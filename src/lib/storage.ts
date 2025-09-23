@@ -92,3 +92,14 @@ if (typeof window !== 'undefined') {
     cache.set(e.key, null)
   })
 }
+
+// UI helpers (non-sensitive). Stored as plain values.
+export function getUIFlag(key: string): boolean {
+  if (typeof localStorage === 'undefined') return false
+  return localStorage.getItem(key) === '1'
+}
+export function setUIFlag(key: string, value: boolean): void {
+  if (typeof localStorage === 'undefined') return
+  if (value) localStorage.setItem(key, '1')
+  else localStorage.removeItem(key)
+}

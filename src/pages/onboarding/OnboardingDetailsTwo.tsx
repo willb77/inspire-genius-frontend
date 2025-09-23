@@ -2,7 +2,7 @@ import ProgressBar from "@/components/onboarding/ProgressBar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { ChevronRight, HelpCircle, Volume2, Pause } from "lucide-react";
+import { ChevronRight, HelpCircle, Volume2, Pause, Loader2 } from "lucide-react";
 import CoachCard from "@/components/onboarding/CoachCard";
 import { Logo } from "@/components/shared/Logo";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -128,7 +128,22 @@ export default function OnboardingDetailsTwo() {
                 variant="outline"
                 className="h-10 w-28 bg-white/80"
                 type="button"
-                onClick={() => setShowTour(true)}
+                onClick={() => {
+                  setShowTour(true);
+                  const firstCoach = coachRefs.current[0];
+                  if (firstCoach) {
+                    // Scroll the first coach into view for the tour
+                    setTimeout(() => {
+                      try {
+                        firstCoach.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+                      } catch {
+                        // fallback
+                        const rect = firstCoach.getBoundingClientRect();
+                        window.scrollTo({ top: window.scrollY + rect.top - 80, behavior: "smooth" });
+                      }
+                    }, 0);
+                  }
+                }}
               >
                 Help <HelpCircle className="ml-2 h-4 w-4" />
               </Button>
@@ -169,7 +184,9 @@ export default function OnboardingDetailsTwo() {
                 className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === 'starting' ? 'animate-pulse' : ''}`}
                 disabled={phase === 'starting'}
               >
-                {phase === 'speaking' ? (
+                {phase === 'starting' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : phase === 'speaking' ? (
                   <Pause className="w-4 h-4" />
                 ) : (
                   <Volume2 className="w-4 h-4" />
