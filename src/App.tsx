@@ -3,9 +3,9 @@ import { routes } from './routes'
 import './App.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
-import { AssessmentProvider } from './context/AssessmentContext'
+// import { AssessmentProvider } from './context/AssessmentContext'
 import { Toaster } from '@/components/ui/sonner'
-import { TourProvider } from '@/context/TourContext'
+// import { TourProvider } from '@/context/TourContext'
 import '@/lib/axios'
 
 const queryClient = new QueryClient()
@@ -15,12 +15,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AssessmentProvider>
-          <TourProvider>
+        {/* <AssessmentProvider>
+          <TourProvider> */}
             {element}
             <Toaster richColors position="top-right" />
-          </TourProvider>
-        </AssessmentProvider>
+          {/* </TourProvider>
+        </AssessmentProvider> */}
       </AuthProvider>
     </QueryClientProvider>
   )
