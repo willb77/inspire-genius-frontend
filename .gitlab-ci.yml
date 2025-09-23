@@ -1,9 +1,10 @@
 stages:
   - build
+  - sonarScan
   - deploy
 
 # -------------------------
-# Build Job
+# Build Job (unchanged)
 # -------------------------
 devBuild:
   stage: build
@@ -41,7 +42,29 @@ devBuild:
       - dist/
 
 # -------------------------
-# Deploy Job
+# SonarQube Scan Job (NEW)
+# -------------------------
+sonarScan:
+  stage: sonarScan
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.projectKey=inspire-genius-frontend
+      -Dsonar.sources=.
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.login=$SONAR_TOKEN
+  only:
+    - development
+  dependencies:
+    - devBuild
+  tags:
+    - pacewisdom-docker-shared-runner
+
+# -------------------------
+# Deploy Job (unchanged)
 # -------------------------
 deploy:
   stage: deploy
