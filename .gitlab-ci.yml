@@ -53,24 +53,18 @@ deploy:
   dependencies:
     - devBuild
   script:
-    # -------------------------
     # Ensure required AWS variables exist
-    # -------------------------
-    - '[ -n "$S3_BUCKET_NAME" ] || { echo "Missing S3_BUCKET_NAME"; exit 1; }'
-    - '[ -n "$CLOUDFRONT_DISTRIBUTION_ID" ] || { echo "Missing CLOUDFRONT_DISTRIBUTION_ID"; exit 1; }'
-    - '[ -n "$AWS_ACCESS_KEY_ID" ] || { echo "Missing AWS_ACCESS_KEY_ID"; exit 1; }'
-    - '[ -n "$AWS_SECRET_ACCESS_KEY" ] || { echo "Missing AWS_SECRET_ACCESS_KEY"; exit 1; }'
-    - '[ -n "$AWS_DEFAULT_REGION" ] || { echo "Missing AWS_DEFAULT_REGION"; exit 1; }'
+    - '[ -z "$S3_BUCKET_NAME" ] && echo "Missing S3_BUCKET_NAME" && exit 1'
+    - '[ -z "$CLOUDFRONT_DISTRIBUTION_ID" ] && echo "Missing CLOUDFRONT_DISTRIBUTION_ID" && exit 1'
+    - '[ -z "$AWS_ACCESS_KEY_ID" ] && echo "Missing AWS_ACCESS_KEY_ID" && exit 1'
+    - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "Missing AWS_SECRET_ACCESS_KEY" && exit 1'
+    - '[ -z "$AWS_DEFAULT_REGION" ] && echo "Missing AWS_DEFAULT_REGION" && exit 1'
 
-    # Debug: Print variables for confirmation (do not print secrets)
-   
-
-    # -------------------------
-    # Clean S3 bucket (no trailing slash)
-    - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
+    # Clean S3 bucket (trim spaces)
+    - aws s3 rm "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
 
     # Upload new build
-    - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
+    - aws s3 cp dist/ "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
 
     # Invalidate CloudFront
     - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
