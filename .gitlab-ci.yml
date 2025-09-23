@@ -66,16 +66,11 @@ deploy:
    
 
     # -------------------------
-    # Clean S3 bucket before upload
-    # -------------------------
-    - aws s3 rm s3://$S3_BUCKET_NAME/ --recursive
+    # Clean S3 bucket (no trailing slash)
+    - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
 
-    # -------------------------
     # Upload new build
-    # -------------------------
-    - aws s3 cp dist/ s3://$S3_BUCKET_NAME/ --recursive
+    - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
 
-    # -------------------------
-    # Invalidate CloudFront cache
-    # -------------------------
-    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+    # Invalidate CloudFront
+    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
