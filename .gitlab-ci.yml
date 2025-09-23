@@ -1,0 +1,39 @@
+stages:
+  - build
+  - deploy
+
+devBuild:
+  stage: build
+  tags:
+    - 3pp-sandbox
+  only:
+    - development
+  script:
+    - |
+      echo "VITE_NODE_ENV=production" > .env
+      echo "VITE_SERVER_URL=$VITE_SERVER_URL" >> .env
+      echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
+    - cat .env
+    - npm ci
+    - npm run build  
+    # Debug: Check that the correct WebSocket URL got embedded
+    - echo "🔍 Verifying built WebSocket URLs..."
+    - grep -r "pacewisdom" dist/ || echo " URL not found in build"
+      
+  artifacts:
+    paths:
+      - dist/
+
+deploy:
+  stage: deploy
+  image: amazon/aws-cli:2.15.10
+  tags:
+    - 3pp-sandbox
+  only:
+    - development
+  script:
+    - aws s3 rm s3://$S3_BUCKET_NAME/ --recursive
+    - aws s3 cp dist/ s3://$S3_BUCKET_NAME/ --recursive
+    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+  dependencies:
+    - devBuild
