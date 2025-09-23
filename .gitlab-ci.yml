@@ -30,7 +30,7 @@ devBuild:
 
     # Install dependencies and build
     - npm ci
-    - npm audit fix || true   # optional: auto-fix vulnerabilities
+    - npm audit fix || true
     - npm run build  
 
     # Debug: Verify WebSocket URL made it into build
@@ -57,13 +57,13 @@ deploy:
     # -------------------------
     # Ensure required AWS variables exist
     # -------------------------
-    - : "${S3_BUCKET_NAME:?Missing S3_BUCKET_NAME}"
-    - : "${CLOUDFRONT_DISTRIBUTION_ID:?Missing CLOUDFRONT_DISTRIBUTION_ID}"
-    - : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}"
-    - : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}"
-    - : "${AWS_DEFAULT_REGION:?Missing AWS_DEFAULT_REGION}"
+    - ' : "${S3_BUCKET_NAME:?Missing S3_BUCKET_NAME}" '
+    - ' : "${CLOUDFRONT_DISTRIBUTION_ID:?Missing CLOUDFRONT_DISTRIBUTION_ID}" '
+    - ' : "${AWS_ACCESS_KEY_ID:?Missing AWS_ACCESS_KEY_ID}" '
+    - ' : "${AWS_SECRET_ACCESS_KEY:?Missing AWS_SECRET_ACCESS_KEY}" '
+    - ' : "${AWS_DEFAULT_REGION:?Missing AWS_DEFAULT_REGION}" '
 
-    # Debug: Print variables for confirmation (don’t print secrets)
+    # Debug: Print variables for confirmation (don't print secrets)
     - echo "DEBUG: S3_BUCKET_NAME=$S3_BUCKET_NAME"
     - echo "DEBUG: CLOUDFRONT_DISTRIBUTION_ID=$CLOUDFRONT_DISTRIBUTION_ID"
     - echo "DEBUG: AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
