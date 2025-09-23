@@ -19,13 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { Logo } from "@/components/shared/Logo";
 
 export default function OnboardingDetailsOne() {
@@ -33,7 +26,7 @@ export default function OnboardingDetailsOne() {
   type FormValues = {
     firstName: string;
     lastName: string;
-    dob: Date | null;
+    dob: string;
     category: string;
     role: string;
     about?: string;
@@ -43,7 +36,7 @@ export default function OnboardingDetailsOne() {
     defaultValues: {
       firstName: "",
       lastName: "",
-      dob: null,
+      dob: "",
       category: "",
       role: "",
       about: "",
@@ -129,39 +122,15 @@ export default function OnboardingDetailsOne() {
                 name="dob"
                 rules={{ required: "Date of birth is required" }}
                 render={({ field }) => (
-                  <FormItem className="relative">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            className="h-11 w-full justify-between rounded-md border border-gray-10 px-3 text-left font-normal"
-                          >
-                            {field.value ? (
-                              <span>
-                                {new Date(field.value).toLocaleDateString(
-                                  "en-GB"
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                Date of Birth
-                              </span>
-                            )}
-                            <CalendarIcon className="ml-2 size-4 opacity-80" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ?? undefined}
-                          onSelect={(d) => field.onChange(d ?? null)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  <FormItem className="relative w-full">
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.currentTarget.value)}
+                        className="block h-11 w-full min-w-0 rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -183,7 +152,7 @@ export default function OnboardingDetailsOne() {
                           <SelectValue placeholder="Category" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="business">Business</SelectItem>
                         <SelectItem value="technology">Technology</SelectItem>
                         <SelectItem value="design">Design</SelectItem>
@@ -210,7 +179,7 @@ export default function OnboardingDetailsOne() {
                           <SelectValue placeholder="Role" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="owner">Owner</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="staff">Staff</SelectItem>
