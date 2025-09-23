@@ -25,4 +25,5 @@ export const STORAGE_KEYS = {
   USER_TOKEN: 'auth_token',
   USER_EMAIL: 'user_email',
   USER_OBJ: 'auth_user_obj',
+  UI_SIDEBAR_OPEN: 'ui_sidebar_open',
 } as const;
