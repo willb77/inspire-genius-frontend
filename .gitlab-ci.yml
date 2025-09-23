@@ -7,12 +7,20 @@ stages:
 # -------------------------
 devBuild:
   stage: build
-  image: node:20.19.0   # ✅ Vite requires Node.js 20.19+ or 22.12+
   tags:
     - 3pp-sandbox
   only:
     - development
   script:
+    # Install Node.js 20 only for this job using NVM
+    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    - export NVM_DIR="$HOME/.nvm"
+    - source $NVM_DIR/nvm.sh
+    - nvm install 20.19.0
+    - nvm use 20.19.0
+    - node -v
+    - npm -v
+
     # Create .env file dynamically from GitLab CI variables
     - |
       echo "VITE_NODE_ENV=production" > .env
@@ -22,7 +30,7 @@ devBuild:
 
     # Install dependencies and build
     - npm ci
-    - npm audit fix || true   # (optional) fix vulnerabilities, but don’t fail job
+    - npm audit fix || true   # optional: fix vulnerabilities
     - npm run build  
 
     # Debug: Verify WebSocket URL made it into build
