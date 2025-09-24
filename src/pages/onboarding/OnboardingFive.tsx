@@ -5,7 +5,7 @@ import { ROUTES } from "@/constants/routes";
 export default function OnboardingFive() {
   return (
     <OnboardingScreen
-      imageSrc="/images/onboarding/onboarding-five.svg"
+      imageSrc="/images/onboarding/onboarding-five.png"
       imageAlt="Onboarding step five"
       title="You're all set!"
       subtitle="Let's get you into the app to start making progress."

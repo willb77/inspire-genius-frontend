@@ -5,7 +5,7 @@ import { ROUTES } from "@/constants/routes";
 export default function OnboardingThree() {
   return (
     <OnboardingScreen
-      imageSrc="/images/onboarding/onboarding-three.svg"
+      imageSrc="/images/onboarding/onboarding-three.png"
       imageAlt="Onboarding step three"
       title="Insights that matter"
       subtitle="We prioritize clarity so you can act with confidence."
