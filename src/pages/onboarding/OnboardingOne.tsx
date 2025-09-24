@@ -6,7 +6,7 @@ import { OnboardingCallout } from "@/components/onboarding/OnboardingCallout";
 export default function OnboardingOne() {
   return (
     <OnboardingScreen
-      imageSrc="/images/onboarding/onboarding-one.svg"
+      imageSrc="/images/onboarding/onboarding-one.png"
       imageAlt="Onboarding step one"
       title="Let's get started!"
       subtitle="Upload your personal info to begin working with your AI Coach."
