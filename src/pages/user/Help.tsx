@@ -1,5 +1,5 @@
 import UserLayout from "@/layouts/UserLayout";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -11,7 +11,14 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import Modal from "@/components/shared/modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
 export default function Help() {
@@ -29,20 +36,20 @@ export default function Help() {
     [message]
   );
 
-  const onCancel = () => {
+  const onCancel = useCallback(() => {
     setFirstName("");
     setEmail("");
     setMessage("");
     setAgree(false);
-  };
+  }, []);
 
-  const onSend = async () => {
+  const onSend = useCallback(async () => {
     if (!agree || !firstName || !email || !message) return;
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((resolve) => setTimeout(resolve, 600));
     setSubmitting(false);
     setShowSubmitted(true);
-  };
+  }, [agree, firstName, email, message]);
 
   return (
     <UserLayout>
@@ -58,6 +65,7 @@ export default function Help() {
             <input
               type="text"
               placeholder="Search..."
+              aria-label="Search help topics"
               className="w-full border bg-gray-20 rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <Search
@@ -76,38 +84,51 @@ export default function Help() {
           <CardContent className="space-y-5 text-left">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-xs ">Your Name</label>
+                <label htmlFor="firstName" className="mb-2 block text-xs">
+                  Your Name
+                </label>
                 <Input
+                  id="firstName"
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                  aria-describedby="firstName-help"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs">Email</label>
+                <label htmlFor="email" className="mb-2 block text-xs">
+                  Email
+                </label>
                 <Input
+                  id="email"
                   placeholder="Email Address"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  aria-describedby="email-help"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="mb-2 block text-xs text-black-250">
+                <label
+                  htmlFor="message"
+                  className="mb-2 block text-xs text-black-250"
+                >
                   Message
                 </label>
-                <span className="text-[11px] text-gray-400">
+                <span className="text-[11px] text-gray-400" aria-live="polite">
                   {MAX_CHARS - charsLeft}/{MAX_CHARS}
                 </span>
               </div>
               <textarea
+                id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, MAX_CHARS))}
                 placeholder="Enter your message"
                 rows={6}
+                aria-describedby="message-help"
                 className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
               />
             </div>
@@ -146,6 +167,7 @@ export default function Help() {
               onClick={onCancel}
               disabled={submitting}
               className="w-[206px] bg-gray-20"
+              type="button"
             >
               Cancel
             </Button>
@@ -156,32 +178,38 @@ export default function Help() {
                 !agree || submitting || !firstName || !email || !message
               }
               className="w-[206px]"
+              type="button"
             >
               {submitting ? "Sending…" : "Send"}
             </Button>
           </CardFooter>
         </Card>
 
-        <Modal open={showSubmitted} onClose={() => setShowSubmitted(false)}>
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-              <span className="text-xl">🎧</span>
+        <Dialog open={showSubmitted} onOpenChange={setShowSubmitted}>
+          <DialogContent className="sm:max-w-md">
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <span className="text-xl">🎧</span>
+              </div>
             </div>
-            <div className="text-center">
-              <h2 className="text-lg font-semibold">Issue Submitted</h2>
-              <p className="mt-1 text-xs text-gray-500">
+            <DialogHeader>
+              <DialogTitle className="text-center">Issue Submitted</DialogTitle>
+              <DialogDescription className="text-center">
                 Thanks for reaching out! We'll review your issue soon.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowSubmitted(false)}
-            >
-              Back
-            </Button>
-          </div>
-        </Modal>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowSubmitted(false)}
+                type="button"
+              >
+                Back
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </UserLayout>
   );
