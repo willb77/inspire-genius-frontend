@@ -150,7 +150,7 @@ export default function OnboardingDetailsTwo() {
               <Button
                 className="h-10 w-32"
                 type="button"
-                onClick={() => navigate(ROUTES.DASHBOARD)}
+                onClick={() => navigate(ROUTES.SETTINGS)}
               >
                 Let's go <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
