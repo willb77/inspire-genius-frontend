@@ -594,7 +594,19 @@ function SidebarMenuSkeleton({
 }) {
   // Random width between 50 to 90%.
   const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
+    // Use cryptographically strong PRNG for lint/Sonar compliance (cosmetic only)
+    try {
+      if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+        const buf = new Uint32Array(1)
+        window.crypto.getRandomValues(buf)
+        const rnd = buf[0] / 0xffffffff // [0,1)
+        return `${Math.floor(rnd * 40) + 50}%`
+      }
+    } catch {
+      // ignore and fallback
+    }
+    // Fallback stable width when crypto is unavailable
+    return "70%"
   }, [])
 
   return (
