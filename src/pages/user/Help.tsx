@@ -7,7 +7,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Search } from "lucide-react";
+import { Headset, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,7 +75,7 @@ export default function Help() {
             />
           </div>
         </div>
-        <Card className="shadow-sm">
+        <Card className="shadow-none sm:shadow-sm">
           <CardHeader className="text-left">
             <CardTitle className="text-base font-medium tracking-tight">
               Get assistance and resolve issues with ease.
@@ -84,9 +84,9 @@ export default function Help() {
           <CardContent className="space-y-5 text-left">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="firstName" className="mb-2 block text-xs">
+                <Label htmlFor="firstName" className="mb-2 block text-xs">
                   Your Name
-                </label>
+                </Label>
                 <Input
                   id="firstName"
                   placeholder="First Name"
@@ -96,9 +96,9 @@ export default function Help() {
                 />
               </div>
               <div>
-                <label htmlFor="email" className="mb-2 block text-xs">
+                <Label htmlFor="email" className="mb-2 block text-xs">
                   Email
-                </label>
+                </Label>
                 <Input
                   id="email"
                   placeholder="Email Address"
@@ -112,12 +112,12 @@ export default function Help() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label
+                <Label
                   htmlFor="message"
                   className="mb-2 block text-xs text-black-250"
                 >
                   Message
-                </label>
+                </Label>
                 <span className="text-[11px] text-gray-400" aria-live="polite">
                   {MAX_CHARS - charsLeft}/{MAX_CHARS}
                 </span>
@@ -132,14 +132,17 @@ export default function Help() {
                 className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
               />
             </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <Checkbox
-                id="agree"
+                id="terms-privacy"
                 checked={agree}
                 onCheckedChange={(checked) => setAgree(!!checked)}
+                className="mt-1"
               />
-              <Label htmlFor="agree" className="text-muted-foreground">
+              <Label
+                htmlFor="terms-privacy"
+                className="text-muted-foreground text-sm leading-snug"
+              >
                 I agree with the{" "}
                 <a
                   href="/terms"
@@ -166,7 +169,7 @@ export default function Help() {
               variant="outline"
               onClick={onCancel}
               disabled={submitting}
-              className="w-52 bg-gray-20"
+              className="w-full sm:w-52 bg-gray-20"
               type="button"
             >
               Cancel
@@ -177,7 +180,7 @@ export default function Help() {
               disabled={
                 !agree || submitting || !firstName || !email || !message
               }
-              className="w-52"
+              className="w-full sm:w-52"
               type="button"
             >
               {submitting ? "Sending…" : "Send"}
@@ -189,9 +192,10 @@ export default function Help() {
           <DialogContent className="sm:max-w-md">
             <div className="flex flex-col items-center gap-4 py-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                <span className="text-xl">🎧</span>
+                <Headset className="h-5 w-5" />
               </div>
             </div>
+
             <DialogHeader>
               <DialogTitle className="text-center">Issue Submitted</DialogTitle>
               <DialogDescription className="text-center">
