@@ -143,7 +143,7 @@ export default function Help() {
                 I agree with the{" "}
                 <a
                   href="/terms"
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-500 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -152,7 +152,7 @@ export default function Help() {
                 &{" "}
                 <a
                   href="/privacy"
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-500 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -166,7 +166,7 @@ export default function Help() {
               variant="outline"
               onClick={onCancel}
               disabled={submitting}
-              className="w-[206px] bg-gray-20"
+              className="w-52 bg-gray-20"
               type="button"
             >
               Cancel
@@ -177,7 +177,7 @@ export default function Help() {
               disabled={
                 !agree || submitting || !firstName || !email || !message
               }
-              className="w-[206px]"
+              className="w-52"
               type="button"
             >
               {submitting ? "Sending…" : "Send"}
