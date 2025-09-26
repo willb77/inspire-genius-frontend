@@ -82,7 +82,8 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 className="pl-10 pr-10"
               />
               <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => togglePasswordVisibility("current")}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
@@ -92,7 +93,7 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 ) : (
                   <Eye className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -107,7 +108,8 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 className="pl-10 pr-10"
               />
               <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => togglePasswordVisibility("new")}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
@@ -117,7 +119,7 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 ) : (
                   <Eye className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -132,7 +134,8 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 className="pl-10 pr-10"
               />
               <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => togglePasswordVisibility("confirm")}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
@@ -142,7 +145,7 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
                 ) : (
                   <Eye className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -155,10 +158,7 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
           >
             Cancel
           </Button>
-          <Button
-            className="w-full sm:w-[48%]"
-            onClick={handlePasswordChange}
-          >
+          <Button className="w-full sm:w-[48%]" onClick={handlePasswordChange}>
             Save Changes
           </Button>
         </DialogFooter>
@@ -166,4 +166,3 @@ export default function ChangePassword({ trigger }: ChangePasswordProps) {
     </Dialog>
   );
 }
-

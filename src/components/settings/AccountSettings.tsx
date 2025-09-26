@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { LockKeyhole, Edit, LogOut } from "lucide-react";
 import ChangePassword from "./ChangePassword";
 import EditProfile from "./EditProfile";
+import { Label } from "../ui/label";
 
 interface ProfileData {
   firstName: string;
@@ -78,44 +79,44 @@ export default function AccountSettings({
           {/* Form Fields */}
           <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 First name
-              </label>
+              </Label>
               <Input value={profileData.firstName} readOnly />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 Last name
-              </label>
+              </Label>
               <Input value={profileData.lastName} readOnly />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 Email
-              </label>
+              </Label>
               <Input value={profileData.email} readOnly />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 Date of birth
-              </label>
+              </Label>
               <Input value={profileData.dateOfBirth} readOnly />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 Category
-              </label>
+              </Label>
               <Input value={profileData.category} readOnly />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700">
                 Role
-              </label>
+              </Label>
               <Input value={profileData.role} readOnly />
             </div>
           </div>

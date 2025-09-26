@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "../ui/label";
 
 interface NotificationSettingsProps {
   pushNotifications: boolean;
@@ -51,12 +52,12 @@ export default function NotificationSettings({
                 onUpdateNotificationsChange(!!checked)
               }
             />
-            <label
+            <Label
               htmlFor="update-notifications"
               className="text-sm font-medium"
             >
               Update / Maintenance Notification
-            </label>
+            </Label>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -67,12 +68,12 @@ export default function NotificationSettings({
                 onMarketingNotificationsChange(!!checked)
               }
             />
-            <label
+            <Label
               htmlFor="marketing-notifications"
               className="text-sm font-medium"
             >
               Marketing / Promotional Notifications
-            </label>
+            </Label>
           </div>
         </div>
       </CardContent>

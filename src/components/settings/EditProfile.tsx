@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Upload, Calendar } from "lucide-react";
+import { Label } from "../ui/label";
 
 interface ProfileData {
   firstName: string;
@@ -76,7 +77,7 @@ export default function EditProfile({
           {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">First name</label>
+              <Label className="text-sm font-medium">First name</Label>
               <Input
                 value={editProfileData.firstName}
                 onChange={(e) => updateField("firstName", e.target.value)}
@@ -85,7 +86,7 @@ export default function EditProfile({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Last name</label>
+              <Label className="text-sm font-medium">Last name</Label>
               <Input
                 value={editProfileData.lastName}
                 onChange={(e) => updateField("lastName", e.target.value)}
@@ -94,7 +95,7 @@ export default function EditProfile({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <Label className="text-sm font-medium">Email</Label>
               <Input
                 type="email"
                 value={editProfileData.email}
@@ -104,7 +105,7 @@ export default function EditProfile({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date of birth</label>
+              <Label className="text-sm font-medium">Date of birth</Label>
               <div className="relative">
                 <Input
                   type="date"
@@ -117,7 +118,7 @@ export default function EditProfile({
             </div>
 
             <div className="space-y-2 w-full">
-              <label className="text-sm font-medium">Category</label>
+              <Label className="text-sm font-medium">Category</Label>
               <Select
                 value={editProfileData.category}
                 onValueChange={(value) => updateField("category", value)}
@@ -135,7 +136,7 @@ export default function EditProfile({
             </div>
 
             <div className="space-y-2 w-full">
-              <label className="text-sm font-medium">Role</label>
+              <Label className="text-sm font-medium">Role</Label>
               <Select
                 value={editProfileData.role}
                 onValueChange={(value) => updateField("role", value)}
