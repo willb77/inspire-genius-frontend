@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import UserLayout from "@/layouts/UserLayout";
-import { Search } from "lucide-react";
+import SearchBar from "@/components/shared/SearchBar";
 import AccountSettings from "@/components/settings/AccountSettings";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 
 export default function Settings() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [pushNotifications, setPushNotifications] = useState(true);
   const [updateNotifications, setUpdateNotifications] = useState(true);
   const [marketingNotifications, setMarketingNotifications] = useState(false);
@@ -34,28 +32,10 @@ export default function Settings() {
 
   return (
     <UserLayout>
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Settings
-          </h1>
-
-          {/* Search Bar */}
-          <div className="relative w-full sm:w-80">
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-              strokeWidth={2}
-            />
-          </div>
+      <div className="space-y-4">
+        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <SearchBar />
         </div>
 
         {/* Account Settings Card */}
