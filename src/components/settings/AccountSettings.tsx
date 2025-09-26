@@ -27,7 +27,7 @@ export default function AccountSettings({
   onLogout,
 }: AccountSettingsProps) {
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-none sm:shadow-sm">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle className="text-lg font-semibold">
           Account Settings

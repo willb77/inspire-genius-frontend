@@ -21,7 +21,7 @@ export default function NotificationSettings({
   onMarketingNotificationsChange,
 }: NotificationSettingsProps) {
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-none sm:shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold">
           Notifications Settings
