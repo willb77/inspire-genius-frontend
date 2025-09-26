@@ -1,7 +1,7 @@
 import UserLayout from "@/layouts/UserLayout";
 import { useState } from "react";
 import HelpForm from "@/components/help/HelpForm";
-import IssueSubmittedDialog from "@/components/help/IssueSubmittedDialog";
+import IssueSubmittedDialog from "@/components/help/IssueSubmitted";
 import SearchBar from "@/components/shared/SearchBar";
 
 
