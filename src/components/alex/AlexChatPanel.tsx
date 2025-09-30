@@ -3,7 +3,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Send } from "lucide-react"
+import { X, Send, Mic } from "lucide-react"
 import OnboardingCallout from "@/components/onboarding/OnboardingCallout"
 import { cn } from "@/lib/utils"
 import { useTour } from "@/context/useTour"
@@ -76,8 +76,9 @@ export default function AlexChatPanel({ open, onOpenChange, className }: AlexCha
         </div>
 
         <div className="p-4 border-t mt-auto">
-          <div className="flex items-center justify-between gap-2">
-            <Input placeholder="Ask Anything...." className="h-11" />
+          <div className="relative flex items-center justify-between gap-2">
+          <Mic className="absolute left-2 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+            <Input placeholder="Ask Anything...." className="h-11 !pl-10" />
             <Button className="h-11 px-3 bg-blue-primary hover:bg-blue-primary/90">
               <Send className="size-5" />
             </Button>
