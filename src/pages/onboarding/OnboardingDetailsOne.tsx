@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import {
   Form,
   FormControl,
@@ -20,9 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Logo } from "@/components/shared/Logo";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format, parse, isValid } from "date-fns";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
+  const [dobOpen, setDobOpen] = useState(false);
   type FormValues = {
     firstName: string;
     lastName: string;
@@ -123,14 +129,38 @@ export default function OnboardingDetailsOne() {
                 rules={{ required: "Date of birth is required" }}
                 render={({ field }) => (
                   <FormItem className="relative w-full">
-                    <FormControl>
-                      <Input
-                        type="date"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.currentTarget.value)}
-                        className="block h-11 w-full min-w-0 rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
-                      />
-                    </FormControl>
+                    <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          type="button"
+                          className="!h-11 w-full justify-start rounded-md border border-gray-10 text-left font-normal relative pr-10"
+                        >
+                          {field.value ? (
+                            <span>{field.value}</span>
+                          ) : (
+                            <span className="text-muted-foreground">Pick a date</span>
+                          )}
+                          <CalendarIcon className="h-4 w-4 opacity-70 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-white" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={(() => { const d = field.value ? parse(field.value, "d LLL yyyy", new Date()) : undefined; return d && isValid(d) ? d : undefined })()}
+                          onSelect={(date) => {
+                            const v = date ? format(date, "d LLL yyyy") : "";
+                            field.onChange(v);
+                            if (date) setDobOpen(false);
+                          }}
+                          captionLayout="dropdown"
+                          startMonth={new Date(1900, 0, 1)}
+                          endMonth={new Date()}
+                          disabled={(date) => date > new Date()}
+                          autoFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

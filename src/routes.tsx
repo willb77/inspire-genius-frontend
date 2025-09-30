@@ -6,7 +6,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import SettingsPage from "@/pages/user/Settings";
 import HelpPage from "@/pages/user/Help";
-
+import Home from "@/pages/user/Home";
+import Dashboard from "@/pages/user/Dashboard";
+import Coaches from "@/pages/user/Coaches";
+import Documents from "@/pages/user/Documents";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import OnboardingOne from "@/pages/onboarding/OnboardingOne";
 import OnboardingTwo from "@/pages/onboarding/OnboardingTwo";
@@ -35,6 +38,10 @@ export const routes: RouteObject[] = [
   {
     element: <ProtectedRoute />,
     children: [
+      {path:"/home",element:<Home/>},
+      {path:"/dashboard",element:<Dashboard/>},
+      {path:"/coaches",element:<Coaches/>},
+      {path:"/documents",element:<Documents/>},
       { path: "/settings", element: <SettingsPage /> },
       { path: "/help", element: <HelpPage /> },
     ],

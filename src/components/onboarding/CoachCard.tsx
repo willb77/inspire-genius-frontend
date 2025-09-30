@@ -53,7 +53,7 @@ export default function CoachCard({ title, gender, accent, tone, extraCount = 0,
   const [tones, setTones] = useState<string[]>(initialTones.length ? initialTones : ["warm", "motivativ"]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.08)] p-5">
+    <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-5">
       {/* Header */}
       <div className="flex items-start justify-between">
         <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
