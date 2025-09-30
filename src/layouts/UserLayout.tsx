@@ -30,8 +30,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
-// Import AlexFloating from "@/components/shared/AlexFloating";
-// Import { useTour } from "@/context/useTour";
+import AlexFloating from "@/components/shared/AlexFloating";
+import { useTour } from "@/context/useTour";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -87,7 +87,7 @@ function SidebarOpenObserver() {
 }
 
 export default function UserLayout({ children, className }: UserLayoutProps) {
-  // Const { isRunning } = useTour();
+  const { isRunning } = useTour();
   // Read initial sidebar open state from localStorage
   const [initialSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
@@ -153,7 +153,7 @@ export default function UserLayout({ children, className }: UserLayoutProps) {
         <div className="flex-1 p-4 md:p-6">
           {children}
         </div>
-        {/* {!isRunning && <AlexFloating />} */}
+       {!isRunning && <AlexFloating />}
       </SidebarInset>
     </SidebarProvider>
   );
