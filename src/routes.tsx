@@ -9,6 +9,7 @@ import HelpPage from "@/pages/user/Help";
 import Home from "@/pages/user/Home";
 import Dashboard from "@/pages/user/Dashboard";
 import Coaches from "@/pages/user/Coaches";
+import CoachChat from "@/pages/user/CoachChat";
 import Documents from "@/pages/user/Documents";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import OnboardingOne from "@/pages/onboarding/OnboardingOne";
@@ -41,6 +42,7 @@ export const routes: RouteObject[] = [
       {path:"/home",element:<Home/>},
       {path:"/dashboard",element:<Dashboard/>},
       {path:"/coaches",element:<Coaches/>},
+      { path: "/dashboard/:coach/chat", element: <CoachChat /> },
       {path:"/documents",element:<Documents/>},
       { path: "/settings", element: <SettingsPage /> },
       { path: "/help", element: <HelpPage /> },
