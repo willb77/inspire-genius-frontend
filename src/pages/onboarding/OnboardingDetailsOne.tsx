@@ -25,18 +25,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parse, isValid } from "date-fns";
+import type { FormValues } from "@/types/onboarding-types";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
   const [dobOpen, setDobOpen] = useState(false);
-  type FormValues = {
-    firstName: string;
-    lastName: string;
-    dob: string;
-    category: string;
-    role: string;
-    about?: string;
-  };
 
   const form = useForm<FormValues>({
     defaultValues: {

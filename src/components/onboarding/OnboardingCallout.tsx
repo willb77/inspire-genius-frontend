@@ -1,11 +1,4 @@
-import type { ReactNode } from "react";
-
-export interface OnboardingCalloutProps {
-  title: string;
-  positionClass: string; // e.g., "top-6 left-6". Must be relative to parent container.
-  className?: string; // optional extra styles for the bubble container
-  icon?: ReactNode; // optional icon node
-}
+import type { OnboardingCalloutProps } from "@/types/onboarding-types";
 
 export function OnboardingCallout({ title, positionClass, className, icon }: OnboardingCalloutProps) {
   return (

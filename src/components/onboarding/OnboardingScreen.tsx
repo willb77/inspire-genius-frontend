@@ -1,18 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import OnboardingImage from "./OnboardingImage";
-import type { ReactNode } from "react";
 import { Logo } from "../shared/Logo";
-
-export interface OnboardingScreenProps {
-  imageSrc: string;
-  imageAlt: string;
-  title: string;
-  subtitle?: string;
-  ctaLabel?: string;
-  nextPath: string;
-  overlays?: ReactNode; // absolute-positioned overlays relative to image container
-}
+import type { OnboardingScreenProps } from "@/types/onboarding-types";
 
 export const OnboardingScreen = ({
   imageSrc,
