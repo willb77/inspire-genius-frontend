@@ -3,15 +3,7 @@ import { Label } from "@/components/ui/label";
 import { IconInput } from "@/components/ui/icon-input";
 import { Button } from "@/components/ui/button";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-
-export type EmailFieldProps = {
-  id?: string;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  value: string;
-  onChange: (value: string) => void;
-};
+import { type EmailFieldProps, type PasswordFieldProps } from "@/types/auth-types";
 
 export function EmailField({
   id = "email",
@@ -36,15 +28,6 @@ export function EmailField({
     </div>
   );
 }
-
-export type PasswordFieldProps = {
-  id?: string;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  value: string;
-  onChange: (value: string) => void;
-};
 
 export function PasswordField({
   id = "password",

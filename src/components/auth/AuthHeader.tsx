@@ -1,7 +1,4 @@
-interface AuthHeaderProps {
-  title: string;
-  subtitle?: string;
-}
+import { type AuthHeaderProps } from "@/types/auth-types";
 
 export default function AuthHeader({ title, subtitle }: AuthHeaderProps) {
   return (
