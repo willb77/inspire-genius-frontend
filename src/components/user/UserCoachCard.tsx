@@ -60,7 +60,6 @@ export default function UserCoachCard({
         <Button
           className="h-11 w-full rounded-xl bg-blue-primary hover:bg-blue-primary/90 text-white"
           onClick={onChat}
-          disabled={true}
         >
           Chat
           <RefreshCcw className="h-4 w-4 ml-2" />
