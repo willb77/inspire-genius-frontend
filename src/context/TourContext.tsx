@@ -83,26 +83,26 @@ const DEFAULT_STEPS: TourStep[] = [
     imageClassName: 'right-[3%] bottom-5 w-24 md:w-28 lg:w-48',
   },
   // Coach chat page (using default dummy coach id/slug "team-coach")
-  // {
-  //   selector: '[data-tour="chat-history"]',
-  //   title: 'Chat history',
-  //   description: 'Your recent conversations appear here. Select any to resume.',
-  //   image: '/images/tour/left-alex.svg',
-  //   padding: 12,
-  //   route: '/dashboard/team-coach/chat',
-  //   tooltipClassName: 'left-[50%] bottom-40',
-  //   imageClassName: 'left-[80%] bottom-40 w-24 md:w-28 lg:w-48',
-  // },
-  // {
-  //   selector: '[data-tour="chat-window"]',
-  //   title: 'Chat window',
-  //   description: 'Type your message and chat with your selected coach here.',
-  //   image: '/images/tour/right-alex.svg',
-  //   padding: 12,
-  //   route: '/dashboard/team-coach/chat',
-  //   tooltipClassName: 'left-[18%] bottom-28',
-  //   imageClassName: 'left-[5%] bottom-28 w-24 md:w-28 lg:w-48',
-  // },
+  {
+    selector: '[data-tour="chat-history"]',
+    title: 'Chat history',
+    description: 'Your recent conversations appear here. Select any to resume.',
+    image: '/images/tour/left-alex.svg',
+    padding: 12,
+    route: '/dashboard/team-coach/chat',
+    tooltipClassName: 'left-[50%] bottom-40',
+    imageClassName: 'left-[80%] bottom-40 w-24 md:w-28 lg:w-48',
+  },
+  {
+    selector: '[data-tour="chat-window"]',
+    title: 'Chat window',
+    description: 'Type your message and chat with your selected coach here.',
+    image: '/images/tour/right-alex.svg',
+    padding: 12,
+    route: '/dashboard/team-coach/chat',
+    tooltipClassName: 'left-[18%] bottom-28',
+    imageClassName: 'left-[5%] bottom-28 w-24 md:w-28 lg:w-48',
+  },
 ];
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
