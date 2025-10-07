@@ -39,21 +39,25 @@ export default function Settings() {
         </div>
 
         {/* Account Settings Card */}
-        <AccountSettings
-          profileData={profileData}
-          onProfileUpdate={handleProfileUpdate}
-          onLogout={handleLogout}
-        />
+        <div data-tour="settings-account">
+          <AccountSettings
+            profileData={profileData}
+            onProfileUpdate={handleProfileUpdate}
+            onLogout={handleLogout}
+          />
+        </div>
 
         {/* Notifications Settings Card */}
-        <NotificationSettings
-          pushNotifications={pushNotifications}
-          updateNotifications={updateNotifications}
-          marketingNotifications={marketingNotifications}
-          onPushNotificationsChange={setPushNotifications}
-          onUpdateNotificationsChange={setUpdateNotifications}
-          onMarketingNotificationsChange={setMarketingNotifications}
-        />
+        <div data-tour="settings-notifications">
+          <NotificationSettings
+            pushNotifications={pushNotifications}
+            updateNotifications={updateNotifications}
+            marketingNotifications={marketingNotifications}
+            onPushNotificationsChange={setPushNotifications}
+            onUpdateNotificationsChange={setUpdateNotifications}
+            onMarketingNotificationsChange={setMarketingNotifications}
+          />
+        </div>
 
         {/* Legal Card */}
         <Card className="shadow-sm">

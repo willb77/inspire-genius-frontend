@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { TourContext, type TourStep, type TourContextValue } from "@/context/tour-context";
+import {
+  TourContext,
+  type TourStep,
+  type TourContextValue,
+} from "@/context/tour-context";
 import { ROUTES } from "@/constants/routes";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Volume2, Pause, Loader2 } from "lucide-react";
@@ -12,96 +16,195 @@ import { scrollToTarget } from "@/lib/scroll";
 const DEFAULT_STEPS: TourStep[] = [
   {
     selector: '[data-tour="nav"]',
-    title: 'This is your navigation bar',
-    description: 'Move between dashboards, panels, and settings—access everything in a few clicks.',
-    image: '/images/tour/left-alex.svg',
+    title: "This is your navigation bar",
+    description:
+      "Move between dashboards, panels, and settings—access everything in a few clicks.",
+    image: "/images/tour/left-alex.svg",
     padding: 8,
     route: ROUTES.HOME,
-    tooltipClassName: 'left-1/4 bottom-10',
-    imageClassName: 'left-[55%] bottom-10 w-24 md:w-28 lg:w-48',
+    tooltipClassName: "left-1/4 bottom-10",
+    imageClassName: "left-[55%] bottom-10 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="about"]',
-    title: 'About Prism',
-    description: 'Learn about PRISM Inspire and how it unlocks potential through neuroscience and AI.',
-    image: '/images/tour/left-alex.svg',
+    title: "About Prism",
+    description:
+      "Learn about PRISM Inspire and how it unlocks potential through neuroscience and AI.",
+    image: "/images/tour/left-alex.svg",
     padding: 12,
     route: ROUTES.HOME,
-    tooltipClassName: 'left-[68%] bottom-40',
-    imageClassName: 'left-[85%] bottom-10 w-24 md:w-28 lg:w-48',
+    tooltipClassName: "left-[68%] bottom-40",
+    imageClassName: "left-[85%] bottom-10 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="ask-alex"]',
-    title: 'Ask Alex',
-    description: 'Your AI assistant is ready to help. Ask questions and explore features.',
-    image: '/images/tour/right-alex.svg',
+    title: "Ask Alex",
+    description:
+      "Your AI assistant is ready to help. Ask questions and explore features.",
+    image: "/images/tour/right-alex.svg",
     padding: 12,
     route: ROUTES.HOME,
-    tooltipClassName:"right-[40%] bottom-10",
-    imageClassName:"right-[65%] bottom-10 w-24 md:w-28 lg:w-48"
+    tooltipClassName: "right-[40%] bottom-10",
+    imageClassName: "right-[65%] bottom-10 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="explore-coaches"]',
-    title: 'Explore Coaches',
-    description: 'Browse AI coaches and get personalized support for your needs.',
-    image: '/images/tour/left-alex.svg',
+    title: "Explore Coaches",
+    description:
+      "Browse AI coaches and get personalized support for your needs.",
+    image: "/images/tour/left-alex.svg",
     padding: 12,
     route: ROUTES.HOME,
-    tooltipClassName:"right-[35%] bottom-2",
-    imageClassName:"right-[20%] bottom-2 w-24 md:w-28 lg:w-48",
-    increasePadding: "pb-36"
+    tooltipClassName: "right-[35%] bottom-2",
+    imageClassName: "right-[20%] bottom-2 w-24 md:w-28 lg:w-48",
+    increasePadding: "pb-36",
   },
   // Dashboard highlights: first three coaches
   {
     selector: '[data-tour="coach-card-1"]',
-    title: 'Pick a coach',
-    description: 'Start by exploring a coach card. Each card shows key details.',
-    image: '/images/tour/left-alex.svg',
+    title: "Pick a coach",
+    description:
+      "Start by exploring a coach card. Each card shows key details.",
+    image: "/images/tour/left-alex.svg",
     padding: 12,
     route: ROUTES.DASHBOARD,
-    tooltipClassName: 'left-[5%] bottom-20',
-    imageClassName: 'left-[30%] bottom-20 w-24 md:w-28 lg:w-48',
+    tooltipClassName: "left-[5%] bottom-20",
+    imageClassName: "left-[30%] bottom-20 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="coach-card-2"]',
-    title: 'More coaches',
-    description: 'You can compare different AI coaches to find the right fit.',
-    image: '/images/tour/right-alex.svg',
+    title: "More coaches",
+    description: "You can compare different AI coaches to find the right fit.",
+    image: "/images/tour/right-alex.svg",
     padding: 12,
     route: ROUTES.DASHBOARD,
-    tooltipClassName: 'left-[50%] bottom-5',
-    imageClassName: 'left-[35%] bottom-5 w-24 md:w-28 lg:w-48',
+    tooltipClassName: "left-[50%] bottom-5",
+    imageClassName: "left-[35%] bottom-5 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="coach-card-3"]',
-    title: 'Ready to chat',
-    description: 'Open a coach to start chatting and get guidance.',
-    image: '/images/tour/left-alex.svg',
+    title: "Ready to chat",
+    description: "Open a coach to start chatting and get guidance.",
+    image: "/images/tour/left-alex.svg",
     padding: 12,
     route: ROUTES.DASHBOARD,
-    tooltipClassName: 'left-[55%] bottom-5',
-    imageClassName: 'right-[3%] bottom-5 w-24 md:w-28 lg:w-48',
+    tooltipClassName: "left-[55%] bottom-5",
+    imageClassName: "right-[3%] bottom-5 w-24 md:w-28 lg:w-48",
   },
+
   // Coach chat page (using default dummy coach id/slug "team-coach")
   {
     selector: '[data-tour="chat-history"]',
-    title: 'Chat history',
-    description: 'Your recent conversations appear here. Select any to resume.',
-    image: '/images/tour/left-alex.svg',
+    title: "Chat history",
+    description: "Your recent conversations appear here. Select any to resume.",
+    image: "/images/tour/left-alex.svg",
     padding: 12,
-    route: '/dashboard/team-coach/chat',
-    tooltipClassName: 'left-[50%] bottom-40',
-    imageClassName: 'left-[80%] bottom-40 w-24 md:w-28 lg:w-48',
+    route: "/dashboard/team-coach/chat",
+    tooltipClassName: "left-[50%] bottom-40",
+    imageClassName: "left-[80%] bottom-40 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="chat-window"]',
-    title: 'Chat window',
-    description: 'Type your message and chat with your selected coach here.',
-    image: '/images/tour/right-alex.svg',
+    title: "Chat window",
+    description: "Type your message and chat with your selected coach here.",
+    image: "/images/tour/right-alex.svg",
     padding: 12,
-    route: '/dashboard/team-coach/chat',
-    tooltipClassName: 'left-[18%] bottom-28',
-    imageClassName: 'left-[5%] bottom-28 w-24 md:w-28 lg:w-48',
+    route: "/dashboard/team-coach/chat",
+    tooltipClassName: "left-[18%] bottom-28",
+    imageClassName: "left-[5%] bottom-28 w-24 md:w-28 lg:w-48",
+  },
+  // Coaches page: first three cards (separate from dashboard)
+  {
+    selector: '[data-tour="coach-card-1-coaches"]',
+    title: "Pick a coach",
+    description:
+      "Start by exploring a coach card. Each card shows key details.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.COACHES,
+    tooltipClassName: "left-[5%] bottom-20",
+    imageClassName: "left-[30%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="coach-card-2-coaches"]',
+    title: "More coaches",
+    description: "You can compare different AI coaches to find the right fit.",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.COACHES,
+    tooltipClassName: "left-[50%] bottom-5",
+    imageClassName: "left-[35%] bottom-5 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="coach-card-3-coaches"]',
+    title: "Ready to chat",
+    description: "Open a coach to start chatting and get guidance.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.COACHES,
+    tooltipClassName: "left-[55%] bottom-5",
+    imageClassName: "right-[3%] bottom-5 w-24 md:w-28 lg:w-48",
+  },
+  // Documents page
+
+  {
+    selector: '[data-tour="docs-toolbar"]',
+    title: "Search and actions",
+    description: "Search, upload, and manage documents with quick actions.",
+    image: "/images/tour/right-alex.svg",
+    padding: 10,
+    route: ROUTES.DOCUMENTS,
+    tooltipClassName: "right-[5%] bottom-24",
+  },
+
+  {
+    selector: '[data-tour="docs-sections"]',
+    title: "Document sections",
+    description:
+      "Your files are grouped by Today, Yesterday, and earlier dates.",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.DOCUMENTS,
+    tooltipClassName: "left-[10%] bottom-20",
+  },
+  // Settings page
+  {
+    selector: '[data-tour="settings-account"]',
+    title: "Account settings",
+    description: "View and edit your profile information.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.SETTINGS,
+    tooltipClassName: "left-[30%] bottom-20",
+  },
+  {
+    selector: '[data-tour="settings-notifications"]',
+    title: "Notification preferences",
+    description: "Control how you receive app notifications.",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.SETTINGS,
+    tooltipClassName: "right-[10%] bottom-24",
+  },
+  // Help page
+
+  {
+    selector: '[data-tour="help-search"]',
+    title: "Search help",
+    description: "Quickly search for help topics and guides.",
+    image: "/images/tour/right-alex.svg",
+    padding: 10,
+    route: ROUTES.HELP,
+    tooltipClassName: "right-[8%] bottom-24",
+  },
+  {
+    selector: '[data-tour="help-form"]',
+    title: "Contact support",
+    description: "Send us a message and we’ll get back to you.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.HELP,
+    tooltipClassName: "left-[25%] bottom-20",
   },
 ];
 
@@ -120,7 +223,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const measure = useCallback(() => {
     if (!activeStep) return;
-    const el = document.querySelector(activeStep.selector) as HTMLElement | null;
+    const el = document.querySelector(
+      activeStep.selector
+    ) as HTMLElement | null;
     if (!el) {
       setRect(null);
       return;
@@ -211,28 +316,43 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
-  const value = useMemo<TourContextValue>(() => ({ start, stop, isRunning: open, step: activeStep }), [start, stop, open, activeStep]);
+  const value = useMemo<TourContextValue>(
+    () => ({ start, stop, isRunning: open, step: activeStep }),
+    [start, stop, open, activeStep]
+  );
 
   return (
     <TourContext.Provider value={value}>
       {children}
-      {open && activeStep && createPortal(
-        <Overlay
-          rect={rect}
-          padding={padding}
-          step={activeStep}
-          stepIndex={index}
-          stepCount={steps.length}
-          onNext={next}
-          onPrev={prev}
-          onSkip={stop}
-        />, document.body)
-      }
+      {open &&
+        activeStep &&
+        createPortal(
+          <Overlay
+            rect={rect}
+            padding={padding}
+            step={activeStep}
+            stepIndex={index}
+            stepCount={steps.length}
+            onNext={next}
+            onPrev={prev}
+            onSkip={stop}
+          />,
+          document.body
+        )}
     </TourContext.Provider>
   );
 }
 
-function Overlay({ rect, padding, step, stepIndex, stepCount, onNext, onPrev, onSkip }: {
+function Overlay({
+  rect,
+  padding,
+  step,
+  stepIndex,
+  stepCount,
+  onNext,
+  onPrev,
+  onSkip,
+}: {
   rect: DOMRect | null;
   padding: number;
   step: TourStep;
@@ -264,7 +384,9 @@ function Overlay({ rect, padding, step, stepIndex, stepCount, onNext, onPrev, on
     ];
     const explicit = voices.find((v) => /female/i.test(v.name));
     if (explicit) return explicit;
-    const byName = voices.find((v) => preferredNames.some((n) => v.name.toLowerCase().includes(n.toLowerCase())));
+    const byName = voices.find((v) =>
+      preferredNames.some((n) => v.name.toLowerCase().includes(n.toLowerCase()))
+    );
     if (byName) return byName;
     const en = voices.find((v) => v.lang?.toLowerCase().startsWith("en"));
     return en ?? voices[0];
@@ -286,7 +408,11 @@ function Overlay({ rect, padding, step, stepIndex, stepCount, onNext, onPrev, on
       onClick={(e) => {
         // clicking on dark area skips; avoid when clicking inside tooltip or spotlight box
         const target = e.target as HTMLElement;
-        if (target.closest('[data-tour-tooltip]') || target.closest('[data-tour-spotlight]')) return;
+        if (
+          target.closest("[data-tour-tooltip]") ||
+          target.closest("[data-tour-spotlight]")
+        )
+          return;
         ttsStop();
         onSkip();
       }}
@@ -299,7 +425,12 @@ function Overlay({ rect, padding, step, stepIndex, stepCount, onNext, onPrev, on
         <div
           data-tour-spotlight
           className="absolute rounded-2xl ring-1 ring-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] ring-offset-2 ring-offset-white/40 backdrop-brightness-90 backdrop-saturate-100 backdrop-contrast-115"
-          style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+          style={{
+            left: box.left,
+            top: box.top,
+            width: box.width,
+            height: box.height,
+          }}
         />
       )}
 
@@ -310,48 +441,92 @@ function Overlay({ rect, padding, step, stepIndex, stepCount, onNext, onPrev, on
           "absolute bg-white rounded-xl p-4 shadow-xl w-[min(360px,calc(100vw-24px))] " +
           (step.tooltipClassName ? step.tooltipClassName : "")
         }
-     
       >
         <div className="flex items-start gap-3">
           <div>
             <div className="text-sm font-semibold mb-1">{step.title}</div>
-            <div className="text-xs text-muted-foreground leading-relaxed">{step.description}</div>
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              {step.description}
+            </div>
           </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <button className="text-sm text-muted-foreground hover:underline" onClick={() => { ttsStop(); onSkip(); }}>Skip</button>
-          <div className="text-xs text-muted-foreground">{stepIndex + 1}/{stepCount}</div>
+          <button
+            className="text-sm text-muted-foreground hover:underline"
+            onClick={() => {
+              ttsStop();
+              onSkip();
+            }}
+          >
+            Skip
+          </button>
+          <div className="text-xs text-muted-foreground">
+            {stepIndex + 1}/{stepCount}
+          </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8" onClick={() => { ttsStop(); onPrev(); }} disabled={stepIndex === 0}>Prev</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => {
+                ttsStop();
+                onPrev();
+              }}
+              disabled={stepIndex === 0}
+            >
+              Prev
+            </Button>
             <button
               type="button"
-              aria-label={phase === 'speaking' ? "Pause audio" : (phase === 'starting' ? 'Loading audio' : "Play audio")}
-              onClick={() => toggle(step.description, { voiceName: femaleVoice?.name, lang: femaleVoice?.lang ?? "en-US" })}
-              className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === 'starting' ? 'animate-pulse' : ''}`}
-              disabled={phase === 'starting'}
+              aria-label={
+                phase === "speaking"
+                  ? "Pause audio"
+                  : phase === "starting"
+                  ? "Loading audio"
+                  : "Play audio"
+              }
+              onClick={() =>
+                toggle(step.description, {
+                  voiceName: femaleVoice?.name,
+                  lang: femaleVoice?.lang ?? "en-US",
+                })
+              }
+              className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${
+                phase === "starting" ? "animate-pulse" : ""
+              }`}
+              disabled={phase === "starting"}
             >
-              {phase === 'starting' ? (
+              {phase === "starting" ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : phase === 'speaking' ? (
+              ) : phase === "speaking" ? (
                 <Pause className="w-4 h-4" />
               ) : (
                 <Volume2 className="w-4 h-4" />
               )}
             </button>
-            <Button size="sm" className="h-8 bg-blue-primary hover:bg-blue-primary/90" onClick={() => { ttsStop(); onNext(); }}>{stepIndex + 1 === stepCount ? "Done" : "Next"}</Button>
+            <Button
+              size="sm"
+              className="h-8 bg-blue-primary hover:bg-blue-primary/90"
+              onClick={() => {
+                ttsStop();
+                onNext();
+              }}
+            >
+              {stepIndex + 1 === stepCount ? "Done" : "Next"}
+            </Button>
           </div>
         </div>
       </div>
       {step.image ? (
-          <img
-            src={step.image}
-            alt="guide"
-            className={
-              "pointer-events-none absolute select-none w-24 md:w-28 lg:w-32 " +
-              (step.imageClassName ? step.imageClassName : "")
-            }
-          />
-        ) : null}
+        <img
+          src={step.image}
+          alt="guide"
+          className={
+            "pointer-events-none absolute select-none w-24 md:w-28 lg:w-32 " +
+            (step.imageClassName ? step.imageClassName : "")
+          }
+        />
+      ) : null}
     </div>
   );
 }

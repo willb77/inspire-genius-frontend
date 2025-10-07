@@ -22,10 +22,14 @@ export default function Help() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Help and Support
           </h1>
-          <SearchBar />
+          <div data-tour="help-search">
+            <SearchBar />
+          </div>
         </div>
         
-        <HelpForm onSubmit={handleFormSubmit} />
+        <div data-tour="help-form">
+          <HelpForm onSubmit={handleFormSubmit} />
+        </div>
         
         <IssueSubmittedDialog 
           open={showSubmitted} 
