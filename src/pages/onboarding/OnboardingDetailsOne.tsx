@@ -132,7 +132,7 @@ export default function OnboardingDetailsOne() {
                           {field.value ? (
                             <span>{field.value}</span>
                           ) : (
-                            <span className="text-muted-foreground">Pick a date</span>
+                            <span className="text-muted-foreground">Date of Birth</span>
                           )}
                           <CalendarIcon className="h-4 w-4 opacity-70 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
                         </Button>

@@ -48,17 +48,24 @@ export default function Coaches() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((c) => (
-            <CoachCard
-              key={c.title}
-              title={c.title}
-              gender={c.gender}
-              accent={c.accent}
-              tone={c.tone}
-              extraCount={c.extraCount}
-              onEdit={() => handleSaved(c.title)}
-            />
-          ))}
+          {filtered.map((c, idx) => {
+            const tourAttr =
+              idx === 0 ? { 'data-tour': 'coach-card-1-coaches' } :
+              idx === 1 ? { 'data-tour': 'coach-card-2-coaches' } :
+              idx === 2 ? { 'data-tour': 'coach-card-3-coaches' } : {};
+            return (
+              <div key={c.title} {...tourAttr}>
+                <CoachCard
+                  title={c.title}
+                  gender={c.gender}
+                  accent={c.accent}
+                  tone={c.tone}
+                  extraCount={c.extraCount}
+                  onEdit={() => handleSaved(c.title)}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </UserLayout>
