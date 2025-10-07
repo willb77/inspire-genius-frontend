@@ -132,7 +132,7 @@ export default function Documents() {
         {/* Header row */}
         <div className="flex items-start justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">Documents Uploaded</h1>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2" data-tour="docs-toolbar">
             <Button className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90" onClick={() => setUploadOpen(true)}>
               Upload Document
               <Upload className="size-4 ml-2" />
@@ -188,7 +188,7 @@ export default function Documents() {
         </div>
 
         {/* Sections */}
-        <div className="bg-white rounded-2xl border shadow-sm p-4">
+        <div className="bg-white rounded-2xl border shadow-sm p-4" data-tour="docs-sections">
           {sections.map((sec, idx) => (
             <div key={sec.title} className={idx > 0 ? "mt-6" : undefined}>
               <button type="button" className="flex items-center gap-2 text-sm text-muted-foreground" onClick={() => toggleSection(sec.title)}>
