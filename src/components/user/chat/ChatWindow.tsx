@@ -4,14 +4,9 @@ import { Input } from "@/components/ui/input";
 import { ChevronLeft, Upload, Send, Copy, Mic, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
-import DocumentsPanel, { type SimpleDoc, type DocumentRef, type DocKind } from "@/components/user/chat/DocumentsPanel";
+import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
 import DocumentViewerModal from "@/components/user/chat/DocumentViewerModal";
-
-export type ChatWindowProps = {
-  coachName: string;
-  className?: string;
-  onBack?: () => void;
-};
+import type { ChatWindowProps, SimpleDoc, DocumentRef, ChatMessage } from "@/types/home-dashboard-types";
 
 export default function ChatWindow({ coachName, className, onBack }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
@@ -39,9 +34,6 @@ export default function ChatWindow({ coachName, className, onBack }: ChatWindowP
   };
 
   // Chat messages state
-  type ChatMessage =
-    | { id: string; kind: "text"; direction: "in" | "out"; text: string; time: string }
-    | { id: string; kind: "doc"; direction: "in" | "out"; docName: string; docKind: DocKind; time: string };
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "msg1", kind: "text", direction: "out", text: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.", time: "11:14 pm" },
     { id: "msg2", kind: "text", direction: "in", text: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type", time: "11:14 pm" },

@@ -3,21 +3,13 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Document, Page, pdfjs, Thumbnail } from "react-pdf";
+import type { DocumentViewerModalProps } from "@/types/home-dashboard-types";
 
 // Configure PDF.js worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url
 ).toString();
-
-export type DocumentViewerModalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  fileUrl: string;
-  fileName?: string;
-  onDelete?: () => void;
-  onDownload?: () => void;
-};
 
 export default function DocumentViewerModal({ open, onOpenChange, fileUrl, fileName = "Document.pdf", onDelete, onDownload, }: DocumentViewerModalProps) {
   // State for react-pdf

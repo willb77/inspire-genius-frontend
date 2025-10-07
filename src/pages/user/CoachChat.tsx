@@ -1,8 +1,9 @@
 import UserLayout from "@/layouts/UserLayout";
-import ChatHistory, { type HistoryGroup } from "@/components/user/chat/ChatHistory";
+import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import type { HistoryGroup } from "@/types/home-dashboard-types";
 
 function titleCaseFromSlug(slug: string): string {
   if (!slug) return "Coach";
