@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
 import DocumentViewerModal from "@/components/user/chat/DocumentViewerModal";
-import type { ChatWindowProps, SimpleDoc, DocumentRef, ChatMessage } from "@/types/chat-types";
+import type { ChatWindowProps, SimpleDoc, DocumentRef, ChatMessage } from "@/types/chat";
 
 export default function ChatWindow({ coachName, className, onBack }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");

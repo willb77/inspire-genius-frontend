@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Upload, Calendar } from "lucide-react";
 import { Label } from "../ui/label";
-import type { ProfileData, EditProfileProps } from "@/types/settings-types";
+import type { ProfileData, EditProfileProps } from "@/types/settings";
 
 export default function EditProfile({
   trigger,

@@ -1,4 +1,4 @@
-import { type AuthHeaderProps } from "@/types/auth-types";
+import { type AuthHeaderProps } from "@/types/auth";
 
 export default function AuthHeader({ title, subtitle }: AuthHeaderProps) {
   return (

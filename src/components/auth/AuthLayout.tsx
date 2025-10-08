@@ -1,5 +1,5 @@
 import { Logo } from "../shared/Logo";
-import { type AuthLayoutProps } from "@/types/auth-types";
+import { type AuthLayoutProps } from "@/types/auth";
 
 /**
  * AuthLayout renders the two-column split layout used by Login, Sign Up and OTP screens.

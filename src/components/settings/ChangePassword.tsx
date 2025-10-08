@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { LockKeyhole, Eye, EyeOff } from "lucide-react";
-import type { ChangePasswordProps } from "@/types/settings-types";
+import type { ChangePasswordProps } from "@/types/settings";
 
 export default function ChangePassword({ trigger }: ChangePasswordProps) {
   const [isOpen, setIsOpen] = useState(false);

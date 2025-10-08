@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { IconInput } from "@/components/ui/icon-input";
 import { Button } from "@/components/ui/button";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import { type EmailFieldProps, type PasswordFieldProps } from "@/types/auth-types";
+import { type EmailFieldProps, type PasswordFieldProps } from "@/types/auth";
 
 export function EmailField({
   id = "email",

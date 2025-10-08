@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
-import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/mydocuments-types";
+import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
 
 const CATEGORIES = [
   { label: "Resume", value: "resume" },

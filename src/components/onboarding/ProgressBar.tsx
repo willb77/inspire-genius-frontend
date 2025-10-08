@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { ProgressBarProps } from "@/types/onboarding-types";
+import type { ProgressBarProps } from "@/types/onboarding";
 
 export default function ProgressBar({ current, total, className }: ProgressBarProps) {
   const pct = Math.max(0, Math.min(100, (current / total) * 100));

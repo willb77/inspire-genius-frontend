@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Send } from "lucide-react";
-import type { HelpFormValues, HelpFormProps } from "@/types/help-types";
+import type { HelpFormValues, HelpFormProps } from "@/types/help";
 
 export default function HelpForm({ onSubmit }: HelpFormProps) {
   const MAX_CHARS = 500;

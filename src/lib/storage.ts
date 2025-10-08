@@ -1,6 +1,6 @@
 import { encryptString, decryptString } from '@/lib/crypto'
 import { STORAGE_KEYS } from '@/constants/routes'
-import { type StoredUser } from '@/types/auth-types'
+import { type StoredUser } from '@/types/auth'
 
 // simple cache for decrypted values
 const cache = new Map<string, string | null>()

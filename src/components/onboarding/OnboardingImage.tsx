@@ -1,4 +1,4 @@
-import type { OnboardingImageProps } from "@/types/onboarding-types";
+import type { OnboardingImageProps } from "@/types/onboarding";
 
 export function OnboardingImage({ src, alt, className, children }: OnboardingImageProps) {
   return (

@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { IssueSubmittedDialogProps } from "@/types/help-types";
+import type { IssueSubmittedDialogProps } from "@/types/help";
 
 export default function IssueSubmittedDialog({ open, onOpenChange }: IssueSubmittedDialogProps) {
   return (

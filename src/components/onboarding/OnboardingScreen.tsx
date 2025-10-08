@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import OnboardingImage from "./OnboardingImage";
 import { Logo } from "../shared/Logo";
-import type { OnboardingScreenProps } from "@/types/onboarding-types";
+import type { OnboardingScreenProps } from "@/types/onboarding";
 
 export const OnboardingScreen = ({
   imageSrc,

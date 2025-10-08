@@ -1,4 +1,4 @@
-import type { OnboardingCalloutProps } from "@/types/onboarding-types";
+import type { OnboardingCalloutProps } from "@/types/onboarding";
 
 export function OnboardingCallout({ title, positionClass, className, icon }: OnboardingCalloutProps) {
   return (

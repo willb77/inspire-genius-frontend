@@ -10,7 +10,7 @@ import { format as formatMonth } from "date-fns";
 import { toast } from "sonner";
 import DocumentViewerModal from "@/components/user/chat/DocumentViewerModal";
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
-import type { DocKind, DocItem } from "@/types/mydocuments-types";
+import type { DocKind, DocItem } from "@/types/documents";
 
 const KIND_STYLES: Record<DocKind, { bg: string; text: string; label: string }> = {
   pdf: { bg: "bg-red-50", text: "text-red-600", label: "PDF" },

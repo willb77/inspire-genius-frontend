@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "../ui/label";
-import type { NotificationSettingsProps } from "@/types/settings-types";
+import type { NotificationSettingsProps } from "@/types/settings";
 
 export default function NotificationSettings({
   pushNotifications,
