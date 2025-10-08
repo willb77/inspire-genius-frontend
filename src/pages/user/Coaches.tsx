@@ -4,7 +4,6 @@ import CoachCard from "@/components/onboarding/CoachCard";
 import IconInput from "@/components/ui/icon-input";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
-
 export default function Coaches() {
   const [query, setQuery] = useState("");
 

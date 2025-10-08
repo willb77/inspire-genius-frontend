@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Document, Page, pdfjs, Thumbnail } from "react-pdf";
-import type { DocumentViewerModalProps } from "@/types/home-dashboard-types";
+import type { DocumentViewerModalProps } from "@/types/chat-types";
 
 // Configure PDF.js worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(

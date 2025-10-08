@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CircleHelp, RefreshCcw } from "lucide-react";
-import type { UserCoachCardProps } from "@/types/home-dashboard-types";
+import type { UserCoachCardProps } from "@/types/dashboard-types";
 
 export default function UserCoachCard({
   title,
