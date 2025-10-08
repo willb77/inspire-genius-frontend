@@ -5,21 +5,7 @@ import { LockKeyhole, Edit, LogOut } from "lucide-react";
 import ChangePassword from "./ChangePassword";
 import EditProfile from "./EditProfile";
 import { Label } from "../ui/label";
-
-interface ProfileData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  dateOfBirth: string;
-  category: string;
-  role: string;
-}
-
-interface AccountSettingsProps {
-  profileData: ProfileData;
-  onProfileUpdate: (updatedData: ProfileData) => void;
-  onLogout: () => void;
-}
+import type { ProfileData, AccountSettingsProps } from "@/types/settings-types";
 
 export default function AccountSettings({
   profileData,

@@ -19,17 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Send } from "lucide-react";
-
-type HelpFormValues = {
-  firstName: string;
-  email: string;
-  message: string;
-  agree: boolean;
-};
-
-interface HelpFormProps {
-  onSubmit: (values: HelpFormValues) => Promise<void>;
-}
+import type { HelpFormValues, HelpFormProps } from "@/types/help-types";
 
 export default function HelpForm({ onSubmit }: HelpFormProps) {
   const MAX_CHARS = 500;
