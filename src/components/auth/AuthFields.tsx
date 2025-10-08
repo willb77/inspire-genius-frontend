@@ -2,8 +2,55 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { IconInput } from "@/components/ui/icon-input";
 import { Button } from "@/components/ui/button";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import { type EmailFieldProps, type PasswordFieldProps } from "@/types/auth";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
+import { type FirstNameFieldProps,type LastNameFieldProps, type EmailFieldProps, type PasswordFieldProps } from "@/types/auth";
+export function FirstNameField({
+  id = "firstName",
+  label = "First Name",
+  placeholder = "Enter your first name",
+  required = true,
+  value,
+  onChange,
+}: FirstNameFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <IconInput
+        id={id}
+        type="text"
+        placeholder={placeholder}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        leftIcon={<FiUser className="text-blue-primary" size={18} />}
+      />
+    </div>
+  );
+}
+
+export function LastNameField({
+  id = "lastName",
+  label = "Last Name",
+  placeholder = "Enter your last name",
+  required = true,
+  value,
+  onChange,
+}: LastNameFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <IconInput
+        id={id}
+        type="text"
+        placeholder={placeholder}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        leftIcon={<FiUser className="text-blue-primary" size={18} />}
+      />
+    </div>
+  );
+}
 
 export function EmailField({
   id = "email",

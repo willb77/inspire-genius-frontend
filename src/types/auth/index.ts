@@ -6,6 +6,8 @@ export type { AuthUser, AuthContextValue } from './context-types';
 
 // Component types
 export type { 
+  FirstNameFieldProps,
+  LastNameFieldProps,
   EmailFieldProps, 
   PasswordFieldProps, 
   AuthHeaderProps, 

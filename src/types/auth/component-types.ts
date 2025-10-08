@@ -1,5 +1,24 @@
 // Auth component related types
 
+export type FirstNameFieldProps = {
+  id?: string;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+export type LastNameFieldProps = {
+  id?: string;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+
 export type EmailFieldProps = {
   id?: string;
   label?: string;
