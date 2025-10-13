@@ -1,8 +1,11 @@
-import { DataTable, type Column } from "@/components/super-admin/organization/DataTable";
+import {
+  DataTable,
+  type Column,
+} from "@/components/super-admin/organization/DataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowDownAZ, Plus, SlidersVertical } from "lucide-react";
-import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
+// import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { useMemo, useState } from "react";
 import ActionMenu from "@/components/shared/ActionMenu";
@@ -46,14 +49,18 @@ export default function SuperAdminOrganizations() {
   ]);
 
   const [sortKey, setSortKey] = useState<keyof OrganizationRow | undefined>();
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | undefined>();
+  const [sortDirection, setSortDirection] = useState<
+    "asc" | "desc" | undefined
+  >();
   const [page, setPage] = useState(1);
   const pageSize = 8;
 
   const onSortChange = (key: string) => {
     if (!key) return;
     if (sortKey === key) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"));
+      setSortDirection((prev) =>
+        prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"
+      );
     } else {
       setSortKey(key as keyof OrganizationRow);
       setSortDirection("asc");
@@ -156,28 +163,38 @@ export default function SuperAdminOrganizations() {
               Filter
               <SlidersVertical className="size-4" />
             </Button>
-            <AddOrganization
+            <Button>
+              <Plus className="size-4" />
+              Add Organization
+            </Button>
+            {/* <AddOrganization
               trigger={
                 <Button>
                   <Plus className="size-4" />
                   Add Organization
                 </Button>
               }
-            />
+            /> */}
           </div>
         </div>
         <div className="h-[calc(100vh-15rem)]">
-        <DataTable
-          columns={columns}
-          data={paginated}
-          sortKey={sortKey}
-          sortDirection={sortDirection}
-          onSortChange={onSortChange}
-        />
+          <DataTable
+            columns={columns}
+            data={paginated}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSortChange={onSortChange}
+          />
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>Show {Math.min(pageSize, total - start)} of {total} results</div>
-          <Pagination pageCount={totalPages} page={page} onPageChange={setPage} />
+          <div>
+            Show {Math.min(pageSize, total - start)} of {total} results
+          </div>
+          <Pagination
+            pageCount={totalPages}
+            page={page}
+            onPageChange={setPage}
+          />
         </div>
       </div>
     </SuperAdminLayout>
