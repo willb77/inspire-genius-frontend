@@ -2,11 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, CheckCircle2, Loader2 } from "lucide-react";
-import { format as formatDate } from "date-fns";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import type { ExportChatModalProps } from "@/types/chat";
+import DatePickerButton from "@/components/shared/DatePickerButton";
 
 export default function ExportChatModal({ open, onOpenChange }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";
@@ -75,45 +73,27 @@ export default function ExportChatModal({ open, onOpenChange }: ExportChatModalP
             {/* From date */}
             <label className="block text-sm font-medium mb-1">Chat From</label>
             <div className="mb-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
-                    <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {fromDate ? formatDate(fromDate, "dd-MM-yyyy") : <span className="text-muted-foreground">Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="p-0">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={(d) => d && setFromDate(d)}
-                    disabled={(date) => (toDate ? date > toDate : false)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePickerButton
+                date={fromDate}
+                onSelect={(d) => {
+                  if (!d) return;
+                  setFromDate(d);
+                  if (toDate && d > toDate) setToDate(d);
+                }}
+                disabled={(date) => (toDate ? date > toDate : false)}
+                buttonClassName="w-full"
+              />
             </div>
 
             {/* To date */}
             <label className="block text-sm font-medium mb-1">Chat Till</label>
             <div className="mb-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
-                    <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {toDate ? formatDate(toDate, "dd-MM-yyyy") : <span className="text-muted-foreground">Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="p-0">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={(d) => d && setToDate(d)}
-                    disabled={(date) => (fromDate ? date < fromDate : false)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePickerButton
+                date={toDate}
+                onSelect={(d) => d && setToDate(d)}
+                disabled={(date) => (fromDate ? date < fromDate : false)}
+                buttonClassName="w-full"
+              />
             </div>
 
             {/* Export type */}

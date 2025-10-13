@@ -127,7 +127,7 @@ export default function SuperAdminDashboard() {
 
           {/* Average Time Spent Chart */}
           <div className="lg:col-span-2">
-            <Card className="bg-gray-20 shadow-sm h-full border-none">
+            <Card className="bg-gray-20 shadow-sm h-full border-none pt-2">
               <AvgTimeSpentChart />
             </Card>
           </div>
