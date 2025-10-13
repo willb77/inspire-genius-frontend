@@ -19,21 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Upload, Calendar } from "lucide-react";
 import { Label } from "../ui/label";
-
-interface ProfileData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  dateOfBirth: string;
-  category: string;
-  role: string;
-}
-
-interface EditProfileProps {
-  trigger: React.ReactNode;
-  profileData: ProfileData;
-  onProfileUpdate: (updatedData: ProfileData) => void;
-}
+import type { ProfileData, EditProfileProps } from "@/types/settings";
 
 export default function EditProfile({
   trigger,

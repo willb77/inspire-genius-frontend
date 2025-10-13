@@ -7,9 +7,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
-import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { EmailField, FirstNameField, LastNameField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
 
 export default function SignUp() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -34,6 +36,10 @@ export default function SignUp() {
         className="space-y-4"
         onSubmit={handleSubmit}
       >
+        <FirstNameField value={firstName} onChange={setFirstName} />
+
+        <LastNameField value={lastName} onChange={setLastName} />
+
         <EmailField value={email} onChange={setEmail} />
 
         <PasswordField value={password} onChange={setPassword} />

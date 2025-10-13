@@ -1,11 +1,4 @@
-import type { ReactNode } from "react";
-
-export interface OnboardingImageProps {
-  src: string;
-  alt: string;
-  className?: string;
-  children?: ReactNode;
-}
+import type { OnboardingImageProps } from "@/types/onboarding";
 
 export function OnboardingImage({ src, alt, className, children }: OnboardingImageProps) {
   return (

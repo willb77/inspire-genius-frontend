@@ -1,10 +1,5 @@
 import type { CSSProperties } from "react";
-
-export interface ProgressBarProps {
-  current: number; // current step (1-indexed)
-  total: number;   // total steps
-  className?: string;
-}
+import type { ProgressBarProps } from "@/types/onboarding";
 
 export default function ProgressBar({ current, total, className }: ProgressBarProps) {
   const pct = Math.max(0, Math.min(100, (current / total) * 100));

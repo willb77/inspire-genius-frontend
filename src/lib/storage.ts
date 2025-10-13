@@ -1,5 +1,6 @@
 import { encryptString, decryptString } from '@/lib/crypto'
 import { STORAGE_KEYS } from '@/constants/routes'
+import { type StoredUser } from '@/types/auth'
 
 // simple cache for decrypted values
 const cache = new Map<string, string | null>()
@@ -38,14 +39,6 @@ async function setEncrypted(key: string, value: string) {
 async function removeEncrypted(key: string) {
   writeRaw(key, null)
   cache.set(key, null)
-}
-
-export type StoredUser = {
-  id?: string
-  email: string
-  name?: string | null
-  role?: string
-  token?: string
 }
 
 export async function getToken(): Promise<string | null> {

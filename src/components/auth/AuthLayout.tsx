@@ -1,12 +1,5 @@
-import type { ReactNode } from "react";
 import { Logo } from "../shared/Logo";
-
-interface AuthLayoutProps {
-  leftTitleOne?: string;
-  leftTitleTwo?: string;
-  subTitle?: string;
-  children: ReactNode;
-}
+import { type AuthLayoutProps } from "@/types/auth";
 
 /**
  * AuthLayout renders the two-column split layout used by Login, Sign Up and OTP screens.

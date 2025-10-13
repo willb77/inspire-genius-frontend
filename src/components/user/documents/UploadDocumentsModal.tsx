@@ -3,15 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
-
-export type SimpleKind = "pdf" | "csv" | "ppt" | "doc";
-export type UploadedFile = { name: string; url: string; kind: SimpleKind };
-
-export type UploadDocumentsModalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUploaded?: (files: UploadedFile[], category: string) => void;
-};
+import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
 
 const CATEGORIES = [
   { label: "Resume", value: "resume" },

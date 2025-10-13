@@ -3,15 +3,7 @@ import { CircleQuestionMark, Volume2, SquarePen } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/multi-select";
-
-export interface CoachCardProps {
-  title: string;
-  gender: string;
-  accent: string;
-  tone: string;
-  extraCount?: number; // e.g., 3 for "3+"
-  onEdit?: () => void;
-}
+import type { CoachCardProps } from "@/types/onboarding";
 
 const GENDER_OPTIONS = [
   { label: "Male", value: "male" },

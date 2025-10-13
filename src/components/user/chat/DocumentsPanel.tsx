@@ -2,17 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Trash2, Download, Eye, ChevronDown, Sparkles } from "lucide-react";
-
-export type DocKind = "pdf" | "csv" | "ppt" | "doc";
-export type SimpleDoc = { name: string; kind: DocKind };
-export type DocumentRef = { name: string; kind: DocKind; url?: string };
+import type { DocKind, SimpleDoc, DocumentsPanelProps } from "@/types/chat";
 
 type DocItem = SimpleDoc & { id: string; group: string; url?: string };
-
-export type DocumentsPanelProps = {
-  onImportToChat: (items: SimpleDoc[]) => void;
-  onPreview?: (item: DocumentRef) => void;
-};
 
 export default function DocumentsPanel({ onImportToChat, onPreview }: DocumentsPanelProps) {
   const pdfDemoUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";

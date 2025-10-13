@@ -6,11 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, CheckCircle2, Loader2 } from "lucide-react";
 import { format as formatDate } from "date-fns";
-
-export type ExportChatModalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
+import type { ExportChatModalProps } from "@/types/chat";
 
 export default function ExportChatModal({ open, onOpenChange }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";

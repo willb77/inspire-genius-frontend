@@ -1,14 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CircleHelp, RefreshCcw } from "lucide-react";
-
-export type UserCoachCardProps = {
-  title: string;
-  gender: string;
-  accent: string;
-  tone: string;
-  extraCount?: number;
-  onChat?: () => void;
-};
+import type { UserCoachCardProps } from "@/types/dashboard";
 
 export default function UserCoachCard({
   title,

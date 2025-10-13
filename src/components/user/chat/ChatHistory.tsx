@@ -2,25 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { PencilLine, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-export type HistoryItem = {
-  id: string;
-  title: string;
-  preview: string;
-  timeLabel: string;
-};
-
-export type HistoryGroup = {
-  label: string;
-  items: HistoryItem[];
-};
-
-export type ChatHistoryProps = {
-  groups: HistoryGroup[];
-  selectedId?: string;
-  onSelect?: (id: string) => void;
-  className?: string;
-};
+import type { ChatHistoryProps } from "@/types/chat";
 
 export default function ChatHistory({ groups, selectedId, onSelect, className }: ChatHistoryProps) {
   const [query, setQuery] = useState("");

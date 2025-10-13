@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { AuthContext, type AuthContextValue, type AuthUser } from './auth-context'
+import { AuthContext } from './auth-context'
+import { type AuthContextValue, type AuthUser } from '@/types/auth'
 import { getEmail, getToken, setEmail, setToken, setUser as storeUser, getUser as readUser, clearAuth } from '@/lib/storage'
 import { syncAuthToken } from '@/lib/axios'
 

@@ -2,15 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "../ui/label";
-
-interface NotificationSettingsProps {
-  pushNotifications: boolean;
-  updateNotifications: boolean;
-  marketingNotifications: boolean;
-  onPushNotificationsChange: (value: boolean) => void;
-  onUpdateNotificationsChange: (value: boolean) => void;
-  onMarketingNotificationsChange: (value: boolean) => void;
-}
+import type { NotificationSettingsProps } from "@/types/settings";
 
 export default function NotificationSettings({
   pushNotifications,

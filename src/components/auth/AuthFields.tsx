@@ -2,16 +2,55 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { IconInput } from "@/components/ui/icon-input";
 import { Button } from "@/components/ui/button";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
+import { type FirstNameFieldProps,type LastNameFieldProps, type EmailFieldProps, type PasswordFieldProps } from "@/types/auth";
+export function FirstNameField({
+  id = "firstName",
+  label = "First Name",
+  placeholder = "Enter your first name",
+  required = true,
+  value,
+  onChange,
+}: FirstNameFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <IconInput
+        id={id}
+        type="text"
+        placeholder={placeholder}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        leftIcon={<FiUser className="text-blue-primary" size={18} />}
+      />
+    </div>
+  );
+}
 
-export type EmailFieldProps = {
-  id?: string;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  value: string;
-  onChange: (value: string) => void;
-};
+export function LastNameField({
+  id = "lastName",
+  label = "Last Name",
+  placeholder = "Enter your last name",
+  required = true,
+  value,
+  onChange,
+}: LastNameFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <IconInput
+        id={id}
+        type="text"
+        placeholder={placeholder}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        leftIcon={<FiUser className="text-blue-primary" size={18} />}
+      />
+    </div>
+  );
+}
 
 export function EmailField({
   id = "email",
@@ -36,15 +75,6 @@ export function EmailField({
     </div>
   );
 }
-
-export type PasswordFieldProps = {
-  id?: string;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  value: string;
-  onChange: (value: string) => void;
-};
 
 export function PasswordField({
   id = "password",
