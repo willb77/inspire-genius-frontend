@@ -2,14 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, type TooltipProps } from "recharts";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format as formatDate } from "date-fns";
 
 import { CardContent, CardHeader } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { Calendar } from "@/components/ui/calendar";
+import DatePickerButton from "@/components/shared/DatePickerButton";
 
 // Chart data for Average Time Spent
 const chartData = [
@@ -57,8 +53,8 @@ export default function AvgTimeSpentChart() {
   };
 
   return (
-    <div className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-10">
+    <div className="w-full flex flex-col justify-between h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Average Time Spent</h3>
           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">In Hours</span>
@@ -67,52 +63,26 @@ export default function AvgTimeSpentChart() {
         {/* Date Range Pickers */}
         <div className="flex items-center gap-4">
           {/* From Date Picker */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start text-left font-normal h-9 flex items-center">
-                <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                {fromDate ? formatDate(fromDate, "dd-MM-yyyy") : <span className="text-muted-foreground">Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="p-0">
-              <Calendar
-                mode="single"
-                selected={fromDate}
-                onSelect={(d) => {
-                  if (!d) return;
-                  setFromDate(d);
-                  if (toDate && d > toDate) {
-                    setToDate(d);
-                  }
-                }}
-                disabled={(date) => (toDate ? date > toDate : false)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePickerButton
+            date={fromDate}
+            onSelect={(d) => {
+              if (!d) return;
+              setFromDate(d);
+              if (toDate && d > toDate) setToDate(d);
+            }}
+            disabled={(date: Date) => (toDate ? date > toDate : false)}
+          />
 
           {/* To Date Picker */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start text-left font-normal h-9 flex items-center">
-                <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                {toDate ? formatDate(toDate, "dd-MM-yyyy") : <span className="text-muted-foreground">Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="p-0">
-              <Calendar
-                mode="single"
-                selected={toDate}
-                onSelect={(d) => d && setToDate(d)}
-                disabled={(date) => (fromDate ? date < fromDate : false)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePickerButton
+            date={toDate}
+            onSelect={(d) => d && setToDate(d)}
+            disabled={(date: Date) => (fromDate ? date < fromDate : false)}
+          />
         </div>
       </CardHeader>
 
-      <CardContent className="h-72">
+      <CardContent className="h-72 mb-2">
         <ChartContainer config={chartConfig}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
