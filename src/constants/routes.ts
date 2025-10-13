@@ -8,6 +8,13 @@ export const ROUTES = {
   DOCUMENTS: '/documents',
   SETTINGS: '/settings',
   HELP: '/help',
+  SUPER_ADMIN: {
+    BASE: '/super-admin',
+    DASHBOARD: '/super-admin/dashboard',
+    TEAM: '/super-admin/team',
+    COACHES: '/super-admin/coaches',
+    ORGANIZATIONS: '/super-admin/organizations',
+  },
   ONBOARDING: {
     ONE: '/onboarding/one',
     TWO: '/onboarding/two',

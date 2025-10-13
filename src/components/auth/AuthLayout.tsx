@@ -17,8 +17,8 @@ export default function AuthLayout({
       <Logo />
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 lg:grid-cols-2 items-center">
         {/* Left panel */}
-        <div className="flex flex-col items-center justify-between">
-          <div className="flex-1 flex flex-col items-center justify-center py-8">
+        <div className="h-full flex flex-col items-center justify-between">
+          <div className="flex-1 flex flex-col items-center justify-start py-8">
             <img
               src="/images/auth/authetication-image.svg"
               alt="Auth illustration"
@@ -34,7 +34,6 @@ export default function AuthLayout({
               {subTitle}
             </p>
           </div>
-          <div />
         </div>
 
         {/* Right panel */}
