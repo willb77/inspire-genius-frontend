@@ -3,10 +3,11 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Send, Mic } from "lucide-react"
+import { X, Send, Mic, Settings, FileUp, Download } from "lucide-react"
 import OnboardingCallout from "@/components/onboarding/OnboardingCallout"
 import { cn } from "@/lib/utils"
 import { useTour } from "@/context/useTour"
+import { useRef } from "react"
 
 export type AlexChatPanelProps = {
   open: boolean
@@ -16,6 +17,8 @@ export type AlexChatPanelProps = {
 
 export default function AlexChatPanel({ open, onOpenChange, className }: AlexChatPanelProps) {
   const { start } = useTour();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const handleUploadClick = () => fileInputRef.current?.click();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -30,13 +33,25 @@ export default function AlexChatPanel({ open, onOpenChange, className }: AlexCha
       >
         <div className="flex items-center justify-between p-4 border-b">
           <div className="text-base font-semibold">Chat with Alex</div>
-          <button
-            aria-label="Close"
-            onClick={() => onOpenChange(false)}
-            className="grid place-items-center rounded-full bg-blue-primary text-white size-6"
-          >
-            <X className="size-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" className="size-8 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground p-0" aria-label="Export">
+              <Download className="size-4" />
+            </Button>
+            <Button variant="secondary" className="size-8 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground p-0" aria-label="Settings">
+              <Settings className="size-4" />
+            </Button>
+            <Button variant="secondary" onClick={handleUploadClick} className="size-8 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground p-0" aria-label="Upload file">
+              <FileUp className="size-4" />
+            </Button>
+            <button
+              aria-label="Close"
+              onClick={() => onOpenChange(false)}
+              className="grid place-items-center rounded-full bg-blue-primary/10 text-blue-primary size-8"
+            >
+              <X className="size-4" />
+            </button>
+            <input ref={fileInputRef} type="file" className="hidden" />
+          </div>
         </div>
 
         <div className="px-4">
