@@ -1,4 +1,4 @@
-import { MoreVertical, Eye, Edit, Slash } from "lucide-react";
+import { MoreVertical, Eye, Edit, Trash2, MessageCircleX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ export type ActionMenuProps<Row = unknown> = {
   showView?: boolean;
   showEdit?: boolean;
   showDeactivate?: boolean;
+  showDelete?: boolean;
   // Sub options
   viewOptions?: ReadonlyArray<MenuOption>;
   editOptions?: ReadonlyArray<MenuOption>;
@@ -28,6 +29,7 @@ export type ActionMenuProps<Row = unknown> = {
   onView?: (row?: Row, option?: string) => void;
   onEdit?: (row?: Row, option?: string) => void;
   onDeactivate?: (row?: Row) => void;
+  onDelete?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -37,11 +39,13 @@ export default function ActionMenu<Row = unknown>({
   showView = true,
   showEdit = true,
   showDeactivate = true,
+  showDelete = false,
   viewOptions,
   editOptions,
   onView,
   onEdit,
   onDeactivate,
+  onDelete,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -110,7 +114,15 @@ export default function ActionMenu<Row = unknown>({
 
         {showDeactivate && (
           <DropdownMenuItem onClick={() => onDeactivate?.(row)}>
-            <Slash className="w-4 h-4 mr-2" /> Deactivate
+            <MessageCircleX className="w-4 h-4 mr-2 text-gray-500" /> Deactivate
+          </DropdownMenuItem>
+        )}
+
+        {showDelete && (showView || showEdit || showDeactivate) && <DropdownMenuSeparator />}
+
+        {showDelete && (
+          <DropdownMenuItem onClick={() => onDelete?.(row)}>
+            <Trash2 className="w-4 h-4 mr-2" /> Delete
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

@@ -20,8 +20,8 @@ import OnboardingFive from "@/pages/onboarding/OnboardingFive";
 import OnboardingDetailsOne from "@/pages/onboarding/OnboardingDetailsOne";
 import OnboardingDetailsTwo from "@/pages/onboarding/OnboardingDetailsTwo";
 import SuperAdminDashboard from "@/pages/super-admin/Dashboard";
-import TeamManagement from "@/pages/super-admin/TeamManagement";
-import CoachManagement from "@/pages/super-admin/CoachManagement";
+// import TeamManagement from "@/pages/super-admin/TeamManagement";
+// import CoachManagement from "@/pages/super-admin/CoachManagement";
 import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 
 // Central route configuration compatible with useRoutes
@@ -54,8 +54,8 @@ export const routes: RouteObject[] = [
       { path: "/help", element: <HelpPage /> },
       // Super Admin protected pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
-      { path: "/super-admin/team", element: <TeamManagement /> },
-      { path: "/super-admin/coaches", element: <CoachManagement /> },
+      // { path: "/super-admin/team", element: <TeamManagement /> },
+      // { path: "/super-admin/coaches", element: <CoachManagement /> },
       { path: "/super-admin/organizations", element: <OrganizationManagement /> },
     ],
   },
