@@ -4,26 +4,49 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { ROUTES } from "@/constants/routes";
-import { EmailField, FirstNameField, LastNameField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { useForm } from "react-hook-form";
+import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
 export default function SignUp() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
+  const redirectTo = useAuthRedirectForAuthPages();
+  
+  const { handleSubmit, setValue, watch, formState: { dirtyFields } } = useForm<{ email: string; password: string; confirm: string }>({
+    mode: "onChange",
+    defaultValues: { email: "", password: "", confirm: "" },
+  });
+
+  useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate]);
+
+  const email = watch("email") ?? "";
+  const password = watch("password") ?? "";
+  const confirm = watch("confirm") ?? "";
+  const [pwdFocused, setPwdFocused] = useState(false);
+  const rules = useMemo(() => ({
+    hasUpper: /[A-Z]/.test(password),
+    hasLower: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecial: /[^A-Za-z0-9]/.test(password),
+  }), [password]);
+  const unmet: string[] = useMemo(() => {
+    const arr: string[] = []
+    if (!rules.hasUpper) arr.push('Uppercase')
+    if (!rules.hasLower) arr.push('Lowercase')
+    if (!rules.hasNumber) arr.push('Number')
+    if (!rules.hasSpecial) arr.push('Special')
+    return arr
+  }, [rules])
   
   // Submit handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirm) return;
-    const ok = await signup("", email, password);
-    if (ok) navigate(ROUTES.OTP);
+  const onSubmit = async (values: { email: string; password: string; confirm: string }) => {
+    if (values.password !== values.confirm) return;
+    await signup(values.email, values.password, values.confirm);
   };
   return (
     <AuthLayout leftTitleOne="Upload. Ask." leftTitleTwo="Analyze. Achieve." subTitle="First things first: let’s set you up with an account.">
@@ -34,17 +57,24 @@ export default function SignUp() {
 
       <form
         className="space-y-4"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
       >
-        <FirstNameField value={firstName} onChange={setFirstName} />
+        <EmailField value={email} onChange={(v) => setValue("email", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
 
-        <LastNameField value={lastName} onChange={setLastName} />
+        <div onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
+          <PasswordField value={password} onChange={(v) => setValue("password", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
+          {(pwdFocused || dirtyFields.password) && password && unmet.length > 0 && (
+            <p className="text-left mt-2 text-xs text-red-500">At least one {unmet.join(', ')}</p>
+          )}
+        </div>
 
-        <EmailField value={email} onChange={setEmail} />
+        <div>
+          <PasswordField id="confirm" label="Confirm Password" value={confirm} onChange={(v) => setValue("confirm", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
+          {dirtyFields.confirm && confirm && password !== confirm && (
+            <p className="text-left mt-2 text-xs text-red-500">Passwords do not match</p>
+          )}
 
-        <PasswordField value={password} onChange={setPassword} />
-
-        <PasswordField id="confirm" label="Confirm Password" value={confirm} onChange={setConfirm} />
+        </div>
 
         <div className="mt-8 flex items-start gap-2">
           <Checkbox id="terms" />
@@ -53,7 +83,7 @@ export default function SignUp() {
           </Label>
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || password !== confirm}>
+        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || !confirm || unmet.length > 0 || password !== confirm}>
           {isLoading ? "Creating..." : "Sign Up"}
         </Button>
       </form>

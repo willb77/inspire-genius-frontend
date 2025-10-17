@@ -28,9 +28,30 @@ export const ROUTES = {
   },
 } as const;
 
+export const NEXT_STEPS = {
+  VERIFY_MFA: 'verify_mfa',
+  CREATE_PROFILE: 'create_profile',
+  VERIFY_EMAIL: 'verify_email',
+  RESEND_OTP: 'resend_otp',
+} as const;
+
+export const ROLES = {
+  SUPER_ADMIN: 'super-admin',
+} as const;
+
+export const PATHS = {
+  SUPER_ADMIN_PREFIX: '/super-admin',
+} as const;
+
 export const STORAGE_KEYS = {
   USER_TOKEN: 'auth_token',
   USER_EMAIL: 'user_email',
   USER_OBJ: 'auth_user_obj',
+  USER_REFRESH_TOKEN: 'auth_refresh_token',
+  USER_ROLE: 'auth_role',
+  USER_ONBOARDING: 'auth_onboarding_done',
+  USER_PASSWORD: 'user_password',
+  USER_SESSION: 'auth_session',
+  USER_NEXT_STEP: 'auth_next_step',
   UI_SIDEBAR_OPEN: 'ui_sidebar_open',
 } as const;

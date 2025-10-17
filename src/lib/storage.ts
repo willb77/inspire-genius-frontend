@@ -51,6 +51,17 @@ export async function removeToken(): Promise<void> {
   await removeEncrypted(STORAGE_KEYS.USER_TOKEN)
 }
 
+// refresh token
+export async function getRefreshToken(): Promise<string | null> {
+  return getDecrypted(STORAGE_KEYS.USER_REFRESH_TOKEN)
+}
+export async function setRefreshToken(token: string): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_REFRESH_TOKEN, token)
+}
+export async function removeRefreshToken(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_REFRESH_TOKEN)
+}
+
 const USER_OBJ_KEY = STORAGE_KEYS.USER_OBJ
 export async function getUser(): Promise<StoredUser | null> {
   const str = await getDecrypted(USER_OBJ_KEY)
@@ -74,8 +85,74 @@ export async function removeEmail(): Promise<void> {
   await removeEncrypted(STORAGE_KEYS.USER_EMAIL)
 }
 
+// password (temporary, for OTP flow only)
+export async function getPassword(): Promise<string | null> {
+  return getDecrypted(STORAGE_KEYS.USER_PASSWORD)
+}
+export async function setPassword(password: string): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_PASSWORD, password)
+}
+export async function removePassword(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_PASSWORD)
+}
+
+// role
+export async function getRole(): Promise<string | null> {
+  return getDecrypted(STORAGE_KEYS.USER_ROLE)
+}
+export async function setRole(role: string): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_ROLE, role)
+}
+export async function removeRole(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_ROLE)
+}
+
+// onboarding flag
+export async function getOnboardingFlag(): Promise<boolean> {
+  const v = await getDecrypted(STORAGE_KEYS.USER_ONBOARDING)
+  return v === '1'
+}
+export async function setOnboardingFlag(done: boolean): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_ONBOARDING, done ? '1' : '0')
+}
+export async function removeOnboardingFlag(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_ONBOARDING)
+}
+
+// session (for OTP flow)
+export async function getSession(): Promise<string | null> {
+  return getDecrypted(STORAGE_KEYS.USER_SESSION)
+}
+export async function setSession(session: string): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_SESSION, session)
+}
+export async function removeSession(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_SESSION)
+}
+
+// next_step persistence (for OTP flow branching)
+export async function getNextStep(): Promise<string | null> {
+  return getDecrypted(STORAGE_KEYS.USER_NEXT_STEP)
+}
+export async function setNextStep(step: string): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.USER_NEXT_STEP, step)
+}
+export async function removeNextStep(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.USER_NEXT_STEP)
+}
+
 export async function clearAuth(): Promise<void> {
-  await Promise.all([removeToken(), removeEmail(), removeUser()])
+  await Promise.all([
+    removeToken(),
+    removeRefreshToken(),
+    removeEmail(),
+    removePassword(),
+    removeRole(),
+    removeOnboardingFlag(),
+    removeSession(),
+    removeNextStep(),
+    removeUser(),
+  ])
 }
 
 // keep cache in sync across tabs
