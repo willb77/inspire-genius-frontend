@@ -73,6 +73,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  const computeIsOnboarded = useCallback((v: unknown): boolean => v === true || v === "true", []);
+
+  const navigateAfterAuth = useCallback(
+    (role: string | null | undefined, isOnboardingCompleted: boolean) => {
+      if (!isOnboardingCompleted) {
+        navigate(ROUTES.ONBOARDING.ONE, { replace: true });
+      } else if ((role ?? "").toLowerCase() === ROLES.SUPER_ADMIN) {
+        navigate(ROUTES.SUPER_ADMIN.DASHBOARD, { replace: true });
+      } else {
+        navigate(ROUTES.HOME, { replace: true });
+      }
+    },
+    [navigate]
+  );
+
+  const completeAuthFromPayload = useCallback(
+    async (
+      payload: LoginDataPayload,
+      fallbackEmail: string,
+      options?: { message?: string; clearNextStep?: boolean }
+    ) => {
+      const accessToken = payload.access_token ?? null;
+      const refreshToken = payload.refresh_token ?? null;
+      const resolvedEmail = (payload.email ?? fallbackEmail) as string;
+      const role = payload.role ?? null;
+      const isOnboardingCompleted = computeIsOnboarded(payload.is_onboarded);
+      const userId = payload.user_id ?? null;
+      const organizationId = payload.organization_id ?? null;
+      const businessId = payload.business_id ?? null;
+      const tokenType = payload.token_type ?? null;
+      const idToken = payload.id_token ?? null;
+
+      if (accessToken) {
+        await setToken(accessToken);
+        syncAuthToken(accessToken);
+      }
+      if (refreshToken) await setRefreshToken(refreshToken);
+      if (role) await setRole(role);
+      await setOnboardingFlag(isOnboardingCompleted);
+      await storeUser({
+        email: resolvedEmail,
+        role: role ?? undefined,
+        accessToken: accessToken ?? undefined,
+        refreshToken: refreshToken ?? undefined,
+        isOnboardingCompleted,
+        userId,
+        organizationId,
+        businessId,
+        tokenType,
+        idToken,
+      });
+      const clearers: Array<Promise<unknown>> = [removeEmail(), removePassword(), removeSession()];
+      if (options?.clearNextStep) clearers.push(removeNextStep());
+      await Promise.all(clearers);
+
+      setUser({
+        id: "me",
+        email: resolvedEmail,
+        name: null,
+        token: accessToken ?? null,
+        role: role ?? null,
+        isOnboardingCompleted,
+      });
+      setPendingVerification(false);
+      if (options?.message) toast.success(options.message);
+      navigateAfterAuth(role, isOnboardingCompleted);
+    },
+    [computeIsOnboarded, navigateAfterAuth]
+  );
+
   const loginMutation = useAuthLoginMutation({
     onSuccess: async ({ data, email, password }) => {
       console.log("Login response", data);
@@ -106,55 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const accessToken = payload.access_token ?? null;
-      const refreshToken = payload.refresh_token ?? null;
-      const resolvedEmail = (payload.email ?? email) as string;
-      const role = payload.role ?? null;
-      const isOnboardingCompleted =
-        payload.is_onboarded === true || payload.is_onboarded === "true";
-      const userId = payload.user_id ?? null;
-      const organizationId = payload.organization_id ?? null;
-      const businessId = payload.business_id ?? null;
-      const tokenType = payload.token_type ?? null;
-      const idToken = payload.id_token ?? null;
-
       // If tokens are present, complete login immediately (no OTP)
       if (accessToken) {
-        await setToken(accessToken);
-        syncAuthToken(accessToken);
-        if (refreshToken) await setRefreshToken(refreshToken);
-        if (role) await setRole(role);
-        await setOnboardingFlag(isOnboardingCompleted);
-        await storeUser({
-          email: resolvedEmail,
-          role: role ?? undefined,
-          accessToken: accessToken ?? undefined,
-          refreshToken: refreshToken ?? undefined,
-          isOnboardingCompleted,
-          userId,
-          organizationId,
-          businessId,
-          tokenType,
-          idToken,
-        });
-        await Promise.all([removeEmail(), removePassword(), removeSession()]);
-        setUser({
-          id: "me",
-          email: resolvedEmail,
-          name: null,
-          token: accessToken ?? null,
-          role: role ?? null,
-          isOnboardingCompleted,
-        });
-        setPendingVerification(false);
-        toast.success(data?.message);
-        // Navigate based on onboarding and role
-        if (!isOnboardingCompleted) {
-          navigate(ROUTES.ONBOARDING.ONE, { replace: true });
-        } else if ((role ?? "").toLowerCase() === ROLES.SUPER_ADMIN) {
-          navigate(ROUTES.SUPER_ADMIN.DASHBOARD, { replace: true });
-        } else {
-          navigate(ROUTES.HOME, { replace: true });
-        }
+        await completeAuthFromPayload(payload, (payload.email ?? email) as string, { message: data?.message });
         return;
       }
 
@@ -278,60 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const payload: LoginDataPayload = (data.data ?? {}) as LoginDataPayload;
-      const accessToken = payload.access_token ?? null;
-      const refreshToken = payload.refresh_token ?? null;
-      const resolvedEmail = (payload.email ?? email) as string;
-      const role = payload.role ?? null;
-      const isOnboardingCompleted =
-        payload.is_onboarded === true || payload.is_onboarded === "true";
-      const userId = payload.user_id ?? null;
-      const organizationId = payload.organization_id ?? null;
-      const businessId = payload.business_id ?? null;
-      const tokenType = payload.token_type ?? null;
-      const idToken = payload.id_token ?? null;
-      if (accessToken) {
-        await setToken(accessToken);
-        syncAuthToken(accessToken);
-      }
-      if (refreshToken) await setRefreshToken(refreshToken);
-      if (role) await setRole(role);
-      await setOnboardingFlag(isOnboardingCompleted);
-      await storeUser({
-        email: resolvedEmail,
-        role: role ?? undefined,
-        accessToken: accessToken ?? undefined,
-        refreshToken: refreshToken ?? undefined,
-        isOnboardingCompleted,
-        userId,
-        organizationId,
-        businessId,
-        tokenType,
-        idToken,
-      });
-      await Promise.all([
-        removeEmail(),
-        removePassword(),
-        removeSession(),
-        removeNextStep(),
-      ]);
-      setUser({
-        id: "me",
-        email: resolvedEmail,
-        name: null,
-        token: accessToken ?? null,
-        role: role ?? null,
-        isOnboardingCompleted,
-      });
-      setPendingVerification(false);
-      toast.success("Verification successful");
-      // Navigate based on role and onboarding status
-      if (!isOnboardingCompleted) {
-        navigate(ROUTES.ONBOARDING.ONE, { replace: true });
-      } else if ((role ?? "").toLowerCase() === ROLES.SUPER_ADMIN) {
-        navigate(ROUTES.SUPER_ADMIN.DASHBOARD, { replace: true });
-      } else {
-        navigate(ROUTES.HOME, { replace: true });
-      }
+      await completeAuthFromPayload(payload, email, { message: "Verification successful", clearNextStep: true });
     },
     onError: (err: unknown) => {
       const ax = err as AxiosError<{ message?: string }>;
