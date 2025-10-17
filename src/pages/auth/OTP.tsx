@@ -1,29 +1,35 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthHeader from "@/components/auth/AuthHeader";
 import { Button } from "@/components/ui/button";
 import { OtpInputField } from "@/components/shared/OtpInputField";
 import { useAuth } from "@/context/useAuth";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes";
+import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
+// Navigation is handled inside AuthContext; no local routing needed here
 
 export default function OTP() {
-  const [value, setValue] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState(105); // 1:45 like the mock
-  const { verifyOtp, resendOtp, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [value, setValue] = useState("");
+  const [secondsLeft, setSecondsLeft] = useState(60); // 1:45 like the mock
+  const { verifyOtp, resendOtp, isLoading } = useAuth();
+  const redirectTo = useAuthRedirectForAuthPages();
+
+  useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate]);
 
   // Handlers
   const handleVerify = async () => {
     if (value.length !== 6) return;
-    const ok = await verifyOtp(value);
-    if (ok) navigate(ROUTES.ONBOARDING.ONE);
+    await verifyOtp(value);
+
   };
 
   const handleResend = async () => {
     if (secondsLeft > 0) return;
     const ok = await resendOtp();
-    if (ok) setSecondsLeft(105);
+    if (ok) setSecondsLeft(60);
   };
 
   useEffect(() => {
@@ -38,8 +44,11 @@ export default function OTP() {
     if (value.length === 6 && !isLoading) {
       void handleVerify();
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // Navigation after verification is handled in AuthContext and by route guards
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");

@@ -4,21 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { ROUTES } from "@/constants/routes";
 import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
+  const redirectTo = useAuthRedirectForAuthPages();
+  
+  useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate])
+
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ok = await login(email, password);
-    if (ok) navigate(ROUTES.OTP);
+    // Navigation is handled by the login mutation
+    await login(email, password);
   };
   return (
     <AuthLayout>

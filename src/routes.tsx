@@ -3,6 +3,7 @@ import Login from "@/pages/auth/Login";
 import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ProtectedRoute from "@/components/ProtectedRoute";
+// import PublicRoute from "@/components/PublicRoute";
 
 import SettingsPage from "@/pages/user/Settings";
 import HelpPage from "@/pages/user/Help";
@@ -27,24 +28,28 @@ import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <SignUp /> },
-  { path: "/forgot", element: <ForgotPassword /> },
-  { path: "/otp", element: <OTP /> },
-  // Super Admin base redirect
-  { path: "/super-admin", element: <Navigate to="/super-admin/dashboard" replace /> },
-  // Onboarding flow
-  { path: "/onboarding/one", element: <OnboardingOne /> },
-  { path: "/onboarding/two", element: <OnboardingTwo /> },
-  { path: "/onboarding/three", element: <OnboardingThree /> },
-  { path: "/onboarding/four", element: <OnboardingFour /> },
-  { path: "/onboarding/five", element: <OnboardingFive /> },
-  // Onboarding details
-  { path: "/onboarding/details/one", element: <OnboardingDetailsOne /> },
-  { path: "/onboarding/details/two", element: <OnboardingDetailsTwo /> },
+  {
+    children: [
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <SignUp /> },
+      { path: "/forgot", element: <ForgotPassword /> },
+      { path: "/otp", element: <OTP /> },
+    ],
+  },
+
   {
     element: <ProtectedRoute />,
     children: [
+      // User onboarding (authenticated-only)
+      { path: "/onboarding/one", element: <OnboardingOne /> },
+      { path: "/onboarding/two", element: <OnboardingTwo /> },
+      { path: "/onboarding/three", element: <OnboardingThree /> },
+      { path: "/onboarding/four", element: <OnboardingFour /> },
+      { path: "/onboarding/five", element: <OnboardingFive /> },
+      { path: "/onboarding/details/one", element: <OnboardingDetailsOne /> },
+      { path: "/onboarding/details/two", element: <OnboardingDetailsTwo /> },
+
+      // User pages
       {path:"/home",element:<Home/>},
       {path:"/dashboard",element:<Dashboard/>},
       {path:"/coaches",element:<Coaches/>},

@@ -22,6 +22,8 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import { useAuth } from "@/context/useAuth";
 
 export type NavItemDef = { to: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
 
@@ -74,6 +76,7 @@ export default function SidebarScaffold({ navItems, children, className, expandO
     if (typeof window === 'undefined') return true;
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
+  const { logout } = useAuth();
   return (
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
@@ -113,11 +116,19 @@ export default function SidebarScaffold({ navItems, children, className, expandO
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Button variant="ghost" className="w-full justify-start" type="button">
-                  <LogOut className="mr-2 size-4" /> Logout
-                </Button>
-              </SidebarMenuButton>
+              <ConfirmDialog
+                title="Log out"
+                description="Are you sure you want to log out?"
+                confirmText="Log out"
+                onConfirm={logout}
+                trigger={
+                  <SidebarMenuButton asChild>
+                    <Button variant="ghost" className="w-full justify-start" type="button">
+                      <LogOut className="mr-2 size-4" /> Logout
+                    </Button>
+                  </SidebarMenuButton>
+                }
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
