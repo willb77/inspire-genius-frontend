@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingCallout from "@/components/onboarding/OnboardingCallout";
 import { useTour } from "@/context/useTour";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ExploreCoachesNames from "@/components/user/ExploreCoachesNames";
+import { useAgents } from "@/hooks/coaches/useAgents";
 
 export default function Home() {
   const { start, step } = useTour();
@@ -11,6 +13,12 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const startTimerRef = useRef<number | null>(null);
   const stopTimerRef = useRef<number | null>(null);
+  const { data: agentsResp, isLoading: agentsLoading } = useAgents({ page: 1, page_size: 12 });
+  type Agent = { id: string; name: string };
+  const agents = useMemo<Agent[]>(() => {
+    const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
+    return Array.isArray(list) ? list : [];
+  }, [agentsResp]);
 
   const clearTimers = () => {
     if (startTimerRef.current) {
@@ -134,26 +142,7 @@ export default function Home() {
             <p className="text-xs text-muted-foreground">AI Coaches at Your Service.</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {[
-                "Prism",
-                "Job Fit",
-                "Leadership",
-                "Compliance",
-                "Train",
-                "Career",
-                "Human Resource",
-                "Culture",
-                "Manage",
-                "Well Being",
-                "Research",
-                "Team",
-              ].map((label) => (
-                <Button key={label} variant="outline" className="justify-center bg-brown-10 hover:bg-brown-10/80 hover:text-black-250 text-black-250 rouned-xl border-none">
-                  {label}
-                </Button>
-              ))}
-            </div>
+            <ExploreCoachesNames agents={agents} isLoading={agentsLoading} />
           </CardContent>
         </Card>
       </div>

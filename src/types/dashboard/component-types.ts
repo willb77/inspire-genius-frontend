@@ -8,5 +8,6 @@ export interface UserCoachCardProps {
   tone: string;
   extraCount?: number;
   onChat?: () => void;
+  disableButton?: boolean;
 }
 
