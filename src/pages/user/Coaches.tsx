@@ -4,54 +4,24 @@ import CoachCard from "@/components/onboarding/CoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import IconInput from "@/components/ui/icon-input";
 import { Search } from "lucide-react";
-import { useAgents } from "@/hooks/coaches/useAgents";
-import { useTones } from "@/hooks/coaches/useTones";
-import { useAccents } from "@/hooks/coaches/useAccents";
-import { useGenders } from "@/hooks/coaches/useGenders";
+import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
 
-type Agent = {
-  id: string;
-  name: string;
-  user_gender: { id: string; name: string } | null;
-  user_accent: { id: string; name: string } | null;
-  user_tones: Array<{ id: string; name: string }> | null;
-};
-type Option = { label: string; value: string };
 export default function Coaches() {
   const [query, setQuery] = useState("");
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: agentsResp, isLoading: agentsLoading } = useAgents({ page: 1, page_size: 10 });
-  const { data: tonesResp, isLoading: tonesLoading } = useTones();
-  const { data: accentsResp, isLoading: accentsLoading } = useAccents();
-  const { data: gendersResp, isLoading: gendersLoading } = useGenders();
+  const { agents: rawAgents, toneOptions, accentOptions, genderOptions, isLoading } = useCoachData({ page: 1, page_size: 10 });
 
   const updateMutation = useUpdatePreferences();
 
-
-  const toneOptions = useMemo<Option[]>(() => {
-    const list = (tonesResp as { data?: { Tones?: Array<{ id: string; name: string }> } } | undefined)?.data?.Tones ?? [];
-    return Array.isArray(list) ? list.map((t) => ({ label: t.name, value: t.id })) : [];
-  }, [tonesResp]);
-
-  const accentOptions = useMemo<Option[]>(() => {
-    const list = (accentsResp as { data?: { Tones?: Array<{ id: string; name: string }> } } | undefined)?.data?.Tones ?? [];
-    return Array.isArray(list) ? list.map((a) => ({ label: a.name, value: a.id })) : [];
-  }, [accentsResp]);
-
-  const genderOptions = useMemo<Option[]>(() => {
-    const list = (gendersResp as { data?: { Genders?: Array<{ id: string; name: string }> } } | undefined)?.data?.Genders ?? [];
-    return Array.isArray(list) ? list.map((g) => ({ label: g.name, value: g.id })) : [];
-  }, [gendersResp]);
-
-  const agents = useMemo<Agent[]>(() => {
-    const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
+  const agents = useMemo(() => {
+    const list = rawAgents;
     const q = query.trim().toLowerCase();
     return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
-  }, [agentsResp, query]);
+  }, [rawAgents, query]);
 
   return (
     <UserLayout>
@@ -70,7 +40,7 @@ export default function Coaches() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(agentsLoading || tonesLoading || accentsLoading || gendersLoading) ? (
+          {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <CoachCardSkeleton key={i} />
             ))
@@ -111,7 +81,7 @@ export default function Coaches() {
                   extraCount={Math.max(0, selectedToneIds.length - 1)}
                   onSubmit={handleSubmit}
                   isSubmitting={updateMutation.isPending && submittingAgentId === agent.id}
-                  isOptionsLoading={tonesLoading || accentsLoading || gendersLoading}
+                  isOptionsLoading={isLoading}
                 />
               </div>
             );
