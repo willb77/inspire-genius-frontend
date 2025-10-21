@@ -3,15 +3,14 @@
 import { useState } from "react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { DataTable, type Column } from "@/components/super-admin/organization/DataTable";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDownAZ, Plus, SlidersVertical } from "lucide-react";
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import CoachFormModal from "@/components/shared/forms/CoachFormModal";
 import type { CoachFormValues } from "@/components/shared/forms/coachForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import { useSortingPagination } from "@/hooks/useSortingPagination";
+import ManagementHeader from "@/components/super-admin/ManagementHeader";
 
 type CoachRow = {
   id: string;
@@ -134,23 +133,7 @@ export default function CoachManagement() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-left">Coach Management</h1>
-          <div className="flex flex-wrap gap-6">
-            <Button variant="outline" className="bg-gray-20">
-              Sort By
-              <ArrowDownAZ className="size-4" />
-            </Button>
-            <Button variant="outline" className="bg-gray-20">
-              Filter
-              <SlidersVertical className="size-4" />
-            </Button>
-            <Button onClick={openAdd}>
-              <Plus className="size-4" />
-              Add Coach
-            </Button>
-          </div>
-        </div>
+        <ManagementHeader title="Coach Management" addLabel="Add Coach" onAdd={openAdd} />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
           <DataTable

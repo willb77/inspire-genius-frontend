@@ -1,12 +1,8 @@
 "use client";
-
-import React from "react";
-import ModalDialog from "@/components/shared/ModalDialog";
-import ModalFormFooter from "@/components/shared/forms/ModalFormFooter";
-import { useForm } from "react-hook-form";
+import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { COACH_FORM_DEFAULTS, COACH_FORM_RULES, type CoachFormValues } from "./coachForm.constants";
 
 export type CoachFormModalProps = {
@@ -28,40 +24,20 @@ export default function CoachFormModal({
   onSubmit,
   submitLabel,
 }: CoachFormModalProps) {
-  const form = useForm<CoachFormValues>({
-    defaultValues: { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) },
-    mode: "onTouched",
-  });
-
-  React.useEffect(() => {
-    if (open) {
-      form.reset({ ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) });
-    }
-  }, [open, defaultValues, form]);
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
-    onOpenChange(false);
-  });
-
-  const footer = (
-    <ModalFormFooter
-      onCancel={() => onOpenChange(false)}
-      onSubmit={handleSubmit}
-      isSubmitting={form.formState.isSubmitting}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add Coach" : "Save Changes")}
-    />
-  );
+  const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
 
   return (
-    <ModalDialog
+    <ModalFormFrame<CoachFormValues>
       open={open}
       onOpenChange={onOpenChange}
       title={title ?? (mode === "add" ? "Add Coach" : "Edit Coach")}
-      footer={footer}
+      mode={mode}
+      defaultValues={dv}
+      submitLabel={submitLabel ?? (mode === "add" ? "Add Coach" : "Save Changes")}
+      onSubmit={onSubmit}
     >
-      <Form {...form}>
-        <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={(e) => e.preventDefault()}>
+      {(form) => (
+        <>
           <FormField
             control={form.control}
             name="name"
@@ -121,8 +97,8 @@ export default function CoachFormModal({
               </FormItem>
             )}
           />
-        </form>
-      </Form>
-    </ModalDialog>
+        </>
+      )}
+    </ModalFormFrame>
   );
 }
