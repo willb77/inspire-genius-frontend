@@ -32,9 +32,16 @@ export interface ProgressBarProps {
 
 export interface CoachCardProps {
   title: string;
-  gender: string;
-  accent: string;
-  tone: string;
+  agentId: string;
+  genders: Array<{ label: string; value: string }>;
+  accents: Array<{ label: string; value: string }>;
+  tones: Array<{ label: string; value: string }>;
+  selectedGenderId?: string | null;
+  selectedAccentId?: string | null;
+  selectedToneIds?: string[] | null; // multi-select
   extraCount?: number; // e.g., 3 for "3+"
-  onEdit?: () => void;
+  onSaved?: () => void;
+  onSubmit?: (values: { genderId?: string; accentId?: string; toneIds: string[] }) => Promise<void> | void;
+  isSubmitting?: boolean;
+  isOptionsLoading?: boolean;
 }

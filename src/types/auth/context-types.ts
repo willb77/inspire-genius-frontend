@@ -27,4 +27,5 @@ export type AuthContextValue = {
   logout: () => Promise<void>
   clearAuth: () => Promise<void>
   setPendingVerification: (pending: boolean) => void
+  markOnboardingCompleted: () => Promise<void>
 }

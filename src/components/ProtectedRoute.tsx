@@ -9,7 +9,7 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
   
   const isOnboardingRoute = path.startsWith('/onboarding')
 
-  if (requireAuth && !user?.token) {
+  if (requireAuth && user && !user?.token) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: path }} replace />
   }
 

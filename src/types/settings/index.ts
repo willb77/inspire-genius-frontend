@@ -4,5 +4,7 @@ export type {
   ChangePasswordProps,
   EditProfileProps,
   NotificationSettingsProps,
+  ChangePasswordFormValues,
+  EditProfileFormValues,
 } from './component-types';
 

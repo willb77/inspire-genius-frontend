@@ -4,13 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { ChevronRight, HelpCircle, Volume2, Pause, Loader2 } from "lucide-react";
 import CoachCard from "@/components/onboarding/CoachCard";
+import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import { Logo } from "@/components/shared/Logo";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useAuth } from "@/context/useAuth";
+import { useAgents } from "@/hooks/coaches/useAgents";
+import { useTones } from "@/hooks/coaches/useTones";
+import { useAccents } from "@/hooks/coaches/useAccents";
+import { useGenders } from "@/hooks/coaches/useGenders";
+import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function OnboardingDetailsTwo() {
   const navigate = useNavigate();
+  const { user, markOnboardingCompleted } = useAuth();
   const [showTour, setShowTour] = useState(false);
+  const [pendingDest, setPendingDest] = useState<string | null>(null);
+  const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const logoRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
   const coachRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -20,6 +32,55 @@ export default function OnboardingDetailsTwo() {
   const [rects, setRects] = useState<DOMRect[]>([]);
   const { phase, toggle, stop, voices } = useTextToSpeech();
   const tooltipText = "We highlighted key elements: You can edit coaches anytime.";
+
+  // Data hooks (same as Coaches.tsx)
+  const { data: agentsResp, isLoading: agentsLoading } = useAgents({ page: 1, page_size: 9 });
+  const { data: tonesResp, isLoading: tonesLoading } = useTones();
+  const { data: accentsResp, isLoading: accentsLoading } = useAccents();
+  const { data: gendersResp, isLoading: gendersLoading } = useGenders();
+  const updateMutation = useUpdatePreferences();
+
+  type Option = { label: string; value: string };
+  type Agent = {
+    id: string;
+    name: string;
+    user_gender: { id: string; name: string } | null;
+    user_accent: { id: string; name: string } | null;
+    user_tones: Array<{ id: string; name: string }> | null;
+  };
+
+  const toneOptions = useMemo<Option[]>(() => {
+    const list = (tonesResp as { data?: { Tones?: Array<{ id: string; name: string }> } } | undefined)?.data?.Tones ?? [];
+    return Array.isArray(list) ? list.map((t) => ({ label: t.name, value: t.id })) : [];
+  }, [tonesResp]);
+
+  const accentOptions = useMemo<Option[]>(() => {
+    const list = (accentsResp as { data?: { Tones?: Array<{ id: string; name: string }> } } | undefined)?.data?.Tones ?? [];
+    return Array.isArray(list) ? list.map((a) => ({ label: a.name, value: a.id })) : [];
+  }, [accentsResp]);
+
+  const genderOptions = useMemo<Option[]>(() => {
+    const list = (gendersResp as { data?: { Genders?: Array<{ id: string; name: string }> } } | undefined)?.data?.Genders ?? [];
+    return Array.isArray(list) ? list.map((g) => ({ label: g.name, value: g.id })) : [];
+  }, [gendersResp]);
+
+  const agents = useMemo<Agent[]>(() => {
+    const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
+    return Array.isArray(list) ? list : [];
+  }, [agentsResp]);
+
+  // Navigate only after onboarding flag is reflected in context
+  useEffect(() => {
+    if (user?.isOnboardingCompleted && pendingDest) {
+      navigate(pendingDest);
+      setPendingDest(null);
+    }
+  }, [user?.isOnboardingCompleted, pendingDest, navigate]);
+
+  const handleMarkOnboarded = useCallback(async (destination: string) => {
+    setPendingDest(destination);
+    await markOnboardingCompleted();
+  }, [markOnboardingCompleted]);
 
   // Try to pick a female voice if available (heuristic by common female voice names)
   const femaleVoice = useMemo(() => {
@@ -86,10 +147,9 @@ export default function OnboardingDetailsTwo() {
       <div className="mx-auto w-full max-w-4xl space-y-6">
         <div ref={progressRef}  className="flex items-center justify-between">
           <button
-          
             className="text-xs text-muted-foreground hover:text-foreground"
             type="button"
-            onClick={() => navigate(ROUTES.ONBOARDING_DETAILS.ONE)}
+            onClick={() => handleMarkOnboarded(ROUTES.ONBOARDING_DETAILS.ONE)}
           >
             Prev
           </button>
@@ -97,24 +157,49 @@ export default function OnboardingDetailsTwo() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            "Team Coach",
-            "Train Coach",
-            "Job Fit Coach",
-            "Leadership Coach",
-            "Well Being Coach",
-            "Career Coach",
-          ].map((title, idx) => (
-            <div key={idx} ref={setCoachRef(idx)}>
-              <CoachCard
-                title={title}
-                gender="Male"
-                accent="American"
-                tone="Warm, Motivative"
-                extraCount={3}
-              />
-            </div>
-          ))}
+          {(agentsLoading || tonesLoading || accentsLoading || gendersLoading) ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <CoachCardSkeleton key={i} />
+            ))
+          ) : (
+            agents.map((agent, idx) => {
+              const selectedToneIds = Array.isArray(agent.user_tones) ? agent.user_tones.map(t => t.id) : [];
+              const handleSubmit = async (values: { genderId?: string; accentId?: string; toneIds: string[] }) => {
+                setSubmittingAgentId(agent.id);
+                try {
+                  await updateMutation.mutateAsync({
+                    agentId: agent.id,
+                    body: {
+                      tone_ids: values.toneIds ?? [],
+                      accent_id: values.accentId ?? "",
+                      gender_id: values.genderId ?? "",
+                    },
+                  });
+                  await queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'agents' });
+                } finally {
+                  setSubmittingAgentId(null);
+                }
+              };
+              return (
+                <div key={agent.id} ref={setCoachRef(idx)}>
+                  <CoachCard
+                    title={agent.name}
+                    agentId={agent.id}
+                    genders={genderOptions}
+                    accents={accentOptions}
+                    tones={toneOptions}
+                    selectedGenderId={agent.user_gender?.id ?? undefined}
+                    selectedAccentId={agent.user_accent?.id ?? undefined}
+                    selectedToneIds={selectedToneIds}
+                    extraCount={Math.max(0, selectedToneIds.length - 1)}
+                    onSubmit={handleSubmit}
+                    isSubmitting={updateMutation.isPending && submittingAgentId === agent.id}
+                    isOptionsLoading={tonesLoading || accentsLoading || gendersLoading}
+                  />
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -150,7 +235,7 @@ export default function OnboardingDetailsTwo() {
               <Button
                 className="h-10 w-32"
                 type="button"
-                onClick={() => navigate(ROUTES.HOME)}
+                onClick={() => handleMarkOnboarded(ROUTES.HOME)}
               >
                 Let's go <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
