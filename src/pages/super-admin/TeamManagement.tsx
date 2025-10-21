@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { DataTable, type Column } from "@/components/super-admin/organization/DataTable";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import Pagination from "@/components/shared/Pagination";
 import TeamFormModal from "@/components/shared/forms/TeamFormModal";
 import type { TeamFormValues } from "@/components/shared/forms/teamForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
+import { useSortingPagination } from "@/hooks/useSortingPagination";
 
 type TeamRow = {
   id: string;
@@ -32,40 +33,9 @@ export default function TeamManagement() {
     { id: "8", name: "Lakshmi Iyer", email: "lakshmi@newwave.org", role: "Lead", status: "Active" },
   ]);
 
-  const [sortKey, setSortKey] = useState<keyof TeamRow | undefined>();
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | undefined>();
-  const [page, setPage] = useState(1);
   const pageSize = 8;
-
-  const onSortChange = (key: string) => {
-    if (!key) return;
-    if (sortKey === key) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"));
-    } else {
-      setSortKey(key as keyof TeamRow);
-      setSortDirection("asc");
-    }
-    setPage(1);
-  };
-
-  const sortedRows = useMemo(() => {
-    if (!sortKey || !sortDirection) return rows;
-    const copy = [...rows];
-    copy.sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      let cmp = 0;
-      if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
-      else cmp = String(av).localeCompare(String(bv));
-      return sortDirection === "asc" ? cmp : -cmp;
-    });
-    return copy;
-  }, [rows, sortKey, sortDirection]);
-
-  const total = sortedRows.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const start = (page - 1) * pageSize;
-  const paginated = sortedRows.slice(start, start + pageSize);
+  const { sortKey, sortDirection, page, setPage, onSortChange, paginated, total, totalPages, start } =
+    useSortingPagination<TeamRow>(rows, pageSize);
 
   // dialog state
   const [addOpen, setAddOpen] = useState(false);
