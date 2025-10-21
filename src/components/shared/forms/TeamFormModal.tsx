@@ -1,11 +1,8 @@
 "use client";
 
-import React from "react";
-import ModalDialog from "@/components/shared/ModalDialog";
-import { useForm } from "react-hook-form";
-import ModalFormFooter from "@/components/shared/forms/ModalFormFooter";
+import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TEAM_FORM_DEFAULTS, TEAM_FORM_RULES, TEAM_ROLES, type TeamFormValues } from "./teamForm.constants";
 
@@ -28,40 +25,20 @@ export default function TeamFormModal({
   onSubmit,
   submitLabel,
 }: TeamFormModalProps) {
-  const form = useForm<TeamFormValues>({
-    defaultValues: { ...TEAM_FORM_DEFAULTS, ...(defaultValues ?? {}) },
-    mode: "onTouched",
-  });
-
-  React.useEffect(() => {
-    if (open) {
-      form.reset({ ...TEAM_FORM_DEFAULTS, ...(defaultValues ?? {}) });
-    }
-  }, [open, defaultValues, form]);
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
-    onOpenChange(false);
-  });
-
-  const footer = (
-    <ModalFormFooter
-      onCancel={() => onOpenChange(false)}
-      onSubmit={handleSubmit}
-      isSubmitting={form.formState.isSubmitting}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
-    />
-  );
+  const dv: TeamFormValues = { ...TEAM_FORM_DEFAULTS, ...(defaultValues ?? {}) } as TeamFormValues;
 
   return (
-    <ModalDialog
+    <ModalFormFrame<TeamFormValues>
       open={open}
       onOpenChange={onOpenChange}
       title={title ?? (mode === "add" ? "Add User" : "Edit User")}
-      footer={footer}
+      mode={mode}
+      defaultValues={dv}
+      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
+      onSubmit={onSubmit}
     >
-      <Form {...form}>
-        <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={(e) => e.preventDefault()}>
+      {(form) => (
+        <>
           <FormField
             control={form.control}
             name="name"
@@ -140,8 +117,8 @@ export default function TeamFormModal({
               )}
             />
           )}
-        </form>
-      </Form>
-    </ModalDialog>
+        </>
+      )}
+    </ModalFormFrame>
   );
 }
