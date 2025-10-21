@@ -3,7 +3,7 @@
 import React from "react";
 import ModalDialog from "@/components/shared/ModalDialog";
 import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import ModalFormFooter from "@/components/shared/forms/ModalFormFooter";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -45,19 +45,12 @@ export default function TeamFormModal({
   });
 
   const footer = (
-    <>
-      <Button
-        variant="secondary"
-        className="bg-gray-100 hover:bg-gray-100 text-foreground"
-        onClick={() => onOpenChange(false)}
-        type="button"
-      >
-        Cancel
-      </Button>
-      <Button onClick={handleSubmit} disabled={form.formState.isSubmitting} type="button">
-        {submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
-      </Button>
-    </>
+    <ModalFormFooter
+      onCancel={() => onOpenChange(false)}
+      onSubmit={handleSubmit}
+      isSubmitting={form.formState.isSubmitting}
+      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
+    />
   );
 
   return (
