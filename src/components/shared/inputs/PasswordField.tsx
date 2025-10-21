@@ -28,7 +28,7 @@ export default function PasswordField({ error, ...inputProps }: PasswordFieldPro
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
       </div>
-      {error ? <p className="text-red-500 text-sm">{error}</p> : null}
+      {error ? <p className="text-red-500 text-sm w-full text-left">{error}</p> : null}
     </div>
   )
 }
