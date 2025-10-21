@@ -60,6 +60,7 @@ export default function Dashboard() {
                       title={a.name}
                       gender={gender}
                       accent={accent}
+                      disableButton = {true}
                       tone={tone}
                       extraCount={extraCount}
                       onChat={() => navigate(`/dashboard/${a.id}/chat`)}

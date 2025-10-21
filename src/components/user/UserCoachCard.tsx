@@ -9,6 +9,7 @@ export default function UserCoachCard({
   tone,
   extraCount = 0,
   onChat,
+  disableButton = false,
 }: UserCoachCardProps) {
   return (
     <div className="bg-white rounded-2xl border shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-5">
@@ -52,6 +53,7 @@ export default function UserCoachCard({
         <Button
           className="h-11 w-full rounded-xl bg-blue-primary hover:bg-blue-primary/90 text-white"
           onClick={onChat}
+          disabled={disableButton}
         >
           Chat
           <RefreshCcw className="h-4 w-4 ml-2" />

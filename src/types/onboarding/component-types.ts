@@ -44,4 +44,5 @@ export interface CoachCardProps {
   onSubmit?: (values: { genderId?: string; accentId?: string; toneIds: string[] }) => Promise<void> | void;
   isSubmitting?: boolean;
   isOptionsLoading?: boolean;
+  disableButton?: boolean;
 }

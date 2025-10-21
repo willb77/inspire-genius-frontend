@@ -28,6 +28,7 @@ export default function CoachCard({
   onSaved,
   onSubmit: onSubmitProp,
   isSubmitting,
+  disableButton = false,
 }: CoachCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
@@ -214,6 +215,7 @@ export default function CoachCard({
         ) : (
           <Button
             variant="secondary"
+            disabled={disableButton}
             className="h-11 flex-1 rounded-xl bg-blue-10 hover:bg-blue-100 text-blue-primary"
             onClick={() => setIsEditing(true)}
           >
