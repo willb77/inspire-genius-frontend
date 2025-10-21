@@ -1,48 +1,91 @@
 import { Button } from "@/components/ui/button";
-import { CircleQuestionMark, Volume2, SquarePen } from "lucide-react";
-import { useState } from "react";
+import { CircleQuestionMark, Volume2, SquarePen, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/multi-select";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CoachCardProps } from "@/types/onboarding";
+import { useForm } from "react-hook-form";
+import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
+import { useQueryClient } from "@tanstack/react-query";
 
-const GENDER_OPTIONS = [
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" },
-  { label: "Other", value: "other" },
-] as const;
+type FormValues = {
+  genderId?: string;
+  accentId?: string;
+  toneIds: string[];
+};
 
-const ACCENT_OPTIONS = [
-  { label: "American", value: "american" },
-  { label: "British", value: "british" },
-  { label: "Indian", value: "indian" },
-  { label: "Australian", value: "australian" },
-] as const;
-
-const TONE_OPTIONS = [
-  { label: "Warm", value: "warm" },
-  { label: "Motivative", value: "motivativ" },
-  { label: "Calm", value: "calm" },
-  { label: "Friendly", value: "friendly" },
-  { label: "Confident", value: "confident" },
-  { label: "Professional", value: "professional" },
-];
-
-export default function CoachCard({ title, gender, accent, tone, extraCount = 0, onEdit }: CoachCardProps) {
+export default function CoachCard({
+  title,
+  agentId,
+  genders,
+  accents,
+  tones,
+  selectedGenderId,
+  selectedAccentId,
+  selectedToneIds,
+  extraCount = 0,
+  onSaved,
+  onSubmit: onSubmitProp,
+  isSubmitting,
+}: CoachCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
+  const {
+    setValue,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { isDirty },
+  } = useForm<FormValues>({
+    defaultValues: {
+      genderId: selectedGenderId ?? undefined,
+      accentId: selectedAccentId ?? undefined,
+      toneIds: selectedToneIds ?? [],
+    },
+  });
 
-  // local edit state
-  const [g, setG] = useState<string | undefined>(
-    GENDER_OPTIONS.find((x) => x.label.toLowerCase() === gender.toLowerCase())?.value ?? "male"
-  );
-  const [a, setA] = useState<string | undefined>(
-    ACCENT_OPTIONS.find((x) => x.label.toLowerCase() === accent.toLowerCase())?.value ?? "american"
-  );
-  const initialTones = tone
-    .split(",")
-    .map((t) => t.trim().toLowerCase())
-    .map((t) => TONE_OPTIONS.find((x) => x.label.toLowerCase() === t)?.value)
-    .filter(Boolean) as string[];
-  const [tones, setTones] = useState<string[]>(initialTones.length ? initialTones : ["warm", "motivativ"]);
+  useEffect(() => {
+    reset({
+      genderId: selectedGenderId ?? undefined,
+      accentId: selectedAccentId ?? undefined,
+      toneIds: selectedToneIds ?? [],
+    });
+  }, [reset, selectedGenderId, selectedAccentId, selectedToneIds]);
+
+  const g = watch("genderId");
+  const a = watch("accentId");
+  const t = watch("toneIds");
+
+  const genderLabel = useMemo(() => genders.find((x) => x.value === (selectedGenderId ?? g))?.label ?? "—", [genders, selectedGenderId, g]);
+  const accentLabel = useMemo(() => accents.find((x) => x.value === (selectedAccentId ?? a))?.label ?? "—", [accents, selectedAccentId, a]);
+  const toneLabels = useMemo(() => {
+    const ids = (selectedToneIds ?? t) ?? [];
+    return ids.map((id) => tones.find((x) => x.value === id)?.label).filter(Boolean) as string[];
+  }, [tones, selectedToneIds, t]);
+
+  const updateMutation = useUpdatePreferences();
+  const submitting = onSubmitProp ? !!isSubmitting : updateMutation.isPending;
+  const onSubmit = async (values: FormValues) => {
+    if (onSubmitProp) {
+      await onSubmitProp(values);
+      setIsEditing(false);
+      onSaved?.();
+      return;
+    }
+    const body = {
+      tone_ids: values.toneIds ?? [],
+      accent_id: values.accentId ?? "",
+      gender_id: values.genderId ?? "",
+    };
+    updateMutation.mutate({ agentId, body }, {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'agents' });
+        setIsEditing(false);
+        onSaved?.();
+      },
+    });
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-5">
@@ -63,55 +106,67 @@ export default function CoachCard({ title, gender, accent, tone, extraCount = 0,
         <div>
           <div className="text-muted-foreground mb-1">Gender</div>
           {isEditing ? (
-            <Select value={g} onValueChange={setG}>
+            submitting ? (
+              <Skeleton className="h-10 w-full rounded-xl" />
+            ) : (
+            <Select value={g} onValueChange={(v) => setValue("genderId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
               <SelectContent>
-                {GENDER_OPTIONS.map((opt) => (
+                {genders.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            )
           ) : (
-            <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{gender}</div>
+            <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{genderLabel}</div>
           )}
         </div>
         <div>
           <div className="text-muted-foreground mb-1">Voice Accent</div>
           {isEditing ? (
-            <Select value={a} onValueChange={setA}>
+            submitting ? (
+              <Skeleton className="h-10 w-full rounded-xl" />
+            ) : (
+            <Select value={a} onValueChange={(v) => setValue("accentId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
                 <SelectValue placeholder="Select accent" />
               </SelectTrigger>
               <SelectContent>
-                {ACCENT_OPTIONS.map((opt) => (
+                {accents.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            )
           ) : (
-            <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{accent}</div>
+            <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{accentLabel}</div>
           )}
         </div>
         <div>
           <div className="text-muted-foreground mb-1">Voice Tone</div>
           {isEditing ? (
-            <MultiSelect
-              value={tones}
-              onChange={setTones}
-              options={TONE_OPTIONS}
-              placeholder="Select tones"
-              className="rounded-xl"
-              maxVisible={3}
-            />
+            submitting ? (
+              <Skeleton className="h-10 w-full rounded-xl" />
+            ) : (
+              <MultiSelect
+                value={t}
+                onChange={(vals) => setValue("toneIds", vals, { shouldDirty: true })}
+                options={tones}
+                placeholder="Select tones"
+                className="rounded-xl"
+                maxVisible={2}
+              />
+            )
           ) : (
             <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium flex items-center gap-2">
-              <span className="flex-1">{tone}</span>
+              <span className="flex-1">{toneLabels.join(", ") || "—"}</span>
               {extraCount > 0 ? (
                 <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg font-medium">
                   {extraCount}+
@@ -128,24 +183,34 @@ export default function CoachCard({ title, gender, accent, tone, extraCount = 0,
           <Volume2 className="h-5 w-5" />
         </Button>
         {isEditing ? (
-          <div className="flex-1 flex gap-3">
+          <form className="flex-1 flex gap-3" onSubmit={handleSubmit(onSubmit)}>
             <Button
+              type="button"
               variant="outline"
               className="h-11 flex-1 rounded-xl"
-              onClick={() => setIsEditing(false)}
+              onClick={() => {
+                reset({
+                  genderId: selectedGenderId ?? undefined,
+                  accentId: selectedAccentId ?? undefined,
+                  toneIds: selectedToneIds ?? [],
+                });
+                setIsEditing(false);
+              }}
             >
               Cancel
             </Button>
             <Button
+              type="submit"
               className="h-11 flex-1 rounded-xl"
-              onClick={() => {
-                setIsEditing(false);
-                onEdit?.();
-              }}
+              disabled={submitting || !isDirty}
             >
-              Save
+              {submitting ? (
+                <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</span>
+              ) : (
+                'Save'
+              )}
             </Button>
-          </div>
+          </form>
         ) : (
           <Button
             variant="secondary"

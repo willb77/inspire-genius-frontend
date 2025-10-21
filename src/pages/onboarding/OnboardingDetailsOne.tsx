@@ -13,19 +13,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Logo } from "@/components/shared/Logo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parse, isValid } from "date-fns";
 import type { FormValues } from "@/types/onboarding";
+import { useCreateProfileMutation } from "@/hooks/onboarding/useCreateProfile";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
@@ -36,24 +30,28 @@ export default function OnboardingDetailsOne() {
       firstName: "",
       lastName: "",
       dob: "",
-      category: "",
-      role: "",
       about: "",
     },
     mode: "onTouched",
   });
 
+  const createProfile = useCreateProfileMutation({
+    onSuccess: () => {
+      navigate(ROUTES.ONBOARDING_DETAILS.TWO, { replace: true });
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
-    // Basic validation safeguard (react-hook-form already enforces rules)
-    if (
-      !values.firstName ||
-      !values.lastName ||
-      !values.dob ||
-      !values.category ||
-      !values.role
-    )
-      return;
-    navigate(ROUTES.ONBOARDING_DETAILS.TWO);
+    if (!values.firstName || !values.lastName || !values.dob) return;
+    const parsed = parse(values.dob, "d LLL yyyy", new Date());
+    const yyyyMmDd = isValid(parsed) ? format(parsed, "yyyy-MM-dd") : "";
+    if (!yyyyMmDd) return;
+    createProfile.mutate({
+      first_name: values.firstName,
+      last_name: values.lastName,
+      date_of_birth: yyyyMmDd,
+      additional_info: values.about?.trim() ? values.about : undefined,
+    });
   };
 
   return (
@@ -159,63 +157,6 @@ export default function OnboardingDetailsOne() {
                 )}
               />
 
-              {/* Category */}
-              <FormField
-                control={form.control}
-                name="category"
-                rules={{ required: "Category is required" }}
-                render={({ field }) => (
-                  <FormItem className="relative">
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="!h-11 w-full rounded-md border border-gray-10">
-                          <SelectValue placeholder="Category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Role */}
-              <FormField
-                control={form.control}
-                name="role"
-                rules={{ required: "Role is required" }}
-                render={({ field }) => (
-                  <FormItem className="relative md:col-span-2 col-span-1">
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="!h-11 w-full rounded-md border border-gray-10">
-                          <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="staff">Staff</SelectItem>
-                        <SelectItem value="hr">
-                          Human Resource Manager
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* About */}
               <FormField
                 control={form.control}
@@ -234,7 +175,7 @@ export default function OnboardingDetailsOne() {
               />
 
               <div className="md:col-span-2 col-span-1 mt-2 flex justify-end">
-                <Button type="submit" className="h-11 w-52">
+                <Button type="submit" className="h-11 w-52" disabled={createProfile.isPending}>
                   Next
                 </Button>
               </div>

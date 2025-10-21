@@ -372,6 +372,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncAuthToken(null);
     setUser(null);
     setPendingVerification(false);
+    navigate(ROUTES.LOGIN, { replace: true });
+  }, []);
+
+  const markOnboardingCompleted = useCallback(async (): Promise<void> => {
+    await setOnboardingFlag(true);
+    // update in-memory user
+    setUser((prev) => (prev ? { ...prev, isOnboardingCompleted: true } : prev));
+    // also persist to stored user object without losing other fields
+    try {
+      const stored = await readUser();
+      if (stored) {
+        await storeUser({ ...stored, isOnboardingCompleted: true });
+      }
+    } catch {
+      // ignore storage errors silently
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -393,6 +409,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       clearAuth,
       setPendingVerification,
+      markOnboardingCompleted,
     }),
     [
       user,
@@ -405,6 +422,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resetPasswordStart,
       resetPasswordConfirm,
       logout,
+      markOnboardingCompleted,
       loginMutation.isPending,
       signupMutation.isPending,
       verifyOtpMutation.isPending,
