@@ -4,6 +4,7 @@ export type TourStep = {
   selector: string;
   title: string;
   description: string;
+  id?: string;
   image?: string;
   padding?: number;
   // Optional route to ensure before showing this step
