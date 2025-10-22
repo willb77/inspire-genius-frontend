@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Volume2, Pause, Loader2 } from "lucide-react";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { scrollToTarget } from "@/lib/scroll";
+import { useFrontendText } from "@/hooks/useFrontendText";
 
 // Central default tour steps
 const DEFAULT_STEPS: TourStep[] = [
@@ -216,8 +217,63 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [padding, setPadding] = useState(12);
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: frontendText, isLoading: frontendTextLoading, error: frontendTextError } = useFrontendText();
+
+  useEffect(() => {
+    if (frontendTextLoading) return;
+    console.log("/v1/frontend-text (TourContext)", { data: frontendText, error: frontendTextError });
+  }, [frontendText, frontendTextLoading, frontendTextError]);
 
   // Default tour steps live at module scope (see DEFAULT_STEPS above)
+
+  // Map API response to TourStep overrides, preserving DEFAULT_STEPS order
+  const apiMappedSteps = useMemo(() => {
+    type ApiItem = {
+      id: string;
+      selector: string;
+      routeKey: string;
+      title: string;
+      description: string;
+    };
+    type ApiShape = {
+      data?: {
+        frontend_texts?: ApiItem[];
+      };
+    };
+
+    const items: ApiItem[] = (frontendText as ApiShape)?.data?.frontend_texts ?? [];
+    if (!Array.isArray(items) || items.length === 0) return [] as TourStep[];
+
+    // Helper to map routeKey (e.g., "HOME") to actual path in ROUTES
+    const routePathFor = (routeKey: string): string | undefined => {
+      const key = routeKey as keyof typeof ROUTES;
+      const val = ROUTES[key];
+      return typeof val === "string" ? val : undefined;
+    };
+
+    // Produce steps in the same order as defaults, overriding when selector matches
+    // and the route matches exactly OR the step.route starts with the route path (to support chat subroutes)
+    const mapped = DEFAULT_STEPS.map((s) => {
+      const match = items.find((it) => {
+        if (it.selector !== s.selector) return false;
+        const routePath = routePathFor(it.routeKey);
+        if (!routePath) return true; // if routeKey not mappable, match by selector only
+        if (!s.route) return true; // if step has no route, selector match is enough
+        return s.route === routePath || s.route.startsWith(routePath);
+      });
+
+      if (!match) return s;
+      const overridden: TourStep = {
+        ...s,
+        id: match.id,
+        title: match.title ?? s.title,
+        description: match.description ?? s.description,
+      };
+      return overridden;
+    });
+
+    return mapped;
+  }, [frontendText]);
 
   const activeStep = steps[index] ?? null;
 
@@ -256,12 +312,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     };
   }, [open, measure]);
 
+
   const start = useCallback((newSteps?: TourStep[]) => {
-    const toUse = newSteps?.length ? newSteps : DEFAULT_STEPS;
+    const toUse = newSteps?.length ? newSteps : (apiMappedSteps.length ? apiMappedSteps : DEFAULT_STEPS);
     setSteps(toUse);
     setIndex(0);
     setOpen(true);
-  }, []);
+  }, [apiMappedSteps]);
 
   const stop = useCallback(() => {
     setOpen(false);
