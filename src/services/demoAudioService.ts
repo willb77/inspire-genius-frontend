@@ -5,6 +5,12 @@ class DemoAudioService {
   private scheduledTime = 0;
   private initialDelayApplied = false;
   private minBufferSize = 3;
+  private activeSources: AudioBufferSourceNode[] = [];
+
+  private safeStopDisconnect(src: AudioBufferSourceNode): void {
+    try { src.stop(); } catch { void 0 }
+    try { src.disconnect(); } catch { void 0 }
+  }
 
   async initializeAudioContext(): Promise<boolean> {
     try {
@@ -23,10 +29,17 @@ class DemoAudioService {
   }
 
   resetAudioState(): void {
+    // stop any in-flight or scheduled sources
+    for (const src of this.activeSources) this.safeStopDisconnect(src);
+    this.activeSources = [];
     this.audioQueue = [];
     this.isPlaying = false;
-    this.scheduledTime = 0;
     this.initialDelayApplied = false;
+    if (this.audioContext) {
+      this.scheduledTime = this.audioContext.currentTime;
+    } else {
+      this.scheduledTime = 0;
+    }
     try {
       if (!this.audioContext || this.audioContext.state === 'closed') {
         const AudioContextClass: typeof AudioContext | undefined =
@@ -86,7 +99,12 @@ class DemoAudioService {
         source.start(this.scheduledTime);
         const gapReduction = 0.0;
         this.scheduledTime += audioBuffer.duration - gapReduction;
-        source.onended = () => this.playNextInQueue();
+        this.activeSources.push(source);
+        source.onended = () => {
+          // remove from active list
+          this.activeSources = this.activeSources.filter((s) => s !== source);
+          this.playNextInQueue();
+        };
       } catch (e) {
         console.error('Error decoding audio data', e);
         this.playNextInQueue();
@@ -133,9 +151,16 @@ class DemoAudioService {
   }
 
   stopAudio(): void {
+    // cancel all scheduled and currently playing sources
+    for (const src of this.activeSources) this.safeStopDisconnect(src);
+    this.activeSources = [];
     this.audioQueue = [];
     this.isPlaying = false;
-    this.scheduledTime = 0;
+    if (this.audioContext) {
+      this.scheduledTime = this.audioContext.currentTime;
+    } else {
+      this.scheduledTime = 0;
+    }
   }
 
   get speaking(): boolean {

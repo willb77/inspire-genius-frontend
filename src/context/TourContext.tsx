@@ -8,10 +8,12 @@ import {
 } from "@/context/tour-context";
 import { ROUTES } from "@/constants/routes";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Volume2, Pause, Loader2 } from "lucide-react";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { Volume2, Pause, Loader2, RotateCcw } from "lucide-react";
+// import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useTourSpeech } from "@/hooks/useTourSpeech";
 import { scrollToTarget } from "@/lib/scroll";
 import { useFrontendText } from "@/hooks/useFrontendText";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 // Central default tour steps
 const DEFAULT_STEPS: TourStep[] = [
@@ -423,31 +425,8 @@ function Overlay({
   const [vpW, vpH] = [window.innerWidth, window.innerHeight];
   const r = rect;
   const p = padding;
-  // Text-to-speech for tooltip description
-  const { phase, toggle, stop: ttsStop, voices } = useTextToSpeech();
-  const femaleVoice = React.useMemo(() => {
-    if (!voices?.length) return undefined;
-    const preferredNames = [
-      "Female",
-      "Aria",
-      "Zira",
-      "Jenny",
-      "Samantha",
-      "Allison",
-      "Victoria",
-      "Karen",
-      "Susan",
-      "Hazel",
-    ];
-    const explicit = voices.find((v) => /female/i.test(v.name));
-    if (explicit) return explicit;
-    const byName = voices.find((v) =>
-      preferredNames.some((n) => v.name.toLowerCase().includes(n.toLowerCase()))
-    );
-    if (byName) return byName;
-    const en = voices.find((v) => v.lang?.toLowerCase().startsWith("en"));
-    return en ?? voices[0];
-  }, [voices]);
+  // Tour speech via API streaming (.pcm)
+  const { phase, play, pause, resume, replay, hasCached, stop: tourStop } = useTourSpeech();
 
   const box = r
     ? {
@@ -470,7 +449,7 @@ function Overlay({
           target.closest("[data-tour-spotlight]")
         )
           return;
-        ttsStop();
+        tourStop();
         onSkip();
       }}
     >
@@ -511,7 +490,7 @@ function Overlay({
           <button
             className="text-sm text-muted-foreground hover:underline"
             onClick={() => {
-              ttsStop();
+              tourStop();
               onSkip();
             }}
           >
@@ -526,46 +505,80 @@ function Overlay({
               size="sm"
               className="h-8"
               onClick={() => {
-                ttsStop();
+                tourStop();
                 onPrev();
               }}
               disabled={stepIndex === 0}
             >
               Prev
             </Button>
-            <button
-              type="button"
-              aria-label={
-                phase === "speaking"
-                  ? "Pause audio"
-                  : phase === "starting"
-                  ? "Loading audio"
-                  : "Play audio"
-              }
-              onClick={() =>
-                toggle(step.description, {
-                  voiceName: femaleVoice?.name,
-                  lang: femaleVoice?.lang ?? "en-US",
-                })
-              }
-              className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${
-                phase === "starting" ? "animate-pulse" : ""
-              }`}
-              disabled={phase === "starting"}
-            >
-              {phase === "starting" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : phase === "speaking" ? (
-                <Pause className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={
+                      phase === "speaking"
+                        ? "Pause audio"
+                        : phase === "paused"
+                        ? "Resume audio"
+                        : phase === "starting"
+                        ? "Loading audio"
+                        : "Play audio"
+                    }
+                    onClick={() => {
+                      if (!step.id) return;
+                      if (phase === "speaking") return void pause();
+                      if (phase === "paused") return void resume();
+                      if (phase === "starting") return;
+                      void play(step.id);
+                    }}
+                    className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === "starting" ? "animate-pulse" : ""}`}
+                    disabled={phase === "starting" || !step.id}
+                  >
+                    {phase === "starting" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : phase === "speaking" ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="z-[1200]">
+                  <span className="text-xs">{phase === "speaking" ? "Pause" : phase === "paused" ? "Resume" : phase === "starting" ? "Loading" : "Play"}</span>
+                </TooltipContent>
+              </Tooltip>
+
+              {hasCached(step.id) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Replay audio"
+                      onClick={() => {
+                        if (!step.id) return;
+                        void replay(step.id);
+                      }}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100"
+                      disabled={phase === "starting"}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="z-[1200]">
+                    <span className="text-xs">Replay</span>
+                  </TooltipContent>
+                </Tooltip>
               )}
-            </button>
+            </TooltipProvider>
+
             <Button
               size="sm"
               className="h-8 bg-blue-primary hover:bg-blue-primary/90"
               onClick={() => {
-                ttsStop();
+                tourStop();
                 onNext();
               }}
             >
