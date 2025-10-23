@@ -182,6 +182,7 @@ export default function ChatWindow({ coachName, className, onBack, onSendText, o
           <div className="relative flex-1">
             <button
               type="button"
+              disabled={true}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
@@ -193,6 +194,7 @@ export default function ChatWindow({ coachName, className, onBack, onSendText, o
               placeholder="Ask Anything...."
               className="h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
+              disabled={true}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -205,11 +207,11 @@ export default function ChatWindow({ coachName, className, onBack, onSendText, o
           </div>
           
           {hasAudio && onToggleAudioPlayback ? (
-            <Button type="button" onClick={onToggleAudioPlayback} variant="secondary" className="h-11 px-3">
+            <Button disabled={true} type="button" onClick={onToggleAudioPlayback} variant="secondary" className="h-11 px-3">
               {isAudioPaused ? <Play className="size-5" /> : <Pause className="size-5" />}
             </Button>
           ) : null}
-          <Button className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3" onClick={handleSend}>
+          <Button disabled={true} className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3" onClick={handleSend}>
             <Send className="size-5" />
           </Button>
         </div>

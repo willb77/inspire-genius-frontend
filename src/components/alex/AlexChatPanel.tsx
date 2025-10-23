@@ -209,6 +209,7 @@ export default function AlexChatPanel({ open, onOpenChange, className }: AlexCha
           <button
               aria-label="Toggle recording"
               onClick={toggleRecording}
+              disabled={true}
               className={`absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center`}
               title={isRecording ? 'Recording… click to stop' : 'Click to start recording'}
             >
@@ -222,7 +223,7 @@ export default function AlexChatPanel({ open, onOpenChange, className }: AlexCha
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              disabled={!isConnected}
+              disabled={!isConnected || true}
             />
             {isRecording && (
               <div className="pointer-events-none absolute left-10 right-28 top-1/2 -translate-y-1/2 flex items-end gap-1 h-5">
@@ -238,11 +239,11 @@ export default function AlexChatPanel({ open, onOpenChange, className }: AlexCha
               </div>
             )}
             {hasAudio && (
-              <Button type="button" onClick={toggleAudioPlayback} variant="secondary" className="h-11 px-3">
+              <Button type="button" onClick={toggleAudioPlayback} disabled={true} variant="secondary" className="h-11 px-3">
                 {isAudioPaused ? <Play className="size-5" /> : <Pause className="size-5" />}
               </Button>
             )}
-            <Button type="button" onClick={handleSend} disabled={!isConnected || !message.trim()} className="h-11 px-3 bg-blue-primary hover:bg-blue-primary/90">
+            <Button type="button" onClick={handleSend} disabled={!isConnected || !message.trim() || true} className="h-11 px-3 bg-blue-primary hover:bg-blue-primary/90">
               <Send className="size-5" />
             </Button>
           </div>
