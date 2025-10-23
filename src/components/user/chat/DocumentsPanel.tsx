@@ -6,7 +6,7 @@ import type { DocKind, SimpleDoc, DocumentsPanelProps } from "@/types/chat";
 
 type DocItem = SimpleDoc & { id: string; group: string; url?: string };
 
-export default function DocumentsPanel({ onImportToChat, onPreview }: DocumentsPanelProps) {
+export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange }: DocumentsPanelProps) {
   const pdfDemoUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
   const [docs, setDocs] = useState<DocItem[]>([
     { id: "t1", name: "Document.pdf", kind: "pdf", group: "Today", url: pdfDemoUrl },
@@ -40,9 +40,11 @@ export default function DocumentsPanel({ onImportToChat, onPreview }: DocumentsP
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      onSelectionChange?.(Array.from(next));
       return next;
     });
   };
+
 
   const toggleGroup = (label: string) => setOpenGroups((p) => ({ ...p, [label]: !(p[label] ?? true) }));
 
@@ -50,6 +52,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview }: DocumentsP
     if (selected.size === 0) return;
     setDocs((list) => list.filter((d) => !selected.has(d.id)));
     setSelected(new Set());
+    onSelectionChange?.([]);
   };
 
   const deleteOne = (id: string) => {
@@ -57,6 +60,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview }: DocumentsP
     setSelected((s) => {
       const next = new Set(s);
       next.delete(id);
+      onSelectionChange?.(Array.from(next));
       return next;
     });
   };
