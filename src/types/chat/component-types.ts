@@ -7,6 +7,13 @@ export interface ChatWindowProps {
   coachName: string;
   className?: string;
   onBack?: () => void;
+  onSendText?: (text: string) => void;
+  onToggleRecording?: () => void;
+  isRecording?: boolean;
+  onDocumentsSelectionChange?: (ids: string[]) => void;
+  hasAudio?: boolean;
+  isAudioPaused?: boolean;
+  onToggleAudioPlayback?: () => void;
 }
 
 // ChatHistory component props
@@ -21,6 +28,7 @@ export interface ChatHistoryProps {
 export interface DocumentsPanelProps {
   onImportToChat: (items: SimpleDoc[]) => void;
   onPreview?: (item: DocumentRef) => void;
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 // ExportChatModal component props
