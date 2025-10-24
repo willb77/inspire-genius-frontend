@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, type T
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import DatePickerButton from "@/components/shared/DatePickerButton";
+import type { ChartDatum } from "@/types/super-admin/dashboard";
 
 // Chart data for Average Time Spent
 const chartData = [
@@ -34,7 +35,6 @@ export default function AvgTimeSpentChart() {
   const [toDate, setToDate] = useState<Date>(today);
 
   // Custom Tooltip component
-  type ChartDatum = { orgName: string; hours: number };
   const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = (payload[0]?.payload as ChartDatum) || undefined;
