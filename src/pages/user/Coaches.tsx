@@ -79,7 +79,7 @@ export default function Coaches() {
                   selectedGenderId={agent.user_gender?.id ?? undefined}
                   selectedAccentId={agent.user_accent?.id ?? undefined}
                   selectedToneIds={selectedToneIds}
-                  extraCount={Math.max(0, selectedToneIds.length - 1)}
+                  extraCount={Math.max(0, selectedToneIds.length - 2)}
                   onSubmit={handleSubmit}
                   isSubmitting={updateMutation.isPending && submittingAgentId === agent.id}
                   isOptionsLoading={isLoading}
