@@ -167,7 +167,7 @@ export default function CoachCard({
             )
           ) : (
             <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium flex items-center gap-2">
-              <span className="flex-1">{toneLabels.join(", ") || "—"}</span>
+              <span className="flex-1">{toneLabels?.length > 0 ? toneLabels.slice(0, 2).join(", ") : "—"}</span>
               {extraCount > 0 ? (
                 <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg font-medium">
                   {extraCount}+

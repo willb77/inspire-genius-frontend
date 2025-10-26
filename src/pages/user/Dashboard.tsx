@@ -52,8 +52,8 @@ export default function Dashboard() {
                 const gender = a.user_gender?.name ?? "—";
                 const accent = a.user_accent?.name ?? "—";
                 const toneNames = (a.user_tones ?? []).map(t => t.name);
-                const tone = toneNames.join(", ") || "—";
-                const extraCount = Math.max(0, toneNames.length - 1);
+                const tone = toneNames?.length > 0 ? toneNames.slice(0, 2).join(", ") : "—";
+                const extraCount = Math.max(0, toneNames.length - 2);
                 return (
                   <div key={a.id} data-tour={idx < 3 ? `coach-card-${idx + 1}` : undefined}>
                     <UserCoachCard
