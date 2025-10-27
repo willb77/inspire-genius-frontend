@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
 import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
+import { useUploadDocuments } from "@/hooks/documents/useUploadDocuments";
+import { toast } from "sonner";
 
-const CATEGORIES = [
-  { label: "Resume", value: "resume" },
-  { label: "Offer Letter", value: "offer" },
-  { label: "Certificates", value: "cert" },
-  { label: "Other", value: "other" },
-] as const;
+// Category selection removed per requirement
 
 function kindFromName(name: string): SimpleKind {
   const low = name.toLowerCase();
@@ -23,24 +19,24 @@ function kindFromName(name: string): SimpleKind {
 export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }: UploadDocumentsModalProps) {
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
-  const [category, setCategory] = useState<string>("");
   const [dragOver, setDragOver] = useState(false);
   const [queue, setQueue] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const uploadMutation = useUploadDocuments();
 
   // Reset when closing
   useEffect(() => {
     if (!open) {
       setStep("form");
-      setCategory("");
       setDragOver(false);
       setQueue([]);
       setProgress(0);
     }
   }, [open]);
 
-  const isReadyToUpload = category && queue.length > 0;
+  // Only require files queued
+  const isReadyToUpload = queue.length > 0;
 
   const onPickFiles = () => inputRef.current?.click();
 
@@ -55,34 +51,28 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
     addFiles(e.dataTransfer.files);
   };
 
-  const onUpload = () => {
+  const onUpload = async () => {
     if (!isReadyToUpload) return;
     setStep("progress");
+    setProgress(0);
+    try {
+      await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => setProgress(p) });
+      setStep("complete");
+      // Notify parent with local mapping so UI updates immediately
+      const result: UploadedFile[] = queue.map((f) => ({
+        name: f.name,
+        url: URL.createObjectURL(f),
+        kind: kindFromName(f.name),
+      }));
+      onUploaded?.(result, "");
+    } catch (e) {
+      toast.error("Upload failed", { description: e instanceof Error ? e.message : "Unable to upload document" });
+      // stay on progress or close? For now, return to form
+      setStep("form");
+    }
   };
 
-  // Simulate upload
-  useEffect(() => {
-    if (step !== "progress") return;
-    setProgress(0);
-    const id = setInterval(() => {
-      setProgress((p) => {
-        const next = Math.min(100, p + Math.floor(8 + Math.random() * 12));
-        if (next >= 100) {
-          clearInterval(id);
-          setStep("complete");
-          // Build uploaded payload
-          const result: UploadedFile[] = queue.map((f) => ({
-            name: f.name,
-            url: URL.createObjectURL(f),
-            kind: kindFromName(f.name),
-          }));
-          onUploaded?.(result, category);
-        }
-        return next;
-      });
-    }, 250);
-    return () => clearInterval(id);
-  }, [step, category, queue, onUploaded]);
+  // Progress is now updated via axios onUploadProgress in the mutation
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,20 +82,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             <div className="mb-1 text-xl font-semibold">Upload Documents</div>
             <div className="text-sm text-muted-foreground mb-5">Please upload a document for analysis.</div>
 
-            {/* Category */}
-            <label className="block text-sm font-medium mb-1">Document Category</label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-full h-11 rounded-xl bg-gray-100 border border-gray-10">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Category selection removed */}
 
             {/* Dropzone */}
             <div
