@@ -21,7 +21,7 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
   // Enforce super-admin role for super admin routes
   if (path.startsWith(PATHS.SUPER_ADMIN_PREFIX)) {
     const role = (user?.role ?? '').toLowerCase()
-    if (role !== ROLES.SUPER_ADMIN) {
+    if (role !== ROLES.SUPER_ADMIN && user) {
       return <Navigate to={ROUTES.HOME} replace />
     }
   }

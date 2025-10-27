@@ -25,6 +25,7 @@ import SuperAdminDashboard from "@/pages/super-admin/Dashboard";
 import TeamManagement from "@/pages/super-admin/TeamManagement";
 import CoachManagement from "@/pages/super-admin/CoachManagement";
 import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
+import UserManagement from "@/pages/super-admin/UserManagement";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -52,18 +53,22 @@ export const routes: RouteObject[] = [
       { path: "/onboarding/details/two", element: <OnboardingDetailsTwo /> },
 
       // User pages
-      {path:"/home",element:<Home/>},
-      {path:"/dashboard",element:<Dashboard/>},
-      {path:"/coaches",element:<Coaches/>},
+      { path: "/home", element: <Home /> },
+      { path: "/dashboard", element: <Dashboard /> },
+      { path: "/coaches", element: <Coaches /> },
       { path: "/dashboard/:coach/chat", element: <CoachChat /> },
-      {path:"/documents",element:<Documents/>},
+      { path: "/documents", element: <Documents /> },
       { path: "/settings", element: <SettingsPage /> },
       { path: "/help", element: <HelpPage /> },
       // Super Admin protected pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
       { path: "/super-admin/team", element: <TeamManagement /> },
       { path: "/super-admin/coaches", element: <CoachManagement /> },
-      { path: "/super-admin/organizations", element: <OrganizationManagement /> },
+      {
+        path: "/super-admin/organizations",
+        element: <OrganizationManagement />,
+      },
+      { path: "/super-admin/users", element: <UserManagement /> },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },
