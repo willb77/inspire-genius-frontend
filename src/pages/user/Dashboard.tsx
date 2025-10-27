@@ -25,6 +25,7 @@ export default function Dashboard() {
     const q = query.trim().toLowerCase();
     return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [agentsResp, query]);
+  const toSlug = (s: string) => String(s || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return (
     <UserLayout>
       <div className="space-y-6">
@@ -63,7 +64,7 @@ export default function Dashboard() {
                       disableButton = {false}
                       tone={tone}
                       extraCount={extraCount}
-                      onChat={() => navigate(`/dashboard/${a.id}/chat`)}
+                      onChat={() => navigate(`/dashboard/${a.id}--${toSlug(a.name)}/chat`)}
                     />
                   </div>
                 );
