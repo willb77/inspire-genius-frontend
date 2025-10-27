@@ -28,3 +28,4 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
 
   return <Outlet />
 }
+ 
