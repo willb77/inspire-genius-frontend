@@ -19,6 +19,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
         <h3 className="text-lg font-semibold">History</h3>
         <button
           aria-label="New Conversation"
+          disabled={true}
           className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
           onClick={() => {
              onCreateNewConversation?.();
@@ -88,6 +89,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                     <li key={it.id}>
                       <button
                         type="button"
+                        disabled={true}
                         onClick={() => onSelect?.(it.id)}
                         className={cn(
                           "w-full text-left rounded-xl px-3 py-2",

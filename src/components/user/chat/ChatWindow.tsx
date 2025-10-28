@@ -181,6 +181,7 @@ export default function ChatWindow({
               Chat
             </button>
             <button
+            disabled={true}
               className={cn(
                 "px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
@@ -195,6 +196,7 @@ export default function ChatWindow({
           <Button
             className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"
             variant="secondary"
+            disabled={true}
             onClick={() => setExportOpen(true)}
           >
             <Upload className="size-4 mr-2" />
@@ -399,7 +401,7 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <button
               type="button"
-              disabled={false}
+              disabled={true}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
@@ -418,7 +420,7 @@ export default function ChatWindow({
               placeholder="Ask Anything...."
               className="h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
-              disabled={false}
+              disabled={true}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -432,7 +434,7 @@ export default function ChatWindow({
 
           {hasAudio && onToggleAudioPlayback ? (
             <Button
-              disabled={false}
+              disabled={true}
               type="button"
               onClick={onToggleAudioPlayback}
               variant="secondary"
@@ -446,7 +448,7 @@ export default function ChatWindow({
             </Button>
           ) : null}
           <Button
-            disabled={false}
+            disabled={true}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
             onClick={handleSend}
           >
