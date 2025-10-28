@@ -6,10 +6,11 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import type { ExportChatModalProps } from "@/types/chat";
 import DatePickerButton from "@/components/shared/DatePickerButton";
 
-export default function ExportChatModal({ open, onOpenChange }: ExportChatModalProps) {
+export default function ExportChatModal({ open, onOpenChange, onExport }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
   const [progress, setProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form fields
   const today = useMemo(() => new Date(), []);
@@ -52,10 +53,16 @@ export default function ExportChatModal({ open, onOpenChange }: ExportChatModalP
     return () => clearInterval(id);
   }, [step, open]);
 
-  const onExport = () => {
-    // Basic guard
+  const handleExport = async () => {
     if (!fromDate || !toDate) return;
-    setStep("progress");
+    // Call parent export; format is fixed to pdf visually and disabled
+    try {
+      setIsSubmitting(true);
+      await onExport?.(fromDate, toDate);
+    } finally {
+      setIsSubmitting(false);
+      onOpenChange(false);
+    }
   };
 
   const onCancel = () => {
@@ -98,13 +105,12 @@ export default function ExportChatModal({ open, onOpenChange }: ExportChatModalP
 
             {/* Export type */}
             <label className="block text-sm font-medium mb-1">Export File</label>
-            <Select value={format} onValueChange={(v: string) => setFormat((v as "pdf" | "csv"))}>
+            <Select value={format} disabled>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select format" />
+                <SelectValue placeholder="PDF" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="csv">CSV</SelectItem>
               </SelectContent>
             </Select>
 
@@ -113,8 +119,14 @@ export default function ExportChatModal({ open, onOpenChange }: ExportChatModalP
               <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button className="bg-blue-primary hover:bg-blue-primary/90" onClick={onExport}>
-                Export
+              <Button className="bg-blue-primary hover:bg-blue-primary/90" onClick={handleExport} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" /> Exporting
+                  </>
+                ) : (
+                  "Export"
+                )}
               </Button>
             </div>
           </div>

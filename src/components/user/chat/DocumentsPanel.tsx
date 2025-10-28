@@ -1,25 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Trash2, Download, Eye, ChevronDown, Sparkles } from "lucide-react";
+import { Trash2, Download, Eye, ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import type { DocKind, SimpleDoc, DocumentsPanelProps } from "@/types/chat";
 
-type DocItem = SimpleDoc & { id: string; group: string; url?: string };
+type UIDocItem = { id: string; name: string; kind: DocKind; url: string; createdAt: Date; tempUrl?: string; categoryName?: string };
 
-export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange }: DocumentsPanelProps) {
-  const pdfDemoUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
-  const [docs, setDocs] = useState<DocItem[]>([
-    { id: "t1", name: "Document.pdf", kind: "pdf", group: "Today", url: pdfDemoUrl },
-    { id: "t2", name: "Document.csv", kind: "csv", group: "Today" },
-    { id: "t3", name: "Presentation.ppt", kind: "ppt", group: "Today" },
-    { id: "t4", name: "Notes.docx", kind: "doc", group: "Today" },
-    { id: "y1", name: "Report.docx", kind: "doc", group: "Yesterday" },
-    { id: "y2", name: "Slides.ppt", kind: "ppt", group: "Yesterday" },
-    { id: "d1", name: "Spec.pdf", kind: "pdf", group: "21-08-2025", url: pdfDemoUrl },
-    { id: "d2", name: "Appendix.pdf", kind: "pdf", group: "21-08-2025", url: pdfDemoUrl },
-  ]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange, sections: sectionsProp, selectedIds, onToggleSelect, isLoading: isLoadingProp, onDelete, onDownload }: DocumentsPanelProps) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds ?? []));
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const useControlled = Array.isArray(sectionsProp);
 
   const kindBadge = (k: DocKind) => {
     const base = "px-2 py-0.5 rounded-md text-xs font-medium";
@@ -35,7 +26,17 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
     }
   };
 
+  const sections = useMemo<Array<{ title: string; items: UIDocItem[] }>>(() => {
+    if (useControlled && sectionsProp) return sectionsProp.map((s) => ({ title: s.title, items: s.items.map((it) => ({ id: it.id, name: it.name, kind: it.kind, url: it.url || "", createdAt: new Date(), tempUrl: it.tempUrl })) }));
+    return [];
+  }, [useControlled, sectionsProp]);
+
+  const currentSelected = useControlled && selectedIds ? new Set(selectedIds) : selected;
   const toggleSelect = (id: string) => {
+    if (onToggleSelect) {
+      onToggleSelect(id);
+      return;
+    }
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -45,18 +46,11 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
     });
   };
 
-
   const toggleGroup = (label: string) => setOpenGroups((p) => ({ ...p, [label]: !(p[label] ?? true) }));
 
-  const deleteSelected = () => {
-    if (selected.size === 0) return;
-    setDocs((list) => list.filter((d) => !selected.has(d.id)));
-    setSelected(new Set());
-    onSelectionChange?.([]);
-  };
-
-  const deleteOne = (id: string) => {
-    setDocs((list) => list.filter((d) => d.id !== id));
+  const deleteOne = async (id: string) => {
+    if (onDelete) return onDelete(id);
+    // Fallback: just remove from local selection
     setSelected((s) => {
       const next = new Set(s);
       next.delete(id);
@@ -66,29 +60,44 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
   };
 
   const importSelected = () => {
-    if (selected.size === 0) return;
-    const items = docs
-      .filter((d) => selected.has(d.id))
-      .map<SimpleDoc>((d) => ({ name: d.name, kind: d.kind }));
+    if ((useControlled ? (selectedIds?.length ?? 0) : selected.size) === 0) return;
+    const sel = new Set(currentSelected);
+    const flat: UIDocItem[] = sections.flatMap((s) => s.items);
+    const items = flat.filter((d) => sel.has(d.id)).map<SimpleDoc>((d) => ({ name: d.name, kind: d.kind }));
     onImportToChat(items);
     setSelected(new Set());
+  };
+
+  const handleDownload = async (doc: UIDocItem) => {
+    if (onDownload) return onDownload(doc.id);
   };
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-1">
-        <span className="text-sm font-medium text-blue-primary">Selected ({String(selected.size).padStart(2, "0")})</span>
-        <Button
-          type="button"
-          onClick={deleteSelected}
-          disabled={selected.size === 0}
-          className="h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100 disabled:opacity-50"
-          variant="secondary"
-        >
-          Delete
-          <Trash2 className="size-4 ml-2" />
-        </Button>
+        <span className="text-sm font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
+        {(useControlled ? (selectedIds?.length ?? 0) : selected.size) > 0 ? (
+          <ConfirmDialog
+            trigger={
+              <Button
+                type="button"
+                className="h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
+                variant="secondary"
+              >
+                Delete
+                <Trash2 className="size-4 ml-2" />
+              </Button>
+            }
+            title="Confirm delete"
+            description={`Are you sure you want to delete ${String((useControlled ? (selectedIds?.length ?? 0) : selected.size))} selected document(s)? This action cannot be undone.`}
+            confirmText="Delete"
+            onConfirm={async () => {
+              const ids = Array.from(currentSelected);
+              for (const id of ids) await deleteOne(id);
+            }}
+          />
+        ) : null}
         <Button
           type="button"
           onClick={importSelected}
@@ -102,69 +111,88 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
 
       {/* Grouped list */}
       <div className="space-y-3">
-        {[...new Set(docs.map((d) => d.group))].map((group) => {
-          const isOpen = openGroups[group] ?? true;
-          const items = docs.filter((d) => d.group === group);
-          return (
-            <div key={group} className="rounded-xl">
-              <button
-                type="button"
-                onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between text-left px-1 py-1 text-sm"
-                aria-expanded={isOpen}
-              >
-                <span className="font-medium text-foreground/90">{group}</span>
-                <ChevronDown className={cn("size-4 transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
-              </button>
-              {isOpen && (
-                <ul className="mt-1 space-y-2">
-                  {items.map((doc) => (
-                    <li key={doc.id}>
-                      <div
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm",
-                          selected.has(doc.id) ? "ring-2 ring-blue-primary/40" : ""
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4"
-                          checked={selected.has(doc.id)}
-                          onChange={() => toggleSelect(doc.id)}
-                          aria-label={`Select ${doc.name}`}
-                        />
-                        {kindBadge(doc.kind)}
-                        <span className="flex-1 truncate">{doc.name}</span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => deleteOne(doc.id)}
-                            className="text-red-600 hover:text-red-700"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                          <button type="button" className="text-foreground/70 hover:text-foreground" aria-label="Download">
-                            <Download className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            className={cn("text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
-                            aria-label="Preview"
-                            onClick={() => doc.kind === "pdf" && onPreview?.({ name: doc.name, kind: doc.kind, url: doc.url })}
-                            disabled={doc.kind !== "pdf"}
-                          >
-                            <Eye className="size-4" />
-                          </button>
+        {(isLoadingProp) ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
+            <Loader2 className="size-4 animate-spin" /> Loading documents...
+          </div>
+        ) : sections.length === 0 ? (
+          <div className="text-sm text-muted-foreground px-1">No files found</div>
+        ) : (
+          sections.map((sec) => {
+            const isOpen = openGroups[sec.title] ?? true;
+            const items = sec.items;
+            return (
+              <div key={sec.title} className="rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(sec.title)}
+                  className="w-full flex items-center justify-between text-left px-1 py-1 text-sm"
+                  aria-expanded={isOpen}
+                >
+                  <span className="font-medium text-foreground/90">{sec.title}</span>
+                  <ChevronDown className={cn("size-4 transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
+                </button>
+                {isOpen && (
+                  <ul className="mt-1 space-y-2">
+                    {items.map((doc) => (
+                      <li key={doc.id}>
+                        <div
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm",
+                            selected.has(doc.id) ? "ring-2 ring-blue-primary/40" : ""
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="size-4"
+                            checked={currentSelected.has(doc.id)}
+                            onChange={() => toggleSelect(doc.id)}
+                            aria-label={`Select ${doc.name}`}
+                          />
+                          {kindBadge(doc.kind)}
+                          <span className="flex-1 truncate">{doc.name}</span>
+                          <div className="flex items-center gap-3">
+                            <ConfirmDialog
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="text-red-600 hover:text-red-700"
+                                  aria-label="Delete"
+                                >
+                                  <Trash2 className="size-4" />
+                                </button>
+                              }
+                              title="Confirm delete"
+                              description="Are you sure you want to delete this document? This action cannot be undone."
+                              confirmText="Delete"
+                              onConfirm={() => deleteOne(doc.id)}
+                            />
+                            <button
+                              title="Download"
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() => handleDownload(doc)}
+                            >
+                              <Download className="size-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className={cn("text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
+                              aria-label="Preview"
+                              onClick={() => doc.kind === "pdf" && onPreview?.({ name: doc.name, kind: doc.kind, url: doc.tempUrl || doc.url })}
+                              disabled={doc.kind !== "pdf"}
+                            >
+                              <Eye className="size-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
