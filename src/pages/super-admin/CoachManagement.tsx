@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { DataTable, type Column } from "@/components/super-admin/organization/DataTable";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,14 @@ import Pagination from "@/components/shared/Pagination";
 import CoachFormModal from "@/components/shared/forms/CoachFormModal";
 import type { CoachFormValues } from "@/components/shared/forms/coachForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
-import { useSortingPagination } from "@/hooks/useSortingPagination";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
+import { useCoachesList, useCreateCoach, useUpdateCoach, useDeactivateCoach } from "@/hooks/super-admin/coach-management/useCoaches";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AxiosError } from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { getTones } from "@/services/coaches/settings.service";
+import type { MultiSelectOption } from "@/components/ui/multi-select";
 
 type CoachRow = {
   id: string;
@@ -20,30 +26,76 @@ type CoachRow = {
   voice_description: string;
   total_sessions: number;
   status: "Active" | "Deactivated";
+  type?: string;
 };
 
 export default function CoachManagement() {
-  const [rows, setRows] = useState<CoachRow[]>([
-    { id: "1", name: "Coach Name", category: "Job Seeker", voice_style: "Calm, Motivation", voice_description: "Velit laborum ad pariatur", total_sessions: 56, status: "Active" },
-    { id: "2", name: "Coach Name", category: "Education", voice_style: "Calm", voice_description: "Officia commodo ad es", total_sessions: 15, status: "Active" },
-    { id: "3", name: "Coach Name", category: "Career", voice_style: "Motivation", voice_description: "Est tempor fugiat cupid", total_sessions: 15, status: "Deactivated" },
-    { id: "4", name: "Coach Name", category: "Business", voice_style: "Encouraging, Motivation", voice_description: "Nulla ex labore velit inur", total_sessions: 86, status: "Active" },
-    { id: "5", name: "Coach Name", category: "Healthcare", voice_style: "Warm, Straightforward", voice_description: "Ad duis sit cillum fugiat", total_sessions: 83, status: "Active" },
-    { id: "6", name: "Coach Name", category: "Personal", voice_style: "Encouraging", voice_description: "Voluptate culpa dolor c", total_sessions: 41, status: "Active" },
-    { id: "7", name: "Coach Name", category: "Wellness", voice_style: "Warm, Calm", voice_description: "Amet culpa magna veni", total_sessions: 58, status: "Active" },
-    { id: "8", name: "Coach Name", category: "Human Resource", voice_style: "Straightforward", voice_description: "Labore in laboris elit co", total_sessions: 29, status: "Active" },
-  ]);
-
   const pageSize = 8;
-  const { sortKey, sortDirection, page, setPage, onSortChange, paginated, total, totalPages, start } =
-    useSortingPagination<CoachRow>(rows, pageSize);
+  const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<keyof CoachRow | undefined>(undefined);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | undefined>(undefined);
+
+  const { data, isLoading, isRefetching } = useCoachesList({ page, limit: pageSize });
+  const agents = useMemo(() => data?.data?.agents ?? [], [data]);
+  const pagination = data?.data?.pagination ?? { total: 0, page, page_size: pageSize };
+
+  type ToneItem = { id: string; name: string; display_name: string };
+  const { data: tonesResp } = useQuery({
+    queryKey: ["agents-settings", "tone"],
+    queryFn: () => getTones<{ Tones: ToneItem[] }>(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const toneOptions: MultiSelectOption[] = useMemo(() => {
+    const list = ((tonesResp?.data as { Tones?: ToneItem[] } | undefined)?.Tones ?? []);
+    return list.map((t) => ({ label: t.display_name || t.name, value: t.display_name || t.name }));
+  }, [tonesResp]);
+
+  const rows: CoachRow[] = useMemo(() => {
+    return agents.map((a) => ({
+      id: a.id,
+      name: a.name,
+      category: a.category_name ?? "",
+      voice_style: "",
+      voice_description: a.prompts?.[0]?.text ?? "",
+      total_sessions: 0,
+      status: (a.status?.toLowerCase() === "deactivated" ? "Deactivated" : "Active") as "Active" | "Deactivated",
+      type: a.type,
+    }));
+  }, [agents]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortKey || !sortDirection) return rows;
+    const copy = [...rows];
+    copy.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (typeof av === "number" && typeof bv === "number") return sortDirection === "asc" ? av - bv : bv - av;
+      const cmp = String(av).localeCompare(String(bv));
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return copy;
+  }, [rows, sortKey, sortDirection]);
+
+  const onSortChange = (key: string) => {
+    const k = key as keyof CoachRow;
+    if (sortKey === k) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"));
+    } else {
+      setSortKey(k);
+      setSortDirection("asc");
+    }
+    setPage(1);
+  };
 
   // Action handlers and dialog state
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<CoachRow | null>(null);
+
+  const createMutation = useCreateCoach();
+  const updateMutation = useUpdateCoach();
+  const deactivateMutation = useDeactivateCoach();
 
   const openAdd = () => setAddOpen(true);
   const openEdit = (row: CoachRow) => {
@@ -54,49 +106,67 @@ export default function CoachManagement() {
     setSelected(row);
     setDeactivateOpen(true);
   };
-  const openDelete = (row: CoachRow) => {
-    setSelected(row);
-    setDeleteOpen(true);
+
+
+  const handleAdd = async (values: CoachFormValues) => {
+    const body = {
+      name: values.name,
+      category_name: values.category,
+      prompt: values.voice_description,
+    };
+    try {
+      const resp = await createMutation.mutateAsync(body);
+      if (resp?.status) toast.success("Coach created successfully");
+      else toast.error(resp?.message || "Failed to create coach");
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to create coach";
+      toast.error(msg);
+      throw e;
+    }
+  };
+  const handleEdit = async (values: CoachFormValues) => {
+    if (!selected) return;
+    const body = {
+      agent_id: selected.id,
+      prompt: values.voice_description,
+      status: values.status,
+    };
+    try {
+      const resp = await updateMutation.mutateAsync(body);
+      if (resp?.status) toast.success("Coach updated successfully");
+      else toast.error(resp?.message || "Failed to update coach");
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to update coach";
+      toast.error(msg);
+      throw e;
+    }
+  };
+  const handleDeactivate = async () => {
+    if (!selected) return;
+    try {
+      const resp = await deactivateMutation.mutateAsync(selected.id);
+      if (resp?.status) toast.success("Coach deactivated successfully");
+      else toast.error(resp?.message || "Failed to deactivate coach");
+      setDeactivateOpen(false);
+    } catch (e: unknown) {
+      const ax = (e as AxiosError<{ message?: string }>);
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to deactivate coach";
+      toast.error(msg);
+    }
   };
 
-  const handleAdd = (values: CoachFormValues) => {
-    const newRow: CoachRow = {
-      id: Date.now().toString(),
-      name: values.name,
-      category: values.category,
-      voice_style: values.voice_style,
-      voice_description: values.voice_description,
-      total_sessions: 0,
-      status: "Active",
-    };
-    setRows((r) => [newRow, ...r]);
-  };
-  const handleEdit = (values: CoachFormValues) => {
-    if (!selected) return;
-    setRows((r) =>
-      r.map((row) =>
-        row.id === selected.id
-          ? { ...row, name: values.name, category: values.category, voice_style: values.voice_style, voice_description: values.voice_description }
-          : row
-      )
-    );
-  };
-  const handleDeactivate = () => {
-    if (!selected) return;
-    setRows((r) => r.map((row) => (row.id === selected.id ? { ...row, status: "Deactivated" } : row)));
-    setDeactivateOpen(false);
-  };
-  const handleDelete = () => {
-    if (!selected) return;
-    setRows((r) => r.filter((row) => row.id !== selected.id));
-    setDeleteOpen(false);
-  };
 
   const columns: Column<CoachRow>[] = [
     { key: "name", header: "Name", sortable: true },
     { key: "category", header: "Category", sortable: true },
     { key: "voice_style", header: "Voice Style", sortable: true },
-    { key: "voice_description", header: "Voice Description" },
+    {
+      key: "voice_description",
+      header: "Voice Description",
+      render: (row) => <div className="line-clamp-1">{row.voice_description.length>20 ?`${row.voice_description.slice(0, 20)}...` : row.voice_description}</div>,
+    },
     { key: "total_sessions", header: "Total Sessions", sortable: true },
     {
       key: "status",
@@ -119,12 +189,10 @@ export default function CoachManagement() {
           row={row}
           align="end"
           showView={false}
-          showEdit
+          showEdit={row.type !== "predefined"}
           showDeactivate
-          showDelete
           onEdit={() => openEdit(row)}
           onDeactivate={() => openDeactivate(row)}
-          onDelete={() => openDelete(row)}
         />
       ),
     },
@@ -136,18 +204,35 @@ export default function CoachManagement() {
         <ManagementHeader title="Coach Management" addLabel="Add Coach" onAdd={openAdd} />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
-          <DataTable
-            columns={columns}
-            data={paginated}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
-            onSortChange={onSortChange}
-          />
+          {isLoading || isRefetching ? (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: pageSize }).map((_, i) => (
+                <div key={i} className="grid grid-cols-6 gap-4 items-center">
+                  <Skeleton className="h-5" />
+                  <Skeleton className="h-5" />
+                  <Skeleton className="h-5" />
+                  <Skeleton className="h-5" />
+                  <Skeleton className="h-5" />
+                  <Skeleton className="h-5" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={sortedRows}
+              sortKey={sortKey as string}
+              sortDirection={sortDirection}
+              onSortChange={onSortChange}
+            />
+          )}
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>Show {Math.min(pageSize, total - start)} of {total} results</div>
-          <Pagination pageCount={totalPages} page={page} onPageChange={setPage} />
+          <div>
+            Show {agents.length > 0 ? (pagination.page - 1) * pagination.page_size + 1 : 0} to {Math.min(pagination.page * pagination.page_size, pagination.total)} of {pagination.total} results
+          </div>
+          <Pagination pageCount={Math.max(1, Math.ceil(pagination.total / pagination.page_size))} page={page} onPageChange={setPage} />
         </div>
       </div>
 
@@ -157,6 +242,8 @@ export default function CoachManagement() {
         onOpenChange={setAddOpen}
         mode="add"
         onSubmit={handleAdd}
+        submitLabel={createMutation.isPending ? "Adding Coach..." : "Add Coach"}
+        toneOptions={toneOptions}
       />
 
       {/* Edit Coach */}
@@ -164,10 +251,11 @@ export default function CoachManagement() {
         open={editOpen}
         onOpenChange={setEditOpen}
         mode="edit"
-        defaultValues={selected ?? undefined}
+        defaultValues={selected ? { ...selected, status: selected.status?.toLowerCase() } : undefined}
         onSubmit={handleEdit}
         title="Edit Coach"
-        submitLabel="Save Changes"
+        submitLabel={updateMutation.isPending ? "Updating Coach..." : "Save Changes"}
+        toneOptions={toneOptions}
       />
 
       {/* Deactivate Coach */}
@@ -183,22 +271,10 @@ export default function CoachManagement() {
         confirmLabel="Deactivate"
         confirmVariant="destructive"
         onConfirm={handleDeactivate}
+        confirmLoading={deactivateMutation.isPending}
       />
 
-      {/* Delete Coach */}
-      <ConfirmActionModal
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Delete Coach"
-        description="Are you sure you want to permanently delete this coach? This action cannot be undone."
-        fields={[
-          { label: "Coach Name", value: selected?.name ?? "" },
-          { label: "Category", value: selected?.category ?? "" },
-        ]}
-        confirmLabel="Delete"
-        confirmVariant="destructive"
-        onConfirm={handleDelete}
-      />
+ 
     </SuperAdminLayout>
   );
 }
