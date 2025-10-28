@@ -1,9 +1,13 @@
 "use client";
+
 import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { COACH_FORM_DEFAULTS, COACH_FORM_RULES, type CoachFormValues } from "./coachForm.constants";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { MultiSelectOption } from "@/components/ui/multi-select";
 
 export type CoachFormModalProps = {
   open: boolean;
@@ -13,6 +17,7 @@ export type CoachFormModalProps = {
   defaultValues?: Partial<CoachFormValues>;
   onSubmit: (values: CoachFormValues) => void | Promise<void>;
   submitLabel?: string;
+  toneOptions?: MultiSelectOption[];
 };
 
 export default function CoachFormModal({
@@ -23,8 +28,10 @@ export default function CoachFormModal({
   defaultValues,
   onSubmit,
   submitLabel,
+  toneOptions = [],
 }: CoachFormModalProps) {
   const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
+  
 
   return (
     <ModalFormFrame<CoachFormValues>
@@ -46,7 +53,7 @@ export default function CoachFormModal({
               <FormItem>
                 <FormLabel className="block text-xs">Coach Name *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Name" {...field} />
+                  <Input placeholder="Enter Name" disabled={mode === "edit"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -61,7 +68,7 @@ export default function CoachFormModal({
               <FormItem>
                 <FormLabel className="block text-xs">Category *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Category" {...field} />
+                  <Input placeholder="Enter Category" disabled={mode === "edit"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -76,12 +83,45 @@ export default function CoachFormModal({
               <FormItem className="md:col-span-2">
                 <FormLabel className="block text-xs">Voice Style</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Calm, Motivation" {...field} />
+                  <MultiSelect
+                    value={String(field.value || "")
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean)}
+                    onChange={(vals) => field.onChange(vals.join(", "))}
+                    options={toneOptions}
+                    placeholder="Select voice styles"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {mode === "edit" ? (
+            <FormField
+              control={form.control}
+              name="status"
+              rules={COACH_FORM_RULES.status}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormControl>
+                    <Select value={String(field.value || "active")} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="deactivated">Deactivated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
 
           <FormField
             control={form.control}
