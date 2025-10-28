@@ -1,94 +1,95 @@
 "use client";
 
-import { Pie, PieChart, Cell, type TooltipProps } from "recharts";
+import { Pie, PieChart } from "recharts";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
+  ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
+import { useDocumentTrend } from "@/hooks/super-admin/dashboard/useDocumentTrend";
 
 export const description = "A donut chart";
 
-const chartData = [
-  { browser: "Resume", Uploads: 275, color: "var(--chart-1)" },
-  { browser: "Health Data", Uploads: 200, color: "var(--chart-2)" },
-  { browser: "Job Description", Uploads: 187, color: "var(--chart-3)" },
-  { browser: "Notes", Uploads: 173, color: "var(--chart-4)" },
-  { browser: "Others", Uploads: 90, color: "var(--chart-5)" },
-];
-
 const chartConfig = {
-  Uploads: { label: "Uploads" },
+  Count: {
+    label: "Count",
+  },
 } satisfies ChartConfig;
 
-// ✅ Custom Tooltip component
-const CustomTooltip = ({
-  active,
-  payload,
-}: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    const data = payload[0];
-    return (
-      <div className="rounded-lg border bg-white px-3 py-2 shadow-sm">
-        <p className="text-sm font-semibold text-gray-900">{data.name}</p>
-        <p className="text-xs text-gray-600">
-          Uploads:{" "}
-          <span className="font-medium text-gray-800">{data.value}</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
 export function DocumentUploadTrend() {
+  const { data, isPending } = useDocumentTrend();
+
+  const chartData = useMemo(() => {
+    const colors = [
+      "var(--chart-1)",
+      "var(--chart-2)",
+      "var(--chart-3)",
+      "var(--chart-4)",
+      "var(--chart-5)",
+    ];
+    const items = Array.isArray(data?.data) ? data!.data! : [];
+    return items.map((item, index) => ({
+      category: item.category_name,
+      // Count: item.file_count ?? 0,
+      Count: 10,
+      fill: colors[index % colors.length],
+    }));
+  }, [data]);
+
   return (
-    <div className="w-full">
-      <CardHeader className="pb-12">
-        <CardTitle className="text-left text-lg font-semibold">
+    <div className="flex flex-col">
+      <CardHeader className="pb-0 text-left">
+        <CardTitle className="text-base font-semibold text-gray-800">
           Documents Uploads Trend
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col sm:flex-row items-center justify-between pb-4">
-        {/* Left Side - Chart */}
-        <div className="flex-1 flex justify-center">
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-square w-[250px] h-[250px]"
-          >
-            <PieChart width={250} height={250}>
-              <ChartTooltip cursor={false} content={<CustomTooltip />} />
+      <CardContent className="flex items-center justify-center p-6">
+        {isPending ? (
+          <Skeleton className="h-[250px] w-[250px] rounded-full" />
+        ) : (
+          <div className="flex flex-row items-center justify-center gap-8">
+            {/* Chart Section */}
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-square w-[230px] h-[230px]"
+            >
+              <PieChart width={230} height={230}>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Pie
+                  data={chartData}
+                  dataKey="Count"
+                  nameKey="category"
+                  innerRadius={70}
+                  outerRadius={100}
+                  paddingAngle={3}
+                />
+              </PieChart>
+            </ChartContainer>
 
-              <Pie
-                data={chartData}
-                dataKey="Uploads"
-                nameKey="browser"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-        </div>
-
-        {/* Right Side - Labels */}
-        <div className="flex flex-col justify-center gap-3 sm:ml-8 mt-4 sm:mt-0">
-          {chartData.map((item, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: item.color }}
-              ></div>
-              <span className="text-sm text-gray-700">{item.browser}</span>
+            <div className="flex flex-col space-y-3">
+              {chartData.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-2 text-sm text-gray-700"
+                >
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: item.fill }}
+                  ></span>
+                  <span>{item.category}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </CardContent>
     </div>
   );
