@@ -108,7 +108,7 @@ export default function AlexChatPanel({
             });
           }
         }
-        setMessages((prev) => [...prev, ...mapped]);
+        setMessages((prev) => [...prev, ...mapped.reverse()]);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load history");
@@ -436,7 +436,7 @@ export default function AlexChatPanel({
             <button
               aria-label="Toggle recording"
               onClick={toggleRecording}
-              disabled={true}
+              disabled={false}
               className={`absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center`}
               title={
                 isRecording
@@ -471,7 +471,7 @@ export default function AlexChatPanel({
                   handleSend();
                 }
               }}
-              disabled={!isConnected || true}
+              disabled={!isConnected}
             />
             {isRecording && (
               <div className="pointer-events-none absolute left-10 right-28 top-1/2 -translate-y-1/2 flex items-end gap-1 h-5">
@@ -495,7 +495,7 @@ export default function AlexChatPanel({
               <Button
                 type="button"
                 onClick={toggleAudioPlayback}
-                disabled={true}
+                disabled={false}
                 variant="secondary"
                 className="h-11 px-3"
               >
@@ -509,7 +509,7 @@ export default function AlexChatPanel({
             <Button
               type="button"
               onClick={handleSend}
-              disabled={!isConnected || !message.trim() || true}
+              disabled={!isConnected || !message.trim()}
               className="h-11 px-3 bg-blue-primary hover:bg-blue-primary/90"
             >
               <Send className="size-5" />
