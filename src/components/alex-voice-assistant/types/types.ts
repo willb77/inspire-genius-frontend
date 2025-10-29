@@ -18,7 +18,7 @@ export interface AlexResponse {
 export type ChatMessage = {
   id: string;
   text: string;
-  sender: "bot" | "user" | "system";
+  sender: "assistant" | "user" | "system";
   timestamp: Date;
   isProcessing?: boolean;
   type?: "processing";
