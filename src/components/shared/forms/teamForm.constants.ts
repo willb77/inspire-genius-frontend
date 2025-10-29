@@ -25,7 +25,9 @@ export const TEAM_FORM_RULES = {
   email: {
     required: "Email is required",
     pattern: {
-      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      // Bounded, simple email pattern to avoid catastrophic backtracking
+      // local-part up to 64, domain up to 253, simple TLD 2+
+      value: /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}$/,
       message: "Enter a valid email",
     },
   },
