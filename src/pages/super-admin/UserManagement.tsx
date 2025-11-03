@@ -13,110 +13,27 @@ import UserFormModal from "@/components/shared/forms/UserFormModal";
 import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
-import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement";
 import type { UserManagementUser } from "@/services/super-admin/user-management/user-management.service";
 import {
-  inviteUser,
-  type InviteUserPayload,
-  updateUserByEmail,
-  type UpdateUserPayload,
-  deleteUserByEmail,
-  resendInvitation,
-} from "@/services/super-admin/user-management/user-management.service";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+  useUserManagement,
+  useInviteUser,
+  useUpdateUser,
+  useDeleteUser,
+  useResendInvitation,
+} from "@/hooks/super-admin/user-management/useUserManagement";
+import { type InviteUserPayload, type UpdateUserPayload } from "@/services/super-admin/user-management/user-management.service";
 import { toast } from "sonner";
-
-type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  status: "Active" | "Awaiting" | "Deactivated";
-  invitation_id?: string | null;
-};
+import type { UserRow } from "@/types/super-admin/user-management";
 
 export default function UserManagement() {
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
   const { data: usersResp } = useUserManagement({ page, limit: pageSize });
-
-  const queryClient = useQueryClient();
-  const inviteMutation = useMutation({
-    mutationFn: (payload: InviteUserPayload) => inviteUser(payload),
-    onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User invitation sent successfully.");
-      // refresh users list
-      queryClient.invalidateQueries({
-        queryKey: ["user-management"],
-        exact: false,
-      });
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ??
-        error?.message ??
-        "Failed to invite user";
-      toast.error(msg);
-    },
-  });
-  const updateMutation = useMutation({
-    mutationFn: (vars: { email: string; payload: UpdateUserPayload }) =>
-      updateUserByEmail(vars.email, vars.payload),
-    onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User updated successfully.");
-      queryClient.invalidateQueries({
-        queryKey: ["user-management"],
-        exact: false,
-      });
-      setModalMode(null);
-      setSelected(null);
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ??
-        error?.message ??
-        "Failed to update user";
-      toast.error(msg);
-    },
-  });
-  const deleteMutation = useMutation({
-    mutationFn: (email: string) => deleteUserByEmail(email),
-    onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User deleted successfully.");
-      queryClient.invalidateQueries({
-        queryKey: ["user-management"],
-        exact: false,
-      });
-      setConfirmMode(null);
-      setSelected(null);
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ??
-        error?.message ??
-        "Failed to delete user";
-      toast.error(msg);
-    },
-  });
-  const resendMutation = useMutation({
-    mutationFn: (invitation_id: string) => resendInvitation(invitation_id),
-    onSuccess: (resp) => {
-      toast.success(resp?.message ?? "Invitation resent successfully.");
-      queryClient.invalidateQueries({
-        queryKey: ["user-management"],
-        exact: false,
-      });
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ??
-        error?.message ??
-        "Failed to resend invitation";
-      toast.error(msg);
-    },
-  });
+  const inviteMutation = useInviteUser();
+  const updateMutation = useUpdateUser();
+  const deleteMutation = useDeleteUser();
+  const resendMutation = useResendInvitation();
 
   const mappedRows = useMemo<UserRow[]>(() => {
     const users: UserManagementUser[] = usersResp?.data?.users ?? [];
@@ -155,22 +72,19 @@ export default function UserManagement() {
   // dialog state
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
-  const [confirmMode, setConfirmMode] = useState<
-    "deactivate" | "delete" | null
-  >(null);
+  const [confirmMode, setConfirmMode] = useState<"deactivate" | "delete" | null>(
+    null
+  );
 
   const openAdd = () => setModalMode("add");
-
   const openEdit = (row: UserRow) => {
     setSelected(row);
     setModalMode("edit");
   };
-
   const openConfirmDeactivate = (row: UserRow) => {
     setSelected(row);
     setConfirmMode("deactivate");
   };
-
   const openConfirmDelete = (row: UserRow) => {
     setSelected(row);
     setConfirmMode("delete");
@@ -189,6 +103,7 @@ export default function UserManagement() {
       },
     });
   };
+
   const handleEdit = (values: UserFormValues) => {
     if (!selected?.email) return;
     const payload: UpdateUserPayload = {
@@ -196,14 +111,24 @@ export default function UserManagement() {
       last_name: values.last_name,
     };
     updateMutation.mutate({ email: selected.email, payload });
+    setModalMode(null);
+    setSelected(null);
   };
+
   const handleDeactivate = () => {
     setConfirmMode(null);
   };
+
   const handleDelete = () => {
     if (!selected?.email) return;
-    deleteMutation.mutate(selected.email);
+    deleteMutation.mutate(selected.email, {
+      onSuccess: () => {
+        setConfirmMode(null);
+        setSelected(null);
+      },
+    });
   };
+
   const handleResend = (row: UserRow) => {
     const invId = row.invitation_id;
     if (!invId) {
