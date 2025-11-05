@@ -55,7 +55,7 @@ export default function OnboardingDetailsOne() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4">
+    <div data-tour="onboarding-details-one" className="min-h-screen w-full flex flex-col items-center justify-center p-4">
       <div className="w-full">
         <Logo />
       </div>

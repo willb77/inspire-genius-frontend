@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getAlexDeviceId, getAlexHistoryBlob, type AlexHistoryParams, getAlexHistoryList, type AlexHistoryListParams } from "@/services/alex/chat.service";
+import { getAlexDeviceId, getAlexHistoryList, type AlexHistoryListParams } from "@/services/alex/chat.service";
 
 export function useAlexDeviceId(enabled: boolean) {
   return useQuery({
@@ -10,11 +10,7 @@ export function useAlexDeviceId(enabled: boolean) {
   });
 }
 
-export function useAlexExportHistory() {
-  return useMutation({
-    mutationFn: async (params: AlexHistoryParams) => getAlexHistoryBlob(params),
-  });
-}
+
 
 export function useAlexHistoryList(params: AlexHistoryListParams = { limit: 100, offset: 0 }, enabled = false) {
   return useQuery({

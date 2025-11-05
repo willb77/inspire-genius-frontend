@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 type Agent = { id: string; name: string }
 
-export default function ExploreCoachesNames({ agents, isLoading }: { agents: Agent[]; isLoading: boolean }) {
+export default function ExploreCoachesNames({ agents, isLoading, onSelect }: { agents: Agent[]; isLoading: boolean; onSelect?: (agent: Agent) => void }) {
 
   if (isLoading) {
     return (
@@ -21,7 +21,9 @@ export default function ExploreCoachesNames({ agents, isLoading }: { agents: Age
         <Button
           key={a.id}
           variant="outline"
+          disabled={true}
           className="justify-center bg-brown-10 hover:bg-brown-10/80 hover:text-black-250 text-black-250 rouned-xl border-none"
+          onClick={() => onSelect?.(a)}
         >
           {a.name}
         </Button>

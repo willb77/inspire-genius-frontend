@@ -23,14 +23,7 @@ export type AlexHistoryParams = {
   end_date?: string;   // YYYY-MM-DD
 };
 
-export async function getAlexHistoryBlob(params: AlexHistoryParams) {
-  const { device_key, limit = 100, offset = 0, start_date, end_date } = params;
-  const res = await api.get("/v1/chat/AlexChat/history", {
-    params: { device_key, limit, offset, start_date, end_date },
-    responseType: "blob",
-  });
-  return res;
-}
+
 
 // History list (JSON) with limit/offset and optional device_key
 export type AlexHistoryListParams = { limit?: number; offset?: number; device_key?: string };
@@ -39,5 +32,34 @@ export async function getAlexHistoryList(params: AlexHistoryListParams = {}) {
   const { data } = await api.get("/v1/chat/AlexChat/history", {
     params: { limit, offset, device_key },
   });
+  return data;
+}
+
+// Download chat export (JSON response containing base64 file data)
+export type AlexDownloadParams = {
+  device_key: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  limit?: number;
+  offset?: number;
+};
+
+export type AlexDownloadResponse = {
+  status?: boolean;
+  message?: string;
+  base64_pdf?: string;
+  base64_csv?: string;
+  mime_type?: string;
+  file_name?: string;
+  data?: {
+    base64_pdf?: string;
+    base64_csv?: string;
+    mime_type?: string;
+    file_name?: string;
+  };
+};
+
+export async function downloadAlexChat(params: AlexDownloadParams) {
+  const { data } = await api.get<AlexDownloadResponse>("/v1/chat/AlexChat/download", { params });
   return data;
 }

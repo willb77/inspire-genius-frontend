@@ -23,14 +23,11 @@ import type { ChatMessage } from "@/components/alex-voice-assistant/types/types"
 import DemoAudioService from "@/services/demoAudioService";
 import EmptyStateCard from "@/components/alex/EmptyStateCard";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
-import {
-  useAlexDeviceId,
-  useAlexExportHistory,
-  useAlexHistoryListOnce,
-} from "@/hooks/alex/useAlexChat";
+import { useAlexDeviceId, useAlexHistoryListOnce } from "@/hooks/alex/useAlexChat";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { downloadAlexChat } from "@/services/alex/chat.service";
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -61,7 +58,6 @@ export default function AlexChatPanel({
   // Alex APIs: device id + export
   const { data: deviceResp } = useAlexDeviceId(true);
   const deviceKey = (deviceResp?.device_id || "").toString();
-  const exportMutation = useAlexExportHistory();
   const historyMutation = useAlexHistoryListOnce();
 
   type AlexHistoryParty = { content?: string; created_at?: string } | undefined;
@@ -118,6 +114,49 @@ export default function AlexChatPanel({
   const handleOpenExport = useCallback(() => {
     setExportOpen(true);
   }, []);
+
+  const handleExportChat = useCallback(async (fromDate: Date, toDate: Date) => {
+    if (!deviceKey) {
+      toast.error("Alex device id not available");
+      return;
+    }
+    const fmt = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+    try {
+      const resp = await downloadAlexChat({
+        device_key: deviceKey,
+        start_date: fmt(fromDate),
+        end_date: fmt(toDate),
+        limit: 100,
+        offset: 0,
+      });
+   if (!resp || !resp.status) return;
+
+      const base64 = resp.base64_pdf || resp.base64_csv;
+      const mime = resp.mime_type || "application/pdf";
+      const fileName = resp.file_name || `alex-chat-${fmt(fromDate)}-to-${fmt(toDate)}.pdf`;
+      if (!base64) return;
+      const byteChars = atob(base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Failed to export conversation", e);
+    }
+  }, [deviceKey]);
 
   // Smoothly scroll to bottom when messages change or history finishes loading
   useEffect(() => {
@@ -343,7 +382,7 @@ export default function AlexChatPanel({
                   <Button
                     variant="secondary"
                     onClick={handleOpenExport}
-                    disabled={true}
+                    disabled={false}
                     className="size-8 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground p-0"
                     aria-label="Export chat"
                   >
@@ -520,56 +559,7 @@ export default function AlexChatPanel({
       <ExportChatModal
         open={exportOpen}
         onOpenChange={setExportOpen}
-        onExport={async (fromDate, toDate) => {
-          if (!deviceKey) {
-            toast.error("Alex device id not available");
-            return;
-          }
-          const fmt = (d: Date) => {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-            return `${y}-${m}-${day}`;
-          };
-          try {
-            const res = await exportMutation.mutateAsync({
-              device_key: deviceKey,
-              limit: 100,
-              offset: 0,
-              start_date: fmt(fromDate),
-              end_date: fmt(toDate),
-            });
-            const blob = res.data as Blob;
-            const contentType =
-              res.headers?.["content-type"] || "application/pdf";
-            const url = window.URL.createObjectURL(
-              new Blob([blob], { type: contentType })
-            );
-            const a = document.createElement("a");
-            a.href = url;
-            const cd = res.headers?.["content-disposition"] as
-              | string
-              | undefined;
-            const match =
-              cd &&
-              cd.match(/filename\*=UTF-8''([^;\s]+)|filename="?([^";]+)"?/i);
-            const filename = (
-              match?.[1] ||
-              match?.[2] ||
-              `alex-chat-${fmt(fromDate)}-to-${fmt(toDate)}.pdf`
-            ).toString();
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            toast.success("Export started");
-          } catch (err) {
-            const msg = (err as Error)?.message || "Failed to export Alex chat";
-            toast.error(msg);
-            throw err;
-          }
-        }}
+        onExport={handleExportChat}
       />
     </Sheet>
   );
