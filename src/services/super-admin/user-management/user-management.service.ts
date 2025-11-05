@@ -1,8 +1,6 @@
 import { api } from '@/lib/axios'
 import type { BaseApiResponse } from '@/types/api'
 
-// ------------------ User Types ------------------
-
 export type UserManagementUser = {
   user_id: string
   email: string
@@ -38,8 +36,6 @@ export type UserManagementFilters = {
   search?: string | null
 }
 
-// ------------------ GET USERS ------------------
-
 export type GetUsersData = {
   users: UserManagementUser[]
   pagination: UserManagementPagination
@@ -63,8 +59,6 @@ export async function getUsers(params: GetUsersParams = {}) {
   const { data } = await api.get<GetUsersResponse>('/v1/user-management/users', { params })
   return data
 }
-
-// ------------------ INVITE USER ------------------
 
 export type InviteUserPayload = {
   email: string
@@ -112,8 +106,6 @@ export async function updateUserByEmail(user_email: string, payload: UpdateUserP
   return data
 }
 
-// ------------------ DELETE USER ------------------
-
 export type DeleteUserData = {
   email: string
   deletion_type: 'hard_delete' | 'soft_delete' | string
@@ -130,8 +122,6 @@ export async function deleteUserByEmail(user_email: string) {
   )
   return data
 }
-
-// ------------------ RESEND INVITATION ------------------
 
 export type ResendInvitationData = {
   invitation_id: string

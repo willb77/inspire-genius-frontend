@@ -21,15 +21,22 @@ import {
   useDeleteUser,
   useResendInvitation,
 } from "@/hooks/super-admin/user-management/useUserManagement";
-import { type InviteUserPayload, type UpdateUserPayload } from "@/services/super-admin/user-management/user-management.service";
+import {
+  type InviteUserPayload,
+  type UpdateUserPayload,
+} from "@/services/super-admin/user-management/user-management.service";
 import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserManagement() {
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
-  const { data: usersResp } = useUserManagement({ page, limit: pageSize });
+  const { data: usersResp, isLoading } = useUserManagement({
+    page,
+    limit: pageSize,
+  });
   const inviteMutation = useInviteUser();
   const updateMutation = useUpdateUser();
   const deleteMutation = useDeleteUser();
@@ -37,11 +44,6 @@ export default function UserManagement() {
 
   const mappedRows = useMemo<UserRow[]>(() => {
     const users: UserManagementUser[] = usersResp?.data?.users ?? [];
-
-    const toName = (u: UserManagementUser) =>
-      u.full_name ||
-      [u.first_name, u.last_name].filter(Boolean).join(" ") ||
-      u.email;
 
     return users.map((u) => {
       let status: "Active" | "Deactivated" | "Awaiting";
@@ -56,7 +58,7 @@ export default function UserManagement() {
 
       return {
         id: u.user_id,
-        name: toName(u),
+        name: u.full_name ?? "",
         email: u.email,
         first_name: u.first_name,
         last_name: u.last_name,
@@ -72,9 +74,9 @@ export default function UserManagement() {
   // dialog state
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
-  const [confirmMode, setConfirmMode] = useState<"deactivate" | "delete" | null>(
-    null
-  );
+  const [confirmMode, setConfirmMode] = useState<
+    "deactivate" | "delete" | null
+  >(null);
 
   const openAdd = () => setModalMode("add");
   const openEdit = (row: UserRow) => {
@@ -195,22 +197,46 @@ export default function UserManagement() {
           addLabel="Add User"
           onAdd={openAdd}
         />
+
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
-          <DataTable columns={columns} data={mappedRows} />
+          {isLoading ? (
+            <div className="space-y-2 p-4 animate-pulse">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-4 gap-4 items-center border-b border-border py-2"
+                >
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                </div>
+              ))}
+            </div>
+          ) : mappedRows.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+              No users found.
+            </div>
+          ) : (
+            <DataTable columns={columns} data={mappedRows} />
+          )}
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            Show {mappedRows.length} of {total} results
+        {!isLoading && mappedRows.length > 0 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>
+              Showing {mappedRows.length} of {total} results
+            </div>
+            <Pagination
+              pageCount={totalPages}
+              page={page}
+              onPageChange={setPage}
+            />
           </div>
-          <Pagination
-            pageCount={totalPages}
-            page={page}
-            onPageChange={setPage}
-          />
-        </div>
+        )}
       </div>
 
+      {/* ✅ Modals */}
       <UserFormModal
         open={!!modalMode}
         onOpenChange={(open) => {

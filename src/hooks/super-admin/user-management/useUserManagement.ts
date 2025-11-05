@@ -16,9 +16,11 @@ import { toast } from "sonner";
 /**
  * Fetch all users
  */
+type SimpleQueryOptions = Omit<UseQueryOptions<GetUsersResponse, AxiosError>, "queryKey" | "queryFn">;
+
 export function useUserManagement(
   params: GetUsersParams,
-  options?: UseQueryOptions<GetUsersResponse, AxiosError>
+  options?: SimpleQueryOptions
 ) {
   return useQuery<GetUsersResponse, AxiosError>({
     queryKey: ["user-management", params],
