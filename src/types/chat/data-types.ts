@@ -19,14 +19,14 @@ export type ChatMessage =
   | {
       id: string;
       kind: "text";
-      direction: "in" | "out";
+      sender: "assistant" | "user";
       text: string;
       time: string;
     }
   | {
       id: string;
       kind: "doc";
-      direction: "in" | "out";
+      sender: "assistant" | "user";
       docName: string;
       docKind: DocKind;
       time: string;

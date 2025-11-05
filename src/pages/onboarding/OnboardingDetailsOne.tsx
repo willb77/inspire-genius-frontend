@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
 import {
   Form,
   FormControl,
@@ -14,16 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/shared/Logo";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { format, parse, isValid } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { FormValues } from "@/types/onboarding";
 import { useCreateProfileMutation } from "@/hooks/onboarding/useCreateProfile";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
-  const [dobOpen, setDobOpen] = useState(false);
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -55,7 +51,7 @@ export default function OnboardingDetailsOne() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4">
+    <div data-tour="onboarding-details-one" className="min-h-screen w-full flex flex-col items-center justify-center p-4">
       <div className="w-full">
         <Logo />
       </div>
@@ -120,38 +116,15 @@ export default function OnboardingDetailsOne() {
                 rules={{ required: "Date of birth is required" }}
                 render={({ field }) => (
                   <FormItem className="relative w-full">
-                    <Popover open={dobOpen} onOpenChange={setDobOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          type="button"
-                          className="!h-11 w-full justify-start rounded-md border border-gray-10 text-left font-normal relative pr-10"
-                        >
-                          {field.value ? (
-                            <span>{field.value}</span>
-                          ) : (
-                            <span className="text-muted-foreground">Date of Birth</span>
-                          )}
-                          <CalendarIcon className="h-4 w-4 opacity-70 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={(() => { const d = field.value ? parse(field.value, "d LLL yyyy", new Date()) : undefined; return d && isValid(d) ? d : undefined })()}
-                          onSelect={(date) => {
-                            const v = date ? format(date, "d LLL yyyy") : "";
-                            field.onChange(v);
-                            if (date) setDobOpen(false);
-                          }}
-                          captionLayout="dropdown"
-                          startMonth={new Date(1900, 0, 1)}
-                          endMonth={new Date()}
-                          disabled={(date) => date > new Date()}
-                          autoFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      value={field.value}
+                      onChange={(v) => {
+                        field.onChange(v);
+                      }}
+                      placeholder="Date of Birth"
+                      minDate={new Date(1900, 0, 1)}
+                      maxDate={new Date()}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

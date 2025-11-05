@@ -21,6 +21,7 @@ export type TourContextValue = {
   stop: () => void;
   isRunning: boolean;
   step: TourStep | null;
+  resolveFrontendText: (q: { selector?: string; routeKey?: string }) => { id?: string; title?: string; description?: string } | null;
 };
 
 export const TourContext = createContext<TourContextValue | null>(null);

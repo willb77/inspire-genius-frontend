@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { PencilLine, ChevronDown } from "lucide-react";
+import { SquarePen, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatHistoryProps } from "@/types/chat";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ChatHistory({ groups, selectedId, onSelect, className }: ChatHistoryProps) {
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading }: ChatHistoryProps) {
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -14,12 +15,21 @@ export default function ChatHistory({ groups, selectedId, onSelect, className }:
 
   return (
     <div className={cn("bg-white rounded-2xl border shadow-sm p-4 w-full", className)}>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-1">
         <h3 className="text-lg font-semibold">History</h3>
-        <button aria-label="Edit History" className="text-muted-foreground hover:text-foreground">
-          <PencilLine className="size-4" />
+        <button
+          aria-label="New Conversation"
+          disabled={true}
+          className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
+          onClick={() => {
+             onCreateNewConversation?.();
+          }}
+          title={"Start a new conversation"}
+        >
+          New Chat <SquarePen className="size-4" />
         </button>
       </div>
+
       <div className="mb-3">
         <Input
           placeholder="Search.."
@@ -29,6 +39,32 @@ export default function ChatHistory({ groups, selectedId, onSelect, className }:
         />
       </div>
       <div className="space-y-4 overflow-auto max-h-[calc(100vh-14rem)]">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[0,1].map((g) => (
+              <div key={g}>
+                <div className="flex items-center gap-2 text-sm text-foreground/80 mb-2">
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <ul className="mt-2 space-y-1">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <li key={`sk-${g}-${i}`}>
+                      <div className="w-full rounded-xl px-3 py-2 hover:bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <div className="mt-1">
+                          <Skeleton className="h-3 w-56" />
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {groups.map((group) => {
           const isOpen = openGroups[group.label] ?? true;
           const filtered = group.items.filter(
@@ -53,6 +89,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className }:
                     <li key={it.id}>
                       <button
                         type="button"
+                        disabled={true}
                         onClick={() => onSelect?.(it.id)}
                         className={cn(
                           "w-full text-left rounded-xl px-3 py-2",

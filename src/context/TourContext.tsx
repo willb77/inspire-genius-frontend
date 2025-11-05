@@ -209,6 +209,73 @@ const DEFAULT_STEPS: TourStep[] = [
     route: ROUTES.HELP,
     tooltipClassName: "left-[25%] bottom-20",
   },
+  {
+    selector: '[data-tour="onboarding-one"]',
+    title: "Empower Your Business",
+    description:
+      "Leverage AI to streamline operations, optimize strategy, and identify growth opportunities, ultimately helping you empower your business to reach its full potential.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING.ONE,
+      tooltipClassName: "right-[15%] bottom-20",
+      imageClassName: "right-[5%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="onboarding-two"]',
+    title: "Elevate Your Knowledge",
+    description:
+      "Go beyond simple answers. We analyze your data and industry trends to elevate your knowledge, giving you a competitive edge in every interaction.",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING.TWO,
+    tooltipClassName: "left-[20%] bottom-20",
+    imageClassName: "left-[5%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="onboarding-three"]',
+    title: "Strengthen connections",
+    description:
+      "The platform provides actionable insights and communication strategies to foster and strengthen connections, turning contacts into advocates and partners.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING.THREE,
+    tooltipClassName: "right-[15%] bottom-20",
+    imageClassName: "right-[5%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="onboarding-four"]',
+    title: "Smart decisions with AI",
+    description:
+      "We synthesize complex information instantly, allowing you to move forward with confidence and clarity, ensuring you make the smart decisions that lead to success.",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING.FOUR,
+    tooltipClassName: "left-[20%] bottom-20",
+    imageClassName: "left-[5%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="onboarding-five"]',
+    title: "Upload Documents",
+    description:
+      "Begin by securely uploading your key documents. This instantly builds a personal knowledge base for powerful, customized AI coaching.",
+    image: "/images/tour/left-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING.FIVE,
+    tooltipClassName: "right-[15%] bottom-20",
+    imageClassName: "right-[5%] bottom-20 w-24 md:w-28 lg:w-48",
+  },
+  {
+    selector: '[data-tour="onboarding-details-one"]',
+    title: "Tell us more about you",
+    description:
+      "Fill the forms below to add more details. The more we know about your unique journey, the better the AI Coach can serve you. Share the details that make your goals personal and actionable",
+    image: "/images/tour/right-alex.svg",
+    padding: 12,
+    route: ROUTES.ONBOARDING_DETAILS.ONE,
+    tooltipClassName: "left-[0%] top-10",
+    imageClassName: "left-[0%] top-44 w-24 md:w-28 lg:w-48",
+  },
+ 
 ];
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
@@ -318,9 +385,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const start = useCallback((newSteps?: TourStep[]) => {
     const toUse = newSteps?.length ? newSteps : (apiMappedSteps.length ? apiMappedSteps : DEFAULT_STEPS);
     setSteps(toUse);
-    setIndex(0);
+    // If we are on an onboarding route, start from its matching step
+    const isOnboardingRoute = location.pathname.startsWith('/onboarding');
+    if (isOnboardingRoute) {
+      const idx = toUse.findIndex((s) => !!s.route && (location.pathname === s.route || location.pathname.startsWith(s.route)));
+      setIndex(idx >= 0 ? idx : 0);
+    } else {
+      setIndex(0);
+    }
     setOpen(true);
-  }, [apiMappedSteps]);
+  }, [apiMappedSteps, location.pathname]);
 
   const stop = useCallback(() => {
     setOpen(false);
@@ -328,6 +402,40 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     setSteps([]);
     setRect(null);
   }, []);
+
+  // Resolve frontend text for a given selector/routeKey using the same API data TourContext consumes
+  const resolveFrontendText = useCallback(
+    (q: { selector?: string; routeKey?: string }) => {
+      type ApiItem = {
+        id: string;
+        selector: string;
+        routeKey: string;
+        title: string;
+        description: string;
+      };
+      type ApiShape = {
+        data?: {
+          frontend_texts?: ApiItem[];
+        };
+      };
+      const items: ApiItem[] = (frontendText as ApiShape)?.data?.frontend_texts ?? [];
+      if (!items.length) return null;
+      let found: ApiItem | undefined;
+      if (q.selector && q.routeKey) {
+        found = items.find((it) => it.selector === q.selector && it.routeKey === q.routeKey);
+      }
+      if (!found && q.selector) {
+        found = items.find((it) => it.selector === q.selector);
+      }
+      if (!found && q.routeKey) {
+        found = items.find((it) => it.routeKey === q.routeKey);
+      }
+      return found
+        ? { id: found.id, title: found.title, description: found.description }
+        : null;
+    },
+    [frontendText]
+  );
 
   // Close on Escape
   useEffect(() => {
@@ -376,8 +484,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
   const value = useMemo<TourContextValue>(
-    () => ({ start, stop, isRunning: open, step: activeStep }),
-    [start, stop, open, activeStep]
+    () => ({ start, stop, isRunning: open, step: activeStep, resolveFrontendText }),
+    [start, stop, open, activeStep, resolveFrontendText]
   );
 
   return (
@@ -529,10 +637,10 @@ function Overlay({
                     }
                     onClick={() => {
                       if (!step.id) return;
-                      if (phase === "speaking") return void pause();
-                      if (phase === "paused") return void resume();
+                      if (phase === "speaking") { pause(); return; }
+                      if (phase === "paused") { resume(); return; }
                       if (phase === "starting") return;
-                      void play(step.id);
+                      play(step.id);
                     }}
                     className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === "starting" ? "animate-pulse" : ""}`}
                     disabled={phase === "starting" || !step.id}
@@ -559,7 +667,7 @@ function Overlay({
                       aria-label="Replay audio"
                       onClick={() => {
                         if (!step.id) return;
-                        void replay(step.id);
+                        replay(step.id);
                       }}
                       className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100"
                       disabled={phase === "starting"}

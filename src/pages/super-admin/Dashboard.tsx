@@ -2,13 +2,19 @@
 
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Calendar as CalendarIcon, Building2, Handshake, BookOpen } from "lucide-react";
+import {
+  User,
+  Calendar as CalendarIcon,
+  Building2,
+  Handshake,
+  BookOpen,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import LicenseExpiring from "@/components/super-admin/dashboard/LicenseExpiring";
 import AvgTimeSpentChart from "@/components/super-admin/dashboard/AvgTimeSpentChart";
 import HelpAndSupport from "@/components/super-admin/dashboard/HelpAndSupport";
 import { DocumentUploadTrend } from "@/components/super-admin/dashboard/DocumentUploadTrend";
-import OrganizationStatCard from "@/components/super-admin/dashboard/OrganizationCards";
+import DashboardSystem from "@/components/super-admin/dashboard/DashboardSystem";
 import { UsedCoachesChartNew } from "@/components/super-admin/dashboard/UsedCoachesChartNew";
 import { useMemo, useState } from "react";
 import {
@@ -30,12 +36,6 @@ export default function SuperAdminDashboard() {
   }, []);
   const [fromDate, setFromDate] = useState<Date>(thirtyDaysAgo);
   const [toDate, setToDate] = useState<Date>(today);
-
-  const orgStats = [
-    { title: "Total Organisations", value: "150,000", icon: <Building2 className="h-6 w-6 text-gray-600" /> },
-    { title: "Businesses Orgs", value: "56,000", icon: <Handshake className="h-6 w-6 text-gray-600" /> },
-    { title: "Educational Orgs", value: "24,012", icon: <BookOpen className="h-6 w-6 text-gray-600" /> },
-  ];
 
   return (
     <SuperAdminLayout>
@@ -119,10 +119,19 @@ export default function SuperAdminDashboard() {
         {/* Top Row: Organization Cards and Average Time Spent Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Organization Overview Cards */}
-          <div className="space-y-4 bg-gray-20 p-2">
-            {orgStats.map((item) => (
-              <OrganizationStatCard key={item.title} title={item.title} value={item.value} icon={item.icon} />
-            ))}
+          <div className="space-y-4 bg-gray-20 p-4 rounded-lg">
+            <DashboardSystem
+              title="Total Organisations"
+              icon={<Building2 className="h-6 w-6 text-gray-600" />}
+            />
+            <DashboardSystem
+              title="Businesses Orgs"
+              icon={<Handshake className="h-6 w-6 text-gray-600" />}
+            />
+            <DashboardSystem
+              title="Educational Orgs"
+              icon={<BookOpen className="h-6 w-6 text-gray-600" />}
+            />
           </div>
 
           {/* Average Time Spent Chart */}
@@ -161,4 +170,3 @@ export default function SuperAdminDashboard() {
     </SuperAdminLayout>
   );
 }
- 

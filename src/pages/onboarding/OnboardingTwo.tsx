@@ -4,6 +4,7 @@ import { ROUTES } from "@/constants/routes";
 
 export default function OnboardingTwo() {
   return (
+    <div data-tour="onboarding-two">
     <OnboardingScreen
       imageSrc="/images/onboarding/onboarding-two.png"
       imageAlt="Onboarding step two"
@@ -21,5 +22,6 @@ export default function OnboardingTwo() {
         </>
       }
     />
+    </div>
   );
 }

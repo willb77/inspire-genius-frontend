@@ -260,6 +260,7 @@ export default function Documents() {
             <Button
               className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90"
               onClick={() => setUploadOpen(true)}
+              disabled={true}
             >
               Upload Document
               <Upload className="size-4 ml-2" />
@@ -278,7 +279,7 @@ export default function Documents() {
                     <Button
                       variant="secondary"
                       className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
-                      disabled={deleteMutation.isPending}
+                      disabled={deleteMutation.isPending || true}
                     >
                       Delete
                       <Trash2 className="size-4 ml-2" />
@@ -322,7 +323,7 @@ export default function Documents() {
                 month={month}
                 onMonthChange={(m) => setMonth(m)}
                 captionLayout="dropdown"
-                initialFocus
+                autoFocus
               />
             </PopoverContent>
           </Popover>
@@ -441,7 +442,7 @@ export default function Documents() {
                               <button
                                 title="Delete"
                                 className="text-red-600 hover:text-red-700"
-                                disabled={deleteMutation.isPending}
+                                disabled={deleteMutation.isPending || true}
                               >
                                 <Trash2 className="size-4" />
                               </button>
@@ -455,7 +456,7 @@ export default function Documents() {
                             title="Download"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={() => void handleDownload(d)}
-                            disabled={downloadingId === d.id}
+                            disabled={downloadingId === d.id || true}
                           >
                             {downloadingId === d.id ? (
                               <Loader2 className="size-4 animate-spin" />
@@ -467,6 +468,7 @@ export default function Documents() {
                             title="View"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={() => handleView(d)}
+                            disabled={true}
                           >
                             <Eye className="size-4" />
                           </button>
