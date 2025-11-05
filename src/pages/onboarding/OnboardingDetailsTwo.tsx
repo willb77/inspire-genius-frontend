@@ -2,13 +2,14 @@ import ProgressBar from "@/components/onboarding/ProgressBar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
-import { ChevronRight, HelpCircle, Volume2, Pause, Loader2 } from "lucide-react";
+import { ChevronRight, HelpCircle, Volume2, Pause, Loader2, RotateCcw } from "lucide-react";
 import CoachCard from "@/components/onboarding/CoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import { Logo } from "@/components/shared/Logo";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTourSpeech } from "@/hooks/useTourSpeech";
 import { useAuth } from "@/context/useAuth";
+import { useTour } from "@/context/useTour";
 import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function OnboardingDetailsTwo() {
   const navigate = useNavigate();
   const { user, markOnboardingCompleted } = useAuth();
+  const { resolveFrontendText } = useTour();
   const [showTour, setShowTour] = useState(false);
   const [pendingDest, setPendingDest] = useState<string | null>(null);
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
@@ -27,8 +29,15 @@ export default function OnboardingDetailsTwo() {
     coachRefs.current[index] = el;
   };
   const [rects, setRects] = useState<DOMRect[]>([]);
-  const { phase, toggle, stop, voices } = useTextToSpeech();
-  const tooltipText = "We highlighted key elements: You can edit coaches anytime.";
+  const { phase, play, pause, resume, replay, hasCached, stop: tourStop } = useTourSpeech();
+  const detTwoSelector = '[data-tour="onboarding-details-two"]';
+  const detailTwoItem =
+    resolveFrontendText({ selector: detTwoSelector, routeKey: 'ONBOARDING_DETAILS.TWO' }) ||
+    resolveFrontendText({ selector: detTwoSelector }) ||
+    resolveFrontendText({ routeKey: 'ONBOARDING_DETAILS.TWO' });
+  const stepId = detailTwoItem?.id;
+  const overlayTitle = detailTwoItem?.title || 'Quick tip';
+  const overlayDesc = detailTwoItem?.description || 'We highlighted key elements: You can edit coaches anytime.';
 
   // Consolidated coach data (shared with Coaches.tsx)
   const { agents, toneOptions, accentOptions, genderOptions, isLoading } = useCoachData({ page: 1, page_size: 9 });
@@ -47,34 +56,10 @@ export default function OnboardingDetailsTwo() {
     await markOnboardingCompleted();
   }, [markOnboardingCompleted]);
 
-  // Try to pick a female voice if available (heuristic by common female voice names)
-  const femaleVoice = useMemo(() => {
-    if (!voices?.length) return undefined;
-    const preferredNames = [
-      "Female",
-      "Aria",
-      "Zira",
-      "Jenny",
-      "Samantha",
-      "Allison",
-      "Victoria",
-      "Karen",
-      "Susan",
-      "Hazel",
-    ];
-    // 1) Names explicitly including 'Female'
-    const explicit = voices.find(v => /female/i.test(v.name));
-    if (explicit) return explicit;
-    // 2) Known female-sounding names
-    const byName = voices.find(v => preferredNames.some(n => v.name.toLowerCase().includes(n.toLowerCase())));
-    if (byName) return byName;
-    // 3) Prefer en-* voices if no match
-    const en = voices.find(v => v.lang?.toLowerCase().startsWith("en"));
-    return en ?? voices[0];
-  }, [voices]);
+  
 
   const handleCloseTour = () => {
-    stop();
+    tourStop();
     setShowTour(false);
   };
 
@@ -105,7 +90,7 @@ export default function OnboardingDetailsTwo() {
   }, [showTour]);
 
   return (
-    <div className="relative min-h-screen w-full p-4 pb-32">
+    <div data-tour="onboarding-details-two" className="relative min-h-screen w-full p-4 pb-32">
       <div className="w-fit">
         <Logo />
       </div>
@@ -222,17 +207,24 @@ export default function OnboardingDetailsTwo() {
           ))}
           {/* Tooltip */}
           <div className="absolute left-[38%] -translate-x-1/2 bottom-4 md:bottom-12 bg-white rounded-xl shadow-xl p-4 w-[min(360px,calc(100vw-24px))]">
-            <div className="text-sm font-semibold mb-1">Quick tip</div>
+            <div className="text-sm font-semibold mb-1">{overlayTitle}</div>
             <div className="text-xs leading-relaxed text-black">
-              We highlighted key elements: You can edit coaches anytime.
+              {overlayDesc}
             </div>
             <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-4">
               <button
                 type="button"
-                aria-label={phase === 'speaking' ? "Pause audio" : (phase === 'starting' ? 'Loading audio' : "Play audio")}
-                onClick={() => toggle(tooltipText, { voiceName: femaleVoice?.name, lang: femaleVoice?.lang ?? "en-US" })}
+                aria-label={phase === 'speaking' ? "Pause audio" : (phase === 'paused' ? 'Resume audio' : phase === 'starting' ? 'Loading audio' : "Play audio")}
+                onClick={() => {
+                  if (!stepId) return;
+                  if (phase === 'speaking') { pause(); return; }
+                  if (phase === 'paused') { resume(); return; }
+                  if (phase === 'starting') return;
+                  play(stepId);
+                }}
                 className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === 'starting' ? 'animate-pulse' : ''}`}
-                disabled={phase === 'starting'}
+                disabled={phase === 'starting' || !stepId}
               >
                 {phase === 'starting' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -242,6 +234,21 @@ export default function OnboardingDetailsTwo() {
                   <Volume2 className="w-4 h-4" />
                 )}
               </button>
+              {stepId && hasCached(stepId) ? (
+                <button
+                  type="button"
+                  aria-label="Replay audio"
+                  onClick={() => {
+                    if (!stepId) return;
+                    replay(stepId);
+                  }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100"
+                  disabled={phase === 'starting'}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              ) : null}
+              </div>
               <Button size="sm" className="h-8 bg-blue-primary hover:bg-blue-primary/90" onClick={handleCloseTour}>Got it!</Button>
             </div>
           </div>

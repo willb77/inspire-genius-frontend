@@ -373,7 +373,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setPendingVerification(false);
     navigate(ROUTES.LOGIN, { replace: true });
-  }, []);
+  }, [navigate]);
 
   const markOnboardingCompleted = useCallback(async (): Promise<void> => {
     await setOnboardingFlag(true);

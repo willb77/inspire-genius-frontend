@@ -1,10 +1,18 @@
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import { ROUTES } from "@/constants/routes";
 import { OnboardingCallout } from "@/components/onboarding/OnboardingCallout";
+import { useTour } from "@/context/useTour";
+import { useEffect } from "react";
 
 
 export default function OnboardingOne() {
+  const { start } = useTour();
+  useEffect(() => {
+    const id = window.setTimeout(() => start(), 100);
+    return () => window.clearTimeout(id);
+  }, [start]);
   return (
+    <div data-tour="onboarding-one">
     <OnboardingScreen
       imageSrc="/images/onboarding/onboarding-one.png"
       imageAlt="Onboarding step one"
@@ -22,5 +30,6 @@ export default function OnboardingOne() {
         </>
       }
     />
+    </div>
   );
 }

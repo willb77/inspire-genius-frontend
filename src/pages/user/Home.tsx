@@ -5,10 +5,12 @@ import OnboardingCallout from "@/components/onboarding/OnboardingCallout";
 import { useTour } from "@/context/useTour";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ExploreCoachesNames from "@/components/user/ExploreCoachesNames";
+import { useNavigate } from "react-router-dom";
 import { useAgents } from "@/hooks/coaches/useAgents";
 
 export default function Home() {
   const { start, step } = useTour();
+  const navigate = useNavigate();
   const [showVideo, setShowVideo] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const startTimerRef = useRef<number | null>(null);
@@ -19,6 +21,7 @@ export default function Home() {
     const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
     return Array.isArray(list) ? list : [];
   }, [agentsResp]);
+  const toSlug = (s: string) => String(s || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const clearTimers = () => {
     if (startTimerRef.current) {
@@ -142,7 +145,11 @@ export default function Home() {
             <p className="text-xs text-muted-foreground">AI Coaches at Your Service.</p>
           </CardHeader>
           <CardContent>
-            <ExploreCoachesNames agents={agents} isLoading={agentsLoading} />
+            <ExploreCoachesNames
+              agents={agents}
+              isLoading={agentsLoading}
+              onSelect={(a) => navigate(`/dashboard/${a.id}--${toSlug(a.name)}/chat`)}
+            />
           </CardContent>
         </Card>
       </div>
