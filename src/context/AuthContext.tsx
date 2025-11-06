@@ -145,7 +145,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginMutation = useAuthLoginMutation({
     onSuccess: async ({ data, email, password }) => {
-      console.log("Login response", data);
       // Some APIs return 200 but embed failure in body
       const failed = data?.status === false || data?.success === false;
       const payload: LoginDataPayload = (data.data ?? {}) as LoginDataPayload;
@@ -203,18 +202,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string): Promise<{ status: boolean }> => {
       try {
+        const emailLc = (email ?? "").trim().toLowerCase();
         const result = (await loginMutation.mutateAsync({
-          email,
+          email: emailLc,
           password,
         })) as { data: ApiEnvelope<LoginDataPayload> };
         const failed =
           result?.data?.status === false || result?.data?.success === false;
         return { status: !failed };
-      } catch {
+      } catch (err) {
+        const ax = err as AxiosError<ApiEnvelope<LoginDataPayload>>;
+        const nextStep: string | undefined = (ax?.response?.data?.data as Partial<LoginDataPayload> | undefined)?.next_step ?? undefined;
+        if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
+          await setEmail(email);
+          await setPassword(password);
+          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+          await resendOtpMutation.mutateAsync();
+          navigate(ROUTES.OTP, { replace: true });
+          return { status: false };
+        }
+
         return { status: false };
       }
     },
-    [loginMutation]
+    [loginMutation, navigate]
   );
 
   const signupMutation = useAuthSignupMutation({

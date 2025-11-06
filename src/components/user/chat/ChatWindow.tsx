@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -401,7 +402,7 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <button
               type="button"
-              disabled={true}
+              disabled={false}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
@@ -412,13 +413,13 @@ export default function ChatWindow({
                   "size-5",
                   isRecording
                     ? "text-red-600 animate-pulse"
-                    : "text-muted-foreground"
+                    : "text-black"
                 )}
               />
             </button>
             <Input
-              placeholder="Ask Anything...."
-              className="h-11 pl-10 pr-10 rounded-xl bg-gray-100"
+              placeholder={isRecording ? "" : "Ask Anything...."}
+              className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
               disabled={true}
               onChange={(e) => setInputText(e.target.value)}
@@ -429,12 +430,30 @@ export default function ChatWindow({
                 }
               }}
             />
+            {isRecording ? (
+              <div className="pointer-events-none absolute left-10 right-16 top-1/2 -translate-y-1/2 flex items-end gap-1 h-5">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-1 rounded-full bg-blue-600/80"
+                    initial={{ height: 6 }}
+                    animate={{ height: [6, 18, 10, 22, 8, 16] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.1,
+                    }}
+                  />
+                ))}
+              </div>
+            ) : null}
             <Paperclip className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
           </div>
 
           {hasAudio && onToggleAudioPlayback ? (
             <Button
-              disabled={true}
+              disabled={false}
               type="button"
               onClick={onToggleAudioPlayback}
               variant="secondary"

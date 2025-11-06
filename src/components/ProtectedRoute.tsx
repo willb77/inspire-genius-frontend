@@ -37,7 +37,7 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
     })()
   }, [isCoachChat])
 
-  if (requireAuth && user && !user?.token) {
+  if (requireAuth && (!user || !user?.token)) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: path }} replace />
   }
 

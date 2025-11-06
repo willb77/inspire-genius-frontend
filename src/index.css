@@ -158,3 +158,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Hide password reveal icon in Microsoft Edge */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* Hide password reveal icon in iOS Safari */
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-clear-button {
+  display: none;
+}
+
+/* General Safari/iOS fix */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+}

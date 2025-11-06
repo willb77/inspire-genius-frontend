@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
+import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -460,7 +461,11 @@ export default function AlexChatPanel({
                           : "bg-yellow-50 text-yellow-800"
                       }`}
                     >
-                      {m.text}
+                      {m.sender === "assistant" ? (
+                        <AssistantMarkdown text={m.text} className="text-left" />
+                      ) : (
+                        m.text
+                      )}
                     </div>
                   )}
                 </div>

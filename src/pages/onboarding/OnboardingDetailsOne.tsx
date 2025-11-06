@@ -75,7 +75,11 @@ export default function OnboardingDetailsOne() {
               <FormField
                 control={form.control}
                 name="firstName"
-                rules={{ required: "First name is required" }}
+                rules={{
+                  required: "First name is required",
+                  minLength: { value: 2, message: "First name must be at least 2 characters" },
+                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: "Only letters, spaces, hyphen and apostrophe allowed" },
+                }}
                 render={({ field }) => (
                   <FormItem className="relative">
                     <FormControl>
@@ -94,7 +98,11 @@ export default function OnboardingDetailsOne() {
               <FormField
                 control={form.control}
                 name="lastName"
-                rules={{ required: "Last name is required" }}
+                rules={{
+                  required: "Last name is required",
+                  minLength: { value: 2, message: "Last name must be at least 2 characters" },
+                  pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: "Only letters, spaces, hyphen and apostrophe allowed" },
+                }}
                 render={({ field }) => (
                   <FormItem className="relative">
                     <FormControl>
@@ -113,7 +121,23 @@ export default function OnboardingDetailsOne() {
               <FormField
                 control={form.control}
                 name="dob"
-                rules={{ required: "Date of birth is required" }}
+                rules={{
+                  required: "Date of birth is required",
+                  validate: (v: string) => {
+                    const d = parse(v, "d LLL yyyy", new Date());
+                    if (!isValid(d)) return "Invalid date";
+                    const today = new Date();
+                    const cutoff = new Date(
+                      today.getFullYear() - 13,
+                      today.getMonth(),
+                      today.getDate()
+                    );
+                    cutoff.setHours(0, 0, 0, 0);
+                    d.setHours(0, 0, 0, 0);
+                    if (d > cutoff) return "You must be at least 13 years old";
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <FormItem className="relative w-full">
                     <DatePicker
@@ -123,7 +147,7 @@ export default function OnboardingDetailsOne() {
                       }}
                       placeholder="Date of Birth"
                       minDate={new Date(1900, 0, 1)}
-                      maxDate={new Date()}
+                      maxDate={(() => { const t=new Date(); return new Date(t.getFullYear()-13, t.getMonth(), t.getDate()); })()}
                     />
                     <FormMessage />
                   </FormItem>

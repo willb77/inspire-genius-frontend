@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { EmailField, PasswordField } from "@/components/auth/AuthFields";
 import { useForm } from "react-hook-form";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
@@ -15,9 +15,9 @@ export default function SignUp() {
   const navigate = useNavigate();
   const redirectTo = useAuthRedirectForAuthPages();
   
-  const { handleSubmit, setValue, watch, formState: { dirtyFields } } = useForm<{ email: string; password: string; confirm: string }>({
+  const { handleSubmit, setValue, watch, formState: { dirtyFields } } = useForm<{ email: string; password: string; confirm: string; terms: boolean }>({
     mode: "onChange",
-    defaultValues: { email: "", password: "", confirm: "" },
+    defaultValues: { email: "", password: "", confirm: "", terms: false },
   });
 
   useEffect(() => {
@@ -28,6 +28,7 @@ export default function SignUp() {
   const password = watch("password") ?? "";
   const confirm = watch("confirm") ?? "";
   const [pwdFocused, setPwdFocused] = useState(false);
+  const terms = watch("terms") ?? false;
   const rules = useMemo(() => ({
     hasUpper: /[A-Z]/.test(password),
     hasLower: /[a-z]/.test(password),
@@ -44,8 +45,9 @@ export default function SignUp() {
   }, [rules])
   
   // Submit handler
-  const onSubmit = async (values: { email: string; password: string; confirm: string }) => {
+  const onSubmit = async (values: { email: string; password: string; confirm: string; terms: boolean }) => {
     if (values.password !== values.confirm) return;
+    if (!values.terms) return;
     await signup(values.email, values.password, values.confirm);
   };
   return (
@@ -77,18 +79,18 @@ export default function SignUp() {
         </div>
 
         <div className="mt-8 flex items-start gap-2">
-          <Checkbox id="terms" />
+          <Checkbox id="terms" checked={!!terms} onCheckedChange={(v) => setValue("terms", Boolean(v), { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
           <Label htmlFor="terms" className="text-muted-foreground text-xs">
             By signing up, I agree with the <a className="underline text-blue-primary" href="#">Terms of Use</a> & <a className="underline text-blue-primary" href="#">Privacy Policy</a>
           </Label>
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || !confirm || unmet.length > 0 || password !== confirm}>
+        <Button type="submit" className="w-full mt-2" disabled={isLoading || !email || !password || !confirm || unmet.length > 0 || password !== confirm || !terms}>
           {isLoading ? "Creating..." : "Sign Up"}
         </Button>
       </form>
 
-      <SocialAuthSection />
+      {/* <SocialAuthSection /> */}
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
         Already have an account? <Link className="underline" to="/login">Log In</Link>

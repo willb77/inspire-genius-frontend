@@ -500,6 +500,31 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
             step={activeStep}
             stepIndex={index}
             stepCount={steps.length}
+            displayIndex={(function () {
+              const isOnboarding = !!activeStep.route && activeStep.route.startsWith('/onboarding');
+              const inGroup = steps.filter((s) => {
+                const sr = s.route ?? '';
+                return isOnboarding ? sr.startsWith('/onboarding') : !sr.startsWith('/onboarding');
+              });
+              const idx = inGroup.findIndex((s) => s.selector === activeStep.selector && (s.route ?? '') === (activeStep.route ?? ''));
+              return idx >= 0 ? idx : 0;
+            })()}
+            displayCount={(function () {
+              const isOnboarding = !!activeStep.route && activeStep.route.startsWith('/onboarding');
+              return steps.filter((s) => {
+                const sr = s.route ?? '';
+                return isOnboarding ? sr.startsWith('/onboarding') : !sr.startsWith('/onboarding');
+              }).length;
+            })()}
+            showPrev={(function () {
+              const isOnboarding = !!activeStep.route && activeStep.route.startsWith('/onboarding');
+              const inGroup = steps.filter((s) => {
+                const sr = s.route ?? '';
+                return isOnboarding ? sr.startsWith('/onboarding') : !sr.startsWith('/onboarding');
+              });
+              const idx = inGroup.findIndex((s) => s.selector === activeStep.selector && (s.route ?? '') === (activeStep.route ?? ''));
+              return idx > 0;
+            })()}
             onNext={next}
             onPrev={prev}
             onSkip={stop}
@@ -516,6 +541,9 @@ function Overlay({
   step,
   stepIndex,
   stepCount,
+  displayIndex,
+  displayCount,
+  showPrev,
   onNext,
   onPrev,
   onSkip,
@@ -525,6 +553,9 @@ function Overlay({
   step: TourStep;
   stepIndex: number;
   stepCount: number;
+  displayIndex: number;
+  displayCount: number;
+  showPrev: boolean;
   onNext: () => void;
   onPrev: () => void;
   onSkip: () => void;
@@ -605,21 +636,22 @@ function Overlay({
             Skip
           </button>
           <div className="text-xs text-muted-foreground">
-            {stepIndex + 1}/{stepCount}
+            {displayIndex + 1}/{displayCount}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => {
-                tourStop();
-                onPrev();
-              }}
-              disabled={stepIndex === 0}
-            >
-              Prev
-            </Button>
+            {showPrev && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  tourStop();
+                  onPrev();
+                }}
+              >
+                Prev
+              </Button>
+            )}
 
             <TooltipProvider>
               <Tooltip>
