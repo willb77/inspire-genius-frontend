@@ -8,7 +8,6 @@ import {
   Send,
   Copy,
   Mic,
-  Paperclip,
   Pause,
   Play,
 } from "lucide-react";
@@ -162,7 +161,7 @@ export default function ChatWindow({
           <button
             aria-label="Back"
             onClick={onBack}
-            className="p-1 rounded-md hover:bg-gray-100"
+            className="cursor-pointer p-1 rounded-md hover:bg-gray-100"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -172,7 +171,7 @@ export default function ChatWindow({
           <div className="flex items-center gap-4">
             <button
               className={cn(
-                "px-2 py-1 border-b-2 text-sm",
+                "cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "chat"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -182,9 +181,9 @@ export default function ChatWindow({
               Chat
             </button>
             <button
-            disabled={true}
+            disabled={false}
               className={cn(
-                "px-2 py-1 border-b-2 text-sm",
+                "cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -197,7 +196,7 @@ export default function ChatWindow({
           <Button
             className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"
             variant="secondary"
-            disabled={true}
+            disabled={false}
             onClick={() => setExportOpen(true)}
           >
             <Upload className="size-4 mr-2" />
@@ -335,7 +334,7 @@ export default function ChatWindow({
                       <button
                         aria-label="Copy message"
                         type="button"
-                        className="text-muted-foreground/60 hover:text-foreground"
+                        className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                         onClick={() => handleCopy(`${m.docName}`)}
                       >
                         <Copy className="size-4 text-black" />
@@ -406,7 +405,7 @@ export default function ChatWindow({
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
-              className="absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
+              className="cursor-pointer absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
             >
               <Mic
                 className={cn(
@@ -421,7 +420,7 @@ export default function ChatWindow({
               placeholder={isRecording ? "" : "Ask Anything...."}
               className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
-              disabled={true}
+              disabled={false}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -448,7 +447,7 @@ export default function ChatWindow({
                 ))}
               </div>
             ) : null}
-            <Paperclip className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+            {/* <Paperclip className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" /> */}
           </div>
 
           {hasAudio && onToggleAudioPlayback ? (
@@ -467,7 +466,7 @@ export default function ChatWindow({
             </Button>
           ) : null}
           <Button
-            disabled={true}
+            disabled={false}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
             onClick={handleSend}
           >

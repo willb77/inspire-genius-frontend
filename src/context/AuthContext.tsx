@@ -20,6 +20,7 @@ import {
   removeSession,
   setNextStep,
   removeNextStep,
+  getNextStep,
 } from "@/lib/storage";
 import { syncAuthToken } from "@/lib/axios";
 import { toast } from "sonner";
@@ -166,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (nextStep === NEXT_STEPS.VERIFY_MFA) {
         await setEmail(email);
         await setPassword(password);
+        await setNextStep(NEXT_STEPS.VERIFY_MFA);
         if (payload.session) await setSession(String(payload.session));
         await storeUser({ email });
         setUser({ id: "pending", email, name: null, token: null });
@@ -199,10 +201,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  
+
   const login = useCallback(
     async (email: string, password: string): Promise<{ status: boolean }> => {
       try {
         const emailLc = (email ?? "").trim().toLowerCase();
+        await setEmail(emailLc);
+        await setPassword(password);
         const result = (await loginMutation.mutateAsync({
           email: emailLc,
           password,
@@ -354,12 +360,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resendOtp = useCallback(async (): Promise<boolean> => {
     try {
-      await resendOtpMutation.mutateAsync();
-      return true;
+      const step = (await getNextStep()) ?? undefined;
+      if (step === NEXT_STEPS.VERIFY_EMAIL) {
+        await resendOtpMutation.mutateAsync();
+        return true;
+      }
+      if (step === NEXT_STEPS.VERIFY_MFA) {
+        const email = (await getEmail()) ?? "";
+        const password = (await getPassword()) ?? "";
+        if (!email || !password) return false;
+        const emailLc = email.trim().toLowerCase();
+        await loginMutation.mutateAsync({ email: emailLc, password });
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
-  }, [resendOtpMutation]);
+  }, [resendOtpMutation, loginMutation]);
+
+  
 
   // mocked reset password handlers
   const resetPasswordStart = useCallback(
