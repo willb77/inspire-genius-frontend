@@ -53,7 +53,7 @@ export default function SignUp() {
   return (
     <AuthLayout leftTitleOne="Upload. Ask." leftTitleTwo="Analyze. Achieve." subTitle="First things first: let’s set you up with an account.">
       <AuthHeader
-        title="Welcome to Inspire Genius"
+        title="Welcome to Inspires Genius"
         subtitle="First things first: let’s set you up with an account."
       />
 
