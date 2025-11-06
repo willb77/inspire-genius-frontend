@@ -84,7 +84,7 @@ export function usePrismAgentWebSocket(
   }, [safeSend]);
 
   const startAudioInput = useCallback(() => {
-    safeSend(JSON.stringify({ type: "audio_start" }));
+    safeSend(JSON.stringify({ type: "start_continuous" }));
   }, [safeSend]);
 
   const sendAudioChunk = useCallback((chunk: ArrayBuffer | Blob) => {
