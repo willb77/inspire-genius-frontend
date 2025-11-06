@@ -56,6 +56,7 @@ export default function CoachChat() {
   if (!demoAudioServiceRef.current) demoAudioServiceRef.current = new DemoAudioService();
   const [isAudioPaused, setIsAudioPaused] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const lastMessageRef = useRef<{ type: string; text: string }>({ type: "", text: "" });
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
@@ -211,6 +212,7 @@ console.log(coachName, "coach name")
     isRecording,
     startRecording,
     stopRecording,
+    updateContinuousMute,
   } = usePrismAgentWebSocket(onResponse, onAudioData);
 
   // Fetch agent conversation (temporary console.log for now)
@@ -459,6 +461,11 @@ console.log(coachName, "coach name")
             isRecording={isRecording}
             hasAudio={hasAudio}
             isAudioPaused={isAudioPaused}
+            isMuted={isMuted}
+            onToggleMute={(next) => {
+              setIsMuted(next);
+              if (isConnected) updateContinuousMute(next);
+            }}
             setMessages={setMessages}
             onExportChat={handleExportChat}
             onToggleAudioPlayback={() => {

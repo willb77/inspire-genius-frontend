@@ -10,6 +10,8 @@ import {
   Mic,
   Pause,
   Play,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
@@ -35,6 +37,9 @@ export default function ChatWindow({
   hasAudio,
   isAudioPaused,
   onToggleAudioPlayback,
+  // Mute control
+  isMuted,
+  onToggleMute,
   messages: externalMessages,
   isConnecting,
   statusBanner,
@@ -465,6 +470,33 @@ export default function ChatWindow({
               )}
             </Button>
           ) : null}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 px-3"
+                onClick={() => {
+                  if (hasAudio && !isAudioPaused) return;
+                  const next = !isMuted;
+                  onToggleMute?.(next);
+                }}
+                disabled={!!(hasAudio && !isAudioPaused)}
+                aria-label={isMuted ? "Unmute Coach" : "Mute Coach"}
+              >
+                {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {hasAudio && !isAudioPaused ? (
+                <span className="text-xs">Mute is disabled during playback</span>
+              ) : isMuted ? (
+                <span className="text-xs">Unmute</span>
+              ) : (
+                <span className="text-xs">Mute</span>
+              )}
+            </TooltipContent>
+          </Tooltip>
           <Button
             disabled={false}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"

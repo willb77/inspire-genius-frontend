@@ -137,6 +137,16 @@ export const useWebSocketMessageHandlers = (
     }
   }, [socketRef, setError]);
 
+  const updateContinuousMute = useCallback((mute: boolean) => {
+    if (!socketRef.current || socketRef.current.readyState !== WebSocketState.OPEN) return;
+    const message = { type: MessageType.START_CONTINUOUS, mute } as const;
+    try {
+      socketRef.current.send(JSON.stringify(message));
+    } catch {
+      setError("Failed to update mute state");
+    }
+  }, [socketRef, setError]);
+
   const handleBinaryMessage = useCallback(
     (data: ArrayBuffer | Blob) => {
       if (!onAudioData) return;
@@ -196,6 +206,7 @@ export const useWebSocketMessageHandlers = (
     sendAudioChunk,
     endAudioInput,
     startContinuousMode,
+    updateContinuousMute,
     handleBinaryMessage,
     handleJsonMessage,
   };
