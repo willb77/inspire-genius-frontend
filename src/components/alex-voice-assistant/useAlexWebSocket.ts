@@ -12,6 +12,7 @@ export interface UseAlexWebSocketReturn {
   sendAudioChunk: (audioData: ArrayBuffer | Blob) => void;
   endAudioInput: () => void;
   startContinuousMode: () => void;
+  updateContinuousMute: (mute: boolean) => void;
   currentResponse: string;
   isProcessing: boolean;
   transcript: string;
@@ -43,7 +44,7 @@ export const useAlexWebSocket = (
 
   const websocketUrl = (import.meta.env.VITE_ALEX_WEB_SOCKET_URL as string) || "";
 
-  const { sendTextMessage, sendAudioChunk, endAudioInput, startContinuousMode, handleBinaryMessage, handleJsonMessage } =
+  const { sendTextMessage, sendAudioChunk, endAudioInput, startContinuousMode, updateContinuousMute, handleBinaryMessage, handleJsonMessage } =
     useWebSocketMessageHandlers(
       socketRef,
       setError,
@@ -156,6 +157,7 @@ export const useAlexWebSocket = (
     sendAudioChunk,
     endAudioInput,
     startContinuousMode,
+    updateContinuousMute,
     currentResponse,
     isProcessing,
     transcript,

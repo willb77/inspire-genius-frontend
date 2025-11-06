@@ -1,8 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/useAuth'
 import { ROUTES, ROLES, PATHS } from '@/constants/routes'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { secureRemoveItem } from '@/lib/secureStorage'
+import LoadingPage from '@/components/loading-inspires-genius/LoadingCard'
 
 export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: boolean }) {
   const {user} = useAuth()
@@ -11,6 +12,20 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
   const isCoachChat = /^\/dashboard\/[^/]+\/chat$/.test(path)
   
   const isOnboardingRoute = path.startsWith('/onboarding')
+
+  // Show an animated loading screen briefly on path changes to avoid white-screen flashes
+  const [booting, setBooting] = useState(true)
+  const bootTimerRef = useRef<number | null>(null)
+  useEffect(() => {
+    // reset booting on every path change
+    setBooting(true)
+    if (bootTimerRef.current) window.clearTimeout(bootTimerRef.current)
+    bootTimerRef.current = window.setTimeout(() => setBooting(false), 5000)
+    return () => {
+      if (bootTimerRef.current) window.clearTimeout(bootTimerRef.current)
+      bootTimerRef.current = null
+    }
+  }, [])
 
   // When navigating away from CoachChat, clear its local storage state (conversation id and selected files)
   useEffect(() => {
@@ -36,6 +51,10 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
       }
     })()
   }, [isCoachChat])
+
+  if (booting) {
+    return <LoadingPage />
+  }
 
   if (requireAuth && (!user || !user?.token)) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: path }} replace />

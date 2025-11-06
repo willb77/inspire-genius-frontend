@@ -36,6 +36,7 @@ export interface UsePrismAgentWebSocketReturn {
   sendAudioChunk: (chunk: ArrayBuffer | Blob) => void;
   endAudioInput: () => void;
   updateSelectedFiles: (fileIds: string[]) => void;
+  updateContinuousMute: (mute: boolean) => void;
   isRecording: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
@@ -97,6 +98,10 @@ export function usePrismAgentWebSocket(
     safeSend(JSON.stringify({ type: "audio_end" }));
   }, [safeSend]);
 
+  const updateContinuousMute = useCallback((mute: boolean) => {
+    safeSend(JSON.stringify({ type: "start_continuous", mute }));
+  }, [safeSend]);
+
   const handleIncoming = useCallback((event: MessageEvent) => {
     if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
       if (event.data instanceof Blob) {
@@ -152,7 +157,7 @@ export function usePrismAgentWebSocket(
   }, []);
 
   const sendInit = useCallback((token: string, conversationId?: string, fileIds?: string[]) => {
-    const payload = { type: "init", access_token: token, conversation_id: conversationId, file_ids: fileIds && fileIds.length ? fileIds : undefined };
+    const payload = { type: "init", access_token: token, conversation_id: conversationId, file_ids: fileIds && fileIds.length ? fileIds : undefined , mute:false};
     safeSend(JSON.stringify(payload));
   }, [safeSend]);
 
@@ -278,6 +283,7 @@ export function usePrismAgentWebSocket(
     sendAudioChunk,
     endAudioInput,
     updateSelectedFiles,
+    updateContinuousMute,
     isRecording,
     startRecording,
     stopRecording,
@@ -295,6 +301,7 @@ export function usePrismAgentWebSocket(
     sendAudioChunk,
     endAudioInput,
     updateSelectedFiles,
+    updateContinuousMute,
     isRecording,
     startRecording,
     stopRecording,
