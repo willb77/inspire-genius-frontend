@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
 import { useUploadDocuments } from "@/hooks/documents/useUploadDocuments";
-import { toast } from "sonner";
 
 // Category selection removed per requirement
 
@@ -22,6 +21,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
   const [dragOver, setDragOver] = useState(false);
   const [queue, setQueue] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const uploadMutation = useUploadDocuments();
 
@@ -32,6 +32,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       setDragOver(false);
       setQueue([]);
       setProgress(0);
+      setUploadError(null);
     }
   }, [open]);
 
@@ -55,6 +56,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
     if (!isReadyToUpload) return;
     setStep("progress");
     setProgress(0);
+    setUploadError(null);
     try {
       await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => setProgress(p) });
       setStep("complete");
@@ -66,16 +68,25 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       }));
       onUploaded?.(result, "");
     } catch (e) {
-      toast.error("Upload failed", { description: e instanceof Error ? e.message : "Unable to upload document" });
-      // stay on progress or close? For now, return to form
-      setStep("form");
+      const msg = e instanceof Error ? e.message : "Unable to upload document";
+      setUploadError(msg);
+      // Stay on progress view and let user close explicitly
+      setStep("progress");
     }
   };
 
   // Progress is now updated via axios onUploadProgress in the mutation
 
+  const handleOpenChange = (next: boolean) => {
+    // Prevent closing while actively uploading (no error yet)
+    if (step === "progress" && !uploadError && next === false) {
+      return;
+    }
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[min(640px,calc(100vw-2rem))] max-h-[85vh] p-0" showCloseButton={false}>
         {step === "form" && (
           <div className="p-6 max-h-[75vh] overflow-y-auto">
@@ -109,7 +120,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
                   multiple
                   className="hidden"
                   onChange={(e) => addFiles(e.target.files)}
-                  accept=".pdf,.csv,.ppt,.pptx,.doc,.docx"
+                  accept=".pdf"
                 />
               </div>
             </div>
@@ -153,16 +164,33 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
         )}
 
         {step === "progress" && (
-          <div className="p-10 flex flex-col items-center text-center gap-5">
+          <div className="p-10 flex flex-col items-center text-center gap-5 relative">
+            {uploadError ? (
+              <button
+                type="button"
+                aria-label="Close"
+                className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="size-5" />
+              </button>
+            ) : null}
             <Upload className="size-7 text-blue-primary" />
             <div className="text-lg font-medium">Uploading Documents.... {progress}%</div>
             <div className="text-sm text-muted-foreground">This might take a few seconds</div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <div className="h-full bg-blue-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
             </div>
-            <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground w-full" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
+            {uploadError ? (
+              <div className="w-full text-left">
+                <p className="text-sm text-red-600">{uploadError}</p>
+              </div>
+            ) : null}
+            {!uploadError ? (
+              <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground w-full" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+            ) : null}
           </div>
         )}
 
