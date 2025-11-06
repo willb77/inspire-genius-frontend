@@ -100,7 +100,7 @@ export default function OnboardingDetailsOne() {
                 name="lastName"
                 rules={{
                   required: "Last name is required",
-                  minLength: { value: 2, message: "Last name must be at least 2 characters" },
+                  minLength: { value: 1, message: "Last name must be at least 1 character" },
                   pattern: { value: /^[A-Za-z][A-Za-z\s'-]*$/, message: "Only letters, spaces, hyphen and apostrophe allowed" },
                 }}
                 render={({ field }) => (
