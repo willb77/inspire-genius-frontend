@@ -67,8 +67,7 @@ export default function CoachCard({
   }, [tones, selectedToneIds, t]);
 
   const updateMutation = useUpdatePreferences();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { phase, playFresh, pause, resume, hasCached } = useCoachAudioPreview();
+  const { phase, playFresh, pause, resume } = useCoachAudioPreview();
   const submitting = onSubmitProp ? !!isSubmitting : updateMutation.isPending;
   const onSubmit = async (values: FormValues) => {
     if (onSubmitProp) {
