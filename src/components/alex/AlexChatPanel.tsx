@@ -171,6 +171,7 @@ export default function AlexChatPanel({
   }, [messages.length, historyMutation.isPending]);
 
   const onResponse = useCallback((response: AlexResponse) => {
+ 
     if (response.type === "continuous_mode") {
       setMessages((prev) => [
         ...prev,
@@ -310,7 +311,8 @@ export default function AlexChatPanel({
     setIsAudioPaused(false);
     setMessages((prev) => [
       ...prev,
-      { id: `msg-${Date.now()}`, text, sender: "user", timestamp: new Date() },
+      { id: `msg-${Date.now()}`, text, sender: "user", timestamp: new Date(), },
+      { id: `msg-${Date.now()}`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
     ]);
   }, [message, isConnected, sendTextMessage]);
 

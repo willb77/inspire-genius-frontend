@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CircleQuestionMark, Volume2, SquarePen, Loader2 } from "lucide-react";
+import { CircleQuestionMark, Volume2, SquarePen, Loader2, Pause } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelect from "@/components/ui/multi-select";
@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { CoachCardProps } from "@/types/onboarding";
 import { useForm } from "react-hook-form";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
+import { useCoachAudioPreview } from "@/hooks/useCoachAudioPreview";
 import { useQueryClient } from "@tanstack/react-query";
 
 type FormValues = {
@@ -66,6 +67,8 @@ export default function CoachCard({
   }, [tones, selectedToneIds, t]);
 
   const updateMutation = useUpdatePreferences();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { phase, playFresh, pause, resume, hasCached } = useCoachAudioPreview();
   const submitting = onSubmitProp ? !!isSubmitting : updateMutation.isPending;
   const onSubmit = async (values: FormValues) => {
     if (onSubmitProp) {
@@ -180,8 +183,30 @@ export default function CoachCard({
 
       {/* Actions */}
       <div className="mt-6 flex items-center gap-3">
-        <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border border-blue-primary">
-          <Volume2 className="h-5 w-5" />
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 rounded-xl border border-blue-primary"
+          disabled={phase === 'starting'}
+          onClick={() => {
+            const params = {
+              genderId: (isEditing ? g : (selectedGenderId ?? g)) ?? undefined,
+              accentId: (isEditing ? a : (selectedAccentId ?? a)) ?? undefined,
+              toneIds: (isEditing ? t : (selectedToneIds ?? t)) ?? [],
+            };
+            if (phase === 'speaking') { pause(); return; }
+            if (phase === 'paused') { resume(); return; }
+            // Fetch fresh audio every time when idle
+            playFresh(params);
+          }}
+        >
+          {phase === 'starting' ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : phase === 'speaking' ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Volume2 className="h-5 w-5" />
+          )}
         </Button>
         {isEditing ? (
           <form className="flex-1 flex gap-3" onSubmit={handleSubmit(onSubmit)}>

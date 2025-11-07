@@ -21,7 +21,7 @@ export default function ExploreCoachesNames({ agents, isLoading, onSelect }: { a
         <Button
           key={a.id}
           variant="outline"
-          disabled={true}
+          disabled={false}
           className="justify-center bg-brown-10 hover:bg-brown-10/80 hover:text-black-250 text-black-250 rouned-xl border-none"
           onClick={() => onSelect?.(a)}
         >

@@ -286,12 +286,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [padding, setPadding] = useState(12);
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: frontendText, isLoading: frontendTextLoading, error: frontendTextError } = useFrontendText();
+  const { data: frontendText, } = useFrontendText();
 
-  useEffect(() => {
-    if (frontendTextLoading) return;
-    console.log("/v1/frontend-text (TourContext)", { data: frontendText, error: frontendTextError });
-  }, [frontendText, frontendTextLoading, frontendTextError]);
+
 
   // Default tour steps live at module scope (see DEFAULT_STEPS above)
 

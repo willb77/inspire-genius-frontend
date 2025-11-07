@@ -6,7 +6,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import type { ExportChatModalProps } from "@/types/chat";
 import DatePickerButton from "@/components/shared/DatePickerButton";
 
-export default function ExportChatModal({ open, onOpenChange, onExport }: ExportChatModalProps) {
+export default function ExportChatModal({ open, onOpenChange, onExport, disableExport =false }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
   const [progress, setProgress] = useState(0);
@@ -119,7 +119,7 @@ export default function ExportChatModal({ open, onOpenChange, onExport }: Export
               <Button variant="secondary" className="bg-gray-100 hover:bg-gray-100 text-foreground" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button className="bg-blue-primary hover:bg-blue-primary/90" onClick={handleExport} disabled={isSubmitting}>
+              <Button className="bg-blue-primary hover:bg-blue-primary/90" onClick={handleExport} disabled={isSubmitting || disableExport}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 mr-2 animate-spin" /> Exporting

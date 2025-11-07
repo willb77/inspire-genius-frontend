@@ -388,7 +388,7 @@ export default function ChatWindow({
       />
 
       {/* Export chat modal */}
-      <ExportChatModal open={exportOpen} onOpenChange={setExportOpen} onExport={onExportChat} />
+      <ExportChatModal open={exportOpen} onOpenChange={setExportOpen} onExport={onExportChat} disableExport={true} />
 
       {/* Small floating sparkle action */}
       {/* <button
@@ -406,7 +406,7 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <button
               type="button"
-              disabled={false}
+              disabled={true}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
@@ -425,7 +425,7 @@ export default function ChatWindow({
               placeholder={isRecording ? "" : "Ask Anything...."}
               className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
-              disabled={false}
+              disabled={true}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -457,7 +457,7 @@ export default function ChatWindow({
 
           {hasAudio && onToggleAudioPlayback ? (
             <Button
-              disabled={false}
+              disabled={true}
               type="button"
               onClick={onToggleAudioPlayback}
               variant="secondary"
@@ -476,12 +476,13 @@ export default function ChatWindow({
                 type="button"
                 variant="secondary"
                 className="h-11 px-3"
+              
                 onClick={() => {
                   if (hasAudio && !isAudioPaused) return;
                   const next = !isMuted;
                   onToggleMute?.(next);
                 }}
-                disabled={!!(hasAudio && !isAudioPaused)}
+                disabled={!!(hasAudio && !isAudioPaused) || true}
                 aria-label={isMuted ? "Unmute Coach" : "Mute Coach"}
               >
                 {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
@@ -498,7 +499,7 @@ export default function ChatWindow({
             </TooltipContent>
           </Tooltip>
           <Button
-            disabled={false}
+            disabled={true}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
             onClick={handleSend}
           >
