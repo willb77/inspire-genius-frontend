@@ -4,6 +4,7 @@ import { SquarePen, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatHistoryProps } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading }: ChatHistoryProps) {
   const [query, setQuery] = useState("");
@@ -17,23 +18,40 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
     <div className={cn("bg-white rounded-2xl border shadow-sm p-4 w-full", className)}>
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-lg font-semibold">History</h3>
-        <button
-          aria-label="New Conversation"
-          disabled={true}
-          className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
-          onClick={() => {
-             onCreateNewConversation?.();
-          }}
-          title={"Start a new conversation"}
-        >
-          New Chat <SquarePen className="size-4" />
-        </button>
+        {(() => {
+          const hasEmptySelected = Boolean(
+            selectedId && groups.some(g => g.items.some(it => it.id === selectedId && (it.preview ?? "").trim() === "To do"))
+          );
+          const tooltipText = hasEmptySelected ? "You already have a new conversation" : "Start a new conversation";
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    aria-label="New Conversation"
+                    disabled={false}
+                    className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
+                    onClick={() => {
+                      onCreateNewConversation?.();
+                    }}
+                  >
+                    New Chat <SquarePen className="size-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span className="text-xs">{tooltipText}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })()}
       </div>
-
+      
       <div className="mb-3">
         <Input
           placeholder="Search.."
           value={query}
+          disabled={true}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-3"
         />
@@ -89,7 +107,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                     <li key={it.id}>
                       <button
                         type="button"
-                        disabled={true}
+                        disabled={false}
                         onClick={() => onSelect?.(it.id)}
                         className={cn(
                           "w-full text-left rounded-xl px-3 py-2",

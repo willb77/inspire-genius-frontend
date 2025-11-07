@@ -1,12 +1,12 @@
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthHeader from "@/components/auth/AuthHeader";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Label } from "@/components/ui/label";
+// import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
+import { EmailField, PasswordField } from "@/components/auth/AuthFields";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
 export default function Login() {
@@ -40,8 +40,8 @@ export default function Login() {
 
         <div className="mt-6 flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <Checkbox id="remember" />
-            <Label htmlFor="remember" className="text-muted-foreground">Remember me</Label>
+            {/* <Checkbox id="remember" />
+            <Label htmlFor="remember" className="text-muted-foreground">Remember me</Label> */}
           </div>
           <Link className="underline text-muted-foreground" to="/forgot">Forgot password?</Link>
         </div>
@@ -51,7 +51,7 @@ export default function Login() {
         </Button>
       </form>
 
-      <SocialAuthSection />
+      {/* <SocialAuthSection /> */}
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
         Don’t have an account? <Link className="underline" to="/signup">Sign Up</Link>

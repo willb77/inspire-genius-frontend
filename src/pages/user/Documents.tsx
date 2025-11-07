@@ -260,7 +260,7 @@ export default function Documents() {
             <Button
               className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90"
               onClick={() => setUploadOpen(true)}
-              disabled={true}
+              disabled={false}
             >
               Upload Document
               <Upload className="size-4 ml-2" />
@@ -442,7 +442,7 @@ export default function Documents() {
                               <button
                                 title="Delete"
                                 className="text-red-600 hover:text-red-700"
-                                disabled={deleteMutation.isPending || true}
+                                disabled={deleteMutation.isPending}
                               >
                                 <Trash2 className="size-4" />
                               </button>
@@ -456,7 +456,7 @@ export default function Documents() {
                             title="Download"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={() => void handleDownload(d)}
-                            disabled={downloadingId === d.id || true}
+                            disabled={downloadingId === d.id}
                           >
                             {downloadingId === d.id ? (
                               <Loader2 className="size-4 animate-spin" />
@@ -468,7 +468,7 @@ export default function Documents() {
                             title="View"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={() => handleView(d)}
-                            disabled={true}
+                            disabled={false}
                           >
                             <Eye className="size-4" />
                           </button>

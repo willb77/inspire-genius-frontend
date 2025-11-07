@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,9 +8,10 @@ import {
   Send,
   Copy,
   Mic,
-  Paperclip,
   Pause,
   Play,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
@@ -35,6 +37,9 @@ export default function ChatWindow({
   hasAudio,
   isAudioPaused,
   onToggleAudioPlayback,
+  // Mute control
+  isMuted,
+  onToggleMute,
   messages: externalMessages,
   isConnecting,
   statusBanner,
@@ -161,7 +166,7 @@ export default function ChatWindow({
           <button
             aria-label="Back"
             onClick={onBack}
-            className="p-1 rounded-md hover:bg-gray-100"
+            className="cursor-pointer p-1 rounded-md hover:bg-gray-100"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -171,7 +176,7 @@ export default function ChatWindow({
           <div className="flex items-center gap-4">
             <button
               className={cn(
-                "px-2 py-1 border-b-2 text-sm",
+                "cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "chat"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -181,9 +186,9 @@ export default function ChatWindow({
               Chat
             </button>
             <button
-            disabled={true}
+            disabled={false}
               className={cn(
-                "px-2 py-1 border-b-2 text-sm",
+                "cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -196,7 +201,7 @@ export default function ChatWindow({
           <Button
             className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"
             variant="secondary"
-            disabled={true}
+            disabled={false}
             onClick={() => setExportOpen(true)}
           >
             <Upload className="size-4 mr-2" />
@@ -334,7 +339,7 @@ export default function ChatWindow({
                       <button
                         aria-label="Copy message"
                         type="button"
-                        className="text-muted-foreground/60 hover:text-foreground"
+                        className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                         onClick={() => handleCopy(`${m.docName}`)}
                       >
                         <Copy className="size-4 text-black" />
@@ -401,26 +406,26 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <button
               type="button"
-              disabled={true}
+              disabled={false}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
-              className="absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
+              className="cursor-pointer absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
             >
               <Mic
                 className={cn(
                   "size-5",
                   isRecording
                     ? "text-red-600 animate-pulse"
-                    : "text-muted-foreground"
+                    : "text-black"
                 )}
               />
             </button>
             <Input
-              placeholder="Ask Anything...."
-              className="h-11 pl-10 pr-10 rounded-xl bg-gray-100"
+              placeholder={isRecording ? "" : "Ask Anything...."}
+              className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
-              disabled={true}
+              disabled={false}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -429,12 +434,30 @@ export default function ChatWindow({
                 }
               }}
             />
-            <Paperclip className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+            {isRecording ? (
+              <div className="pointer-events-none absolute left-10 right-16 top-1/2 -translate-y-1/2 flex items-end gap-1 h-5">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-1 rounded-full bg-blue-600/80"
+                    initial={{ height: 6 }}
+                    animate={{ height: [6, 18, 10, 22, 8, 16] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.1,
+                    }}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {/* <Paperclip className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" /> */}
           </div>
 
           {hasAudio && onToggleAudioPlayback ? (
             <Button
-              disabled={true}
+              disabled={false}
               type="button"
               onClick={onToggleAudioPlayback}
               variant="secondary"
@@ -447,8 +470,35 @@ export default function ChatWindow({
               )}
             </Button>
           ) : null}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 px-3"
+                onClick={() => {
+                  if (hasAudio && !isAudioPaused) return;
+                  const next = !isMuted;
+                  onToggleMute?.(next);
+                }}
+                disabled={!!(hasAudio && !isAudioPaused)}
+                aria-label={isMuted ? "Unmute Coach" : "Mute Coach"}
+              >
+                {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {hasAudio && !isAudioPaused ? (
+                <span className="text-xs">Mute is disabled during playback</span>
+              ) : isMuted ? (
+                <span className="text-xs">Unmute</span>
+              ) : (
+                <span className="text-xs">Mute</span>
+              )}
+            </TooltipContent>
+          </Tooltip>
           <Button
-            disabled={true}
+            disabled={false}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
             onClick={handleSend}
           >

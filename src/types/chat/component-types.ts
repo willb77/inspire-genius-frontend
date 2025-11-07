@@ -14,6 +14,9 @@ export interface ChatWindowProps {
   hasAudio?: boolean;
   isAudioPaused?: boolean;
   onToggleAudioPlayback?: () => void;
+  // Mute control
+  isMuted?: boolean;
+  onToggleMute?: (next: boolean) => void;
   messages?: ChatMessage[]; // external conversation, used for logging for now
   isConnecting?: boolean;
   statusBanner?: { type: "success" | "error" | "info"; text: string };

@@ -3,6 +3,7 @@ import Login from "@/pages/auth/Login";
 import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ResetPassword from "@/pages/auth/ResetPassword";
+import AcceptInvitation from "@/pages/auth/AcceptInvitation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 // import PublicRoute from "@/components/PublicRoute";
 
@@ -37,6 +38,7 @@ export const routes: RouteObject[] = [
       { path: "/forgot", element: <ForgotPassword /> },
       { path: "/otp", element: <OTP /> },
       { path: "/reset-password", element: <ResetPassword /> },
+      { path: "/accept-invitation", element: <AcceptInvitation /> },
     ],
   },
 

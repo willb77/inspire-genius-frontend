@@ -12,6 +12,8 @@ import {
   Play,
   Loader2,
   RotateCcw,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -28,6 +30,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
+import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -44,6 +47,7 @@ export default function AlexChatPanel({
   const [message, setMessage] = useState("");
   const [isAudioPaused, setIsAudioPaused] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current)
@@ -273,6 +277,7 @@ export default function AlexChatPanel({
     isRecording,
     startRecording,
     stopRecording,
+    updateContinuousMute,
   } = useAlexWebSocket(onResponse, onAudioData);
 
   const toggleRecording = useCallback(async () => {
@@ -325,6 +330,10 @@ export default function AlexChatPanel({
   useEffect(() => {
     if (!isConnected && open) {
       connect();
+      
+    }
+    if (isConnected && open) {
+      updateContinuousMute(false);
     }
     // do not add connect/disconnect to deps to avoid re-creating
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -460,7 +469,11 @@ export default function AlexChatPanel({
                           : "bg-yellow-50 text-yellow-800"
                       }`}
                     >
-                      {m.text}
+                      {m.sender === "assistant" ? (
+                        <AssistantMarkdown text={m.text} className="text-left" />
+                      ) : (
+                        m.text
+                      )}
                     </div>
                   )}
                 </div>
@@ -545,6 +558,36 @@ export default function AlexChatPanel({
                 )}
               </Button>
             )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-11 px-3"
+                    onClick={() => {
+                      if (hasAudio && !isAudioPaused) return; // disabled while audio is actively playing
+                      const next = !isMuted;
+                      setIsMuted(next);
+                      if (isConnected) updateContinuousMute(next);
+                    }}
+                    disabled={hasAudio && !isAudioPaused}
+                    aria-label={isMuted ? "Unmute Alex" : "Mute Alex"}
+                  >
+                    {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {hasAudio && !isAudioPaused ? (
+                    <span className="text-xs">Mute is disabled during playback</span>
+                  ) : isMuted ? (
+                    <span className="text-xs">Unmute</span>
+                  ) : (
+                    <span className="text-xs">Mute</span>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               type="button"
               onClick={handleSend}
