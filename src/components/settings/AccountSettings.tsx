@@ -59,7 +59,7 @@ export default function AccountSettings({
           <Button
             variant="outline"
             size="sm"
-            disabled={true}
+            disabled={false}
             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gray-20 hover:bg-gray-30"
             onClick={() => onChangePasswordOpenChange?.(true)}
           >
@@ -68,7 +68,7 @@ export default function AccountSettings({
           </Button>
           <Button
             size="sm"
-            disabled={true}
+            disabled={false}
             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-10 text-primary hover:bg-blue-20"
             onClick={() => onEditProfileOpenChange?.(true)}
           >
@@ -159,7 +159,7 @@ export default function AccountSettings({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="flex items-center gap-2 w-full sm:w-[206px]" disabled={!!isUpdatingProfile}>
+                  <Button type="submit" className="flex items-center gap-2 w-full sm:w-[206px]" disabled={!!isUpdatingProfile || true}>
                     {isUpdatingProfile ? "Saving..." : "Save"}
                   </Button>
                 </DialogFooter>
@@ -205,7 +205,7 @@ export default function AccountSettings({
                   >
                     Cancel
                   </Button>
-                  <Button className="w-full sm:w-[48%]" type="submit" disabled={!!isChangingPassword || formSubmitting}>
+                  <Button className="w-full sm:w-[48%]" type="submit" disabled={!!isChangingPassword || formSubmitting || true}>
                     {isChangingPassword || formSubmitting ? "Saving..." : "Save Changes"}
                   </Button>
                 </DialogFooter>

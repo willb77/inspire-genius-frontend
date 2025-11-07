@@ -67,6 +67,7 @@ export interface ExportChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onExport?: (from: Date, to: Date) => Promise<void> | void;
+  disableExport?: boolean;
 }
 
 // DocumentViewerModal component props

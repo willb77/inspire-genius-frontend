@@ -2,7 +2,9 @@ import {
   DataTable,
   type Column,
 } from "@/components/super-admin/organization/DataTable";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 // import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { useMemo, useState } from "react";
@@ -152,7 +154,21 @@ export default function SuperAdminOrganizations() {
           <h1 className="text-2xl font-semibold tracking-tight text-left">
             Organization Management
           </h1>
-        
+          <div className="flex flex-wrap gap-6">
+         
+            <Button>
+              <Plus className="size-4" />
+              Add Organization
+            </Button>
+            {/* <AddOrganization
+              trigger={
+                <Button>
+                  <Plus className="size-4" />
+                  Add Organization
+                </Button>
+              }
+            /> */}
+          </div>
         </div>
         <div className="h-[calc(100vh-15rem)]">
           <DataTable
