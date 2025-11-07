@@ -1,0 +1,93 @@
+"use client";
+
+import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
+import { Input } from "@/components/ui/input";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { User_FORM_DEFAULTS, User_FORM_RULES, type UserFormValues } from "./userForm.constants";
+
+export type UserFormModalProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
+  mode: "add" | "edit";
+  defaultValues?: Partial<UserFormValues>;
+  onSubmit: (values: UserFormValues) => void | Promise<void>;
+  submitLabel?: string;
+};
+
+export default function UserFormModal({
+  open,
+  onOpenChange,
+  title,
+  mode,
+  defaultValues = {},
+  onSubmit,
+  submitLabel,
+}: UserFormModalProps) {
+  const defaultValuesMerged: UserFormValues = { ...User_FORM_DEFAULTS, ...defaultValues };
+
+  return (
+    <ModalFormFrame<UserFormValues>
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title ?? (mode === "add" ? "Add User" : "Edit User")}
+      mode={mode}
+      defaultValues={defaultValuesMerged}
+      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
+      onSubmit={onSubmit}
+    >
+      {({ control }) => (
+        <>
+          <FormField
+            control={control}
+            name="first_name"
+            rules={User_FORM_RULES.first_name}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-xs">First Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter First Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="last_name"
+            rules={User_FORM_RULES.last_name}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-xs">Last Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter Last Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {mode === "add" && (
+            <>
+              <FormField
+                control={control}
+                name="email"
+                rules={User_FORM_RULES.email}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-xs">Email *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter Email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+        </>
+      )}
+    </ModalFormFrame>
+  );
+}
