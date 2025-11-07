@@ -161,13 +161,13 @@ export default function CoachManagement() {
   const columns: Column<CoachRow>[] = [
     { key: "name", header: "Name", sortable: true },
     { key: "category", header: "Category", sortable: true },
-    { key: "voice_style", header: "Voice Style", sortable: true },
+    // { key: "voice_style", header: "Voice Style", sortable: true },
     {
       key: "voice_description",
       header: "Voice Description",
       render: (row) => <div className="line-clamp-1">{row.voice_description.length>20 ?`${row.voice_description.slice(0, 20)}...` : row.voice_description}</div>,
     },
-    { key: "total_sessions", header: "Total Sessions", sortable: true },
+    // { key: "total_sessions", header: "Total Sessions", sortable: true },
     {
       key: "status",
       header: "Status",
@@ -190,7 +190,7 @@ export default function CoachManagement() {
           align="end"
           showView={false}
           showEdit={row.type !== "predefined"}
-          showDeactivate
+          showDeactivate={row.status === "Active"}
           onEdit={() => openEdit(row)}
           onDeactivate={() => openDeactivate(row)}
         />

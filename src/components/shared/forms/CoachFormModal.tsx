@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { COACH_FORM_DEFAULTS, COACH_FORM_RULES, type CoachFormValues } from "./coachForm.constants";
-import { MultiSelect } from "@/components/ui/multi-select";
+// import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { MultiSelectOption } from "@/components/ui/multi-select";
 
@@ -28,7 +28,7 @@ export default function CoachFormModal({
   defaultValues,
   onSubmit,
   submitLabel,
-  toneOptions = [],
+  // toneOptions = [],
 }: CoachFormModalProps) {
   const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
   
@@ -74,7 +74,7 @@ export default function CoachFormModal({
               </FormItem>
             )}
           />
-
+{/* 
           <FormField
             control={form.control}
             name="voice_style"
@@ -96,7 +96,7 @@ export default function CoachFormModal({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           {mode === "edit" ? (
             <FormField
