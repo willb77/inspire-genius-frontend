@@ -1,6 +1,6 @@
 stages:
   - build
-  - sonarScan
+  # - sonarScan   # 🔒 Commented out temporarily
   - deploy
 
 # -------------------------
@@ -42,26 +42,26 @@ devBuild:
       - dist/
 
 # -------------------------
-# SonarQube Scan Job (NEW)
+# SonarQube Scan Job (commented out)
 # -------------------------
-sonarScan:
-  stage: sonarScan
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  script:
-    - >
-      sonar-scanner
-      -Dsonar.projectKey=inspire-genius-frontend
-      -Dsonar.sources=.
-      -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.login=$SONAR_TOKEN
-  only:
-    - development
-  dependencies:
-    - devBuild
-  tags:
-    - pacewisdom-docker-shared-runner
+# sonarScan:
+#   stage: sonarScan
+#   image:
+#     name: sonarsource/sonar-scanner-cli:latest
+#     entrypoint: [""]
+#   script:
+#     - >
+#       sonar-scanner
+#       -Dsonar.projectKey=inspire-genius-frontend
+#       -Dsonar.sources=.
+#       -Dsonar.host.url=$SONAR_HOST_URL
+#       -Dsonar.login=$SONAR_TOKEN
+#   only:
+#     - development
+#   dependencies:
+#     - devBuild
+#   tags:
+#     - pacewisdom-docker-shared-runner
 
 # -------------------------
 # Deploy Job (unchanged)
