@@ -1,4 +1,11 @@
-import { MoreVertical, Eye, Edit, Trash2, MessageCircleX } from "lucide-react";
+import {
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+  MessageCircleX,
+  Mail,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +25,7 @@ export type ActionMenuProps<Row = unknown> = {
   triggerClassName?: string;
   align?: "start" | "end" | "center";
   // Toggles for actions
+  showResend?: boolean;
   showView?: boolean;
   showEdit?: boolean;
   showDeactivate?: boolean;
@@ -28,6 +36,7 @@ export type ActionMenuProps<Row = unknown> = {
   // Callbacks (row and optional option value)
   onView?: (row?: Row, option?: string) => void;
   onEdit?: (row?: Row, option?: string) => void;
+  onResend?: (row?: Row) => void;
   onDeactivate?: (row?: Row) => void;
   onDelete?: (row?: Row) => void;
 };
@@ -36,6 +45,7 @@ export default function ActionMenu<Row = unknown>({
   row,
   triggerClassName,
   align = "end",
+  showResend = true,
   showView = true,
   showEdit = true,
   showDeactivate = true,
@@ -44,6 +54,7 @@ export default function ActionMenu<Row = unknown>({
   editOptions,
   onView,
   onEdit,
+  onResend,
   onDeactivate,
   onDelete,
 }: ActionMenuProps<Row>) {
@@ -61,9 +72,10 @@ export default function ActionMenu<Row = unknown>({
           <span className="sr-only">Open menu</span>
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align={align}>
-        {showView && (
-          viewOptions && viewOptions.length ? (
+        {showView &&
+          (viewOptions && viewOptions.length ? (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Eye className="w-4 h-4 mr-2" /> View
@@ -71,7 +83,10 @@ export default function ActionMenu<Row = unknown>({
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   {viewOptions.map((opt) => (
-                    <DropdownMenuItem key={opt.value} onClick={() => onView?.(row, opt.value)}>
+                    <DropdownMenuItem
+                      key={opt.value}
+                      onClick={() => onView?.(row, opt.value)}
+                    >
                       {opt.label}
                     </DropdownMenuItem>
                   ))}
@@ -82,13 +97,14 @@ export default function ActionMenu<Row = unknown>({
             <DropdownMenuItem onClick={() => onView?.(row)}>
               <Eye className="w-4 h-4 mr-2" /> View
             </DropdownMenuItem>
-          )
+          ))}
+
+        {showView && (showEdit || showDeactivate || showResend) && (
+          <DropdownMenuSeparator />
         )}
 
-        {showView && (showEdit || showDeactivate) && <DropdownMenuSeparator />}
-
-        {showEdit && (
-          editOptions && editOptions.length ? (
+        {showEdit &&
+          (editOptions && editOptions.length ? (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Edit className="w-4 h-4 mr-2" /> Edit
@@ -96,7 +112,10 @@ export default function ActionMenu<Row = unknown>({
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   {editOptions.map((opt) => (
-                    <DropdownMenuItem key={opt.value} onClick={() => onEdit?.(row, opt.value)}>
+                    <DropdownMenuItem
+                      key={opt.value}
+                      onClick={() => onEdit?.(row, opt.value)}
+                    >
                       {opt.label}
                     </DropdownMenuItem>
                   ))}
@@ -107,10 +126,17 @@ export default function ActionMenu<Row = unknown>({
             <DropdownMenuItem onClick={() => onEdit?.(row)}>
               <Edit className="w-4 h-4 mr-2" /> Edit
             </DropdownMenuItem>
-          )
+          ))}
+
+        {showResend && (
+          <DropdownMenuItem onClick={() => onResend?.(row)}>
+            <Mail className="w-4 h-4 mr-2" /> Resend
+          </DropdownMenuItem>
         )}
 
-        {showEdit && showDeactivate && <DropdownMenuSeparator />}
+        {(showEdit || showResend) && showDeactivate && (
+          <DropdownMenuSeparator />
+        )}
 
         {showDeactivate && (
           <DropdownMenuItem onClick={() => onDeactivate?.(row)}>
@@ -118,7 +144,10 @@ export default function ActionMenu<Row = unknown>({
           </DropdownMenuItem>
         )}
 
-        {showDelete && (showView || showEdit || showDeactivate) && <DropdownMenuSeparator />}
+        {showDelete &&
+          (showView || showEdit || showDeactivate || showResend) && (
+            <DropdownMenuSeparator />
+          )}
 
         {showDelete && (
           <DropdownMenuItem onClick={() => onDelete?.(row)}>
