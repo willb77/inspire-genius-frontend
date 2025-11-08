@@ -12,7 +12,10 @@ export function buildCoachAudioPreviewUrl(params?: CoachAudioParams): string {
   const url = new URL(`${base.replace(/\/+$/, '')}/v1/frontend-text/audio-preview`)
   if (params?.accentId) url.searchParams.set('accent_id', params.accentId)
   if (params?.genderId) url.searchParams.set('gender_id', params.genderId)
-  if (params?.toneIds && params.toneIds.length > 0) url.searchParams.set('tone_ids', params.toneIds.join(','))
+  if (params?.toneIds && params.toneIds.length > 0) {
+    const list = params.toneIds.filter((v): v is string => !!v && v.trim().length > 0)
+    for (const id of list) url.searchParams.append('tone_ids', id)
+  }
   return url.toString()
 }
 
