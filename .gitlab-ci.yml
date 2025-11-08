@@ -56,8 +56,8 @@ deploy:
     # Ensure required AWS variables exist
     - '[ -z "$S3_BUCKET_NAME_UAT" ] && echo "Missing S3_BUCKET_NAME_UAT" && exit 1'
     - '[ -z "$CLOUDFRONT_DISTRIBUTION_ID_UAT" ] && echo "Missing CLOUDFRONT_DISTRIBUTION_ID_UAT" && exit 1'
-    - '[ -z "$AWS_ACCESS_KEY_ID" ] && echo "Missing AWS_ACCESS_KEY_ID" && exit 1'
-    - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "Missing AWS_SECRET_ACCESS_KEY" && exit 1'
+    - '[ -z "$AWS_ACCESS_KEY_ID_UAT" ] && echo "Missing AWS_ACCESS_KEY_ID_UAT" && exit 1'
+    - '[ -z "$AWS_SECRET_ACCESS_KEY_UAT" ] && echo "Missing AWS_SECRET_ACCESS_KEY_UAT" && exit 1'
     - '[ -z "$AWS_DEFAULT_REGION" ] && echo "Missing AWS_DEFAULT_REGION" && exit 1'
 
     # Clean S3 bucket (trim spaces)
