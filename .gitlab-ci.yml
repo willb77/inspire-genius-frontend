@@ -1,17 +1,16 @@
 stages:
   - build
-  # - sonarScan   # 🔒 Commented out temporarily
   - deploy
 
 # -------------------------
-# Build Job (unchanged)
+# Build Job
 # -------------------------
 devBuild:
   stage: build
   tags:
     - 3pp-sandbox
   only:
-    - development
+    - uat
   script:
     # Install Node.js 20 only for this job using NVM
     - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -42,29 +41,7 @@ devBuild:
       - dist/
 
 # -------------------------
-# SonarQube Scan Job (commented out)
-# -------------------------
-# sonarScan:
-#   stage: sonarScan
-#   image:
-#     name: sonarsource/sonar-scanner-cli:latest
-#     entrypoint: [""]
-#   script:
-#     - >
-#       sonar-scanner
-#       -Dsonar.projectKey=inspire-genius-frontend
-#       -Dsonar.sources=.
-#       -Dsonar.host.url=$SONAR_HOST_URL
-#       -Dsonar.login=$SONAR_TOKEN
-#   only:
-#     - development
-#   dependencies:
-#     - devBuild
-#   tags:
-#     - pacewisdom-docker-shared-runner
-
-# -------------------------
-# Deploy Job (unchanged)
+# Deploy Job
 # -------------------------
 deploy:
   stage: deploy
@@ -72,22 +49,22 @@ deploy:
   tags:
     - 3pp-sandbox
   only:
-    - development
+    - uat
   dependencies:
     - devBuild
   script:
     # Ensure required AWS variables exist
-    - '[ -z "$S3_BUCKET_NAME" ] && echo "Missing S3_BUCKET_NAME" && exit 1'
-    - '[ -z "$CLOUDFRONT_DISTRIBUTION_ID" ] && echo "Missing CLOUDFRONT_DISTRIBUTION_ID" && exit 1'
+    - '[ -z "$S3_BUCKET_NAME_UAT" ] && echo "Missing S3_BUCKET_NAME_UAT" && exit 1'
+    - '[ -z "$CLOUDFRONT_DISTRIBUTION_ID_UAT" ] && echo "Missing CLOUDFRONT_DISTRIBUTION_ID_UAT" && exit 1'
     - '[ -z "$AWS_ACCESS_KEY_ID" ] && echo "Missing AWS_ACCESS_KEY_ID" && exit 1'
     - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "Missing AWS_SECRET_ACCESS_KEY" && exit 1'
     - '[ -z "$AWS_DEFAULT_REGION" ] && echo "Missing AWS_DEFAULT_REGION" && exit 1'
 
     # Clean S3 bucket (trim spaces)
-    - aws s3 rm "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
+    - aws s3 rm "s3://$(echo $S3_BUCKET_NAME_UAT | xargs)" --recursive
 
     # Upload new build
-    - aws s3 cp dist/ "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
+    - aws s3 cp dist/ "s3://$(echo $S3_BUCKET_NAME_UAT | xargs)" --recursive
 
     # Invalidate CloudFront
-    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID_UAT" --paths "/*"
