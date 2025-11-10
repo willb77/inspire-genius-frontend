@@ -75,7 +75,7 @@ export default function Coaches() {
                   genders={genderOptions}
                   accents={accentOptions}
                   tones={toneOptions}
-                  disableButton = {true}
+                  disableButton = {false}
                   selectedGenderId={agent.user_gender?.id ?? undefined}
                   selectedAccentId={agent.user_accent?.id ?? undefined}
                   selectedToneIds={selectedToneIds}
