@@ -159,7 +159,7 @@ export default function AccountSettings({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="flex items-center gap-2 w-full sm:w-[206px]" disabled={!!isUpdatingProfile || true}>
+                  <Button type="submit" className="flex items-center gap-2 w-full sm:w-[206px]" disabled={!!isUpdatingProfile}>
                     {isUpdatingProfile ? "Saving..." : "Save"}
                   </Button>
                 </DialogFooter>
@@ -205,7 +205,7 @@ export default function AccountSettings({
                   >
                     Cancel
                   </Button>
-                  <Button className="w-full sm:w-[48%]" type="submit" disabled={!!isChangingPassword || formSubmitting || true}>
+                  <Button className="w-full sm:w-[48%]" type="submit" disabled={!!isChangingPassword || formSubmitting}>
                     {isChangingPassword || formSubmitting ? "Saving..." : "Save Changes"}
                   </Button>
                 </DialogFooter>
