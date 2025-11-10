@@ -10,9 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const email = user?.email ?? "";
   const name = (email && email.split("@")[0]) || "User";
   const initial = (name?.[0] ?? "U").toUpperCase();
@@ -55,9 +58,9 @@ export default function UserTopHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Help &amp; Support</DropdownMenuItem>
+            {/* <DropdownMenuItem>Profile</DropdownMenuItem> */}
+            <DropdownMenuItem onSelect={() => navigate(ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>
             <DropdownMenuSeparator />
             <ConfirmDialog
               title="Log out"

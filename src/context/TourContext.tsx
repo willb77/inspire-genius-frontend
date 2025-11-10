@@ -157,7 +157,8 @@ const DEFAULT_STEPS: TourStep[] = [
     image: "/images/tour/right-alex.svg",
     padding: 10,
     route: ROUTES.DOCUMENTS,
-    tooltipClassName: "right-[5%] bottom-24",
+    tooltipClassName: "left-[40%] bottom-24 ",
+    imageClassName: "left-[20%] bottom-24 w-24 md:w-28 lg:w-48",
   },
 
   {
@@ -168,7 +169,8 @@ const DEFAULT_STEPS: TourStep[] = [
     image: "/images/tour/right-alex.svg",
     padding: 12,
     route: ROUTES.DOCUMENTS,
-    tooltipClassName: "left-[10%] bottom-20",
+    tooltipClassName: "left-[25%] bottom-16",
+    imageClassName: "left-[10%] bottom-16 w-24 md:w-28 lg:w-48",
   },
   // Settings page
   {
@@ -178,7 +180,8 @@ const DEFAULT_STEPS: TourStep[] = [
     image: "/images/tour/left-alex.svg",
     padding: 12,
     route: ROUTES.SETTINGS,
-    tooltipClassName: "left-[30%] bottom-20",
+    tooltipClassName: "left-[30%] bottom-14",
+    imageClassName: "left-[60%] bottom-14 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="settings-notifications"]',
@@ -188,6 +191,7 @@ const DEFAULT_STEPS: TourStep[] = [
     padding: 12,
     route: ROUTES.SETTINGS,
     tooltipClassName: "right-[10%] bottom-24",
+    imageClassName: "right-[60%] bottom-24 w-24 md:w-28 lg:w-48",
   },
   // Help page
 
@@ -204,10 +208,11 @@ const DEFAULT_STEPS: TourStep[] = [
     selector: '[data-tour="help-form"]',
     title: "Contact support",
     description: "Send us a message and we’ll get back to you.",
-    image: "/images/tour/left-alex.svg",
+    image: "/images/tour/right-alex.svg",
     padding: 12,
     route: ROUTES.HELP,
     tooltipClassName: "left-[25%] bottom-20",
+    imageClassName: "left-[10%] bottom-20 w-24 md:w-28 lg:w-48",
   },
   {
     selector: '[data-tour="onboarding-one"]',
@@ -381,11 +386,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const start = useCallback((newSteps?: TourStep[]) => {
     const toUse = newSteps?.length ? newSteps : (apiMappedSteps.length ? apiMappedSteps : DEFAULT_STEPS);
-    setSteps(toUse);
-    // If we are on an onboarding route, start from its matching step
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
+    // Filter steps to the relevant group only
+    const grouped = toUse.filter((s) => {
+      const r = s.route ?? ''
+      return isOnboardingRoute ? r.startsWith('/onboarding') : !r.startsWith('/onboarding')
+    })
+    setSteps(grouped);
+    // If we are on an onboarding route, start from its matching step inside the group
     if (isOnboardingRoute) {
-      const idx = toUse.findIndex((s) => !!s.route && (location.pathname === s.route || location.pathname.startsWith(s.route)));
+      const idx = grouped.findIndex((s) => !!s.route && (location.pathname === s.route || location.pathname.startsWith(s.route)));
       setIndex(idx >= 0 ? idx : 0);
     } else {
       setIndex(0);
