@@ -482,7 +482,7 @@ export default function ChatWindow({
                   const next = !isMuted;
                   onToggleMute?.(next);
                 }}
-                disabled={!!(hasAudio && !isAudioPaused) || true}
+                disabled={!!(hasAudio && !isAudioPaused)}
                 aria-label={isMuted ? "Unmute Coach" : "Mute Coach"}
               >
                 {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}

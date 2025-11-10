@@ -30,6 +30,10 @@ export default function CoachCard({
   onSubmit: onSubmitProp,
   isSubmitting,
   disableButton = false,
+  activeAgentId,
+  setActiveAgentId,
+  activeAgentPhase,
+  setActiveAgentPhase,
 }: CoachCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
@@ -89,6 +93,17 @@ export default function CoachCard({
       },
     });
   };
+
+  useEffect(() => {
+    // If this card is the active one, sync its phase up to parent
+    if (activeAgentId === agentId && setActiveAgentPhase) {
+      setActiveAgentPhase(phase);
+    }
+    // When active card goes idle, clear active id
+    if (phase === 'idle' && activeAgentId === agentId && setActiveAgentId) {
+      setActiveAgentId(null);
+    }
+  }, [phase, activeAgentId, agentId, setActiveAgentId, setActiveAgentPhase]);
 
   return (
     <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-5">
@@ -186,7 +201,7 @@ export default function CoachCard({
           variant="outline"
           size="icon"
           className="h-11 w-11 rounded-xl border border-blue-primary"
-          disabled={phase === 'starting'}
+          disabled={(phase === 'starting') || (!!activeAgentId && activeAgentId !== agentId && activeAgentPhase !== 'paused')}
           onClick={() => {
             const params = {
               genderId: (isEditing ? g : (selectedGenderId ?? g)) ?? undefined,
@@ -197,6 +212,8 @@ export default function CoachCard({
             if (phase === 'paused') { resume(); return; }
             // Fetch fresh audio every time when idle
             playFresh(params);
+            if (setActiveAgentId) setActiveAgentId(agentId);
+            if (setActiveAgentPhase) setActiveAgentPhase('starting');
           }}
         >
           {phase === 'starting' ? (

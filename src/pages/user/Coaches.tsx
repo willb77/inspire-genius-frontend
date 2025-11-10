@@ -11,6 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function Coaches() {
   const [query, setQuery] = useState("");
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
+  const [activeAgentPhase, setActiveAgentPhase] = useState<'idle' | 'starting' | 'speaking' | 'paused' | 'error'>('idle');
   const queryClient = useQueryClient();
 
   const { agents: rawAgents, toneOptions, accentOptions, genderOptions, isLoading } = useCoachData({ page: 1, page_size: 10 });
@@ -83,6 +85,10 @@ export default function Coaches() {
                   onSubmit={handleSubmit}
                   isSubmitting={updateMutation.isPending && submittingAgentId === agent.id}
                   isOptionsLoading={isLoading}
+                  activeAgentId={activeAgentId}
+                  setActiveAgentId={setActiveAgentId}
+                  activeAgentPhase={activeAgentPhase}
+                  setActiveAgentPhase={setActiveAgentPhase}
                 />
               </div>
             );
