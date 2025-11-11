@@ -23,7 +23,6 @@ export default function LicenceDetailsPage() {
     total: data?.data?.total ?? 0,
   };
 
-  /** 🎨 Helpers */
   const getStatusColor = (status: string) => {
     const lower = status.toLowerCase();
     if (lower === "active") return "bg-green-100 text-green-700 border-transparent";
@@ -48,7 +47,6 @@ export default function LicenceDetailsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        {/* 🧭 Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Button
@@ -74,7 +72,6 @@ export default function LicenceDetailsPage() {
         <Card className="bg-white shadow-sm">
           <CardContent>
             {isPending ? (
-              // 🕓 Loading State
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Card key={i} className="p-4 border">
@@ -84,13 +81,11 @@ export default function LicenceDetailsPage() {
                 ))}
               </div>
             ) : licenses.length === 0 ? (
-              // 🚫 Empty State
               <div className="text-center py-12 text-gray-600">
                 <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 No licenses found
               </div>
             ) : (
-              // ✅ License Cards
               <div className="space-y-3">
                 {licenses.map((license) => (
                   <Card
@@ -98,7 +93,6 @@ export default function LicenceDetailsPage() {
                     className="p-4 border hover:shadow-md transition-all"
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Organization Info */}
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Building2 className="h-5 w-5 text-gray-600" />
@@ -115,7 +109,6 @@ export default function LicenceDetailsPage() {
                         </div>
                       </div>
 
-                      {/* Status + Tier */}
                       <div className="flex flex-col sm:flex-row items-end gap-4">
                         <div className="text-right">
                           <Badge
@@ -140,7 +133,6 @@ export default function LicenceDetailsPage() {
               </div>
             )}
 
-            {/* 📄 Pagination */}
             {!isPending && licenses.length > 0 && (
               <div className="flex items-center justify-between text-sm text-muted-foreground mt-6 pt-4 border-t">
                 <div>
