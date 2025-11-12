@@ -95,8 +95,8 @@ export default function Home() {
             </p>
             </div>
             <div className="grid grid-cols-2 gap-5">
-              <Button variant="outline" className="w-full border border-blue-primary text-blue-primary">Take Survey</Button>
-              <Button className="w-full">Know more</Button>
+              <Button  variant="outline" className="cursor-not-allowed w-full border border-blue-primary text-blue-primary">Take Survey</Button>
+              <Button className="cursor-not-allowed w-full">Know more</Button>
             </div>
           </CardContent>
         </Card>
@@ -131,8 +131,8 @@ export default function Home() {
               <img src="/images/user/home/tour.svg" alt="Tour" className="w-5 h-5" />
               Take a Tour
             </Button>
-            <Button className="w-full h-16 bg-brown-350 hover:bg-brown-350/80 hover:text-white text-white" variant="outline"><img src="/images/user/home/how-to-use.svg" alt="How to use" className="w-5 h-5" />How to use</Button>
-            <Button className="w-full h-16 bg-brown-250 hover:bg-brown-250/80 hover:text-white text-white" variant="destructive"><img src="/images/user/home/coaches.svg" alt="Coaches" className="w-5 h-5" />Coaches Introduction</Button>
+            <Button className="cursor-not-allowed w-full h-16 bg-brown-350 hover:bg-brown-350/80 hover:text-white text-white" variant="outline"><img src="/images/user/home/how-to-use.svg" alt="How to use" className="w-5 h-5" />How to use</Button>
+            <Button className="cursor-not-allowed w-full h-16 bg-brown-250 hover:bg-brown-250/80 hover:text-white text-white" variant="destructive"><img src="/images/user/home/coaches.svg" alt="Coaches" className="w-5 h-5" />Coaches Introduction</Button>
           </div>
           </CardContent>
         </Card>
