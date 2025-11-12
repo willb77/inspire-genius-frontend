@@ -66,7 +66,7 @@ export default function CoachChat() {
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
   const deleteMutation = useDeleteDocument();
-console.log(coachName, "coach name")
+
   const docSections = useMemo(() => {
     type ApiFile = {
       id: string;
@@ -140,7 +140,7 @@ console.log(coachName, "coach name")
   }, [downloadMutation]);
 
   const onResponse = useCallback((resp: AgentResponse) => {
-    console.log("WS response", resp);
+
     if (resp.type === "init_success") {
       setStatusBanner({ type: "success", text: "Connected. Select Documents to proceed" });
       return;
@@ -150,7 +150,11 @@ console.log(coachName, "coach name")
       return;
     }
     if (resp.type === "continuous_mode") {
-      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text: "", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]));
+      // Show processing placeholder (recording started)
+      setMessages((prev) => ([
+        ...prev.filter((m) => m.kind !== 'processing'),
+        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isProcessing: true, type: 'processing' }
+      ]));
       return;
     }
     if (resp.type === "audio_start") {
@@ -170,7 +174,10 @@ console.log(coachName, "coach name")
       const text = resp.full_text ?? resp.text ?? "";
       if (!text) return;
       if (lastMessageRef.current.type !== "response_chunk" || lastMessageRef.current.text !== text) {
-        setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]));
+        setMessages((prev) => ([
+          ...prev.filter((m) => m.kind !== 'processing'),
+          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }
+        ]));
         lastMessageRef.current = { type: "response_chunk", text };
       }
       return;
@@ -196,12 +203,12 @@ console.log(coachName, "coach name")
       svc.addAudioChunk(audioData);
       setHasAudio(true);
       const ctx = svc.getAudioContext();
-      if (ctx && ctx.state === "suspended") {
+      if (ctx && ctx.state === "suspended" && !isAudioPaused) {
         svc.resumeAudio();
         setIsAudioPaused(false);
       }
     });
-  }, []);
+  }, [isAudioPaused]);
 
   const {
     connect,
@@ -455,6 +462,13 @@ console.log(coachName, "coach name")
               demoAudioServiceRef.current?.resetAudioState();
               setHasAudio(false);
               setIsAudioPaused(false);
+              // Add user message and a processing placeholder
+              const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              setMessages((prev) => ([
+                ...prev.filter((m) => m.kind !== 'processing'),
+                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr },
+                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, isProcessing: true, type: 'processing' },
+              ]));
               sendTextMessage(t);
             }}
             onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}

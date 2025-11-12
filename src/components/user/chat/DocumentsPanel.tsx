@@ -73,16 +73,16 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-1">
-        <span className="text-sm font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
+        <span className="text-xs font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
         {(useControlled ? (selectedIds?.length ?? 0) : selected.size) > 0 ? (
           <ConfirmDialog
             trigger={
               <Button
                 type="button"
-                className="h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
+                className="invisible h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
                 variant="secondary"
               >
                 Delete
@@ -101,7 +101,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
         <Button
           type="button"
           onClick={importSelected}
-          className="h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
+          className="invisible h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
           variant="secondary"
         >
           Import to Chat
