@@ -21,6 +21,8 @@ export default function OnboardingDetailsTwo() {
   const [showTour, setShowTour] = useState(false);
   const [pendingDest, setPendingDest] = useState<string | null>(null);
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
+  const [activeAgentPhase, setActiveAgentPhase] = useState<'idle' | 'starting' | 'speaking' | 'paused' | 'error'>('idle');
   const queryClient = useQueryClient();
   const logoRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
@@ -145,6 +147,10 @@ export default function OnboardingDetailsTwo() {
                     onSubmit={handleSubmit}
                     isSubmitting={updateMutation.isPending && submittingAgentId === agent.id}
                     isOptionsLoading={isLoading}
+                    activeAgentId={activeAgentId}
+                    setActiveAgentId={setActiveAgentId}
+                    activeAgentPhase={activeAgentPhase}
+                    setActiveAgentPhase={setActiveAgentPhase}
                   />
                 </div>
               );

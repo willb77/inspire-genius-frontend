@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { OtpInputField } from "@/components/shared/OtpInputField";
 import { useAuth } from "@/context/useAuth";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
+import { getNextStep } from "@/lib/storage";
 // Navigation is handled inside AuthContext; no local routing needed here
 
 export default function OTP() {
@@ -14,10 +15,18 @@ export default function OTP() {
   const [secondsLeft, setSecondsLeft] = useState(60); // 1:45 like the mock
   const { verifyOtp, resendOtp, isLoading } = useAuth();
   const redirectTo = useAuthRedirectForAuthPages();
+  const [hideLogin, setHideLogin] = useState(false);
 
   useEffect(() => {
     if (redirectTo) navigate(redirectTo, { replace: true });
   }, [redirectTo, navigate]);
+
+  useEffect(() => {
+    (async () => {
+      const step = await getNextStep();
+      setHideLogin(step === "verify_mfa");
+    })();
+  }, []);
 
   // Handlers
   const handleVerify = async () => {
@@ -91,15 +100,17 @@ export default function OTP() {
           </button>
         </div>
 
-        <p className="text-sm text-muted-foreground mt-auto">
-          Already have an account?{" "}
-          <a
-            className="underline text-blue-primary font-semibold"
-            href="/login"
-          >
-            Log In
-          </a>
-        </p>
+        {!hideLogin && (
+          <p className="text-sm text-muted-foreground mt-auto">
+            Already have an account?{" "}
+            <a
+              className="underline text-blue-primary font-semibold"
+              href="/login"
+            >
+              Log In
+            </a>
+          </p>
+        )}
       </div>
     </AuthLayout>
   );

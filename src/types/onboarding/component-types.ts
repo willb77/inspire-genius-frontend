@@ -45,4 +45,8 @@ export interface CoachCardProps {
   isSubmitting?: boolean;
   isOptionsLoading?: boolean;
   disableButton?: boolean;
+  activeAgentId?: string | null;
+  setActiveAgentId?: (id: string | null) => void;
+  activeAgentPhase?: 'idle' | 'starting' | 'speaking' | 'paused' | 'error';
+  setActiveAgentPhase?: (phase: 'idle' | 'starting' | 'speaking' | 'paused' | 'error') => void;
 }

@@ -28,7 +28,7 @@ export default function UserTopHeader() {
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+        <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed">
           <Bell className="size-5" />
           <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
         </Button>

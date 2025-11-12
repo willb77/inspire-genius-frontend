@@ -74,6 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // Event-based token sync: update in-memory user token when axios refreshes
+  useEffect(() => {
+    const onAuthToken = (e: Event) => {
+      const detail = (e as CustomEvent<{ token?: string }>).detail;
+      const next = detail?.token;
+      if (!next) return;
+      setUser((prev) => (prev ? { ...prev, token: next } : prev));
+      syncAuthToken(next);
+    };
+    window.addEventListener("auth:token", onAuthToken as EventListener);
+    return () => window.removeEventListener("auth:token", onAuthToken as EventListener);
+  }, []);
+
   const computeIsOnboarded = useCallback((v: unknown): boolean => v === true || v === "true", []);
 
   const navigateAfterAuth = useCallback(

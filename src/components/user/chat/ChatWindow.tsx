@@ -12,6 +12,7 @@ import {
   Play,
   Volume2,
   VolumeX,
+  SquarePause,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
@@ -19,7 +20,11 @@ import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
 import DocumentIframeModal from "@/components/user/chat/DocumentIframeModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -95,9 +100,15 @@ export default function ChatWindow({
     const half = Math.floor((max - 1) / 2);
     return `${s.slice(0, half)}…${s.slice(-half)}`;
   };
+  const stripPdfExt = (name: string) => name.replace(/\.pdf$/i, "");
   const selectedSummary = useMemo(() => {
     if (!selectedDocNames || selectedDocNames.length === 0) return "";
-    const head = selectedDocNames.slice(0, 2).map((n, i) => (i === 1 ? middleTruncate(n, 18) : n));
+    const head = selectedDocNames
+      .slice(0, 10)
+      .map((n, i) => {
+        const base = stripPdfExt(n);
+        return i === 1 ? middleTruncate(base, 18) : base;
+      });
     return head.join(", ") + (selectedDocNames.length > 2 ? " …" : "");
   }, [selectedDocNames]);
 
@@ -119,23 +130,11 @@ export default function ChatWindow({
     const text = inputText.trim();
     if (!text) return;
     onSendText?.(text);
-    setMessages?.((prev) => [
-      ...prev,
-      {
-        id: `msg-${Date.now()}`,
-        kind: "text",
-        sender: "user",
-        text,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
     setInputText("");
   };
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -152,6 +151,21 @@ export default function ChatWindow({
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [hasMore, onLoadMore, convIsFetchingNext]);
+
+  // Auto-scroll to bottom when new messages render
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+    if (!externalMessages || externalMessages.length === 0) return;
+    const node = bottomRef.current;
+    if (!node) return;
+    try {
+      node.scrollIntoView({ behavior: "smooth", block: "end" });
+    } catch {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalMessages?.length, activeTab]);
 
   return (
     <div
@@ -186,7 +200,7 @@ export default function ChatWindow({
               Chat
             </button>
             <button
-            disabled={false}
+              disabled={false}
               className={cn(
                 "cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
@@ -222,15 +236,15 @@ export default function ChatWindow({
         }}
         ref={scrollRef}
       >
-        {selectedDocNames && selectedDocNames.length > 0  ? (
+        {selectedDocNames && selectedDocNames.length ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-900 border border-blue-200 rounded-md px-2 py-1">
+              <div className="min-h-10 w-full mb-3 inline-flex items-start gap-1 text-xs bg-blue-50 text-blue-900 border border-blue-200 rounded-md px-2 py-1">
                 <span>Selected:</span>
                 <span className="font-semibold">{selectedSummary}</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent>{selectedDocNames.join(", ")}</TooltipContent>
+            <TooltipContent>{selectedDocNames.map(stripPdfExt).join(", ")}</TooltipContent>
           </Tooltip>
         ) : isConnecting ? (
           <div className="text-xs text-blue-600">Connecting...</div>
@@ -253,8 +267,19 @@ export default function ChatWindow({
             {convIsLoading ? (
               <div className="space-y-4 px-4 mt-2">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}> 
-                    <div className={cn("max-w-[70%] rounded-2xl p-3", i % 2 === 0 ? "bg-gray-100" : "bg-gray-100")}>
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex",
+                      i % 2 === 0 ? "justify-start" : "justify-end"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[70%] rounded-2xl p-3",
+                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
+                      )}
+                    >
                       <Skeleton className="h-4 w-48 mb-2" />
                       <Skeleton className="h-4 w-32" />
                     </div>
@@ -269,32 +294,80 @@ export default function ChatWindow({
                   const right = m.sender === "user";
                   return (
                     <div key={m.id} className="space-y-1">
+                      <div className={cn("max-w-[70%] min-w-40 w-fit ", right ? "ml-auto" : undefined)}>
+                        <div
+                          className={cn(
+                            "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
+                            right ? "bg-gray-100" : "bg-gray-100"
+                          )}
+                        >
+                          {m.sender === "assistant" ? (
+                            <AssistantMarkdown
+                              text={m.text}
+                              className="text-left"
+                            />
+                          ) : (
+                            m.text
+                          )}
+                        </div>
+                        <div
+                          className={cn(
+                            "max-w-full min-w-40 w-full flex items-center justify-between mt-2 px-2",
+                            right ? "ml-auto" : undefined
+                          )}
+                        >
+                          <button
+                            aria-label="Copy message"
+                            type="button"
+                            className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
+                            onClick={() => handleCopy(m.text)}
+                          >
+                            <Copy className="size-4 text-black" />
+                          </button>
+                          <div className="text-[11px] text-muted-foreground">
+                            {m.time}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                if (m.kind === "processing") {
+                  return (
+                    <div key={m.id} className="space-y-1">
                       <div
                         className={cn(
-                          "max-w-[70%] rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
-                          right ? "ml-auto bg-gray-100" : "bg-gray-100"
+                          "max-w-[70%] rounded-2xl p-3 text-sm shadow-sm bg-gray-100"
                         )}
                       >
-                        {m.sender === "assistant" ? (
-                          <AssistantMarkdown text={m.text} className="text-left" />
-                        ) : (
-                          m.text
-                        )}
+                        <div className="flex items-center gap-1 h-5">
+                          {[0, 1, 2, 3, 4, 5].map((i) => (
+                            <motion.span
+                              key={i}
+                              className="w-1.5 h-1.5 rounded-full bg-blue-800"
+                              initial={{ opacity: 0.4, y: 0 }}
+                              animate={{
+                                opacity: [0.4, 1, 0.4],
+                                y: [0, -3, 0],
+                              }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                delay: i * 0.15,
+                              }}
+                            />
+                          ))}
+                        </div>
                       </div>
                       <div
                         className={cn(
-                          "max-w-[70%] flex items-center justify-between mt-2 px-2",
-                          right ? "ml-auto" : undefined
+                          "max-w-[70%] flex items-center justify-between mt-2 px-2"
                         )}
                       >
-                        <button
-                          aria-label="Copy message"
-                          type="button"
-                          className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
-                          onClick={() => handleCopy(m.text)}
-                        >
-                          <Copy className="size-4 text-black" />
-                        </button>
+                        <div className="text-xs text-muted-foreground">
+                          {coachName} is processing…
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {m.time}
                         </div>
@@ -351,12 +424,24 @@ export default function ChatWindow({
                   </div>
                 );
               })}
+              <div ref={bottomRef} />
             </div>
             {convIsFetchingNext ? (
               <div className="space-y-4 px-4 mt-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={`more-${i}`} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}> 
-                    <div className={cn("max-w-[70%] rounded-2xl p-3", i % 2 === 0 ? "bg-gray-100" : "bg-gray-100")}> 
+                  <div
+                    key={`more-${i}`}
+                    className={cn(
+                      "flex",
+                      i % 2 === 0 ? "justify-start" : "justify-end"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[70%] rounded-2xl p-3",
+                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
+                      )}
+                    >
                       <Skeleton className="h-4 w-40 mb-2" />
                       <Skeleton className="h-4 w-24" />
                     </div>
@@ -388,7 +473,12 @@ export default function ChatWindow({
       />
 
       {/* Export chat modal */}
-      <ExportChatModal open={exportOpen} onOpenChange={setExportOpen} onExport={onExportChat} disableExport={true} />
+      <ExportChatModal
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        onExport={onExportChat}
+        disableExport={false}
+      />
 
       {/* Small floating sparkle action */}
       {/* <button
@@ -406,26 +496,28 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <button
               type="button"
-              disabled={true}
+              disabled={false}
               onClick={() => onToggleRecording?.()}
               aria-label={isRecording ? "Stop recording" : "Start recording"}
               aria-pressed={!!isRecording}
               className="cursor-pointer absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
             >
+              {isRecording ? <SquarePause className={cn(
+                  "size-5",
+                  isRecording ? "text-red-600 animate-pulse" : "text-black"
+                )}/> : 
               <Mic
                 className={cn(
                   "size-5",
-                  isRecording
-                    ? "text-red-600 animate-pulse"
-                    : "text-black"
+                  isRecording ? "text-red-600 animate-pulse" : "text-black"
                 )}
-              />
+              />}
             </button>
             <Input
               placeholder={isRecording ? "" : "Ask Anything...."}
               className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
               value={inputText}
-              disabled={true}
+              disabled={false}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -456,19 +548,26 @@ export default function ChatWindow({
           </div>
 
           {hasAudio && onToggleAudioPlayback ? (
-            <Button
-              disabled={true}
-              type="button"
-              onClick={onToggleAudioPlayback}
-              variant="secondary"
-              className="h-11 px-3"
-            >
-              {isAudioPaused ? (
-                <Play className="size-5" />
-              ) : (
-                <Pause className="size-5" />
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  disabled={false}
+                  type="button"
+                  onClick={onToggleAudioPlayback}
+                  variant="secondary"
+                  className="h-11 px-3"
+                >
+                  {isAudioPaused ? (
+                    <Play className="size-5" />
+                  ) : (
+                    <Pause className="size-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">{isAudioPaused ? "Play" : "Pause"}</span>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -482,15 +581,21 @@ export default function ChatWindow({
                   const next = !isMuted;
                   onToggleMute?.(next);
                 }}
-                disabled={!!(hasAudio && !isAudioPaused) || true}
+                disabled={!!(hasAudio && !isAudioPaused)}
                 aria-label={isMuted ? "Unmute Coach" : "Mute Coach"}
               >
-                {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+                {isMuted ? (
+                  <VolumeX className="size-5" />
+                ) : (
+                  <Volume2 className="size-5" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
               {hasAudio && !isAudioPaused ? (
-                <span className="text-xs">Mute is disabled during playback</span>
+                <span className="text-xs">
+                  Mute is disabled during playback
+                </span>
               ) : isMuted ? (
                 <span className="text-xs">Unmute</span>
               ) : (
@@ -499,7 +604,7 @@ export default function ChatWindow({
             </TooltipContent>
           </Tooltip>
           <Button
-            disabled={true}
+            disabled={false}
             className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
             onClick={handleSend}
           >
@@ -509,7 +614,7 @@ export default function ChatWindow({
       </div>
 
       {copied ? (
-        <div className="fixed right-6 bottom-24 z-50">
+        <div className="fixed right-6 bottom-40 z-50">
           <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
             Copied to clipboard
           </div>
