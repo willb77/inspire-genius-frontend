@@ -324,7 +324,7 @@ export default function ChatWindow({
                           >
                             <Copy className="size-4 text-black" />
                           </button>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] text-muted-foreground">
                             {m.time}
                           </div>
                         </div>
@@ -548,19 +548,26 @@ export default function ChatWindow({
           </div>
 
           {hasAudio && onToggleAudioPlayback ? (
-            <Button
-              disabled={false}
-              type="button"
-              onClick={onToggleAudioPlayback}
-              variant="secondary"
-              className="h-11 px-3"
-            >
-              {isAudioPaused ? (
-                <Play className="size-5" />
-              ) : (
-                <Pause className="size-5" />
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  disabled={false}
+                  type="button"
+                  onClick={onToggleAudioPlayback}
+                  variant="secondary"
+                  className="h-11 px-3"
+                >
+                  {isAudioPaused ? (
+                    <Play className="size-5" />
+                  ) : (
+                    <Pause className="size-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">{isAudioPaused ? "Play" : "Pause"}</span>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
