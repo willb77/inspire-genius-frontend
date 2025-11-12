@@ -30,6 +30,16 @@ export type ChatMessage =
       docName: string;
       docKind: DocKind;
       time: string;
+    }
+  | {
+      id: string;
+      kind: "processing";
+      sender: "assistant";
+      time: string;
+      // for compatibility with Alex style flags
+      isProcessing?: true;
+      type?: "processing";
+      text?: string;
     };
 
 // Chat history types

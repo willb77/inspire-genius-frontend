@@ -73,16 +73,16 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-1">
-        <span className="text-sm font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
+        <span className="text-xs font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
         {(useControlled ? (selectedIds?.length ?? 0) : selected.size) > 0 ? (
           <ConfirmDialog
             trigger={
               <Button
                 type="button"
-                className="h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
+                className="invisible h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
                 variant="secondary"
               >
                 Delete
@@ -101,7 +101,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
         <Button
           type="button"
           onClick={importSelected}
-          className="h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
+          className="invisible h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
           variant="secondary"
         >
           Import to Chat
@@ -156,7 +156,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                               trigger={
                                 <button
                                   type="button"
-                                  className="text-red-600 hover:text-red-700"
+                                  className="cursor-pointer text-red-600 hover:text-red-700"
                                   aria-label="Delete"
                                 >
                                   <Trash2 className="size-4" />
@@ -169,14 +169,14 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                             />
                             <button
                               title="Download"
-                              className="text-muted-foreground hover:text-foreground"
+                              className="cursor-pointer text-muted-foreground hover:text-foreground"
                               onClick={() => handleDownload(doc)}
                             >
                               <Download className="size-4" />
                             </button>
                             <button
                               type="button"
-                              className={cn("text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
+                              className={cn("cursor-pointer text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
                               aria-label="Preview"
                               onClick={() => doc.kind === "pdf" && onPreview?.({ name: doc.name, kind: doc.kind, url: doc.tempUrl || doc.url })}
                               disabled={doc.kind !== "pdf"}

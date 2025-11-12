@@ -268,6 +268,7 @@ export default function Documents() {
             <div className="flex items-center gap-3 justify-end">
               <IconInput
                 placeholder="Search.."
+                disabled={true}
                 leftIcon={<Search className="size-4" />}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -294,7 +295,7 @@ export default function Documents() {
               {selectedCount === 0 ? (
                 <button
                   aria-label="Settings"
-                  className="p-2 rounded-md hover:bg-gray-100"
+                  className="invisible p-2 rounded-md hover:bg-gray-100"
                 >
                   <Settings className="size-5" />
                 </button>
@@ -308,7 +309,8 @@ export default function Documents() {
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className="text-blue-primary hover:underline flex items-center gap-2"
+              disabled
+                className="text-blue-primary cursor-not-allowed flex items-center gap-2"
                 type="button"
               >
                 {formatMonth(month, "MMMM , yyyy")}{" "}
@@ -406,6 +408,7 @@ export default function Documents() {
                       >
                         <div className="w-full flex-1 flex items-center gap-3">
                           <Checkbox
+                          disabled
                             checked={selected.has(d.id)}
                             onCheckedChange={(v) => toggleSelect(d.id, v)}
                           />
@@ -441,7 +444,7 @@ export default function Documents() {
                             trigger={
                               <button
                                 title="Delete"
-                                className="text-red-600 hover:text-red-700"
+                                className="cursor-pointer text-red-600 hover:text-red-700"
                                 disabled={deleteMutation.isPending}
                               >
                                 <Trash2 className="size-4" />
@@ -454,7 +457,7 @@ export default function Documents() {
                           />
                           <button
                             title="Download"
-                            className="text-muted-foreground hover:text-foreground"
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
                             onClick={() => void handleDownload(d)}
                             disabled={downloadingId === d.id}
                           >
@@ -466,7 +469,7 @@ export default function Documents() {
                           </button>
                           <button
                             title="View"
-                            className="text-muted-foreground hover:text-foreground"
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
                             onClick={() => handleView(d)}
                             disabled={false}
                           >

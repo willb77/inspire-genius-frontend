@@ -14,6 +14,8 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Copy,
+  SquarePause,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import { format } from "date-fns";
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -49,6 +52,8 @@ export default function AlexChatPanel({
   const [hasAudio, setHasAudio] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current)
     demoAudioServiceRef.current = new DemoAudioService();
@@ -135,8 +140,8 @@ export default function AlexChatPanel({
         device_key: deviceKey,
         start_date: fmt(fromDate),
         end_date: fmt(toDate),
-        limit: 100,
-        offset: 0,
+        // limit: 100,
+        // offset: 0,
       });
    if (!resp || !resp.status) return;
 
@@ -311,8 +316,8 @@ export default function AlexChatPanel({
     setIsAudioPaused(false);
     setMessages((prev) => [
       ...prev,
-      { id: `msg-${Date.now()}`, text, sender: "user", timestamp: new Date(), },
-      { id: `msg-${Date.now()}`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
+      { id: `msg-${Date.now()}-user`, text, sender: "user", timestamp: new Date(), },
+      { id: `msg-${Date.now()}-assistant`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
     ]);
   }, [message, isConnected, sendTextMessage]);
 
@@ -341,8 +346,50 @@ export default function AlexChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isConnected]);
 
+ 
+    const handleCopy = (text: string) => {
+      try {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1200);
+      } catch {
+        // ignore
+      }
+    };
+  
+  const handleClosePanel = useCallback(() => {
+    try {
+      const svc = demoAudioServiceRef.current;
+      const ctx = svc?.getAudioContext();
+      if (svc && ctx && ctx.state === "running") {
+        svc.pauseAudio();
+        setIsAudioPaused(true);
+      }
+      if (isRecording) {
+        stopRecording();
+      }
+    } finally {
+      onOpenChange(false);
+    }
+  }, [isRecording, onOpenChange, stopRecording]);
+
+  const handleSheetOpenChange = useCallback((next: boolean) => {
+    if (!next) {
+      const svc = demoAudioServiceRef.current;
+      const ctx = svc?.getAudioContext();
+      if (svc && ctx && ctx.state === "running") {
+        svc.pauseAudio();
+        setIsAudioPaused(true);
+      }
+      if (isRecording) {
+        stopRecording();
+      }
+    }
+    onOpenChange(next);
+  }, [isRecording, onOpenChange, stopRecording]);
+   
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetContent
         side="right"
         className={cn(
@@ -405,7 +452,7 @@ export default function AlexChatPanel({
             </TooltipProvider>
             <button
               aria-label="Close"
-              onClick={() => onOpenChange(false)}
+              onClick={handleClosePanel}
               className="grid place-items-center rounded-full bg-blue-primary/10 text-blue-primary size-8"
             >
               <X className="size-4" />
@@ -462,8 +509,9 @@ export default function AlexChatPanel({
                       ))}
                     </div>
                   ) : (
+                    <div className="inline-block">
                     <div
-                      className={`inline-block px-3 py-2 rounded-md text-sm ${
+                      className={`px-3 py-2 rounded-md text-sm text-center ${
                         m.sender === "user"
                           ? "bg-blue-50 text-blue-900"
                           : m.sender === "assistant"
@@ -476,6 +524,26 @@ export default function AlexChatPanel({
                       ) : (
                         m.text
                       )}
+                      
+                    </div>
+                       <div
+                          className={cn(
+                            "max-w-full mb-5 min-w-40 w-full flex items-center justify-between mt-2 px-2",
+                            m.sender === "assistant" ? "ml-auto" : undefined
+                          )}
+                        >
+                          <button
+                            aria-label="Copy message"
+                            type="button"
+                            className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
+                            onClick={() => handleCopy(m.text)}
+                          >
+                            <Copy className="size-3.5 text-black" />
+                          </button>
+                          <div className="text-[10px] text-muted-foreground">
+                            {formatUSTimestamp(new Date(m.timestamp))}
+                          </div>
+                        </div>
                     </div>
                   )}
                 </div>
@@ -498,13 +566,17 @@ export default function AlexChatPanel({
                   : "Click to start recording"
               }
             >
+              {isRecording ? <SquarePause className={cn(
+                  "size-5",
+                  isRecording ? "text-red-600 animate-pulse" : "text-black"
+                )}/>:
               <Mic
                 className={`size-5 ${
                   isRecording
                     ? "text-red-600 animate-pulse"
                     : "text-muted-foreground"
                 }`}
-              />
+              />}
             </button>
             <Input
               placeholder={
@@ -546,19 +618,28 @@ export default function AlexChatPanel({
               </div>
             )}
             {hasAudio && (
-              <Button
-                type="button"
-                onClick={toggleAudioPlayback}
-                disabled={false}
-                variant="secondary"
-                className="h-11 px-3"
-              >
-                {isAudioPaused ? (
-                  <Play className="size-5" />
-                ) : (
-                  <Pause className="size-5" />
-                )}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      onClick={toggleAudioPlayback}
+                      disabled={false}
+                      variant="secondary"
+                      className="h-11 px-3"
+                    >
+                      {isAudioPaused ? (
+                        <Play className="size-5" />
+                      ) : (
+                        <Pause className="size-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <span className="text-xs">{isAudioPaused ? "Play" : "Pause"}</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <TooltipProvider>
               <Tooltip>
@@ -600,7 +681,15 @@ export default function AlexChatPanel({
             </Button>
           </div>
         </div>
+               {copied ? (
+        <div className="fixed right-6 bottom-40 z-999">
+          <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
+            Copied to clipboard
+          </div>
+        </div>
+      ) : null}
       </SheetContent>
+   
       <ExportChatModal
         open={exportOpen}
         onOpenChange={setExportOpen}

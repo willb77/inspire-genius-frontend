@@ -1,4 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useState } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function MultiSelect({
   className,
   maxVisible = 3,
 }: MultiSelectProps) {
+  const [open, setOpen] = useState(false);
   const toggle = (v: string) => {
     const has = value.includes(v);
     const next = has ? value.filter((x) => x !== v) : [...value, v];
@@ -32,7 +34,7 @@ export function MultiSelect({
   const remaining = selected.length - visible.length;
 
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
@@ -76,6 +78,7 @@ export function MultiSelect({
               key={o.value}
               checked={checked}
               onCheckedChange={() => toggle(o.value)}
+              onSelect={(e) => e.preventDefault()}
               className={cn(
                 "text-sm px-2 py-1.5 pr-8 rounded-md outline-none cursor-pointer",
                 "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
