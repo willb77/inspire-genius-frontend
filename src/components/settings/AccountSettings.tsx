@@ -1,5 +1,4 @@
-//
-import { Button } from "@/components/ui/button";
+  import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +8,8 @@ import { Label } from "../ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import PasswordField from "@/components/shared/inputs/PasswordField";
+import { DatePicker } from "@/components/ui/date-picker";
+import { parse, isValid, format as formatDate } from "date-fns";
 
 export default function AccountSettings({
   profileData,
@@ -25,6 +26,17 @@ export default function AccountSettings({
   editProfileForm,
   onEditProfileSubmit,
 }: AccountSettingsProps) {
+  const displayDob = (() => {
+    try {
+      const raw = profileData?.dateOfBirth ?? "";
+      if (!raw) return "";
+      let d = parse(raw, "yyyy-MM-dd", new Date());
+      if (!isValid(d)) d = new Date(raw);
+      return isValid(d) ? formatDate(d, "dd LLL yyyy") : String(raw);
+    } catch {
+      return String(profileData?.dateOfBirth ?? "");
+    }
+  })();
 
   const form = changePasswordForm;
   const register = form?.register;
@@ -81,7 +93,7 @@ export default function AccountSettings({
             size="sm"
             onClick={onLogout}
             disabled={true}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FFEBEC] text-[#DE3B40] hover:bg-[#FFEBEC]"
+            className="hidden items-center justify-center gap-2 w-full sm:w-auto bg-[#FFEBEC] text-[#DE3B40] hover:bg-[#FFEBEC]"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -101,7 +113,12 @@ export default function AccountSettings({
               <form
                 className="space-y-6"
                 onSubmit={editProfileForm.handleSubmit(async (values) => {
-                  await onEditProfileSubmit?.(values);
+                  let nextDob = values?.dateOfBirth ?? "";
+                  if (typeof nextDob === "string" && nextDob) {
+                    const d = parse(nextDob, "d LLL yyyy", new Date());
+                    if (isValid(d)) nextDob = formatDate(d, "yyyy-MM-dd");
+                  }
+                  await onEditProfileSubmit?.({ ...values, dateOfBirth: nextDob });
                 })}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -130,7 +147,13 @@ export default function AccountSettings({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Date of birth</Label>
-                    <Input type="date" {...editProfileForm.register("dateOfBirth")} />
+                    <DatePicker
+                      value={editProfileForm.watch("dateOfBirth")}
+                      onChange={(v) => editProfileForm.setValue("dateOfBirth", v, { shouldDirty: true, shouldTouch: true })}
+                      placeholder="Date of Birth"
+                      minDate={new Date(1900, 0, 1)}
+                      maxDate={(() => { const t = new Date(); return new Date(t.getFullYear() - 13, t.getMonth(), t.getDate()); })()}
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">Additional info</Label>
@@ -256,7 +279,7 @@ export default function AccountSettings({
               {isProfileLoading ? (
                 <Skeleton className="h-9 w-full" />
               ) : (
-                <Input value={profileData.dateOfBirth} readOnly />
+                <Input value={displayDob} readOnly />
               )}
             </div>
             <div className="space-y-2 lg:col-span-2">

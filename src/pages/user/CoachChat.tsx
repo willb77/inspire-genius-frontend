@@ -18,6 +18,7 @@ import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
 import { exportConversation } from "@/services/agent/agentService";
+import { format } from "date-fns";
 
 function titleCaseFromSlug(slug: string): string {
   if (!slug) return "Coach";
@@ -139,6 +140,22 @@ export default function CoachChat() {
     }
   }, [downloadMutation]);
 
+  function formatUSTimeSafe(input: unknown): string {
+    try {
+      let d: Date;
+      if (input instanceof Date) {
+        d = input;
+      } else if (typeof input === "string" || typeof input === "number") {
+        d = new Date(input);
+      } else {
+        d = new Date();
+      }
+      return isNaN(d.getTime()) ? format(new Date(), "do MMM yy, hh:mm a") : format(d, "do MMM yy, hh:mm a");
+    } catch {
+      return format(new Date(), "do MMM yy, hh:mm a");
+    }
+  }
+
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
@@ -153,7 +170,7 @@ export default function CoachChat() {
       // Show processing placeholder (recording started)
       setMessages((prev) => ([
         ...prev.filter((m) => m.kind !== 'processing'),
-        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isProcessing: true, type: 'processing' }
+        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: formatUSTimeSafe(new Date()), isProcessing: true, type: 'processing' }
       ]));
       return;
     }
@@ -166,7 +183,7 @@ export default function CoachChat() {
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
-      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]));
+      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: formatUSTimeSafe(new Date()) }]));
       lastMessageRef.current = { type: "transcript", text };
       return;
     }
@@ -176,7 +193,7 @@ export default function CoachChat() {
       if (lastMessageRef.current.type !== "response_chunk" || lastMessageRef.current.text !== text) {
         setMessages((prev) => ([
           ...prev.filter((m) => m.kind !== 'processing'),
-          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }
+          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: formatUSTimeSafe(new Date()) }
         ]));
         lastMessageRef.current = { type: "response_chunk", text };
       }
@@ -302,7 +319,7 @@ export default function CoachChat() {
       id: c.id,
       title: c.title || "No Title",
       preview: "To do",
-      timeLabel: c.created_at ? new Date(c.created_at).toLocaleString() : "",
+      timeLabel: c.created_at ? formatUSTimeSafe(c.created_at) : "",
     }));
     return [
       {
@@ -313,6 +330,7 @@ export default function CoachChat() {
   }, [conversationData]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
+    console.log(from, to, "values")
     if (!conversationId) return;
     try {
       const resp = await exportConversation(conversationId, from, to);
@@ -342,14 +360,6 @@ export default function CoachChat() {
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
     if (!messagesPages) return;
-    const toLocalTime = (dt: unknown) => {
-      try {
-        const d = typeof dt === "string" || typeof dt === "number" ? new Date(dt) : new Date();
-        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      } catch {
-        return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      }
-    };
     const pages = Array.isArray((messagesPages as { pages?: unknown[] }).pages)
       ? ((messagesPages as { pages: Array<{ data?: { messages?: Array<Record<string, unknown>> } }> }).pages)
       : [];
@@ -359,7 +369,7 @@ export default function CoachChat() {
       const role = typeof (m as Record<string, unknown>).message_type === "string" ? ((m as Record<string, unknown>).message_type as string) : "";
       const sender: "assistant" | "user" = role.toLowerCase() === "assistant" ? "assistant" : "user";
       const created = (m as Record<string, unknown>).sent_at ?? (m as Record<string, unknown>).created_at ?? (m as Record<string, unknown>).timestamp;
-      const time = toLocalTime(created);
+      const time = formatUSTimeSafe(created);
       const text = typeof (m as Record<string, unknown>).content === "string" ? ((m as Record<string, unknown>).content as string) :
         typeof (m as Record<string, unknown>).text === "string" ? ((m as Record<string, unknown>).text as string) : "";
       return { id, kind: "text", sender, text, time };
@@ -367,7 +377,6 @@ export default function CoachChat() {
     setMessages(mapped);
   }, [messagesPages]);
 
-  // Handle selection -> set conversationId and persist encrypted
   const handleSelectConversation = useCallback((id: string) => {
     setSelectedId(id);
     setConversationId(id);
@@ -463,7 +472,7 @@ export default function CoachChat() {
               setHasAudio(false);
               setIsAudioPaused(false);
               // Add user message and a processing placeholder
-              const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const timeStr = formatUSTimeSafe(new Date());
               setMessages((prev) => ([
                 ...prev.filter((m) => m.kind !== 'processing'),
                 { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr },
