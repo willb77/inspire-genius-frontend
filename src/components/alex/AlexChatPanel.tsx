@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Copy,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import { format } from "date-fns";
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -49,6 +51,8 @@ export default function AlexChatPanel({
   const [hasAudio, setHasAudio] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current)
     demoAudioServiceRef.current = new DemoAudioService();
@@ -311,8 +315,8 @@ export default function AlexChatPanel({
     setIsAudioPaused(false);
     setMessages((prev) => [
       ...prev,
-      { id: `msg-${Date.now()}`, text, sender: "user", timestamp: new Date(), },
-      { id: `msg-${Date.now()}`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
+      { id: `msg-${Date.now()}-user`, text, sender: "user", timestamp: new Date(), },
+      { id: `msg-${Date.now()}-assistant`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
     ]);
   }, [message, isConnected, sendTextMessage]);
 
@@ -341,6 +345,17 @@ export default function AlexChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isConnected]);
 
+ 
+    const handleCopy = (text: string) => {
+      try {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1200);
+      } catch {
+        // ignore
+      }
+    };
+   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -462,8 +477,9 @@ export default function AlexChatPanel({
                       ))}
                     </div>
                   ) : (
+                    <div className="inline-block">
                     <div
-                      className={`inline-block px-3 py-2 rounded-md text-sm ${
+                      className={`px-3 py-2 rounded-md text-sm text-center ${
                         m.sender === "user"
                           ? "bg-blue-50 text-blue-900"
                           : m.sender === "assistant"
@@ -476,6 +492,26 @@ export default function AlexChatPanel({
                       ) : (
                         m.text
                       )}
+                      
+                    </div>
+                       <div
+                          className={cn(
+                            "max-w-full mb-5 min-w-40 w-full flex items-center justify-between mt-2 px-2",
+                            m.sender === "assistant" ? "ml-auto" : undefined
+                          )}
+                        >
+                          <button
+                            aria-label="Copy message"
+                            type="button"
+                            className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
+                            onClick={() => handleCopy(m.text)}
+                          >
+                            <Copy className="size-3.5 text-black" />
+                          </button>
+                          <div className="text-[10px] text-muted-foreground">
+                            {formatUSTimestamp(new Date(m.timestamp))}
+                          </div>
+                        </div>
                     </div>
                   )}
                 </div>
@@ -600,7 +636,15 @@ export default function AlexChatPanel({
             </Button>
           </div>
         </div>
+               {copied ? (
+        <div className="fixed right-6 bottom-40 z-999">
+          <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
+            Copied to clipboard
+          </div>
+        </div>
+      ) : null}
       </SheetContent>
+   
       <ExportChatModal
         open={exportOpen}
         onOpenChange={setExportOpen}
