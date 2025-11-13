@@ -2,9 +2,14 @@ import { api } from "@/lib/axios";
 
 // Lists documents from the backend file service
 // Endpoint: /v1/file_service/list?page=<number>&limit=<number>
-export async function listDocuments(page = 1, limit = 10): Promise<unknown> {
+export async function listDocuments(page = 1, limit = 10, filters?: { date?: string; search?: string }): Promise<unknown> {
+  const params: Record<string, unknown> = { page, limit };
+  if (filters) {
+    if (typeof filters.date === "string" && filters.date) params.date = filters.date;
+    if (typeof filters.search === "string" && filters.search) params.search = filters.search;
+  }
   const resp = await api.get("/v1/file_service/list", {
-    params: { page, limit },
+    params,
     withCredentials: true,
   });
   return resp.data as unknown;
@@ -32,6 +37,18 @@ export async function deleteDocument(fileId: string): Promise<void> {
   await api.delete(`/v1/file_service/${encodeURIComponent(fileId)}`, {
     withCredentials: true,
   });
+}
+
+// Bulk delete files
+// Endpoint: /v1/file_service/bulk-delete
+// Body: { file_ids: string[] }
+export async function bulkDeleteDocuments(fileIds: string[]): Promise<void> {
+  if (!Array.isArray(fileIds) || fileIds.length === 0) return;
+  await api.post(
+    "/v1/file_service/bulk-delete",
+    { file_ids: fileIds },
+    { withCredentials: true }
+  );
 }
 
 // Uploads one or more files using multipart/form-data
