@@ -289,6 +289,7 @@ export default function CoachChat() {
             setSelectedId(id);
             setConversationId(id);
             secureSetItem("conv", { id });
+            connect(agentId, accessToken, selectedFileIds, id);
           }
         },
         onError: (e) => {
@@ -298,30 +299,51 @@ export default function CoachChat() {
     );
   };
 
+  // Persist and rehydrate selected document IDs (optional)
+  const selectedKey = useMemo(() => {
+    if (conversationId) return `docsel:${conversationId}`;
+    if (agentId) return `docsel:agent:${agentId}`;
+    return undefined;
+  }, [conversationId, agentId]);
+
   useEffect(() => {
     if (!agentId || !accessToken || !conversationId) return;
-    if (!isConnected && !isConnecting && selectedFileIds.length > 0) {
-      // Initial connect includes current selected files
-      connect(agentId, accessToken, selectedFileIds, conversationId);
-      prevSelectedIdsRef.current = selectedFileIds;
-      return;
-    } else if (isConnected) {
-      // When connected, only update file context if ids changed (order-insensitive)
-      const prev = prevSelectedIdsRef.current || [];
-      const sameSize = prev.length === selectedFileIds.length;
-      let equal = sameSize;
-      if (equal) {
-        const setPrev = new Set(prev);
-        for (const id of selectedFileIds) {
-          if (!setPrev.has(id)) { equal = false; break; }
+    let mounted = true;
+    (async () => {
+      if (!isConnected && !isConnecting && conversationId) {
+        // Hydrate selected file IDs from storage first so the initial connect has them
+        let nextIds = selectedFileIds;
+        if (selectedKey) {
+          const stored = await secureGetItem<{ ids?: string[] }>(selectedKey);
+          if (!mounted) return;
+          const ids = Array.isArray(stored) ? (stored as unknown as string[]) : stored?.ids;
+          if (Array.isArray(ids)) {
+            nextIds = ids;
+          }
+        }
+        // Initial connect includes current/hydrated selected files
+        connect(agentId, accessToken, nextIds, conversationId);
+        prevSelectedIdsRef.current = nextIds;
+        return;
+      }else if (isConnected) {
+        // When connected, only update file context if ids changed (order-insensitive)
+        const prev = prevSelectedIdsRef.current || [];
+        const sameSize = prev.length === selectedFileIds.length;
+        let equal = sameSize;
+        if (equal) {
+          const setPrev = new Set(prev);
+          for (const id of selectedFileIds) {
+            if (!setPrev.has(id)) { equal = false; break; }
+          }
+        }
+        if (!equal) {
+          updateSelectedFiles(selectedFileIds);
+          prevSelectedIdsRef.current = selectedFileIds;
         }
       }
-      if (!equal) {
-        updateSelectedFiles(selectedFileIds);
-        prevSelectedIdsRef.current = selectedFileIds;
-      }
-    }
-  }, [agentId, accessToken, conversationId, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+    })();
+    return () => { mounted = false; };
+  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
 
   // (Removed extra CONNECTING updater to avoid double init)
 
@@ -395,6 +417,7 @@ export default function CoachChat() {
   const handleSelectConversation = useCallback((id: string) => {
     setSelectedId(id);
     setConversationId(id);
+    setMessages([]);
     secureSetItem("conv", { id });
   }, []);
 
@@ -422,6 +445,7 @@ export default function CoachChat() {
                 setSelectedId(id);
                 setConversationId(id);
                 secureSetItem("conv", { id });
+                connect(agentId, accessToken, selectedFileIds, id);
               }
             },
             onError: (e) => {
@@ -432,14 +456,7 @@ export default function CoachChat() {
       }
     })();
     return () => { mounted = false; };
-  }, [agentId, createConvMutation, queryClient]);
-
-  // Persist and rehydrate selected document IDs (optional)
-  const selectedKey = useMemo(() => {
-    if (conversationId) return `docsel:${conversationId}`;
-    if (agentId) return `docsel:agent:${agentId}`;
-    return undefined;
-  }, [conversationId, agentId]);
+  }, [agentId]);
 
   useEffect(() => {
     let mounted = true;
