@@ -63,6 +63,7 @@ export default function CoachChat() {
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
+  const prevSelectedIdsRef = useRef<string[]>([]);
   // Documents API & derived state
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
@@ -299,16 +300,30 @@ export default function CoachChat() {
 
   useEffect(() => {
     if (!agentId || !accessToken || !conversationId) return;
-    if (!isConnected && !isConnecting) {
+    if (!isConnected && !isConnecting && selectedFileIds.length > 0) {
       // Initial connect includes current selected files
       connect(agentId, accessToken, selectedFileIds, conversationId);
+      prevSelectedIdsRef.current = selectedFileIds;
       return;
-    }
-    if (isConnected) {
-      // When connected, only update file context – do NOT re-init
-      updateSelectedFiles(selectedFileIds);
+    } else if (isConnected) {
+      // When connected, only update file context if ids changed (order-insensitive)
+      const prev = prevSelectedIdsRef.current || [];
+      const sameSize = prev.length === selectedFileIds.length;
+      let equal = sameSize;
+      if (equal) {
+        const setPrev = new Set(prev);
+        for (const id of selectedFileIds) {
+          if (!setPrev.has(id)) { equal = false; break; }
+        }
+      }
+      if (!equal) {
+        updateSelectedFiles(selectedFileIds);
+        prevSelectedIdsRef.current = selectedFileIds;
+      }
     }
   }, [agentId, accessToken, conversationId, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+
+  // (Removed extra CONNECTING updater to avoid double init)
 
 
 
