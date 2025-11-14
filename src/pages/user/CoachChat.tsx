@@ -220,11 +220,11 @@ export default function CoachChat() {
     svc.initializeAudioContext().then(() => {
       svc.addAudioChunk(audioData);
       setHasAudio(true);
-      const ctx = svc.getAudioContext();
-      if (ctx && ctx.state === "suspended" && !isAudioPaused) {
-        svc.resumeAudio();
-        setIsAudioPaused(false);
-      }
+      // const ctx = svc.getAudioContext();
+      // if (ctx && ctx.state === "suspended" && !isAudioPaused) {
+      //   svc.resumeAudio();
+      //   setIsAudioPaused(false);
+      // }
     });
   }, [isAudioPaused]);
 
