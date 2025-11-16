@@ -71,7 +71,7 @@ export default function AccountSettings({
           <Button
             variant="outline"
             size="sm"
-            disabled={false}
+            disabled={true}
             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gray-20 hover:bg-gray-30"
             onClick={() => onChangePasswordOpenChange?.(true)}
           >
@@ -80,7 +80,7 @@ export default function AccountSettings({
           </Button>
           <Button
             size="sm"
-            disabled={false}
+            disabled={true}
             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-10 text-primary hover:bg-blue-20"
             onClick={() => onEditProfileOpenChange?.(true)}
           >

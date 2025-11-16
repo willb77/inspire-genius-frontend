@@ -26,11 +26,11 @@ export default function EmptyStateCard({ onStart }: { onStart: () => void }) {
             <img src="/images/user/home/tour.svg" alt="Tour" className="w-5 h-5" />
             <span className="ml-2">Take a Tour</span>
           </Button>
-          <Button className="w-full h-12 bg-brown-350 hover:bg-brown-350/80 text-white" variant="outline">
+          <Button className="cursor-not-allowed w-full h-12 bg-brown-350 hover:bg-brown-350/80 text-white" variant="outline">
             <img src="/images/user/home/how-to-use.svg" alt="How to use" className="w-5 h-5" />
             <span className="ml-2">How to use</span>
           </Button>
-          <Button className="w-full h-12 bg-brown-250 hover:bg-brown-250/80 text-white" variant="destructive">
+          <Button className="cursor-not-allowed w-full h-12 bg-brown-250 hover:bg-brown-250/80 text-white" variant="destructive">
             <img src="/images/user/home/coaches.svg" alt="Coaches" className="w-5 h-5" />
             <span className="ml-2">Coaches Introduction</span>
           </Button>

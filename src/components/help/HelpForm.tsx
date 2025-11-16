@@ -233,7 +233,7 @@ export default function HelpForm({ form, onSubmit, isSubmitting, isTypesLoading,
 
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || true}
                 className="w-full sm:w-52"
                 
               >
