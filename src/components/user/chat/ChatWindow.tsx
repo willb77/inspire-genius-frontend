@@ -13,10 +13,12 @@ import {
   Volume2,
   VolumeX,
   SquarePause,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
+import DocumentsSidePanel from "@/components/user/chat/DocumentsSidePanel";
 import DocumentIframeModal from "@/components/user/chat/DocumentIframeModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
@@ -63,6 +65,7 @@ export default function ChatWindow({
   docOnDownload,
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
+  const [docsOpen, setDocsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewer, setViewer] = useState<{ url: string; name: string }>({
     url: "",
@@ -212,6 +215,21 @@ export default function ChatWindow({
               Documents
             </button>
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-9 bg-transparent px-3 rounded-lg text-xs font-medium"
+                onClick={() => setDocsOpen(true)}
+                aria-label="Open documents side panel"
+              >
+                <FileText className="size-4 mr-1" />
+                Quick Access
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Open documents panel to select files to add to chat</TooltipContent>
+          </Tooltip>
           <Button
             className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"
             variant="secondary"
@@ -620,6 +638,20 @@ export default function ChatWindow({
           </div>
         </div>
       ) : null}
+
+      {/* Side documents panel */}
+      <DocumentsSidePanel
+        open={docsOpen}
+        onOpenChange={setDocsOpen}
+        sections={docSections}
+        selectedIds={selectedFileIds}
+        onToggleSelect={onToggleDocSelect}
+        isLoading={docIsLoading}
+        onDelete={docOnDelete}
+        onDownload={docOnDownload}
+        onImportToChat={onImportDocs}
+        onPreview={onPreview}
+      />
     </div>
   );
 }
