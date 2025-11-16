@@ -118,9 +118,10 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium truncate">{it.title}</span>
-                          <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
+
                         </div>
-                        <div className={cn("text-xs truncate", selectedId === it.id ? "text-white/90" : "text-muted-foreground")}>{it.preview}</div>
+                                                  <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
+                        {/* <div className={cn("text-xs truncate", selectedId === it.id ? "text-white/90" : "text-muted-foreground")}>{it.preview}</div> */}
                       </button>
                     </li>
                   ))}
