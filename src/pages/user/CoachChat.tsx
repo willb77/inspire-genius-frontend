@@ -64,6 +64,7 @@ export default function CoachChat() {
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
   const prevSelectedIdsRef = useRef<string[]>([]);
+  const isRefreshed = useRef(false);
   // Documents API & derived state
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
@@ -272,10 +273,12 @@ export default function CoachChat() {
       return undefined;
     }
   }
-   const handleToggleDocSelect = useCallback((id: string) => {
-    if (isConnected) disconnect();
+
+   const handleToggleDocSelect = useCallback(async (id: string) => {
+    await disconnect();
     setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, [disconnect, isConnected]);
+  }, []);
+
 
   const handleCreateConversation = () => {
     if (!agentId || createConvMutation.isPending) return;
@@ -324,25 +327,13 @@ export default function CoachChat() {
             nextIds = ids;
           }
         }
+        const finalIds = isRefreshed.current ? selectedFileIds : nextIds;
         // Initial connect includes current/hydrated selected files
-        connect(agentId, accessToken, nextIds, conversationId);
-        prevSelectedIdsRef.current = nextIds;
+        connect(agentId, accessToken, finalIds, conversationId);
+
+        prevSelectedIdsRef.current = isRefreshed ? selectedFileIds : nextIds;
+        isRefreshed.current = true;
         return;
-      }else if (isConnected) {
-        // When connected, only update file context if ids changed (order-insensitive)
-        const prev = prevSelectedIdsRef.current || [];
-        const sameSize = prev.length === selectedFileIds.length;
-        let equal = sameSize;
-        if (equal) {
-          const setPrev = new Set(prev);
-          for (const id of selectedFileIds) {
-            if (!setPrev.has(id)) { equal = false; break; }
-          }
-        }
-        if (!equal) {
-          updateSelectedFiles(selectedFileIds);
-          prevSelectedIdsRef.current = selectedFileIds;
-        }
       }
     })();
     return () => { mounted = false; };
@@ -417,7 +408,8 @@ export default function CoachChat() {
     setMessages(mapped);
   }, [messagesPages]);
 
-  const handleSelectConversation = useCallback((id: string) => {
+  const handleSelectConversation = useCallback(async (id: string) => {
+    await disconnect();
     setSelectedId(id);
     setConversationId(id);
     if (isConnected) disconnect();
