@@ -1,70 +1,43 @@
 stages:
   - build
-  # - sonarScan   # 🔒 Commented out temporarily
   - deploy
 
 # -------------------------
-# Build Job (unchanged)
+# Build Job
 # -------------------------
 devBuild:
   stage: build
   tags:
     - 3pp-sandbox
   only:
+    - uat
     - development
   script:
-    # Install Node.js 20 only for this job using NVM
+    # Install Node.js 20
     - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
     - export NVM_DIR="$HOME/.nvm"
     - source $NVM_DIR/nvm.sh
     - nvm install 20.19.0
     - nvm use 20.19.0
-    - node -v
-    - npm -v
 
-    # Create .env file dynamically from GitLab CI variables
+    # Generate .env
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
-    - cat .env
 
-    # Install dependencies and build
+    # Install and build
     - npm ci
     - npm audit fix || true
-    - npm run build  
+    - npm run build
 
-    # Debug: Verify WebSocket URL made it into build
-    - echo "🔍 Verifying built WebSocket URLs..."
-    - grep -r "pacewisdom" dist/ || echo " URL not found in build"
-      
   artifacts:
     paths:
       - dist/
+    expire_in: 1 day
+
 
 # -------------------------
-# SonarQube Scan Job (commented out)
-# -------------------------
-# sonarScan:
-#   stage: sonarScan
-#   image:
-#     name: sonarsource/sonar-scanner-cli:latest
-#     entrypoint: [""]
-#   script:
-#     - >
-#       sonar-scanner
-#       -Dsonar.projectKey=inspire-genius-frontend
-#       -Dsonar.sources=.
-#       -Dsonar.host.url=$SONAR_HOST_URL
-#       -Dsonar.login=$SONAR_TOKEN
-#   only:
-#     - development
-#   dependencies:
-#     - devBuild
-#   tags:
-#     - pacewisdom-docker-shared-runner
-
-# -------------------------
-# Deploy Job (unchanged)
+# Deploy Job
 # -------------------------
 deploy:
   stage: deploy
@@ -72,22 +45,42 @@ deploy:
   tags:
     - 3pp-sandbox
   only:
+    - uat
     - development
   dependencies:
     - devBuild
   script:
-    # Ensure required AWS variables exist
-    - '[ -z "$S3_BUCKET_NAME" ] && echo "Missing S3_BUCKET_NAME" && exit 1'
-    - '[ -z "$CLOUDFRONT_DISTRIBUTION_ID" ] && echo "Missing CLOUDFRONT_DISTRIBUTION_ID" && exit 1'
-    - '[ -z "$AWS_ACCESS_KEY_ID" ] && echo "Missing AWS_ACCESS_KEY_ID" && exit 1'
-    - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "Missing AWS_SECRET_ACCESS_KEY" && exit 1'
-    - '[ -z "$AWS_DEFAULT_REGION" ] && echo "Missing AWS_DEFAULT_REGION" && exit 1'
+    # Detect environment based on branch
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "uat" ]; then
+        echo "🔹 UAT environment detected"
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_UAT"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_UAT"
+        export S3_BUCKET_NAME="$S3_BUCKET_NAME_UAT"
+        export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID_UAT"
+      else
+        echo "🔹 Development environment detected"
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+        export S3_BUCKET_NAME="$S3_BUCKET_NAME"
+        export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID"
+      fi
 
-    # Clean S3 bucket (trim spaces)
-    - aws s3 rm "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
+    - export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
-    # Upload new build
-    - aws s3 cp dist/ "s3://$(echo $S3_BUCKET_NAME | xargs)" --recursive
+    # Verify credentials
+    - echo "🔍 Checking AWS identity..."
+    - aws sts get-caller-identity
+
+    # Deploy to S3
+    - echo "🧹 Cleaning s3://$S3_BUCKET_NAME ..."
+    - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
+
+    - echo "🚀 Uploading new build ..."
+    - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
 
     # Invalidate CloudFront
+    - echo "🌀 Invalidating CloudFront cache ..."
     - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+
+    - echo "✅ Deployment complete!"

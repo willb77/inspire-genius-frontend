@@ -20,6 +20,7 @@ export default function SearchBar({
         placeholder={placeholder}
         aria-label="Search"
         onChange={handleInputChange}
+        disabled={true}
         className="w-full border bg-gray-20 rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
       <Search
