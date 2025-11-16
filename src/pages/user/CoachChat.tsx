@@ -114,9 +114,7 @@ export default function CoachChat() {
     return selectedFileIds.map((id) => map.get(id)).filter(Boolean) as string[];
   }, [docSections, selectedFileIds]);
 
-  const handleToggleDocSelect = useCallback((id: string) => {
-    setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, []);
+ 
 
   const docOnDelete = useCallback(async (id: string) => {
     try {
@@ -230,6 +228,7 @@ export default function CoachChat() {
 
   const {
     connect,
+    disconnect,
     updateSelectedFiles,
     sendTextMessage,
     isConnected,
@@ -273,6 +272,10 @@ export default function CoachChat() {
       return undefined;
     }
   }
+   const handleToggleDocSelect = useCallback((id: string) => {
+    if (isConnected) disconnect();
+    setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, [disconnect, isConnected]);
 
   const handleCreateConversation = () => {
     if (!agentId || createConvMutation.isPending) return;
@@ -417,9 +420,10 @@ export default function CoachChat() {
   const handleSelectConversation = useCallback((id: string) => {
     setSelectedId(id);
     setConversationId(id);
+    if (isConnected) disconnect();
     setMessages([]);
     secureSetItem("conv", { id });
-  }, []);
+  }, [disconnect, isConnected]);
 
   // On mount or agent change, read persisted conversation id
   useEffect(() => {
