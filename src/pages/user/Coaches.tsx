@@ -29,7 +29,10 @@ export default function Coaches() {
     <UserLayout>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Coaches</h1>
+          <div className="flex flex-col text-left gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Manage Coaches</h1>
+            <p className="text-xs text-muted-foreground max-w-[75%]">Configure each coach's voice tone, gender, and accent. These settings apply wherever you chat with them.</p>
+          </div>
           <div className="w-full max-w-xs">
             <IconInput
               placeholder="Search.."
@@ -40,6 +43,8 @@ export default function Coaches() {
             />
           </div>
         </div>
+
+
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (

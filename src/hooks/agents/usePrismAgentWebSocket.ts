@@ -221,9 +221,15 @@ export function usePrismAgentWebSocket(
   const updateSelectedFiles = useCallback((fileIds: string[]) => {
     const p = pendingInitRef.current;
     if (!p) return;
-    // Only update the pending init payload so the next init includes latest file ids.
+    // Update the pending init payload so the next init includes latest file ids (covers CONNECTING state)
     pendingInitRef.current = { ...p, fileIds };
-  }, []);
+    // If socket is already open, immediately re-init with latest file ids so backend receives them
+    const ws = socketRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const token = activeTokenRef.current || p.token;
+      sendInit(token, p.conversationId, fileIds);
+    }
+  }, [sendInit]);
 
   const startRecording = useCallback(async () => {
     if (isRecording) return;
