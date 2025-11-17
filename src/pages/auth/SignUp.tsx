@@ -51,7 +51,7 @@ export default function SignUp() {
     await signup(values.email, values.password, values.confirm);
   };
   return (
-    <AuthLayout leftTitleOne="Upload. Ask." leftTitleTwo="Analyze. Achieve." subTitle="First things first: let’s set you up with an account.">
+    <AuthLayout leftTitleOne="Ask. Analyze. Set Goals." leftTitleTwo="Interact. Problem Solve. Achieve" subTitle="First things first: let’s set you up with an account.">
       <AuthHeader
         title="Welcome to Inspires Genius"
         subtitle="First things first: let’s set you up with an account."
