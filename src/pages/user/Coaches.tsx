@@ -82,7 +82,7 @@ export default function Coaches() {
                   genders={genderOptions}
                   accents={accentOptions}
                   tones={toneOptions}
-                  disableButton = {agent.name !== "PRISM Coach"}
+                  disableButton = {false}
                   selectedGenderId={agent.user_gender?.id ?? undefined}
                   selectedAccentId={agent.user_accent?.id ?? undefined}
                   selectedToneIds={selectedToneIds}
