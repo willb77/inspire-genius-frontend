@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type { ExportChatModalProps } from "@/types/chat";
-import DatePickerButton from "@/components/shared/DatePickerButton";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, parse, isValid } from "date-fns";
 
 export default function ExportChatModal({ open, onOpenChange, onExport, disableExport =false }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";
@@ -19,9 +20,11 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
     d.setDate(d.getDate() - 30);
     return d;
   }, []);
-  const [fromDate, setFromDate] = useState<Date>(thirtyDaysAgo);
-  const [toDate, setToDate] = useState<Date>(today);
-  const [format, setFormat] = useState<"pdf" | "csv">("pdf");
+  // Display dates as: dd Mon yy (e.g., 05 Nov 25)
+  const DISP_FMT = "dd LLL yy";
+  const [fromStr, setFromStr] = useState<string>(format(thirtyDaysAgo, DISP_FMT));
+  const [toStr, setToStr] = useState<string>(format(today, DISP_FMT));
+  const [exportFormat, setExportFormat] = useState<"pdf" | "csv">("pdf");
 
   // Reset when opening/closing
   useEffect(() => {
@@ -29,9 +32,9 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
       // Reset to initial state when closed
       setStep("form");
       setProgress(0);
-      setFromDate(thirtyDaysAgo);
-      setToDate(today);
-      setFormat("pdf");
+      setFromStr(format(thirtyDaysAgo, DISP_FMT));
+      setToStr(format(today, DISP_FMT));
+      setExportFormat("pdf");
     }
   }, [open, thirtyDaysAgo, today]);
 
@@ -53,9 +56,23 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
     return () => clearInterval(id);
   }, [step, open]);
 
+  const parseDisplayDate = (s: string): Date | null => {
+    const patterns = ["dd LLL yy", "d LLL yyyy", "dd-MM-yyyy"] as const;
+    for (const p of patterns) {
+      const d = parse(s, p, new Date());
+      if (isValid(d)) return d;
+    }
+    const naive = new Date(s);
+    return isValid(naive) ? naive : null;
+  };
+
   const handleExport = async () => {
+    const fromDate = parseDisplayDate(fromStr);
+    const toDate = parseDisplayDate(toStr);
+    console.log("fromDate", fromDate);
+    console.log("toDate", toDate);
     if (!fromDate || !toDate) return;
-    // Call parent export; format is fixed to pdf visually and disabled
+    if (fromDate > toDate) return;
     try {
       setIsSubmitting(true);
       await onExport?.(fromDate, toDate);
@@ -71,41 +88,56 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[min(520px,calc(100vw-2rem))] p-0 overflow-hidden" showCloseButton={false}>
+      <DialogContent className="w-[min(520px,calc(100vw-2rem))] p-0 overflow-visible" showCloseButton={false}>
         {step === "form" && (
           <div className="p-6">
             <div className="mb-1 text-lg font-semibold">Export Chat</div>
             <div className="text-sm text-muted-foreground mb-5">Download a copy of your chat for future reference.</div>
 
-            {/* From date */}
+            {/* From date (Onboarding-style DatePicker) */}
             <label className="block text-sm font-medium mb-1">Chat From</label>
-            <div className="mb-3">
-              <DatePickerButton
-                date={fromDate}
-                onSelect={(d) => {
-                  if (!d) return;
-                  setFromDate(d);
-                  if (toDate && d > toDate) setToDate(d);
+            <div className="mb-3 w-full">
+              <DatePicker
+                value={fromStr}
+                displayFormat={DISP_FMT}
+                onChange={(v) => {
+                  setFromStr(v);
+                  const parsedFrom = (() => { const d = parse(v, DISP_FMT, new Date()); return isValid(d) ? d : null; })();
+                  const parsedTo = (() => { const d = parse(toStr, DISP_FMT, new Date()); return isValid(d) ? d : null; })();
+                  if (parsedFrom && parsedTo && parsedFrom > parsedTo) {
+                    setToStr(v);
+                  }
                 }}
-                disabled={(date) => (toDate ? date > toDate : false)}
-                buttonClassName="w-full"
+                placeholder="From date"
+                minDate={new Date(1900, 0, 1)}
+                maxDate={(() => {
+                  const parsedTo = parse(toStr, DISP_FMT, new Date());
+                  return isValid(parsedTo) ? parsedTo : today;
+                })()}
+                className="w-full"
               />
             </div>
 
-            {/* To date */}
+            {/* To date (Onboarding-style DatePicker) */}
             <label className="block text-sm font-medium mb-1">Chat Till</label>
-            <div className="mb-3">
-              <DatePickerButton
-                date={toDate}
-                onSelect={(d) => d && setToDate(d)}
-                disabled={(date) => (fromDate ? date < fromDate : false)}
-                buttonClassName="w-full"
+            <div className="mb-3 w-full">
+              <DatePicker
+                value={toStr}
+                displayFormat={DISP_FMT}
+                onChange={(v) => setToStr(v)}
+                placeholder="To date"
+                minDate={(() => {
+                  const parsedFrom = parse(fromStr, DISP_FMT, new Date());
+                  return isValid(parsedFrom) ? parsedFrom : new Date(1900, 0, 1);
+                })()}
+                maxDate={today}
+                className="w-full"
               />
             </div>
 
             {/* Export type */}
             <label className="block text-sm font-medium mb-1">Export File</label>
-            <Select value={format} disabled>
+            <Select value={exportFormat} disabled>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="PDF" />
               </SelectTrigger>

@@ -3,7 +3,7 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { format, isValid } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 
 export type DatePickerProps = {
   value?: string; // formatted like "d LLL yyyy"
@@ -12,6 +12,7 @@ export type DatePickerProps = {
   minDate?: Date;
   maxDate?: Date;
   className?: string;
+  displayFormat?: string; // optional, defaults to onboarding's "d LLL yyyy"
 };
 
 // Button-like input to match existing UI
@@ -38,19 +39,23 @@ const Trigger = forwardRef<HTMLButtonElement, { value?: string; onClick?: () => 
 );
 Trigger.displayName = "DatePickerTrigger";
 
-export function DatePicker({ value, onChange, placeholder, minDate = new Date(1900, 0, 1), maxDate = new Date(), className }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder, minDate = new Date(1900, 0, 1), maxDate = new Date(), className, displayFormat = "d LLL yyyy" }: DatePickerProps) {
   const selected = useMemo(() => {
     if (!value) return undefined;
-    const d = new Date(value);
+    // Parse using provided display format first, fallback to native
+    let d = parse(value, displayFormat, new Date());
+    if (!isValid(d)) d = new Date(value);
     return isValid(d) ? d : undefined;
-  }, [value]);
+  }, [value, displayFormat]);
   return (
     <ReactDatePicker
+      wrapperClassName="w-full"
       selected={selected}
       onChange={(d: Date | null) => {
-        const v = d ? format(d, "d LLL yyyy") : "";
+        const v = d ? format(d, displayFormat) : "";
         onChange(v);
       }}
+      dateFormat={displayFormat}
       minDate={minDate}
       maxDate={maxDate}
       showMonthDropdown

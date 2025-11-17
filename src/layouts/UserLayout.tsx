@@ -19,8 +19,8 @@ export type UserLayoutProps = {
 
 const NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
-  { to: ROUTES.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.COACHES, icon: Users, label: "Coaches" },
+  { to: ROUTES.DASHBOARD, icon: LayoutDashboard, label: "Chat with Coaches" },
+  { to: ROUTES.COACHES, icon: Users, label: "Manage Coaches" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
