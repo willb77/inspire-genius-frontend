@@ -27,6 +27,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -65,6 +67,7 @@ export default function ChatWindow({
   docOnDownload,
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewer, setViewer] = useState<{ url: string; name: string }>({
@@ -72,6 +75,8 @@ export default function ChatWindow({
     name: "",
   });
   const [exportOpen, setExportOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const onImportDocs = (items: SimpleDoc[]) => {
     if (!items.length) return;
     const now = new Date();
@@ -91,6 +96,11 @@ export default function ChatWindow({
       })),
     ]);
     setActiveTab("chat");
+  };
+
+  const handleUploaded = () => {
+    queryClient.invalidateQueries({ queryKey: ["file_service", "list"] });
+    setUploadOpen(false);
   };
   const onPreview = (item: DocumentRef) => {
     if (!item.url) return;
@@ -469,17 +479,21 @@ export default function ChatWindow({
             ) : null}
           </div>
         ) : (
-          <DocumentsPanel
-            onImportToChat={onImportDocs}
-            onPreview={onPreview}
-            // Controlled docs from parent (CoachChat)
-            sections={docSections}
-            selectedIds={selectedFileIds}
-            onToggleSelect={onToggleDocSelect}
-            isLoading={docIsLoading}
-            onDelete={docOnDelete}
-            onDownload={docOnDownload}
-          />
+          <>
+       
+            <DocumentsPanel
+              onImportToChat={onImportDocs}
+              onPreview={onPreview}
+              // Controlled docs from parent (CoachChat)
+              sections={docSections}
+              selectedIds={selectedFileIds}
+              onToggleSelect={onToggleDocSelect}
+              isLoading={docIsLoading}
+              onDelete={docOnDelete}
+              onDownload={docOnDownload}
+              setupUploadOpen={setUploadOpen}
+            />
+          </>
         )}
       </div>
 
@@ -651,6 +665,14 @@ export default function ChatWindow({
         onDownload={docOnDownload}
         onImportToChat={onImportDocs}
         onPreview={onPreview}
+        onUploadClick={() => setUploadOpen(true)}
+      />
+
+      {/* Upload documents modal (shared with Documents page flow) */}
+      <UploadDocumentsModal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onUploaded={handleUploaded}
       />
     </div>
   );

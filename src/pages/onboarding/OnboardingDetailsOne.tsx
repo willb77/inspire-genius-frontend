@@ -53,7 +53,7 @@ export default function OnboardingDetailsOne() {
   return (
     <div data-tour="onboarding-details-one" className="min-h-screen w-full flex flex-col items-center justify-center p-4">
       <div className="w-full">
-        <Logo />
+        <Logo className="h-20"/>
       </div>
       <div className="w-full max-w-2xl space-y-6">
         <ProgressBar current={1} total={2} />
@@ -85,7 +85,7 @@ export default function OnboardingDetailsOne() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="First Name"
+                        placeholder="Enter your first name (e.g. John)"
                         className="peer h-11 w-full rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
@@ -108,7 +108,7 @@ export default function OnboardingDetailsOne() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Last Name"
+                        placeholder="Enter your last name (e.g. Doe)"
                         className="peer h-11 w-full rounded-md border border-gray-10 bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
@@ -145,7 +145,7 @@ export default function OnboardingDetailsOne() {
                       onChange={(v) => {
                         field.onChange(v);
                       }}
-                      placeholder="Date of Birth"
+                      placeholder="Select your date of birth"
                       minDate={new Date(1900, 0, 1)}
                       maxDate={(() => { const t=new Date(); return new Date(t.getFullYear()-13, t.getMonth(), t.getDate()); })()}
                     />
@@ -159,11 +159,12 @@ export default function OnboardingDetailsOne() {
                 control={form.control}
                 name="about"
                 render={({ field }) => (
-                  <FormItem className="md:col-span-2 col-span-1 relative">
+                  <FormItem className="md:col-span-2 col-span-1 relative mt-2">
+                    <p className="text-left text-[10px] font-normal text-muted-foreground">Share a few lines about your goals and background (optional)</p>
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Tell us more about you (optional)"
+                        placeholder="e.g I am student preparing for exams"
                         className="min-h-24 w-full rounded-md border border-gray-10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                       />
                     </FormControl>
