@@ -215,7 +215,7 @@ export default function ChatWindow({
             <button
               disabled={false}
               className={cn(
-                "cursor-pointer px-2 py-1 border-b-2 text-sm",
+                "hidden cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -230,12 +230,12 @@ export default function ChatWindow({
               <Button
                 type="button"
                 variant="secondary"
-                className="h-9 bg-transparent px-3 rounded-lg text-xs font-medium"
+                className="h-9 bg-transparent px-3 rounded-lg text-sm font-normal"
                 onClick={() => setDocsOpen(true)}
                 aria-label="Open documents side panel"
               >
                 <FileText className="size-4 mr-1" />
-                Quick Access
+                Documents
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">Open documents panel to select files to add to chat</TooltipContent>
