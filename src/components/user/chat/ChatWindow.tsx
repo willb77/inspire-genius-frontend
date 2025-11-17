@@ -13,10 +13,12 @@ import {
   Volume2,
   VolumeX,
   SquarePause,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
+import DocumentsSidePanel from "@/components/user/chat/DocumentsSidePanel";
 import DocumentIframeModal from "@/components/user/chat/DocumentIframeModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
@@ -25,6 +27,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -63,12 +67,16 @@ export default function ChatWindow({
   docOnDownload,
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewer, setViewer] = useState<{ url: string; name: string }>({
     url: "",
     name: "",
   });
   const [exportOpen, setExportOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const onImportDocs = (items: SimpleDoc[]) => {
     if (!items.length) return;
     const now = new Date();
@@ -88,6 +96,11 @@ export default function ChatWindow({
       })),
     ]);
     setActiveTab("chat");
+  };
+
+  const handleUploaded = () => {
+    queryClient.invalidateQueries({ queryKey: ["file_service", "list"] });
+    setUploadOpen(false);
   };
   const onPreview = (item: DocumentRef) => {
     if (!item.url) return;
@@ -202,7 +215,7 @@ export default function ChatWindow({
             <button
               disabled={false}
               className={cn(
-                "cursor-pointer px-2 py-1 border-b-2 text-sm",
+                "hidden cursor-pointer px-2 py-1 border-b-2 text-sm",
                 activeTab === "documents"
                   ? "border-blue-primary text-foreground"
                   : "border-transparent text-muted-foreground"
@@ -212,6 +225,21 @@ export default function ChatWindow({
               Documents
             </button>
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-9 bg-transparent px-3 rounded-lg text-sm font-normal"
+                onClick={() => setDocsOpen(true)}
+                aria-label="Open documents side panel"
+              >
+                <FileText className="size-4 mr-1" />
+                Documents
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Open documents panel to select files to add to chat</TooltipContent>
+          </Tooltip>
           <Button
             className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"
             variant="secondary"
@@ -451,17 +479,21 @@ export default function ChatWindow({
             ) : null}
           </div>
         ) : (
-          <DocumentsPanel
-            onImportToChat={onImportDocs}
-            onPreview={onPreview}
-            // Controlled docs from parent (CoachChat)
-            sections={docSections}
-            selectedIds={selectedFileIds}
-            onToggleSelect={onToggleDocSelect}
-            isLoading={docIsLoading}
-            onDelete={docOnDelete}
-            onDownload={docOnDownload}
-          />
+          <>
+       
+            <DocumentsPanel
+              onImportToChat={onImportDocs}
+              onPreview={onPreview}
+              // Controlled docs from parent (CoachChat)
+              sections={docSections}
+              selectedIds={selectedFileIds}
+              onToggleSelect={onToggleDocSelect}
+              isLoading={docIsLoading}
+              onDelete={docOnDelete}
+              onDownload={docOnDownload}
+              setupUploadOpen={setUploadOpen}
+            />
+          </>
         )}
       </div>
 
@@ -620,6 +652,28 @@ export default function ChatWindow({
           </div>
         </div>
       ) : null}
+
+      {/* Side documents panel */}
+      <DocumentsSidePanel
+        open={docsOpen}
+        onOpenChange={setDocsOpen}
+        sections={docSections}
+        selectedIds={selectedFileIds}
+        onToggleSelect={onToggleDocSelect}
+        isLoading={docIsLoading}
+        onDelete={docOnDelete}
+        onDownload={docOnDownload}
+        onImportToChat={onImportDocs}
+        onPreview={onPreview}
+        onUploadClick={() => setUploadOpen(true)}
+      />
+
+      {/* Upload documents modal (shared with Documents page flow) */}
+      <UploadDocumentsModal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onUploaded={handleUploaded}
+      />
     </div>
   );
 }

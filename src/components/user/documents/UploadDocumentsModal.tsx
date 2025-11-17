@@ -20,10 +20,14 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
   const [step, setStep] = useState<Step>("form");
   const [dragOver, setDragOver] = useState(false);
   const [queue, setQueue] = useState<File[]>([]);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(0); // displayed progress
+  const [serverProgress, setServerProgress] = useState(0); // raw progress from axios
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const uploadMutation = useUploadDocuments();
+  const smoothTimerRef = useRef<number | null>(null);
+  const colorTimerRef = useRef<number | null>(null);
+  const [colorIndex, setColorIndex] = useState(0);
 
   // Reset when closing
   useEffect(() => {
@@ -32,7 +36,12 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       setDragOver(false);
       setQueue([]);
       setProgress(0);
+      setServerProgress(0);
       setUploadError(null);
+      if (colorTimerRef.current) {
+        window.clearInterval(colorTimerRef.current);
+        colorTimerRef.current = null;
+      }
     }
   }, [open]);
 
@@ -56,9 +65,12 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
     if (!isReadyToUpload) return;
     setStep("progress");
     setProgress(0);
+    setServerProgress(0);
     setUploadError(null);
     try {
-      await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => setProgress(p) });
+      await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => setServerProgress(p) });
+      // on success, complete to 100 then show complete step
+      setProgress(100);
       setStep("complete");
       // Notify parent with local mapping so UI updates immediately
       const result: UploadedFile[] = queue.map((f) => ({
@@ -76,6 +88,52 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
   };
 
   // Progress is now updated via axios onUploadProgress in the mutation
+  // Smooth the displayed progress up to 90% while uploading; wait for success to jump to 100
+  useEffect(() => {
+    if (step !== "progress" || uploadError) {
+      if (smoothTimerRef.current) {
+        window.clearInterval(smoothTimerRef.current);
+        smoothTimerRef.current = null;
+      }
+      return;
+    }
+    const tick = () => {
+      setProgress((curr) => {
+        const target = Math.min(serverProgress || 90, 90);
+        if (curr < target) return Math.min(curr + 1, target);
+        return curr;
+      });
+    };
+    // run smoother/frequent updates
+    smoothTimerRef.current = window.setInterval(tick, 120);
+    return () => {
+      if (smoothTimerRef.current) {
+        window.clearInterval(smoothTimerRef.current);
+        smoothTimerRef.current = null;
+      }
+    };
+  }, [step, uploadError, serverProgress]);
+
+  // Cycle text color near 90% for better feedback
+  useEffect(() => {
+    if (step === "progress" && !uploadError && progress >= 85 && progress < 100) {
+      if (colorTimerRef.current) window.clearInterval(colorTimerRef.current);
+      colorTimerRef.current = window.setInterval(() => {
+        setColorIndex((i) => (i + 1) % 3);
+      }, 400);
+      return () => {
+        if (colorTimerRef.current) {
+          window.clearInterval(colorTimerRef.current);
+          colorTimerRef.current = null;
+        }
+      };
+    } else {
+      if (colorTimerRef.current) {
+        window.clearInterval(colorTimerRef.current);
+        colorTimerRef.current = null;
+      }
+    }
+  }, [step, uploadError, progress]);
 
   const handleOpenChange = (next: boolean) => {
     // Prevent closing while actively uploading (no error yet)
@@ -176,10 +234,44 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
               </button>
             ) : null}
             <Upload className="size-7 text-blue-primary" />
-            <div className="text-lg font-medium">Uploading Documents.... {progress}%</div>
-            <div className="text-sm text-muted-foreground">This might take a few seconds</div>
+            {uploadError ? (
+              <div className="text-lg font-semibold text-red-600">Something went wrong</div>
+            ) : (
+              (() => {
+                const nearing = ["text-blue-600", "text-amber-600", "text-violet-600"][colorIndex] || "";
+                const msgs90 = ["Almost there...", "Finalizing...", "Wrapping up..."];
+                const colors90 = ["text-green-600", "text-emerald-600", "text-lime-600"];
+                const uploadLabel = queue.length > 1 ? "Uploading Documents" : "Uploading Document";
+                const isNearing = progress >= 85 && progress < 90;
+                const isFinalizing = progress >= 90 && progress < 100;
+                const progressTextClass = isFinalizing
+                  ? `${colors90[colorIndex] || "text-green-600"} animate-pulse`
+                  : isNearing
+                  ? nearing
+                  : "";
+                const text = isFinalizing
+                  ? `${msgs90[colorIndex] || msgs90[0]} ${progress}%`
+                  : `${uploadLabel}.... ${progress}%`;
+                return (
+                  <div
+                    className={"text-lg font-medium " + progressTextClass}
+                    aria-busy={step === "progress" && !uploadError}
+                  >
+                    {text}
+                  </div>
+                );
+              })()
+            )}
+            {uploadError ? (
+              <div className="text-sm text-muted-foreground">The uploaded document may not be in a supported format or is too large. Please check the file and try again.</div>
+            ) : (
+              <div className="text-sm text-muted-foreground">This might take a few seconds. Please don't close this window while uploading.</div>
+            )}
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+              <div
+                className={`h-full ${uploadError ? "bg-red-500" : "bg-blue-primary"} transition-[width] duration-300`}
+                style={{ width: `${progress}%` }}
+              />
             </div>
             {uploadError ? (
               <div className="w-full text-left">

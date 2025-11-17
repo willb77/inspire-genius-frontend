@@ -95,7 +95,7 @@ export default function Home() {
             </p>
             </div>
             <div className="grid grid-cols-2 gap-5">
-              <Button  variant="outline" className="cursor-not-allowed w-full border border-blue-primary text-blue-primary">Take Survey</Button>
+              <Button variant="outline" className="cursor-not-allowed w-full border border-blue-primary text-blue-primary">Take Survey</Button>
               <Button className="cursor-not-allowed w-full">Know more</Button>
             </div>
           </CardContent>

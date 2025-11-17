@@ -31,7 +31,12 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="bg-transparent rounded-xl p-4" data-tour="dashboard-coach-list">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Choose a coach to chat</h2>
+            <div className="text-left flex-1 min-w-0">
+              <h2 className="text-lg font-semibold">Choose a coach to chat</h2>
+              <p className="mt-1 max-w-[75%] text-xs text-muted-foreground">
+                Pick a coach card below to open a chat and start your conversation. You can adjust each coach&apos;s settings later from the Manage Coaches page.
+              </p>
+            </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input

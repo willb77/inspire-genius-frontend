@@ -63,6 +63,8 @@ export default function CoachChat() {
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
+  const prevSelectedIdsRef = useRef<string[]>([]);
+  const isRefreshed = useRef(false);
   // Documents API & derived state
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
@@ -113,9 +115,7 @@ export default function CoachChat() {
     return selectedFileIds.map((id) => map.get(id)).filter(Boolean) as string[];
   }, [docSections, selectedFileIds]);
 
-  const handleToggleDocSelect = useCallback((id: string) => {
-    setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, []);
+ 
 
   const docOnDelete = useCallback(async (id: string) => {
     try {
@@ -219,16 +219,17 @@ export default function CoachChat() {
     svc.initializeAudioContext().then(() => {
       svc.addAudioChunk(audioData);
       setHasAudio(true);
-      const ctx = svc.getAudioContext();
-      if (ctx && ctx.state === "suspended" && !isAudioPaused) {
-        svc.resumeAudio();
-        setIsAudioPaused(false);
-      }
+      // const ctx = svc.getAudioContext();
+      // if (ctx && ctx.state === "suspended" && !isAudioPaused) {
+      //   svc.resumeAudio();
+      //   setIsAudioPaused(false);
+      // }
     });
   }, [isAudioPaused]);
 
   const {
     connect,
+    disconnect,
     updateSelectedFiles,
     sendTextMessage,
     isConnected,
@@ -273,6 +274,12 @@ export default function CoachChat() {
     }
   }
 
+   const handleToggleDocSelect = useCallback(async (id: string) => {
+    await disconnect();
+    setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+
   const handleCreateConversation = () => {
     if (!agentId || createConvMutation.isPending) return;
     createConvMutation.mutate(
@@ -288,6 +295,7 @@ export default function CoachChat() {
             setSelectedId(id);
             setConversationId(id);
             secureSetItem("conv", { id });
+            connect(agentId, accessToken, selectedFileIds, id);
           }
         },
         onError: (e) => {
@@ -297,18 +305,43 @@ export default function CoachChat() {
     );
   };
 
+  // Persist and rehydrate selected document IDs (optional)
+  const selectedKey = useMemo(() => {
+    if (conversationId) return `docsel:${conversationId}`;
+    if (agentId) return `docsel:agent:${agentId}`;
+    return undefined;
+  }, [conversationId, agentId]);
+
   useEffect(() => {
     if (!agentId || !accessToken || !conversationId) return;
-    if (!isConnected && !isConnecting) {
-      // Initial connect includes current selected files
-      connect(agentId, accessToken, selectedFileIds, conversationId);
-      return;
-    }
-    if (isConnected) {
-      // When connected, only update file context – do NOT re-init
-      updateSelectedFiles(selectedFileIds);
-    }
-  }, [agentId, accessToken, conversationId, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+    let mounted = true;
+    (async () => {
+      if (!isConnected && !isConnecting && conversationId) {
+
+        // Hydrate selected file IDs from storage first so the initial connect has them
+        let nextIds = selectedFileIds;
+        if (selectedKey) {
+          const stored = await secureGetItem<{ ids?: string[] }>(selectedKey);
+          if (!mounted) return;
+          const ids = Array.isArray(stored) ? (stored as unknown as string[]) : stored?.ids;
+          if (Array.isArray(ids)) {
+            nextIds = ids;
+          }
+        }
+                console.log("Connecting to conversation", selectedFileIds, nextIds);
+        const finalIds = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
+        // Initial connect includes current/hydrated selected files
+        connect(agentId, accessToken, finalIds, conversationId);
+
+        prevSelectedIdsRef.current = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
+        isRefreshed.current = true;
+        return;
+      }
+    })();
+    return () => { mounted = false; };
+  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+
+  // (Removed extra CONNECTING updater to avoid double init)
 
 
 
@@ -377,11 +410,14 @@ export default function CoachChat() {
     setMessages(mapped);
   }, [messagesPages]);
 
-  const handleSelectConversation = useCallback((id: string) => {
+  const handleSelectConversation = useCallback(async (id: string) => {
+    await disconnect();
     setSelectedId(id);
     setConversationId(id);
+    if (isConnected) disconnect();
+    setMessages([]);
     secureSetItem("conv", { id });
-  }, []);
+  }, [disconnect, isConnected]);
 
   // On mount or agent change, read persisted conversation id
   useEffect(() => {
@@ -407,6 +443,7 @@ export default function CoachChat() {
                 setSelectedId(id);
                 setConversationId(id);
                 secureSetItem("conv", { id });
+                connect(agentId, accessToken, selectedFileIds, id);
               }
             },
             onError: (e) => {
@@ -417,14 +454,7 @@ export default function CoachChat() {
       }
     })();
     return () => { mounted = false; };
-  }, [agentId, createConvMutation, queryClient]);
-
-  // Persist and rehydrate selected document IDs (optional)
-  const selectedKey = useMemo(() => {
-    if (conversationId) return `docsel:${conversationId}`;
-    if (agentId) return `docsel:agent:${agentId}`;
-    return undefined;
-  }, [conversationId, agentId]);
+  }, [agentId]);
 
   useEffect(() => {
     let mounted = true;

@@ -7,8 +7,8 @@ import { type AuthLayoutProps } from "@/types/auth";
  * This keeps duplication low and follows basic Sonar rules (small components, single responsibility).
  */
 export default function AuthLayout({
-  leftTitleOne = "Upload. Ask.",
-  leftTitleTwo = "Analyze. Achieve.",
+  leftTitleOne = "Ask. Analyze. Set Goals.",
+  leftTitleTwo = "Interact. Problem Solve. Achieve",
   subTitle = "Get answers, guidance, and insights instantly—powered by AI built around you.",
   children,
 }: AuthLayoutProps) {

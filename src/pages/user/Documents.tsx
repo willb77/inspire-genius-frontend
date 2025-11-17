@@ -4,13 +4,6 @@ import IconInput from "@/components/ui/icon-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Calendar as CalendarIcon,
   Search,
   Settings,
   Trash2,
@@ -21,7 +14,7 @@ import {
   Upload,
   Loader2,
 } from "lucide-react";
-import { format as formatMonth } from "date-fns";
+import { format as formatMonth, format, parse, isValid } from "date-fns";
 import { toast } from "sonner";
 import DocumentIframeModal from "@/components/user/chat/DocumentIframeModal";
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
@@ -32,9 +25,11 @@ import { api } from "@/lib/axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
+import { useBulkDeleteDocuments } from "@/hooks/documents/useBulkDeleteDocuments";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Pagination from "@/components/shared/Pagination";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const KIND_STYLES: Record<
   DocKind,
@@ -58,17 +53,28 @@ export default function Documents() {
     url: "",
     name: "",
   });
-  const [month, setMonth] = useState<Date>(new Date());
+  const [filterDate, setFilterDate] = useState<string>();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [page, setPage] = useState<number>(1);
   const limit = 10;
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Data
-  const { data: fileServiceList, isLoading: listLoading } = useListDocuments(page, limit);
+  const yyyyMmDd = useMemo(() => {
+    try {
+      if (!filterDate) return "";
+      let d = parse(filterDate, "d LLL yyyy", new Date());
+      if (!isValid(d)) d = new Date(filterDate);
+      return isValid(d) ? format(d, "yyyy-MM-dd") : "";
+    } catch {
+      return "";
+    }
+  }, [filterDate]);
+  const { data: fileServiceList, isLoading: listLoading, isFetching: listFetching } = useListDocuments(page, limit, { date: yyyyMmDd, search: query.trim() });
   const queryClient = useQueryClient();
   const downloadMutation = useDownloadDocument();
   const deleteMutation = useDeleteDocument();
+  const bulkDeleteMutation = useBulkDeleteDocuments();
 
   // Month filter currently applies only to fallback mode; API grouping uses server date labels
   const monthFiltered: DocItem[] = useMemo(() => [], []);
@@ -173,10 +179,12 @@ export default function Documents() {
 
   const handleDeleteSelected = async () => {
     if (selected.size === 0) return;
-    // Batch delete sequentially; backend may later support bulk
     try {
-      for (const id of selected) {
-        await deleteMutation.mutateAsync(id);
+      if (selected.size === 1) {
+        const [onlyId] = Array.from(selected);
+        await deleteMutation.mutateAsync(onlyId);
+      } else {
+        await bulkDeleteMutation.mutateAsync(Array.from(selected));
       }
       setSelected(new Set());
       toast.success("Documents deleted", {
@@ -185,9 +193,7 @@ export default function Documents() {
     } catch (e) {
       toast.error("Delete failed", {
         description:
-          e instanceof Error
-            ? e.message
-            : "Unable to delete one or more documents",
+          e instanceof Error ? e.message : "Unable to delete one or more documents",
       });
     }
   };
@@ -280,7 +286,7 @@ export default function Documents() {
                     <Button
                       variant="secondary"
                       className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
-                      disabled={deleteMutation.isPending || true}
+                      disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
                     >
                       Delete
                       <Trash2 className="size-4 ml-2" />
@@ -304,31 +310,16 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Month selector + selected pill */}
+        {/* Date filter + selected pill */}
         <div className="flex items-center gap-3">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-              disabled
-                className="text-blue-primary cursor-not-allowed flex items-center gap-2"
-                type="button"
-              >
-                {formatMonth(month, "MMMM , yyyy")}{" "}
-                <CalendarIcon className="size-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="p-0">
-              <Calendar
-                mode="single"
-                selected={month}
-                onSelect={(d) => d && setMonth(d)}
-                month={month}
-                onMonthChange={(m) => setMonth(m)}
-                captionLayout="dropdown"
-                autoFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="w-56">
+            <DatePicker
+              value={filterDate}
+              onChange={setFilterDate}
+              placeholder="Filter by date"
+              maxDate={new Date()}
+            />
+          </div>
           {selectedCount > 0 ? (
             <span className="text-blue-primary bg-blue-50 rounded-lg px-3 py-1 text-sm font-medium">
               Selected ({String(selectedCount).padStart(2, "0")})
@@ -341,7 +332,7 @@ export default function Documents() {
           className="bg-white rounded-2xl border shadow-sm p-4"
           data-tour="docs-sections"
         >
-          {listLoading ? (
+          {listLoading || listFetching ? (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => (
                 <div key={i}>

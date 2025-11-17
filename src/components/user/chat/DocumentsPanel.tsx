@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Trash2, Download, Eye, ChevronDown, Sparkles, Loader2 } from "lucide-react";
+import { Trash2, Download, Eye, ChevronDown, Sparkles, Loader2, Upload } from "lucide-react";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import type { DocKind, SimpleDoc, DocumentsPanelProps } from "@/types/chat";
 
 type UIDocItem = { id: string; name: string; kind: DocKind; url: string; createdAt: Date; tempUrl?: string; categoryName?: string };
 
-export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange, sections: sectionsProp, selectedIds, onToggleSelect, isLoading: isLoadingProp, onDelete, onDownload }: DocumentsPanelProps) {
+export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange, sections: sectionsProp, selectedIds, onToggleSelect, isLoading: isLoadingProp, onDelete, onDownload, setupUploadOpen }: DocumentsPanelProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds ?? []));
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const useControlled = Array.isArray(sectionsProp);
@@ -98,10 +98,21 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
             }}
           />
         ) : null}
+             <div className="flex-1 flex justify-end mb-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-8 px-3 rounded-lg bg-blue-primary/5 text-blue-primary hover:bg-blue-primary/10"
+                onClick={() => setupUploadOpen?.(true)}
+              >
+                <Upload className="size-4 mr-2" />
+                Upload
+              </Button>
+            </div>
         <Button
           type="button"
           onClick={importSelected}
-          className="invisible h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
+          className="hidden h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
           variant="secondary"
         >
           Import to Chat
