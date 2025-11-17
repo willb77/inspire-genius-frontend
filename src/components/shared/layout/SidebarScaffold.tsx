@@ -53,7 +53,7 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
           navigate(to);
         }}
         aria-label={label}
-        className={cn(isActive ? activeClasses : inactiveClasses)}
+        className={cn("py-2.5",isActive ? activeClasses : inactiveClasses)}
       >
         <Icon className="shrink-0 " />
         <span>{label}</span>
@@ -102,9 +102,9 @@ export default function SidebarScaffold({ navItems, children, className, expandO
                       {group.map((item) => (
                         <NavItem key={item.label} {...item} expandOnPath={expandOnPath} />
                       ))}
-                      {gi !== groups.length - 1 && (
+                      {/* {gi !== groups.length - 1 && (
                         <SidebarSeparator className="!w-[80%] mx-auto my-4" />
-                      )}
+                      )} */}
                     </React.Fragment>
                   ));
                 })()}
