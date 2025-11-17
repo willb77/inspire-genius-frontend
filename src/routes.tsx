@@ -27,6 +27,8 @@ import TeamManagement from "@/pages/super-admin/TeamManagement";
 import CoachManagement from "@/pages/super-admin/CoachManagement";
 import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 import UserManagement from "@/pages/super-admin/UserManagement";
+import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
+import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -71,6 +73,11 @@ export const routes: RouteObject[] = [
         element: <OrganizationManagement />,
       },
       { path: "/super-admin/users", element: <UserManagement /> },
+      { path: "/super-admin/dashboard/issues", element: <IssuesDetailsPage /> },
+      {
+        path: "/super-admin/issues/:id",
+        element: <IssueDetailPage />,
+      },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },
