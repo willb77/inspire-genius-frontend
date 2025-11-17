@@ -327,11 +327,11 @@ export default function CoachChat() {
             nextIds = ids;
           }
         }
-        const finalIds = isRefreshed.current ? selectedFileIds : nextIds;
+        const finalIds = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         // Initial connect includes current/hydrated selected files
         connect(agentId, accessToken, finalIds, conversationId);
 
-        prevSelectedIdsRef.current = isRefreshed ? selectedFileIds : nextIds;
+        prevSelectedIdsRef.current = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         isRefreshed.current = true;
         return;
       }
