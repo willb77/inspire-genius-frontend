@@ -94,7 +94,7 @@ export default function OnboardingDetailsTwo() {
   return (
     <div data-tour="onboarding-details-two" className="relative min-h-screen w-full p-4 pb-32">
       <div className="w-fit">
-        <Logo />
+        <Logo className="h-20"/>
       </div>
       <div className="mx-auto w-full max-w-4xl space-y-6">
         <div ref={progressRef}  className="flex items-center justify-between">
@@ -106,6 +106,13 @@ export default function OnboardingDetailsTwo() {
             Prev
           </button>
           <ProgressBar current={2} total={2} />
+        </div>
+
+        <div className="space-y-1 text-center md:text-left">
+          <h2 className="text-xl font-semibold">Configure your mentor</h2>
+          <p className="text-xs md:text-sm text-muted-foreground">
+            Choose each mentor&apos;s voice tone, gender, and accent so conversations feel natural to you. You can change these settings later.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
