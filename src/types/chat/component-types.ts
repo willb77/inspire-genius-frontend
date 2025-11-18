@@ -60,6 +60,7 @@ export interface DocumentsPanelProps {
   isLoading?: boolean;
   onDelete?: (id: string) => void;
   onDownload?: (id: string) => void;
+  setupUploadOpen?: (open: boolean) => void;
 }
 
 // ExportChatModal component props

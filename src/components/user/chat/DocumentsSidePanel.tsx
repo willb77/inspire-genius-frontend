@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
 import type { DocumentsPanelProps, DocumentRef, SimpleDoc } from "@/types/chat";
 
@@ -16,6 +17,7 @@ interface DocumentsSidePanelProps {
   onDownload?: DocumentsPanelProps["onDownload"];
   onImportToChat: (items: SimpleDoc[]) => void;
   onPreview?: (item: DocumentRef) => void;
+  onUploadClick?: () => void;
 }
 
 export default function DocumentsSidePanel({
@@ -29,6 +31,7 @@ export default function DocumentsSidePanel({
   onDownload,
   onImportToChat,
   onPreview,
+  onUploadClick,
 }: DocumentsSidePanelProps) {
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
@@ -61,8 +64,10 @@ export default function DocumentsSidePanel({
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="text-base font-semibold">Documents</div>
+        <div className="flex items-center justify-between border-b px-4 py-3 gap-3">
+          <div className="flex items-center gap-3">
+            <div className="text-base font-semibold">Documents</div>
+          </div>
           <button
             type="button"
             aria-label="Close documents"
@@ -82,6 +87,7 @@ export default function DocumentsSidePanel({
             isLoading={isLoading}
             onDelete={onDelete}
             onDownload={onDownload}
+            setupUploadOpen={onUploadClick}
           />
         </div>
       </div>
