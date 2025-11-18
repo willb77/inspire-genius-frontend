@@ -21,13 +21,18 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
   const [dragOver, setDragOver] = useState(false);
   const [queue, setQueue] = useState<File[]>([]);
   const [progress, setProgress] = useState(0); // displayed progress
-  const [serverProgress, setServerProgress] = useState(0); // raw progress from axios
+  const progressRef = useRef(0); // track latest progress to avoid stale closures
+  const serverProgressRef = useRef(0); // raw progress from axios
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const uploadMutation = useUploadDocuments();
   const smoothTimerRef = useRef<number | null>(null);
   const colorTimerRef = useRef<number | null>(null);
   const [colorIndex, setColorIndex] = useState(0);
+  const finishTimerRef = useRef<number | null>(null);
+  const finalMsgTimerRef = useRef<number | null>(null);
+  const [finishing, setFinishing] = useState(false);
+  const [finalMsgIndex, setFinalMsgIndex] = useState(0);
 
   // Reset when closing
   useEffect(() => {
@@ -36,14 +41,33 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       setDragOver(false);
       setQueue([]);
       setProgress(0);
-      setServerProgress(0);
+      serverProgressRef.current = 0;
       setUploadError(null);
       if (colorTimerRef.current) {
         window.clearInterval(colorTimerRef.current);
         colorTimerRef.current = null;
       }
+      if (smoothTimerRef.current) {
+        window.clearInterval(smoothTimerRef.current);
+        smoothTimerRef.current = null;
+      }
+      if (finishTimerRef.current) {
+        window.clearInterval(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
+      if (finalMsgTimerRef.current) {
+        window.clearInterval(finalMsgTimerRef.current);
+        finalMsgTimerRef.current = null;
+      }
+      setFinishing(false);
+      setFinalMsgIndex(0);
     }
   }, [open]);
+
+  // Keep a live reference of progress for use inside async handlers
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
   // Only require files queued
   const isReadyToUpload = queue.length > 0;
@@ -65,32 +89,80 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
     if (!isReadyToUpload) return;
     setStep("progress");
     setProgress(0);
-    setServerProgress(0);
+    serverProgressRef.current = 0;
     setUploadError(null);
     try {
-      await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => setServerProgress(p) });
-      // on success, complete to 100 then show complete step
-      setProgress(100);
-      setStep("complete");
-      // Notify parent with local mapping so UI updates immediately
-      const result: UploadedFile[] = queue.map((f) => ({
-        name: f.name,
-        url: URL.createObjectURL(f),
-        kind: kindFromName(f.name),
-      }));
-      onUploaded?.(result, "");
+      await uploadMutation.mutateAsync({ files: queue, onProgress: (p) => { serverProgressRef.current = p; } });
+      // Use the latest progress value at the moment of success
+      const startP = Math.max(0, Math.min(100, progressRef.current));
+      setFinishing(true);
+      setFinalMsgIndex(0);
+      if (smoothTimerRef.current) {
+        window.clearInterval(smoothTimerRef.current);
+        smoothTimerRef.current = null;
+      }
+      if (finalMsgTimerRef.current) {
+        window.clearInterval(finalMsgTimerRef.current);
+        finalMsgTimerRef.current = null;
+      }
+      finalMsgTimerRef.current = window.setInterval(() => {
+        setFinalMsgIndex((i) => (i < 2 ? i + 1 : 2));
+      }, 1000);
+      const startTime = Date.now();
+      if (finishTimerRef.current) {
+        window.clearInterval(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
+      finishTimerRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(1, elapsed / 3000);
+        const next = Math.round(startP + (100 - startP) * t);
+        // Ensure monotonic increase (never go backward)
+        setProgress((prev) => (next < prev ? prev : next));
+        if (t >= 1) {
+          if (finishTimerRef.current) {
+            window.clearInterval(finishTimerRef.current);
+            finishTimerRef.current = null;
+          }
+          if (finalMsgTimerRef.current) {
+            window.clearInterval(finalMsgTimerRef.current);
+            finalMsgTimerRef.current = null;
+          }
+          setFinishing(false);
+          setStep("complete");
+          const result: UploadedFile[] = queue.map((f) => ({
+            name: f.name,
+            url: URL.createObjectURL(f),
+            kind: kindFromName(f.name),
+          }));
+          onUploaded?.(result, "");
+        }
+      }, 50);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unable to upload document";
       setUploadError(msg);
       // Stay on progress view and let user close explicitly
       setStep("progress");
+      if (smoothTimerRef.current) {
+        window.clearInterval(smoothTimerRef.current);
+        smoothTimerRef.current = null;
+      }
+      if (finishTimerRef.current) {
+        window.clearInterval(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
+      if (finalMsgTimerRef.current) {
+        window.clearInterval(finalMsgTimerRef.current);
+        finalMsgTimerRef.current = null;
+      }
+      setFinishing(false);
     }
   };
 
   // Progress is now updated via axios onUploadProgress in the mutation
   // Smooth the displayed progress up to 90% while uploading; wait for success to jump to 100
   useEffect(() => {
-    if (step !== "progress" || uploadError) {
+    if (step !== "progress" || uploadError || finishing) {
       if (smoothTimerRef.current) {
         window.clearInterval(smoothTimerRef.current);
         smoothTimerRef.current = null;
@@ -98,21 +170,17 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
       return;
     }
     const tick = () => {
-      setProgress((curr) => {
-        const target = Math.min(serverProgress || 90, 90);
-        if (curr < target) return Math.min(curr + 1, target);
-        return curr;
-      });
+      setProgress((curr) => (curr < 97 ? curr + 1 : 97));
     };
-    // run smoother/frequent updates
-    smoothTimerRef.current = window.setInterval(tick, 120);
+    // ~180s to reach 97% => ~1850ms per 1%
+    smoothTimerRef.current = window.setInterval(tick, 1850);
     return () => {
       if (smoothTimerRef.current) {
         window.clearInterval(smoothTimerRef.current);
         smoothTimerRef.current = null;
       }
     };
-  }, [step, uploadError, serverProgress]);
+  }, [step, uploadError, finishing]);
 
   // Cycle text color near 90% for better feedback
   useEffect(() => {
@@ -243,14 +311,14 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
                 const colors90 = ["text-green-600", "text-emerald-600", "text-lime-600"];
                 const uploadLabel = queue.length > 1 ? "Uploading Documents" : "Uploading Document";
                 const isNearing = progress >= 85 && progress < 90;
-                const isFinalizing = progress >= 90 && progress < 100;
+                const isFinalizing = finishing || (progress >= 90 && progress < 100);
                 const progressTextClass = isFinalizing
                   ? `${colors90[colorIndex] || "text-green-600"} animate-pulse`
                   : isNearing
                   ? nearing
                   : "";
                 const text = isFinalizing
-                  ? `${msgs90[colorIndex] || msgs90[0]} ${progress}%`
+                  ? `${(finishing ? msgs90[finalMsgIndex] : (msgs90[colorIndex] || msgs90[0]))} ${progress}%`
                   : `${uploadLabel}.... ${progress}%`;
                 return (
                   <div
