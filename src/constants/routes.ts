@@ -16,6 +16,7 @@ export const ROUTES = {
     COACHES: "/super-admin/coaches",
     ORGANIZATIONS: "/super-admin/organizations",
     USERS: "/super-admin/users",
+    SETTINGS: "/super-admin/settings",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
@@ -39,6 +40,7 @@ export const NEXT_STEPS = {
 
 export const ROLES = {
   SUPER_ADMIN: "super-admin",
+  USER: "user",
 } as const;
 
 export const PATHS = {

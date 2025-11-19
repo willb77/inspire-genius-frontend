@@ -43,7 +43,7 @@ export default function SuperAdminDashboard() {
         {/* Header with Dashboard title and avatars */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-4">
+          <div className="invisible flex items-center gap-4">
             <div className="flex items-center -space-x-2">
               <Avatar className="h-9 w-9 border-2 border-white">
                 <AvatarFallback className="bg-gray-200">
@@ -67,7 +67,7 @@ export default function SuperAdminDashboard() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="justify-start text-left font-normal h-9"
+                  className="invisible justify-start text-left font-normal h-9"
                 >
                   <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
                   {fromDate ? (
@@ -93,7 +93,7 @@ export default function SuperAdminDashboard() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="justify-start text-left font-normal h-9"
+                  className="invisible justify-start text-left font-normal h-9"
                 >
                   <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
                   {toDate ? (

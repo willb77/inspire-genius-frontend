@@ -4,10 +4,11 @@ import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import AcceptInvitation from "@/pages/auth/AcceptInvitation";
+// import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
 // import PublicRoute from "@/components/PublicRoute";
 
-import SettingsPage from "@/pages/user/Settings";
+import UserSettingsPage from "@/pages/user/Settings";
 import HelpPage from "@/pages/user/Help";
 import Home from "@/pages/user/Home";
 import Dashboard from "@/pages/user/Dashboard";
@@ -30,6 +31,7 @@ import UserManagement from "@/pages/super-admin/UserManagement";
 import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
 import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
 import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
+import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -42,6 +44,7 @@ export const routes: RouteObject[] = [
       { path: "/otp", element: <OTP /> },
       { path: "/reset-password", element: <ResetPassword /> },
       { path: "/accept-invitation", element: <AcceptInvitation /> },
+      // { path: "/social-login", element: <SocialLogin /> },
     ],
   },
 
@@ -63,7 +66,7 @@ export const routes: RouteObject[] = [
       { path: "/coaches", element: <Coaches /> },
       { path: "/dashboard/:coach/chat", element: <CoachChat /> },
       { path: "/documents", element: <Documents /> },
-      { path: "/settings", element: <SettingsPage /> },
+      { path: "/settings", element: <UserSettingsPage /> },
       { path: "/help", element: <HelpPage /> },
       // Super Admin protected pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
@@ -83,6 +86,7 @@ export const routes: RouteObject[] = [
         path: "/super-admin/dashboard/licences",
         element: <LicenceDetailsPage />,
       },
+      {path:"/super-admin/settings",element:<SuperAdminSettingsPage />}
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },
