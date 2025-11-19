@@ -11,12 +11,13 @@ import {
 import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes";
+import { ROLES, ROUTES } from "@/constants/routes";
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const email = user?.email ?? "";
+  const role = user?.role ?? "";
   const name = (email && email.split("@")[0]) || "User";
   const initial = (name?.[0] ?? "U").toUpperCase();
   return (
@@ -59,8 +60,8 @@ export default function UserTopHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {/* <DropdownMenuItem>Profile</DropdownMenuItem> */}
-            <DropdownMenuItem onSelect={() => navigate(ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate(role === ROLES.SUPER_ADMIN ? ROUTES.SUPER_ADMIN.SETTINGS : ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
+            {role === ROLES.USER && <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <ConfirmDialog
               title="Log out"
