@@ -29,6 +29,7 @@ import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 import UserManagement from "@/pages/super-admin/UserManagement";
 import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
 import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
+import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -77,6 +78,10 @@ export const routes: RouteObject[] = [
       {
         path: "/super-admin/issues/:id",
         element: <IssueDetailPage />,
+      },
+      {
+        path: "/super-admin/dashboard/licences",
+        element: <LicenceDetailsPage />,
       },
     ],
   },
