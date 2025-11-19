@@ -5,7 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
   Search,
-  Settings,
   Trash2,
   Download,
   Eye,
@@ -13,6 +12,7 @@ import {
   ChevronRight,
   Upload,
   Loader2,
+  Settings,
 } from "lucide-react";
 import { format as formatMonth, format, parse, isValid } from "date-fns";
 import { toast } from "sonner";
@@ -256,9 +256,14 @@ export default function Documents() {
       <div className="space-y-4">
         {/* Header row */}
         <div className="flex items-start justify-between">
+          <div className="text-left flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">
             Documents Uploaded
           </h1>
+          <p className="text-xs text-muted-foreground">
+            Upload documents to access them in the chat.
+          </p>
+          </div>
           <div
             className="flex flex-col items-end gap-2"
             data-tour="docs-toolbar"
@@ -271,7 +276,7 @@ export default function Documents() {
               Upload Document
               <Upload className="size-4 ml-2" />
             </Button>
-            <div className="flex items-center gap-3 justify-end">
+            <div className="hidden items-center gap-3 justify-end">
               <IconInput
                 placeholder="Search.."
                 leftIcon={<Search className="size-4" />}
@@ -310,7 +315,7 @@ export default function Documents() {
         </div>
 
         {/* Date filter + selected pill */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mt-10">
           <div className="w-56">
             <DatePicker
               value={filterDate}
@@ -324,6 +329,28 @@ export default function Documents() {
               Selected ({String(selectedCount).padStart(2, "0")})
             </span>
           ) : null}
+
+            <div className="flex-1 flex items-center gap-3 justify-end">
+
+              {selectedCount > 0 ? (
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      variant="secondary"
+                      className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
+                      disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
+                    >
+                      Delete
+                      <Trash2 className="size-4 ml-2" />
+                    </Button>
+                  }
+                  title="Confirm delete"
+                  description={`Are you sure you want to delete ${selectedCount} selected document(s)? This action cannot be undone.`}
+                  confirmText="Delete"
+                  onConfirm={handleDeleteSelected}
+                />
+              ) : null}
+            </div>
         </div>
 
         {/* Sections */}
