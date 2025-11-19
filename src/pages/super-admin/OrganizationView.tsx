@@ -19,7 +19,6 @@ import ActionMenu from "@/components/shared/ActionMenu";
 import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
 import UserFormModal from "@/components/shared/forms/UserFormModal";
 import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
-
 import {
   useAssignCoachesToBusiness,
   useOrganizationViewDetail,
@@ -39,21 +38,33 @@ export default function OrganizationView() {
   const params = useParams<{ id: string }>();
   const [tab, setTab] = useState<TabType>("basic");
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | "organization">("organization");
+  const [selectedBusinessId, setSelectedBusinessId] = useState<
+    string | "organization"
+  >("organization");
   const [assigningAgentId, setAssigningAgentId] = useState<string | null>(null);
 
   const isOrganizationLevel = selectedBusinessId === "organization";
 
-  const { data: orgViewRes, isLoading, refetch } = useOrganizationViewDetail(params.id);
+  const {
+    data: orgViewRes,
+    isLoading,
+    refetch,
+  } = useOrganizationViewDetail(params.id);
   const { data: rolesRes } = useRoles();
-  const { data: orgAgentsRes, isLoading: isLoadingAgents, refetch: refetchAgents } = useOrganizationAgents(
+  const {
+    data: orgAgentsRes,
+    isLoading: isLoadingAgents,
+    refetch: refetchAgents,
+  } = useOrganizationAgents(
     params.id,
-    isOrganizationLevel ? undefined : selectedBusinessId as string
+    isOrganizationLevel ? undefined : (selectedBusinessId as string)
   );
-  const { data: usersRes } = useUserManagement(
+  const { data: usersRes, isLoading: isLoadingUsers } = useUserManagement(
     {
       organization_id: params.id,
-      business_id: isOrganizationLevel ? undefined : selectedBusinessId as string,
+      business_id: isOrganizationLevel
+        ? undefined
+        : (selectedBusinessId as string),
       page: 1,
       limit: 50,
     },
@@ -65,7 +76,8 @@ export default function OrganizationView() {
       toast.success(res.message || "Coaches assigned successfully");
       refetchAgents();
     },
-    onError: (error) => toast.error(error.message || "Failed to assign coaches"),
+    onError: (error) =>
+      toast.error(error.message || "Failed to assign coaches"),
   });
 
   const removeCoachFromOrgMutation = useRemoveCoachesFromOrganization({
@@ -105,25 +117,28 @@ export default function OrganizationView() {
   }, [orgViewRes?.data]);
 
   const selectedBusiness = useMemo(
-    () => orgViewRes?.data?.businesses?.find((b) => b.id === selectedBusinessId),
+    () =>
+      orgViewRes?.data?.businesses?.find((b) => b.id === selectedBusinessId),
     [orgViewRes?.data?.businesses, selectedBusinessId]
   );
 
   const businessOptions = useMemo(() => {
     const options = [{ id: "organization", label: "Organization" }];
     if (!orgViewRes?.data?.businesses) return options;
-
     const orgType = organization?.type?.toLowerCase();
     const businesses = orgViewRes.data.businesses;
-
     if (orgType === "both") {
-      businesses.forEach((b) => options.push({ id: b.id, label: b.business_type }));
+      businesses.forEach((b) =>
+        options.push({ id: b.id, label: b.business_type })
+      );
     } else {
       const targetType = orgType === "education" ? "education" : "corporate";
-      const business = businesses.find((b) => b.business_type.toLowerCase() === targetType);
-      if (business) options.push({ id: business.id, label: business.business_type });
+      const business = businesses.find(
+        (b) => b.business_type.toLowerCase() === targetType
+      );
+      if (business)
+        options.push({ id: business.id, label: business.business_type });
     }
-
     return options;
   }, [orgViewRes?.data?.businesses, organization?.type]);
 
@@ -142,26 +157,28 @@ export default function OrganizationView() {
   }, [orgAgentsRes?.data?.agents]);
 
   const licenseRows = useMemo(
-    () => (orgViewRes?.data?.licenses || []).map((l) => ({
-      tier: l.subscription_tier,
-      start: l.start_date,
-      end: l.end_date,
-      remaining: l.days_remaining,
-      status: l.status,
-      is_active: l.status === "active",
-    })),
+    () =>
+      (orgViewRes?.data?.licenses || []).map((l) => ({
+        tier: l.subscription_tier,
+        start: l.start_date,
+        end: l.end_date,
+        remaining: l.days_remaining,
+        status: l.status,
+        is_active: l.status === "active",
+      })),
     [orgViewRes?.data?.licenses]
   );
 
   const usersData = useMemo(
-    () => (usersRes?.data?.users || []).map((u: any) => ({
-      id: u.user_id,
-      name: u.full_name,
-      email: u.email,
-      role: u.role,
-      status: u.is_active ? "Active" : "Inactive",
-      is_active: u.is_active,
-    })),
+    () =>
+      (usersRes?.data?.users || []).map((u: any) => ({
+        id: u.user_id,
+        name: u.full_name,
+        email: u.email,
+        role: u.role,
+        status: u.is_active ? "Active" : "Inactive",
+        is_active: u.is_active,
+      })),
     [usersRes?.data?.users]
   );
 
@@ -170,8 +187,8 @@ export default function OrganizationView() {
       const role = rolesRes?.data?.roles?.find((r) => r.name === roleName);
       if (!role) throw new Error(`${roleName} role not found`);
       if (!organization?.id) throw new Error("Missing organization ID");
-      if (isOrganizationLevel) throw new Error(`Please select a business to add ${roleName}`);
-
+      if (isOrganizationLevel)
+        throw new Error(`Please select a business to add ${roleName}`);
       const inviteRes = await inviteUser({
         email: values.email,
         first_name: values.first_name,
@@ -180,16 +197,19 @@ export default function OrganizationView() {
         organization_id: organization.id,
         business_id: selectedBusinessId as string,
       });
-
       if (inviteRes.status) {
         toast.success(inviteRes.message || `${roleName} invited successfully`);
         setActiveModal(null);
         refetch();
       } else {
-        throw new Error(inviteRes.error_status?.description || `Failed to invite ${roleName}`);
+        throw new Error(
+          inviteRes.error_status?.description || `Failed to invite ${roleName}`
+        );
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : `Failed to add ${roleName}`);
+      toast.error(
+        error instanceof Error ? error.message : `Failed to add ${roleName}`
+      );
     }
   };
 
@@ -198,7 +218,6 @@ export default function OrganizationView() {
       toast.error("Cannot assign to organization level");
       return;
     }
-
     setAssigningAgentId(agentId);
     assignCoachMutation.mutate(
       {
@@ -206,30 +225,38 @@ export default function OrganizationView() {
         businessId: selectedBusinessId as string,
         payload: { agent_ids: [agentId] },
       },
-      {
-        onSettled: () => setAssigningAgentId(null),
-      }
+      { onSettled: () => setAssigningAgentId(null) }
     );
   };
 
   const handleRemoveCoach = async (agentId: string) => {
     if (!organization?.id) return;
-
+    setAssigningAgentId(agentId);
+    const onSettled = () => setAssigningAgentId(null);
     if (isOrganizationLevel) {
-      removeCoachFromOrgMutation.mutate({
-        orgId: organization.id,
-        payload: { agent_ids: [agentId] },
-      });
+      removeCoachFromOrgMutation.mutate(
+        { orgId: organization.id, payload: { agent_ids: [agentId] } },
+        { onSettled }
+      );
     } else {
-      removeCoachFromBusinessMutation.mutate({
-        orgId: organization.id,
-        businessId: selectedBusinessId as string,
-        payload: { agent_ids: [agentId] },
-      });
+      removeCoachFromBusinessMutation.mutate(
+        {
+          orgId: organization.id,
+          businessId: selectedBusinessId as string,
+          payload: { agent_ids: [agentId] },
+        },
+        { onSettled }
+      );
     }
   };
 
-  const StatusBadge = ({ status, isActive }: { status: string; isActive: boolean }) => (
+  const StatusBadge = ({
+    status,
+    isActive,
+  }: {
+    status: string;
+    isActive: boolean;
+  }) => (
     <Badge
       variant="secondary"
       className={
@@ -250,7 +277,9 @@ export default function OrganizationView() {
     {
       key: "status",
       header: "Status",
-      render: (row: any) => <StatusBadge status={row.status} isActive={row.is_active} />,
+      render: (row: any) => (
+        <StatusBadge status={row.status} isActive={row.is_active} />
+      ),
     },
   ];
 
@@ -259,23 +288,38 @@ export default function OrganizationView() {
     { key: "gender", header: "Gender" },
     { key: "accent", header: "Accent" },
     { key: "tones", header: "Tones" },
-    ...(!isOrganizationLevel ? [
-      {
-        key: "assignment",
-        header: "Assignment",
-        render: (row: any) => row.is_assigned_to_business ? (
-          <Badge className="bg-blue-100 text-blue-700 border-transparent">Assigned</Badge>
-        ) : (
-          <Button
-            size="sm"
-            onClick={() => handleAssignCoachToBusiness(row.agent_id)}
-            disabled={assigningAgentId === row.agent_id}
-          >
-            {assigningAgentId === row.agent_id ? "Assigning..." : "Assign"}
-          </Button>
-        ),
-      },
-    ] : []),
+    ...(!isOrganizationLevel
+      ? [
+          {
+            key: "assignment",
+            header: "Assignment",
+            render: (row: any) =>
+              row.is_assigned_to_business ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRemoveCoach(row.agent_id)}
+                  disabled={assigningAgentId === row.agent_id}
+                >
+                  {assigningAgentId === row.agent_id
+                    ? "Unassigning..."
+                    : "Unassign"}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleAssignCoachToBusiness(row.agent_id)}
+                  disabled={assigningAgentId === row.agent_id}
+                >
+                  {assigningAgentId === row.agent_id
+                    ? "Assigning..."
+                    : "Assign"}
+                </Button>
+              ),
+          },
+        ]
+      : []),
     {
       key: "actions",
       header: "Action",
@@ -287,8 +331,7 @@ export default function OrganizationView() {
           showResend={false}
           showDeactivate={false}
           showEdit={true}
-          showDelete={isOrganizationLevel || row.is_assigned_to_business}
-          onDelete={() => handleRemoveCoach(row.agent_id)}
+          showDelete={false}
         />
       ),
     },
@@ -298,12 +341,26 @@ export default function OrganizationView() {
     { key: "name", header: "Name" },
     { key: "email", header: "Email" },
     { key: "role", header: "Role" },
-    { key: "status", header: "Status", render: (row: any) => <StatusBadge status={row.status} isActive={row.status === "Active"} /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: any) => (
+        <StatusBadge status={row.status} isActive={row.status === "Active"} />
+      ),
+    },
     {
       key: "actions",
       header: "Action",
       render: (row: any) => (
-        <ActionMenu row={row} align="end" showView={false} showResend={false} showDeactivate={false} showDelete={false} showEdit={true} />
+        <ActionMenu
+          row={row}
+          align="end"
+          showView={false}
+          showResend={false}
+          showDeactivate={false}
+          showDelete={false}
+          showEdit={true}
+        />
       ),
     },
   ];
@@ -312,10 +369,15 @@ export default function OrganizationView() {
     { label: "Org Name", value: organization?.name },
     { label: "Admin Name", value: organization?.admin_name },
     { label: "Admin Email", value: organization?.admin_email },
-    ...(!isOrganizationLevel ? [
-      { label: "Business Admin Name", value: selectedBusiness?.admin_name },
-      { label: "Business Admin Email", value: selectedBusiness?.admin_email },
-    ] : []),
+    ...(!isOrganizationLevel
+      ? [
+          { label: "Business Admin Name", value: selectedBusiness?.admin_name },
+          {
+            label: "Business Admin Email",
+            value: selectedBusiness?.admin_email,
+          },
+        ]
+      : []),
     { label: "Website URL", value: organization?.website_url },
     { label: "Address", value: organization?.address },
     { label: "Contact", value: organization?.contact },
@@ -338,20 +400,69 @@ export default function OrganizationView() {
     <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-start justify-between text-left">
-          <h2 className="text-2xl font-semibold">{organization.name}</h2>
-          {((tab === "basic") || (tab === "coaches" && isOrganizationLevel) || tab === "users") && (
-            <Button onClick={() => setActiveModal(tab === "basic" ? "admin" : tab === "coaches" ? "coach" : "user")}>
+          {businessOptions.length > 1 ? (
+            <div className="space-y-2">
+              <Select
+                value={selectedBusinessId}
+                onValueChange={setSelectedBusinessId}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businessOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Input value={organization.type} readOnly />
+            </div>
+          )}
+          {(tab === "basic" ||
+            (tab === "coaches" && isOrganizationLevel) ||
+            tab === "users") && (
+            <Button
+              onClick={() =>
+                setActiveModal(
+                  tab === "basic"
+                    ? "admin"
+                    : tab === "coaches"
+                    ? "coach"
+                    : "user"
+                )
+              }
+            >
               <Plus className="size-4" />
-              Add {tab === "basic" ? "Admin" : tab === "coaches" ? "Coaches" : "Users"}
+              Add{" "}
+              {tab === "basic"
+                ? "Admin"
+                : tab === "coaches"
+                ? "Coaches"
+                : "Users"}
             </Button>
           )}
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as TabType)} className="w-full">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as TabType)}
+          className="w-full"
+        >
           <TabsList className="mb-2">
             <TabsTrigger value="basic">Basic & License Info</TabsTrigger>
             <TabsTrigger value="coaches">Coaches Info</TabsTrigger>
-            <TabsTrigger value="users" disabled={isOrganizationLevel} className={isOrganizationLevel ? "opacity-50 cursor-not-allowed" : ""}>
+            <TabsTrigger
+              value="users"
+              disabled={isOrganizationLevel}
+              className={
+                isOrganizationLevel ? "opacity-50 cursor-not-allowed" : ""
+              }
+            >
               Users Info
             </TabsTrigger>
           </TabsList>
@@ -359,27 +470,6 @@ export default function OrganizationView() {
           <TabsContent value="basic">
             <div className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-left">
-                {businessOptions.length > 1 ? (
-                  <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {businessOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Input value={organization.type} readOnly />
-                  </div>
-                )}
-
                 {basicInfoFields.map(({ label, value }) => (
                   <div key={label} className="space-y-2">
                     <Label>{label}</Label>
@@ -387,9 +477,10 @@ export default function OrganizationView() {
                   </div>
                 ))}
               </div>
-
               <div className="text-left">
-                <h3 className="text-sm font-medium mb-3">License / Subscription History</h3>
+                <h3 className="text-sm font-medium mb-3">
+                  License / Subscription History
+                </h3>
                 <DataTable columns={licenseColumns} data={licenseRows} />
               </div>
             </div>
@@ -397,16 +488,30 @@ export default function OrganizationView() {
 
           <TabsContent value="coaches">
             {isLoadingAgents ? (
-              <div className="flex justify-center items-center h-40 text-gray-500">Loading coaches...</div>
+              <div className="flex justify-center items-center h-40 text-gray-500">
+                Loading coaches...
+              </div>
             ) : coachesData.length === 0 ? (
-              <div className="flex justify-center items-center h-40 text-gray-500">No coaches assigned</div>
+              <div className="flex justify-center items-center h-40 text-gray-500">
+                No coaches assigned
+              </div>
             ) : (
               <DataTable columns={coachesColumns} data={coachesData} />
             )}
           </TabsContent>
 
           <TabsContent value="users">
-            <DataTable columns={usersColumns} data={usersData} />
+            {isLoadingUsers ? (
+              <div className="flex justify-center items-center h-40 text-gray-500">
+                Loading users...
+              </div>
+            ) : usersData.length === 0 ? (
+              <div className="flex justify-center items-center h-40 text-gray-500">
+                No users found
+              </div>
+            ) : (
+              <DataTable columns={usersColumns} data={usersData} />
+            )}
           </TabsContent>
         </Tabs>
 
@@ -418,7 +523,6 @@ export default function OrganizationView() {
           onSubmit={(values) => handleInviteUser(values, "admin")}
           submitLabel="Invite Admin"
         />
-
         {isOrganizationLevel && (
           <AddOrganization
             open={activeModal === "coach"}
@@ -431,7 +535,6 @@ export default function OrganizationView() {
             isOrganizationLevel={true}
           />
         )}
-
         <UserFormModal
           open={activeModal === "user"}
           onOpenChange={(open) => setActiveModal(open ? "user" : null)}
