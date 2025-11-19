@@ -32,7 +32,7 @@ import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
 import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
 import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
-
+import OrganizationView from "@/pages/super-admin/OrganizationView";
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
@@ -76,6 +76,11 @@ export const routes: RouteObject[] = [
         path: "/super-admin/organizations",
         element: <OrganizationManagement />,
       },
+      {
+        path: "/super-admin/organizations/:id/view",
+        element: <OrganizationView />,
+      },
+
       { path: "/super-admin/users", element: <UserManagement /> },
       { path: "/super-admin/dashboard/issues", element: <IssuesDetailsPage /> },
       {
