@@ -2,8 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIssues } from "@/hooks/help/useIssues";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function HelpAndSupport() {
+
+  const navigate = useNavigate();
   // Fetch recent issues - show first 5 issues for dashboard view
   const { data: issuesData, isPending, isError } = useIssues({ page: 1, page_size: 3 });
   
@@ -12,9 +16,13 @@ export default function HelpAndSupport() {
     <div className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold">Help & Support</CardTitle>
-        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+        <Button
+          variant={"link"}
+          className="text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+          onClick={() => navigate("/super-admin/dashboard/issues")}
+        >
           View all
-        </button>
+        </Button>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -68,7 +76,7 @@ export default function HelpAndSupport() {
                     className={`capitalize ${
                       issue.status === "open"
                         ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                        : issue.status === "in_progress"
+                        : issue.status === "in-progress"
                         ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
                         : "bg-green-100 text-green-800 hover:bg-green-100"
                     }`}
