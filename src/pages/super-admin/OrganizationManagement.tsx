@@ -1,119 +1,86 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import {
   DataTable,
   type Column,
 } from "@/components/super-admin/organization/DataTable";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
 // import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
-import SuperAdminLayout from "@/layouts/SuperAdminLayout";
-import { useMemo, useState } from "react";
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
-
-type OrganizationRow = {
-  id: string;
-  name: string;
-  type: string;
-  admin_name: string;
-  email: string;
-  status: "Active" | "Deactivated";
-};
+import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
+import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
+import ManagementHeader from "@/components/super-admin/ManagementHeader";
+import {
+  useOrganizationManagement,
+  useDeactivateOrganization,
+} from "@/hooks/super-admin/organization-management/useOrganizationManagement";
+import type { OrganizationRow } from "@/types/super-admin/organization/form-types";
+import { toast } from "sonner";
 
 export default function SuperAdminOrganizations() {
-  const [rows] = useState<OrganizationRow[]>([
-    {
-      id: "1",
-      name: "EezieShift",
-      type: "Education",
-      admin_name: "David Smith",
-      email: "david.smith@gmail.com",
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Innovasys",
-      type: "Both",
-      admin_name: "Sofia Perez",
-      email: "sofia.perez@gmail.com",
-      status: "Deactivated",
-    },
-    {
-      id: "3",
-      name: "WizeVive",
-      type: "Business",
-      admin_name: "Abhi Kurne",
-      email: "abhi@gmail.com",
-      status: "Active",
-    },
-  ]);
-
-  const [sortKey, setSortKey] = useState<keyof OrganizationRow | undefined>();
-  const [sortDirection, setSortDirection] = useState<
-    "asc" | "desc" | undefined
-  >();
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<OrganizationRow[]>([]);
   const [page, setPage] = useState(1);
-  const pageSize = 8;
+  const pageSize = 10;
 
-  const onSortChange = (key: string) => {
-    if (!key) return;
-    if (sortKey === key) {
-      setSortDirection((prev) =>
-        prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"
-      );
-    } else {
-      setSortKey(key as keyof OrganizationRow);
-      setSortDirection("asc");
-    }
-    setPage(1);
+  const { data, isLoading, refetch } = useOrganizationManagement({
+    page,
+    limit: pageSize,
+  });
+
+  useEffect(() => {
+    const orgs = data?.data?.organizations ?? [];
+    const mapped: OrganizationRow[] = orgs.map((o) => ({
+      id: o.id,
+      name: o.name ?? "",
+      type: o.type ?? "",
+      status: o.status ? "Active" : "Deactivated",
+      admin_is_active: o.admin_is_active ?? false,
+    }));
+    setRows(mapped);
+  }, [data]);
+
+  const total = data?.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const [selected, setSelected] = useState<OrganizationRow | null>(null);
+  const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
+  const [confirmMode, setConfirmMode] = useState(false);
+
+  const { mutate: deactivateOrg, isPending } = useDeactivateOrganization({
+    onSuccess: (res) => {
+      toast.success(res.message || "Organization deactivated successfully");
+      refetch();
+      setConfirmMode(false);
+      setSelected(null);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to deactivate organization");
+    },
+  });
+
+  // Handle Deactivate
+  const handleDeactivate = () => {
+    if (!selected) return;
+    deactivateOrg(selected.id);
   };
 
-  const sortedRows = useMemo(() => {
-    if (!sortKey || !sortDirection) return rows;
-    const copy = [...rows];
-    copy.sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      const cmp = String(av).localeCompare(String(bv));
-      return sortDirection === "asc" ? cmp : -cmp;
+  const handleView = (row: OrganizationRow) => {
+    navigate(`/super-admin/organizations/${row.id}/view`, {
+      state: { org: row },
     });
-    return copy;
-  }, [rows, sortKey, sortDirection]);
-
-  const total = sortedRows.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const start = (page - 1) * pageSize;
-  const paginated = sortedRows.slice(start, start + pageSize);
-
-  // Action config controlled by parent
-  const actionConfig = {
-    showView: true,
-    showEdit: true,
-    showDeactivate: true,
-    viewOptions: [
-      { label: "Business", value: "business" },
-      { label: "Education", value: "education" },
-    ],
-    editOptions: [
-      { label: "Business", value: "business" },
-      { label: "Education", value: "education" },
-    ],
-  } as const;
+  };
 
   const columns: Column<OrganizationRow>[] = [
-    {
-      key: "name",
-      header: "Name",
-      sortable: true,
-      // No extra wrappers; just value by default
-    },
-    { key: "type", header: "Type", sortable: true },
-    { key: "admin_name", header: "Admin Name", sortable: true },
-    { key: "email", header: "Email", sortable: true },
+    { key: "name", header: "Name" },
+    { key: "type", header: "Type" },
     {
       key: "status",
       header: "Status",
-      sortable: true,
       render: (row) => (
         <Badge
           variant="secondary"
@@ -134,14 +101,19 @@ export default function SuperAdminOrganizations() {
         <ActionMenu
           row={row}
           align="end"
-          showView={actionConfig.showView}
-          showEdit={actionConfig.showEdit}
-          showDeactivate={actionConfig.showDeactivate}
-          viewOptions={actionConfig.viewOptions}
-          editOptions={actionConfig.editOptions}
-          onView={(_, opt) => console.log("View", row.id, opt)}
-          onEdit={(_, opt) => console.log("Edit", row.id, opt)}
-          onDeactivate={() => console.log("Deactivate", row.id)}
+          showView
+          showEdit={false}
+          showDeactivate
+          showResend={!row.admin_is_active}
+          onView={() => handleView(row)}
+          onEdit={() => {
+            setSelected(row);
+            setModalMode("edit");
+          }}
+          onDeactivate={() => {
+            setSelected(row);
+            setConfirmMode(true);
+          }}
         />
       ),
     },
@@ -150,46 +122,84 @@ export default function SuperAdminOrganizations() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-left">
-            Organization Management
-          </h1>
-          <div className="flex flex-wrap gap-6">
-         
-            <Button>
-              <Plus className="size-4" />
-              Add Organization
-            </Button>
-            {/* <AddOrganization
-              trigger={
-                <Button>
-                  <Plus className="size-4" />
-                  Add Organization
-                </Button>
-              }
-            /> */}
+        <ManagementHeader
+          title="Organization Management"
+          addLabel="Add Organization"
+          onAdd={() => setModalMode("add")}
+        />
+
+        <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-sm text-muted-foreground">
+                Loading organizations...
+              </div>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-sm text-muted-foreground">
+                No organizations found
+              </div>
+            </div>
+          ) : (
+            <DataTable columns={columns} data={rows} />
+          )}
+        </div>
+
+        {!isLoading && rows.length > 0 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>
+              Showing {Math.min(pageSize, total - (page - 1) * pageSize)} of{" "}
+              {total} results
+            </div>
+            <Pagination
+              pageCount={totalPages}
+              page={page}
+              onPageChange={setPage}
+            />
           </div>
-        </div>
-        <div className="h-[calc(100vh-15rem)]">
-          <DataTable
-            columns={columns}
-            data={paginated}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
-            onSortChange={onSortChange}
-          />
-        </div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            Show {Math.min(pageSize, total - start)} of {total} results
-          </div>
-          <Pagination
-            pageCount={totalPages}
-            page={page}
-            onPageChange={setPage}
-          />
-        </div>
+        )}
       </div>
+
+      {/* Add Organization Modal - Only Step 1 */}
+      <AddOrganization
+        open={!!modalMode}
+        onOpenChange={(open) => {
+          if (!open) {
+            setModalMode(null);
+            setSelected(null);
+          }
+        }}
+        mode={modalMode ?? "add"}
+        flowType="organization-only" // Only show organization info step
+        initialData={
+          modalMode === "edit" && selected
+            ? {
+                organization_name: selected.name,
+              }
+            : undefined
+        }
+        onSubmit={() => {
+          refetch();
+        }}
+      />
+
+      {/* Confirm Deactivate Modal */}
+      <ConfirmActionModal
+        open={confirmMode}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmMode(false);
+            setSelected(null);
+          }
+        }}
+        title="Deactivate Organization?"
+        description="Are you sure you want to deactivate this organization?"
+        fields={[{ label: "Organization Name", value: selected?.name ?? "" }]}
+        confirmLabel={isPending ? "Deactivating..." : "Deactivate"}
+        confirmVariant="destructive"
+        onConfirm={handleDeactivate}
+      />
     </SuperAdminLayout>
   );
 }

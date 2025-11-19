@@ -6,7 +6,7 @@ interface Step {
   label: string;
 }
 
-interface CustomModalProps {
+interface OnboardingOrganizationModelProps {
   open: boolean;
   onOpenChange?: (open: boolean) => void;
   title: string;
@@ -19,7 +19,9 @@ interface CustomModalProps {
   onClose: () => void;
 }
 
-export const CustomModal: React.FC<CustomModalProps> = ({
+export const OnboardingOrganizationModel: React.FC<
+  OnboardingOrganizationModelProps
+> = ({
   open,
   onOpenChange,
   title,
@@ -42,7 +44,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
       />
 
       {/* Dialog Content */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[calc(100%-2rem)] sm:max-w-2xl bg-white rounded-lg shadow-lg p-6">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[calc(100%-2rem)] sm:max-w-2xl bg-white  shadow-lg p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
@@ -103,7 +105,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
         )}
 
         {/* Main Content */}
-        <div className="mb-6">{children}</div>
+        <div className="mb-6 h-[300px] overflow-y-auto">{children}</div>
 
         {/* Footer */}
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
@@ -111,4 +113,3 @@ export const CustomModal: React.FC<CustomModalProps> = ({
     </div>
   );
 };
- 

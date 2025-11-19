@@ -27,7 +27,7 @@ import TeamManagement from "@/pages/super-admin/TeamManagement";
 import CoachManagement from "@/pages/super-admin/CoachManagement";
 import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 import UserManagement from "@/pages/super-admin/UserManagement";
-
+import OrganizationView from "@/pages/super-admin/OrganizationView";
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
@@ -70,6 +70,11 @@ export const routes: RouteObject[] = [
         path: "/super-admin/organizations",
         element: <OrganizationManagement />,
       },
+      {
+        path: "/super-admin/organizations/:id/view",
+        element: <OrganizationView />,
+      },
+
       { path: "/super-admin/users", element: <UserManagement /> },
     ],
   },

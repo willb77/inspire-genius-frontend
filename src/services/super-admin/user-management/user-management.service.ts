@@ -66,6 +66,7 @@ export type InviteUserPayload = {
   last_name: string
   role_id?: string
   organization_id?: string
+  business_id?: string
 }
 
 export type InviteUserData = {
