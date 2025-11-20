@@ -55,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: stored?.role ?? null,
           isOnboardingCompleted: stored?.isOnboardingCompleted,
         });
-        console.log("User", stored);
         syncAuthToken(token);
       } else {
         syncAuthToken(null);
@@ -454,6 +453,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuth,
       setPendingVerification,
       markOnboardingCompleted,
+      completeAuthFromPayload,
     }),
     [
       user,
@@ -471,6 +471,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signupMutation.isPending,
       verifyOtpMutation.isPending,
       resendOtpMutation.isPending,
+      completeAuthFromPayload,
     ]
   );
 

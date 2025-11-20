@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { EmailField, PasswordField } from "@/components/auth/AuthFields";
+import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
 export default function Login() {
@@ -15,13 +15,29 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const redirectTo = useAuthRedirectForAuthPages();
+  const [providerActive, setProviderActive] = useState<boolean>(() => {
+    try {
+      return Boolean(sessionStorage.getItem("auth:provider"));
+    } catch {
+      return false;
+    }
+  });
   
   useEffect(() => {
-    if (redirectTo) navigate(redirectTo, { replace: true });
-  }, [redirectTo, navigate])
+    if (!redirectTo) return;
+    // Skip redirect if a social provider flow is in progress
+    let inProgress = providerActive;
+    try {
+      inProgress = inProgress || Boolean(sessionStorage.getItem("auth:provider"));
+    } catch {
+      setProviderActive((s) => s);
+    }
+    if (!inProgress) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate, providerActive])
 
   
   const handleSubmit = async (e: React.FormEvent) => {
+    sessionStorage.removeItem("auth:provider");
     e.preventDefault();
     // Navigation is handled by the login mutation
     await login(email, password);
@@ -51,7 +67,10 @@ export default function Login() {
         </Button>
       </form>
 
-      {/* <SocialAuthSection /> */}
+      <SocialAuthSection
+        onProviderStart={() => setProviderActive(true)}
+        onProviderEnd={() => setProviderActive(false)}
+      />
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
         Don’t have an account? <Link className="underline" to="/signup">Sign Up</Link>

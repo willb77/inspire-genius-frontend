@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/useAuth";
-import { EmailField, PasswordField } from "@/components/auth/AuthFields";
+import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/AuthFields";
 import { useForm } from "react-hook-form";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 
@@ -14,6 +14,13 @@ export default function SignUp() {
   const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
   const redirectTo = useAuthRedirectForAuthPages();
+  const [providerActive, setProviderActive] = useState<boolean>(() => {
+    try {
+      return Boolean(sessionStorage.getItem("auth:provider"));
+    } catch {
+      return false;
+    }
+  });
   
   const { handleSubmit, setValue, watch, formState: { dirtyFields } } = useForm<{ email: string; password: string; confirm: string; terms: boolean }>({
     mode: "onChange",
@@ -21,8 +28,16 @@ export default function SignUp() {
   });
 
   useEffect(() => {
-    if (redirectTo) navigate(redirectTo, { replace: true });
-  }, [redirectTo, navigate]);
+    if (!redirectTo) return;
+    // Skip redirect if a social provider flow is in progress
+    let inProgress = providerActive;
+    try {
+      inProgress = inProgress || Boolean(sessionStorage.getItem("auth:provider"));
+    } catch {
+      setProviderActive((s) => s);
+    }
+    if (!inProgress) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate, providerActive]);
 
   const email = watch("email") ?? "";
   const password = watch("password") ?? "";
@@ -46,6 +61,7 @@ export default function SignUp() {
   
   // Submit handler
   const onSubmit = async (values: { email: string; password: string; confirm: string; terms: boolean }) => {
+    sessionStorage.removeItem("auth:provider");
     if (values.password !== values.confirm) return;
     if (!values.terms) return;
     await signup(values.email, values.password, values.confirm);
@@ -90,7 +106,10 @@ export default function SignUp() {
         </Button>
       </form>
 
-      {/* <SocialAuthSection /> */}
+      <SocialAuthSection
+        onProviderStart={() => setProviderActive(true)}
+        onProviderEnd={() => setProviderActive(false)}
+      />
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
         Already have an account? <Link className="underline" to="/login">Log In</Link>
