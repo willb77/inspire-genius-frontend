@@ -1,5 +1,7 @@
 // Auth context related types
 
+import type { LoginDataPayload } from "./api-types"
+
 export type AuthUser = {
   id: string
   email: string
@@ -28,4 +30,5 @@ export type AuthContextValue = {
   clearAuth: () => Promise<void>
   setPendingVerification: (pending: boolean) => void
   markOnboardingCompleted: () => Promise<void>
+  completeAuthFromPayload: (payload: LoginDataPayload, fallbackEmail: string, options?: { message?: string; clearNextStep?: boolean }) => Promise<void>
 }

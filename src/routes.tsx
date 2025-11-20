@@ -4,7 +4,7 @@ import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import AcceptInvitation from "@/pages/auth/AcceptInvitation";
-// import SocialLogin from "@/pages/auth/SocialLogin";
+import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
 // import PublicRoute from "@/components/PublicRoute";
 
@@ -33,6 +33,8 @@ import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
 import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 import OrganizationView from "@/pages/super-admin/OrganizationView";
+// import UserCoaches from "@/pages/super-admin/UserCoaches";
+
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
@@ -44,7 +46,7 @@ export const routes: RouteObject[] = [
       { path: "/otp", element: <OTP /> },
       { path: "/reset-password", element: <ResetPassword /> },
       { path: "/accept-invitation", element: <AcceptInvitation /> },
-      // { path: "/social-login", element: <SocialLogin /> },
+      { path: "/social-login", element: <SocialLogin /> },
     ],
   },
 
@@ -72,6 +74,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
       { path: "/super-admin/team", element: <TeamManagement /> },
       { path: "/super-admin/coaches", element: <CoachManagement /> },
+      // { path: "/super-admin/:userId/coaches", element: <UserCoaches /> },
       {
         path: "/super-admin/organizations",
         element: <OrganizationManagement />,

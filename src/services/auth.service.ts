@@ -35,3 +35,21 @@ export async function verifySignupApi(email: string, confirm_code: string) {
   const res = await api.post<ApiEnvelope>(`/v1/verify-signup?email=${encodeURIComponent(email)}&confirmation_code=${encodeURIComponent(confirm_code)}`)
   return res.data
 }
+
+// Social login helper: call /v1/me with a provided token without mutating global auth state
+export async function getMeWithToken(token: string) {
+  const res = await api.get<ApiEnvelope>("/v1/me", {
+    headers: {
+      "access-token": `${token}`,
+    },
+  })
+  return res.data
+}
+
+// Social provider login URL generator
+export async function getSocialAuthLoginUrl(provider: string) {
+  const res = await api.get<ApiEnvelope<{ login_url: string }>>(
+    `/v1/social-auth/login/?provider=${encodeURIComponent(provider)}`
+  )
+  return res.data
+}
