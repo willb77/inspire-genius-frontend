@@ -72,7 +72,7 @@ export default function AccountSettings({
           {(profileData?.passwordChangeAllowed || profileData?.role === ROLES.SUPER_ADMIN) && <Button
             variant="outline"
             size="sm"
-            disabled={false}
+            disabled={true}
             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gray-20 hover:bg-gray-30"
             onClick={() => onChangePasswordOpenChange?.(true)}
           >
