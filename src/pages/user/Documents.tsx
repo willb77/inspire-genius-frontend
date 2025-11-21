@@ -426,7 +426,6 @@ export default function Documents() {
                       >
                         <div className="w-full flex-1 flex items-center gap-3">
                           <Checkbox
-                          disabled
                             checked={selected.has(d.id)}
                             onCheckedChange={(v) => toggleSelect(d.id, v)}
                           />

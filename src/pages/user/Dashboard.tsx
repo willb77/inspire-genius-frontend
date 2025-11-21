@@ -66,7 +66,7 @@ export default function Dashboard() {
                       title={a.name}
                       gender={gender}
                       accent={accent}
-                      disableButton = {a.name !== "PRISM Coach"}
+                      disableButton = {false}
                       tone={tone}
                       extraCount={extraCount}
                       onChat={() => navigate(`/dashboard/${a.id}--${toSlug(a.name)}/chat`)}
