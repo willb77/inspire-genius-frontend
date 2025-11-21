@@ -34,6 +34,7 @@ export default function Settings() {
     date_of_birth?: string;
     additional_info?: string;
     is_password_change_allowed?: boolean;
+    role?: string;
   }>();
 
   const changePasswordForm = useForm<ChangePasswordFormValues>({
@@ -105,6 +106,7 @@ export default function Settings() {
       dateOfBirth: data.date_of_birth ?? "",
       additionalInfo: data.additional_info ?? "",
       passwordChangeAllowed: data.is_password_change_allowed ?? false,
+      role: data.role ?? "",
       
     };
     setProfileData((prev) => ({

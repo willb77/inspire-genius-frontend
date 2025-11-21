@@ -13,7 +13,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
   // { to: ROUTES.SUPER_ADMIN.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.SUPER_ADMIN.COACHES, icon: Bot, label: "Coach Management" },
-  { to: ROUTES.SUPER_ADMIN.ORGANIZATIONS, icon: UsersRound, label: "Organizational Management" },
+  // { to: ROUTES.SUPER_ADMIN.ORGANIZATIONS, icon: UsersRound, label: "Organizational Management" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 
 ];
