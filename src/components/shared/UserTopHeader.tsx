@@ -18,12 +18,13 @@ export default function UserTopHeader() {
   const navigate = useNavigate();
   const email = user?.email ?? "";
   const role = user?.role ?? "";
-  const name = (email && email.split("@")[0]) || "User";
-  const initial = (name?.[0] ?? "U").toUpperCase();
+  const fallbackName = (email && email.split("@")[0]) || "User";
+  const displayName = (user?.fullName && user.fullName.trim()) ? (user.fullName as string) : fallbackName;
+  const initial = (displayName?.[0] ?? "U").toUpperCase();
   return (
     <div className="mt-2 flex items-center justify-between w-full">
       <div className="ml-1 w-full flex flex-col text-left">
-        <p className="text-base md:text-2xl font-medium text-black-250">Welcome! {name}</p>
+        <p className="text-base md:text-2xl font-medium text-black-250">Welcome! {displayName}</p>
         <p className="text-xs text-black-250">
           Your AI coaches are ready—let’s begin!
         </p>
@@ -53,7 +54,7 @@ export default function UserTopHeader() {
                   <span className="text-sm font-semibold leading-none">{initial}</span>
                 </span>
                 <div>
-                  <p className="text-sm font-medium">{name}</p>
+                  <p className="text-sm font-medium">{displayName}</p>
                   <p className="text-xs text-muted-foreground break-all">{email}</p>
                 </div>
               </div>

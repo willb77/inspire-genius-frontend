@@ -8,6 +8,7 @@ export interface LoginDataPayload {
   token_type?: string | null
   user_id?: string | null
   email?: string | null
+  full_name?: string | null
   role?: string | null
   has_profile?: boolean | null
   is_onboarded?: boolean | string | null

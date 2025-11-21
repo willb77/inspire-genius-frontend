@@ -18,7 +18,7 @@ import { ROLES } from "@/constants/routes";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
-  const { user } = useAuth();
+  const { user, markFullName } = useAuth();
   const role = user?.role;
   const [updateNotifications, setUpdateNotifications] = useState(true);
   const [marketingNotifications, setMarketingNotifications] = useState(false);
@@ -142,6 +142,10 @@ export default function Settings() {
           additionalInfo: values.additionalInfo,
           email: prev.email,
         }));
+        const fullName = `${values.firstName} ${values.lastName}`.trim();
+        if (fullName) {
+          markFullName(fullName);
+        }
         setEditProfileOpen(false);
         editProfileForm.reset(values);
       },
@@ -218,14 +222,14 @@ export default function Settings() {
               <div>
                 <a
                   href="#"
-                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
                 >
                   Terms of service
                 </a>
                 <br />
                 <a
                   href="#"
-                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
                 >
                   Privacy policy
                 </a>
