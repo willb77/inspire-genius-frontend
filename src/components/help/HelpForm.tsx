@@ -224,7 +224,7 @@ export default function HelpForm({ form, onSubmit, isSubmitting, isTypesLoading,
               <Button
                 variant="outline"
                 onClick={onCancel}
-                disabled={isSubmitting || true}
+                disabled={isSubmitting}
                 className="w-full sm:w-52 bg-gray-20"
                 type="button"
               >
@@ -233,7 +233,7 @@ export default function HelpForm({ form, onSubmit, isSubmitting, isTypesLoading,
 
               <Button
                 type="submit"
-                disabled={isSubmitting || true}
+                disabled={isSubmitting}
                 className="w-full sm:w-52"
                 
               >
