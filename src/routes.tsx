@@ -4,10 +4,11 @@ import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import AcceptInvitation from "@/pages/auth/AcceptInvitation";
+import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
 // import PublicRoute from "@/components/PublicRoute";
 
-import SettingsPage from "@/pages/user/Settings";
+import UserSettingsPage from "@/pages/user/Settings";
 import HelpPage from "@/pages/user/Help";
 import Home from "@/pages/user/Home";
 import Dashboard from "@/pages/user/Dashboard";
@@ -27,6 +28,12 @@ import TeamManagement from "@/pages/super-admin/TeamManagement";
 import CoachManagement from "@/pages/super-admin/CoachManagement";
 import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
 import UserManagement from "@/pages/super-admin/UserManagement";
+import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
+import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
+import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
+import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
+import OrganizationView from "@/pages/super-admin/OrganizationView";
+import UserCoaches from "@/pages/super-admin/UserCoaches";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -39,6 +46,7 @@ export const routes: RouteObject[] = [
       { path: "/otp", element: <OTP /> },
       { path: "/reset-password", element: <ResetPassword /> },
       { path: "/accept-invitation", element: <AcceptInvitation /> },
+      { path: "/social-login", element: <SocialLogin /> },
     ],
   },
 
@@ -60,17 +68,33 @@ export const routes: RouteObject[] = [
       { path: "/coaches", element: <Coaches /> },
       { path: "/dashboard/:coach/chat", element: <CoachChat /> },
       { path: "/documents", element: <Documents /> },
-      { path: "/settings", element: <SettingsPage /> },
+      { path: "/settings", element: <UserSettingsPage /> },
       { path: "/help", element: <HelpPage /> },
       // Super Admin protected pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
       { path: "/super-admin/team", element: <TeamManagement /> },
       { path: "/super-admin/coaches", element: <CoachManagement /> },
+      { path: "/super-admin/:userId/coaches", element: <UserCoaches /> },
       {
         path: "/super-admin/organizations",
         element: <OrganizationManagement />,
       },
+      {
+        path: "/super-admin/organizations/:id/view",
+        element: <OrganizationView />,
+      },
+
       { path: "/super-admin/users", element: <UserManagement /> },
+      { path: "/super-admin/dashboard/issues", element: <IssuesDetailsPage /> },
+      {
+        path: "/super-admin/issues/:id",
+        element: <IssueDetailPage />,
+      },
+      {
+        path: "/super-admin/dashboard/licences",
+        element: <LicenceDetailsPage />,
+      },
+      {path:"/super-admin/settings",element:<SuperAdminSettingsPage />}
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

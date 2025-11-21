@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           token,
           role: stored?.role ?? null,
           isOnboardingCompleted: stored?.isOnboardingCompleted,
+          fullName: stored?.fullName ?? null,
         });
-        console.log("User", stored);
         syncAuthToken(token);
       } else {
         syncAuthToken(null);
@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: email as string,
             name: stored?.name ?? null,
             token: null,
+            fullName: stored?.fullName ?? null,
           });
           setPendingVerification(true);
         }
@@ -118,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const businessId = payload.business_id ?? null;
       const tokenType = payload.token_type ?? null;
       const idToken = payload.id_token ?? null;
+      const fullName = payload.full_name ?? null;
 
       if (accessToken) {
         await setToken(accessToken);
@@ -137,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         businessId,
         tokenType,
         idToken,
+        fullName,
       });
       const clearers: Array<Promise<unknown>> = [removeEmail(), removePassword(), removeSession()];
       if (options?.clearNextStep) clearers.push(removeNextStep());
@@ -149,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: accessToken ?? null,
         role: role ?? null,
         isOnboardingCompleted,
+        fullName,
       });
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
@@ -434,6 +438,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const markFullName = useCallback(async (fullName: string): Promise<void> => {
+    // update in-memory user
+    setUser((prev) => (prev ? { ...prev, fullName } : prev));
+    // persist to storage without losing other fields
+    try {
+      const stored = await readUser();
+      if (stored) {
+        await storeUser({ ...stored, fullName });
+      }
+    } catch {
+      // ignore storage errors silently
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -454,6 +472,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuth,
       setPendingVerification,
       markOnboardingCompleted,
+      markFullName,
+      completeAuthFromPayload,
     }),
     [
       user,
@@ -467,10 +487,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resetPasswordConfirm,
       logout,
       markOnboardingCompleted,
+      markFullName,
       loginMutation.isPending,
       signupMutation.isPending,
       verifyOtpMutation.isPending,
       resendOtpMutation.isPending,
+      completeAuthFromPayload,
     ]
   );
 

@@ -61,7 +61,7 @@ export default function AvgTimeSpentChart() {
         </div>
 
         {/* Date Range Pickers */}
-        <div className="flex items-center gap-4">
+        <div className="invisible flex items-center gap-4">
           {/* From Date Picker */}
           <DatePickerButton
             date={fromDate}

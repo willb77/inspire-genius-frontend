@@ -11,18 +11,20 @@ import {
 import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes";
+import { ROLES, ROUTES } from "@/constants/routes";
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const email = user?.email ?? "";
-  const name = (email && email.split("@")[0]) || "User";
-  const initial = (name?.[0] ?? "U").toUpperCase();
+  const role = user?.role ?? "";
+  const fallbackName = (email && email.split("@")[0]) || "User";
+  const displayName = (user?.fullName && user.fullName.trim()) ? (user.fullName as string) : fallbackName;
+  const initial = (displayName?.[0] ?? "U").toUpperCase();
   return (
     <div className="mt-2 flex items-center justify-between w-full">
       <div className="ml-1 w-full flex flex-col text-left">
-        <p className="text-base md:text-2xl font-medium text-black-250">Welcome! {name}</p>
+        <p className="text-base md:text-2xl font-medium text-black-250">Welcome! {displayName}</p>
         <p className="text-xs text-black-250">
           Your AI coaches are ready—let’s begin!
         </p>
@@ -52,15 +54,15 @@ export default function UserTopHeader() {
                   <span className="text-sm font-semibold leading-none">{initial}</span>
                 </span>
                 <div>
-                  <p className="text-sm font-medium">{name}</p>
+                  <p className="text-sm font-medium">{displayName}</p>
                   <p className="text-xs text-muted-foreground break-all">{email}</p>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {/* <DropdownMenuItem>Profile</DropdownMenuItem> */}
-            <DropdownMenuItem onSelect={() => navigate(ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate(role === ROLES.SUPER_ADMIN ? ROUTES.SUPER_ADMIN.SETTINGS : ROUTES.SETTINGS)}>Settings</DropdownMenuItem>
+            {role === ROLES.USER && <DropdownMenuItem onSelect={() => navigate(ROUTES.HELP)}>Help &amp; Support</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <ConfirmDialog
               title="Log out"

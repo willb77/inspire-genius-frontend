@@ -4,6 +4,11 @@ import { IconInput } from "@/components/ui/icon-input";
 import { Button } from "@/components/ui/button";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
 import { type FirstNameFieldProps,type LastNameFieldProps, type EmailFieldProps, type PasswordFieldProps } from "@/types/auth";
+import { useSocialAuthLoginUrlMutation } from "@/hooks/auth";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import type { AxiosError } from "axios";
+import type { ApiEnvelope } from "@/types/auth/api-types";
 export function FirstNameField({
   id = "firstName",
   label = "First Name",
@@ -103,7 +108,46 @@ export function PasswordField({
   );
 }
 
-export function SocialAuthSection() {
+type SocialAuthSectionProps = {
+  onProviderStart?: (provider: string) => void;
+  onProviderEnd?: () => void;
+};
+
+export function SocialAuthSection({ onProviderStart, onProviderEnd }: SocialAuthSectionProps = {}) {
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
+  const socialLogin = useSocialAuthLoginUrlMutation();
+
+  const handleProvider = (provider: string) => {
+    setActiveProvider(provider);
+    try {
+      sessionStorage.setItem("auth:provider", provider);
+    } catch {
+      setActiveProvider((p) => p);
+    }
+    onProviderStart?.(provider);
+    socialLogin.mutate(
+      { provider },
+      {
+        onSuccess: (res) => {
+          const url = res?.data?.login_url;
+          if (url) {
+            window.location.href = url;
+          } else {
+            toast.error("Login URL not received");
+          }
+        },
+        onError: (err: AxiosError<ApiEnvelope>) => {
+          const msg = err?.response?.data?.message ?? err?.message ?? "Failed to start social login";
+          toast.error(msg);
+        },
+        onSettled: () => {
+          setActiveProvider(null);
+          onProviderEnd?.();
+        },
+      }
+    );
+  };
+
   return (
     <>
       <div className="my-6 flex items-center gap-2 text-xs text-muted-foreground">
@@ -112,16 +156,27 @@ export function SocialAuthSection() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Button variant="outline" aria-label="Continue with Google" title="Continue with Google">
-          <img src="/images/auth/google-logo.svg" alt="google" className="h-5" />
+      <div className="flex justify-center items-center gap-3">
+        <Button
+          variant="outline"
+          aria-label="Continue with Google"
+          title="Continue with Google"
+          className="min-w-52"
+          disabled={socialLogin.isPending && activeProvider === "Google"}
+          onClick={() => handleProvider("Google")}
+        >
+          {socialLogin.isPending && activeProvider === "Google" ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <img src="/images/auth/google-logo.svg" alt="google" className="h-5" />
+          )}
         </Button>
-        <Button variant="outline" aria-label="Continue with Apple" title="Continue with Apple">
+        {/* <Button  variant="outline" aria-label="Continue with Apple" title="Continue with Apple">
           <img src="/images/auth/apple-logo.svg" alt="apple" className="h-5" />
-        </Button>
-        <Button variant="outline" aria-label="Continue with Facebook" title="Continue with Facebook">
+        </Button> */}
+        {/* <Button onClick={()=> handleProvider("Facebook")} variant="outline" aria-label="Continue with Facebook" title="Continue with Facebook">
           <img src="/images/auth/facebook-logo.svg" alt="facebook" className="h-5" />
-        </Button>
+        </Button> */}
       </div>
     </>
   );

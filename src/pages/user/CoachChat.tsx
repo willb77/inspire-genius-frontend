@@ -328,7 +328,6 @@ export default function CoachChat() {
             nextIds = ids;
           }
         }
-                console.log("Connecting to conversation", selectedFileIds, nextIds);
         const finalIds = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         // Initial connect includes current/hydrated selected files
         connect(agentId, accessToken, finalIds, conversationId);

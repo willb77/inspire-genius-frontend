@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import {
   DataTable,
@@ -30,6 +31,7 @@ import type { UserRow } from "@/types/super-admin/user-management";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserManagement() {
+  const navigate = useNavigate();
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
@@ -42,31 +44,37 @@ export default function UserManagement() {
   const deleteMutation = useDeleteUser();
   const resendMutation = useResendInvitation();
 
-  const mappedRows = useMemo<UserRow[]>(() => {
-    const users: UserManagementUser[] = usersResp?.data?.users ?? [];
+const mappedRows = useMemo<UserRow[]>(() => {
+  const users: UserManagementUser[] = usersResp?.data?.users ?? [];
 
-    return users.map((u) => {
-      let status: "Active" | "Deactivated" | "Awaiting";
+  return users.map((u) => {
+    let status: "Active" | "Deactivated" | "Awaiting";
 
-      if (u.user_status?.toLowerCase?.() === "active" || u.is_active) {
-        status = "Active";
-      } else if (u.user_status?.toLowerCase?.() === "awaiting") {
-        status = "Awaiting";
-      } else {
-        status = "Deactivated";
-      }
+    if (u.user_status?.toLowerCase?.() === "active" || u.is_active) {
+      status = "Active";
+    } else if (u.user_status?.toLowerCase?.() === "awaiting") {
+      status = "Awaiting";
+    } else {
+      status = "Deactivated";
+    }
 
-      return {
-        id: u.user_id,
-        name: u.full_name ?? "",
-        email: u.email,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        status,
-        invitation_id: u.invitation_id,
-      };
-    });
-  }, [usersResp]);
+    // Normalize invitation status for display
+    const inviteStatus =
+      u.invitation_status?.toLowerCase?.() || "not_applicable";
+
+    return {
+      id: u.user_id,
+      name: u.full_name ?? "",
+      email: u.email,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      status,
+      invitation_id: u.invitation_id,
+      invitation_status: inviteStatus,
+    };
+  });
+}, [usersResp]);
+
 
   const total = usersResp?.data?.pagination?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -161,6 +169,38 @@ export default function UserManagement() {
       },
     },
     {
+      key: "invitation_status",
+      header: "Invitation Status",
+      sortable: true,
+      render: (row) => {
+        const inviteStatus = row.invitation_status;
+
+        const badgeClass =
+          inviteStatus === "accepted"
+            ? "bg-green-100 text-green-700 border-transparent"
+            : inviteStatus === "invitation_sent"
+            ? "bg-yellow-100 text-yellow-700 border-transparent"
+            : inviteStatus === "expired"
+            ? "bg-red-100 text-red-700 border-transparent"
+            : "bg-gray-200 text-gray-700 border-transparent";
+
+        const labelMap: Record<string, string> = {
+          accepted: "Accepted",
+          invitation_sent: "Invitation Sent",
+          expired: "Expired",
+          pending: "Pending",
+          not_applicable: "-",
+        };
+
+        return (
+          <Badge variant="secondary" className={badgeClass}>
+            {labelMap[inviteStatus] || "-"}
+          </Badge>
+        );
+      },
+    },
+
+    {
       key: "actions",
       header: "Action",
       render: (row) => {
@@ -168,7 +208,7 @@ export default function UserManagement() {
 
         const showResend = status === "awaiting";
         const showDelete = status === "awaiting" || status === "deactivated";
-        const showDeactivate = status === "active";
+        // const showDeactivate = status === "active";
 
         return (
           <ActionMenu
@@ -177,8 +217,10 @@ export default function UserManagement() {
             showView={false}
             showEdit
             showResend={showResend}
-            showDeactivate={showDeactivate}
+            showDeactivate={false}
             showDelete={showDelete}
+            showCoaches={false}
+            onCoaches={() => navigate(`/super-admin/${row.id}/coaches`)}
             onEdit={() => openEdit(row)}
             onResend={() => handleResend(row)}
             onDeactivate={() => openConfirmDeactivate(row)}
@@ -236,7 +278,7 @@ export default function UserManagement() {
         )}
       </div>
 
-      {/* ✅ Modals */}
+      {/* Modals */}
       <UserFormModal
         open={!!modalMode}
         onOpenChange={(open) => {
