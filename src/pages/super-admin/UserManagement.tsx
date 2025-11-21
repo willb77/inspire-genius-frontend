@@ -181,7 +181,7 @@ export default function UserManagement() {
             showResend={showResend}
             showDeactivate={showDeactivate}
             showDelete={showDelete}
-            showCoaches={true}
+            showCoaches={false}
             onCoaches={() => navigate(`/super-admin/${row.id}/coaches`)}
             onEdit={() => openEdit(row)}
             onResend={() => handleResend(row)}
