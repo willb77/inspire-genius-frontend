@@ -5,6 +5,7 @@ import {
   Trash2,
   MessageCircleX,
   Mail,
+  Bot,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,6 +40,8 @@ export type ActionMenuProps<Row = unknown> = {
   onResend?: (row?: Row) => void;
   onDeactivate?: (row?: Row) => void;
   onDelete?: (row?: Row) => void;
+  showCoaches?: boolean;
+  onCoaches?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -57,6 +60,8 @@ export default function ActionMenu<Row = unknown>({
   onResend,
   onDeactivate,
   onDelete,
+  showCoaches = false,
+  onCoaches,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -131,6 +136,12 @@ export default function ActionMenu<Row = unknown>({
         {showResend && (
           <DropdownMenuItem onClick={() => onResend?.(row)}>
             <Mail className="w-4 h-4 mr-2" /> Resend
+          </DropdownMenuItem>
+        )}
+
+        {showCoaches && (
+          <DropdownMenuItem onClick={() => onCoaches?.(row)}>
+            <Bot className="w-4 h-4 mr-2" /> Coaches
           </DropdownMenuItem>
         )}
 
