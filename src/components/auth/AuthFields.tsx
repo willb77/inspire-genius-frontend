@@ -156,11 +156,12 @@ export function SocialAuthSection({ onProviderStart, onProviderEnd }: SocialAuth
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="grid grid-cols-2 items-center gap-3">
+      <div className="flex justify-center items-center gap-3">
         <Button
           variant="outline"
           aria-label="Continue with Google"
           title="Continue with Google"
+          className="min-w-52"
           disabled={socialLogin.isPending && activeProvider === "Google"}
           onClick={() => handleProvider("Google")}
         >
@@ -173,9 +174,9 @@ export function SocialAuthSection({ onProviderStart, onProviderEnd }: SocialAuth
         {/* <Button  variant="outline" aria-label="Continue with Apple" title="Continue with Apple">
           <img src="/images/auth/apple-logo.svg" alt="apple" className="h-5" />
         </Button> */}
-        <Button onClick={()=> handleProvider("Facebook")} variant="outline" aria-label="Continue with Facebook" title="Continue with Facebook">
+        {/* <Button onClick={()=> handleProvider("Facebook")} variant="outline" aria-label="Continue with Facebook" title="Continue with Facebook">
           <img src="/images/auth/facebook-logo.svg" alt="facebook" className="h-5" />
-        </Button>
+        </Button> */}
       </div>
     </>
   );
