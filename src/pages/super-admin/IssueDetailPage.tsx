@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,13 +31,27 @@ import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { toast } from "sonner";
 import { useAddAdminComment, useGetIssueById } from "@/hooks/super-admin/dashboard/useIssues";
 
+type IssueComment = {
+  text?: string;
+  comment?: string;
+  created_at?: string;
+};
+
 export default function IssueDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
   const issue_id = params?.id as string;
 
-  const [comment, setComment] = useState("");
-  const [changeStatus, setChangeStatus] = useState("");
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<{ comment: string; status: string }>({
+    mode: "onChange",
+    defaultValues: { comment: "", status: "" },
+  });
 
   const { data: issue, isPending, isError } = useGetIssueById(issue_id);
   const addCommentMutation = useAddAdminComment();
@@ -84,24 +99,19 @@ export default function IssueDetailPage() {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!comment.trim() && !changeStatus) {
-      toast.error("Please add a comment or select a status");
-      return;
-    }
-
+  const onSubmit = async (values: { comment: string; status: string }) => {
     try {
       await addCommentMutation.mutateAsync({
         issue_id,
-        comment: comment.trim(),
-        change_status: changeStatus || undefined,
+        comment: (values.comment ?? "").trim(),
+        change_status: values.status || undefined,
       });
-      
       toast.success("Comment added successfully");
-      setComment("");
-      setChangeStatus("");
+      reset();
     } catch (error) {
-      toast.error("Failed to add comment");
+      console.log(error);
+      // @ts-expect-error dynamic error
+      toast.error(error?.message || "Failed to add comment");
     }
   };
 
@@ -291,7 +301,7 @@ export default function IssueDetailPage() {
                   Comments ({issue.comments.length})
                 </h3>
                 <div className="space-y-3">
-                  {issue.comments.map((comment: any, index: number) => (
+                  {issue.comments.map((comment: IssueComment, index: number) => (
                     <div
                       key={index}
                       className="bg-gray-50 p-4 rounded-lg border border-gray-200"
@@ -325,32 +335,47 @@ export default function IssueDetailPage() {
                   </label>
                   <Textarea
                     placeholder="Enter your comment here..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
                     className="min-h-[100px] resize-none"
+                    {...register("comment", {
+                      validate: (v) =>
+                        !v || v.trim().length >= 5 || "Comment must be at least 5 characters",
+                    })}
                   />
+                  {errors.comment?.message ? (
+                    <p className="mt-1 text-xs text-red-600 text-left">{errors.comment.message}</p>
+                  ) : null}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block text-left">
                     Change Status (Optional)
                   </label>
-                  <Select value={changeStatus} onValueChange={setChangeStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status to change" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="status"
+                    rules={{ required: "Status is required" }}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status to change" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.status?.message ? (
+                    <p className="mt-1 text-xs text-red-600 text-left">{errors.status.message}</p>
+                  ) : null}
                 </div>
 
                 <Button
-                  onClick={handleSubmit}
-                  disabled={addCommentMutation.isPending}
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={addCommentMutation.isPending || isSubmitting}
                   className="w-full"
                 >
                   {addCommentMutation.isPending ? (

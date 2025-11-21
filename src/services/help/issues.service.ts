@@ -27,6 +27,13 @@ export async function createIssue(form: FormData) {
   return data
 }
 
+export type IssueAdminComment = {
+  id: string
+  comment: string
+  commented_by: string
+  created_at: string
+}
+
 export type IssueListItem = {
   id: string
   subject: string
@@ -38,6 +45,16 @@ export type IssueListItem = {
   reported_by: string
   reported_by_name: string
   created_at: string
+  // Optional extended fields from API
+  updated_at?: string
+  agent_id?: string | null
+  organization_id?: string | null
+  business_id?: string | null
+  resolved_at?: string | null
+  is_open?: boolean
+  is_resolved?: boolean
+  age_in_days?: number
+  admin_comment?: IssueAdminComment | null
 }
 
 export type GetIssuesResponse = {

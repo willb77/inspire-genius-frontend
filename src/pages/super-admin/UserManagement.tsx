@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import {
   DataTable,
@@ -30,6 +31,7 @@ import type { UserRow } from "@/types/super-admin/user-management";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserManagement() {
+  const navigate = useNavigate();
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
@@ -179,6 +181,8 @@ export default function UserManagement() {
             showResend={showResend}
             showDeactivate={showDeactivate}
             showDelete={showDelete}
+            showCoaches={true}
+            onCoaches={() => navigate(`/super-admin/${row.id}/coaches`)}
             onEdit={() => openEdit(row)}
             onResend={() => handleResend(row)}
             onDeactivate={() => openConfirmDeactivate(row)}

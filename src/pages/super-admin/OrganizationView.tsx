@@ -34,6 +34,37 @@ import { toast } from "sonner";
 type TabType = "basic" | "coaches" | "users";
 type ModalType = "admin" | "coach" | "user" | null;
 
+// Table row shapes
+type LicenseRow = {
+  tier: string;
+  start: string;
+  end: string;
+  remaining: number;
+  status: string;
+  is_active: boolean;
+};
+
+type CoachRow = {
+  id: string;
+  agent_id: string;
+  name: string;
+  accent: string;
+  gender: string;
+  tones: string;
+  status: string;
+  is_active: boolean;
+  is_assigned_to_business?: boolean;
+};
+
+type UserRow = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  is_active: boolean;
+};
+
 export default function OrganizationView() {
   const params = useParams<{ id: string }>();
   const [tab, setTab] = useState<TabType>("basic");
@@ -142,45 +173,67 @@ export default function OrganizationView() {
     return options;
   }, [orgViewRes?.data?.businesses, organization?.type]);
 
-  const coachesData = useMemo(() => {
-    return (orgAgentsRes?.data?.agents || []).map((agent) => ({
+  const coachesData = useMemo<CoachRow[]>(() => {
+    const list = (orgAgentsRes?.data?.agents ?? []) as Array<{
+      id: string;
+      agent_id: string;
+      agent_name: string;
+      preferences?: {
+        accent?: { name?: string };
+        gender?: { name?: string };
+        tones?: Array<{ name?: string }>;
+      };
+      is_active: boolean;
+      is_assigned_to_business?: boolean;
+    }>;
+    return list.map((agent) => ({
       id: agent.id,
       agent_id: agent.agent_id,
       name: agent.agent_name,
-      accent: agent.preferences?.accent?.name || "-",
-      gender: agent.preferences?.gender?.name || "-",
-      tones: agent.preferences?.tones?.map((t) => t.name).join(", ") || "-",
+      accent: agent.preferences?.accent?.name ?? "-",
+      gender: agent.preferences?.gender?.name ?? "-",
+      tones: (agent.preferences?.tones ?? []).map((t) => t.name ?? "").filter(Boolean).join(", ") || "-",
       status: agent.is_active ? "Active" : "Inactive",
       is_active: agent.is_active,
       is_assigned_to_business: agent.is_assigned_to_business ?? false,
     }));
   }, [orgAgentsRes?.data?.agents]);
 
-  const licenseRows = useMemo(
-    () =>
-      (orgViewRes?.data?.licenses || []).map((l) => ({
-        tier: l.subscription_tier,
-        start: l.start_date,
-        end: l.end_date,
-        remaining: l.days_remaining,
-        status: l.status,
-        is_active: l.status === "active",
-      })),
-    [orgViewRes?.data?.licenses]
-  );
+  const licenseRows = useMemo<LicenseRow[]>(() => {
+    const list = (orgViewRes?.data?.licenses ?? []) as Array<{
+      subscription_tier: string;
+      start_date: string;
+      end_date: string;
+      days_remaining: number;
+      status: string;
+    }>;
+    return list.map((l) => ({
+      tier: l.subscription_tier,
+      start: l.start_date,
+      end: l.end_date,
+      remaining: l.days_remaining,
+      status: l.status,
+      is_active: l.status === "active",
+    }));
+  }, [orgViewRes?.data?.licenses]);
 
-  const usersData = useMemo(
-    () =>
-      (usersRes?.data?.users || []).map((u: any) => ({
-        id: u.user_id,
-        name: u.full_name,
-        email: u.email,
-        role: u.role,
-        status: u.is_active ? "Active" : "Inactive",
-        is_active: u.is_active,
-      })),
-    [usersRes?.data?.users]
-  );
+  const usersData = useMemo<UserRow[]>(() => {
+    const list = (usersRes?.data?.users ?? []) as Array<{
+      user_id: string;
+      full_name?: string;
+      email?: string;
+      role?: string;
+      is_active?: boolean;
+    }>;
+    return list.map((u) => ({
+      id: u.user_id,
+      name: u.full_name ?? "",
+      email: u.email ?? "",
+      role: u.role ?? "",
+      status: u.is_active ? "Active" : "Inactive",
+      is_active: Boolean(u.is_active),
+    }));
+  }, [usersRes?.data?.users]);
 
   const handleInviteUser = async (values: UserFormValues, roleName: string) => {
     try {
@@ -277,7 +330,7 @@ export default function OrganizationView() {
     {
       key: "status",
       header: "Status",
-      render: (row: any) => (
+      render: (row: LicenseRow) => (
         <StatusBadge status={row.status} isActive={row.is_active} />
       ),
     },
@@ -293,7 +346,7 @@ export default function OrganizationView() {
           {
             key: "assignment",
             header: "Assignment",
-            render: (row: any) =>
+            render: (row: CoachRow) =>
               row.is_assigned_to_business ? (
                 <Button
                   size="sm"
@@ -323,7 +376,7 @@ export default function OrganizationView() {
     {
       key: "actions",
       header: "Action",
-      render: (row: any) => (
+      render: (row: CoachRow) => (
         <ActionMenu
           row={row}
           align="end"
@@ -344,14 +397,14 @@ export default function OrganizationView() {
     {
       key: "status",
       header: "Status",
-      render: (row: any) => (
+      render: (row: UserRow) => (
         <StatusBadge status={row.status} isActive={row.status === "Active"} />
       ),
     },
     {
       key: "actions",
       header: "Action",
-      render: (row: any) => (
+      render: (row: UserRow) => (
         <ActionMenu
           row={row}
           align="end"
@@ -450,7 +503,7 @@ export default function OrganizationView() {
 
         <Tabs
           value={tab}
-          onValueChange={(v) => setTab(v as TabType)}
+          onValueChange={(v: string) => setTab(v as TabType)}
           className="w-full"
         >
           <TabsList className="mb-2">
