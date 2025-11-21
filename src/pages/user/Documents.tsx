@@ -279,7 +279,7 @@ export default function Documents() {
             <div className="hidden items-center gap-3 justify-end">
               <IconInput
                 placeholder="Search.."
-                disabled={true}
+                disabled={false}
                 leftIcon={<Search className="size-4" />}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
