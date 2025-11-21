@@ -65,6 +65,7 @@ export function useSocialLogin(): SocialLoginState {
       id_token: null,
       token_type: null,
       user_id: me.user_id ?? null,
+      full_name: me.full_name ?? null,
       email: me.email ?? null,
       role: me.role ?? null,
       has_profile: me.has_profile ?? null,

@@ -17,9 +17,11 @@ import { format, parse, isValid } from "date-fns";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { FormValues } from "@/types/onboarding";
 import { useCreateProfileMutation } from "@/hooks/onboarding/useCreateProfile";
+import { useAuth } from "@/context/useAuth";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
+  const { markFullName } = useAuth();
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -31,23 +33,28 @@ export default function OnboardingDetailsOne() {
     mode: "onTouched",
   });
 
-  const createProfile = useCreateProfileMutation({
-    onSuccess: () => {
-      navigate(ROUTES.ONBOARDING_DETAILS.TWO, { replace: true });
-    },
-  });
+  const createProfile = useCreateProfileMutation();
 
   const onSubmit = (values: FormValues) => {
     if (!values.firstName || !values.lastName || !values.dob) return;
     const parsed = parse(values.dob, "d LLL yyyy", new Date());
     const yyyyMmDd = isValid(parsed) ? format(parsed, "yyyy-MM-dd") : "";
     if (!yyyyMmDd) return;
-    createProfile.mutate({
-      first_name: values.firstName,
-      last_name: values.lastName,
-      date_of_birth: yyyyMmDd,
-      additional_info: values.about?.trim() ? values.about : undefined,
-    });
+    createProfile.mutate(
+      {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        date_of_birth: yyyyMmDd,
+        additional_info: values.about?.trim() ? values.about : undefined,
+      },
+      {
+        onSuccess: async () => {
+          const fullName = `${values.firstName} ${values.lastName}`.trim();
+          if (fullName) await markFullName(fullName);
+          navigate(ROUTES.ONBOARDING_DETAILS.TWO, { replace: true });
+        },
+      }
+    );
   };
 
   return (

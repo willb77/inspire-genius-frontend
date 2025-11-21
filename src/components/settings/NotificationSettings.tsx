@@ -30,6 +30,7 @@ export default function NotificationSettings({
           </div>
           <Switch
             checked={pushNotifications}
+            disabled={true}
             onCheckedChange={onPushNotificationsChange}
           />
         </div>
@@ -39,6 +40,7 @@ export default function NotificationSettings({
           <div className="flex items-center space-x-3">
             <Checkbox
               id="update-notifications"
+              disabled = {true}
               checked={updateNotifications}
               onCheckedChange={(checked) =>
                 onUpdateNotificationsChange(!!checked)
@@ -54,6 +56,7 @@ export default function NotificationSettings({
 
           <div className="flex items-center space-x-3">
             <Checkbox
+              disabled={true}
               id="marketing-notifications"
               checked={marketingNotifications}
               onCheckedChange={(checked) =>
