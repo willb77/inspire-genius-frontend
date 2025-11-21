@@ -200,7 +200,7 @@ export default function HelpForm({ form, onSubmit, isSubmitting, isTypesLoading,
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground"><Upload className="size-4" /> Drag and drop screenshots here</div>
                     <div className="text-xs text-muted-foreground">OR</div>
-                    <Button disabled={true} type="button" variant="secondary" className="bg-gray-100 hover:bg-gray-100" onClick={pickFiles}>Browse files</Button>
+                    <Button disabled={false} type="button" variant="secondary" className="bg-gray-100 hover:bg-gray-100" onClick={pickFiles}>Browse files</Button>
                     <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => addFiles(e.target.files)} />
                   </div>
                 </div>
