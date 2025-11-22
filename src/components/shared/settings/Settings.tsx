@@ -7,15 +7,19 @@ import { useMe } from "@/hooks/user/useMe";
 import { useChangePassword } from "@/hooks/user/useChangePassword";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import type { ChangePasswordFormValues, EditProfileFormValues, ProfileData } from "@/types/settings";
+import type {
+  ChangePasswordFormValues,
+  EditProfileFormValues,
+  ProfileData,
+} from "@/types/settings";
 import { useUpdateProfile } from "@/hooks/onboarding/useUpdateProfile";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
-  const {user}=useAuth();
-  const role=user?.role;
+  const { user, markFullName } = useAuth();
+  const role = user?.role;
   const [updateNotifications, setUpdateNotifications] = useState(true);
   const [marketingNotifications, setMarketingNotifications] = useState(false);
   const { data: meResp, isPending: meLoading } = useMe<{
@@ -29,6 +33,8 @@ export default function Settings() {
     full_name?: string;
     date_of_birth?: string;
     additional_info?: string;
+    is_password_change_allowed?: boolean;
+    role?: string;
   }>();
 
   const changePasswordForm = useForm<ChangePasswordFormValues>({
@@ -54,21 +60,31 @@ export default function Settings() {
 
   const upsertProfileMutation = useUpdateProfile();
 
-
-  const handleChangePassword = async (payload: { current_password: string; new_password: string; confirm_password: string }) => {
+  const handleChangePassword = async (payload: {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+  }) => {
     changePasswordMutation.mutate(payload, {
       onSuccess: (response) => {
-      toast.success(response.message ?? "Password changed successfully");
-      setChangePasswordOpen(false);
-      changePasswordForm.reset();
+        toast.success(response.message ?? "Password changed successfully");
+        setChangePasswordOpen(false);
+        changePasswordForm.reset();
       },
       onError: (error) => {
-        const msg = (error as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message ?? error.message ?? "Failed to change password";
-      toast.error(msg);
+        const msg =
+          (
+            error as {
+              response?: { data?: { message?: string } };
+              message?: string;
+            }
+          ).response?.data?.message ??
+          error.message ??
+          "Failed to change password";
+        toast.error(msg);
       },
     });
   };
-
 
   // Profile data
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -89,6 +105,9 @@ export default function Settings() {
       lastName: data.last_name ?? "",
       dateOfBirth: data.date_of_birth ?? "",
       additionalInfo: data.additional_info ?? "",
+      passwordChangeAllowed: data.is_password_change_allowed ?? false,
+      role: data.role ?? "",
+      
     };
     setProfileData((prev) => ({
       ...prev,
@@ -123,11 +142,23 @@ export default function Settings() {
           additionalInfo: values.additionalInfo,
           email: prev.email,
         }));
+        const fullName = `${values.firstName} ${values.lastName}`.trim();
+        if (fullName) {
+          markFullName(fullName);
+        }
         setEditProfileOpen(false);
         editProfileForm.reset(values);
       },
       onError: (error) => {
-        const msg = (error as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message ?? (error as Error).message ?? "Failed to update profile";
+        const msg =
+          (
+            error as {
+              response?: { data?: { message?: string } };
+              message?: string;
+            }
+          ).response?.data?.message ??
+          (error as Error).message ??
+          "Failed to update profile";
         toast.error(msg);
       },
     });
@@ -168,40 +199,44 @@ export default function Settings() {
         </div>
 
         {/* Notifications Settings Card */}
-        {role===ROLES.USER && <div data-tour="settings-notifications">
-          <NotificationSettings
-            pushNotifications={pushNotifications}
-            updateNotifications={updateNotifications}
-            marketingNotifications={marketingNotifications}
-            onPushNotificationsChange={setPushNotifications}
-            onUpdateNotificationsChange={setUpdateNotifications}
-            onMarketingNotificationsChange={setMarketingNotifications}
-          />
-        </div>}
+        {role === ROLES.USER && (
+          <div data-tour="settings-notifications">
+            <NotificationSettings
+              pushNotifications={pushNotifications}
+              updateNotifications={updateNotifications}
+              marketingNotifications={marketingNotifications}
+              onPushNotificationsChange={setPushNotifications}
+              onUpdateNotificationsChange={setUpdateNotifications}
+              onMarketingNotificationsChange={setMarketingNotifications}
+            />
+          </div>
+        )}
 
         {/* Legal Card */}
-        {role===ROLES.USER && <Card className="shadow-sm">
-          <CardHeader className="text-left">
-            <CardTitle className="text-lg font-semibold">Legal</CardTitle>
-          </CardHeader>
-          <CardContent className="text-left">
-            <div>
-              <a
-                href="#"
-                className="text-blue-600 hover:text-blue-800 text-sm underline"
-              >
-                Terms of service
-              </a>
-              <br />
-              <a
-                href="#"
-                className="text-blue-600 hover:text-blue-800 text-sm underline"
-              >
-                Privacy policy
-              </a>
-            </div>
-          </CardContent>
-        </Card>}
+        {role === ROLES.USER && (
+          <Card className="shadow-sm">
+            <CardHeader className="text-left">
+              <CardTitle className="text-lg font-semibold">Legal</CardTitle>
+            </CardHeader>
+            <CardContent className="text-left">
+              <div>
+                <a
+                  href="#"
+                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
+                >
+                  Terms of service
+                </a>
+                <br />
+                <a
+                  href="#"
+                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
+                >
+                  Privacy policy
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );

@@ -6,6 +6,7 @@ export interface ProfileData {
   category: string;
   role: string;
   additionalInfo?: string;
+  passwordChangeAllowed?: boolean;
 }
 
 export interface AccountSettingsProps {
@@ -23,6 +24,7 @@ export interface AccountSettingsProps {
   onEditProfileOpenChange?: (open: boolean) => void;
   editProfileForm?: import("react-hook-form").UseFormReturn<EditProfileFormValues>;
   onEditProfileSubmit?: (values: EditProfileFormValues) => Promise<void> | void;
+  passwordChangeAllowed?: boolean;
 }
 
 export interface ChangePasswordProps {

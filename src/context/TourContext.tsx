@@ -195,15 +195,15 @@ const DEFAULT_STEPS: TourStep[] = [
   },
   // Help page
 
-  {
-    selector: '[data-tour="help-search"]',
-    title: "Search help",
-    description: "Quickly search for help topics and guides.",
-    image: "/images/tour/right-alex.svg",
-    padding: 10,
-    route: ROUTES.HELP,
-    tooltipClassName: "right-[8%] bottom-24",
-  },
+  // {
+  //   selector: '[data-tour="help-search"]',
+  //   title: "Search help",
+  //   description: "Quickly search for help topics and guides.",
+  //   image: "/images/tour/right-alex.svg",
+  //   padding: 10,
+  //   route: ROUTES.HELP,
+  //   tooltipClassName: "right-[8%] bottom-24",
+  // },
   {
     selector: '[data-tour="help-form"]',
     title: "Contact support",

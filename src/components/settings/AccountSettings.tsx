@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import PasswordField from "@/components/shared/inputs/PasswordField";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parse, isValid, format as formatDate } from "date-fns";
+import { ROLES } from "@/constants/routes";
 
 export default function AccountSettings({
   profileData,
@@ -68,7 +69,7 @@ export default function AccountSettings({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <Button
+          {(profileData?.passwordChangeAllowed || profileData?.role === ROLES.SUPER_ADMIN) && <Button
             variant="outline"
             size="sm"
             disabled={false}
@@ -77,11 +78,11 @@ export default function AccountSettings({
           >
             <LockKeyhole className="h-4 w-4" />
             Change Password?
-          </Button>
+          </Button>}
           <Button
             size="sm"
             disabled={false}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-10 text-primary hover:bg-blue-20"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto md:min-w-32 bg-blue-10 text-primary hover:bg-blue-20"
             onClick={() => onEditProfileOpenChange?.(true)}
           >
             <Edit className="h-4 w-4" />

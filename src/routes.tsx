@@ -33,7 +33,7 @@ import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
 import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 import OrganizationView from "@/pages/super-admin/OrganizationView";
-// import UserCoaches from "@/pages/super-admin/UserCoaches";
+import UserCoaches from "@/pages/super-admin/UserCoaches";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -74,7 +74,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
       { path: "/super-admin/team", element: <TeamManagement /> },
       { path: "/super-admin/coaches", element: <CoachManagement /> },
-      // { path: "/super-admin/:userId/coaches", element: <UserCoaches /> },
+      { path: "/super-admin/:userId/coaches", element: <UserCoaches /> },
       {
         path: "/super-admin/organizations",
         element: <OrganizationManagement />,

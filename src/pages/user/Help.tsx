@@ -79,7 +79,7 @@ export default function Help() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Help and Support
           </h1>
-          <div data-tour="help-search">
+          <div data-tour="help-search" className="hidden">
             <SearchBar />
           </div>
         </div>
@@ -113,6 +113,11 @@ export default function Help() {
                     </div>
                   </div>
                   <Skeleton className="mt-2 h-10 w-full" />
+                  <div className="mt-3">
+                    <Skeleton className="h-3 w-28 mb-2" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-40 mt-2" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -131,9 +136,18 @@ export default function Help() {
                     </div>
                   </div>
                   <div className="mt-1 text-sm text-muted-foreground line-clamp-3">{it.description}</div>
+                  {it.admin_comment?.comment ? (
+                    <div className="mt-3 rounded-md border bg-muted/30 p-3 text-left">
+                      <div className="text-xs font-semibold text-muted-foreground">Admin Comment</div>
+                      <div className="mt-1 text-sm text-foreground">{it.admin_comment.comment}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {it.admin_comment.created_at ? new Date(it.admin_comment.created_at).toLocaleString() : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ))}
-              <div className="pt-2">
+              <div className="pt-2 flex justify-end">
                 <Pagination pageCount={pageCount} page={page} onPageChange={setPage} />
               </div>
             </div>

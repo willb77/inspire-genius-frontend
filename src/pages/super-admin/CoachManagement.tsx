@@ -189,6 +189,7 @@ export default function CoachManagement() {
           row={row}
           align="end"
           showView={false}
+          showResend={false}
           showEdit={row.type !== "predefined"}
           showDeactivate={row.status === "Active"}
           onEdit={() => openEdit(row)}
