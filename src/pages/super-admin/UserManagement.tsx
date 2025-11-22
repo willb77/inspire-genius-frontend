@@ -173,31 +173,40 @@ const mappedRows = useMemo<UserRow[]>(() => {
       render: (row) => {
         const inviteStatus = row.invitation_status;
 
-        const badgeClass =
-          inviteStatus === "accepted"
-            ? "bg-green-100 text-green-700 border-transparent"
-            : inviteStatus === "invitation_sent"
-            ? "bg-yellow-100 text-yellow-700 border-transparent"
-            : inviteStatus === "expired"
-            ? "bg-red-100 text-red-700 border-transparent"
-            : "bg-gray-200 text-gray-700 border-transparent";
+        const badgeConfig: Record<
+          string,
+          { label: string; className: string }
+        > = {
+          pending: {
+            label: "Pending",
+            className: "bg-yellow-100 text-yellow-700 border-transparent",
+          },
+          accepted: {
+            label: "Accepted",
+            className: "bg-green-100 text-green-700 border-transparent",
+          },
+          expired: {
+            label: "Expired",
+            className: "bg-red-100 text-red-700 border-transparent",
+          },
+          cancelled: {
+            label: "Cancelled",
+            className: "bg-gray-300 text-gray-700 border-transparent",
+          },
+        };
 
-        const labelMap: Record<string, string> = {
-          accepted: "Accepted",
-          invitation_sent: "Invitation Sent",
-          expired: "Expired",
-          pending: "Pending",
-          not_applicable: "-",
+        const badge = badgeConfig[inviteStatus] ?? {
+          label: "-",
+          className: "bg-gray-200 text-gray-700 border-transparent",
         };
 
         return (
-          <Badge variant="secondary" className={badgeClass}>
-            {labelMap[inviteStatus] || "-"}
+          <Badge variant="secondary" className={badge.className}>
+            {badge.label}
           </Badge>
         );
       },
     },
-
     {
       key: "actions",
       header: "Action",
@@ -205,8 +214,7 @@ const mappedRows = useMemo<UserRow[]>(() => {
         const status = row.status?.toLowerCase();
 
         const showResend = status === "awaiting";
-        const showDelete = status === "awaiting" || status === "deactivated";
-        // const showDeactivate = status === "active";
+        const showDelete = status === "awaiting";
 
         return (
           <ActionMenu
