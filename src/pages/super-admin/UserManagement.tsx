@@ -119,6 +119,7 @@ const mappedRows = useMemo<UserRow[]>(() => {
     const payload: UpdateUserPayload = {
       first_name: values.first_name,
       last_name: values.last_name,
+      is_active: selected?.status === "Awaiting" ? undefined : values.status === "Active",
     };
     updateMutation.mutate({ email: selected.email, payload });
     setModalMode(null);
@@ -126,7 +127,16 @@ const mappedRows = useMemo<UserRow[]>(() => {
   };
 
   const handleDeactivate = () => {
-    setConfirmMode(null);
+    if (!selected?.email) return;
+    updateMutation.mutate(
+      { email: selected.email, payload: { first_name: selected.first_name ?? "", last_name: selected.last_name ?? "", is_active: false } },
+      {
+        onSuccess: () => {
+          setConfirmMode(null);
+          setSelected(null);
+        },
+      }
+    );
   };
 
   const handleDelete = () => {
@@ -179,8 +189,8 @@ const mappedRows = useMemo<UserRow[]>(() => {
           string,
           { label: string; className: string }
         > = {
-          pending: {
-            label: "Pending",
+          invitation_sent: {
+            label: "Invitation Sent",
             className: "bg-yellow-100 text-yellow-700 border-transparent",
           },
           accepted: {
@@ -191,16 +201,11 @@ const mappedRows = useMemo<UserRow[]>(() => {
             label: "Expired",
             className: "bg-red-100 text-red-700 border-transparent",
           },
-          cancelled: {
-            label: "Cancelled",
-            className: "bg-gray-300 text-gray-700 border-transparent",
-          },
         };
 
-        const badge = badgeConfig[inviteStatus] ?? {
-          label: "-",
-          className: "bg-gray-200 text-gray-700 border-transparent",
-        };
+        const badge = badgeConfig[inviteStatus];
+
+        if (!badge) return null;
 
         return (
           <Badge variant="secondary" className={badge.className}>
@@ -217,16 +222,17 @@ const mappedRows = useMemo<UserRow[]>(() => {
 
         const showResend = status === "awaiting";
         const showDelete = status === "awaiting";
+        const showDeactivate = status === "active";
 
         return (
           <ActionMenu
             row={row}
             align="end"
             showView={false}
-            showEdit
-            showResend={showResend}
-            showDeactivate={false}
-            showDelete={showDelete}
+            showEdit={!updateMutation.isPending}
+            showResend={showResend && !resendMutation.isPending}
+            showDeactivate={showDeactivate && !updateMutation.isPending}
+            showDelete={showDelete && !deleteMutation.isPending}
             showCoaches={false}
             onCoaches={() => navigate(`/super-admin/${row.id}/coaches`)}
             onEdit={() => openEdit(row)}
@@ -302,12 +308,22 @@ const mappedRows = useMemo<UserRow[]>(() => {
                 first_name: selected.first_name ?? "",
                 last_name: selected.last_name ?? "",
                 email: selected.email,
+                status: selected.status === "Deactivated" ? "Deactivated" : "Active",
               }
             : undefined
         }
         onSubmit={modalMode === "edit" ? handleEdit : handleAdd}
         title={modalMode === "edit" ? "Edit User" : "Add User"}
-        submitLabel={modalMode === "edit" ? "Save Changes" : "Add User"}
+        submitLabel={
+          modalMode === "edit"
+            ? updateMutation.isPending
+              ? "Saving..."
+              : "Save Changes"
+            : inviteMutation.isPending
+            ? "Adding..."
+            : "Add User"
+        }
+        allowStatusEdit={selected?.status !== "Awaiting"}
       />
 
       <ConfirmActionModal
@@ -317,11 +333,13 @@ const mappedRows = useMemo<UserRow[]>(() => {
         description={
           confirmMode === "delete"
             ? "Are you sure you want to permanently delete this user? This action cannot be undone."
-            : "Are you sure you want to deactivate the Organization?"
+            : "Are you sure you want to deactivate this user?"
         }
         fields={[{ label: "User Name", value: selected?.name ?? "" }]}
         confirmLabel={confirmMode === "delete" ? "Delete" : "Deactivate"}
         confirmVariant="destructive"
+        confirmLoading={confirmMode === "delete" ? deleteMutation.isPending : updateMutation.isPending}
+        confirmDisabled={confirmMode === "delete" ? deleteMutation.isPending : updateMutation.isPending}
         onConfirm={confirmMode === "delete" ? handleDelete : handleDeactivate}
       />
     </SuperAdminLayout>
