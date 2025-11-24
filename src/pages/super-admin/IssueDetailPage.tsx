@@ -102,17 +102,23 @@ export default function IssueDetailPage() {
 
   const onSubmit = async (values: { comment: string; status: string }) => {
     try {
-      await addCommentMutation.mutateAsync({
+      const response = await addCommentMutation.mutateAsync({
         issue_id,
         comment: (values.comment ?? "").trim(),
         change_status: values.status || undefined,
       });
-      toast.success("Comment added successfully");
+
+      const successMessage =
+        response?.message || "Comment added successfully";
+
+      toast.success(successMessage);
       reset();
-    } catch (error) {
-      console.log(error);
-      // @ts-expect-error dynamic error
-      toast.error(error?.message || "Failed to add comment");
+    } catch (error: any) {
+
+      const errorMessage =
+        error?.response?.data?.message || error?.message ||
+        "Failed to add comment";
+      toast.error(errorMessage);
     }
   };
 
@@ -294,7 +300,6 @@ export default function IssueDetailPage() {
               )}
             </div>
 
-            {/* Comments Section */}
             {issue.comments && issue.comments.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -321,7 +326,6 @@ export default function IssueDetailPage() {
               </div>
             )}
 
-            {/* Add Comment Section */}
             <Card className="border-2 border-dashed border-gray-300 bg-gray-50">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -337,10 +341,7 @@ export default function IssueDetailPage() {
                   <Textarea
                     placeholder="Enter your comment here..."
                     className="min-h-[100px] resize-none"
-                    {...register("comment", {
-                      validate: (v) =>
-                        !v || v.trim().length >= 5 || "Comment must be at least 5 characters",
-                    })}
+                    {...register("comment")}
                   />
                   {errors.comment?.message ? (
                     <p className="mt-1 text-xs text-red-600 text-left">{errors.comment.message}</p>
