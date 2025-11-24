@@ -410,6 +410,8 @@ export default function CoachChat() {
 
   const handleSelectConversation = useCallback(async (id: string) => {
     await disconnect();
+    //Clear audio state
+     demoAudioServiceRef.current?.resetAudioState();
     setSelectedId(id);
     setConversationId(id);
     if (isConnected) disconnect();
