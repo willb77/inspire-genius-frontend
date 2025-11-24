@@ -4,6 +4,7 @@ import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { User_FORM_DEFAULTS, User_FORM_RULES, type UserFormValues } from "./userForm.constants";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type UserFormModalProps = {
   open: boolean;
@@ -13,6 +14,7 @@ export type UserFormModalProps = {
   defaultValues?: Partial<UserFormValues>;
   onSubmit: (values: UserFormValues) => void | Promise<void>;
   submitLabel?: string;
+  allowStatusEdit?: boolean;
 };
 
 export default function UserFormModal({
@@ -23,6 +25,7 @@ export default function UserFormModal({
   defaultValues = {},
   onSubmit,
   submitLabel,
+  allowStatusEdit,
 }: UserFormModalProps) {
   const defaultValuesMerged: UserFormValues = { ...User_FORM_DEFAULTS, ...defaultValues };
 
@@ -85,6 +88,31 @@ export default function UserFormModal({
                 )}
               />
             </>
+          )}
+
+          {mode === "edit" && allowStatusEdit !== false && (
+            <FormField
+              control={control}
+              name="status"
+              rules={User_FORM_RULES.status}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormControl>
+                    <Select value={String(field.value || "Active")} onValueChange={(v) => field.onChange(v as UserFormValues["status"])}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Deactivated">Deactivated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
         </>
       )}
