@@ -91,6 +91,7 @@ export async function inviteUser(payload: InviteUserPayload) {
 export type UpdateUserPayload = {
   first_name: string
   last_name: string
+  is_active?: boolean
 }
 
 export type UpdateUserData = {
