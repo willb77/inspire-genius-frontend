@@ -30,6 +30,7 @@ import {
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { toast } from "sonner";
 import { useAddAdminComment, useGetIssueById } from "@/hooks/super-admin/dashboard/useIssues";
+import { Label } from "@/components/ui/label";
 
 type IssueComment = {
   text?: string;
@@ -330,9 +331,9 @@ export default function IssueDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block text-left">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block text-left">
                     Comment
-                  </label>
+                  </Label>
                   <Textarea
                     placeholder="Enter your comment here..."
                     className="min-h-[100px] resize-none"
@@ -347,9 +348,9 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block text-left">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block text-left">
                     Change Status (Optional)
-                  </label>
+                  </Label>
                   <Controller
                     control={control}
                     name="status"
