@@ -412,6 +412,7 @@ export default function CoachChat() {
     await disconnect();
     //Clear audio state
      demoAudioServiceRef.current?.resetAudioState();
+     setIsAudioPaused(true)
     setSelectedId(id);
     setConversationId(id);
     if (isConnected) disconnect();
@@ -491,6 +492,8 @@ export default function CoachChat() {
             hasConversations={hasConversations}
             onCreateNewConversation={handleCreateConversation}
             isLoading={isLoadingConversations || createConvMutation.isPending}
+            isAudioRunning={hasAudio && !isAudioPaused}
+            audioWarningText="Switching conversations will reset audio for the new conversation."
           />
         </div>
         <div className="lg:col-span-8" data-tour="chat-window">
