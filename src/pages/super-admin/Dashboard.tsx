@@ -16,6 +16,7 @@ import HelpAndSupport from "@/components/super-admin/dashboard/HelpAndSupport";
 import { DocumentUploadTrend } from "@/components/super-admin/dashboard/DocumentUploadTrend";
 import DashboardSystem from "@/components/super-admin/dashboard/DashboardSystem";
 import { UsedCoachesChartNew } from "@/components/super-admin/dashboard/UsedCoachesChartNew";
+import LatestUsers from "@/components/super-admin/dashboard/LatestUsers";
 import { useMemo, useState } from "react";
 import {
   Popover,
@@ -165,6 +166,11 @@ export default function SuperAdminDashboard() {
           <Card className="bg-gray-20 shadow-sm border-none">
             <DocumentUploadTrend />
           </Card>
+        </div>
+
+        {/* Latest Users Section */}
+        <div className="bg-gray-20 shadow-sm border-none">
+          <LatestUsers />
         </div>
       </div>
     </SuperAdminLayout>
