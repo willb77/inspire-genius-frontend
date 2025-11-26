@@ -454,7 +454,11 @@ export default function CoachChat() {
         );
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+     mounted = false;
+      demoAudioServiceRef.current?.resetAudioState();
+     setIsAudioPaused(true)
+     };
   }, [agentId]);
 
   useEffect(() => {
