@@ -34,8 +34,6 @@ export default function LatestUsers() {
     accepted: "Accepted",
     invitation_sent: "Invitation Sent",
     expired: "Expired",
-    pending: "Pending",
-    not_applicable: "-",
   };
 
   return (
@@ -87,7 +85,7 @@ export default function LatestUsers() {
           users.length > 0 &&
           users.map((u, index) => {
             const inviteStatus =
-              u.invitation_status?.toLowerCase?.() || "not_applicable";
+              u.invitation_status?.toLowerCase?.() || "unknown";
             const fullName =
               u.full_name ||
               `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() ||
