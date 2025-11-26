@@ -22,20 +22,25 @@ import {
   ChevronLeft,
   MessageSquare,
   Clock,
-  Building,
   FileText,
   Send,
   CheckCircle2,
 } from "lucide-react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { toast } from "sonner";
-import { useAddAdminComment, useGetIssueById } from "@/hooks/super-admin/dashboard/useIssues";
-
-type IssueComment = {
-  text?: string;
-  comment?: string;
-  created_at?: string;
-};
+import {
+  useAddAdminComment,
+  useGetIssueById,
+} from "@/hooks/super-admin/dashboard/useIssues";
+import { Label } from "@/components/ui/label";
+import {
+  ISSUE_DETAIL_RULES,
+  ISSUE_DETAIL_DEFAULTS,
+  type IssueDetailFormValues,
+  ISSUE_STATUSES,
+  getStatusColor,
+  getPriorityColor,
+} from "@/components/shared/forms/IssueDetailPage.constants";
 
 export default function IssueDetailPage() {
   const params = useParams();
@@ -48,46 +53,16 @@ export default function IssueDetailPage() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<{ comment: string; status: string }>({
+  } = useForm<IssueDetailFormValues>({
     mode: "onChange",
-    defaultValues: { comment: "", status: "" },
+    defaultValues: ISSUE_DETAIL_DEFAULTS,
   });
 
   const { data: issue, isPending, isError } = useGetIssueById(issue_id);
   const addCommentMutation = useAddAdminComment();
 
-  // Helper functions
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "open":
-        return "bg-yellow-100 text-yellow-700 border-transparent";
-      case "in-progress":
-        return "bg-blue-100 text-blue-700 border-transparent";
-      case "resolved":
-      case "closed":
-        return "bg-green-100 text-green-700 border-transparent";
-      default:
-        return "bg-gray-100 text-gray-700 border-transparent";
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case "critical":
-        return "bg-red-100 text-red-700 border-transparent";
-      case "high":
-        return "bg-orange-100 text-orange-700 border-transparent";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700 border-transparent";
-      case "low":
-        return "bg-green-100 text-green-700 border-transparent";
-      default:
-        return "bg-gray-100 text-gray-700 border-transparent";
-    }
-  };
-
   const formatStatus = (status: string) => status.replace(/_/g, " ");
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -101,17 +76,22 @@ export default function IssueDetailPage() {
 
   const onSubmit = async (values: { comment: string; status: string }) => {
     try {
-      await addCommentMutation.mutateAsync({
+      const response = await addCommentMutation.mutateAsync({
         issue_id,
         comment: (values.comment ?? "").trim(),
         change_status: values.status || undefined,
       });
-      toast.success("Comment added successfully");
+
+      const successMessage = response?.message || "Comment added successfully";
+
+      toast.success(successMessage);
       reset();
-    } catch (error) {
-      console.log(error);
-      // @ts-expect-error dynamic error
-      toast.error(error?.message || "Failed to add comment");
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to add comment";
+      toast.error(errorMessage);
     }
   };
 
@@ -155,7 +135,6 @@ export default function IssueDetailPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-2 max-w-5xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -175,9 +154,8 @@ export default function IssueDetailPage() {
           </div>
         </div>
 
-        {/* Main Issue Card */}
         <Card className="bg-white shadow-sm">
-          <CardHeader className="border-b bg-gray-50">
+          <CardHeader className="border-b">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
                 <CardTitle className="text-xl text-left flex items-start gap-2">
@@ -203,7 +181,6 @@ export default function IssueDetailPage() {
           </CardHeader>
 
           <CardContent>
-            {/* Description */}
             <div className="mb-2">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -215,7 +192,7 @@ export default function IssueDetailPage() {
             </div>
 
             {/* Issue Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 mb-4  text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 mb-4  text-left gap-4">
               <div className="flex items-start gap-3 p-1 bg-gray-50 rounded-lg">
                 <User className="h-5 w-5 text-gray-600 mt-0.5" />
                 <div>
@@ -277,121 +254,120 @@ export default function IssueDetailPage() {
                   </div>
                 </div>
               )}
-
-              {issue.organization_id && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Building className="h-5 w-5 text-gray-600 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-500">
-                      Organization ID
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900 font-mono">
-                      {issue.organization_id.slice(0, 8)}...
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Comments Section */}
-            {issue.comments && issue.comments.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Comments ({issue.comments.length})
-                </h3>
-                <div className="space-y-3">
-                  {issue.comments.map((comment: IssueComment, index: number) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                    >
-                      <p className="text-sm text-gray-700 text-left">
-                        {comment.text || comment.comment}
-                      </p>
-                      {comment.created_at && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          {formatDate(comment.created_at)}
+            {(issue.comments && issue.comments.length > 0) || true ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <Card className="border-2 border-dashed border-gray-300 bg-gray-50 h-[370px] flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      Add Admin Comment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block text-left">
+                        Comment
+                      </Label>
+                      <Textarea
+                        placeholder="Enter your comment here..."
+                        className="min-h-[100px] resize-none"
+                        {...register("comment", ISSUE_DETAIL_RULES.comment)}
+                      />
+                      {errors.comment?.message && (
+                        <p className="mt-1 text-xs text-red-600 text-left">
+                          {errors.comment.message}
                         </p>
                       )}
                     </div>
-                  ))}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block text-left">
+                        Change Status (Optional)
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="status"
+                        rules={ISSUE_DETAIL_RULES.status}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status to change" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ISSUE_STATUSES.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status.replace("-", " ")}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.status?.message && (
+                        <p className="mt-1 text-xs text-red-600 text-left">
+                          {errors.status.message}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleSubmit(onSubmit)}
+                      disabled={addCommentMutation.isPending || isSubmitting}
+                      className="w-full"
+                    >
+                      {addCommentMutation.isPending ? (
+                        <>Submitting...</>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Comment
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-4 h-[370px] overflow-y-auto pr-2">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Comments ({issue.comments?.length || 0})
+                  </h3>
+
+                  {issue.comments && issue.comments.length > 0 ? (
+                    <div className="space-y-3">
+                      {[...issue.comments]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                        )
+                        .map((comment, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                          >
+                            <p className="text-sm text-gray-700 text-left">
+                              {comment.text || comment.comment}
+                            </p>
+                            {comment.created_at && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                {formatDate(comment.created_at)}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      No comments yet.
+                    </p>
+                  )}
                 </div>
               </div>
-            )}
-
-            {/* Add Comment Section */}
-            <Card className="border-2 border-dashed border-gray-300 bg-gray-50">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Add Admin Comment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block text-left">
-                    Comment
-                  </label>
-                  <Textarea
-                    placeholder="Enter your comment here..."
-                    className="min-h-[100px] resize-none"
-                    {...register("comment", {
-                      validate: (v) =>
-                        !v || v.trim().length >= 5 || "Comment must be at least 5 characters",
-                    })}
-                  />
-                  {errors.comment?.message ? (
-                    <p className="mt-1 text-xs text-red-600 text-left">{errors.comment.message}</p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block text-left">
-                    Change Status (Optional)
-                  </label>
-                  <Controller
-                    control={control}
-                    name="status"
-                    rules={{ required: "Status is required" }}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status to change" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in-progress">In Progress</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.status?.message ? (
-                    <p className="mt-1 text-xs text-red-600 text-left">{errors.status.message}</p>
-                  ) : null}
-                </div>
-
-                <Button
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={addCommentMutation.isPending || isSubmitting}
-                  className="w-full"
-                >
-                  {addCommentMutation.isPending ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Submit Comment
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+            ) : null}
           </CardContent>
         </Card>
       </div>
