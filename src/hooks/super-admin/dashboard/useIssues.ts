@@ -44,19 +44,14 @@ export function useAddAdminComment(): UseMutationResult<
       comment: string;
       change_status?: string;
     }) => {
-      const payload: AddAdminCommentRequest = {
-        comment,
-      };
-
-      if (change_status) {
-        payload.change_status = change_status;
-      }
+      const payload: AddAdminCommentRequest = { comment };
+      if (change_status) payload.change_status = change_status;
 
       return await addAdminComment(issue_id, payload);
     },
-    onSuccess: (variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["issue", variables.data?.comment_id],
+        queryKey: ["issue", variables.issue_id],
       });
 
       queryClient.invalidateQueries({
