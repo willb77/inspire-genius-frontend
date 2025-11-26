@@ -42,12 +42,6 @@ import {
   getPriorityColor,
 } from "@/components/shared/forms/IssueDetailPage.constants";
 
-type IssueComment = {
-  text?: string;
-  comment?: string;
-  created_at?: string;
-};
-
 export default function IssueDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
@@ -264,47 +258,13 @@ export default function IssueDetailPage() {
 
             {(issue.comments && issue.comments.length > 0) || true ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Comments ({issue.comments?.length || 0})
-                  </h3>
-
-                  {issue.comments && issue.comments.length > 0 ? (
-                    <div className="space-y-3">
-                      {issue.comments.map(
-                        (comment: IssueComment, index: number) => (
-                          <div
-                            key={index}
-                            className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                          >
-                            <p className="text-sm text-gray-700 text-left">
-                              {comment.text || comment.comment}
-                            </p>
-                            {comment.created_at && (
-                              <p className="text-xs text-gray-500 mt-2">
-                                {formatDate(comment.created_at)}
-                              </p>
-                            )}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">
-                      No comments yet.
-                    </p>
-                  )}
-                </div>
-
-                <Card className="border-2 border-dashed border-gray-300 bg-gray-50">
+                <Card className="border-2 border-dashed border-gray-300 bg-gray-50 h-[370px] flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <MessageSquare className="h-5 w-5" />
                       Add Admin Comment
                     </CardTitle>
                   </CardHeader>
-
                   <CardContent className="space-y-4">
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-2 block text-left">
@@ -369,6 +329,43 @@ export default function IssueDetailPage() {
                     </Button>
                   </CardContent>
                 </Card>
+
+                <div className="space-y-4 h-[370px] overflow-y-auto pr-2">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Comments ({issue.comments?.length || 0})
+                  </h3>
+
+                  {issue.comments && issue.comments.length > 0 ? (
+                    <div className="space-y-3">
+                      {[...issue.comments]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                        )
+                        .map((comment, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                          >
+                            <p className="text-sm text-gray-700 text-left">
+                              {comment.text || comment.comment}
+                            </p>
+                            {comment.created_at && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                {formatDate(comment.created_at)}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      No comments yet.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : null}
           </CardContent>
