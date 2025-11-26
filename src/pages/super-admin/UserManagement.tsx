@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import {
   DataTable,
@@ -14,7 +13,6 @@ import UserFormModal from "@/components/shared/forms/UserFormModal";
 import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
-import type { UserManagementUser } from "@/services/super-admin/user-management/user-management.service";
 import {
   useUserManagement,
   useInviteUser,
@@ -22,222 +20,252 @@ import {
   useDeleteUser,
   useResendInvitation,
 } from "@/hooks/super-admin/user-management/useUserManagement";
-import {
-  type InviteUserPayload,
-  type UpdateUserPayload,
-} from "@/services/super-admin/user-management/user-management.service";
 import { toast } from "sonner";
+import type { AxiosError } from "axios";
 import type { UserRow } from "@/types/super-admin/user-management";
-import { Skeleton } from "@/components/ui/skeleton";
+import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 
 export default function UserManagement() {
-  const navigate = useNavigate();
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
-  const { data: usersResp, isLoading } = useUserManagement({
+  const { data, isLoading, isRefetching } = useUserManagement({
     page,
     limit: pageSize,
   });
+  const users = useMemo(() => data?.data?.users ?? [], [data]);
+  const pagination = data?.data?.pagination ?? {
+    total: 0,
+    page,
+    limit: pageSize,
+  };
+
+  const rows: UserRow[] = useMemo(() => {
+    return users.map((u) => {
+      let status: "Active" | "Deactivated" | "Awaiting";
+      if (u.user_status?.toLowerCase?.() === "active" || u.is_active) {
+        status = "Active";
+      } else if (u.user_status?.toLowerCase?.() === "awaiting") {
+        status = "Awaiting";
+      } else {
+        status = "Deactivated";
+      }
+
+      return {
+        id: u.user_id,
+        name: u.full_name ?? "",
+        email: u.email,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        status,
+        invitation_id: u.invitation_id,
+        invitation_status:
+        u.invitation_status?.toLowerCase?.() || "not_applicable",
+      };
+    });
+  }, [users]);
+
+  // Action handlers and dialog state
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selected, setSelected] = useState<UserRow | null>(null);
+
   const inviteMutation = useInviteUser();
   const updateMutation = useUpdateUser();
   const deleteMutation = useDeleteUser();
   const resendMutation = useResendInvitation();
 
-const mappedRows = useMemo<UserRow[]>(() => {
-  const users: UserManagementUser[] = usersResp?.data?.users ?? [];
-
-  return users.map((u) => {
-    let status: "Active" | "Deactivated" | "Awaiting";
-
-    if (u.user_status?.toLowerCase?.() === "active" || u.is_active) {
-      status = "Active";
-    } else if (u.user_status?.toLowerCase?.() === "awaiting") {
-      status = "Awaiting";
-    } else {
-      status = "Deactivated";
-    }
-
-    // Normalize invitation status for display
-    const inviteStatus =
-      u.invitation_status?.toLowerCase?.() || "not_applicable";
-
-    return {
-      id: u.user_id,
-      name: u.full_name ?? "",
-      email: u.email,
-      first_name: u.first_name,
-      last_name: u.last_name,
-      status,
-      invitation_id: u.invitation_id,
-      invitation_status: inviteStatus,
-    };
-  });
-}, [usersResp]);
-
-
-  const total = usersResp?.data?.pagination?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  // dialog state
-  const [selected, setSelected] = useState<UserRow | null>(null);
-  const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
-  const [confirmMode, setConfirmMode] = useState<
-    "deactivate" | "delete" | null
-  >(null);
-
-  const openAdd = () => setModalMode("add");
+  const openAdd = () => setAddOpen(true);
   const openEdit = (row: UserRow) => {
     setSelected(row);
-    setModalMode("edit");
+    setEditOpen(true);
   };
-  const openConfirmDeactivate = (row: UserRow) => {
+  const openDeactivate = (row: UserRow) => {
     setSelected(row);
-    setConfirmMode("deactivate");
+    setDeactivateOpen(true);
   };
-  const openConfirmDelete = (row: UserRow) => {
+  const openDelete = (row: UserRow) => {
     setSelected(row);
-    setConfirmMode("delete");
+    setDeleteOpen(true);
   };
 
-  const handleAdd = (values: UserFormValues) => {
-    const payload: InviteUserPayload = {
+  const handleAdd = async (values: UserFormValues) => {
+    const body = {
       first_name: values.first_name,
       last_name: values.last_name,
       email: values.email,
     };
-    inviteMutation.mutate(payload, {
-      onSuccess: () => {
-        setModalMode(null);
-        setSelected(null);
-      },
-    });
+    try {
+      const resp = await inviteMutation.mutateAsync(body);
+      if (resp?.status) toast.success("User invited successfully");
+      else toast.error(resp?.message || "Failed to invite user");
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg =
+        ax?.response?.data?.message ||
+        (e as Error).message ||
+        "Failed to invite user";
+      toast.error(msg);
+      throw e;
+    }
   };
 
-  const handleEdit = (values: UserFormValues) => {
-    if (!selected?.email) return;
-    const payload: UpdateUserPayload = {
+  const handleEdit = async (values: UserFormValues) => {
+    if (!selected) return;
+    const body = {
       first_name: values.first_name,
       last_name: values.last_name,
-      is_active: selected?.status === "Awaiting" ? undefined : values.status === "Active",
+      is_active:
+        selected.status === "Awaiting" ? undefined : values.status === "Active",
     };
-    updateMutation.mutate({ email: selected.email, payload });
-    setModalMode(null);
-    setSelected(null);
+    try {
+      const resp = await updateMutation.mutateAsync({
+        email: selected.email,
+        payload: body,
+      });
+      if (resp?.status) toast.success("User updated successfully");
+      else toast.error(resp?.message || "Failed to update user");
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg =
+        ax?.response?.data?.message ||
+        (e as Error).message ||
+        "Failed to update user";
+      toast.error(msg);
+      throw e;
+    }
   };
 
-  const handleDeactivate = () => {
-    if (!selected?.email) return;
-    updateMutation.mutate(
-      { email: selected.email, payload: { first_name: selected.first_name ?? "", last_name: selected.last_name ?? "", is_active: false } },
-      {
-        onSuccess: () => {
-          setConfirmMode(null);
-          setSelected(null);
-        },
-      }
-    );
+  const handleDeactivate = async () => {
+    if (!selected) return;
+    const body = {
+      first_name: selected.first_name ?? "",
+      last_name: selected.last_name ?? "",
+      is_active: false,
+    };
+    try {
+      const resp = await updateMutation.mutateAsync({
+        email: selected.email,
+        payload: body,
+      });
+      if (resp?.status) toast.success("User deactivated successfully");
+      else toast.error(resp?.message || "Failed to deactivate user");
+      setDeactivateOpen(false);
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg =
+        ax?.response?.data?.message ||
+        (e as Error).message ||
+        "Failed to deactivate user";
+      toast.error(msg);
+    }
   };
 
-  const handleDelete = () => {
-    if (!selected?.email) return;
-    deleteMutation.mutate(selected.email, {
-      onSuccess: () => {
-        setConfirmMode(null);
-        setSelected(null);
-      },
-    });
+  const handleDelete = async () => {
+    if (!selected) return;
+    try {
+      const resp = await deleteMutation.mutateAsync(selected.email);
+      if (resp?.status) toast.success("User deleted successfully");
+      else toast.error(resp?.message || "Failed to delete user");
+      setDeleteOpen(false);
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg =
+        ax?.response?.data?.message ||
+        (e as Error).message ||
+        "Failed to delete user";
+      toast.error(msg);
+    }
   };
 
-  const handleResend = (row: UserRow) => {
-    const invId = row.invitation_id;
-    if (!invId) {
-      toast.error("No invitation found to resend.");
+  const handleResend = async (row: UserRow) => {
+    if (!row.invitation_id) {
+      toast.error("No invitation found to resend");
       return;
     }
-    resendMutation.mutate(invId);
+    try {
+      const resp = await resendMutation.mutateAsync(row.invitation_id);
+      if (resp?.status) toast.success("Invitation resent successfully");
+      else toast.error(resp?.message || "Failed to resend invitation");
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg =
+        ax?.response?.data?.message ||
+        (e as Error).message ||
+        "Failed to resend invitation";
+      toast.error(msg);
+    }
   };
 
   const columns: Column<UserRow>[] = [
-    { key: "name", header: "Name", sortable: true },
-    { key: "email", header: "Email", sortable: true },
+    { key: "name", header: "Name" },
+    { key: "email", header: "Email" },
     {
       key: "status",
       header: "Status",
-      sortable: true,
-      render: (row) => {
-        const statusClass =
-          row.status === "Active"
-            ? "bg-green-100 text-green-700 border-transparent"
-            : "bg-gray-200 text-gray-700 border-transparent";
-
-        return (
-          <Badge variant="secondary" className={statusClass}>
-            {row.status}
-          </Badge>
-        );
-      },
+      render: (row) => (
+        <Badge
+          variant="secondary"
+          className={
+            row.status === "Active"
+              ? "bg-green-100 text-green-700 border-transparent"
+              : "bg-gray-200 text-gray-700 border-transparent"
+          }
+        >
+          {row.status}
+        </Badge>
+      ),
     },
     {
       key: "invitation_status",
       header: "Invitation Status",
-      sortable: true,
       render: (row) => {
-        const inviteStatus = row.invitation_status;
-
-        const badgeClass =
-          inviteStatus === "accepted"
-            ? "bg-green-100 text-green-700 border-transparent"
-            : inviteStatus === "invitation_sent"
-            ? "bg-yellow-100 text-yellow-700 border-transparent"
-            : inviteStatus === "expired"
-            ? "bg-red-100 text-red-700 border-transparent"
-            : "bg-gray-200 text-gray-700 border-transparent";
-
-        const labelMap: Record<string, string> = {
-          accepted: "Accepted",
-          invitation_sent: "Invitation Sent",
-          expired: "Expired",
-          pending: "Pending",
-          not_applicable: "-",
+        const badgeConfig: Record<
+          string,
+          { label: string; className: string }
+        > = {
+          invitation_sent: {
+            label: "Invitation Sent",
+            className: "bg-yellow-100 text-yellow-700 border-transparent",
+          },
+          accepted: {
+            label: "Accepted",
+            className: "bg-green-100 text-green-700 border-transparent",
+          },
+          expired: {
+            label: "Expired",
+            className: "bg-red-100 text-red-700 border-transparent",
+          },
         };
-
+        const badge = badgeConfig[row.invitation_status];
+        if (!badge) return null;
         return (
-          <Badge variant="secondary" className={badgeClass}>
-            {labelMap[inviteStatus] || "-"}
+          <Badge variant="secondary" className={badge.className}>
+            {badge.label}
           </Badge>
         );
       },
     },
-
     {
       key: "actions",
       header: "Action",
-      render: (row) => {
-        const status = row.status?.toLowerCase();
-
-        const showResend = status === "awaiting";
-        const showDelete = status === "awaiting";
-        const showDeactivate = status === "active";
-
-        return (
-          <ActionMenu
-            row={row}
-            align="end"
-            showView={false}
-            showEdit={!updateMutation.isPending}
-            showResend={showResend && !resendMutation.isPending}
-            showDeactivate={showDeactivate && !updateMutation.isPending}
-            showDelete={showDelete && !deleteMutation.isPending}
-            showCoaches={false}
-            onCoaches={() => navigate(`/super-admin/${row.id}/coaches`)}
-            onEdit={() => openEdit(row)}
-            onResend={() => handleResend(row)}
-            onDeactivate={() => openConfirmDeactivate(row)}
-            onDelete={() => openConfirmDelete(row)}
-          />
-        );
-      },
+      render: (row) => (
+        <ActionMenu
+          row={row}
+          align="end"
+          showView={false}
+          showEdit={true}
+          showResend={row.status === "Awaiting"}
+          showDeactivate={row.status === "Active"}
+          showDelete={row.status === "Awaiting"}
+          onEdit={() => openEdit(row)}
+          onResend={() => handleResend(row)}
+          onDeactivate={() => openDeactivate(row)}
+          onDelete={() => openDelete(row)}
+        />
+      ),
     },
   ];
 
@@ -251,92 +279,91 @@ const mappedRows = useMemo<UserRow[]>(() => {
         />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
-          {isLoading ? (
-            <div className="space-y-2 p-4 animate-pulse">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-4 gap-4 items-center border-b border-border py-2"
-                >
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-5 w-20" />
-                  <Skeleton className="h-8 w-16 rounded-md" />
-                </div>
-              ))}
-            </div>
-          ) : mappedRows.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-              No users found.
-            </div>
+          {isLoading || isRefetching ? (
+            <LoadingSkeleton columns={5} rows={pageSize} />
           ) : (
-            <DataTable columns={columns} data={mappedRows} />
+            <DataTable columns={columns} data={rows} />
           )}
         </div>
 
-        {!isLoading && mappedRows.length > 0 && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div>
-              Showing {mappedRows.length} of {total} results
-            </div>
-            <Pagination
-              pageCount={totalPages}
-              page={page}
-              onPageChange={setPage}
-            />
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div>
+            Show{" "}
+            {users.length > 0
+              ? (pagination.page - 1) * pagination.limit + 1
+              : 0}{" "}
+            to {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+            of {pagination.total} results
           </div>
-        )}
+          <Pagination
+            pageCount={Math.max(
+              1,
+              Math.ceil(pagination.total / pagination.limit)
+            )}
+            page={page}
+            onPageChange={setPage}
+          />
+        </div>
       </div>
 
-      {/* Modals */}
+      {/* Add User */}
       <UserFormModal
-        open={!!modalMode}
-        onOpenChange={(open) => {
-          if (!open) {
-            setModalMode(null);
-            setSelected(null);
-          }
-        }}
-        mode={modalMode ?? "add"}
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        mode="add"
+        onSubmit={handleAdd}
+        submitLabel={inviteMutation.isPending ? "Adding User..." : "Add User"}
+        allowStatusEdit={false}
+      />
+
+      {/* Edit User */}
+      <UserFormModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
         defaultValues={
           selected
             ? {
                 first_name: selected.first_name ?? "",
                 last_name: selected.last_name ?? "",
                 email: selected.email,
-                status: selected.status === "Deactivated" ? "Deactivated" : "Active",
+                status:
+                  selected.status === "Deactivated" ? "Deactivated" : "Active",
               }
             : undefined
         }
-        onSubmit={modalMode === "edit" ? handleEdit : handleAdd}
-        title={modalMode === "edit" ? "Edit User" : "Add User"}
+        onSubmit={handleEdit}
+        title="Edit User"
         submitLabel={
-          modalMode === "edit"
-            ? updateMutation.isPending
-              ? "Saving..."
-              : "Save Changes"
-            : inviteMutation.isPending
-            ? "Adding..."
-            : "Add User"
+          updateMutation.isPending ? "Updating User..." : "Save Changes"
         }
         allowStatusEdit={selected?.status !== "Awaiting"}
       />
 
+      {/* Deactivate User */}
       <ConfirmActionModal
-        open={!!confirmMode}
-        onOpenChange={() => setConfirmMode(null)}
-        title={confirmMode === "delete" ? "Delete User" : "Deactivate User?"}
-        description={
-          confirmMode === "delete"
-            ? "Are you sure you want to permanently delete this user? This action cannot be undone."
-            : "Are you sure you want to deactivate this user?"
-        }
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        title="Deactivate User"
+        description="Are you sure you want to deactivate this user?"
         fields={[{ label: "User Name", value: selected?.name ?? "" }]}
-        confirmLabel={confirmMode === "delete" ? "Delete" : "Deactivate"}
+        confirmLabel="Deactivate"
         confirmVariant="destructive"
-        confirmLoading={confirmMode === "delete" ? deleteMutation.isPending : updateMutation.isPending}
-        confirmDisabled={confirmMode === "delete" ? deleteMutation.isPending : updateMutation.isPending}
-        onConfirm={confirmMode === "delete" ? handleDelete : handleDeactivate}
+        onConfirm={handleDeactivate}
+        confirmLoading={updateMutation.isPending}
+      />
+
+      {/* Delete User */}
+      <ConfirmActionModal
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete User"
+        description="Are you sure you want to permanently delete this user? This action cannot be undone."
+        fields={[{ label: "User Name", value: selected?.name ?? "" }]}
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={handleDelete}
+        confirmLoading={deleteMutation.isPending}
       />
     </SuperAdminLayout>
   );
