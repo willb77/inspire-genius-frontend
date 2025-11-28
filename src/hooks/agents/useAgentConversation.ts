@@ -3,7 +3,7 @@ import { getAgentConversation, type AgentConversationParams } from "@/services/a
 
 export function useAgentConversation(agentId?: string, params: AgentConversationParams = { page: 1, limit: 20 }) {
   return useQuery({
-    queryKey: ["agent", "conversation", agentId, params.page, params.limit],
+    queryKey: ["agent", "conversation", agentId, params.page, params.limit, params.search ?? ""],
     queryFn: () => {
       if (!agentId) throw new Error("agentId required");
       return getAgentConversation(agentId, params);

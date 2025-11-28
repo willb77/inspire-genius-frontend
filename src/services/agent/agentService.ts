@@ -4,12 +4,17 @@ import { format } from "date-fns";
 export type AgentConversationParams = {
   page?: number;
   limit?: number;
+  search?: string;
 };
 
 export async function getAgentConversation(agentId: string, params: AgentConversationParams = {}) {
-  const { page = 1, limit = 20 } = params;
+  const { page = 1, limit = 20, search } = params;
+  const query: Record<string, unknown> = { agent_id: agentId, page, limit };
+  if (typeof search === "string" && search.trim().length > 0) {
+    query.search = search.trim();
+  }
   const resp = await api.get(`/v1/chat/conversations`, {
-    params: {agent_id: agentId, page, limit },
+    params: query,
   });
   return resp.data as unknown;
 }

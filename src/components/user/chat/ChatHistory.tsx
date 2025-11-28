@@ -9,10 +9,12 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 export type ChatHistoryWithAudioProps = ChatHistoryProps & {
   isAudioRunning?: boolean;
   audioWarningText?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 };
 
-export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText }: ChatHistoryWithAudioProps) {
-  const [query, setQuery] = useState("");
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange }: ChatHistoryWithAudioProps) {
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const toggleGroup = (label: string) => {
@@ -59,9 +61,12 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
       <div className="mb-3">
         <Input
           placeholder="Search.."
-          value={query}
-          disabled={true}
-          onChange={(e) => setQuery(e.target.value)}
+          value={typeof searchValue === "string" ? searchValue : searchValue}
+          disabled={false}
+          onChange={(e) => {
+            const val = e.target.value;
+            onSearchChange?.(val);
+          }}
           className="pl-3"
         />
       </div>
@@ -94,11 +99,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
         ) : null}
         {groups.map((group) => {
           const isOpen = openGroups[group.label] ?? true;
-          const filtered = group.items.filter(
-            (it) =>
-              it.title.toLowerCase().includes(query.toLowerCase()) ||
-              it.preview.toLowerCase().includes(query.toLowerCase())
-          );
+          const filtered = group?.items;
           return (
             <div key={group.label}>
               <button
