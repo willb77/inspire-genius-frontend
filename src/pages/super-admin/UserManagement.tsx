@@ -258,7 +258,7 @@ export default function UserManagement() {
           showView={false}
           showEdit={true}
           showResend={row.status === "Awaiting"}
-          showDeactivate={row.status === "Active"}
+          showDeactivate={false}
           showDelete={row.status === "Awaiting"}
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
