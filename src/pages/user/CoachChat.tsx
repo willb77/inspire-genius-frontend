@@ -63,6 +63,8 @@ export default function CoachChat() {
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const prevSelectedIdsRef = useRef<string[]>([]);
   const isRefreshed = useRef(false);
   // Documents API & derived state
@@ -240,8 +242,15 @@ export default function CoachChat() {
     updateContinuousMute,
   } = usePrismAgentWebSocket(onResponse, onAudioData);
 
-  // Fetch agent conversation (temporary console.log for now)
-  const { data: conversationData, isLoading: isLoadingConversations } = useAgentConversation(agentId, { page: 1, limit: 20 });
+  // Debounce search to avoid excessive API calls
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+
+  // Fetch agent conversation with optional (debounced) search filter
+  const { data: conversationData, isLoading: isLoadingConversations } = useAgentConversation(agentId, { page: 1, limit: 100, search: debouncedSearch });
+
   const queryClient = useQueryClient();
   const {
     data: messagesPages,
@@ -415,6 +424,7 @@ export default function CoachChat() {
      setIsAudioPaused(true)
     setSelectedId(id);
     setConversationId(id);
+    setSearchQuery("");
     if (isConnected) disconnect();
     setMessages([]);
     secureSetItem("conv", { id });
@@ -496,6 +506,8 @@ export default function CoachChat() {
             hasConversations={hasConversations}
             onCreateNewConversation={handleCreateConversation}
             isLoading={isLoadingConversations || createConvMutation.isPending}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
             isAudioRunning={hasAudio && !isAudioPaused}
             audioWarningText="Switching conversations will reset audio for the new conversation."
           />
