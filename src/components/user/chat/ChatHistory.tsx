@@ -6,13 +6,21 @@ import type { ChatHistoryProps } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading }: ChatHistoryProps) {
-  const [query, setQuery] = useState("");
+export type ChatHistoryWithAudioProps = ChatHistoryProps & {
+  isAudioRunning?: boolean;
+  audioWarningText?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+};
+
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange }: ChatHistoryWithAudioProps) {
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
   };
+
 
   return (
     <div className={cn("bg-white rounded-2xl border shadow-sm p-4 w-full", className)}>
@@ -20,26 +28,29 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
         <h3 className="text-lg font-semibold">History</h3>
         {(() => {
           const hasEmptySelected = Boolean(
-            selectedId && groups.some(g => g.items.some(it => it.id === selectedId && (it.preview ?? "").trim() === "To do"))
+            selectedId && groups.some(g => g.items.some(it => it.id === selectedId && (it.preview ?? "").trim() !== "New Conversation"))
           );
-          const tooltipText = hasEmptySelected ? "You already have a new conversation" : "Start a new conversation";
+          const newChatTooltip = hasEmptySelected ? "You already have a new conversation" : "Start a new conversation";
+          const buttonEl = (
+            <button
+              aria-label="New Conversation"
+              disabled={false}
+              className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
+              onClick={() => {
+                onCreateNewConversation?.();
+              }}
+            >
+              New Chat <SquarePen className="size-4" />
+            </button>
+          );
           return (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    aria-label="New Conversation"
-                    disabled={false}
-                    className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
-                    onClick={() => {
-                      onCreateNewConversation?.();
-                    }}
-                  >
-                    New Chat <SquarePen className="size-4" />
-                  </button>
+                  {buttonEl}
                 </TooltipTrigger>
                 <TooltipContent>
-                  <span className="text-xs">{tooltipText}</span>
+                  <span className="text-xs">{newChatTooltip}</span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -50,9 +61,12 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
       <div className="mb-3">
         <Input
           placeholder="Search.."
-          value={query}
-          disabled={true}
-          onChange={(e) => setQuery(e.target.value)}
+          value={typeof searchValue === "string" ? searchValue : searchValue}
+          disabled={false}
+          onChange={(e) => {
+            const val = e.target.value;
+            onSearchChange?.(val);
+          }}
           className="pl-3"
         />
       </div>
@@ -85,11 +99,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
         ) : null}
         {groups.map((group) => {
           const isOpen = openGroups[group.label] ?? true;
-          const filtered = group.items.filter(
-            (it) =>
-              it.title.toLowerCase().includes(query.toLowerCase()) ||
-              it.preview.toLowerCase().includes(query.toLowerCase())
-          );
+          const filtered = group?.items;
           return (
             <div key={group.label}>
               <button
@@ -103,8 +113,8 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
               </button>
               {isOpen && (
                 <ul className="mt-2 space-y-1">
-                  {filtered.map((it) => (
-                    <li key={it.id}>
+                  {filtered.map((it) => {
+                    const btn = (
                       <button
                         type="button"
                         disabled={false}
@@ -118,13 +128,30 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium truncate">{it.title}</span>
-
                         </div>
-                                                  <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
-                        {/* <div className={cn("text-xs truncate", selectedId === it.id ? "text-white/90" : "text-muted-foreground")}>{it.preview}</div> */}
+                        <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
                       </button>
-                    </li>
-                  ))}
+                    );
+                    if (isAudioRunning) {
+                      return (
+                        <li key={it.id}>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {btn}
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-red-500 text-white border-red-500">
+                                <span className="text-xs">{audioWarningText || "Switching conversations will stop current audio"}</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </li>
+                      );
+                    }
+                    return (
+                      <li key={it.id}>{btn}</li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
