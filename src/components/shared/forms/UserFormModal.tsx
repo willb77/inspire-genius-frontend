@@ -2,9 +2,25 @@
 
 import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { User_FORM_DEFAULTS, User_FORM_RULES, type UserFormValues } from "./userForm.constants";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  User_FORM_DEFAULTS,
+  User_FORM_RULES,
+  type UserFormValues,
+} from "./userForm.constants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type UserFormModalProps = {
   open: boolean;
@@ -27,7 +43,10 @@ export default function UserFormModal({
   submitLabel,
   allowStatusEdit,
 }: UserFormModalProps) {
-  const defaultValuesMerged: UserFormValues = { ...User_FORM_DEFAULTS, ...defaultValues };
+  const defaultValuesMerged: UserFormValues = {
+    ...User_FORM_DEFAULTS,
+    ...defaultValues,
+  };
 
   return (
     <ModalFormFrame<UserFormValues>
@@ -36,7 +55,9 @@ export default function UserFormModal({
       title={title ?? (mode === "add" ? "Add User" : "Edit User")}
       mode={mode}
       defaultValues={defaultValuesMerged}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")}
+      submitLabel={
+        submitLabel ?? (mode === "add" ? "Add User" : "Save Changes")
+      }
       onSubmit={onSubmit}
     >
       {({ control }) => (
@@ -70,24 +91,58 @@ export default function UserFormModal({
               </FormItem>
             )}
           />
+          <>
+            <FormField
+              control={control}
+              name="email"
+              rules={User_FORM_RULES.email}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Email *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter Email"
+                      readOnly={mode === "edit"}
+                      className={
+                        mode === "edit" ? "bg-gray-100 cursor-not-allowed" : ""
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
 
-          {mode === "add" && (
-            <>
-              <FormField
-                control={control}
-                name="email"
-                rules={User_FORM_RULES.email}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-xs">Email *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter Email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
+          {mode === "edit" && allowStatusEdit !== false && (
+            <FormField
+              control={control}
+              name="status"
+              rules={User_FORM_RULES.status}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Status</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={String(field.value || "Active")}
+                      onValueChange={(v) =>
+                        field.onChange(v as UserFormValues["status"])
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Deactivated">Deactivated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
 
           {mode === "edit" && allowStatusEdit !== false && (

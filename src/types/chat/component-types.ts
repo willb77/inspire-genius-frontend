@@ -46,6 +46,8 @@ export interface ChatHistoryProps {
   onCreateNewConversation?: () => void;
   statusText?: string;
   isLoading?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 // DocumentsPanel component props
