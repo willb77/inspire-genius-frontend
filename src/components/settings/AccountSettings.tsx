@@ -126,16 +126,30 @@ export default function AccountSettings({
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">First name</Label>
                     <Input
-                      {...editProfileForm.register("firstName")}
+                      {...editProfileForm.register("firstName", {
+                        required: "First name is required",
+                        maxLength: { value: 50, message: "First name must be at most 50 characters" },
+                        validate: (v) => (v?.trim()?.length ? true : "First name is required"),
+                      })}
                       placeholder="First Name"
                     />
+                    {editProfileForm.formState?.errors?.firstName?.message ? (
+                      <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.firstName.message)}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Last name</Label>
                     <Input
-                      {...editProfileForm.register("lastName")}
+                      {...editProfileForm.register("lastName", {
+                        required: "Last name is required",
+                        maxLength: { value: 50, message: "Last name must be at most 50 characters" },
+                        validate: (v) => (v?.trim()?.length ? true : "Last name is required"),
+                      })}
                       placeholder="Last Name"
                     />
+                    {editProfileForm.formState?.errors?.lastName?.message ? (
+                      <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.lastName.message)}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Email</Label>
@@ -160,9 +174,14 @@ export default function AccountSettings({
                     <Label className="text-sm font-medium">Additional info</Label>
                     <Textarea
                       rows={4}
-                      {...editProfileForm.register("additionalInfo")}
+                      {...editProfileForm.register("additionalInfo", {
+                        maxLength: { value: 500, message: "Additional info must be at most 500 characters" },
+                      })}
                       placeholder="Tell us more about you..."
                     />
+                    {editProfileForm.formState?.errors?.additionalInfo?.message ? (
+                      <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.additionalInfo.message)}</p>
+                    ) : null}
                   </div>
                 </div>
                 <DialogFooter className="w-full flex flex-col sm:flex-row gap-2">
