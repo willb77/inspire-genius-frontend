@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useCoachAudioPreview } from "@/hooks/useCoachAudioPreview";
 import { useQueryClient } from "@tanstack/react-query";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 type FormValues = {
   genderId?: string;
@@ -197,33 +198,60 @@ export default function CoachCard({
 
       {/* Actions */}
       <div className="mt-6 flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-11 w-11 rounded-xl border border-blue-primary"
-          disabled={(phase === 'starting') || (!!activeAgentId && activeAgentId !== agentId && activeAgentPhase !== 'paused')}
-          onClick={() => {
-            const params = {
-              genderId: (isEditing ? g : (selectedGenderId ?? g)) ?? undefined,
-              accentId: (isEditing ? a : (selectedAccentId ?? a)) ?? undefined,
-              toneIds: (isEditing ? t : (selectedToneIds ?? t)) ?? [],
-            };
-            if (phase === 'speaking') { pause(); return; }
-            if (phase === 'paused') { resume(); return; }
-            // Fetch fresh audio every time when idle
-            playFresh(params);
-            if (setActiveAgentId) setActiveAgentId(agentId);
-            if (setActiveAgentPhase) setActiveAgentPhase('starting');
-          }}
-        >
-          {phase === 'starting' ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : phase === 'speaking' ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Volume2 className="h-5 w-5" />
-          )}
-        </Button>
+        {(isEditing || isDirty) ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl border border-blue-primary"
+                    disabled
+                  >
+                    {phase === 'starting' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : phase === 'speaking' ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Volume2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="text-xs">if any changes are made, Save and play</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 rounded-xl border border-blue-primary"
+            disabled={(phase === 'starting') || (!!activeAgentId && activeAgentId !== agentId && activeAgentPhase !== 'paused')}
+            onClick={() => {
+              const params = {
+                genderId: (isEditing ? g : (selectedGenderId ?? g)) ?? undefined,
+                accentId: (isEditing ? a : (selectedAccentId ?? a)) ?? undefined,
+                toneIds: (isEditing ? t : (selectedToneIds ?? t)) ?? [],
+              };
+              if (phase === 'speaking') { pause(); return; }
+              if (phase === 'paused') { resume(); return; }
+              playFresh(params);
+              if (setActiveAgentId) setActiveAgentId(agentId);
+              if (setActiveAgentPhase) setActiveAgentPhase('starting');
+            }}
+          >
+            {phase === 'starting' ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : phase === 'speaking' ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <Volume2 className="h-5 w-5" />
+            )}
+          </Button>
+        )}
         {isEditing ? (
           <form className="flex-1 flex gap-3" onSubmit={handleSubmit(onSubmit)}>
             <Button
