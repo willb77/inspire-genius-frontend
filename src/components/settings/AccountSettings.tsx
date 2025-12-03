@@ -307,7 +307,7 @@ export default function AccountSettings({
               {isProfileLoading ? (
                 <Skeleton className="h-20 w-full" />
               ) : (
-                <Textarea value={profileData.additionalInfo ?? ""} readOnly rows={4} />
+                <Textarea placeholder="Add additional info" value={profileData.additionalInfo ?? ""} readOnly rows={4} />
               )}
             </div>
           </div>
