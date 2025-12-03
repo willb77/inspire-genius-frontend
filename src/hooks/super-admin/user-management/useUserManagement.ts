@@ -1,17 +1,31 @@
 import {
-  useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryOptions,
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  type UseQueryOptions,
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { getUsers, inviteUser, updateUserByEmail, deleteUserByEmail, resendInvitation,
+import {
+  getUsers,
+  inviteUser,
+  updateUserByEmail,
+  deleteUserByEmail,
+  resendInvitation,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
   type UpdateUserPayload,
+  type InviteUserResponse,
+  type UpdateUserResponse,
+  type DeleteUserResponse,
+  type ResendInvitationResponse,
 } from "@/services/super-admin/user-management/user-management.service";
+import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
 
 type SimpleQueryOptions = Omit<
-  UseQueryOptions<GetUsersResponse, AxiosError>,
+  UseQueryOptions<GetUsersResponse, AxiosError<BaseApiResponse<null>>>,
   "queryKey" | "queryFn"
 >;
 
@@ -24,7 +38,7 @@ export function useUserManagement(
   params: GetUsersParams,
   options?: SimpleQueryOptions
 ) {
-  return useQuery<GetUsersResponse, AxiosError>({
+  return useQuery<GetUsersResponse, AxiosError<BaseApiResponse<null>>>({
     queryKey: QK.list(params),
     queryFn: () => getUsers(params),
     staleTime: 5 * 60 * 1000,
@@ -38,8 +52,13 @@ export function useUserManagement(
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: InviteUserPayload) => inviteUser(payload),
+
+  return useMutation<
+    InviteUserResponse,
+    AxiosError<BaseApiResponse<null>>,
+    InviteUserPayload
+  >({
+    mutationFn: (payload) => inviteUser(payload),
     onSuccess: (resp) => {
       toast.success(resp?.message ?? "User invitation sent successfully.");
       queryClient.invalidateQueries({
@@ -47,10 +66,10 @@ export function useInviteUser() {
         exact: false,
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const msg =
-        error?.response?.data?.message ??
-        error?.message ??
+        error.response?.data?.message ??
+        error.message ??
         "Failed to invite user";
       toast.error(msg);
     },
@@ -59,9 +78,13 @@ export function useInviteUser() {
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (vars: { email: string; payload: UpdateUserPayload }) =>
-      updateUserByEmail(vars.email, vars.payload),
+
+  return useMutation<
+    UpdateUserResponse,
+    AxiosError<BaseApiResponse<null>>,
+    { email: string; payload: UpdateUserPayload }
+  >({
+    mutationFn: ({ email, payload }) => updateUserByEmail(email, payload),
     onSuccess: (resp) => {
       toast.success(resp?.message ?? "User updated successfully.");
       queryClient.invalidateQueries({
@@ -69,10 +92,10 @@ export function useUpdateUser() {
         exact: false,
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const msg =
-        error?.response?.data?.message ??
-        error?.message ??
+        error.response?.data?.message ??
+        error.message ??
         "Failed to update user";
       toast.error(msg);
     },
@@ -81,8 +104,13 @@ export function useUpdateUser() {
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (email: string) => deleteUserByEmail(email),
+
+  return useMutation<
+    DeleteUserResponse,
+    AxiosError<BaseApiResponse<null>>,
+    string
+  >({
+    mutationFn: (email) => deleteUserByEmail(email),
     onSuccess: (resp) => {
       toast.success(resp?.message ?? "User deleted successfully.");
       queryClient.invalidateQueries({
@@ -90,10 +118,10 @@ export function useDeleteUser() {
         exact: false,
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const msg =
-        error?.response?.data?.message ??
-        error?.message ??
+        error.response?.data?.message ??
+        error.message ??
         "Failed to delete user";
       toast.error(msg);
     },
@@ -102,8 +130,13 @@ export function useDeleteUser() {
 
 export function useResendInvitation() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (invitation_id: string) => resendInvitation(invitation_id),
+
+  return useMutation<
+    ResendInvitationResponse,
+    AxiosError<BaseApiResponse<null>>,
+    string
+  >({
+    mutationFn: (invitation_id) => resendInvitation(invitation_id),
     onSuccess: (resp) => {
       toast.success(resp?.message ?? "Invitation resent successfully.");
       queryClient.invalidateQueries({
@@ -111,10 +144,10 @@ export function useResendInvitation() {
         exact: false,
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       const msg =
-        error?.response?.data?.message ??
-        error?.message ??
+        error.response?.data?.message ??
+        error.message ??
         "Failed to resend invitation";
       toast.error(msg);
     },
