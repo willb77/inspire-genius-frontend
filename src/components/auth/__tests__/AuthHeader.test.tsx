@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import AuthHeader from "./AuthHeader";
+import AuthHeader from "../AuthHeader";
 
 describe("AuthHeader Component", () => {
   test("renders title correctly", () => {

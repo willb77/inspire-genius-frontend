@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BrowserRouter } from "react-router-dom";
-import ForgotPassword from "./ForgotPassword";
+import ForgotPassword from "../ForgotPassword";
 import { useRequestPasswordReset } from "@/hooks/auth/useRequestPasswordReset";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";

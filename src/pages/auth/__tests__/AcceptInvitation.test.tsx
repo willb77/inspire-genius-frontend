@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BrowserRouter } from "react-router-dom";
-import AcceptInvitation from "./AcceptInvitation";
+import AcceptInvitation from "../AcceptInvitation";
 import { ROUTES } from "@/constants/routes";
 
 import { TextEncoder, TextDecoder } from "util";

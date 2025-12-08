@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import AuthLayout from "./AuthLayout";
+import AuthLayout from "../AuthLayout";
 
 // Mock the Logo component
-jest.mock("../shared/Logo", () => ({
+jest.mock("../../shared/Logo", () => ({
   Logo: () => <div data-testid="mock-logo">Logo</div>,
 }));
 

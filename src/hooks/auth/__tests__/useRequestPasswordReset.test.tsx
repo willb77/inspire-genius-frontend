@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useRequestPasswordReset } from "./useRequestPasswordReset";
+import { useRequestPasswordReset } from "../useRequestPasswordReset";
 import { requestPasswordReset } from "@/services/auth/password.service";
 import { toast } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
