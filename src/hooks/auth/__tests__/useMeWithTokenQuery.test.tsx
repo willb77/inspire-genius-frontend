@@ -4,7 +4,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useMeWithTokenQuery } from "./useMeWithTokenQuery";
+import { useMeWithTokenQuery } from "../useMeWithTokenQuery";
 import { getMeWithToken } from "@/services/auth.service";
 
 jest.mock("@/services/auth.service", () => ({

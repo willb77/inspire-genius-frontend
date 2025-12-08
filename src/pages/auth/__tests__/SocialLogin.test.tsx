@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import SocialLogin from "./SocialLogin";
+import SocialLogin from "../SocialLogin";
 
 const mockUseSocialLogin = jest.fn();
 

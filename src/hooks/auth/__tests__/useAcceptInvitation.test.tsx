@@ -4,7 +4,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAcceptInvitation } from "./useAcceptInvitation";
+import { useAcceptInvitation } from "../useAcceptInvitation";
 import { acceptInvitation } from "@/services/auth/invitation.service";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";

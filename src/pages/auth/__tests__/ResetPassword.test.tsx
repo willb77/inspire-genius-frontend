@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import ResetPassword from "./ResetPassword";
+import ResetPassword from "../ResetPassword";
 import { MemoryRouter } from "react-router-dom";
 
 jest.mock("@/components/auth/AuthLayout", () => ({

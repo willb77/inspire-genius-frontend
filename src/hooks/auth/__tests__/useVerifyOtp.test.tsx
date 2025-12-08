@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { useAuthVerifyOtpMutation } from "./useVerifyOtp";
+import { useAuthVerifyOtpMutation } from "../useVerifyOtp";
 import {
   getEmail,
   getPassword,

@@ -4,7 +4,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAuthSignupMutation } from "./useSignup";
+import { useAuthSignupMutation } from "../useSignup";
 import { signupApi } from "@/services/auth.service";
 import type { ApiEnvelope, LoginDataPayload } from "@/types/auth/api-types";
 import type { AxiosError } from "axios";

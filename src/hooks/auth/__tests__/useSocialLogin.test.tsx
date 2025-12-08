@@ -4,7 +4,7 @@
 
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { useSocialLogin } from "./useSocialLogin";
+import { useSocialLogin } from "../useSocialLogin";
 import { toast } from "sonner";
 import { useAuth } from "@/context/useAuth";
 import { useMeWithTokenQuery } from "@/hooks/auth/useMeWithTokenQuery";

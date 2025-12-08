@@ -7,7 +7,7 @@ import {
   EmailField,
   PasswordField,
   SocialAuthSection,
-} from "./AuthFields";
+} from "../AuthFields";
 
 // ------------ MOCKS ------------
 

@@ -4,7 +4,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useResetPassword } from "./useResetPassword";
+import { useResetPassword } from "../useResetPassword";
 import {
   resetPassword,
   type ResetPasswordPayload,

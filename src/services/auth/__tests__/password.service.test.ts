@@ -8,7 +8,7 @@ import {
   resetPassword,
   type RequestPasswordResetPayload,
   type ResetPasswordPayload,
-} from "./password.service";
+} from "../password.service";
 
 // ---- Mock Axios Instance ----
 jest.mock("@/lib/axios", () => ({

@@ -1,14 +1,7 @@
-/**
- * @jest-environment jsdom
- */
-
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import SignUp from "./SignUp";
+import SignUp from "../SignUp";
 import { MemoryRouter } from "react-router-dom";
 
-// ---------------- MOCK COMPONENTS ----------------
-
-// Mock AuthLayout and AuthHeader to avoid complex UI + effects
 jest.mock("@/components/auth/AuthLayout", () => ({
   __esModule: true,
   default: ({ children }: any) => <div>{children}</div>,
@@ -19,7 +12,6 @@ jest.mock("@/components/auth/AuthHeader", () => ({
   default: ({ title }: any) => <h1>{title}</h1>,
 }));
 
-// Mock EmailField
 jest.mock("@/components/auth/AuthFields", () => ({
   EmailField: ({ value, onChange }: any) => (
     <input
@@ -44,7 +36,6 @@ jest.mock("@/components/auth/AuthFields", () => ({
   ),
 }));
 
-// Mock Checkbox
 jest.mock("@/components/ui/checkbox", () => ({
   Checkbox: ({ checked, onCheckedChange }: any) => (
     <input
@@ -56,7 +47,6 @@ jest.mock("@/components/ui/checkbox", () => ({
   ),
 }));
 
-// Mock button (shadcn)
 jest.mock("@/components/ui/button", () => ({
   Button: ({ children, ...props }: any) => (
     <button {...props}>{children}</button>
@@ -66,8 +56,6 @@ jest.mock("@/components/ui/button", () => ({
 jest.mock("@/components/ui/label", () => ({
   Label: ({ children }: any) => <label>{children}</label>,
 }));
-
-// ---------------- MOCK LOGIC HOOKS ----------------
 
 const mockSignup = jest.fn();
 jest.mock("@/context/useAuth", () => ({
@@ -87,8 +75,6 @@ const mockRedirect = jest.fn();
 jest.mock("@/hooks/useAuthRedirectForAuthPages", () => ({
   useAuthRedirectForAuthPages: () => mockRedirect(),
 }));
-
-// ---------------- TEST SUITE ----------------
 
 describe("SignUp Component", () => {
   beforeEach(() => {

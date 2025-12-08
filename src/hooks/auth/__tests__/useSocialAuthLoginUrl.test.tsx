@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useSocialAuthLoginUrlMutation } from "./useSocialAuthLoginUrl";
+import { useSocialAuthLoginUrlMutation } from "../useSocialAuthLoginUrl";
 
 import { getSocialAuthLoginUrl } from "@/services/auth.service";
 import type { ApiEnvelope } from "@/types/auth/api-types";

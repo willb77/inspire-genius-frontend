@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useResendOtpMutation } from "./useResendOtp";
+import { useResendOtpMutation } from "../useResendOtp";
 
 import { getEmail } from "@/lib/storage";
 import { resendVerificationApi } from "@/services/auth.service";

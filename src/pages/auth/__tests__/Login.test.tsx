@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import Login from "./Login";
+import Login from "../Login";
 
 const mockNavigate = jest.fn();
 const mockLogin = jest.fn();

@@ -4,7 +4,7 @@
 
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import OTP from "./OTP";
+import OTP from "../OTP";
 
 jest.mock('@/components/auth/AuthLayout', () => ({
   __esModule: true,

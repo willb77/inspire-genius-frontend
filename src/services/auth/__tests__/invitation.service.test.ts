@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios";
-import { acceptInvitation, type AcceptInvitationPayload } from "./invitation.service";
+import { acceptInvitation, type AcceptInvitationPayload } from "../invitation.service";
 
 // Mock the axios instance
 jest.mock("@/lib/axios", () => ({
