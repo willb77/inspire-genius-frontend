@@ -59,17 +59,19 @@ export function useInviteUser() {
     InviteUserPayload
   >({
     mutationFn: (payload) => inviteUser(payload),
+
     onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User invitation sent successfully.");
+      toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
     },
+
     onError: (error) => {
       const msg =
-        error.response?.data?.message ??
-        error.message ??
+        error.response?.data?.message ||
+        error.message ||
         "Failed to invite user";
       toast.error(msg);
     },
@@ -85,17 +87,19 @@ export function useUpdateUser() {
     { email: string; payload: UpdateUserPayload }
   >({
     mutationFn: ({ email, payload }) => updateUserByEmail(email, payload),
+
     onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User updated successfully.");
+      toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
     },
+
     onError: (error) => {
       const msg =
-        error.response?.data?.message ??
-        error.message ??
+        error.response?.data?.message ||
+        error.message ||
         "Failed to update user";
       toast.error(msg);
     },
@@ -111,17 +115,19 @@ export function useDeleteUser() {
     string
   >({
     mutationFn: (email) => deleteUserByEmail(email),
+
     onSuccess: (resp) => {
-      toast.success(resp?.message ?? "User deleted successfully.");
+      toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
     },
+
     onError: (error) => {
       const msg =
-        error.response?.data?.message ??
-        error.message ??
+        error.response?.data?.message ||
+        error.message ||
         "Failed to delete user";
       toast.error(msg);
     },
@@ -137,17 +143,19 @@ export function useResendInvitation() {
     string
   >({
     mutationFn: (invitation_id) => resendInvitation(invitation_id),
+
     onSuccess: (resp) => {
-      toast.success(resp?.message ?? "Invitation resent successfully.");
+      toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
     },
+
     onError: (error) => {
       const msg =
-        error.response?.data?.message ??
-        error.message ??
+        error.response?.data?.message ||
+        error.message ||
         "Failed to resend invitation";
       toast.error(msg);
     },
