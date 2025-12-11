@@ -15,6 +15,7 @@ import type {
 import { useUpdateProfile } from "@/hooks/onboarding/useUpdateProfile";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
+import { Link } from "react-router-dom";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -220,19 +221,13 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="text-left">
               <div>
-                <a
-                  href="#"
-                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
-                >
-                  Terms of service
-                </a>
+                <Link to="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                  Terms of Use
+                </Link>
                 <br />
-                <a
-                  href="#"
-                  className="text-blue-600 cursor-not-allowed hover:text-blue-800 text-sm underline"
-                >
-                  Privacy policy
-                </a>
+                <Link to="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                  Privacy Policy
+                </Link>
               </div>
             </CardContent>
           </Card>

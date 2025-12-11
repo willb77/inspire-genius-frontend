@@ -97,7 +97,7 @@ export default function SignUp() {
         <div className="mt-8 flex items-start gap-2">
           <Checkbox id="terms" checked={!!terms} onCheckedChange={(v) => setValue("terms", Boolean(v), { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
           <Label htmlFor="terms" className="text-muted-foreground text-xs">
-            By signing up, I agree with the <a className="underline text-blue-primary" href="#">Terms of Use</a> & <a className="underline text-blue-primary" href="#">Privacy Policy</a>
+            By signing up, I agree with the <Link className="underline text-blue-primary" to="#">Terms of Use</Link> & <Link className="underline text-blue-primary" to="#">Privacy Policy</Link>
           </Label>
         </div>
 
