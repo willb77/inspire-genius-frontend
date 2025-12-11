@@ -65,6 +65,9 @@ export default function CoachChat() {
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  // Completed assistant audio buffer for floating player
+  const [audioPlayerBuffer, setAudioPlayerBuffer] = useState<AudioBuffer | null>(null);
+  const [showAudioPlayer, setShowAudioPlayer] = useState(true);
   const prevSelectedIdsRef = useRef<string[]>([]);
   const isRefreshed = useRef(false);
   // Documents API & derived state
@@ -180,6 +183,32 @@ export default function CoachChat() {
       demoAudioServiceRef.current?.resetAudioState();
       setHasAudio(true);
       setIsAudioPaused(false);
+      setAudioPlayerBuffer(null);
+      setShowAudioPlayer(true)
+
+      return;
+    }
+
+    if (resp.type === "audio_complete") {
+      const svc = demoAudioServiceRef.current;
+      if (svc) {
+        (async () => {
+          // Wait until the service finishes decoding/playing queued chunks
+          await new Promise<void>((resolve) => {
+            const check = () => {
+              if (!svc.speaking) resolve();
+              else setTimeout(check, 60);
+            };
+            check();
+          });
+          if (svc.getCombinedAudioBuffer) {
+            try {
+              const buf = await svc.getCombinedAudioBuffer();
+              if (buf) setAudioPlayerBuffer(buf);
+            } catch { /* ignore */ }
+          }
+        })();
+      }
       return;
     }
     if (resp.type === "transcript") {
@@ -304,6 +333,7 @@ export default function CoachChat() {
             setSelectedId(id);
             setConversationId(id);
             secureSetItem("conv", { id });
+            setAudioPlayerBuffer(null);
             connect(agentId, accessToken, selectedFileIds, id);
           }
         },
@@ -419,6 +449,7 @@ export default function CoachChat() {
   }, [messagesPages]);
 
   const handleSelectConversation = useCallback(async (id: string) => {
+    if (selectedId !== id){
     await disconnect();
     //Clear audio state
      demoAudioServiceRef.current?.resetAudioState();
@@ -428,7 +459,8 @@ export default function CoachChat() {
     setSearchQuery("");
     if (isConnected) disconnect();
     setMessages([]);
-    secureSetItem("conv", { id });
+    setAudioPlayerBuffer(null);
+    secureSetItem("conv", { id });}
   }, [disconnect, isConnected]);
 
   // On mount or agent change, read persisted conversation id
@@ -554,6 +586,10 @@ export default function CoachChat() {
               }
             }}
             messages={messages}
+            audioPlayerBuffer={audioPlayerBuffer}
+            onCloseAudioPlayer={() => setShowAudioPlayer(false)}
+            setShowAudioPlayer={setShowAudioPlayer}
+            showAudioPlayer={showAudioPlayer}
             isConnecting={isConnecting}
             statusBanner={statusBanner}
             convIsLoading={isLoadingConversation}

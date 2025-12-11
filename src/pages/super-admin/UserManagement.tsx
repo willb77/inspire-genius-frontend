@@ -21,7 +21,6 @@ import {
   useResendInvitation,
 } from "@/hooks/super-admin/user-management/useUserManagement";
 import { toast } from "sonner";
-import type { AxiosError } from "axios";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 
@@ -60,12 +59,11 @@ export default function UserManagement() {
         status,
         invitation_id: u.invitation_id,
         invitation_status:
-        u.invitation_status?.toLowerCase?.() || "not_applicable",
+          u.invitation_status?.toLowerCase?.() || "not_applicable",
       };
     });
   }, [users]);
 
-  // Action handlers and dialog state
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
@@ -97,87 +95,60 @@ export default function UserManagement() {
       last_name: values.last_name,
       email: values.email,
     };
+
     try {
-      const resp = await inviteMutation.mutateAsync(body);
-      if (resp?.status) toast.success("User invited successfully");
-      else toast.error(resp?.message || "Failed to invite user");
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      const msg =
-        ax?.response?.data?.message ||
-        (e as Error).message ||
-        "Failed to invite user";
-      toast.error(msg);
+      await inviteMutation.mutateAsync(body);
+    } catch (e) {
       throw e;
     }
   };
 
   const handleEdit = async (values: UserFormValues) => {
     if (!selected) return;
+
     const body = {
       first_name: values.first_name,
       last_name: values.last_name,
       is_active:
         selected.status === "Awaiting" ? undefined : values.status === "Active",
     };
+
     try {
-      const resp = await updateMutation.mutateAsync({
+      await updateMutation.mutateAsync({
         email: selected.email,
         payload: body,
       });
-      if (resp?.status) toast.success("User updated successfully");
-      else toast.error(resp?.message || "Failed to update user");
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      const msg =
-        ax?.response?.data?.message ||
-        (e as Error).message ||
-        "Failed to update user";
-      toast.error(msg);
+    } catch (e) {
       throw e;
     }
   };
 
   const handleDeactivate = async () => {
     if (!selected) return;
+
     const body = {
       first_name: selected.first_name ?? "",
       last_name: selected.last_name ?? "",
       is_active: false,
     };
+
     try {
-      const resp = await updateMutation.mutateAsync({
+      await updateMutation.mutateAsync({
         email: selected.email,
         payload: body,
       });
-      if (resp?.status) toast.success("User deactivated successfully");
-      else toast.error(resp?.message || "Failed to deactivate user");
+
       setDeactivateOpen(false);
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      const msg =
-        ax?.response?.data?.message ||
-        (e as Error).message ||
-        "Failed to deactivate user";
-      toast.error(msg);
-    }
+    } catch (e) {}
   };
 
   const handleDelete = async () => {
     if (!selected) return;
+
     try {
-      const resp = await deleteMutation.mutateAsync(selected.email);
-      if (resp?.status) toast.success("User deleted successfully");
-      else toast.error(resp?.message || "Failed to delete user");
+      await deleteMutation.mutateAsync(selected.email);
       setDeleteOpen(false);
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      const msg =
-        ax?.response?.data?.message ||
-        (e as Error).message ||
-        "Failed to delete user";
-      toast.error(msg);
-    }
+    } catch (e) {}
   };
 
   const handleResend = async (row: UserRow) => {
@@ -185,18 +156,10 @@ export default function UserManagement() {
       toast.error("No invitation found to resend");
       return;
     }
+
     try {
-      const resp = await resendMutation.mutateAsync(row.invitation_id);
-      if (resp?.status) toast.success("Invitation resent successfully");
-      else toast.error(resp?.message || "Failed to resend invitation");
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      const msg =
-        ax?.response?.data?.message ||
-        (e as Error).message ||
-        "Failed to resend invitation";
-      toast.error(msg);
-    }
+      await resendMutation.mutateAsync(row.invitation_id);
+    } catch (e) {}
   };
 
   const columns: Column<UserRow>[] = [
@@ -258,7 +221,7 @@ export default function UserManagement() {
           showView={false}
           showEdit={true}
           showResend={row.status === "Awaiting"}
-          showDeactivate={row.status === "Active"}
+          showDeactivate={false}
           showDelete={row.status === "Awaiting"}
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
@@ -272,12 +235,8 @@ export default function UserManagement() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <ManagementHeader
-          title="User Management"
-          addLabel="Add User"
-          onAdd={openAdd}
+        <ManagementHeader title="User Management" addLabel="Add User" onAdd={openAdd}
         />
-
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
           {isLoading || isRefetching ? (
             <LoadingSkeleton columns={5} rows={pageSize} />
@@ -296,17 +255,13 @@ export default function UserManagement() {
             of {pagination.total} results
           </div>
           <Pagination
-            pageCount={Math.max(
-              1,
-              Math.ceil(pagination.total / pagination.limit)
-            )}
+            pageCount={Math.max(1, Math.ceil(pagination.total / pagination.limit) )}
             page={page}
             onPageChange={setPage}
           />
         </div>
       </div>
 
-      {/* Add User */}
       <UserFormModal
         open={addOpen}
         onOpenChange={setAddOpen}
@@ -316,7 +271,6 @@ export default function UserManagement() {
         allowStatusEdit={false}
       />
 
-      {/* Edit User */}
       <UserFormModal
         open={editOpen}
         onOpenChange={setEditOpen}
@@ -340,7 +294,6 @@ export default function UserManagement() {
         allowStatusEdit={selected?.status !== "Awaiting"}
       />
 
-      {/* Deactivate User */}
       <ConfirmActionModal
         open={deactivateOpen}
         onOpenChange={setDeactivateOpen}
@@ -353,7 +306,6 @@ export default function UserManagement() {
         confirmLoading={updateMutation.isPending}
       />
 
-      {/* Delete User */}
       <ConfirmActionModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
