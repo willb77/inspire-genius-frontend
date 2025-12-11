@@ -34,6 +34,11 @@ export interface ChatWindowProps {
   onToggleDocSelect?: (id: string) => void;
   docOnDelete?: (id: string) => void;
   docOnDownload?: (id: string) => void;
+  // Completed assistant audio playback
+  audioPlayerBuffer?: AudioBuffer | null;
+  onCloseAudioPlayer?: () => void;
+  setShowAudioPlayer?: (open: boolean) => void;
+  showAudioPlayer?: boolean;
 }
 
 // ChatHistory component props

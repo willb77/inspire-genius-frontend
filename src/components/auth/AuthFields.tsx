@@ -129,8 +129,20 @@ export function SocialAuthSection({ onProviderStart, onProviderEnd }: SocialAuth
       { provider },
       {
         onSuccess: (res) => {
-          const url = res?.data?.login_url;
+          let url = res?.data?.login_url;
           if (url) {
+            try {
+              const u = new URL(url);
+              // If Google login, ensure account chooser shows up
+              if (/google\.com$/i.test(u.hostname) || u.hostname.includes("accounts.google.")) {
+                if (!u.searchParams.has("prompt")) {
+                  u.searchParams.set("prompt", "select_account");
+                }
+                url = u.toString();
+              }
+            } catch {
+              // if URL parsing fails, fall back to original url
+            }
             window.location.href = url;
           } else {
             toast.error("Login URL not received");

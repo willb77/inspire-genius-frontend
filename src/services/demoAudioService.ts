@@ -6,6 +6,8 @@ class DemoAudioService {
   private initialDelayApplied = false;
   private minBufferSize = 3;
   private activeSources: AudioBufferSourceNode[] = [];
+  // Maintain decoded chunks to build a single AudioBuffer for UI playback
+  private combinedBuffers: AudioBuffer[] = [];
 
   private safeStopDisconnect(src: AudioBufferSourceNode): void {
     try { src.stop(); } catch { void 0 }
@@ -28,6 +30,30 @@ class DemoAudioService {
     }
   }
 
+  async getCombinedAudioBuffer(): Promise<AudioBuffer | null> {
+    try {
+      if (!this.audioContext) return null;
+      if (!this.combinedBuffers.length) return null;
+      const first = this.combinedBuffers[0];
+      const channels = first.numberOfChannels;
+      const sampleRate = first.sampleRate;
+      const totalLength = this.combinedBuffers.reduce((sum, b) => sum + b.length, 0);
+      const combined = this.audioContext.createBuffer(channels, totalLength, sampleRate);
+      for (let ch = 0; ch < channels; ch++) {
+        const dest = combined.getChannelData(ch);
+        let offset = 0;
+        for (const buf of this.combinedBuffers) {
+          const src = buf.getChannelData(Math.min(ch, buf.numberOfChannels - 1));
+          dest.set(src, offset);
+          offset += src.length;
+        }
+      }
+      return combined;
+    } catch {
+      return null;
+    }
+  }
+
   resetAudioState(): void {
     // stop any in-flight or scheduled sources
     for (const src of this.activeSources) this.safeStopDisconnect(src);
@@ -35,6 +61,7 @@ class DemoAudioService {
     this.audioQueue = [];
     this.isPlaying = false;
     this.initialDelayApplied = false;
+    this.combinedBuffers = [];
     if (this.audioContext) {
       this.scheduledTime = this.audioContext.currentTime;
     } else {
@@ -91,6 +118,8 @@ class DemoAudioService {
       const wavBuffer = this.createWavFile(pcmData, 1, 24000, 2);
       try {
         const audioBuffer = await this.audioContext!.decodeAudioData(wavBuffer);
+        // Store buffer for later UI playback
+        this.combinedBuffers.push(audioBuffer);
         const now = this.audioContext!.currentTime;
         if (this.scheduledTime < now) this.scheduledTime = now + 0.01;
         const source = this.audioContext!.createBufferSource();
