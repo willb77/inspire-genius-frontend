@@ -14,6 +14,8 @@ import {
   VolumeX,
   SquarePause,
   FileText,
+  X,
+  CirclePlay,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/tooltip";
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
 import { useQueryClient } from "@tanstack/react-query";
+import { AudioPlayer } from "@/components/shared/audio-player/audio-player";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -65,6 +68,10 @@ export default function ChatWindow({
   onToggleDocSelect,
   docOnDelete,
   docOnDownload,
+  audioPlayerBuffer,
+  onCloseAudioPlayer,
+  setShowAudioPlayer,
+  showAudioPlayer
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -127,6 +134,9 @@ export default function ChatWindow({
 
   // Messages come from parent
   const renderMessages: ChatMessage[] = [...(externalMessages ?? [])];
+  const lastMessageId = renderMessages?.length
+    ? renderMessages[renderMessages?.length - 1]?.id
+    : undefined;
 
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -180,6 +190,9 @@ export default function ChatWindow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalMessages?.length, activeTab]);
 
+  const handleShowAudioPlayer = (open?: boolean) => {
+    setShowAudioPlayer?.(open ?? false);
+  };
   return (
     <div
       className={cn(
@@ -344,6 +357,7 @@ export default function ChatWindow({
                             right ? "ml-auto" : undefined
                           )}
                         >
+                          <div className="flex items-center gap-4">
                           <button
                             aria-label="Copy message"
                             type="button"
@@ -352,6 +366,13 @@ export default function ChatWindow({
                           >
                             <Copy className="size-4 text-black" />
                           </button>
+                           {audioPlayerBuffer && m.sender === "assistant" && m.id === lastMessageId && (
+                             <CirclePlay
+                               className="size-4.5 text-blue-800 cursor-pointer"
+                               onClick={() => handleShowAudioPlayer(true)}
+                             />
+                           )}
+                          </div>
                           <div className="text-[11px] text-muted-foreground">
                             {m.time}
                           </div>
@@ -521,6 +542,23 @@ export default function ChatWindow({
       >
         <Sparkles className="size-5" />
       </button> */}
+
+      {/* Floating audio player (appears above the input when assistant audio completes) */}
+      {audioPlayerBuffer && showAudioPlayer ? (
+        <div className="px-3">
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Close audio player"
+              className="cursor-pointer p-0.5 absolute -right-1 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => onCloseAudioPlayer?.()}
+            >
+              <X className="h-4 w-4 text-white" />
+            </button>
+            <AudioPlayer audioBuffer={audioPlayerBuffer} />
+          </div>
+        </div>
+      ) : null}
 
       {/* Input */}
       <div className="border-t p-3">

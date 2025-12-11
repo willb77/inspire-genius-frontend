@@ -34,6 +34,8 @@ import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 import OrganizationView from "@/pages/super-admin/OrganizationView";
 import UserCoaches from "@/pages/super-admin/UserCoaches";
+import Terms from "@/pages/legal/Terms";
+import Privacy from "@/pages/legal/Privacy";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -47,6 +49,8 @@ export const routes: RouteObject[] = [
       { path: "/reset-password", element: <ResetPassword /> },
       { path: "/accept-invitation", element: <AcceptInvitation /> },
       { path: "/social-login", element: <SocialLogin /> },
+      { path: "/terms", element: <Terms /> },
+      { path: "/privacy", element: <Privacy /> },
     ],
   },
 
