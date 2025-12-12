@@ -1,3 +1,18 @@
+/**
+ * @jest-environment jsdom
+ *
+ * Test Suite: Login Page
+ *
+ * Covers:
+ *  • Form submission + login() invocation
+ *  • SessionStorage provider flow logic
+ *  • Redirect behavior using useAuthRedirectForAuthPages
+ *  • Social login start/end flow
+ *  • Navigation links (Sign Up, Forgot Password)
+ *  • Error handling when sessionStorage throws
+ *  • Ensures full line coverage of Login.tsx
+ */
+
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "../Login";
@@ -5,6 +20,11 @@ import Login from "../Login";
 const mockNavigate = jest.fn();
 const mockLogin = jest.fn();
 
+/* -------------------------------------------------------------
+   MOCK react-router-dom
+   - Overrides Link to allow intercepting navigation
+   - Overrides useNavigate to our mock function
+--------------------------------------------------------------*/
 jest.mock("react-router-dom", () => {
   const actual = jest.requireActual("react-router-dom");
   return {
@@ -24,6 +44,10 @@ jest.mock("react-router-dom", () => {
   };
 });
 
+/* -------------------------------------------------------------
+   MOCK Auth Context
+   - Provides login() and isLoading flag
+--------------------------------------------------------------*/
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({
     login: mockLogin,
@@ -31,17 +55,21 @@ jest.mock("@/context/useAuth", () => ({
   }),
 }));
 
+/* -------------------------------------------------------------
+   MOCK redirect hook used for auto-navigation on auth pages
+--------------------------------------------------------------*/
 jest.mock("@/hooks/useAuthRedirectForAuthPages", () => ({
   useAuthRedirectForAuthPages: jest.fn(),
 }));
 
+/* -------------------------------------------------------------
+   MOCK Auth field components
+   - Replace EmailField, PasswordField, SocialAuthSection
+   - Simple inputs/buttons to simulate behavior
+--------------------------------------------------------------*/
 jest.mock("@/components/auth/AuthFields", () => ({
   EmailField: ({ value, onChange }: any) => (
-    <input
-      aria-label="email"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <input aria-label="email" value={value} onChange={(e) => onChange(e.target.value)} />
   ),
   PasswordField: ({ value, onChange }: any) => (
     <input
@@ -62,6 +90,7 @@ jest.mock("@/components/auth/AuthFields", () => ({
       >
         Google Login
       </button>
+
       <button
         aria-label="Provider End"
         onClick={() => {
@@ -75,14 +104,15 @@ jest.mock("@/components/auth/AuthFields", () => ({
   ),
 }));
 
-jest.mock("@/components/auth/AuthLayout", () => (props: any) => (
-  <div>{props.children}</div>
-));
+/* -------------------------------------------------------------
+   MOCK layout components
+--------------------------------------------------------------*/
+jest.mock("@/components/auth/AuthLayout", () => (props: any) => <div>{props.children}</div>);
+jest.mock("@/components/auth/AuthHeader", () => (props: any) => <h1>{props.title}</h1>);
 
-jest.mock("@/components/auth/AuthHeader", () => (props: any) => (
-  <h1>{props.title}</h1>
-));
-
+/* -------------------------------------------------------------
+   Extract the mock reference so we can override return values
+--------------------------------------------------------------*/
 const mockRedirectHook =
   require("@/hooks/useAuthRedirectForAuthPages").useAuthRedirectForAuthPages;
 
@@ -93,6 +123,7 @@ describe("Login Page - Full Coverage", () => {
     mockLogin.mockClear();
   });
 
+  /** Helper function to render the Login page with routes */
   function renderPage() {
     return render(
       <MemoryRouter initialEntries={["/login"]}>
@@ -106,137 +137,139 @@ describe("Login Page - Full Coverage", () => {
     );
   }
 
-  // Test: handleSubmit function (lines 71-72)
-  test("calls login with email and password on form submit", async () => {
-    mockRedirectHook.mockReturnValue(null);
+  /* -------------------------------------------------------------
+     Form Submission — handleSubmit()
+--------------------------------------------------------------*/
+  test("calls login() with email and password on form submit", async () => {
+    mockRedirectHook.mockReturnValue(null); // no redirect
     renderPage();
 
-    const emailInput = screen.getByLabelText("email");
-    const passwordInput = screen.getByLabelText("password");
-    
-    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    fireEvent.change(screen.getByLabelText("email"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("password"), {
+      target: { value: "password123" },
+    });
 
-    const form = emailInput.closest("form")!;
+    // Submit form
+    const form = screen.getByLabelText("email").closest("form")!;
     fireEvent.submit(form);
 
-    await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123");
-    });
+    // Assert login() called with correct args
+    await waitFor(() =>
+      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123")
+    );
   });
 
-  // Test: handleSubmit removes provider from sessionStorage (line 71)
-  test("removes auth provider from sessionStorage on form submit", async () => {
+  /* -------------------------------------------------------------
+     Form submission clears provider from sessionStorage
+--------------------------------------------------------------*/
+  test("removes auth provider from sessionStorage on submit", async () => {
     mockRedirectHook.mockReturnValue(null);
     sessionStorage.setItem("auth:provider", "Google");
-    
+
     renderPage();
 
-    const emailInput = screen.getByLabelText("email");
-    const form = emailInput.closest("form")!;
-    
+    const form = screen.getByLabelText("email").closest("form")!;
     fireEvent.submit(form);
 
     expect(sessionStorage.getItem("auth:provider")).toBeNull();
   });
 
-  // Test: useEffect redirect when redirectTo exists and no provider active (lines 40-43)
-  test("redirects when redirectTo is provided and no provider is active", () => {
+  /* -------------------------------------------------------------
+     Redirect Handling via useEffect + redirect hook
+--------------------------------------------------------------*/
+  test("redirects when redirectTo exists and provider is NOT active", () => {
     mockRedirectHook.mockReturnValue("/dashboard");
-    
+
     renderPage();
 
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 
-  // Test: useEffect does NOT redirect when provider is active (lines 40-43)
-  test("does not redirect when provider flow is in progress", () => {
+  test("does NOT redirect when provider flow is active", () => {
     mockRedirectHook.mockReturnValue("/dashboard");
     sessionStorage.setItem("auth:provider", "Google");
-    
+
     renderPage();
 
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  // Test: useEffect does NOT redirect when redirectTo is null
-  test("does not redirect when redirectTo is null", () => {
+  test("does NOT redirect when redirectTo is null", () => {
     mockRedirectHook.mockReturnValue(null);
-    
+
     renderPage();
 
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  // Test: sessionStorage error handling in useState (line 22)
-  test("handles sessionStorage error gracefully on initial load", () => {
+  /* -------------------------------------------------------------
+     sessionStorage error handling
+--------------------------------------------------------------*/
+  test("handles sessionStorage error gracefully on page load", () => {
     mockRedirectHook.mockReturnValue(null);
-    
-    // Mock sessionStorage.getItem to throw an error
-    const originalGetItem = Storage.prototype.getItem;
+
+    // Override getItem to throw
+    const original = Storage.prototype.getItem;
     Storage.prototype.getItem = jest.fn(() => {
-      throw new Error("SessionStorage access denied");
+      throw new Error("SessionStorage error");
     });
 
-    // Should not throw error
+    // Should not crash the component
     expect(() => renderPage()).not.toThrow();
 
     // Restore original
-    Storage.prototype.getItem = originalGetItem;
+    Storage.prototype.getItem = original;
   });
 
-  // Test: sessionStorage error handling in useEffect (lines 29-35)
-  test("handles sessionStorage error in useEffect", () => {
+  test("handles sessionStorage error inside useEffect redirect logic", () => {
     mockRedirectHook.mockReturnValue("/dashboard");
-    
-    // Mock sessionStorage.getItem to throw an error
-    const originalGetItem = Storage.prototype.getItem;
-    let callCount = 0;
+
+    const original = Storage.prototype.getItem;
+    let count = 0;
+
+    // Throw error only on the second call
     Storage.prototype.getItem = jest.fn(() => {
-      callCount++;
-      // Throw error on second call (inside useEffect)
-      if (callCount > 1) {
-        throw new Error("SessionStorage access denied");
-      }
+      count++;
+      if (count > 1) throw new Error("SessionStorage error");
       return null;
     });
 
     renderPage();
 
-    // Should still attempt redirect despite sessionStorage error
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
 
-    // Restore original
-    Storage.prototype.getItem = originalGetItem;
+    Storage.prototype.getItem = original;
   });
 
-  // Test: Social auth provider start/end callbacks
-  test("sets provider active state when social auth starts", () => {
+  /* -------------------------------------------------------------
+     Social Auth Section Behavior
+--------------------------------------------------------------*/
+  test("sets provider when social login begins", () => {
     mockRedirectHook.mockReturnValue(null);
     renderPage();
 
-    const googleButton = screen.getByLabelText("Google Login");
-    fireEvent.click(googleButton);
+    fireEvent.click(screen.getByLabelText("Google Login"));
 
-    // Verify sessionStorage was set
     expect(sessionStorage.getItem("auth:provider")).toBe("Google");
   });
 
-  test("sets provider inactive state when social auth ends", () => {
+  test("clears provider when social login ends", () => {
     mockRedirectHook.mockReturnValue(null);
     sessionStorage.setItem("auth:provider", "Google");
-    
+
     renderPage();
 
-    const endButton = screen.getByLabelText("Provider End");
-    fireEvent.click(endButton);
+    fireEvent.click(screen.getByLabelText("Provider End"));
 
-    // Verify sessionStorage was cleared
     expect(sessionStorage.getItem("auth:provider")).toBeNull();
   });
 
-  // Test: Navigation links
-  test("navigates to signup", () => {
+  /* -------------------------------------------------------------
+     Navigation Link Behavior
+--------------------------------------------------------------*/
+  test("navigates to Sign Up page", () => {
     mockRedirectHook.mockReturnValue(null);
     renderPage();
 
@@ -245,7 +278,7 @@ describe("Login Page - Full Coverage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/signup", { replace: false });
   });
 
-  test("navigates to forgot password", () => {
+  test("navigates to Forgot Password page", () => {
     mockRedirectHook.mockReturnValue(null);
     renderPage();
 

@@ -1,21 +1,43 @@
 /**
  * @jest-environment jsdom
+ *
+ * Test Suite: OTP Component
+ *
+ * Covers:
+ *  • OTP input auto-fill logic
+ *  • Auto-verification when all 6 digits are entered
+ *  • Manual verification button behavior
+ *  • Timer countdown + resend functionality
+ *  • Conditional rendering (login link, step logic)
+ *  • Redirect logic via redirect hook
+ *  • Loading states
  */
 
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import OTP from "../OTP";
 
+/* -------------------------------------------------------------------
+   MOCK: AuthLayout (simple wrapper)
+------------------------------------------------------------------- */
 jest.mock('@/components/auth/AuthLayout', () => ({
   __esModule: true,
   default: ({ children }: any) => <div>{children}</div>,
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: AuthHeader component
+------------------------------------------------------------------- */
 jest.mock('@/components/auth/AuthHeader', () => ({
   __esModule: true,
   default: ({ title }: any) => <h1>{title}</h1>,
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: OtpInputField
+   - Creates 6 input fields
+   - Simulates user typing by modifying a string-based OTP value
+------------------------------------------------------------------- */
 jest.mock('@/components/shared/OtpInputField', () => ({
   __esModule: true,
   OtpInputField: ({ value, onChange }: any) => (
@@ -36,44 +58,53 @@ jest.mock('@/components/shared/OtpInputField', () => ({
   ),
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: useAuth context
+------------------------------------------------------------------- */
 const mockUseAuth = jest.fn();
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: redirect hook
+------------------------------------------------------------------- */
 const mockRedirectHook = jest.fn();
 jest.mock("@/hooks/useAuthRedirectForAuthPages", () => ({
   useAuthRedirectForAuthPages: () => mockRedirectHook(),
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: getNextStep (controls step-based UI)
+------------------------------------------------------------------- */
 const mockGetNextStep = jest.fn();
 jest.mock("@/lib/storage", () => ({
   getNextStep: () => mockGetNextStep(),
 }));
 
+/* -------------------------------------------------------------------
+   MOCK: useNavigate from react-router-dom
+------------------------------------------------------------------- */
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
 }));
 
+/* -------------------------------------------------------------------
+   Utility to render OTP component with custom mocks
+------------------------------------------------------------------- */
 async function renderOTP(options?: {
   nextStep?: string;
   redirectTo?: string | null;
   authMock?: any;
 }) {
-  const {
-    nextStep = "normal",
-    redirectTo = null,
-    authMock,
-  } = options || {};
+  const { nextStep = "normal", redirectTo = null, authMock } = options || {};
 
   mockGetNextStep.mockResolvedValue(nextStep);
   mockRedirectHook.mockReturnValue(redirectTo);
 
-  if (authMock) {
-    mockUseAuth.mockReturnValue(authMock);
-  }
+  if (authMock) mockUseAuth.mockReturnValue(authMock);
 
   await act(async () => {
     render(
@@ -88,6 +119,7 @@ describe("OTP Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Default mockAuth
     mockUseAuth.mockReturnValue({
       verifyOtp: jest.fn(),
       resendOtp: jest.fn().mockResolvedValue(true),
@@ -95,11 +127,17 @@ describe("OTP Component", () => {
     });
   });
 
+  /* -------------------------------------------------------------------
+     UI Rendering Tests
+  ------------------------------------------------------------------- */
   test("renders header", async () => {
     await renderOTP();
     expect(screen.getByText("Almost Done")).toBeInTheDocument();
   });
 
+  /* -------------------------------------------------------------------
+     AUTO VERIFY: When user enters 6 digits → verifyOtp() auto triggers
+  ------------------------------------------------------------------- */
   test("auto verify when OTP reaches 6 digits", async () => {
     const verifyOtpMock = jest.fn().mockResolvedValue(true);
 
@@ -111,6 +149,7 @@ describe("OTP Component", () => {
       },
     });
 
+    // Enter each digit
     await act(async () => {
       for (let i = 0; i < 6; i++) {
         fireEvent.change(screen.getByLabelText(`otp-${i}`), {
@@ -119,13 +158,13 @@ describe("OTP Component", () => {
       }
     });
 
-    await waitFor(() => {
-      expect(verifyOtpMock).toHaveBeenCalledTimes(1);
-    });
-    
+    await waitFor(() => expect(verifyOtpMock).toHaveBeenCalledTimes(1));
     expect(verifyOtpMock).toHaveBeenCalledWith("123456");
   });
 
+  /* -------------------------------------------------------------------
+     Manual verify still triggers verifyOtp() when typing 6 digits
+  ------------------------------------------------------------------- */
   test("manual verify triggers verifyOtp once", async () => {
     const verifyOtpMock = jest.fn().mockResolvedValue(true);
 
@@ -137,6 +176,7 @@ describe("OTP Component", () => {
       },
     });
 
+    // Enter six digits
     await act(async () => {
       for (let i = 0; i < 6; i++) {
         fireEvent.change(screen.getByLabelText(`otp-${i}`), {
@@ -145,13 +185,13 @@ describe("OTP Component", () => {
       }
     });
 
-    await waitFor(() => {
-      expect(verifyOtpMock).toHaveBeenCalled();
-    });
-
+    await waitFor(() => expect(verifyOtpMock).toHaveBeenCalled());
     expect(verifyOtpMock).toHaveBeenCalledWith("999999");
   });
 
+  /* -------------------------------------------------------------------
+     Button Disabled State Logic
+  ------------------------------------------------------------------- */
   test("verify button is disabled when OTP is incomplete", async () => {
     await renderOTP();
 
@@ -170,6 +210,9 @@ describe("OTP Component", () => {
     expect(verifyButton).toBeDisabled();
   });
 
+  /* -------------------------------------------------------------------
+     Loading State
+  ------------------------------------------------------------------- */
   test("verify button shows loading state", async () => {
     await renderOTP({
       authMock: {
@@ -182,22 +225,28 @@ describe("OTP Component", () => {
     expect(screen.getByText("Verifying...")).toBeInTheDocument();
   });
 
+  /* -------------------------------------------------------------------
+     Conditional Rendering Based on Step (verify_mfa hides login link)
+  ------------------------------------------------------------------- */
   test("hides login link when step=verify_mfa", async () => {
     await renderOTP({ nextStep: "verify_mfa" });
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Already have an account/i)).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.queryByText(/Already have an account/i)).not.toBeInTheDocument()
+    );
   });
 
   test("shows login link when step=normal", async () => {
     await renderOTP({ nextStep: "normal" });
 
-    await waitFor(() => {
-      expect(screen.getByText(/Already have an account/i)).toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.getByText(/Already have an account/i)).toBeInTheDocument()
+    );
   });
 
+  /* -------------------------------------------------------------------
+     Redirect behavior
+  ------------------------------------------------------------------- */
   test("redirects when redirectHook returns path", async () => {
     await renderOTP({ redirectTo: "/dashboard" });
 
@@ -206,7 +255,10 @@ describe("OTP Component", () => {
     });
   });
 
-  test("resend OTP works after timer", async () => {
+  /* -------------------------------------------------------------------
+     Resend OTP logic + timer expiration
+  ------------------------------------------------------------------- */
+  test("resend OTP works after timer expires", async () => {
     jest.useFakeTimers();
 
     const resendMock = jest.fn().mockResolvedValue(true);
@@ -219,6 +271,7 @@ describe("OTP Component", () => {
       },
     });
 
+    // Fast-forward 60 seconds
     act(() => {
       jest.advanceTimersByTime(60000);
     });
@@ -226,20 +279,18 @@ describe("OTP Component", () => {
     const resendButton = screen.getByText("Resend code");
     expect(resendButton).not.toBeDisabled();
 
-    await act(async () => {
-      fireEvent.click(resendButton);
-    });
+    await act(async () => fireEvent.click(resendButton));
 
-    await waitFor(() => {
-      expect(resendMock).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(() => expect(resendMock).toHaveBeenCalledTimes(1));
 
     jest.useRealTimers();
   });
 
+  /* -------------------------------------------------------------------
+     Timer Behavior
+  ------------------------------------------------------------------- */
   test("timer counts down correctly", async () => {
     jest.useFakeTimers();
-
     await renderOTP();
 
     expect(screen.getByText(/01:00s/i)).toBeInTheDocument();
@@ -253,9 +304,8 @@ describe("OTP Component", () => {
     jest.useRealTimers();
   });
 
-  test("resend button is disabled during timer", async () => {
+  test("resend button is disabled during active timer", async () => {
     await renderOTP();
-
     const resendButton = screen.getByText("Resend code");
     expect(resendButton).toBeDisabled();
   });

@@ -1,3 +1,18 @@
+/**
+ * @jest-environment jsdom
+ *
+ * Test Suite: ForgotPassword Component
+ *
+ * Covers:
+ *  • UI rendering of layout, header, input, button, and login link
+ *  • Email input state updates + trimming behavior
+ *  • Button enabling/disabling logic
+ *  • Submission and mutation behavior
+ *  • Navigation after success
+ *  • Loading states
+ *  • Edge cases like Enter key and rapid submissions
+ */
+
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BrowserRouter } from "react-router-dom";
@@ -6,6 +21,10 @@ import { useRequestPasswordReset } from "@/hooks/auth/useRequestPasswordReset";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 
+/* -------------------------------------------------------------
+   MOCK AXIOS (even though this component doesn't use axios directly,
+   the mock prevents unintended network calls from submodules)
+--------------------------------------------------------------*/
 jest.mock("@/lib/axios", () => ({
   __esModule: true,
   default: {
@@ -17,14 +36,23 @@ jest.mock("@/lib/axios", () => ({
   },
 }));
 
-// Mock the hooks and components
+/* -------------------------------------------------------------
+   MOCK useRequestPasswordReset mutation hook
+--------------------------------------------------------------*/
 jest.mock("@/hooks/auth/useRequestPasswordReset");
+
+/* -------------------------------------------------------------
+   MOCK react-router: useNavigate + Link
+--------------------------------------------------------------*/
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: jest.fn(),
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: any) => <a href={to}>{children}</a>, // Simulated Link component
 }));
 
+/* -------------------------------------------------------------
+   MOCK UI Components — AuthLayout & AuthHeader
+--------------------------------------------------------------*/
 jest.mock("@/components/auth/AuthLayout", () => ({
   __esModule: true,
   default: ({ children }: any) => (
@@ -42,17 +70,19 @@ jest.mock("@/components/auth/AuthHeader", () => ({
   ),
 }));
 
+/* -------------------------------------------------------------
+   TEST SUITE
+--------------------------------------------------------------*/
 describe("ForgotPassword Component", () => {
-  const mockNavigate = jest.fn();
-  const mockMutateAsync = jest.fn();
+  const mockNavigate = jest.fn();        // navigation mock
+  const mockMutateAsync = jest.fn();     // mutation mock
   const mockUseRequestPasswordReset = jest.mocked(useRequestPasswordReset);
   const mockUseNavigate = jest.mocked(useNavigate);
 
   beforeEach(() => {
-    // Reset all mocks before each test
     jest.clearAllMocks();
 
-    // Setup default mock implementations
+    // Set default behavior for mocked hooks
     mockUseNavigate.mockReturnValue(mockNavigate);
     mockUseRequestPasswordReset.mockReturnValue({
       mutateAsync: mockMutateAsync,
@@ -60,6 +90,7 @@ describe("ForgotPassword Component", () => {
     } as any);
   });
 
+  // Helper to render component with routing
   const renderComponent = () => {
     return render(
       <BrowserRouter>
@@ -68,127 +99,121 @@ describe("ForgotPassword Component", () => {
     );
   };
 
+  /* -------------------------------------------------------------
+     UI RENDERING TESTS
+  --------------------------------------------------------------*/
   describe("Component Rendering", () => {
-    it("should render the forgot password form with all required elements", () => {
+    it("renders form layout + header + input + button", () => {
       renderComponent();
 
       expect(screen.getByTestId("auth-layout")).toBeInTheDocument();
       expect(screen.getByTestId("auth-header")).toBeInTheDocument();
+
       expect(screen.getByText("Forgot Password")).toBeInTheDocument();
       expect(
-        screen.getByText(
-          "Enter your email and we'll send you a verification code"
-        )
+        screen.getByText("Enter your email and we'll send you a verification code")
       ).toBeInTheDocument();
+
       expect(screen.getByLabelText("Email Address")).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText("you@example.com")
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /send link/i })
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /send link/i })).toBeInTheDocument();
     });
 
-    it("should render the login link with correct text", () => {
+    it("renders login link correctly", () => {
       renderComponent();
 
       expect(screen.getByText("Remembered your password?")).toBeInTheDocument();
+
       const loginLink = screen.getByText("Log In");
       expect(loginLink).toBeInTheDocument();
       expect(loginLink.closest("a")).toHaveAttribute("href", ROUTES.LOGIN);
     });
 
-    it("should render submit button as disabled initially when email is empty", () => {
+    it("submit button is disabled when email is empty", () => {
       renderComponent();
-
-      const submitButton = screen.getByRole("button", { name: /send link/i });
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: /send link/i })).toBeDisabled();
     });
   });
 
+  /* -------------------------------------------------------------
+     USER INPUT BEHAVIOR
+  --------------------------------------------------------------*/
   describe("User Interactions", () => {
-    it("should update email input value when user types", () => {
+    it("updates email input value when typing", () => {
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText(
-        "you@example.com"
-      ) as HTMLInputElement;
+      const emailInput = screen.getByPlaceholderText("you@example.com") as HTMLInputElement;
 
       fireEvent.change(emailInput, { target: { value: "test@example.com" } });
 
       expect(emailInput.value).toBe("test@example.com");
     });
 
-    it("should enable submit button when email is entered", () => {
+    it("enables submit button when email is entered", () => {
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
-      const submitButton = screen.getByRole("button", { name: /send link/i });
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-
-      expect(submitButton).not.toBeDisabled();
+      expect(screen.getByRole("button", { name: /send link/i })).not.toBeDisabled();
     });
 
-    it("should keep submit button disabled when email is empty", () => {
+    it("keeps submit button disabled if email is empty", () => {
       renderComponent();
-
-      const submitButton = screen.getByRole("button", { name: /send link/i });
-
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: /send link/i })).toBeDisabled();
     });
   });
 
+  /* -------------------------------------------------------------
+     FORM SUBMISSION
+  --------------------------------------------------------------*/
   describe("Form Submission", () => {
-    it("should call mutateAsync with correct email on form submission", async () => {
+    it("calls mutateAsync with email on submit", async () => {
       mockMutateAsync.mockResolvedValue(undefined);
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
-      const submitButton = screen.getByRole("button", { name: /send link/i });
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByRole("button", { name: /send link/i }));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(
           { email: "test@example.com" },
           expect.objectContaining({
-            onSuccess: expect.any(Function),
+            onSuccess: expect.any(Function), // ensures callback is passed through
           })
         );
       });
     });
 
-    it("should not submit form when email is empty", async () => {
+    it("does not submit if email is empty", async () => {
       renderComponent();
 
-      const form = screen
-        .getByRole("button", { name: /send link/i })
-        .closest("form");
-
-      if (form) {
-        fireEvent.submit(form);
-      }
+      const form = screen.getByRole("button", { name: /send link/i }).closest("form")!;
+      fireEvent.submit(form);
 
       await waitFor(() => {
         expect(mockMutateAsync).not.toHaveBeenCalled();
       });
     });
 
-    it("should navigate to login page on successful password reset", async () => {
-      mockMutateAsync.mockImplementation((_, options) => {
-        options?.onSuccess?.();
+    it("navigates to login after successful request", async () => {
+      // Simulate onSuccess being called
+      mockMutateAsync.mockImplementation((_, opts) => {
+        opts?.onSuccess?.();
         return Promise.resolve(undefined);
       });
 
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
-      const submitButton = screen.getByRole("button", { name: /send link/i });
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByRole("button", { name: /send link/i }));
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LOGIN);
@@ -196,8 +221,11 @@ describe("ForgotPassword Component", () => {
     });
   });
 
+  /* -------------------------------------------------------------
+     LOADING STATE — isPending
+  --------------------------------------------------------------*/
   describe("Loading State", () => {
-    it("should show loading text and disable button while request is pending", () => {
+    it("displays 'Sending...' and disables button when loading", () => {
       mockUseRequestPasswordReset.mockReturnValue({
         mutateAsync: mockMutateAsync,
         isPending: true,
@@ -205,75 +233,77 @@ describe("ForgotPassword Component", () => {
 
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
       const submitButton = screen.getByRole("button", { name: /sending.../i });
 
-      expect(submitButton).toBeInTheDocument();
       expect(submitButton).toBeDisabled();
       expect(submitButton).toHaveTextContent("Sending...");
     });
 
-    it("should show normal text when not pending", () => {
+    it("shows normal text when not loading", () => {
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
-      const submitButton = screen.getByRole("button", { name: /send link/i });
-
-      expect(submitButton).toHaveTextContent("Send Link");
+      expect(screen.getByRole("button", { name: /send link/i })).toHaveTextContent("Send Link");
     });
   });
 
+  /* -------------------------------------------------------------
+     EDGE CASES
+  --------------------------------------------------------------*/
   describe("Edge Cases", () => {
-    it("should handle form submission via Enter key", async () => {
+    it("handles Enter key submission", async () => {
       mockMutateAsync.mockResolvedValue(undefined);
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText("you@example.com");
+      fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+        target: { value: "test@example.com" },
+      });
 
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.submit(emailInput.closest("form")!);
+      fireEvent.submit(screen.getByPlaceholderText("you@example.com").closest("form")!);
 
-      await waitFor(() => {
+      await waitFor(() =>
         expect(mockMutateAsync).toHaveBeenCalledWith(
           { email: "test@example.com" },
           expect.any(Object)
-        );
-      });
+        )
+      );
     });
 
-    it("should handle multiple rapid submissions correctly", async () => {
+    it("handles rapid multiple clicks", async () => {
       mockMutateAsync.mockResolvedValue(undefined);
+
       renderComponent();
 
       const emailInput = screen.getByPlaceholderText("you@example.com");
-      const submitButton = screen.getByRole("button", { name: /send link/i });
+      const button = screen.getByRole("button", { name: /send link/i });
 
       fireEvent.change(emailInput, { target: { value: "test@example.com" } });
 
-      // Click multiple times rapidly
-      fireEvent.click(submitButton);
-      fireEvent.click(submitButton);
-      fireEvent.click(submitButton);
+      fireEvent.click(button);
+      fireEvent.click(button);
+      fireEvent.click(button);
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledTimes(3);
       });
     });
 
-    it("should trim whitespace from email input", () => {
+    it("trims whitespace in email input", () => {
       renderComponent();
 
-      const emailInput = screen.getByPlaceholderText(
-        "you@example.com"
-      ) as HTMLInputElement;
+      const emailInput = screen.getByPlaceholderText("you@example.com") as HTMLInputElement;
 
       fireEvent.change(emailInput, {
         target: { value: "  test@example.com  " },
       });
+
       expect(emailInput.value).toBe("test@example.com");
     });
   });

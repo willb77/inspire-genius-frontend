@@ -1,5 +1,17 @@
 /**
  * @jest-environment jsdom
+ *
+ * Test suite for the `useAuthLoginMutation` hook.
+ * This hook wraps the `loginApi()` function using React Query's `useMutation`,
+ * and returns metadata (loading/error/success states) and the final response.
+ *
+ * The tests cover:
+ *  - successful login responses
+ *  - API error handling (Axios errors)
+ *  - forwarding of custom mutation callbacks (onSuccess, onError)
+ *  - correct parameters passed to the API
+ *  - mutation state transitions (idle → pending → success/error)
+ *  - ability to reset mutation state
  */
 
 import { renderHook, waitFor } from "@testing-library/react";
@@ -8,15 +20,20 @@ import { useAuthLoginMutation } from "../useLogin";
 import { loginApi } from "@/services/auth.service";
 import type { AxiosError } from "axios";
 
+// Mock login API so real network requests are not made
 jest.mock("@/services/auth.service", () => ({
   loginApi: jest.fn(),
 }));
 
+/**
+ * Utility wrapper that provides a fresh QueryClient
+ * for each test. This isolates React Query state.
+ */
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: {
-        retry: false,
+        retry: false, // avoid automatic retries interfering with tests
       },
     },
   });
@@ -28,10 +45,13 @@ function createWrapper() {
 
 describe("useAuthLoginMutation", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // reset all mocks before each test
   });
 
-  test("successfully logs in and returns data with credentials", async () => {
+  // SUCCESS CASES
+
+  test("successfully logs in and returns data along with credentials", async () => {
+    // Mock successful API response
     const mockResponse = {
       status: true,
       data: {
@@ -42,6 +62,7 @@ describe("useAuthLoginMutation", () => {
 
     (loginApi as jest.Mock).mockResolvedValueOnce(mockResponse);
 
+    // Render the hook
     const { result } = renderHook(() => useAuthLoginMutation(), {
       wrapper: createWrapper(),
     });
@@ -51,16 +72,20 @@ describe("useAuthLoginMutation", () => {
       password: "password123",
     };
 
+    // Trigger mutation
     result.current.mutate(credentials);
 
+    // Wait until success is reported by React Query
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
+    // API should be called with verification flag set to false
     expect(loginApi).toHaveBeenCalledWith({
       email: "test@example.com",
       password: "password123",
       verification: false,
     });
 
+    // Hook should return response + input credentials
     expect(result.current.data).toEqual({
       data: mockResponse,
       email: "test@example.com",
@@ -68,12 +93,11 @@ describe("useAuthLoginMutation", () => {
     });
   });
 
-  test("handles login error", async () => {
+  // ERROR HANDLING
+
+  test("handles login error and exposes Axios error", async () => {
     const mockError = {
-      response: {
-        status: 401,
-        data: { message: "Invalid credentials" },
-      },
+      response: { status: 401, data: { message: "Invalid credentials" } },
       isAxiosError: true,
     } as AxiosError;
 
@@ -83,11 +107,13 @@ describe("useAuthLoginMutation", () => {
       wrapper: createWrapper(),
     });
 
+    // Trigger failed login
     result.current.mutate({
       email: "wrong@example.com",
       password: "wrongpassword",
     });
 
+    // Wait until mutation is marked as error
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(loginApi).toHaveBeenCalledWith({
@@ -99,11 +125,10 @@ describe("useAuthLoginMutation", () => {
     expect(result.current.error).toEqual(mockError);
   });
 
-  test("accepts custom mutation options", async () => {
-    const mockResponse = {
-      status: true,
-      data: { token: "token-123" },
-    };
+  // CUSTOM CALLBACK HANDLING
+
+  test("accepts and calls custom onSuccess callback", async () => {
+    const mockResponse = { status: true, data: { token: "token-123" } };
 
     (loginApi as jest.Mock).mockResolvedValueOnce(mockResponse);
 
@@ -116,9 +141,7 @@ describe("useAuthLoginMutation", () => {
           onSuccess: onSuccessMock,
           onError: onErrorMock,
         }),
-      {
-        wrapper: createWrapper(),
-      }
+      { wrapper: createWrapper() }
     );
 
     result.current.mutate({
@@ -128,6 +151,7 @@ describe("useAuthLoginMutation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
+    // onSuccess should be called with enriched mutation payload
     expect(onSuccessMock).toHaveBeenCalledWith(
       {
         data: mockResponse,
@@ -141,7 +165,7 @@ describe("useAuthLoginMutation", () => {
     expect(onErrorMock).not.toHaveBeenCalled();
   });
 
-  test("calls onError callback when mutation fails", async () => {
+  test("calls custom onError callback when API rejects", async () => {
     const mockError = {
       response: { status: 500, data: { message: "Server error" } },
       isAxiosError: true,
@@ -158,9 +182,7 @@ describe("useAuthLoginMutation", () => {
           onError: onErrorMock,
           onSuccess: onSuccessMock,
         }),
-      {
-        wrapper: createWrapper(),
-      }
+      { wrapper: createWrapper() }
     );
 
     result.current.mutate({
@@ -170,6 +192,7 @@ describe("useAuthLoginMutation", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
+    // Custom onError should receive error + variables
     expect(onErrorMock).toHaveBeenCalledWith(
       mockError,
       { email: "fail@test.com", password: "failpass" },
@@ -179,13 +202,13 @@ describe("useAuthLoginMutation", () => {
     expect(onSuccessMock).not.toHaveBeenCalled();
   });
 
+  // API CALL FORMAT
+
   test("passes correct verification flag to loginApi", async () => {
-    const mockResponse = {
+    (loginApi as jest.Mock).mockResolvedValueOnce({
       status: true,
       data: { token: "verify-token" },
-    };
-
-    (loginApi as jest.Mock).mockResolvedValueOnce(mockResponse);
+    });
 
     const { result } = renderHook(() => useAuthLoginMutation(), {
       wrapper: createWrapper(),
@@ -198,6 +221,7 @@ describe("useAuthLoginMutation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
+    // Ensures API always receives verification:false
     expect(loginApi).toHaveBeenCalledWith({
       email: "verify@test.com",
       password: "verifypass",
@@ -205,23 +229,23 @@ describe("useAuthLoginMutation", () => {
     });
   });
 
-  test("returns correct mutation states during execution", async () => {
-    const mockResponse = {
-      status: true,
-      data: { token: "state-token" },
-    };
+  // MUTATION STATE TESTS
 
+  test("returns correct mutation states throughout lifecycle", async () => {
+    // Mock slow response to test pending state
     (loginApi as jest.Mock).mockImplementation(
       () =>
-        new Promise((resolve) => {
-          setTimeout(() => resolve(mockResponse), 100);
-        })
+        new Promise((resolve) => setTimeout(() => resolve({
+          status: true,
+          data: { token: "state-token" },
+        }), 100))
     );
 
     const { result } = renderHook(() => useAuthLoginMutation(), {
       wrapper: createWrapper(),
     });
 
+    // Initial state
     expect(result.current.isPending).toBe(false);
     expect(result.current.isIdle).toBe(true);
 
@@ -230,17 +254,18 @@ describe("useAuthLoginMutation", () => {
       password: "statepass",
     });
 
+    // Should enter pending state
     await waitFor(() => expect(result.current.isPending).toBe(true));
 
+    // Then eventually succeed
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.isPending).toBe(false);
   });
 
-  test("can be reset after mutation", async () => {
-    const mockResponse = {
-      status: true,
-      data: { token: "reset-token" },
-    };
+  // RESET MUTATION
+
+  test("mutation can be reset after completion", async () => {
+    const mockResponse = { status: true, data: { token: "reset-token" } };
 
     (loginApi as jest.Mock).mockResolvedValueOnce(mockResponse);
 
@@ -254,13 +279,13 @@ describe("useAuthLoginMutation", () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
     expect(result.current.data).toBeDefined();
 
+    // Reset mutation state back to idle
     result.current.reset();
 
     await waitFor(() => expect(result.current.isIdle).toBe(true));
-    
+
     expect(result.current.isSuccess).toBe(false);
     expect(result.current.isError).toBe(false);
   });

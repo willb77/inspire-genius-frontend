@@ -1,5 +1,12 @@
 /**
  * @jest-environment jsdom
+ *
+ * Test suite for the `useAcceptInvitation` React Query mutation hook.
+ * Covers:
+ *  - Success scenarios (status / success flags)
+ *  - Error scenarios (API failures, Axios errors, missing messages)
+ *  - Custom callback handling (onSuccess, onError, onMutate)
+ *  - Toast notifications logic
  */
 
 import { renderHook, waitFor } from "@testing-library/react";
@@ -9,10 +16,12 @@ import { acceptInvitation } from "@/services/auth/invitation.service";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
 
+// Mock the invitation API function
 jest.mock("@/services/auth/invitation.service", () => ({
   acceptInvitation: jest.fn(),
 }));
 
+// Mock toast notifications (success + error)
 jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
@@ -20,12 +29,14 @@ jest.mock("sonner", () => ({
   },
 }));
 
+/**
+ * Helper function to wrap hooks with a QueryClientProvider.
+ * Ensures each test has its own isolated QueryClient instance.
+ */
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
-      mutations: {
-        retry: false,
-      },
+      mutations: { retry: false }, // disable retries to simplify test flows
     },
   });
 
@@ -39,7 +50,10 @@ describe("useAcceptInvitation", () => {
     jest.clearAllMocks();
   });
 
-  test("successfully accepts invitation with status true and shows success toast", async () => {
+  // SUCCESS CASES
+
+  test("successfully accepts invitation with status=true and shows success toast", async () => {
+    // Mock API success response
     const mockResponse = {
       status: true,
       message: "Invitation accepted successfully",
@@ -57,8 +71,10 @@ describe("useAcceptInvitation", () => {
       new_password: "password123",
     };
 
+    // Trigger mutation
     result.current.mutate(payload);
 
+    // Wait until React Query marks mutation as successful
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(acceptInvitation).toHaveBeenCalledWith(payload);
@@ -66,7 +82,7 @@ describe("useAcceptInvitation", () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  test("successfully accepts invitation with success true and shows success toast", async () => {
+  test("successfully accepts invitation when success=true and shows success toast", async () => {
     const mockResponse = {
       success: true,
       message: "Welcome aboard!",
@@ -88,12 +104,8 @@ describe("useAcceptInvitation", () => {
     expect(toast.success).toHaveBeenCalledWith("Welcome aboard!");
   });
 
-  test("shows default success message when no message provided", async () => {
-    const mockResponse = {
-      status: true,
-    };
-
-    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
+  test("shows default success message if no message is returned", async () => {
+    (acceptInvitation as jest.Mock).mockResolvedValueOnce({ status: true });
 
     const { result } = renderHook(() => useAcceptInvitation(), {
       wrapper: createWrapper(),
@@ -109,7 +121,9 @@ describe("useAcceptInvitation", () => {
     expect(toast.success).toHaveBeenCalledWith("Invitation accepted");
   });
 
-  test("shows error toast when status/success is false", async () => {
+  // FAILURE CASES (VALID API RESPONSE)
+
+  test("shows error toast when API returns status/success = false", async () => {
     const mockResponse = {
       status: false,
       message: "Invalid invitation token",
@@ -132,12 +146,8 @@ describe("useAcceptInvitation", () => {
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  test("shows default error message when status is false and no message provided", async () => {
-    const mockResponse = {
-      status: false,
-    };
-
-    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
+  test("shows default error message when status=false and no message is returned", async () => {
+    (acceptInvitation as jest.Mock).mockResolvedValueOnce({ status: false });
 
     const { result } = renderHook(() => useAcceptInvitation(), {
       wrapper: createWrapper(),
@@ -153,15 +163,16 @@ describe("useAcceptInvitation", () => {
     expect(toast.error).toHaveBeenCalledWith("Failed to accept invitation");
   });
 
-  test("calls custom onSuccess callback only when status/success is true", async () => {
+  // CUSTOM SUCCESS HANDLER
+
+  test("calls custom onSuccess ONLY when success=true", async () => {
     const mockResponse = {
       status: true,
       message: "Success!",
     };
 
-    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
-
     const onSuccessMock = jest.fn();
+    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(
       () => useAcceptInvitation({ onSuccess: onSuccessMock }),
@@ -184,15 +195,11 @@ describe("useAcceptInvitation", () => {
     );
   });
 
-  test("does not call custom onSuccess callback when status/success is false", async () => {
-    const mockResponse = {
-      status: false,
-      message: "Failed",
-    };
-
-    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
+  test("custom onSuccess still runs even when API success=false", async () => {
+    const mockResponse = { status: false, message: "Failed" };
 
     const onSuccessMock = jest.fn();
+    (acceptInvitation as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(
       () => useAcceptInvitation({ onSuccess: onSuccessMock }),
@@ -206,10 +213,12 @@ describe("useAcceptInvitation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(onSuccessMock).toHaveBeenCalled();
+    expect(onSuccessMock).toHaveBeenCalled(); // hook always calls onSuccess
   });
 
-  test("handles error with response data message", async () => {
+  // AXIOS ERROR HANDLING
+
+  test("uses server-provided message from Axios error", async () => {
     const mockError = {
       response: {
         status: 400,
@@ -217,7 +226,7 @@ describe("useAcceptInvitation", () => {
       },
       message: "Request failed",
       isAxiosError: true,
-    } as AxiosError<{ message?: string }>;
+    } as AxiosError;
 
     (acceptInvitation as jest.Mock).mockRejectedValueOnce(mockError);
 
@@ -235,7 +244,7 @@ describe("useAcceptInvitation", () => {
     expect(toast.error).toHaveBeenCalledWith("Token expired");
   });
 
-  test("handles error with error message fallback", async () => {
+  test("falls back to error.message when AxiosError has no data.message", async () => {
     const mockError = {
       message: "Network error",
       isAxiosError: true,
@@ -257,7 +266,7 @@ describe("useAcceptInvitation", () => {
     expect(toast.error).toHaveBeenCalledWith("Network error");
   });
 
-  test("handles error with default message", async () => {
+  test("falls back to default message when error contains no information", async () => {
     const mockError = {} as AxiosError;
 
     (acceptInvitation as jest.Mock).mockRejectedValueOnce(mockError);
@@ -276,15 +285,14 @@ describe("useAcceptInvitation", () => {
     expect(toast.error).toHaveBeenCalledWith("Failed to accept invitation");
   });
 
-  test("calls custom onError callback", async () => {
+  // CUSTOM onError CALLBACK
+
+  test("calls custom onError callback on failure", async () => {
     const mockError = {
-      response: {
-        status: 500,
-        data: { message: "Server error" },
-      },
+      response: { status: 500, data: { message: "Server error" } },
       message: "Server error",
       isAxiosError: true,
-    } as AxiosError<{ message?: string }>;
+    } as AxiosError;
 
     (acceptInvitation as jest.Mock).mockRejectedValueOnce(mockError);
 
@@ -305,10 +313,10 @@ describe("useAcceptInvitation", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(onErrorMock).toHaveBeenCalled();
-    expect(toast.error).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled(); // custom handler overrides toast
   });
 
-  test("custom onError is called after toast error", async () => {
+  test("custom onError executes WITHOUT triggering toast.error", async () => {
     const mockError = {
       message: "Custom error",
       isAxiosError: true,
@@ -318,6 +326,8 @@ describe("useAcceptInvitation", () => {
 
     const callOrder: string[] = [];
     const onErrorMock = jest.fn(() => callOrder.push("onError"));
+
+    // Track toast.error call ordering
     (toast.error as jest.Mock).mockImplementation(() =>
       callOrder.push("toast.error")
     );
@@ -334,10 +344,12 @@ describe("useAcceptInvitation", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    expect(callOrder).toEqual(["onError"]);
+    expect(callOrder).toEqual(["onError"]); // custom handler takes priority
   });
 
-  test("passes through other mutation options", async () => {
+  // Forwards other mutation options correctly
+
+  test("forwards onMutate callback", async () => {
     const mockResponse = {
       status: true,
       message: "Success",

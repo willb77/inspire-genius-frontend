@@ -1,14 +1,37 @@
+/**
+ * @jest-environment jsdom
+ *
+ * Test suite for the `useRequestPasswordReset` React Query mutation hook.
+ *
+ * This hook:
+ *  - Calls `requestPasswordReset()` API to request a password reset email.
+ *  - Displays toast notifications on success or error.
+ *  - Supports optional `onSuccess` and `onError` callbacks passed by the user.
+ *
+ * These tests verify:
+ *  - Correct API calls
+ *  - Success handling (with both `status` and `success` flags)
+ *  - Error handling (API error, network error, missing messages)
+ *  - Custom callback execution
+ *  - Toast messages for all paths
+ */
+
 import { renderHook, act } from "@testing-library/react";
 import { useRequestPasswordReset } from "../useRequestPasswordReset";
 import { requestPasswordReset } from "@/services/auth/password.service";
 import { toast } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// ---- MOCKS ----
+// ---------------------------------------------------------
+// MOCKS
+// ---------------------------------------------------------
+
+// Mock password service API
 jest.mock("@/services/auth/password.service", () => ({
   requestPasswordReset: jest.fn(),
 }));
 
+// Mock toast notification system
 jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
@@ -16,6 +39,10 @@ jest.mock("sonner", () => ({
   },
 }));
 
+/**
+ * Creates a wrapper that injects React Query's QueryClientProvider.
+ * Ensures React Query hooks work correctly in test environment.
+ */
 function createWrapper() {
   const queryClient = new QueryClient();
   return ({ children }: any) => (
@@ -23,13 +50,15 @@ function createWrapper() {
   );
 }
 
-
 describe("useRequestPasswordReset", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // reset mocks before every test
   });
 
+  // SUCCESS CASES
+
   test("calls requestPasswordReset and triggers success toast", async () => {
+    // Mock API returning success through `status: true`
     (requestPasswordReset as jest.Mock).mockResolvedValueOnce({
       status: true,
       message: "Email sent",
@@ -39,17 +68,18 @@ describe("useRequestPasswordReset", () => {
       wrapper: createWrapper(),
     });
 
+    // Execute mutation
     await act(async () => {
       await result.current.mutateAsync({ email: "test@example.com" });
     });
 
-    expect(requestPasswordReset).toHaveBeenCalledWith({
-      email: "test@example.com",
-    });
+    // Verify API call and toast success
+    expect(requestPasswordReset).toHaveBeenCalledWith({ email: "test@example.com" });
     expect(toast.success).toHaveBeenCalledWith("Email sent");
   });
 
   test("handles success when 'success' field is true", async () => {
+    // Mock API returning success through `success: true`
     (requestPasswordReset as jest.Mock).mockResolvedValueOnce({
       success: true,
       message: "Done",
@@ -65,6 +95,8 @@ describe("useRequestPasswordReset", () => {
 
     expect(toast.success).toHaveBeenCalledWith("Done");
   });
+
+  // FAILURE CASES
 
   test("shows error toast when status is false", async () => {
     (requestPasswordReset as jest.Mock).mockResolvedValueOnce({
@@ -82,6 +114,8 @@ describe("useRequestPasswordReset", () => {
 
     expect(toast.error).toHaveBeenCalledWith("User not found");
   });
+
+  // CUSTOM CALLBACKS
 
   test("calls user-provided onSuccess callback", async () => {
     const onSuccessMock = jest.fn();
@@ -102,6 +136,8 @@ describe("useRequestPasswordReset", () => {
 
     expect(onSuccessMock).toHaveBeenCalled();
   });
+
+  // ERROR HANDLING
 
   test("handles API error and shows toast with API message", async () => {
     const error = {
@@ -140,8 +176,8 @@ describe("useRequestPasswordReset", () => {
 
   test("calls user-provided onError callback", async () => {
     const onErrorMock = jest.fn();
-
     const error = { message: "Oops" };
+
     (requestPasswordReset as jest.Mock).mockRejectedValueOnce(error);
 
     const { result } = renderHook(

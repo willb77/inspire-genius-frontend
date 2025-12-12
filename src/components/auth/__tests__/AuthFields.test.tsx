@@ -1,3 +1,11 @@
+/**
+ * This test suite verifies:
+ * - Rendering and interaction behavior of individual auth input fields
+ * - Social authentication UI behavior
+ * - That providers are stored in sessionStorage
+ * - Correct mutate function calls for social login
+ */
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
@@ -9,14 +17,14 @@ import {
   SocialAuthSection,
 } from "../AuthFields";
 
-// ------------ MOCKS ------------
+// MOCK SETUP
 
-// Mock toast
+// Mock toast.error from sonner so real notifications are not triggered
 jest.mock("sonner", () => ({
   toast: { error: jest.fn() },
 }));
 
-// Mock the social login mutation hook
+// Mock social authentication mutation hook
 const mutateMock = jest.fn();
 
 jest.mock("@/hooks/auth", () => ({
@@ -26,17 +34,17 @@ jest.mock("@/hooks/auth", () => ({
   }),
 }));
 
-// Mock window.location
+// Mock window.location so redirects do not break tests
 delete (window as any).location;
 window.location = { href: "" } as any;
 
-// Mock sessionStorage
+// Mock sessionStorage safely
 const mockSetItem = jest.fn();
 const mockGetItem = jest.fn();
 const mockRemoveItem = jest.fn();
 const mockClear = jest.fn();
 
-Object.defineProperty(window, 'sessionStorage', {
+Object.defineProperty(window, "sessionStorage", {
   value: {
     setItem: mockSetItem,
     getItem: mockGetItem,
@@ -46,37 +54,41 @@ Object.defineProperty(window, 'sessionStorage', {
   writable: true,
 });
 
-// ------------ TESTS ------------
+// FIELD TESTS
 
 describe("Auth Field Components", () => {
   test("FirstNameField renders label and input", () => {
-    render(<FirstNameField value="Abhi" onChange={() => {}} />);
+    // Renders input field and ensures value appears correctly
+    render(<FirstNameField value="TestingFirstName" onChange={() => {}} />);
 
     expect(screen.getByLabelText("First Name")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Abhi")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("TestingFirstName")).toBeInTheDocument();
   });
 
   test("LastNameField triggers onChange", () => {
+    // Verifies typing triggers callback with updated value
     const onChange = jest.fn();
     render(<LastNameField value="" onChange={onChange} />);
 
     fireEvent.change(screen.getByLabelText("Last Name"), {
-      target: { value: "Kurne" },
+      target: { value: "TestingLastName" },
     });
 
-    expect(onChange).toHaveBeenCalledWith("Kurne");
+    expect(onChange).toHaveBeenCalledWith("TestingLastName");
   });
 
   test("EmailField renders placeholder", () => {
+    // Ensures placeholder text is shown properly
     render(<EmailField value="" onChange={() => {}} />);
+
     expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
   });
 
   test("PasswordField toggles visibility", () => {
+    // Clicking icon toggles password visibility from "password" → "text"
     render(<PasswordField value="" onChange={() => {}} />);
 
-    const iconButton = screen.getByRole("button"); // rightIcon makes a button
-
+    const iconButton = screen.getByRole("button");
     fireEvent.click(iconButton);
 
     expect(screen.getByPlaceholderText("••••••••")).toHaveAttribute(
@@ -86,7 +98,7 @@ describe("Auth Field Components", () => {
   });
 });
 
-// ------------ SOCIAL AUTH ------------
+// SOCIAL AUTH SECTION TESTS
 
 describe("SocialAuthSection", () => {
   beforeEach(() => {
@@ -95,6 +107,7 @@ describe("SocialAuthSection", () => {
   });
 
   test("renders Google button", () => {
+    // Ensures the Google auth button appears
     render(<SocialAuthSection />);
 
     expect(
@@ -103,6 +116,7 @@ describe("SocialAuthSection", () => {
   });
 
   test("clicking Google triggers mutate", () => {
+    // Verifies clicking the button triggers social auth mutation
     render(<SocialAuthSection />);
 
     fireEvent.click(
@@ -111,20 +125,18 @@ describe("SocialAuthSection", () => {
 
     expect(mutateMock).toHaveBeenCalledWith(
       { provider: "Google" },
-      expect.any(Object)
+      expect.any(Object) // mutation options
     );
   });
 
   test("stores provider in sessionStorage", () => {
+    // Ensures provider name is saved before redirecting
     render(<SocialAuthSection />);
 
     fireEvent.click(
       screen.getByRole("button", { name: /continue with google/i })
     );
 
-    expect(mockSetItem).toHaveBeenCalledWith(
-      "auth:provider",
-      "Google"
-    );
+    expect(mockSetItem).toHaveBeenCalledWith("auth:provider", "Google");
   });
 });

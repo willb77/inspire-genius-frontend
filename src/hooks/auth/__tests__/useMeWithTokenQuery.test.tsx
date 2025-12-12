@@ -1,5 +1,18 @@
 /**
  * @jest-environment jsdom
+ *
+ * Test suite for the `useMeWithTokenQuery` hook.
+ * 
+ * This hook:
+ *  - Fetches authenticated user details using a provided token.
+ *  - Calls the `getMeWithToken()` service only when a valid token is provided.
+ *  - Supports an explicit `enabledOverride` flag to force-enable or disable the query.
+ * 
+ * These tests cover:
+ *  - Conditional query execution based on token presence
+ *  - Proper API invocation when token is valid
+ *  - Custom enable/disable logic
+ *  - Success and error states from React Query
  */
 
 import { renderHook, waitFor } from "@testing-library/react";
@@ -7,16 +20,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useMeWithTokenQuery } from "../useMeWithTokenQuery";
 import { getMeWithToken } from "@/services/auth.service";
 
+// Mock the API service so queries do not hit the real backend
 jest.mock("@/services/auth.service", () => ({
   getMeWithToken: jest.fn(),
 }));
 
-// React Query test wrapper
+/**
+ * Utility wrapper to provide React Query context for tests.
+ * Ensures each test runs with a fresh QueryClient instance.
+ */
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false,
+        retry: false, // avoid auto-retry interfering with tests
       },
     },
   });
@@ -28,8 +45,10 @@ function createWrapper() {
 
 describe("useMeWithTokenQuery", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // Reset mocks for each test
   });
+
+  // TOKEN-BASED ENABLE/DISABLE BEHAVIOR
 
   test("does not run query when token is null", () => {
     renderHook(() => useMeWithTokenQuery(null), {
@@ -47,7 +66,9 @@ describe("useMeWithTokenQuery", () => {
     expect(getMeWithToken).not.toHaveBeenCalled();
   });
 
-  test("fetches data when token is provided", async () => {
+  // SUCCESS CASE
+
+  test("fetches data when a valid token is provided", async () => {
     (getMeWithToken as jest.Mock).mockResolvedValueOnce({
       status: true,
       data: { id: 123 },
@@ -57,6 +78,7 @@ describe("useMeWithTokenQuery", () => {
       wrapper: createWrapper(),
     });
 
+    // Wait for query to complete successfully
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(getMeWithToken).toHaveBeenCalledWith("valid-token");
@@ -66,6 +88,8 @@ describe("useMeWithTokenQuery", () => {
     });
   });
 
+  // ENABLE OVERRIDE LOGIC
+
   test("does not run when enabledOverride is false", () => {
     renderHook(() => useMeWithTokenQuery("token-123", false), {
       wrapper: createWrapper(),
@@ -74,7 +98,7 @@ describe("useMeWithTokenQuery", () => {
     expect(getMeWithToken).not.toHaveBeenCalled();
   });
 
-  test("runs when enabledOverride is true", async () => {
+  test("runs query when enabledOverride is true", async () => {
     (getMeWithToken as jest.Mock).mockResolvedValueOnce({
       status: true,
       data: { name: "John" },
@@ -90,7 +114,9 @@ describe("useMeWithTokenQuery", () => {
     expect(getMeWithToken).toHaveBeenCalledWith("abc-token");
   });
 
-  test("returns error when service throws", async () => {
+  // ERROR HANDLING CASE
+
+  test("returns error when API throws", async () => {
     const mockError = new Error("Invalid token");
     (getMeWithToken as jest.Mock).mockRejectedValue(mockError);
 
@@ -98,14 +124,18 @@ describe("useMeWithTokenQuery", () => {
       wrapper: createWrapper(),
     });
 
-    // Wait for loading to complete (either success or error)
+    // Wait until React Query finishes loading (either success or error)
     await waitFor(() => expect(result.current.isLoading).toBe(false), {
       timeout: 3000,
     });
 
-    // Check the error state
+    // Error state must be true
     expect(result.current.isError).toBe(true);
+
+    // API must have been called with the provided token
     expect(getMeWithToken).toHaveBeenCalledWith("bad-token");
+
+    // Error object must match the thrown error
     expect(result.current.error).toBeInstanceOf(Error);
     expect((result.current.error as Error).message).toBe("Invalid token");
   });

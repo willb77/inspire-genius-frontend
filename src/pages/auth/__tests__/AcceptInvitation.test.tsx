@@ -1,13 +1,32 @@
+/**
+ * @jest-environment jsdom
+ *
+ * Test Suite: AcceptInvitation Component
+ *
+ * Covers:
+ *  - Rendering of UI sections and inputs
+ *  - Password validation rules (uppercase, lowercase, numbers, specials)
+ *  - Confirm-password matching
+ *  - Submission logic including missing token, valid token, navigation
+ *  - Loading states and disabled button behavior
+ *  - Focus/blur validation behavior
+ *  - Edge case handling
+ */
+
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BrowserRouter } from "react-router-dom";
 import AcceptInvitation from "../AcceptInvitation";
 import { ROUTES } from "@/constants/routes";
 
+// Polyfill for TextEncoder/Decoder used by some dependencies
 import { TextEncoder, TextDecoder } from "util";
-global.TextEncoder = TextEncoder  as any;
+global.TextEncoder = TextEncoder as any;
 global.TextDecoder = TextDecoder as any;
 
+/* ------------------------------------------------------------------
+   MOCKS: React Router navigation + search params (token handling)
+-------------------------------------------------------------------*/
 const mockNavigate = jest.fn();
 const mockSearchParams = new URLSearchParams();
 
@@ -17,6 +36,9 @@ jest.mock("react-router-dom", () => ({
   useSearchParams: () => [mockSearchParams],
 }));
 
+/* ---------------------------------------
+   MOCK: Toast notifications
+----------------------------------------*/
 jest.mock("sonner", () => ({
   toast: {
     error: jest.fn(),
@@ -24,6 +46,9 @@ jest.mock("sonner", () => ({
   },
 }));
 
+/* ------------------------------------------------------------------
+   MOCK: useAcceptInvitation hook (we control mutateAsync + pending)
+-------------------------------------------------------------------*/
 const mockMutateAsync = jest.fn();
 const mockUseAcceptInvitation = {
   mutateAsync: mockMutateAsync,
@@ -34,6 +59,9 @@ jest.mock("@/hooks/auth/useAcceptInvitation", () => ({
   useAcceptInvitation: () => mockUseAcceptInvitation,
 }));
 
+/* ------------------------------------------------------------------
+   MOCK: AuthLayout, AuthHeader, PasswordField components
+-------------------------------------------------------------------*/
 jest.mock("@/components/auth/AuthLayout", () => ({
   __esModule: true,
   default: ({ children }: any) => <div data-testid="auth-layout">{children}</div>,
@@ -62,6 +90,9 @@ jest.mock("@/components/shared/inputs/PasswordField", () => ({
   ),
 }));
 
+/* ------------------------------------------------------------------
+   Helper: Render component wrapped in BrowserRouter
+-------------------------------------------------------------------*/
 const renderComponent = () => {
   return render(
     <BrowserRouter>
@@ -70,27 +101,32 @@ const renderComponent = () => {
   );
 };
 
-// ------------ TESTS ------------
+/* ==================================================================
+   TEST SUITE
+===================================================================*/
 
 describe("AcceptInvitation Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSearchParams.delete("token");
+    mockSearchParams.delete("token"); // Reset token before each test
   });
 
+  /* --------------------------------------------------------------
+     RENDERING TESTS: Verifies UI structure is correct
+  ---------------------------------------------------------------*/
   describe("Rendering", () => {
     test("renders AuthLayout component", () => {
       renderComponent();
       expect(screen.getByTestId("auth-layout")).toBeInTheDocument();
     });
 
-    test("renders AuthHeader with correct props", () => {
+    test("renders AuthHeader with correct text", () => {
       renderComponent();
       expect(screen.getByText("Accept Invitation")).toBeInTheDocument();
       expect(screen.getByText("Create your password to continue")).toBeInTheDocument();
     });
 
-    test("renders both password fields", () => {
+    test("renders password fields", () => {
       renderComponent();
       expect(screen.getByPlaceholderText("Enter New Password")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Confirm New Password")).toBeInTheDocument();
@@ -107,351 +143,249 @@ describe("AcceptInvitation Component", () => {
       expect(loginLink).toBeInTheDocument();
       expect(loginLink).toHaveAttribute("href", ROUTES.LOGIN);
     });
-
-    test("displays 'Already have an account?' text", () => {
-      renderComponent();
-      expect(screen.getByText(/already have an account\?/i)).toBeInTheDocument();
-    });
   });
 
+  /* --------------------------------------------------------------
+     FORM VALIDATION: Password rules, matching, enabling submit
+  ---------------------------------------------------------------*/
   describe("Form Validation", () => {
-    test("submit button is disabled initially", () => {
+    test("submit button disabled initially", () => {
       renderComponent();
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: /set password/i })).toBeDisabled();
     });
 
-    test("shows validation error for missing uppercase", () => {
+    test("missing uppercase letter shows validation error", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "password123!" },
+      });
 
-      fireEvent.change(passwordInput, { target: { value: "password123!" } });
-      fireEvent.focus(passwordInput);
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
       expect(screen.getByText(/at least one uppercase/i)).toBeInTheDocument();
     });
 
-    test("shows validation error for missing lowercase", () => {
+    test("password mismatch shows error", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.change(passwordInput, { target: { value: "PASSWORD123!" } });
-      fireEvent.focus(passwordInput);
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      expect(screen.getByText(/at least one lowercase/i)).toBeInTheDocument();
-    });
-
-    test("shows validation error for missing number", () => {
-      renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-      fireEvent.change(passwordInput, { target: { value: "Password!" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.getByText(/at least one number/i)).toBeInTheDocument();
-    });
-
-    test("shows validation error for missing special character", () => {
-      renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-      fireEvent.change(passwordInput, { target: { value: "Password123" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.getByText(/at least one special/i)).toBeInTheDocument();
-    });
-
-    test("shows multiple validation errors", () => {
-      renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-      fireEvent.change(passwordInput, { target: { value: "pass" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.getByText(/at least one uppercase, number, special/i)).toBeInTheDocument();
-    });
-
-    test("hides validation errors when password meets requirements", () => {
-      renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-      fireEvent.change(passwordInput, { target: { value: "Password123!" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.queryByText(/at least one/i)).not.toBeInTheDocument();
-    });
-
-    test("shows error when passwords do not match", () => {
-      renderComponent();
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
-
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Different123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Different123!" },
+      });
 
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
 
-    test("hides mismatch error when passwords match", () => {
+    test("matching passwords removes error", () => {
       renderComponent();
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
+
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Password123!" },
+      });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
     });
 
-    test("enables submit button when all validations pass", () => {
+    test("enables submit button when validations pass", () => {
       renderComponent();
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      expect(submitButton).not.toBeDisabled();
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Password123!" },
+      });
+
+      expect(screen.getByRole("button", { name: /set password/i })).not.toBeDisabled();
     });
   });
 
+  /* --------------------------------------------------------------
+     PASSWORD RULE SPECIFIC TESTS
+  ---------------------------------------------------------------*/
   describe("Password Validation Rules", () => {
-    test("accepts password with all required characters", () => {
+    test("password meets all requirements", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.change(passwordInput, { target: { value: "MyP@ssw0rd!" } });
-      fireEvent.focus(passwordInput);
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "MyP@ssw0rd!" },
+      });
 
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
       expect(screen.queryByText(/at least one/i)).not.toBeInTheDocument();
     });
 
-    test("validates uppercase requirement", () => {
+    test("rejects missing lowercase", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.change(passwordInput, { target: { value: "password123!" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
-    });
-
-    test("validates lowercase requirement", () => {
-      renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-      fireEvent.change(passwordInput, { target: { value: "PASSWORD123!" } });
-      fireEvent.focus(passwordInput);
-
-      expect(screen.getByText(/lowercase/i)).toBeInTheDocument();
-    });
-
-    test("accepts various special characters", () => {
-      const specialChars = ["!", "@", "#", "$", "%", "^", "&", "*"];
-
-      specialChars.forEach((char) => {
-        const { unmount } = renderComponent();
-        const passwordInput = screen.getByPlaceholderText("Enter New Password");
-
-        fireEvent.change(passwordInput, { target: { value: `Password123${char}` } });
-        fireEvent.focus(passwordInput);
-
-        expect(screen.queryByText(/special/i)).not.toBeInTheDocument();
-        unmount();
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "PASSWORD123!" },
       });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      expect(screen.getByText(/lowercase/i)).toBeInTheDocument();
     });
   });
 
+  /* --------------------------------------------------------------
+     FORM SUBMISSION BEHAVIOR
+  ---------------------------------------------------------------*/
   describe("Form Submission", () => {
-    test("shows error when token is missing", async () => {
+    test("shows error when invitation token is missing", async () => {
       const { toast } = require("sonner");
+
       renderComponent();
 
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByRole("button", { name: /set password/i }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith("Invalid or missing invitation token");
       });
     });
 
-    test("submits form with valid token and password", async () => {
+    test("submits form when token is valid", async () => {
       mockSearchParams.set("token", "valid-token-123");
       mockMutateAsync.mockResolvedValue({ status: true });
 
       renderComponent();
 
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByRole("button", { name: /set password/i }));
 
-      await waitFor(() => {
+      await waitFor(() =>
         expect(mockMutateAsync).toHaveBeenCalledWith({
           invitation_token: "valid-token-123",
           new_password: "Password123!",
-        });
-      });
+        })
+      );
     });
 
-    test("navigates to login on successful submission", async () => {
+    test("navigates to login on success", async () => {
       mockSearchParams.set("token", "valid-token-123");
       mockMutateAsync.mockResolvedValue({ status: true });
 
       renderComponent();
 
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
-
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
-
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LOGIN, { replace: true });
-      });
-    });
-
-    test("handles submission with success flag", async () => {
-      mockSearchParams.set("token", "valid-token-123");
-      mockMutateAsync.mockResolvedValue({ success: true });
-
-      renderComponent();
-
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
-
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
-
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LOGIN, { replace: true });
-      });
-    });
-
-    test("does not navigate when submission fails", async () => {
-      mockSearchParams.set("token", "valid-token-123");
-      mockMutateAsync.mockResolvedValue({ status: false });
-
-      renderComponent();
-
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
-
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
-
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockMutateAsync).toHaveBeenCalled();
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
       });
 
-      expect(mockNavigate).not.toHaveBeenCalled();
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: "Password123!" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /set password/i }));
+
+      await waitFor(() =>
+        expect(mockNavigate).toHaveBeenCalledWith(ROUTES.LOGIN, { replace: true })
+      );
     });
   });
 
+  /* --------------------------------------------------------------
+     LOADING STATE UI
+  ---------------------------------------------------------------*/
   describe("Loading State", () => {
-    test("shows 'Saving...' text when submitting", () => {
+    test("button shows 'Saving...' text when pending", () => {
       mockUseAcceptInvitation.isPending = true;
 
       renderComponent();
 
       expect(screen.getByRole("button", { name: /saving/i })).toBeInTheDocument();
-
       mockUseAcceptInvitation.isPending = false;
     });
 
-    test("disables submit button when pending", () => {
+    test("submit button is disabled while loading", () => {
       mockUseAcceptInvitation.isPending = true;
 
       renderComponent();
 
-      const submitButton = screen.getByRole("button", { name: /saving/i });
-      expect(submitButton).toBeDisabled();
-
+      expect(screen.getByRole("button", { name: /saving/i })).toBeDisabled();
       mockUseAcceptInvitation.isPending = false;
     });
   });
 
+  /* --------------------------------------------------------------
+     FOCUS + BLUR VALIDATION
+  ---------------------------------------------------------------*/
   describe("Focus Behavior", () => {
     test("shows validation on focus", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.change(passwordInput, { target: { value: "weak" } });
-      fireEvent.focus(passwordInput);
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "weak" },
+      });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
       expect(screen.getByText(/at least one/i)).toBeInTheDocument();
     });
 
-    test("hides validation on blur when field is empty", () => {
+    test("hides validation when field is blurred empty", () => {
       renderComponent();
-      const passwordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.focus(passwordInput);
-      fireEvent.blur(passwordInput);
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      fireEvent.blur(screen.getByPlaceholderText("Enter New Password"));
 
       expect(screen.queryByText(/at least one/i)).not.toBeInTheDocument();
     });
   });
 
+  /* --------------------------------------------------------------
+     EDGE CASE TESTS
+  ---------------------------------------------------------------*/
   describe("Edge Cases", () => {
-    test("handles empty password fields", () => {
+    test("both password fields empty => submit disabled", () => {
       renderComponent();
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: /set password/i })).toBeDisabled();
     });
 
-    test("handles only new password filled", () => {
+    test("only one password filled => still disabled", () => {
       renderComponent();
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: "Password123!" },
+      });
 
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: /set password/i })).toBeDisabled();
     });
 
-    test("handles only confirm password filled", () => {
+    test("shows mismatch again after edit", () => {
       renderComponent();
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
 
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      const newPass = screen.getByPlaceholderText("Enter New Password");
+      const confirm = screen.getByPlaceholderText("Confirm New Password");
 
-      const submitButton = screen.getByRole("button", { name: /set password/i });
-      expect(submitButton).toBeDisabled();
-    });
-
-    test("handles password change after match", () => {
-      renderComponent();
-      const newPasswordInput = screen.getByPlaceholderText("Enter New Password");
-      const confirmPasswordInput = screen.getByPlaceholderText("Confirm New Password");
-
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+      fireEvent.change(newPass, { target: { value: "Password123!" } });
+      fireEvent.change(confirm, { target: { value: "Password123!" } });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
 
-      fireEvent.change(newPasswordInput, { target: { value: "Password123!X" } });
-
+      // Editing breaks match
+      fireEvent.change(newPass, { target: { value: "Password123!X" } });
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
   });

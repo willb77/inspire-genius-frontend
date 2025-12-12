@@ -1,9 +1,21 @@
+/**
+ * @jest-environment jsdom
+ *
+ * This test suite validates the AuthHeader component, ensuring:
+ * - Title renders properly with correct styling
+ * - Subtitle renders conditionally only when provided
+ * - Special characters and long text are handled gracefully
+ * - Wrapper and text elements apply correct Tailwind classes
+ */
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AuthHeader from "../AuthHeader";
 
 describe("AuthHeader Component", () => {
+
   test("renders title correctly", () => {
+    // Title should render as an <h1>
     render(<AuthHeader title="Welcome Back" />);
 
     const heading = screen.getByRole("heading", { level: 1 });
@@ -12,6 +24,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("renders title with correct styling classes", () => {
+    // Title should include default Tailwind styling classes
     render(<AuthHeader title="Sign Up" />);
 
     const heading = screen.getByRole("heading", { level: 1 });
@@ -26,6 +39,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("renders subtitle when provided", () => {
+    // Subtitle should render as a <p> only when passed
     render(
       <AuthHeader
         title="Create Account"
@@ -39,6 +53,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("subtitle has correct styling classes", () => {
+    // Subtitle should apply correct Tailwind text classes
     render(
       <AuthHeader
         title="Login"
@@ -57,6 +72,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("does not render subtitle when not provided", () => {
+    // No <p> tag should appear when subtitle is missing
     const { container } = render(<AuthHeader title="Sign In" />);
 
     const paragraphs = container.querySelectorAll("p");
@@ -64,6 +80,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("does not render subtitle when undefined", () => {
+    // Passing undefined should not create a subtitle element
     render(<AuthHeader title="Reset Password" subtitle={undefined} />);
 
     const subtitle = screen.queryByRole("paragraph");
@@ -71,9 +88,9 @@ describe("AuthHeader Component", () => {
   });
 
   test("does not render subtitle when empty string", () => {
+    // Empty string is falsy → subtitle should be ignored
     render(<AuthHeader title="Verify Email" subtitle="" />);
 
-    // Empty string is falsy, so subtitle should not render
     const paragraphs = screen.queryAllByText("");
     const subtitleParagraphs = paragraphs.filter(
       (el) => el.tagName === "P" && el.classList.contains("text-muted-foreground")
@@ -82,6 +99,7 @@ describe("AuthHeader Component", () => {
   });
 
   test("renders wrapper div with correct classes", () => {
+    // The outer <div> should apply layout spacing classes
     const { container } = render(
       <AuthHeader title="Test" subtitle="Subtitle" />
     );
@@ -91,26 +109,34 @@ describe("AuthHeader Component", () => {
   });
 
   test("handles long title text", () => {
-    const longTitle = "This is a very long title that should still render correctly in the component";
+    // Long titles must still render without issues
+    const longTitle =
+      "This is a very long title that should still render correctly in the component";
+
     render(<AuthHeader title={longTitle} />);
 
     expect(screen.getByText(longTitle)).toBeInTheDocument();
   });
 
   test("handles long subtitle text", () => {
-    const longSubtitle = "This is a very long subtitle that provides detailed information about what the user should do next in the authentication process";
+    // Long subtitles should render without truncation
+    const longSubtitle =
+      "This is a very long subtitle that provides detailed information about what the user should do next in the authentication process";
+
     render(<AuthHeader title="Login" subtitle={longSubtitle} />);
 
     expect(screen.getByText(longSubtitle)).toBeInTheDocument();
   });
 
-  test("renders with special characters in title", () => {
+  test("renders title with special characters", () => {
+    // Title must support unicode and emoji
     render(<AuthHeader title="Welcome to App™ 2.0!" />);
 
     expect(screen.getByText("Welcome to App™ 2.0!")).toBeInTheDocument();
   });
 
-  test("renders with special characters in subtitle", () => {
+  test("renders subtitle with special characters", () => {
+    // Subtitle must support arrows and unicode symbols
     render(
       <AuthHeader
         title="Sign Up"

@@ -1,25 +1,39 @@
+/**
+ * @jest-environment jsdom
+ *
+ * This test suite verifies the AuthLayout component behavior, including:
+ * - Left panel content (titles, subtitle, illustration image)
+ * - Right panel rendering of children
+ * - Custom prop handling for overriding default text
+ * - Overall layout structure and CSS classes
+ * - Accessibility and edge-case behavior
+ */
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AuthLayout from "../AuthLayout";
 
-// Mock the Logo component
+// Mocking Logo component to isolate AuthLayout behavior
 jest.mock("../../shared/Logo", () => ({
   Logo: () => <div data-testid="mock-logo">Logo</div>,
 }));
 
 describe("AuthLayout Component", () => {
+
+  // Rendering & Basic Structure
   describe("Rendering", () => {
     test("renders Logo component", () => {
+      // Ensures the left panel always includes the Logo
       render(
         <AuthLayout>
           <div>Test Content</div>
         </AuthLayout>
       );
-
       expect(screen.getByTestId("mock-logo")).toBeInTheDocument();
     });
 
     test("renders children in right panel", () => {
+      // Children should render inside the right panel area
       render(
         <AuthLayout>
           <div data-testid="test-child">Child Content</div>
@@ -31,6 +45,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("renders authentication illustration image", () => {
+      // Verifies correct image path and alt text
       render(
         <AuthLayout>
           <div>Content</div>
@@ -46,6 +61,7 @@ describe("AuthLayout Component", () => {
     });
   });
 
+  // Default Text Rendering
   describe("Default Props", () => {
     test("renders default left title one", () => {
       render(
@@ -84,8 +100,10 @@ describe("AuthLayout Component", () => {
     });
   });
 
+  // Custom Prop Overrides
   describe("Custom Props", () => {
     test("renders custom left title one", () => {
+      // Custom title should override default text
       render(
         <AuthLayout leftTitleOne="Custom Title One">
           <div>Content</div>
@@ -127,6 +145,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("renders all custom props together", () => {
+      // Ensures full override functionality works correctly
       render(
         <AuthLayout
           leftTitleOne="Welcome"
@@ -143,8 +162,10 @@ describe("AuthLayout Component", () => {
     });
   });
 
+  // Layout Structure & CSS Classes
   describe("Layout Structure", () => {
     test("has correct root container classes", () => {
+      // Ensures main wrapper uses correct Tailwind spacing/theme classes
       const { container } = render(
         <AuthLayout>
           <div>Content</div>
@@ -161,6 +182,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("has grid layout container with correct classes", () => {
+      // Validates responsive grid behavior
       const { container } = render(
         <AuthLayout>
           <div>Content</div>
@@ -180,6 +202,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("image has correct styling classes", () => {
+      // Validates correct sizing classes of illustration image
       render(
         <AuthLayout>
           <div>Content</div>
@@ -196,6 +219,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("left titles have correct styling", () => {
+      // Both title headings should have consistent styling
       render(
         <AuthLayout>
           <div>Content</div>
@@ -214,6 +238,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("subtitle has correct styling classes", () => {
+      // Validates visual style of subtitle text
       render(
         <AuthLayout>
           <div>Content</div>
@@ -232,7 +257,8 @@ describe("AuthLayout Component", () => {
     });
 
     test("right panel has correct classes", () => {
-      const { } = render(
+      // Right panel should apply layout padding and full width
+      render(
         <AuthLayout>
           <div data-testid="child">Content</div>
         </AuthLayout>
@@ -243,6 +269,7 @@ describe("AuthLayout Component", () => {
     });
   });
 
+  // Children Rendering Variants
   describe("Children Rendering", () => {
     test("renders multiple children", () => {
       render(
@@ -257,6 +284,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("renders complex children structure", () => {
+      // Ensures forms and nested JSX render correctly
       render(
         <AuthLayout>
           <form data-testid="auth-form">
@@ -272,14 +300,15 @@ describe("AuthLayout Component", () => {
     });
 
     test("renders when children is null", () => {
-      const { } = render(<AuthLayout>{null}</AuthLayout>);
+      // Layout should still display left panel even if right panel is empty
+      render(<AuthLayout>{null}</AuthLayout>);
 
-      // Should still render the layout structure
       expect(screen.getByTestId("mock-logo")).toBeInTheDocument();
       expect(screen.getByAltText("Auth illustration")).toBeInTheDocument();
     });
   });
 
+  // Accessibility Checks
   describe("Accessibility", () => {
     test("image has descriptive alt text", () => {
       render(
@@ -293,6 +322,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("headings are properly structured", () => {
+      // Should always have exactly two <h2> headings
       render(
         <AuthLayout>
           <div>Content</div>
@@ -304,6 +334,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("subtitle is readable text", () => {
+      // Subtitle must be inside a readable <p> element
       render(
         <AuthLayout>
           <div>Content</div>
@@ -317,8 +348,10 @@ describe("AuthLayout Component", () => {
     });
   });
 
+  // Edge Case Handling
   describe("Edge Cases", () => {
     test("handles empty string props", () => {
+      // Empty string titles should still render but display no text
       render(
         <AuthLayout leftTitleOne="" leftTitleTwo="" subTitle="">
           <div>Content</div>
@@ -333,8 +366,10 @@ describe("AuthLayout Component", () => {
     });
 
     test("handles very long text in titles", () => {
+      // Long strings should be supported without breaking UI
       const longTitle =
         "This is a very long title that should still render correctly without breaking the layout or causing any issues";
+
       render(
         <AuthLayout leftTitleOne={longTitle}>
           <div>Content</div>
@@ -345,6 +380,7 @@ describe("AuthLayout Component", () => {
     });
 
     test("handles special characters in props", () => {
+      // Unicode, emojis, and punctuation should render fine
       render(
         <AuthLayout
           leftTitleOne="Welcome! 🎉"
