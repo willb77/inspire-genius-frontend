@@ -2,6 +2,8 @@ class DemoAudioService {
   private audioContext: AudioContext | null = null;
   private audioQueue: (Blob | ArrayBuffer)[] = [];
   private isPlaying = false;
+  private decodeInFlight = 0;
+  private decodeChain: Promise<void> = Promise.resolve();
   private scheduledTime = 0;
   private initialDelayApplied = false;
   private minBufferSize = 3;
@@ -60,6 +62,8 @@ class DemoAudioService {
     this.activeSources = [];
     this.audioQueue = [];
     this.isPlaying = false;
+    this.decodeInFlight = 0;
+    this.decodeChain = Promise.resolve();
     this.initialDelayApplied = false;
     this.combinedBuffers = [];
     if (this.audioContext) {
@@ -84,9 +88,29 @@ class DemoAudioService {
     }
   }
 
-  addAudioChunk(audioData: Blob | ArrayBuffer): void {
-    this.audioQueue.push(audioData);
-    this.processAudioQueue();
+  addAudioChunk(audioData: Blob | ArrayBuffer, playInBackground: boolean = true): void {
+    if (playInBackground) {
+      this.audioQueue.push(audioData);
+      this.processAudioQueue();
+      return;
+    }
+
+    this.decodeInFlight++;
+    this.decodeChain = this.decodeChain
+      .then(async () => {
+        await this.initializeAudioContext();
+        if (!this.audioContext) return;
+        const pcmData = await (audioData instanceof Blob ? audioData.arrayBuffer() : audioData);
+        const wavBuffer = this.createWavFile(pcmData, 1, 24000, 2);
+        const audioBuffer = await this.audioContext.decodeAudioData(wavBuffer);
+        this.combinedBuffers.push(audioBuffer);
+      })
+      .catch((e) => {
+        console.error('Error decoding audio data', e);
+      })
+      .finally(() => {
+        this.decodeInFlight = Math.max(0, this.decodeInFlight - 1);
+      });
   }
 
   private processAudioQueue(): void {
@@ -193,7 +217,7 @@ class DemoAudioService {
   }
 
   get speaking(): boolean {
-    return this.isPlaying || this.audioQueue.length > 0;
+    return this.isPlaying || this.audioQueue.length > 0 || this.decodeInFlight > 0;
   }
 
   getStatus(): { isPlaying: boolean; queueLength: number; scheduledTime: number; buffered: boolean } {

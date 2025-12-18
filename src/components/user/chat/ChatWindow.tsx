@@ -550,12 +550,12 @@ export default function ChatWindow({
             <button
               type="button"
               aria-label="Close audio player"
-              className="cursor-pointer p-0.5 absolute -right-1 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
+              className="cursor-pointer p-0.5 absolute z-10 -right-0.5 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => onCloseAudioPlayer?.()}
             >
               <X className="h-4 w-4 text-white" />
             </button>
-            <AudioPlayer audioBuffer={audioPlayerBuffer} />
+            <AudioPlayer audioBuffer={audioPlayerBuffer} autoPlay deferReloadWhilePlaying />
           </div>
         </div>
       ) : null}
@@ -644,7 +644,7 @@ export default function ChatWindow({
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 px-3"
+                className="h-11 px-3 hidden"
               
                 onClick={() => {
                   if (hasAudio && !isAudioPaused) return;
