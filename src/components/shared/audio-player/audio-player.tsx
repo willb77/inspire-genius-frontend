@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import WaveSurfer from "wavesurfer.js"
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RotateCcw } from "lucide-react"
+import { getUIFlag, setUIFlag } from "@/lib/storage"
 
 interface AudioPlayerProps {
   audioBuffer: AudioBuffer | null
@@ -13,6 +14,7 @@ interface AudioPlayerProps {
 }
 
 export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloadWhilePlaying = true }: AudioPlayerProps) {
+  const SPEAKER_OFF_KEY = "isSpeker"
   const containerRef = useRef<HTMLDivElement>(null)
   const waveRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
@@ -31,6 +33,14 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
   const [isMuted, setIsMuted] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const prevVolumeRef = useRef(1)
+
+  useEffect(() => {
+    const speakerOff = getUIFlag(SPEAKER_OFF_KEY)
+    if (speakerOff) {
+      setIsMuted(true)
+      setVolume(0)
+    }
+  }, [])
 
   useEffect(() => {
     autoPlayRef.current = autoPlay
@@ -293,10 +303,13 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
 
   const toggleMute = () => {
     if (isMuted) {
-      setVolume(prevVolumeRef.current)
+      setUIFlag(SPEAKER_OFF_KEY, false)
+      const restored = prevVolumeRef.current > 0 ? prevVolumeRef.current : 1
+      setVolume(restored)
       setIsMuted(false)
     } else {
       prevVolumeRef.current = volume
+      setUIFlag(SPEAKER_OFF_KEY, true)
       setVolume(0)
       setIsMuted(true)
     }
@@ -421,9 +434,11 @@ export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloa
                 setVolume(newVolume)
                 if (newVolume <= 0) {
                   setIsMuted(true)
+                  setUIFlag(SPEAKER_OFF_KEY, true)
                 } else {
                   prevVolumeRef.current = newVolume
                   setIsMuted(false)
+                  setUIFlag(SPEAKER_OFF_KEY, false)
                 }
               }}
               className="w-full h-1.5 rounded-full bg-white/25 accent-white cursor-pointer"
