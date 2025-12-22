@@ -190,6 +190,21 @@ export default function ChatWindow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalMessages?.length, activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+    if (!audioPlayerBuffer || !showAudioPlayer) return;
+    const node = bottomRef.current;
+    if (!node) return;
+    window.setTimeout(() => {
+      try {
+        node.scrollIntoView({ behavior: "smooth", block: "end" });
+      } catch {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+    }, 50);
+  }, [activeTab, audioPlayerBuffer, showAudioPlayer]);
+
   const handleShowAudioPlayer = (open?: boolean) => {
     setShowAudioPlayer?.(open ?? false);
   };
@@ -268,7 +283,10 @@ export default function ChatWindow({
       {/* Body */}
 
       <div
-        className="flex-1 overflow-auto p-4"
+        className={cn(
+          "flex-1 overflow-auto p-4",
+          audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
+        )}
         style={{
           backgroundImage:
             "radial-gradient(circle at 10px 10px, rgba(246, 184, 108, 0.08) 2px, transparent 2px), radial-gradient(circle at 30px 30px, rgba(246, 184, 108, 0.06) 2px, transparent 2px)",
@@ -533,16 +551,6 @@ export default function ChatWindow({
         disableExport={false}
       />
 
-      {/* Small floating sparkle action */}
-      {/* <button
-        type="button"
-        aria-label="Assistant action"
-        className="absolute left-4 bottom-24 grid place-items-center rounded-xl shadow h-10 w-10 text-white"
-        style={{ background: "linear-gradient(135deg, #55362A, #466BC4)" }}
-      >
-        <Sparkles className="size-5" />
-      </button> */}
-
       {/* Floating audio player (appears above the input when assistant audio completes) */}
       {audioPlayerBuffer && showAudioPlayer ? (
         <div className="px-3">
@@ -559,6 +567,18 @@ export default function ChatWindow({
           </div>
         </div>
       ) : null}
+
+      {/* Small floating sparkle action */}
+      {/* <button
+        type="button"
+        aria-label="Assistant action"
+        className="absolute left-4 bottom-24 grid place-items-center rounded-xl shadow h-10 w-10 text-white"
+        style={{ background: "linear-gradient(135deg, #55362A, #466BC4)" }}
+      >
+        <Sparkles className="size-5" />
+      </button> */}
+
+  
 
       {/* Input */}
       <div className="border-t p-3">
