@@ -158,6 +158,7 @@ export default function ChatWindow({
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const prevAudioVisibleRef = useRef(false);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -192,15 +193,26 @@ export default function ChatWindow({
 
   useEffect(() => {
     if (activeTab !== "chat") return;
-    if (!audioPlayerBuffer || !showAudioPlayer) return;
+    const audioVisible = !!audioPlayerBuffer && !!showAudioPlayer;
+    const wasVisible = prevAudioVisibleRef.current;
+    prevAudioVisibleRef.current = audioVisible;
+
+    if (!audioVisible || wasVisible) return;
+
+    const el = scrollRef.current;
+    if (el) {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceFromBottom > 160) return;
+    }
+
     const node = bottomRef.current;
     if (!node) return;
     window.setTimeout(() => {
       try {
         node.scrollIntoView({ behavior: "smooth", block: "end" });
       } catch {
-        const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
+        const fallback = scrollRef.current;
+        if (fallback) fallback.scrollTop = fallback.scrollHeight;
       }
     }, 50);
   }, [activeTab, audioPlayerBuffer, showAudioPlayer]);
