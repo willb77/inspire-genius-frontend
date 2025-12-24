@@ -202,7 +202,7 @@ export default function ChatWindow({
     const el = scrollRef.current;
     if (el) {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (distanceFromBottom > 160) return;
+      if (distanceFromBottom > 400) return;
     }
 
     const node = bottomRef.current;
