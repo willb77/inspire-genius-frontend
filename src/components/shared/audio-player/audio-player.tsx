@@ -1,180 +1,62 @@
 "use client"
 
-import type React from "react"
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import WaveSurfer from "wavesurfer.js"
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, RotateCcw } from "lucide-react"
+import { getUIFlag, setUIFlag } from "@/lib/storage"
 
 interface AudioPlayerProps {
   audioBuffer: AudioBuffer | null
   onError?: (error: string) => void
+  autoPlay?: boolean
+  deferReloadWhilePlaying?: boolean
 }
 
-export function AudioPlayer({ audioBuffer, onError }: AudioPlayerProps) {
+export function AudioPlayer({ audioBuffer, onError, autoPlay = false, deferReloadWhilePlaying = true }: AudioPlayerProps) {
+  const SPEAKER_OFF_KEY = "isSpeker"
   const containerRef = useRef<HTMLDivElement>(null)
   const waveRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
+  const isDraggingRef = useRef(false)
+  const loadSeqRef = useRef(0)
+  const pendingPlayRef = useRef(false)
+  const pendingBufferRef = useRef<AudioBuffer | null>(null)
+  const userPausedRef = useRef(false)
+  const autoPlayRef = useRef(autoPlay)
+  const deferReloadRef = useRef(deferReloadWhilePlaying)
+  const playbackRateRef = useRef(1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
-  const [isDragging, setIsDragging] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
   const prevVolumeRef = useRef(1)
 
   useEffect(() => {
-    if (!waveRef.current || !audioBuffer) return
-
-    try {
-      wavesurferRef.current = WaveSurfer.create({
-        container: waveRef.current,
-        waveColor: "#3b82f6",
-        progressColor: "#1e40af",
-        cursorColor: "#1e3a8a",
-        barWidth: 2,
-        barRadius: 3,
-        cursorWidth: 2,
-        height: 24,
-        normalize: true,
-        fillParent: true,
-      })
-
-      const offlineContext = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        audioBuffer.length,
-        audioBuffer.sampleRate,
-      )
-      const source = offlineContext.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(offlineContext.destination)
-      source.start(0)
-
-      offlineContext.startRendering().then((renderedBuffer) => {
-        const blob = bufferToWave(renderedBuffer)
-        const url = URL.createObjectURL(blob)
-        const peaks = Array.from({ length: renderedBuffer.numberOfChannels }, (_, i) =>
-          renderedBuffer.getChannelData(i),
-        )
-        wavesurferRef.current?.load(url, peaks, renderedBuffer.duration)
-      })
-
-      wavesurferRef.current.on("play", () => setIsPlaying(true))
-      wavesurferRef.current.on("pause", () => setIsPlaying(false))
-      wavesurferRef.current.on("ready", () => {
-        const dur = wavesurferRef.current?.getDuration() || 0
-        setDuration(dur)
-      })
-      wavesurferRef.current.on("timeupdate", (currentTime) => {
-        if (!isDragging) {
-          setCurrentTime(currentTime)
-        }
-      })
-
-      return () => {
-        wavesurferRef.current?.destroy()
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to load audio"
-      onError?.(errorMessage)
-      console.error("WaveSurfer initialization error:", error)
+    const speakerOff = getUIFlag(SPEAKER_OFF_KEY)
+    if (speakerOff) {
+      setIsMuted(true)
+      setVolume(0)
     }
-  }, [audioBuffer, onError])
+  }, [])
 
   useEffect(() => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.setVolume(volume)
-    }
-  }, [volume])
+    autoPlayRef.current = autoPlay
+  }, [autoPlay])
 
-  const togglePlayPause = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.playPause()
-    }
-  }
+  useEffect(() => {
+    deferReloadRef.current = deferReloadWhilePlaying
+  }, [deferReloadWhilePlaying])
 
-  const skipBackward = () => {
-    if (wavesurferRef.current) {
-      const newTime = Math.max(0, currentTime - 10)
-      wavesurferRef.current.seekTo(newTime / duration)
-      setCurrentTime(newTime)
-    }
-  }
+  useEffect(() => {
+    playbackRateRef.current = playbackRate
+    const ws = wavesurferRef.current as unknown as { setPlaybackRate?: (rate: number) => void } | null
+    if (ws?.setPlaybackRate) ws.setPlaybackRate(playbackRate)
+  }, [playbackRate])
 
-  const skipForward = () => {
-    if (wavesurferRef.current) {
-      const newTime = Math.min(duration, currentTime + 10)
-      wavesurferRef.current.seekTo(newTime / duration)
-      setCurrentTime(newTime)
-    }
-  }
-
-  const replay = () => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.seekTo(0)
-      setCurrentTime(0)
-      wavesurferRef.current.play()
-    }
-  }
-
-  const toggleMute = () => {
-    if (isMuted) {
-      setVolume(prevVolumeRef.current)
-      setIsMuted(false)
-    } else {
-      prevVolumeRef.current = volume
-      setVolume(0)
-      setIsMuted(true)
-    }
-  }
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true)
-    seekToPosition(e)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return
-    seekToPosition(e)
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-    if (wavesurferRef.current) {
-      wavesurferRef.current.seekTo(currentTime / duration)
-    }
-  }
-
-  const seekToPosition = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!wavesurferRef.current || !waveRef.current) return
-
-    const rect = waveRef.current.getBoundingClientRect()
-    const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    const newTime = percentage * duration
-
-    wavesurferRef.current.seekTo(percentage)
-    setCurrentTime(newTime)
-  }
-
-  const handleWaveClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!wavesurferRef.current || !waveRef.current) return
-
-    const rect = waveRef.current.getBoundingClientRect()
-    const percentage = (e.clientX - rect.left) / rect.width
-    const newTime = percentage * duration
-
-    wavesurferRef.current.seekTo(percentage)
-    setCurrentTime(newTime)
-  }
-
-  const formatTime = (seconds: number) => {
-    if (!isFinite(seconds)) return "0:00"
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
-
-  const bufferToWave = (audioBuffer: AudioBuffer) => {
+  const bufferToWave = useCallback((audioBuffer: AudioBuffer) => {
     const numberOfChannels = audioBuffer.numberOfChannels
     const sampleRate = audioBuffer.sampleRate
     const format = 1 // PCM
@@ -221,8 +103,6 @@ export function AudioPlayer({ audioBuffer, onError }: AudioPlayerProps) {
     setUint32(arrayLength - offset - 4) // chunk length
 
     let index = offset
-
-
     for (let i = 0; i < audioBuffer.length; i++) {
       for (let channel = 0; channel < numberOfChannels; channel++) {
         let sample = Math.max(-1, Math.min(1, channels[channel][i]))
@@ -233,6 +113,213 @@ export function AudioPlayer({ audioBuffer, onError }: AudioPlayerProps) {
     }
 
     return new Blob([arrayBuffer], { type: "audio/wav" })
+  }, [])
+
+  const applyBuffer = useCallback((buf: AudioBuffer, preferPlay: boolean) => {
+    const ws = wavesurferRef.current
+    if (!ws) return
+
+    const prevTime = ws.getCurrentTime() || 0
+    const wasPlaying = ws.isPlaying()
+    const seq = ++loadSeqRef.current
+
+    try {
+      const url = URL.createObjectURL(bufferToWave(buf))
+
+      ws.once("ready", () => {
+        if (seq !== loadSeqRef.current) {
+          URL.revokeObjectURL(url)
+          return
+        }
+        try {
+          const dur = ws.getDuration() || 0
+          const safeTime = Math.min(prevTime, dur)
+          if (dur > 0) {
+            ws.seekTo(safeTime / dur)
+            setCurrentTime(safeTime)
+          }
+
+          const wsRate = wavesurferRef.current as unknown as { setPlaybackRate?: (rate: number) => void } | null
+          if (wsRate?.setPlaybackRate) wsRate.setPlaybackRate(playbackRateRef.current)
+
+          const shouldPlay = (preferPlay || wasPlaying || pendingPlayRef.current || autoPlayRef.current) && !userPausedRef.current
+          pendingPlayRef.current = false
+          if (shouldPlay) ws.play()
+        } catch {
+          // ignore
+        }
+        URL.revokeObjectURL(url)
+      })
+
+      ws.load(url)
+    } catch {
+      // ignore
+    }
+  }, [bufferToWave])
+
+  useEffect(() => {
+    if (!waveRef.current) return
+    if (wavesurferRef.current) return
+
+    try {
+      const ws = WaveSurfer.create({
+        container: waveRef.current,
+        waveColor: "#3b82f6",
+        progressColor: "#1e40af",
+        cursorColor: "#1e3a8a",
+        barWidth: 2,
+        barRadius: 3,
+        cursorWidth: 2,
+        height: 24,
+        normalize: true,
+        fillParent: true,
+      })
+      wavesurferRef.current = ws
+
+      ws.on("play", () => setIsPlaying(true))
+      ws.on("pause", () => setIsPlaying(false))
+      ws.on("ready", () => {
+        const dur = ws.getDuration() || 0
+        setDuration(dur)
+      })
+      ws.on("error", (e) => {
+        const msg = typeof e === "string" ? e : "Failed to load audio"
+        onError?.(msg)
+      })
+      ws.on("timeupdate", (t) => {
+        if (!isDraggingRef.current) {
+          setCurrentTime(t)
+        }
+
+        const pending = pendingBufferRef.current
+        if (!pending) return
+        if (!deferReloadRef.current) return
+
+        const dur = ws.getDuration() || 0
+        const nearEnd = dur > 0 && dur - t <= 0.35
+        if (!ws.isPlaying() || nearEnd) {
+          pendingBufferRef.current = null
+          applyBuffer(pending, false)
+        }
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to load audio"
+      onError?.(errorMessage)
+      console.error("WaveSurfer initialization error:", error)
+    }
+
+    return () => {
+      wavesurferRef.current?.destroy()
+      wavesurferRef.current = null
+    }
+  }, [applyBuffer, onError])
+
+  useEffect(() => {
+    const ws = wavesurferRef.current
+    if (!ws) return
+
+    if (!audioBuffer) {
+      setDuration(0)
+      setCurrentTime(0)
+      return
+    }
+
+    const isPlayingNow = ws.isPlaying()
+    const dur = ws.getDuration() || 0
+    const t = ws.getCurrentTime() || 0
+    const nearEnd = dur > 0 && dur - t <= 0.35
+
+    if (deferReloadRef.current && isPlayingNow && !nearEnd) {
+      pendingBufferRef.current = audioBuffer
+      return
+    }
+
+    pendingBufferRef.current = null
+    applyBuffer(audioBuffer, autoPlayRef.current)
+  }, [applyBuffer, audioBuffer])
+
+  useEffect(() => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.setVolume(volume)
+    }
+  }, [volume])
+
+  const seekToTime = (t: number) => {
+    const ws = wavesurferRef.current
+    if (!ws) return
+    if (duration <= 0) return
+    const safe = Math.max(0, Math.min(duration, t))
+    ws.seekTo(safe / duration)
+    setCurrentTime(safe)
+  }
+
+  const togglePlayPause = () => {
+    const ws = wavesurferRef.current
+    if (!ws) return
+
+    const dur = ws.getDuration() || 0
+    if (dur <= 0) {
+      // User clicked play before WaveSurfer is ready.
+      pendingPlayRef.current = true
+      userPausedRef.current = false
+      return
+    }
+
+    pendingPlayRef.current = false
+    if (ws.isPlaying()) {
+      userPausedRef.current = true
+      ws.pause()
+    } else {
+      userPausedRef.current = false
+      ws.play()
+    }
+  }
+
+  const skipBackward = () => {
+    if (wavesurferRef.current) {
+      if (duration <= 0) return
+      const newTime = Math.max(0, currentTime - 10)
+      wavesurferRef.current.seekTo(newTime / duration)
+      setCurrentTime(newTime)
+    }
+  }
+
+  const skipForward = () => {
+    if (wavesurferRef.current) {
+      if (duration <= 0) return
+      const newTime = Math.min(duration, currentTime + 10)
+      wavesurferRef.current.seekTo(newTime / duration)
+      setCurrentTime(newTime)
+    }
+  }
+
+  const replay = () => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.seekTo(0)
+      setCurrentTime(0)
+      wavesurferRef.current.play()
+    }
+  }
+
+  const toggleMute = () => {
+    if (isMuted) {
+      setUIFlag(SPEAKER_OFF_KEY, false)
+      const restored = prevVolumeRef.current > 0 ? prevVolumeRef.current : 1
+      setVolume(restored)
+      setIsMuted(false)
+    } else {
+      prevVolumeRef.current = volume
+      setUIFlag(SPEAKER_OFF_KEY, true)
+      setVolume(0)
+      setIsMuted(true)
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    if (!isFinite(seconds)) return "0:00"
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
   return (
@@ -241,110 +328,100 @@ export function AudioPlayer({ audioBuffer, onError }: AudioPlayerProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full bg-card border border-border rounded-lg shadow-lg"
-      style={{ height: "100px" }}
+      className="w-full rounded-2xl shadow-lg border border-white/20"
+      style={{ background: "linear-gradient(135deg, #5b5ad6, #7250c7)", height: "83px" }}
     >
-      <div className="flex flex-col h-full p-2 gap-1">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex-1 min-h-0"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          <div
-            ref={waveRef}
-            onClick={handleWaveClick}
-            className={`h-full cursor-pointer hover:opacity-80 transition-opacity ${isDragging ? "opacity-100" : ""}`}
-            style={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}
-          />
-        </motion.div>
+      <div className="relative flex flex-col h-full px-3 py-2 gap-1.5">
+        <div ref={waveRef} className="absolute left-[-9999px] top-0 h-0 w-0 overflow-hidden" />
 
-        <div className="flex items-center justify-between gap-1.5">
-          {/* Time display */}
-          <div className="flex gap-0.5 text-xs text-muted-foreground min-w-32 whitespace-nowrap">
-            <p className="min-w-8 text-blue-900">{formatTime(currentTime)}</p>
-            <span>/</span>
-            <p className="min-w-8">{formatTime(duration)}</p>
-          </div>
-
+        <div className="flex items-center gap-3">
           {/* Control buttons */}
-          <div className="flex items-center gap-1">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
               onClick={skipBackward}
-              className="p-1.5 rounded-full bg-secondary hover:bg-accent transition-colors"
               aria-label="Skip backward 10 seconds"
+              className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
-              <SkipBack size={14} className="text-secondary-foreground" />
-            </motion.button>
+              <SkipBack className="h-4 w-4" />
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
+              type="button"
               onClick={togglePlayPause}
-              className="p-1.5 rounded-full bg-primary hover:bg-primary/90 transition-colors shadow-lg"
               aria-label={isPlaying ? "Pause" : "Play"}
+              className="h-9 w-9 rounded-full bg-white text-indigo-700 grid place-items-center shadow ring-2 ring-white/50"
             >
-              {isPlaying ? (
-                <Pause size={16} className="text-primary-foreground" />
-              ) : (
-                <Play size={16} className="text-primary-foreground ml-0.5" />
-              )}
-            </motion.button>
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
+              type="button"
               onClick={skipForward}
-              className="p-1.5 rounded-full bg-secondary hover:bg-accent transition-colors"
               aria-label="Skip forward 10 seconds"
+              className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
-              <SkipForward size={14} className="text-secondary-foreground" />
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={replay}
-              className="p-1.5 rounded-full bg-secondary hover:bg-accent transition-colors"
-              aria-label="Replay from start"
-            >
-              <RotateCcw size={14} className="text-secondary-foreground" />
-            </motion.button>
+              <SkipForward className="h-4 w-4" />
+            </button>
           </div>
 
+          <div className="flex-1 min-w-0">
+            {/* Time display */}
+            <div className="flex flex-col items-center gap-1">
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, duration)}
+                step={0.01}
+                value={Math.min(currentTime, duration || 0)}
+                onMouseDown={() => {
+                  isDraggingRef.current = true
+                }}
+                onMouseUp={() => {
+                  isDraggingRef.current = false
+                }}
+                onTouchStart={() => {
+                  isDraggingRef.current = true
+                }}
+                onTouchEnd={() => {
+                  isDraggingRef.current = false
+                }}
+                onChange={(e) => {
+                  const t = Number.parseFloat(e.target.value)
+                  if (!isFinite(t)) return
+                  seekToTime(t)
+                }}
+                className="w-full h-1.5 rounded-full bg-white/25 accent-white cursor-pointer"
+                aria-label="Seek"
+                disabled={duration <= 0}
+              />
+              <div className="text-white/90 text-xs font-semibold whitespace-nowrap">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={replay}
+            aria-label="Replay from start"
+            className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
           {/* Volume control - compact */}
-          <div className="flex items-center gap-1 min-w-fit">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+          <div className="flex items-center gap-2 min-w-[160px]">
+            <button
+              type="button"
               onClick={toggleMute}
-              className="p-1.5 rounded-full hover:bg-secondary transition-colors flex-shrink-0"
               aria-label={isMuted ? "Unmute" : "Mute"}
+              className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/20 text-white grid place-items-center"
             >
-              {isMuted ? (
-                <motion.div
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <VolumeX size={14} className="text-muted-foreground" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Volume2 size={14} className="text-muted-foreground" />
-                </motion.div>
-              )}
-            </motion.button>
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
             <input
               type="range"
               min="0"
@@ -353,17 +430,44 @@ export function AudioPlayer({ audioBuffer, onError }: AudioPlayerProps) {
               value={volume}
               onChange={(e) => {
                 const newVolume = Number.parseFloat(e.target.value)
+                if (!isFinite(newVolume)) return
                 setVolume(newVolume)
-                if (newVolume > 0 && isMuted) {
+                if (newVolume <= 0) {
+                  setIsMuted(true)
+                  setUIFlag(SPEAKER_OFF_KEY, true)
+                } else {
+                  prevVolumeRef.current = newVolume
                   setIsMuted(false)
+                  setUIFlag(SPEAKER_OFF_KEY, false)
                 }
               }}
-              className="w-12 h-1.5 bg-secondary rounded-full cursor-pointer accent-primary flex-shrink-0"
+              className="w-full h-1.5 rounded-full bg-white/25 accent-white cursor-pointer"
               aria-label="Volume control"
             />
-            <span className="text-xs text-muted-foreground w-6 text-right flex-shrink-0">
-              {Math.round(volume * 100)}%
-            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-white/90 text-xs font-semibold whitespace-nowrap">
+            <span className={`h-1.5 w-1.5 rounded-full ${isPlaying ? "bg-green-400" : "bg-yellow-300"}`} />
+            {isPlaying ? "PLAYING" : "PAUSED"}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {([0.5, 1, 1.5, 2] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setPlaybackRate(r)}
+                className={
+                  "px-2 py-0.5 rounded-full border text-xs font-semibold transition-colors " +
+                  (playbackRate === r
+                    ? "bg-white text-indigo-700 border-white"
+                    : "bg-white/10 text-white border-white/25 hover:bg-white/15")
+                }
+                aria-pressed={playbackRate === r}
+              >
+                {r}x
+              </button>
+            ))}
           </div>
         </div>
       </div>

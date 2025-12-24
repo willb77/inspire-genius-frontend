@@ -68,6 +68,10 @@ export default function CoachChat() {
   // Completed assistant audio buffer for floating player
   const [audioPlayerBuffer, setAudioPlayerBuffer] = useState<AudioBuffer | null>(null);
   const [showAudioPlayer, setShowAudioPlayer] = useState(true);
+  const audioBufferUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const audioBufferUpdateInFlightRef = useRef(false);
+  const lastCombinedLengthRef = useRef(0);
+  const audioBufferFirstRefreshScheduledRef = useRef(false);
   const prevSelectedIdsRef = useRef<string[]>([]);
   const isRefreshed = useRef(false);
   // Documents API & derived state
@@ -161,6 +165,36 @@ export default function CoachChat() {
     }
   }
 
+  const scheduleAudioBufferRefresh: () => void = useCallback(() => {
+    if (audioBufferUpdateTimeoutRef.current) return;
+    const delay = audioBufferFirstRefreshScheduledRef.current ? 1200 : 50;
+    audioBufferFirstRefreshScheduledRef.current = true;
+    audioBufferUpdateTimeoutRef.current = setTimeout(() => {
+      audioBufferUpdateTimeoutRef.current = null;
+      const svc = demoAudioServiceRef.current;
+      if (!svc || !svc.getCombinedAudioBuffer) return;
+      if (audioBufferUpdateInFlightRef.current) return;
+      audioBufferUpdateInFlightRef.current = true;
+      svc
+        .getCombinedAudioBuffer()
+        .then((buf) => {
+          if (!buf) return;
+          if (buf.length <= lastCombinedLengthRef.current) return;
+          const delta = buf.length - lastCombinedLengthRef.current;
+          // Avoid reloading WaveSurfer too frequently while streaming.
+          if (lastCombinedLengthRef.current > 0 && delta < buf.sampleRate * 0.8 && svc.speaking) return;
+          lastCombinedLengthRef.current = buf.length;
+          setAudioPlayerBuffer(buf);
+        })
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
+          audioBufferUpdateInFlightRef.current = false;
+        });
+    }, delay);
+  }, []);
+
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
@@ -181,36 +215,42 @@ export default function CoachChat() {
     }
     if (resp.type === "audio_start") {
       demoAudioServiceRef.current?.resetAudioState();
-      setHasAudio(true);
-      setIsAudioPaused(false);
+      setHasAudio(false);
+      setIsAudioPaused(true);
       setAudioPlayerBuffer(null);
+      lastCombinedLengthRef.current = 0;
+      audioBufferFirstRefreshScheduledRef.current = false;
       setShowAudioPlayer(true)
+      scheduleAudioBufferRefresh();
 
       return;
     }
 
-    if (resp.type === "audio_complete") {
-      const svc = demoAudioServiceRef.current;
-      if (svc) {
-        (async () => {
-          // Wait until the service finishes decoding/playing queued chunks
-          await new Promise<void>((resolve) => {
-            const check = () => {
-              if (!svc.speaking) resolve();
-              else setTimeout(check, 60);
-            };
-            check();
-          });
-          if (svc.getCombinedAudioBuffer) {
-            try {
-              const buf = await svc.getCombinedAudioBuffer();
-              if (buf) setAudioPlayerBuffer(buf);
-            } catch { /* ignore */ }
-          }
-        })();
-      }
-      return;
-    }
+    // if (resp.type === "audio_complete") {
+    //   const svc = demoAudioServiceRef.current;
+    //   if (svc) {
+    //     (async () => {
+    //       // Wait until the service finishes decoding/playing queued chunks
+    //       await new Promise<void>((resolve) => {
+    //         const check = () => {
+    //           if (!svc.speaking) resolve();
+    //           else setTimeout(check, 60);
+    //         };
+    //         check();
+    //       });
+    //       if (svc.getCombinedAudioBuffer) {
+    //         try {
+    //           const buf = await svc.getCombinedAudioBuffer();
+    //           if (buf) {
+    //             lastCombinedLengthRef.current = buf.length;
+    //             setAudioPlayerBuffer(buf);
+    //           }
+    //         } catch { /* ignore */ }
+    //       }
+    //     })();
+    //   }
+    //   return;
+    // }
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
@@ -242,21 +282,32 @@ export default function CoachChat() {
       lastMessageRef.current = { type: "error", text };
       return;
     }
-  }, []);
+  }, [scheduleAudioBufferRefresh]);
 
   const onAudioData = useCallback((audioData: ArrayBuffer) => {
     const svc = demoAudioServiceRef.current;
     if (!svc) return;
     svc.initializeAudioContext().then(() => {
-      svc.addAudioChunk(audioData);
-      setHasAudio(true);
+      // Disable background playback; WaveSurfer AudioPlayer will handle playback.
+      svc.addAudioChunk(audioData, false);
+      setHasAudio(false);
+      scheduleAudioBufferRefresh();
       // const ctx = svc.getAudioContext();
       // if (ctx && ctx.state === "suspended" && !isAudioPaused) {
       //   svc.resumeAudio();
       //   setIsAudioPaused(false);
       // }
     });
-  }, [isAudioPaused]);
+  }, [isAudioPaused, scheduleAudioBufferRefresh]);
+
+  useEffect(() => {
+    return () => {
+      if (audioBufferUpdateTimeoutRef.current) {
+        clearTimeout(audioBufferUpdateTimeoutRef.current);
+        audioBufferUpdateTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const {
     connect,
