@@ -158,6 +158,7 @@ export default function ChatWindow({
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const prevAudioVisibleRef = useRef(false);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -189,6 +190,32 @@ export default function ChatWindow({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalMessages?.length, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+    const audioVisible = !!audioPlayerBuffer && !!showAudioPlayer;
+    const wasVisible = prevAudioVisibleRef.current;
+    prevAudioVisibleRef.current = audioVisible;
+
+    if (!audioVisible || wasVisible) return;
+
+    const el = scrollRef.current;
+    if (el) {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceFromBottom > 160) return;
+    }
+
+    const node = bottomRef.current;
+    if (!node) return;
+    window.setTimeout(() => {
+      try {
+        node.scrollIntoView({ behavior: "smooth", block: "end" });
+      } catch {
+        const fallback = scrollRef.current;
+        if (fallback) fallback.scrollTop = fallback.scrollHeight;
+      }
+    }, 50);
+  }, [activeTab, audioPlayerBuffer, showAudioPlayer]);
 
   const handleShowAudioPlayer = (open?: boolean) => {
     setShowAudioPlayer?.(open ?? false);
@@ -268,7 +295,10 @@ export default function ChatWindow({
       {/* Body */}
 
       <div
-        className="flex-1 overflow-auto p-4"
+        className={cn(
+          "flex-1 overflow-auto p-4",
+          audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
+        )}
         style={{
           backgroundImage:
             "radial-gradient(circle at 10px 10px, rgba(246, 184, 108, 0.08) 2px, transparent 2px), radial-gradient(circle at 30px 30px, rgba(246, 184, 108, 0.06) 2px, transparent 2px)",
@@ -533,6 +563,23 @@ export default function ChatWindow({
         disableExport={false}
       />
 
+      {/* Floating audio player (appears above the input when assistant audio completes) */}
+      {audioPlayerBuffer && showAudioPlayer ? (
+        <div className="px-3">
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Close audio player"
+              className="cursor-pointer p-0.5 absolute z-10 -right-0.5 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => onCloseAudioPlayer?.()}
+            >
+              <X className="h-4 w-4 text-white" />
+            </button>
+            <AudioPlayer audioBuffer={audioPlayerBuffer} autoPlay deferReloadWhilePlaying />
+          </div>
+        </div>
+      ) : null}
+
       {/* Small floating sparkle action */}
       {/* <button
         type="button"
@@ -543,22 +590,7 @@ export default function ChatWindow({
         <Sparkles className="size-5" />
       </button> */}
 
-      {/* Floating audio player (appears above the input when assistant audio completes) */}
-      {audioPlayerBuffer && showAudioPlayer ? (
-        <div className="px-3">
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Close audio player"
-              className="cursor-pointer p-0.5 absolute -right-1 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
-              onClick={() => onCloseAudioPlayer?.()}
-            >
-              <X className="h-4 w-4 text-white" />
-            </button>
-            <AudioPlayer audioBuffer={audioPlayerBuffer} />
-          </div>
-        </div>
-      ) : null}
+  
 
       {/* Input */}
       <div className="border-t p-3">
@@ -644,7 +676,7 @@ export default function ChatWindow({
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 px-3"
+                className="h-11 px-3 hidden"
               
                 onClick={() => {
                   if (hasAudio && !isAudioPaused) return;
