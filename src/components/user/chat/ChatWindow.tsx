@@ -149,21 +149,54 @@ export default function ChatWindow({
       // ignore
     }
   };
-  const handleSend = () => {
-    const text = inputText.trim();
-    if (!text) return;
-    onSendText?.(text);
-    setInputText("");
-  };
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const prevAudioVisibleRef = useRef(false);
+  const didInitialAutoScrollRef = useRef(false);
+  const stickToBottomRef = useRef(true);
+
+  const handleSend = () => {
+    const text = inputText.trim();
+    if (!text) return;
+
+    // Sending a message is an explicit user action: always snap back to bottom.
+    stickToBottomRef.current = true;
+
+    onSendText?.(text);
+    setInputText("");
+
+    window.setTimeout(() => {
+      const node = bottomRef.current;
+      if (!node) return;
+      try {
+        node.scrollIntoView({ behavior: "smooth", block: "end" });
+      } catch {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+    }, 0);
+  };
+
+  const lastMessageSignature = useMemo(() => {
+    const last = externalMessages?.length
+      ? externalMessages[externalMessages.length - 1]
+      : undefined;
+    if (!last) return "";
+    if (last.kind === "text") return `${last.id}:${last.text?.length ?? 0}`;
+    if (last.kind === "processing") return `${last.id}:processing`;
+    return `${last.id}:${String((last as { kind?: unknown }).kind ?? "unknown")}`;
+  }, [externalMessages]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const updateStickToBottom = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      stickToBottomRef.current = distanceFromBottom <= 400;
+    };
     const onScroll = () => {
+      updateStickToBottom();
       if (!hasMore || !onLoadMore || convIsFetchingNext) return;
       const threshold = 200;
       const distanceFromBottom =
@@ -172,6 +205,7 @@ export default function ChatWindow({
         onLoadMore();
       }
     };
+    updateStickToBottom();
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [hasMore, onLoadMore, convIsFetchingNext]);
@@ -180,6 +214,13 @@ export default function ChatWindow({
   useEffect(() => {
     if (activeTab !== "chat") return;
     if (!externalMessages || externalMessages.length === 0) return;
+
+    if (!didInitialAutoScrollRef.current) {
+      didInitialAutoScrollRef.current = true;
+    } else if (!stickToBottomRef.current) {
+      return;
+    }
+
     const node = bottomRef.current;
     if (!node) return;
     try {
@@ -189,7 +230,12 @@ export default function ChatWindow({
       if (el) el.scrollTop = el.scrollHeight;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalMessages?.length, activeTab]);
+  }, [lastMessageSignature, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "chat") return;
+    didInitialAutoScrollRef.current = false;
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "chat") return;
@@ -198,12 +244,7 @@ export default function ChatWindow({
     prevAudioVisibleRef.current = audioVisible;
 
     if (!audioVisible || wasVisible) return;
-
-    const el = scrollRef.current;
-    if (el) {
-      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (distanceFromBottom > 400) return;
-    }
+    if (!stickToBottomRef.current) return;
 
     const node = bottomRef.current;
     if (!node) return;
