@@ -140,6 +140,16 @@ export default function ChatWindow({
 
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const selectDocsLottieSrc = useMemo(() => {
+    const options = [
+      "https://lottie.host/embed/f13eb55b-1ae1-41cf-ba8b-33a5f1fb0028/zpOwzGQlox.lottie",
+      "https://lottie.host/embed/0282a5cd-2be0-4629-b8aa-6b25db7da055/jaFMoZJmcz.lottie",
+      "https://lottie.host/embed/593a4db4-30f8-4c24-8860-6a34b8fd84f4/5CkhhSNGH0.lottie",
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }, []);
+
   const handleCopy = (text: string) => {
     try {
       navigator.clipboard.writeText(text);
@@ -363,7 +373,7 @@ export default function ChatWindow({
         ) : statusBanner && activeTab === "chat" ? (
           <div
             className={cn(
-              "text-xs font-medium",
+              "flex justify-center items-center gap-2 text-xs font-medium",
               statusBanner.type === "success"
                 ? "text-green-600"
                 : statusBanner.type === "error"
@@ -372,8 +382,19 @@ export default function ChatWindow({
             )}
           >
             {statusBanner.text}
+            {statusBanner.type === "success" ? (
+              <div className="w-fit">
+                <iframe
+                  src={selectDocsLottieSrc}
+                  title="Success animation"
+                  className="h-24 w-24"
+                  allow="autoplay"
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
+
         {activeTab === "chat" ? (
           <div className="space-y-4">
             {convIsLoading ? (
