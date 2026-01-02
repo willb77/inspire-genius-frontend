@@ -167,7 +167,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                               trigger={
                                 <button
                                   type="button"
-                                  className="text-red-600 hover:text-red-700"
+                                  className="cursor-pointer text-red-600 hover:text-red-700"
                                   aria-label="Delete"
                                 >
                                   <Trash2 className="size-4" />
@@ -180,14 +180,14 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                             />
                             <button
                               title="Download"
-                              className="text-muted-foreground hover:text-foreground"
+                              className="cursor-pointer text-muted-foreground hover:text-foreground"
                               onClick={() => handleDownload(doc)}
                             >
                               <Download className="size-4" />
                             </button>
                             <button
                               type="button"
-                              className={cn("text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
+                              className={cn("cursor-pointer text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
                               aria-label="Preview"
                               onClick={() => doc.kind === "pdf" && onPreview?.({ name: doc.name, kind: doc.kind, url: doc.tempUrl || doc.url })}
                               disabled={doc.kind !== "pdf"}
