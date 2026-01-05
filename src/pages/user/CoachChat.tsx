@@ -407,6 +407,7 @@ export default function CoachChat() {
     let mounted = true;
     (async () => {
       if (!isConnected && !isConnecting && conversationId) {
+
         // Hydrate selected file IDs from storage first so the initial connect has them
         let nextIds = selectedFileIds;
         if (selectedKey) {

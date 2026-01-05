@@ -140,6 +140,16 @@ export default function ChatWindow({
 
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const selectDocsLottieSrc = useMemo(() => {
+    const options = [
+      "https://lottie.host/embed/f13eb55b-1ae1-41cf-ba8b-33a5f1fb0028/zpOwzGQlox.lottie",
+      "https://lottie.host/embed/0282a5cd-2be0-4629-b8aa-6b25db7da055/jaFMoZJmcz.lottie",
+      "https://lottie.host/embed/593a4db4-30f8-4c24-8860-6a34b8fd84f4/5CkhhSNGH0.lottie",
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }, []);
+
   const handleCopy = (text: string) => {
     try {
       navigator.clipboard.writeText(text);
@@ -149,21 +159,54 @@ export default function ChatWindow({
       // ignore
     }
   };
-  const handleSend = () => {
-    const text = inputText.trim();
-    if (!text) return;
-    onSendText?.(text);
-    setInputText("");
-  };
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const prevAudioVisibleRef = useRef(false);
+  const didInitialAutoScrollRef = useRef(false);
+  const stickToBottomRef = useRef(true);
+
+  const handleSend = () => {
+    const text = inputText.trim();
+    if (!text) return;
+
+    // Sending a message is an explicit user action: always snap back to bottom.
+    stickToBottomRef.current = true;
+
+    onSendText?.(text);
+    setInputText("");
+
+    window.setTimeout(() => {
+      const node = bottomRef.current;
+      if (!node) return;
+      try {
+        node.scrollIntoView({ behavior: "smooth", block: "end" });
+      } catch {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+    }, 0);
+  };
+
+  const lastMessageSignature = useMemo(() => {
+    const last = externalMessages?.length
+      ? externalMessages[externalMessages.length - 1]
+      : undefined;
+    if (!last) return "";
+    if (last.kind === "text") return `${last.id}:${last.text?.length ?? 0}`;
+    if (last.kind === "processing") return `${last.id}:processing`;
+    return `${last.id}:${String((last as { kind?: unknown }).kind ?? "unknown")}`;
+  }, [externalMessages]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const updateStickToBottom = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      stickToBottomRef.current = distanceFromBottom <= 400;
+    };
     const onScroll = () => {
+      updateStickToBottom();
       if (!hasMore || !onLoadMore || convIsFetchingNext) return;
       const threshold = 200;
       const distanceFromBottom =
@@ -172,6 +215,7 @@ export default function ChatWindow({
         onLoadMore();
       }
     };
+    updateStickToBottom();
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [hasMore, onLoadMore, convIsFetchingNext]);
@@ -180,6 +224,13 @@ export default function ChatWindow({
   useEffect(() => {
     if (activeTab !== "chat") return;
     if (!externalMessages || externalMessages.length === 0) return;
+
+    if (!didInitialAutoScrollRef.current) {
+      didInitialAutoScrollRef.current = true;
+    } else if (!stickToBottomRef.current) {
+      return;
+    }
+
     const node = bottomRef.current;
     if (!node) return;
     try {
@@ -189,7 +240,12 @@ export default function ChatWindow({
       if (el) el.scrollTop = el.scrollHeight;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalMessages?.length, activeTab]);
+  }, [lastMessageSignature, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "chat") return;
+    didInitialAutoScrollRef.current = false;
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "chat") return;
@@ -198,12 +254,7 @@ export default function ChatWindow({
     prevAudioVisibleRef.current = audioVisible;
 
     if (!audioVisible || wasVisible) return;
-
-    const el = scrollRef.current;
-    if (el) {
-      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (distanceFromBottom > 160) return;
-    }
+    if (!stickToBottomRef.current) return;
 
     const node = bottomRef.current;
     if (!node) return;
@@ -322,7 +373,7 @@ export default function ChatWindow({
         ) : statusBanner && activeTab === "chat" ? (
           <div
             className={cn(
-              "text-xs font-medium",
+              "flex justify-center items-center gap-2 text-xs font-medium",
               statusBanner.type === "success"
                 ? "text-green-600"
                 : statusBanner.type === "error"
@@ -331,8 +382,19 @@ export default function ChatWindow({
             )}
           >
             {statusBanner.text}
+            {statusBanner.type === "success" ? (
+              <div className="w-fit">
+                <iframe
+                  src={selectDocsLottieSrc}
+                  title="Success animation"
+                  className="h-24 w-24"
+                  allow="autoplay"
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
+
         {activeTab === "chat" ? (
           <div className="space-y-4">
             {convIsLoading ? (

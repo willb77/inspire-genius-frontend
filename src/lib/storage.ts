@@ -156,6 +156,20 @@ export async function clearAuth(): Promise<void> {
   ])
 }
 
+export async function getAlexFloatingOpen(): Promise<boolean> {
+  const v = await getDecrypted(STORAGE_KEYS.UI_ALEX_FLOATING_OPEN)
+  if (v === null) return true
+  return v === '1'
+}
+
+export async function setAlexFloatingOpen(open: boolean): Promise<void> {
+  await setEncrypted(STORAGE_KEYS.UI_ALEX_FLOATING_OPEN, open ? '1' : '0')
+}
+
+export async function removeAlexFloatingOpen(): Promise<void> {
+  await removeEncrypted(STORAGE_KEYS.UI_ALEX_FLOATING_OPEN)
+}
+
 // keep cache in sync across tabs
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {

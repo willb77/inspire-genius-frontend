@@ -58,4 +58,5 @@ export const STORAGE_KEYS = {
   USER_SESSION: "auth_session",
   USER_NEXT_STEP: "auth_next_step",
   UI_SIDEBAR_OPEN: "ui_sidebar_open",
+  UI_ALEX_FLOATING_OPEN: "ui_alex_floating_open",
 } as const;

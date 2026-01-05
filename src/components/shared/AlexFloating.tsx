@@ -2,11 +2,47 @@ import React from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import AlexChatPanel from "@/components/alex/AlexChatPanel";
+import { getAlexFloatingOpen, setAlexFloatingOpen } from "@/lib/storage";
 
 export default function AlexFloating() {
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState<boolean | null>(null);
   const [chatOpen, setChatOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    getAlexFloatingOpen()
+      .then((v) => {
+        if (!mounted) return;
+        setOpen(v);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setOpen(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const closeFloating = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setOpen(false);
+    setAlexFloatingOpen(false).catch(() => {
+      // ignore
+    });
+  };
+
+  const openFloating = () => {
+    setOpen(true);
+    setAlexFloatingOpen(true).catch(() => {
+      // ignore
+    });
+  };
   
+  if (open === null) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-2">
       <AnimatePresence initial={false} mode="wait">
@@ -26,7 +62,7 @@ export default function AlexFloating() {
             <button
               type="button"
               aria-label="Close Alex"
-              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+              onClick={closeFloating}
               className="cursor-pointer absolute -top-2 -right-2 grid place-items-center rounded-full bg-blue-primary hover:bg-blue-primary text-white transition-colors size-6"
             >
               <X className="size-4" />
@@ -43,7 +79,7 @@ export default function AlexFloating() {
           <motion.button
             key="alex-handle"
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={openFloating}
             aria-label="Open Alex Assistant"
             initial={{ x: 80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
