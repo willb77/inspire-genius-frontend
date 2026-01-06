@@ -9,6 +9,7 @@ import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateConversation } from "@/hooks/agents/useCreateConversation";
 import { useConversationMessagesInfinite } from "@/hooks/agents/useConversationMessagesInfinite";
+import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
 import { usePrismAgentWebSocket } from "@/hooks/agents/usePrismAgentWebSocket";
 import type { AgentResponse } from "@/hooks/agents/usePrismAgentWebSocket";
 import DemoAudioService from "@/services/demoAudioService";
@@ -27,6 +28,25 @@ function titleCaseFromSlug(slug: string): string {
     .filter(Boolean)
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
     .join(" ");
+}
+
+function extractSessionId(resp: unknown): string | undefined {
+  // Try common shapes: { data: { conversation: { id } } }, { data: { session: { id } } }, { data: { id } }, or flat
+  try {
+    if (!resp || typeof resp !== "object") return undefined;
+    const r = resp as Record<string, unknown>;
+    const data = (r.data ?? r) as Record<string, unknown>;
+    const convo = data.conversation as Record<string, unknown> | undefined;
+    const session = data.session as Record<string, unknown> | undefined;
+    const fromConvo = typeof convo?.id === "string" ? (convo.id as string) : undefined;
+    const fromSessionId = typeof session?.id === "string" ? (session.id as string) : undefined;
+    const fromSessionConv = typeof session?.conversation_id === "string" ? (session.conversation_id as string) : undefined;
+    const fromFlatConv = typeof (data as Record<string, unknown>).conversation_id === "string" ? ((data as Record<string, unknown>).conversation_id as string) : undefined;
+    const fromData = typeof data.id === "string" ? (data.id as string) : undefined;
+    return fromConvo || fromSessionConv || fromSessionId || fromFlatConv || fromData;
+  } catch {
+    return undefined;
+  }
 }
 
 export default function CoachChat() {
@@ -341,27 +361,10 @@ export default function CoachChat() {
   } = useConversationMessagesInfinite(conversationId, 50);
 
   const createConvMutation = useCreateConversation();
+  const deleteConvMutation = useDeleteConversation();
   type ConversationListResponse = { data?: { conversations?: Array<{ id: string; title?: string }>; page?: number; total_count?: number } } | undefined;
   const convResp = (conversationData as ConversationListResponse) || undefined;
   const hasConversations = Boolean(convResp?.data?.conversations && convResp.data.conversations.length > 0);
-  function extractSessionId(resp: unknown): string | undefined {
-    // Try common shapes: { data: { conversation: { id } } }, { data: { session: { id } } }, { data: { id } }, or flat
-    try {
-      if (!resp || typeof resp !== "object") return undefined;
-      const r = resp as Record<string, unknown>;
-      const data = (r.data ?? r) as Record<string, unknown>;
-      const convo = data.conversation as Record<string, unknown> | undefined;
-      const session = data.session as Record<string, unknown> | undefined;
-      const fromConvo = typeof convo?.id === "string" ? (convo.id as string) : undefined;
-      const fromSessionId = typeof session?.id === "string" ? (session.id as string) : undefined;
-      const fromSessionConv = typeof session?.conversation_id === "string" ? (session.conversation_id as string) : undefined;
-      const fromFlatConv = typeof (data as Record<string, unknown>).conversation_id === "string" ? ((data as Record<string, unknown>).conversation_id as string) : undefined;
-      const fromData = typeof data.id === "string" ? (data.id as string) : undefined;
-      return fromConvo || fromSessionConv || fromSessionId || fromFlatConv || fromData;
-    } catch {
-      return undefined;
-    }
-  }
 
    const handleToggleDocSelect = useCallback(async (id: string) => {
     await disconnect();
@@ -369,14 +372,14 @@ export default function CoachChat() {
   }, []);
 
 
-  const handleCreateConversation = () => {
+  const handleCreateConversation = useCallback(() => {
     if (!agentId || createConvMutation.isPending) return;
     createConvMutation.mutate(
       { agentId },
       {
         onSuccess: async (resp) => {
           // Invalidate conversations list for this agent
-          queryClient.invalidateQueries({ queryKey: ["agent", "conversation", agentId] , exact: false });
+          queryClient.invalidateQueries({ queryKey: ["agent", "conversation", agentId], exact: false });
           const id = extractSessionId(resp);
           if (id) {
             // Clear previous local conv id then set to new
@@ -393,7 +396,36 @@ export default function CoachChat() {
         },
       }
     );
-  };
+  }, [agentId, accessToken, connect, createConvMutation, queryClient, selectedFileIds]);
+
+  const handleDeleteConversation = useCallback(async (id: string) => {
+    if (!agentId) return;
+    if (deleteConvMutation.isPending) return;
+    const deletingActive = id === conversationId || id === selectedId;
+
+    try {
+      await deleteConvMutation.mutateAsync({ conversationId: id, agentId });
+
+      if (deletingActive) {
+        await disconnect();
+        demoAudioServiceRef.current?.resetAudioState();
+        setHasAudio(false);
+        setIsAudioPaused(false);
+        setMessages([]);
+        setAudioPlayerBuffer(null);
+        setConversationId(undefined);
+        setSelectedId(undefined);
+        try {
+          await secureRemoveItem("conv");
+        } catch {
+          // ignore
+        }
+        handleCreateConversation();
+      }
+    } catch (e) {
+      console.error("Failed to delete conversation", e);
+    }
+  }, [agentId, conversationId, deleteConvMutation, disconnect, handleCreateConversation, selectedId]);
 
   // Persist and rehydrate selected document IDs (optional)
   const selectedKey = useMemo(() => {
@@ -594,6 +626,7 @@ export default function CoachChat() {
             onSearchChange={setSearchQuery}
             isAudioRunning={hasAudio && !isAudioPaused}
             audioWarningText="Switching conversations will reset audio for the new conversation."
+            onDeleteConversation={handleDeleteConversation}
           />
         </div>
         <div className="lg:col-span-8" data-tour="chat-window">
