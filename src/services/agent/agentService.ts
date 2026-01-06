@@ -31,6 +31,11 @@ export async function getConversationDetail(conversationId: string, page: number
   return resp.data as unknown;
 }
 
+export async function deleteConversation(conversationId: string) {
+  const resp = await api.delete(`/v1/chat/conversations/${conversationId}`);
+  return resp.data as unknown;
+}
+
 export async function exportConversation(conversationId: string, from: Date, to: Date) {
   const start = format(from, "yyyy-MM-dd");
   const end = format(to, "yyyy-MM-dd");
