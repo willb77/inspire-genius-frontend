@@ -1,19 +1,27 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { SquarePen, ChevronDown } from "lucide-react";
+import { SquarePen, ChevronDown, MoreHorizontal, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatHistoryProps } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type ChatHistoryWithAudioProps = ChatHistoryProps & {
   isAudioRunning?: boolean;
   audioWarningText?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  onDeleteConversation?: (conversationId: string) => void | Promise<void>;
 };
 
-export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange }: ChatHistoryWithAudioProps) {
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation }: ChatHistoryWithAudioProps) {
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -114,23 +122,74 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
               {isOpen && (
                 <ul className="mt-2 space-y-1">
                   {filtered.map((it) => {
-                    const btn = (
-                      <button
-                        type="button"
-                        disabled={false}
-                        onClick={() => onSelect?.(it.id)}
+                    const menu = onDeleteConversation ? (
+                      <div
                         className={cn(
-                          "w-full text-left rounded-xl px-3 py-2",
-                          selectedId === it.id
-                            ? "bg-blue-primary text-white"
-                            : "bg-transparent text-foreground hover:bg-gray-50"
+                          "absolute right-2 top-2 opacity-0 transition-opacity",
+                          "group-hover:opacity-100 group-focus-within:opacity-100",
+                          undefined
                         )}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{it.title}</span>
-                        </div>
-                        <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
-                      </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Open conversation actions"
+                              className={cn(
+                                "cursor-pointer rounded-md p-1",
+                                selectedId === it.id
+                                  ? "text-white/90 hover:bg-white/10"
+                                  : "text-muted-foreground hover:bg-gray-100"
+                              )}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <ConfirmDialog
+                              title="Delete conversation"
+                              description="Are you sure you want to delete this conversation? This action cannot be undone."
+                              confirmText="Delete"
+                              confirmVariant="destructive"
+                              onConfirm={() => onDeleteConversation(it.id)}
+                              trigger={
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                                  <span className="text-red-600">Delete</span>
+                                </DropdownMenuItem>
+                              }
+                            />
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ) : null;
+
+                    const btn = (
+                      <div className="relative group">
+                        <button
+                          type="button"
+                          disabled={false}
+                          onClick={() => onSelect?.(it.id)}
+                          className={cn(
+                            "w-full text-left rounded-xl px-3 py-2 pr-9",
+                            selectedId === it.id
+                              ? "bg-blue-primary text-white"
+                              : "bg-transparent text-foreground hover:bg-gray-50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium truncate">{it.title}</span>
+                          </div>
+                          <span className={cn("text-xs", selectedId === it.id ? "text-white/80" : "text-muted-foreground")}>{it.timeLabel}</span>
+                        </button>
+                        {menu}
+                      </div>
                     );
                     if (isAudioRunning) {
                       return (
