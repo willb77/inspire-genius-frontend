@@ -36,6 +36,11 @@ export async function deleteConversation(conversationId: string) {
   return resp.data as unknown;
 }
 
+export async function renameConversation(conversationId: string, title: string) {
+  const resp = await api.patch(`/v1/chat/conversations/${conversationId}`, { title });
+  return resp.data as unknown;
+}
+
 export async function exportConversation(conversationId: string, from: Date, to: Date) {
   const start = format(from, "yyyy-MM-dd");
   const end = format(to, "yyyy-MM-dd");
