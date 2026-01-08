@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCreateConversation } from "@/hooks/agents/useCreateConversation";
 import { useConversationMessagesInfinite } from "@/hooks/agents/useConversationMessagesInfinite";
 import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
+import { useRenameConversation } from "@/hooks/agents/useRenameConversation";
 import { usePrismAgentWebSocket } from "@/hooks/agents/usePrismAgentWebSocket";
 import type { AgentResponse } from "@/hooks/agents/usePrismAgentWebSocket";
 import DemoAudioService from "@/services/demoAudioService";
@@ -362,6 +363,7 @@ export default function CoachChat() {
 
   const createConvMutation = useCreateConversation();
   const deleteConvMutation = useDeleteConversation();
+  const renameConvMutation = useRenameConversation();
   type ConversationListResponse = { data?: { conversations?: Array<{ id: string; title?: string }>; page?: number; total_count?: number } } | undefined;
   const convResp = (conversationData as ConversationListResponse) || undefined;
   const hasConversations = Boolean(convResp?.data?.conversations && convResp.data.conversations.length > 0);
@@ -426,6 +428,17 @@ export default function CoachChat() {
       console.error("Failed to delete conversation", e);
     }
   }, [agentId, conversationId, deleteConvMutation, disconnect, handleCreateConversation, selectedId]);
+
+  const handleRenameConversation = useCallback(async (id: string, title: string) => {
+    if (!agentId) return;
+    if (renameConvMutation.isPending) return;
+    try {
+      await renameConvMutation.mutateAsync({ conversationId: id, title, agentId });
+      
+    } catch (e) {
+      console.error("Failed to rename conversation", e);
+    }
+  }, [agentId, renameConvMutation]);
 
   // Persist and rehydrate selected document IDs (optional)
   const selectedKey = useMemo(() => {
@@ -627,6 +640,8 @@ export default function CoachChat() {
             isAudioRunning={hasAudio && !isAudioPaused}
             audioWarningText="Switching conversations will reset audio for the new conversation."
             onDeleteConversation={handleDeleteConversation}
+            onRenameConversation={handleRenameConversation}
+            renameIsPending={renameConvMutation.isPending}
           />
         </div>
         <div className="lg:col-span-8" data-tour="chat-window">
