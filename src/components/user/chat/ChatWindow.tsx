@@ -32,6 +32,7 @@ import {
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { AudioPlayer } from "@/components/shared/audio-player/audio-player";
+import { useChatWindowAudio } from "@/hooks/useChatWindowAudio";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -133,7 +134,7 @@ export default function ChatWindow({
   }, [selectedDocNames]);
 
   // Messages come from parent
-  const renderMessages: ChatMessage[] = [...(externalMessages ?? [])];
+  const renderMessages: ChatMessage[] = useMemo(() => externalMessages ?? [], [externalMessages]);
   const lastMessageId = renderMessages?.length
     ? renderMessages[renderMessages?.length - 1]?.id
     : undefined;
@@ -141,11 +142,24 @@ export default function ChatWindow({
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const {
+    hasAudioForMessageId,
+    playForMessageId,
+    activeBuffer,
+    playerKey,
+    clearOverride,
+  } = useChatWindowAudio({
+    messages: renderMessages,
+    audioPlayerBuffer,
+    showAudioPlayer,
+    setShowAudioPlayer,
+    onCloseAudioPlayer,
+  });
+
   const selectDocsLottieSrc = useMemo(() => {
     const options = [
       "https://lottie.host/embed/f13eb55b-1ae1-41cf-ba8b-33a5f1fb0028/zpOwzGQlox.lottie",
       "https://lottie.host/embed/0282a5cd-2be0-4629-b8aa-6b25db7da055/jaFMoZJmcz.lottie",
-      "https://lottie.host/embed/593a4db4-30f8-4c24-8860-6a34b8fd84f4/5CkhhSNGH0.lottie",
     ];
     return options[Math.floor(Math.random() * options.length)];
   }, []);
@@ -249,7 +263,7 @@ export default function ChatWindow({
 
   useEffect(() => {
     if (activeTab !== "chat") return;
-    const audioVisible = !!audioPlayerBuffer && !!showAudioPlayer;
+    const audioVisible = !!activeBuffer && !!showAudioPlayer;
     const wasVisible = prevAudioVisibleRef.current;
     prevAudioVisibleRef.current = audioVisible;
 
@@ -266,11 +280,7 @@ export default function ChatWindow({
         if (fallback) fallback.scrollTop = fallback.scrollHeight;
       }
     }, 50);
-  }, [activeTab, audioPlayerBuffer, showAudioPlayer]);
-
-  const handleShowAudioPlayer = (open?: boolean) => {
-    setShowAudioPlayer?.(open ?? false);
-  };
+  }, [activeTab, activeBuffer, showAudioPlayer]);
   return (
     <div
       className={cn(
@@ -348,7 +358,7 @@ export default function ChatWindow({
       <div
         className={cn(
           "flex-1 overflow-auto p-4",
-          audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
+          activeBuffer && showAudioPlayer ? "pb-40" : "pb-6"
         )}
         style={{
           backgroundImage:
@@ -458,12 +468,16 @@ export default function ChatWindow({
                           >
                             <Copy className="size-4 text-black" />
                           </button>
-                           {audioPlayerBuffer && m.sender === "assistant" && m.id === lastMessageId && (
+                           {m.sender === "assistant" && ((m.id === lastMessageId && !!audioPlayerBuffer) || hasAudioForMessageId(m.id)) ? (
                              <CirclePlay
                                className="size-4.5 text-blue-800 cursor-pointer"
-                               onClick={() => handleShowAudioPlayer(true)}
+                               onClick={() => {
+                                 playForMessageId(m.id).catch(() => {
+                                   // ignore
+                                 });
+                               }}
                              />
-                           )}
+                           ) : null}
                           </div>
                           <div className="text-[11px] text-muted-foreground">
                             {m.time}
@@ -626,21 +640,26 @@ export default function ChatWindow({
       />
 
       {/* Floating audio player (appears above the input when assistant audio completes) */}
-      {audioPlayerBuffer && showAudioPlayer ? (
+      {(() => {
+        if (!activeBuffer || !showAudioPlayer) return null;
+        return (
         <div className="px-3">
           <div className="relative">
             <button
               type="button"
               aria-label="Close audio player"
               className="cursor-pointer p-0.5 absolute z-10 -right-0.5 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
-              onClick={() => onCloseAudioPlayer?.()}
+              onClick={() => {
+                clearOverride();
+              }}
             >
               <X className="h-4 w-4 text-white" />
             </button>
-            <AudioPlayer audioBuffer={audioPlayerBuffer} autoPlay deferReloadWhilePlaying />
+            <AudioPlayer key={playerKey} audioBuffer={activeBuffer} autoPlay deferReloadWhilePlaying />
           </div>
         </div>
-      ) : null}
+        );
+      })()}
 
       {/* Small floating sparkle action */}
       {/* <button
@@ -761,7 +780,7 @@ export default function ChatWindow({
                   Mute is disabled during playback
                 </span>
               ) : isMuted ? (
-                <span className="text-xs">Unmute</span>
+                <span className="text-xs text-white/10">Unmute</span>
               ) : (
                 <span className="text-xs">Mute</span>
               )}
