@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { SquarePen, ChevronDown, MoreHorizontal, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SquarePen, ChevronDown, MoreHorizontal, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatHistoryProps } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +27,41 @@ export type ChatHistoryWithAudioProps = ChatHistoryProps & {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   onDeleteConversation?: (conversationId: string) => void | Promise<void>;
+  onRenameConversation?: (conversationId: string, title: string) => void | Promise<void>;
+  renameIsPending?: boolean;
 };
 
-export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation }: ChatHistoryWithAudioProps) {
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation, onRenameConversation, renameIsPending }: ChatHistoryWithAudioProps) {
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const conversationTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of groups) {
+      for (const it of g.items) {
+        map.set(it.id, it.title);
+      }
+    }
+    return map;
+  }, [groups]);
+
+  const openRenameDialog = (conversationId: string) => {
+    const currentTitle = conversationTitleById.get(conversationId) ?? "";
+    setRenameId(conversationId);
+    setRenameValue(currentTitle);
+    setRenameOpen(true);
+  };
+
+  const handleConfirmRename = async () => {
+    if (!renameId) return;
+    const nextTitle = renameValue.trim();
+    if (!nextTitle) return;
+    await onRenameConversation?.(renameId, nextTitle);
+    setRenameOpen(false);
+  };
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -152,6 +190,17 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
+                            {onRenameConversation ? (
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  openRenameDialog(it.id);
+                                }}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>Rename</span>
+                              </DropdownMenuItem>
+                            ) : null}
+
                             <ConfirmDialog
                               title="Delete conversation"
                               description="Are you sure you want to delete this conversation? This action cannot be undone."
@@ -217,6 +266,47 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
           );
         })}
       </div>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename conversation</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            placeholder="Conversation title"
+            autoFocus
+            disabled={!!renameIsPending}
+          />
+       
+            <div className="flex flex-col items-center justify-center gap-2 py-2">
+              <iframe
+                src="https://lottie.host/embed/593a4db4-30f8-4c24-8860-6a34b8fd84f4/5CkhhSNGH0.lottie"
+                title="Renaming animation"
+                className="h-32 w-32"
+                allow="autoplay"
+              />
+              <p className="text-xs text-muted-foreground">
+                {renameIsPending
+                  ? "Shaping your conversation’s identity… ✨"
+                  : "Give your conversation a name — make it easy to remember 🚀"}
+              </p>
+            </div>
+      
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameOpen(false)} disabled={!!renameIsPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmRename}
+              disabled={!renameValue.trim() || !!renameIsPending}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
