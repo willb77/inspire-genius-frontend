@@ -24,6 +24,7 @@ devBuild:
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
+    - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
     # Install and build
     - npm ci
