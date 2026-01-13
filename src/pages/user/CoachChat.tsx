@@ -81,6 +81,7 @@ export default function CoachChat() {
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const lastMessageRef = useRef<{ type: string; text: string }>({ type: "", text: "" });
+  const prevHydratedConversationIdRef = useRef<string | undefined>(undefined);
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
@@ -526,7 +527,13 @@ export default function CoachChat() {
 
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
+    // IMPORTANT: hydrate from API only when local state is empty and we switched to a new conversation.
+    // This prevents messagesPages from overwriting live websocket-driven updates.
     if (!messagesPages) return;
+    if (!conversationId) return;
+    if (messages.length > 0) return;
+    if (conversationId === prevHydratedConversationIdRef.current) return;
+
     const pages = Array.isArray((messagesPages as { pages?: unknown[] }).pages)
       ? ((messagesPages as { pages: Array<{ data?: { messages?: Array<Record<string, unknown>> } }> }).pages)
       : [];
@@ -541,14 +548,9 @@ export default function CoachChat() {
         typeof (m as Record<string, unknown>).text === "string" ? ((m as Record<string, unknown>).text as string) : "";
       return { id, kind: "text", sender, text, time };
     });
-    setMessages((prev) => {
-      if (!mapped.length) return prev;
-      if (!prev.length) return mapped;
-      const mappedIds = new Set(mapped.map((m) => m.id));
-      const extras = prev.filter((m) => !mappedIds.has(m.id));
-      return [...mapped, ...extras];
-    });
-  }, [messagesPages]);
+    setMessages(mapped);
+    prevHydratedConversationIdRef.current = conversationId;
+  }, [messagesPages, conversationId, messages.length]);
 
   const handleSelectConversation = useCallback(async (id: string) => {
     if (selectedId !== id){
