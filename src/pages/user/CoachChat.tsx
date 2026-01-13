@@ -541,7 +541,13 @@ export default function CoachChat() {
         typeof (m as Record<string, unknown>).text === "string" ? ((m as Record<string, unknown>).text as string) : "";
       return { id, kind: "text", sender, text, time };
     });
-    setMessages(mapped);
+    setMessages((prev) => {
+      if (!mapped.length) return prev;
+      if (!prev.length) return mapped;
+      const mappedIds = new Set(mapped.map((m) => m.id));
+      const extras = prev.filter((m) => !mappedIds.has(m.id));
+      return [...mapped, ...extras];
+    });
   }, [messagesPages]);
 
   const handleSelectConversation = useCallback(async (id: string) => {
