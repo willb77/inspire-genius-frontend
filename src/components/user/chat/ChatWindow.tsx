@@ -42,6 +42,7 @@ import type {
 
 export default function ChatWindow({
   coachName,
+  conversationId,
   className,
   onBack,
   onSendText,
@@ -135,20 +136,25 @@ export default function ChatWindow({
 
   // Messages come from parent
   const renderMessages: ChatMessage[] = useMemo(() => externalMessages ?? [], [externalMessages]);
-  const lastMessageId = renderMessages?.length
-    ? renderMessages[renderMessages?.length - 1]?.id
-    : undefined;
+  const lastAssistantText = useMemo(() => {
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      const m = renderMessages[i];
+      if (m?.kind === "text" && m?.sender === "assistant") return m.text;
+    }
+    return undefined;
+  }, [renderMessages]);
 
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
 
   const {
-    hasAudioForMessageId,
-    playForMessageId,
+    hasAudioForText,
+    playForText,
     activeBuffer,
     playerKey,
     clearOverride,
   } = useChatWindowAudio({
+    conversationId,
     messages: renderMessages,
     audioPlayerBuffer,
     showAudioPlayer,
@@ -179,6 +185,22 @@ export default function ChatWindow({
   const prevAudioVisibleRef = useRef(false);
   const didInitialAutoScrollRef = useRef(false);
   const stickToBottomRef = useRef(true);
+
+  useEffect(() => {
+    stickToBottomRef.current = true;
+    didInitialAutoScrollRef.current = false;
+
+    window.setTimeout(() => {
+      const node = bottomRef.current;
+      if (!node) return;
+      try {
+        node.scrollIntoView({ behavior: "smooth", block: "end" });
+      } catch {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+    }, 0);
+  }, [conversationId]);
 
   const handleSend = () => {
     const text = inputText.trim();
@@ -468,11 +490,11 @@ export default function ChatWindow({
                           >
                             <Copy className="size-4 text-black" />
                           </button>
-                           {m.sender === "assistant" && ((m.id === lastMessageId && !!audioPlayerBuffer) || hasAudioForMessageId(m.id)) ? (
+                           {m.sender === "assistant" && ((m.text === lastAssistantText && !!audioPlayerBuffer) || hasAudioForText(m.text)) ? (
                              <CirclePlay
                                className="size-4.5 text-blue-800 cursor-pointer"
                                onClick={() => {
-                                 playForMessageId(m.id).catch(() => {
+                                 playForText(m.text).catch(() => {
                                    // ignore
                                  });
                                }}
