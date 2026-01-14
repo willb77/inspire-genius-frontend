@@ -81,7 +81,6 @@ export default function CoachChat() {
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const lastMessageRef = useRef<{ type: string; text: string }>({ type: "", text: "" });
-  const prevHydratedConversationIdRef = useRef<string | undefined>(undefined);
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [statusBanner, setStatusBanner] = useState<{ type: "success" | "error" | "info"; text: string } | undefined>(undefined);
@@ -389,7 +388,7 @@ export default function CoachChat() {
             await secureRemoveItem("conv");
             setSelectedId(id);
             setConversationId(id);
-            secureSetItem("conv", { id });
+            await secureSetItem("conv", { id });
             setAudioPlayerBuffer(null);
             connect(agentId, accessToken, selectedFileIds, id);
           }
@@ -530,10 +529,6 @@ export default function CoachChat() {
     // IMPORTANT: hydrate from API only when local state is empty and we switched to a new conversation.
     // This prevents messagesPages from overwriting live websocket-driven updates.
     if (!messagesPages) return;
-    if (!conversationId) return;
-    if (messages.length > 0) return;
-    if (conversationId === prevHydratedConversationIdRef.current) return;
-
     const pages = Array.isArray((messagesPages as { pages?: unknown[] }).pages)
       ? ((messagesPages as { pages: Array<{ data?: { messages?: Array<Record<string, unknown>> } }> }).pages)
       : [];
@@ -549,8 +544,8 @@ export default function CoachChat() {
       return { id, kind: "text", sender, text, time };
     });
     setMessages(mapped);
-    prevHydratedConversationIdRef.current = conversationId;
-  }, [messagesPages, conversationId, messages.length]);
+
+  }, [messagesPages]);
 
   const handleSelectConversation = useCallback(async (id: string) => {
     if (selectedId !== id){
@@ -655,6 +650,7 @@ export default function CoachChat() {
         <div className="lg:col-span-8" data-tour="chat-window">
           <ChatWindow
             coachName={coachName}
+            conversationId={conversationId}
             onBack={() => navigate(-1)}
             onSendText={(t) => {
               demoAudioServiceRef.current?.resetAudioState();

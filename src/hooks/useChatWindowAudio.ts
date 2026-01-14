@@ -4,13 +4,15 @@ import {
   audioBufferToWavArrayBuffer,
   CHAT_AUDIO_DB_PRUNE_CONFIG,
   getConversationAudioDecrypted,
-  listConversationAudioIndices,
+  listConversationAudioTextPreviews,
+  makeAudioTextPreview,
   pruneChatAudioDb,
   putConversationAudioEncrypted,
 } from "@/lib/chatAudioDb";
 
 type UseChatWindowAudioParams = {
-  messages: Array<{ id: string; kind: string; sender?: string }>;
+  conversationId?: string | null;
+  messages: Array<{ id: string; kind: string; sender?: string; text?: string }>;
   audioPlayerBuffer: AudioBuffer | null | undefined;
   showAudioPlayer: boolean | undefined;
   setShowAudioPlayer?: (open: boolean) => void;
@@ -19,15 +21,15 @@ type UseChatWindowAudioParams = {
 
 type UseChatWindowAudioReturn = {
   activeConversationId: string | null;
-  audioIndexByMessageId: Map<string, number>;
-  hasAudioForMessageId: (messageId: string) => boolean;
-  playForMessageId: (messageId: string) => Promise<void>;
+  hasAudioForText: (text: string) => boolean;
+  playForText: (text: string) => Promise<void>;
   activeBuffer: AudioBuffer | null;
   playerKey: string;
   clearOverride: () => void;
 };
 
 export function useChatWindowAudio({
+  conversationId,
   messages,
   audioPlayerBuffer,
   showAudioPlayer,
@@ -35,26 +37,23 @@ export function useChatWindowAudio({
   onCloseAudioPlayer,
 }: UseChatWindowAudioParams): UseChatWindowAudioReturn {
   const renderMessages = useMemo(() => messages ?? [], [messages]);
-  const lastMessageId = renderMessages.length ? renderMessages[renderMessages.length - 1]?.id : undefined;
+  const lastAssistantTextPreview = useMemo(() => {
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      const m = renderMessages[i];
+      if (m?.kind === "text" && m?.sender === "assistant") {
+        const preview = makeAudioTextPreview(m.text || "", 200);
+        return preview || undefined;
+      }
+    }
+    return undefined;
+  }, [renderMessages]);
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const prevConversationIdRef = useRef<string | null>(null);
 
-  const [audioIndices, setAudioIndices] = useState<Set<number>>(() => new Set());
+  const [audioTextPreviews, setAudioTextPreviews] = useState<Set<string>>(() => new Set());
 
-  const audioIndexByMessageId = useMemo(() => {
-    const map = new Map<string, number>();
-    let idx = 0;
-    for (const m of renderMessages) {
-      if (m.kind === "text" && m.sender === "assistant") {
-        map.set(m.id, idx);
-        idx++;
-      }
-    }
-    return map;
-  }, [renderMessages]);
-
-  const decodedCacheRef = useRef<Map<number, AudioBuffer>>(new Map());
+  const decodedCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
   const decodeCtxRef = useRef<AudioContext | null>(null);
   const [overrideAudioBuffer, setOverrideAudioBuffer] = useState<AudioBuffer | null>(null);
   const [playerKey, setPlayerKey] = useState<string>("live");
@@ -81,6 +80,15 @@ export function useChatWindowAudio({
 
   useEffect(() => {
     let mounted = true;
+
+    const provided = typeof conversationId === "string" ? conversationId : null;
+    if (provided) {
+      setActiveConversationId(provided);
+      return () => {
+        mounted = false;
+      };
+    }
+
     secureGetItem<{ id?: string }>("conv")
       .then((v) => {
         if (!mounted) return;
@@ -91,27 +99,28 @@ export function useChatWindowAudio({
         if (!mounted) return;
         setActiveConversationId(null);
       });
+
     return () => {
       mounted = false;
     };
-  }, [renderMessages.length, lastMessageId]);
+  }, [conversationId]);
 
   useEffect(() => {
     const convId = activeConversationId;
     if (!convId) {
-      setAudioIndices(new Set());
+      setAudioTextPreviews(new Set());
       return;
     }
 
     let mounted = true;
-    listConversationAudioIndices(convId)
-      .then((indices) => {
+    listConversationAudioTextPreviews(convId)
+      .then((previews) => {
         if (!mounted) return;
-        setAudioIndices(new Set(indices));
+        setAudioTextPreviews(new Set(previews));
       })
       .catch(() => {
         if (!mounted) return;
-        setAudioIndices(new Set());
+        setAudioTextPreviews(new Set());
       });
 
     const prev = prevConversationIdRef.current;
@@ -135,12 +144,9 @@ export function useChatWindowAudio({
     const convId = activeConversationId;
     if (!convId) return;
     if (!audioPlayerBuffer) return;
-    if (!lastMessageId) return;
+    if (!lastAssistantTextPreview) return;
 
-    const idx = audioIndexByMessageId.get(lastMessageId);
-    if (typeof idx !== "number") return;
-
-    const key = `${convId}:${idx}`;
+    const key = `${convId}:${lastAssistantTextPreview}`;
     const lastStored = lastStoredSamplesRef.current.get(key) ?? 0;
     const nextLen = audioPlayerBuffer.length;
     if (nextLen <= lastStored) return;
@@ -155,21 +161,21 @@ export function useChatWindowAudio({
       (async () => {
         const normalized = await resampleForStorage(audioPlayerBuffer);
         const wav = await audioBufferToWavArrayBuffer(normalized);
-        await putConversationAudioEncrypted(convId, idx, wav, "audio/wav");
+        await putConversationAudioEncrypted(convId, lastAssistantTextPreview, wav, "audio/wav");
 
         await pruneChatAudioDb(CHAT_AUDIO_DB_PRUNE_CONFIG);
 
         lastStoredSamplesRef.current.set(key, nextLen);
-        setAudioIndices((prevSet) => {
+        setAudioTextPreviews((prevSet) => {
           const copy = new Set(prevSet);
-          copy.add(idx);
+          copy.add(lastAssistantTextPreview);
           return copy;
         });
       })().catch(() => {
         // ignore
       });
     }, 1200);
-  }, [activeConversationId, audioIndexByMessageId, audioPlayerBuffer, lastMessageId]);
+  }, [activeConversationId, audioPlayerBuffer, lastAssistantTextPreview]);
 
   const ensureDecodeContext = () => {
     const Ctx: typeof AudioContext | undefined =
@@ -180,10 +186,23 @@ export function useChatWindowAudio({
     return decodeCtxRef.current;
   };
 
-  const hasAudioForMessageId = (messageId: string): boolean => {
-    const idx = audioIndexByMessageId.get(messageId);
-    if (typeof idx !== "number") return false;
-    return audioIndices.has(idx);
+  const resolveStoredPreview = (text: string): string | null => {
+    const current = makeAudioTextPreview(text || "", 200);
+    if (!current) return null;
+    if (audioTextPreviews.has(current)) return current;
+
+    let best: string | null = null;
+    for (const stored of audioTextPreviews) {
+      if (!stored) continue;
+      if (current.startsWith(stored) || stored.startsWith(current)) {
+        if (!best || stored.length > best.length) best = stored;
+      }
+    }
+    return best;
+  };
+
+  const hasAudioForText = (text: string): boolean => {
+    return Boolean(resolveStoredPreview(text));
   };
 
   const clearOverride = () => {
@@ -191,38 +210,38 @@ export function useChatWindowAudio({
     onCloseAudioPlayer?.();
   };
 
-  const playForMessageId = async (messageId: string) => {
+  const playForText = async (text: string) => {
     const convId = activeConversationId;
     if (!convId) return;
 
-    // Latest "live" message uses current buffer and just resets player position
-    if (messageId === lastMessageId && audioPlayerBuffer) {
+    const resolved = resolveStoredPreview(text);
+
+    if (resolved && resolved === lastAssistantTextPreview && audioPlayerBuffer) {
       setOverrideAudioBuffer(null);
-      setPlayerKey(`live:${convId}:${messageId}`);
+      setPlayerKey(`live:${convId}:${resolved}`);
       setShowAudioPlayer?.(true);
       return;
     }
 
-    const idx = audioIndexByMessageId.get(messageId);
-    if (typeof idx !== "number") return;
+    if (!resolved) return;
 
-    const cached = decodedCacheRef.current.get(idx);
+    const cached = decodedCacheRef.current.get(resolved);
     if (cached) {
       setOverrideAudioBuffer(cached);
-      setPlayerKey(`idb:${convId}:${idx}`);
+      setPlayerKey(`idb:${convId}:${resolved}`);
       setShowAudioPlayer?.(true);
       return;
     }
 
-    const rec = await getConversationAudioDecrypted(convId, idx);
+    const rec = await getConversationAudioDecrypted(convId, resolved);
     if (!rec) return;
     const ctx = ensureDecodeContext();
     if (!ctx) return;
 
     const decoded = await ctx.decodeAudioData(rec.wav.slice(0));
-    decodedCacheRef.current.set(idx, decoded);
+    decodedCacheRef.current.set(resolved, decoded);
     setOverrideAudioBuffer(decoded);
-    setPlayerKey(`idb:${convId}:${idx}`);
+    setPlayerKey(`idb:${convId}:${resolved}`);
     setShowAudioPlayer?.(true);
   };
 
@@ -230,9 +249,8 @@ export function useChatWindowAudio({
 
   return {
     activeConversationId,
-    audioIndexByMessageId,
-    hasAudioForMessageId,
-    playForMessageId,
+    hasAudioForText,
+    playForText,
     activeBuffer,
     playerKey,
     clearOverride,
