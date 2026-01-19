@@ -345,7 +345,7 @@ export default function ChatWindow({
         ) : statusBanner && activeTab === "chat" ? (
           <div
             className={cn(
-              "text-xs font-medium",
+              "flex justify-center items-center gap-2 text-xs font-medium",
               statusBanner.type === "success"
                 ? "text-green-600"
                 : statusBanner.type === "error"
