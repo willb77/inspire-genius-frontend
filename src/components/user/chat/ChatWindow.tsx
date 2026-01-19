@@ -143,6 +143,7 @@ export default function ChatWindow({
 
     const selectDocsLottieSrc = useMemo(() => {
     const options = [
+      "https://lottie.host/embed/979ce88f-abf2-4fbe-9b3b-0b98f01f3900/yNrKdE9Ex1.lottie",
       "https://lottie.host/embed/f13eb55b-1ae1-41cf-ba8b-33a5f1fb0028/zpOwzGQlox.lottie",
       "https://lottie.host/embed/0282a5cd-2be0-4629-b8aa-6b25db7da055/jaFMoZJmcz.lottie",
     ];
