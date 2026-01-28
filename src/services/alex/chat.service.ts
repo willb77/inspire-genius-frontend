@@ -40,6 +40,7 @@ export type AlexDownloadParams = {
   device_key: string;
   start_date: string; // YYYY-MM-DD
   end_date: string;   // YYYY-MM-DD
+  timezone?: string;
   limit?: number;
   offset?: number;
 };

@@ -129,6 +129,7 @@ export default function AlexChatPanel({
       toast.error("Alex device id not available");
       return;
     }
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const fmt = (d: Date) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -140,6 +141,7 @@ export default function AlexChatPanel({
         device_key: deviceKey,
         start_date: fmt(fromDate),
         end_date: fmt(toDate),
+        timezone,
         // limit: 100,
         // offset: 0,
       });
