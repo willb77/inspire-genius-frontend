@@ -44,10 +44,12 @@ export async function renameConversation(conversationId: string, title: string) 
 export async function exportConversation(conversationId: string, from: Date, to: Date) {
   const start = format(from, "yyyy-MM-dd");
   const end = format(to, "yyyy-MM-dd");
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const resp = await api.get(`/v1/chat/conversations/${conversationId}/download`, {
     params: {
       start_date: start,
       end_date: end,
+      timezone,
     },
   });
   return resp.data as unknown as { status: boolean; file_name: string; mime_type: string; base64_pdf?: string; base64_csv?: string };
