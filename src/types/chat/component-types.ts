@@ -5,6 +5,7 @@ import type { SimpleDoc, DocumentRef, HistoryGroup, ChatMessage, DocKind } from 
 // ChatWindow component props
 export interface ChatWindowProps {
   coachName: string;
+  conversationId?: string;
   className?: string;
   onBack?: () => void;
   onSendText?: (text: string) => void;

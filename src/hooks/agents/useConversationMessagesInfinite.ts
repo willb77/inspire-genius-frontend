@@ -19,6 +19,7 @@ export function useConversationMessagesInfinite(conversationId?: string, pageSiz
   return useInfiniteQuery<ConversationMessagesPage, Error, ConversationMessagesPage, [string, string | undefined], number>({
     queryKey: ["conversation-messages", conversationId],
     enabled: Boolean(conversationId),
+    refetchOnWindowFocus: false,
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
       if (!conversationId) return { data: { messages: [], page: pageParam, page_size: pageSize, has_next: false } } as ConversationMessagesPage;

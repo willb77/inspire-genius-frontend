@@ -1,6 +1,6 @@
 type ChatAudioRecord = {
   conversationId: string;
-  index: number;
+  textPreview: string;
   createdAt: number;
   mimeType: string;
   // legacy/plain storage
@@ -12,7 +12,7 @@ type ChatAudioRecord = {
 };
 
 const DB_NAME = "chat-audio";
-const DB_VERSION = 2;
+const DB_VERSION = 8;
 const STORE = "audio";
 
 const TEXT = new TextEncoder();
@@ -70,14 +70,13 @@ function openDb(): Promise<IDBDatabase> {
 
     req.onupgradeneeded = () => {
       const db = req.result;
-      let store: IDBObjectStore;
-      if (!db.objectStoreNames.contains(STORE)) {
-        store = db.createObjectStore(STORE, {
-          keyPath: ["conversationId", "index"],
-        });
-      } else {
-        store = req.transaction!.objectStore(STORE);
+      if (db.objectStoreNames.contains(STORE)) {
+        db.deleteObjectStore(STORE);
       }
+
+      const store = db.createObjectStore(STORE, {
+        keyPath: ["conversationId", "textPreview"],
+      });
 
       if (!store.indexNames.contains("byConversationId")) {
         store.createIndex("byConversationId", "conversationId", { unique: false });
@@ -169,14 +168,20 @@ export async function audioBufferToWavArrayBuffer(audioBuffer: AudioBuffer): Pro
   return await audioBufferToWavBlob(audioBuffer).arrayBuffer();
 }
 
-export async function putConversationAudio(conversationId: string, index: number, blob: Blob): Promise<void> {
+export function makeAudioTextPreview(text: string, maxChars: number = 200): string {
+  const raw = (text ?? "").trim();
+  if (!raw) return "";
+  return raw.slice(0, Math.max(0, Math.floor(maxChars)));
+}
+
+export async function putConversationAudio(conversationId: string, textPreview: string, blob: Blob): Promise<void> {
   const db = await openDb();
   const tx = db.transaction(STORE, "readwrite");
   const store = tx.objectStore(STORE);
 
   const record: ChatAudioRecord = {
     conversationId,
-    index,
+    textPreview,
     createdAt: Date.now(),
     mimeType: blob.type || "audio/wav",
     blob,
@@ -189,7 +194,7 @@ export async function putConversationAudio(conversationId: string, index: number
 
 export async function putConversationAudioEncrypted(
   conversationId: string,
-  index: number,
+  textPreview: string,
   wav: ArrayBuffer,
   mimeType: string = "audio/wav"
 ): Promise<void> {
@@ -200,7 +205,7 @@ export async function putConversationAudioEncrypted(
   const enc = await encryptBytes(wav);
   const record: ChatAudioRecord = {
     conversationId,
-    index,
+    textPreview,
     createdAt: Date.now(),
     mimeType,
     iv: enc.iv,
@@ -213,19 +218,19 @@ export async function putConversationAudioEncrypted(
   db.close();
 }
 
-export async function getConversationAudio(conversationId: string, index: number): Promise<ChatAudioRecord | null> {
+export async function getConversationAudio(conversationId: string, textPreview: string): Promise<ChatAudioRecord | null> {
   const db = await openDb();
   const tx = db.transaction(STORE, "readonly");
   const store = tx.objectStore(STORE);
-  const req = store.get([conversationId, index]);
+  const req = store.get([conversationId, textPreview]);
   const result = await requestToPromise(req);
   await txDone(tx);
   db.close();
   return (result as ChatAudioRecord | undefined) ?? null;
 }
 
-export async function getConversationAudioDecrypted(conversationId: string, index: number): Promise<{ mimeType: string; wav: ArrayBuffer } | null> {
-  const rec = await getConversationAudio(conversationId, index);
+export async function getConversationAudioDecrypted(conversationId: string, textPreview: string): Promise<{ mimeType: string; wav: ArrayBuffer } | null> {
+  const rec = await getConversationAudio(conversationId, textPreview);
   if (!rec) return null;
 
   if (rec.cipher) {
@@ -249,13 +254,13 @@ export async function getConversationAudioDecrypted(conversationId: string, inde
   return null;
 }
 
-export async function listConversationAudioIndices(conversationId: string): Promise<number[]> {
+export async function listConversationAudioTextPreviews(conversationId: string): Promise<string[]> {
   const db = await openDb();
   const tx = db.transaction(STORE, "readonly");
   const store = tx.objectStore(STORE);
   const idx = store.index("byConversationId");
   const range = IDBKeyRange.only(conversationId);
-  const out: number[] = [];
+  const out: string[] = [];
 
   await new Promise<void>((resolve, reject) => {
     const cursorReq = idx.openCursor(range);
@@ -265,8 +270,8 @@ export async function listConversationAudioIndices(conversationId: string): Prom
         resolve();
         return;
       }
-      const v = cursor.value as { index?: number };
-      if (typeof v.index === "number") out.push(v.index);
+      const v = cursor.value as { textPreview?: string };
+      if (typeof v.textPreview === "string") out.push(v.textPreview);
       cursor.continue();
     };
     cursorReq.onerror = () => reject(cursorReq.error);
@@ -274,7 +279,7 @@ export async function listConversationAudioIndices(conversationId: string): Prom
 
   await txDone(tx);
   db.close();
-  out.sort((a, b) => a - b);
+  out.sort((a, b) => a.localeCompare(b));
   return out;
 }
 
@@ -311,8 +316,8 @@ export async function clearConversationAudio(conversationId: string): Promise<vo
   db.close();
 }
 
-export async function hasConversationAudio(conversationId: string, index: number): Promise<boolean> {
-  const rec = await getConversationAudio(conversationId, index);
+export async function hasConversationAudio(conversationId: string, textPreview: string): Promise<boolean> {
+  const rec = await getConversationAudio(conversationId, textPreview);
   return Boolean(rec);
 }
 

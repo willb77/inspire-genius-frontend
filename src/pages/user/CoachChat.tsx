@@ -388,7 +388,7 @@ export default function CoachChat() {
             await secureRemoveItem("conv");
             setSelectedId(id);
             setConversationId(id);
-            secureSetItem("conv", { id });
+            await secureSetItem("conv", { id });
             setAudioPlayerBuffer(null);
             connect(agentId, accessToken, selectedFileIds, id);
           }
@@ -526,6 +526,8 @@ export default function CoachChat() {
 
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
+    // IMPORTANT: hydrate from API only when local state is empty and we switched to a new conversation.
+    // This prevents messagesPages from overwriting live websocket-driven updates.
     if (!messagesPages) return;
     const pages = Array.isArray((messagesPages as { pages?: unknown[] }).pages)
       ? ((messagesPages as { pages: Array<{ data?: { messages?: Array<Record<string, unknown>> } }> }).pages)
@@ -542,6 +544,7 @@ export default function CoachChat() {
       return { id, kind: "text", sender, text, time };
     });
     setMessages(mapped);
+
   }, [messagesPages]);
 
   const handleSelectConversation = useCallback(async (id: string) => {
@@ -647,6 +650,7 @@ export default function CoachChat() {
         <div className="lg:col-span-8" data-tour="chat-window">
           <ChatWindow
             coachName={coachName}
+            conversationId={conversationId}
             onBack={() => navigate(-1)}
             onSendText={(t) => {
               demoAudioServiceRef.current?.resetAudioState();
