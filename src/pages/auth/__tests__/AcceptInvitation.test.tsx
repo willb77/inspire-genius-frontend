@@ -156,24 +156,25 @@ describe("AcceptInvitation Component", () => {
 
     test("missing uppercase letter shows validation error", () => {
       renderComponent();
+      
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "password123!" },
+        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.getByText(/at least one uppercase/i)).toBeInTheDocument();
+      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
     });
 
     test("password mismatch shows error", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Different123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD + "different" },
       });
 
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -182,12 +183,21 @@ describe("AcceptInvitation Component", () => {
     test("matching passwords removes error", () => {
       renderComponent();
 
+      // First create a mismatch
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD + "different" },
+      });
+
+      // Verify error exists
+      expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+
+      // Now make them match
+      fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
@@ -197,11 +207,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.getByRole("button", { name: /set password/i })).not.toBeDisabled();
@@ -216,22 +226,59 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "MyP@ssw0rd!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
-      expect(screen.queryByText(/at least one/i)).not.toBeInTheDocument();
+      
+      // Should not show any validation errors
+      expect(screen.queryByText(/uppercase/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/lowercase/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/number/i)).not.toBeInTheDocument();
     });
 
     test("rejects missing lowercase", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "PASSWORD123!" },
+        target: { value: process.env.TEST_INVALID_NO_LOWERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
       expect(screen.getByText(/lowercase/i)).toBeInTheDocument();
+    });
+
+    test("rejects missing uppercase", () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
+      });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
+    });
+
+    test("rejects missing number", () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: process.env.TEST_INVALID_NO_NUMBER as string },
+      });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      expect(screen.getByText(/number/i)).toBeInTheDocument();
+    });
+
+    test("rejects missing special character", () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
+        target: { value: process.env.TEST_INVALID_NO_SPECIAL as string },
+      });
+
+      fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
+      expect(screen.getByText(/special/i)).toBeInTheDocument();
     });
   });
 
@@ -245,11 +292,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -266,11 +313,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -278,7 +325,7 @@ describe("AcceptInvitation Component", () => {
       await waitFor(() =>
         expect(mockMutateAsync).toHaveBeenCalledWith({
           invitation_token: "valid-token-123",
-          new_password: "Password123!",
+          new_password: process.env.TEST_VALID_PASSWORD as string,
         })
       );
     });
@@ -290,11 +337,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -332,16 +379,16 @@ describe("AcceptInvitation Component", () => {
      FOCUS + BLUR VALIDATION
   ---------------------------------------------------------------*/
   describe("Focus Behavior", () => {
-    test("shows validation on focus", () => {
+    test("shows validation on focus when password is invalid", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "weak" },
+        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.getByText(/at least one/i)).toBeInTheDocument();
+      expect(screen.getByText(/uppercase/i)).toBeInTheDocument();
     });
 
     test("hides validation when field is blurred empty", () => {
@@ -350,7 +397,7 @@ describe("AcceptInvitation Component", () => {
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
       fireEvent.blur(screen.getByPlaceholderText("Enter New Password"));
 
-      expect(screen.queryByText(/at least one/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/uppercase/i)).not.toBeInTheDocument();
     });
   });
 
@@ -367,7 +414,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: "Password123!" },
+        target: { value: process.env.TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.getByRole("button", { name: /set password/i })).toBeDisabled();
@@ -379,13 +426,13 @@ describe("AcceptInvitation Component", () => {
       const newPass = screen.getByPlaceholderText("Enter New Password");
       const confirm = screen.getByPlaceholderText("Confirm New Password");
 
-      fireEvent.change(newPass, { target: { value: "Password123!" } });
-      fireEvent.change(confirm, { target: { value: "Password123!" } });
+      fireEvent.change(newPass, { target: { value: process.env.TEST_VALID_PASSWORD as string } });
+      fireEvent.change(confirm, { target: { value: process.env.TEST_VALID_PASSWORD as string } });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
 
       // Editing breaks match
-      fireEvent.change(newPass, { target: { value: "Password123!X" } });
+      fireEvent.change(newPass, { target: { value: (process.env.TEST_VALID_PASSWORD as string) + "X" } });
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
   });

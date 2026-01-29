@@ -68,7 +68,7 @@ describe("useAcceptInvitation", () => {
 
     const payload = {
       invitation_token: "invite-token-123",
-      new_password: "password123",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     };
 
     // Trigger mutation
@@ -96,7 +96,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token-456",
-      new_password: "pass456",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -113,7 +113,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token-789",
-      new_password: "pass789",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -137,7 +137,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "invalid-token",
-      new_password: "test123",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -155,7 +155,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -181,7 +181,7 @@ describe("useAcceptInvitation", () => {
 
     const payload = {
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     };
 
     result.current.mutate(payload);
@@ -208,7 +208,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -236,7 +236,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "expired-token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -258,7 +258,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -277,7 +277,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -305,7 +305,7 @@ describe("useAcceptInvitation", () => {
 
     const payload = {
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     };
 
     result.current.mutate(payload);
@@ -339,7 +339,7 @@ describe("useAcceptInvitation", () => {
 
     result.current.mutate({
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -366,7 +366,7 @@ describe("useAcceptInvitation", () => {
 
     const payload = {
       invitation_token: "token",
-      new_password: "pass",
+      new_password: process.env.TEST_VALID_PASSWORD as string,
     };
 
     result.current.mutate(payload);

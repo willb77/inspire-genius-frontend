@@ -82,8 +82,8 @@ describe("password.service.ts", () => {
   describe("resetPassword()", () => {
     const payload: ResetPasswordPayload = {
       reset_token: "abc123",
-      new_password: "NewPass@123",
-      confirm_password: "NewPass@123",
+      new_password: process.env.TEST_VALID_PASSWORD!,
+      confirm_password: process.env.TEST_VALID_PASSWORD!,
     };
 
     test("should call API with correct URL and payload", async () => {

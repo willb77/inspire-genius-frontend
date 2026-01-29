@@ -142,7 +142,7 @@ describe("ResetPassword Component", () => {
 
     // Enter valid new password
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: "Password123" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     // Enter mismatching confirm password
@@ -168,11 +168,11 @@ describe("ResetPassword Component", () => {
 
     // Fill new + confirm password
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: "Password123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "Password123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     // Submit form
@@ -183,8 +183,8 @@ describe("ResetPassword Component", () => {
     expect(mockMutateAsync).toHaveBeenCalledWith(
       {
         reset_token: "resetToken123",
-        new_password: "Password123!",
-        confirm_password: "Password123!",
+        new_password: process.env.TEST_VALID_PASSWORD!,
+        confirm_password: process.env.TEST_VALID_PASSWORD!,
       },
       expect.any(Object) // options containing onSuccess callback
     );
@@ -204,11 +204,11 @@ describe("ResetPassword Component", () => {
     renderComponent();
 
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: "Pass123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "Pass123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     await act(async () =>
@@ -233,11 +233,11 @@ describe("ResetPassword Component", () => {
     renderComponent();
 
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: "Pass123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "Pass123!" },
+      target: { value: process.env.TEST_VALID_PASSWORD! },
     });
 
     await act(async () =>
