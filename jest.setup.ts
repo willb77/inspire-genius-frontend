@@ -16,7 +16,7 @@ dotenv.config({ path: ".env" });
 // Restore console.log after dotenv loads
 console.log = originalConsoleLog;
 
-// Set defaults as fallback if .env.test is not found
+// Set defaults as fallback if .env is not found
 process.env.TEST_VALID_PASSWORD = process.env.TEST_VALID_PASSWORD || "Test-Password123!";
 process.env.TEST_INVALID_NO_UPPERCASE = process.env.TEST_INVALID_NO_UPPERCASE || "test-password123!";
 process.env.TEST_INVALID_NO_LOWERCASE = process.env.TEST_INVALID_NO_LOWERCASE || "TEST-PASSWORD123!";
