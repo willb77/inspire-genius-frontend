@@ -1,17 +1,21 @@
 stages:
   - build
+  - sonar
   - deploy
 
-# -------------------------
-# Build Job
-# -------------------------
+# =========================
+# BUILD STAGE
+# =========================
 devBuild:
   stage: build
   tags:
     - 3pp-sandbox
-  only:
-    - uat
-    - development
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+    - if: '$CI_COMMIT_REF_NAME == "uat"'
+    - when: never
+
   script:
     # Install Node.js 20
     - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -26,7 +30,7 @@ devBuild:
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
     - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
-    # Install and build
+    # Install & build
     - npm ci
     - npm audit fix || true
     - npm run build
@@ -37,30 +41,72 @@ devBuild:
     expire_in: 1 day
 
 
-# -------------------------
-# Deploy Job
-# -------------------------
+# =========================
+# SONARQUBE (DEV ONLY)
+# =========================
+sonarqube:
+  stage: sonar
+  image: sonarsource/sonar-scanner-cli:5
+  tags:
+    - 3pp-sandbox
+  dependencies:
+    - devBuild
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+    - when: never
+
+  variables:
+    SONAR_USER_HOME: "$CI_PROJECT_DIR/.sonar"
+    GIT_DEPTH: "0"
+
+  script:
+    - echo "Running SonarQube analysis (DEV)..."
+    - sonar-scanner \
+        -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+        -Dsonar.projectName=$SONAR_PROJECT_NAME \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.login=$SONAR_TOKEN
+
+  allow_failure: true   # DEV should not be blocked
+
+
+# =========================
+# DEPLOY STAGE
+# =========================
 deploy:
   stage: deploy
   image: amazon/aws-cli:2.15.10
   tags:
     - 3pp-sandbox
-  only:
-    - uat
-    - development
   dependencies:
     - devBuild
+
+  rules:
+    # DEV → auto deploy
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+
+    # UAT → manual approval
+    - if: '$CI_COMMIT_REF_NAME == "uat"'
+      when: manual
+      allow_failure: false
+
+    - when: never
+
   script:
-    # Detect environment based on branch
+    # Select environment
     - |
       if [ "$CI_COMMIT_REF_NAME" = "uat" ]; then
-        echo "🔹 UAT environment detected"
+        echo "UAT environment detected"
         export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_UAT"
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_UAT"
         export S3_BUCKET_NAME="$S3_BUCKET_NAME_UAT"
         export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID_UAT"
       else
-        echo "🔹 Development environment detected"
+        echo "DEV environment detected"
         export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
         export S3_BUCKET_NAME="$S3_BUCKET_NAME"
@@ -69,19 +115,18 @@ deploy:
 
     - export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
-    # Verify credentials
-    - echo "🔍 Checking AWS identity..."
+    # Verify AWS access
     - aws sts get-caller-identity
 
     # Deploy to S3
-    - echo "🧹 Cleaning s3://$S3_BUCKET_NAME ..."
+    - echo "Deploying to S3..."
     - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
-
-    - echo "🚀 Uploading new build ..."
     - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
 
-    # Invalidate CloudFront
-    - echo "🌀 Invalidating CloudFront cache ..."
-    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+    # CloudFront invalidation
+    - echo "Invalidating CloudFront cache..."
+    - aws cloudfront create-invalidation \
+        --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+        --paths "/*"
 
-    - echo "✅ Deployment complete!"
+    - echo "Deployment complete!"
