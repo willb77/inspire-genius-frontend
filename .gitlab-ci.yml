@@ -4,10 +4,11 @@ stages:
   - deploy
 
 # =========================
-# BUILD STAGE
+# BUILD STAGE (DEV + UAT)
 # =========================
 devBuild:
   stage: build
+  image: node:20.19.0
   tags:
     - 3pp-sandbox
 
@@ -16,23 +17,19 @@ devBuild:
     - if: '$CI_COMMIT_REF_NAME == "uat"'
     - when: never
 
-  script:
-    # Install Node.js 20
-    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    - export NVM_DIR="$HOME/.nvm"
-    - source $NVM_DIR/nvm.sh
-    - nvm install 20.19.0
-    - nvm use 20.19.0
+  variables:
+    NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
 
-    # Generate .env
+  script:
+
+    # Generate .env (build-time config)
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
     - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
     # Install & build
-    - npm ci
-    - npm audit fix || true
+    - npm ci --no-audit --no-fund
     - npm run build
 
   artifacts:
@@ -62,7 +59,7 @@ sonarqube:
     GIT_DEPTH: "0"
 
   script:
-    - echo "Running SonarQube analysis (DEV)..."
+    - echo "Running SonarQube analysis for DEV..."
     - sonar-scanner \
         -Dsonar.projectKey=$SONAR_PROJECT_KEY \
         -Dsonar.projectName=$SONAR_PROJECT_NAME \
@@ -115,13 +112,12 @@ deploy:
 
     - export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
-    # Verify AWS access
+    # Verify AWS identity
     - aws sts get-caller-identity
 
-    # Deploy to S3
-    - echo "Deploying to S3..."
-    - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
-    - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
+    # Deploy to S3 (safe sync)
+    - echo "Deploying build to S3..."
+    - aws s3 sync dist/ "s3://$S3_BUCKET_NAME" --delete
 
     # CloudFront invalidation
     - echo "Invalidating CloudFront cache..."
