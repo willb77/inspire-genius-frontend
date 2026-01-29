@@ -121,8 +121,6 @@ deploy:
 
     # CloudFront invalidation
     - echo "Invalidating CloudFront cache..."
-    - aws cloudfront create-invalidation \
-        --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
-        --paths "/*"
+    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
 
     - echo "Deployment complete!"
