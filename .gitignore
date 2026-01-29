@@ -30,3 +30,6 @@ dist-ssr
 .env.development
 .env.production
 !.env.example
+
+# unit test / coverage reports
+coverage
