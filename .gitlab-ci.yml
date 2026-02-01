@@ -1,34 +1,33 @@
 stages:
   - build
+  - sonar
   - deploy
 
-# -------------------------
-# Build Job
-# -------------------------
+# =========================
+# BUILD STAGE (DEV ONLY)
+# =========================
 devBuild:
   stage: build
+  image: node:20.19.0
   tags:
     - 3pp-sandbox
-  only:
-    - uat
-    - development
-  script:
-    # Install Node.js 20
-    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    - export NVM_DIR="$HOME/.nvm"
-    - source $NVM_DIR/nvm.sh
-    - nvm install 20.19.0
-    - nvm use 20.19.0
 
-    # Generate .env
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+    - when: never
+
+  variables:
+    NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+
+  script:
+    # Generate .env (build-time config)
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
     - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
-    # Install and build
-    - npm ci
-    - npm audit fix || true
+    # Install & build
+    - npm ci --no-audit --no-fund
     - npm run build
 
   artifacts:
@@ -37,51 +36,76 @@ devBuild:
     expire_in: 1 day
 
 
-# -------------------------
-# Deploy Job
-# -------------------------
+# =========================
+# SONARQUBE (DEV ONLY)
+# =========================
+sonarqube:
+  stage: sonar
+  image: sonarsource/sonar-scanner-cli:5
+  tags:
+    - pacewisdom-docker-shared-runner-1
+  dependencies:
+    - devBuild
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+    - when: never
+
+  variables:
+    SONAR_USER_HOME: "$CI_PROJECT_DIR/.sonar"
+    GIT_DEPTH: "0"
+
+    SONAR_PROJECT_KEY: "inspiregenius-frontend"
+    SONAR_PROJECT_NAME: "InspireGenius Frontend"
+
+
+  script:
+    - echo "Running SonarQube analysis for DEV..."
+    - |
+      sonar-scanner \
+        -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
+        -Dsonar.projectName="$SONAR_PROJECT_NAME" \
+        -Dsonar.sources="." \
+        -Dsonar.host.url="$SONAR_HOST_URL" \
+        -Dsonar.login="$SONAR_TOKEN"
+
+  allow_failure: true
+
+
+# =========================
+# DEPLOY STAGE (DEV ONLY)
+# =========================
 deploy:
   stage: deploy
   image: amazon/aws-cli:2.15.10
   tags:
     - 3pp-sandbox
-  only:
-    - uat
-    - development
   dependencies:
     - devBuild
-  script:
-    # Detect environment based on branch
-    - |
-      if [ "$CI_COMMIT_REF_NAME" = "uat" ]; then
-        echo "🔹 UAT environment detected"
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_UAT"
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_UAT"
-        export S3_BUCKET_NAME="$S3_BUCKET_NAME_UAT"
-        export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID_UAT"
-      else
-        echo "🔹 Development environment detected"
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-        export S3_BUCKET_NAME="$S3_BUCKET_NAME"
-        export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID"
-      fi
 
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+    - when: never
+
+  script:
+    - echo "DEV environment detected"
+
+    - export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+    - export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+    - export S3_BUCKET_NAME="$S3_BUCKET_NAME"
+    - export CLOUDFRONT_DISTRIBUTION_ID="$CLOUDFRONT_DISTRIBUTION_ID"
     - export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 
-    # Verify credentials
-    - echo "🔍 Checking AWS identity..."
+    # Verify AWS identity
     - aws sts get-caller-identity
 
     # Deploy to S3
-    - echo "🧹 Cleaning s3://$S3_BUCKET_NAME ..."
-    - aws s3 rm "s3://$S3_BUCKET_NAME" --recursive
+    - echo "Deploying build to S3..."
+    - aws s3 sync dist/ "s3://$S3_BUCKET_NAME" --delete
 
-    - echo "🚀 Uploading new build ..."
-    - aws s3 cp dist/ "s3://$S3_BUCKET_NAME" --recursive
-
-    # Invalidate CloudFront
-    - echo "🌀 Invalidating CloudFront cache ..."
+    # CloudFront invalidation
+    - echo "Invalidating CloudFront cache..."
     - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
-
-    - echo "✅ Deployment complete!"
+    - echo "Deployment complete!"
