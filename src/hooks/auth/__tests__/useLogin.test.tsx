@@ -69,7 +69,7 @@ describe("useAuthLoginMutation", () => {
 
     const credentials = {
       email: "test@example.com",
-      password: "password123",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     };
 
     // Trigger mutation
@@ -81,7 +81,7 @@ describe("useAuthLoginMutation", () => {
     // API should be called with verification flag set to false
     expect(loginApi).toHaveBeenCalledWith({
       email: "test@example.com",
-      password: "password123",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
       verification: false,
     });
 
@@ -89,7 +89,7 @@ describe("useAuthLoginMutation", () => {
     expect(result.current.data).toEqual({
       data: mockResponse,
       email: "test@example.com",
-      password: "password123",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
   });
 
@@ -110,7 +110,7 @@ describe("useAuthLoginMutation", () => {
     // Trigger failed login
     result.current.mutate({
       email: "wrong@example.com",
-      password: "wrongpassword",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     // Wait until mutation is marked as error
@@ -118,7 +118,7 @@ describe("useAuthLoginMutation", () => {
 
     expect(loginApi).toHaveBeenCalledWith({
       email: "wrong@example.com",
-      password: "wrongpassword",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
       verification: false,
     });
 
@@ -146,7 +146,7 @@ describe("useAuthLoginMutation", () => {
 
     result.current.mutate({
       email: "user@test.com",
-      password: "pass123",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -156,9 +156,9 @@ describe("useAuthLoginMutation", () => {
       {
         data: mockResponse,
         email: "user@test.com",
-        password: "pass123",
+        password: process.env.FAKE_TEST_VALID_PASSWORD as string,
       },
-      { email: "user@test.com", password: "pass123" },
+      { email: "user@test.com", password: process.env.FAKE_TEST_VALID_PASSWORD as string },
       undefined
     );
 
@@ -187,7 +187,7 @@ describe("useAuthLoginMutation", () => {
 
     result.current.mutate({
       email: "fail@test.com",
-      password: "failpass",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -195,7 +195,7 @@ describe("useAuthLoginMutation", () => {
     // Custom onError should receive error + variables
     expect(onErrorMock).toHaveBeenCalledWith(
       mockError,
-      { email: "fail@test.com", password: "failpass" },
+      { email: "fail@test.com", password: process.env.FAKE_TEST_VALID_PASSWORD as string },
       undefined
     );
 
@@ -216,7 +216,7 @@ describe("useAuthLoginMutation", () => {
 
     result.current.mutate({
       email: "verify@test.com",
-      password: "verifypass",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -224,7 +224,7 @@ describe("useAuthLoginMutation", () => {
     // Ensures API always receives verification:false
     expect(loginApi).toHaveBeenCalledWith({
       email: "verify@test.com",
-      password: "verifypass",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
       verification: false,
     });
   });
@@ -251,7 +251,7 @@ describe("useAuthLoginMutation", () => {
 
     result.current.mutate({
       email: "state@test.com",
-      password: "statepass",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     // Should enter pending state
@@ -275,7 +275,7 @@ describe("useAuthLoginMutation", () => {
 
     result.current.mutate({
       email: "reset@test.com",
-      password: "resetpass",
+      password: process.env.FAKE_TEST_VALID_PASSWORD as string,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

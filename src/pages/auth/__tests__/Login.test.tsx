@@ -148,7 +148,7 @@ describe("Login Page - Full Coverage", () => {
       target: { value: "test@example.com" },
     });
     fireEvent.change(screen.getByLabelText("password"), {
-      target: { value: "password123" },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     // Submit form
@@ -157,7 +157,7 @@ describe("Login Page - Full Coverage", () => {
 
     // Assert login() called with correct args
     await waitFor(() =>
-      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123")
+      expect(mockLogin).toHaveBeenCalledWith("test@example.com", process.env.FAKE_TEST_VALID_PASSWORD as string)
     );
   });
 

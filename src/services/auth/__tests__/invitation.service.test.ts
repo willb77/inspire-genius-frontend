@@ -26,7 +26,7 @@ describe("acceptInvitation API", () => {
   // Example payload sent to backend
   const mockPayload: AcceptInvitationPayload = {
     invitation_token: "test-token",
-    new_password: "StrongPass123",
+    new_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
   };
 
   beforeEach(() => {
