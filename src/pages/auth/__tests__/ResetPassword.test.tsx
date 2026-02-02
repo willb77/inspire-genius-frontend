@@ -142,7 +142,7 @@ describe("ResetPassword Component", () => {
 
     // Enter valid new password
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     // Enter mismatching confirm password
@@ -168,11 +168,11 @@ describe("ResetPassword Component", () => {
 
     // Fill new + confirm password
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     // Submit form
@@ -183,8 +183,8 @@ describe("ResetPassword Component", () => {
     expect(mockMutateAsync).toHaveBeenCalledWith(
       {
         reset_token: "resetToken123",
-        new_password: process.env.TEST_VALID_PASSWORD as string,
-        confirm_password: process.env.TEST_VALID_PASSWORD as string,
+        new_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
+        confirm_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
       },
       expect.any(Object) // options containing onSuccess callback
     );
@@ -204,11 +204,11 @@ describe("ResetPassword Component", () => {
     renderComponent();
 
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     await act(async () =>
@@ -233,11 +233,11 @@ describe("ResetPassword Component", () => {
     renderComponent();
 
     fireEvent.change(screen.getByLabelText("Enter New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: process.env.TEST_VALID_PASSWORD as string },
+      target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
     });
 
     await act(async () =>

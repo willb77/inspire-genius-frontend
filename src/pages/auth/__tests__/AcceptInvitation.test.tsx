@@ -158,7 +158,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
       
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_UPPERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -170,11 +170,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD + "different" },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD + "different" },
       });
 
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -185,11 +185,11 @@ describe("AcceptInvitation Component", () => {
 
       // First create a mismatch
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD + "different" },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD + "different" },
       });
 
       // Verify error exists
@@ -197,7 +197,7 @@ describe("AcceptInvitation Component", () => {
 
       // Now make them match
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
@@ -207,11 +207,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.getByRole("button", { name: /set password/i })).not.toBeDisabled();
@@ -226,7 +226,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -241,7 +241,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_LOWERCASE as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_LOWERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -252,7 +252,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_UPPERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -263,7 +263,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_NUMBER as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_NUMBER as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -274,7 +274,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_SPECIAL as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_SPECIAL as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -292,11 +292,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -313,11 +313,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -325,7 +325,7 @@ describe("AcceptInvitation Component", () => {
       await waitFor(() =>
         expect(mockMutateAsync).toHaveBeenCalledWith({
           invitation_token: "valid-token-123",
-          new_password: process.env.TEST_VALID_PASSWORD as string,
+          new_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
         })
       );
     });
@@ -337,11 +337,11 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /set password/i }));
@@ -383,7 +383,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_INVALID_NO_UPPERCASE as string },
+        target: { value: process.env.FAKE_TEST_INVALID_NO_UPPERCASE as string },
       });
 
       fireEvent.focus(screen.getByPlaceholderText("Enter New Password"));
@@ -414,7 +414,7 @@ describe("AcceptInvitation Component", () => {
       renderComponent();
 
       fireEvent.change(screen.getByPlaceholderText("Enter New Password"), {
-        target: { value: process.env.TEST_VALID_PASSWORD as string },
+        target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string },
       });
 
       expect(screen.getByRole("button", { name: /set password/i })).toBeDisabled();
@@ -426,13 +426,13 @@ describe("AcceptInvitation Component", () => {
       const newPass = screen.getByPlaceholderText("Enter New Password");
       const confirm = screen.getByPlaceholderText("Confirm New Password");
 
-      fireEvent.change(newPass, { target: { value: process.env.TEST_VALID_PASSWORD as string } });
-      fireEvent.change(confirm, { target: { value: process.env.TEST_VALID_PASSWORD as string } });
+      fireEvent.change(newPass, { target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string } });
+      fireEvent.change(confirm, { target: { value: process.env.FAKE_TEST_VALID_PASSWORD as string } });
 
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
 
       // Editing breaks match
-      fireEvent.change(newPass, { target: { value: (process.env.TEST_VALID_PASSWORD as string) + "X" } });
+      fireEvent.change(newPass, { target: { value: (process.env.FAKE_TEST_VALID_PASSWORD as string) + "X" } });
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
   });

@@ -56,8 +56,8 @@ function wrapper() {
 // Reusable payload
 const payload: ResetPasswordPayload = {
   reset_token: "token",
-  new_password: process.env.TEST_VALID_PASSWORD as string,
-  confirm_password: process.env.TEST_VALID_PASSWORD as string,
+  new_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
+  confirm_password: process.env.FAKE_TEST_VALID_PASSWORD as string,
 };
 
 describe("useResetPassword", () => {

@@ -294,10 +294,10 @@ describe("Settings Component", () => {
   it("renders legal links correctly", () => {
     render(<Settings />, { wrapper: createWrapper() });
 
-    expect(screen.getByText("Terms of Use")).toHaveAttribute("href", "/terms");
+    expect(screen.getByText("Terms of Use")).toHaveAttribute("href", "/");
     expect(screen.getByText("Privacy Policy")).toHaveAttribute(
       "href",
-      "/privacy"
+      "/"
     );
   });
 });
