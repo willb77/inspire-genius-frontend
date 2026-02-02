@@ -244,6 +244,15 @@ export default function ChatWindow({
   const handleShowAudioPlayer = (open?: boolean) => {
     setShowAudioPlayer?.(open ?? false);
   };
+
+  const coachMessages = [
+  `${coachName} will be with you shortly`,
+  `One moment with ${coachName}`,
+  `Please wait`
+];
+
+const genericMessages =
+  coachMessages[Math.floor(Math.random() *coachMessages.length)];
   return (
     <div
       className={cn(
@@ -478,8 +487,8 @@ export default function ChatWindow({
                           "max-w-[70%] flex items-center justify-between mt-2 px-2"
                         )}
                       >
-                        <div className="text-xs text-muted-foreground">
-                          {coachName} is processing…
+                        <div className={cn("text-xs text-muted-foreground", m.text ? "text-purple-700" : "")}>
+                          {m.text ? m.text : `${genericMessages}`}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {m.time}
