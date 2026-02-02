@@ -253,6 +253,7 @@ export default function ChatWindow({
 
 const genericMessages =
   coachMessages[Math.floor(Math.random() *coachMessages.length)];
+  
   return (
     <div
       className={cn(
