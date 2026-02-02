@@ -226,6 +226,23 @@ export default function CoachChat() {
       setStatusBanner({ type: "error", text: resp.message || "Authentication error" });
       return;
     }
+
+    if (resp.type === "processing") {
+      const text = String(resp.message ?? "").trim();
+      setMessages((prev) => ([
+        ...prev.filter((m) => m.kind !== "processing"),
+        {
+          id: `msg-${Date.now()}`,
+          kind: "processing",
+          sender: "assistant",
+          time: formatUSTimeSafe(new Date()),
+          isProcessing: true,
+          type: "processing",
+          text: text || undefined,
+        },
+      ]));
+      return;
+    }
     if (resp.type === "continuous_mode") {
       // Show processing placeholder (recording started)
       setMessages((prev) => ([
