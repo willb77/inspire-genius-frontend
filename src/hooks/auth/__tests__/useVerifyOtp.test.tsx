@@ -75,7 +75,7 @@ describe("useAuthVerifyOtpMutation", () => {
   test("calls verifySignupApi when step = VERIFY_EMAIL", async () => {
     // Simulate stored values in session/local storage
     (getEmail as jest.Mock).mockResolvedValue("test@example.com");
-    (getPassword as jest.Mock).mockResolvedValue("pass123");
+    (getPassword as jest.Mock).mockResolvedValue(process.env.FAKE_TEST_BASIC_PASSWORD as string);
     (getSession as jest.Mock).mockResolvedValue(null);
     (getNextStep as jest.Mock).mockResolvedValue(NEXT_STEPS.VERIFY_EMAIL);
 
@@ -110,7 +110,7 @@ describe("useAuthVerifyOtpMutation", () => {
       mode: "verify_email",
       data: verifyResponse,
       email: "test@example.com",
-      password: "pass123",
+      password: process.env.FAKE_TEST_BASIC_PASSWORD as string,
     });
   });
 
@@ -120,7 +120,7 @@ describe("useAuthVerifyOtpMutation", () => {
   test("calls loginApi when step != VERIFY_EMAIL", async () => {
     // Storage values for MFA flow
     (getEmail as jest.Mock).mockResolvedValue("test@example.com");
-    (getPassword as jest.Mock).mockResolvedValue("mypassword");
+    (getPassword as jest.Mock).mockResolvedValue(process.env.FAKE_TEST_MFA_PASSWORD as string);
     (getSession as jest.Mock).mockResolvedValue("sess-123");
     (getNextStep as jest.Mock).mockResolvedValue("VERIFY_MFA");
 
@@ -144,7 +144,7 @@ describe("useAuthVerifyOtpMutation", () => {
     // Ensure loginApi is called with correct payload
     expect(loginApi).toHaveBeenCalledWith({
       email: "test@example.com",
-      password: "mypassword",
+      password: process.env.FAKE_TEST_MFA_PASSWORD as string,
       verification: true,
       session: "sess-123",
       otp: "123456",
@@ -164,7 +164,7 @@ describe("useAuthVerifyOtpMutation", () => {
   test("calls custom onSuccess callback", async () => {
     // Storage setup
     (getEmail as jest.Mock).mockResolvedValue("me@example.com");
-    (getPassword as jest.Mock).mockResolvedValue("1234");
+    (getPassword as jest.Mock).mockResolvedValue(process.env.FAKE_TEST_OTP_SHORT_PASSWORD as string);
     (getSession as jest.Mock).mockResolvedValue(null);
     (getNextStep as jest.Mock).mockResolvedValue(NEXT_STEPS.VERIFY_EMAIL);
 
@@ -193,7 +193,7 @@ describe("useAuthVerifyOtpMutation", () => {
   test("calls custom onError callback when API fails", async () => {
     // Setup storage for email verification path
     (getEmail as jest.Mock).mockResolvedValue("x@example.com");
-    (getPassword as jest.Mock).mockResolvedValue("pass");
+    (getPassword as jest.Mock).mockResolvedValue(process.env.FAKE_TEST_OTP_PASS_PASSWORD as string);
     (getSession as jest.Mock).mockResolvedValue(null);
     (getNextStep as jest.Mock).mockResolvedValue(NEXT_STEPS.VERIFY_EMAIL);
 

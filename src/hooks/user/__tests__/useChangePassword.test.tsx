@@ -45,9 +45,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("calls changePassword with correct payload and returns success response", async () => {
     const mockPayload = {
-      current_password: "oldPassword123",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const mockResponse = {
@@ -78,9 +78,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("handles API error correctly", async () => {
     const mockPayload = {
-      current_password: "wrongPassword",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_WRONG_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const error = {
@@ -111,9 +111,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("calls onSuccess callback when mutation succeeds", async () => {
     const mockPayload = {
-      current_password: "oldPassword123",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const mockResponse = {
@@ -145,9 +145,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("calls onError callback when mutation fails", async () => {
     const mockPayload = {
-      current_password: "wrongPassword",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_WRONG_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const error = {
@@ -181,9 +181,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("works with mutateAsync", async () => {
     const mockPayload = {
-      current_password: "oldPassword123",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const mockResponse = {
@@ -209,9 +209,9 @@ describe("useChangePassword", () => {
   // --------------------
   it("sets loading state correctly during mutation", async () => {
     const mockPayload = {
-      current_password: "oldPassword123",
-      new_password: "newPassword456",
-      confirm_password: "newPassword456",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
     };
 
     const mockResponse = {
