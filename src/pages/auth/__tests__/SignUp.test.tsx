@@ -145,6 +145,13 @@ describe("SignUp Component", () => {
     expect(screen.getByText("Welcome to Inspires Genius")).toBeInTheDocument();
   });
 
+  test("renders Terms of Use and Privacy Policy links", () => {
+    renderSignUp();
+
+    expect(screen.getByRole("link", { name: /terms of use/i })).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("link", { name: /privacy policy/i })).toHaveAttribute("href", "/privacy");
+  });
+
   /* -----------------------------------------------------------------------
      FORM INPUTS
   ------------------------------------------------------------------------ */
@@ -170,7 +177,7 @@ describe("SignUp Component", () => {
     const pwd = screen.getByLabelText("password");
 
     fireEvent.focus(pwd);
-    fireEvent.change(pwd, { target: { value: "abc" } });
+    fireEvent.change(pwd, { target: { value: process.env.FAKE_TEST_SIGNUP_WEAK_PASSWORD as string } });
 
     expect(screen.getByText(/Uppercase/)).toBeInTheDocument();
     expect(screen.getByText(/Number/)).toBeInTheDocument();
@@ -184,11 +191,11 @@ describe("SignUp Component", () => {
     renderSignUp();
 
     fireEvent.change(screen.getByLabelText("password"), {
-      target: { value: "Password1!" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("confirm"), {
-      target: { value: "WrongPassword" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_MISMATCH_PASSWORD as string },
     });
 
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -217,11 +224,11 @@ describe("SignUp Component", () => {
     });
 
     fireEvent.change(screen.getByLabelText("password"), {
-      target: { value: "Password1!" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("confirm"), {
-      target: { value: "Password1!" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_PASSWORD as string },
     });
 
     fireEvent.click(screen.getByLabelText("terms"));
@@ -245,11 +252,11 @@ describe("SignUp Component", () => {
     });
 
     fireEvent.change(screen.getByLabelText("password"), {
-      target: { value: "Password1!" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_PASSWORD as string },
     });
 
     fireEvent.change(screen.getByLabelText("confirm"), {
-      target: { value: "Password1!" },
+      target: { value: process.env.FAKE_TEST_SIGNUP_PASSWORD as string },
     });
 
     fireEvent.click(screen.getByLabelText("terms"));
@@ -260,8 +267,8 @@ describe("SignUp Component", () => {
 
     expect(mockSignup).toHaveBeenCalledWith(
       "test@example.com",
-      "Password1!",
-      "Password1!"
+      process.env.FAKE_TEST_SIGNUP_PASSWORD as string,
+      process.env.FAKE_TEST_SIGNUP_PASSWORD as string
     );
   });
 

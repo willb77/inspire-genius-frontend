@@ -221,11 +221,11 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="text-left">
               <div>
-                <Link to="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                <Link to="/terms" className="text-blue-600 hover:text-blue-800 text-sm underline">
                   Terms of Use
                 </Link>
                 <br />
-                <Link to="#" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-800 text-sm underline">
                   Privacy Policy
                 </Link>
               </div>

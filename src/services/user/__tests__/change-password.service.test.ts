@@ -27,9 +27,9 @@ jest.mock("@/lib/axios", () => ({
 describe("changePassword API", () => {
   // Example payload sent to backend
   const mockPayload: ChangePasswordRequest = {
-    current_password: "oldPassword123",
-    new_password: "newPassword456",
-    confirm_password: "newPassword456",
+    current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+    new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+    confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
   };
 
   beforeEach(() => {
@@ -130,9 +130,9 @@ describe("changePassword API", () => {
   // FAILURE CASE - Password validation error
   test("should throw error when passwords do not match", async () => {
     const invalidPayload: ChangePasswordRequest = {
-      current_password: "oldPassword123",
-      new_password: "newPassword456",
-      confirm_password: "differentPassword789",
+      current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT as string,
+      new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW as string,
+      confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_DIFFERENT_CONFIRM as string,
     };
 
     const mockError = new Error("Passwords do not match");
