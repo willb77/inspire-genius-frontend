@@ -30,9 +30,54 @@ export const ORGANIZATION_FORM_RULES = {
   type: { required: "Organization type is required" },
   email: {
     required: "Organization email is required",
-    pattern: {
-      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-      message: "Please enter a valid email address",
+    validate: (value: string) => {
+      if (!value) return true;
+
+      const msg = "Please enter a valid email address";
+      const atIndex = value.indexOf("@");
+      if (atIndex <= 0) return msg;
+      if (value.indexOf("@", atIndex + 1) !== -1) return msg;
+
+      const local = value.slice(0, atIndex);
+      const domain = value.slice(atIndex + 1);
+      if (!local || !domain) return msg;
+
+      for (let i = 0; i < local.length; i += 1) {
+        const ch = local[i] ?? "";
+        const code = ch.charCodeAt(0);
+        const isUpper = code >= 65 && code <= 90;
+        const isLower = code >= 97 && code <= 122;
+        const isDigit = code >= 48 && code <= 57;
+        const isAllowedSymbol = ch === "." || ch === "_" || ch === "%" || ch === "+" || ch === "-";
+        if (!(isUpper || isLower || isDigit || isAllowedSymbol)) return msg;
+      }
+
+      const lastDot = domain.lastIndexOf(".");
+      if (lastDot <= 0 || lastDot >= domain.length - 1) return msg;
+
+      const host = domain.slice(0, lastDot);
+      const tld = domain.slice(lastDot + 1);
+      if (tld.length < 2) return msg;
+
+      for (let i = 0; i < host.length; i += 1) {
+        const ch = host[i] ?? "";
+        const code = ch.charCodeAt(0);
+        const isUpper = code >= 65 && code <= 90;
+        const isLower = code >= 97 && code <= 122;
+        const isDigit = code >= 48 && code <= 57;
+        const isAllowedSymbol = ch === "." || ch === "-";
+        if (!(isUpper || isLower || isDigit || isAllowedSymbol)) return msg;
+      }
+
+      for (let i = 0; i < tld.length; i += 1) {
+        const ch = tld[i] ?? "";
+        const code = ch.charCodeAt(0);
+        const isUpper = code >= 65 && code <= 90;
+        const isLower = code >= 97 && code <= 122;
+        if (!(isUpper || isLower)) return msg;
+      }
+
+      return true;
     },
   },
   contact: {

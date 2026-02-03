@@ -19,9 +19,20 @@ export const User_FORM_RULES = {
   last_name: { required: "Last name is required" },
   email: {
     required: "Email is required",
-    pattern: {
-      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: "Enter a valid email",
+    validate: (value: string) => {
+      if (!value) return true;
+      if (/\s/.test(value)) return "Enter a valid email";
+
+      const atIndex = value.indexOf("@");
+      if (atIndex <= 0) return "Enter a valid email";
+      if (value.indexOf("@", atIndex + 1) !== -1) return "Enter a valid email";
+
+      const domain = value.slice(atIndex + 1);
+      const lastDot = domain.lastIndexOf(".");
+      if (lastDot <= 0) return "Enter a valid email";
+      if (lastDot >= domain.length - 1) return "Enter a valid email";
+
+      return true;
     },
   },
   role: { required: "Role is required" },

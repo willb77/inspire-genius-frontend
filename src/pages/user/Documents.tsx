@@ -95,11 +95,18 @@ export default function Documents() {
     )?.date_groups;
     if (Array.isArray(apiGroups) && apiGroups.length) {
       const base = (api.defaults.baseURL as string) || "";
-      const joinUrl = (fileKey: string) =>
-        `${base.replace(/\/+$/, "")}/${String(fileKey || "").replace(
-          /^\/+/,
-          ""
-        )}`;
+      const stripTrailingSlashes = (s: string) => {
+        let end = s.length;
+        while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1;
+        return end === s.length ? s : s.slice(0, end);
+      };
+      const stripLeadingSlashes = (s: string) => {
+        let start = 0;
+        while (start < s.length && s.charCodeAt(start) === 47) start += 1;
+        return start === 0 ? s : s.slice(start);
+      };
+      const baseClean = stripTrailingSlashes(String(base || ""));
+      const joinUrl = (fileKey: string) => `${baseClean}/${stripLeadingSlashes(String(fileKey || ""))}`;
       const kindFromApi = (t?: string): DocKind => {
         const k = String(t || "").toLowerCase();
         if (k === "pdf") return "pdf";
