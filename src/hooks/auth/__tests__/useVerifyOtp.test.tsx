@@ -147,7 +147,7 @@ describe("useAuthVerifyOtpMutation", () => {
       password: process.env.FAKE_TEST_MFA_PASSWORD as string,
       verification: true,
       session: "sess-123",
-      otp: "123456",
+      otp: process.env.FAKE_OTP as string,
     });
 
     // Expect correct structured data returned

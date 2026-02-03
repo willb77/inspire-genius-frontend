@@ -29,6 +29,7 @@ process.env.FAKE_TEST_BASIC_PASSWORD ??= "fake-pass123";
 process.env.FAKE_TEST_MFA_PASSWORD ??= "fake-mypassword";
 process.env.FAKE_TEST_OTP_SHORT_PASSWORD ??= "fake-1234";
 process.env.FAKE_TEST_OTP_PASS_PASSWORD ??= "fake-pass";
+process.env.FAKE_OTP ??= "123456";
 
 // Polyfill for TextEncoder/TextDecoder
 globalThis.TextEncoder = TextEncoder as unknown as typeof globalThis.TextEncoder;
