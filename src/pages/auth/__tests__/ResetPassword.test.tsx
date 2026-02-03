@@ -147,7 +147,7 @@ describe("ResetPassword Component", () => {
 
     // Enter mismatching confirm password
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "WrongPassword" },
+      target: { value: process.env.FAKE_TEST_MISMATCH_PASSWORD as string },
     });
 
     // Submit form

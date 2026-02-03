@@ -41,8 +41,8 @@ describe("useAuthSignupMutation", () => {
   // Input variables used across tests
   const vars = {
     email: "test@example.com",
-    password: "pass123",
-    confirmPassword: "pass123",
+    password: process.env.FAKE_TEST_BASIC_PASSWORD as string,
+    confirmPassword: process.env.FAKE_TEST_BASIC_PASSWORD as string,
   };
 
   // Mock success response from API

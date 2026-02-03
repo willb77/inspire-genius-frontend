@@ -174,7 +174,7 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.FAKE_TEST_VALID_PASSWORD + "different" },
+        target: { value: process.env.FAKE_TEST_MISMATCH_PASSWORD as string },
       });
 
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -189,7 +189,7 @@ describe("AcceptInvitation Component", () => {
       });
 
       fireEvent.change(screen.getByPlaceholderText("Confirm New Password"), {
-        target: { value: process.env.FAKE_TEST_VALID_PASSWORD + "different" },
+        target: { value: process.env.FAKE_TEST_MISMATCH_PASSWORD as string },
       });
 
       // Verify error exists
@@ -432,7 +432,7 @@ describe("AcceptInvitation Component", () => {
       expect(screen.queryByText("Passwords do not match")).not.toBeInTheDocument();
 
       // Editing breaks match
-      fireEvent.change(newPass, { target: { value: (process.env.FAKE_TEST_VALID_PASSWORD as string) + "X" } });
+      fireEvent.change(newPass, { target: { value: process.env.FAKE_TEST_MISMATCH_PASSWORD as string } });
       expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
     });
   });
