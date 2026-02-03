@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingCallout from "@/components/onboarding/OnboardingCallout";
 import { useTour } from "@/context/useTour";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExploreCoachesNames from "@/components/user/ExploreCoachesNames";
 import { useNavigate } from "react-router-dom";
 import { useAgents } from "@/hooks/coaches/useAgents";
@@ -21,9 +21,29 @@ export default function Home() {
     const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
     return Array.isArray(list) ? list : [];
   }, [agentsResp]);
-  const toSlug = (s: string) => String(s || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const toSlug = (s: string) => {
+    const input = String(s || "").trim().toLowerCase();
+    let out = "";
+    let lastWasDash = false;
+    for (let i = 0; i < input.length; i += 1) {
+      const code = input.charCodeAt(i);
+      const isDigit = code >= 48 && code <= 57;
+      const isLower = code >= 97 && code <= 122;
+      if (isLower || isDigit) {
+        out += input[i] ?? "";
+        lastWasDash = false;
+      } else if (!lastWasDash && out.length > 0) {
+        out += "-";
+        lastWasDash = true;
+      } else {
+        lastWasDash = true;
+      }
+    }
+    if (out.endsWith("-")) out = out.slice(0, -1);
+    return out;
+  };
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     if (startTimerRef.current) {
       window.clearTimeout(startTimerRef.current);
       startTimerRef.current = null;
@@ -32,15 +52,15 @@ export default function Home() {
       window.clearTimeout(stopTimerRef.current);
       stopTimerRef.current = null;
     }
-  };
+  }, []);
 
-  const startPlaybackCycle = () => {
+  const startPlaybackCycle = useCallback(() => {
     clearTimers();
     setShowVideo(true);
     // Allow DOM to render the <video> before playing
     startTimerRef.current = window.setTimeout(() => {
       try {
-        videoRef.current?.play().catch(() => void 0);
+        videoRef.current?.play().catch(() => undefined);
       } catch { /* no-op */ }
       // Stop after 30s
       stopTimerRef.current = window.setTimeout(() => {
@@ -48,7 +68,7 @@ export default function Home() {
         setShowVideo(false);
       }, 8000);
     }, 0);
-  };
+  }, [clearTimers]);
 
   useEffect(() => {
     // Auto-start after 2 seconds on first mount
@@ -57,7 +77,7 @@ export default function Home() {
       window.clearTimeout(id);
       clearTimers();
     };
-  }, []);
+  }, [clearTimers, startPlaybackCycle]);
   return (
     <UserLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
