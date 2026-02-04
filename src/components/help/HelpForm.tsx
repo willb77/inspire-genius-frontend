@@ -193,6 +193,8 @@ export default function HelpForm({ form, onSubmit, isSubmitting, isTypesLoading,
                 <FormLabel className="mb-2 block text-xs">Attachments (optional)</FormLabel>
                 <div
                   className={`rounded-xl border-2 border-dashed ${dragOver ? "border-blue-400 bg-blue-50/40" : "border-gray-300"} p-4`}
+                  role="region"
+                  aria-label="Attachments drop zone"
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={onDrop}

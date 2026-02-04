@@ -60,7 +60,7 @@ export default function AcceptInvitation() {
       <AuthHeader title="Accept Invitation" subtitle="Create your password to continue" />
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <div onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
+        <div role="group" aria-label="New password" onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
           <PasswordField
             placeholder="Enter New Password"
             value={newPasswordValue}
