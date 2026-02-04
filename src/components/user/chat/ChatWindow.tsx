@@ -411,7 +411,7 @@ const genericMessages =
                     <div
                       className={cn(
                         "max-w-[70%] rounded-2xl p-3",
-                        "bg-gray-100"
+                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
                       )}
                     >
                       <Skeleton className="h-4 w-48 mb-2" />
@@ -432,7 +432,7 @@ const genericMessages =
                         <div
                           className={cn(
                             "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
-                            "bg-gray-100"
+                            right ? "bg-gray-100" : "bg-gray-100"
                           )}
                         >
                           {m.sender === "assistant" ? (
@@ -581,7 +581,7 @@ const genericMessages =
                     <div
                       className={cn(
                         "max-w-[70%] rounded-2xl p-3",
-                        "bg-gray-100"
+                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
                       )}
                     >
                       <Skeleton className="h-4 w-40 mb-2" />

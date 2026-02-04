@@ -106,11 +106,6 @@ export default function Home() {
                   alt="Video"
                   className="h-80 object-cover rounded-2xl cursor-pointer"
                   onClick={startPlaybackCycle}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") startPlaybackCycle();
-                  }}
                   title="Play overview"
                 />
               )}

@@ -75,15 +75,7 @@ jest.mock("framer-motion", () => ({
 jest.mock("@/components/ui/sheet", () => ({
   Sheet: ({ children, open, onOpenChange }: any) =>
     open ? (
-      <div
-        data-testid="sheet"
-        role="button"
-        tabIndex={0}
-        onClick={() => onOpenChange?.(false)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenChange?.(false);
-        }}
-      >
+      <div data-testid="sheet" onClick={() => onOpenChange?.(false)}>
         {children}
       </div>
     ) : null,

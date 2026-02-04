@@ -55,12 +55,6 @@ export default function DocumentsSidePanel({
           open ? "pointer-events-auto" : "pointer-events-none"
         )}
         onClick={() => onOpenChange(false)}
-        role="button"
-        tabIndex={0}
-        aria-label="Close documents panel"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenChange(false);
-        }}
       />
       <div
         className={cn(

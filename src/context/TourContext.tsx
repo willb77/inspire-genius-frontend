@@ -598,15 +598,6 @@ function Overlay({
         tourStop();
         onSkip();
       }}
-      role="button"
-      tabIndex={0}
-      aria-label="Skip tour"
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          tourStop();
-          onNext();
-        }
-      }}
     >
       {/* Transparent overlay for click-capture only (no global dim so highlight stays bright) */}
       <div className="absolute inset-0 bg-transparent" />
