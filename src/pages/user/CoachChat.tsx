@@ -275,31 +275,7 @@ export default function CoachChat() {
       return;
     }
 
-    // if (resp.type === "audio_complete") {
-    //   const svc = demoAudioServiceRef.current;
-    //   if (svc) {
-    //     (async () => {
-    //       // Wait until the service finishes decoding/playing queued chunks
-    //       await new Promise<void>((resolve) => {
-    //         const check = () => {
-    //           if (!svc.speaking) resolve();
-    //           else setTimeout(check, 60);
-    //         };
-    //         check();
-    //       });
-    //       if (svc.getCombinedAudioBuffer) {
-    //         try {
-    //           const buf = await svc.getCombinedAudioBuffer();
-    //           if (buf) {
-    //             lastCombinedLengthRef.current = buf.length;
-    //             setAudioPlayerBuffer(buf);
-    //           }
-    //         } catch { /* ignore */ }
-    //       }
-    //     })();
-    //   }
-    //   return;
-    // }
+    // NOTE: Removed disabled audio-complete handling; restore via git history if needed.
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
@@ -341,11 +317,7 @@ export default function CoachChat() {
       svc.addAudioChunk(audioData, false);
       setHasAudio(false);
       scheduleAudioBufferRefresh();
-      // const ctx = svc.getAudioContext();
-      // if (ctx && ctx.state === "suspended" && !isAudioPaused) {
-      //   svc.resumeAudio();
-      //   setIsAudioPaused(false);
-      // }
+      // NOTE: Removed disabled audio-context resume logic; restore via git history if needed.
     });
   }, [isAudioPaused, scheduleAudioBufferRefresh]);
 

@@ -8,7 +8,7 @@ import {
   type Column,
 } from "@/components/super-admin/organization/DataTable";
 import { Badge } from "@/components/ui/badge";
-// import AddOrganization from "@/components/super-admin/organization/AddOrganizations";
+// NOTE: Removed unused duplicate import; restore via git history if needed.
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";

@@ -1,7 +1,7 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  /* padding: 2rem; */
+  /* Previous padding was removed; restore via git history if needed. */
   text-align: center;
 }
 
