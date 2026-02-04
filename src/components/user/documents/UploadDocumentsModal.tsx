@@ -224,8 +224,6 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
             {/* Dropzone */}
             <div
               className={`mt-4 rounded-xl border-2 border-dashed ${dragOver ? "border-blue-400 bg-blue-50/40" : "border-gray-300"} p-6`}
-              role="region"
-              aria-label="Documents drop zone"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);

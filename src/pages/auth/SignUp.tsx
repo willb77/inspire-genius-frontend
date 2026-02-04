@@ -79,7 +79,7 @@ export default function SignUp() {
       >
         <EmailField value={email} onChange={(v) => setValue("email", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
 
-        <div role="group" aria-label="Password" onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
+        <div onFocus={() => setPwdFocused(true)} onBlur={() => setPwdFocused(false)}>
           <PasswordField value={password} onChange={(v) => setValue("password", v, { shouldDirty: true, shouldTouch: true, shouldValidate: true })} />
           {(pwdFocused || dirtyFields.password) && password && unmet.length > 0 && (
             <p className="text-left mt-2 text-xs text-red-500">At least one {unmet.join(', ')}</p>
