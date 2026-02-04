@@ -39,6 +39,25 @@ import type {
   ChatMessage,
 } from "@/types/chat";
 
+const getSecureRandomInt = (maxExclusive: number) => {
+  if (maxExclusive <= 0) return 0;
+
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== "function") return 0;
+
+  const range = 0x100000000; // 2^32
+  const limit = range - (range % maxExclusive);
+  const buffer = new Uint32Array(1);
+
+  let value = 0;
+  do {
+    cryptoObj.getRandomValues(buffer);
+    value = buffer[0] ?? 0;
+  } while (value >= limit);
+
+  return value % maxExclusive;
+};
+
 export default function ChatWindow({
   coachName,
   className,
@@ -147,7 +166,7 @@ export default function ChatWindow({
       "https://lottie.host/embed/f13eb55b-1ae1-41cf-ba8b-33a5f1fb0028/zpOwzGQlox.lottie",
       "https://lottie.host/embed/0282a5cd-2be0-4629-b8aa-6b25db7da055/jaFMoZJmcz.lottie",
     ];
-    return options[Math.floor(Math.random() * options.length)];
+    return options[getSecureRandomInt(options.length)];
   }, []);
 
   const handleCopy = (text: string) => {
@@ -252,7 +271,7 @@ export default function ChatWindow({
 ];
 
 const genericMessages =
-  coachMessages[Math.floor(Math.random() *coachMessages.length)];
+  coachMessages[getSecureRandomInt(coachMessages.length)];
   
   return (
     <div
@@ -392,7 +411,7 @@ const genericMessages =
                     <div
                       className={cn(
                         "max-w-[70%] rounded-2xl p-3",
-                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
+                        "bg-gray-100"
                       )}
                     >
                       <Skeleton className="h-4 w-48 mb-2" />
@@ -413,7 +432,7 @@ const genericMessages =
                         <div
                           className={cn(
                             "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",
-                            right ? "bg-gray-100" : "bg-gray-100"
+                            "bg-gray-100"
                           )}
                         >
                           {m.sender === "assistant" ? (
@@ -562,7 +581,7 @@ const genericMessages =
                     <div
                       className={cn(
                         "max-w-[70%] rounded-2xl p-3",
-                        i % 2 === 0 ? "bg-gray-100" : "bg-gray-100"
+                        "bg-gray-100"
                       )}
                     >
                       <Skeleton className="h-4 w-40 mb-2" />

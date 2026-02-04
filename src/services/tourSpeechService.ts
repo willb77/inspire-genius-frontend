@@ -3,7 +3,13 @@ import { getToken } from "@/lib/storage";
 
 export function buildTourAudioUrl(textId: string): string {
   const base = (api.defaults.baseURL as string) || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL || "";
-  return `${base.replace(/\/+$/, "")}/v1/frontend-text/${encodeURIComponent(textId)}/audio-stream`;
+  const stripTrailingSlashes = (s: string) => {
+    let end = s.length;
+    while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1;
+    return end === s.length ? s : s.slice(0, end);
+  };
+  const baseClean = stripTrailingSlashes(String(base || ""));
+  return `${baseClean}/v1/frontend-text/${encodeURIComponent(textId)}/audio-stream`;
 }
 
 export async function fetchTourAudioPcm(textId: string, controller?: AbortController): Promise<ArrayBuffer> {

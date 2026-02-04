@@ -107,7 +107,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
       <div className="mb-3">
         <Input
           placeholder="Search.."
-          value={typeof searchValue === "string" ? searchValue : searchValue}
+          value={searchValue}
           disabled={false}
           onChange={(e) => {
             const val = e.target.value;

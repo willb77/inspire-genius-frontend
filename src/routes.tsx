@@ -6,7 +6,7 @@ import ResetPassword from "@/pages/auth/ResetPassword";
 import AcceptInvitation from "@/pages/auth/AcceptInvitation";
 import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
-// import PublicRoute from "@/components/PublicRoute";
+// NOTE: Removed unused PublicRoute import; restore via git history if needed.
 
 import UserSettingsPage from "@/pages/user/Settings";
 import HelpPage from "@/pages/user/Help";

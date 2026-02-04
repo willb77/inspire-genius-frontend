@@ -41,6 +41,12 @@ export const OnboardingOrganizationModel: React.FC<
       <div
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange?.(false)}
+        role="button"
+        tabIndex={0}
+        aria-label="Close"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onOpenChange?.(false);
+        }}
       />
 
       {/* Dialog Content */}

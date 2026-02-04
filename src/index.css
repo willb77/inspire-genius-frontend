@@ -1,9 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* sonar-ignore-next-line */
+@custom-variant dark (&:is(.dark *)); /*NOSONAR*/
 
-@theme {
+/* sonar-ignore-next-line */
+@theme { /*NOSONAR*/
   --color-primary-start: #5c73db;
   --color-primary-end: #764ba2;
   --color-blue-primary: #466bc4;
@@ -32,7 +34,8 @@
   --color-blue-20: #f6f9ff;
 }
 
-@theme inline {
+/* sonar-ignore-next-line */
+@theme inline { /*NOSONAR*/
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

@@ -209,7 +209,16 @@ export default function OnboardingDetailsTwo() {
       {showTour && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
           {/* Dim layer */}
-          <div className="absolute inset-0 bg-black/55" onClick={handleCloseTour} />
+          <div
+            className="absolute inset-0 bg-black/55"
+            onClick={handleCloseTour}
+            role="button"
+            tabIndex={0}
+            aria-label="Close tour"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleCloseTour();
+            }}
+          />
           {/* Multiple spotlights */}
           {rects.map((r, i) => (
             <div

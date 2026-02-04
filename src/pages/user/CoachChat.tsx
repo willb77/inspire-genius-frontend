@@ -114,7 +114,18 @@ export default function CoachChat() {
     const apiGroups = (fileServiceList as { date_groups?: ApiGroup[] } | undefined)?.date_groups;
     if (Array.isArray(apiGroups) && apiGroups.length) {
       const base = (api.defaults.baseURL as string) || "";
-      const joinUrl = (fileKey: string) => `${base.replace(/\/+$/, "")}/${String(fileKey || "").replace(/^\/+/, "")}`;
+      const stripTrailingSlashes = (s: string) => {
+        let end = s.length;
+        while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1;
+        return end === s.length ? s : s.slice(0, end);
+      };
+      const stripLeadingSlashes = (s: string) => {
+        let start = 0;
+        while (start < s.length && s.charCodeAt(start) === 47) start += 1;
+        return start === 0 ? s : s.slice(start);
+      };
+      const baseClean = stripTrailingSlashes(String(base || ""));
+      const joinUrl = (fileKey: string) => `${baseClean}/${stripLeadingSlashes(String(fileKey || ""))}`;
       const kindFromApi = (t?: string) => {
         const k = String(t || "").toLowerCase();
         if (k === "pdf") return "pdf" as const;
@@ -264,31 +275,7 @@ export default function CoachChat() {
       return;
     }
 
-    // if (resp.type === "audio_complete") {
-    //   const svc = demoAudioServiceRef.current;
-    //   if (svc) {
-    //     (async () => {
-    //       // Wait until the service finishes decoding/playing queued chunks
-    //       await new Promise<void>((resolve) => {
-    //         const check = () => {
-    //           if (!svc.speaking) resolve();
-    //           else setTimeout(check, 60);
-    //         };
-    //         check();
-    //       });
-    //       if (svc.getCombinedAudioBuffer) {
-    //         try {
-    //           const buf = await svc.getCombinedAudioBuffer();
-    //           if (buf) {
-    //             lastCombinedLengthRef.current = buf.length;
-    //             setAudioPlayerBuffer(buf);
-    //           }
-    //         } catch { /* ignore */ }
-    //       }
-    //     })();
-    //   }
-    //   return;
-    // }
+    // NOTE: Removed disabled audio-complete handling; restore via git history if needed.
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
@@ -330,11 +317,7 @@ export default function CoachChat() {
       svc.addAudioChunk(audioData, false);
       setHasAudio(false);
       scheduleAudioBufferRefresh();
-      // const ctx = svc.getAudioContext();
-      // if (ctx && ctx.state === "suspended" && !isAudioPaused) {
-      //   svc.resumeAudio();
-      //   setIsAudioPaused(false);
-      // }
+      // NOTE: Removed disabled audio-context resume logic; restore via git history if needed.
     });
   }, [isAudioPaused, scheduleAudioBufferRefresh]);
 

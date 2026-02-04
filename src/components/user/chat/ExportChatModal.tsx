@@ -7,6 +7,25 @@ import type { ExportChatModalProps } from "@/types/chat";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parse, isValid } from "date-fns";
 
+const getSecureRandomInt = (maxExclusive: number) => {
+  if (maxExclusive <= 0) return 0;
+
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== "function") return 0;
+
+  const range = 0x100000000;
+  const limit = range - (range % maxExclusive);
+  const buffer = new Uint32Array(1);
+
+  let value = 0;
+  do {
+    cryptoObj.getRandomValues(buffer);
+    value = buffer[0] ?? 0;
+  } while (value >= limit);
+
+  return value % maxExclusive;
+};
+
 export default function ExportChatModal({ open, onOpenChange, onExport, disableExport =false }: ExportChatModalProps) {
   type Step = "form" | "progress" | "complete";
   const [step, setStep] = useState<Step>("form");
@@ -45,7 +64,7 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
     setProgress(0);
     const id = setInterval(() => {
       setProgress((p) => {
-        const next = Math.min(100, p + Math.floor(5 + Math.random() * 12));
+        const next = Math.min(100, p + 5 + getSecureRandomInt(12));
         if (next >= 100) {
           clearInterval(id);
           setStep("complete");

@@ -9,7 +9,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Volume2, Pause, Loader2, RotateCcw } from "lucide-react";
-// import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+// NOTE: Removed unused text-to-speech hook import; restore via git history if needed.
 import { useTourSpeech } from "@/hooks/useTourSpeech";
 import { scrollToTarget } from "@/lib/scroll";
 import { useFrontendText } from "@/hooks/useFrontendText";
@@ -597,6 +597,15 @@ function Overlay({
           return;
         tourStop();
         onSkip();
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Skip tour"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          tourStop();
+          onNext();
+        }
       }}
     >
       {/* Transparent overlay for click-capture only (no global dim so highlight stays bright) */}

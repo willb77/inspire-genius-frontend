@@ -9,7 +9,13 @@ export type CoachAudioParams = {
 
 export function buildCoachAudioPreviewUrl(params?: CoachAudioParams): string {
   const base = (api.defaults.baseURL as string) || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL || ""
-  const url = new URL(`${base.replace(/\/+$/, '')}/v1/frontend-text/audio-preview`)
+  const stripTrailingSlashes = (s: string) => {
+    let end = s.length
+    while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1
+    return end === s.length ? s : s.slice(0, end)
+  }
+  const baseClean = stripTrailingSlashes(String(base || ""))
+  const url = new URL(`${baseClean}/v1/frontend-text/audio-preview`)
   if (params?.accentId) url.searchParams.set('accent_id', params.accentId)
   if (params?.genderId) url.searchParams.set('gender_id', params.genderId)
   if (params?.toneIds && params.toneIds.length > 0) {
