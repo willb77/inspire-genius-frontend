@@ -2,10 +2,10 @@
 @import "tw-animate-css";
 
 /* sonar-ignore-next-line */
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *)); /* NOSONAR */
 
 /* sonar-ignore-next-line */
-@theme {
+@theme { /* NOSONAR */
   --color-primary-start: #5c73db;
   --color-primary-end: #764ba2;
   --color-blue-primary: #466bc4;
@@ -35,7 +35,7 @@
 }
 
 /* sonar-ignore-next-line */
-@theme inline {
+@theme inline { /* NOSONAR */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
