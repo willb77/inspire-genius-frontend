@@ -1,8 +1,7 @@
 import AuthLayout from "@/components/auth/AuthLayout";
 import AuthHeader from "@/components/auth/AuthHeader";
 import { Button } from "@/components/ui/button";
-// import { Label } from "@/components/ui/label";
-// import { Checkbox } from "@/components/ui/checkbox";
+// NOTE: Removed unused remember-me UI imports; restore via git history if needed.
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/useAuth";
@@ -56,8 +55,7 @@ export default function Login() {
 
         <div className="mt-6 flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            {/* <Checkbox id="remember" />
-            <Label htmlFor="remember" className="text-muted-foreground">Remember me</Label> */}
+            {/* NOTE: Removed remember-me UI; restore via git history if needed. */}
           </div>
           <Link className="underline text-muted-foreground" to="/forgot">Forgot password?</Link>
         </div>
