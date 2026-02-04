@@ -183,6 +183,8 @@ export default function OrganizationInfoStep({ form }: Props) {
             className={`rounded-lg border-2 border-dashed transition-colors h-[121px] ${
               dragOver ? "border-blue-400 bg-blue-50/40" : "border-gray-300"
             } p-4 sm:p-6`}
+            role="region"
+            aria-label="Logo drop zone"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
