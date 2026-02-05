@@ -3,7 +3,8 @@
  */
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import type { FieldValues, UseFormReturn, UseFormWatch } from "react-hook-form";
+import * as React from "react";
+import type { FieldValues, UseFormHandleSubmit, UseFormReturn, UseFormWatch } from "react-hook-form";
 import AccountSettings from "../AccountSettings";
 import { ROLES } from "@/constants/routes";
 import type { AccountSettingsProps } from "@/types/settings";
@@ -11,17 +12,20 @@ import type { AccountSettingsProps } from "@/types/settings";
 /* ------------------------------------------------------------------ */
 /* MOCK UI COMPONENTS                                                   */
 /* ------------------------------------------------------------------ */
+
+type MockWithChildren = { children?: React.ReactNode; className?: string };
+
 jest.mock("@/components/ui/card", () => ({
-  Card: ({ children, className }: any) => (
+  Card: ({ children, className }: MockWithChildren) => (
     <div className={className}>{children}</div>
   ),
-  CardContent: ({ children, className }: any) => (
+  CardContent: ({ children, className }: MockWithChildren) => (
     <div className={className}>{children}</div>
   ),
-  CardHeader: ({ children, className }: any) => (
+  CardHeader: ({ children, className }: MockWithChildren) => (
     <div className={className}>{children}</div>
   ),
-  CardTitle: ({ children, className }: any) => (
+  CardTitle: ({ children, className }: MockWithChildren) => (
     <h2 className={className}>{children}</h2>
   ),
 }));
@@ -35,7 +39,15 @@ jest.mock("@/components/ui/button", () => ({
     variant,
     size,
     className,
-  }: any) => (
+  }: {
+    children?: React.ReactNode;
+    onClick?: React.MouseEventHandler<HTMLButtonElement>;
+    disabled?: boolean;
+    type?: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
+    variant?: unknown;
+    size?: unknown;
+    className?: string;
+  }) => (
     <button
       onClick={onClick}
       disabled={disabled}
@@ -50,7 +62,7 @@ jest.mock("@/components/ui/button", () => ({
 }));
 
 jest.mock("@/components/ui/input", () => ({
-  Input: ({ value, readOnly, disabled, type, placeholder, ...props }: any) => (
+  Input: ({ value, readOnly, disabled, type, placeholder, ...props }: React.ComponentPropsWithoutRef<"input">) => (
     <input
       value={value}
       readOnly={readOnly}
@@ -63,7 +75,7 @@ jest.mock("@/components/ui/input", () => ({
 }));
 
 jest.mock("@/components/ui/textarea", () => ({
-  Textarea: ({ value, readOnly, placeholder, rows, ...props }: any) => (
+  Textarea: ({ value, readOnly, placeholder, rows, ...props }: React.ComponentPropsWithoutRef<"textarea">) => (
     <textarea
       value={value}
       readOnly={readOnly}
@@ -75,40 +87,40 @@ jest.mock("@/components/ui/textarea", () => ({
 }));
 
 jest.mock("@/components/ui/label", () => ({
-  Label: ({ children, className }: any) => (
+  Label: ({ children, className }: MockWithChildren) => (
     <label className={className}>{children}</label>
   ),
 }));
 
 jest.mock("@/components/ui/skeleton", () => ({
-  Skeleton: ({ className }: any) => (
+  Skeleton: ({ className }: { className?: string }) => (
     <div data-testid="skeleton" className={className} />
   ),
 }));
 
 jest.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children, open }: any) => (
+  Dialog: ({ children, open }: { children?: React.ReactNode; open?: boolean }) => (
     <div data-testid="dialog" data-open={open}>
       {open && children}
     </div>
   ),
-  DialogContent: ({ children, className }: any) => (
+  DialogContent: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
     <div data-testid="dialog-content" className={className}>
       {children}
     </div>
   ),
-  DialogHeader: ({ children }: any) => (
+  DialogHeader: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="dialog-header">{children}</div>
   ),
-  DialogFooter: ({ children, className }: any) => (
+  DialogFooter: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
     <div data-testid="dialog-footer" className={className}>
       {children}
     </div>
   ),
-  DialogTitle: ({ children }: any) => (
+  DialogTitle: ({ children }: { children?: React.ReactNode }) => (
     <h2 data-testid="dialog-title">{children}</h2>
   ),
-  DialogDescription: ({ children, className }: any) => (
+  DialogDescription: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
     <p data-testid="dialog-description" className={className}>
       {children}
     </p>
@@ -117,27 +129,41 @@ jest.mock("@/components/ui/dialog", () => ({
 
 // Fixed Issue #2: Proper forwardRef mock
 jest.mock("@/components/shared/inputs/PasswordField", () => {
-  const React = require("react");
   return {
     __esModule: true,
     default: React.forwardRef(
-      ({ placeholder, error, ...props }: any, ref: any) => (
-        <div>
-          <input
-            ref={ref}
-            data-testid="password-field"
-            placeholder={placeholder}
-            {...props}
-          />
-          {error && <span data-testid="password-error">{error}</span>}
-        </div>
-      )
+      (
+        props: {
+          placeholder?: string;
+          error?: React.ReactNode;
+        } & React.ComponentPropsWithoutRef<"input">,
+        ref: React.ForwardedRef<HTMLInputElement>
+      ) => {
+        const { placeholder, error, ...rest } = props;
+        return (
+          <div>
+            <input
+              ref={ref}
+              data-testid="password-field"
+              placeholder={placeholder}
+              {...rest}
+            />
+            {error && <span data-testid="password-error">{error}</span>}
+          </div>
+        );
+      }
     ),
   };
 });
 
 jest.mock("@/components/ui/date-picker", () => ({
-  DatePicker: ({ value, onChange, placeholder, minDate, maxDate }: any) => (
+  DatePicker: ({ value, onChange, placeholder, minDate, maxDate }: {
+    value?: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    minDate?: Date;
+    maxDate?: Date;
+  }) => (
     <input
       data-testid="date-picker"
       value={value}
@@ -161,7 +187,7 @@ jest.mock("lucide-react", () => ({
 function createMockForm<T extends FieldValues>(
   overrides?: Partial<UseFormReturn<T>>
 ): UseFormReturn<T> {
-  const defaultErrors: any = {};
+  const defaultErrors = {} as unknown;
 
   return {
     register: jest.fn((name: string) => ({
@@ -170,11 +196,13 @@ function createMockForm<T extends FieldValues>(
       onChange: jest.fn(),
       onBlur: jest.fn(),
     })),
-    handleSubmit: jest.fn((cb: any) => (e?: any) => {
-      e?.preventDefault?.();
-      return cb({});
-    }),
-    watch: jest.fn((field?: any) => {
+    handleSubmit: jest.fn((cb: (...args: unknown[]) => unknown) => {
+      return async (e?: unknown) => {
+        preventDefault(e);
+        await cb({});
+      };
+    }) as unknown as UseFormHandleSubmit<T>,
+    watch: jest.fn((field?: string) => {
       if (field) return "";
       return {};
     }) as unknown as UseFormWatch<T>,
@@ -185,7 +213,7 @@ function createMockForm<T extends FieldValues>(
     setError: jest.fn(),
     clearErrors: jest.fn(),
     trigger: jest.fn(),
-    control: {} as any,
+    control: {} as unknown as UseFormReturn<T>["control"],
     formState: {
       errors: defaultErrors,
       isSubmitting: false,
@@ -205,6 +233,35 @@ function createMockForm<T extends FieldValues>(
     ...overrides,
   } as UseFormReturn<T>;
 }
+
+const preventDefault = (e?: unknown) => {
+  if (!e || typeof e !== "object") return;
+  if (!("preventDefault" in e)) return;
+  const pd = (e as { preventDefault?: unknown }).preventDefault;
+  if (typeof pd !== "function") return;
+
+  (pd as () => void).call(e);
+};
+
+const makeHandleSubmitMock = <T extends FieldValues>(values: T): UseFormHandleSubmit<T> => {
+  const mock = jest.fn((cb: (vals: T) => unknown) => {
+    return async (e?: unknown) => {
+      preventDefault(e);
+      await cb(values);
+    };
+  });
+  return mock as unknown as UseFormHandleSubmit<T>;
+};
+
+const makeHandleSubmitMockAsync = <T extends FieldValues>(values: T): UseFormHandleSubmit<T> => {
+  const mock = jest.fn((cb: (vals: T) => Promise<unknown> | unknown) => {
+    return async (e?: unknown) => {
+      preventDefault(e);
+      await cb(values);
+    };
+  });
+  return mock as unknown as UseFormHandleSubmit<T>;
+};
 
 /* ------------------------------------------------------------------ */
 /* FORM TYPES                                                           */
@@ -441,27 +498,24 @@ describe("AccountSettings Component", () => {
     });
 
     test("submits edit profile form with valid data", async () => {
-      const mockHandleSubmit = jest.fn((cb: any) => (e?: any) => {
-        e?.preventDefault?.();
-        return cb({
-          firstName: "John",
-          lastName: "Doe",
-          email: "john@test.com",
-          dateOfBirth: "10 Jan 2000",
-          additionalInfo: "Info",
-        });
+      const mockHandleSubmit = makeHandleSubmitMock<EditProfileFormValues>({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@test.com",
+        dateOfBirth: "10 Jan 2000",
+        additionalInfo: "Info",
       });
 
       const editForm = createMockForm<EditProfileFormValues>({
         handleSubmit: mockHandleSubmit,
-        watch: jest.fn((field?: any) => {
-          const values: any = {
+        watch: jest.fn((field?: string) => {
+          const values: Record<string, string> = {
             firstName: "John",
             lastName: "Doe",
             dateOfBirth: "10 Jan 2000",
           };
           return field ? values[field] : values;
-        }) as any,
+        }) as unknown as UseFormWatch<EditProfileFormValues>,
       });
 
       const props = createBaseProps({
@@ -486,20 +540,17 @@ describe("AccountSettings Component", () => {
     });
 
     test("converts date format on profile submission", async () => {
-      const mockHandleSubmit = jest.fn((cb: any) => (e?: any) => {
-        e?.preventDefault?.();
-        return cb({
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane@test.com",
-          dateOfBirth: "15 Feb 1995",
-          additionalInfo: "New info",
-        });
+      const mockHandleSubmit = makeHandleSubmitMock<EditProfileFormValues>({
+        firstName: "Jane",
+        lastName: "Smith",
+        email: "jane@test.com",
+        dateOfBirth: "15 Feb 1995",
+        additionalInfo: "New info",
       });
 
       const editForm = createMockForm<EditProfileFormValues>({
         handleSubmit: mockHandleSubmit,
-        watch: jest.fn(() => "15 Feb 1995") as any,
+        watch: jest.fn(() => "15 Feb 1995") as unknown as UseFormWatch<EditProfileFormValues>,
       });
 
       const props = createBaseProps({
@@ -612,7 +663,7 @@ describe("AccountSettings Component", () => {
     test("renders null when editProfileForm is not provided", () => {
       const props = createBaseProps({
         editProfileOpen: true,
-        editProfileForm: undefined as any,
+        editProfileForm: undefined as unknown as UseFormReturn<EditProfileFormValues>,
       });
 
       const { container } = render(<AccountSettings {...props} />);
@@ -644,21 +695,18 @@ describe("AccountSettings Component", () => {
     });
 
     test("submits change password form with valid data", async () => {
-      const mockHandleSubmit = jest.fn((cb: any) => (e?: any) => {
-        e?.preventDefault?.();
-        return cb({
-          current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT_SHORT as string,
-          new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-          confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-        });
+      const mockHandleSubmit = makeHandleSubmitMock<ChangePasswordFormValues>({
+        current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_CURRENT_SHORT as string,
+        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
+        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
       });
 
       const changeForm = createMockForm<ChangePasswordFormValues>({
         handleSubmit: mockHandleSubmit,
-        watch: jest.fn((field?: any) => {
+        watch: jest.fn((field?: string) => {
           if (field === "new_password") return process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string;
           return "";
-        }) as any,
+        }) as unknown as UseFormWatch<ChangePasswordFormValues>,
       });
 
       const props = createBaseProps({
@@ -685,18 +733,15 @@ describe("AccountSettings Component", () => {
         .fn()
         .mockRejectedValue(new Error("Invalid password"));
 
-      const mockHandleSubmit = jest.fn((cb: any) => async (e?: any) => {
-        e?.preventDefault?.();
-        await cb({
-          current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_WRONG_SHORT as string,
-          new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-          confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
-        });
+      const mockHandleSubmit = makeHandleSubmitMockAsync<ChangePasswordFormValues>({
+        current_password: process.env.FAKE_TEST_CHANGE_PASSWORD_WRONG_SHORT as string,
+        new_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
+        confirm_password: process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string,
       });
 
       const changeForm = createMockForm<ChangePasswordFormValues>({
         handleSubmit: mockHandleSubmit,
-        watch: jest.fn(() => process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string) as any,
+        watch: jest.fn(() => process.env.FAKE_TEST_CHANGE_PASSWORD_NEW_SHORT as string) as unknown as UseFormWatch<ChangePasswordFormValues>,
       });
 
       const props = createBaseProps({
@@ -835,7 +880,7 @@ describe("AccountSettings Component", () => {
     test("renders null when changePasswordForm is not provided", () => {
       const props = createBaseProps({
         changePasswordOpen: true,
-        changePasswordForm: undefined as any,
+        changePasswordForm: undefined as unknown as UseFormReturn<ChangePasswordFormValues>,
       });
 
       render(<AccountSettings {...props} />);
@@ -865,7 +910,7 @@ describe("AccountSettings Component", () => {
       const props = createBaseProps({
         profileData: {
           ...createBaseProps().profileData,
-          additionalInfo: undefined as any,
+          additionalInfo: undefined as unknown as string,
         },
       });
 

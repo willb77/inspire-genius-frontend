@@ -22,8 +22,7 @@ import { cn } from "@/lib/utils";
 import { useTour } from "@/context/useTour";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { useAlexWebSocket } from "@/components/alex-voice-assistant/useAlexWebSocket";
-import type { AlexResponse } from "@/components/alex-voice-assistant/types/types";
-import type { ChatMessage } from "@/components/alex-voice-assistant/types/types";
+import type { AlexResponse, ChatMessage } from "@/components/alex-voice-assistant/types/types";
 import DemoAudioService from "@/services/demoAudioService";
 import EmptyStateCard from "@/components/alex/EmptyStateCard";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
@@ -34,6 +33,53 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { downloadAlexChat } from "@/services/alex/chat.service";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import { format } from "date-fns";
+
+const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
+
+const formatExportDate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+type AlexHistoryParty = { content?: string; created_at?: string } | undefined;
+type AlexHistoryItem = {
+  sequence?: number;
+  user?: AlexHistoryParty;
+  assistant?: AlexHistoryParty;
+};
+
+const getMessageBubbleClassName = (sender: ChatMessage["sender"]) => {
+  if (sender === "user") return "bg-blue-50 text-blue-900";
+  if (sender === "assistant") return "bg-gray-100 text-gray-900";
+  return "bg-yellow-50 text-yellow-800";
+};
+
+const mapHistoryToChatMessages = (list: AlexHistoryItem[]): ChatMessage[] => {
+  const mapped: ChatMessage[] = [];
+  for (const item of list) {
+    const u = item?.user;
+    const a = item?.assistant;
+    if (u && typeof u.content === "string") {
+      mapped.push({
+        id: `hist-u-${item.sequence ?? Date.now()}-${mapped.length}`,
+        text: u.content,
+        sender: "user",
+        timestamp: new Date(u.created_at || Date.now()),
+      });
+    }
+    if (a && typeof a.content === "string") {
+      mapped.push({
+        id: `hist-a-${item.sequence ?? Date.now()}-${mapped.length}`,
+        text: a.content,
+        sender: "assistant",
+        timestamp: new Date(a.created_at || Date.now()),
+      });
+    }
+  }
+  return mapped;
+};
 
 export type AlexChatPanelProps = {
   open: boolean;
@@ -53,7 +99,6 @@ export default function AlexChatPanel({
   const [isMuted, setIsMuted] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current)
     demoAudioServiceRef.current = new DemoAudioService();
@@ -68,13 +113,6 @@ export default function AlexChatPanel({
   const { data: deviceResp } = useAlexDeviceId(true);
   const deviceKey = (deviceResp?.device_id || "").toString();
   const historyMutation = useAlexHistoryListOnce();
-
-  type AlexHistoryParty = { content?: string; created_at?: string } | undefined;
-  type AlexHistoryItem = {
-    sequence?: number;
-    user?: AlexHistoryParty;
-    assistant?: AlexHistoryParty;
-  };
 
   const handleLoadHistory = useCallback(async () => {
     if (!deviceKey) {
@@ -92,27 +130,7 @@ export default function AlexChatPanel({
         resp?.history ??
         []) as AlexHistoryItem[];
       if (Array.isArray(list) && list.length) {
-        const mapped: ChatMessage[] = [];
-        for (const item of list) {
-          const u = item?.user;
-          const a = item?.assistant;
-          if (u && typeof u.content === "string") {
-            mapped.push({
-              id: `hist-u-${item.sequence ?? Date.now()}-${mapped.length}`,
-              text: u.content,
-              sender: "user",
-              timestamp: new Date(u.created_at || Date.now()),
-            });
-          }
-          if (a && typeof a.content === "string") {
-            mapped.push({
-              id: `hist-a-${item.sequence ?? Date.now()}-${mapped.length}`,
-              text: a.content,
-              sender: "assistant",
-              timestamp: new Date(a.created_at || Date.now()),
-            });
-          }
-        }
+        const mapped = mapHistoryToChatMessages(list);
         setMessages((prev) => [...prev, ...mapped.reverse()]);
       }
     } catch (e) {
@@ -130,26 +148,22 @@ export default function AlexChatPanel({
       return;
     }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const fmt = (d: Date) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    };
     try {
       const resp = await downloadAlexChat({
         device_key: deviceKey,
-        start_date: fmt(fromDate),
-        end_date: fmt(toDate),
+        start_date: formatExportDate(fromDate),
+        end_date: formatExportDate(toDate),
         timezone,
         // limit: 100,
         // offset: 0,
       });
-   if (!resp || !resp.status) return;
+      if (!resp || !resp.status) {
+        return;
+      }
 
       const base64 = resp.base64_pdf || resp.base64_csv;
       const mime = resp.mime_type || "application/pdf";
-      const fileName = resp.file_name || `alex-chat-${fmt(fromDate)}-to-${fmt(toDate)}.pdf`;
+      const fileName = resp.file_name || `alex-chat-${formatExportDate(fromDate)}-to-${formatExportDate(toDate)}.pdf`;
       if (!base64) return;
       const byteChars = atob(base64);
       const byteNumbers = new Array(byteChars.length);
@@ -178,7 +192,6 @@ export default function AlexChatPanel({
   }, [messages.length, historyMutation.isPending]);
 
   const onResponse = useCallback((response: AlexResponse) => {
- 
     if (response.type === "continuous_mode") {
       setMessages((prev) => [
         ...prev,
@@ -237,7 +250,6 @@ export default function AlexChatPanel({
     if (response.type === "response") {
       const text = response.text ?? "";
       if (!text) return;
-      // setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, text, sender: "bot", timestamp: new Date() }]));
       lastMessageRef.current = { type: "response", text };
       return;
     }
@@ -255,9 +267,6 @@ export default function AlexChatPanel({
       lastMessageRef.current = { type: "error", text };
       return;
     }
-    // if (response.type === "audio_complete") {
-    //   return;
-    // }
   }, []);
 
   const onAudioData = useCallback(
@@ -348,16 +357,15 @@ export default function AlexChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isConnected]);
 
- 
-    const handleCopy = (text: string) => {
-      try {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1200);
-      } catch {
-        // ignore
-      }
-    };
+  const handleCopy = useCallback((text: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // ignore
+    }
+  }, []);
   
   const handleClosePanel = useCallback(() => {
     try {
@@ -389,7 +397,23 @@ export default function AlexChatPanel({
     }
     onOpenChange(next);
   }, [isRecording, onOpenChange, stopRecording]);
-   
+
+  let inputPlaceholder = "Alex is offline";
+  if (isRecording) {
+    inputPlaceholder = "";
+  } else if (isConnected) {
+    inputPlaceholder = "Ask Anything....";
+  } else if (isConnecting) {
+    inputPlaceholder = "Connecting to Alex...";
+  }
+
+  let muteTooltipText = "Mute";
+  if (hasAudio && !isAudioPaused) {
+    muteTooltipText = "Mute is disabled during playback";
+  } else if (isMuted) {
+    muteTooltipText = "Unmute";
+  }
+
   return (
     <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetContent
@@ -461,13 +485,11 @@ export default function AlexChatPanel({
             </button>
           </div>
         </div>
+
         {historyMutation.isPending ? (
           <div className="px-4">
-            {[0, 1, 2,3].map((i) => (
-              <div
-                key={`sk-${i}`}
-                className={i % 2 === 0 ? "text-left" : "text-right"}
-              >
+            {[0, 1, 2, 3].map((i) => (
+              <div key={`sk-${i}`} className={i % 2 === 0 ? "text-left" : "text-right"}>
                 <div className="inline-flex px-3 py-2 rounded-md">
                   <Skeleton className="h-6 w-40" />
                 </div>
@@ -475,60 +497,44 @@ export default function AlexChatPanel({
             ))}
           </div>
         ) : null}
+
         {messages.length === 0 && !historyMutation.isPending && (
           <div className="px-4">
             <EmptyStateCard onStart={start} />
           </div>
         )}
+
         {messages.length > 0 && !historyMutation.isPending && (
           <div className={`px-4 ${messages.length === 0 ? "mt-16" : ""}`}>
             {/* space for callouts overlay */}
             <div className="h-[58vh] overflow-y-auto space-y-2 rounded-md px-3 bg-white">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={m.sender === "user" ? "text-right" : "text-left"}
-                >
-                  {m.sender === "assistant" && m.type === "processing" ? (
-                    <div
-                      className={`inline-flex items-end gap-1 px-3 py-2 rounded-md text-sm bg-gray-100 text-gray-900`}
-                    >
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <motion.span
-                          key={i}
-                          className="w-1.5 h-3 rounded-full bg-gray-600/70"
-                          animate={{
-                            height: [8, 14, 8],
-                            opacity: [0.6, 1, 0.6],
-                          }}
-                          transition={{
-                            duration: 0.9,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                            delay: i * 0.12,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="inline-block">
-                    <div
-                      className={`px-3 py-2 rounded-md text-sm text-center ${
-                        m.sender === "user"
-                          ? "bg-blue-50 text-blue-900"
-                          : m.sender === "assistant"
-                          ? "bg-gray-100 text-gray-900"
-                          : "bg-yellow-50 text-yellow-800"
-                      }`}
-                    >
-                      {m.sender === "assistant" ? (
-                        <AssistantMarkdown text={m.text} className="text-left" />
-                      ) : (
-                        m.text
-                      )}
-                      
-                    </div>
-                       <div
+              {messages.map((m) => {
+                const messageBubbleClassName = getMessageBubbleClassName(m.sender);
+                const messagePositionClassName = m.sender === "user" ? "text-right" : "text-left";
+
+                return (
+                  <div key={m.id} className={messagePositionClassName}>
+                    {m.sender === "assistant" && m.type === "processing" ? (
+                      <div className="inline-flex items-end gap-1 px-3 py-2 rounded-md text-sm bg-gray-100 text-gray-900">
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <motion.span
+                            key={i}
+                            className="w-1.5 h-3 rounded-full bg-gray-600/70"
+                            animate={{ height: [8, 14, 8], opacity: [0.6, 1, 0.6] }}
+                            transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="inline-block">
+                        <div className={`px-3 py-2 rounded-md text-sm text-center ${messageBubbleClassName}`}>
+                          {m.sender === "assistant" ? (
+                            <AssistantMarkdown text={m.text} className="text-left" />
+                          ) : (
+                            m.text
+                          )}
+                        </div>
+                        <div
                           className={cn(
                             "max-w-full mb-5 min-w-40 w-full flex items-center justify-between mt-2 px-2",
                             m.sender === "assistant" ? "ml-auto" : undefined
@@ -546,10 +552,11 @@ export default function AlexChatPanel({
                             {formatUSTimestamp(new Date(m.timestamp))}
                           </div>
                         </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <div ref={bottomRef} />
             </div>
           </div>
@@ -561,35 +568,21 @@ export default function AlexChatPanel({
               aria-label="Toggle recording"
               onClick={toggleRecording}
               disabled={false}
-              className={`absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center`}
-              title={
-                isRecording
-                  ? "Recording… click to stop"
-                  : "Click to start recording"
-              }
+              className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center"
+              title={isRecording ? "Recording… click to stop" : "Click to start recording"}
             >
-              {isRecording ? <SquarePause className={cn(
-                  "size-5",
-                  isRecording ? "text-red-600 animate-pulse" : "text-black"
-                )}/>:
-              <Mic
-                className={`size-5 ${
-                  isRecording
-                    ? "text-red-600 animate-pulse"
-                    : "text-muted-foreground"
-                }`}
-              />}
+              {isRecording ? (
+                <SquarePause
+                  className={cn("size-5", isRecording ? "text-red-600 animate-pulse" : "text-black")}
+                />
+              ) : (
+                <Mic
+                  className={`size-5 ${isRecording ? "text-red-600 animate-pulse" : "text-muted-foreground"}`}
+                />
+              )}
             </button>
             <Input
-              placeholder={
-                isRecording
-                  ? ""
-                  : isConnected
-                  ? "Ask Anything...."
-                  : isConnecting
-                  ? "Connecting to Alex..."
-                  : "Alex is offline"
-              }
+              placeholder={inputPlaceholder}
               className="h-11 !pl-10"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -609,12 +602,7 @@ export default function AlexChatPanel({
                     className="w-1 rounded-full bg-blue-600/80"
                     initial={{ height: 6 }}
                     animate={{ height: [6, 18, 10, 22, 8, 16] }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.1,
-                    }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: i * 0.1 }}
                   />
                 ))}
               </div>
@@ -630,11 +618,7 @@ export default function AlexChatPanel({
                       variant="secondary"
                       className="h-11 px-3"
                     >
-                      {isAudioPaused ? (
-                        <Play className="size-5" />
-                      ) : (
-                        <Pause className="size-5" />
-                      )}
+                      {isAudioPaused ? <Play className="size-5" /> : <Pause className="size-5" />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">
@@ -663,13 +647,7 @@ export default function AlexChatPanel({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  {hasAudio && !isAudioPaused ? (
-                    <span className="text-xs">Mute is disabled during playback</span>
-                  ) : isMuted ? (
-                    <span className="text-xs">Unmute</span>
-                  ) : (
-                    <span className="text-xs">Mute</span>
-                  )}
+                  <span className="text-xs">{muteTooltipText}</span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -683,20 +661,14 @@ export default function AlexChatPanel({
             </Button>
           </div>
         </div>
-               {copied ? (
-        <div className="fixed right-6 bottom-40 z-999">
-          <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
-            Copied to clipboard
+        {copied ? (
+          <div className="fixed right-6 bottom-40 z-999">
+            <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">Copied to clipboard</div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
       </SheetContent>
-   
-      <ExportChatModal
-        open={exportOpen}
-        onOpenChange={setExportOpen}
-        onExport={handleExportChat}
-      />
+
+      <ExportChatModal open={exportOpen} onOpenChange={setExportOpen} onExport={handleExportChat} />
     </Sheet>
   );
 }
