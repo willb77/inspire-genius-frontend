@@ -1,13 +1,24 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { usePrismAgentWebSocket } from "../usePrismAgentWebSocket";
 
+type WsSentMessage = string | ArrayBuffer | Blob;
+
+const readBlobAsArrayBuffer = (blob: Blob): Promise<ArrayBuffer> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+};
+
 // Mock WebSocket
 class MockWebSocket {
-  static CONNECTING = 0;
-  static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
-  static instances: MockWebSocket[] = [];
+  public static readonly CONNECTING = 0;
+  public static readonly OPEN = 1;
+  public static readonly CLOSING = 2;
+  public static readonly CLOSED = 3;
+  public static readonly instances: MockWebSocket[] = [];
 
   public url: string;
   public readyState: number = MockWebSocket.CONNECTING;
@@ -16,7 +27,7 @@ class MockWebSocket {
   public onerror: (() => void) | null = null;
   public onmessage: ((event: MessageEvent) => void) | null = null;
 
-  private sentMessages: (string | ArrayBuffer | Blob)[] = [];
+  private sentMessages: WsSentMessage[] = [];
 
   constructor(url: string) {
     this.url = url;
@@ -28,7 +39,7 @@ class MockWebSocket {
     }, 10);
   }
 
-  send(data: string | ArrayBuffer | Blob) {
+  send(data: WsSentMessage) {
     this.sentMessages.push(data);
   }
 
@@ -43,7 +54,7 @@ class MockWebSocket {
   }
 
   // Simulate receiving a message
-  simulateMessage(data: string | ArrayBuffer | Blob) {
+  simulateMessage(data: WsSentMessage) {
     if (this.onmessage) {
       const event = { data } as MessageEvent;
       this.onmessage(event);
@@ -62,7 +73,7 @@ class MockWebSocket {
 
   // Static helper to reset instances
   static resetInstances() {
-    this.instances = [];
+    this.instances.length = 0;
   }
 }
 
@@ -126,13 +137,7 @@ describe("usePrismAgentWebSocket", () => {
     // Polyfill Blob.arrayBuffer() for jsdom
     if (!Blob.prototype.arrayBuffer) {
       Blob.prototype.arrayBuffer = function () {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result as ArrayBuffer);
-          };
-          reader.readAsArrayBuffer(this);
-        });
+        return readBlobAsArrayBuffer(this);
       };
     }
 
