@@ -27,6 +27,7 @@ devBuild:
     - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
     # Install & build
+    - sudo docker system prune -a --volumes -f
     - npm ci --no-audit --no-fund
     - npm run build
 
