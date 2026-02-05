@@ -8,18 +8,12 @@ import {
 } from "@/context/tour-context";
 import { ROUTES } from "@/constants/routes";
 import { useLocation, useNavigate } from "react-router-dom";
-import { RotateCcw } from "lucide-react";
+import { Volume2, Pause, Loader2, RotateCcw } from "lucide-react";
 // NOTE: Removed unused text-to-speech hook import; restore via git history if needed.
 import { useTourSpeech } from "@/hooks/useTourSpeech";
 import { scrollToTarget } from "@/lib/scroll";
 import { useFrontendText } from "@/hooks/useFrontendText";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import {
-  getSpotlightBox,
-  getTourAudioUiState,
-  handleTourAudioButtonClick,
-  isTourOverlayInteractiveTarget,
-} from "@/context/tour/utils";
 
 // Central default tour steps
 const DEFAULT_STEPS: TourStep[] = [
@@ -391,12 +385,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
 
   const start = useCallback((newSteps?: TourStep[]) => {
-    let toUse = DEFAULT_STEPS;
-    if (newSteps?.length) {
-      toUse = newSteps;
-    } else if (apiMappedSteps.length) {
-      toUse = apiMappedSteps;
-    }
+    const toUse = newSteps?.length ? newSteps : (apiMappedSteps.length ? apiMappedSteps : DEFAULT_STEPS);
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
     // Filter steps to the relevant group only
     const grouped = toUse.filter((s) => {
@@ -585,64 +574,39 @@ function Overlay({
   // Tour speech via API streaming (.pcm)
   const { phase, play, pause, resume, replay, hasCached, stop: tourStop } = useTourSpeech();
 
-  const { audioAriaLabel, audioPulseClassName, isAudioButtonDisabled, audioTooltipText, audioIcon } =
-    getTourAudioUiState(phase, step.id);
-
-  const box = getSpotlightBox(r, p, vpW, vpH);
-
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement;
-      if (isTourOverlayInteractiveTarget(target)) return;
-      tourStop();
-      onSkip();
-    },
-    [onSkip, tourStop]
-  );
-
-  const handleOverlayKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      tourStop();
-      onNext();
-    },
-    [onNext, tourStop]
-  );
-
-  const handleSkip = useCallback(() => {
-    tourStop();
-    onSkip();
-  }, [onSkip, tourStop]);
-
-  const handlePrev = useCallback(() => {
-    tourStop();
-    onPrev();
-  }, [onPrev, tourStop]);
-
-  const handleNext = useCallback(() => {
-    tourStop();
-    onNext();
-  }, [onNext, tourStop]);
-
-  const handleAudioClick = useCallback(() => {
-    handleTourAudioButtonClick({ stepId: step.id, phase, play, pause, resume });
-  }, [pause, phase, play, resume, step.id]);
-
-  const handleReplay = useCallback(() => {
-    if (!step.id) return;
-    replay(step.id);
-  }, [replay, step.id]);
-
+  const box = r
+    ? {
+        left: Math.max(8, r.left - p),
+        top: Math.max(8, r.top - p),
+        width: Math.min(vpW - 16, r.width + p * 0.1),
+        height: Math.min(vpH - 16, r.height + p * 0),
+      }
+    : null;
   return (
     <div
       aria-live="polite"
       className="fixed inset-0 z-[1000]"
       style={{ pointerEvents: "auto" }}
-      onClick={handleOverlayClick}
+      onClick={(e) => {
+        // clicking on dark area skips; avoid when clicking inside tooltip or spotlight box
+        const target = e.target as HTMLElement;
+        if (
+          target.closest("[data-tour-tooltip]") ||
+          target.closest("[data-tour-spotlight]")
+        )
+          return;
+        tourStop();
+        onSkip();
+      }}
       role="button"
       tabIndex={0}
       aria-label="Skip tour"
-      onKeyDown={handleOverlayKeyDown}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          tourStop();
+          onNext();
+        }
+      }}
     >
       {/* Transparent overlay for click-capture only (no global dim so highlight stays bright) */}
       <div className="absolute inset-0 bg-transparent" />
@@ -680,7 +644,10 @@ function Overlay({
         <div className="mt-3 flex items-center justify-between gap-3">
           <button
             className="text-sm text-muted-foreground hover:underline"
-            onClick={handleSkip}
+            onClick={() => {
+              tourStop();
+              onSkip();
+            }}
           >
             Skip
           </button>
@@ -693,7 +660,10 @@ function Overlay({
                 variant="outline"
                 size="sm"
                 className="h-8"
-                onClick={handlePrev}
+                onClick={() => {
+                  tourStop();
+                  onPrev();
+                }}
               >
                 Prev
               </Button>
@@ -704,16 +674,36 @@ function Overlay({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label={audioAriaLabel}
-                    onClick={handleAudioClick}
-                    className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${audioPulseClassName}`}
-                    disabled={isAudioButtonDisabled}
+                    aria-label={
+                      phase === "speaking"
+                        ? "Pause audio"
+                        : phase === "paused"
+                        ? "Resume audio"
+                        : phase === "starting"
+                        ? "Loading audio"
+                        : "Play audio"
+                    }
+                    onClick={() => {
+                      if (!step.id) return;
+                      if (phase === "speaking") { pause(); return; }
+                      if (phase === "paused") { resume(); return; }
+                      if (phase === "starting") return;
+                      play(step.id);
+                    }}
+                    className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === "starting" ? "animate-pulse" : ""}`}
+                    disabled={phase === "starting" || !step.id}
                   >
-                    {audioIcon}
+                    {phase === "starting" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : phase === "speaking" ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="z-[1200]">
-                  <span className="text-xs">{audioTooltipText}</span>
+                  <span className="text-xs">{phase === "speaking" ? "Pause" : phase === "paused" ? "Resume" : phase === "starting" ? "Loading" : "Play"}</span>
                 </TooltipContent>
               </Tooltip>
 
@@ -723,7 +713,10 @@ function Overlay({
                     <button
                       type="button"
                       aria-label="Replay audio"
-                      onClick={handleReplay}
+                      onClick={() => {
+                        if (!step.id) return;
+                        replay(step.id);
+                      }}
                       className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100"
                       disabled={phase === "starting"}
                     >
@@ -740,7 +733,10 @@ function Overlay({
             <Button
               size="sm"
               className="h-8 bg-blue-primary hover:bg-blue-primary/90"
-              onClick={handleNext}
+              onClick={() => {
+                tourStop();
+                onNext();
+              }}
             >
               {stepIndex + 1 === stepCount ? "Done" : "Next"}
             </Button>
