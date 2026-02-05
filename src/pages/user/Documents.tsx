@@ -528,14 +528,6 @@ export default function Documents() {
         onOpenChange={setViewerOpen}
         fileUrl={viewer.url}
         fileName={viewer.name}
-        onDownload={() => {
-          const a = document.createElement("a");
-          a.href = viewer.url;
-          a.download = viewer.name;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }}
       />
 
       {/* Upload documents modal */}
