@@ -31,6 +31,9 @@ process.env.FAKE_TEST_OTP_SHORT_PASSWORD ??= "fake-1234";
 process.env.FAKE_TEST_OTP_PASS_PASSWORD ??= "fake-pass";
 process.env.FAKE_OTP ??= "123456";
 
+// Set up environment variables
+process.env.VITE_AGENTS_WEBSOCKET_BASE_URL = "wss://fake-websocket.test";
+
 // Polyfill for TextEncoder/TextDecoder
 globalThis.TextEncoder = TextEncoder as unknown as typeof globalThis.TextEncoder;
 globalThis.TextDecoder = TextDecoder as unknown as typeof globalThis.TextDecoder;
