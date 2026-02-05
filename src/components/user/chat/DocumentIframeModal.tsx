@@ -8,7 +8,6 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   fileUrl: string;
   fileName?: string;
-  onDownload?: () => void;
 };
 
 export default function DocumentIframeModal({ open, onOpenChange, fileUrl, fileName = "Document" }: Props) {

@@ -72,12 +72,15 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
     if (onDownload) return onDownload(doc.id);
   };
 
+  const selectedCount = useControlled ? (selectedIds?.length ?? 0) : selected.size;
+  const selectedCountPadded = String(selectedCount).padStart(2, "0");
+
   return (
     <div className="space-y-2">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-1">
-        <span className="text-xs font-medium text-blue-primary">Selected ({String((useControlled ? (selectedIds?.length ?? 0) : selected.size)).padStart(2, "0")})</span>
-        {(useControlled ? (selectedIds?.length ?? 0) : selected.size) > 0 ? (
+        <span className="text-xs font-medium text-blue-primary">Selected ({selectedCountPadded})</span>
+        {selectedCount > 0 ? (
           <ConfirmDialog
             trigger={
               <Button
@@ -90,7 +93,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
               </Button>
             }
             title="Confirm delete"
-            description={`Are you sure you want to delete ${String((useControlled ? (selectedIds?.length ?? 0) : selected.size))} selected document(s)? This action cannot be undone.`}
+            description={`Are you sure you want to delete ${String(selectedCount)} selected document(s)? This action cannot be undone.`}
             confirmText="Delete"
             onConfirm={async () => {
               const ids = Array.from(currentSelected);
