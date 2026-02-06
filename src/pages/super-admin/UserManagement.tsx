@@ -96,11 +96,7 @@ export default function UserManagement() {
       email: values.email,
     };
 
-    try {
-      await inviteMutation.mutateAsync(body);
-    } catch (e) {
-      throw e;
-    }
+    await inviteMutation.mutateAsync(body);
   };
 
   const handleEdit = async (values: UserFormValues) => {
@@ -113,14 +109,10 @@ export default function UserManagement() {
         selected.status === "Awaiting" ? undefined : values.status === "Active",
     };
 
-    try {
-      await updateMutation.mutateAsync({
-        email: selected.email,
-        payload: body,
-      });
-    } catch (e) {
-      throw e;
-    }
+    await updateMutation.mutateAsync({
+      email: selected.email,
+      payload: body,
+    });
   };
 
   const handleDeactivate = async () => {
@@ -132,23 +124,19 @@ export default function UserManagement() {
       is_active: false,
     };
 
-    try {
-      await updateMutation.mutateAsync({
-        email: selected.email,
-        payload: body,
-      });
+    await updateMutation.mutateAsync({
+      email: selected.email,
+      payload: body,
+    });
 
-      setDeactivateOpen(false);
-    } catch (e) {}
+    setDeactivateOpen(false);
   };
 
   const handleDelete = async () => {
     if (!selected) return;
 
-    try {
-      await deleteMutation.mutateAsync(selected.email);
-      setDeleteOpen(false);
-    } catch (e) {}
+    await deleteMutation.mutateAsync(selected.email);
+    setDeleteOpen(false);
   };
 
   const handleResend = async (row: UserRow) => {
@@ -157,9 +145,7 @@ export default function UserManagement() {
       return;
     }
 
-    try {
-      await resendMutation.mutateAsync(row.invitation_id);
-    } catch (e) {}
+    await resendMutation.mutateAsync(row.invitation_id);
   };
 
   const columns: Column<UserRow>[] = [

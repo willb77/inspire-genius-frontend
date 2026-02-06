@@ -76,10 +76,16 @@ export default function CoachManagement() {
     return copy;
   }, [rows, sortKey, sortDirection]);
 
+  const getNextSortDirection = (prev: "asc" | "desc" | undefined) => {
+    if (prev === "asc") return "desc" as const;
+    if (prev === "desc") return undefined;
+    return "asc" as const;
+  };
+
   const onSortChange = (key: string) => {
     const k = key as keyof CoachRow;
     if (sortKey === k) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : prev === "desc" ? undefined : "asc"));
+      setSortDirection((prev) => getNextSortDirection(prev));
     } else {
       setSortKey(k);
       setSortDirection("asc");

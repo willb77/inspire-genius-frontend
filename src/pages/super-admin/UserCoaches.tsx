@@ -29,15 +29,17 @@ export default function UserCoaches() {
           <h1 className="text-xl font-semibold capitalize">{data?.user_name || "User Coaches"}</h1>
         </div>
 
-        {isLoading  ? (
+        {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-48 rounded-2xl" />
             ))}
           </div>
-        ) : list.length === 0 ? (
+        )}
+        {!isLoading && list.length === 0 && (
           <div className="text-sm text-muted-foreground">No coaches found.</div>
-        ) : (
+        )}
+        {!isLoading && list.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {list.map((c) => {
               const active = Boolean(c.is_assigned_to_user ?? c.is_active);

@@ -71,7 +71,7 @@ export default function LicenceDetailsPage() {
         {/* 🧾 License List */}
         <Card className="bg-white shadow-sm">
           <CardContent>
-            {isPending ? (
+            {isPending && (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Card key={i} className="p-4 border">
@@ -80,12 +80,14 @@ export default function LicenceDetailsPage() {
                   </Card>
                 ))}
               </div>
-            ) : licenses.length === 0 ? (
+            )}
+            {!isPending && licenses.length === 0 && (
               <div className="text-center py-12 text-gray-600">
                 <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 No licenses found
               </div>
-            ) : (
+            )}
+            {!isPending && licenses.length > 0 && (
               <div className="space-y-3">
                 {licenses.map((license) => (
                   <Card
