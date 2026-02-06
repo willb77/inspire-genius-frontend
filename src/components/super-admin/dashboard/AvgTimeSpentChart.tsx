@@ -8,6 +8,23 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import DatePickerButton from "@/components/shared/DatePickerButton";
 import type { ChartDatum } from "@/types/super-admin/dashboard";
 
+const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = (payload[0]?.payload as ChartDatum) || undefined;
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-900 mb-2">{data?.orgName}</p>
+        <div className="space-y-1">
+          <p className="text-sm text-gray-600">
+            Hours: <span className="font-medium text-gray-900">{data?.hours} hrs</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 // Chart data for Average Time Spent
 const chartData = [
   { orgName: "Org name", hours: 4 },
@@ -33,24 +50,6 @@ export default function AvgTimeSpentChart() {
 
   const [fromDate, setFromDate] = useState<Date>(thirtyDaysAgo);
   const [toDate, setToDate] = useState<Date>(today);
-
-  // Custom Tooltip component
-  const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = (payload[0]?.payload as ChartDatum) || undefined;
-      return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{data?.orgName}</p>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">
-              Hours: <span className="font-medium text-gray-900">{data?.hours} hrs</span>
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="w-full flex flex-col justify-between h-full">
