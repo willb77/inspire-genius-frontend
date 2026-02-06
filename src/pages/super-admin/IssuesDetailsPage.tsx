@@ -76,7 +76,7 @@ export default function IssuesDetailsPage() {
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
           <Card className="bg-white shadow-sm">
             <CardContent className="p-0">
-              {isPending || isRefetching ? (
+              {(isPending || isRefetching) && (
                 <div className="space-y-3 p-4">
                   {Array.from({ length: pageSize }).map((_, i) => (
                     <div key={i} className="border rounded-lg p-4 space-y-3">
@@ -98,19 +98,22 @@ export default function IssuesDetailsPage() {
                     </div>
                   ))}
                 </div>
-              ) : isError ? (
+              )}
+              {!isPending && !isRefetching && isError && (
                 <div className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
                   <p className="text-red-600">
                     Failed to load issues. Please try again later.
                   </p>
                 </div>
-              ) : issues.length === 0 ? (
+              )}
+              {!isPending && !isRefetching && !isError && issues.length === 0 && (
                 <div className="text-center py-12 text-gray-600">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p>No issues found</p>
                 </div>
-              ) : (
+              )}
+              {!isPending && !isRefetching && !isError && issues.length > 0 && (
                 <div className="space-y-3 p-4">
                   {issues.map((issue) => (
                     <Card

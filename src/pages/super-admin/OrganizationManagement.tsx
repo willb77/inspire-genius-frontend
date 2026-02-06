@@ -129,19 +129,21 @@ export default function SuperAdminOrganizations() {
         />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
-          {isLoading ? (
+          {isLoading && (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-muted-foreground">
                 Loading organizations...
               </div>
             </div>
-          ) : rows.length === 0 ? (
+          )}
+          {!isLoading && rows.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-muted-foreground">
                 No organizations found
               </div>
             </div>
-          ) : (
+          )}
+          {!isLoading && rows.length > 0 && (
             <DataTable columns={columns} data={rows} />
           )}
         </div>

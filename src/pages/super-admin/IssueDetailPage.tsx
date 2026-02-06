@@ -256,8 +256,7 @@ export default function IssueDetailPage() {
               )}
             </div>
 
-            {(issue.comments && issue.comments.length > 0) || true ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <Card className="border-2 border-dashed border-gray-300 bg-gray-50 h-[370px] flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
@@ -367,7 +366,6 @@ export default function IssueDetailPage() {
                   )}
                 </div>
               </div>
-            ) : null}
           </CardContent>
         </Card>
       </div>

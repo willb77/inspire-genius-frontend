@@ -25,14 +25,45 @@ import {
   useOrganizationAgents,
   useRemoveCoachesFromOrganization,
   useRemoveCoachesFromBusiness,
+  useRoles,
 } from "@/hooks/super-admin/organization-management/useOrganizationManagement";
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement";
-import { useRoles } from "@/hooks/super-admin/organization-management/useOrganizationManagement";
 import { inviteUser } from "@/services/super-admin/user-management/user-management.service";
 import { toast } from "sonner";
 
 type TabType = "basic" | "coaches" | "users";
 type ModalType = "admin" | "coach" | "user" | null;
+
+const MODAL_FOR_TAB: Record<string, ModalType> = {
+  basic: "admin",
+  coaches: "coach",
+  users: "user",
+};
+
+const BUTTON_LABEL_FOR_TAB: Record<string, string> = {
+  basic: "Admin",
+  coaches: "Coaches",
+  users: "Users",
+};
+
+const StatusBadge = ({
+  status,
+  isActive,
+}: {
+  status: string;
+  isActive: boolean;
+}) => (
+  <Badge
+    variant="secondary"
+    className={
+      isActive || status === "Active"
+        ? "bg-green-100 text-green-700 border-transparent"
+        : "bg-gray-200 text-gray-700 border-transparent"
+    }
+  >
+    {status}
+  </Badge>
+);
 
 // Table row shapes
 type LicenseRow = {
@@ -303,25 +334,6 @@ export default function OrganizationView() {
     }
   };
 
-  const StatusBadge = ({
-    status,
-    isActive,
-  }: {
-    status: string;
-    isActive: boolean;
-  }) => (
-    <Badge
-      variant="secondary"
-      className={
-        isActive || status === "Active"
-          ? "bg-green-100 text-green-700 border-transparent"
-          : "bg-gray-200 text-gray-700 border-transparent"
-      }
-    >
-      {status}
-    </Badge>
-  );
-
   const licenseColumns = [
     { key: "tier", header: "Subscription Tier" },
     { key: "start", header: "Start Date" },
@@ -480,23 +492,10 @@ export default function OrganizationView() {
             (tab === "coaches" && isOrganizationLevel) ||
             tab === "users") && (
             <Button
-              onClick={() =>
-                setActiveModal(
-                  tab === "basic"
-                    ? "admin"
-                    : tab === "coaches"
-                    ? "coach"
-                    : "user"
-                )
-              }
+              onClick={() => setActiveModal(MODAL_FOR_TAB[tab] ?? null)}
             >
               <Plus className="size-4" />
-              Add{" "}
-              {tab === "basic"
-                ? "Admin"
-                : tab === "coaches"
-                ? "Coaches"
-                : "Users"}
+              Add {BUTTON_LABEL_FOR_TAB[tab] ?? ""}
             </Button>
           )}
         </div>
@@ -540,29 +539,33 @@ export default function OrganizationView() {
           </TabsContent>
 
           <TabsContent value="coaches">
-            {isLoadingAgents ? (
+            {isLoadingAgents && (
               <div className="flex justify-center items-center h-40 text-gray-500">
                 Loading coaches...
               </div>
-            ) : coachesData.length === 0 ? (
+            )}
+            {!isLoadingAgents && coachesData.length === 0 && (
               <div className="flex justify-center items-center h-40 text-gray-500">
                 No coaches assigned
               </div>
-            ) : (
+            )}
+            {!isLoadingAgents && coachesData.length > 0 && (
               <DataTable columns={coachesColumns} data={coachesData} />
             )}
           </TabsContent>
 
           <TabsContent value="users">
-            {isLoadingUsers ? (
+            {isLoadingUsers && (
               <div className="flex justify-center items-center h-40 text-gray-500">
                 Loading users...
               </div>
-            ) : usersData.length === 0 ? (
+            )}
+            {!isLoadingUsers && usersData.length === 0 && (
               <div className="flex justify-center items-center h-40 text-gray-500">
                 No users found
               </div>
-            ) : (
+            )}
+            {!isLoadingUsers && usersData.length > 0 && (
               <DataTable columns={usersColumns} data={usersData} />
             )}
           </TabsContent>
