@@ -5,6 +5,17 @@ import { useIssues } from "@/hooks/help/useIssues";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
+const STATUS_COLOR: Record<string, string> = {
+  open: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+  "in-progress": "bg-blue-100 text-blue-800 hover:bg-blue-100",
+};
+const STATUS_COLOR_DEFAULT = "bg-green-100 text-green-800 hover:bg-green-100";
+
+const PRIORITY_VARIANT: Record<string, "destructive" | "default" | "secondary"> = {
+  critical: "destructive",
+  high: "default",
+};
+
 export default function HelpAndSupport() {
 
   const navigate = useNavigate();
@@ -26,8 +37,7 @@ export default function HelpAndSupport() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {isPending ? (
-          // Loading skeleton
+        {isPending && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="border rounded-lg p-4">
@@ -42,15 +52,18 @@ export default function HelpAndSupport() {
               </div>
             ))}
           </div>
-        ) : isError ? (
+        )}
+        {!isPending && isError && (
           <div className="text-sm text-red-600 text-center py-4">
             Failed to load issues. Please try again later.
           </div>
-        ) : issues.length === 0 ? (
+        )}
+        {!isPending && !isError && issues.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-4">
             No recent issues found.
           </div>
-        ) : (
+        )}
+        {!isPending && !isError && issues.length > 0 &&
           issues.map((issue) => (
             <Card key={issue.id} className="p-4 shadow-none border-none">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between">
@@ -63,34 +76,18 @@ export default function HelpAndSupport() {
                   </p>
                   <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                     <span>By: {issue.reported_by_name}</span>
-                    {/* <span>{new Date(issue.created_at).toLocaleDateString()}</span>
-                    {issue.issue_type_name && (
-                      <span className="text-blue-600">{issue.issue_type_name}</span>
-                    )} */}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <Badge
                     variant="secondary"
-                    className={`capitalize ${
-                      issue.status === "open"
-                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                        : issue.status === "in-progress"
-                        ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                        : "bg-green-100 text-green-800 hover:bg-green-100"
-                    }`}
+                    className={`capitalize ${STATUS_COLOR[issue.status] ?? STATUS_COLOR_DEFAULT}`}
                   >
                     {issue.status}
                   </Badge>
                   <Badge
-                    variant={
-                      issue.priority === "critical"
-                        ? "destructive"
-                        : issue.priority === "high"
-                        ? "default"
-                        : "secondary"
-                    }
+                    variant={PRIORITY_VARIANT[issue.priority] ?? "secondary"}
                     className="capitalize"
                   >
                     {issue.priority}
@@ -99,7 +96,7 @@ export default function HelpAndSupport() {
               </div>
             </Card>
           ))
-        )}
+        }
       </CardContent>
     </div>
   );
