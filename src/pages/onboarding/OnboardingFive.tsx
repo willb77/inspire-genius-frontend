@@ -13,13 +13,11 @@ export default function OnboardingFive() {
       ctaLabel="Let's go"
       nextPath={ROUTES.ONBOARDING_DETAILS.ONE}
       overlays={
-        <>
           <OnboardingCallout
             title="Upload Documents"
             positionClass="top-32 md:top-28 right-[55%] md:right-[56%] lg:right-[54%]"
             className="!rounded-b-xl !rounded-tr-xl"
           />
-        </>
       }
     />
     </div>
