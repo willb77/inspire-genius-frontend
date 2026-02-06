@@ -13,6 +13,21 @@ import { useTour } from "@/context/useTour";
 import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+
+type SpeechPhase = 'idle' | 'starting' | 'speaking' | 'paused' | 'error';
+
+const AUDIO_ICON: Record<string, ReactNode> = {
+  starting: <Loader2 className="w-4 h-4 animate-spin" />,
+  speaking: <Pause className="w-4 h-4" />,
+};
+const AUDIO_ICON_DEFAULT = <Volume2 className="w-4 h-4" />;
+
+const AUDIO_ARIA_LABEL: Record<string, string> = {
+  speaking: "Pause audio",
+  paused: "Resume audio",
+  starting: "Loading audio",
+};
 
 export default function OnboardingDetailsTwo() {
   const navigate = useNavigate();
@@ -22,7 +37,7 @@ export default function OnboardingDetailsTwo() {
   const [pendingDest, setPendingDest] = useState<string | null>(null);
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
-  const [activeAgentPhase, setActiveAgentPhase] = useState<'idle' | 'starting' | 'speaking' | 'paused' | 'error'>('idle');
+  const [activeAgentPhase, setActiveAgentPhase] = useState<SpeechPhase>('idle');
   const queryClient = useQueryClient();
   const logoRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
@@ -237,7 +252,7 @@ export default function OnboardingDetailsTwo() {
               <div className="flex items-center gap-4">
               <button
                 type="button"
-                aria-label={phase === 'speaking' ? "Pause audio" : (phase === 'paused' ? 'Resume audio' : phase === 'starting' ? 'Loading audio' : "Play audio")}
+                aria-label={AUDIO_ARIA_LABEL[phase] ?? "Play audio"}
                 onClick={() => {
                   if (!stepId) return;
                   if (phase === 'speaking') { pause(); return; }
@@ -248,13 +263,7 @@ export default function OnboardingDetailsTwo() {
                 className={`inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 ${phase === 'starting' ? 'animate-pulse' : ''}`}
                 disabled={phase === 'starting' || !stepId}
               >
-                {phase === 'starting' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : phase === 'speaking' ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Volume2 className="w-4 h-4" />
-                )}
+                {AUDIO_ICON[phase] ?? AUDIO_ICON_DEFAULT}
               </button>
               {stepId && hasCached(stepId) ? (
                 <button
