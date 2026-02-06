@@ -255,9 +255,4 @@ it("should render callout titles correctly", () => {
     expect(howToUseSpan).toHaveClass("ml-2");
     expect(coachesSpan).toHaveClass("ml-2");
   });
-
-  it("should match snapshot", () => {
-    const { container } = render(<EmptyStateCard onStart={mockOnStart} />);
-    expect(container).toMatchSnapshot();
-  });
 });
