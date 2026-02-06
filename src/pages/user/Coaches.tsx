@@ -53,10 +53,12 @@ export default function Coaches() {
             ))
           ) : (
           agents.map((agent, idx) => {
-            const tourAttr =
-              idx === 0 ? { 'data-tour': 'coach-card-1-coaches' } :
-              idx === 1 ? { 'data-tour': 'coach-card-2-coaches' } :
-              idx === 2 ? { 'data-tour': 'coach-card-3-coaches' } : {};
+            const TOUR_ATTRS: Record<number, Record<string, string>> = {
+              0: { 'data-tour': 'coach-card-1-coaches' },
+              1: { 'data-tour': 'coach-card-2-coaches' },
+              2: { 'data-tour': 'coach-card-3-coaches' },
+            };
+            const tourAttr = TOUR_ATTRS[idx] ?? {};
             const selectedToneIds = Array.isArray(agent.user_tones) ? agent.user_tones.map(t => t.id) : [];
             const handleSubmit = async (values: { genderId?: string; accentId?: string; toneIds: string[] }) => {
               setSubmittingAgentId(agent.id);
