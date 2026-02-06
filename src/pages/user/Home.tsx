@@ -101,18 +101,18 @@ export default function Home() {
                   poster="/images/user/home/about-prism.svg"
                 />
               ) : (
-                <img
-                  src="/images/user/home/about-prism.svg"
-                  alt="Video"
-                  className="h-80 object-cover rounded-2xl cursor-pointer"
+                <button
+                  type="button"
                   onClick={startPlaybackCycle}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") startPlaybackCycle();
-                  }}
+                  className="appearance-none border-0 bg-transparent p-0 cursor-pointer"
                   title="Play overview"
-                />
+                >
+                  <img
+                    src="/images/user/home/about-prism.svg"
+                    alt="Play overview"
+                    className="h-80 object-cover rounded-2xl"
+                  />
+                </button>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
@@ -154,10 +154,10 @@ export default function Home() {
               onClick={() => start()}
             >
               <img src="/images/user/home/tour.svg" alt="Tour" className="w-5 h-5" />
-              Take a Tour
+              <span>Take a Tour</span>
             </Button>
-            <Button className="cursor-not-allowed w-full h-16 bg-brown-350 hover:bg-brown-350/80 hover:text-white text-white" variant="outline"><img src="/images/user/home/how-to-use.svg" alt="How to use" className="w-5 h-5" />How to use</Button>
-            <Button className="cursor-not-allowed w-full h-16 bg-brown-250 hover:bg-brown-250/80 hover:text-white text-white" variant="destructive"><img src="/images/user/home/coaches.svg" alt="Coaches" className="w-5 h-5" />Coaches Introduction</Button>
+            <Button className="cursor-not-allowed w-full h-16 bg-brown-350 hover:bg-brown-350/80 hover:text-white text-white" variant="outline"><img src="/images/user/home/how-to-use.svg" alt="How to use" className="w-5 h-5" /><span>How to use</span></Button>
+            <Button className="cursor-not-allowed w-full h-16 bg-brown-250 hover:bg-brown-250/80 hover:text-white text-white" variant="destructive"><img src="/images/user/home/coaches.svg" alt="Coaches" className="w-5 h-5" /><span>Coaches Introduction</span></Button>
           </div>
           </CardContent>
         </Card>

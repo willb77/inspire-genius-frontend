@@ -13,6 +13,12 @@ import { useIssueTypes } from "@/hooks/help/useIssueTypes";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
+const getPriorityVariant = (priority: string) => {
+  if (priority === 'critical') return 'destructive' as const;
+  if (priority === 'high') return 'default' as const;
+  return 'secondary' as const;
+};
+
 export default function Help() {
   const [showSubmitted, setShowSubmitted] = useState(false);
   const [page, setPage] = useState(1);
@@ -100,7 +106,7 @@ export default function Help() {
         {/* Issues List */}
         <div className="bg-white rounded-2xl border shadow-sm p-4">
           <div className="text-left mb-3 font-semibold">Recent Issues</div>
-          {isListing ? (
+          {isListing && (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="border rounded-lg p-3">
@@ -121,9 +127,11 @@ export default function Help() {
                 </div>
               ))}
             </div>
-          ) : items.length === 0 ? (
+          )}
+          {!isListing && items.length === 0 && (
             <div className="text-sm text-muted-foreground">No issues found.</div>
-          ) : (
+          )}
+          {!isListing && items.length > 0 && (
             <div className="space-y-3">
               {items.map((it) => (
                 <div key={it.id} className="border rounded-lg p-3">
@@ -131,7 +139,7 @@ export default function Help() {
                     <div className="font-medium">{it.subject}</div>
                     <div className="flex items-center gap-2">
                       <Badge variant={it.status === 'open' ? 'secondary' : 'default'}>{it.status}</Badge>
-                      <Badge variant={it.priority === 'critical' ? 'destructive' : (it.priority === 'high' ? 'default' : 'secondary')}>{it.priority}</Badge>
+                      <Badge variant={getPriorityVariant(it.priority)}>{it.priority}</Badge>
                       <span className="text-xs text-muted-foreground">{new Date(it.created_at).toLocaleString()}</span>
                     </div>
                   </div>
