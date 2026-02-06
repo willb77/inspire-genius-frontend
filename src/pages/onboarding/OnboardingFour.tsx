@@ -13,13 +13,11 @@ export default function OnboardingFour() {
 ctaLabel="Let's go"
       nextPath={ROUTES.ONBOARDING.FIVE}
       overlays={
-        <>
           <OnboardingCallout
             title="Smart decisions with AI"
             positionClass="top-20 md:top-14 right-[30%] md:right-[43%] lg:right-[46%]"
             className="!rounded-b-xl !rounded-tr-xl"
           />
-        </>
       }
     />
     </div>

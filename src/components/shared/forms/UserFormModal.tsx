@@ -91,8 +91,7 @@ export default function UserFormModal({
               </FormItem>
             )}
           />
-          <>
-            <FormField
+          <FormField
               control={control}
               name="email"
               rules={User_FORM_RULES.email}
@@ -113,7 +112,6 @@ export default function UserFormModal({
                 </FormItem>
               )}
             />
-          </>
 
           {mode === "edit" && allowStatusEdit !== false && (
             <FormField
