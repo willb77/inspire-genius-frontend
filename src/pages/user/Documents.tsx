@@ -148,14 +148,16 @@ export default function Documents() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toDateString();
     const groups: Record<string, DocItem[]> = {};
+    const getDateGroupKey = (date: Date) => {
+      const dateStr = date.toDateString();
+      if (dateStr === todayStr) return "Today";
+      if (dateStr === yesterdayStr) return "Yesterday";
+      return formatDMY(date);
+    };
     for (const d of filtered) {
-      const key =
-        d.createdAt.toDateString() === todayStr
-          ? "Today"
-          : d.createdAt.toDateString() === yesterdayStr
-          ? "Yesterday"
-          : formatDMY(d.createdAt);
-      (groups[key] ||= []).push(d);
+      const key = getDateGroupKey(d.createdAt);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(d);
     }
     for (const k of Object.keys(groups))
       groups[k].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -366,7 +368,7 @@ export default function Documents() {
           className="bg-white rounded-2xl border shadow-sm p-4"
           data-tour="docs-sections"
         >
-          {listLoading || listFetching ? (
+          {(listLoading || listFetching) && (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => (
                 <div key={i}>
@@ -395,7 +397,8 @@ export default function Documents() {
                 </div>
               ))}
             </div>
-          ) : sections.length === 0 ? (
+          )}
+          {!listLoading && !listFetching && sections.length === 0 && (
             <div className="py-16 grid place-items-center text-center">
               <div className="text-lg font-semibold mb-1">No files found</div>
               <div className="text-sm text-muted-foreground mb-4">
@@ -409,7 +412,8 @@ export default function Documents() {
                 <Upload className="size-4 ml-2" />
               </Button>
             </div>
-          ) : (
+          )}
+          {!listLoading && !listFetching && sections.length > 0 &&
             sections.map((sec, idx) => (
               <div key={sec.title} className={idx > 0 ? "mt-6" : undefined}>
                 <button
@@ -506,7 +510,7 @@ export default function Documents() {
                 )}
               </div>
             ))
-          )}
+          }
         </div>
 
         {/* Pagination */}
