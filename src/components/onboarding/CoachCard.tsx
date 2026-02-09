@@ -10,6 +10,13 @@ import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useCoachAudioPreview } from "@/hooks/useCoachAudioPreview";
 import { useQueryClient } from "@tanstack/react-query";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import type { ReactNode } from "react";
+
+const AUDIO_ICON: Record<string, ReactNode> = {
+  starting: <Loader2 className="h-5 w-5 animate-spin" />,
+  speaking: <Pause className="h-5 w-5" />,
+};
+const AUDIO_ICON_DEFAULT = <Volume2 className="h-5 w-5" />;
 
 type FormValues = {
   genderId?: string;
@@ -124,10 +131,10 @@ export default function CoachCard({
       <div className="mt-4 space-y-3 text-sm">
         <div>
           <div className="text-muted-foreground mb-1">Gender</div>
-          {isEditing ? (
-            submitting ? (
-              <Skeleton className="h-10 w-full rounded-xl" />
-            ) : (
+          {isEditing && submitting && (
+            <Skeleton className="h-10 w-full rounded-xl" />
+          )}
+          {isEditing && !submitting && (
             <Select value={g} onValueChange={(v) => setValue("genderId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
                 <SelectValue placeholder="Select gender" />
@@ -140,17 +147,17 @@ export default function CoachCard({
                 ))}
               </SelectContent>
             </Select>
-            )
-          ) : (
+          )}
+          {!isEditing && (
             <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{genderLabel}</div>
           )}
         </div>
         <div>
           <div className="text-muted-foreground mb-1">Voice Accent</div>
-          {isEditing ? (
-            submitting ? (
-              <Skeleton className="h-10 w-full rounded-xl" />
-            ) : (
+          {isEditing && submitting && (
+            <Skeleton className="h-10 w-full rounded-xl" />
+          )}
+          {isEditing && !submitting && (
             <Select value={a} onValueChange={(v) => setValue("accentId", v, { shouldDirty: true })}>
               <SelectTrigger className="h-11 w-full rounded-xl bg-gray-100 border border-gray-10">
                 <SelectValue placeholder="Select accent" />
@@ -163,17 +170,17 @@ export default function CoachCard({
                 ))}
               </SelectContent>
             </Select>
-            )
-          ) : (
+          )}
+          {!isEditing && (
             <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium">{accentLabel}</div>
           )}
         </div>
         <div>
           <div className="text-muted-foreground mb-1">Voice Tone</div>
-          {isEditing ? (
-            submitting ? (
-              <Skeleton className="h-10 w-full rounded-xl" />
-            ) : (
+          {isEditing && submitting && (
+            <Skeleton className="h-10 w-full rounded-xl" />
+          )}
+          {isEditing && !submitting && (
               <MultiSelect
                 value={t}
                 onChange={(vals) => setValue("toneIds", vals, { shouldDirty: true })}
@@ -182,8 +189,8 @@ export default function CoachCard({
                 className="rounded-xl"
                 maxVisible={2}
               />
-            )
-          ) : (
+          )}
+          {!isEditing && (
             <div className="bg-gray-100 text-foreground rounded-xl px-3 py-2 font-medium flex items-center gap-2">
               <span className="flex-1">{toneLabels?.length > 0 ? toneLabels.slice(0, 2).join(", ") : "—"}</span>
               {extraCount > 0 ? (
@@ -209,13 +216,7 @@ export default function CoachCard({
                     className="h-11 w-11 rounded-xl border border-blue-primary"
                     disabled
                   >
-                    {phase === 'starting' ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : phase === 'speaking' ? (
-                      <Pause className="h-5 w-5" />
-                    ) : (
-                      <Volume2 className="h-5 w-5" />
-                    )}
+                    {AUDIO_ICON[phase] ?? AUDIO_ICON_DEFAULT}
                   </Button>
                 </div>
               </TooltipTrigger>
@@ -243,13 +244,7 @@ export default function CoachCard({
               if (setActiveAgentPhase) setActiveAgentPhase('starting');
             }}
           >
-            {phase === 'starting' ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : phase === 'speaking' ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Volume2 className="h-5 w-5" />
-            )}
+            {AUDIO_ICON[phase] ?? AUDIO_ICON_DEFAULT}
           </Button>
         )}
         {isEditing ? (

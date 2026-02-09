@@ -195,9 +195,11 @@ describe("LicenseExpiring", () => {
 
     render(<LicenseExpiring />);
 
-    // Render fallback is "undefined days remaining"
-    expect(screen.getByText("undefined days remaining")).toBeInTheDocument();
+    const daysRemainingTexts = screen.getAllByText(/days\s+remaining/i);
 
-    expect(screen.getByText("5 days remaining")).toBeInTheDocument();
+    // One for Org A (blank), one for Org B (5 days)
+    expect(daysRemainingTexts).toHaveLength(2);
+
+    expect(screen.getByText(/5\s+days\s+remaining/i)).toBeInTheDocument();
   });
 });
