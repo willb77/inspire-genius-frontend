@@ -125,16 +125,18 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
 
       {/* Grouped list */}
       <div className="space-y-3">
-        {(isLoadingProp) ? (
+        {isLoadingProp && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
             <Loader2 className="size-4 animate-spin" /> Loading documents...
           </div>
-        ) : sections.length === 0 ? (
+        )}
+        {!isLoadingProp && sections.length === 0 && (
           <div className="min-h-72 flex flex-col justify-center items-center gap-2 text-sm text-muted-foreground px-1">No files found <iframe src="https://lottie.host/embed/7a313347-1c37-4ba2-a0e9-1586496a05cc/a8xuE1n57r.lottie"   title="file not found"
                   className="h-28 w-28"
                   allow="autoplay" /> 
                   </div>
-        ) : (
+        )}
+        {!isLoadingProp && sections.length > 0 &&
           sections.map((sec) => {
             const isOpen = openGroups[sec.title] ?? true;
             const items = sec.items;
@@ -209,7 +211,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
               </div>
             );
           })
-        )}
+        }
       </div>
     </div>
   );
