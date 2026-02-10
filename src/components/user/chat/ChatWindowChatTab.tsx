@@ -51,7 +51,7 @@ export default function ChatWindowChatTab({
               {m.sender === "assistant" ? (
                 <AssistantMarkdown
                   text={m.text}
-                  className="text-left"
+                  className="text-left overflow-x-auto"
                 />
               ) : (
                 m.text
