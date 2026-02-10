@@ -23,7 +23,7 @@ jest.mock("@/layouts/SuperAdminLayout", () => ({
 ------------------------------------------------- */
 jest.mock("@/components/ui/card", () => ({
   Card: ({ children, onClick }: any) => (
-    <div onClick={onClick}>{children}</div>
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}>{children}</div>
   ),
   CardContent: ({ children }: any) => <div>{children}</div>,
 }));
