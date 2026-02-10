@@ -172,7 +172,6 @@ export default function Settings() {
   };
 
   return (
-    <>
       <div className="space-y-4">
         <div className="invisible mb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
@@ -233,6 +232,5 @@ export default function Settings() {
           </Card>
         )}
       </div>
-    </>
   );
 }
