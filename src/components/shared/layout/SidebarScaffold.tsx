@@ -41,7 +41,7 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
   const { open, setOpen } = useSidebar();
   const isActive = location.pathname === to;
   const activeClasses = "cursor-pointer !bg-blue-primary !text-white [&>svg]:!text-white";
-  const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A]";
+  const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A] glow-border-hover";
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
