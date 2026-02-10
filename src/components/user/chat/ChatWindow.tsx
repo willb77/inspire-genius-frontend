@@ -272,12 +272,6 @@ const genericMessages =
           "flex-1 overflow-auto p-4",
           audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
         )}
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 10px 10px, rgba(246, 184, 108, 0.08) 2px, transparent 2px), radial-gradient(circle at 30px 30px, rgba(246, 184, 108, 0.06) 2px, transparent 2px)",
-          backgroundSize: "48px 48px",
-          backgroundPosition: "0 0, 24px 24px",
-        }}
         ref={scrollRef}
       >
         <ChatWindowTopBanner
