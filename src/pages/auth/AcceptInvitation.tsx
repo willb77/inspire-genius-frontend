@@ -31,7 +31,7 @@ export default function AcceptInvitation() {
   const rules = useMemo(() => ({
     hasUpper: /[A-Z]/.test(newPasswordValue),
     hasLower: /[a-z]/.test(newPasswordValue),
-    hasNumber: /[0-9]/.test(newPasswordValue),
+    hasNumber: /\d/.test(newPasswordValue),
     hasSpecial: /[^A-Za-z0-9]/.test(newPasswordValue),
   }), [newPasswordValue])
 

@@ -11,7 +11,11 @@ export function useSortingPagination<T extends Record<string, unknown>>(rows: T[
     if (!key) return
     const k = key as keyof T
     if (sortKey === k) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : prev === 'desc' ? undefined : 'asc'))
+      setSortDirection((prev) => {
+        if (prev === 'asc') return 'desc'
+        if (prev === 'desc') return undefined
+        return 'asc'
+      })
     } else {
       setSortKey(k)
       setSortDirection('asc')

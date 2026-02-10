@@ -47,7 +47,7 @@ export default function SignUp() {
   const rules = useMemo(() => ({
     hasUpper: /[A-Z]/.test(password),
     hasLower: /[a-z]/.test(password),
-    hasNumber: /[0-9]/.test(password),
+    hasNumber: /\d/.test(password),
     hasSpecial: /[^A-Za-z0-9]/.test(password),
   }), [password]);
   const unmet: string[] = useMemo(() => {
