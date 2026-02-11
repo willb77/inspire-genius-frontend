@@ -195,11 +195,9 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
           colorTimerRef.current = null;
         }
       };
-    } else {
-      if (colorTimerRef.current) {
-        window.clearInterval(colorTimerRef.current);
-        colorTimerRef.current = null;
-      }
+    } else if (colorTimerRef.current) {
+      window.clearInterval(colorTimerRef.current);
+      colorTimerRef.current = null;
     }
   }, [step, uploadError, progress]);
 
@@ -314,13 +312,13 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
                 const uploadLabel = queue.length > 1 ? "Uploading Documents" : "Uploading Document";
                 const isNearing = progress >= 85 && progress < 90;
                 const isFinalizing = finishing || (progress >= 90 && progress < 100);
-                const progressTextClass = isFinalizing
-                  ? `${colors90[colorIndex] || "text-green-600"} animate-pulse`
-                  : isNearing
-                  ? nearing
-                  : "";
+                let progressTextClass = "";
+                if (isFinalizing) progressTextClass = `${colors90[colorIndex] || "text-green-600"} animate-pulse`;
+                else if (isNearing) progressTextClass = nearing;
+
+                const finalizingMsg = finishing ? msgs90[finalMsgIndex] : (msgs90[colorIndex] || msgs90[0]);
                 const text = isFinalizing
-                  ? `${(finishing ? msgs90[finalMsgIndex] : (msgs90[colorIndex] || msgs90[0]))} ${progress}%`
+                  ? `${finalizingMsg} ${progress}%`
                   : `${uploadLabel}.... ${progress}%`;
                 return (
                   <div

@@ -529,7 +529,7 @@ export default function AlexChatPanel({
                       <div className="inline-block">
                         <div className={`px-3 py-2 rounded-md text-sm text-center ${messageBubbleClassName}`}>
                           {m.sender === "assistant" ? (
-                            <AssistantMarkdown text={m.text} className="text-left" />
+                            <AssistantMarkdown text={m.text} className="text-left overflow-x-auto" />
                           ) : (
                             m.text
                           )}

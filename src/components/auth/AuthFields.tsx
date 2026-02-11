@@ -9,10 +9,10 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { AxiosError } from "axios";
 import type { ApiEnvelope } from "@/types/auth/api-types";
-export function FirstNameField({
-  id = "firstName",
-  label = "First Name",
-  placeholder = "Enter your first name",
+function NameField({
+  id,
+  label,
+  placeholder,
   required = true,
   value,
   onChange,
@@ -33,27 +33,29 @@ export function FirstNameField({
   );
 }
 
-export function LastNameField({
-  id = "lastName",
-  label = "Last Name",
-  placeholder = "Enter your last name",
-  required = true,
-  value,
-  onChange,
-}: LastNameFieldProps) {
+export function FirstNameField(props: FirstNameFieldProps) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <IconInput
-        id={id}
-        type="text"
-        placeholder={placeholder}
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value)}
-        leftIcon={<FiUser className="text-blue-primary" size={18} />}
-      />
-    </div>
+    <NameField
+      id={props.id ?? "firstName"}
+      label={props.label ?? "First Name"}
+      placeholder={props.placeholder ?? "Enter your first name"}
+      required={props.required ?? true}
+      value={props.value}
+      onChange={props.onChange}
+    />
+  );
+}
+
+export function LastNameField(props: LastNameFieldProps) {
+  return (
+    <NameField
+      id={props.id ?? "lastName"}
+      label={props.label ?? "Last Name"}
+      placeholder={props.placeholder ?? "Enter your last name"}
+      required={props.required ?? true}
+      value={props.value}
+      onChange={props.onChange}
+    />
   );
 }
 

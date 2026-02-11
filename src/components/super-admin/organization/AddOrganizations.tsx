@@ -155,7 +155,11 @@ export default function AddOrganization({
       toast.success(result.message || "Organization created successfully");
       setOrganizationId(result.data.organization_id);
       onSubmitProp?.(form.getValues());
-      isLastStep ? handleClose() : setCurrentStep((prev) => prev + 1);
+      if (isLastStep) {
+        handleClose();
+      } else {
+        setCurrentStep((prev) => prev + 1);
+      }
     }
   };
 
@@ -186,7 +190,11 @@ export default function AddOrganization({
       }
     }
 
-    (isLastStep || flowType === "coaches-only") ? handleClose() : setCurrentStep((prev) => prev + 1);
+    if (isLastStep || flowType === "coaches-only") {
+      handleClose();
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
   };
 
   const handleLicenseStep = async (values: OrganizationFormData, isLastStep: boolean) => {
@@ -200,7 +208,11 @@ export default function AddOrganization({
     });
     toast.success("License created successfully");
 
-    (flowType === "organization-only" || isLastStep) ? handleClose() : setCurrentStep((prev) => prev + 1);
+    if (flowType === "organization-only" || isLastStep) {
+      handleClose();
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
   };
 
   const renderStepContent = () => {
@@ -227,6 +239,9 @@ export default function AddOrganization({
   };
 
   const isLastStep = currentStep === visibleSteps.length - 1;
+  let nextButtonLabel = "Save & Next";
+  if (isSubmitting) nextButtonLabel = "Processing...";
+  else if (isLastStep) nextButtonLabel = "Submit";
 
   return (
     <OnboardingOrganizationModel
@@ -243,7 +258,7 @@ export default function AddOrganization({
             Cancel
           </Button>
           <Button onClick={handleNext} disabled={isSubmitting}>
-            {isSubmitting ? "Processing..." : isLastStep ? "Submit" : "Save & Next"}
+            {nextButtonLabel}
           </Button>
         </>
       }
