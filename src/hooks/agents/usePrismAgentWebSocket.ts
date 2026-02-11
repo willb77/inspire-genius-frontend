@@ -106,8 +106,8 @@ export function usePrismAgentWebSocket(
     if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
       if (event.data instanceof Blob) {
         event.data.arrayBuffer().then((buf) => { if (onAudioData) onAudioData(buf); });
-      } else {
-        if (onAudioData) onAudioData(event.data);
+      } else if (onAudioData) {
+        onAudioData(event.data);
       }
       return;
     }
