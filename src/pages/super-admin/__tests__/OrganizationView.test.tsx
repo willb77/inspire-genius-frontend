@@ -22,6 +22,30 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import OrganizationView from "../OrganizationView";
 import { toast } from "sonner";
 
+const findLabelByText = (text: string) => {
+  const labels = screen.getAllByTestId("label");
+  return labels.find((l) => l.textContent === text);
+};
+
+const findButtonByTextIncludes = (text: string) => {
+  const buttons = screen.getAllByTestId("button");
+  return buttons.find((btn) => btn.textContent?.includes(text));
+};
+
+const findButtonInContainerBySelectorAndText = (
+  container: HTMLElement,
+  selector: string,
+  text: string,
+) => {
+  const buttons = container.querySelectorAll(selector);
+  return Array.from(buttons).find((btn) => btn.textContent?.includes(text));
+};
+
+const findOpenUserFormModal = () => {
+  const modals = screen.getAllByTestId("user-form-modal");
+  return modals.find((modal) => modal.getAttribute("data-open") === "true");
+};
+
 // Mock react-router-dom
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -685,12 +709,7 @@ describe("OrganizationView", () => {
       fireEvent.click(select);
 
       await waitFor(() => {
-        // Business admin fields should be visible
-        const labels = screen.getAllByTestId("label");
-        const businessAdminLabel = labels.find(
-          (l) => l.textContent === "Business Admin Name",
-        );
-        expect(businessAdminLabel).toBeInTheDocument();
+        expect(findLabelByText("Business Admin Name")).toBeInTheDocument();
       });
     });
   });
@@ -803,10 +822,7 @@ describe("OrganizationView", () => {
     test("opens admin modal when Add Admin button is clicked", () => {
       renderWithProviders(<OrganizationView />);
 
-      const addButtons = screen.getAllByTestId("button");
-      const addAdminButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
@@ -828,10 +844,7 @@ describe("OrganizationView", () => {
       const coachesTab = screen.getByTestId("tabs-trigger-coaches");
       fireEvent.click(coachesTab);
 
-      const addButtons = screen.getAllByTestId("button");
-      const addCoachButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Coaches"),
-      );
+      const addCoachButton = findButtonByTextIncludes("Add Coaches");
 
       if (addCoachButton) {
         fireEvent.click(addCoachButton);
@@ -858,10 +871,7 @@ describe("OrganizationView", () => {
     test("closes modals correctly", () => {
       renderWithProviders(<OrganizationView />);
 
-      const addButtons = screen.getAllByTestId("button");
-      const addAdminButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
@@ -887,11 +897,7 @@ describe("OrganizationView", () => {
     test("modal opens and closes for each tab type", () => {
       renderWithProviders(<OrganizationView />);
 
-      // Test basic tab modal (admin)
-      const addButtons = screen.getAllByTestId("button");
-      const addAdminButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
@@ -908,18 +914,12 @@ describe("OrganizationView", () => {
       renderWithProviders(<OrganizationView />);
 
       // Open modal
-      const addButtons = screen.getAllByTestId("button");
-      const addAdminButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
         // Open
         fireEvent.click(addAdminButton);
-        let modals = screen.getAllByTestId("user-form-modal");
-        let openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        let openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
 
         // Close
@@ -933,10 +933,7 @@ describe("OrganizationView", () => {
 
         // Re-open
         fireEvent.click(addAdminButton);
-        modals = screen.getAllByTestId("user-form-modal");
-        openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
       }
     });
@@ -996,25 +993,23 @@ describe("OrganizationView", () => {
 
       const { container } = renderWithProviders(<OrganizationView />);
 
+      // Select business to enable business-level coach actions
+      fireEvent.click(screen.getByTestId("select"));
+
       // Switch to coaches tab
       const coachesTab = screen.getByTestId("tabs-trigger-coaches");
       fireEvent.click(coachesTab);
 
       await waitFor(() => {
-        // Find the Assign button in the rendered table
-        const assignButtons = container.querySelectorAll(
+        const assignButton = findButtonInContainerBySelectorAndText(
+          container,
           'button[data-variant="secondary"]',
+          "Assign",
         );
-        const assignButton = Array.from(assignButtons).find((btn) =>
-          btn.textContent?.includes("Assign"),
-        );
-
-        if (assignButton) {
-          fireEvent.click(assignButton);
-
-          // Verify handleAssignCoachToBusiness was called
-          expect(mockMutate).toHaveBeenCalled();
-        }
+        expect(assignButton).toBeDefined();
+        if (!assignButton) return;
+        fireEvent.click(assignButton);
+        expect(mockMutate).toHaveBeenCalled();
       });
     });
 
