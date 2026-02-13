@@ -154,14 +154,6 @@ jest.mock("@/components/ui/select", () => ({
       data-testid="select"
       data-value={value}
       onClick={() => onValueChange?.("test-business-id")} // trigger selection
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onValueChange?.("test-business-id");
-        }
-      }}
     >
       {children}
     </div>
