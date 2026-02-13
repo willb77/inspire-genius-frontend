@@ -4,6 +4,14 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import UserCoaches from "../UserCoaches";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+const findCoachCardCallByTitle = (title: string) =>
+  mockSACoachCard.mock.calls.find((call) => call[0].title === title);
+
+const findLastCoachCardCallByTitle = (title: string, takeLast: number) => {
+  const lastCalls = mockSACoachCard.mock.calls.slice(-takeLast);
+  return lastCalls.find((call) => call[0].title === title);
+};
+
 /* -------------------------------------------------
   TEST UTILS
 ------------------------------------------------- */
@@ -266,11 +274,10 @@ describe("UserCoaches Component", () => {
     it("passes correct props to SACoachCard for active coach", () => {
       renderWithRouter(<UserCoaches />);
 
-      const alphaCall = mockSACoachCard.mock.calls.find(
-        (call) => call[0].title === "Coach Alpha"
-      );
+      const alphaCall = findCoachCardCallByTitle("Coach Alpha");
 
-      expect(alphaCall[0]).toMatchObject({
+      expect(alphaCall).toBeDefined();
+      expect(alphaCall?.[0]).toMatchObject({
         title: "Coach Alpha",
         categoryName: "Fitness",
         isActive: true,
@@ -282,11 +289,10 @@ describe("UserCoaches Component", () => {
     it("passes correct props to SACoachCard for inactive coach", () => {
       renderWithRouter(<UserCoaches />);
 
-      const betaCall = mockSACoachCard.mock.calls.find(
-        (call) => call[0].title === "Coach Beta"
-      );
+      const betaCall = findCoachCardCallByTitle("Coach Beta");
 
-      expect(betaCall[0]).toMatchObject({
+      expect(betaCall).toBeDefined();
+      expect(betaCall?.[0]).toMatchObject({
         title: "Coach Beta",
         categoryName: "Nutrition",
         isActive: false,
@@ -298,12 +304,11 @@ describe("UserCoaches Component", () => {
     it("uses is_assigned_to_user when available", () => {
       renderWithRouter(<UserCoaches />);
 
-      const gammaCall = mockSACoachCard.mock.calls.find(
-        (call) => call[0].title === "Coach Gamma"
-      );
+      const gammaCall = findCoachCardCallByTitle("Coach Gamma");
 
       // Coach Gamma has is_assigned_to_user: true but is_active: false
-      expect(gammaCall[0].isActive).toBe(true);
+      expect(gammaCall).toBeDefined();
+      expect(gammaCall?.[0].isActive).toBe(true);
     });
 
     it("falls back to is_active when is_assigned_to_user is not available", () => {
@@ -324,11 +329,10 @@ describe("UserCoaches Component", () => {
 
       renderWithRouter(<UserCoaches />);
 
-      const alphaCall = mockSACoachCard.mock.calls.find(
-        (call) => call[0].title === "Coach Alpha"
-      );
+      const alphaCall = findCoachCardCallByTitle("Coach Alpha");
 
-      expect(alphaCall[0].isActive).toBe(true);
+      expect(alphaCall).toBeDefined();
+      expect(alphaCall?.[0].isActive).toBe(true);
     });
 
     it("uses coach id as title when name is not available", () => {
@@ -367,11 +371,10 @@ describe("UserCoaches Component", () => {
 
       renderWithRouter(<UserCoaches />);
 
-      const alphaCall = mockSACoachCard.mock.calls.find(
-        (call) => call[0].title === "Coach Alpha"
-      );
+      const alphaCall = findCoachCardCallByTitle("Coach Alpha");
 
-      expect(alphaCall[0].categoryName).toBeUndefined();
+      expect(alphaCall).toBeDefined();
+      expect(alphaCall?.[0].categoryName).toBeUndefined();
     });
   });
 
@@ -486,9 +489,9 @@ describe("UserCoaches Component", () => {
 
       // After toggle completes, loading should be false
       await waitFor(() => {
-        const lastCalls = mockSACoachCard.mock.calls.slice(-3);
-        const alphaCall = lastCalls.find((call) => call[0].title === "Coach Alpha");
-        expect(alphaCall[0].isLoading).toBe(false);
+        const alphaCall = findLastCoachCardCallByTitle("Coach Alpha", 3);
+        expect(alphaCall).toBeDefined();
+        expect(alphaCall?.[0].isLoading).toBe(false);
       });
     });
   });
