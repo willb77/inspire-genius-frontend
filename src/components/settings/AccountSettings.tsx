@@ -11,6 +11,30 @@ import PasswordField from "@/components/shared/inputs/PasswordField";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parse, isValid, format as formatDate } from "date-fns";
 import { ROLES } from "@/constants/routes";
+import type { EditProfileFormValues } from "@/types/settings";
+
+function formatDobForDisplay(rawDob: unknown): string {
+  try {
+    const raw = String(rawDob ?? "");
+    if (!raw) return "";
+    let d = parse(raw, "yyyy-MM-dd", new Date());
+    if (!isValid(d)) d = new Date(raw);
+    return isValid(d) ? formatDate(d, "dd LLL yyyy") : raw;
+  } catch {
+    return String(rawDob ?? "");
+  }
+}
+
+function normalizeDobForSubmit(nextDob: string): string {
+  if (!nextDob) return "";
+  const d = parse(nextDob, "d LLL yyyy", new Date());
+  return isValid(d) ? formatDate(d, "yyyy-MM-dd") : nextDob;
+}
+
+function getMaxDobDate(): Date {
+  const t = new Date();
+  return new Date(t.getFullYear() - 13, t.getMonth(), t.getDate());
+}
 
 export default function AccountSettings({
   profileData,
@@ -27,17 +51,7 @@ export default function AccountSettings({
   editProfileForm,
   onEditProfileSubmit,
 }: AccountSettingsProps) {
-  const displayDob = (() => {
-    try {
-      const raw = profileData?.dateOfBirth ?? "";
-      if (!raw) return "";
-      let d = parse(raw, "yyyy-MM-dd", new Date());
-      if (!isValid(d)) d = new Date(raw);
-      return isValid(d) ? formatDate(d, "dd LLL yyyy") : String(raw);
-    } catch {
-      return String(profileData?.dateOfBirth ?? "");
-    }
-  })();
+  const displayDob = formatDobForDisplay(profileData?.dateOfBirth);
 
   const form = changePasswordForm;
   const register = form?.register;
@@ -51,13 +65,33 @@ export default function AccountSettings({
   // password visibility handled by PasswordField component
 
   const onValid = async (values: { current_password: string; new_password: string; confirm_password: string }) => {
-    if (onChangePassword) {
-      try {
-        await onChangePassword(values);
-      } catch {
-        // keep dialog open on error
-      }
+    if (!onChangePassword) return;
+    try {
+      await onChangePassword(values);
+    } catch {
+      // keep dialog open on error
     }
+  };
+
+  const handleEditProfileSubmitLocal = async (values: EditProfileFormValues) => {
+    const nextDob = normalizeDobForSubmit(values.dateOfBirth);
+    await onEditProfileSubmit?.({ ...values, dateOfBirth: nextDob });
+  };
+
+  const handleEditProfileCancel = () => {
+    onEditProfileOpenChange?.(false);
+    editProfileForm?.reset({
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      email: profileData.email,
+      dateOfBirth: profileData.dateOfBirth,
+      additionalInfo: profileData.additionalInfo ?? "",
+    });
+  };
+
+  const handleChangePasswordCancel = () => {
+    onChangePasswordOpenChange?.(false);
+    reset?.();
   };
 
   return (
@@ -113,14 +147,7 @@ export default function AccountSettings({
             {editProfileForm ? (
               <form
                 className="space-y-6"
-                onSubmit={editProfileForm.handleSubmit(async (values) => {
-                  let nextDob = values?.dateOfBirth ?? "";
-                  if (typeof nextDob === "string" && nextDob) {
-                    const d = parse(nextDob, "d LLL yyyy", new Date());
-                    if (isValid(d)) nextDob = formatDate(d, "yyyy-MM-dd");
-                  }
-                  await onEditProfileSubmit?.({ ...values, dateOfBirth: nextDob });
-                })}
+                onSubmit={editProfileForm.handleSubmit(handleEditProfileSubmitLocal)}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -167,7 +194,7 @@ export default function AccountSettings({
                       onChange={(v) => editProfileForm.setValue("dateOfBirth", v, { shouldDirty: true, shouldTouch: true })}
                       placeholder="Date of Birth"
                       minDate={new Date(1900, 0, 1)}
-                      maxDate={(() => { const t = new Date(); return new Date(t.getFullYear() - 13, t.getMonth(), t.getDate()); })()}
+                      maxDate={getMaxDobDate()}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -189,16 +216,7 @@ export default function AccountSettings({
                     variant="outline"
                     className="w-full sm:w-[206px] bg-gray-20"
                     type="button"
-                    onClick={() => {
-                      onEditProfileOpenChange?.(false);
-                      editProfileForm.reset({
-                        firstName: profileData.firstName,
-                        lastName: profileData.lastName,
-                        email: profileData.email,
-                        dateOfBirth: profileData.dateOfBirth,
-                        additionalInfo: profileData.additionalInfo ?? "",
-                      });
-                    }}
+                    onClick={handleEditProfileCancel}
                   >
                     Cancel
                   </Button>
@@ -241,10 +259,7 @@ export default function AccountSettings({
                     variant="outline"
                     className="w-full sm:w-[48%]"
                     type="button"
-                    onClick={() => {
-                      onChangePasswordOpenChange?.(false);
-                      reset?.();
-                    }}
+                    onClick={handleChangePasswordCancel}
                   >
                     Cancel
                   </Button>
