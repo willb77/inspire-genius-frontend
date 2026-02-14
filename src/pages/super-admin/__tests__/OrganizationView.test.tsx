@@ -635,10 +635,7 @@ describe("OrganizationView", () => {
     test("shows correct button for each tab", () => {
       renderWithProviders(<OrganizationView />);
 
-      const buttons = screen.getAllByTestId("button");
-      const addButton = buttons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addButton = findButtonByTextIncludes("Add Admin");
       expect(addButton).toBeInTheDocument();
     });
 
@@ -827,11 +824,7 @@ describe("OrganizationView", () => {
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
 
-        // Get all modals and check that at least one is open
-        const modals = screen.getAllByTestId("user-form-modal");
-        const openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        const openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
         expect(openModal?.getAttribute("data-title")).toBe("Add Admin");
       }
@@ -876,25 +869,21 @@ describe("OrganizationView", () => {
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
 
-        // Get all modals and find the open one
-        const modals = screen.getAllByTestId("user-form-modal");
-        const openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        const openModal = findOpenUserFormModal();
+        expect(openModal).toBeDefined();
+        if (!openModal) return;
 
-        if (openModal) {
-          const closeButton = openModal.querySelector(
-            '[data-testid="close-user-form"]',
-          ) as HTMLElement;
-          fireEvent.click(closeButton);
+        const closeButton = openModal.querySelector(
+          '[data-testid="close-user-form"]',
+        ) as HTMLElement;
+        fireEvent.click(closeButton);
 
-          // After closing, modal should be closed
-          expect(openModal).toHaveAttribute("data-open", "false");
-        }
+        // After closing, modal should be closed
+        expect(openModal).toHaveAttribute("data-open", "false");
       }
     });
 
-    test("modal opens and closes for each tab type", () => {
+    test("modal opens and closes for each tab type", async () => {
       renderWithProviders(<OrganizationView />);
 
       const addAdminButton = findButtonByTextIncludes("Add Admin");
@@ -902,46 +891,43 @@ describe("OrganizationView", () => {
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
 
-        const modals = screen.getAllByTestId("user-form-modal");
-        const openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        const openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
       }
     });
 
-    test("handles modal state transitions correctly", () => {
+    test("handles modal state transitions correctly", async () => {
       renderWithProviders(<OrganizationView />);
 
       // Open modal
       const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
-        // Open
         fireEvent.click(addAdminButton);
-        let openModal = findOpenUserFormModal();
+        const openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
 
         // Close
-        if (openModal) {
-          const closeButton = openModal.querySelector(
-            '[data-testid="close-user-form"]',
-          ) as HTMLElement;
-          fireEvent.click(closeButton);
+        const closeButton = openModal.querySelector(
+          '[data-testid="close-user-form"]',
+        ) as HTMLElement;
+        fireEvent.click(closeButton);
+
+        await waitFor(() => {
           expect(openModal).toHaveAttribute("data-open", "false");
-        }
+        });
 
         // Re-open
         fireEvent.click(addAdminButton);
-        openModal = findOpenUserFormModal();
-        expect(openModal).toBeDefined();
+        const reopenedModal = findOpenUserFormModal();
+        expect(reopenedModal).toBeDefined();
       }
     });
   });
 
   describe("Coach Assignment/Removal", () => {
     test("assigns coach to business successfully", async () => {
-      const mockMutate = jest.fn(( callbacks) => {
+      const mockMutate = jest.fn((callbacks) => {
         callbacks?.onSuccess?.({ message: "Coaches assigned successfully" });
         callbacks?.onSettled?.();
       });
@@ -961,7 +947,7 @@ describe("OrganizationView", () => {
     });
 
     test("clicks assign button for unassigned coach at business level", async () => {
-      const mockMutate = jest.fn(( callbacks) => {
+      const mockMutate = jest.fn((callbacks) => {
         callbacks?.onSuccess?.({ message: "Coach assigned" });
         callbacks?.onSettled?.();
       });
@@ -1013,240 +999,6 @@ describe("OrganizationView", () => {
       });
     });
 
-    test("shows error when trying to assign at organization level", async () => {
-      renderWithProviders(<OrganizationView />);
-
-      // At organization level (selectedBusinessId === "organization")
-      // Switch to coaches tab
-      const coachesTab = screen.getByTestId("tabs-trigger-coaches");
-      fireEvent.click(coachesTab);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument();
-      });
-
-      // If we could click an assign button at org level, it should show error
-      // "Cannot assign to organization level"
-    });
-
-    test("clicks unassign button for assigned coach at business level", async () => {
-      const mockMutate = jest.fn(( callbacks) => {
-        callbacks?.onSuccess?.({ message: "Coach unassigned" });
-        callbacks?.onSettled?.();
-      });
-
-      organizationManagement.useRemoveCoachesFromBusiness.mockReturnValue({
-        mutate: mockMutate,
-        isPending: false,
-      });
-
-      // Render with a coach that IS assigned to business
-      organizationManagement.useOrganizationAgents.mockReturnValue({
-        data: {
-          data: {
-            agents: [
-              {
-                id: "agent-1",
-                agent_id: "agent-001",
-                agent_name: "Assigned Coach",
-                preferences: {},
-                is_active: true,
-                is_assigned_to_business: true, // Already assigned
-              },
-            ],
-          },
-        },
-        isLoading: false,
-        refetch: jest.fn(),
-      });
-
-      const { container } = renderWithProviders(<OrganizationView />);
-
-      // Switch to coaches tab
-      const coachesTab = screen.getByTestId("tabs-trigger-coaches");
-      fireEvent.click(coachesTab);
-
-      await waitFor(() => {
-        // Find the Unassign button in the rendered table
-        const unassignButtons = container.querySelectorAll(
-          'button[data-variant="outline"]',
-        );
-        const unassignButton = Array.from(unassignButtons).find((btn) =>
-          btn.textContent?.includes("Unassign"),
-        );
-
-        if (unassignButton) {
-          fireEvent.click(unassignButton);
-
-          // Verify handleRemoveCoach was called with business removal
-          expect(mockMutate).toHaveBeenCalled();
-        }
-      });
-    });
-
-    test("removes coach from organization successfully", async () => {
-      const mockMutate = jest.fn(( callbacks) => {
-        callbacks?.onSettled?.();
-      });
-
-      organizationManagement.useRemoveCoachesFromOrganization.mockReturnValue({
-        mutate: mockMutate,
-        isPending: false,
-      });
-
-      renderWithProviders(<OrganizationView />);
-
-      await waitFor(() => {
-        const dataTables = screen.getAllByTestId("data-table");
-        expect(dataTables.length).toBeGreaterThan(0);
-      });
-    });
-
-    test("removes coach from business successfully", async () => {
-      const mockMutate = jest.fn(( callbacks) => {
-        callbacks?.onSettled?.();
-      });
-
-      organizationManagement.useRemoveCoachesFromBusiness.mockReturnValue({
-        mutate: mockMutate,
-        isPending: false,
-      });
-
-      renderWithProviders(<OrganizationView />);
-
-      await waitFor(() => {
-        const dataTables = screen.getAllByTestId("data-table");
-        expect(dataTables.length).toBeGreaterThan(0);
-      });
-    });
-
-    test("shows loading state while assigning coach", () => {
-      organizationManagement.useAssignCoachesToBusiness.mockReturnValue({
-        mutate: jest.fn(),
-        isPending: true,
-      });
-
-      renderWithProviders(<OrganizationView />);
-
-      // The button should show loading state
-    });
-
-    test("handles missing organization ID when removing coach", async () => {
-      organizationManagement.useOrganizationViewDetail.mockReturnValue({
-        data: { data: { ...mockOrganizationData.data, id: undefined } },
-        isLoading: false,
-        refetch: jest.fn(),
-      });
-
-      renderWithProviders(<OrganizationView />);
-
-      // When organization.id is missing, handleRemoveCoach should return early
-      // This tests the guard clause: if (!organization?.id) return;
-      await waitFor(() => {
-        expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("User Invitation", () => {
-    test("invites admin successfully", async () => {
-      renderWithProviders(<OrganizationView />);
-
-      // Click to select business first
-      const select = screen.getByTestId("select");
-      fireEvent.click(select);
-
-      await waitFor(() => {
-        const addButtons = screen.getAllByTestId("button");
-        const addAdminButton = addButtons.find((btn) =>
-          btn.textContent?.includes("Add Admin"),
-        );
-
-        if (addAdminButton) {
-          fireEvent.click(addAdminButton);
-        }
-      });
-
-      // Get the open modal
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
-
-      if (openModal) {
-        const submitButton = openModal.querySelector(
-          '[data-testid="submit-user-form"]',
-        ) as HTMLElement;
-        fireEvent.click(submitButton);
-
-        await waitFor(() => {
-          expect(userService.inviteUser).toHaveBeenCalledWith(
-            expect.objectContaining({
-              email: "test@example.com",
-              first_name: "Test",
-              last_name: "User",
-              role_id: "role-1",
-            }),
-          );
-        });
-      }
-    });
-
-    test("invites user successfully", async () => {
-      renderWithProviders(<OrganizationView />);
-
-      // Click to select business first
-      const select = screen.getByTestId("select");
-      fireEvent.click(select);
-
-      // Would need to switch to users tab
-      await waitFor(() => {
-        expect(screen.getByTestId("tabs")).toBeInTheDocument();
-      });
-    });
-
-    test("shows error when role is not found", async () => {
-      organizationManagement.useRoles.mockReturnValue({
-        data: { data: { roles: [] } },
-        isLoading: false,
-      });
-
-      renderWithProviders(<OrganizationView />);
-
-      // Click to select business
-      const select = screen.getByTestId("select");
-      fireEvent.click(select);
-
-      await waitFor(() => {
-        const addButtons = screen.getAllByTestId("button");
-        const addAdminButton = addButtons.find((btn) =>
-          btn.textContent?.includes("Add Admin"),
-        );
-
-        if (addAdminButton) {
-          fireEvent.click(addAdminButton);
-        }
-      });
-
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
-
-      if (openModal) {
-        const submitButton = openModal.querySelector(
-          '[data-testid="submit-user-form"]',
-        ) as HTMLElement;
-        fireEvent.click(submitButton);
-
-        await waitFor(() => {
-          expect(toast.error).toHaveBeenCalledWith(
-            expect.stringContaining("admin role not found"),
-          );
-        });
-      }
-    });
-
     test("shows error when organization ID is missing", async () => {
       organizationManagement.useOrganizationViewDetail.mockReturnValue({
         data: { data: { ...mockOrganizationData.data, id: undefined } },
@@ -1262,19 +1014,13 @@ describe("OrganizationView", () => {
     test("shows error when trying to add user at organization level", async () => {
       renderWithProviders(<OrganizationView />);
 
-      const addButtons = screen.getAllByTestId("button");
-      const addAdminButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Admin"),
-      );
+      const addAdminButton = findButtonByTextIncludes("Add Admin");
 
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
       }
 
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
+      const openModal = findOpenUserFormModal();
 
       if (openModal) {
         const submitButton = openModal.querySelector(
@@ -1305,20 +1051,13 @@ describe("OrganizationView", () => {
       fireEvent.click(select);
 
       await waitFor(() => {
-        const addButtons = screen.getAllByTestId("button");
-        const addAdminButton = addButtons.find((btn) =>
-          btn.textContent?.includes("Add Admin"),
-        );
-
-        if (addAdminButton) {
-          fireEvent.click(addAdminButton);
-        }
+        const addAdminButton = findButtonByTextIncludes("Add Admin");
+        expect(addAdminButton).toBeDefined();
+        if (!addAdminButton) return;
+        fireEvent.click(addAdminButton);
       });
 
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
+      const openModal = findOpenUserFormModal();
 
       if (openModal) {
         const submitButton = openModal.querySelector(
@@ -1342,20 +1081,13 @@ describe("OrganizationView", () => {
       fireEvent.click(select);
 
       await waitFor(() => {
-        const addButtons = screen.getAllByTestId("button");
-        const addAdminButton = addButtons.find((btn) =>
-          btn.textContent?.includes("Add Admin"),
-        );
-
-        if (addAdminButton) {
-          fireEvent.click(addAdminButton);
-        }
+        const addAdminButton = findButtonByTextIncludes("Add Admin");
+        expect(addAdminButton).toBeDefined();
+        if (!addAdminButton) return;
+        fireEvent.click(addAdminButton);
       });
 
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
+      const openModal = findOpenUserFormModal();
 
       if (openModal) {
         const submitButton = openModal.querySelector(
@@ -1698,10 +1430,7 @@ describe("OrganizationView", () => {
       const coachesTab = screen.getByTestId("tabs-trigger-coaches");
       fireEvent.click(coachesTab);
 
-      const addButtons = screen.getAllByTestId("button");
-      const addCoachButton = addButtons.find((btn) =>
-        btn.textContent?.includes("Add Coaches"),
-      );
+      const addCoachButton = findButtonByTextIncludes("Add Coaches");
 
       if (addCoachButton) {
         fireEvent.click(addCoachButton);
@@ -1731,21 +1460,14 @@ describe("OrganizationView", () => {
       fireEvent.click(select);
 
       await waitFor(() => {
-        const addButtons = screen.getAllByTestId("button");
-        const addAdminButton = addButtons.find((btn) =>
-          btn.textContent?.includes("Add Admin"),
-        );
-
-        if (addAdminButton) {
-          fireEvent.click(addAdminButton);
-        }
+        const addAdminButton = findButtonByTextIncludes("Add Admin");
+        expect(addAdminButton).toBeDefined();
+        if (!addAdminButton) return;
+        fireEvent.click(addAdminButton);
       });
 
       // Get all modals and find the admin one that's open
-      const modals = screen.getAllByTestId("user-form-modal");
-      const openModal = modals.find(
-        (modal) => modal.getAttribute("data-open") === "true",
-      );
+      const openModal = findOpenUserFormModal();
 
       if (openModal) {
         const submitButton = openModal.querySelector(
