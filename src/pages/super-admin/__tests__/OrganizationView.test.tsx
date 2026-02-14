@@ -902,11 +902,9 @@ describe("OrganizationView", () => {
       if (addAdminButton) {
         fireEvent.click(addAdminButton);
 
-        const modals = screen.getAllByTestId("user-form-modal");
-        const openModal = modals.find(
-          (modal) => modal.getAttribute("data-open") === "true",
-        );
+        const openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
+        if (!openModal) return;
       }
     });
 
@@ -922,14 +920,14 @@ describe("OrganizationView", () => {
         let openModal = findOpenUserFormModal();
         expect(openModal).toBeDefined();
 
+        if (!openModal) return;
+
         // Close
-        if (openModal) {
-          const closeButton = openModal.querySelector(
-            '[data-testid="close-user-form"]',
-          ) as HTMLElement;
-          fireEvent.click(closeButton);
-          expect(openModal).toHaveAttribute("data-open", "false");
-        }
+        const closeButton = openModal.querySelector(
+          '[data-testid="close-user-form"]',
+        ) as HTMLElement;
+        fireEvent.click(closeButton);
+        expect(openModal).toHaveAttribute("data-open", "false");
 
         // Re-open
         fireEvent.click(addAdminButton);
