@@ -34,6 +34,7 @@ import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
 import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 import OrganizationView from "@/pages/super-admin/OrganizationView";
 import UserCoaches from "@/pages/super-admin/UserCoaches";
+import ProjectLog from "@/pages/super-admin/ProjectLog";
 import Terms from "@/pages/legal/Terms";
 import Privacy from "@/pages/legal/Privacy";
 
@@ -98,7 +99,8 @@ export const routes: RouteObject[] = [
         path: "/super-admin/dashboard/licences",
         element: <LicenceDetailsPage />,
       },
-      {path:"/super-admin/settings",element:<SuperAdminSettingsPage />}
+      {path:"/super-admin/settings",element:<SuperAdminSettingsPage />},
+      {path:"/super-admin/project-log",element:<ProjectLog />}
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

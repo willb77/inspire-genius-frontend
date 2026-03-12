@@ -17,6 +17,7 @@ export const ROUTES = {
     ORGANIZATIONS: "/super-admin/organizations",
     USERS: "/super-admin/users",
     SETTINGS: "/super-admin/settings",
+    PROJECT_LOG: "/super-admin/project-log",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
