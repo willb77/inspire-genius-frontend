@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IG Project Log — Inspire Genius</title>
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --accent: #3b82f6; --accent2: #6366f1; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
+    .tab { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .tab:hover { color: var(--text); border-color: var(--accent); }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.3rem; color: var(--accent); margin-bottom: 1rem; }
+    .card h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .card h4 { font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--accent2); }
+    .card p, .card li { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .card ul { list-style: disc; padding-left: 1.5rem; }
+    .card code { background: #0f172a; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.8rem; font-family: 'SF Mono', Monaco, monospace; color: #a5b4fc; }
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; }
+    th { background: #0f172a; text-align: left; padding: 0.5rem 0.75rem; font-weight: 600; border-bottom: 2px solid var(--border); }
+    td { padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+    tr:hover td { background: rgba(59,130,246,0.05); }
+    .prompt-entry { background: #0f172a; border-left: 3px solid var(--accent); padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-radius: 0 6px 6px 0; }
+    .prompt-entry .timestamp { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem; }
+    .prompt-entry .prompt-text { font-size: 0.875rem; color: var(--text); white-space: pre-wrap; }
+    .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.5rem; }
+    @media (max-width: 640px) { .container { padding: 1rem; } .card { padding: 1rem; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span>IG</span> Project Log</h1>
+    <p class="subtitle">Inspire Genius — Documentation, Schema, Rules & Session History</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="changelog">Change Log</button>
+      <button class="tab" data-tab="schema">Database Schema</button>
+      <button class="tab" data-tab="claude">CLAUDE.md</button>
+      <button class="tab" data-tab="rules-style">Code Style</button>
+      <button class="tab" data-tab="rules-arch">Architecture</button>
+      <button class="tab" data-tab="rules-workflow">Workflow</button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">2</span></button>
+    </div>
+
+    <!-- ═══════════ CHANGE LOG ═══════════ -->
+    <div class="panel active" id="changelog">
+      <div class="card">
+        <h2>Change Log</h2>
+        <h3>[2026-03-11] — Project Documentation & Admin Project Log Page</h3>
+        <h4>Added</h4>
+        <ul>
+          <li><code>change_log.md</code> — tracks all project changes</li>
+          <li><code>database_schema.md</code> — documents frontend data models and API entity schemas</li>
+          <li><code>CLAUDE.md</code> — Claude Code guidance file for AI-assisted development</li>
+          <li><code>.claude/rules/</code> — rule files for code style, architecture, and workflow</li>
+          <li><code>src/pages/super-admin/ProjectLog.tsx</code> — new super admin page rendering project documentation</li>
+          <li><code>IG_project_log.html</code> — standalone HTML export of all project documentation</li>
+          <li>Added "Project Log" entry to super admin sidebar navigation</li>
+          <li>Added <code>/super-admin/project-log</code> route</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════ DATABASE SCHEMA ═══════════ -->
+    <div class="panel" id="schema">
+      <div class="card">
+        <h2>Database Schema</h2>
+
+        <h3>User (AuthUser)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string (UUID)</td><td>Primary key</td></tr>
+          <tr><td>email</td><td>string</td><td>Unique</td></tr>
+          <tr><td>name</td><td>string?</td><td>Display name</td></tr>
+          <tr><td>fullName</td><td>string?</td><td>Full name</td></tr>
+          <tr><td>role</td><td>string</td><td>"user" or "super-admin"</td></tr>
+          <tr><td>isOnboardingCompleted</td><td>boolean</td><td>Onboarding status</td></tr>
+        </table>
+
+        <h3>UserRow (Admin User Management)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Primary key</td></tr>
+          <tr><td>name</td><td>string</td><td>Display name</td></tr>
+          <tr><td>email</td><td>string</td><td>Email</td></tr>
+          <tr><td>first_name</td><td>string?</td><td>First name</td></tr>
+          <tr><td>last_name</td><td>string?</td><td>Last name</td></tr>
+          <tr><td>status</td><td>enum</td><td>"Active", "Deactivated", "Awaiting"</td></tr>
+          <tr><td>invitation_id</td><td>string?</td><td>FK → Invitation</td></tr>
+          <tr><td>invitation_status</td><td>string</td><td>Invitation state</td></tr>
+        </table>
+
+        <h3>Organization</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>organization_id</td><td>string?</td><td>Primary key</td></tr>
+          <tr><td>organization_name</td><td>string</td><td>Name</td></tr>
+          <tr><td>type</td><td>string</td><td>Organization type</td></tr>
+          <tr><td>email</td><td>string</td><td>Contact email</td></tr>
+          <tr><td>contact</td><td>string</td><td>Contact number</td></tr>
+          <tr><td>website_url</td><td>string</td><td>Website</td></tr>
+          <tr><td>address</td><td>string</td><td>Address</td></tr>
+          <tr><td>coaches</td><td>CoachInfo[]</td><td>Assigned coaches</td></tr>
+          <tr><td>license_type</td><td>string</td><td>License type</td></tr>
+          <tr><td>license_key</td><td>string</td><td>License key</td></tr>
+          <tr><td>license_start_date</td><td>string?</td><td>License start</td></tr>
+          <tr><td>license_end_date</td><td>string?</td><td>License expiry</td></tr>
+        </table>
+
+        <h3>OrganizationRow (Admin List)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Primary key</td></tr>
+          <tr><td>name</td><td>string</td><td>Name</td></tr>
+          <tr><td>type</td><td>string</td><td>Type</td></tr>
+          <tr><td>status</td><td>enum</td><td>"Active", "Deactivated"</td></tr>
+          <tr><td>admin_is_active</td><td>boolean</td><td>Admin account active</td></tr>
+        </table>
+
+        <h3>CoachInfo</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Primary key</td></tr>
+          <tr><td>agentId</td><td>string</td><td>FK → Agent</td></tr>
+          <tr><td>toneIds</td><td>string[]</td><td>FK → Tone[]</td></tr>
+          <tr><td>accentId</td><td>string</td><td>FK → Accent</td></tr>
+          <tr><td>genderId</td><td>string</td><td>FK → Gender</td></tr>
+        </table>
+
+        <h3>DocItem (Documents)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Primary key</td></tr>
+          <tr><td>name</td><td>string</td><td>File name</td></tr>
+          <tr><td>kind</td><td>enum</td><td>"pdf", "csv", "ppt", "doc"</td></tr>
+          <tr><td>createdAt</td><td>Date</td><td>Upload date</td></tr>
+          <tr><td>url</td><td>string</td><td>Download URL</td></tr>
+        </table>
+
+        <h3>ChatMessage</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Message ID</td></tr>
+          <tr><td>kind</td><td>enum</td><td>"text", "doc", "processing"</td></tr>
+          <tr><td>sender</td><td>enum</td><td>"assistant", "user"</td></tr>
+          <tr><td>text</td><td>string?</td><td>Message text</td></tr>
+          <tr><td>time</td><td>string</td><td>Timestamp</td></tr>
+        </table>
+
+        <h3>HelpFormValues (Issue Submission)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>issueTypeId</td><td>string</td><td>FK → IssueType</td></tr>
+          <tr><td>subject</td><td>string</td><td>Issue subject</td></tr>
+          <tr><td>description</td><td>string</td><td>Description</td></tr>
+          <tr><td>priority</td><td>enum</td><td>"low", "medium", "high", "critical"</td></tr>
+          <tr><td>attachments</td><td>File[]</td><td>Attached files</td></tr>
+        </table>
+
+        <h3>API Envelope</h3>
+        <p>All responses wrapped in: <code>BaseApiResponse&lt;T&gt; { status, success, message, error_status, data }</code></p>
+
+        <h3>Environment Variables</h3>
+        <table>
+          <tr><th>Variable</th><th>Purpose</th></tr>
+          <tr><td>VITE_API_BASE_URL</td><td>Backend API base URL</td></tr>
+          <tr><td>VITE_ALEX_WEBSOCKET_URL</td><td>Alex voice assistant WebSocket</td></tr>
+          <tr><td>VITE_AGENTS_WEBSOCKET_BASE_URL</td><td>Agent WebSocket base</td></tr>
+          <tr><td>VITE_STORAGE_SECRET</td><td>Encryption key for secure storage</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════ CLAUDE.MD ═══════════ -->
+    <div class="panel" id="claude">
+      <div class="card">
+        <h2>CLAUDE.md</h2>
+        <h3>Project Overview</h3>
+        <p>Inspire Genius is an AI coaching platform frontend. The app code lives entirely in <code>inspire-genius-frontend/</code>.</p>
+
+        <h3>Stack</h3>
+        <p>React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + shadcn/ui (new-york style, slate base)</p>
+
+        <h3>Data Flow Pattern</h3>
+        <p>Service → Hook → Component</p>
+        <ul>
+          <li><strong>Services</strong> (<code>src/services/</code>): Axios calls organized by domain</li>
+          <li><strong>Hooks</strong> (<code>src/hooks/</code>): React Query mutations/queries wrapping services</li>
+          <li><strong>Pages</strong> (<code>src/pages/</code>): Route-level components organized by role</li>
+        </ul>
+
+        <h3>Global State</h3>
+        <p>React Context only — AuthContext, TourContext, SidebarContext</p>
+
+        <h3>Routing</h3>
+        <ul>
+          <li>Public: /login, /signup, /otp, /forgot, /reset-password, /accept-invitation, /social-login</li>
+          <li>User: /home, /dashboard, /coaches, /documents, /settings, /help, /onboarding/*</li>
+          <li>Super Admin: /super-admin/*</li>
+        </ul>
+
+        <h3>API Layer</h3>
+        <p>Singleton axios instance with token injection and 401 auto-refresh interceptors</p>
+
+        <h3>Testing</h3>
+        <p>Jest + jsdom + React Testing Library, tests colocated in <code>__tests__/</code> directories</p>
+      </div>
+    </div>
+
+    <!-- ═══════════ CODE STYLE RULES ═══════════ -->
+    <div class="panel" id="rules-style">
+      <div class="card">
+        <h2>Code Style Rules</h2>
+        <h3>TypeScript</h3>
+        <ul>
+          <li>Strict TypeScript; avoid <code>any</code> — use proper types from <code>src/types/</code></li>
+          <li>Use <code>type</code> for object shapes, <code>interface</code> only when extending</li>
+          <li>Prefer named exports for components, default exports for pages</li>
+        </ul>
+        <h3>React</h3>
+        <ul>
+          <li>Functional components only</li>
+          <li>React Hook Form + Zod for forms</li>
+          <li>TanStack React Query for server state</li>
+          <li>Context for global state only (auth, tour, sidebar)</li>
+        </ul>
+        <h3>Styling</h3>
+        <ul>
+          <li>Tailwind CSS utilities only — no CSS modules</li>
+          <li><code>cn()</code> from <code>@/lib/utils</code> for conditional classes</li>
+          <li>shadcn/ui from <code>@/components/ui/</code></li>
+          <li><code>lucide-react</code> icons exclusively</li>
+        </ul>
+        <h3>File Organization</h3>
+        <ul>
+          <li>Pages: <code>src/pages/{auth,onboarding,user,super-admin,legal}/</code></li>
+          <li>Tests: <code>__tests__/</code> next to source</li>
+          <li>Services: <code>src/services/</code> by domain</li>
+          <li>Hooks: <code>src/hooks/</code> by domain</li>
+          <li>Types: <code>src/types/</code> by domain</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════ ARCHITECTURE RULES ═══════════ -->
+    <div class="panel" id="rules-arch">
+      <div class="card">
+        <h2>Architecture Rules</h2>
+        <h3>Data Flow</h3>
+        <p>Service → Hook → Component (never call services from components directly)</p>
+        <h3>API Layer</h3>
+        <ul>
+          <li>All HTTP via singleton axios in <code>src/lib/axios.ts</code></li>
+          <li>Token injection & 401 refresh handled by interceptors</li>
+          <li>Responses follow <code>BaseApiResponse&lt;T&gt;</code> envelope</li>
+        </ul>
+        <h3>Auth</h3>
+        <ul>
+          <li>AuthContext manages auth lifecycle</li>
+          <li><code>useAuth()</code> hook for auth state</li>
+          <li>ProtectedRoute enforces roles</li>
+          <li>Two roles: "user" and "super-admin"</li>
+          <li>Encrypted storage for tokens</li>
+        </ul>
+        <h3>Routing</h3>
+        <ul>
+          <li>All routes in <code>src/routes.tsx</code> using <code>useRoutes</code></li>
+          <li>Constants in <code>src/constants/routes.ts</code></li>
+          <li>Super admin pages → <code>SuperAdminLayout</code></li>
+          <li>User pages → <code>UserLayout</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════ WORKFLOW RULES ═══════════ -->
+    <div class="panel" id="rules-workflow">
+      <div class="card">
+        <h2>Workflow Rules</h2>
+        <h3>Commands (from inspire-genius-frontend/)</h3>
+        <ul>
+          <li>Dev: <code>npm run dev</code></li>
+          <li>Build: <code>npm run build</code></li>
+          <li>Lint: <code>npm run lint</code></li>
+          <li>Test: <code>npm run test</code> (watch) / <code>npm run test:ci</code></li>
+        </ul>
+        <h3>Deployment</h3>
+        <ul>
+          <li>GitLab CI on "development" branch</li>
+          <li>Pipeline: build → SonarQube → S3 + CloudFront</li>
+        </ul>
+        <h3>Adding a Super Admin Page</h3>
+        <ul>
+          <li>1. Create in <code>src/pages/super-admin/</code></li>
+          <li>2. Wrap with <code>SuperAdminLayout</code></li>
+          <li>3. Add <code>ROUTES.SUPER_ADMIN</code> constant</li>
+          <li>4. Add route in <code>src/routes.tsx</code></li>
+          <li>5. Add nav item in <code>src/layouts/SuperAdminLayout.tsx</code></li>
+        </ul>
+        <h3>Documentation</h3>
+        <ul>
+          <li>Update <code>change_log.md</code> for notable changes</li>
+          <li>Update <code>database_schema.md</code> for data model changes</li>
+          <li>Update <code>CLAUDE.md</code> for architecture changes</li>
+          <li>Keep <code>.claude/rules/</code> current</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════ SESSION PROMPTS ═══════════ -->
+    <div class="panel" id="session">
+      <div class="card">
+        <h2>Session Prompts</h2>
+        <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-11 — Prompt #1</div>
+          <div class="prompt-text">Create the following files to capture all changes change_log.md, database_schema.md. claude.md and all the .claude/rule files continually. Please create a IG_project_log.html page, include it in super admin menu, update it continually with all of the .md and rule files. Deploy it when complete. Complete these task in the background</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-11 — Prompt #2</div>
+          <div class="prompt-text">after every prompt is submitted add it to the session_prompts section in the IG_project_log.html</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

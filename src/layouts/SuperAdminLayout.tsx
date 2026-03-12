@@ -1,6 +1,6 @@
 import React from "react";
 import { ROUTES } from "@/constants/routes";
-import { LayoutDashboard, Bot, UsersRound, Settings } from "lucide-react";
+import { LayoutDashboard, Bot, UsersRound, Settings, FileText } from "lucide-react";
 import SidebarScaffold, { type NavItemDef } from "@/components/shared/layout/SidebarScaffold";
 
 export type UserLayoutProps = {
@@ -15,7 +15,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.COACHES, icon: Bot, label: "Coach Management" },
   // { to: ROUTES.SUPER_ADMIN.ORGANIZATIONS, icon: UsersRound, label: "Organizational Management" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
-
+  { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ];
 
 export default function SuperAdminLayout({ children, className }: UserLayoutProps) {
