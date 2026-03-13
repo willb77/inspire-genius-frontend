@@ -23,6 +23,7 @@ import {
 } from "@/services/super-admin/user-management/user-management.service";
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
+import { logAuditEvent } from "@/services/audit/audit.service";
 
 type SimpleQueryOptions = Omit<
   UseQueryOptions<GetUsersResponse, AxiosError<BaseApiResponse<null>>>,
@@ -60,12 +61,13 @@ export function useInviteUser() {
   >({
     mutationFn: (payload) => inviteUser(payload),
 
-    onSuccess: (resp) => {
+    onSuccess: (resp, variables) => {
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
+      logAuditEvent({ event_type: "user_invited", actor: "admin", resource: "user", details: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -88,12 +90,13 @@ export function useUpdateUser() {
   >({
     mutationFn: ({ email, payload }) => updateUserByEmail(email, payload),
 
-    onSuccess: (resp) => {
+    onSuccess: (resp, variables) => {
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
+      logAuditEvent({ event_type: "user_updated", actor: "admin", resource: "user", details: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -116,12 +119,13 @@ export function useDeleteUser() {
   >({
     mutationFn: (email) => deleteUserByEmail(email),
 
-    onSuccess: (resp) => {
+    onSuccess: (resp, email) => {
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
+      logAuditEvent({ event_type: "user_deleted", actor: "admin", resource: "user", details: { email } });
     },
 
     onError: (error) => {

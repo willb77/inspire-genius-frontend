@@ -35,6 +35,12 @@ import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
 import OrganizationView from "@/pages/super-admin/OrganizationView";
 import UserCoaches from "@/pages/super-admin/UserCoaches";
 import ProjectLog from "@/pages/super-admin/ProjectLog";
+import RlhfTraining from "@/pages/super-admin/RlhfTraining";
+import PromptBuilder from "@/pages/super-admin/PromptBuilder";
+import AuditLog from "@/pages/super-admin/AuditLog";
+import MagicLinkLogin from "@/pages/auth/MagicLinkLogin";
+import MagicLinkVerify from "@/pages/auth/MagicLinkVerify";
+import PreviewHome from "@/pages/PreviewHome";
 import Terms from "@/pages/legal/Terms";
 import Privacy from "@/pages/legal/Privacy";
 
@@ -50,8 +56,12 @@ export const routes: RouteObject[] = [
       { path: "/reset-password", element: <ResetPassword /> },
       { path: "/accept-invitation", element: <AcceptInvitation /> },
       { path: "/social-login", element: <SocialLogin /> },
+      { path: "/magic-login", element: <MagicLinkLogin /> },
+      { path: "/magic-verify", element: <MagicLinkVerify /> },
       { path: "/terms", element: <Terms /> },
       { path: "/privacy", element: <Privacy /> },
+      // ⚠️ TEMPORARY: preview Home without auth — remove before deploy
+      { path: "/preview-home", element: <PreviewHome /> },
     ],
   },
 
@@ -100,7 +110,10 @@ export const routes: RouteObject[] = [
         element: <LicenceDetailsPage />,
       },
       {path:"/super-admin/settings",element:<SuperAdminSettingsPage />},
-      {path:"/super-admin/project-log",element:<ProjectLog />}
+      {path:"/super-admin/project-log",element:<ProjectLog />},
+      {path:"/super-admin/rlhf-training",element:<RlhfTraining />},
+      {path:"/super-admin/prompt-builder",element:<PromptBuilder />},
+      {path:"/super-admin/audit-log",element:<AuditLog />}
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

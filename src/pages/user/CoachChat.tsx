@@ -650,6 +650,7 @@ export default function CoachChat() {
         <div className="lg:col-span-8" data-tour="chat-window">
           <ChatWindow
             coachName={coachName}
+            coachId={agentId}
             conversationId={conversationId}
             onBack={() => navigate(-1)}
             onSendText={(t) => {

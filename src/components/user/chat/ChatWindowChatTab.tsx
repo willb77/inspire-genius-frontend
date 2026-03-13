@@ -4,6 +4,7 @@ import { Copy, CirclePlay } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import type { ChatMessage } from "@/types/chat";
 
 const getDocKindBadgeClass = (kind?: string) => {
@@ -23,6 +24,8 @@ type ChatWindowChatTabProps = {
   lastMessageId?: string;
   onShowAudioPlayer: () => void;
   genericMessages: string;
+  coachId?: string;
+  conversationId?: string;
 };
 
 export default function ChatWindowChatTab({
@@ -35,6 +38,8 @@ export default function ChatWindowChatTab({
   lastMessageId,
   onShowAudioPlayer,
   genericMessages,
+  coachId,
+  conversationId,
 }: ChatWindowChatTabProps) {
   const renderMessage = (m: ChatMessage) => {
     if (m.kind === "text") {
@@ -83,6 +88,13 @@ export default function ChatWindowChatTab({
               </div>
               <div className="text-[11px] text-muted-foreground">{m.time}</div>
             </div>
+            {m.sender === "assistant" && coachId && conversationId && (
+              <MessageFeedback
+                messageId={m.id}
+                conversationId={conversationId}
+                coachId={coachId}
+              />
+            )}
           </div>
         </div>
       );

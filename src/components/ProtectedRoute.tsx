@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/useAuth'
-import { ROUTES, ROLES, PATHS } from '@/constants/routes'
+import { ROUTES, PATHS } from '@/constants/routes'
+import { hasAccess } from '@/types/roles'
 import { useEffect, useRef, useState } from 'react'
 import { secureRemoveItem } from '@/lib/secureStorage'
 import LoadingPage from '@/components/loading-inspires-genius/LoadingCard'
@@ -65,10 +66,10 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
     return <Navigate to={ROUTES.ONBOARDING.ONE} replace />
   }
 
-  // Enforce super-admin role for super admin routes
+  // Enforce role-based access for super admin routes
   if (path.startsWith(PATHS.SUPER_ADMIN_PREFIX)) {
     const role = (user?.role ?? '').toLowerCase()
-    if (role !== ROLES.SUPER_ADMIN && user) {
+    if (!hasAccess(role, path) && user) {
       return <Navigate to={ROUTES.HOME} replace />
     }
   }

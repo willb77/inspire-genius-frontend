@@ -33,7 +33,37 @@
     .prompt-entry .timestamp { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.25rem; }
     .prompt-entry .prompt-text { font-size: 0.875rem; color: var(--text); white-space: pre-wrap; }
     .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.5rem; }
-    @media (max-width: 640px) { .container { padding: 1rem; } .card { padding: 1rem; } }
+    .section-toggle { width: 100%; background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 1rem; cursor: pointer; font-size: 0.95rem; font-weight: 600; text-align: left; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .section-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .section-toggle::after { content: '+'; font-size: 1.2rem; font-weight: 700; color: var(--accent); transition: transform 0.2s; }
+    .section-toggle.open::after { content: '-'; }
+    .section-body { display: none; }
+    .section-body.open { display: block; }
+    .toc { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; }
+    .toc h3 { font-size: 0.95rem; color: var(--accent); margin-bottom: 0.75rem; }
+    .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.4rem; }
+    .toc a { font-size: 0.82rem; color: var(--muted); text-decoration: none; padding: 0.3rem 0.5rem; border-radius: 4px; display: block; transition: all 0.2s; }
+    .toc a:hover { color: var(--accent); background: rgba(59,130,246,0.1); }
+    .path-badge { display: inline-block; background: rgba(99,102,241,0.2); color: var(--accent2); font-size: 0.7rem; padding: 0.15rem 0.6rem; border-radius: 999px; margin-left: 0.75rem; font-family: 'SF Mono', Monaco, monospace; vertical-align: middle; }
+    @media (max-width: 640px) { .container { padding: 1rem; } .card { padding: 1rem; } .sidebar-grid { grid-template-columns: 1fr !important; } .toc-grid { grid-template-columns: 1fr; } }
+
+    /* Site Map styles */
+    .tree { font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.8; color: var(--muted); white-space: pre; overflow-x: auto; padding: 1rem 0; }
+    .tree .root { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
+    .tree .section-label { color: var(--accent2); font-weight: 600; }
+    .tree .route { color: #a5b4fc; }
+    .tree .desc { color: var(--muted); }
+    .tree .connector { color: #475569; }
+    .flow-diagram { font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.8; color: var(--muted); white-space: pre; overflow-x: auto; padding: 1rem 0; }
+    .flow-diagram .highlight { color: var(--accent); font-weight: 600; }
+    .flow-diagram .route { color: #a5b4fc; }
+    .flow-diagram .action { color: #34d399; }
+    .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+    .sidebar-card { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; }
+    .sidebar-card h4 { color: var(--accent); margin-bottom: 0.75rem; font-size: 1rem; margin-top: 0; }
+    .sidebar-card .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; font-size: 0.85rem; color: var(--muted); }
+    .sidebar-card .nav-icon { color: var(--accent2); font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem; min-width: 110px; }
+    .nav-desc { color: var(--text); }
   </style>
 </head>
 <body>
@@ -48,13 +78,54 @@
       <button class="tab" data-tab="rules-style">Code Style</button>
       <button class="tab" data-tab="rules-arch">Architecture</button>
       <button class="tab" data-tab="rules-workflow">Workflow</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">2</span></button>
+      <button class="tab" data-tab="fileref">File Reference</button>
+      <button class="tab" data-tab="sitemap">Site Map</button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">7</span></button>
+    </div>
+
+    <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
+    <div class="toc">
+      <h3>Quick Navigation — Source File Index</h3>
+      <div class="toc-grid">
+        <a href="#" onclick="activateTab('changelog')">Change Log <span class="path-badge">root/change_log.md</span></a>
+        <a href="#" onclick="activateTab('schema')">Database Schema <span class="path-badge">root/database_schema.md</span></a>
+        <a href="#" onclick="activateTab('claude')">CLAUDE.md <span class="path-badge">root/CLAUDE.md</span></a>
+        <a href="#" onclick="activateTab('rules-style')">Code Style <span class="path-badge">.claude/rules/code-style.md</span></a>
+        <a href="#" onclick="activateTab('rules-arch')">Architecture <span class="path-badge">.claude/rules/architecture.md</span></a>
+        <a href="#" onclick="activateTab('rules-workflow')">Workflow <span class="path-badge">.claude/rules/workflow.md</span></a>
+        <a href="#" onclick="activateTab('fileref')">File Reference <span class="path-badge">src/**/*</span></a>
+        <a href="#" onclick="activateTab('sitemap')">Site Map <span class="path-badge">src/routes.tsx</span></a>
+        <a href="#" onclick="activateTab('session')">Session Prompts <span class="path-badge">session history</span></a>
+      </div>
     </div>
 
     <!-- ═══════════ CHANGE LOG ═══════════ -->
     <div class="panel active" id="changelog">
-      <div class="card">
-        <h2>Change Log</h2>
+      <div class="card" id="section-change-log">
+        <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-03-13] — Project Log Enhancement: TOC, Section IDs & Content Sync</h3>
+        <h4>Added</h4>
+        <ul>
+          <li>Table of Contents (TOC) with quick navigation links and source-file path badges</li>
+          <li>HTML section IDs on every panel for deep-linking (<code>id="section-*"</code>)</li>
+          <li>Path badges on each section header identifying source subfolder</li>
+          <li>Missing schema entities: LoginDataPayload, ProfileData, HistoryItem, IssueType, Dashboard Analytics</li>
+          <li>Missing CLAUDE.md sections: Key Conventions, Project Documentation, Commands</li>
+        </ul>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>IG_project_log.html</code> — merged all <code>.md</code> and <code>.claude/rules/</code> file content into single dashboard</li>
+        </ul>
+
+        <h3>[2026-03-12] — Home Page Redesign</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/user/Home.tsx</code> — complete redesign inspired by Manager Dashboard:
+            blue gradient hero banner, four stat cards, redesigned About PRISM &amp; Ask Alex sections,
+            improved Explore Coaches grid with icons and hover states, personalized greeting</li>
+        </ul>
+
         <h3>[2026-03-11] — Project Documentation & Admin Project Log Page</h3>
         <h4>Added</h4>
         <ul>
@@ -72,8 +143,8 @@
 
     <!-- ═══════════ DATABASE SCHEMA ═══════════ -->
     <div class="panel" id="schema">
-      <div class="card">
-        <h2>Database Schema</h2>
+      <div class="card" id="section-database-schema">
+        <h2>Database Schema <span class="path-badge">root/database_schema.md</span></h2>
 
         <h3>User (AuthUser)</h3>
         <table>
@@ -84,6 +155,26 @@
           <tr><td>fullName</td><td>string?</td><td>Full name</td></tr>
           <tr><td>role</td><td>string</td><td>"user" or "super-admin"</td></tr>
           <tr><td>isOnboardingCompleted</td><td>boolean</td><td>Onboarding status</td></tr>
+        </table>
+
+        <h3>LoginDataPayload (Auth Response)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>session</td><td>string?</td><td>Session identifier</td></tr>
+          <tr><td>access_token</td><td>string?</td><td>JWT access token</td></tr>
+          <tr><td>refresh_token</td><td>string?</td><td>JWT refresh token</td></tr>
+          <tr><td>id_token</td><td>string?</td><td>Identity token</td></tr>
+          <tr><td>token_type</td><td>string?</td><td>e.g. "Bearer"</td></tr>
+          <tr><td>user_id</td><td>string?</td><td>User UUID</td></tr>
+          <tr><td>email</td><td>string?</td><td>User email</td></tr>
+          <tr><td>full_name</td><td>string?</td><td>User full name</td></tr>
+          <tr><td>role</td><td>string?</td><td>User role</td></tr>
+          <tr><td>has_profile</td><td>boolean?</td><td>Whether profile exists</td></tr>
+          <tr><td>is_onboarded</td><td>boolean/string?</td><td>Onboarding status</td></tr>
+          <tr><td>organization_id</td><td>string?</td><td>FK → Organization</td></tr>
+          <tr><td>business_id</td><td>string?</td><td>FK → Business</td></tr>
+          <tr><td>mfa_required</td><td>boolean?</td><td>Whether MFA is required</td></tr>
+          <tr><td>next_step</td><td>string?</td><td>Auth flow next step</td></tr>
         </table>
 
         <h3>UserRow (Admin User Management)</h3>
@@ -136,6 +227,19 @@
           <tr><td>genderId</td><td>string</td><td>FK → Gender</td></tr>
         </table>
 
+        <h3>ProfileData (User Settings)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>firstName</td><td>string</td><td>First name</td></tr>
+          <tr><td>lastName</td><td>string</td><td>Last name</td></tr>
+          <tr><td>email</td><td>string</td><td>Email</td></tr>
+          <tr><td>dateOfBirth</td><td>string</td><td>Date string</td></tr>
+          <tr><td>category</td><td>string</td><td>User category</td></tr>
+          <tr><td>role</td><td>string</td><td>User role</td></tr>
+          <tr><td>additionalInfo</td><td>string?</td><td>Bio/about text</td></tr>
+          <tr><td>passwordChangeAllowed</td><td>boolean?</td><td>Whether password change is enabled</td></tr>
+        </table>
+
         <h3>DocItem (Documents)</h3>
         <table>
           <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
@@ -156,6 +260,15 @@
           <tr><td>time</td><td>string</td><td>Timestamp</td></tr>
         </table>
 
+        <h3>HistoryItem (Conversation History)</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Conversation ID</td></tr>
+          <tr><td>title</td><td>string</td><td>Conversation title</td></tr>
+          <tr><td>preview</td><td>string</td><td>Last message preview</td></tr>
+          <tr><td>timeLabel</td><td>string</td><td>Relative time label</td></tr>
+        </table>
+
         <h3>HelpFormValues (Issue Submission)</h3>
         <table>
           <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
@@ -164,6 +277,21 @@
           <tr><td>description</td><td>string</td><td>Description</td></tr>
           <tr><td>priority</td><td>enum</td><td>"low", "medium", "high", "critical"</td></tr>
           <tr><td>attachments</td><td>File[]</td><td>Attached files</td></tr>
+        </table>
+
+        <h3>IssueType</h3>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+          <tr><td>id</td><td>string</td><td>Primary key</td></tr>
+          <tr><td>name</td><td>string</td><td>Type name</td></tr>
+        </table>
+
+        <h3>Dashboard Analytics</h3>
+        <table>
+          <tr><th>Entity</th><th>Fields</th><th>Purpose</th></tr>
+          <tr><td>ChartDatum</td><td>orgName (string), hours (number)</td><td>Avg time spent per org</td></tr>
+          <tr><td>CoachUsageData</td><td>month (string), desktop (number), mobile (number)</td><td>Coach usage by platform</td></tr>
+          <tr><td>DocumentUploadData</td><td>browser (string), Uploads (number), color (string)</td><td>Upload trends by browser</td></tr>
         </table>
 
         <h3>API Envelope</h3>
@@ -182,10 +310,20 @@
 
     <!-- ═══════════ CLAUDE.MD ═══════════ -->
     <div class="panel" id="claude">
-      <div class="card">
-        <h2>CLAUDE.md</h2>
+      <div class="card" id="section-claude-md">
+        <h2>CLAUDE.md <span class="path-badge">root/CLAUDE.md</span></h2>
         <h3>Project Overview</h3>
-        <p>Inspire Genius is an AI coaching platform frontend. The app code lives entirely in <code>inspire-genius-frontend/</code>.</p>
+        <p>Inspire Genius is an AI coaching platform frontend. The app code lives entirely in <code>inspire-genius-frontend/</code>. There is a Python <code>venv/</code> at the repo root (not related to the frontend).</p>
+
+        <h3>Commands (from inspire-genius-frontend/)</h3>
+        <ul>
+          <li><code>npm run dev</code> — Start Vite dev server</li>
+          <li><code>npm run build</code> — TypeScript check + Vite production build</li>
+          <li><code>npm run lint</code> — ESLint</li>
+          <li><code>npm run test</code> — Jest in watch mode</li>
+          <li><code>npm run test:ci</code> — Jest single run (CI)</li>
+          <li><code>npm run test:coverage</code> — Jest with coverage report</li>
+        </ul>
 
         <h3>Stack</h3>
         <p>React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + shadcn/ui (new-york style, slate base)</p>
@@ -193,33 +331,67 @@
         <h3>Data Flow Pattern</h3>
         <p>Service → Hook → Component</p>
         <ul>
-          <li><strong>Services</strong> (<code>src/services/</code>): Axios calls organized by domain</li>
-          <li><strong>Hooks</strong> (<code>src/hooks/</code>): React Query mutations/queries wrapping services</li>
-          <li><strong>Pages</strong> (<code>src/pages/</code>): Route-level components organized by role</li>
+          <li><strong>Services</strong> (<code>src/services/</code>): Axios calls organized by domain (auth, coaches, documents, help, onboarding, super-admin, alex/chat, user)</li>
+          <li><strong>Hooks</strong> (<code>src/hooks/</code>): React Query mutations/queries wrapping services. Server state via TanStack React Query.</li>
+          <li><strong>Pages</strong> (<code>src/pages/</code>): Route-level components organized by role (auth, onboarding, user, super-admin, legal)</li>
         </ul>
 
         <h3>Global State</h3>
-        <p>React Context only — AuthContext, TourContext, SidebarContext</p>
-
-        <h3>Routing</h3>
+        <p>React Context only (no Redux/Zustand)</p>
         <ul>
-          <li>Public: /login, /signup, /otp, /forgot, /reset-password, /accept-invitation, /social-login</li>
-          <li>User: /home, /dashboard, /coaches, /documents, /settings, /help, /onboarding/*</li>
-          <li>Super Admin: /super-admin/*</li>
+          <li><code>AuthContext</code> — auth lifecycle, token management, role-based navigation</li>
+          <li><code>TourContext</code> — guided tour with audio narration</li>
+          <li><code>SidebarContext</code> — sidebar UI state</li>
         </ul>
 
-        <h3>API Layer</h3>
-        <p>Singleton axios instance with token injection and 401 auto-refresh interceptors</p>
+        <h3>Routing (<code>src/routes.tsx</code>)</h3>
+        <ul>
+          <li>Public: /login, /signup, /otp, /forgot, /reset-password, /accept-invitation, /social-login, /terms, /privacy</li>
+          <li>User: /home, /dashboard, /coaches, /documents, /settings, /help, /onboarding/*</li>
+          <li>Super Admin: /super-admin/*</li>
+          <li><code>ProtectedRoute</code> enforces auth, role checks, and onboarding completion</li>
+        </ul>
+
+        <h3>Two User Roles</h3>
+        <p><code>"user"</code> and <code>"super-admin"</code> (defined in <code>src/constants/routes.ts</code> as <code>ROLES</code> enum)</p>
+
+        <h3>API Layer (<code>src/lib/axios.ts</code>)</h3>
+        <ul>
+          <li>Singleton axios instance, base URL from <code>VITE_API_BASE_URL</code> env var</li>
+          <li>Request interceptor injects <code>access-token</code> from encrypted storage</li>
+          <li>Response interceptor handles 401 with single-flight token refresh, auto-retry, or logout</li>
+        </ul>
+
+        <h3>Auth Storage</h3>
+        <p><code>src/lib/secureStorage.ts</code> + <code>src/lib/storage.ts</code> — sensitive data (tokens) via encrypted storage wrapper. Keys centralized in <code>STORAGE_KEYS</code> enum.</p>
 
         <h3>Testing</h3>
-        <p>Jest + jsdom + React Testing Library, tests colocated in <code>__tests__/</code> directories</p>
+        <p>Jest + jsdom + React Testing Library, tests colocated in <code>__tests__/</code> directories. CSS modules mocked via <code>identity-obj-proxy</code>.</p>
+
+        <h3>Key Conventions</h3>
+        <ul>
+          <li>Route constants in <code>src/constants/routes.ts</code> (<code>ROUTES</code>, <code>ROLES</code>, <code>STORAGE_KEYS</code>, <code>NEXT_STEPS</code>)</li>
+          <li>Forms use React Hook Form + Zod validation</li>
+          <li>Notifications via Sonner toast (<code>&lt;Toaster&gt;</code> in App.tsx)</li>
+          <li>Icons from <code>lucide-react</code></li>
+          <li>Path alias: <code>@/</code> → <code>src/</code> (configured in Vite, tsconfig, and jest)</li>
+        </ul>
+
+        <h3>Project Documentation</h3>
+        <ul>
+          <li><code>change_log.md</code> — chronological record of all project changes</li>
+          <li><code>database_schema.md</code> — frontend data models and API entity schemas</li>
+          <li><code>IG_project_log.html</code> — standalone HTML dashboard with all docs + session prompt history</li>
+          <li><code>.claude/rules/</code> — development rules (code-style, architecture, workflow)</li>
+          <li>Project Log page available at <code>/super-admin/project-log</code> in the app</li>
+        </ul>
       </div>
     </div>
 
     <!-- ═══════════ CODE STYLE RULES ═══════════ -->
     <div class="panel" id="rules-style">
-      <div class="card">
-        <h2>Code Style Rules</h2>
+      <div class="card" id="section-rules-code-style">
+        <h2>Code Style Rules <span class="path-badge">.claude/rules/code-style.md</span></h2>
         <h3>TypeScript</h3>
         <ul>
           <li>Strict TypeScript; avoid <code>any</code> — use proper types from <code>src/types/</code></li>
@@ -253,8 +425,8 @@
 
     <!-- ═══════════ ARCHITECTURE RULES ═══════════ -->
     <div class="panel" id="rules-arch">
-      <div class="card">
-        <h2>Architecture Rules</h2>
+      <div class="card" id="section-rules-architecture">
+        <h2>Architecture Rules <span class="path-badge">.claude/rules/architecture.md</span></h2>
         <h3>Data Flow</h3>
         <p>Service → Hook → Component (never call services from components directly)</p>
         <h3>API Layer</h3>
@@ -283,8 +455,8 @@
 
     <!-- ═══════════ WORKFLOW RULES ═══════════ -->
     <div class="panel" id="rules-workflow">
-      <div class="card">
-        <h2>Workflow Rules</h2>
+      <div class="card" id="section-rules-workflow">
+        <h2>Workflow Rules <span class="path-badge">.claude/rules/workflow.md</span></h2>
         <h3>Commands (from inspire-genius-frontend/)</h3>
         <ul>
           <li>Dev: <code>npm run dev</code></li>
@@ -315,10 +487,499 @@
       </div>
     </div>
 
+    <!-- ═══════════ FILE REFERENCE ═══════════ -->
+    <div class="panel" id="fileref">
+      <div id="section-file-reference"></div>
+      <!-- Section: App Entry & Config -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">App Entry &amp; Configuration</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>src/main.tsx</code></td><td>—</td><td>React DOM entry point, renders App into root</td><td>createRoot, BrowserRouter, StrictMode</td><td>Client-side app startup</td></tr>
+            <tr><td><code>src/App.tsx</code></td><td>—</td><td>Root component with providers: QueryClient, AuthProvider, TourProvider, Toaster</td><td>useRoutes, QueryClientProvider, AuthProvider, TourProvider</td><td>Global provider setup, route rendering</td></tr>
+            <tr><td><code>src/routes.tsx</code></td><td>—</td><td>Central route config for React Router v6. Defines all public, protected, and super-admin routes</td><td>All page components, ProtectedRoute</td><td>URL → component mapping, catch-all redirect</td></tr>
+            <tr><td><code>src/constants/routes.ts</code></td><td>—</td><td>ROUTES, ROLES, STORAGE_KEYS, NEXT_STEPS, PATHS constants</td><td>—</td><td>DRY route/storage references app-wide</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Layouts -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Layouts</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>src/layouts/UserLayout.tsx</code></td><td>User sidebar with 6 nav items (Home, Dashboard, Coaches, Documents, Settings, Help). Renders AlexFloating unless tour running</td><td>SidebarScaffold, TourContext, AlexFloating</td><td>Consistent user navigation</td></tr>
+            <tr><td><code>src/layouts/SuperAdminLayout.tsx</code></td><td>Super-admin sidebar with Dashboard, User Mgmt, Coach Mgmt, Settings, Project Log nav items</td><td>SidebarScaffold, ROUTES constants</td><td>Consistent admin navigation</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Auth Pages -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Auth Pages</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>pages/auth/Login.tsx</code></td><td>/login</td><td>Email/password login form with auto-redirect for authenticated users</td><td>useAuth(), useAuthRedirectForAuthPages(), AuthFields</td><td>User authentication, social auth</td></tr>
+            <tr><td><code>pages/auth/SignUp.tsx</code></td><td>/signup</td><td>Registration form with password strength validation (uppercase, lowercase, number, special char)</td><td>useAuth(), useForm(), useAuthRedirectForAuthPages()</td><td>Account creation with terms acceptance</td></tr>
+            <tr><td><code>pages/auth/ForgotPassword.tsx</code></td><td>/forgot</td><td>Email-only form to send password reset verification code</td><td>useRequestPasswordReset()</td><td>Password reset initiation</td></tr>
+            <tr><td><code>pages/auth/ResetPassword.tsx</code></td><td>/reset-password</td><td>New password + confirmation form using reset token from URL params</td><td>useResetPassword(), useForm(), useSearchParams()</td><td>Password change with token validation</td></tr>
+            <tr><td><code>pages/auth/OTP.tsx</code></td><td>/otp</td><td>6-digit OTP input with 60s countdown timer and resend. Auto-verifies on completion</td><td>useAuth(), getNextStep(), OtpInputField</td><td>MFA verification, OTP auto-submit</td></tr>
+            <tr><td><code>pages/auth/SocialLogin.tsx</code></td><td>/social-login</td><td>OAuth callback handler showing processing/done/error states</td><td>useSocialLogin()</td><td>Social login completion and redirect</td></tr>
+            <tr><td><code>pages/auth/AcceptInvitation.tsx</code></td><td>/accept-invitation</td><td>Invited user password setup form with complexity validation</td><td>useAcceptInvitation(), useForm(), useSearchParams()</td><td>Invitation acceptance with password setup</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Onboarding Pages -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Onboarding Pages</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>pages/onboarding/OnboardingOne.tsx</code></td><td>/onboarding/one</td><td>First tutorial screen with callout overlay. Triggers tour on mount</td><td>useTour()</td><td>Tour initiation, visual branding</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingTwo.tsx</code></td><td>/onboarding/two</td><td>Second tutorial screen — actionable insights messaging</td><td>Navigation</td><td>Progressive onboarding</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingThree.tsx</code></td><td>/onboarding/three</td><td>Third tutorial screen — clarity and confidence messaging</td><td>Navigation</td><td>Progressive onboarding</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingFour.tsx</code></td><td>/onboarding/four</td><td>Fourth tutorial screen — AI coach collaboration</td><td>Navigation</td><td>Progressive onboarding</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingFive.tsx</code></td><td>/onboarding/five</td><td>Final tutorial screen — bridges to detail forms</td><td>Navigation</td><td>Transition to data collection</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingDetailsOne.tsx</code></td><td>/onboarding/details/one</td><td>Profile form: first name, last name, DOB (13+ validation), optional bio. Progress 1/2</td><td>useCreateProfileMutation(), useAuth(), useForm()</td><td>User profile creation</td></tr>
+            <tr><td><code>pages/onboarding/OnboardingDetailsTwo.tsx</code></td><td>/onboarding/details/two</td><td>Coach preferences: paginated coach cards with tone/accent/gender. Tour overlay + audio. Progress 2/2</td><td>useCoachData(), useUpdatePreferences(), useTourSpeech(), useTour(), useAuth()</td><td>Coach customization, onboarding completion</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: User Pages -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">User Pages</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>pages/user/Home.tsx</code></td><td>/home</td><td>Dashboard landing: PRISM video, Ask Alex card, Explore Coaches grid. Auto-video with 8s timer</td><td>useAgents(), useTour()</td><td>Dashboard overview, coach exploration</td></tr>
+            <tr><td><code>pages/user/Dashboard.tsx</code></td><td>/dashboard</td><td>Searchable coach grid. Each card navigates to chat with formatted slug</td><td>useAgents(), useNavigate()</td><td>Coach browsing, search, chat initiation</td></tr>
+            <tr><td><code>pages/user/Coaches.tsx</code></td><td>/coaches</td><td>Full coach management with configurable preferences (gender/accent/tone), search, audio preview</td><td>useCoachData(), useUpdatePreferences(), QueryClient</td><td>Persistent coach customization</td></tr>
+            <tr><td><code>pages/user/CoachChat.tsx</code></td><td>/dashboard/:coach/chat</td><td>Two-panel AI chat: history sidebar + chat window. WebSocket real-time, audio streaming, doc context, export</td><td>usePrismAgentWebSocket(), useConversationMessagesInfinite(), useCreateConversation(), useListDocuments(), DemoAudioService</td><td>Real-time AI chat, voice I/O, document context, conversation management</td></tr>
+            <tr><td><code>pages/user/Documents.tsx</code></td><td>/documents</td><td>Document management: upload, search, date filter, bulk/single delete, download, inline view</td><td>useListDocuments(), useDownloadDocument(), useDeleteDocument(), useBulkDeleteDocuments()</td><td>Full document CRUD with pagination</td></tr>
+            <tr><td><code>pages/user/Settings.tsx</code></td><td>/settings</td><td>Wrapper rendering shared Settings component in UserLayout</td><td>UserLayout, Settings</td><td>Account configuration</td></tr>
+            <tr><td><code>pages/user/Help.tsx</code></td><td>/help</td><td>Support ticket system: create form (type, subject, desc, priority, attachments) + issue list with admin comments</td><td>useCreateIssue(), useIssues(), useIssueTypes(), useForm()</td><td>Support ticket creation and tracking</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Super Admin Pages -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Super Admin Pages</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>pages/super-admin/Dashboard.tsx</code></td><td>/super-admin/dashboard</td><td>Analytics dashboard: org metrics, avg time chart, coach usage, license expiry, doc trends, latest users</td><td>Dashboard sub-components, date utilities</td><td>System-wide analytics and monitoring</td></tr>
+            <tr><td><code>pages/super-admin/UserManagement.tsx</code></td><td>/super-admin/users</td><td>Data table with sorting/pagination. Modals for add/edit/deactivate/delete. Invitation management</td><td>useUserManagement(), useInviteUser(), useUpdateUser(), useDeleteUser(), useResendInvitation()</td><td>User CRUD, role assignment, invitation mgmt</td></tr>
+            <tr><td><code>pages/super-admin/CoachManagement.tsx</code></td><td>/super-admin/coaches</td><td>Sortable coach table. Add/edit/deactivate. Differentiates predefined vs custom coaches</td><td>useCoachesList(), useCreateCoach(), useUpdateCoach(), useDeactivateCoach()</td><td>Coach inventory and status management</td></tr>
+            <tr><td><code>pages/super-admin/OrganizationManagement.tsx</code></td><td>/super-admin/organizations</td><td>Organization list with type/status badges. Add/deactivate actions</td><td>useOrganizationManagement(), useDeactivateOrganization()</td><td>Organization CRUD and status control</td></tr>
+            <tr><td><code>pages/super-admin/OrganizationView.tsx</code></td><td>/super-admin/organizations/:id/view</td><td>3-tab detail: Basic & License, Coaches, Users. Coach assignment/removal, user invitations</td><td>useOrganizationViewDetail(), useOrganizationAgents(), useUserManagement(), assignment mutations</td><td>Comprehensive org management</td></tr>
+            <tr><td><code>pages/super-admin/TeamManagement.tsx</code></td><td>/super-admin/team</td><td>Internal team member table with CRUD (uses mock data)</td><td>useSortingPagination()</td><td>Team roster management</td></tr>
+            <tr><td><code>pages/super-admin/UserCoaches.tsx</code></td><td>/super-admin/users/:userId/coaches</td><td>Coach assignment grid for individual users with toggle switches</td><td>useUserCoaches(), useAssignAgents()</td><td>Per-user coach assignment</td></tr>
+            <tr><td><code>pages/super-admin/IssuesDetailsPage.tsx</code></td><td>/super-admin/issues</td><td>Paginated support ticket list with status/priority badges</td><td>useIssues(), useNavigate()</td><td>Ticket overview and navigation</td></tr>
+            <tr><td><code>pages/super-admin/IssueDetailPage.tsx</code></td><td>/super-admin/issues/:id</td><td>Full ticket detail: metadata, admin comment form, comment thread</td><td>useGetIssueById(), useAddAdminComment(), useForm()</td><td>Ticket resolution and admin response</td></tr>
+            <tr><td><code>pages/super-admin/LicenceDetailsPage.tsx</code></td><td>/super-admin/licenses</td><td>Paginated license list with org name, tier badge, date range, status</td><td>useLicence()</td><td>License monitoring</td></tr>
+            <tr><td><code>pages/super-admin/ProjectLog.tsx</code></td><td>/super-admin/project-log</td><td>Tabbed documentation viewer: changelog, schema, CLAUDE.md, rules</td><td>Internal markdown renderer</td><td>In-app documentation access</td></tr>
+            <tr><td><code>pages/super-admin/Settings.tsx</code></td><td>/super-admin/settings</td><td>Wrapper rendering shared Settings in SuperAdminLayout</td><td>SuperAdminLayout, Settings</td><td>Admin profile management</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Legal Pages -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Legal Pages</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Route</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>pages/legal/Privacy.tsx</code></td><td>/privacy</td><td>Collapsible privacy policy sections (7 sections)</td><td>useNavigate()</td><td>GDPR/privacy compliance</td></tr>
+            <tr><td><code>pages/legal/Terms.tsx</code></td><td>/terms</td><td>Collapsible terms of service sections</td><td>useNavigate()</td><td>Legal terms disclosure</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Context Providers -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Context Providers</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>context/AuthContext.tsx</code></td><td>Auth lifecycle provider: login, signup, OTP, logout, token refresh, role navigation</td><td>Storage functions, auth hooks, syncAuthToken, toast</td><td>Cross-tab auth sync, MFA flows, onboarding tracking</td></tr>
+            <tr><td><code>context/auth-context.ts</code></td><td>Creates AuthContext with createContext API</td><td>AuthContextValue type</td><td>Global auth state without prop drilling</td></tr>
+            <tr><td><code>context/useAuth.ts</code></td><td>Type-safe useAuth() hook consuming AuthContext</td><td>useContext(AuthContext)</td><td>Safe auth state access with error if outside provider</td></tr>
+            <tr><td><code>context/TourContext.tsx</code></td><td>Tour provider: visual overlays, step progression, audio narration, route-aware steps</td><td>useTourSpeech, useFrontendText, scrollToTarget, createPortal</td><td>Step-by-step guided tours with highlighting and audio</td></tr>
+            <tr><td><code>context/tour-context.ts</code></td><td>Creates TourContext and TourStep/TourContextValue types</td><td>—</td><td>Tour state types with tooltips, images, routing</td></tr>
+            <tr><td><code>context/useTour.ts</code></td><td>Type-safe useTour() hook</td><td>useContext(TourContext)</td><td>Tour start/stop/step access</td></tr>
+            <tr><td><code>context/sidebar-context.tsx</code></td><td>Sidebar expanded/collapsed state for desktop and mobile</td><td>createContext, useContext</td><td>Global sidebar toggle</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Lib / Utilities -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Lib / Utilities</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>lib/axios.ts</code></td><td>Singleton axios instance. Request interceptor injects token. Response interceptor handles 401 with single-flight refresh</td><td>Storage functions, VITE_API_BASE_URL env</td><td>Centralized HTTP with auto-auth, retry, cross-tab token sync</td></tr>
+            <tr><td><code>lib/crypto.ts</code></td><td>AES-GCM encryption/decryption using Web Crypto API with PBKDF2 key derivation</td><td>crypto.subtle</td><td>At-rest encryption for sensitive frontend data</td></tr>
+            <tr><td><code>lib/secureStorage.ts</code></td><td>Encrypted localStorage wrapper with AES-GCM. Fallback to plain JSON if crypto unavailable</td><td>getKey(), crypto.subtle, localStorage</td><td>secureSetItem/secureGetItem/secureRemoveItem</td></tr>
+            <tr><td><code>lib/storage.ts</code></td><td>Facade for auth/UI state persistence. Token, user, email, role, session, onboarding, UI flags</td><td>crypto functions, STORAGE_KEYS, StoredUser type</td><td>getToken/setToken, getUser/setUser, clearAuth, getUIFlag/setUIFlag</td></tr>
+            <tr><td><code>lib/utils.ts</code></td><td>cn() function for conditional Tailwind class merging</td><td>clsx, twMerge</td><td>Type-safe dynamic styling app-wide</td></tr>
+            <tr><td><code>lib/scroll.ts</code></td><td>Smooth scroll-to-element utility</td><td>Element.scrollIntoView()</td><td>Tour step scrolling, focused navigation</td></tr>
+            <tr><td><code>lib/chatAudioDb.ts</code></td><td>IndexedDB wrapper for encrypted chat audio. Stores, retrieves, prunes audio recordings</td><td>IndexedDB API, AES-GCM, WAV encoding, PBKDF2</td><td>Persistent encrypted audio storage with auto-pruning</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Services -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Services (API Layer)</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>API Endpoints</th><th>Exported Functions</th></tr>
+            <tr><td><code>services/auth.service.ts</code></td><td>Core auth: login, signup, verify, OTP, social auth</td><td>POST /v1/login, /v1/signup, /v1/verify-signup, /v1/resend-verification; GET /v1/me, /v1/social-auth/login/</td><td>loginApi, signupApi, verifySignupApi, resendVerificationApi, getMeWithToken, getSocialAuthLoginUrl</td></tr>
+            <tr><td><code>services/auth/invitation.service.ts</code></td><td>Accept user invitations</td><td>POST /v1/user-management/invitations/accept</td><td>acceptInvitation</td></tr>
+            <tr><td><code>services/auth/password.service.ts</code></td><td>Password reset request and completion</td><td>POST /v1/request-password-reset, /v1/reset-password</td><td>requestPasswordReset, resetPassword</td></tr>
+            <tr><td><code>services/agent/agentService.ts</code></td><td>Agent conversation CRUD and messages</td><td>GET/POST/DELETE/PATCH /v1/chat/conversations/*, POST /v1/chat/sessions/start</td><td>getAgentConversation, createConversation, getConversationDetail, deleteConversation, renameConversation, exportConversation</td></tr>
+            <tr><td><code>services/alex/chat.service.ts</code></td><td>Alex AI chat: device ID, history, download</td><td>GET /v1/chat/AlexChat/device-id, /history, /download</td><td>getAlexDeviceId, getAlexHistoryList, downloadAlexChat</td></tr>
+            <tr><td><code>services/coaches/agents.service.ts</code></td><td>Fetch paginated agent list</td><td>GET /v1/agents-settings/agents</td><td>getAgents</td></tr>
+            <tr><td><code>services/coaches/preferences.service.ts</code></td><td>Save/update coach voice preferences</td><td>POST /v1/agents-settings/preferences, PUT /v1/agents-settings/preferences/{agentId}</td><td>savePreferences, updatePreferences</td></tr>
+            <tr><td><code>services/coaches/settings.service.ts</code></td><td>Fetch tone/accent/gender option sets</td><td>GET /v1/agents-settings/{segment}</td><td>getAgentSetting, getTones, getAccents, getGenders</td></tr>
+            <tr><td><code>services/documents/fileService.ts</code></td><td>Document CRUD with upload progress</td><td>GET /v1/file_service/list, /download/{id}; DELETE /{id}, /bulk-delete; POST /upload</td><td>listDocuments, getDocumentDownloadLink, deleteDocument, bulkDeleteDocuments, uploadDocuments</td></tr>
+            <tr><td><code>services/help/issues.service.ts</code></td><td>Issue types, submission, listing</td><td>GET /v1/issues/types, /v1/issues/; POST /v1/issues/</td><td>getIssueTypes, createIssue, getIssues</td></tr>
+            <tr><td><code>services/onboarding/profile.service.ts</code></td><td>Create/update user profile</td><td>POST /v1/onboarding/profile, PUT /v1/onboarding/profile</td><td>createProfile, updateProfile</td></tr>
+            <tr><td><code>services/user/me.service.ts</code></td><td>Get current user profile</td><td>GET /v1/me</td><td>getMe</td></tr>
+            <tr><td><code>services/user/change-password.service.ts</code></td><td>Change password for authenticated user</td><td>POST /v1/change-password</td><td>changePassword</td></tr>
+            <tr><td><code>services/coachAudioPreviewService.ts</code></td><td>Fetch PCM audio for coach voice preview</td><td>GET /v1/frontend-text/audio-preview</td><td>buildCoachAudioPreviewUrl, fetchCoachAudioPcm</td></tr>
+            <tr><td><code>services/demoAudioService.ts</code></td><td>Web Audio playback: queue, decode, play/pause PCM/WAV</td><td>—</td><td>DemoAudioService class</td></tr>
+            <tr><td><code>services/tourSpeechService.ts</code></td><td>Tour narration audio streaming</td><td>GET /v1/frontend-text/{textId}/audio-stream</td><td>buildTourAudioUrl, fetchTourAudioPcm, streamTourAudioPcm</td></tr>
+            <tr><td><code>services/frontend-text.service.ts</code></td><td>Frontend localization/config text</td><td>GET /v1/frontend-text</td><td>getFrontendText</td></tr>
+            <tr><td><code>services/super-admin/coachManagementService.ts</code></td><td>Admin coach CRUD + categories</td><td>GET/POST/PUT/DELETE /v1/agents-settings/*</td><td>listAgents, createCoach, updateCoach, deactivateCoach, getCoachCategories</td></tr>
+            <tr><td><code>services/super-admin/coaches/coachesService.ts</code></td><td>Assign coaches to users</td><td>GET /v1/agents-settings/user/{userId}/agents, POST /v1/agents-settings/user/agents/assign</td><td>getUserAgentAssignments, assignAgentsToUser</td></tr>
+            <tr><td><code>services/super-admin/dashboard/dashboard-system.service.ts</code></td><td>System statistics (org/business counts)</td><td>GET /v1/dashboard/system</td><td>getDashboardSystem</td></tr>
+            <tr><td><code>services/super-admin/dashboard/document-trend.service.ts</code></td><td>Document count by category</td><td>GET /v1/dashboard/documents/count</td><td>getDocumentTrend</td></tr>
+            <tr><td><code>services/super-admin/dashboard/issues.service.ts</code></td><td>Admin issue detail and comments</td><td>GET /v1/issues/{id}, POST /v1/issues/{id}/admin-comment</td><td>getIssueById, addAdminComment</td></tr>
+            <tr><td><code>services/super-admin/dashboard/licence.service.ts</code></td><td>List licenses</td><td>GET /v1/licenses/</td><td>getLicenses</td></tr>
+            <tr><td><code>services/super-admin/organization-management/organization-management.service.ts</code></td><td>Full org lifecycle: list, create, assign coaches, licenses, businesses</td><td>GET/POST/DELETE /v1/organizations/*, POST /v1/licenses/, GET /v1/rbac/roles</td><td>getOrganizations, createOrganization, assignCoachesToOrganization, createLicense, getOrganizationViewDetail, deactivateOrganization, + 5 more</td></tr>
+            <tr><td><code>services/super-admin/user-management/user-management.service.ts</code></td><td>User lifecycle: list, invite, update, delete, resend invitation</td><td>GET /v1/user-management/users, POST /invite, PUT /users/{email}/edit, DELETE /users/{email}, POST /invitations/{id}/resend</td><td>getUsers, inviteUser, updateUserByEmail, deleteUserByEmail, resendInvitation</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Hooks -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Hooks</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Hook(s)</th><th>Description</th><th>Wraps Service</th></tr>
+            <tr><td><code>hooks/auth/useLogin.ts</code></td><td>useAuthLoginMutation</td><td>Login mutation</td><td>loginApi</td></tr>
+            <tr><td><code>hooks/auth/useSignup.ts</code></td><td>useAuthSignupMutation</td><td>Signup mutation</td><td>signupApi</td></tr>
+            <tr><td><code>hooks/auth/useVerifyOtp.ts</code></td><td>useAuthVerifyOtpMutation</td><td>OTP verification (email + MFA)</td><td>verifySignupApi / loginApi</td></tr>
+            <tr><td><code>hooks/auth/useResendOtp.ts</code></td><td>useResendOtpMutation</td><td>Resend OTP</td><td>resendVerificationApi</td></tr>
+            <tr><td><code>hooks/auth/useAcceptInvitation.ts</code></td><td>useAcceptInvitation</td><td>Accept invitation with password</td><td>acceptInvitation</td></tr>
+            <tr><td><code>hooks/auth/useRequestPasswordReset.ts</code></td><td>useRequestPasswordReset</td><td>Request password reset email</td><td>requestPasswordReset</td></tr>
+            <tr><td><code>hooks/auth/useResetPassword.ts</code></td><td>useResetPassword</td><td>Complete password reset</td><td>resetPassword</td></tr>
+            <tr><td><code>hooks/auth/useSocialAuthLoginUrl.ts</code></td><td>useSocialAuthLoginUrlMutation</td><td>Get social provider redirect URL</td><td>getSocialAuthLoginUrl</td></tr>
+            <tr><td><code>hooks/auth/useSocialLogin.ts</code></td><td>useSocialLogin</td><td>Complete post-OAuth flow, auto-redirect</td><td>useMeWithTokenQuery, useAuth()</td></tr>
+            <tr><td><code>hooks/auth/useMeWithTokenQuery.ts</code></td><td>useMeWithTokenQuery</td><td>Query /v1/me with token (social login)</td><td>getMeWithToken</td></tr>
+            <tr><td><code>hooks/agents/useAgentConversation.ts</code></td><td>useAgentConversation</td><td>List agent conversations (stale 30s)</td><td>getAgentConversation</td></tr>
+            <tr><td><code>hooks/agents/useConversationMessagesInfinite.ts</code></td><td>useConversationMessagesInfinite</td><td>Infinite scroll messages (stale 15s)</td><td>getConversationDetail</td></tr>
+            <tr><td><code>hooks/agents/useCreateConversation.ts</code></td><td>useCreateConversation</td><td>Create new conversation</td><td>createConversation</td></tr>
+            <tr><td><code>hooks/agents/useDeleteConversation.ts</code></td><td>useDeleteConversation</td><td>Delete conversation + cache invalidation</td><td>deleteConversation</td></tr>
+            <tr><td><code>hooks/agents/useRenameConversation.ts</code></td><td>useRenameConversation</td><td>Rename conversation + cache invalidation</td><td>renameConversation</td></tr>
+            <tr><td><code>hooks/agents/usePrismAgentWebSocket.ts</code></td><td>usePrismAgentWebSocket</td><td>WebSocket for real-time agent chat. Text/audio, recording, auto-reconnect, file attachments</td><td>WebSocket API (VITE_AGENTS_WEBSOCKET_BASE_URL)</td></tr>
+            <tr><td><code>hooks/alex/useAlexChat.ts</code></td><td>useAlexDeviceId, useAlexHistoryList, useAlexHistoryListOnce</td><td>Alex device session + history management</td><td>getAlexDeviceId, getAlexHistoryList</td></tr>
+            <tr><td><code>hooks/coaches/useAgents.ts</code></td><td>useAgents</td><td>Fetch paginated agents</td><td>getAgents</td></tr>
+            <tr><td><code>hooks/coaches/useCoachData.ts</code></td><td>useCoachData</td><td>Composite: agents + tone/accent/gender options</td><td>useAgents, useTones, useAccents, useGenders</td></tr>
+            <tr><td><code>hooks/coaches/useTones.ts</code></td><td>useTones</td><td>Fetch tone options</td><td>getTones</td></tr>
+            <tr><td><code>hooks/coaches/useAccents.ts</code></td><td>useAccents</td><td>Fetch accent options</td><td>getAccents</td></tr>
+            <tr><td><code>hooks/coaches/useGenders.ts</code></td><td>useGenders</td><td>Fetch gender options</td><td>getGenders</td></tr>
+            <tr><td><code>hooks/coaches/useAgentSetting.ts</code></td><td>useAgentSetting</td><td>Generic agent setting fetcher</td><td>getAgentSetting</td></tr>
+            <tr><td><code>hooks/coaches/useSavePreferences.ts</code></td><td>useSavePreferences</td><td>Save multi-agent preferences</td><td>savePreferences</td></tr>
+            <tr><td><code>hooks/coaches/useUpdatePreferences.ts</code></td><td>useUpdatePreferences</td><td>Update single agent preferences</td><td>updatePreferences</td></tr>
+            <tr><td><code>hooks/documents/useListDocuments.ts</code></td><td>useListDocuments</td><td>Paginated docs with filters (stale 60s)</td><td>listDocuments</td></tr>
+            <tr><td><code>hooks/documents/useUploadDocuments.ts</code></td><td>useUploadDocuments</td><td>Upload with progress callback</td><td>uploadDocuments</td></tr>
+            <tr><td><code>hooks/documents/useDownloadDocument.ts</code></td><td>useDownloadDocument</td><td>Get download link</td><td>getDocumentDownloadLink</td></tr>
+            <tr><td><code>hooks/documents/useDeleteDocument.ts</code></td><td>useDeleteDocument</td><td>Delete + cache invalidation</td><td>deleteDocument</td></tr>
+            <tr><td><code>hooks/documents/useBulkDeleteDocuments.ts</code></td><td>useBulkDeleteDocuments</td><td>Bulk delete + cache invalidation</td><td>bulkDeleteDocuments</td></tr>
+            <tr><td><code>hooks/help/useIssueTypes.ts</code></td><td>useIssueTypes</td><td>Issue type options (stale 5m)</td><td>getIssueTypes</td></tr>
+            <tr><td><code>hooks/help/useCreateIssue.ts</code></td><td>useCreateIssue</td><td>Submit new support issue</td><td>createIssue</td></tr>
+            <tr><td><code>hooks/help/useIssues.ts</code></td><td>useIssues</td><td>List user issues</td><td>getIssues</td></tr>
+            <tr><td><code>hooks/onboarding/useCreateProfile.ts</code></td><td>useCreateProfileMutation</td><td>Create profile during onboarding</td><td>createProfile</td></tr>
+            <tr><td><code>hooks/onboarding/useUpdateProfile.ts</code></td><td>useUpdateProfile</td><td>Update profile + invalidate 'me' cache</td><td>updateProfile</td></tr>
+            <tr><td><code>hooks/user/useMe.ts</code></td><td>useMe</td><td>Current authenticated user</td><td>getMe</td></tr>
+            <tr><td><code>hooks/user/useChangePassword.ts</code></td><td>useChangePassword</td><td>Change password mutation</td><td>changePassword</td></tr>
+            <tr><td><code>hooks/super-admin/coach-management/useCoaches.ts</code></td><td>useCoachesList, useCoachCategories, useCreateCoach, useUpdateCoach, useDeactivateCoach</td><td>Admin coach CRUD (stale 5m)</td><td>listAgents, createCoach, updateCoach, deactivateCoach, getCoachCategories</td></tr>
+            <tr><td><code>hooks/super-admin/coaches/useAssignAgents.ts</code></td><td>useAssignAgents</td><td>Assign coaches to users + cache invalidation</td><td>assignAgentsToUser</td></tr>
+            <tr><td><code>hooks/super-admin/coaches/useUserCoaches.ts</code></td><td>useUserCoaches</td><td>User's assigned coaches (stale 60s)</td><td>getUserAgentAssignments</td></tr>
+            <tr><td><code>hooks/super-admin/dashboard/useDashboardSystem.ts</code></td><td>useDashboardSystem</td><td>System-wide stats</td><td>getDashboardSystem</td></tr>
+            <tr><td><code>hooks/super-admin/dashboard/useDocumentTrend.ts</code></td><td>useDocumentTrend</td><td>Document trends</td><td>getDocumentTrend</td></tr>
+            <tr><td><code>hooks/super-admin/dashboard/useIssues.ts</code></td><td>useGetIssueById, useAddAdminComment</td><td>Issue detail + admin comments</td><td>getIssueById, addAdminComment</td></tr>
+            <tr><td><code>hooks/super-admin/dashboard/useLicence.ts</code></td><td>useLicence</td><td>Paginated licenses</td><td>getLicenses</td></tr>
+            <tr><td><code>hooks/super-admin/organization-management/useOrganizationManagement.ts</code></td><td>useOrganizationManagement + 10 more hooks</td><td>Full org lifecycle management</td><td>All organization-management.service functions</td></tr>
+            <tr><td><code>hooks/super-admin/user-management/useUserManagement.ts</code></td><td>useUserManagement, useInviteUser, useUpdateUser, useDeleteUser, useResendInvitation</td><td>User admin with toast feedback (stale 5m)</td><td>getUsers, inviteUser, updateUserByEmail, deleteUserByEmail, resendInvitation</td></tr>
+            <tr><td><code>hooks/use-mobile.ts</code></td><td>useIsMobile</td><td>Detect mobile viewport (768px breakpoint)</td><td>—</td></tr>
+            <tr><td><code>hooks/useAuthRedirectForAuthPages.ts</code></td><td>useAuthRedirectForAuthPages</td><td>Auto-redirect authenticated users from auth pages based on role/onboarding</td><td>Storage functions</td></tr>
+            <tr><td><code>hooks/useFrontendText.ts</code></td><td>useFrontendText</td><td>Frontend localization text (stale 5m)</td><td>getFrontendText</td></tr>
+            <tr><td><code>hooks/useSortingPagination.ts</code></td><td>useSortingPagination</td><td>Generic local sort + pagination for data tables</td><td>—</td></tr>
+            <tr><td><code>hooks/useCoachAudioPreview.ts</code></td><td>useCoachAudioPreview</td><td>Play/pause/resume coach voice preview with cache</td><td>DemoAudioService, fetchCoachAudioPcm</td></tr>
+            <tr><td><code>hooks/useTextToSpeech.ts</code></td><td>useTextToSpeech</td><td>Browser native TTS synthesis with voice/rate/pitch control</td><td>SpeechSynthesis API</td></tr>
+            <tr><td><code>hooks/useTourSpeech.ts</code></td><td>useTourSpeech</td><td>Tour narration audio playback with cache</td><td>DemoAudioService, fetchTourAudioPcm</td></tr>
+            <tr><td><code>hooks/useChatWindowAudio.ts</code></td><td>useChatWindowAudio</td><td>Chat message audio with IndexedDB caching, encryption, resampling</td><td>chatAudioDb utilities, AudioContext</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Shared Components -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Shared Components</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>components/ProtectedRoute.tsx</code></td><td>Route guard: enforces auth, role-based access, onboarding completion</td><td>useAuth, useLocation, useNavigate, secureStorage</td><td>Auth-protected routes, super-admin restriction</td></tr>
+            <tr><td><code>components/shared/ActionMenu.tsx</code></td><td>Generic dropdown action menu for table rows (View, Edit, Delete, etc.)</td><td>lucide icons, dropdown components</td><td>Reusable row actions with sub-menus</td></tr>
+            <tr><td><code>components/shared/AlexFloating.tsx</code></td><td>Floating chat trigger widget for Alex AI assistant</td><td>AlexChatPanel, framer-motion, storage</td><td>Always-available AI assistant with state persistence</td></tr>
+            <tr><td><code>components/shared/ConfirmDialog.tsx</code></td><td>Generic confirmation modal for destructive actions</td><td>Dialog, Button components</td><td>Consistent confirmation pattern</td></tr>
+            <tr><td><code>components/shared/DatePickerButton.tsx</code></td><td>Button-triggered date picker with popover</td><td>Popover, Calendar, date-fns</td><td>Compact date selection</td></tr>
+            <tr><td><code>components/shared/LoadingSkeleton.tsx</code></td><td>Configurable grid skeleton loader</td><td>Skeleton component</td><td>Flexible loading placeholders</td></tr>
+            <tr><td><code>components/shared/Logo.tsx</code></td><td>Application logo component</td><td>Image asset</td><td>Branding consistency</td></tr>
+            <tr><td><code>components/shared/ModalDialog.tsx</code></td><td>Customizable modal wrapper with title, description, footer</td><td>Dialog components</td><td>Consistent modal styling</td></tr>
+            <tr><td><code>components/shared/OtpInputField.tsx</code></td><td>6-digit OTP input with auto-focus and paste support</td><td>React refs</td><td>OTP verification flows</td></tr>
+            <tr><td><code>components/shared/Pagination.tsx</code></td><td>react-paginate wrapper</td><td>react-paginate</td><td>Data pagination controls</td></tr>
+            <tr><td><code>components/shared/SearchBar.tsx</code></td><td>Search input with icon</td><td>Input, lucide icons</td><td>Search UI framework</td></tr>
+            <tr><td><code>components/shared/UserTopHeader.tsx</code></td><td>User profile header with dropdown (settings, logout)</td><td>useAuth, useNavigate, ConfirmDialog</td><td>User menu, profile dropdown</td></tr>
+            <tr><td><code>components/shared/audio-player/audio-player.tsx</code></td><td>Full audio player with WaveSurfer waveform, playback controls, rate/volume</td><td>WaveSurfer.js, framer-motion</td><td>Audio playback with visualization</td></tr>
+            <tr><td><code>components/shared/audio-player/audio-buffer-handler.tsx</code></td><td>Audio file upload and buffer manager with drag-drop</td><td>AudioContext API, AudioPlayer</td><td>Audio file processing</td></tr>
+            <tr><td><code>components/shared/layout/SidebarScaffold.tsx</code></td><td>Main app layout with collapsible sidebar and nav items</td><td>shadcn sidebar components, useAuth, storage</td><td>Navigation, logout, sidebar state persistence</td></tr>
+            <tr><td><code>components/shared/settings/Settings.tsx</code></td><td>Settings page coordinator: account, notifications, password</td><td>useMe, useChangePassword, useUpdateProfile</td><td>Profile management, password changes</td></tr>
+            <tr><td><code>components/shared/inputs/PasswordField.tsx</code></td><td>Password input with show/hide toggle</td><td>Input, Button, lucide icons</td><td>Secure password entry</td></tr>
+            <tr><td><code>components/shared/forms/UserFormModal.tsx</code></td><td>User add/edit form modal</td><td>ModalFormFrame, userForm.constants</td><td>User management in admin</td></tr>
+            <tr><td><code>components/shared/forms/TeamFormModal.tsx</code></td><td>Team member form modal</td><td>ModalFormFrame, teamForm.constants, validateEmail</td><td>Team member management</td></tr>
+            <tr><td><code>components/shared/forms/CoachFormModal.tsx</code></td><td>Coach add/edit form modal</td><td>ModalFormFrame, coachForm.constants</td><td>Coach creation/editing</td></tr>
+            <tr><td><code>components/shared/forms/ConfirmActionModal.tsx</code></td><td>Confirmation modal showing field values before action</td><td>ModalDialog, Button, Input</td><td>Action confirmation with context</td></tr>
+            <tr><td><code>components/shared/forms/ModalFormFrame.tsx</code></td><td>Generic form modal container with submit handling</td><td>ModalDialog, Form components, react-hook-form</td><td>Consistent form modal pattern</td></tr>
+            <tr><td><code>components/shared/forms/ModalFormFooter.tsx</code></td><td>Standard Cancel/Submit buttons</td><td>Button</td><td>Form action buttons</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Feature Components -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Feature Components</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Calls</th><th>Enables</th></tr>
+            <tr><td><code>components/auth/AuthLayout.tsx</code></td><td>Two-column auth template (illustration + form)</td><td>Logo</td><td>Auth page layout consistency</td></tr>
+            <tr><td><code>components/auth/AuthHeader.tsx</code></td><td>Auth form title and subtitle</td><td>—</td><td>Form headers</td></tr>
+            <tr><td><code>components/auth/AuthFields.tsx</code></td><td>Reusable auth input fields + social auth (Google) buttons</td><td>IconInput, useSocialAuthLoginUrlMutation, toast</td><td>Form field composition, Google OAuth</td></tr>
+            <tr><td><code>components/alex/AlexChatPanel.tsx</code></td><td>Alex AI chat interface: text/voice chat, history, export</td><td>useAlexWebSocket, useAlexDeviceId, useAlexHistoryListOnce, AudioPlayer</td><td>Chat, voice I/O, history, export</td></tr>
+            <tr><td><code>components/alex/EmptyStateCard.tsx</code></td><td>Alex chat welcome state with callouts and actions</td><td>Card, Button, OnboardingCallout</td><td>First-time user guidance</td></tr>
+            <tr><td><code>components/alex-voice-assistant/useAlexWebSocket.ts</code></td><td>WebSocket hook for Alex real-time connection and messaging</td><td>webSocketHandlers, getUserMedia API</td><td>WebSocket lifecycle, recording, message routing</td></tr>
+            <tr><td><code>components/alex-voice-assistant/handlers/webSocketHandlers.ts</code></td><td>WebSocket connection and message handling hooks</td><td>useCallback refs</td><td>Modular WebSocket handling</td></tr>
+            <tr><td><code>components/help/HelpForm.tsx</code></td><td>Issue submission form with file attachments</td><td>Form components, Select, file input</td><td>Issue reporting with attachments</td></tr>
+            <tr><td><code>components/help/IssueSubmitted.tsx</code></td><td>Success confirmation dialog for issue submission</td><td>Dialog</td><td>User feedback confirmation</td></tr>
+            <tr><td><code>components/onboarding/CoachCard.tsx</code></td><td>Coach selection card with gender/accent/tone dropdowns + audio preview</td><td>useForm, useUpdatePreferences, useCoachAudioPreview</td><td>Coach preference selection</td></tr>
+            <tr><td><code>components/onboarding/OnboardingScreen.tsx</code></td><td>Full-screen onboarding step template</td><td>Logo, OnboardingImage, Button</td><td>Multi-screen onboarding flow</td></tr>
+            <tr><td><code>components/onboarding/OnboardingCallout.tsx</code></td><td>Floating callout/tooltip for onboarding</td><td>—</td><td>Tutorial text overlays</td></tr>
+            <tr><td><code>components/onboarding/OnboardingImage.tsx</code></td><td>Image container with overlay support</td><td>—</td><td>Onboarding illustrations</td></tr>
+            <tr><td><code>components/onboarding/ProgressBar.tsx</code></td><td>Step progress indicator</td><td>—</td><td>Visual progress feedback</td></tr>
+            <tr><td><code>components/settings/AccountSettings.tsx</code></td><td>Account management: edit profile, change password, view info</td><td>useForm (2x), Input, Dialog, DatePicker, PasswordField</td><td>Profile editing, password changes</td></tr>
+            <tr><td><code>components/settings/NotificationSettings.tsx</code></td><td>Push, update, marketing notification toggles</td><td>Switch, Checkbox</td><td>Notification preferences (currently disabled)</td></tr>
+            <tr><td><code>components/loading-inspires-genius/LoadingCard.tsx</code></td><td>Animated loading page for app init</td><td>AINeuralLoader, framer-motion</td><td>Branded loading experience</td></tr>
+            <tr><td><code>components/loading-inspires-genius/ai-neural-loader.tsx</code></td><td>AI neural network animation with orbiting particles</td><td>framer-motion SVG</td><td>Animated visual feedback</td></tr>
+            <tr><td><code>components/loading-inspires-genius/waveform-loader.tsx</code></td><td>Animated waveform bar animation</td><td>framer-motion stagger</td><td>Processing visualization</td></tr>
+            <tr><td><code>components/super-admin/ManagementHeader.tsx</code></td><td>Admin page header with title + add button</td><td>Button, lucide icon</td><td>Consistent admin page headers</td></tr>
+            <tr><td><code>components/super-admin/SACoachCard.tsx</code></td><td>Coach enable/disable card with toggle</td><td>Button, loader icon</td><td>Coach status management</td></tr>
+            <tr><td><code>components/super-admin/dashboard/DashboardSystem.tsx</code></td><td>KPI card showing org/business statistics</td><td>useDashboardSystem, Card</td><td>Dashboard metrics</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: UI Components (shadcn) -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">UI Components (shadcn/ui — 32 components)</button>
+        <div class="section-body">
+          <p>All pre-built accessible components from shadcn/ui (new-york style, slate base, Radix UI primitives):</p>
+          <table>
+            <tr><th>Component</th><th>Purpose</th></tr>
+            <tr><td><code>avatar</code></td><td>Profile image with fallback initials</td></tr>
+            <tr><td><code>badge</code></td><td>Label/tag display with variants</td></tr>
+            <tr><td><code>button</code></td><td>Button with primary/secondary/outline/ghost variants</td></tr>
+            <tr><td><code>calendar</code></td><td>Date picker calendar grid</td></tr>
+            <tr><td><code>card</code></td><td>Container with header, title, description, footer</td></tr>
+            <tr><td><code>chart</code></td><td>Recharts wrapper with responsive container</td></tr>
+            <tr><td><code>checkbox</code></td><td>Accessible checkbox input</td></tr>
+            <tr><td><code>collapsible</code></td><td>Expandable/collapsible content</td></tr>
+            <tr><td><code>date-picker</code></td><td>Popover-based date picker</td></tr>
+            <tr><td><code>dialog</code></td><td>Modal dialog overlay (Radix Dialog)</td></tr>
+            <tr><td><code>drawer</code></td><td>Slide-out drawer/sidebar</td></tr>
+            <tr><td><code>dropdown-menu</code></td><td>Dropdown with items (Radix)</td></tr>
+            <tr><td><code>form</code></td><td>React Hook Form integration (FormField, FormItem, FormLabel, etc.)</td></tr>
+            <tr><td><code>icon-input</code></td><td>Text input with icon prefix/suffix</td></tr>
+            <tr><td><code>input-otp</code></td><td>OTP input with pin entries</td></tr>
+            <tr><td><code>input</code></td><td>Text input field</td></tr>
+            <tr><td><code>label</code></td><td>Form label (Radix Label)</td></tr>
+            <tr><td><code>menubar</code></td><td>Horizontal menu bar</td></tr>
+            <tr><td><code>multi-select</code></td><td>Multi-select dropdown</td></tr>
+            <tr><td><code>otp-input</code></td><td>Custom OTP input</td></tr>
+            <tr><td><code>popover</code></td><td>Floating popover (Radix)</td></tr>
+            <tr><td><code>select</code></td><td>Dropdown select (Radix)</td></tr>
+            <tr><td><code>separator</code></td><td>Visual divider line</td></tr>
+            <tr><td><code>sheet</code></td><td>Side sheet/drawer overlay</td></tr>
+            <tr><td><code>sidebar</code></td><td>Sidebar layout with collapsible nav</td></tr>
+            <tr><td><code>skeleton</code></td><td>Loading skeleton placeholder</td></tr>
+            <tr><td><code>sonner</code></td><td>Toast notification provider</td></tr>
+            <tr><td><code>switch</code></td><td>Toggle switch (Radix)</td></tr>
+            <tr><td><code>table</code></td><td>Data table with headers/body/rows/cells</td></tr>
+            <tr><td><code>tabs</code></td><td>Tab navigation (Radix)</td></tr>
+            <tr><td><code>textarea</code></td><td>Multi-line text input</td></tr>
+            <tr><td><code>tooltip</code></td><td>Tooltip overlay (Radix)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Type Definitions -->
+      <div class="card">
+        <button class="section-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">Type Definitions</button>
+        <div class="section-body">
+          <table>
+            <tr><th>File</th><th>Description</th><th>Key Types Defined</th></tr>
+            <tr><td><code>types/api.ts</code></td><td>Base API response envelope</td><td>BaseApiResponse&lt;T&gt;</td></tr>
+            <tr><td><code>types/auth/api-types.ts</code></td><td>Auth API types</td><td>LoginNextStep, LoginDataPayload, ApiEnvelope&lt;T&gt;</td></tr>
+            <tr><td><code>types/auth/context-types.ts</code></td><td>Auth context state shape</td><td>AuthUser, AuthContextValue</td></tr>
+            <tr><td><code>types/auth/storage-types.ts</code></td><td>Auth persistence types</td><td>StoredUser</td></tr>
+            <tr><td><code>types/chat/data-types.ts</code></td><td>Chat message structures</td><td>ChatMessage (union), DocKind, SimpleDoc, DocumentRef, HistoryItem, HistoryGroup</td></tr>
+            <tr><td><code>types/documents/data-types.ts</code></td><td>Document entities</td><td>DocItem, UploadedFile, DocSection</td></tr>
+            <tr><td><code>types/onboarding/form-types.ts</code></td><td>Onboarding profile form</td><td>FormValues (firstName, lastName, dob, about)</td></tr>
+            <tr><td><code>types/help/component-types.ts</code></td><td>Help form types</td><td>HelpFormValues, HelpFormProps, IssueSubmittedDialogProps</td></tr>
+            <tr><td><code>types/settings/component-types.ts</code></td><td>Settings types</td><td>ProfileData, ChangePasswordFormValues, EditProfileFormValues, NotificationSettingsProps</td></tr>
+            <tr><td><code>types/super-admin/dashboard/data-types.ts</code></td><td>Dashboard analytics</td><td>ChartDatum, DocumentUploadData, CoachUsageData</td></tr>
+            <tr><td><code>types/super-admin/organization/form-types.ts</code></td><td>Organization form</td><td>CoachInfo, OrganizationFormData, OrganizationRow</td></tr>
+            <tr><td><code>types/super-admin/user-management/form-type.ts</code></td><td>User management</td><td>UserRow</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════ SITE MAP ═══════════ -->
+    <div class="panel" id="sitemap">
+      <div id="section-site-map"></div>
+      <!-- How to Navigate -->
+      <div class="card">
+        <h2>How to Navigate the Site</h2>
+        <ul>
+          <li>The app has <strong>two user roles</strong>: regular <code>user</code> and <code>super-admin</code>. After login, users are routed based on their role.</li>
+          <li>Regular users must <strong>complete onboarding</strong> (5 tutorial screens + 2 detail forms) before accessing the main app. The <code>ProtectedRoute</code> component enforces this automatically.</li>
+          <li>The <strong>sidebar navigation</strong> is the primary way to move between pages. Each role has its own sidebar with different menu items.</li>
+          <li>The <strong>Alex AI floating assistant</strong> is available on all user pages (bottom-right corner) for quick AI help.</li>
+          <li>The <code>ProtectedRoute</code> component enforces authentication, role-based access checks, and onboarding completion on every protected route.</li>
+        </ul>
+      </div>
+
+      <!-- Visual Site Map -->
+      <div class="card">
+        <h2>Visual Site Map</h2>
+        <div class="tree"><span class="root">Inspire Genius App</span>
+<span class="connector">|</span>
+<span class="connector">+--</span> <span class="section-label">Public Routes (no auth required)</span>
+<span class="connector">|   +--</span> <span class="route">/login</span> <span class="desc">— Email/password login, social auth (Google)</span>
+<span class="connector">|   +--</span> <span class="route">/signup</span> <span class="desc">— Registration with password validation</span>
+<span class="connector">|   +--</span> <span class="route">/forgot</span> <span class="desc">— Password reset email request</span>
+<span class="connector">|   +--</span> <span class="route">/reset-password</span> <span class="desc">— New password form (token from email)</span>
+<span class="connector">|   +--</span> <span class="route">/otp</span> <span class="desc">— 6-digit MFA verification</span>
+<span class="connector">|   +--</span> <span class="route">/accept-invitation</span> <span class="desc">— Invited user password setup</span>
+<span class="connector">|   +--</span> <span class="route">/social-login</span> <span class="desc">— OAuth callback handler</span>
+<span class="connector">|   +--</span> <span class="route">/terms</span> <span class="desc">— Terms of service</span>
+<span class="connector">|   \--</span> <span class="route">/privacy</span> <span class="desc">— Privacy policy</span>
+<span class="connector">|</span>
+<span class="connector">+--</span> <span class="section-label">Onboarding (authenticated, pre-main-app)</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/one</span> <span class="desc">— Tutorial screen 1 (triggers guided tour)</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/two</span> <span class="desc">— Tutorial screen 2</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/three</span> <span class="desc">— Tutorial screen 3</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/four</span> <span class="desc">— Tutorial screen 4</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/five</span> <span class="desc">— Tutorial screen 5</span>
+<span class="connector">|   +--</span> <span class="route">/onboarding/details/one</span> <span class="desc">— Profile form (name, DOB, bio)</span>
+<span class="connector">|   \--</span> <span class="route">/onboarding/details/two</span> <span class="desc">— Coach preferences (tone, accent, gender)</span>
+<span class="connector">|</span>
+<span class="connector">+--</span> <span class="section-label">User Pages (role: "user", sidebar: UserLayout)</span>
+<span class="connector">|   +--</span> <span class="route">/home</span> <span class="desc">— Dashboard: PRISM video, Ask Alex, Explore Coaches</span>
+<span class="connector">|   +--</span> <span class="route">/dashboard</span> <span class="desc">— Coach grid with search, click to start chat</span>
+<span class="connector">|   |   \--</span> <span class="route">/dashboard/:coach/chat</span> <span class="desc">— AI chat: real-time WebSocket, voice, docs</span>
+<span class="connector">|   +--</span> <span class="route">/coaches</span> <span class="desc">— Manage coach preferences (voice, accent, tone)</span>
+<span class="connector">|   +--</span> <span class="route">/documents</span> <span class="desc">— Upload, search, filter, download, delete documents</span>
+<span class="connector">|   +--</span> <span class="route">/settings</span> <span class="desc">— Account settings, password change, notifications</span>
+<span class="connector">|   \--</span> <span class="route">/help</span> <span class="desc">— Submit support tickets, view issue history</span>
+<span class="connector">|   </span><span class="desc">[Alex AI Floating Assistant available on all user pages]</span>
+<span class="connector">|</span>
+<span class="connector">\--</span> <span class="section-label">Super Admin Pages (role: "super-admin", sidebar: SuperAdminLayout)</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/dashboard</span> <span class="desc">— Analytics: org metrics, charts, licenses, trends</span>
+<span class="connector">    |   +--</span> <span class="route">/super-admin/dashboard/issues</span> <span class="desc">— Support ticket list</span>
+<span class="connector">    |   \--</span> <span class="route">/super-admin/dashboard/licences</span> <span class="desc">— License overview</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/users</span> <span class="desc">— User management: invite, edit, deactivate, delete</span>
+<span class="connector">    |   \--</span> <span class="route">/super-admin/:userId/coaches</span> <span class="desc">— Assign coaches to specific user</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/coaches</span> <span class="desc">— Coach management: add, edit, deactivate</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/organizations</span> <span class="desc">— Organization list: add, deactivate</span>
+<span class="connector">    |   \--</span> <span class="route">/super-admin/organizations/:id/view</span> <span class="desc">— Org detail: coaches, users, licenses</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/team</span> <span class="desc">— Team member management</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/issues/:id</span> <span class="desc">— Issue detail: admin comments, status changes</span>
+<span class="connector">    +--</span> <span class="route">/super-admin/settings</span> <span class="desc">— Admin account settings</span>
+<span class="connector">    \--</span> <span class="route">/super-admin/project-log</span> <span class="desc">— Project documentation dashboard</span></div>
+      </div>
+
+      <!-- Auth Flow Diagram -->
+      <div class="card">
+        <h2>Auth Flow Diagram</h2>
+        <div class="flow-diagram"><span class="highlight">User visits app</span> <span class="route">/</span> redirects to <span class="route">/login</span>
+<span class="connector">  +--</span> <span class="action">Login with email/password</span>
+<span class="connector">  |   +--</span> MFA required? <span class="route">/otp</span> <span class="connector">--></span> verify <span class="connector">--></span> <span class="action">route by role</span>
+<span class="connector">  |   \--</span> No MFA <span class="connector">--></span> <span class="action">route by role</span>
+<span class="connector">  +--</span> <span class="action">Login with Google</span> <span class="connector">--></span> <span class="route">/social-login</span> <span class="connector">--></span> callback <span class="connector">--></span> <span class="action">route by role</span>
+<span class="connector">  +--</span> <span class="action">Sign up</span> <span class="connector">--></span> <span class="route">/signup</span> <span class="connector">--></span> <span class="route">/otp</span> (email verify) <span class="connector">--></span> <span class="route">/login</span>
+<span class="connector">  +--</span> <span class="action">Forgot password</span> <span class="connector">--></span> <span class="route">/forgot</span> <span class="connector">--></span> email sent <span class="connector">--></span> <span class="route">/reset-password</span>
+<span class="connector">  \--</span> <span class="action">Accept invitation</span> <span class="connector">--></span> <span class="route">/accept-invitation</span> <span class="connector">--></span> set password <span class="connector">--></span> <span class="route">/login</span>
+
+<span class="highlight">After successful auth:</span>
+<span class="connector">  +--</span> Not onboarded? <span class="connector">--></span> <span class="route">/onboarding/one</span> <span class="connector">--></span> ... <span class="connector">--></span> <span class="route">/onboarding/details/two</span> <span class="connector">--></span> <span class="action">mark complete</span>
+<span class="connector">  +--</span> Role: <code>"user"</code> <span class="connector">--></span> <span class="route">/home</span>
+<span class="connector">  \--</span> Role: <code>"super-admin"</code> <span class="connector">--></span> <span class="route">/super-admin/dashboard</span></div>
+      </div>
+
+      <!-- Sidebar Navigation Reference -->
+      <div class="card">
+        <h2>Sidebar Navigation Reference</h2>
+        <div class="sidebar-grid">
+          <div class="sidebar-card">
+            <h4>User Sidebar (UserLayout)</h4>
+            <div class="nav-item"><span class="nav-icon">Home</span> <span class="nav-desc">Home — Dashboard landing page</span></div>
+            <div class="nav-item"><span class="nav-icon">Bot</span> <span class="nav-desc">Chat with Coaches — Coach grid</span></div>
+            <div class="nav-item"><span class="nav-icon">TableProperties</span> <span class="nav-desc">Manage Coaches — Coach preferences</span></div>
+            <div class="nav-item"><span class="nav-icon">FileText</span> <span class="nav-desc">My Documents — Document management</span></div>
+            <div class="nav-item"><span class="nav-icon">Settings</span> <span class="nav-desc">Settings — Account settings</span></div>
+            <div class="nav-item"><span class="nav-icon">HelpCircle</span> <span class="nav-desc">Help &amp; Support — Support tickets</span></div>
+            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--accent2);">+ Alex AI Floating Assistant (bottom-right on all pages)</div>
+          </div>
+          <div class="sidebar-card">
+            <h4>Super Admin Sidebar (SuperAdminLayout)</h4>
+            <div class="nav-item"><span class="nav-icon">LayoutDashboard</span> <span class="nav-desc">Dashboard — Analytics overview</span></div>
+            <div class="nav-item"><span class="nav-icon">UsersRound</span> <span class="nav-desc">User Management — Invite, edit, manage users</span></div>
+            <div class="nav-item"><span class="nav-icon">Bot</span> <span class="nav-desc">Coach Management — Add, edit coaches</span></div>
+            <div class="nav-item"><span class="nav-icon">Settings</span> <span class="nav-desc">Settings — Admin account settings</span></div>
+            <div class="nav-item"><span class="nav-icon">FileText</span> <span class="nav-desc">Project Log — Project documentation</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
-      <div class="card">
-        <h2>Session Prompts</h2>
+      <div class="card" id="section-session-prompts">
+        <h2>Session Prompts <span class="path-badge">session history</span></h2>
         <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
 
         <div class="prompt-entry">
@@ -331,6 +992,31 @@
           <div class="prompt-text">after every prompt is submitted add it to the session_prompts section in the IG_project_log.html</div>
         </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-11 — Prompt #3</div>
+          <div class="prompt-text">complete this in the background. review all files in the frontend, provide a description of each, what it does, what its for, what it calls, what it enables, and what it interacts with. Include routes. Add this to project documentation in IG_project_log.html in a new tab.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-11 — Prompt #4</div>
+          <div class="prompt-text">complete this task in the background. please describe how to navigate the site. Create a map and add it to the IG_project_log.html. the push it to s3</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-12 — Prompt #5</div>
+          <div class="prompt-text">please complete this task in the background. Review this site https://inspire-genius-fe-uat.pacewisdom.in/home and provide a new design based on this dashboard '/Users/williambrown/Dropbox/AES Material/Inspire-X/IG_New_DashBoards/ig_manager_dashboard_all UserDBs.html'</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-13 — Prompt #6</div>
+          <div class="prompt-text">Create the following files to capture all changes change_log.md, database_schema.md. claude.md and all the .claude/rule files continually. Please merge these new .md file with /Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/IG_project_log.html at the root level, update it continually with all of the .md and rule files. Add identifiers to identify the subfolder entries. Deploy it when complete. Complete these task in the background</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-13 — Prompt #7</div>
+          <div class="prompt-text">Implement the RLHF Feedback System + Super Admin Enhancements plan: Phase 1 (Foundation types/services/hooks for feedback, audit, magic-auth, prompt-builder), Phase 2 (RLHF feedback widget on coach chat), Phase 3 (RLHF Training Dashboard), Phase 4 (System Prompt Builder), Phase 5 (Enhanced user roles with permission matrix), Phase 6 (Audit Log Viewer), Phase 7 (Magic Link Auth integration). All 7 phases with new routes, nav items, data layers, and audit logging integration.</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -338,12 +1024,19 @@
   <script>
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.tab).classList.add('active');
+        activateTab(tab.dataset.tab);
       });
     });
+
+    function activateTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+      const panel = document.getElementById(tabId);
+      if (tab) tab.classList.add('active');
+      if (panel) { panel.classList.add('active'); panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      return false;
+    }
   </script>
 </body>
 </html>
