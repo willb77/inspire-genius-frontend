@@ -21,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ROLES } from "@/constants/routes";
+import { ROLE_LABELS } from "@/types/roles";
 
 export type UserFormModalProps = {
   open: boolean;
@@ -112,6 +114,32 @@ export default function UserFormModal({
                 </FormItem>
               )}
             />
+
+          <FormField
+            control={control}
+            name="role"
+            rules={User_FORM_RULES.role}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-xs">Role *</FormLabel>
+                <FormControl>
+                  <Select value={field.value || ""} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(ROLES).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {ROLE_LABELS[role] ?? role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {mode === "edit" && allowStatusEdit !== false && (
             <FormField

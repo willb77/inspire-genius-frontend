@@ -39,6 +39,8 @@ const getSecureRandomInt = (maxExclusive: number) => {
 
 export default function ChatWindow({
   coachName,
+  coachId,
+  conversationId,
   className,
   onBack,
   onSendText,
@@ -295,6 +297,8 @@ const genericMessages =
             lastMessageId={lastMessageId}
             onShowAudioPlayer={() => handleShowAudioPlayer(true)}
             genericMessages={genericMessages}
+            coachId={coachId}
+            conversationId={conversationId}
           />
         ) : (
           <DocumentsPanel

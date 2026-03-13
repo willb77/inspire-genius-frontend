@@ -26,6 +26,7 @@ import { syncAuthToken } from "@/lib/axios";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
 import { NEXT_STEPS, ROUTES, ROLES } from "@/constants/routes";
+import { logAuditEvent } from "@/services/audit/audit.service";
 import { useNavigate } from "react-router-dom";
 import type { ApiEnvelope, LoginDataPayload } from "@/types/auth/api-types";
 import { useAuthLoginMutation, useAuthSignupMutation, useAuthVerifyOtpMutation, useResendOtpMutation } from "@/hooks/auth";
@@ -156,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
+      logAuditEvent({ event_type: "user_login", actor: resolvedEmail, actor_id: userId ?? undefined });
       navigateAfterAuth(role, isOnboardingCompleted);
     },
     [computeIsOnboarded, navigateAfterAuth]
@@ -416,12 +418,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async (): Promise<void> => {
+    const email = user?.email;
     await clearAuth();
     syncAuthToken(null);
     setUser(null);
     setPendingVerification(false);
+    logAuditEvent({ event_type: "user_logout", actor: email ?? "unknown" });
     navigate(ROUTES.LOGIN, { replace: true });
-  }, [navigate]);
+  }, [navigate, user?.email]);
 
   const markOnboardingCompleted = useCallback(async (): Promise<void> => {
     await setOnboardingFlag(true);

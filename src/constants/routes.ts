@@ -18,6 +18,9 @@ export const ROUTES = {
     USERS: "/super-admin/users",
     SETTINGS: "/super-admin/settings",
     PROJECT_LOG: "/super-admin/project-log",
+    RLHF_TRAINING: "/super-admin/rlhf-training",
+    PROMPT_BUILDER: "/super-admin/prompt-builder",
+    AUDIT_LOG: "/super-admin/audit-log",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
@@ -39,8 +42,16 @@ export const NEXT_STEPS = {
   RESEND_OTP: "resend_otp",
 } as const;
 
+export const ROUTES_MAGIC = {
+  MAGIC_LOGIN: "/magic-login",
+  MAGIC_VERIFY: "/magic-verify",
+} as const;
+
 export const ROLES = {
   SUPER_ADMIN: "super-admin",
+  ADMIN: "admin",
+  COMPANY_ADMIN: "company-admin",
+  MANAGER_ADMIN: "manager-admin",
   USER: "user",
 } as const;
 
