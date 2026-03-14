@@ -12,6 +12,8 @@ import {
   updateUserByEmail,
   deleteUserByEmail,
   resendInvitation,
+  purgeInactiveUsers,
+  getInactiveUserCount,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
@@ -20,6 +22,7 @@ import {
   type UpdateUserResponse,
   type DeleteUserResponse,
   type ResendInvitationResponse,
+  type PurgeInactiveResult,
 } from "@/services/super-admin/user-management/user-management.service";
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
@@ -161,6 +164,62 @@ export function useResendInvitation() {
         error.response?.data?.message ||
         error.message ||
         "Failed to resend invitation";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useInactiveUserCount(enabled = false) {
+  return useQuery<number, AxiosError<BaseApiResponse<null>>>({
+    queryKey: ["super-admin", "user-management", "inactive-count"],
+    queryFn: () => getInactiveUserCount(),
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function usePurgeInactiveUsers() {
+  const queryClient = useQueryClient();
+
+  return useMutation<PurgeInactiveResult, AxiosError<BaseApiResponse<null>>>({
+    mutationFn: () => purgeInactiveUsers(),
+
+    onSuccess: (result) => {
+      if (result.succeeded.length > 0 && result.failed.length === 0) {
+        toast.success(
+          `Purged ${result.succeeded.length} inactive user(s)`
+        );
+      } else if (result.succeeded.length > 0 && result.failed.length > 0) {
+        toast.warning(
+          `Purged ${result.succeeded.length} user(s), but ${result.failed.length} could not be removed`
+        );
+      } else if (result.total === 0) {
+        toast.info("No inactive users found to purge");
+      } else {
+        toast.error("Failed to purge inactive users");
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+
+      logAuditEvent({
+        event_type: "users_purged",
+        actor: "admin",
+        resource: "user",
+        details: {
+          purged_count: result.succeeded.length,
+          failed_count: result.failed.length,
+        },
+      });
+    },
+
+    onError: (error) => {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to purge inactive users";
       toast.error(msg);
     },
   });

@@ -65,6 +65,7 @@ export type InviteUserPayload = {
   first_name: string
   last_name: string
   role_id?: string
+  role?: string
   organization_id?: string
   business_id?: string
 }
@@ -140,4 +141,49 @@ export async function resendInvitation(invitation_id: string) {
     `/v1/user-management/invitations/${encodeURIComponent(invitation_id)}/resend`
   )
   return data
+}
+
+// ------------------ PURGE INACTIVE USERS ------------------
+
+export type PurgeInactiveData = {
+  purged: number
+  failed: number
+  purged_emails: string[]
+  failed_emails: string[]
+}
+
+export type PurgeInactiveResponse = BaseApiResponse<PurgeInactiveData>
+
+export type PurgeInactiveResult = {
+  succeeded: string[]
+  failed: string[]
+  total: number
+}
+
+/**
+ * Calls the backend purge endpoint to hard-delete all deactivated users.
+ */
+export async function purgeInactiveUsers(): Promise<PurgeInactiveResult> {
+  const { data } = await api.delete<PurgeInactiveResponse>(
+    '/v1/user-management/users/purge/inactive'
+  )
+
+  const purgeData = data?.data
+  return {
+    succeeded: purgeData?.purged_emails ?? [],
+    failed: purgeData?.failed_emails ?? [],
+    total: (purgeData?.purged ?? 0) + (purgeData?.failed ?? 0),
+  }
+}
+
+/**
+ * Fetches the count of inactive/deactivated users without deleting them.
+ */
+export async function getInactiveUserCount(): Promise<number> {
+  const response = await getUsers({
+    user_status_filter: 'inactive',
+    limit: 1,
+    page: 1,
+  })
+  return response?.data?.pagination?.total ?? 0
 }

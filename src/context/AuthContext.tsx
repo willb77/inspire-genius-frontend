@@ -30,6 +30,7 @@ import { logAuditEvent } from "@/services/audit/audit.service";
 import { useNavigate } from "react-router-dom";
 import type { ApiEnvelope, LoginDataPayload } from "@/types/auth/api-types";
 import { useAuthLoginMutation, useAuthSignupMutation, useAuthVerifyOtpMutation, useResendOtpMutation } from "@/hooks/auth";
+import { requestMagicLink } from "@/services/magic-auth/magic-auth.service";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -167,32 +168,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: async ({ data, email, password }) => {
       // Some APIs return 200 but embed failure in body
       const failed = data?.status === false || data?.success === false;
-      const payload: LoginDataPayload = (data.data ?? {}) as LoginDataPayload;
+      const raw = (data.data ?? {}) as Record<string, unknown>;
+      // Normalize PascalCase Cognito keys to snake_case expected by LoginDataPayload
+      const payload: LoginDataPayload = {
+        ...raw,
+        access_token: (raw.access_token ?? raw.AccessToken ?? null) as string | null,
+        refresh_token: (raw.refresh_token ?? raw.RefreshToken ?? null) as string | null,
+        id_token: (raw.id_token ?? raw.IdToken ?? null) as string | null,
+        token_type: (raw.token_type ?? raw.TokenType ?? null) as string | null,
+      } as LoginDataPayload;
       // If backend tells us to verify MFA, do that FIRST and return early
       const nextStep: string | undefined = payload.next_step ?? undefined;
       if (failed) {
         const msg = data?.message || "Invalid email or password";
         toast.error(msg);
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setEmail(email);
-          await setPassword(password);
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+          } catch {
+            // Fall back to OTP if magic link fails
+            await setEmail(email);
+            await setPassword(password);
+            await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+            navigate(ROUTES.OTP, { replace: true });
+          }
         }
         return;
       }
       // Payload under data.data
 
       if (nextStep === NEXT_STEPS.VERIFY_MFA) {
-        await setEmail(email);
-        await setPassword(password);
-        await setNextStep(NEXT_STEPS.VERIFY_MFA);
-        if (payload.session) await setSession(String(payload.session));
-        await storeUser({ email });
-        setUser({ id: "pending", email, name: null, token: null });
-        setPendingVerification(true);
-        toast.success(data?.message);
-        navigate(ROUTES.OTP, { replace: true });
+        // Send magic link instead of OTP for MFA verification
+        try {
+          await requestMagicLink({ email: email.trim().toLowerCase() });
+          toast.success("Check your email for a sign-in link");
+        } catch {
+          toast.error("Failed to send magic link. Please try again.");
+        }
         return;
       }
       const accessToken = payload.access_token ?? null;
@@ -239,11 +253,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const ax = err as AxiosError<ApiEnvelope<LoginDataPayload>>;
         const nextStep: string | undefined = (ax?.response?.data?.data as Partial<LoginDataPayload> | undefined)?.next_step ?? undefined;
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setEmail(email);
-          await setPassword(password);
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          await resendOtpMutation.mutateAsync();
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+          } catch {
+            toast.error("Failed to send verification link");
+          }
           return { status: false };
         }
 
@@ -264,15 +280,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const msg = data?.message || "Sign up failed";
         toast.error(msg);
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+            navigate(ROUTES.LOGIN, { replace: true });
+          } catch {
+            // Fall back to OTP if magic link fails
+            await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+            navigate(ROUTES.OTP, { replace: true });
+          }
         }
         return;
       }
 
       if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-        await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-        navigate(ROUTES.OTP, { replace: true });
+        // Send magic link for email verification instead of OTP
+        try {
+          await requestMagicLink({ email: email.trim().toLowerCase() });
+          toast.success("Account created! Check your email for a verification link");
+          navigate(ROUTES.LOGIN, { replace: true });
+        } catch {
+          // Fall back to OTP if magic link fails
+          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+          navigate(ROUTES.OTP, { replace: true });
+        }
       }
     },
     onError: (err: unknown) => {
