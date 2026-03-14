@@ -32,6 +32,15 @@ const EVENT_TYPES = [
   "user_invited",
   "user_updated",
   "user_deleted",
+  "page_view",
+  "coach_created",
+  "coach_updated",
+  "coach_deleted",
+  "document_uploaded",
+  "document_deleted",
+  "onboarding_completed",
+  "password_reset",
+  "settings_updated",
 ]
 
 export default function AuditLog() {

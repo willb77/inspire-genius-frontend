@@ -2,6 +2,7 @@ import React from "react";
 import { ROUTES } from "@/constants/routes";
 import { LayoutDashboard, Bot, UsersRound, Settings, FileText, MessageSquarePlus, Wand2, Shield } from "lucide-react";
 import SidebarScaffold, { type NavItemDef } from "@/components/shared/layout/SidebarScaffold";
+import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ const NAV_ITEMS: NavItemDef[] = [
 ];
 
 export default function SuperAdminLayout({ children, className }: UserLayoutProps) {
+  usePageViewAudit("admin");
   return (
     <SidebarScaffold navItems={NAV_ITEMS} className={className}>
       {children}
