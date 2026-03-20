@@ -13,7 +13,6 @@ import {
   Award,
   Building2,
   Grid3x3,
-  Table,
   BarChart3,
   Home,
   PlusCircle,
@@ -69,8 +68,8 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     items: [
       { to: "/company-admin/dashboard", icon: Building2, label: "Company Dashboard" },
       { to: "/company-admin/users", icon: Users, label: "Team Management" },
-      { to: "/company-admin/org-chart", icon: Grid3x3, label: "Org Chart" },
-      { to: "/company-admin/assignments", icon: Table, label: "Assignments" },
+      { to: "/company-admin/costs", icon: BarChart3, label: "Costs & Expenses" },
+      { to: "/company-admin/organization", icon: Grid3x3, label: "Organization" },
       { to: "/company-admin/training", icon: BookOpen, label: "Training" },
       { to: "/company-admin/leadership", icon: Award, label: "Leadership" },
     ],

@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-20] — Phase 2: Multi-Role Dashboard Pages & MSW Mocks [WS-B]
+
+### Added
+- **Manager pages**: `Team.tsx` (direct reports table with PRISM scores, goals, training), `Hiring.tsx` (pipeline stats, candidates table, interviews, Job DNA profiles)
+- **Company Admin pages**: `Users.tsx` (searchable user CRUD table), `Costs.tsx` (monthly spend chart, department cost breakdown, license allocation)
+- **Practitioner pages**: `Clients.tsx` (searchable client roster with PRISM, sessions, notes), `Credits.tsx` (usage chart, transaction history, purchase CTA)
+- **Distributor pages**: `Practitioners.tsx` (searchable practitioner network with utilization bars, regional breakdown), `Credits.tsx` (usage trend, allocations by practitioner, transaction log)
+- **MSW mock handlers**: `manager.ts` (team, hiring, interviews), `company-admin.ts` (users CRUD, departments, costs, analytics), `practitioner.ts` (clients, sessions, followups, credits), `distributor.ts` (practitioners, credits, transactions, territory)
+- Route constants: `ROUTES.MANAGER.HIRING`, `ROUTES.COMPANY_ADMIN.COSTS`, `ROUTES.PRACTITIONER.CREDITS`, `ROUTES.DISTRIBUTOR.CREDITS`
+- Sidebar section: added "Costs & Expenses" to Company section
+
+### Changed
+- Replaced placeholder pages for Team, Users, Clients, Practitioners with full data-rich implementations
+- Updated `routes.tsx` with new page routes
+- Updated `sidebar-sections.ts` with new navigation items
+
+---
+
 ## [2026-03-19] — Test Stabilization: 11 Failing Suites Fixed [WS-A]
 
 ### Added
