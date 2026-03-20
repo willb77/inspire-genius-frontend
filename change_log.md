@@ -4,6 +4,66 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-19] — Test Stabilization: 11 Failing Suites Fixed [WS-A]
+
+### Added
+- `inspire-genius-frontend/jest.vite-env-transform.ts` — Custom ts-jest AST transformer that rewrites `import.meta.env.X` → `process.env.X` at compile time, fixing CJS/ESM incompatibility in Jest
+- `inspire-genius-frontend/tsconfig.test.json` — Dedicated TypeScript config for Jest, extending tsconfig.app.json with test-friendly settings (esModuleInterop, relaxed strictness)
+
+### Fixed
+- `jest.config.ts` — Removed deprecated `globals.ts-jest` config, added AST transformer + diagnostic suppression for import.meta errors
+- `src/services/agent/__tests__/agentService.test.ts` — Timezone-sensitive dates: `new Date("2024-01-01")` (UTC midnight) → `new Date(2024, 0, 1)` (local midnight)
+- `src/pages/super-admin/__tests__/Dashboard.test.tsx` — Same UTC→local date fix in Calendar mock
+- `src/pages/super-admin/LicenceDetailsPage.tsx` — `formatDate()` now appends `T00:00:00` to date-only strings to force local-time parsing instead of UTC
+- `src/pages/super-admin/__tests__/LicenceDetailsPage.test.tsx` — Passes after source fix
+- `src/pages/auth/__tests__/Login.test.tsx` — Added mock for `useRequestMagicLink`, `lucide-react`; updated tests for new magic-link-first login flow
+- `src/pages/super-admin/__tests__/UserManagement.test.tsx` — Added mocks for `useRoles`, `useInactiveUserCount`, `usePurgeInactiveUsers`; wrapped renders in `QueryClientProvider`; updated assertions for new badge labels and action menu behavior
+- `src/components/super-admin/__tests__/ManagementHeader.test.tsx` — Updated CSS selectors from `gap-6` to `gap-3` + `items-center` to match source
+
+### Result
+- **Before:** 114/125 suites pass, 1129/1137 tests pass
+- **After:** 125/125 suites pass, 1226/1226 tests pass (+89 newly runnable tests)
+
+---
+
+## [2026-03-19] — Default Route Redirect for S3 Preview
+
+### Changed
+- `inspire-genius-frontend/src/routes.tsx` — Changed default route redirects from `/login` to `/preview-home` so the S3-hosted preview site shows the dashboard instead of the login page
+
+---
+
+## [2026-03-19] — PWA Manifest & Secrets Manager Migration [WS-D 1.6-1.7]
+
+### Added — PWA Support (1.6)
+- `inspire-genius-frontend/public/manifest.json` — PWA manifest with app name, theme color (#002060), and full icon set
+- `inspire-genius-frontend/public/icons/` — PWA icon set (72–512px) generated from Logo-Dark.png
+- `inspire-genius-frontend/public/offline.html` — Offline fallback page with branded UI and retry button
+- `vite-plugin-pwa` configured in `vite.config.ts` — auto-updating service worker with Workbox, precaches app shell, caches Google Fonts
+- `index.html` — Added manifest link, apple-touch-icon, theme-color meta, and apple-mobile-web-app tags
+- Title corrected from "Inspires Genius" to "Inspire Genius"
+
+### Added — Secrets Manager Migration (1.7)
+- `inspire-genius-backend/prism_inspire/core/secrets.py` — Async/sync secrets utility with AWS Secrets Manager integration, in-memory TTL cache, and .env fallback for development
+- `infrastructure/scripts/secrets-setup.sh` — Setup script to create secrets in AWS Secrets Manager (interactive or --from-env import), creates IAM read policy
+- `docs/secrets-inventory.md` — Complete inventory of all secrets, their Secrets Manager names, which service uses them, and setup instructions
+- `.gitlab-ci.yml` — Updated build stage to fetch VITE_STORAGE_SECRET from Secrets Manager (falls back to CI variable)
+
+### Audit Findings
+- Backblaze B2 credentials hardcoded as defaults in `prism_inspire/core/config.py` — flagged for remediation
+- `VITE_STORAGE_SECRET` committed in frontend `.env` — should be CI-only
+
+---
+
+## [2026-03-15] — Fix Magic Link Authentication Flow — Dual Auth Mode Support
+
+### Fixed
+- Updated IG backend `auth.py` to accept both Cognito RS256 tokens and Magic Auth HS256 tokens (no `kid` header)
+- Aligned Magic Auth Lambda `JWT_SECRET` with IG backend `SECRET_KEY`
+- Backend now serves magic link authenticated users without requiring Cognito user attributes
+
+---
+
 ## [2026-03-14] — Replace MFA/OTP Login with Magic Link
 
 ### Changed

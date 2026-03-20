@@ -199,10 +199,10 @@ describe("ManagementHeader Component", () => {
 
     it("applies correct classes to button container", () => {
       const { container } = render(<ManagementHeader {...defaultProps} />);
-      const buttonContainer = container.querySelector(".flex.flex-wrap.gap-6");
-      
+      const buttonContainer = container.querySelector(".flex.flex-wrap.items-center.gap-3");
+
       expect(buttonContainer).toBeInTheDocument();
-      expect(buttonContainer).toHaveClass("flex", "flex-wrap", "gap-6");
+      expect(buttonContainer).toHaveClass("flex", "flex-wrap", "items-center", "gap-3");
     });
 
     it("applies size-4 class to Plus icon", () => {
@@ -424,9 +424,9 @@ describe("ManagementHeader Component", () => {
 
     it("button is a direct child of button container", () => {
       const { container } = render(<ManagementHeader {...defaultProps} />);
-      const buttonContainer = container.querySelector(".flex.flex-wrap.gap-6");
+      const buttonContainer = container.querySelector(".flex.flex-wrap.items-center.gap-3");
       const button = screen.getByTestId("button");
-      
+
       expect(buttonContainer).toContainElement(button);
     });
   });

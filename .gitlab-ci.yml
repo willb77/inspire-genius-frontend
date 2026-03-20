@@ -21,10 +21,20 @@ devBuild:
 
   script:
     # Generate .env (build-time config)
+    # Non-secret config from CI variables
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
-    - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
+
+    # Fetch secrets from AWS Secrets Manager (falls back to CI variables)
+    - |
+      if command -v aws &>/dev/null; then
+        STORAGE_SECRET=$(aws secretsmanager get-secret-value \
+          --secret-id "inspire-genius/VITE_STORAGE_SECRET" \
+          --query SecretString --output text \
+          --region "${AWS_DEFAULT_REGION:-us-east-1}" 2>/dev/null) || true
+      fi
+    - echo "VITE_STORAGE_SECRET=${STORAGE_SECRET:-$VITE_STORAGE_SECRET}" >> .env
 
     # Install & build
     - sudo docker system prune -a --volumes -f
