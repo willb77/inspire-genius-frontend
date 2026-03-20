@@ -45,22 +45,26 @@ import Privacy from "@/pages/legal/Privacy";
 // Manager pages
 import ManagerDashboard from "@/pages/manager/Dashboard";
 import ManagerTeam from "@/pages/manager/Team";
+import ManagerHiring from "@/pages/manager/Hiring";
 import ManagerSettings from "@/pages/manager/Settings";
 
 // Company Admin pages
 import CompanyAdminDashboard from "@/pages/company-admin/Dashboard";
 import CompanyAdminUsers from "@/pages/company-admin/Users";
 import CompanyAdminOrganization from "@/pages/company-admin/Organization";
+import CompanyAdminCosts from "@/pages/company-admin/Costs";
 import CompanyAdminSettings from "@/pages/company-admin/Settings";
 
 // Practitioner pages
 import PractitionerDashboard from "@/pages/practitioner/Dashboard";
 import PractitionerClients from "@/pages/practitioner/Clients";
+import PractitionerCredits from "@/pages/practitioner/Credits";
 import PractitionerSettings from "@/pages/practitioner/Settings";
 
 // Distributor pages
 import DistributorDashboard from "@/pages/distributor/Dashboard";
 import DistributorPractitioners from "@/pages/distributor/Practitioners";
+import DistributorCredits from "@/pages/distributor/Credits";
 import DistributorTerritory from "@/pages/distributor/Territory";
 import DistributorSettings from "@/pages/distributor/Settings";
 
@@ -125,22 +129,26 @@ export const routes: RouteObject[] = [
       // Manager pages
       { path: "/manager/dashboard", element: <ManagerDashboard /> },
       { path: "/manager/team", element: <ManagerTeam /> },
+      { path: "/manager/hiring", element: <ManagerHiring /> },
       { path: "/manager/settings", element: <ManagerSettings /> },
 
       // Company Admin pages
       { path: "/company-admin/dashboard", element: <CompanyAdminDashboard /> },
       { path: "/company-admin/users", element: <CompanyAdminUsers /> },
       { path: "/company-admin/organization", element: <CompanyAdminOrganization /> },
+      { path: "/company-admin/costs", element: <CompanyAdminCosts /> },
       { path: "/company-admin/settings", element: <CompanyAdminSettings /> },
 
       // Practitioner pages
       { path: "/practitioner/dashboard", element: <PractitionerDashboard /> },
       { path: "/practitioner/clients", element: <PractitionerClients /> },
+      { path: "/practitioner/credits", element: <PractitionerCredits /> },
       { path: "/practitioner/settings", element: <PractitionerSettings /> },
 
       // Distributor pages
       { path: "/distributor/dashboard", element: <DistributorDashboard /> },
       { path: "/distributor/practitioners", element: <DistributorPractitioners /> },
+      { path: "/distributor/credits", element: <DistributorCredits /> },
       { path: "/distributor/territory", element: <DistributorTerritory /> },
       { path: "/distributor/settings", element: <DistributorSettings /> },
     ],
