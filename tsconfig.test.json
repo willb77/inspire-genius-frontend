@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ES2020",
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "erasableSyntaxOnly": false,
+    "types": ["jest", "node", "@testing-library/jest-dom", "vite/client"]
+  },
+  "include": ["src"]
+}

@@ -25,7 +25,10 @@ import {
 import { syncAuthToken } from "@/lib/axios";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
-import { NEXT_STEPS, ROUTES, ROLES } from "@/constants/routes";
+import { NEXT_STEPS, ROUTES } from "@/constants/routes";
+import { HOME_ROUTE_BY_ROLE } from "@/constants/navigation";
+import { ROLE_HIERARCHY, isUserRole } from "@/types/roles";
+import type { UserRole } from "@/types/roles";
 import { logAuditEvent } from "@/services/audit/audit.service";
 import { useNavigate } from "react-router-dom";
 import type { ApiEnvelope, LoginDataPayload } from "@/types/auth/api-types";
@@ -96,9 +99,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (role: string | null | undefined, isOnboardingCompleted: boolean) => {
       if (!isOnboardingCompleted) {
         navigate(ROUTES.ONBOARDING.ONE, { replace: true });
-      } else if ((role ?? "").toLowerCase() === ROLES.SUPER_ADMIN) {
-        navigate(ROUTES.SUPER_ADMIN.DASHBOARD, { replace: true });
+        return;
+      }
+      const normalizedRole = (role ?? "").toLowerCase();
+      if (isUserRole(normalizedRole)) {
+        navigate(HOME_ROUTE_BY_ROLE[normalizedRole], { replace: true });
       } else {
+        // Fallback for legacy roles
         navigate(ROUTES.HOME, { replace: true });
       }
     },
@@ -488,9 +495,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const hasRole = useCallback(
+    (role: UserRole): boolean => {
+      const userRole = (user?.role ?? "").toLowerCase();
+      return userRole === role;
+    },
+    [user?.role]
+  );
+
+  const isAtLeast = useCallback(
+    (role: UserRole): boolean => {
+      const userRole = (user?.role ?? "").toLowerCase();
+      if (!isUserRole(userRole)) return false;
+      return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[role];
+    },
+    [user?.role]
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      hasRole,
+      isAtLeast,
       isLoading:
         hydrating ||
         loginMutation.isPending ||
@@ -515,6 +541,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       hydrating,
       pendingVerification,
+      hasRole,
+      isAtLeast,
       login,
       signup,
       verifyOtp,

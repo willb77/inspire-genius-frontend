@@ -22,23 +22,30 @@ export default function MagicLinkVerify() {
       { token },
       {
         onSuccess: (resp) => {
-          const user = resp?.data as MagicAuthUser | undefined
-          if (!user?.access_token) return
+          // Response may be { data: MagicAuthUser } or { access_token, user: {...} }
+          const nested = resp?.data as MagicAuthUser | undefined
+          const flat = resp as unknown as Record<string, unknown>
+          const accessToken = nested?.access_token ?? (flat?.access_token as string | undefined)
 
+          if (!accessToken) return
+
+          // Extract user info from nested .data or flat .user object
+          const userObj = (flat?.user ?? {}) as Record<string, unknown>
           const payload: LoginDataPayload = {
-            access_token: user.access_token,
-            refresh_token: user.refresh_token ?? null,
-            token_type: user.token_type ?? null,
-            id_token: user.id_token ?? null,
-            user_id: user.user_id ?? null,
-            email: user.email ?? null,
-            full_name: user.full_name ?? null,
-            role: user.role ?? null,
-            is_onboarded: user.is_onboarded ?? null,
-            organization_id: user.organization_id ?? null,
-            business_id: user.business_id ?? null,
+            access_token: accessToken,
+            refresh_token: nested?.refresh_token ?? (flat?.refresh_token as string | null) ?? null,
+            token_type: nested?.token_type ?? (flat?.token_type as string | null) ?? null,
+            id_token: nested?.id_token ?? null,
+            user_id: nested?.user_id ?? (userObj?.id as string | null) ?? null,
+            email: nested?.email ?? (userObj?.email as string | null) ?? null,
+            full_name: nested?.full_name ?? (userObj?.full_name as string | null) ?? null,
+            role: nested?.role ?? (userObj?.role as string | null) ?? null,
+            is_onboarded: nested?.is_onboarded ?? true,
+            organization_id: nested?.organization_id ?? (userObj?.company_id as string | null) ?? null,
+            business_id: nested?.business_id ?? null,
           }
-          completeAuthFromPayload(payload, user.email, {
+          const email = payload.email ?? nested?.email ?? (userObj?.email as string) ?? ""
+          completeAuthFromPayload(payload, email, {
             message: "Signed in successfully",
           })
         },
@@ -52,7 +59,7 @@ export default function MagicLinkVerify() {
       <AuthLayout>
         <AuthHeader title="Verification Failed" subtitle="This magic link is invalid or expired" />
         <p className="text-sm text-muted-foreground text-center mt-4">
-          <Link className="underline" to="/magic-login">Request a new magic link</Link>
+          <Link className="underline" to="/login">Request a new magic link</Link>
         </p>
       </AuthLayout>
     )
