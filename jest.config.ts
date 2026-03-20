@@ -11,6 +11,8 @@ const config: JestConfigWithTsJest = {
     "\\.(css|scss|sass)$": "identity-obj-proxy",
   },
 
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/e2e/"],
+
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
 
   transform: {
