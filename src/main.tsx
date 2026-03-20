@@ -4,10 +4,20 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
-)
+async function enableMocking() {
+  if (import.meta.env.MODE !== 'development' || import.meta.env.VITE_MSW_ENABLED !== 'true') {
+    return
+  }
+  const { worker } = await import('./mocks/browser')
+  return worker.start({ onUnhandledRequest: 'bypass' })
+}
+
+enableMocking().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </StrictMode>,
+  )
+})
