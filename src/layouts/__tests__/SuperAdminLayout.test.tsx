@@ -5,41 +5,15 @@
 import { render, screen } from "@testing-library/react";
 import SuperAdminLayout from "../SuperAdminLayout";
 
-// 🔹 Mock ROUTES
-jest.mock("@/constants/routes", () => ({
-  ROUTES: {
-    SUPER_ADMIN: {
-      DASHBOARD: "/dashboard",
-      USERS: "/users",
-      COACHES: "/coaches",
-      SETTINGS: "/settings",
-    },
-  },
-}));
+// Mock AppShell since SuperAdminLayout is now a thin wrapper
+const mockAppShell = jest.fn();
 
-// 🔹 Mock lucide-react icons
-jest.mock("lucide-react", () => ({
-  LayoutDashboard: () => <span data-testid="icon-dashboard" />,
-  UsersRound: () => <span data-testid="icon-users" />,
-  Bot: () => <span data-testid="icon-bot" />,
-  Settings: () => <span data-testid="icon-settings" />,
-}));
-
-// 🔹 Capture navItems passed to SidebarScaffold
-const mockSidebarScaffold = jest.fn();
-
-jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
+jest.mock("../AppShell", () => ({
   __esModule: true,
   default: (props: any) => {
-    mockSidebarScaffold(props);
+    mockAppShell(props);
     return (
-      <div data-testid="sidebar-scaffold" data-class={props.className}>
-        {/* Render nav labels for testing */}
-        <div data-testid="nav-items">
-          {props.navItems.map((item: any) => (
-            <div key={item.label}>{item.label}</div>
-          ))}
-        </div>
+      <div data-testid="app-shell" data-role={props.role} data-class={props.className}>
         {props.children}
       </div>
     );
@@ -61,52 +35,26 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes correct nav items to SidebarScaffold", () => {
+  test("passes role='super-admin' to AppShell", () => {
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
 
-    // Ensure SidebarScaffold was called
-    expect(mockSidebarScaffold).toHaveBeenCalled();
-
-    const props = mockSidebarScaffold.mock.calls[0][0];
-
-    expect(props.navItems).toHaveLength(4);
-
-    expect(props.navItems[0].label).toBe("Dashboard");
-    expect(props.navItems[1].label).toBe("User Management");
-    expect(props.navItems[2].label).toBe("Coach Management");
-    expect(props.navItems[3].label).toBe("Settings");
-
-    expect(props.navItems[0].to).toBe("/dashboard");
-    expect(props.navItems[1].to).toBe("/users");
-    expect(props.navItems[2].to).toBe("/coaches");
-    expect(props.navItems[3].to).toBe("/settings");
+    expect(mockAppShell).toHaveBeenCalled();
+    const props = mockAppShell.mock.calls[0][0];
+    expect(props.role).toBe("super-admin");
   });
 
-  test("renders navigation labels", () => {
-    render(
-      <SuperAdminLayout>
-        <div />
-      </SuperAdminLayout>,
-    );
-
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("User Management")).toBeInTheDocument();
-    expect(screen.getByText("Coach Management")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-  });
-
-  test("forwards className to SidebarScaffold", () => {
+  test("forwards className to AppShell", () => {
     render(
       <SuperAdminLayout className="custom-class">
         <div />
       </SuperAdminLayout>,
     );
 
-    expect(screen.getByTestId("sidebar-scaffold")).toHaveAttribute(
+    expect(screen.getByTestId("app-shell")).toHaveAttribute(
       "data-class",
       "custom-class",
     );

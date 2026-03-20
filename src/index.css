@@ -13,9 +13,33 @@
   --color-primary-end-hover: #6a43a0;
 
   /* Global font family */
-  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+  --font-sans: "Manrope", "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol";
+
+  /* IG Brand colors */
+  --color-ig-brand: #3B5BFF;
+  --color-ig-brand-dark: #2A47CC;
+  --color-ig-brand-light: rgba(59, 91, 255, 0.1);
+  --color-ig-brand-medium: rgba(59, 91, 255, 0.15);
+  --color-ig-accent: #2DD4BF;
+  --color-ig-accent-dark: #0D9488;
+  --color-ig-green: #10B981;
+  --color-ig-blue: #3B82F6;
+  --color-ig-purple: #8B5CF6;
+  --color-ig-red: #EF4444;
+  --color-ig-gold: #e9c46a;
+
+  /* PRISM colors */
+  --color-prism-gold: #E53E3E;
+  --color-prism-green: #38A169;
+  --color-prism-yellow: #ECC94B;
+  --color-prism-blue: #3182CE;
+
+  /* Layout dimensions */
+  --spacing-sidebar-w: 200px;
+  --spacing-right-panel-w: 260px;
+  --spacing-header-h: 60px;
 
   /* black color */
   --color-black-250: #1a1a1a;

@@ -70,7 +70,7 @@ export function usePrismAgentWebSocket(
 
   const makeUrl = useCallback((agentId: string) => {
     const trimmed = base.replace(/\/$/, "");
-    return `${trimmed}/v1/agents/ws/agents/${agentId}`;
+    return `${trimmed}/agents/${agentId}`;
   }, [base]);
 
   const safeSend = useCallback((data: string | ArrayBuffer | Blob) => {

@@ -22,6 +22,32 @@ export const ROUTES = {
     PROMPT_BUILDER: "/super-admin/prompt-builder",
     AUDIT_LOG: "/super-admin/audit-log",
   },
+  MANAGER: {
+    BASE: "/manager",
+    DASHBOARD: "/manager/dashboard",
+    TEAM: "/manager/team",
+    SETTINGS: "/manager/settings",
+  },
+  COMPANY_ADMIN: {
+    BASE: "/company-admin",
+    DASHBOARD: "/company-admin/dashboard",
+    USERS: "/company-admin/users",
+    ORGANIZATION: "/company-admin/organization",
+    SETTINGS: "/company-admin/settings",
+  },
+  PRACTITIONER: {
+    BASE: "/practitioner",
+    DASHBOARD: "/practitioner/dashboard",
+    CLIENTS: "/practitioner/clients",
+    SETTINGS: "/practitioner/settings",
+  },
+  DISTRIBUTOR: {
+    BASE: "/distributor",
+    DASHBOARD: "/distributor/dashboard",
+    PRACTITIONERS: "/distributor/practitioners",
+    TERRITORY: "/distributor/territory",
+    SETTINGS: "/distributor/settings",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",
@@ -48,15 +74,24 @@ export const ROUTES_MAGIC = {
 } as const;
 
 export const ROLES = {
-  SUPER_ADMIN: "super-admin",
-  ADMIN: "admin",
-  COMPANY_ADMIN: "company-admin",
-  MANAGER_ADMIN: "manager-admin",
   USER: "user",
+  MANAGER: "manager",
+  COMPANY_ADMIN: "company-admin",
+  PRACTITIONER: "practitioner",
+  DISTRIBUTOR: "distributor",
+  SUPER_ADMIN: "super-admin",
+  /** @deprecated kept for backward compatibility with existing data */
+  ADMIN: "admin",
+  /** @deprecated kept for backward compatibility with existing data */
+  MANAGER_ADMIN: "manager-admin",
 } as const;
 
 export const PATHS = {
   SUPER_ADMIN_PREFIX: "/super-admin",
+  MANAGER_PREFIX: "/manager",
+  COMPANY_ADMIN_PREFIX: "/company-admin",
+  PRACTITIONER_PREFIX: "/practitioner",
+  DISTRIBUTOR_PREFIX: "/distributor",
 } as const;
 
 export const STORAGE_KEYS = {

@@ -2,16 +2,27 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/useAuth'
 import { ROUTES, PATHS } from '@/constants/routes'
 import { hasAccess } from '@/types/roles'
+import { HOME_ROUTE_BY_ROLE } from '@/constants/navigation'
+import { isUserRole } from '@/types/roles'
 import { useEffect, useRef, useState } from 'react'
 import { secureRemoveItem } from '@/lib/secureStorage'
 import LoadingPage from '@/components/loading-inspires-genius/LoadingCard'
+
+/** All admin-like route prefixes that require role checks */
+const ROLE_PREFIXES = [
+  PATHS.SUPER_ADMIN_PREFIX,
+  PATHS.MANAGER_PREFIX,
+  PATHS.COMPANY_ADMIN_PREFIX,
+  PATHS.PRACTITIONER_PREFIX,
+  PATHS.DISTRIBUTOR_PREFIX,
+]
 
 export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: boolean }) {
   const {user} = useAuth()
   const location = useLocation()
   const path = location.pathname
   const isCoachChat = /^\/dashboard\/[^/]+\/chat$/.test(path)
-  
+
   const isOnboardingRoute = path.startsWith('/onboarding')
 
   // Show an animated loading screen briefly on path changes to avoid white-screen flashes
@@ -66,11 +77,14 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
     return <Navigate to={ROUTES.ONBOARDING.ONE} replace />
   }
 
-  // Enforce role-based access for super admin routes
-  if (path.startsWith(PATHS.SUPER_ADMIN_PREFIX)) {
-    const role = (user?.role ?? '').toLowerCase()
-    if (!hasAccess(role, path) && user) {
-      return <Navigate to={ROUTES.HOME} replace />
+  // Enforce role-based access for any role-prefixed route
+  const isRolePrefixedRoute = ROLE_PREFIXES.some((prefix) => path.startsWith(prefix))
+  if (isRolePrefixedRoute && user) {
+    const role = (user.role ?? '').toLowerCase()
+    if (!hasAccess(role, path)) {
+      // Redirect to the user's own home route
+      const home = isUserRole(role) ? HOME_ROUTE_BY_ROLE[role] : ROUTES.HOME
+      return <Navigate to={home} replace />
     }
   }
 

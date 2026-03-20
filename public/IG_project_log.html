@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">14</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">18</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,21 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-03-15] — Fix Magic Link Authentication Flow — Dual Auth Mode Support</h3>
+        <h4>Fixed</h4>
+        <ul>
+          <li>Updated IG backend <code>auth.py</code> to accept both Cognito RS256 tokens and Magic Auth HS256 tokens (no <code>kid</code> header)</li>
+          <li>Aligned Magic Auth Lambda <code>JWT_SECRET</code> with IG backend <code>SECRET_KEY</code></li>
+          <li>Backend now serves magic link authenticated users without requiring Cognito user attributes</li>
+        </ul>
+
+        <h3>[2026-03-14] — Replace MFA/OTP Login with Magic Link</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/auth/Login.tsx</code> — Magic link is now the primary login method. Users enter email, receive sign-in link via email, click to authenticate. Password login available as secondary option.</li>
+          <li><code>src/context/AuthContext.tsx</code> — MFA verification now sends a magic link instead of redirecting to the OTP page. Signup email verification also sends a magic link instead of OTP.</li>
+        </ul>
 
         <h3>[2026-03-14] — Integration Evaluation & Migration Planning Documents</h3>
         <h4>Added</h4>
@@ -1068,6 +1083,31 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-03-14 — Prompt #14</div>
           <div class="prompt-text">Is the project log being updated for both the backend changes and frontend changes?</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-14 — Prompt #15</div>
+          <div class="prompt-text">complete in the background. replace the current MFA log in system with Magic link</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-15 — Prompt #16</div>
+          <div class="prompt-text">hows it going</div>
+        </div>
+
+        <div class="prompt-entry">
+          <span class="prompt-timestamp">2026-03-19</span>
+          <span class="prompt-text">WS-D Infrastructure: Implement PWA Manifest & Icons (1.6) and Secrets Manager Migration (1.7) — generate PWA icon set, configure vite-plugin-pwa with service worker, create offline fallback, build secrets.py utility with AWS Secrets Manager + env fallback, create secrets-setup.sh script, update CI pipeline, document secrets inventory</span>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-19 — Prompt #18</div>
+          <div class="prompt-text">This dashboard still has a login page. Please remove it. I need to see the dashboards after the login. The login is not needed.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-19 — Prompt #19 [WS-A Bug Triage]</div>
+          <div class="prompt-text">Bug Triage &amp; Fix Engineer session: Triaged 11 failing test suites. Fixed Jest import.meta.env CJS/ESM incompatibility via custom AST transformer, timezone-sensitive date tests, missing React Query provider/hook mocks, stale CSS selectors, and UTC date parsing bug. Result: 125/125 suites, 1226/1226 tests pass.</div>
         </div>
 
       </div>
