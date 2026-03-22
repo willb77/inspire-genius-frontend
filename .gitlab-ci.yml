@@ -38,7 +38,12 @@ devBuild:
       fi
     - echo "VITE_STORAGE_SECRET=${STORAGE_SECRET:-$VITE_STORAGE_SECRET}" >> .env
 
-    # Install & build
+    # Sentry config (for source map uploads and release tracking)
+    - echo "VITE_SENTRY_DSN=$VITE_SENTRY_DSN" >> .env
+    - echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
+    - echo "VITE_APP_VERSION=$CI_COMMIT_SHORT_SHA" >> .env
+
+    # Install & build (with source maps for Sentry)
     - sudo docker system prune -a --volumes -f
     - npm ci --no-audit --no-fund
     - npm run build
@@ -220,6 +225,19 @@ deploy:
 
     # Verify AWS identity
     - aws sts get-caller-identity
+
+    # Upload source maps to Sentry (if configured)
+    - |
+      if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
+        npm install -g @sentry/cli
+        sentry-cli releases new "$CI_COMMIT_SHORT_SHA" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        sentry-cli releases files "$CI_COMMIT_SHORT_SHA" upload-sourcemaps dist/assets/ \
+          --url-prefix '~/assets/' --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        sentry-cli releases finalize "$CI_COMMIT_SHORT_SHA" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        echo "Source maps uploaded to Sentry."
+      else
+        echo "Sentry not configured — skipping source map upload."
+      fi
 
     # Deploy to S3
     - echo "Deploying build to S3..."
