@@ -20,7 +20,9 @@ export default defineConfig(({ mode }) => {
     ? "'self' 'unsafe-inline' 'unsafe-eval'"
     : "'self'"
 
-  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex]
+  const sentryDsn = env.VITE_SENTRY_DSN || ""
+  const sentryIngest = sentryDsn ? new URL(sentryDsn).origin : ""
+  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex, sentryIngest]
     .filter(Boolean)
     .join(" ")
 
