@@ -137,6 +137,10 @@ export function useChatWindowAudio({
 
     return () => {
       mounted = false;
+      if (pendingStoreRef.current) {
+        clearTimeout(pendingStoreRef.current);
+        pendingStoreRef.current = null;
+      }
     };
   }, [activeConversationId]);
 

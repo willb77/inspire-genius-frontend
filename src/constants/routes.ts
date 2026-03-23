@@ -9,6 +9,9 @@ export const ROUTES = {
   DOCUMENTS: "/documents",
   SETTINGS: "/settings",
   HELP: "/help",
+  FEEDBACK: "/feedback",
+  ANALYTICS: "/analytics",
+  PRISM_ASSESSMENT: "/prism-assessment",
   SUPER_ADMIN: {
     BASE: "/super-admin",
     DASHBOARD: "/super-admin/dashboard",
@@ -21,6 +24,44 @@ export const ROUTES = {
     RLHF_TRAINING: "/super-admin/rlhf-training",
     PROMPT_BUILDER: "/super-admin/prompt-builder",
     AUDIT_LOG: "/super-admin/audit-log",
+    ANALYTICS: "/super-admin/analytics",
+  },
+  MANAGER: {
+    BASE: "/manager",
+    DASHBOARD: "/manager/dashboard",
+    TEAM: "/manager/team",
+    HIRING: "/manager/hiring",
+    PRISM_TEAM: "/manager/prism-team",
+    ANALYTICS: "/manager/analytics",
+    SETTINGS: "/manager/settings",
+  },
+  COMPANY_ADMIN: {
+    BASE: "/company-admin",
+    DASHBOARD: "/company-admin/dashboard",
+    USERS: "/company-admin/users",
+    ORGANIZATION: "/company-admin/organization",
+    COSTS: "/company-admin/costs",
+    PRISM_OVERVIEW: "/company-admin/prism-overview",
+    ANALYTICS: "/company-admin/analytics",
+    SETTINGS: "/company-admin/settings",
+  },
+  PRACTITIONER: {
+    BASE: "/practitioner",
+    DASHBOARD: "/practitioner/dashboard",
+    CLIENTS: "/practitioner/clients",
+    CREDITS: "/practitioner/credits",
+    PRISM_CLIENTS: "/practitioner/prism-clients",
+    ANALYTICS: "/practitioner/analytics",
+    SETTINGS: "/practitioner/settings",
+  },
+  DISTRIBUTOR: {
+    BASE: "/distributor",
+    DASHBOARD: "/distributor/dashboard",
+    PRACTITIONERS: "/distributor/practitioners",
+    CREDITS: "/distributor/credits",
+    TERRITORY: "/distributor/territory",
+    ANALYTICS: "/distributor/analytics",
+    SETTINGS: "/distributor/settings",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
@@ -48,15 +89,24 @@ export const ROUTES_MAGIC = {
 } as const;
 
 export const ROLES = {
-  SUPER_ADMIN: "super-admin",
-  ADMIN: "admin",
-  COMPANY_ADMIN: "company-admin",
-  MANAGER_ADMIN: "manager-admin",
   USER: "user",
+  MANAGER: "manager",
+  COMPANY_ADMIN: "company-admin",
+  PRACTITIONER: "practitioner",
+  DISTRIBUTOR: "distributor",
+  SUPER_ADMIN: "super-admin",
+  /** @deprecated kept for backward compatibility with existing data */
+  ADMIN: "admin",
+  /** @deprecated kept for backward compatibility with existing data */
+  MANAGER_ADMIN: "manager-admin",
 } as const;
 
 export const PATHS = {
   SUPER_ADMIN_PREFIX: "/super-admin",
+  MANAGER_PREFIX: "/manager",
+  COMPANY_ADMIN_PREFIX: "/company-admin",
+  PRACTITIONER_PREFIX: "/practitioner",
+  DISTRIBUTOR_PREFIX: "/distributor",
 } as const;
 
 export const STORAGE_KEYS = {

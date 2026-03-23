@@ -9,7 +9,6 @@ export function useAuthRedirectForAuthPages(): string | null {
 
   const hasToken = Boolean(user?.token)
   const isOnboarded = user?.isOnboardingCompleted === true
-  console.log(user?.isOnboardingCompleted, "isOnboarded")
   const isSuperAdmin = (user?.role ?? '').toLowerCase() === ROLES.SUPER_ADMIN
   const isAuthPage = path === ROUTES.LOGIN || path === ROUTES.SIGNUP || path === ROUTES.OTP || path === '/forgot'
 

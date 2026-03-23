@@ -4,6 +4,16 @@
 const TEXT = new TextEncoder();
 const RTEXT = new TextDecoder();
 
+function safeGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function safeSet(key: string, value: string): void {
+  try { localStorage.setItem(key, value); } catch { /* storage blocked */ }
+}
+function safeRemove(key: string): void {
+  try { localStorage.removeItem(key); } catch { /* storage blocked */ }
+}
+
 async function getKey(): Promise<CryptoKey | null> {
   try {
     const secret = (import.meta.env.VITE_STORAGE_SECRET as string) || "";
@@ -27,7 +37,7 @@ export async function secureSetItem(key: string, value: unknown): Promise<void> 
     const k = await getKey();
     const json = JSON.stringify(value);
     if (!k || !crypto?.subtle) {
-      localStorage.setItem(key, json);
+      safeSet(key, json);
       return;
     }
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -37,14 +47,14 @@ export async function secureSetItem(key: string, value: unknown): Promise<void> 
       data: btoa(String.fromCharCode(...new Uint8Array(cipher))),
       v: 1,
     };
-    localStorage.setItem(key, JSON.stringify(payload));
+    safeSet(key, JSON.stringify(payload));
   } catch {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* noop */ }
+    safeSet(key, JSON.stringify(value));
   }
 }
 
 export async function secureGetItem<T = unknown>(key: string): Promise<T | null> {
-  const raw = localStorage.getItem(key);
+  const raw = safeGet(key);
   if (!raw) return null;
   try {
     const k = await getKey();
@@ -61,9 +71,5 @@ export async function secureGetItem<T = unknown>(key: string): Promise<T | null>
 }
 
 export async function secureRemoveItem(key: string): Promise<void> {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    // noop
-  }
+  safeRemove(key);
 }

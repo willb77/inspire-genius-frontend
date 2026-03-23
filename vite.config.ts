@@ -1,6 +1,7 @@
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
+import { VitePWA } from "vite-plugin-pwa"
 import { defineConfig, loadEnv } from "vite"
 
 // https://vite.dev/config/
@@ -19,7 +20,9 @@ export default defineConfig(({ mode }) => {
     ? "'self' 'unsafe-inline' 'unsafe-eval'"
     : "'self'"
 
-  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex]
+  const sentryDsn = env.VITE_SENTRY_DSN || ""
+  const sentryIngest = sentryDsn ? new URL(sentryDsn).origin : ""
+  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex, sentryIngest]
     .filter(Boolean)
     .join(" ")
 
@@ -60,10 +63,67 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: "autoUpdate",
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,woff2}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+          navigateFallback: "/index.html",
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-cache",
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "gstatic-fonts-cache",
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+        },
+        manifest: false, // Using public/manifest.json directly
+        devOptions: {
+          enabled: false,
+        },
+      }),
+    ],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    build: {
+      assetsDir: "assets",
+      sourcemap: "hidden",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom", "react-router-dom"],
+            ui: [
+              "@radix-ui/react-dialog",
+              "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-select",
+              "@radix-ui/react-tabs",
+              "@radix-ui/react-tooltip",
+              "lucide-react",
+              "framer-motion",
+            ],
+            query: ["@tanstack/react-query"],
+            charts: ["recharts"],
+          },
+        },
       },
     },
     server: {

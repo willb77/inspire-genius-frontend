@@ -31,7 +31,7 @@ npx jest src/components/alex/__tests__/AlexChatPanel.test.tsx
 **Data flow pattern:** Service → Hook → Component
 - **Services** (`src/services/`): Axios calls organized by domain (auth, coaches, documents, help, onboarding, super-admin, alex/chat, user)
 - **Hooks** (`src/hooks/`): React Query mutations/queries wrapping services. Server state managed via TanStack React Query.
-- **Pages** (`src/pages/`): Route-level components organized by role (auth, onboarding, user, super-admin, legal)
+- **Pages** (`src/pages/`): Route-level components organized by role (auth, onboarding, user, manager, company-admin, practitioner, distributor, super-admin, legal)
 
 **Global state:** React Context only (no Redux/Zustand)
 - `AuthContext` — auth lifecycle, token management, role-based navigation
@@ -41,10 +41,20 @@ npx jest src/components/alex/__tests__/AlexChatPanel.test.tsx
 **Routing** (`src/routes.tsx`):
 - Public routes: `/login`, `/signup`, `/otp`, `/forgot`, `/reset-password`, `/accept-invitation`, `/social-login`, `/terms`, `/privacy`
 - Protected user routes: `/home`, `/dashboard`, `/coaches`, `/documents`, `/settings`, `/help`, `/onboarding/*`
+- Protected manager routes: `/manager/*`
+- Protected company-admin routes: `/company-admin/*`
+- Protected practitioner routes: `/practitioner/*`
+- Protected distributor routes: `/distributor/*`
 - Protected super-admin routes: `/super-admin/*`
 - `ProtectedRoute` component enforces auth, role checks, and onboarding completion
 
-**Two user roles:** `user` and `super-admin` (defined in `src/constants/routes.ts` as `ROLES` enum)
+**Six user roles** (defined in `src/constants/routes.ts` as `ROLES` enum):
+1. `user` — end user / employee receiving coaching
+2. `manager` — supervisory role with direct-report visibility
+3. `company-admin` — organization-level administrator
+4. `practitioner` — PRISM-accredited coach, uses IG as business platform
+5. `distributor` — regional wholesaler of PRISM credits to Practitioners
+6. `super-admin` — platform owner, full access
 
 **API layer** (`src/lib/axios.ts`):
 - Singleton axios instance, base URL from `VITE_API_BASE_URL` env var (default `http://localhost:3000`)
