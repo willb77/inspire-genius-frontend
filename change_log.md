@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-23] — Phase 5: Analytics Dashboards for All 6 Roles [WS-B]
+
+### Added — Analytics Pages
+- `src/pages/user/Analytics.tsx` — Sessions/week LineChart, goals AreaChart, agent usage PieChart, satisfaction trend, PRISM growth trajectory BarChart
+- `src/pages/manager/Analytics.tsx` — Coaching engagement by member, goal completion stacked bars, member performance trend, hiring stages PieChart, time-to-hire BarChart
+- `src/pages/company-admin/Analytics.tsx` — Department comparison grouped BarChart, engagement trend AreaChart, license utilization PieChart, cost/user LineChart, CSV/JSON export
+- `src/pages/practitioner/Analytics.tsx` — Client engagement bars, weekly session frequency LineChart, PRISM completion rates PieChart
+- `src/pages/distributor/Analytics.tsx` — Credits by region BarChart, practitioner utilization bars, credit flow AreaChart (purchases/allocations/usage)
+- `src/pages/super-admin/Analytics.tsx` — Platform stats (Total/MAU/DAU), agent usage PieChart, org comparison BarChart, system health AreaChart (response time + error rate)
+
+### Added — Infrastructure
+- `src/services/analytics/analytics.service.ts` — 6 API endpoints (one per role)
+- `src/hooks/analytics/useAnalytics.ts` — 6 React Query hooks
+- `src/mocks/handlers/analytics.ts` — MSW handlers with realistic mock data for all roles
+- Routes: `/analytics`, `/manager/analytics`, `/company-admin/analytics`, `/practitioner/analytics`, `/distributor/analytics`, `/super-admin/analytics`
+- Nav items: "Analytics" added to manager, company, distributor, practitioner, and tools sidebar sections
+
+---
+
 ## [2026-03-22] — Phase 4: RLHF Feedback Components, Prompt Builder & Training Dashboard [WS-B]
 
 ### Added — Feedback Components (4.B1)

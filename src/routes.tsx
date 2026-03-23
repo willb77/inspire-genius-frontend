@@ -14,6 +14,7 @@ import Coaches from "@/pages/user/Coaches";
 import CoachChat from "@/pages/user/CoachChat";
 import Documents from "@/pages/user/Documents";
 import FeedbackHistory from "@/pages/user/FeedbackHistory";
+import UserAnalytics from "@/pages/user/Analytics";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import OnboardingOne from "@/pages/onboarding/OnboardingOne";
 import OnboardingTwo from "@/pages/onboarding/OnboardingTwo";
@@ -37,6 +38,7 @@ import ProjectLog from "@/pages/super-admin/ProjectLog";
 import RlhfTraining from "@/pages/super-admin/RlhfTraining";
 import PromptBuilder from "@/pages/super-admin/PromptBuilder";
 import AuditLog from "@/pages/super-admin/AuditLog";
+import SuperAdminAnalytics from "@/pages/super-admin/Analytics";
 import MagicLinkLogin from "@/pages/auth/MagicLinkLogin";
 import MagicLinkVerify from "@/pages/auth/MagicLinkVerify";
 import PreviewHome from "@/pages/PreviewHome";
@@ -48,6 +50,7 @@ import ManagerDashboard from "@/pages/manager/Dashboard";
 import ManagerTeam from "@/pages/manager/Team";
 import ManagerHiring from "@/pages/manager/Hiring";
 import ManagerSettings from "@/pages/manager/Settings";
+import ManagerAnalytics from "@/pages/manager/Analytics";
 
 // Company Admin pages
 import CompanyAdminDashboard from "@/pages/company-admin/Dashboard";
@@ -55,12 +58,14 @@ import CompanyAdminUsers from "@/pages/company-admin/Users";
 import CompanyAdminOrganization from "@/pages/company-admin/Organization";
 import CompanyAdminCosts from "@/pages/company-admin/Costs";
 import CompanyAdminSettings from "@/pages/company-admin/Settings";
+import CompanyAdminAnalytics from "@/pages/company-admin/Analytics";
 
 // Practitioner pages
 import PractitionerDashboard from "@/pages/practitioner/Dashboard";
 import PractitionerClients from "@/pages/practitioner/Clients";
 import PractitionerCredits from "@/pages/practitioner/Credits";
 import PractitionerSettings from "@/pages/practitioner/Settings";
+import PractitionerAnalytics from "@/pages/practitioner/Analytics";
 
 // PRISM pages
 import PrismAssessment from "@/pages/user/PrismAssessment";
@@ -75,6 +80,7 @@ import DistributorPractitioners from "@/pages/distributor/Practitioners";
 import DistributorCredits from "@/pages/distributor/Credits";
 import DistributorTerritory from "@/pages/distributor/Territory";
 import DistributorSettings from "@/pages/distributor/Settings";
+import DistributorAnalytics from "@/pages/distributor/Analytics";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -120,6 +126,7 @@ export const routes: RouteObject[] = [
       { path: "/help", element: <HelpPage /> },
       { path: "/prism-assessment", element: <PrismAssessment /> },
       { path: "/feedback", element: <FeedbackHistory /> },
+      { path: "/analytics", element: <UserAnalytics /> },
 
       // Super Admin pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
@@ -137,6 +144,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/rlhf-training", element: <RlhfTraining /> },
       { path: "/super-admin/prompt-builder", element: <PromptBuilder /> },
       { path: "/super-admin/audit-log", element: <AuditLog /> },
+      { path: "/super-admin/analytics", element: <SuperAdminAnalytics /> },
 
       // Manager pages
       { path: "/manager/dashboard", element: <ManagerDashboard /> },
@@ -144,6 +152,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/hiring", element: <ManagerHiring /> },
       { path: "/manager/prism-team", element: <PrismTeam /> },
       { path: "/manager/settings", element: <ManagerSettings /> },
+      { path: "/manager/analytics", element: <ManagerAnalytics /> },
 
       // Company Admin pages
       { path: "/company-admin/dashboard", element: <CompanyAdminDashboard /> },
@@ -151,6 +160,7 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/organization", element: <CompanyAdminOrganization /> },
       { path: "/company-admin/costs", element: <CompanyAdminCosts /> },
       { path: "/company-admin/settings", element: <CompanyAdminSettings /> },
+      { path: "/company-admin/analytics", element: <CompanyAdminAnalytics /> },
 
       // Practitioner pages
       { path: "/practitioner/dashboard", element: <PractitionerDashboard /> },
@@ -158,6 +168,7 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/credits", element: <PractitionerCredits /> },
       { path: "/practitioner/prism-clients", element: <PrismClients /> },
       { path: "/practitioner/settings", element: <PractitionerSettings /> },
+      { path: "/practitioner/analytics", element: <PractitionerAnalytics /> },
 
       // Distributor pages
       { path: "/distributor/dashboard", element: <DistributorDashboard /> },
@@ -165,6 +176,7 @@ export const routes: RouteObject[] = [
       { path: "/distributor/credits", element: <DistributorCredits /> },
       { path: "/distributor/territory", element: <DistributorTerritory /> },
       { path: "/distributor/settings", element: <DistributorSettings /> },
+      { path: "/distributor/analytics", element: <DistributorAnalytics /> },
     ],
   },
   { path: "*", element: <Navigate to="/preview-home" replace /> },
