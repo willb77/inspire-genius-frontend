@@ -104,6 +104,28 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    build: {
+      assetsDir: "assets",
+      sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom", "react-router-dom"],
+            ui: [
+              "@radix-ui/react-dialog",
+              "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-select",
+              "@radix-ui/react-tabs",
+              "@radix-ui/react-tooltip",
+              "lucide-react",
+              "framer-motion",
+            ],
+            query: ["@tanstack/react-query"],
+            charts: ["recharts"],
+          },
+        },
+      },
+    },
     server: {
       headers: securityHeaders,
     },
