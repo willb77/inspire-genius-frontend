@@ -3,6 +3,7 @@ import { managerHandlers } from "./manager"
 import { companyAdminHandlers } from "./company-admin"
 import { practitionerHandlers } from "./practitioner"
 import { distributorHandlers } from "./distributor"
+import { analyticsHandlers } from "./analytics"
 
 export const handlers = [
   ...authHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...companyAdminHandlers,
   ...practitionerHandlers,
   ...distributorHandlers,
+  ...analyticsHandlers,
 ]

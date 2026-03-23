@@ -60,6 +60,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/manager/career-mgmt", icon: Activity, label: "Career Mgmt" },
       { to: "/manager/team-building", icon: UsersRound, label: "Team Building" },
       { to: "/manager/leadership", icon: Award, label: "Leadership" },
+      { to: "/manager/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   {
@@ -73,6 +74,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/company-admin/organization", icon: Grid3x3, label: "Organization" },
       { to: "/company-admin/training", icon: BookOpen, label: "Training" },
       { to: "/company-admin/leadership", icon: Award, label: "Leadership" },
+      { to: "/company-admin/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   {
@@ -84,6 +86,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/distributor/practitioners", icon: User, label: "Practitioners" },
       { to: "/distributor/credits", icon: PlusCircle, label: "Credits" },
       { to: "/distributor/territory", icon: BarChart3, label: "Allocate Credits" },
+      { to: "/distributor/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   {
@@ -96,6 +99,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/practitioner/credits", icon: PlusCircle, label: "Credits" },
       { to: "/practitioner/conversations", icon: MessageSquare, label: "Conversations" },
       { to: "/practitioner/follow-up", icon: Clock, label: "Follow-Up", badge: 5 },
+      { to: "/practitioner/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   {
@@ -106,6 +110,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/documents", icon: FileText, label: "Documents" },
       { to: "/goals", icon: Target, label: "Goals" },
       { to: "/feedback", icon: MessageSquarePlus, label: "Feedback" },
+      { to: "/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   {
