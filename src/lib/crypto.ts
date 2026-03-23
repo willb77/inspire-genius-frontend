@@ -41,9 +41,21 @@ function base64ToBuf(b64: string) {
   return bytes.buffer
 }
 
-export async function encryptString(plain: string, passphrase?: string, salt?: string): Promise<string> {
+function resolveSecret(passphrase?: string): string {
   const secret = passphrase ?? (import.meta.env.VITE_CRYPTO_KEY as string) ?? ''
-  const s = salt ?? (import.meta.env.VITE_CRYPTO_SALT as string) ?? 'ig-default-salt'
+  if (!secret && import.meta.env.DEV) {
+    console.warn('[crypto] VITE_CRYPTO_KEY is not set — storage encryption uses an empty passphrase. Set VITE_CRYPTO_KEY in .env for secure storage.')
+  }
+  return secret
+}
+
+function resolveSalt(salt?: string): string {
+  return salt ?? (import.meta.env.VITE_CRYPTO_SALT as string) ?? 'ig-default-salt'
+}
+
+export async function encryptString(plain: string, passphrase?: string, salt?: string): Promise<string> {
+  const secret = resolveSecret(passphrase)
+  const s = resolveSalt(salt)
   const key = await deriveKey(secret, s)
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const cipherBuf = await crypto.subtle.encrypt(
@@ -55,8 +67,8 @@ export async function encryptString(plain: string, passphrase?: string, salt?: s
 }
 
 export async function decryptString(payload: string, passphrase?: string, salt?: string): Promise<string> {
-  const secret = passphrase ?? (import.meta.env.VITE_CRYPTO_KEY as string) ?? ''
-  const s = salt ?? (import.meta.env.VITE_CRYPTO_SALT as string) ?? 'ig-default-salt'
+  const secret = resolveSecret(passphrase)
+  const s = resolveSalt(salt)
   const key = await deriveKey(secret, s)
   const [ivB64, dataB64] = payload.split(':')
   const iv = new Uint8Array(base64ToBuf(ivB64))

@@ -448,8 +448,8 @@ describe("chat.service", () => {
 
   describe("exportConversation", () => {
     const conversationId = "conv-123";
-    const fromDate = new Date("2024-01-01");
-    const toDate = new Date("2024-01-31");
+    const fromDate = new Date(2024, 0, 1);
+    const toDate = new Date(2024, 0, 31);
 
     beforeEach(() => {
       // Mock timezone
@@ -556,7 +556,7 @@ describe("chat.service", () => {
     });
 
     it("should handle same from and to dates", async () => {
-      const sameDate = new Date("2024-01-15");
+      const sameDate = new Date(2024, 0, 15);
       const mockResponse = {
         data: {
           status: true,
@@ -591,8 +591,8 @@ describe("chat.service", () => {
 
       mockApi.get.mockResolvedValue(mockResponse);
 
-      const customFromDate = new Date("2024-03-15");
-      const customToDate = new Date("2024-12-25");
+      const customFromDate = new Date(2024, 2, 15);
+      const customToDate = new Date(2024, 11, 25);
 
       await exportConversation(conversationId, customFromDate, customToDate);
 

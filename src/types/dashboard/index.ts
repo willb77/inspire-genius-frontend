@@ -6,3 +6,11 @@ export type {
   UserCoachCardProps
 } from './component-types';
 
+// Dashboard data types
+export type {
+  StatCardData,
+  PRISMDimension,
+  UpcomingEvent,
+  ActivityItem,
+} from './data-types';
+

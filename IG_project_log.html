@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">15</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">20</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,21 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-03-15] — Fix Magic Link Authentication Flow — Dual Auth Mode Support</h3>
+        <h4>Fixed</h4>
+        <ul>
+          <li>Updated IG backend <code>auth.py</code> to accept both Cognito RS256 tokens and Magic Auth HS256 tokens (no <code>kid</code> header)</li>
+          <li>Aligned Magic Auth Lambda <code>JWT_SECRET</code> with IG backend <code>SECRET_KEY</code></li>
+          <li>Backend now serves magic link authenticated users without requiring Cognito user attributes</li>
+        </ul>
+
+        <h3>[2026-03-14] — Replace MFA/OTP Login with Magic Link</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/auth/Login.tsx</code> — Magic link is now the primary login method. Users enter email, receive sign-in link via email, click to authenticate. Password login available as secondary option.</li>
+          <li><code>src/context/AuthContext.tsx</code> — MFA verification now sends a magic link instead of redirecting to the OTP page. Signup email verification also sends a magic link instead of OTP.</li>
+        </ul>
 
         <h3>[2026-03-14] — Integration Evaluation & Migration Planning Documents</h3>
         <h4>Added</h4>
@@ -1073,6 +1088,51 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-03-14 — Prompt #15</div>
           <div class="prompt-text">complete in the background. replace the current MFA log in system with Magic link</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-15 — Prompt #16</div>
+          <div class="prompt-text">hows it going</div>
+        </div>
+
+        <div class="prompt-entry">
+          <span class="prompt-timestamp">2026-03-19</span>
+          <span class="prompt-text">WS-D Infrastructure: Implement PWA Manifest & Icons (1.6) and Secrets Manager Migration (1.7) — generate PWA icon set, configure vite-plugin-pwa with service worker, create offline fallback, build secrets.py utility with AWS Secrets Manager + env fallback, create secrets-setup.sh script, update CI pipeline, document secrets inventory</span>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-19 — Prompt #18</div>
+          <div class="prompt-text">This dashboard still has a login page. Please remove it. I need to see the dashboards after the login. The login is not needed.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <span class="prompt-timestamp">2026-03-21</span>
+          <span class="prompt-text">WS-D Phase 3: API Monitoring Setup (3.D1), Centralized Logging Infrastructure (3.D2), Error Tracking Setup (3.D3) — CloudWatch monitoring dashboard with latency/error/request panels, health check endpoints, structured JSON logging with correlation IDs, log retention policies, Sentry integration for frontend and backend, ErrorBoundary component, source map uploads in CI, error budgets</span>
+        </div>
+
+        <div class="prompt-entry">
+          <span class="prompt-timestamp">2026-03-20</span>
+          <span class="prompt-text">WS-D Phase 2: CI/CD Pipeline for Multi-Role Testing (2.6) and Database Migration Automation (2.7) — Playwright E2E smoke tests for all 6 roles, SonarQube quality gate enforcement, unit test coverage reporting, Alembic migration dry-run/auto-apply/rollback in CI pipeline</span>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-19 — Prompt #19 [WS-A Bug Triage]</div>
+          <div class="prompt-text">Bug Triage &amp; Fix Engineer session: Triaged 11 failing test suites. Fixed Jest import.meta.env CJS/ESM incompatibility via custom AST transformer, timezone-sensitive date tests, missing React Query provider/hook mocks, stale CSS selectors, and UTC date parsing bug. Result: 125/125 suites, 1226/1226 tests pass.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-22 — Prompt #20 [PRISM Integration Plugin]</div>
+          <div class="prompt-text">PRISM Integration Plugin: Full implementation of types (api-types, assessment-types), constants (quest types, quadrant/behaviour configs, status badges), service (7 IG backend endpoints), 6 React Query hooks (initiate, status polling, report, history, unlock, upgrade), 8 atomic components (StatusBadge, QuadrantChart, BehaviourChart, WorkEnvironment, WorkAptitude, BigFiveChart, EQChart, MentalToughness), 3 composite components (InitiateForm, AssessmentCard, ReportViewer), 3 pages (user PrismAssessment, practitioner PrismClients, manager PrismTeam), route registration, nav items, and 14 unit tests. Built as standalone plugin architecture.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-22 — WS-B Phase 4</div>
+          <div class="prompt-text">Phase 4 RLHF &amp; Feedback UI: FeedbackButtons (thumbs up/down), CorrectionModal (RHF+Zod), FeedbackIndicator. FeedbackHistory page with filters + /feedback route. PromptVersionDiff with template var highlighting. RlhfReviewQueue with approve/reject + JSON/CSV export. 6 tests passing.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-23 — WS-B Phase 5</div>
+          <div class="prompt-text">Phase 5 Analytics Dashboards: 6 analytics pages (User, Manager, Company Admin, Practitioner, Distributor, Super Admin) with recharts (LineChart, BarChart, PieChart, AreaChart). MSW handlers + service + hooks. Routes and nav items for all roles. Zero TS errors, build passes.</div>
         </div>
 
       </div>

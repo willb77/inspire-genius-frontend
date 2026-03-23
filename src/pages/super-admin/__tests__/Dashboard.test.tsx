@@ -64,7 +64,7 @@ jest.mock("@/components/ui/calendar", () => ({
     <div>
       <button
         data-testid="select-date"
-        onClick={() => onSelect?.(new Date("2024-01-01"))}
+        onClick={() => onSelect?.(new Date(2024, 0, 1))}
       >
         Select Date
       </button>
