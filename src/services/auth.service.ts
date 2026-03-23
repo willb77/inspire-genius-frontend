@@ -16,7 +16,7 @@ export async function loginApi(payload: LoginPayload) {
 
 export async function resendVerificationApi(email: string) {
   // Adjust to your backend: if it expects JSON body, send { email }.
-  const res = await api.post<ApiEnvelope>(`/v1/resend-verification?email=${email}`)
+  const res = await api.post<ApiEnvelope>(`/v1/resend-verification?email=${encodeURIComponent(email)}`)
   return res.data
 }
 
