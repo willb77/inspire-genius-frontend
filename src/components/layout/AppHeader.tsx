@@ -20,7 +20,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
   const displayRole = (user?.role ?? "user").replace("-", " ")
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[var(--spacing-header-h)] bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 z-50">
+    <header role="banner" className="fixed top-0 left-0 right-0 h-[var(--spacing-header-h)] bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 z-50">
       {/* Left */}
       <div className="flex items-center gap-2.5">
         <button onClick={onMenuToggle} className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Menu">

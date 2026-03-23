@@ -6,14 +6,14 @@ import { type StoredUser } from '@/types/auth'
 const cache = new Map<string, string | null>()
 
 function readRaw(key: string): string | null {
-  if (typeof localStorage === 'undefined') return null
-  return localStorage.getItem(key)
+  try { return localStorage.getItem(key) } catch { return null }
 }
 
 function writeRaw(key: string, value: string | null) {
-  if (typeof localStorage === 'undefined') return
-  if (value === null) localStorage.removeItem(key)
-  else localStorage.setItem(key, value)
+  try {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
+  } catch { /* storage blocked */ }
 }
 
 async function getDecrypted(key: string): Promise<string | null> {
@@ -171,19 +171,21 @@ export async function removeAlexFloatingOpen(): Promise<void> {
 
 // keep cache in sync across tabs
 if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (!e.key) return
-    cache.set(e.key, null)
-  })
+  try {
+    window.addEventListener('storage', (e) => {
+      if (!e.key) return
+      cache.set(e.key, null)
+    })
+  } catch { /* ignore */ }
 }
 
 // UI helpers (non-sensitive). Stored as plain values.
 export function getUIFlag(key: string): boolean {
-  if (typeof localStorage === 'undefined') return false
-  return localStorage.getItem(key) === '1'
+  try { return localStorage.getItem(key) === '1' } catch { return false }
 }
 export function setUIFlag(key: string, value: boolean): void {
-  if (typeof localStorage === 'undefined') return
-  if (value) localStorage.setItem(key, '1')
-  else localStorage.removeItem(key)
+  try {
+    if (value) localStorage.setItem(key, '1')
+    else localStorage.removeItem(key)
+  } catch { /* storage blocked */ }
 }

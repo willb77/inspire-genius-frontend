@@ -36,7 +36,7 @@ export default function RightPanel({ prism = DEFAULT_PRISM, upcoming = DEFAULT_U
   const displayEmail = user?.email ?? ""
 
   return (
-    <aside className="hidden lg:flex fixed top-[var(--spacing-header-h)] right-0 bottom-0 w-[var(--spacing-right-panel-w)] bg-white border-l border-[#e5e7eb] overflow-y-auto flex-col gap-5 p-4">
+    <aside role="complementary" aria-label="User profile and upcoming events" className="hidden lg:flex fixed top-[var(--spacing-header-h)] right-0 bottom-0 w-[var(--spacing-right-panel-w)] bg-white border-l border-[#e5e7eb] overflow-y-auto flex-col gap-5 p-4">
       {/* Profile */}
       <div className="text-center">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
