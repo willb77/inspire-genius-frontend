@@ -37,10 +37,12 @@ export default function AppSidebar({ role, open, onClose }: AppSidebarProps) {
     <>
       {/* Mobile backdrop */}
       {open && (
-        <div className="fixed inset-0 bg-black/30 z-[90] md:hidden" onClick={onClose} />
+        <div className="fixed inset-0 bg-black/30 z-[90] md:hidden" onClick={onClose} aria-hidden="true" />
       )}
 
       <aside
+        role="navigation"
+        aria-label="Sidebar navigation"
         className={cn(
           "fixed top-[var(--spacing-header-h)] bottom-0 w-[var(--spacing-sidebar-w)] bg-white border-r border-[#e5e7eb] overflow-y-auto flex flex-col z-[100]",
           "scrollbar-thin scrollbar-thumb-[#e5e7eb]",
@@ -65,7 +67,7 @@ export default function AppSidebar({ role, open, onClose }: AppSidebarProps) {
                     key={item.to + item.label}
                     onClick={() => handleNav(item.to)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-3 py-[5px] mx-2 rounded-md text-[13px] border-l-2 border-transparent transition-all text-left",
+                      "w-full flex items-center gap-2 px-3 py-[5px] md:py-[5px] min-h-[44px] md:min-h-0 mx-2 rounded-md text-[13px] border-l-2 border-transparent transition-all text-left",
                       isActive
                         ? "bg-[rgba(59,91,255,0.15)] border-l-[#3B5BFF] text-[#3B5BFF] font-semibold"
                         : "text-[#374151] hover:bg-[rgba(59,91,255,0.1)]"

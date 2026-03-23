@@ -106,7 +106,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       assetsDir: "assets",
-      sourcemap: true,
+      sourcemap: "hidden",
       rollupOptions: {
         output: {
           manualChunks: {

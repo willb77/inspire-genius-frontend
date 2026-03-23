@@ -6,17 +6,21 @@ import './index.css'
 import App from './App'
 
 // Initialize error tracking before rendering
-initSentry()
+try { initSentry() } catch { /* ignore */ }
 
 async function enableMocking() {
   if (import.meta.env.MODE !== 'development' || import.meta.env.VITE_MSW_ENABLED !== 'true') {
     return
   }
-  const { worker } = await import('./mocks/browser')
-  return worker.start({ onUnhandledRequest: 'bypass' })
+  try {
+    const { worker } = await import('./mocks/browser')
+    await worker.start({ onUnhandledRequest: 'bypass' })
+  } catch (err) {
+    console.warn('[MSW] Failed to start:', err)
+  }
 }
 
-enableMocking().then(() => {
+function renderApp() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <BrowserRouter>
@@ -24,4 +28,9 @@ enableMocking().then(() => {
       </BrowserRouter>
     </StrictMode>,
   )
+}
+
+enableMocking().then(renderApp).catch(() => {
+  // Fallback: render even if mocking setup fails entirely
+  renderApp()
 })

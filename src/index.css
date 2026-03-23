@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Accessibility: visible focus indicators */
+*:focus-visible {
+  outline: 2px solid #3B5BFF;
+  outline-offset: 2px;
+}
+
 /* sonar-ignore-next-line */
 @custom-variant dark (&:is(.dark *)); /*NOSONAR*/
 

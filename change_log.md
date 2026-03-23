@@ -4,49 +4,166 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [2026-03-23] — Phase 5: Analytics Dashboards for All 6 Roles [WS-B]
+## [2026-03-23] — Phase 7: UI Polish & Accessibility [WS-B 7.B1-7.B4]
 
-### Added — Analytics Pages
-- `src/pages/user/Analytics.tsx` — Sessions/week LineChart, goals AreaChart, agent usage PieChart, satisfaction trend, PRISM growth trajectory BarChart
-- `src/pages/manager/Analytics.tsx` — Coaching engagement by member, goal completion stacked bars, member performance trend, hiring stages PieChart, time-to-hire BarChart
-- `src/pages/company-admin/Analytics.tsx` — Department comparison grouped BarChart, engagement trend AreaChart, license utilization PieChart, cost/user LineChart, CSV/JSON export
-- `src/pages/practitioner/Analytics.tsx` — Client engagement bars, weekly session frequency LineChart, PRISM completion rates PieChart
-- `src/pages/distributor/Analytics.tsx` — Credits by region BarChart, practitioner utilization bars, credit flow AreaChart (purchases/allocations/usage)
-- `src/pages/super-admin/Analytics.tsx` — Platform stats (Total/MAU/DAU), agent usage PieChart, org comparison BarChart, system health AreaChart (response time + error rate)
+### Added — Visual Polish (7.B1)
+- `LoadingFallback` — Skeleton-based page loading with card grid and content placeholders
+- `SkeletonCard` — Reusable animated card skeleton
+- `EmptyState` — Centered empty state with icon, title, message, optional action
+- `ErrorState` — Error display with retry button
 
-### Added — Infrastructure
-- `src/services/analytics/analytics.service.ts` — 6 API endpoints (one per role)
-- `src/hooks/analytics/useAnalytics.ts` — 6 React Query hooks
-- `src/mocks/handlers/analytics.ts` — MSW handlers with realistic mock data for all roles
-- Routes: `/analytics`, `/manager/analytics`, `/company-admin/analytics`, `/practitioner/analytics`, `/distributor/analytics`, `/super-admin/analytics`
-- Nav items: "Analytics" added to manager, company, distributor, practitioner, and tools sidebar sections
+### Added — Accessibility (7.B2)
+- `SkipToContent` — Skip navigation link (sr-only, visible on focus)
+- `focus-visible` outline (2px solid #3B5BFF) added to global CSS
+- AppShell: `id="main-content"`, `role="main"`, `tabIndex={-1}` on main element
+- AppHeader: `role="banner"`
+- AppSidebar: `role="navigation"`, `aria-label`, mobile backdrop `aria-hidden`
+- RightPanel: `role="complementary"`, `aria-label`
+- DataCard: `role="region"`, `aria-label={title}`
+
+### Changed — Responsive (7.B3)
+- Sidebar nav buttons: `min-h-[44px]` on mobile for touch targets (WCAG 2.5.5)
+
+### Tests
+- EmptyState (3 tests), ErrorState (3 tests), SkipToContent (1 test)
 
 ---
 
-## [2026-03-22] — Phase 4: RLHF Feedback Components, Prompt Builder & Training Dashboard [WS-B]
+## [2026-03-23] — Phase 7 Final Launch Sweep [WS-A 7.A1-7.A3]
 
-### Added — Feedback Components (4.B1)
-- `FeedbackButtons` — Reusable thumbs up/down on AI responses with sonner toast, active state, callback
-- `CorrectionModal` — Dialog for submitting corrected response text with RHF + Zod validation, reason dropdown
-- `FeedbackIndicator` — Inline color-coded indicator (positive/negative/correction) with icon
+### Fixed (Launch Blockers)
+- **CRITICAL:** `src/services/auth.service.ts:19` — URL parameter injection: `resendVerificationApi` now encodes email with `encodeURIComponent()`. Emails with `+`, `&`, `=`, `#` characters were corrupting the query string.
+- **HIGH:** `vite.config.ts:109` — Source maps changed from `true` to `"hidden"`. Production JS no longer includes `//# sourceMappingURL` comments, preventing source code exposure. Maps still generated for Sentry.
+- **MEDIUM:** `src/hooks/useChatWindowAudio.ts` — `pendingStoreRef` timeout now cleared on component unmount.
+- **MEDIUM:** Removed 5 `console.log` statements leaking auth/state data to browser console in production: `useAuthRedirectForAuthPages.ts:12`, `AuthContext.tsx:403`, `CoachChat.tsx:500`, `ExportChatModal.tsx:91-92`, `storage.ts:116`.
 
-### Added — Feedback History Page (4.B2)
-- `src/pages/user/FeedbackHistory.tsx` — Table of all user feedback with filter by type and coach
-- Route `/feedback` added to routes.ts and routes.tsx
-- Nav item "Feedback" added to Tools section in sidebar-sections.ts
+### Full Bug Catalog (26 total)
+- **Fixed:** 7 (1 Critical, 2 High, 4 Medium) — all launch blockers resolved
+- **Accepted for launch:** 19 (10 Medium/Low mock-data pages, 8 Low missing-zodResolver forms, 1 dead route constant)
 
-### Enhanced — Prompt Builder (4.B3)
-- `PromptVersionDiff` component — Side-by-side old/new text comparison with template variable highlighting ({{var}} syntax)
-- Existing PromptBuilder page preserved with its full CRUD, version history, and preview panel
+### Final Test Results
+- 139/139 test suites, 1319/1319 tests pass
+- 0 TypeScript errors, build passes (4.1s)
+- Zero Critical bugs, Zero High bugs remaining
 
-### Enhanced — RLHF Training Dashboard (4.B4)
-- `RlhfReviewQueue` component — Pending corrections with approve/reject, original vs corrected side-by-side
-- Export functionality: JSON and CSV download buttons with mock training data
-- Tab navigation: Overview (existing charts + table) and Review Queue
+---
 
-### Added — Tests
-- `FeedbackButtons.test.tsx` — Renders buttons, fires mutation on click
-- `FeedbackIndicator.test.tsx` — Renders correct label for each type
+## [2026-03-23] — High Availability, DR, Blue-Green, Security [WS-D 6.D1-6.D4]
+
+### Added — Auto-Scaling (6.D1)
+- `infrastructure/cloudformation/autoscaling-stack.yml` — ECS auto-scaling: target tracking (CPU 60%), step scale-up (>70% → +2 tasks), step scale-down (<30% → -1 task), min 2 / max 10 tasks, max-capacity cost alert
+
+### Added — Disaster Recovery (6.D2)
+- `infrastructure/scripts/dr-failover.sh` — Failover (promote replica, update Route53, verify health), failback (restore primary, recreate replica), status, drill (full failover+failback with RTO measurement)
+- `docs/dr-runbook.md` — Step-by-step recovery procedure, RTO<1hr RPO<15min targets, post-incident checklist, quarterly drill schedule
+
+### Added — Blue-Green Deployment (6.D3)
+- `infrastructure/scripts/blue-green-deploy.sh` — Zero-downtime deploy: register green task def, update ECS service, 10-attempt health check (3 consecutive passes required), auto-rollback on failure, SNS notifications
+- `docs/blue-green-procedure.md` — Pre-deployment checklist, automated/manual steps, rollback procedure, monitoring guide
+
+### Added — Security Hardening (6.D4)
+- `infrastructure/cloudformation/waf-stack.yml` — WAF v2: rate limiting (2000 req/5min/IP), AWS Managed Rules (Common, Known Bad Inputs, IP Reputation), geo-restriction (US/CA/GB/AU/IN), rate-limit alarm
+- `infrastructure/cloudformation/vpc-security-stack.yml` — VPC flow logs (14-day retention), rejected traffic alarm (>1000/5min), AWS Config with 5 compliance rules (no inline IAM, no root keys, RDS encrypted, no public S3, encrypted EBS)
+
+---
+
+## [2026-03-23] — Phase 6 Security Sweep & Bug Triage [WS-A 6.A1-6.A3]
+
+### Fixed
+- `src/services/auth.service.ts:19` — URL parameter injection: `resendVerificationApi` now uses `encodeURIComponent(email)` to prevent query string corruption with special characters
+- `src/lib/crypto.ts` — Dev-mode warning when `VITE_CRYPTO_KEY` is unset; extracted `resolveSecret`/`resolveSalt` helpers to centralize fallback logic
+- `src/hooks/useChatWindowAudio.ts:138` — Memory leak: `pendingStoreRef` timeout now cleared on component unmount, preventing setState on unmounted component
+
+### Security Audit Findings
+- **URL injection (fixed):** `resendVerificationApi` interpolated email without encoding
+- **Crypto weakness (warned):** `VITE_CRYPTO_KEY` falls back to empty string — encryption uses empty passphrase
+- **Plaintext fallback (reported):** `secureStorage.ts` silently stores tokens as plain JSON on encryption failure
+- **Source maps (reported):** `vite.config.ts` enables source maps in production builds
+- **Console logging (reported):** 5 files log auth/state data to browser console in production
+- **CSRF (acceptable):** Custom `access-token` header provides adequate protection against form-based CSRF
+- **XSS (clean):** Single `dangerouslySetInnerHTML` usage is safe (injects CSS vars from config, not user input)
+
+### Verified
+- **6.A1:** 139/139 suites, 1319/1319 tests. Build passes. 0 TS errors.
+- **6.A2:** Timer/interval cleanup verified across codebase. Token refresh single-flight locking confirmed in axios.ts.
+- **6.A3:** No XSS, SQL injection, or auth bypass vulnerabilities found. Division-by-zero guards all safe.
+
+---
+
+## [2026-03-22] — CDN Optimization, API Caching & Asset Pipeline [WS-D 5.D1-5.D3]
+
+### Added — CDN Optimization (5.D1)
+- `infrastructure/cloudformation/cdn-optimization-stack.yml` — CloudFront distribution with 3 cache behaviors:
+  - `/assets/*` — static assets, max-age=31536000 (1 year), immutable, custom cache policy optimized for >90% hit rate
+  - `/v1/*` — API pass-through, no caching, all headers forwarded, CORS response headers policy
+  - Default (`/*`) — HTML pages, max-age=0 must-revalidate for SPA, stale-while-revalidate=60
+- `infrastructure/cloudfront-functions/spa-rewrite.js` — CloudFront Function (viewer-request) rewrites non-file URIs to /index.html, preserves /assets/, /icons/, /images/, manifest.json, sw.js, robots.txt
+- Origin Access Control for S3 bucket (sigv4 signing)
+- Response headers policy: HSTS (1yr, includeSubDomains, preload), X-Content-Type-Options: nosniff, X-Frame-Options: DENY, X-XSS-Protection, Referrer-Policy
+
+### Added — API Response Caching (5.D2)
+- `inspire-genius-backend/prism_inspire/core/cache.py` — Redis/ElastiCache cache utility:
+  - `get_cache(key)` / `set_cache(key, value, ttl)` / `invalidate(key)` / `invalidate_pattern(pattern)`
+  - `@cached(ttl, key_prefix)` decorator for automatic cache-through (sync + async variants)
+  - TTL presets: REALTIME=300 (5min), HISTORICAL=3600 (1hr), COST_DASHBOARD=900 (15min)
+  - `invalidate_on_write(patterns)` helper for write-through invalidation
+  - Falls back to in-memory dict cache when REDIS_URL not set (development)
+  - JSON serialization for complex objects, MD5 key hashing
+- `inspire-genius-backend/prism_inspire/middleware/cache.py` — CacheMiddleware for FastAPI:
+  - `/v1/analytics/*` → private, max-age=300
+  - `/v1/dashboard/*` → private, max-age=900
+  - `/v1/costs/*` → private, max-age=900
+  - `/health*` → no-cache, no-store, must-revalidate
+  - All other `/v1/*` → no-store (writes)
+  - Non-GET methods always get no-store
+
+### Added — Asset Pipeline (5.D3)
+- `inspire-genius-frontend/vite.config.ts` — Code splitting via `build.rollupOptions.output.manualChunks`:
+  - `vendor` — react, react-dom, react-router-dom
+  - `ui` — @radix-ui/*, lucide-react, framer-motion
+  - `query` — @tanstack/react-query
+  - `charts` — recharts
+- Asset fingerprinting confirmed: `build.assetsDir = 'assets'` (Vite default [hash] in filenames)
+- `infrastructure/scripts/optimize-images.sh` — Converts PNG/JPG to WebP using cwebp or sharp-cli, preserves originals, reports size savings
+- `inspire-genius-frontend/.gitlab-ci.yml` — Deploy stage enhanced:
+  - Verifies gzip/brotli compression enabled on CloudFront distribution
+  - Logs JS/CSS asset sizes in deploy output for build audit trail
+
+---
+
+## [2026-03-22] — Phase 5 Bug Triage [WS-A 5.A1-5.A3]
+
+### Fixed
+- `src/components/feedback/CorrectionModal.tsx` — Added missing `zodResolver(correctionSchema)` to `useForm`. Blank correction submissions could bypass Zod validation entirely.
+
+### Verified
+- **5.A1:** 139/139 suites, 1319/1319 tests. Build passes. 0 TS errors.
+- **5.A1 RLHF regression:** Core chain intact (MessageFeedback → useFeedback → POST /v1/feedback). Star rating + correction text submission functional.
+- **5.A2 Analytics:** All division/percentage guards verified safe — no division-by-zero possible in PRISMThermometer, BMLProgressBar, scoring.ts, RlhfFeedbackTable.
+- **5.A3 Performance:** Build 3.5s, test suite 12.9s, bundle stable at ~1,941 KB JS.
+
+### Reported (Open)
+- P3: FeedbackButtons/CorrectionModal not wired into chat UI (dead code)
+- P3: FeedbackHistory, RlhfReviewQueue, RlhfTraining export all use hardcoded mock data
+- P3: CostDashboard/PRISMThermometer/QuickActions still unused by any page
+- P3: ROUTES.COMPANY_ADMIN.PRISM_OVERVIEW dead config
+
+---
+
+## [2026-03-22] — Database Scaling & Storage [WS-D 4.D1-4.D3]
+
+### Added — Feedback Data Storage (4.D1)
+- `inspire-genius-backend/ai/models/feedback.py` — Feedback, FeedbackCorrection, TrainingExport ORM models with JSONB metadata, optimized composite indexes
+- `inspire-genius-backend/prism_inspire/alembic/versions/d4e5f6a7b8c9_feedback_tables.py` — Migration creating 3 tables + 8 indexes + 3 enums
+- `inspire-genius-backend/prism_inspire/db/session.py` — Read replica support via READ_REPLICA_URL env var, `@with_read_db` decorator for aggregation queries, connection pooling (pool_size=10, max_overflow=20, pool_recycle=1800)
+
+### Added — Backup Enhancement (4.D2)
+- `infrastructure/scripts/backup.sh` — Daily snapshots, PITR enable (35-day retention), cross-region DR replication (us-west-2), test-restore with 1-hour target verification, backup monitoring
+- `infrastructure/cloudformation/backup-stack.yml` — CloudWatch alarms for backup age (>25h), replication lag (>60s), low storage (<5GB)
+
+### Added — Storage Optimization (4.D3)
+- `infrastructure/scripts/archive-feedback.sh` — Archives feedback >90 days to S3 as JSONL, soft-deletes from primary DB, supports --dry-run
+- `infrastructure/cloudformation/s3-lifecycle-stack.yml` — Archive bucket (Standard→IA@30d→Glacier@90d→Deep Archive@365d→delete@7y), training exports bucket (IA@30d→Glacier@180d→delete@3y), storage growth alarms (100GB warning, 500GB critical)
 
 ---
 

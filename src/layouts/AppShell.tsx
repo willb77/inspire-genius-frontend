@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 import AppHeader from "@/components/layout/AppHeader"
 import AppSidebar from "@/components/layout/AppSidebar"
 import RightPanel from "@/components/layout/RightPanel"
+import SkipToContent from "@/components/shared/SkipToContent"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import type { UserRole } from "@/types/roles"
 
@@ -18,11 +19,15 @@ export default function AppShell({ role, children, className }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-[#f9fafb]">
+      <SkipToContent />
       <AppHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
       <AppSidebar role={role} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <RightPanel />
 
       <main
+        id="main-content"
+        role="main"
+        tabIndex={-1}
         className={cn(
           "pt-[var(--spacing-header-h)] md:pl-[var(--spacing-sidebar-w)] lg:pr-[var(--spacing-right-panel-w)]",
           "min-h-screen overflow-y-auto",
