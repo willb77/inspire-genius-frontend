@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { useSubmitFeedback } from "@/hooks/feedback/useFeedback"
@@ -45,7 +46,9 @@ export default function CorrectionModal({
   originalText,
 }: CorrectionModalProps) {
   const submitFeedback = useSubmitFeedback()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CorrectionForm>()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<CorrectionForm>({
+    resolver: zodResolver(correctionSchema),
+  })
 
   async function onSubmit(data: CorrectionForm) {
     try {
