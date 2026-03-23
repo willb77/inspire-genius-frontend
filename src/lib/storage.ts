@@ -113,7 +113,6 @@ export async function getOnboardingFlag(): Promise<boolean> {
   return v === '1'
 }
 export async function setOnboardingFlag(done: boolean): Promise<void> {
-  console.log("Setting onboarding flag", done);
   await setEncrypted(STORAGE_KEYS.USER_ONBOARDING, done ? '1' : '0')
 }
 export async function removeOnboardingFlag(): Promise<void> {

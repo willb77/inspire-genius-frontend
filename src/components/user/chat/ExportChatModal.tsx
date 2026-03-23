@@ -88,8 +88,6 @@ export default function ExportChatModal({ open, onOpenChange, onExport, disableE
   const handleExport = async () => {
     const fromDate = parseDisplayDate(fromStr);
     const toDate = parseDisplayDate(toStr);
-    console.log("fromDate", fromDate);
-    console.log("toDate", toDate);
     if (!fromDate || !toDate) return;
     if (fromDate > toDate) return;
     try {

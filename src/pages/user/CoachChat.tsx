@@ -497,7 +497,6 @@ export default function CoachChat() {
   }, [conversationData]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
-    console.log(from, to, "values")
     if (!conversationId) return;
     try {
       const resp = await exportConversation(conversationId, from, to);
