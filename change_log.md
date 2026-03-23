@@ -4,21 +4,95 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [2026-03-20] — Phase 2: Multi-Role Dashboard Pages & MSW Mocks [WS-B]
+## [2026-03-22] — Phase 4: RLHF Feedback Components, Prompt Builder & Training Dashboard [WS-B]
 
-### Added
-- **Manager pages**: `Team.tsx` (direct reports table with PRISM scores, goals, training), `Hiring.tsx` (pipeline stats, candidates table, interviews, Job DNA profiles)
-- **Company Admin pages**: `Users.tsx` (searchable user CRUD table), `Costs.tsx` (monthly spend chart, department cost breakdown, license allocation)
-- **Practitioner pages**: `Clients.tsx` (searchable client roster with PRISM, sessions, notes), `Credits.tsx` (usage chart, transaction history, purchase CTA)
-- **Distributor pages**: `Practitioners.tsx` (searchable practitioner network with utilization bars, regional breakdown), `Credits.tsx` (usage trend, allocations by practitioner, transaction log)
-- **MSW mock handlers**: `manager.ts` (team, hiring, interviews), `company-admin.ts` (users CRUD, departments, costs, analytics), `practitioner.ts` (clients, sessions, followups, credits), `distributor.ts` (practitioners, credits, transactions, territory)
-- Route constants: `ROUTES.MANAGER.HIRING`, `ROUTES.COMPANY_ADMIN.COSTS`, `ROUTES.PRACTITIONER.CREDITS`, `ROUTES.DISTRIBUTOR.CREDITS`
-- Sidebar section: added "Costs & Expenses" to Company section
+### Added — Feedback Components (4.B1)
+- `FeedbackButtons` — Reusable thumbs up/down on AI responses with sonner toast, active state, callback
+- `CorrectionModal` — Dialog for submitting corrected response text with RHF + Zod validation, reason dropdown
+- `FeedbackIndicator` — Inline color-coded indicator (positive/negative/correction) with icon
 
-### Changed
-- Replaced placeholder pages for Team, Users, Clients, Practitioners with full data-rich implementations
-- Updated `routes.tsx` with new page routes
-- Updated `sidebar-sections.ts` with new navigation items
+### Added — Feedback History Page (4.B2)
+- `src/pages/user/FeedbackHistory.tsx` — Table of all user feedback with filter by type and coach
+- Route `/feedback` added to routes.ts and routes.tsx
+- Nav item "Feedback" added to Tools section in sidebar-sections.ts
+
+### Enhanced — Prompt Builder (4.B3)
+- `PromptVersionDiff` component — Side-by-side old/new text comparison with template variable highlighting ({{var}} syntax)
+- Existing PromptBuilder page preserved with its full CRUD, version history, and preview panel
+
+### Enhanced — RLHF Training Dashboard (4.B4)
+- `RlhfReviewQueue` component — Pending corrections with approve/reject, original vs corrected side-by-side
+- Export functionality: JSON and CSV download buttons with mock training data
+- Tab navigation: Overview (existing charts + table) and Review Queue
+
+### Added — Tests
+- `FeedbackButtons.test.tsx` — Renders buttons, fires mutation on click
+- `FeedbackIndicator.test.tsx` — Renders correct label for each type
+
+---
+
+## [2026-03-22] — Phase 4 Bug Triage & Fixes [WS-A 4.A1-4.A2]
+
+### Fixed
+- `src/components/ProtectedRoute.tsx` — Reduced boot delay from 5000ms to 300ms. Users were blocked by a 5-second loading screen on every protected route visit.
+- `src/components/ErrorBoundary.tsx` — Safe error handling: `error as Error` → `instanceof Error` check with `String()` fallback for non-Error thrown values.
+
+### Verified
+- **4.A1 Bug Sweep:** 137/137 test suites, 1313/1313 tests pass. Build passes. 0 TypeScript errors.
+- **4.A2 RLHF:** Feedback flow (star rating → API → storage) fully wired via MessageFeedback → useFeedback → feedback.service. RLHF Training page and Prompt Builder page both functional.
+- **Dead sidebar links:** Resolved — navigation.ts consolidated, all sidebar items have matching routes.
+- **PRISM integration:** 11 components, 6 hooks, service all structurally sound. Two P2/P3 issues reported (missing route ACL, dead config).
+- **Job Blueprint:** Test harness + 20+ components compile and render.
+
+### Reported (Open)
+- P2: `/prism-assessment` route accessible by any authenticated role — missing ACL
+- P3: `ROUTES.COMPANY_ADMIN.PRISM_OVERVIEW` constant has no route entry
+- P3: `CostDashboard`, `PRISMThermometer`, `QuickActions` components unused by dashboard pages
+- P3: Backend — 5 test collection errors (pydantic, google module, vector store deps)
+
+---
+
+## [2026-03-21] — API Monitoring, Centralized Logging & Error Tracking [WS-D 3.D1-3.D3]
+
+### Added — API Monitoring Setup (3.D1)
+- `inspire-genius-backend/prism_inspire/middleware/health.py` — Health check endpoints: `/health` (liveness), `/health/ready` (readiness with DB check), `/health/live` (k8s probe)
+- `infrastructure/cloudformation/monitoring-stack.yml` — CloudWatch dashboard with request rate, error rate, latency P50/P95/P99 panels; SNS alerting (email); uptime alarm (1-min threshold), error spike alarm (>10 5xx/5min), high latency alarm (P95 > 2s)
+
+### Added — Centralized Logging Infrastructure (3.D2)
+- `inspire-genius-backend/prism_inspire/core/log_config.py` — Rewritten with `StructuredJsonFormatter` for CloudWatch-compatible JSON, `ContextVar`-based correlation IDs, human-readable format for dev
+- `inspire-genius-backend/prism_inspire/middleware/observability.py` — Request logging middleware: generates/propagates `X-Correlation-ID`, logs method/path/status/duration/IP for every request
+- CloudFormation log groups: 30-day (app/access), 90-day (error), 365-day (audit) retention
+- Metric filters extract API5xxErrors, API4xxErrors, APIRequestCount, APILatencyMs from structured logs
+
+### Added — Error Tracking Setup (3.D3)
+- `inspire-genius-frontend/src/lib/sentry.ts` — Sentry init with DSN from env, 20% trace sampling, error replay, PII filtering
+- `inspire-genius-frontend/src/components/ErrorBoundary.tsx` — Sentry ErrorBoundary with branded fallback UI (Try Again / Go Home)
+- `inspire-genius-frontend/src/App.tsx` — Wrapped app in `<ErrorBoundary>`
+- `inspire-genius-frontend/src/main.tsx` — `initSentry()` called before render
+- `inspire-genius-backend/prism_inspire/main.py` — `sentry_sdk.init()` with 20% trace sampling, env-based DSN
+- Frontend CI: Sentry source map upload via `sentry-cli` in deploy stage
+- `vite.config.ts` — CSP connect-src updated to allow Sentry ingest domain
+- Error budgets defined: < 0.1% API error rate, < 0.5% frontend JS errors
+
+---
+
+## [2026-03-20] — CI/CD Multi-Role Testing & Database Migration Automation [WS-D 2.6-2.7]
+
+### Added — CI/CD Pipeline for Multi-Role Testing (2.6)
+- `inspire-genius-frontend/.gitlab-ci.yml` — New `test` and `e2e` stages added to pipeline (build → test → sonar → e2e → deploy)
+- `inspire-genius-frontend/e2e/smoke.spec.ts` — Playwright smoke tests: login, sidebar, logout for all 6 roles (user, manager, company-admin, practitioner, distributor, super-admin)
+- `inspire-genius-frontend/e2e/helpers.ts` — Shared login helper and per-role credentials
+- `inspire-genius-frontend/playwright.config.ts` — Playwright config with Chromium project, CI/local modes
+- E2E test matrix: 6 parallel jobs (`e2e:user`, `e2e:manager`, etc.) each running `--grep="@role"` tagged tests
+- SonarQube quality gate: `sonar.qualitygate.wait=true` with 300s timeout, `allow_failure: false` (blocks deploy on gate failure)
+- Unit test stage produces coverage reports (lcov + cobertura) consumed by SonarQube
+
+### Added — Database Migration Automation (2.7)
+- `infrastructure/scripts/migrate.sh` — Migration runner with `--dry-run`, `--rollback [N]`, `--status`, `--check` commands
+- `inspire-genius-backend/.gitlab-ci.yml` — Two new stages:
+  - `migrate:dry-run` (pre-build) — Validates migration consistency, fails pipeline on schema conflicts
+  - `migrate:apply` (post-build, pre-deploy) — Auto-applies pending Alembic migrations, saves rollback target
+- Rollback target artifact persisted for 7 days per deployment
 
 ---
 

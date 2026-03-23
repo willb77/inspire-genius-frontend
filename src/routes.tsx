@@ -13,6 +13,7 @@ import Dashboard from "@/pages/user/Dashboard";
 import Coaches from "@/pages/user/Coaches";
 import CoachChat from "@/pages/user/CoachChat";
 import Documents from "@/pages/user/Documents";
+import FeedbackHistory from "@/pages/user/FeedbackHistory";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
 import OnboardingOne from "@/pages/onboarding/OnboardingOne";
 import OnboardingTwo from "@/pages/onboarding/OnboardingTwo";
@@ -61,6 +62,13 @@ import PractitionerClients from "@/pages/practitioner/Clients";
 import PractitionerCredits from "@/pages/practitioner/Credits";
 import PractitionerSettings from "@/pages/practitioner/Settings";
 
+// PRISM pages
+import PrismAssessment from "@/pages/user/PrismAssessment";
+import PrismClients from "@/pages/practitioner/PrismClients";
+import PrismTeam from "@/pages/manager/PrismTeam";
+import PrismTestHarness from "@/pages/dev/PrismTestHarness";
+import JobBlueprintTestHarness from "@/pages/dev/JobBlueprintTestHarness";
+
 // Distributor pages
 import DistributorDashboard from "@/pages/distributor/Dashboard";
 import DistributorPractitioners from "@/pages/distributor/Practitioners";
@@ -85,6 +93,8 @@ export const routes: RouteObject[] = [
       { path: "/terms", element: <Terms /> },
       { path: "/privacy", element: <Privacy /> },
       { path: "/preview-home", element: <PreviewHome /> },
+      { path: "/dev/prism-test", element: <PrismTestHarness /> },
+      { path: "/dev/job-blueprint-test", element: <JobBlueprintTestHarness /> },
     ],
   },
 
@@ -108,6 +118,8 @@ export const routes: RouteObject[] = [
       { path: "/documents", element: <Documents /> },
       { path: "/settings", element: <UserSettingsPage /> },
       { path: "/help", element: <HelpPage /> },
+      { path: "/prism-assessment", element: <PrismAssessment /> },
+      { path: "/feedback", element: <FeedbackHistory /> },
 
       // Super Admin pages
       { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
@@ -130,6 +142,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/dashboard", element: <ManagerDashboard /> },
       { path: "/manager/team", element: <ManagerTeam /> },
       { path: "/manager/hiring", element: <ManagerHiring /> },
+      { path: "/manager/prism-team", element: <PrismTeam /> },
       { path: "/manager/settings", element: <ManagerSettings /> },
 
       // Company Admin pages
@@ -143,6 +156,7 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/dashboard", element: <PractitionerDashboard /> },
       { path: "/practitioner/clients", element: <PractitionerClients /> },
       { path: "/practitioner/credits", element: <PractitionerCredits /> },
+      { path: "/practitioner/prism-clients", element: <PrismClients /> },
       { path: "/practitioner/settings", element: <PractitionerSettings /> },
 
       // Distributor pages
