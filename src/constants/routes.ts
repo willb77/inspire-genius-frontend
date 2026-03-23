@@ -10,6 +10,7 @@ export const ROUTES = {
   SETTINGS: "/settings",
   HELP: "/help",
   FEEDBACK: "/feedback",
+  ANALYTICS: "/analytics",
   PRISM_ASSESSMENT: "/prism-assessment",
   SUPER_ADMIN: {
     BASE: "/super-admin",
@@ -23,6 +24,7 @@ export const ROUTES = {
     RLHF_TRAINING: "/super-admin/rlhf-training",
     PROMPT_BUILDER: "/super-admin/prompt-builder",
     AUDIT_LOG: "/super-admin/audit-log",
+    ANALYTICS: "/super-admin/analytics",
   },
   MANAGER: {
     BASE: "/manager",
@@ -30,6 +32,7 @@ export const ROUTES = {
     TEAM: "/manager/team",
     HIRING: "/manager/hiring",
     PRISM_TEAM: "/manager/prism-team",
+    ANALYTICS: "/manager/analytics",
     SETTINGS: "/manager/settings",
   },
   COMPANY_ADMIN: {
@@ -39,6 +42,7 @@ export const ROUTES = {
     ORGANIZATION: "/company-admin/organization",
     COSTS: "/company-admin/costs",
     PRISM_OVERVIEW: "/company-admin/prism-overview",
+    ANALYTICS: "/company-admin/analytics",
     SETTINGS: "/company-admin/settings",
   },
   PRACTITIONER: {
@@ -47,6 +51,7 @@ export const ROUTES = {
     CLIENTS: "/practitioner/clients",
     CREDITS: "/practitioner/credits",
     PRISM_CLIENTS: "/practitioner/prism-clients",
+    ANALYTICS: "/practitioner/analytics",
     SETTINGS: "/practitioner/settings",
   },
   DISTRIBUTOR: {
@@ -55,6 +60,7 @@ export const ROUTES = {
     PRACTITIONERS: "/distributor/practitioners",
     CREDITS: "/distributor/credits",
     TERRITORY: "/distributor/territory",
+    ANALYTICS: "/distributor/analytics",
     SETTINGS: "/distributor/settings",
   },
   ONBOARDING: {
