@@ -25,14 +25,11 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
 
   const isOnboardingRoute = path.startsWith('/onboarding')
 
-  // Show an animated loading screen briefly on path changes to avoid white-screen flashes
+  // Brief loading screen on initial mount to avoid white-screen flash while auth hydrates
   const [booting, setBooting] = useState(true)
   const bootTimerRef = useRef<number | null>(null)
   useEffect(() => {
-    // reset booting on every path change
-    setBooting(true)
-    if (bootTimerRef.current) window.clearTimeout(bootTimerRef.current)
-    bootTimerRef.current = window.setTimeout(() => setBooting(false), 5000)
+    bootTimerRef.current = window.setTimeout(() => setBooting(false), 300)
     return () => {
       if (bootTimerRef.current) window.clearTimeout(bootTimerRef.current)
       bootTimerRef.current = null
