@@ -9,6 +9,8 @@ export const ROUTES = {
   DOCUMENTS: "/documents",
   SETTINGS: "/settings",
   HELP: "/help",
+  FEEDBACK: "/feedback",
+  PRISM_ASSESSMENT: "/prism-assessment",
   SUPER_ADMIN: {
     BASE: "/super-admin",
     DASHBOARD: "/super-admin/dashboard",
@@ -27,6 +29,7 @@ export const ROUTES = {
     DASHBOARD: "/manager/dashboard",
     TEAM: "/manager/team",
     HIRING: "/manager/hiring",
+    PRISM_TEAM: "/manager/prism-team",
     SETTINGS: "/manager/settings",
   },
   COMPANY_ADMIN: {
@@ -35,6 +38,7 @@ export const ROUTES = {
     USERS: "/company-admin/users",
     ORGANIZATION: "/company-admin/organization",
     COSTS: "/company-admin/costs",
+    PRISM_OVERVIEW: "/company-admin/prism-overview",
     SETTINGS: "/company-admin/settings",
   },
   PRACTITIONER: {
@@ -42,6 +46,7 @@ export const ROUTES = {
     DASHBOARD: "/practitioner/dashboard",
     CLIENTS: "/practitioner/clients",
     CREDITS: "/practitioner/credits",
+    PRISM_CLIENTS: "/practitioner/prism-clients",
     SETTINGS: "/practitioner/settings",
   },
   DISTRIBUTOR: {
