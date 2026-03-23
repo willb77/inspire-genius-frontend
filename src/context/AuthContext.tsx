@@ -400,7 +400,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resendOtpMutation = useResendOtpMutation({
     onSuccess: (data) => {
-      console.log("Resend OTP response", data);
       const failed = data?.status === false || data?.success === false;
       if (failed) {
         const msg = data?.message || "Failed to resend OTP";

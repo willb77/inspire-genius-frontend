@@ -2,6 +2,7 @@ import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
+import { visualizer } from "rollup-plugin-visualizer"
 import { defineConfig, loadEnv } from "vite"
 
 // https://vite.dev/config/
@@ -66,6 +67,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      ...(process.env.ANALYZE ? [visualizer({ open: true, filename: "dist/stats.html" })] : []),
       VitePWA({
         registerType: "autoUpdate",
         workbox: {
@@ -114,6 +116,7 @@ export default defineConfig(({ mode }) => {
             ui: [
               "@radix-ui/react-dialog",
               "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-popover",
               "@radix-ui/react-select",
               "@radix-ui/react-tabs",
               "@radix-ui/react-tooltip",
