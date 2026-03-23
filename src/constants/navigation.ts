@@ -18,6 +18,7 @@ import {
   UserCheck,
   Map,
   Briefcase,
+  Brain,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -26,6 +27,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.COACHES, icon: TableProperties, label: "Manage Coaches" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
+  { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "PRISM Assessment" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -46,6 +48,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
+  { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -61,6 +64,7 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
+  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
   { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

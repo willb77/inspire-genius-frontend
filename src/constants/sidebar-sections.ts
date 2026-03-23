@@ -19,6 +19,7 @@ import {
   FileText,
   Target,
   Settings,
+  MessageSquarePlus,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -104,6 +105,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     items: [
       { to: "/documents", icon: FileText, label: "Documents" },
       { to: "/goals", icon: Target, label: "Goals" },
+      { to: "/feedback", icon: MessageSquarePlus, label: "Feedback" },
     ],
   },
   {
