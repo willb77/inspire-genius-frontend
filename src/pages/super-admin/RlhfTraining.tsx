@@ -1,19 +1,40 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import RlhfMetricCards from "@/components/super-admin/rlhf/RlhfMetricCards"
 import RlhfRatingChart from "@/components/super-admin/rlhf/RlhfRatingChart"
 import RlhfFeedbackTable from "@/components/super-admin/rlhf/RlhfFeedbackTable"
+import RlhfReviewQueue from "@/components/super-admin/rlhf/RlhfReviewQueue"
 import { useFeedbackList, useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Download } from "lucide-react"
+import { CalendarIcon, FileJson, FileSpreadsheet } from "lucide-react"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
+
+const MOCK_EXPORT_DATA = [
+  { id: "f1", date: "2026-03-21", agent: "Meridian", rating: 5, type: "positive", correction: null },
+  { id: "f2", date: "2026-03-21", agent: "Aura", rating: 1, type: "correction", correction: "Improved response text" },
+  { id: "f3", date: "2026-03-20", agent: "Nova", rating: 1, type: "negative", correction: null },
+  { id: "f4", date: "2026-03-20", agent: "Meridian", rating: 5, type: "positive", correction: null },
+  { id: "f5", date: "2026-03-19", agent: "Atlas", rating: 5, type: "positive", correction: null },
+]
+
+function downloadBlob(content: string, filename: string, type: string) {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function RlhfTraining() {
   const [page, setPage] = useState(1)
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [activeTab, setActiveTab] = useState<"overview" | "queue">("overview")
 
   const dateFrom = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
   const dateTo = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined
@@ -31,6 +52,18 @@ export default function RlhfTraining() {
 
   const stats = statsData?.data ?? null
   const listResult = listData?.data ?? null
+
+  const exportJSON = useCallback(() => {
+    downloadBlob(JSON.stringify(MOCK_EXPORT_DATA, null, 2), "rlhf-training-data.json", "application/json")
+    toast.success("Exported as JSON")
+  }, [])
+
+  const exportCSV = useCallback(() => {
+    const headers = "id,date,agent,rating,type,correction\n"
+    const rows = MOCK_EXPORT_DATA.map((d) => `${d.id},${d.date},${d.agent},${d.rating},${d.type},${d.correction ?? ""}`).join("\n")
+    downloadBlob(headers + rows, "rlhf-training-data.csv", "text/csv")
+    toast.success("Exported as CSV")
+  }, [])
 
   return (
     <SuperAdminLayout>
@@ -65,28 +98,53 @@ export default function RlhfTraining() {
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="size-4" />
-              Export
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportJSON}>
+              <FileJson className="size-4" />
+              JSON
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportCSV}>
+              <FileSpreadsheet className="size-4" />
+              CSV
             </Button>
           </div>
         </div>
 
-        {/* Metric cards */}
-        <RlhfMetricCards stats={stats} isLoading={statsLoading} />
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RlhfRatingChart stats={stats} />
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-[#e5e7eb]">
+          {(["overview", "queue"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-[13px] font-semibold capitalize border-b-2 transition-colors ${
+                activeTab === tab ? "border-[#3B5BFF] text-[#3B5BFF]" : "border-transparent text-[#6b7280] hover:text-[#374151]"
+              }`}
+            >
+              {tab === "queue" ? "Review Queue" : "Overview"}
+            </button>
+          ))}
         </div>
 
-        {/* Feedback table */}
-        <RlhfFeedbackTable
-          data={listResult}
-          isLoading={listLoading}
-          page={page}
-          onPageChange={setPage}
-        />
+        {activeTab === "overview" ? (
+          <>
+            {/* Metric cards */}
+            <RlhfMetricCards stats={stats} isLoading={statsLoading} />
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <RlhfRatingChart stats={stats} />
+            </div>
+
+            {/* Feedback table */}
+            <RlhfFeedbackTable
+              data={listResult}
+              isLoading={listLoading}
+              page={page}
+              onPageChange={setPage}
+            />
+          </>
+        ) : (
+          <RlhfReviewQueue />
+        )}
       </div>
     </SuperAdminLayout>
   )

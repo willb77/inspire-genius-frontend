@@ -37,7 +37,7 @@ export function ErrorBoundary({ children }: { children: ReactNode }) {
   return (
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => (
-        <FallbackUI error={error as Error} resetError={resetError} />
+        <FallbackUI error={error instanceof Error ? error : new Error(String(error))} resetError={resetError} />
       )}
     >
       {children}
