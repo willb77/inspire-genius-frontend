@@ -12,9 +12,27 @@ export async function listDocuments(page = 1, limit = 10, filters?: { date?: str
     params,
     withCredentials: true,
   });
-  // Unwrap the BaseApiResponse envelope — backend returns { status, data: { date_groups, … } }
+  // Unwrap the BaseApiResponse envelope.
+  // Backend returns: { status, data: { date_groups, total_pages, … } }
+  // After axios parses JSON, resp.data = that object.
+  // We need to drill down to the object that contains `date_groups`.
   const body = resp.data as Record<string, unknown> | undefined;
-  return (body?.data ?? body) as unknown;
+  if (!body || typeof body !== "object") return body;
+
+  // If body itself has date_groups, it's already unwrapped
+  if (Array.isArray((body as Record<string, unknown>).date_groups)) return body;
+
+  // Unwrap one level: body.data should contain { date_groups, total_pages }
+  const inner = body.data as Record<string, unknown> | undefined;
+  if (inner && typeof inner === "object") {
+    // Check for double-wrap: inner.data might contain the real payload
+    if (Array.isArray((inner as Record<string, unknown>).date_groups)) return inner;
+    const deeper = (inner as Record<string, unknown>).data as Record<string, unknown> | undefined;
+    if (deeper && typeof deeper === "object" && Array.isArray(deeper.date_groups)) return deeper;
+    return inner;
+  }
+
+  return body;
 }
 
 // Fetches a download link for a given file id
@@ -70,7 +88,8 @@ export async function uploadDocuments(files: File[], onProgress?: (p: number) =>
   for (const f of files) form.append("files", f);
   const resp = await api.post("/v1/file_service/upload", form, {
     withCredentials: true,
-    headers: { "Content-Type": "multipart/form-data" },
+    // Do NOT set Content-Type manually — axios auto-sets it with the
+    // correct multipart boundary when the body is a FormData instance.
     onUploadProgress: (e) => {
       if (!onProgress) return;
       const total = e.total ?? 0;
@@ -78,5 +97,7 @@ export async function uploadDocuments(files: File[], onProgress?: (p: number) =>
       if (total > 0) onProgress(Math.min(100, Math.floor((loaded / total) * 100)));
     },
   });
-  return resp.data as unknown;
+  // Unwrap BaseApiResponse envelope if present
+  const body = resp.data as Record<string, unknown> | undefined;
+  return (body?.data ?? body) as unknown;
 }

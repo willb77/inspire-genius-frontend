@@ -9,10 +9,8 @@ import DataCard from "@/components/dashboard/DataCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
-import { usePrismInitiate } from "@/hooks/prism/usePrismInitiate";
 import { useAuditStats } from "@/hooks/audit/useAudit";
 import { ASSESSMENT_STATUS } from "@/constants/prism";
-import { QUEST_TYPE } from "@/types/prism/api-types";
 import {
   MessageSquare,
   Target,
@@ -106,23 +104,8 @@ export default function Home() {
   const lastReportDate = latestAssessment?.completedAt ?? latestAssessment?.initiatedAt;
   const hasActiveAssessment = assessments.some((a) => ACTIVE_STATUSES.has(a.status as never));
 
-  // PRISM initiate mutation — calls POST /v1/prism/initiate
-  const initiateMutation = usePrismInitiate();
-
   const handleRequestSurvey = () => {
-    if (!user) return;
-    const nameParts = (user.fullName ?? user.name ?? "").split(" ");
-    initiateMutation.mutate({
-      userId: user.id ?? "",
-      forename: nameParts[0] ?? "",
-      surname: nameParts.slice(1).join(" ") || (nameParts[0] ?? ""),
-      email: user.email ?? "",
-      gender: false, // default; PRISM API requires boolean
-      organisation: "",
-      questionnaireTypeId: QUEST_TYPE.FOUNDATION as 4,
-      languageId: 1,
-      isGift: false,
-    });
+    navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
   return (
@@ -186,14 +169,12 @@ export default function Home() {
             <Button
               size="sm"
               className="w-full mt-2"
-              disabled={hasActiveAssessment || initiateMutation.isPending}
+              disabled={hasActiveAssessment}
               onClick={handleRequestSurvey}
             >
-              {initiateMutation.isPending
-                ? "Requesting..."
-                : hasActiveAssessment
-                  ? "Assessment in Progress"
-                  : "Request Survey"}
+              {hasActiveAssessment
+                ? "Assessment in Progress"
+                : "Request Survey"}
             </Button>
           </CardContent>
         </Card>

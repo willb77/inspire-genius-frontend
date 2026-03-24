@@ -1,5 +1,6 @@
 import UserLayout from "@/layouts/UserLayout"
 import DataCard from "@/components/dashboard/DataCard"
+import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 const SESSIONS = Array.from({ length: 12 }, (_, i) => ({ week: `W${i + 1}`, sessions: Math.floor(Math.random() * 6) + 3 }))
@@ -19,6 +20,8 @@ export default function UserAnalytics() {
     <UserLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">Track your coaching journey, goals, and personal growth.</p>
+
+      <PlaceholderBanner />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <DataCard title="Sessions Per Week" className="!mt-0">
