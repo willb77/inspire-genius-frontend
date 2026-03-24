@@ -1,4 +1,4 @@
-import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
+import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole, RoleConfig } from "@/types/roles"
 import { ROUTES } from "@/constants/routes"
 import {
@@ -81,6 +81,21 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.TERRITORY, icon: Map, label: "Territory" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
+]
+
+/** Role-view links — lets super-admin jump to any role's dashboard */
+const ROLE_VIEW_ITEMS: NavItemDef[] = [
+  { to: ROUTES.HOME, icon: Home, label: "User Home" },
+  { to: ROUTES.MANAGER.DASHBOARD, icon: Users, label: "Manager" },
+  { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: Building2, label: "Company Admin" },
+  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: UserCheck, label: "Practitioner" },
+  { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Briefcase, label: "Distributor" },
+]
+
+/** Sectioned navigation for super-admin (admin tools + role views) */
+export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
+  { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS },
+  { label: "Role Views", items: ROLE_VIEW_ITEMS },
 ]
 
 /** Lookup from role to its nav items */

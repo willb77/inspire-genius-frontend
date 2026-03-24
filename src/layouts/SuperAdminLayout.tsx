@@ -1,5 +1,5 @@
 import React from "react";
-import { SUPER_ADMIN_NAV_ITEMS } from "@/constants/navigation";
+import { SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 
 export type SuperAdminLayoutProps = {
@@ -9,7 +9,7 @@ export type SuperAdminLayoutProps = {
 
 export default function SuperAdminLayout({ children, className }: SuperAdminLayoutProps) {
   return (
-    <SidebarScaffold navItems={SUPER_ADMIN_NAV_ITEMS} className={className}>
+    <SidebarScaffold navItems={[]} navSections={SUPER_ADMIN_NAV_SECTIONS} className={className}>
       {children}
     </SidebarScaffold>
   );
