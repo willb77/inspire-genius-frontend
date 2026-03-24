@@ -104,6 +104,15 @@
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
 
+        <h3>[2026-03-24] — Wire PRISM "Request Survey" Button to Real API</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/user/Home.tsx</code> — "Request Survey" button on the Home dashboard now calls the PRISM initiate API via <code>usePrismInitiate</code> hook instead of navigating to <code>/prism-assessment</code></li>
+          <li>Button displays "Requesting..." loading state while the API call is in flight</li>
+          <li>Button is disabled when an assessment is already in progress (<code>assessmentInProgress</code>) or when the mutation is pending</li>
+          <li>Fixed TypeScript operator precedence error in surname fallback logic</li>
+        </ul>
+
         <h3>[2026-03-15] — Fix Magic Link Authentication Flow — Dual Auth Mode Support</h3>
         <h4>Fixed</h4>
         <ul>
@@ -1133,6 +1142,11 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-03-23 — WS-B Phase 5</div>
           <div class="prompt-text">Phase 5 Analytics Dashboards: 6 analytics pages (User, Manager, Company Admin, Practitioner, Distributor, Super Admin) with recharts (LineChart, BarChart, PieChart, AreaChart). MSW handlers + service + hooks. Routes and nav items for all roles. Zero TS errors, build passes.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-24</div>
+          <div class="prompt-text">it will also call the PRISM API to requst questionnaire and report</div>
         </div>
 
       </div>

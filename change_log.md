@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-24] — Wire PRISM "Request Survey" Button to Real API
+
+### Changed
+- `src/pages/user/Home.tsx` — "Request Survey" button on the Home dashboard now calls the PRISM initiate API via `usePrismInitiate` hook instead of navigating to `/prism-assessment`
+- Button displays "Requesting..." loading state while the API call is in flight
+- Button is disabled when an assessment is already in progress (`assessmentInProgress`) or when the mutation is pending
+- Fixed TypeScript operator precedence error in surname fallback logic
+
+---
+
 ## [2026-03-23] — Phase 7: UI Polish & Accessibility [WS-B 7.B1-7.B4]
 
 ### Added — Visual Polish (7.B1)
