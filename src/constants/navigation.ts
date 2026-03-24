@@ -26,7 +26,7 @@ import {
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "PRISM Assessment" },
+  { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
   { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
   { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },

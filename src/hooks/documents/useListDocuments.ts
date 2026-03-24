@@ -10,7 +10,8 @@ export function useListDocuments(page = 1, limit = 10, filters?: { date?: string
   return useQuery({
     queryKey: ["file_service", "list", page, limit, effectiveFilters?.date ?? null, effectiveFilters?.search ?? null],
     queryFn: () => listDocuments(page, limit, effectiveFilters),
-    staleTime: 60_000,
+    staleTime: 0, // always treat as stale so invalidation + remount trigger refetch
+    refetchOnMount: true,
     placeholderData: (prev) => prev, // preserve previous page while loading next
   });
 }
