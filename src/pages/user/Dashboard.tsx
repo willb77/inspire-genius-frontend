@@ -21,7 +21,8 @@ export default function Dashboard() {
   };
 
   const agents = useMemo<Agent[]>(() => {
-    const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? [];
+    const raw = (agentsResp as { data?: Agent[] | { agents?: Agent[] } } | undefined)?.data;
+    const list = Array.isArray(raw) ? raw : (raw as { agents?: Agent[] } | undefined)?.agents ?? [];
     const q = query.trim().toLowerCase();
     return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [agentsResp, query]);

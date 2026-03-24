@@ -35,7 +35,7 @@ export default function PrismAssessmentCard({
   const unlock = usePrismUnlock()
 
   const currentStatus =
-    statusData?.data?.data?.status ?? assessment.status
+    statusData?.data?.status ?? assessment.status
   const canUpgrade =
     assessment.questionnaireType !== QUEST_TYPE.PROFESSIONAL &&
     (currentStatus === 'report_ready' || currentStatus === 'ingested')

@@ -1,5 +1,6 @@
 import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
+import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 const ENGAGEMENT = [
@@ -19,6 +20,7 @@ const STAGE_COLORS = ["#3B5BFF", "#2DD4BF", "#ECC94B", "#10B981", "#8B5CF6"]
 export default function ManagerAnalytics() {
   return (
     <ManagerLayout>
+      <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">Team Analytics</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">Track coaching engagement, goals, training, and hiring metrics.</p>
 

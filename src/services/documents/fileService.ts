@@ -12,7 +12,9 @@ export async function listDocuments(page = 1, limit = 10, filters?: { date?: str
     params,
     withCredentials: true,
   });
-  return resp.data as unknown;
+  // Unwrap the BaseApiResponse envelope — backend returns { status, data: { date_groups, … } }
+  const body = resp.data as Record<string, unknown> | undefined;
+  return (body?.data ?? body) as unknown;
 }
 
 // Fetches a download link for a given file id
@@ -22,11 +24,21 @@ export async function getDocumentDownloadLink(fileId: string): Promise<string> {
   });
   const data = resp.data as unknown;
   // Accept either a raw string URL or an object with a url/link field
+  // Also handle BaseApiResponse envelope: { status, data: { url } }
   if (typeof data === "string") return data;
   if (data && typeof data === "object") {
     const maybe = (data as Record<string, unknown>);
-    const url = (maybe.url ?? maybe.link ?? maybe.download_url) as string | undefined;
-    if (url && typeof url === "string") return url;
+    // Check top-level first
+    const topUrl = (maybe.url ?? maybe.link ?? maybe.download_url) as string | undefined;
+    if (topUrl && typeof topUrl === "string") return topUrl;
+    // Unwrap envelope if present
+    const inner = maybe.data;
+    if (typeof inner === "string") return inner;
+    if (inner && typeof inner === "object") {
+      const innerObj = inner as Record<string, unknown>;
+      const innerUrl = (innerObj.url ?? innerObj.link ?? innerObj.download_url) as string | undefined;
+      if (innerUrl && typeof innerUrl === "string") return innerUrl;
+    }
   }
   throw new Error("Unexpected download link response shape");
 }

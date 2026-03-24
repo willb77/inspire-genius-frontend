@@ -3,7 +3,7 @@ import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Button } from "@/components/ui/button"
-import { FileJson, FileSpreadsheet } from "lucide-react"
+import { FileJson, FileSpreadsheet, Info } from "lucide-react"
 import { toast } from "sonner"
 
 const DEPT = [
@@ -27,6 +27,14 @@ export default function CompanyAdminAnalytics() {
 
   return (
     <CompanyAdminLayout>
+      {/* Placeholder Data Notice */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+        <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-[13px] text-amber-800">
+          Analytics data is currently placeholder. Live metrics and reporting are in progress.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Company Analytics</h1>

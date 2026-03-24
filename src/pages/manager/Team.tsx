@@ -2,6 +2,7 @@ import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import ProgressBar from "@/components/dashboard/ProgressBar"
+import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 
 const MEMBERS = [
   { id: "tm-1", name: "Alex Thompson", role: "Senior Developer", avatar: "AT", bg: "#3B82F6", prism: 88, goals: "5/7", training: 92, status: "active", lastActive: "2 hours ago" },
@@ -15,6 +16,7 @@ const MEMBERS = [
 export default function ManagerTeam() {
   return (
     <ManagerLayout>
+      <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">Team Management</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">Manage direct reports, assign training, and monitor participation.</p>
 

@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
 import DataCard from "@/components/dashboard/DataCard"
 import ProgressBar from "@/components/dashboard/ProgressBar"
+import { useAuth } from "@/context/useAuth"
+import { Info } from "lucide-react"
 
 const STATS = [
   { label: "Total Employees", value: "247", change: "+12 this month", icon: "bg-[rgba(59,91,255,0.1)]" },
@@ -53,10 +56,22 @@ const scoreBg = (tier: string) =>
   tier === "high" ? "bg-[#D1FAE5] text-[#38A169]" : tier === "mid" ? "bg-[#DBEAFE] text-[#3182CE]" : "bg-[#FEF9C3] text-[#92400E]"
 
 export default function CompanyAdminDashboard() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const orgName = (user as Record<string, unknown> | null)?.organizationName as string ?? "Your Organization"
+
   return (
     <CompanyAdminLayout>
+      {/* Placeholder Data Notice */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+        <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-[13px] text-amber-800">
+          Dashboard data is currently placeholder. Live data integration is in progress.
+        </p>
+      </div>
+
       <WelcomeBanner
-        title="Acme Corp Dashboard"
+        title={`${orgName} Dashboard`}
         subtitle="Manage your organization's teams, training, and PRISM assessments across all departments."
       >
         <div className="flex gap-5 flex-wrap">
@@ -66,15 +81,27 @@ export default function CompanyAdminDashboard() {
         </div>
       </WelcomeBanner>
 
-      {/* Stats */}
+      {/* Stats — clickable tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-        {STATS.map((s) => (
-          <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 hover:shadow-sm transition-shadow">
-            <div className="text-xs text-[#6b7280]">{s.label}</div>
-            <div className="text-2xl font-extrabold text-[#111827] my-1">{s.value}</div>
-            <div className="text-[11px] font-semibold text-[#10B981]">{s.change}</div>
-          </div>
-        ))}
+        {STATS.map((s) => {
+          const link =
+            s.label === "Total Employees" ? "/company-admin/users"
+            : s.label === "Active Teams" ? "/company-admin/organization"
+            : s.label === "Training Completion" ? "/company-admin/training"
+            : s.label === "PRISM Assessed" ? "/company-admin/analytics"
+            : undefined
+          return (
+            <button
+              key={s.label}
+              onClick={() => link && navigate(link)}
+              className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 hover:shadow-md hover:border-[#3B5BFF]/30 transition-all text-left cursor-pointer"
+            >
+              <div className="text-xs text-[#6b7280]">{s.label}</div>
+              <div className="text-2xl font-extrabold text-[#111827] my-1">{s.value}</div>
+              <div className="text-[11px] font-semibold text-[#10B981]">{s.change}</div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Departments */}

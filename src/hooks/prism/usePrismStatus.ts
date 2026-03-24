@@ -12,7 +12,7 @@ export function usePrismStatus(assessmentId: string | null, enabled = true) {
     queryFn: () => getAssessmentStatus(assessmentId!),
     enabled: enabled && !!assessmentId,
     refetchInterval: (query) => {
-      const status = query.state.data?.data?.data?.status
+      const status = query.state.data?.data?.status
       if (
         status === 'report_ready' ||
         status === 'ingested' ||

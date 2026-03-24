@@ -3,6 +3,7 @@ import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
 import DataCard from "@/components/dashboard/DataCard"
 import ProgressBar from "@/components/dashboard/ProgressBar"
 import StatusBadge from "@/components/dashboard/StatusBadge"
+import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { useAuth } from "@/context/useAuth"
 
 const STATS = [
@@ -49,6 +50,7 @@ export default function ManagerDashboard() {
 
   return (
     <ManagerLayout>
+      <PlaceholderBanner />
       <WelcomeBanner
         title="Team Manager Dashboard"
         subtitle={`Welcome back, ${name}. Your team of 14 is performing well this quarter.`}

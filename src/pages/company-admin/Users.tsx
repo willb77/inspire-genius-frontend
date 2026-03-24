@@ -2,6 +2,8 @@ import { useState } from "react"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
+import { Info } from "lucide-react"
+import { toast } from "sonner"
 
 const USERS = [
   { id: "u-1", name: "Alex Thompson", email: "alex.t@acme.com", role: "User", department: "Engineering", team: "Frontend Team", status: "active", joinDate: "Jun 2025" },
@@ -24,12 +26,23 @@ export default function CompanyAdminUsers() {
 
   return (
     <CompanyAdminLayout>
+      {/* Placeholder Data Notice */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+        <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-[13px] text-amber-800">
+          User data is currently placeholder. Live user provisioning and management is in progress.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">User Management</h1>
           <p className="text-[13px] text-[#6b7280]">Provision and manage users within your organization.</p>
         </div>
-        <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors">
+        <button
+          onClick={() => toast.info("Add User functionality is coming soon.")}
+          className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors"
+        >
           + Add User
         </button>
       </div>

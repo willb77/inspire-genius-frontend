@@ -18,7 +18,7 @@ export default function PrismReportViewer({
   assessmentId,
 }: PrismReportViewerProps) {
   const { data, isLoading } = usePrismReport(assessmentId)
-  const report = data?.data?.data
+  const report = data?.data
 
   if (isLoading) {
     return (
