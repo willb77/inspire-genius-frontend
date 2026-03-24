@@ -8,13 +8,25 @@ import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 import { useRequestMagicLink } from "@/hooks/magic-auth/useMagicAuth";
 import { Mail } from "lucide-react";
+import type { LoginDataPayload } from "@/types/auth/api-types";
+import type { UserRole } from "@/types/roles";
+
+// Dev bypass accounts — only rendered in development mode
+const DEV_ACCOUNTS: { label: string; role: UserRole; email: string; name: string }[] = [
+  { label: "User", role: "user", email: "user@test.com", name: "Test User" },
+  { label: "Manager", role: "manager", email: "manager@test.com", name: "Test Manager" },
+  { label: "Company Admin", role: "company-admin", email: "companyadmin@test.com", name: "Company Admin" },
+  { label: "Practitioner", role: "practitioner", email: "practitioner@test.com", name: "Test Practitioner" },
+  { label: "Distributor", role: "distributor", email: "distributor@test.com", name: "Test Distributor" },
+  { label: "Super Admin", role: "super-admin", email: "admin@test.com", name: "Super Admin" },
+];
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, completeAuthFromPayload } = useAuth();
   const navigate = useNavigate();
   const redirectTo = useAuthRedirectForAuthPages();
   const magicLinkMutation = useRequestMagicLink();
@@ -37,6 +49,25 @@ export default function Login() {
     if (!inProgress) navigate(redirectTo, { replace: true });
   }, [redirectTo, navigate, providerActive])
 
+  const handleDevLogin = async (acct: typeof DEV_ACCOUNTS[number]) => {
+    const payload: LoginDataPayload = {
+      access_token: `dev-token-${acct.role}-${Date.now()}`,
+      refresh_token: `dev-refresh-${acct.role}-${Date.now()}`,
+      token_type: "Bearer",
+      user_id: `dev-${acct.role}`,
+      email: acct.email,
+      full_name: acct.name,
+      role: acct.role,
+      has_profile: true,
+      is_onboarded: true,
+      organization_id: null,
+      business_id: null,
+      mfa_required: false,
+      next_step: null,
+    };
+    await completeAuthFromPayload(payload, acct.email, { message: `Dev login: ${acct.label}` });
+  };
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
@@ -45,7 +76,7 @@ export default function Login() {
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
-    sessionStorage.removeItem("auth:provider");
+    try { sessionStorage.removeItem("auth:provider"); } catch { /* storage blocked */ }
     e.preventDefault();
     await login(email, password);
   };
@@ -161,6 +192,25 @@ export default function Login() {
       <p className="mt-6 text-sm text-muted-foreground text-center">
         Don't have an account? <Link className="underline" to="/signup">Sign Up</Link>
       </p>
+
+      {import.meta.env.DEV && (
+        <div className="mt-6 border-t pt-4">
+          <p className="text-xs text-muted-foreground text-center mb-3 font-semibold uppercase tracking-wide">Dev Quick Login</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEV_ACCOUNTS.map((acct) => (
+              <Button
+                key={acct.role}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => handleDevLogin(acct)}
+              >
+                {acct.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
     </AuthLayout>
   );
 }

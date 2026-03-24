@@ -24,75 +24,90 @@ export const MOCK_USERS: MockUser[] = [
 const sessions = new Map<string, MockUser>()
 
 function makeTokens(userId: string) {
-  const accessToken = `mock-access-${userId}-${Date.now()}`
-  const refreshToken = `mock-refresh-${userId}-${Date.now()}`
-  return { accessToken, refreshToken }
+  const access_token = `mock-access-${userId}-${Date.now()}`
+  const refresh_token = `mock-refresh-${userId}-${Date.now()}`
+  return { access_token, refresh_token }
 }
 
 export const authHandlers = [
-  /** POST /api/auth/login */
-  http.post("/api/auth/login", async ({ request }) => {
-    const body = (await request.json()) as { email?: string; password?: string }
+  /** POST /v1/login — matches real backend endpoint */
+  http.post("*/v1/login", async ({ request }) => {
+    const body = (await request.json()) as { email?: string; password?: string; verification?: boolean }
     const user = MOCK_USERS.find(
       (u) => u.email === body.email && u.password === body.password
     )
     if (!user) {
       return HttpResponse.json(
-        { success: false, message: "Invalid email or password" },
+        { status: false, message: "Invalid email or password", data: {} },
         { status: 401 }
       )
     }
     const tokens = makeTokens(user.id)
-    sessions.set(tokens.accessToken, user)
+    sessions.set(tokens.access_token, user)
     return HttpResponse.json({
-      success: true,
+      status: true,
+      message: "Login successful",
       data: {
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
-        tokens,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: "Bearer",
+        user_id: user.id,
+        email: user.email,
+        full_name: user.name,
+        role: user.role,
+        has_profile: true,
+        is_onboarded: true,
+        organization_id: null,
+        business_id: null,
+        mfa_required: false,
+        next_step: null,
       },
     })
   }),
 
-  /** GET /api/auth/me */
-  http.get("/api/auth/me", ({ request }) => {
+  /** GET /v1/me — matches real backend endpoint */
+  http.get("*/v1/me", ({ request }) => {
     const authHeader = request.headers.get("access-token") ?? ""
     const user = sessions.get(authHeader)
     if (!user) {
       return HttpResponse.json(
-        { success: false, message: "Unauthorized" },
+        { status: false, message: "Unauthorized", data: {} },
         { status: 401 }
       )
     }
     return HttpResponse.json({
-      success: true,
+      status: true,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatarUrl: user.avatarUrl,
-        },
+        user_id: user.id,
+        email: user.email,
+        full_name: user.name,
+        role: user.role,
+        has_profile: true,
+        is_onboarded: true,
+        avatarUrl: user.avatarUrl,
       },
     })
   }),
 
-  /** POST /api/auth/refresh-token */
-  http.post("/api/auth/refresh-token", async ({ request }) => {
-    const body = (await request.json()) as { refreshToken?: string }
-    // For mock purposes, find any session and re-issue tokens
+  /** POST /v1/refresh-token — matches real backend endpoint */
+  http.post("*/v1/refresh-token", async ({ request }) => {
+    const body = (await request.json()) as { refresh_token?: string }
     const existingUser = Array.from(sessions.values())[0]
-    if (!existingUser || !body.refreshToken) {
+    if (!existingUser || !body.refresh_token) {
       return HttpResponse.json(
-        { success: false, message: "Invalid refresh token" },
+        { status: false, message: "Invalid refresh token", data: {} },
         { status: 401 }
       )
     }
     const tokens = makeTokens(existingUser.id)
-    sessions.set(tokens.accessToken, existingUser)
+    sessions.set(tokens.access_token, existingUser)
     return HttpResponse.json({
-      success: true,
-      data: { tokens },
+      status: true,
+      data: {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: "Bearer",
+      },
     })
   }),
 ]

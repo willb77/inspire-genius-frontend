@@ -3,6 +3,7 @@ import SignUp from "@/pages/auth/SignUp";
 import OTP from "@/pages/auth/OTP";
 import ResetPassword from "@/pages/auth/ResetPassword";
 import AcceptInvitation from "@/pages/auth/AcceptInvitation";
+import Login from "@/pages/auth/Login";
 import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -84,10 +85,10 @@ import DistributorAnalytics from "@/pages/distributor/Analytics";
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
-  { path: "/", element: <Navigate to="/preview-home" replace /> },
+  { path: "/", element: <Navigate to="/login" replace /> },
   {
     children: [
-      { path: "/login", element: <Navigate to="/preview-home" replace /> },
+      { path: "/login", element: <Login /> },
       { path: "/signup", element: <SignUp /> },
       { path: "/forgot", element: <ForgotPassword /> },
       { path: "/otp", element: <OTP /> },
@@ -179,7 +180,7 @@ export const routes: RouteObject[] = [
       { path: "/distributor/analytics", element: <DistributorAnalytics /> },
     ],
   },
-  { path: "*", element: <Navigate to="/preview-home" replace /> },
+  { path: "*", element: <Navigate to="/login" replace /> },
 ];
 
 export default routes;

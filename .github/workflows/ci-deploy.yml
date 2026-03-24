@@ -1,0 +1,195 @@
+name: CI/CD — Build, Test & Deploy
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+
+env:
+  NODE_VERSION: "20"
+  S3_BUCKET: inspires-genius-dev-frontend
+  CLOUDFRONT_DISTRIBUTION_ID: EQNFTOWMBMKSA
+  AWS_REGION: us-east-1
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. BUILD
+  # ─────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Generate .env
+        run: |
+          cat > .env <<EOF
+          VITE_NODE_ENV=production
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          VITE_ALEX_WEBSOCKET_URL=${{ secrets.VITE_ALEX_WEBSOCKET_URL }}
+          VITE_AGENTS_WEBSOCKET_BASE_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}
+          VITE_STORAGE_SECRET=${{ secrets.VITE_STORAGE_SECRET }}
+          VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}
+          VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_ENVIRONMENT=production
+          VITE_APP_VERSION=${{ github.sha }}
+          EOF
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+      - name: Upload node_modules artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # 2. UNIT & INTEGRATION TESTS
+  # ─────────────────────────────────────────────
+  test-unit:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+
+      - name: Run tests with coverage
+        run: npm run test:ci -- --coverage --forceExit
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 3. E2E SMOKE TESTS (per role)
+  # ─────────────────────────────────────────────
+  e2e:
+    name: E2E — ${{ matrix.role }}
+    needs: build
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [user, manager, company-admin, practitioner, distributor, super-admin]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        run: npx vite preview --port 4173 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 15); do
+            curl -s http://localhost:4173 > /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server failed to start" && exit 1
+
+      - name: Run E2E tests — @${{ matrix.role }}
+        env:
+          CI: "true"
+          BASE_URL: http://localhost:4173
+        run: npx playwright test --project=chromium --grep="@${{ matrix.role }}"
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.role }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 4. DEPLOY TO S3 + CLOUDFRONT
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS
+    needs: [test-unit, e2e]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Deploy to S3
+        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Deployment complete
+        run: echo "Deployed to https://d1nxsns258du4y.cloudfront.net"
