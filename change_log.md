@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-24] — Fix PRISM Flow, Documents, Feedback, Analytics, Help Pages
+
+### Changed — PRISM (User)
+- `src/pages/user/PrismAssessment.tsx` / `src/constants/navigation.ts` — "Request Survey" button now navigates to the assessment form page (`/prism-assessment`) instead of calling the API directly; menu item renamed from "Request Survey" to "Request Assessment"
+
+### Fixed — Documents (User)
+- Documents service now uses robust `BaseApiResponse` envelope unwrapping to correctly extract the document list; stale cache cleared on mount
+- Upload fixed by removing the manually-set `Content-Type: multipart/form-data` header (was breaking multipart boundary); React Query cache invalidated on successful upload so the list refreshes automatically
+
+### Fixed — Feedback (User / Super-Admin)
+- Feedback page wired to real `/v1/feedback` and `/v1/feedback/stats` APIs with pagination support and rating filters
+- All hardcoded mock data removed
+
+### Added — Analytics (User)
+- Placeholder banner added to Analytics page indicating no real backend endpoint is available yet
+
+### Added — Help & Support (User)
+- Voice Help card added to Help & Support page with a placeholder link for a future voice agent URL
+
+---
+
 ## [2026-03-24] — Fix User, Manager, Company Admin Dashboards — Data Loading, Missing Routes, PRISM
 
 ### Fixed — User Dashboard
