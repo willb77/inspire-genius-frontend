@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">21</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">22</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,30 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-03-24] — Fix User, Manager, Company Admin Dashboards — Data Loading, Missing Routes, PRISM</h3>
+        <h4>Fixed — User Dashboard</h4>
+        <ul>
+          <li>Sidebar now shows "User Pages" nav section when super-admin visits via Role Views</li>
+          <li>Stat tiles wired to real audit stats API (replaced hardcoded dummy data)</li>
+          <li>PRISM services fixed to unwrap <code>resp.data</code> correctly (fixes behavioral report status and survey request)</li>
+          <li>Coach list now handles both flat array and nested response shapes (fixes coaches not loading)</li>
+          <li>Documents service unwraps <code>BaseApiResponse</code> envelope (fixes documents not populating)</li>
+          <li>Quick Actions "Set New Goal" button now routes to <code>/coaches</code> instead of chat</li>
+        </ul>
+        <h4>Fixed — Manager Dashboard</h4>
+        <ul>
+          <li>Created 7 missing pages (Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership) with Coming Soon placeholders — sidebar links no longer reset to main screen</li>
+          <li>Added "Sample data" placeholder banner to Dashboard, Team, Hiring, and Analytics pages</li>
+        </ul>
+        <h4>Fixed — Company Admin Dashboard</h4>
+        <ul>
+          <li>Created Training and Leadership pages (missing routes were causing sidebar resets)</li>
+          <li>Rebuilt blank Organization page with org chart placeholder and department table</li>
+          <li>Added content to blank Settings page (org profile, security, notifications, billing sections)</li>
+          <li>Dashboard stat tiles are now clickable; "Add User" button shows toast notification</li>
+          <li>Added placeholder data banner to all Company Admin pages</li>
+        </ul>
 
         <h3>[2026-03-24] — Add Cross-Role Navigation for Super-Admin</h3>
         <h4>Added</h4>
@@ -1165,6 +1189,11 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-03-24 — Prompt #21</div>
           <div class="prompt-text">Navigation is still not working well. Once logged in I am taken to the Super Admin dashboard and see and use all of the links on Super Admin but I can go anywhere else from there. I can get to the mai user page, or manager, company, practitioner, or distibutor.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-24 — Prompt #22</div>
+          <div class="prompt-text">Fix User Main, Manager Dashboard, and Company Admin Dashboard issues: User dashboard stat tiles show hardcoded data (wire to audit stats API), PRISM services not unwrapping resp.data (breaks survey request and behavioral report), coach list not loading (response shape mismatch), documents not populating (BaseApiResponse envelope not unwrapped), "Set New Goal" routes to wrong page. Manager dashboard sidebar links reset to main screen (7 pages missing: Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership). Company Admin sidebar also resets (Training and Leadership pages missing), Organization page blank, Settings page blank, stat tiles not clickable. Fix all issues and add placeholder data banners.</div>
         </div>
 
       </div>

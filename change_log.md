@@ -4,6 +4,29 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-24] — Fix User, Manager, Company Admin Dashboards — Data Loading, Missing Routes, PRISM
+
+### Fixed — User Dashboard
+- Sidebar now shows "User Pages" nav section when super-admin visits via Role Views
+- Stat tiles wired to real audit stats API (replaced hardcoded dummy data)
+- PRISM services fixed to unwrap `resp.data` correctly (fixes behavioral report status and survey request)
+- Coach list now handles both flat array and nested response shapes (fixes coaches not loading)
+- Documents service unwraps `BaseApiResponse` envelope (fixes documents not populating)
+- Quick Actions "Set New Goal" button now routes to `/coaches` instead of chat
+
+### Fixed — Manager Dashboard
+- Created 7 missing pages (Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership) with Coming Soon placeholders — sidebar links no longer reset to main screen
+- Added "Sample data" placeholder banner to Dashboard, Team, Hiring, and Analytics pages
+
+### Fixed — Company Admin Dashboard
+- Created Training and Leadership pages (missing routes were causing sidebar resets)
+- Rebuilt blank Organization page with org chart placeholder and department table
+- Added content to blank Settings page (org profile, security, notifications, billing sections)
+- Dashboard stat tiles are now clickable; "Add User" button shows toast notification
+- Added placeholder data banner to all Company Admin pages
+
+---
+
 ## [2026-03-24] — Add Cross-Role Navigation for Super-Admin
 
 ### Added
