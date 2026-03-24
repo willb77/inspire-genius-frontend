@@ -60,7 +60,7 @@ export async function loginAs(page: Page, role: string) {
 
   await page.getByLabel(/email/i).fill(creds.email);
   await page.getByLabel(/password/i).fill(creds.password);
-  await page.getByRole("button", { name: /sign in|log in|submit/i }).click();
+  await page.getByRole("button", { name: "Log In" }).click();
 
   // Wait for navigation away from /login
   await expect(page).not.toHaveURL(/\/login/, { timeout: 10000 });
