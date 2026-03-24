@@ -169,6 +169,15 @@ test.describe("security", () => {
   test("login page has no autocomplete on password", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
+
+    // Switch to password login view (default is magic-link)
+    const passwordToggle = page.getByRole("button", {
+      name: /sign in with password/i,
+    });
+    if (await passwordToggle.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await passwordToggle.click();
+    }
+
     const passwordInput = page.locator("input[type='password']");
     if (await passwordInput.isVisible({ timeout: 3000 }).catch(() => false)) {
       const autocomplete = await passwordInput.getAttribute("autocomplete");
