@@ -19,20 +19,24 @@ jest.mock("lucide-react", () => ({
 }));
 
 // 🔹 Mock navigation with the nav items the layout uses
-const DummyIcon = () => <span />;
-jest.mock("@/constants/navigation", () => ({
-  SUPER_ADMIN_NAV_ITEMS: [
-    { to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" },
-    { to: "/super-admin/users", icon: DummyIcon, label: "User Management" },
-    { to: "/super-admin/coaches", icon: DummyIcon, label: "Coach Management" },
-    { to: "/super-admin/rlhf-training", icon: DummyIcon, label: "RLHF Training" },
-    { to: "/super-admin/prompt-builder", icon: DummyIcon, label: "Prompt Builder" },
-    { to: "/super-admin/audit-log", icon: DummyIcon, label: "Audit Log" },
-    { to: "/super-admin/analytics", icon: DummyIcon, label: "Analytics" },
-    { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
-    { to: "/super-admin/project-log", icon: DummyIcon, label: "Project Log" },
-  ],
-}));
+// Note: jest.mock is hoisted above variable declarations, so DummyIcon must be
+// defined inside the factory function to avoid "Cannot access before initialization".
+jest.mock("@/constants/navigation", () => {
+  const DummyIcon = () => null;
+  return {
+    SUPER_ADMIN_NAV_ITEMS: [
+      { to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" },
+      { to: "/super-admin/users", icon: DummyIcon, label: "User Management" },
+      { to: "/super-admin/coaches", icon: DummyIcon, label: "Coach Management" },
+      { to: "/super-admin/rlhf-training", icon: DummyIcon, label: "RLHF Training" },
+      { to: "/super-admin/prompt-builder", icon: DummyIcon, label: "Prompt Builder" },
+      { to: "/super-admin/audit-log", icon: DummyIcon, label: "Audit Log" },
+      { to: "/super-admin/analytics", icon: DummyIcon, label: "Analytics" },
+      { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
+      { to: "/super-admin/project-log", icon: DummyIcon, label: "Project Log" },
+    ],
+  };
+});
 
 // 🔹 Capture navItems passed to SidebarScaffold
 const mockSidebarScaffold = jest.fn();
