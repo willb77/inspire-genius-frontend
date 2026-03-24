@@ -46,7 +46,7 @@ describe("agents.service", () => {
       {
         params: {
           page: 1,
-          limit: 10,
+          page_size: 10,
           search: undefined,
           status: undefined,
           type: undefined,
@@ -73,7 +73,7 @@ describe("agents.service", () => {
       {
         params: {
           page: 2,
-          limit: 5,
+          page_size: 5,
           search: "test",
           status: "active",
           type: "ai",

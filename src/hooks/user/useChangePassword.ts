@@ -7,7 +7,7 @@ export function useChangePassword() {
   return useMutation<ChangePasswordResponse, AxiosError, ChangePasswordRequest>({
     mutationFn: (payload) => changePassword(payload),
     onSuccess: () => {
-      logAuditEvent({ event_type: "settings_updated", actor: "user", resource: "password", details: { action: "password_changed" } })
+      logAuditEvent({ action: "settings_changed", actor_email: "user", target_type: "settings", extra_data: { action: "password_changed" } })
     },
   })
 }

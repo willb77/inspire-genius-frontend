@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">20</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">21</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,28 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-03-24] — Add Cross-Role Navigation for Super-Admin</h3>
+        <h4>Added</h4>
+        <ul>
+          <li><code>SidebarScaffold</code> — new optional <code>navSections</code> prop supporting grouped navigation sections</li>
+          <li>Super-admin sidebar now has two named sections: <strong>"Administration"</strong> (existing admin tools) and <strong>"Role Views"</strong> (links to User Home, Manager, Company Admin, Practitioner, and Distributor dashboards)</li>
+        </ul>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>AppShell</code> — detects super-admin role from <code>AuthContext</code> and overrides the sidebar role so the full super-admin navigation is always displayed regardless of which page the super-admin is visiting</li>
+          <li><code>UserLayout</code> — detects super-admin role and shows admin sections instead of user-only nav items</li>
+          <li>When a super-admin navigates to any role's page (e.g., <code>/home</code>, <code>/manager/dashboard</code>), the sidebar continues to show the full super-admin navigation rather than that role's nav</li>
+        </ul>
+
+        <h3>[2026-03-24] — Wire PRISM "Request Survey" Button to Real API</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/user/Home.tsx</code> — "Request Survey" button on the Home dashboard now calls the PRISM initiate API via <code>usePrismInitiate</code> hook instead of navigating to <code>/prism-assessment</code></li>
+          <li>Button displays "Requesting..." loading state while the API call is in flight</li>
+          <li>Button is disabled when an assessment is already in progress (<code>assessmentInProgress</code>) or when the mutation is pending</li>
+          <li>Fixed TypeScript operator precedence error in surname fallback logic</li>
+        </ul>
 
         <h3>[2026-03-15] — Fix Magic Link Authentication Flow — Dual Auth Mode Support</h3>
         <h4>Fixed</h4>
@@ -1121,8 +1143,28 @@
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-03-22 — Prompt #20 [WS-A Phase 4 Triage]</div>
-          <div class="prompt-text">Phase 4 bug triage post Phase 3 merge. Fixed P2: ProtectedRoute 5s boot delay → 300ms, ErrorBoundary unsafe cast. Verified RLHF feedback flow (star rating → API → storage), Prompt Builder, PRISM integration (11 components), Job Blueprint (20+ components). Dead sidebar links resolved. 137/137 suites, 1313/1313 tests green. Reported: /prism-assessment missing ACL, dead CostDashboard/PRISMThermometer components, backend 5 collection errors.</div>
+          <div class="timestamp">2026-03-22 — Prompt #20 [PRISM Integration Plugin]</div>
+          <div class="prompt-text">PRISM Integration Plugin: Full implementation of types (api-types, assessment-types), constants (quest types, quadrant/behaviour configs, status badges), service (7 IG backend endpoints), 6 React Query hooks (initiate, status polling, report, history, unlock, upgrade), 8 atomic components (StatusBadge, QuadrantChart, BehaviourChart, WorkEnvironment, WorkAptitude, BigFiveChart, EQChart, MentalToughness), 3 composite components (InitiateForm, AssessmentCard, ReportViewer), 3 pages (user PrismAssessment, practitioner PrismClients, manager PrismTeam), route registration, nav items, and 14 unit tests. Built as standalone plugin architecture.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-22 — WS-B Phase 4</div>
+          <div class="prompt-text">Phase 4 RLHF &amp; Feedback UI: FeedbackButtons (thumbs up/down), CorrectionModal (RHF+Zod), FeedbackIndicator. FeedbackHistory page with filters + /feedback route. PromptVersionDiff with template var highlighting. RlhfReviewQueue with approve/reject + JSON/CSV export. 6 tests passing.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-23 — WS-B Phase 5</div>
+          <div class="prompt-text">Phase 5 Analytics Dashboards: 6 analytics pages (User, Manager, Company Admin, Practitioner, Distributor, Super Admin) with recharts (LineChart, BarChart, PieChart, AreaChart). MSW handlers + service + hooks. Routes and nav items for all roles. Zero TS errors, build passes.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-24</div>
+          <div class="prompt-text">it will also call the PRISM API to requst questionnaire and report</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-03-24 — Prompt #21</div>
+          <div class="prompt-text">Navigation is still not working well. Once logged in I am taken to the Super Admin dashboard and see and use all of the links on Super Admin but I can go anywhere else from there. I can get to the mai user page, or manager, company, practitioner, or distibutor.</div>
         </div>
 
       </div>

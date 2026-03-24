@@ -41,10 +41,10 @@ export function useSavePrompt() {
       toast.success("System prompt saved")
       queryClient.invalidateQueries({ queryKey: ["prompts"], exact: false })
       logAuditEvent({
-        event_type: "prompt_saved",
-        actor: variables.coach_id,
-        resource: "system_prompt",
-        details: { coach_id: variables.coach_id },
+        action: "prompt_saved",
+        actor_email: variables.coach_id,
+        target_type: "system_prompt",
+        extra_data: { coach_id: variables.coach_id },
       })
     },
     onError: (error) => {
@@ -67,11 +67,11 @@ export function useUpdatePrompt() {
       toast.success("System prompt updated")
       queryClient.invalidateQueries({ queryKey: ["prompts"], exact: false })
       logAuditEvent({
-        event_type: "prompt_updated",
-        actor: variables.payload.coach_id,
-        resource: "system_prompt",
-        resource_id: variables.id,
-        details: { coach_id: variables.payload.coach_id },
+        action: "prompt_updated",
+        actor_email: variables.payload.coach_id,
+        target_type: "system_prompt",
+        target_id: variables.id,
+        extra_data: { coach_id: variables.payload.coach_id },
       })
     },
     onError: (error) => {

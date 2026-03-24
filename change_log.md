@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-03-24] — Add Cross-Role Navigation for Super-Admin
+
+### Added
+- `SidebarScaffold` — new optional `navSections` prop supporting grouped navigation sections
+- Super-admin sidebar now has two named sections: **"Administration"** (existing admin tools) and **"Role Views"** (links to User Home, Manager, Company Admin, Practitioner, and Distributor dashboards)
+
+### Changed
+- `AppShell` — detects super-admin role from `AuthContext` and overrides the sidebar role accordingly, so the full super-admin navigation is always displayed regardless of which page the super-admin is visiting
+- `UserLayout` — detects super-admin role and shows admin sections instead of user-only nav items
+- When a super-admin navigates to any role's page (e.g., `/home`, `/manager/dashboard`), the sidebar continues to show the full super-admin navigation rather than that role's nav
+
+---
+
 ## [2026-03-24] — Wire PRISM "Request Survey" Button to Real API
 
 ### Changed

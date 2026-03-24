@@ -22,52 +22,57 @@ import type { AuditLogEntry } from "@/types/audit"
 
 type AuditRow = AuditLogEntry & Record<string, unknown>
 
-const EVENT_TYPES = [
+const ACTION_TYPES = [
   "all",
-  "user_login",
-  "user_logout",
-  "feedback_submitted",
-  "prompt_saved",
-  "prompt_updated",
-  "user_invited",
+  "login",
+  "logout",
+  "login_failed",
+  "password_changed",
+  "user_created",
   "user_updated",
   "user_deleted",
-  "page_view",
-  "coach_created",
-  "coach_updated",
-  "coach_deleted",
+  "user_activated",
+  "user_deactivated",
+  "user_role_changed",
   "document_uploaded",
+  "document_processed",
   "document_deleted",
-  "onboarding_completed",
-  "password_reset",
-  "settings_updated",
+  "settings_changed",
+  "export_requested",
+  "system_error",
 ]
+
+const PAGE_SIZE = 15
 
 export default function AuditLog() {
   const [page, setPage] = useState(1)
-  const [eventType, setEventType] = useState("all")
+  const [actionFilter, setActionFilter] = useState("all")
   const [actorSearch, setActorSearch] = useState("")
 
   const params = {
-    page,
-    limit: 15,
-    event_type: eventType === "all" ? undefined : eventType,
-    actor: actorSearch || undefined,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+    action: actionFilter === "all" ? undefined : actionFilter,
+    actor_id: actorSearch || undefined,
   }
 
   const { data: logsData, isLoading: logsLoading } = useAuditLogs(params)
   const { data: statsData, isLoading: statsLoading } = useAuditStats()
 
-  const logs = logsData?.data?.logs ?? []
-  const pagination = logsData?.data?.pagination ?? { total: 0, page: 1, limit: 15, has_more: false }
+  const logsPayload = logsData?.data
+  const logs = logsPayload?.logs ?? []
+  const total = logsPayload?.total ?? 0
+  const limit = logsPayload?.limit ?? PAGE_SIZE
   const stats = statsData?.data
 
   const rows: AuditRow[] = logs.map((l) => ({ ...l }))
 
+  const uniqueActors = stats?.top_actors?.length ?? 0
+
   const metricCards = [
-    { title: "Total Events", value: stats?.total_events ?? 0, icon: Shield, bg: "bg-teal-50", color: "text-teal-600" },
-    { title: "Events Today", value: stats?.events_today ?? 0, icon: Activity, bg: "bg-blue-50", color: "text-blue-600" },
-    { title: "Unique Actors", value: stats?.unique_actors ?? 0, icon: Users, bg: "bg-purple-50", color: "text-purple-600" },
+    { title: "Total Events", value: stats?.total_logs ?? 0, icon: Shield, bg: "bg-teal-50", color: "text-teal-600" },
+    { title: "Events Today", value: stats?.logs_today ?? 0, icon: Activity, bg: "bg-blue-50", color: "text-blue-600" },
+    { title: "Unique Actors", value: uniqueActors, icon: Users, bg: "bg-purple-50", color: "text-purple-600" },
   ]
 
   const columns: Column<AuditRow>[] = [
@@ -77,22 +82,30 @@ export default function AuditLog() {
       render: (row) => new Date(row.timestamp).toLocaleString(),
     },
     {
-      key: "event_type",
-      header: "Event Type",
+      key: "action",
+      header: "Action",
       render: (row) => (
         <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-transparent">
-          {row.event_type}
+          {row.action}
         </Badge>
       ),
     },
-    { key: "actor", header: "Actor" },
-    { key: "resource", header: "Resource" },
     {
-      key: "details",
-      header: "Details",
+      key: "actor_email",
+      header: "Actor",
+      render: (row) => <span>{row.actor_email ?? row.actor_type ?? "—"}</span>,
+    },
+    {
+      key: "target_type",
+      header: "Target",
+      render: (row) => <span>{row.target_type ?? "—"}</span>,
+    },
+    {
+      key: "description",
+      header: "Description",
       render: (row) => (
         <span className="text-sm truncate max-w-[200px] block text-muted-foreground">
-          {row.details ? JSON.stringify(row.details) : "—"}
+          {row.description ?? "—"}
         </span>
       ),
     },
@@ -122,14 +135,14 @@ export default function AuditLog() {
 
         {/* Filters */}
         <div className="flex items-center gap-3">
-          <Select value={eventType} onValueChange={(v) => { setEventType(v); setPage(1); }}>
+          <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(1); }}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Event type" />
+              <SelectValue placeholder="Action type" />
             </SelectTrigger>
             <SelectContent>
-              {EVENT_TYPES.map((t) => (
+              {ACTION_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {t === "all" ? "All Events" : t.replace(/_/g, " ")}
+                  {t === "all" ? "All Actions" : t.replace(/_/g, " ")}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -153,12 +166,12 @@ export default function AuditLog() {
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>
-            Showing {logs.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0}
-            {" "}to {Math.min(pagination.page * pagination.limit, pagination.total)}
-            {" "}of {pagination.total} results
+            Showing {logs.length > 0 ? (page - 1) * limit + 1 : 0}
+            {" "}to {Math.min(page * limit, total)}
+            {" "}of {total} results
           </div>
           <Pagination
-            pageCount={Math.max(1, Math.ceil(pagination.total / pagination.limit))}
+            pageCount={Math.max(1, Math.ceil(total / limit))}
             page={page}
             onPageChange={setPage}
           />

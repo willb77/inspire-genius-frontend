@@ -38,7 +38,7 @@ export function useCreateCoach() {
     mutationFn: (body: CreateCoachBody) => svcCreateCoach(body),
     onSuccess: (_resp, variables) => {
       qc.invalidateQueries({ queryKey: ["super-admin", "coaches"], exact: false });
-      logAuditEvent({ event_type: "coach_created", actor: "admin", resource: "coach", details: { name: variables.name } });
+      logAuditEvent({ action: "coach_created", actor_email: "admin", target_type: "coach", extra_data: { name: variables.name } });
     },
   });
 }
@@ -49,7 +49,7 @@ export function useUpdateCoach() {
     mutationFn: (body: UpdateCoachBody) => svcUpdateCoach(body),
     onSuccess: (_resp, variables) => {
       qc.invalidateQueries({ queryKey: ["super-admin", "coaches"], exact: false });
-      logAuditEvent({ event_type: "coach_updated", actor: "admin", resource: "coach", details: { agent_id: variables.agent_id } });
+      logAuditEvent({ action: "coach_updated", actor_email: "admin", target_type: "coach", extra_data: { agent_id: variables.agent_id } });
     },
   });
 }
@@ -60,7 +60,7 @@ export function useDeactivateCoach() {
     mutationFn: (agentId: string) => svcDeactivateCoach(agentId),
     onSuccess: (_resp, agentId) => {
       qc.invalidateQueries({ queryKey: ["super-admin", "coaches"], exact: false });
-      logAuditEvent({ event_type: "coach_deleted", actor: "admin", resource: "coach", details: { agent_id: agentId } });
+      logAuditEvent({ action: "coach_deleted", actor_email: "admin", target_type: "coach", extra_data: { agent_id: agentId } });
     },
   });
 }

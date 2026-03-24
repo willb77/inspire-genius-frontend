@@ -9,7 +9,7 @@ export function useUploadDocuments() {
       return uploadDocuments(args.files, args.onProgress);
     },
     onSuccess: (_resp, variables) => {
-      logAuditEvent({ event_type: "document_uploaded", actor: "user", resource: "document", details: { count: variables.files.length } });
+      logAuditEvent({ action: "document_uploaded", actor_email: "user", target_type: "document", extra_data: { count: variables.files.length } });
     },
   });
 }

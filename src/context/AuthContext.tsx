@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
-      logAuditEvent({ event_type: "user_login", actor: resolvedEmail, actor_id: userId ?? undefined });
+      logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
       navigateAfterAuth(role, isOnboardingCompleted);
     },
     [computeIsOnboarded, navigateAfterAuth]
@@ -461,7 +461,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncAuthToken(null);
     setUser(null);
     setPendingVerification(false);
-    logAuditEvent({ event_type: "user_logout", actor: email ?? "unknown" });
+    logAuditEvent({ action: "logout", actor_email: email ?? "unknown" });
     navigate(ROUTES.LOGIN, { replace: true });
   }, [navigate, user?.email]);
 

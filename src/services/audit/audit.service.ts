@@ -1,4 +1,5 @@
 import { api } from "@/lib/axios"
+import type { BaseApiResponse } from "@/types/api"
 import type {
   AuditLogPayload,
   AuditLogListParams,
@@ -6,13 +7,12 @@ import type {
   AuditStatsData,
 } from "@/types/audit"
 
-export type AuditLogResponse = { success?: boolean; message?: string }
-export type AuditLogListResponse = { success?: boolean; data?: AuditLogListData }
-export type AuditStatsResponse = { success?: boolean; data?: AuditStatsData }
+export type AuditLogListResponse = BaseApiResponse<AuditLogListData>
+export type AuditStatsResponse = BaseApiResponse<AuditStatsData>
 
 export async function logAuditEvent(payload: AuditLogPayload): Promise<void> {
   try {
-    await api.post<AuditLogResponse>("/v1/audit/log", payload)
+    await api.post("/v1/audit/log", payload)
   } catch {
     // fire-and-forget — silent error handling
   }

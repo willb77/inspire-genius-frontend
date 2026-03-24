@@ -12,7 +12,7 @@ export function useBulkDeleteDocuments() {
     onSuccess: (_resp, fileIds) => {
       // Refresh documents list
       queryClient.invalidateQueries({ queryKey: ["file_service", "list"] });
-      logAuditEvent({ event_type: "document_deleted", actor: "user", resource: "document", details: { count: fileIds.length, file_ids: fileIds } });
+      logAuditEvent({ action: "document_deleted", actor_email: "user", target_type: "document", extra_data: { count: fileIds.length, file_ids: fileIds } });
     },
   });
 }

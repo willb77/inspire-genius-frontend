@@ -10,7 +10,7 @@ export function useAssignAgents(userId: string | undefined) {
       if (userId) {
         await qc.invalidateQueries({ queryKey: ["super-admin", "user-coaches", userId] });
       }
-      logAuditEvent({ event_type: "coach_updated", actor: "admin", resource: "user_coach_assignment", details: { user_id: variables.user_id, agent_count: variables.agent_ids?.length } });
+      logAuditEvent({ action: "coach_updated", actor_email: "admin", target_type: "user_coach_assignment", extra_data: { user_id: variables.user_id, agent_count: variables.agent_ids?.length } });
     },
   });
 }
