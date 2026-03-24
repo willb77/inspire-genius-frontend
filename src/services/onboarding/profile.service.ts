@@ -6,6 +6,9 @@ export type CreateProfilePayload = {
   date_of_birth: string // yyyy-mm-dd
   additional_info?: string
   role_id?: string
+  gender?: string
+  ethnicity?: string
+  cultural_affinity?: string
 }
 
 export type CreateProfileResponse = {

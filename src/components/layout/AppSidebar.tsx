@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { LogOut } from "lucide-react"
+import { LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/useAuth"
 import { getSectionsForRole, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 function getInitials(name: string | null | undefined, email: string | undefined): string {
   if (name) {
@@ -17,9 +18,11 @@ type AppSidebarProps = {
   role: UserRole
   open: boolean
   onClose: () => void
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
-export default function AppSidebar({ role, open, onClose }: AppSidebarProps) {
+export default function AppSidebar({ role, open, onClose, collapsed, onToggleCollapse }: AppSidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
@@ -44,24 +47,79 @@ export default function AppSidebar({ role, open, onClose }: AppSidebarProps) {
         role="navigation"
         aria-label="Sidebar navigation"
         className={cn(
-          "fixed top-[var(--spacing-header-h)] bottom-0 w-[var(--spacing-sidebar-w)] bg-white border-r border-[#e5e7eb] overflow-y-auto flex flex-col z-[100]",
+          "fixed top-[var(--spacing-header-h)] bottom-0 bg-white border-r border-[#e5e7eb] overflow-y-auto flex flex-col z-[100]",
           "scrollbar-thin scrollbar-thumb-[#e5e7eb]",
-          // Desktop: always visible
+          "transition-[width] duration-200 ease-in-out",
+          // Desktop: always visible, width depends on collapsed state
           "hidden md:flex",
-          // Mobile: overlay
-          open && "!flex md:flex left-0",
+          collapsed ? "md:w-[var(--spacing-sidebar-collapsed-w)]" : "md:w-[var(--spacing-sidebar-w)]",
+          // Mobile: full width overlay
+          open && "!flex !w-[var(--spacing-sidebar-w)] md:flex left-0",
           !open && "md:flex"
         )}
       >
+        {/* Desktop collapse toggle */}
+        <button
+          onClick={onToggleCollapse}
+          className={cn(
+            "hidden md:flex items-center justify-center",
+            "absolute -right-3 top-4 z-[110]",
+            "w-6 h-6 rounded-full bg-white border border-[#e5e7eb] shadow-sm",
+            "hover:bg-[#f3f4f6] hover:shadow transition-colors"
+          )}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronRight className="w-3.5 h-3.5 text-[#6b7280]" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5 text-[#6b7280]" />
+          )}
+        </button>
+
         <nav className="flex-1 py-3 px-0">
           {sections.map((section) => (
             <div key={section.id} className="mb-3">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#9ca3af] px-4 py-1 mb-0.5">
-                {section.label}
-              </div>
+              {!collapsed && (
+                <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#9ca3af] px-4 py-1 mb-0.5">
+                  {section.label}
+                </div>
+              )}
+              {collapsed && (
+                <div className="h-px bg-[#e5e7eb] mx-2 my-2" />
+              )}
               {section.items.map((item: SidebarNavItem) => {
                 const Icon = item.icon
                 const isActive = location.pathname === item.to
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.to + item.label}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleNav(item.to)}
+                          className={cn(
+                            "w-full flex items-center justify-center py-2 min-h-[36px] mx-auto transition-all",
+                            isActive
+                              ? "text-[#3B5BFF]"
+                              : "text-[#374151] hover:bg-[rgba(59,91,255,0.1)]"
+                          )}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          {item.badge !== undefined && (
+                            <span className="absolute top-0 right-1 bg-[#EF4444] text-white text-[8px] font-semibold w-3.5 h-3.5 rounded-full flex items-center justify-center leading-none">
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" sideOffset={8}>
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                }
+
                 return (
                   <button
                     key={item.to + item.label}
@@ -92,13 +150,27 @@ export default function AppSidebar({ role, open, onClose }: AppSidebarProps) {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
             {initials}
           </div>
-          <div className="flex-1 min-w-0 leading-tight">
-            <div className="text-xs font-semibold text-[#1f2937] truncate">{displayName}</div>
-            <div className="text-[10px] text-[#6b7280] capitalize">{displayRole}</div>
-          </div>
-          <button onClick={logout} className="shrink-0 p-1 rounded hover:bg-[#f3f4f6]" title="Log out">
-            <LogOut className="w-4 h-4 text-[#6b7280]" />
-          </button>
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0 leading-tight">
+                <div className="text-xs font-semibold text-[#1f2937] truncate">{displayName}</div>
+                <div className="text-[10px] text-[#6b7280] capitalize">{displayRole}</div>
+              </div>
+              <button onClick={logout} className="shrink-0 p-1 rounded hover:bg-[#f3f4f6]" title="Log out">
+                <LogOut className="w-4 h-4 text-[#6b7280]" />
+              </button>
+            </>
+          )}
+          {collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={logout} className="sr-only" title="Log out">
+                  <LogOut className="w-4 h-4 text-[#6b7280]" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Log out</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </aside>
     </>

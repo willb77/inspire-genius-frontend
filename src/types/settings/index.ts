@@ -1,4 +1,5 @@
 export type {
+  GenderOption,
   ProfileData,
   AccountSettingsProps,
   ChangePasswordProps,

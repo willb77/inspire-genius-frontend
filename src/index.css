@@ -44,6 +44,7 @@
 
   /* Layout dimensions */
   --spacing-sidebar-w: 200px;
+  --spacing-sidebar-collapsed-w: 56px;
   --spacing-right-panel-w: 260px;
   --spacing-header-h: 60px;
 

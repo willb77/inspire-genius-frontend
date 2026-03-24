@@ -54,6 +54,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "/documents",
     "/settings",
     "/help",
+    "/feedback",
+    "/analytics",
+    "/prism-assessment",
   ],
   distributor: [
     "/distributor",
@@ -63,6 +66,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "/documents",
     "/settings",
     "/help",
+    "/feedback",
+    "/analytics",
   ],
   practitioner: [
     "/practitioner",
@@ -72,6 +77,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "/documents",
     "/settings",
     "/help",
+    "/feedback",
+    "/analytics",
   ],
   "company-admin": [
     "/company-admin",
@@ -81,6 +88,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "/documents",
     "/settings",
     "/help",
+    "/feedback",
+    "/analytics",
   ],
   manager: [
     "/manager",
@@ -90,8 +99,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "/documents",
     "/settings",
     "/help",
+    "/feedback",
+    "/analytics",
   ],
-  user: ["/home", "/dashboard", "/coaches", "/documents", "/settings", "/help"],
+  user: ["/home", "/dashboard", "/coaches", "/documents", "/settings", "/help", "/feedback", "/analytics", "/prism-assessment"],
 }
 
 /** Check whether a role (string) has access to a given path */
