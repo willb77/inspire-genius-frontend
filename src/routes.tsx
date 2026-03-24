@@ -50,6 +50,13 @@ import Privacy from "@/pages/legal/Privacy";
 import ManagerDashboard from "@/pages/manager/Dashboard";
 import ManagerTeam from "@/pages/manager/Team";
 import ManagerHiring from "@/pages/manager/Hiring";
+import ManagerCandidates from "@/pages/manager/Candidates";
+import ManagerInterviews from "@/pages/manager/Interviews";
+import ManagerJobDna from "@/pages/manager/JobDna";
+import ManagerTraining from "@/pages/manager/Training";
+import ManagerCareerManagement from "@/pages/manager/CareerManagement";
+import ManagerTeamBuilding from "@/pages/manager/TeamBuilding";
+import ManagerLeadership from "@/pages/manager/Leadership";
 import ManagerSettings from "@/pages/manager/Settings";
 import ManagerAnalytics from "@/pages/manager/Analytics";
 
@@ -58,6 +65,8 @@ import CompanyAdminDashboard from "@/pages/company-admin/Dashboard";
 import CompanyAdminUsers from "@/pages/company-admin/Users";
 import CompanyAdminOrganization from "@/pages/company-admin/Organization";
 import CompanyAdminCosts from "@/pages/company-admin/Costs";
+import CompanyAdminTraining from "@/pages/company-admin/Training";
+import CompanyAdminLeadership from "@/pages/company-admin/Leadership";
 import CompanyAdminSettings from "@/pages/company-admin/Settings";
 import CompanyAdminAnalytics from "@/pages/company-admin/Analytics";
 
@@ -151,6 +160,13 @@ export const routes: RouteObject[] = [
       { path: "/manager/dashboard", element: <ManagerDashboard /> },
       { path: "/manager/team", element: <ManagerTeam /> },
       { path: "/manager/hiring", element: <ManagerHiring /> },
+      { path: "/manager/candidates", element: <ManagerCandidates /> },
+      { path: "/manager/interviews", element: <ManagerInterviews /> },
+      { path: "/manager/job-dna", element: <ManagerJobDna /> },
+      { path: "/manager/training", element: <ManagerTraining /> },
+      { path: "/manager/career-mgmt", element: <ManagerCareerManagement /> },
+      { path: "/manager/team-building", element: <ManagerTeamBuilding /> },
+      { path: "/manager/leadership", element: <ManagerLeadership /> },
       { path: "/manager/prism-team", element: <PrismTeam /> },
       { path: "/manager/settings", element: <ManagerSettings /> },
       { path: "/manager/analytics", element: <ManagerAnalytics /> },
@@ -160,6 +176,8 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/users", element: <CompanyAdminUsers /> },
       { path: "/company-admin/organization", element: <CompanyAdminOrganization /> },
       { path: "/company-admin/costs", element: <CompanyAdminCosts /> },
+      { path: "/company-admin/training", element: <CompanyAdminTraining /> },
+      { path: "/company-admin/leadership", element: <CompanyAdminLeadership /> },
       { path: "/company-admin/settings", element: <CompanyAdminSettings /> },
       { path: "/company-admin/analytics", element: <CompanyAdminAnalytics /> },
 

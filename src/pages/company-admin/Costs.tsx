@@ -1,6 +1,7 @@
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import ProgressBar from "@/components/dashboard/ProgressBar"
+import { Info } from "lucide-react"
 
 const SUMMARY = [
   { label: "Total Spend (6 mo)", value: "$107,000", change: "+12% vs prior", changeColor: "text-[#EF4444]" },
@@ -35,7 +36,15 @@ export default function CompanyAdminCosts() {
   return (
     <CompanyAdminLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Cost Management</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track platform costs, license expenses, and training spend.</p>
+      <p className="text-[13px] text-[#6b7280] mb-3">Track platform costs, license expenses, and training spend.</p>
+
+      {/* Placeholder Data Notice */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 flex items-start gap-2">
+        <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-[13px] text-amber-800">
+          Cost data is currently placeholder. Live billing and license cost tracking is in progress.
+        </p>
+      </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">

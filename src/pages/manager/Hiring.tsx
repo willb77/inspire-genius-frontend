@@ -1,6 +1,7 @@
 import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
+import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 
 const PIPELINE_STATS = [
   { label: "Open Positions", value: "3", color: "#3B5BFF" },
@@ -42,6 +43,7 @@ const matchColor = (score: number) =>
 export default function ManagerHiring() {
   return (
     <ManagerLayout>
+      <PlaceholderBanner />
       <h1 className="text-xl font-bold text-[#111827] mb-1">Hiring Pipeline</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">Track candidates, interviews, and Job DNA matching.</p>
 

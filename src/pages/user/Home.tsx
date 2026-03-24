@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
 import { usePrismInitiate } from "@/hooks/prism/usePrismInitiate";
+import { useAuditStats } from "@/hooks/audit/useAudit";
 import { ASSESSMENT_STATUS } from "@/constants/prism";
 import { QUEST_TYPE } from "@/types/prism/api-types";
 import {
@@ -25,28 +26,11 @@ import {
   CalendarDays,
 } from "lucide-react";
 
-// TODO: Replace with real data from Audit Service API
-const STATS = [
-  { label: "Total Sessions", value: "12", change: "+3 this week", icon: MessageSquare, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
-  { label: "Goals Completed", value: "5/8", change: "63%", icon: Target, iconColor: "text-emerald-600", iconBg: "bg-emerald-100" },
-  { label: "Alignment Score", value: "85", change: "+5", changeColor: "text-emerald-500", icon: Activity, iconColor: "text-violet-600", iconBg: "bg-violet-100" },
-  { label: "Files Uploaded", value: "24", change: "+4 new", icon: FileUp, iconColor: "text-amber-600", iconBg: "bg-amber-100" },
-];
-
 const QUICK_ACTIONS = [
   { label: "Chat with Meridian", icon: Bot, to: ROUTES.DASHBOARD, bg: "bg-blue-100", iconColor: "text-blue-600" },
   { label: "Upload Document", icon: Upload, to: ROUTES.DOCUMENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
-  { label: "View PRISM Report", icon: ClipboardList, to: "/prism-assessment", bg: "bg-violet-100", iconColor: "text-violet-600" },
-  { label: "Set New Goal", icon: Flag, to: ROUTES.DASHBOARD, bg: "bg-amber-100", iconColor: "text-amber-600" },
-];
-
-// TODO: Replace with real data from Audit Service API
-const ACTIVITY = [
-  { label: "Completed session with Meridian", time: "2 hours ago", color: "bg-emerald-500" },
-  { label: "Uploaded quarterly review document", time: "Yesterday", color: "bg-blue-500" },
-  { label: "PRISM profile updated", time: "2 days ago", color: "bg-violet-500" },
-  { label: "New goal: Improve team communication", time: "3 days ago", color: "bg-amber-500" },
-  { label: "Completed coaching milestone #4", time: "1 week ago", color: "bg-emerald-500" },
+  { label: "View PRISM Report", icon: ClipboardList, to: ROUTES.PRISM_ASSESSMENT, bg: "bg-violet-100", iconColor: "text-violet-600" },
+  { label: "Set New Goal", icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
 ];
 
 const ACTIVE_STATUSES = new Set([
@@ -75,9 +59,48 @@ export default function Home() {
   const navigate = useNavigate();
   const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
 
+  // Audit stats — real data from GET /v1/audit/stats
+  const { data: auditData, isLoading: auditLoading } = useAuditStats();
+  const stats = auditData?.data;
+
+  const STATS = [
+    {
+      label: "Total Sessions",
+      value: auditLoading ? "..." : String(stats?.total_logs ?? 0),
+      change: auditLoading ? "" : `+${stats?.logs_this_week ?? 0} this week`,
+      icon: MessageSquare,
+      iconColor: "text-blue-600",
+      iconBg: "bg-blue-100",
+    },
+    {
+      label: "Sessions Today",
+      value: auditLoading ? "..." : String(stats?.logs_today ?? 0),
+      change: auditLoading ? "" : `${stats?.logs_this_month ?? 0} this month`,
+      icon: Target,
+      iconColor: "text-emerald-600",
+      iconBg: "bg-emerald-100",
+    },
+    {
+      label: "AI Requests",
+      value: auditLoading ? "..." : String(stats?.ai_usage?.request_count ?? 0),
+      change: auditLoading ? "" : `$${(stats?.ai_usage?.total_cost_usd ?? 0).toFixed(2)} cost`,
+      icon: Activity,
+      iconColor: "text-violet-600",
+      iconBg: "bg-violet-100",
+    },
+    {
+      label: "This Month",
+      value: auditLoading ? "..." : String(stats?.logs_this_month ?? 0),
+      change: auditLoading ? "" : `${stats?.logs_this_week ?? 0} this week`,
+      icon: FileUp,
+      iconColor: "text-amber-600",
+      iconBg: "bg-amber-100",
+    },
+  ];
+
   // Real PRISM assessment data
   const { data: prismData, isLoading: prismLoading } = usePrismHistory(user?.id ?? null);
-  const assessments = (prismData as { data?: { data?: { assessments?: Array<{ status: string; initiatedAt?: string | null; completedAt?: string | null }> } } })?.data?.data?.assessments ?? [];
+  const assessments = (prismData as { data?: { assessments?: Array<{ status: string; initiatedAt?: string | null; completedAt?: string | null }> } } | undefined)?.data?.assessments ?? [];
   const latestAssessment = assessments[0];
   const reportStatus = getReportStatus(latestAssessment?.status);
   const lastReportDate = latestAssessment?.completedAt ?? latestAssessment?.initiatedAt;
@@ -186,18 +209,27 @@ export default function Home() {
       {/* Quick Actions — full width */}
       <QuickActions actions={QUICK_ACTIONS} />
 
-      {/* Recent Activity — full width */}
+      {/* Recent Activity — from audit top actions */}
       <DataCard title="Recent Activity">
         <div className="space-y-4">
-          {ACTIVITY.map((item, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <div className={`w-2 h-2 rounded-full mt-2 ${item.color}`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.time}</p>
-              </div>
-            </div>
-          ))}
+          {auditLoading ? (
+            <p className="text-sm text-muted-foreground">Loading activity...</p>
+          ) : stats?.top_actions && stats.top_actions.length > 0 ? (
+            stats.top_actions.slice(0, 5).map((item, i) => {
+              const colors = ["bg-emerald-500", "bg-blue-500", "bg-violet-500", "bg-amber-500", "bg-rose-500"];
+              return (
+                <div key={i} className="flex items-start gap-3">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${colors[i % colors.length]}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{item.action.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-muted-foreground">{item.count} occurrences</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-sm text-muted-foreground">No recent activity</p>
+          )}
         </div>
       </DataCard>
     </UserLayout>

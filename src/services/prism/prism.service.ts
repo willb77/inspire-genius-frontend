@@ -13,54 +13,61 @@ import type {
 const BASE = '/v1/prism'
 
 /** Initiate a new PRISM assessment */
-export function initiateAssessment(data: InitiateAssessmentRequest) {
-  return api.post<BaseApiResponse<InitiateAssessmentResponse>>(
+export async function initiateAssessment(data: InitiateAssessmentRequest) {
+  const resp = await api.post<BaseApiResponse<InitiateAssessmentResponse>>(
     `${BASE}/initiate`,
     data,
   )
+  return resp.data
 }
 
 /** Poll assessment status */
-export function getAssessmentStatus(assessmentId: string) {
-  return api.get<BaseApiResponse<AssessmentStatusResponse>>(
+export async function getAssessmentStatus(assessmentId: string) {
+  const resp = await api.get<BaseApiResponse<AssessmentStatusResponse>>(
     `${BASE}/status/${assessmentId}`,
   )
+  return resp.data
 }
 
 /** Fetch completed report (PDF + structured data) */
-export function getAssessmentReport(assessmentId: string) {
-  return api.get<BaseApiResponse<PrismReportResponse>>(
+export async function getAssessmentReport(assessmentId: string) {
+  const resp = await api.get<BaseApiResponse<PrismReportResponse>>(
     `${BASE}/report/${assessmentId}`,
   )
+  return resp.data
 }
 
 /** Get all assessments for a user */
-export function getUserAssessments(userId: string) {
-  return api.get<
+export async function getUserAssessments(userId: string) {
+  const resp = await api.get<
     BaseApiResponse<{ assessments: PrismAssessment[]; total: number }>
   >(`${BASE}/history/${userId}`)
+  return resp.data
 }
 
 /** Unlock/pay for a report */
-export function unlockAssessment(data: UnlockAssessmentRequest) {
-  return api.post<BaseApiResponse<AssessmentStatusResponse>>(
+export async function unlockAssessment(data: UnlockAssessmentRequest) {
+  const resp = await api.post<BaseApiResponse<AssessmentStatusResponse>>(
     `${BASE}/unlock/${data.assessmentId}`,
     data,
   )
+  return resp.data
 }
 
 /** Upgrade report to higher tier */
-export function upgradeAssessment(data: UpgradeAssessmentRequest) {
-  return api.post<BaseApiResponse<AssessmentStatusResponse>>(
+export async function upgradeAssessment(data: UpgradeAssessmentRequest) {
+  const resp = await api.post<BaseApiResponse<AssessmentStatusResponse>>(
     `${BASE}/upgrade/${data.assessmentId}`,
     data,
   )
+  return resp.data
 }
 
 /** Submit callback — called when user returns from PRISM questionnaire */
-export function submitQuestionnaireCallback(assessmentId: string) {
-  return api.post<BaseApiResponse<AssessmentStatusResponse>>(
+export async function submitQuestionnaireCallback(assessmentId: string) {
+  const resp = await api.post<BaseApiResponse<AssessmentStatusResponse>>(
     `${BASE}/submit`,
     { assessmentId },
   )
+  return resp.data
 }

@@ -21,7 +21,7 @@ export default function PrismAssessment() {
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
 
-  const assessments = data?.data?.data?.assessments ?? []
+  const assessments = data?.data?.assessments ?? []
   const activeAssessment = assessments.find((a) =>
     ACTIVE_STATUSES.has(a.status),
   )
