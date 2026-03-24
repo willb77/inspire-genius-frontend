@@ -5,7 +5,9 @@ import AppSidebar from "@/components/layout/AppSidebar"
 import RightPanel from "@/components/layout/RightPanel"
 import SkipToContent from "@/components/shared/SkipToContent"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
+import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
+import { isUserRole } from "@/types/roles"
 
 export type AppShellProps = {
   role: UserRole
@@ -16,6 +18,10 @@ export type AppShellProps = {
 export default function AppShell({ role, children, className }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { user } = useAuth()
+  // Super-admin sees all sidebar sections regardless of which role page they're viewing
+  const actualRole = user?.role === "super-admin" ? "super-admin" : role
+  const sidebarRole = isUserRole(actualRole) ? actualRole : role
   usePageViewAudit(role)
 
   return (
@@ -23,7 +29,7 @@ export default function AppShell({ role, children, className }: AppShellProps) {
       <SkipToContent />
       <AppHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
       <AppSidebar
-        role={role}
+        role={sidebarRole}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         collapsed={sidebarCollapsed}
