@@ -7,7 +7,6 @@ import {
   Settings,
   HelpCircle,
   Bot,
-  TableProperties,
   LayoutDashboard,
   UsersRound,
   MessageSquarePlus,
@@ -19,15 +18,18 @@ import {
   Map,
   Briefcase,
   Brain,
+  BarChart3,
+  MessageCircle,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.COACHES, icon: TableProperties, label: "Manage Coaches" },
-  { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
   { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "PRISM Assessment" },
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
+  { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
+  { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -40,6 +42,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
   { to: ROUTES.SUPER_ADMIN.PROMPT_BUILDER, icon: Wand2, label: "Prompt Builder" },
   { to: ROUTES.SUPER_ADMIN.AUDIT_LOG, icon: Shield, label: "Audit Log" },
+  { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]
@@ -49,6 +52,7 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
+  { to: ROUTES.MANAGER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -57,6 +61,7 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.COMPANY_ADMIN.USERS, icon: UsersRound, label: "User Management" },
   { to: ROUTES.COMPANY_ADMIN.ORGANIZATION, icon: Building2, label: "Organization" },
+  { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -65,6 +70,7 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
   { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
+  { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -73,6 +79,7 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.DISTRIBUTOR.PRACTITIONERS, icon: Briefcase, label: "Practitioners" },
   { to: ROUTES.DISTRIBUTOR.TERRITORY, icon: Map, label: "Territory" },
+  { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

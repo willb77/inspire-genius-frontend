@@ -1,3 +1,5 @@
+export type GenderOption = "Male" | "Female" | "Non-Binary" | "N/A" | "";
+
 export interface ProfileData {
   firstName: string;
   lastName: string;
@@ -7,6 +9,9 @@ export interface ProfileData {
   role: string;
   additionalInfo?: string;
   passwordChangeAllowed?: boolean;
+  gender?: GenderOption;
+  ethnicity?: string;
+  culturalAffinity?: string;
 }
 
 export interface AccountSettingsProps {
@@ -45,6 +50,9 @@ export type EditProfileFormValues = {
   email: string;
   dateOfBirth: string;
   additionalInfo: string;
+  gender: GenderOption;
+  ethnicity: string;
+  culturalAffinity: string;
 };
 
 export interface EditProfileProps {

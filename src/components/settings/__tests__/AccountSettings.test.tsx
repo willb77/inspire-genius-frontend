@@ -7,7 +7,7 @@ import * as React from "react";
 import type { FieldValues, UseFormHandleSubmit, UseFormReturn, UseFormWatch } from "react-hook-form";
 import AccountSettings from "../AccountSettings";
 import { ROLES } from "@/constants/routes";
-import type { AccountSettingsProps } from "@/types/settings";
+import type { AccountSettingsProps, GenderOption } from "@/types/settings";
 
 /* ------------------------------------------------------------------ */
 /* MOCK UI COMPONENTS                                                   */
@@ -175,6 +175,24 @@ jest.mock("@/components/ui/date-picker", () => ({
   ),
 }));
 
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ children, value }: { children?: React.ReactNode; value?: string }) => (
+    <div data-testid="select" data-value={value}>{children}</div>
+  ),
+  SelectTrigger: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
+    <button data-testid="select-trigger" className={className}>{children}</button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span data-testid="select-value">{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({ children, value }: { children?: React.ReactNode; value?: string }) => (
+    <div data-testid="select-item" data-value={value}>{children}</div>
+  ),
+}));
+
 jest.mock("lucide-react", () => ({
   Edit: () => <span data-testid="edit-icon">Edit</span>,
   LockKeyhole: () => <span data-testid="lock-icon">Lock</span>,
@@ -278,6 +296,9 @@ type EditProfileFormValues = {
   email: string;
   dateOfBirth: string;
   additionalInfo: string;
+  gender: GenderOption;
+  ethnicity: string;
+  culturalAffinity: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -504,6 +525,9 @@ describe("AccountSettings Component", () => {
         email: "john@test.com",
         dateOfBirth: "10 Jan 2000",
         additionalInfo: "Info",
+        gender: "",
+        ethnicity: "",
+        culturalAffinity: "",
       });
 
       const editForm = createMockForm<EditProfileFormValues>({
@@ -535,6 +559,9 @@ describe("AccountSettings Component", () => {
           email: "john@test.com",
           dateOfBirth: "2000-01-10",
           additionalInfo: "Info",
+          gender: "",
+          ethnicity: "",
+          culturalAffinity: "",
         });
       });
     });
@@ -546,6 +573,9 @@ describe("AccountSettings Component", () => {
         email: "jane@test.com",
         dateOfBirth: "15 Feb 1995",
         additionalInfo: "New info",
+        gender: "",
+        ethnicity: "",
+        culturalAffinity: "",
       });
 
       const editForm = createMockForm<EditProfileFormValues>({
@@ -591,6 +621,9 @@ describe("AccountSettings Component", () => {
         email: "john@test.com",
         dateOfBirth: "2000-01-10",
         additionalInfo: "Info",
+        gender: "",
+        ethnicity: "",
+        culturalAffinity: "",
       });
     });
 

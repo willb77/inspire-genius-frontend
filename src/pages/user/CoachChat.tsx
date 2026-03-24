@@ -499,11 +499,13 @@ export default function CoachChat() {
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
     if (!conversationId) return;
     try {
-      const resp = await exportConversation(conversationId, from, to);
+      const resp = await exportConversation(conversationId, from, to) as { status?: boolean; data?: { file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string }; file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string };
       if (!resp || !resp.status) return;
-      const base64 = resp.base64_pdf || resp.base64_csv;
-      const mime = resp.mime_type || "application/pdf";
-      const fileName = resp.file_name || `conversation_${conversationId}.pdf`;
+      // API may return data nested in envelope or flat — handle both
+      const payload = resp.data ?? resp;
+      const base64 = payload.base64_pdf || payload.base64_csv;
+      const mime = payload.mime_type || "application/pdf";
+      const fileName = payload.file_name || `conversation_${conversationId}.pdf`;
       if (!base64) return;
       const byteChars = atob(base64);
       const byteNumbers = new Array(byteChars.length);
