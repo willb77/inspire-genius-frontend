@@ -22,12 +22,12 @@ export type AgentsListParams = {
 export async function listAgents(params: AgentsListParams = {}) {
   const { page = 1, limit = 10, search, status, type } = params;
   const resp = await api.get("/v1/agents-settings/agents", {
-    params: { page, limit, search, status, type },
+    params: { page, page_size: limit, search, status, type },
   });
   return resp.data as {
     message: string;
     status: boolean;
-    data: { agents: AgentItem[]; pagination: { total: number; page: number; page_size: number } };
+    data: AgentItem[] | { agents: AgentItem[]; pagination: { total: number; page: number; page_size: number } };
   };
 }
 

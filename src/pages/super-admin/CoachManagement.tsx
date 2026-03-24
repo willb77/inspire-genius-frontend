@@ -36,8 +36,12 @@ export default function CoachManagement() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | undefined>(undefined);
 
   const { data, isLoading, isRefetching } = useCoachesList({ page, limit: pageSize });
-  const agents = useMemo(() => data?.data?.agents ?? [], [data]);
-  const pagination = data?.data?.pagination ?? { total: 0, page, page_size: pageSize };
+  const agents = useMemo(() => {
+    const d = data?.data;
+    if (Array.isArray(d)) return d;
+    return d?.agents ?? [];
+  }, [data]);
+  const pagination = (Array.isArray(data?.data) ? undefined : data?.data?.pagination) ?? { total: 0, page, page_size: pageSize };
 
   type ToneItem = { id: string; name: string; display_name: string };
   const { data: tonesResp } = useQuery({

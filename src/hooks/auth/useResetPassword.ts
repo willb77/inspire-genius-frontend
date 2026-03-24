@@ -14,7 +14,7 @@ export function useResetPassword(
       const msg = data?.message || (ok ? 'Password reset successful' : 'Password reset failed')
       if (ok) {
         toast.success(msg)
-        logAuditEvent({ event_type: "password_reset", actor: "user", resource: "auth" })
+        logAuditEvent({ action: "password_changed", actor_email: "user", target_type: "auth" })
       } else {
         toast.error(msg)
       }

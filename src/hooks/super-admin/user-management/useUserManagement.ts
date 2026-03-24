@@ -45,11 +45,7 @@ export function useUserManagement(
   return useQuery<GetUsersResponse, AxiosError<BaseApiResponse<null>>>({
     queryKey: QK.list(params),
     queryFn: () => getUsers(params),
-    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
     ...options,
   });
 }
@@ -70,7 +66,7 @@ export function useInviteUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_invited", actor: "admin", resource: "user", details: { email: variables.email } });
+      logAuditEvent({ action: "user_created", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -99,7 +95,7 @@ export function useUpdateUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_updated", actor: "admin", resource: "user", details: { email: variables.email } });
+      logAuditEvent({ action: "user_updated", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -128,7 +124,7 @@ export function useDeleteUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_deleted", actor: "admin", resource: "user", details: { email } });
+      logAuditEvent({ action: "user_deleted", actor_email: "admin", target_type: "user", extra_data: { email } });
     },
 
     onError: (error) => {
@@ -205,10 +201,10 @@ export function usePurgeInactiveUsers() {
       });
 
       logAuditEvent({
-        event_type: "users_purged",
-        actor: "admin",
-        resource: "user",
-        details: {
+        action: "user_deleted",
+        actor_email: "admin",
+        target_type: "user",
+        extra_data: {
           purged_count: result.succeeded.length,
           failed_count: result.failed.length,
         },

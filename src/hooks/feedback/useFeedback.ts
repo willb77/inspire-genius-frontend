@@ -31,11 +31,11 @@ export function useSubmitFeedback() {
       toast.success("Thank you for your feedback!")
       queryClient.invalidateQueries({ queryKey: ["feedback"], exact: false })
       logAuditEvent({
-        event_type: "feedback_submitted",
-        actor: variables.coach_id,
-        resource: "feedback",
-        resource_id: variables.message_id,
-        details: { rating: variables.rating, conversation_id: variables.conversation_id },
+        action: "feedback_submitted",
+        actor_email: variables.coach_id,
+        target_type: "feedback",
+        target_id: variables.message_id,
+        extra_data: { rating: variables.rating, conversation_id: variables.conversation_id },
       })
     },
     onError: (error) => {

@@ -15,10 +15,10 @@ export function usePageViewAudit(actor: string = "user") {
     if (pathname !== prev.current) {
       prev.current = pathname
       logAuditEvent({
-        event_type: "page_view",
-        actor,
-        resource: "page",
-        details: { path: pathname },
+        action: "page_view",
+        actor_email: actor,
+        target_type: "page",
+        extra_data: { path: pathname },
       })
     }
   }, [pathname, actor])

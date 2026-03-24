@@ -9,7 +9,7 @@ export function useDeleteDocument() {
     mutationFn: async (fileId: string) => deleteDocument(fileId),
     onSuccess: async (_resp, fileId) => {
       await queryClient.invalidateQueries({ queryKey: ["file_service", "list"] });
-      logAuditEvent({ event_type: "document_deleted", actor: "user", resource: "document", details: { file_id: fileId } });
+      logAuditEvent({ action: "document_deleted", actor_email: "user", target_type: "document", extra_data: { file_id: fileId } });
     },
   });
 }

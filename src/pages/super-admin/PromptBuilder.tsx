@@ -27,7 +27,11 @@ export default function PromptBuilder() {
   const [constraints, setConstraints] = useState("")
 
   const { data: coachesData } = useCoachesList({ page: 1, limit: 100 })
-  const coaches = useMemo(() => coachesData?.data?.agents ?? [], [coachesData])
+  const coaches = useMemo(() => {
+    const d = coachesData?.data
+    if (Array.isArray(d)) return d as { id: string; name: string }[]
+    return d?.agents ?? []
+  }, [coachesData])
 
   const { data: versionsData, isLoading: versionsLoading } = usePromptVersions(selectedCoachId)
   const versions = useMemo(() => versionsData?.data?.versions ?? [], [versionsData])
