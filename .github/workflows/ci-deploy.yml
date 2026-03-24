@@ -30,17 +30,15 @@ jobs:
 
       - name: Generate .env
         run: |
-          cat > .env <<EOF
-          VITE_NODE_ENV=production
-          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
-          VITE_ALEX_WEBSOCKET_URL=${{ secrets.VITE_ALEX_WEBSOCKET_URL }}
-          VITE_AGENTS_WEBSOCKET_BASE_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}
-          VITE_STORAGE_SECRET=${{ secrets.VITE_STORAGE_SECRET }}
-          VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}
-          VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
-          VITE_SENTRY_ENVIRONMENT=production
-          VITE_APP_VERSION=${{ github.sha }}
-          EOF
+          echo "VITE_NODE_ENV=production" > .env
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
+          echo "VITE_ALEX_WEBSOCKET_URL=${{ secrets.VITE_ALEX_WEBSOCKET_URL }}" >> .env
+          echo "VITE_AGENTS_WEBSOCKET_BASE_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}" >> .env
+          echo "VITE_STORAGE_SECRET=${{ secrets.VITE_STORAGE_SECRET }}" >> .env
+          echo "VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}" >> .env
+          echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}" >> .env
+          echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
+          echo "VITE_APP_VERSION=${{ github.sha }}" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
@@ -55,19 +53,11 @@ jobs:
           path: dist/
           retention-days: 1
 
-      - name: Upload node_modules artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: node_modules
-          path: node_modules/
-          retention-days: 1
-
   # ─────────────────────────────────────────────
   # 2. UNIT & INTEGRATION TESTS
   # ─────────────────────────────────────────────
   test-unit:
     name: Unit Tests
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -76,12 +66,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
-        with:
-          name: node_modules
-          path: node_modules/
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Run tests with coverage
         run: npm run test:ci -- --coverage --forceExit
@@ -113,12 +101,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
-        with:
-          name: node_modules
-          path: node_modules/
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Download dist
         uses: actions/download-artifact@v4
@@ -161,7 +147,7 @@ jobs:
   # ─────────────────────────────────────────────
   deploy:
     name: Deploy to AWS
-    needs: [test-unit, e2e]
+    needs: [build, test-unit, e2e]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
 
