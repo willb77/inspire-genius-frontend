@@ -1,31 +1,43 @@
 import UserLayout from "@/layouts/UserLayout";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, AlertCircle, Bot, RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import UserCoachCard from "@/components/user/UserCoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { useAgents } from "@/hooks/coaches/useAgents";
 
+type Agent = {
+  id: string;
+  name: string;
+  user_gender: { id: string; name: string } | null;
+  user_accent: { id: string; name: string } | null;
+  user_tones: Array<{ id: string; name: string }> | null;
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const { data: agentsResp, isLoading: agentsLoading } = useAgents({ page: 1, page_size: 12 });
-
-  type Agent = {
-    id: string;
-    name: string;
-    user_gender: { id: string; name: string } | null;
-    user_accent: { id: string; name: string } | null;
-    user_tones: Array<{ id: string; name: string }> | null;
-  };
+  const { data: agentsResp, isLoading: agentsLoading, isError, error, refetch } = useAgents({ page: 1, page_size: 12 });
 
   const agents = useMemo<Agent[]>(() => {
-    const raw = (agentsResp as { data?: Agent[] | { agents?: Agent[] } } | undefined)?.data;
-    const list = Array.isArray(raw) ? raw : (raw as { agents?: Agent[] } | undefined)?.agents ?? [];
+    if (!agentsResp) return [];
+    // Handle multiple response shapes: { data: Agent[] } | { data: { agents: Agent[] } } | Agent[]
+    const payload = agentsResp as Record<string, unknown>;
+    const raw = payload?.data ?? payload;
+    let list: Agent[];
+    if (Array.isArray(raw)) {
+      list = raw;
+    } else if (raw && typeof raw === "object" && "agents" in raw && Array.isArray((raw as Record<string, unknown>).agents)) {
+      list = (raw as { agents: Agent[] }).agents;
+    } else {
+      list = [];
+    }
     const q = query.trim().toLowerCase();
-    return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
+    return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [agentsResp, query]);
+
   const toSlug = (s: string) => {
     const input = String(s || "").trim().toLowerCase();
     let out = "";
@@ -47,6 +59,7 @@ export default function Dashboard() {
     if (out.endsWith("-")) out = out.slice(0, -1);
     return out;
   };
+
   return (
     <UserLayout>
       <div className="space-y-6">
@@ -74,12 +87,39 @@ export default function Dashboard() {
               Array.from({ length: 3 }).map((_, i) => (
                 <CoachCardSkeleton key={i} actions="single" />
               ))
+            ) : isError ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <h3 className="text-lg font-semibold">Failed to load coaches</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                  {(error as { message?: string })?.message || "Could not connect to the server. Please try again."}
+                </p>
+                <Button variant="outline" className="mt-4" onClick={() => refetch()}>
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            ) : agents.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <Bot className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold">No coaches available</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                  {query
+                    ? `No coaches match "${query}". Try a different search.`
+                    : "No AI coaches have been assigned to your account yet. Please contact your administrator."}
+                </p>
+                {query && (
+                  <Button variant="outline" className="mt-4" onClick={() => setQuery("")}>
+                    Clear search
+                  </Button>
+                )}
+              </div>
             ) : (
               agents.map((a, idx) => {
-                const gender = a.user_gender?.name ?? "—";
-                const accent = a.user_accent?.name ?? "—";
+                const gender = a.user_gender?.name ?? "\u2014";
+                const accent = a.user_accent?.name ?? "\u2014";
                 const toneNames = (a.user_tones ?? []).map(t => t.name);
-                const tone = toneNames?.length > 0 ? toneNames.slice(0, 2).join(", ") : "—";
+                const tone = toneNames.length > 0 ? toneNames.slice(0, 2).join(", ") : "\u2014";
                 const extraCount = Math.max(0, toneNames.length - 2);
                 return (
                   <div key={a.id} data-tour={idx < 3 ? `coach-card-${idx + 1}` : undefined}>
@@ -87,7 +127,7 @@ export default function Dashboard() {
                       title={a.name}
                       gender={gender}
                       accent={accent}
-                      disableButton = {false}
+                      disableButton={false}
                       tone={tone}
                       extraCount={extraCount}
                       onChat={() => navigate(`/dashboard/${a.id}--${toSlug(a.name)}/chat`)}
