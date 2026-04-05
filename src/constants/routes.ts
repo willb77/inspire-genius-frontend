@@ -25,6 +25,9 @@ export const ROUTES = {
     PROMPT_BUILDER: "/super-admin/prompt-builder",
     AUDIT_LOG: "/super-admin/audit-log",
     ANALYTICS: "/super-admin/analytics",
+    VOICE_SETTINGS: "/super-admin/voice-settings",
+    PROCESS_BUILDER: "/super-admin/process-builder",
+    AGENT_TRAINER: "/super-admin/agent-trainer",
   },
   MANAGER: {
     BASE: "/manager",
