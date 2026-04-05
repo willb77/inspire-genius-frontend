@@ -1,116 +1,143 @@
+import React, { Suspense } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
-import SignUp from "@/pages/auth/SignUp";
-import OTP from "@/pages/auth/OTP";
-import ResetPassword from "@/pages/auth/ResetPassword";
-import AcceptInvitation from "@/pages/auth/AcceptInvitation";
-import Login from "@/pages/auth/Login";
-import SocialLogin from "@/pages/auth/SocialLogin";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
-import UserSettingsPage from "@/pages/user/Settings";
-import HelpPage from "@/pages/user/Help";
-import Home from "@/pages/user/Home";
-import Dashboard from "@/pages/user/Dashboard";
-import Coaches from "@/pages/user/Coaches";
-import CoachChat from "@/pages/user/CoachChat";
-import Documents from "@/pages/user/Documents";
-import FeedbackHistory from "@/pages/user/FeedbackHistory";
-import UserAnalytics from "@/pages/user/Analytics";
-import ForgotPassword from "@/pages/auth/ForgotPassword";
-import OnboardingOne from "@/pages/onboarding/OnboardingOne";
-import OnboardingTwo from "@/pages/onboarding/OnboardingTwo";
-import OnboardingThree from "@/pages/onboarding/OnboardingThree";
-import OnboardingFour from "@/pages/onboarding/OnboardingFour";
-import OnboardingFive from "@/pages/onboarding/OnboardingFive";
-import OnboardingDetailsOne from "@/pages/onboarding/OnboardingDetailsOne";
-import OnboardingDetailsTwo from "@/pages/onboarding/OnboardingDetailsTwo";
-import SuperAdminDashboard from "@/pages/super-admin/Dashboard";
-import TeamManagement from "@/pages/super-admin/TeamManagement";
-import CoachManagement from "@/pages/super-admin/CoachManagement";
-import OrganizationManagement from "@/pages/super-admin/OrganizationManagement";
-import UserManagement from "@/pages/super-admin/UserManagement";
-import IssuesDetailsPage from "@/pages/super-admin/IssuesDetailsPage";
-import IssueDetailPage from "@/pages/super-admin/IssueDetailPage";
-import LicenceDetailsPage from "@/pages/super-admin/LicenceDetailsPage";
-import SuperAdminSettingsPage from "@/pages/super-admin/Settings";
-import OrganizationView from "@/pages/super-admin/OrganizationView";
-import UserCoaches from "@/pages/super-admin/UserCoaches";
-import ProjectLog from "@/pages/super-admin/ProjectLog";
-import RlhfTraining from "@/pages/super-admin/RlhfTraining";
-import PromptBuilder from "@/pages/super-admin/PromptBuilder";
-import AuditLog from "@/pages/super-admin/AuditLog";
-import SuperAdminAnalytics from "@/pages/super-admin/Analytics";
-import MagicLinkLogin from "@/pages/auth/MagicLinkLogin";
-import MagicLinkVerify from "@/pages/auth/MagicLinkVerify";
-import PreviewHome from "@/pages/PreviewHome";
-import Terms from "@/pages/legal/Terms";
-import Privacy from "@/pages/legal/Privacy";
+// ── Auth pages ──────────────────────────────────────────────────────────────
+const Login = React.lazy(() => import("@/pages/auth/Login"));
+const SignUp = React.lazy(() => import("@/pages/auth/SignUp"));
+const ForgotPassword = React.lazy(() => import("@/pages/auth/ForgotPassword"));
+const OTP = React.lazy(() => import("@/pages/auth/OTP"));
+const ResetPassword = React.lazy(() => import("@/pages/auth/ResetPassword"));
+const AcceptInvitation = React.lazy(() => import("@/pages/auth/AcceptInvitation"));
+const SocialLogin = React.lazy(() => import("@/pages/auth/SocialLogin"));
+const MagicLinkLogin = React.lazy(() => import("@/pages/auth/MagicLinkLogin"));
+const MagicLinkVerify = React.lazy(() => import("@/pages/auth/MagicLinkVerify"));
 
-// Manager pages
-import ManagerDashboard from "@/pages/manager/Dashboard";
-import ManagerTeam from "@/pages/manager/Team";
-import ManagerHiring from "@/pages/manager/Hiring";
-import ManagerCandidates from "@/pages/manager/Candidates";
-import ManagerInterviews from "@/pages/manager/Interviews";
-import ManagerJobDna from "@/pages/manager/JobDna";
-import ManagerTraining from "@/pages/manager/Training";
-import ManagerCareerManagement from "@/pages/manager/CareerManagement";
-import ManagerTeamBuilding from "@/pages/manager/TeamBuilding";
-import ManagerLeadership from "@/pages/manager/Leadership";
-import ManagerSettings from "@/pages/manager/Settings";
-import ManagerAnalytics from "@/pages/manager/Analytics";
+// ── Legal pages ─────────────────────────────────────────────────────────────
+const Terms = React.lazy(() => import("@/pages/legal/Terms"));
+const Privacy = React.lazy(() => import("@/pages/legal/Privacy"));
 
-// Company Admin pages
-import CompanyAdminDashboard from "@/pages/company-admin/Dashboard";
-import CompanyAdminUsers from "@/pages/company-admin/Users";
-import CompanyAdminOrganization from "@/pages/company-admin/Organization";
-import CompanyAdminCosts from "@/pages/company-admin/Costs";
-import CompanyAdminTraining from "@/pages/company-admin/Training";
-import CompanyAdminLeadership from "@/pages/company-admin/Leadership";
-import CompanyAdminSettings from "@/pages/company-admin/Settings";
-import CompanyAdminAnalytics from "@/pages/company-admin/Analytics";
+// ── Misc / Preview / Dev pages ──────────────────────────────────────────────
+const PreviewHome = React.lazy(() => import("@/pages/PreviewHome"));
+const PrismTestHarness = React.lazy(() => import("@/pages/dev/PrismTestHarness"));
+const JobBlueprintTestHarness = React.lazy(() => import("@/pages/dev/JobBlueprintTestHarness"));
 
-// Practitioner pages
-import PractitionerDashboard from "@/pages/practitioner/Dashboard";
-import PractitionerClients from "@/pages/practitioner/Clients";
-import PractitionerCredits from "@/pages/practitioner/Credits";
-import PractitionerSettings from "@/pages/practitioner/Settings";
-import PractitionerAnalytics from "@/pages/practitioner/Analytics";
+// ── Onboarding pages ────────────────────────────────────────────────────────
+const OnboardingOne = React.lazy(() => import("@/pages/onboarding/OnboardingOne"));
+const OnboardingTwo = React.lazy(() => import("@/pages/onboarding/OnboardingTwo"));
+const OnboardingThree = React.lazy(() => import("@/pages/onboarding/OnboardingThree"));
+const OnboardingFour = React.lazy(() => import("@/pages/onboarding/OnboardingFour"));
+const OnboardingFive = React.lazy(() => import("@/pages/onboarding/OnboardingFive"));
+const OnboardingDetailsOne = React.lazy(() => import("@/pages/onboarding/OnboardingDetailsOne"));
+const OnboardingDetailsTwo = React.lazy(() => import("@/pages/onboarding/OnboardingDetailsTwo"));
 
-// PRISM pages
-import PrismAssessment from "@/pages/user/PrismAssessment";
-import PrismClients from "@/pages/practitioner/PrismClients";
-import PrismTeam from "@/pages/manager/PrismTeam";
-import PrismTestHarness from "@/pages/dev/PrismTestHarness";
-import JobBlueprintTestHarness from "@/pages/dev/JobBlueprintTestHarness";
+// ── User pages ──────────────────────────────────────────────────────────────
+const Home = React.lazy(() => import("@/pages/user/Home"));
+const Dashboard = React.lazy(() => import("@/pages/user/Dashboard"));
+const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
+const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
+const Documents = React.lazy(() => import("@/pages/user/Documents"));
+const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
+const HelpPage = React.lazy(() => import("@/pages/user/Help"));
+const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
+const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
+const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 
-// Distributor pages
-import DistributorDashboard from "@/pages/distributor/Dashboard";
-import DistributorPractitioners from "@/pages/distributor/Practitioners";
-import DistributorCredits from "@/pages/distributor/Credits";
-import DistributorTerritory from "@/pages/distributor/Territory";
-import DistributorSettings from "@/pages/distributor/Settings";
-import DistributorAnalytics from "@/pages/distributor/Analytics";
+// ── Super Admin pages ───────────────────────────────────────────────────────
+const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboard"));
+const TeamManagement = React.lazy(() => import("@/pages/super-admin/TeamManagement"));
+const CoachManagement = React.lazy(() => import("@/pages/super-admin/CoachManagement"));
+const OrganizationManagement = React.lazy(() => import("@/pages/super-admin/OrganizationManagement"));
+const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManagement"));
+const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
+const IssueDetailPage = React.lazy(() => import("@/pages/super-admin/IssueDetailPage"));
+const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
+const SuperAdminSettingsPage = React.lazy(() => import("@/pages/super-admin/Settings"));
+const OrganizationView = React.lazy(() => import("@/pages/super-admin/OrganizationView"));
+const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
+const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
+const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
+const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
+const AuditLog = React.lazy(() => import("@/pages/super-admin/AuditLog"));
+const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
+const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
+const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
+
+// ── Agent Trainer pages ────────────────────────────────────────────────────
+const AgentTrainerDashboard = React.lazy(() => import("@/pages/super-admin/trainer/AgentTrainerDashboard"));
+const AgentTrainerPromptStudio = React.lazy(() => import("@/pages/super-admin/trainer/PromptStudio"));
+const AgentTrainerKnowledge = React.lazy(() => import("@/pages/super-admin/trainer/KnowledgeManager"));
+const AgentTrainerTraining = React.lazy(() => import("@/pages/super-admin/trainer/TrainingPlanBuilder"));
+const AgentTrainerCosts = React.lazy(() => import("@/pages/super-admin/trainer/CostDashboard"));
+const AgentTrainerSimulator = React.lazy(() => import("@/pages/super-admin/trainer/ConversationSimulator"));
+const AgentTrainerWorkflows = React.lazy(() => import("@/pages/super-admin/trainer/WorkflowDesigner"));
+
+// ── Manager pages ───────────────────────────────────────────────────────────
+const ManagerDashboard = React.lazy(() => import("@/pages/manager/Dashboard"));
+const ManagerTeam = React.lazy(() => import("@/pages/manager/Team"));
+const ManagerHiring = React.lazy(() => import("@/pages/manager/Hiring"));
+const ManagerCandidates = React.lazy(() => import("@/pages/manager/Candidates"));
+const ManagerInterviews = React.lazy(() => import("@/pages/manager/Interviews"));
+const ManagerJobDna = React.lazy(() => import("@/pages/manager/JobDna"));
+const ManagerTraining = React.lazy(() => import("@/pages/manager/Training"));
+const ManagerCareerManagement = React.lazy(() => import("@/pages/manager/CareerManagement"));
+const ManagerTeamBuilding = React.lazy(() => import("@/pages/manager/TeamBuilding"));
+const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"));
+const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
+const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
+const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
+
+// ── Company Admin pages ─────────────────────────────────────────────────────
+const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Dashboard"));
+const CompanyAdminUsers = React.lazy(() => import("@/pages/company-admin/Users"));
+const CompanyAdminOrganization = React.lazy(() => import("@/pages/company-admin/Organization"));
+const CompanyAdminCosts = React.lazy(() => import("@/pages/company-admin/Costs"));
+const CompanyAdminTraining = React.lazy(() => import("@/pages/company-admin/Training"));
+const CompanyAdminLeadership = React.lazy(() => import("@/pages/company-admin/Leadership"));
+const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Settings"));
+const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
+
+// ── Practitioner pages ──────────────────────────────────────────────────────
+const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
+const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
+const PractitionerCredits = React.lazy(() => import("@/pages/practitioner/Credits"));
+const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
+const PractitionerSettings = React.lazy(() => import("@/pages/practitioner/Settings"));
+const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
+
+// ── Distributor pages ───────────────────────────────────────────────────────
+const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
+const DistributorPractitioners = React.lazy(() => import("@/pages/distributor/Practitioners"));
+const DistributorCredits = React.lazy(() => import("@/pages/distributor/Credits"));
+const DistributorTerritory = React.lazy(() => import("@/pages/distributor/Territory"));
+const DistributorSettings = React.lazy(() => import("@/pages/distributor/Settings"));
+const DistributorAnalytics = React.lazy(() => import("@/pages/distributor/Analytics"));
+
+// ── Suspense wrapper helper ─────────────────────────────────────────────────
+function withSuspense(element: React.ReactNode) {
+  return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
+}
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
   {
     children: [
-      { path: "/login", element: <Login /> },
-      { path: "/signup", element: <SignUp /> },
-      { path: "/forgot", element: <ForgotPassword /> },
-      { path: "/otp", element: <OTP /> },
-      { path: "/reset-password", element: <ResetPassword /> },
-      { path: "/accept-invitation", element: <AcceptInvitation /> },
-      { path: "/social-login", element: <SocialLogin /> },
-      { path: "/magic-login", element: <MagicLinkLogin /> },
-      { path: "/magic-verify", element: <MagicLinkVerify /> },
-      { path: "/terms", element: <Terms /> },
-      { path: "/privacy", element: <Privacy /> },
-      { path: "/preview-home", element: <PreviewHome /> },
-      { path: "/dev/prism-test", element: <PrismTestHarness /> },
-      { path: "/dev/job-blueprint-test", element: <JobBlueprintTestHarness /> },
+      { path: "/login", element: withSuspense(<Login />) },
+      { path: "/signup", element: withSuspense(<SignUp />) },
+      { path: "/forgot", element: withSuspense(<ForgotPassword />) },
+      { path: "/otp", element: withSuspense(<OTP />) },
+      { path: "/reset-password", element: withSuspense(<ResetPassword />) },
+      { path: "/accept-invitation", element: withSuspense(<AcceptInvitation />) },
+      { path: "/social-login", element: withSuspense(<SocialLogin />) },
+      { path: "/magic-login", element: withSuspense(<MagicLinkLogin />) },
+      { path: "/magic-verify", element: withSuspense(<MagicLinkVerify />) },
+      { path: "/terms", element: withSuspense(<Terms />) },
+      { path: "/privacy", element: withSuspense(<Privacy />) },
+      { path: "/preview-home", element: withSuspense(<PreviewHome />) },
+      { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
+      { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
     ],
   },
 
@@ -118,84 +145,96 @@ export const routes: RouteObject[] = [
     element: <ProtectedRoute />,
     children: [
       // User onboarding (authenticated-only)
-      { path: "/onboarding/one", element: <OnboardingOne /> },
-      { path: "/onboarding/two", element: <OnboardingTwo /> },
-      { path: "/onboarding/three", element: <OnboardingThree /> },
-      { path: "/onboarding/four", element: <OnboardingFour /> },
-      { path: "/onboarding/five", element: <OnboardingFive /> },
-      { path: "/onboarding/details/one", element: <OnboardingDetailsOne /> },
-      { path: "/onboarding/details/two", element: <OnboardingDetailsTwo /> },
+      { path: "/onboarding/one", element: withSuspense(<OnboardingOne />) },
+      { path: "/onboarding/two", element: withSuspense(<OnboardingTwo />) },
+      { path: "/onboarding/three", element: withSuspense(<OnboardingThree />) },
+      { path: "/onboarding/four", element: withSuspense(<OnboardingFour />) },
+      { path: "/onboarding/five", element: withSuspense(<OnboardingFive />) },
+      { path: "/onboarding/details/one", element: withSuspense(<OnboardingDetailsOne />) },
+      { path: "/onboarding/details/two", element: withSuspense(<OnboardingDetailsTwo />) },
 
       // User pages
-      { path: "/home", element: <Home /> },
-      { path: "/dashboard", element: <Dashboard /> },
-      { path: "/coaches", element: <Coaches /> },
-      { path: "/dashboard/:coach/chat", element: <CoachChat /> },
-      { path: "/documents", element: <Documents /> },
-      { path: "/settings", element: <UserSettingsPage /> },
-      { path: "/help", element: <HelpPage /> },
-      { path: "/prism-assessment", element: <PrismAssessment /> },
-      { path: "/feedback", element: <FeedbackHistory /> },
-      { path: "/analytics", element: <UserAnalytics /> },
+      { path: "/home", element: withSuspense(<Home />) },
+      { path: "/dashboard", element: withSuspense(<Dashboard />) },
+      { path: "/coaches", element: withSuspense(<Coaches />) },
+      { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
+      { path: "/documents", element: withSuspense(<Documents />) },
+      { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      { path: "/help", element: withSuspense(<HelpPage />) },
+      { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
+      { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
+      { path: "/analytics", element: withSuspense(<UserAnalytics />) },
 
       // Super Admin pages
-      { path: "/super-admin/dashboard", element: <SuperAdminDashboard /> },
-      { path: "/super-admin/team", element: <TeamManagement /> },
-      { path: "/super-admin/coaches", element: <CoachManagement /> },
-      { path: "/super-admin/:userId/coaches", element: <UserCoaches /> },
-      { path: "/super-admin/organizations", element: <OrganizationManagement /> },
-      { path: "/super-admin/organizations/:id/view", element: <OrganizationView /> },
-      { path: "/super-admin/users", element: <UserManagement /> },
-      { path: "/super-admin/dashboard/issues", element: <IssuesDetailsPage /> },
-      { path: "/super-admin/issues/:id", element: <IssueDetailPage /> },
-      { path: "/super-admin/dashboard/licences", element: <LicenceDetailsPage /> },
-      { path: "/super-admin/settings", element: <SuperAdminSettingsPage /> },
-      { path: "/super-admin/project-log", element: <ProjectLog /> },
-      { path: "/super-admin/rlhf-training", element: <RlhfTraining /> },
-      { path: "/super-admin/prompt-builder", element: <PromptBuilder /> },
-      { path: "/super-admin/audit-log", element: <AuditLog /> },
-      { path: "/super-admin/analytics", element: <SuperAdminAnalytics /> },
+      { path: "/super-admin/dashboard", element: withSuspense(<SuperAdminDashboard />) },
+      { path: "/super-admin/team", element: withSuspense(<TeamManagement />) },
+      { path: "/super-admin/coaches", element: withSuspense(<CoachManagement />) },
+      { path: "/super-admin/:userId/coaches", element: withSuspense(<UserCoaches />) },
+      { path: "/super-admin/organizations", element: withSuspense(<OrganizationManagement />) },
+      { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
+      { path: "/super-admin/users", element: withSuspense(<UserManagement />) },
+      { path: "/super-admin/dashboard/issues", element: withSuspense(<IssuesDetailsPage />) },
+      { path: "/super-admin/issues/:id", element: withSuspense(<IssueDetailPage />) },
+      { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
+      { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
+      { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },
+      { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
+      { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
+      { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
+      { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
+      { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
+      { path: "/super-admin/process-builder", element: withSuspense(<ProcessBuilderPage />) },
+
+      // Agent Trainer routes
+      { path: "/super-admin/agent-trainer", element: withSuspense(<AgentTrainerDashboard />) },
+      { path: "/super-admin/agent-trainer/:agentId", element: withSuspense(<AgentTrainerDashboard />) },
+      { path: "/super-admin/agent-trainer/:agentId/prompt", element: withSuspense(<AgentTrainerPromptStudio />) },
+      { path: "/super-admin/agent-trainer/:agentId/knowledge", element: withSuspense(<AgentTrainerKnowledge />) },
+      { path: "/super-admin/agent-trainer/:agentId/training", element: withSuspense(<AgentTrainerTraining />) },
+      { path: "/super-admin/agent-trainer/:agentId/costs", element: withSuspense(<AgentTrainerCosts />) },
+      { path: "/super-admin/agent-trainer/:agentId/test", element: withSuspense(<AgentTrainerSimulator />) },
+      { path: "/super-admin/agent-trainer/workflows", element: withSuspense(<AgentTrainerWorkflows />) },
 
       // Manager pages
-      { path: "/manager/dashboard", element: <ManagerDashboard /> },
-      { path: "/manager/team", element: <ManagerTeam /> },
-      { path: "/manager/hiring", element: <ManagerHiring /> },
-      { path: "/manager/candidates", element: <ManagerCandidates /> },
-      { path: "/manager/interviews", element: <ManagerInterviews /> },
-      { path: "/manager/job-dna", element: <ManagerJobDna /> },
-      { path: "/manager/training", element: <ManagerTraining /> },
-      { path: "/manager/career-mgmt", element: <ManagerCareerManagement /> },
-      { path: "/manager/team-building", element: <ManagerTeamBuilding /> },
-      { path: "/manager/leadership", element: <ManagerLeadership /> },
-      { path: "/manager/prism-team", element: <PrismTeam /> },
-      { path: "/manager/settings", element: <ManagerSettings /> },
-      { path: "/manager/analytics", element: <ManagerAnalytics /> },
+      { path: "/manager/dashboard", element: withSuspense(<ManagerDashboard />) },
+      { path: "/manager/team", element: withSuspense(<ManagerTeam />) },
+      { path: "/manager/hiring", element: withSuspense(<ManagerHiring />) },
+      { path: "/manager/candidates", element: withSuspense(<ManagerCandidates />) },
+      { path: "/manager/interviews", element: withSuspense(<ManagerInterviews />) },
+      { path: "/manager/job-dna", element: withSuspense(<ManagerJobDna />) },
+      { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
+      { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
+      { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
+      { path: "/manager/leadership", element: withSuspense(<ManagerLeadership />) },
+      { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
+      { path: "/manager/settings", element: withSuspense(<ManagerSettings />) },
+      { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
 
       // Company Admin pages
-      { path: "/company-admin/dashboard", element: <CompanyAdminDashboard /> },
-      { path: "/company-admin/users", element: <CompanyAdminUsers /> },
-      { path: "/company-admin/organization", element: <CompanyAdminOrganization /> },
-      { path: "/company-admin/costs", element: <CompanyAdminCosts /> },
-      { path: "/company-admin/training", element: <CompanyAdminTraining /> },
-      { path: "/company-admin/leadership", element: <CompanyAdminLeadership /> },
-      { path: "/company-admin/settings", element: <CompanyAdminSettings /> },
-      { path: "/company-admin/analytics", element: <CompanyAdminAnalytics /> },
+      { path: "/company-admin/dashboard", element: withSuspense(<CompanyAdminDashboard />) },
+      { path: "/company-admin/users", element: withSuspense(<CompanyAdminUsers />) },
+      { path: "/company-admin/organization", element: withSuspense(<CompanyAdminOrganization />) },
+      { path: "/company-admin/costs", element: withSuspense(<CompanyAdminCosts />) },
+      { path: "/company-admin/training", element: withSuspense(<CompanyAdminTraining />) },
+      { path: "/company-admin/leadership", element: withSuspense(<CompanyAdminLeadership />) },
+      { path: "/company-admin/settings", element: withSuspense(<CompanyAdminSettings />) },
+      { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
 
       // Practitioner pages
-      { path: "/practitioner/dashboard", element: <PractitionerDashboard /> },
-      { path: "/practitioner/clients", element: <PractitionerClients /> },
-      { path: "/practitioner/credits", element: <PractitionerCredits /> },
-      { path: "/practitioner/prism-clients", element: <PrismClients /> },
-      { path: "/practitioner/settings", element: <PractitionerSettings /> },
-      { path: "/practitioner/analytics", element: <PractitionerAnalytics /> },
+      { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
+      { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
+      { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },
+      { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
+      { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
+      { path: "/practitioner/analytics", element: withSuspense(<PractitionerAnalytics />) },
 
       // Distributor pages
-      { path: "/distributor/dashboard", element: <DistributorDashboard /> },
-      { path: "/distributor/practitioners", element: <DistributorPractitioners /> },
-      { path: "/distributor/credits", element: <DistributorCredits /> },
-      { path: "/distributor/territory", element: <DistributorTerritory /> },
-      { path: "/distributor/settings", element: <DistributorSettings /> },
-      { path: "/distributor/analytics", element: <DistributorAnalytics /> },
+      { path: "/distributor/dashboard", element: withSuspense(<DistributorDashboard />) },
+      { path: "/distributor/practitioners", element: withSuspense(<DistributorPractitioners />) },
+      { path: "/distributor/credits", element: withSuspense(<DistributorCredits />) },
+      { path: "/distributor/territory", element: withSuspense(<DistributorTerritory />) },
+      { path: "/distributor/settings", element: withSuspense(<DistributorSettings />) },
+      { path: "/distributor/analytics", element: withSuspense(<DistributorAnalytics />) },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

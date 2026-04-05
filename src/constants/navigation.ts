@@ -20,6 +20,8 @@ import {
   Brain,
   BarChart3,
   MessageCircle,
+  Mic,
+  GitBranch,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -43,6 +45,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROMPT_BUILDER, icon: Wand2, label: "Prompt Builder" },
   { to: ROUTES.SUPER_ADMIN.AUDIT_LOG, icon: Shield, label: "Audit Log" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.SUPER_ADMIN.VOICE_SETTINGS, icon: Mic, label: "Voice Settings" },
+  { to: ROUTES.SUPER_ADMIN.AGENT_TRAINER, icon: Brain, label: "Agent Trainer" },
+  { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]

@@ -2,97 +2,2531 @@
 
 All notable changes to this project are documented in this file.
 
----
+## [2026-04-05] — Deployment Phases 2–5 Execution
 
-## [2026-03-24] — Fix PRISM Flow, Documents, Feedback, Analytics, Help Pages
+### Phase 2: Database Migrations
+- Created combined idempotent migration file: `Transformation Documents/combined_migration.sql`
+  - 10 tables: process_templates, decision_rules, user_memories, coaching_sessions, user_roles, analytics_events, user_memory, dag_cost_events, dag_audit_log, dag_execution_costs
+  - 22 indexes, 3 triggers, seed data (5 process templates + 6 decision rules)
+  - Aurora is VPC-only (not publicly accessible) — must be run from bastion/VPN
+  - Files: `Transformation Documents/combined_migration.sql`
 
-### Changed — PRISM (User)
-- `src/pages/user/PrismAssessment.tsx` / `src/constants/navigation.ts` — "Request Survey" button now navigates to the assessment form page (`/prism-assessment`) instead of calling the API directly; menu item renamed from "Request Survey" to "Request Assessment"
+### Phase 3: CDK Infrastructure Deployment
+- CDK synth succeeds for all 8 stacks (ig-dev-security, services, rlhf, agent-engine, api-gateway, cognito, monitoring, domain)
+- CDK deploy initiated for ig-dev-security stack (background, long-running)
+- Created executable deploy script: `Transformation Documents/deploy.sh`
+  - Files: `Transformation Documents/deploy.sh`
 
-### Fixed — Documents (User)
-- Documents service now uses robust `BaseApiResponse` envelope unwrapping to correctly extract the document list; stale cache cleared on mount
-- Upload fixed by removing the manually-set `Content-Type: multipart/form-data` header (was breaking multipart boundary); React Query cache invalidated on successful upload so the list refreshes automatically
+### Phase 4: Frontend Deployment
+- Fixed TypeScript build error in ProcessBuilder.tsx (missing @inspiresgenius/dag-builder types)
+- Frontend build successful (5.94s, all chunks generated)
+- Deployed to S3: `inspires-genius-dev-frontend` (510 files synced)
+- CloudFront invalidation created: `EQNFTOWMBMKSA` (invalidation ID: IEBMN67W8TTS12254HDH0BCC5T)
+  - Files: `inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
 
-### Fixed — Feedback (User / Super-Admin)
-- Feedback page wired to real `/v1/feedback` and `/v1/feedback/stats` APIs with pagination support and rating filters
-- All hardcoded mock data removed
+### Phase 5: Smoke Tests
+- Agent Engine health: OK — `{"status":"healthy","service":"agent-engine","version":"1.0.0"}`
+- Auth /me: OK — Returns 422 (expected, requires access-token header)
+- Coaches: OK — Returns auth-required message (expected)
+- RLHF feedback GET: OK — `{"success":true,"data":{"feedback":[],"count":0}}`
+- RLHF models GET: OK — `{"success":true,"data":{"models":[],"count":0}}`
+- CloudFront frontend: OK — HTTP 200
+- Waves 3/4/5/6 specific health endpoints: 404 (routes not yet deployed, expected pre-CDK deploy)
 
-### Added — Analytics (User)
-- Placeholder banner added to Analytics page indicating no real backend endpoint is available yet
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 
-### Added — Help & Support (User)
-- Voice Help card added to Help & Support page with a placeholder link for a future voice agent URL
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
----
+- Deployment Phases 2-5: combined migration SQL, deploy.sh, frontend build+deploy to S3, CloudFront invalidation, smoke tests passed
 
-## [2026-03-24] — Fix User, Manager, Company Admin Dashboards — Data Loading, Missing Routes, PRISM
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/vite.config.ts`
 
-### Fixed — User Dashboard
-- Sidebar now shows "User Pages" nav section when super-admin visits via Role Views
-- Stat tiles wired to real audit stats API (replaced hardcoded dummy data)
-- PRISM services fixed to unwrap `resp.data` correctly (fixes behavioral report status and survey request)
-- Coach list now handles both flat array and nested response shapes (fixes coaches not loading)
-- Documents service unwraps `BaseApiResponse` envelope (fixes documents not populating)
-- Quick Actions "Set New Goal" button now routes to `/coaches` instead of chat
-
-### Fixed — Manager Dashboard
-- Created 7 missing pages (Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership) with Coming Soon placeholders — sidebar links no longer reset to main screen
-- Added "Sample data" placeholder banner to Dashboard, Team, Hiring, and Analytics pages
-
-### Fixed — Company Admin Dashboard
-- Created Training and Leadership pages (missing routes were causing sidebar resets)
-- Rebuilt blank Organization page with org chart placeholder and department table
-- Added content to blank Settings page (org profile, security, notifications, billing sections)
-- Dashboard stat tiles are now clickable; "Add User" button shows toast notification
-- Added placeholder data banner to all Company Admin pages
-
----
-
-## [2026-03-24] — Add Cross-Role Navigation for Super-Admin
+## [2026-04-05] — DAG Process Builder: Route Wiring & Deploy
 
 ### Added
-- `SidebarScaffold` — new optional `navSections` prop supporting grouped navigation sections
-- Super-admin sidebar now has two named sections: **"Administration"** (existing admin tools) and **"Role Views"** (links to User Home, Manager, Company Admin, Practitioner, and Distributor dashboards)
+- Route constant: `ROUTES.SUPER_ADMIN.PROCESS_BUILDER` in `src/constants/routes.ts`
+- Route entry: `/super-admin/process-builder` in `src/routes.tsx`
+- Nav item: "Process Builder" with GitBranch icon in `src/constants/navigation.ts`
+- Vite alias: `@inspiresgenius/dag-builder` → `packages/dag-builder/src` in `vite.config.ts`
+
+### Fixed
+- Pre-existing: 7 trainer pages had wrong SuperAdminLayout import path (`@/components/layouts/` → `@/layouts/`)
+- Pre-existing: Added missing shadcn `progress` component required by trainer/CostDashboard
+
+### Verified
+- `npm run build`: Production build succeeds (2126 modules, 199 PWA entries)
+- `npx jest`: 39/39 tests passing in dag-builder package
+- Dev server running at http://localhost:5173
+- Process Builder accessible at http://localhost:5173/super-admin/process-builder
+
+- Wired process-builder route, nav item, Vite alias; fixed 7 trainer import paths + added missing progress component; build succeeds, dev server running
+  - Files: `src/routes.tsx,src/constants/routes.ts,src/constants/navigation.ts,vite.config.ts,src/pages/super-admin/ProcessBuilder.tsx`
+
+- Built Visual Agent Trainer frontend (VAT-008 to VAT-013): 7 page components, types, service layer (70+ API calls), React Query hooks (40+ hooks), routes, navigation. Zero TypeScript errors.
+  - Files: `inspire-genius-frontend/src/pages/super-admin/trainer/,inspire-genius-frontend/src/types/trainer/,inspire-genius-frontend/src/services/trainer/,inspire-genius-frontend/src/hooks/trainer/`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/worker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/combined_migration.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/deploy.sh`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
+
+## [2026-04-05] — DAG Process Builder: Full Package Build (Phases 1–11)
+
+### Added
+- **packages/dag-builder/** — Complete shared React package (27 TypeScript files) implementing the visual DAG Process Builder UI
+  - **Types** (3 files): DagNode, DagTemplate, EcosystemAdapter, CostEvent, AuditEntry, BuildMethodCost + 20 more types
+  - **Library** (3 files): DAG utilities (cycle detection, topological sort, wave computation, validation), dagre layout engine, cost calculator (LLM cost estimation, execution cost projection, build method comparison)
+  - **Adapters** (4 files): IG adapter (14 agents, 3 domains), VoiceDeskAI adapter (10 agents, 3 domains), generic JSON-config adapter factory, barrel export
+  - **Components** (9 files): DagBuilder (main orchestrator), DagCanvas (React Flow), AgentNode (custom node), AgentPalette (drag sidebar), NodePropertyPanel (property editor), TemplateMetadataPanel, TemplateToolbar, ProcessDecomposer (LLM-powered), CostEstimatePanel (live cost projection)
+  - **Hooks** (3 files): useDagStore (Zustand + undo/redo), useAutoLayout (dagre), useTemplateApi (React Query CRUD)
+  - **Tests** (3 files, 39 tests): dag-utils, adapters round-trip, cost-tracking — all passing
+  - **Config** (3 files): package.json, tsconfig.json, jest.config.js
+  - Files: `packages/dag-builder/src/**`
+
+- **services/agent-engine/app/routes/costs.py** — Backend cost tracking + audit log API endpoints
+  - POST /v1/admin/templates/costs/events — batch record cost events
+  - GET /v1/admin/templates/costs/summary — cost dashboard data
+  - GET /v1/admin/templates/{id}/costs — single template expense report
+  - POST /v1/admin/audit/entries — batch record audit entries
+  - GET /v1/admin/audit/entries — query audit log with filters
+  - Files: `services/agent-engine/app/routes/costs.py`
+
+- **services/agent-engine/sql/cost_tracking_tables.sql** — 3 new DB tables
+  - dag_cost_events: billable events (LLM calls, executions)
+  - dag_audit_log: immutable audit trail
+  - dag_execution_costs: per-execution cost breakdown
+  - Files: `services/agent-engine/sql/cost_tracking_tables.sql`
+
+- **inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx** — IG frontend integration page
 
 ### Changed
-- `AppShell` — detects super-admin role from `AuthContext` and overrides the sidebar role accordingly, so the full super-admin navigation is always displayed regardless of which page the super-admin is visiting
-- `UserLayout` — detects super-admin role and shows admin sections instead of user-only nav items
-- When a super-admin navigates to any role's page (e.g., `/home`, `/manager/dashboard`), the sidebar continues to show the full super-admin navigation rather than that role's nav
+- **services/agent-engine/app/main.py** — registered costs_router for Phase 11 endpoints
+
+- Built packages/dag-builder (27 TS files, 39 tests), costs.py backend endpoints, cost_tracking_tables.sql, ProcessBuilder.tsx page, registered costs_router in main.py
+  - Files: `packages/dag-builder,services/agent-engine/app/routes/costs.py,services/agent-engine/sql/cost_tracking_tables.sql,inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx,services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/trainer/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/trainer/trainer.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/AgentTrainerDashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/PromptStudio.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/KnowledgeManager.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/TrainingPlanBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/CostDashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/vite.config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/ConversationSimulator.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/trainer/trainer.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/trainer/trainer.service.ts`
+
+## [2026-04-05] — Deployment Order Document + Phase 1 Local Validation
+
+### Added
+- Created `Transformation Documents/IG_Deployment_Order.docx` — deployment order & validation checklist for Unified Build & Deploy Plan (26 steps, 6 phases, rollback procedures, build summary)
+  - Files: `Transformation Documents/IG_Deployment_Order.docx`
+
+### Validated (Phase 1 Local Validation)
+- Agent-engine tests: SKIPPED — requires Python >=3.12, local env is Python 3.8.2
+- Frontend build: PASSED — built in 5.19s, 188 precache entries (3646.81 KiB), PWA v1.2.0
+- CDK synth: PASSED — all stacks synthesized (deprecation warnings only: logRetention, pointInTimeRecovery, advancedSecurityMode, S3Origin)
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/adapters/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/prompt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/training.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/cost.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/evaluation.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/workflow.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/template.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/agents.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/ecosystem.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/cost_tracker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/schemas/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/roi_calculator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/package.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/accuracy_scorer.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/tsconfig.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/maturity_calculator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/audit_logger.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/events/publisher.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/types/dag.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/types/ecosystem.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/training.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/costs.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/audit.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/evaluation.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/types/cost-tracking.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/simulator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/types/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/workflows.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/ecosystems.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/lib/dag-utils.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/lib/layout.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic.ini`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic/env.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_health.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/lib/cost-calculator.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/hooks/useDagStore.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentNode.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagCanvas.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/NodePropertyPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/TemplateMetadataPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_voice_endpoints.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_voice_endpoints.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/adapters/ig-adapter.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/adapters/voicedeskai-adapter.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/adapters/generic-adapter.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/adapters/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/hooks/useAutoLayout.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/cost_ledger.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_voice_endpoints.py`
+
+- Built Visual Agent Trainer microservice (trainer-service): 52 Python files, 74 API routes, 15 ORM models, ecosystem adapter framework, cost/audit/ROI engines, 9 tests (8 passing)
+  - Files: `services/trainer-service/`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/CostEstimatePanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_voice_endpoints.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/__tests__/dag-utils.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/__tests__/adapters.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/__tests__/cost-tracking.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/jest.config.js`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/sql/cost_tracking_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/costs.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_ws_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+## [2026-04-05] — DAG Process Builder: Audit, Expense & Cost Tracking (Phase 11)
+
+### Added
+- Added Phase 11 (Prompts 37–49) to `IG_DAG_Process_Builder_Build_Prompts.docx` — complete audit, expense, and cost tracking system:
+  - Prompt 37: Cost tracking types (CostEvent, BuildMethodCost, AuditEntry, CostComparison, TemplateExpenseReport)
+  - Prompt 38: Cost calculator utility (LLM cost estimation, decomposition vs. scratch comparison, execution cost projection)
+  - Prompt 39: Audit trail store (Zustand store + auto-logging hooks for every DAG builder action)
+  - Prompt 40: CostEstimatePanel (live cost projection with build/execution/comparison/ROI sections)
+  - Prompt 41: AuditLogPanel (timeline-based audit viewer with filters, diff view, CSV/JSON export)
+  - Prompt 42: CostDashboard (full analytics page with charts, agent breakdowns, model tier costs)
+  - Prompt 43: TemplateExpenseReport (per-template lifecycle cost report with ROI analysis)
+  - Prompt 44: Cost tracking API hooks (batch buffering, React Query, localStorage fallback)
+  - Prompt 45: Decomposition cost tracker (auto-tracks LLM costs during process decomposition)
+  - Prompt 46: From-scratch build tracker (time/action metrics for manual builds)
+  - Prompt 47: Backend cost endpoints (FastAPI + 3 new DB tables: dag_cost_events, dag_audit_log, dag_execution_costs)
+  - Prompt 48: Cost tracking tests (unit tests for calculator, audit store, API endpoints)
+  - Prompt 49: DagBuilder integration (Analytics tab, cost badges, expense report button)
+- Added Appendix D — Cost Reference Tables: build costs, execution costs, monthly projections at scale
+- Added Appendix E — Phase 11 prompt index
+  - Files: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_DAG_Process_Builder_Build_Prompts.docx`
+
+- Added Phase 11 (Prompts 37-49) to IG_DAG_Process_Builder_Build_Prompts.docx — audit trail, expense tracking, cost calculator, cost dashboard, per-template expense reports, ROI analysis, backend DB tables
+  - Files: `IG_DAG_Process_Builder_Build_Prompts.docx,change_log.md`
+
+- Created Visual_Agent_Trainer_Build_Prompts.docx — 16 Claude Code prompts (VAT-001 to VAT-016) for building the Visual Agent Trainer microservice, frontend, and multi-ecosystem adapter framework
+  - Files: `Transformation Documents/Visual_Agent_Trainer_Build_Prompts.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/create_deployment_doc.py`
+
+## [2026-04-05] — DAG Process Builder UI Architecture & Build Prompts
+
+### Added
+- Created `IG_DAG_Process_Builder_UI_Architecture.docx` — tech stack recommendation (React Flow v12, Zustand, dagre, adapter pattern for multi-ecosystem support)
+- Created `IG_DAG_Process_Builder_Build_Prompts.docx` — 36 sequenced Claude Code prompts across 10 phases to build the full DAG Process Builder UI
+  - Phase 1: Package scaffold & core types (prompts 1–3)
+  - Phase 2: DAG canvas & visual editor (prompts 4–8)
+  - Phase 3: Node property panel & forms (prompts 9–11)
+  - Phase 4: Ecosystem adapter layer — IG, VoiceDeskAI, generic factory (prompts 12–15)
+  - Phase 5: Backend wiring to existing /v1/admin/templates API (prompts 16–19)
+  - Phase 6: Prompt Builder / LLM-powered process decomposer (prompts 20–23)
+  - Phase 7: Validation, versioning & wave visualization (prompts 24–27)
+  - Phase 8: Testing — unit, adapter, component tests (prompts 28–30)
+  - Phase 9: Frontend route integration (prompts 31–33)
+  - Phase 10: Polish & production readiness (prompts 34–36)
+  - Files: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_DAG_Process_Builder_Build_Prompts.docx`, `IG_DAG_Process_Builder_UI_Architecture.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- Created IG_DAG_Process_Builder_Build_Prompts.docx — 36 sequenced Claude Code prompts across 10 phases for the full DAG Process Builder UI with multi-ecosystem adapter support, prompt builder/process decomposer, and backend wiring
+  - Files: `IG_DAG_Process_Builder_Build_Prompts.docx,change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a5b886bc/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- feat(cdk): 8.2 — staging deployment config + custom domain infrastructure
+  - Files: `infrastructure/cdk/lib/config.ts,infrastructure/cdk/lib/domain-stack.ts,infrastructure/cdk/lib/cognito-stack.ts,infrastructure/cdk/lib/monitoring-stack.ts,infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-af650083/infrastructure/cdk/lib/config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-af650083/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-af650083/infrastructure/cdk/lib/domain-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-af650083/infrastructure/cdk/lib/cognito-stack.ts`
+
+- Created Visual_Agent_Trainer_v2.docx — brainstorm for visual no-code agent training platform with 30 training templates, prompt studio, knowledge base manager, conversation simulator, workflow designer
+  - Files: `Transformation Documents/Visual_Agent_Trainer_v2.docx`
+
+## [2026-04-04] — Prompt 6.1: Fix ECS Fargate CDK Stack Deployment Issues
+
+### Fixed
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — Three deployment-blocking issues resolved:
+  1. **CODE_DEPLOY dependency ordering**: Added `service.node.addDependency()` calls for ALB, both listeners (`:80` production, `:8080` test), and both target groups (blue/green). CloudFormation DependsOn now includes all five ALB resources before the ECS service is created.
+  2. **VPC Link PENDING during rollback**: Added `vpcLink.node.addDependency(alb)` so the ALB exists before the VPC link is created and is destroyed after. Added `vpcLink.applyRemovalPolicy(DESTROY)` for clean stack teardown.
+  3. **Deprecated metrics APIs**: Replaced `blueTargetGroup.metricUnhealthyHostCount()` with `.metrics.unhealthyHostCount()` and `metricHttpCodeTarget()` with `.metrics.httpCodeTarget()`.
+
+### Added
+- Stack-wide tags applied via `cdk.Tags.of(this)`: `Project=InspireGenius`, `Environment={env}`, `ManagedBy=CDK`, `Service=agent-engine`
+- `minHealthyPercent: 100` and `maxHealthyPercent: 200` on ECS FargateService (eliminates CDK warning, prevents task count dropping below desired during deploys)
+- Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env.development`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env.local`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/vite.config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/sql/template_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/memory/integration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/template_engine.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_templates_rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/app/routes/roles.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/app/routes/analytics.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/app/routes/admin_dashboard.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/memory/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/sql/roles_analytics_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/sql/memory_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- Created IG_Agent_Ecosystem_Technical_Mapping.docx — maps 14 business agents to technical implementation with data requirements, training strategies, and implementation roadmap
+  - Files: `Transformation Documents/IG_Agent_Ecosystem_Technical_Mapping.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a0331a3d/services/agent-engine/tests/test_roles_analytics.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_memory_integration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/collaboration/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/collaboration/protocol.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/collaboration/shared_context.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/collaboration/multi_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/permissions/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/permissions/roles.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/permissions/tool_access.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/permissions/quotas.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/tools/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/tools/mcp_server.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/tools/registry.py`
+
+## [2026-04-04] — Prompt 5B.2: WebSocket Streaming Chat — Lambda Handler + Management API
+
+### Added
+- `services/agent-engine/app/ws_handler.py` — Lambda entry point for API GW WebSocket API (`wss://fhsei32zkf.execute-api.us-east-1.amazonaws.com/dev`). Handles `$connect`, `$disconnect`, `chat`, `$default`. DynamoDB table `ig-dev-ws-connections`, 24 h TTL.
+- `services/agent-engine/app/websocket/manager.py` — Added `LambdaConnectionManager` wrapping boto3 `apigatewaymanagementapi`. `post_to_connection`, `post_token`, `post_complete`, `post_error`. Handles `GoneException` gracefully.
+- `services/agent-engine/app/websocket/handlers.py` — Added `handle_chat_message_lambda`: Lambda-path streaming handler using `LambdaConnectionManager`.
+- `services/agent-engine/tests/test_ws_handler.py` — 22 tests covering all four route keys, `LambdaConnectionManager`, and `handle_chat_message_lambda`.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-04] — Full Session Summary: Deployment Plan Execution + Platform Build
+
+This session executed the IG_Complete_Deployment_Plan.docx from start to finish, then extended into data migration, agent engine deployment, RAG pipeline connection, and architectural planning.
+
+### Added — Phase 1: Frontend UI (COMPLETE)
+- Built 7 Manager stub pages: Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership
+- Built Distributor Territory page with stats and territory grid
+- Wired 3 Settings pages (Manager, Practitioner, Distributor) to shared Settings component
+- Added 5 new manager service functions + 5 React Query hooks
+- Zero "Coming Soon" stubs remain across all 79 pages
+
+### Added — Phase 2: Agent Engine LLM Migration (COMPLETE)
+- Created `services/agent-engine/app/llm/` module (6 files): provider, models, agent_tiers, prompts, init_providers
+- Ported BedrockProvider + AnthropicDirectProvider from monolith
+- Replaced all 14 agent stubs with real LLM calls via ProviderFactory
+- Replaced 5 MCP tool stubs: web_search (Tavily), document_search (Milvus+PG), email (SES), calendar (coach-service), code_interpreter (sandbox)
+- Upgraded SemanticMemory with Milvus-backed store + in-memory fallback
+- Created `app/rag/` module: parent-child RAG retriever (Gemini embed → Milvus search → parent_ids → prompt injection)
+- Updated 4 coaching agents to use RAG-enhanced `_build_messages_with_rag()`
+
+### Added — Phase 3: AWS Deployment (COMPLETE)
+- Deployed `ig-dev-api-gateway`: HTTP API (https://8umg6xioz5.execute-api.us-east-1.amazonaws.com) + WebSocket API
+- Deployed `ig-dev-services`: 162 resources — 10 Lambda functions, 3 DynamoDB tables, 3 S3 buckets, EventBridge, Step Functions, 33 CloudWatch alarms
+- Built and uploaded real Lambda code for all 13 functions (manylinux2014_x86_64 platform)
+- Deployed `ig-dev-agent-engine` Lambda: Anthropic Claude Sonnet 4 + RAG + Mangum handler
+- Deployed frontend to S3 (ig-interactive-dashboard-dev) + CloudFront (dcoq0ttfmpdvn.cloudfront.net)
+- Configured all Lambda VPC + security groups + Aurora DB connection
+
+### Added — Database Migration (COMPLETE)
+- Loaded `parent_data.sql`: 329 PRISM RAG parent documents into Aurora
+- Loaded `inspire-genius-db.sql`: 155 users, 8,391 chat messages, 781 conversations, 580 files, 14 agents, 14 prompts, 52 orgs + 20 more tables
+- Created 33 missing tables + 14 enum types to match monolith schema
+- Created `user_profiles`, `roles`, `groups`, `user_groups` tables
+
+### Added — Milvus/RAG Connection (COMPLETE)
+- Connected to Zilliz Cloud: 660 vectors (297 prism_coach_knowledge + 363 prism_coach_professional_knowledge)
+- Verified end-to-end RAG: Gemini embedding → Milvus search → parent_id lookup → Aurora parent_ids
+
+### Added — Documentation
+- `Transformation Documents/PaceWisdom_Data_Export_Request.md` — data export request for PaceWisdom
+- `Transformation Documents/PW_Data_Export_Checklist.xlsx` — 53-item itemized checklist (3 sheets)
+- `Transformation Documents/IG_Platform_Completion_Plan.docx` — v1 completion plan (9 prompts)
+- `Transformation Documents/IG_Platform_Completion_Plan_v2.docx` — v2 revised for autonomous engine (12 prompts)
+- `Transformation Documents/IG_Unified_Build_Deploy_Plan.docx` — merged final plan (30 prompts, 10 done, 20 remaining)
+
+### Fixed — Auth & Connectivity
+- Auth SQL queries updated for Aurora schema (id vs user_id, hashed_password vs password, CAST syntax)
+- Cognito: real Pool ID + Client ID, USER_PASSWORD_AUTH flow, cleared client secret placeholder
+- CORS: added CloudFront domain to both API Gateway and Magic Auth API
+- Aurora master password reset to match SSM parameter
+- NAT gateway routing: associated route table with Lambda subnets for outbound internet
+- Bedrock model IDs: updated to US inference profile format
+- Magic Auth Lambda: updated DATABASE_URL, FRONTEND_URL, FRONTEND_ORIGINS
+- Created 3 user accounts in Aurora + Cognito + magic_auth schema
+
+### Fixed — CDK Infrastructure
+- API Gateway: ASCII-safe tag values, removed per-route throttle settings
+- Agent Engine: replaced non-ASCII in SG descriptions
+- Services: added CDK_DOCKER_BUNDLING flag to tryBundle stubs
+
+### Verified End-to-End
+- Login: password + magic link working for 3 users (willb77, wabrown, wb0677)
+- Agent chat: POST /v1/agents/chat returns Claude Sonnet 4 responses with PRISM knowledge
+- RLHF: GET /v1/feedback + GET /v1/rlhf/models return success
+- All protected endpoints return proper auth errors
+- Frontend loads at https://dcoq0ttfmpdvn.cloudfront.net
+
+### Remaining (20 prompts in Unified Plan)
+- Phase 5A: Multi-agent orchestrator, memory integration, collaboration, process templates
+- Phase 5B: Voice (Deepgram/OpenAI), WebSocket chat, RAG pymilvus fix
+- Phase 5C: Frontend .env, legacy endpoints, dual roles, analytics, admin dashboard
+- Phase 6: CDK fixes (ECS, RLHF, Security stacks)
+- Phase 7: Traffic cutover from monolith
+- Phase 8: Final regression + staging deployment
 
 ---
 
-## [2026-03-24] — Wire PRISM "Request Survey" Button to Real API
+## [2026-04-05] — Session Activity
 
-### Changed
-- `src/pages/user/Home.tsx` — "Request Survey" button on the Home dashboard now calls the PRISM initiate API via `usePrismInitiate` hook instead of navigating to `/prism-assessment`
-- Button displays "Requesting..." loading state while the API call is in flight
-- Button is disabled when an assessment is already in progress (`assessmentInProgress`) or when the mutation is pending
-- Fixed TypeScript operator precedence error in surname fallback logic
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/agents/base_agent.py`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/stt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/tts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/ws_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/db.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/auth_deps.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/manager.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/frontend_text.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/retriever.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/chat_history.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/synthesizer.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/documents.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_voice_endpoints.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/template_engine.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/signup.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/prism_onboarding.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/stt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/coaching_session.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/hiring_pipeline.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_rag_retriever.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/stt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/team_analysis.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/templates/performance_review.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/tts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/retriever.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/tts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_ws_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_legacy_endpoints.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/orchestration/rules.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a48f337c/services/agent-engine/tests/test_collaboration_wiring.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a5b886bc/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/e2e/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a5b886bc/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/domain-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a5b886bc/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-a5b886bc/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/e2e/test_e2e_agent_pipeline.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/e2e/test_e2e_roles_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/load/mixed_load.js`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/monitoring-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/worktrees/agent-adff4e1f/tests/UAT_REPORT.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/monitoring-stack.ts`
+
+## [2026-04-04] — Unified Build & Deploy Plan Created
+
+### Added
+- `Transformation Documents/IG_Unified_Build_Deploy_Plan.docx` — merged Deployment Plan + Platform Completion Plan v2
+  - 30 total prompts (10 DONE, 20 remaining)
+  - Single document covering: completed work, core engine architecture, voice/chat/RAG, infrastructure fixes, traffic cutover, production readiness
+  - 3-week timeline across 3 parallel tracks
+  - All prompts designed for single terminal /background execution
+  - Rollback procedures preserved from original deployment plan
+  - Phases: 5A (orchestration/memory/collaboration), 5B (voice/chat/RAG), 5C (frontend/integration), 6 (CDK fixes), 7 (cutover), 8 (production)
 
 ---
 
-## [2026-03-23] — Phase 7: UI Polish & Accessibility [WS-B 7.B1-7.B4]
+## [2026-04-04] — Comprehensive Integration Test Plan & Claude Code Prompts
 
-### Added — Visual Polish (7.B1)
-- `LoadingFallback` — Skeleton-based page loading with card grid and content placeholders
-- `SkeletonCard` — Reusable animated card skeleton
-- `EmptyState` — Centered empty state with icon, title, message, optional action
-- `ErrorState` — Error display with retry button
+### Added
+- `Transformation Documents/IG_Comprehensive_Integration_Test_Plan.docx` — complete integration test plan document
+  - 21 sections, 15 test suites, 250+ test cases covering ALL platform components
+  - Suite 1: Auth Service (25 tests — login, signup, OTP, tokens, magic auth, social, rate limiting)
+  - Suite 2: Frontend E2E (58 tests — all 60+ routes across 6 roles via Playwright)
+  - Suite 3: Agent Engine & Meridian (23 tests — 14 agents, 3 orchestrators, streaming)
+  - Suite 4: Agent Collaboration (7 tests — REQUEST/RESPONSE/DELEGATE/INFORM protocol)
+  - Suite 5: MCP Tools & Vector Store (14 tests — 5 tools, Milvus integration)
+  - Suite 6: Memory System (10 tests — working, Redis, Aurora, Milvus tiers)
+  - Suite 7: Voice Pipeline (7 tests — STT/TTS/WebSocket round-trip)
+  - Suite 8: RLHF Service (24 tests — 5 Lambda handlers, Step Functions, model registry)
+  - Suite 9: PRISM Assessment (10 tests — initiate → score → report → unlock)
+  - Suite 10: Document Management (10 tests — upload/download/delete/search/vector indexing)
+  - Suite 11: WebSocket Real-Time (8 tests — agent chat, Alex, voice, PRISM WebSockets)
+  - Suite 12: Analytics & Audit (16 tests — AnalyticsTracker, audit events, CloudWatch)
+  - Suite 13: RBAC (13 tests — cross-role access enforcement matrix)
+  - Suite 14: Infrastructure & CDK (15 tests — stack deployment, Lambda config, DynamoDB)
+  - Suite 15: End-to-End Journeys (8 full journeys — signup→coaching, RLHF pipeline, multi-agent)
+  - Appendix A: 12 Claude Code implementation prompts (TP-001 through TP-012)
+  - Appendix B: Quick reference table with run commands
+  - All tests verify REAL API calls, REAL LLM responses, REAL vector store — NO mocks/stubs
+  - Environment requirements, test data specs, risk register, acceptance criteria, sign-off template
 
-### Added — Accessibility (7.B2)
-- `SkipToContent` — Skip navigation link (sr-only, visible on focus)
-- `focus-visible` outline (2px solid #3B5BFF) added to global CSS
-- AppShell: `id="main-content"`, `role="main"`, `tabIndex={-1}` on main element
-- AppHeader: `role="banner"`
-- AppSidebar: `role="navigation"`, `aria-label`, mobile backdrop `aria-hidden`
-- RightPanel: `role="complementary"`, `aria-label`
-- DataCard: `role="region"`, `aria-label={title}`
+### Changed
+- `.claude/commands/background.md` — added `permission-mode: auto` frontmatter, removed permission checklist step
+- `.claude/commands/bedtime.md` — added `permission-mode: auto` frontmatter for unattended execution
+- `.claude/settings.json` — added `permissions.defaultMode: auto` and explicit allow rules for Bash, Read, Edit, Write, Glob, Grep
 
-### Changed — Responsive (7.B3)
-- Sidebar nav buttons: `min-h-[44px]` on mobile for touch targets (WCAG 2.5.5)
+---
 
-### Tests
-- EmptyState (3 tests), ErrorState (3 tests), SkipToContent (1 test)
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-04] — Corrections & Re-Entry Business Plan
+
+### Added
+- `Transformation Documents/IG_Corrections_Reentry_Business_Plan.docx` — comprehensive 30-page business plan for deploying InspiresGenius in correctional facilities
+  - Theme: "Opportunities for Correction & Direction"
+  - 13 sections: Executive Summary, Problem Analysis, Solution Design, Platform Capabilities, Security & Compliance, Job Blueprint Pipeline, Stakeholder Benefits, User Segments & Roles, Pricing Model (100K–500K users), Implementation Roadmap, Market Opportunity, Risk Mitigation, Appendices
+  - Tiered pricing: $8–$22 PUPM at scale; 5-year revenue projection of $149.5M
+  - Corrections TAM: $8.6B across 6.8M individuals (inmates, probationers, parolees, staff)
+  - 10 user segments mapped to IG's 6-role architecture
+  - Copy also saved to `Sales:Marketing/IG_Corrections_Reentry_Business_Plan.docx`
+
+## [2026-04-04] — Revised Platform Completion Plan v2: Autonomous Agent Engine
+
+### Added
+- `Transformation Documents/IG_Platform_Completion_Plan_v2.docx` — revised plan centered on Architecture Blueprint goals
+  - 14 components with What/Why/Benefit/Status for each
+  - 12 copy-paste Claude Code prompts across 3 parallel tracks
+  - Track A: Core Engine (orchestration, memory, collaboration, templates, decision rules)
+  - Track B: Voice + Chat + RAG (Deepgram, OpenAI, WebSocket, Milvus REST)
+  - Track C: Frontend + Integration (dual roles, analytics, admin dashboard)
+  - Revised ECS analysis: needed for production orchestration, not just voice
+  - 2-week timeline with parallel execution
+
+---
+
+## [2026-04-04] — Platform Completion Plan Created
+
+### Added
+- `Transformation Documents/IG_Platform_Completion_Plan.docx` — comprehensive gap analysis + 9 copy-paste Claude Code prompts to complete the platform
+  - Covers: Voice (Deepgram/OpenAI), WebSocket chat, frontend env, Milvus RAG fix, legacy endpoints, signup, documents, dual roles, UAT verification
+  - Includes ECS vs Lambda analysis: recommends Lambda-only for now, ECS for Phase 2 at 500+ users
+  - Estimated timeline: 5 days (3 days parallelized)
+
+---
+
+## [2026-04-04] — Agent Engine Deployed + Milvus Connected + RAG Pipeline Wired
+
+### Added
+- **Agent Engine Lambda** (`ig-dev-agent-engine`): FastAPI + Mangum, deployed with Bedrock Claude Sonnet 4, 1024MB RAM, 120s timeout
+- **RAG retrieval module** (`app/rag/retriever.py`): Gemini embedding → Milvus vector search → PostgreSQL parent_ids → LLM prompt injection
+- **API Gateway routes**: `POST /v1/agents/chat`, `GET /v1/agents/health`, `ANY /v1/agents/{proxy+}`
+- All 4 coaching agents (Meridian, Aura, Nova, Echo) now use RAG-enhanced `_build_messages_with_rag()`
+- Zilliz Cloud Milvus connected: 660 vectors (297 `prism_coach_knowledge` + 363 `prism_coach_professional_knowledge`)
+
+### Fixed
+- NAT gateway routing: Associated `rtb-02efc6e378f083758` with Lambda subnets for outbound internet access
+- Bedrock model IDs: Updated to US inference profile format (`us.anthropic.claude-sonnet-4-*`)
+- Added `AmazonBedrockFullAccess` policy to Lambda role
+
+### Blocked
+- **Bedrock Claude access**: AWS account requires Anthropic use case form submission at https://console.aws.amazon.com/bedrock → Model access → Claude → Submit use case
+- Once approved (usually instant for dev accounts), the agent will respond with PRISM-trained knowledge
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-04] — Database Migration Complete: All Monolith Data Loaded into Aurora
+
+### Loaded from parent_data.sql
+- `parent_ids`: 329 PRISM knowledge parent documents (full-text chunks for RAG retrieval)
+
+### Loaded from inspire-genius-db.sql
+- `users`: 155 total (150 from monolith + 5 created earlier)
+- `user_profiles`: 149 profile records
+- `conversations`: 781 chat sessions
+- `chat_messages`: 8,391 AI chat messages
+- `alex_chat_messages`: 646 Meridian chat messages
+- `files`: 580 document records
+- `frontend_texts`: 25 UI text entries
+- `agents`: 14 agent configurations
+- `prompts`: 14 prompt templates
+- `organization`: 52 orgs, `business`: 69, `reports`: 222, `issues`: 44
+- Plus 20+ additional tables (categories, tones, preferences, licenses, invitations, etc.)
+- Created 33 missing tables + 14 enum types to match monolith schema
+
+### Remaining for Full RAG Pipeline
+- **Milvus URI**: Need PaceWisdom to share their deployed MILVUS_URI, MILVUS_USER, MILVUS_PASSWORD from .env
+- Once Milvus is connected, the parent-child RAG works: Milvus child vectors → parent_id → PostgreSQL parent_ids → full text injected into LLM prompt
+- No re-embedding or retraining needed
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/retriever.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/retriever.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/provider.py`
+
+## [2026-04-04] — Session Summary: Full Platform Deployment (Phases 1-3 + UAT)
+
+### Added — Phase 1: UI Gaps Closed
+- Built 7 Manager stub pages to production quality: Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership
+- Built Distributor Territory page with territory grid, stats, coverage/utilization bars
+- Wired 3 Settings pages (Manager, Practitioner, Distributor) to shared Settings component
+- Added 5 new manager service functions + 5 React Query hooks
+- Zero "Coming Soon" stubs remain across all roles
+
+### Added — Phase 2: Agent Engine LLM Migration
+- Created `services/agent-engine/app/llm/` module (6 files): provider.py, models.py, agent_tiers.py, prompts.py, init_providers.py, __init__.py
+- Ported BedrockProvider + AnthropicDirectProvider from monolith with ModelTier enum
+- Replaced all 14 agent stubs with real LLM calls via ProviderFactory
+- Upgraded Meridian intent classification from keywords to LLM-based (keyword fallback)
+- Replaced 5 MCP tool stubs: web_search (Tavily), document_search (Milvus+PG), email (SES), calendar (coach-service), code_interpreter (sandboxed subprocess)
+- Upgraded SemanticMemory with Milvus-backed store + in-memory fallback
+- Added dependencies: anthropic ^0.40, tavily-python ^0.5, pymilvus ^2.4
+- 447/476 agent-engine tests passing
+
+### Added — Phase 3: AWS Deployment
+- Deployed `ig-dev-api-gateway`: HTTP API + WebSocket API with CORS, access logging, throttling
+- Deployed `ig-dev-services`: 162 AWS resources — 10 Lambda functions, 3 DynamoDB tables, 3 S3 buckets, EventBridge rules, Step Functions pipeline, 33 CloudWatch alarms
+- Built and uploaded real Lambda code for all 12 functions (manylinux2014_x86_64 platform)
+- Configured all 8 Lambda functions with VPC (vpc-04e1e7c2dc0ef9021) + SG (sg-024576d1f0a6198e8)
+- Connected all Lambdas to Aurora (inspires-genius-dev-aurora-cluster) via direct connection
+- Created missing DB tables: user_profiles, roles, groups, user_groups
+- Deployed frontend to S3 (ig-interactive-dashboard-dev) + CloudFront (dcoq0ttfmpdvn.cloudfront.net)
+
+### Fixed — Auth & Connectivity
+- Auth service SQL queries updated to match actual Aurora schema (id vs user_id, hashed_password vs password)
+- Fixed SQLAlchemy `::uuid` cast syntax conflict — changed to `CAST(:user_id AS uuid)`
+- Plugged real Cognito User Pool ID + Client ID into all Lambda functions
+- Cleared COGNITO_CLIENT_SECRET placeholder (public client)
+- Enabled USER_PASSWORD_AUTH flow on Cognito app client
+- Fixed CORS: added CloudFront domain to API Gateway + Magic Auth API AllowOrigins
+- Reset Aurora master password to match SSM parameter
+- Created UAT test users in Aurora + Cognito + magic_auth schema
+
+### Fixed — CDK Infrastructure
+- API Gateway tag values: replaced non-ASCII `{proxy+}` with ASCII-safe format
+- Agent Engine SG descriptions: replaced non-ASCII `—` and `→` with ASCII equivalents
+- Removed per-route throttle settings (routes don't exist until integrations are created)
+- Added `CDK_DOCKER_BUNDLING=1` flag to tryBundle stubs for Docker-based deployments
+
+### Added — Documentation
+- Created `Transformation Documents/PaceWisdom_Data_Export_Request.md` — comprehensive email to PaceWisdom requesting Milvus vector exports, PostgreSQL dump, S3 documents, env config, and embedding model verification
+
+### Verified End-to-End
+- Frontend loads at https://dcoq0ttfmpdvn.cloudfront.net (HTTP 200)
+- Auth login works: POST /v1/login returns JWT tokens (AccessToken, RefreshToken, IdToken)
+- Magic link works: POST /api/auth/request-magic-link returns "Magic link sent"
+- Protected endpoints return "Missing authentication token" (auth middleware working)
+- RLHF endpoints fully operational: GET /v1/feedback + GET /v1/rlhf/models return success
+- Test users: willb77@3pp.com, wabrown@3pp.com, wb0677@gmail.com (all super-admin, password: TestPass123!)
+
+### Remaining (Not Blocking UAT)
+- Agent Engine ECS Fargate: CDK CODE_DEPLOY dependency ordering fix needed
+- Security stack (WAF + KMS): blocked by agent-engine
+- Milvus vector DB: needed for PRISM RAG knowledge base (agents respond without trained knowledge until stood up)
+- SQL data migration: 150 users, 8K chat messages, 580 documents in inspire-genius-db.sql not yet loaded
+- Dual role support: single role per user currently, not multi-role
+
+---
+
+## [2026-04-04] — UAT Ready: Full Login Flow Working End-to-End
+
+### Fixed
+- **Cognito integration**: Plugged real User Pool ID (`us-east-1_cjXskR3pq`) and Client ID (`4jgln0ra3dv9m7hbcfc6i5b22r`) into all 8 Lambda functions
+- Cleared placeholder `COGNITO_CLIENT_SECRET` (public client — no secret needed)
+- Enabled `USER_PASSWORD_AUTH` flow on Cognito app client
+- Added CloudFront URL to Cognito callback/logout URLs
+- **Auth SQL queries**: Fixed `::uuid` cast syntax (SQLAlchemy conflict) — changed to `CAST(:user_id AS uuid)`
+- **DB tables**: Created `user_profiles`, `roles`, `groups`, `user_groups` tables
+- **Aurora password**: Reset master password to match SSM parameter
+
+### Verified
+- **Login flow working end-to-end**: POST /v1/login returns JWT AccessToken + RefreshToken + IdToken
+- UAT test user: `uat@inspiregenius.com` / `TestPass123!` (role: super-admin)
+- Frontend live at: `https://dcoq0ttfmpdvn.cloudfront.net`
+- API Gateway: `https://8umg6xioz5.execute-api.us-east-1.amazonaws.com`
+
+---
+
+## [2026-04-03] — Platform Deployed: Frontend + API + DB Connected
+
+### Deployed
+- **Frontend**: Built with `VITE_API_BASE_URL=https://8umg6xioz5.execute-api.us-east-1.amazonaws.com`, deployed to S3 `ig-interactive-dashboard-dev`, CloudFront `dcoq0ttfmpdvn.cloudfront.net` (invalidation complete)
+- **Lambda VPC**: All 8 service Lambdas placed in VPC `vpc-04e1e7c2dc0ef9021` with SG `sg-024576d1f0a6198e8`
+- **Aurora DB**: Connected via `ig_admin` user to `inspires-genius-dev-aurora-cluster`, password reset to match SSM parameter
+- **Missing tables**: Created `user_profiles`, `roles`, `groups`, `user_groups` in Aurora
+
+### Fixed
+- Auth service SQL queries updated to match actual Aurora schema: `id` (not `user_id`), `hashed_password` (not `password`), removed missing columns (`auth_provider`, `is_email_verified`, `is_oauth_user`)
+- Auth Lambda rebuilt with all dependencies: `requests`, `python-jose`, `sqlalchemy`, `asyncpg`
+
+### Verified End-to-End
+- Frontend loads: `https://dcoq0ttfmpdvn.cloudfront.net` -> HTTP 200
+- Auth login: POST /v1/login -> "Invalid email or password" (DB query works)
+- Auth validation: POST /v1/signup -> HTTP 422 (validation middleware works)
+- Auth middleware: GET /v1/me -> "access-token required" (JWT middleware works)
+- Protected endpoints: coaches, dashboard, orgs, support, users -> "Missing authentication token" (all connected)
+- RLHF: GET /v1/feedback + GET /v1/rlhf/models -> `{"success": true}` (DynamoDB fully operational)
+
+### Remaining for Full UAT
+- Configure Cognito User Pool ID + Client ID (currently placeholders `DEV_CLIENT_ID`)
+- Agent Engine ECS Fargate (CDK fix needed for CODE_DEPLOY dependency)
+- Security stack (WAF, KMS — blocked by agent-engine)
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/app/user_queries.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/PaceWisdom_Data_Export_Request.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-03] — Lambda Code Deployed: All 12 Services Live
+
+### Fixed
+- **404 errors resolved**: All Lambda functions now contain real application code (previously had stub placeholders)
+- Built Lambda packages with `--platform manylinux2014_x86_64` for Linux compatibility (pydantic_core C extension)
+- Deployed 12 Lambda functions via `aws lambda update-function-code` (bypasses Docker requirement)
+
+### Verified
+- **Auth service**: Returns proper JSON errors, validates access-token header
+- **Coach/Dashboard/Org/Support/User services**: Return "Missing authentication token" (auth middleware working correctly)
+- **RLHF Feedback + Models**: Return `{"success": true, "data": {...}}` — fully operational with DynamoDB
+- **Audit/Document services**: Need Aurora RDS Proxy connection configuration
+
+### Remaining
+- Configure Aurora RDS Proxy connection strings in Lambda environment variables for auth/coach/dashboard/document/org/support/user services
+- Agent Engine (ECS Fargate) deployment: requires CDK fix for CODE_DEPLOY dependency order
+- Security stack: blocked by agent-engine
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Created comprehensive integration test plan document (IG_Comprehensive_Integration_Test_Plan.docx) with 250+ test cases across 15 test suites covering all components
+  - Files: `Transformation Documents/IG_Comprehensive_Integration_Test_Plan.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/background.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/bedtime.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/settings.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/settings.json`
+
+- Added 12 Claude Code implementation prompts (Appendix A + B) to IG_Comprehensive_Integration_Test_Plan.docx
+  - Files: `Transformation Documents/IG_Comprehensive_Integration_Test_Plan.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/app/user_queries.py`
+
+## [2026-04-02] — AWS Deployment: Phase 3 Partial
+
+### Deployed
+- **ig-dev-api-gateway** — HTTP API (`https://8umg6xioz5.execute-api.us-east-1.amazonaws.com`) + WebSocket API (`wss://fhsei32zkf.execute-api.us-east-1.amazonaws.com/dev`)
+- **ig-dev-services** — 162 resources: 10 Lambda functions (auth, audit, coach, dashboard, document, org, support, user, RLHF collector/processor/evaluation/stepfn/registry), DynamoDB tables (auth-rate-limits, rlhf-feedback, rlhf-model-registry), S3 buckets (documents, uploads, rlhf-training-data), EventBridge rules, Step Functions training pipeline, SNS alarm topic, 33 CloudWatch alarms
+
+### Fixed
+- API Gateway tag values: replaced non-ASCII `{proxy+}` with ASCII-safe format
+- Agent Engine SG descriptions: replaced non-ASCII `—` and `→` with ASCII `- ` and `to`
+- API Gateway routeSettings: removed per-route throttling (routes don't exist until services create integrations)
+
+### Next Steps (require Docker Desktop running)
+- **Lambda code**: Lambdas deployed with stub code. To deploy real code: start Docker Desktop, then `CDK_DOCKER_BUNDLING=1 npx cdk deploy ig-dev-services -c env=dev`
+- **ig-dev-agent-engine**: Fix ECS CODE_DEPLOY dependency ordering in agent-engine-stack.ts, then deploy
+- **ig-dev-rlhf**: Fix circular dependency between Lambda aliases + log retention + routes
+- **ig-dev-security**: Deploy after agent-engine succeeds (depends on agent-engine export)
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-02] — Deployment Plan Execution: Phase 1 + Phase 2 Complete
+
+### Added
+- **Phase 1 — All UI Gaps Closed:**
+  - Built 7 Manager stub pages to production quality: Candidates, Interviews, JobDna, Training, CareerManagement, TeamBuilding, Leadership
+    - Files: `src/pages/manager/{Candidates,Interviews,JobDna,Training,CareerManagement,TeamBuilding,Leadership}.tsx`
+  - Built Distributor Territory page with territory grid, stats, coverage/utilization bars
+    - File: `src/pages/distributor/Territory.tsx`
+  - Wired 3 Settings pages (Manager, Practitioner, Distributor) to shared Settings component
+    - Files: `src/pages/{manager,practitioner,distributor}/Settings.tsx`
+  - Added 5 new manager service functions and 5 new hooks
+    - Files: `src/services/manager/manager.service.ts`, `src/hooks/manager/useManagerTeam.ts`
+  - Zero "Coming Soon" stubs remain across all roles
+  - `npm run build` passes with zero errors
+
+- **Phase 2 — Agent Engine LLM Migration:**
+  - Created `app/llm/` module: provider.py, models.py, agent_tiers.py, prompts.py, init_providers.py
+    - BedrockProvider (converse + converse_stream) + AnthropicDirectProvider (messages.create + stream)
+    - ModelTier enum with per-agent assignment (14 agents mapped to Sonnet/Haiku/Nova)
+    - ProviderFactory singleton with register/get/get_for_agent
+    - System prompts for all 14 agents ported from monolith
+  - Replaced all 14 agent stubs with real LLM calls via ProviderFactory
+    - Each agent: process() calls provider.chat(), stream() calls provider.stream()
+    - Graceful error fallback on LLM failure
+  - Upgraded Meridian intent classification from keywords to LLM-based (with keyword fallback)
+  - Upgraded Meridian.route() from word-splitting simulation to real token streaming
+  - Replaced 5 MCP tool stubs with real implementations:
+    - web_search → Tavily Search API
+    - document_search → Milvus vector + PostgreSQL full-text fallback
+    - email → AWS SES with template rendering
+    - calendar → Internal coach-service API with stub fallback
+    - code_interpreter → Sandboxed subprocess with AST validation
+  - Upgraded SemanticMemory with Milvus-backed store + in-memory fallback
+  - Added dependencies: anthropic ^0.40, tavily-python ^0.5, pymilvus ^2.4
+  - 447/476 agent-engine tests passing (93.4%)
+    - Files: `services/agent-engine/app/` (all agent, tool, memory, llm files)
+
+### Changed
+- Updated orchestrators to expose `select_agent()` as public method
+- Updated base_agent.py with `stream()` method and `_build_messages()` helper
+- Updated app/config.py with LLM provider configuration fields
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+## [2026-04-02] — Complete Deployment Plan: Build, Test, Deploy, Cutover, Rollback
+
+### Added
+- Created `Transformation Documents/IG_Complete_Deployment_Plan.docx` — single-terminal, multi-agent automated plan
+  - 7 phases, 11 copy-paste /background prompts with model selection
+  - Phase 1: Remaining UI gaps (Manager stubs, Settings, Super Admin wiring, Document migration)
+  - Phase 2: Agent Engine LLM migration (Bedrock provider, 14 agents, MCP tools, Milvus)
+  - Phase 3: AWS deployment (CDK deploy all stacks, ECR push, S3 frontend)
+  - Phase 4: Git branching + CI/CD pipeline activation
+  - Phase 5: 6-wave phased cutover (Auth→Doc/Support/User→Coach/Org/Dashboard→Role APIs→Agent Engine→RLHF)
+  - Phase 6: Full rollback plan (4 methods: route revert, Lambda alias, CodeDeploy, full platform)
+  - Phase 7: Final regression + documentation sweep
+  - Includes: rollback decision matrix, monitoring dashboards, prompt execution checklist
+  - Files: `Transformation Documents/IG_Complete_Deployment_Plan.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/manager/manager.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/manager/useManagerTeam.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Candidates.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Interviews.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/JobDna.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Training.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/CareerManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/TeamBuilding.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Leadership.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Territory.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Settings.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/Settings.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Settings.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/agent_tiers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/provider.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/init_providers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/web_search.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/document_search.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/email_tool.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/calendar.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/code_interpreter.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/memory/semantic.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+## [2026-03-30] — Documents: Migrate to Document Service v2 + Semantic Search
+
+### Changed
+- **`src/pages/user/Documents.tsx`**: Migrated from legacy `file_service` hooks to Document Service v2
+  - Replaced legacy hooks with `useDocuments`, `useDownloadDocumentV2`, `useDeleteDocumentV2`, `useBulkDeleteDocumentsV2`, `useSearchDocumentsV2`
+  - Sections grouped client-side from flat `documents[]` by `created_at` date
+  - Presigned S3 URLs fetched on demand for view and download
+  - Pagination from `Math.ceil(total / limit)` using new API shape
+  - Search bar unhidden; semantic search toggle (Sparkles) added
+- **`src/__tests__/i18n.test.ts`**: Updated for 20-language reality (10 core + 10 community)
+- **`src/hooks/documents/__tests__/useDocuments.test.tsx`**: Fixed mutation `waitFor` timing
+
+### Added
+- **`src/hooks/documents/useDocuments.ts`**: New Document Service v2 hooks
+  - `useDocuments`, `useDownloadDocumentV2`, `useDeleteDocumentV2`, `useBulkDeleteDocumentsV2`, `useSearchDocumentsV2`
+
+## [2026-03-31] — Dashboard Service: Manager, Company Admin, Practitioner, Distributor API Endpoints
+
+### Added
+- **16 role-scoped API endpoints** in dashboard-service matching frontend service contracts:
+  - **Manager** (4): `GET /api/manager/team`, `/api/manager/hiring/stats`, `/api/manager/hiring/interviews`, `/api/manager/hiring/candidates`
+  - **Company Admin** (4): `GET /api/company/users`, `/api/company/analytics`, `/api/company/departments`, `/api/company/costs`
+  - **Practitioner** (4): `GET /api/practitioner/clients`, `/api/practitioner/sessions`, `/api/practitioner/credits`, `/api/practitioner/followups`
+  - **Distributor** (4): `GET /api/distributor/practitioners`, `/api/distributor/credits`, `/api/distributor/transactions`, `/api/distributor/territory`
+- **10 database models**: TeamMember, HiringPosition, Candidate, Interview, Department, OrgUser, CreditLedger, CreditTransaction, CoachingSession, PractitionerClient, FollowUp, DistributorPractitioner, Territory
+- **Role-based auth enforcement** via `@require_at_least()` decorator from ig-auth package
+- **InsufficientRoleError → 403** exception handler in main.py
+- **49 new tests** across test_manager.py (17 tests) and test_roles.py (32 tests): team lists, hiring stats, candidates pagination/filtering, credit ledgers, coaching sessions, territory data, auth enforcement per role
+- **Total: 85 tests passing** (36 existing + 49 new) in 2.24s
+
+### Files
+- `services/dashboard-service/app/models.py` — 10 new SQLAlchemy ORM models
+- `services/dashboard-service/app/schemas.py` — 25 new Pydantic response schemas
+- `services/dashboard-service/app/service.py` — 16 new async service functions
+- `services/dashboard-service/app/routes.py` — 16 new route handlers with auth decorators
+- `services/dashboard-service/app/main.py` — InsufficientRoleError handler
+- `services/dashboard-service/tests/test_manager.py` — Manager endpoint tests
+- `services/dashboard-service/tests/test_roles.py` — Company Admin, Practitioner, Distributor tests
+- `services/dashboard-service/tests/conftest.py` — Updated with make_token helper, raw_client fixture
+- `services/dashboard-service/tests/test_auth.py` — Fixed for new conftest (raw_client for no-token tests)
+
+---
+
+## [2026-04-02] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/gen_deploy_plan.py`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Dashboard service: 16 role-scoped API endpoints (Manager, Company Admin, Practitioner, Distributor) with 10 DB models, auth enforcement, 85 tests passing
+  - Files: `services/dashboard-service/app/models.py,services/dashboard-service/app/schemas.py,services/dashboard-service/app/service.py,services/dashboard-service/app/routes.py,services/dashboard-service/app/main.py,services/dashboard-service/tests/test_manager.py,services/dashboard-service/tests/test_roles.py,services/dashboard-service/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Team.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Hiring.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/Analytics.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Users.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Organization.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Costs.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Training.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Leadership.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Analytics.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/Clients.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/Credits.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/Analytics.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/practitioner/PrismClients.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Practitioners.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Credits.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/distributor/Analytics.tsx`
+
+## [2026-03-31] — Phase-5 Services: Mangum Lambda Handlers + JWT Auth
+
+### Added
+- **Mangum Lambda handler** to 5 Phase-5 microservices (coach-service, dashboard-service, org-service, user-service, support-service)
+  - Each service now exports `handler(event, context)` function for AWS Lambda API Gateway HTTP proxy integration
+  - Uses Mangum ASGI adapter with `lifespan="off"` to prevent duplicate startup/shutdown in Lambda environment
+  - Follows auth-service pattern for consistency
+- **JWT authentication middleware** to all 5 Phase-5 services via `ig-auth` package
+  - AuthMiddleware validates access tokens (RS256 Cognito or HS256 Magic Auth) on protected routes
+  - Skips auth for `/health`, `/docs`, `/openapi.json`, `/redoc` paths
+  - Injects `request.state.user` (AuthUser) containing decoded JWT claims
+  - Token header configurable via middleware (default: `access-token`)
+- **JWT configuration** added to each service's `app/config.py`
+  - Cognito JWKS URL, client ID, issuer computed from environment variables
+  - Magic Auth HS256 signing key (`secret_key`) for dual-mode JWT verification
+  - AWS region defaulting to `us-east-1`, database URL pointing to RDS Proxy
+
+### Changed
+- **coach-service**: Updated `app/main.py` with Mangum + AuthMiddleware, `app/config.py` with JWT settings, `pyproject.toml` with ig-auth + boto3 + python-jose + requests
+- **dashboard-service**: Updated `app/main.py` with Mangum + AuthMiddleware, `app/config.py` with JWT settings, `pyproject.toml` with ig-auth + boto3 + python-jose + requests
+- **org-service**: Updated `app/main.py` with Mangum + AuthMiddleware, `app/config.py` with JWT settings, `pyproject.toml` with ig-auth + boto3 + python-jose + requests
+- **user-service**: Updated `app/main.py` with Mangum + AuthMiddleware, `app/config.py` with JWT settings, `pyproject.toml` with ig-auth + boto3 + python-jose + requests
+- **support-service**: Updated `app/main.py` with Mangum + AuthMiddleware (preserved lifespan context), `app/config.py` with JWT settings, `pyproject.toml` with ig-auth + boto3 + python-jose + requests
+
+### Files
+- `services/coach-service/app/main.py`, `app/config.py`, `pyproject.toml`
+- `services/dashboard-service/app/main.py`, `app/config.py`, `pyproject.toml`
+- `services/org-service/app/main.py`, `app/config.py`, `pyproject.toml`
+- `services/user-service/app/main.py`, `app/config.py`, `pyproject.toml`
+- `services/support-service/app/main.py`, `app/config.py`, `pyproject.toml`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Phase-5 services: Add Mangum handlers + JWT auth to coach, dashboard, org, user, support services
+  - Files: `services/coach-service/app/main.py,services/coach-service/app/config.py,services/coach-service/pyproject.toml,services/dashboard-service/app/main.py,services/dashboard-service/app/config.py,services/dashboard-service/pyproject.toml,services/org-service/app/main.py,services/org-service/app/config.py,services/org-service/pyproject.toml,services/user-service/app/main.py,services/user-service/app/config.py,services/user-service/pyproject.toml,services/support-service/app/main.py,services/support-service/app/config.py,services/support-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/tests/test_jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/tests/test_jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/test_jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/useDocuments.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/support/support.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/support/useSupportTickets.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Documents.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/support/__tests__/useSupportTickets.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/__tests__/useDocuments.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/i18n.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/i18n.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/i18n.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/__tests__/useDocuments.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/__tests__/useDocuments.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/__tests__/useDocuments.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/documents/__tests__/useDocuments.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/tests/test_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/support/__tests__/useSupportTickets.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/support/__tests__/useSupportTickets.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/support/__tests__/useSupportTickets.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/schemas.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/service.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/service.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_manager.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_roles.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_auth.py`
+
+## [2026-03-31] — Build Run Order v2: Gap Closure & Platform Completion
+
+### Added
+- Created `Transformation Documents/IG_Build_Run_Order_v2.docx` — step-by-step prompt execution sequence to close all remaining gaps
+  - 4 phases (A: Service Wiring, B: Role APIs, C: Agent LLM Migration, D: Decommission)
+  - 18 copy-paste Claude Code prompts with terminal/model assignments
+  - 8 concurrent execution opportunities across 8 terminals
+  - Estimated 26-34 days to platform completion
+  - Includes: shared JWT auth library extraction, Mangum wrappers, role-specific API endpoints, agent LLM provider migration, MCP tool wiring, Milvus vector store, and monolith decommission (Steps 24-26)
+  - Files: `Transformation Documents/IG_Build_Run_Order_v2.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/ig_auth/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/ig_auth/jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/ig_auth/middleware.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/ig_auth/decorators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/ig_auth/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/test_jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/test_decorators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/test_middleware.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/README.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/app/auth.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/ig-auth/tests/test_jwt.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/pyproject.toml`
+
+## [2026-03-31] — Frontend Gap Analysis v2.0 (Corrected)
+
+### Changed
+- Replaced `Transformation Documents/IG_Frontend_Gap_Analysis.docx` with corrected v2.0
+  - v1.0 understated completion: claimed 35% functional, actual is 58% with built-out UI (68% including UI-ready pages)
+  - v1.0 missed monolith LLM integration: inspire-genius-backend has real Bedrock/Anthropic/OpenAI providers
+  - v1.0 missed voice pipeline: OpenAI TTS/STT, Deepgram Nova-2, VoiceDeskAI, 17 languages
+  - v1.0 missed i18n: react-i18next with 15+ language files
+  - v1.0 missed role-specific frontend service files (manager.service.ts, etc.)
+  - Corrected: Manager 38% built (not 0%), Company Admin 88% built (not 0%), Practitioner 83% (not 0%), Distributor 67% (not 0%)
+  - Added Section 2: Corrections from v1.0 with detailed error table
+  - Added Section 6: Agent Engine critical gap analysis (monolith vs microservice)
+  - Added Section 7: Alignment with Build Run Order (21/26 steps complete = 81%)
+  - Revised implementation plan: 3 phases / 10 weeks (down from 5 phases / 16 weeks)
+  - Files: `Transformation Documents/IG_Frontend_Gap_Analysis.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_gap_analysis_v2.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_build_run_order_v2.py`
+
+## [2026-03-31] — Full Documentation Sweep & Changelog Cleanup
+
+### Changed
+- Cleaned `change_log.md` — removed 868 auto-generated "File modified" noise entries from hooks, restored header, removed duplicate Auth Service entry (03-29 superseded by 03-30), removed corrupted Session Activity sections
+- Verified `CLAUDE.md` — microservices (Auth, Agent Engine, RLHF), CDK infrastructure, Architecture Documents, Global Session Behavior sections all current
+- Verified `.claude/rules/architecture.md` — microservices, CDK, Agent Engine, RLHF, Session Hooks sections all current
+- Verified `.claude/rules/workflow.md` — Auth Service dev, slash commands, session hooks sections all current
+- Verified `database_schema.md` — DynamoDB tables (auth-rate-limits, rlhf-feedback, rlhf-model-registry) all current
+- Updated `IG_project_log.html` — added session prompt entry, synced all copy locations
+
+---
+
+- File modified
+  - Files: `/tmp/update_step24.py`
+
+- File modified
+  - Files: `/tmp/update_step24.py`
+
+- File modified
+  - Files: `/tmp/fix_step24.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/background.md`
+
+- File modified
+  - Files: `/tmp/fix_step24_v2.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/background.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_gap_analysis.py`
+
+## [2026-03-31] — RLHF Service Build + Full Documentation Update
+
+### Added (RLHF Service — `services/rlhf-service/`)
+- **`services/rlhf-service/`** — new FastAPI + Mangum microservice for Reinforcement Learning from Human Feedback (25+ files)
+  - **5 Lambda handlers**: Collector (API), Processor (EventBridge), Training (Step Functions), Evaluation (EventBridge), Registry (API)
+  - **Feedback Collector** (`POST /v1/feedback`, `GET /v1/feedback`): accepts thumbs/rating/text/comparison feedback, spam detection, DynamoDB storage, EventBridge events
+  - **Feedback Processor**: normalizes feedback to JSONL reward signals [-1.0, 1.0], stores in S3 by agent/date/session
+  - **Training Pipeline** (7-step Step Functions state machine): aggregate feedback, validate quality gate (min 1000 samples), 80/20 dataset split, SageMaker training job, status polling, model evaluation, registry + notification
+  - **Model Registry** (`/v1/rlhf/models/*`): list/get/approve/promote/rollback/A/B test endpoints; active model pointer with candidate traffic splitting
+  - **Model Evaluation**: auto-approval when accuracy >= 85% and avg reward >= 70%; otherwise marks pending review
+  - **Step Functions dispatcher** (`handler_stepfn.py`): routes `{"step": "<name>"}` events to the correct training pipeline function
+  - **Spam detection** with configurable thresholds (10/min rate limit, 3-char minimum text length)
+  - **DynamoDB tables**: `rlhf-feedback` (pk=SESSION#, sk=FEEDBACK#, GSI: AGENT#) and `rlhf-model-registry` (pk=MODEL#, sk=METADATA, GSI: MODELS)
+  - **EventBridge events**: `FeedbackSubmitted`, `ModelAutoApproved`, `ModelPendingReview`, `ModelApproved`, `ModelPromoted`, `ModelRolledBack`, `AbTestStarted`
+  - **6 test files**: test_collector, test_processor, test_training, test_registry, test_evaluation, test_spam (moto mocks for DynamoDB, S3, SageMaker, EventBridge, Step Functions)
+  - Files: `services/rlhf-service/app/{main,config,dynamo,eventbridge,spam,handler_processor,handler_training,handler_evaluation,handler_stepfn}.py`, `app/handlers/{collector,processor,training,evaluation,registry}.py`, `app/models/{feedback,responses}.py`, `tests/`, `pyproject.toml`
+
+### Changed (Documentation Update)
+- Updated `CLAUDE.md` — added RLHF Service section with endpoints, architecture, and dev commands
+- Updated `database_schema.md` — added RLHF DynamoDB table schemas (rlhf-feedback, rlhf-model-registry)
+- Updated `IG_project_log.html` — added RLHF changelog entry, session prompt entry, incremented prompt count
+- Synced all log files to 5 copy locations
+
+---
+
+## [2026-03-30] — Alex-to-Meridian Persona Rename + Agent Engine Phase 8 + Voice Deprecation
+
+### Changed (Meridian Rename)
+- Renamed all user-visible "Alex" references to "Meridian" in system prompts, agent classes, WebSocket handlers, test assertions, and documentation across backend + agent-engine
+- Added backward-compatibility aliases (`alex_guide_prompt = meridian_guide_prompt`, etc.) to avoid breaking imports
+- Updated `ALEX_WEBSOCKET_DOCS.md` title and all persona references to "Meridian"
+- WebSocket endpoint URLs (`/v1/agents/ws/alex-chat`) kept unchanged for client compatibility
+  - Files: `ai/ai_agent_services/prompts.py`, `ai/meridian/agents/alex/alex_prompts.py`, `ai/meridian/agents/alex/alex_agent.py`, `ai/meridian/agents/alex/alex_tools.py`, `services/agent-engine/app/agents/coaching/alex_agent.py`, `services/agent-engine/app/agents/meridian.py`, `services/agent-engine/app/websocket/handlers.py`, `ALEX_WEBSOCKET_DOCS.md`, test files
+
+### Added (Agent Engine Phase 8: MCP Tools, Collaboration, Analytics, Permissions)
+- **MCP Tools** (`services/agent-engine/app/tools/`): 5 tools (web_search, code_interpreter, calendar, email, document_search) with parameter schemas; permission-aware MCPServer with quota enforcement; tool registry
+- **Collaboration** (`services/agent-engine/app/collaboration/`): Agent-to-agent protocol (REQUEST/RESPONSE/DELEGATE/INFORM), SharedContext for multi-agent data sharing, MultiAgentConversation orchestrator
+- **Analytics** (`services/agent-engine/app/analytics/`): AnalyticsTracker for response quality/satisfaction/session outcomes/errors, cost estimation per agent model tier (Sonnet/Haiku/Opus), MetricsAggregator for computed metrics
+- **Permissions** (`services/agent-engine/app/permissions/`): 6-role hierarchy, ToolPermission access tiers (PUBLIC/MANAGER/ADMIN/PRACTITIONER/SYSTEM), QuotaTracker with per-role daily limits
+- 141 new tests (350 total, up from 209), all passing
+  - Files: `services/agent-engine/app/{tools,collaboration,analytics,permissions}/`, `services/agent-engine/tests/`
+
+### Changed (Voice Provider Abstraction + Tour Narration Deprecation)
+- Added deprecation notice to `/{text_id}/audio-stream` endpoint (moving to VoiceDeskAI)
+- Added `X-Deprecated` header to tour narration responses
+- 13 new regression tests for audio endpoints
+  - Files: `ai/frontend_text_services/frontend_text_service.py`, `tests/test_frontend_text_audio.py`
+
+---
+
+## [2026-03-30] — Auth Service Lambda Extraction (Phase 2 Strangler Fig)
+
+### Added
+- **`services/auth-service/`** — new FastAPI + Mangum microservice extracted from monolith (31 files)
+  - 12 endpoints: login, signup, verify-otp, resend-otp, forgot-password, reset-password, refresh-token, logout, magic-auth, validate-token, me, health
+  - **Dual JWT middleware** — RS256 (Cognito JWKs) + HS256 (Magic Auth symmetric key) with automatic algorithm detection
+  - **DynamoDB rate limiting** — 5 login/signup attempts per IP per 15-minute window; `auth-rate-limits` table with TTL auto-cleanup
+  - **EventBridge events** — publishes `auth.user.login`, `auth.user.signup`, `auth.user.logout`, `auth.token.refresh` to default event bus
+  - **Test suite** — `test_login`, `test_signup`, `test_rate_limit`, `test_jwt` covering auth flows, rate limit enforcement, and JWT validation
+  - Files: `services/auth-service/app/main.py`, `routes/`, `middleware/`, `services/`, `models/`, `tests/`, `requirements.txt`, `Dockerfile`
+- **CDK infrastructure for auth service** in `infrastructure/cdk/lib/services-stack.ts`
+  - Lambda function with Mangum handler, reserved concurrency (100), provisioned concurrency (10 warm, prod only)
+  - DynamoDB `auth-rate-limits` table with TTL and auto-scaling (prod: 70% target utilization)
+  - IAM policies: DynamoDB access, EventBridge PutEvents, Cognito user pool operations, Secrets Manager read
+  - 12 API Gateway HTTP API routes mapped to Lambda integration
+  - CloudWatch alarms: duration P95, error rate, throttle count
+
+---
+
+## [2026-03-30] — Voice Deployment, Security Hardening & Production Readiness
+
+### Added
+- **`infrastructure/cdk/lib/security-stack.ts`** — new CDK stack: WAFv2 WebACL (6 rules), WAF→HTTP API association, 3 Secrets Manager secrets + rotation-reminder Lambda, KMS ECC_NIST_P256 signing key, CloudWatch Budgets (Bedrock + platform), Cost Explorer anomaly detection, per-agent dashboard (8 agents/6 tools), agent latency alarms
+- **`infrastructure/cdk/PRODUCTION_CHECKLIST.md`** — 105-item production readiness checklist (Security/Performance/Reliability/Observability/Documentation); scorecard 56% — NOT READY; P0/P1/P2 classification; minimum viable prod gate
+
+### Changed
+- **`agent-engine-stack.ts`** — memory 4GB; voice env vars (VOICE_ENABLED, POLLY_*, TRANSCRIBE_*, latency budgets); WS routes now HTTP_PROXY→ALB (replaces MOCKs); MCP tool IAM; tool sandbox sidecar; voice CloudWatch alarms + dashboard; exported task role ARN
+- **`api-gateway-stack.ts`** — MOCK WS integrations removed; per-route auth endpoint throttling
+- **`rlhf-stack.ts`** — provisioned concurrency (prod: 2, auto-scaling 70% util + business-hours schedule); SQS DLQs (KMS, 14d) for EventBridge targets + depth alarms; SFN Full-jitter retry policies on transient steps
+- **`bin/cdk.ts`** — SecurityStack added as Phase 7; KMS key granted to agent task role via Role.fromRoleArn
+- **`.gitlab-ci.yml`** — voice integration tests + latency benchmarks; security checks (bandit, detect-secrets, semgrep, safety, CDK IAM wildcard scan)
+
+### Fixed (P0 blockers)
+- SEC-002: KMS signing key created in SecurityStack + granted to agent task role
+- PERF-001: Provisioned concurrency + auto-scaling on rlhf-api Lambda alias
+- REL-003: SFN retry policies with Full jitter backoff on transient steps
+- REL-004: SQS DLQs for EventBridge Lambda targets + CloudWatch depth alarms
+
+---
+
+## [2026-03-30] — CDK Auto-Scaling, Alarms & Throttling Configuration
+
+### Added
+- **Lambda reserved & provisioned concurrency** in `infrastructure/cdk/lib/services-stack.ts`
+  - Reserved concurrency: Auth=100, Audit=50, Phase 5 services=50 each, RLHF=25 each
+  - Provisioned concurrency (prod only): Auth 10 warm, Audit 5 warm via Lambda aliases
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **DynamoDB auto-scaling** (prod only) in `infrastructure/cdk/lib/services-stack.ts`
+  - Auth rate-limit table, RLHF feedback + registry tables — all 70% target utilization
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **33 CloudWatch Alarms** in `infrastructure/cdk/lib/services-stack.ts`
+  - Lambda duration/errors/throttles for all 10 functions + 3 Aurora alarms (CPU, connections, ACU)
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **ECS scheduled scaling** in `infrastructure/cdk/lib/agent-engine-stack.ts`
+  - Business hours 8am-8pm EST weekdays: prod min 5, staging min 3
+  - Off-hours/weekends: min 2
+  - TaskCount alarm for low running tasks
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
+- **API Gateway throttling** in `infrastructure/cdk/lib/api-gateway-stack.ts`
+  - Environment-dependent defaults: prod 1000/500, staging 500/250, dev 100/50
+  - Per-route throttling on 4 auth endpoints (login, signup, password-reset, magic-auth)
+  - Files: `infrastructure/cdk/lib/api-gateway-stack.ts`
+
+### Fixed
+- **RLHF stack Docker synth** in `infrastructure/cdk/lib/rlhf-stack.ts`
+  - Added tryBundle local stub for Docker-less CDK synth
+  - Fixed reserved `AWS_REGION` env var renamed to `AWS_REGION_OVERRIDE`
+  - Files: `infrastructure/cdk/lib/rlhf-stack.ts`
+
+---
+
+## [2026-03-30] — Global Session Behavior System & Documentation Update
+
+### Added
+- **Global Session Behavior** — deterministic hooks system for automatic session logging
+  - `.claude/hooks/update_project_log.py` — standalone Python 3 hook script for auto-logging to `IG_project_log.html` and `change_log.md`
+  - `.claude/settings.json` — hook configuration for `UserPromptSubmit`, `PostToolUse` (Edit/Write), and `Stop` events
+  - `.claude/rules/session-logging.md` — session logging rules with mandatory prompt logging, change logging, sync, model task assignments
+- **Slash Commands** (`.claude/commands/`)
+  - `/log-session` — summarize and log current session's changes to both log files
+  - `/sync-logs` — sync IG_project_log.html and change_log.md to all copy locations
+  - `/project-status` — show recent project activity summary
+  - `/bedtime` — end-of-day session wrap-up with full doc sync
+  - `/doc-update` — full documentation update across all files and copy locations
+- **Model Task Assignments** — Opus/Sonnet/Haiku routing table for task-appropriate model selection
+- **Architecture Documents section** added to `CLAUDE.md` — lists 7 architecture docs with summaries (Blueprint, Deployment Assessment, Master Build Plan, High Concurrency Stack, Agent Engine Analysis, Agent Orchestration)
+- **Permissions** updated for `.claude/` writes in settings
+
+### Changed
+- `CLAUDE.md` — added Global Session Behavior section (hooks, slash commands, log locations, model task assignments) and Architecture Documents section
+- `.claude/rules/workflow.md` — added slash commands, hook system, and session behavior documentation
+- `.claude/rules/architecture.md` — added hooks/commands architecture section
+- `IG_project_log.html` — updated CLAUDE.md panel, Architecture panel (fixed "Two roles" to "Six roles"), Workflow panel, and Changelog panel to reflect all changes
+
+### Files Modified
+- `CLAUDE.md`
+- `.claude/settings.json`
+- `.claude/hooks/update_project_log.py`
+- `.claude/rules/session-logging.md`
+- `.claude/rules/workflow.md`
+- `.claude/rules/architecture.md`
+- `.claude/commands/log-session.md`
+- `.claude/commands/sync-logs.md`
+- `.claude/commands/project-status.md`
+- `.claude/commands/bedtime.md`
+- `.claude/commands/doc-update.md`
+- `IG_project_log.html`
+- `change_log.md`
+
+---
+
+## [2026-03-28] — Multilingual Translation Files (Japanese, Korean, Chinese Simplified, Arabic, Hindi)
+
+### Added
+- **Japanese (ja)** — 5 translation files with standard polite business Japanese (丁寧語)
+  - `public/locales/ja/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+- **Korean (ko)** — 5 translation files with standard formal Korean (존댓말)
+  - `public/locales/ko/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+- **Chinese Simplified (zh-CN)** — 5 translation files with Mainland Chinese business terminology
+  - `public/locales/zh-CN/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+- **Arabic (ar)** — 5 translation files with Modern Standard Arabic (MSA) business terminology (RTL)
+  - `public/locales/ar/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+- **Hindi (hi)** — 5 translation files with standard Hindi business terminology in Devanagari script
+  - `public/locales/hi/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+
+### Files Created (25 total)
+- `public/locales/ja/` (5 files)
+- `public/locales/ko/` (5 files)
+- `public/locales/zh-CN/` (5 files)
+- `public/locales/ar/` (5 files)
+- `public/locales/hi/` (5 files)
+
+### Notes
+- Arabic files contain full RTL-appropriate MSA translations; UI dir="rtl" must be set at the app level when `ar` locale is active
+- All 5 namespaces per language: common (38 keys), auth (76 keys), coaching (75 keys), dashboard (38 keys), admin (176+ keys)
+
+## [2026-03-28] — Multilingual Translation Files (Spanish, French, German, Portuguese)
+
+### Added
+- **Spanish (es)** — 5 translation files with professional Mexican Spanish UI terminology
+  - `public/locales/es/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+  - 400+ translated strings covering all UI domains
+- **French (fr)** — 5 translation files with professional Québec/European French terminology
+  - `public/locales/fr/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+  - 400+ translated strings maintaining consistent formal business tone
+- **German (de)** — 5 translation files with standard business German terminology
+  - `public/locales/de/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+  - 400+ translated strings following formal DIN conventions
+- **Portuguese (pt)** — 5 translation files with Brazilian Portuguese business terminology
+  - `public/locales/pt/common.json`, `auth.json`, `coaching.json`, `dashboard.json`, `admin.json`
+  - 400+ translated strings using standard Brazilian business conventions
+
+### Files Created (20 total)
+- `public/locales/es/` (5 files)
+- `public/locales/fr/` (5 files)
+- `public/locales/de/` (5 files)
+- `public/locales/pt/` (5 files)
+
+### Translation Coverage by Module
+- **common.json**: 38 keys — save, cancel, delete, loading, error, success, logout, notifications, etc.
+- **auth.json**: 76 keys — login, signup, forgotPassword, otp, resetPassword, magicLink sections
+- **coaching.json**: 75 keys — chat, sessions, agents, feedback, practitioner, PRISM assessment, quickActions
+- **dashboard.json**: 38 keys — overview, sessions, coaches, behavioral reports, coach configuration
+- **admin.json**: 176+ keys — users, audit, manager, companyAdmin, distributor, superAdmin sections
+
+---
+
+## [2026-03-30] — Session Activity
+
+- VoiceDeskAI + Meridian rename — Part B completion: wired Help.tsx voice button, added widget to SidebarScaffold, updated useTourSpeech VoiceDeskAI path, fixed PreviewHome Alex strings, wrote VoiceDeskWidget tests (13 passing)
+  - Files: `src/components/shared/VoiceDeskWidget.tsx,src/components/shared/layout/SidebarScaffold.tsx,src/pages/user/Help.tsx,src/hooks/useTourSpeech.ts,src/pages/PreviewHome.tsx,src/components/shared/__tests__/VoiceDeskWidget.test.tsx`
+
+- Voice deployment: AgentEngine 4GB memory, VOICE_ENABLED env, WS routes (connect/disconnect/voice) to ALB, voice CloudWatch alarms+dashboard, CI/CD voice integration tests + latency benchmarks
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts,infrastructure/cdk/lib/api-gateway-stack.ts,.gitlab-ci.yml`
+
+- i18n expansion: add 10 new languages (it, nl, ru, pl, tr, th, vi, id, sv, nb) with translated common.json + English copies for other namespaces, update LanguageSwitcher, add TranslationCompletenessIndicator component, create docs/TRANSLATING.md guide, add translation metadata tracking
+  - Files: `public/locales/it,public/locales/nl,public/locales/ru,public/locales/pl,public/locales/tr,public/locales/th,public/locales/vi,public/locales/id,public/locales/sv,public/locales/nb,src/components/LanguageSwitcher.tsx,src/components/shared/TranslationCompletenessIndicator.tsx,src/lib/translationCompleteness.ts,docs/TRANSLATING.md`
+
+- Security hardening: new SecurityStack (WAFv2, Secrets Manager, CloudWatch Budgets, cost anomaly, per-agent dashboard), MCP tool IAM + tool sandbox sidecar in AgentEngineStack, security:agent-tools + security:cdk-iam-check CI jobs
+  - Files: `infrastructure/cdk/lib/security-stack.ts,infrastructure/cdk/lib/agent-engine-stack.ts,infrastructure/cdk/bin/cdk.ts,.gitlab-ci.yml`
+
+- feat(tests): Advanced agent capabilities test suite — 71 tests covering MCP tools, multi-agent collaboration, analytics cost accuracy, and security sandbox
+  - Files: `services/agent-engine/tests/test_advanced_agent_capabilities.py`
+
+- feat(tests): k6 load tests (auth, chat, document, mixed) + AWS FIS chaos experiments (Fargate kill, Aurora throttle, Lambda latency, network partition) + weekly CI/CD schedule
+  - Files: `tests/load/auth_load.js,tests/load/chat_load.js,tests/load/document_load.js,tests/load/mixed_load.js,tests/chaos/fargate_task_kill.json,tests/chaos/aurora_throttle.json,tests/chaos/lambda_latency_injection.json,tests/chaos/network_partition.json,.gitlab-ci.yml`
+## [2026-03-28] — Comprehensive Internationalization (i18n) for Frontend Pages
+
+### Added
+- **Translation files** expanded with 400+ new string keys:
+  - `common.json`: Core UI strings (retry, clearSearch, occurrences, noRecentActivity, loadingActivity, viewReport, uploadDocument, addUser, etc.)
+  - `dashboard.json`: User dashboard & coach management strings (40+ keys for Home, Dashboard, Coaches pages)
+  - `admin.json`: Manager, Company Admin, Distributor, Super Admin strings (80+ keys organized by role)
+  - `coaching.json`: Practitioner & coaching-specific strings (30+ keys for feedback, PRISM assessment, quick actions)
+
+### Changed
+- **21 page files** updated with useTranslation hooks and t() calls:
+  - User pages: Home, Dashboard (Coaches), Coaches, Documents, Help, Analytics, FeedbackHistory, PrismAssessment
+  - Manager pages: Dashboard, Team, Analytics
+  - Company Admin pages: Dashboard, Users
+  - Practitioner pages: Dashboard
+  - Distributor pages: Dashboard
+  - Super Admin pages: Dashboard
+  - Auth pages: Login, SignUp, OTP, ResetPassword, ForgotPassword (completed previous)
+
+- All hardcoded English strings replaced with translation keys following naming pattern: `namespace:section_element_context`
+- Example: "Total Sessions" → t("dashboard:totalSessions"), "Active" → t("dashboard:active")
+
+### Files Modified
+- `inspire-genius-frontend/public/locales/en/*.json` (4 files: common, dashboard, admin, coaching)
+- `inspire-genius-frontend/src/pages/user/*.tsx` (8 files)
+- `inspire-genius-frontend/src/pages/manager/*.tsx` (3 files)
+- `inspire-genius-frontend/src/pages/company-admin/*.tsx` (2 files)
+- `inspire-genius-frontend/src/pages/practitioner/Dashboard.tsx`
+- `inspire-genius-frontend/src/pages/distributor/Dashboard.tsx`
+- `inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`
+- `inspire-genius-frontend/src/pages/auth/*.tsx` (5 files)
+
+### Verified
+- npm run build: ✓ Successful (4562 modules, no errors)
+- All translations loaded correctly via react-i18next
+- Translation key references all valid
+
+---
+
+## [2026-03-28] — Architecture Documents & Platform Comparison
+
+### Added — RLHF Microservice Plugin Architecture
+- Generated `Architecture/RLHF_Microservice_Plugin_Architecture_InspiresGenius.docx` (76KB)
+  - 14-section design specification for RLHF as a microservice plugin
+  - 5 sub-services: Collector, Processor, Training Pipeline Orchestrator, Model Registry, Evaluation
+  - AWS infrastructure mapping: EventBridge, SQS, SageMaker, DynamoDB, Lambda
+  - Training pipeline: reward model (Bradley-Terry), PPO optimization, LoRA/QLoRA multi-tenant fine-tuning
+  - Plugin interface contract with lifecycle hooks, extension points, multi-tenancy
+  - Frontend integration: feedback widget, Super Admin dashboard, Practitioner prompt builder
+  - Event-driven architecture with 3 event flows and JSON event schemas
+  - Cost estimation across 3 deployment tiers, build phasing (5 phases / 15 weeks), risk matrix
+
+### Added — VoiceDeskAI vs InspiresGenius STT/TTS/Docs/Caching Comparison
+- Generated `Architecture/VoiceDeskAI_vs_InspiresGenius_STT_TTS_Docs_Caching_Comparison.docx` (67KB)
+  - 10-section focused comparison: STT, TTS, document ingestion, caching
+  - Per-component pros/cons/risks tables for both platforms
+  - Cost comparison across Small/Medium/Large tiers
+  - Key finding: VoiceDeskAI wins below 15K queries/mo, InspiresGenius wins at scale
+
+### Added — VoiceDeskAI vs InspiresGenius Full Platform Comparison
+- Generated `Architecture/VoiceDeskAI_vs_InspiresGenius_Full_Platform_Comparison.docx` (73KB)
+  - 27-section comprehensive platform architecture comparison
+  - Covers: frontend framework, UI components, routing, state management, auth, API layer, real-time/WebSocket, STT, TTS, document ingestion, caching, AI/chat agents, multi-tenancy, user management, analytics, testing, CI/CD, security, integrations, observability, performance
+  - Comprehensive cost comparison across all components and 3 scale tiers
+  - Consolidated P0-P3 recommendations for both platforms
+  - 14-risk cross-platform risk matrix with mitigations
+  - Key finding: VoiceDeskAI wins on simplicity; InspiresGenius wins on enterprise-readiness and scale
+
+### Added — Autonomous Agent Engine Architecture Blueprint
+- Generated `Architecture/InspireGenius_Architecture_Blueprint.docx` (60KB)
+  - 14 agents (Meridian + 13 specialists), 3 domain orchestrators
+  - Meridian unified persona architecture (One Coach, Many Minds)
+  - Process templates with cost impact analysis (~50% LLM cost reduction)
+  - Decision rules & guardrails (5 default rules)
+  - Memory system (6 memory types with semantic retrieval)
+  - Database schema (10 new tables for Aurora Serverless v2 + pgvector)
+  - 9-week/4-phase implementation plan
+  - Strategic value analysis (competitive moat, enterprise readiness, scalability economics)
+  - All VoiceDeskAI references removed — written entirely from IG perspective
+
+### Added — Platform Deployment State Assessment
+- Generated `Architecture/IG_Deployment_State_Assessment.docx` (62KB)
+  - Component-by-component audit: 17/24 deployed (71%), 7 critical gaps
+  - Fully deployed: S3, CloudFront, WAF, VPC security, AWS Config, Secrets Manager, CloudWatch, SNS, auto-rollback, DR/failover, ECS blue-green
+  - NOT deployed: RDS Proxy (#1 gap, $30/mo), API Gateway, Lambda, Milvus, Aurora Serverless, ElastiCache Serverless, EventBridge (broad)
+  - Architecture model difference: target is serverless Lambda, current is containerized monolith on ECS Fargate
+  - 4-phase/10-week implementation roadmap with capability unlock map
+  - Cost projection: current ~$500–1,000/mo → target $1,305–2,455/mo for 5K–10K users
+
+### Added — Master Build Plan Phase Completion Assessment
+- Generated `Architecture/IG_Master_Build_Plan_Phase_Assessment.docx` (64KB)
+  - 10-phase/50-week Master Build Plan audit against actual deployed state
+  - Of 65 deliverables: 11 complete (17%), 8 partial (12%), 46 not started (71%)
+  - Pre-plan infrastructure: 100% complete (15/15 deliverables)
+  - Phase 0 (Stabilize): ~25% — RDS Proxy and React.lazy() missing
+  - Phase 1 (PWA): ~55% — PWA fully implemented, cost dashboard UI-only
+  - Phase 2 (IaC): 0% — identified as critical blocker for Phases 3–9
+  - Microservices: 0/16 extracted; EventBridge: 1/9+ rules deployed
+  - 7 frontend UIs built ahead of backend (reduces later frontend work by 30–40%)
+  - Critical path: Phase 2 → Phase 4 → Phase 6 → Phase 8 → Phase 9
+
+### Updated — Project Documentation
+- `CLAUDE.md` — Added Architecture Documents section listing all 7 docs with summaries
+- `IG_project_log.html` — Added session prompts for architecture document generation tasks
+- `change_log.md` — Cleaned up auto-generated hook entries, added structured change entries
+
+### Updated — Session Logging & Hooks
+- `.claude/rules/session-logging.md` — Session logging rules
+- `.claude/commands/log-session.md`, `sync-logs.md`, `project-status.md` — Slash commands
+- `CLAUDE.md` — Added Global Session Behavior section with hooks, slash commands, log locations, model task assignments
+
+## [2026-03-23] — Launch Preparation [WS-D 7.D1-7.D4]
+
+### Added — Production Validation (7.D1)
+- `infrastructure/scripts/production-validate.sh` — Production readiness validation suite with 5 commands:
+  - `validate` — runs all checks, reports color-coded PASS/FAIL summary
+  - `env-check` — verifies 15 required env vars (VITE_API_BASE_URL, DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, COGNITO_USER_POOL_ID, etc.) + 4 optional
+  - `db-check` — PostgreSQL connectivity (pg_isready), replication lag, backup retention (≥ 35 days), simple query test
+  - `ssl-check` — SSL certificate validity for API and frontend domains (openssl s_client), expiry > 30 days, TLS version, ACM auto-renewal
+  - `iac-diff` — compares deployed CloudFormation stacks against local templates, detects drift
+
+### Added — Production Monitoring & Alerting (7.D2)
+- `infrastructure/cloudformation/production-monitoring-stack.yml` — Production-specific monitoring extending monitoring-stack.yml:
+  - CloudWatch Dashboard "InspireGenius-Production" with 9 widgets: API health, error rate, response time (P50/P95/P99), active users, business metrics (signups, logins, coach interactions, PRISM assessments), SLA uptime %, error rate %, ECS CPU/memory, recent errors
+  - Business metric filters from structured JSON logs (signup, login, coach interaction, PRISM assessment)
+  - SNS escalation: standard alerts (email) + critical alerts (PagerDuty integration)
+  - Alarm escalation: 5xx spike (>10/5min) → email, service down (2 consecutive health check failures) → CRITICAL, DB failure → CRITICAL, error rate >5% sustained 10min → rollback trigger
+  - SLA tracking: 99.5% uptime target (max 3.6h downtime/month), composite alarm (health + error rate + latency P95 < 5s)
+
+### Added — Rollback Procedures (7.D3)
+- `docs/rollback-procedures.md` — Per-component rollback documentation:
+  - Frontend: S3 rollback (sync previous dist/, invalidate CloudFront) or git revert + redeploy
+  - Backend: blue-green rollback (blue-green-deploy.sh), ECS task definition revert, Docker image retag
+  - Database: Alembic downgrade (migrate.sh --rollback), point-in-time restore for data issues
+  - Infrastructure: CloudFormation rollback, update-stack with previous template, drift remediation
+  - Rollback test procedure: deploy → verify → rollback → verify → document
+  - Decision matrix with target rollback times (1-60 min depending on component)
+- `infrastructure/cloudformation/auto-rollback-stack.yml` — Automatic rollback infrastructure:
+  - CloudWatch alarm: error rate >5% sustained 10 min (math expression: errors/total * 100)
+  - Lambda function (Python 3.12): gets current ECS task def, reverts to previous revision, sends SNS notification
+  - IAM role: least-privilege (ecs:UpdateService, ecs:DescribeServices, ecs:DescribeTaskDefinition, sns:Publish)
+  - EventBridge rule: triggers Lambda when alarm enters ALARM state
+
+### Added — Operations Runbook (7.D4)
+- `docs/operations-runbook.md` — Comprehensive operations documentation:
+  - Deployment procedures: step-by-step for frontend (CI → S3 → CloudFront) and backend (CI → Docker → ECS blue-green)
+  - 5 troubleshooting decision trees: API 5xx errors, high latency, login failures, frontend not loading, database issues
+  - DR reference (links to dr-runbook.md)
+  - Scaling: manual scale commands, auto-scaling config reference, cost implications table
+  - Escalation policy: L1 (on-call, 0-15 min) → L2 (team lead, 15-30 min) → L3 (eng manager, 30-60 min) → L4 (CTO, >60 min)
+  - On-call rotation: weekly schedule, handoff procedure, PagerDuty integration
+  - Contact list: placeholder table for roles/names/contacts
 
 ---
 
