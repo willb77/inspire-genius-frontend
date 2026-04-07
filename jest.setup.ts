@@ -31,20 +31,32 @@ function _resolve(bundle: Record<string, unknown>, key: string): string {
 }
 
 jest.mock("react-i18next", () => ({
-  useTranslation: (ns?: string) => ({
-    t: (key: string, opts?: Record<string, unknown>) => {
-      const bundle = _loadNs(ns || "common");
-      let val = _resolve(bundle, key);
-      // Handle {{var}} interpolation
-      if (opts && typeof opts === "object") {
-        for (const [k, v] of Object.entries(opts)) {
-          val = val.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v));
+  useTranslation: (ns?: string | string[]) => {
+    // Default namespace is the first element if array, else the string, else "common"
+    const defaultNs = Array.isArray(ns) ? ns[0] : (ns || "common");
+    return {
+      t: (key: string, opts?: Record<string, unknown>) => {
+        // Handle "namespace:key" format (e.g., "dashboard:manageCoaches")
+        let resolveNs = defaultNs;
+        let resolveKey = key;
+        if (key.includes(":")) {
+          const [prefix, ...rest] = key.split(":");
+          resolveNs = prefix;
+          resolveKey = rest.join(":");
         }
-      }
-      return val;
-    },
-    i18n: { changeLanguage: jest.fn(), language: "en" },
-  }),
+        const bundle = _loadNs(resolveNs);
+        let val = _resolve(bundle, resolveKey);
+        // Handle {{var}} interpolation
+        if (opts && typeof opts === "object") {
+          for (const [k, v] of Object.entries(opts)) {
+            val = val.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v));
+          }
+        }
+        return val;
+      },
+      i18n: { changeLanguage: jest.fn(), language: "en" },
+    };
+  },
   Trans: ({ children }: { children: React.ReactNode }) => children,
   initReactI18next: { type: "3rdParty", init: jest.fn() },
 }));
