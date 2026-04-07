@@ -14,6 +14,16 @@ export type AgentDefinition = {
   domain: string;
   icon?: string;
   color?: string;
+  /** Extended details shown in the agent info modal. */
+  fullDescription?: string;
+  capabilities?: string[];
+  modelTier?: string;
+  /** If true, this agent was added dynamically (not a built-in). */
+  isCustom?: boolean;
+  /** Agent maturity level from the trainer system. */
+  maturityLevel?: number;
+  /** Agent training status from the trainer system. */
+  trainerStatus?: string;
 };
 
 /**
@@ -27,10 +37,10 @@ export interface EcosystemAdapter {
   readonly name: string;
 
   /** All agents available in this ecosystem. */
-  readonly agents: AgentDefinition[];
+  agents: AgentDefinition[];
 
   /** Domain name → agent IDs grouping for the palette. */
-  readonly domainGroups: Record<string, string[]>;
+  domainGroups: Record<string, string[]>;
 
   /** Serialize a DagTemplate to the ecosystem's API format. */
   toApiFormat(template: DagTemplate): unknown;

@@ -14,11 +14,12 @@ import type {
 
 // ─── Cycle Detection ────────────────────────────────────────────
 
-enum Color {
-  WHITE,
-  GRAY,
-  BLACK,
-}
+const Color = {
+  WHITE: 0,
+  GRAY: 1,
+  BLACK: 2,
+} as const;
+type Color = (typeof Color)[keyof typeof Color];
 
 /**
  * Detect all cycles in a DAG using DFS with color marking.

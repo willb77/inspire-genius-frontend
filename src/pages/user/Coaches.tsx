@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import UserLayout from "@/layouts/UserLayout";
 import CoachCard from "@/components/onboarding/CoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
@@ -9,6 +10,7 @@ import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Coaches() {
+  const { t } = useTranslation(["common", "dashboard"]);
   const [query, setQuery] = useState("");
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
@@ -30,12 +32,12 @@ export default function Coaches() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col text-left gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Manage Coaches</h1>
-            <p className="text-xs text-muted-foreground max-w-[75%]">Configure each coach's voice tone, gender, and accent. These settings apply wherever you chat with them.</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("dashboard:manageCoaches")}</h1>
+            <p className="text-xs text-muted-foreground max-w-[75%]">{t("dashboard:coachesConfigDescription")}</p>
           </div>
           <div className="w-full max-w-xs">
             <IconInput
-              placeholder="Search.."
+              placeholder={t("dashboard:search")}
               leftIcon={<Search className="size-4" />}
               value={query}
               onChange={(e) => setQuery(e.target.value)}

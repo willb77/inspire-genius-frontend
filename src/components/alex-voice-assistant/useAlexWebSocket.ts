@@ -65,7 +65,7 @@ export const useAlexWebSocket = (
         const response: AlexResponse = JSON.parse(event.data);
         handleJsonMessage(response);
       } catch (err) {
-        console.error("Alex WebSocket parse error", err);
+        console.error("Meridian WebSocket parse error", err);
         setError("Failed to parse server response");
       }
     },

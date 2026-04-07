@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next';
 import UserLayout from '@/layouts/UserLayout'
 import PrismInitiateForm from '@/components/prism/PrismInitiateForm'
 import PrismAssessmentCard from '@/components/prism/PrismAssessmentCard'
@@ -17,6 +18,7 @@ const ACTIVE_STATUSES: Set<string> = new Set([
 ])
 
 export default function PrismAssessment() {
+  const { t } = useTranslation(["common", "coaching"]);
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
@@ -34,18 +36,17 @@ export default function PrismAssessment() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            PRISM Assessment
+            {t("coaching:prism.assessment")}
           </h1>
           <p className="text-muted-foreground">
-            Complete your PRISM Brain Mapping to unlock personalized coaching
-            insights
+            {t("coaching:prism.completeDescription")}
           </p>
         </div>
 
         {/* Active Assessment */}
         {activeAssessment && (
           <div className="space-y-2">
-            <h2 className="text-lg font-semibold">Active Assessment</h2>
+            <h2 className="text-lg font-semibold">{t("coaching:prism.activeAssessment")}</h2>
             <PrismAssessmentCard
               assessment={activeAssessment}
               onViewReport={setViewingReportId}
@@ -60,12 +61,12 @@ export default function PrismAssessment() {
         {viewingReportId && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Report</h2>
+              <h2 className="text-lg font-semibold">{t("coaching:prism.report")}</h2>
               <button
                 onClick={() => setViewingReportId(null)}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                Close
+                {t("common:close")}
               </button>
             </div>
             <PrismReportViewer assessmentId={viewingReportId} />
@@ -81,7 +82,7 @@ export default function PrismAssessment() {
         ) : (
           pastAssessments.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold">Assessment History</h2>
+              <h2 className="text-lg font-semibold">{t("coaching:prism.assessmentHistory")}</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {pastAssessments.map((assessment) => (
                   <PrismAssessmentCard

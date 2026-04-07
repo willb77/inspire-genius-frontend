@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next";
 import UserLayout from "@/layouts/UserLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { useFeedbackList, useFeedbackStats } from "@/hooks/feedback/useFeedback"
@@ -41,20 +42,21 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-const RATING_OPTIONS = [
-  { label: "All Ratings", value: "" },
-  { label: "5 Stars", value: "5" },
-  { label: "4 Stars", value: "4" },
-  { label: "3 Stars", value: "3" },
-  { label: "2 Stars", value: "2" },
-  { label: "1 Star", value: "1" },
-]
-
 const PAGE_SIZE = 10
 
 export default function FeedbackHistory() {
+  const { t } = useTranslation(["common", "coaching"]);
   const [ratingFilter, setRatingFilter] = useState("")
   const [page, setPage] = useState(1)
+
+  const RATING_OPTIONS = [
+    { label: t("coaching:feedback.allRatings"), value: "" },
+    { label: t("coaching:feedback.fiveStars"), value: "5" },
+    { label: t("coaching:feedback.fourStars"), value: "4" },
+    { label: t("coaching:feedback.threeStars"), value: "3" },
+    { label: t("coaching:feedback.twoStars"), value: "2" },
+    { label: t("coaching:feedback.oneStar"), value: "1" },
+  ]
 
   const listParams = {
     rating: ratingFilter ? Number(ratingFilter) : undefined,
@@ -82,8 +84,8 @@ export default function FeedbackHistory() {
 
   return (
     <UserLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Feedback History</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Review all feedback you've submitted on AI coach responses.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("coaching:feedback.history")}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("coaching:feedback.reviewDescription")}</p>
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -96,10 +98,10 @@ export default function FeedbackHistory() {
           ))
         ) : (
           [
-            { label: "Total Feedback", value: stats?.total_count ?? 0 },
-            { label: "Avg Rating", value: stats?.avg_rating ? `${stats.avg_rating.toFixed(1)} / 5` : "—" },
-            { label: "5-Star", value: stats?.rating_distribution?.["5"] ?? 0 },
-            { label: "1-Star", value: stats?.rating_distribution?.["1"] ?? 0 },
+            { label: t("coaching:feedback.totalFeedback"), value: stats?.total_count ?? 0 },
+            { label: t("coaching:feedback.avgRating"), value: stats?.avg_rating ? `${stats.avg_rating.toFixed(1)} / 5` : "—" },
+            { label: t("coaching:feedback.fiveStarCount"), value: stats?.rating_distribution?.["5"] ?? 0 },
+            { label: t("coaching:feedback.oneStarCount"), value: stats?.rating_distribution?.["1"] ?? 0 },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
               <div className="text-xs text-[#6b7280]">{s.label}</div>
@@ -109,7 +111,7 @@ export default function FeedbackHistory() {
         )}
       </div>
 
-      <DataCard title="Feedback">
+      <DataCard title={t("coaching:feedback.feedback")}>
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
@@ -123,7 +125,7 @@ export default function FeedbackHistory() {
           </select>
           {pagination && (
             <span className="text-xs text-[#9ca3af]">
-              {pagination.total} result{pagination.total !== 1 ? "s" : ""}
+              {pagination.total} {t("coaching:feedback.result")}{pagination.total !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -132,14 +134,14 @@ export default function FeedbackHistory() {
         {listLoading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-5 h-5 text-[#3B5BFF] animate-spin" />
-            <span className="ml-2 text-sm text-[#6b7280]">Loading feedback...</span>
+            <span className="ml-2 text-sm text-[#6b7280]">{t("coaching:feedback.loadingFeedback")}</span>
           </div>
         )}
 
         {/* Error */}
         {listError && !listLoading && (
           <div className="text-center py-8 text-sm text-[#EF4444]">
-            Failed to load feedback. Please try again later.
+            {t("coaching:feedback.failedLoadFeedback")}
           </div>
         )}
 

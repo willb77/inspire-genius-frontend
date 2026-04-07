@@ -241,7 +241,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       expect(screen.getByTestId("sheet")).toBeInTheDocument();
-      expect(screen.getByText("Chat with Alex")).toBeInTheDocument();
+      expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
     });
 
     it("should not render when closed", () => {
@@ -315,7 +315,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       const input = screen.getByTestId("input");
-      expect(input).toHaveAttribute("placeholder", "Connecting to Alex...");
+      expect(input).toHaveAttribute("placeholder", "Connecting to Meridian...");
     });
 
     it("should show offline state when not connected or connecting", () => {
@@ -334,7 +334,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       const input = screen.getByTestId("input");
-      expect(input).toHaveAttribute("placeholder", "Alex is offline");
+      expect(input).toHaveAttribute("placeholder", "Meridian is offline");
     });
 
     it("should show Ask Anything placeholder when connected", () => {
@@ -873,7 +873,7 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Alex device id not available",
+          "Meridian device id not available",
         );
       });
     });
@@ -1037,7 +1037,7 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Alex device id not available",
+          "Meridian device id not available",
         );
       });
     });

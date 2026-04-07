@@ -14,7 +14,7 @@ import { canAddEdge } from "../lib/dag-utils";
 const nodeSchema = z.object({
   agentId: z.string().min(1),
   description: z.string().min(1, "Task description is required"),
-  timeout: z.number().int().min(1).max(600).default(30),
+  timeout: z.number().int().min(1).max(600),
 });
 
 type NodeForm = z.infer<typeof nodeSchema>;

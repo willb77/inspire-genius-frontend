@@ -1,7 +1,9 @@
 import DistributorLayout from "@/layouts/DistributorLayout"
 import DataCard from "@/components/dashboard/DataCard"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useDistributorCredits, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
 
-const CHART_BARS = [
+const FALLBACK_CHART_BARS = [
   { label: "Sep", val: 320, pct: 51.6 },
   { label: "Oct", val: 480, pct: 77.4 },
   { label: "Nov", val: 540, pct: 87.1 },
@@ -10,7 +12,9 @@ const CHART_BARS = [
   { label: "Feb", val: 530, pct: 85.5 },
 ]
 
-const TRANSACTIONS = [
+type TxItem = { date: string; type: string; desc: string; amount: string; amtColor: string; balance: string }
+
+const FALLBACK_TRANSACTIONS: TxItem[] = [
   { date: "Mar 15", type: "Purchase", desc: "Purchase", amount: "+500", amtColor: "text-[#10B981]", balance: "1,800" },
   { date: "Mar 14", type: "Allocation", desc: "Allocation to Dr. Chen", amount: "-200", amtColor: "text-[#EF4444]", balance: "1,300" },
   { date: "Mar 12", type: "Allocation", desc: "Allocation to M. Torres", amount: "-150", amtColor: "text-[#EF4444]", balance: "1,450" },
@@ -29,6 +33,14 @@ function txColor(type: string) {
 }
 
 export default function DistributorCredits() {
+  const { data: creditsData, isLoading: creditsLoading } = useDistributorCredits()
+  const { data: txData, isLoading: txLoading, error: txError, refetch: refetchTx } = useDistributorTransactions()
+
+  const cd = creditsData as { chartBars?: typeof FALLBACK_CHART_BARS } | undefined
+  const CHART_BARS = cd?.chartBars ?? FALLBACK_CHART_BARS
+
+  const transactions = ((txData as { transactions?: TxItem[] } | undefined)?.transactions ?? FALLBACK_TRANSACTIONS) as TxItem[]
+
   return (
     <DistributorLayout>
       <div className="flex items-center justify-between mb-5">
@@ -50,7 +62,11 @@ export default function DistributorCredits() {
           { label: "Used by Practitioners", value: "5,000", color: "#3B82F6" },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-4 text-center">
-            <div className="text-[28px] font-bold" style={{ color: s.color }}>{s.value}</div>
+            {creditsLoading ? (
+              <Skeleton className="h-9 w-20 mx-auto mb-1" />
+            ) : (
+              <div className="text-[28px] font-bold" style={{ color: s.color }}>{s.value}</div>
+            )}
             <div className="text-[11px] text-[#6b7280] mt-1">{s.label}</div>
           </div>
         ))}
@@ -91,6 +107,12 @@ export default function DistributorCredits() {
 
       {/* Transaction Log */}
       <DataCard title="Transaction History">
+        {txError && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetchTx()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -101,18 +123,25 @@ export default function DistributorCredits() {
               </tr>
             </thead>
             <tbody>
-              {TRANSACTIONS.map((t, i) => (
-                <tr key={i} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5 text-xs text-[#6b7280]">{t.date}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[13px] font-medium ${txColor(t.type)}`}>{t.desc}</span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[13px] font-bold ${t.amtColor}`}>{t.amount}</span>
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-[#6b7280]">{t.balance}</td>
-                </tr>
-              ))}
+              {txLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={4} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : transactions.map((t, i) => (
+                    <tr key={i} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5 text-xs text-[#6b7280]">{t.date}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[13px] font-medium ${txColor(t.type)}`}>{t.desc}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[13px] font-bold ${t.amtColor}`}>{t.amount}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b7280]">{t.balance}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

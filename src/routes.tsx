@@ -72,6 +72,9 @@ const AgentTrainerTraining = React.lazy(() => import("@/pages/super-admin/traine
 const AgentTrainerCosts = React.lazy(() => import("@/pages/super-admin/trainer/CostDashboard"));
 const AgentTrainerSimulator = React.lazy(() => import("@/pages/super-admin/trainer/ConversationSimulator"));
 const AgentTrainerWorkflows = React.lazy(() => import("@/pages/super-admin/trainer/WorkflowDesigner"));
+const AgentTrainerExecutions = React.lazy(() => import("@/pages/super-admin/trainer/ExecutionList"));
+const AgentTrainerExecutionViewer = React.lazy(() => import("@/pages/super-admin/trainer/ExecutionViewer"));
+const HitlDashboard = React.lazy(() => import("@/pages/super-admin/trainer/HitlDashboard"));
 
 // ── Manager pages ───────────────────────────────────────────────────────────
 const ManagerDashboard = React.lazy(() => import("@/pages/manager/Dashboard"));
@@ -138,6 +141,7 @@ export const routes: RouteObject[] = [
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
       { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
       { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
+      { path: "/dev/process-builder", element: withSuspense(<ProcessBuilderPage />) },
     ],
   },
 
@@ -183,7 +187,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
-      { path: "/super-admin/process-builder", element: withSuspense(<ProcessBuilderPage />) },
+      { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
       // Agent Trainer routes
       { path: "/super-admin/agent-trainer", element: withSuspense(<AgentTrainerDashboard />) },
@@ -194,6 +198,9 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/agent-trainer/:agentId/costs", element: withSuspense(<AgentTrainerCosts />) },
       { path: "/super-admin/agent-trainer/:agentId/test", element: withSuspense(<AgentTrainerSimulator />) },
       { path: "/super-admin/agent-trainer/workflows", element: withSuspense(<AgentTrainerWorkflows />) },
+      { path: "/super-admin/agent-trainer/executions", element: withSuspense(<AgentTrainerExecutions />) },
+      { path: "/super-admin/agent-trainer/executions/:executionId", element: withSuspense(<AgentTrainerExecutionViewer />) },
+      { path: "/super-admin/agent-trainer/approvals", element: withSuspense(<HitlDashboard />) },
 
       // Manager pages
       { path: "/manager/dashboard", element: withSuspense(<ManagerDashboard />) },

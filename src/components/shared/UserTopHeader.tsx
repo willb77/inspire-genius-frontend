@@ -12,6 +12,7 @@ import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useNavigate } from "react-router-dom";
 import { ROLES, ROUTES } from "@/constants/routes";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
@@ -30,6 +31,7 @@ export default function UserTopHeader() {
         </p>
       </div>
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
         <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed">
           <Bell className="size-5" />
           <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />

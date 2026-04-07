@@ -22,7 +22,18 @@ export function useTourSpeech() {
     setError(null);
   }, []);
 
-  const play = useCallback(async (textId: string) => {
+  const play = useCallback(async (textId: string, text?: string) => {
+    // VoiceDeskAI path: if the widget is available and text is provided, use it
+    if (text) {
+      const voicedeskSpeak = (window as unknown as Record<string, unknown>).__voicedeskSpeak as
+        | ((t: string) => boolean)
+        | undefined;
+      if (voicedeskSpeak?.(text)) {
+        setPhase("speaking");
+        lastIdRef.current = textId;
+        return;
+      }
+    }
     try {
       stop();
       setPhase("starting");

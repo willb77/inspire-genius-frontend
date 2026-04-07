@@ -1,102 +1,100 @@
-import { useState } from "react"
+/**
+ * Unified Workflow Designer — mounts the DPB React Flow canvas
+ * inside the Agent Trainer, using agents from the VAT API.
+ *
+ * Route: /super-admin/agent-trainer/workflows
+ * Redirect: /super-admin/process-builder → here
+ */
+
+import { useMemo, useCallback } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
-import { useWorkflows, useCreateWorkflow, useWorkflow, useValidateWorkflow } from "@/hooks/trainer/useTrainer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { GitBranch, Plus, CheckCircle2, AlertTriangle } from "lucide-react"
+import { useTrainerAgents, useEcosystems } from "@/hooks/trainer/useTrainer"
+import { DagBuilder, createIGConfig } from "@inspiresgenius/dag-builder"
+import type { AgentDefinition, DagTemplate } from "@inspiresgenius/dag-builder"
+import type { AgentConfig } from "@/types/trainer"
+import { toast } from "sonner"
+import { api as axios } from "@/lib/axios"
+
+/** Map VAT AgentConfig to DPB AgentDefinition, enriching with maturity data. */
+function vatAgentToDpbAgent(agent: AgentConfig): AgentDefinition {
+  const domainColors: Record<string, string> = {
+    coaching: "#3b82f6",
+    business: "#22c55e",
+    system: "#a855f7",
+  }
+  return {
+    id: agent.agent_id,
+    name: agent.agent_id,
+    displayName: agent.name,
+    description: agent.role_subtitle ?? `${agent.domain} agent`,
+    domain: agent.domain,
+    color: domainColors[agent.domain] ?? "#64748b",
+    maturityLevel: agent.maturity_level,
+    trainerStatus: agent.status,
+  }
+}
 
 export default function WorkflowDesigner() {
-  const [selectedId, setSelectedId] = useState("")
-  const [newName, setNewName] = useState("")
+  const { data: agentsResp } = useTrainerAgents()
+  const { data: ecosystemsResp } = useEcosystems()
 
-  const { data: workflowsResp } = useWorkflows()
-  const { data: workflowResp } = useWorkflow(selectedId)
-  const createWorkflow = useCreateWorkflow()
-  const validateWorkflow = useValidateWorkflow()
+  const vatAgents: AgentConfig[] = (agentsResp as any)?.data ?? []
+  void ((ecosystemsResp as any)?.data?.[0]?.ecosystem_id)
 
-  const workflows = (workflowsResp as any)?.data ?? []
-  const workflow = (workflowResp as any)?.data
+  // Build ecosystem config with VAT agents injected into the DPB adapter
+  const ecosystemConfig = useMemo(() => {
+    const baseConfig = createIGConfig(
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
+    )
+
+    // If we have VAT agents, override the adapter's agents with enriched data
+    if (vatAgents.length > 0) {
+      const dpbAgents = vatAgents.map(vatAgentToDpbAgent)
+      baseConfig.adapter.agents = dpbAgents
+
+      // Rebuild domain groups from VAT data
+      const groups: Record<string, string[]> = {}
+      for (const agent of dpbAgents) {
+        if (!groups[agent.domain]) groups[agent.domain] = []
+        groups[agent.domain].push(agent.id)
+      }
+      baseConfig.adapter.domainGroups = groups
+    }
+
+    return baseConfig
+  }, [vatAgents])
+
+  // Save workflow template to unified trainer API
+  const handleSave = useCallback(async (template: DagTemplate) => {
+    try {
+      await axios.post("/v1/trainer/templates", {
+        name: template.name || "Untitled Workflow",
+        description: template.description || "",
+        category: "Workflows",
+        template_type: "workflow",
+        dag_config: {
+          nodes: template.nodes,
+          edges: template.edges,
+        },
+        manifest: {
+          version: template.version ?? 1,
+          triggerKeywords: template.triggerKeywords ?? [],
+          metadata: template.metadata ?? {},
+        },
+      })
+      toast.success("Workflow template saved")
+    } catch {
+      toast.error("Failed to save workflow template")
+    }
+  }, [])
 
   return (
     <SuperAdminLayout>
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left: Workflow List */}
-        <div className="w-72 border-r flex flex-col">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold flex items-center gap-2"><GitBranch className="h-4 w-4" /> Workflows</h2>
-          </div>
-          <div className="p-3 flex gap-2">
-            <Input placeholder="New workflow..." value={newName} onChange={e => setNewName(e.target.value)} className="text-sm" />
-            <Button size="sm" onClick={() => {
-              if (newName) { createWorkflow.mutate({ name: newName, dag_config: { nodes: [], edges: [] } }); setNewName("") }
-            }}><Plus className="h-4 w-4" /></Button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {workflows.map((w: any) => (
-              <div key={w.id} className={`px-4 py-3 cursor-pointer hover:bg-muted/50 border-b ${selectedId === w.id ? "bg-muted" : ""}`} onClick={() => setSelectedId(w.id)}>
-                <span className="text-sm font-medium">{w.name}</span>
-                {w.agent_sequence && <p className="text-xs text-muted-foreground mt-1">{w.agent_sequence.join(" → ")}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Center: Canvas */}
-        <div className="flex-1 flex flex-col">
-          {!selectedId ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                <GitBranch className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                <p>Select a workflow or create a new one</p>
-                <p className="text-xs mt-1">React Flow canvas will be installed for visual editing</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="p-4 border-b flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">{workflow?.name}</h3>
-                  <p className="text-sm text-muted-foreground">{workflow?.description || "No description"}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => validateWorkflow.mutate(selectedId)}>
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> Validate
-                  </Button>
-                </div>
-              </div>
-              {validateWorkflow.data && (
-                <div className="p-4 border-b">
-                  <Card>
-                    <CardContent className="p-3">
-                      {(validateWorkflow.data as any)?.data?.valid ? (
-                        <div className="flex items-center gap-2 text-green-600"><CheckCircle2 className="h-4 w-4" /> Workflow is valid</div>
-                      ) : (
-                        <div className="space-y-1">
-                          {((validateWorkflow.data as any)?.data?.errors ?? []).map((e: string, i: number) => (
-                            <div key={i} className="flex items-center gap-2 text-red-600 text-sm"><AlertTriangle className="h-4 w-4" /> {e}</div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-              <div className="flex-1 bg-muted/20 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-lg">Visual Workflow Canvas</p>
-                  <p className="text-sm mt-1">React Flow integration -- drag agent nodes, connect with edges</p>
-                  {workflow?.dag_config && (
-                    <div className="mt-4 text-xs">
-                      <p>Nodes: {workflow.dag_config.nodes?.length || 0}</p>
-                      <p>Edges: {workflow.dag_config.edges?.length || 0}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+      <div className="h-[calc(100vh-4rem)]">
+        <DagBuilder
+          ecosystemConfig={ecosystemConfig}
+          onSave={handleSave}
+        />
       </div>
     </SuperAdminLayout>
   )

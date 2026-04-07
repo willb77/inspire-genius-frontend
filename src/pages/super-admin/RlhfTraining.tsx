@@ -4,6 +4,8 @@ import RlhfMetricCards from "@/components/super-admin/rlhf/RlhfMetricCards"
 import RlhfRatingChart from "@/components/super-admin/rlhf/RlhfRatingChart"
 import RlhfFeedbackTable from "@/components/super-admin/rlhf/RlhfFeedbackTable"
 import RlhfReviewQueue from "@/components/super-admin/rlhf/RlhfReviewQueue"
+import RlhfModelHistory from "@/components/super-admin/rlhf/RlhfModelHistory"
+import RlhfTrainingStatus from "@/components/super-admin/rlhf/RlhfTrainingStatus"
 import { useFeedbackList, useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -34,7 +36,7 @@ function downloadBlob(content: string, filename: string, type: string) {
 export default function RlhfTraining() {
   const [page, setPage] = useState(1)
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-  const [activeTab, setActiveTab] = useState<"overview" | "queue">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "queue" | "models" | "training">("overview")
 
   const dateFrom = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
   const dateTo = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined
@@ -111,15 +113,20 @@ export default function RlhfTraining() {
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-[#e5e7eb]">
-          {(["overview", "queue"] as const).map((tab) => (
+          {([
+            { key: "overview", label: "Overview" },
+            { key: "queue", label: "Review Queue" },
+            { key: "models", label: "Model History" },
+            { key: "training", label: "Training Status" },
+          ] as const).map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-[13px] font-semibold capitalize border-b-2 transition-colors ${
-                activeTab === tab ? "border-[#3B5BFF] text-[#3B5BFF]" : "border-transparent text-[#6b7280] hover:text-[#374151]"
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-[13px] font-semibold border-b-2 transition-colors ${
+                activeTab === tab.key ? "border-[#3B5BFF] text-[#3B5BFF]" : "border-transparent text-[#6b7280] hover:text-[#374151]"
               }`}
             >
-              {tab === "queue" ? "Review Queue" : "Overview"}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -142,8 +149,12 @@ export default function RlhfTraining() {
               onPageChange={setPage}
             />
           </>
-        ) : (
+        ) : activeTab === "queue" ? (
           <RlhfReviewQueue />
+        ) : activeTab === "models" ? (
+          <RlhfModelHistory />
+        ) : (
+          <RlhfTrainingStatus />
         )}
       </div>
     </SuperAdminLayout>

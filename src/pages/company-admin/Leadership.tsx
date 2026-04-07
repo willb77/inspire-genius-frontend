@@ -1,8 +1,12 @@
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Award, Users, TrendingUp, Target } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useCompanyAnalytics } from "@/hooks/company-admin/useCompanyAdmin"
 
-const PLACEHOLDER_LEADERS = [
+type Leader = { name: string; department: string; score: number; potential: string; programs: number }
+
+const FALLBACK_LEADERS: Leader[] = [
   { name: "Alex Thompson", department: "Engineering", score: 92, potential: "High", programs: 3 },
   { name: "Maria Garcia", department: "Design", score: 90, potential: "High", programs: 2 },
   { name: "James Wilson", department: "Product", score: 87, potential: "High", programs: 4 },
@@ -12,6 +16,11 @@ const PLACEHOLDER_LEADERS = [
 ]
 
 export default function CompanyAdminLeadership() {
+  const { data: analyticsData, isLoading, error, refetch } = useCompanyAnalytics()
+
+  const ad = analyticsData as { leaders?: Leader[] } | undefined
+  const leaders = (ad?.leaders ?? FALLBACK_LEADERS) as Leader[]
+
   return (
     <CompanyAdminLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Leadership Development</h1>
@@ -48,6 +57,12 @@ export default function CompanyAdminLeadership() {
 
       {/* Leadership Pipeline Table */}
       <DataCard title="Leadership Pipeline">
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -58,27 +73,34 @@ export default function CompanyAdminLeadership() {
               </tr>
             </thead>
             <tbody>
-              {PLACEHOLDER_LEADERS.map((l) => (
-                <tr key={l.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{l.name}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{l.department}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      l.score >= 88 ? "bg-[#D1FAE5] text-[#38A169]" : "bg-[#DBEAFE] text-[#3182CE]"
-                    }`}>
-                      {l.score}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      l.potential === "High" ? "bg-[#ECFDF5] text-[#059669]" : "bg-[#FEF3C7] text-[#92400E]"
-                    }`}>
-                      {l.potential}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{l.programs}</td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={5} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : leaders.map((l) => (
+                    <tr key={l.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{l.name}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{l.department}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          l.score >= 88 ? "bg-[#D1FAE5] text-[#38A169]" : "bg-[#DBEAFE] text-[#3182CE]"
+                        }`}>
+                          {l.score}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          l.potential === "High" ? "bg-[#ECFDF5] text-[#059669]" : "bg-[#FEF3C7] text-[#92400E]"
+                        }`}>
+                          {l.potential}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{l.programs}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

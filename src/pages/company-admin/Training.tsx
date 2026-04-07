@@ -1,8 +1,12 @@
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { BookOpen, Clock, Users, TrendingUp } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useCompanyAnalytics as useCompanyAdminAnalytics } from "@/hooks/company-admin/useCompanyAdmin"
 
-const PLACEHOLDER_PROGRAMS = [
+type Program = { name: string; enrolled: number; completed: number; status: string }
+
+const FALLBACK_PROGRAMS: Program[] = [
   { name: "PRISM Fundamentals", enrolled: 156, completed: 112, status: "Active" },
   { name: "Leadership Essentials", enrolled: 48, completed: 31, status: "Active" },
   { name: "Communication Skills", enrolled: 89, completed: 67, status: "Active" },
@@ -11,6 +15,11 @@ const PLACEHOLDER_PROGRAMS = [
 ]
 
 export default function CompanyAdminTraining() {
+  const { data: analyticsData, isLoading, error, refetch } = useCompanyAdminAnalytics()
+
+  const ad = analyticsData as { programs?: Program[] } | undefined
+  const programs = (ad?.programs ?? FALLBACK_PROGRAMS) as Program[]
+
   return (
     <CompanyAdminLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Training Programs</h1>
@@ -47,6 +56,12 @@ export default function CompanyAdminTraining() {
 
       {/* Programs Table */}
       <DataCard title="Training Programs">
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -57,23 +72,30 @@ export default function CompanyAdminTraining() {
               </tr>
             </thead>
             <tbody>
-              {PLACEHOLDER_PROGRAMS.map((p) => (
-                <tr key={p.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{p.name}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.enrolled}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.completed}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{Math.round((p.completed / p.enrolled) * 100)}%</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      p.status === "Active" ? "bg-[#ECFDF5] text-[#059669]"
-                        : p.status === "Scheduled" ? "bg-[#DBEAFE] text-[#1E40AF]"
-                        : "bg-[#f3f4f6] text-[#6b7280]"
-                    }`}>
-                      {p.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={5} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : programs.map((p) => (
+                    <tr key={p.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{p.name}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.enrolled}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.completed}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{Math.round((p.completed / p.enrolled) * 100)}%</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          p.status === "Active" ? "bg-[#ECFDF5] text-[#059669]"
+                            : p.status === "Scheduled" ? "bg-[#DBEAFE] text-[#1E40AF]"
+                            : "bg-[#f3f4f6] text-[#6b7280]"
+                        }`}>
+                          {p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

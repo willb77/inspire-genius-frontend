@@ -1,3 +1,24 @@
+/**
+ * useTextToSpeech — Browser-native SpeechSynthesis API wrapper.
+ *
+ * @role  OFFLINE FALLBACK TTS ENGINE
+ *
+ * This hook wraps the browser's built-in SpeechSynthesis API and is used
+ * exclusively as the offline/degraded-mode TTS engine inside `useTTS`.
+ *
+ * ┌──────────────────────────────────────────────────────────────┐
+ * │  DO NOT consume this hook directly in components.            │
+ * │  Use `useTTS` instead — it orchestrates both engines and     │
+ * │  selects the correct one based on network availability.      │
+ * │                                                              │
+ * │  Server TTS  (online)  → OpenAI gpt-4o-mini-tts via backend │
+ * │  Browser TTS (offline) → this hook / SpeechSynthesis API    │
+ * └──────────────────────────────────────────────────────────────┘
+ *
+ * Why keep it?  PWA offline mode needs a TTS fallback. Browser SpeechSynthesis
+ * is zero-cost and requires no network, making it ideal for offline coaching
+ * sessions where network connectivity is unavailable.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type SpeakOptions = {

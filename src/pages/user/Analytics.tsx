@@ -18,7 +18,7 @@ const COLORS = ["#3B5BFF", "#2DD4BF", "#8B5CF6", "#10B981", "#EF4444"]
 export default function UserAnalytics() {
   return (
     <UserLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics</h1>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics (TODO: translate)</h1>
       <p className="text-[13px] text-[#6b7280] mb-5">Track your coaching journey, goals, and personal growth.</p>
 
       <PlaceholderBanner />

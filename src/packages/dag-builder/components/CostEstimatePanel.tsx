@@ -10,7 +10,6 @@ import {
   estimateExecutionCost,
   estimateDecompositionCost,
   estimateFromScratchCost,
-  calculateLlmCost,
 } from "../lib/cost-calculator";
 
 type Props = { ecosystemConfig: EcosystemConfig; className?: string };

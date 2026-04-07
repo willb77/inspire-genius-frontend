@@ -47,7 +47,7 @@ const DEFAULT_STEPS: TourStep[] = [
   },
   {
     selector: '[data-tour="ask-alex"]',
-    title: "Ask Alex",
+    title: "Ask Meridian",
     description:
       "Your AI assistant is ready to help. Ask questions and explore features.",
     image: "/images/tour/right-alex.svg",
