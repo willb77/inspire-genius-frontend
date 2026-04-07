@@ -21,7 +21,7 @@ export default function MagicLinkVerify() {
     mutation.mutate(
       { token },
       {
-        onSuccess: (resp) => {
+        onSuccess: async (resp) => {
           // Response may be { data: MagicAuthUser } or { access_token, user: {...} }
           const nested = resp?.data as MagicAuthUser | undefined
           const flat = resp as unknown as Record<string, unknown>
@@ -45,7 +45,7 @@ export default function MagicLinkVerify() {
             business_id: nested?.business_id ?? null,
           }
           const email = payload.email ?? nested?.email ?? (userObj?.email as string) ?? ""
-          completeAuthFromPayload(payload, email, {
+          await completeAuthFromPayload(payload, email, {
             message: "Signed in successfully",
           })
         },
