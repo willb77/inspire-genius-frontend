@@ -2,6 +2,902 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-06] — VAT + DPB Integration (MRG-001 through MRG-012)
+
+### Added
+- **MRG-001: Shared Adapter** — DPB AgentPalette now uses VAT's `/v1/trainer/agents` API with maturity rings, domain badges, accuracy/RLHF metrics, and "Train This Agent" links
+  - Files: `packages/dag-builder/src/types/ecosystem.ts`, `packages/dag-builder/src/components/AgentPalette.tsx`
+- **MRG-002: Mount DPB in VAT** — WorkflowDesigner page replaced with full DPB React Flow canvas, `/super-admin/process-builder` redirects to `/super-admin/agent-trainer/workflows`
+  - Files: `inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`, `inspire-genius-frontend/src/routes.tsx`
+- **MRG-003: AI Decomposition** — Added `POST /v1/trainer/workflows/decompose` Bedrock-powered endpoint with keyword fallback, ProcessDecomposer wired to trainer-service
+  - Files: `services/trainer-service/app/routes/workflows.py`, `packages/dag-builder/src/components/ProcessDecomposer.tsx`
+- **MRG-004: Unified Template Library** — Added `template_type` and `dag_config` columns to `training_templates`, browse/create routes support type filtering
+  - Files: `services/trainer-service/app/models/template.py`, `services/trainer-service/app/routes/templates.py`
+- **MRG-005: Unified Cost & Audit** — Added `source` discriminator to `cost_entries` and `audit_entries` tables, routes support source filtering
+  - Files: `services/trainer-service/app/models/cost_ledger.py`, `services/trainer-service/app/models/audit_log.py`, `services/trainer-service/app/routes/costs.py`, `services/trainer-service/app/routes/audit.py`
+- **MRG-006: Cross-Tool Links** — NodePropertyPanel shows agent maturity, accuracy, prompt preview, "View Full Prompt" / "Test Agent" / "Train This Agent" links
+  - Files: `packages/dag-builder/src/components/NodePropertyPanel.tsx`, `packages/dag-builder/src/components/DagBuilder.tsx`
+- **MRG-007: Execution Tracing Backend** — `WorkflowExecution` + `ExecutionStep` ORM models, 8 execution endpoints, `ExecutionEngine` service with wave-based execution
+  - Files: `services/trainer-service/app/models/execution.py`, `services/trainer-service/app/routes/executions.py`, `services/trainer-service/app/services/execution_engine.py`
+- **MRG-008: Execution Tracing Frontend** — ExecutionList + ExecutionViewer pages with step detail, status badges, KPI cards, hooks and service functions
+  - Files: `inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionList.tsx`, `inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionViewer.tsx`
+- **MRG-009: SME Interviewer** — TPL-031 template: Leadership Interviewer system prompt, 5 knowledge docs (CFO/CHRO/Engineering Director interview guides, data validation, PRISM mapping), 15 evaluation tests, Leadership Assessment Pipeline workflow
+  - Files: `services/trainer-service/templates/TPL-031-leadership-interviewer/` (9 files)
+- **MRG-010: Cultural Alignment** — TPL-032 template: Cultural Architecture prompt, 3 knowledge docs (cultural assessment, engagement metrics, Hofstede dimensions), 8 evaluation tests, Cultural Assessment workflow
+  - Files: `services/trainer-service/templates/TPL-032-cultural-alignment/` (7 files)
+- **MRG-011: Data Connector MCP Tool** — `data_connector` tool in agent-engine with CSV/S3 V1 support, Workday/Jira/SAP V2 stubs, ADMIN permission tier, 50-row limit, test suite
+  - Files: `services/agent-engine/app/tools/data_connector.py`, `services/agent-engine/tests/test_data_connector.py`
+- **MRG-012: HITL Engine** — PendingApproval model, approval/reject endpoints, HitlDashboard frontend with approve/reject UI, timeout handling
+  - Files: `services/trainer-service/app/models/pending_approval.py`, `services/trainer-service/app/routes/approvals.py`, `inspire-genius-frontend/src/pages/super-admin/trainer/HitlDashboard.tsx`
+- **CDK Infrastructure** — Trainer service Lambda + Worker Lambda, EventBridge rules (WorkflowExecutionRequested, HitlApprovalRequested, hourly HITL timeout check), SES/Bedrock/S3 permissions, 5 CloudWatch alarms
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **Migration SQL** — Consolidated migration for all new tables (workflow_executions, execution_steps, pending_approvals) and columns (template_type, dag_config, source)
+  - Files: `services/trainer-service/alembic/versions/002_vat_dpb_integration.sql`
+
+### Changed
+- Trainer service version bumped to 2.0.0
+- Route registry updated to include executions + approvals routers
+- Frontend types updated with WorkflowExecution, ExecutionStep, ExecutionStats types
+- TrainingTemplate type now includes `template_type` and `dag_config`
+- AuditEntry type now includes `source` field
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- VAT+DPB Integration: 12 MRG prompts completed — shared adapter, DPB editor mount, AI decomposition, unified templates/costs/audit, cross-tool links, execution tracing (backend+frontend), SME interviewer TPL-031, cultural alignment TPL-032, data connector MCP tool, HITL engine, CDK infra, migration SQL
+  - Files: `packages/dag-builder/src/types/ecosystem.ts,packages/dag-builder/src/components/AgentPalette.tsx,packages/dag-builder/src/components/DagBuilder.tsx,packages/dag-builder/src/components/NodePropertyPanel.tsx,packages/dag-builder/src/components/ProcessDecomposer.tsx,services/trainer-service/app/models/template.py,services/trainer-service/app/models/cost_ledger.py,services/trainer-service/app/models/audit_log.py,services/trainer-service/app/models/execution.py,services/trainer-service/app/models/pending_approval.py,services/trainer-service/app/routes/workflows.py,services/trainer-service/app/routes/templates.py,services/trainer-service/app/routes/costs.py,services/trainer-service/app/routes/audit.py,services/trainer-service/app/routes/executions.py,services/trainer-service/app/routes/approvals.py,services/trainer-service/app/services/execution_engine.py,services/trainer-service/app/services/cost_tracker.py,services/trainer-service/app/services/audit_logger.py,services/trainer-service/app/routes/__init__.py,services/trainer-service/app/main.py,services/trainer-service/alembic/versions/002_vat_dpb_integration.sql,services/agent-engine/app/tools/data_connector.py,services/agent-engine/tests/test_data_connector.py,infrastructure/cdk/lib/services-stack.ts,inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx,inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionList.tsx,inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionViewer.tsx,inspire-genius-frontend/src/pages/super-admin/trainer/HitlDashboard.tsx,inspire-genius-frontend/src/routes.tsx,inspire-genius-frontend/src/types/trainer/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/__init__.py`
+
+## [2026-04-06] — Design B Login Skin + Login Flow Fixes
+
+### Changed
+- **AuthLayout.tsx** — replaced with Design B "Immersive Brand Wall" split layout:
+  - Left panel: dark gradient brand wall with animated mesh blobs, "Unlock your full potential" headline, testimonial card, Logo-Light.png
+  - Right panel: clean white form container with centered content
+  - Mobile responsive: brand wall hidden on screens < 1024px, Logo-Dark.png shown instead
+  - Files: `src/components/auth/AuthLayout.tsx`
+- **Login.tsx** — fixed multiple login issues:
+  - Added email validation before submission (empty check + regex format check)
+  - Added password validation (empty check with toast feedback)
+  - Added `submitting` state to prevent double-submission
+  - All buttons disabled while any login operation is in progress (`isBusy` flag)
+  - Wrapped `login()` call in try/catch with user-visible error toast
+  - Files: `src/pages/auth/Login.tsx`
+- **magicAuthAxios.ts** — added response interceptor with proper error handling:
+  - Timeout set to 15 seconds (was unlimited)
+  - Content-Type header set to application/json
+  - Network errors show user-friendly toast ("Unable to reach the authentication service")
+  - Timeout errors show specific toast ("Request timed out")
+  - Files: `src/lib/magicAuthAxios.ts`
+
+### Added
+- **Float keyframe animation** in `src/index.css` for brand wall mesh blob animation
+- **Logo-Light.png** and **Logo-Dark.png** copied to `public/` for auth pages
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/manifest.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/manifest.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/types/ecosystem.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/prompt.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/data_connector.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/registry.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/prompt.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/registry.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/knowledge/cfo_interview_template.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_data_connector.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/knowledge/cultural_assessment_framework.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/knowledge/chro_interview_template.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/knowledge/engineering_director_template.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/knowledge/engagement_metrics_guide.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/knowledge/data_validation_framework.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/workflows.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/knowledge/hofstede_dimensions.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/knowledge/prism_leadership_mapping.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/template.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/evaluation/tests.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/trainer/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/cost_ledger.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/evaluation/tests.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/audit_log.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-032-cultural-alignment/workflow_manifest.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/audit.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/templates/TPL-031-leadership-interviewer/workflow_manifest.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/cost_tracker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/audit_logger.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/costs.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/costs.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/trainer/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/execution.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/trainer/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/services/execution_engine.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/trainer/trainer.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/NodePropertyPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/executions.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionList.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic/versions/002_vat_dpb_integration.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/ExecutionViewer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/pending_approval.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/models/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/approvals.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/trainer/trainer.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/trainer/useTrainer.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/HitlDashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+## [2026-04-06] — Phase 5 Service Extraction + RDS Proxy CDK + CloudWatch Alarms
+
+### Added
+- **Dockerfiles** for all 5 Phase 5 microservices (coach, dashboard, org, support, user)
+  - Follows auth-service Lambda pattern: Python 3.12, Poetry, ig-auth shared package
+  - Build from repo root: `docker build -f services/<service>/Dockerfile .`
+  - Files: `services/{coach,dashboard,org,support,user}-service/Dockerfile`
+- **EventBridge event emission** for all 5 Phase 5 services
+  - coach-service: CoachProfileCreated, CoachProfileUpdated, BookingCreated
+  - org-service: OrganizationCreated, OrganizationUpdated, MemberAdded, MemberRemoved
+  - user-service: ProfileCreated, ProfileUpdated, RoleAssigned, PreferencesUpdated
+  - support-service: TicketCreated, TicketResolved, MessageSent
+  - dashboard-service: MetricsRefreshed, ActivityIngested
+  - Files: `services/{coach,dashboard,org,support,user}-service/app/events.py`
+- **DatabaseStack** (`infrastructure/cdk/lib/database-stack.ts`) — RDS Proxy CDK resource
+  - Manages RDS Proxy in front of pre-CDK Aurora Serverless v2 cluster
+  - IAM auth, connection pooling, Secrets Manager integration
+  - Security group allowing PostgreSQL from VPC
+  - Cross-stack exports: proxy endpoint, ARN, secret ARN, security group ID
+- **CloudWatch alarms** for RLHF Step Functions and Evaluation Lambdas (2 missing alarm sets)
+
+### Changed
+- **bin/cdk.ts** — added DatabaseStack instantiation before ServicesStack, updated deployment order docs
+- **services-stack.ts** — added `addLambdaAlarms()` for rlhfStepFnLambda and rlhfEvaluationLambda
+- **service.py** in all 5 Phase 5 services — wired `emit_event()` calls after create/update/delete operations
+
+### Verified
+- CDK TypeScript compiles with zero errors
+- CDK synth completes successfully for all 11 stacks (dev environment)
+- Cognito Google OAuth conditional deployment works without credentials
+
+- Created VAT_vs_DPB_Comparison_Integration.docx — overlap analysis, integration strategy, unified architecture vision, 3 end-to-end use case walkthroughs
+  - Files: `Transformation Documents/VAT_vs_DPB_Comparison_Integration.docx`
+
+- Created Platform_Convergence_Analysis.docx — compares Prism/Meridian Strategy with VAT+DPB implementation. 13-point overlap matrix, 4 new capabilities identified, 10 synergies mapped, 7 risks assessed, 6-phase integration path.
+  - Files: `Transformation Documents/Platform_Convergence_Analysis.docx`
+
+- Created VAT_DPB_Integration_Plan_with_Prompts.docx — 4-part merge plan with 12 Claude Code prompts (MRG-001 to MRG-012), unified microservices architecture, 4 new capabilities (SME Interviewer, Cultural Alignment, Data Connector, HITL Engine)
+  - Files: `Transformation Documents/VAT_DPB_Integration_Plan_with_Prompts.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/auth/AuthLayout.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/index.css`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/magicAuthAxios.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/auth/Login.tsx`
+
+## [2026-04-06] — DAG Process Builder: Agent Modals, Working Save/Fork, Visualize, Agent Management
+
+### Added
+- **AgentDetailModal** — click the info icon on any agent in the palette to open a modal with:
+  - Full description (paragraph-length about text)
+  - Capabilities list (6 capabilities per agent)
+  - Technical details (agent ID, domain, model tier, source)
+  - All 14 IG agents now have fullDescription, capabilities, and modelTier fields
+- **ManageAgentsModal** — click the gear icon in the palette header to:
+  - Add a new individual agent (ID, name, descriptions, capabilities, domain, color, model tier)
+  - Add a new domain palette with multiple agents at once
+  - Import agents/palettes from JSON
+  - View and remove custom agents
+- **DAG Visualization Modal** — "Visualize" button in toolbar opens a wave-by-wave planning map showing:
+  - Steps grouped by execution wave with color-coded wave badges
+  - Parallel vs sequential indicators
+  - Dependency chains between waves
+  - Execution summary (total steps, waves, max parallelism)
+
+### Fixed
+- **Save button** — now works: tries API POST/PATCH, falls back to localStorage if API unavailable. Shows spinner during save, checkmark on success.
+- **Fork button** — now works: increments version, renames template, marks as dirty for save.
+- **Validate button** — now shows alert with error list instead of no-op.
+- **AgentDefinition type** — extended with fullDescription, capabilities, modelTier, isCustom fields
+- **EcosystemAdapter interface** — agents and domainGroups are now mutable (for dynamic agent management)
+
+### Files
+- New: AgentDetailModal.tsx, ManageAgentsModal.tsx
+- Modified: AgentPalette.tsx, TemplateToolbar.tsx, ig-adapter.ts, ecosystem.ts, index.ts, DagBuilder.tsx
+
+- Added AgentDetailModal (full descriptions+capabilities), ManageAgentsModal (add agents/palettes/import JSON), DAG Visualization modal, working Save/Fork/Validate buttons
+  - Files: `AgentDetailModal.tsx,ManageAgentsModal.tsx,AgentPalette.tsx,TemplateToolbar.tsx,ig-adapter.ts,ecosystem.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateGallery.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/ProcessDecomposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs/index.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs/design-a.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs/design-b.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs/design-c.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs/design-d.html`
+
+- Created Visual_Agent_Trainer_User_Guide.docx — comprehensive 25-chapter capability & user guide with 8 step-by-step use case examples for training agents
+  - Files: `Transformation Documents/Visual_Agent_Trainer_User_Guide.docx`
+
+## [2026-04-06] — Visual Agent Trainer: Full Build & AWS Deployment
+
+### Added — Documents
+- `Transformation Documents/IG_Comprehensive_Integration_Test_Plan.docx` — 250+ test cases, 15 test suites, 12 Claude Code implementation prompts (TP-001 to TP-012)
+- `Transformation Documents/IG_Agent_Ecosystem_Technical_Mapping.docx` — Maps 14 business agents to technical implementation with data/training strategies
+- `Transformation Documents/Visual_Agent_Trainer_Build_Prompts.docx` — 16 Claude Code prompts (VAT-001 to VAT-016) for building the trainer platform
+
+### Added — Visual Agent Trainer Microservice (`services/trainer-service/`)
+- 50 Python files, FastAPI + Mangum Lambda microservice
+- 74 API routes across 11 route modules (agents, prompts, knowledge, training, costs, audit, evaluation, simulator, workflows, templates, ecosystems)
+- 15 SQLAlchemy ORM models (ecosystems, agent_configs, agent_prompts, prompt_ab_tests, knowledge_sources, knowledge_documents, training_plans, training_goals, cost_entries, cost_budgets, audit_entries, evaluation_tests, evaluation_results, workflow_templates, training_templates)
+- Ecosystem adapter framework: abstract `EcosystemAdapter` interface (12 methods) + Inspire Genius adapter
+- Business logic services: CostTracker, ROICalculator, AccuracyScorer (4-signal composite), MaturityCalculator (5 levels), AuditLogger
+- EventBridge publisher + worker Lambda handler (5 event types)
+- Alembic migration SQL for 15 tables
+- Dockerfile, pyproject.toml, 9 tests (8 passing)
+
+### Added — Visual Agent Trainer Frontend
+- `src/types/trainer/index.ts` — 20+ TypeScript types
+- `src/services/trainer/trainer.service.ts` — 70+ API call functions
+- `src/hooks/trainer/useTrainer.ts` — 40+ React Query hooks
+- 7 page components in `src/pages/super-admin/trainer/`:
+  - AgentTrainerDashboard (card grid, maturity rings, domain filter)
+  - PromptStudio (split-pane editor, version history, token counter)
+  - KnowledgeManager (file-browser, upload, search, coverage)
+  - TrainingPlanBuilder (goal wizard, progress bars, evaluate)
+  - CostDashboard (KPI cards, ROI section, audit timeline)
+  - ConversationSimulator (chat, persona switching, test runner)
+  - WorkflowDesigner (workflow list, DAG validation)
+- Routes, constants, navigation wired (8 new routes under /super-admin/agent-trainer)
+
+### Added — CDK Infrastructure (`infrastructure/cdk/lib/trainer-stack.ts`)
+- TrainerStack: 2 Lambda functions (service + worker), 2 DynamoDB tables, S3 bucket, EventBridge rule, API Gateway routes, 5 CloudWatch alarms
+- Deployed to AWS: `ig-dev-trainer` stack (CREATE_COMPLETE)
+- Lambda functions: `ig-dev-trainer-service` + `ig-dev-trainer-worker` (ARM64/Graviton)
+- API Gateway: `ANY /v1/trainer/{proxy+}` → health endpoint returning 200
+
+### Changed
+- `.claude/commands/background.md` — Added `permission-mode: auto` frontmatter
+- `.claude/commands/bedtime.md` — Added `permission-mode: auto` frontmatter
+- `.claude/settings.json` — Added `permissions.defaultMode: auto` + explicit allow rules
+- RDS Proxy endpoints updated in all CDK stacks (replaced `xxxxxxxxxx` → `ctsmouhogj3n`)
+- Frontend rebuilt with correct `VITE_API_BASE_URL` (no more localhost:3000)
+- Frontend deployed to both S3 buckets + CloudFront invalidation
+
+### Deployment Status
+- Health endpoint live: `https://8umg6xioz5.execute-api.us-east-1.amazonaws.com/v1/trainer/health` → `{"status":"ok"}`
+- DB-dependent endpoints returning 503 (Aurora migration pending — SQL ready but needs VPC access)
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/types/ecosystem.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/adapters/ig-adapter.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/AgentDetailModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/ManageAgentsModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/TemplateToolbar.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/index.ts`
+
+## [2026-04-06] — DAG Process Builder: Status Assessment + ECS Fix
+
+### Status Assessment
+The DAG Process Builder is **functionally complete**:
+- **Package**: 27 TypeScript files, 39 tests passing, Vite build clean
+- **Frontend**: Deployed to S3, CloudFront serving, /dev/process-builder (public) + /super-admin/process-builder (auth)
+- **Backend**: 6 cost/audit endpoints, 5 DB tables + 13 indexes in Aurora
+- **AWS**: API Gateway CORS fixed ($default catch-all), JWT secrets synced, magic-auth callback URL updated
+- **React bug**: Infinite render loop (error #185) fixed — DagCanvas onNodesChange only syncs on drag-end
+
+### Fixed
+- **ECS agent-runtime container crash** — `uvicorn: executable file not found in $PATH`
+  - Root cause: Dockerfile used `pip install --target /deps` which installed packages but not binaries
+  - Fix: Changed to `pip install -r requirements.txt` (system-wide) and copy both site-packages + /usr/local/bin/
+  - New image pushed: `ig-aan/agent-runtime:dag-builder-v2-20260406-084756`
+  - ECS force-new-deployment triggered
+  - Files: `services/agent-engine/Dockerfile`
+
+### Remaining Work (from Build Prompts document, Phases not yet built)
+- 12 components: EcosystemSwitcher, WaveOverlay, ValidationPanel, VersionHistory, TemplateGallery, StepEditor, AuditLogPanel, CostDashboard, TemplateExpenseReport, KeyboardShortcutsHelp, ExecutionOverlay, RuleIndicator
+- 8 hooks: useExecutionStatus, useDecisionRules, useKeyboardShortcuts, usePlannerApi, useAuditStore, useCostApi, useDecompositionCostTracker, useScratchBuildTracker
+- Component integration tests (React Testing Library)
+- Company-admin process builder page
+
+- Fixed Dockerfile (uvicorn not on PATH), pushed dag-builder-v2 to ECR, triggered ECS deploy, redeployed frontend
+  - Files: `services/agent-engine/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/DagCanvas.tsx`
+
+- Fixed DagCanvas infinite render loop: rewrote to use React Flow useNodesState/useEdgesState (uncontrolled), sync store via subscribe+setRfNodes. Fixed ECS Dockerfile uvicorn PATH. Redeployed frontend + backend.
+  - Files: `src/packages/dag-builder/components/DagCanvas.tsx,services/agent-engine/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/login-designs.html`
+
+## [2026-04-05] — DAG Process Builder: Full Build, Deploy, Debug Session
+
+### Added
+- **packages/dag-builder/** — Complete shared React package (27 TypeScript files)
+  - Types: DagNode, DagTemplate, EcosystemAdapter, CostEvent, AuditEntry + 20 more
+  - Library: DAG utilities (cycle detection, topological sort, wave computation), dagre layout, cost calculator
+  - Adapters: IG (14 agents), VoiceDeskAI (10 agents), generic JSON-config factory
+  - Components: DagBuilder, DagCanvas, AgentNode, AgentPalette, NodePropertyPanel, TemplateMetadataPanel, TemplateToolbar, ProcessDecomposer, CostEstimatePanel
+  - Hooks: useDagStore (Zustand + undo/redo), useAutoLayout (dagre), useTemplateApi (React Query CRUD)
+  - Tests: 3 files, 39 tests — all passing
+- **services/agent-engine/app/routes/costs.py** — 6 backend cost/audit endpoints
+- **services/agent-engine/sql/cost_tracking_tables.sql** — 3 DB tables (dag_cost_events, dag_audit_log, dag_execution_costs)
+- **inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx** — Process Builder page
+- **Public route** /dev/process-builder — accessible without login for testing
+- **Route wiring**: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, route in routes.tsx, nav item with GitBranch icon
+- **Vite alias**: @inspiresgenius/dag-builder → src/packages/dag-builder
+- **dag-builder source** copied into frontend at src/packages/dag-builder/ for CI compatibility
+
+### Deployed to AWS
+- **Aurora PostgreSQL migration** — 5 tables + 13 indexes created via temporary Lambda
+  - Database `inspire_genius` created on Aurora cluster
+  - Tables: process_templates, decision_rules, dag_cost_events, dag_audit_log, dag_execution_costs
+- **Agent Engine Docker image** pushed to ECR: ig-aan/agent-runtime:dag-builder-20260405-134119
+- **ECS deployment** triggered on ig-aan-dev-agent-runtime
+- **Frontend** deployed to S3 (inspires-genius-dev-frontend) + CloudFront invalidation
+
+### Fixed
+- **DagCanvas infinite render loop** (React error #185) — onNodesChange was updating store on every React Flow change; fixed to only sync on drag-end
+- **Pre-existing trainer pages** — 7 files had wrong SuperAdminLayout import path
+- **Missing shadcn progress component** — added for trainer/CostDashboard
+- **useFrontendText** — added catch handler + retry:false for missing /v1/frontend-text endpoint
+- **API Gateway CORS** — added \ catch-all route (ig-dev-api-catchall Lambda) so 404s return CORS headers
+- **Magic-auth JWT** — synced SECRET_KEY on auth-service to match magic-auth JWT_SECRET
+- **Aurora master password** — restored original after migration changed it
+- **CloudFront CORS** — created ig-dev-cors-policy response headers policy on ALB CloudFront
+- **Dockerfile** — added poetry-plugin-export, removed broken COPY directives
+- **poetry.lock** — regenerated to match pyproject.toml
+
+### Architecture Documents Created
+- **IG_DAG_Process_Builder_UI_Architecture.docx** — tech stack recommendation
+- **IG_DAG_Process_Builder_Build_Prompts.docx** — 49 sequenced Claude Code prompts (Phases 1-11)
+
+### Changed
+- services/agent-engine/app/main.py — registered costs_router
+- Frontend deps: added @xyflow/react, @dagrejs/dagre, zustand, immer
+- API Gateway 8umg6xioz5: added \ route, /v1/frontend-text route
+- CloudFront EQNFTOWMBMKSA + E1MRO2FG18P8KW: CORS origin allowlists updated
+- Magic-auth Lambda: FRONTEND_URL updated to d1nxsns258du4y.cloudfront.net
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/project_unified_build_deploy.md`
+
+- Full session: 27 TS files, 39 tests, 6 backend endpoints, 3 DB tables, Aurora migration, ECR push, ECS deploy, 8 bug fixes, 2 architecture docs, public route at /dev/process-builder
+  - Files: `packages/dag-builder,services/agent-engine,inspire-genius-frontend,infrastructure/cdk,AWS:Aurora+ECR+ECS+APIGateway+CloudFront`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/MEMORY.md`
+
+## [2026-04-05] — Fix 3 Deployment Blockers (Migration, CDK Stacks, Smoke Tests)
+
+### Added
+- **Migration Runner Lambda** (`services/migration-runner/`) — temporary VPC Lambda for running DB migrations against Aurora PostgreSQL without a bastion
+  - `handler.py`: pg8000 (pure Python) SQL executor with `$$`-aware statement splitting, idempotent execution
+  - `deploy.sh`: automated script to discover VPC/creds from existing infra, deploy Lambda, run migration, cleanup
+  - `smoke-test.sh`: post-deployment endpoint health checker for all 6 waves of services
+
+### Fixed
+- **Agent Engine Stack** (`infrastructure/cdk/bin/cdk.ts`) — added explicit `addDependency(apiGatewayStack)` to AgentEngineStack; CDK was not inferring the dependency from `Fn.importValue()` cross-stack references (http-api-id, ws-api-id), causing deploy ordering failures
+- **Cognito Stack** (`infrastructure/cdk/lib/cognito-stack.ts`) — made Google OAuth fully conditional:
+  - Google Identity Provider only created when `googleClientId` + `googleClientSecret` CDK context values are provided
+  - `supportedIdentityProviders` on WebAppClient only includes GOOGLE when provider exists
+  - Stack now deploys cleanly without Google OAuth credentials (Cognito-native auth only)
+- **Trainer Lambda Bundle Size** (`infrastructure/cdk/lib/trainer-stack.ts`) — reduced bundle from >250MB to under limit:
+  - Remove boto3/botocore/s3transfer/urllib3 (already in Lambda runtime, ~70MB savings)
+  - Remove `.dist-info` and `.egg-info` metadata directories (~5-10MB savings)
+  - Applied same optimizations to both TrainerLambda and TrainerWorker, in both local and Docker bundling paths
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/useFrontendText.ts`
+
+- Deployed trainer stack to AWS (ig-dev-trainer: 2 Lambdas, 2 DynamoDB, S3, EventBridge, CloudWatch). Rebuilt frontend with correct API URL (8umg6xioz5). Deployed to both S3 buckets + CloudFront invalidation.
+  - Files: `infrastructure/cdk/lib/trainer-stack.ts,inspire-genius-frontend/dist/`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/packages/dag-builder/components/DagCanvas.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/ProcessBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagCanvas.tsx`
+
+## [2026-04-05] — CDK Stack Deployment + Smoke Tests + Infrastructure Fixes
+
+### Deployed
+- **ig-dev-monitoring** stack — CloudWatch dashboards, composite alarms, SNS alert topics for Wave 5/6 cutover monitoring
+  - Dashboard: `ig-dev-wave5-wave6-cutover`
+  - Ops SNS topic: `ig-dev-ops-alerts`
+  - Cutover SNS topic: `ig-dev-cutover-alerts`
+
+### Fixed (CDK Stacks)
+- **RLHF Stack** (`infrastructure/cdk/lib/rlhf-stack.ts`) — resolved CloudFormation circular dependency by:
+  - Replacing construct-reference ARNs (`.functionArn`, `.stateMachineArn`, `.functionName`) with string-based ARN patterns throughout dashboard, alarms, integration, and permissions
+  - Replacing `apiLambda.addPermission()` with `CfnPermission` to avoid implicit dependency chains
+  - Moving Lambda alias creation to prod-only (dev/staging invoke function directly)
+  - Note: RLHF stack still blocked by duplicate resources in services-stack (DynamoDB tables, S3 bucket, Lambda functions already exist)
+- **Cognito Stack** (`infrastructure/cdk/lib/cognito-stack.ts`) — fixed two issues:
+  - Shortened `prism_accreditation_number` to `prism_accred_num` (Cognito 20-char custom attribute name limit)
+  - Added `{username}` placeholder to admin invite email body (required by Cognito)
+  - Note: still blocked by missing Google identity provider configuration
+- **Trainer Service** (`services/trainer-service/pyproject.toml`) — fixed duplicate `[project.optional-dependencies]` TOML section that broke CDK synth for all stacks
+
+### Smoke Test Results
+- **Wave 1** (Agent Engine): `/v1/agents/health` — 200 OK, `/v1/agents/chat` — 200 OK (Sentinel responds)
+- **Wave 2** (Documents/Users): `/v1/documents` — 307 redirect, `/v1/users/*` — route exists
+- **Wave 6** (RLHF): `/v1/feedback` — 200 OK, `/v1/rlhf/models` — 200 OK
+- **Trainer**: `/v1/trainer/health` — 500 (Lambda too large, needs layer/container)
+- **Waves 3-5 health endpoints**: 404 (no dedicated health routes configured)
+
+### Pending / Blocked
+- **DB Migration** — Aurora Data API could not be enabled (provisioned mode limitation); SSM agent not running on backend EC2 instance. Migration SQL ready at `Transformation Documents/combined_migration.sql`
+- **ig-dev-agent-engine** — ECS service requires ALB to exist before CODE_DEPLOY service creation; needs deployment ordering fix
+- **ig-dev-rlhf** — RLHF resources (DynamoDB, S3, Lambda) already exist in ig-dev-services stack; needs Strangler Fig migration (remove from services-stack first)
+- **ig-dev-cognito** — needs Google OAuth identity provider configured in Cognito before client can reference it
+- **ig-dev-security** — depends on agent-engine stack export (`ig-dev-agent-engine-task-role-arn`)
+- **ig-dev-domain** — depends on cognito stack
+- **ig-dev-trainer** — Lambda package exceeds 250MB limit; needs Lambda Layer or container image
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/migration-runner/handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/migration-runner/deploy.sh`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/migration-runner/smoke-test.sh`
+
+## [2026-04-05] — DAG Process Builder: DB Migration + Agent Engine Deployed
+
+### Deployed
+- **Aurora PostgreSQL migration** — ran via temporary Lambda (created, invoked, cleaned up):
+  - Created database `inspire_genius` on Aurora cluster
+  - Created 5 tables: `process_templates`, `decision_rules`, `dag_cost_events`, `dag_audit_log`, `dag_execution_costs`
+  - Created 13 indexes for query optimization
+  - All 18 SQL statements executed successfully with zero errors
+- **Agent Engine Docker image** pushed to ECR:
+  - Image: `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-aan/agent-runtime:dag-builder-20260405-134119`
+  - Also tagged as `:latest`
+  - Includes: costs_router with 6 new API endpoints
+- **ECS deployment** triggered — force-new-deployment on `ig-aan-dev-agent-runtime` service
+  - Rollout state: IN_PROGRESS
+  - New tasks spinning up with updated image
+
+### Changed
+- `services/agent-engine/Dockerfile` — fixed build: added `poetry-plugin-export`, removed broken `2>/dev/null || true` COPY directives
+- `services/agent-engine/poetry.lock` — regenerated to match pyproject.toml
+- `inspires-genius-dev/aurora/master-credentials` Secret — populated with connection details
+
+### Cleaned Up
+- Temporary Lambda `ig-dag-migration-temp` — deleted after successful migration
+- Temporary Lambda layer `ig-temp-psycopg2` (3 versions) — deleted
+- Temporary IAM policy `TempSecretsAccess` — removed from auth Lambda role
+- Local temp files — removed
+
+- Aurora migration: 5 tables+13 indexes created; ECR push: ig-aan/agent-runtime:dag-builder-20260405-134119; ECS: force-new-deployment on agent-runtime
+  - Files: `services/agent-engine/Dockerfile,services/agent-engine/poetry.lock,Aurora:inspire_genius DB`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+## [2026-04-05] — DAG Process Builder: Deployed to AWS
+
+### Deployed
+- Frontend commit `dad5e90` pushed to `origin/development` → triggers GitLab CI/CD pipeline
+  - Pipeline: build → unit tests → SonarQube → E2E → S3 sync → CloudFront invalidation
+  - DAG builder bundled as code-split chunk: ProcessBuilder-BmNNn1cC.js (258 KB, 83 KB gzip)
+  - Live URL (after pipeline): https://dev.inspiregenius.com/super-admin/process-builder
+- Backend commit `e24b7c9` to monorepo main branch (local — push to agent-engine ECR when ready)
+- dag-builder source copied into frontend at src/packages/dag-builder/ for CI compatibility
+
+### Changed
+- vite.config.ts: alias points to src/packages/dag-builder (works in both local dev and CI)
+- Installed @xyflow/react, @dagrejs/dagre, zustand, immer as frontend dependencies
+
+### Pending (manual)
+- Run cost_tracking_tables.sql migration against Aurora PostgreSQL
+- Deploy agent-engine Docker image to ECS (includes costs_router)
+
+- Pushed dad5e90 to origin/development; committed e24b7c9 to monorepo; copied dag-builder into frontend src/packages/; installed xyflow+dagre+zustand+immer; build succeeds (258KB chunk)
+  - Files: `inspire-genius-frontend (pushed),services/agent-engine/app/routes/costs.py,services/agent-engine/sql/cost_tracking_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- Built VAT-007 CDK TrainerStack: 2 Lambda functions, 2 DynamoDB tables, S3 bucket, EventBridge rule, API Gateway routes, 5 CloudWatch alarms. CDK synth succeeds (68 constructs).
+  - Files: `infrastructure/cdk/lib/trainer-stack.ts,infrastructure/cdk/bin/cdk.ts,services/trainer-service/app/worker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_mcp_tools.py`
+
+- Updated RDS Proxy endpoint (ctsmouhogj3n) in all CDK stacks. Generated 15-table migration SQL. Initiated CDK deploy ig-dev-trainer.
+  - Files: `infrastructure/cdk/lib/trainer-stack.ts,services/trainer-service/alembic/versions/001_create_trainer_tables.sql,services/trainer-service/app/worker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/run_migration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/deploy_stacks.sh`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/trainer-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/rlhf-stack.ts`
+
 ## [2026-04-05] — Deployment Phases 2–5 Execution
 
 ### Phase 2: Database Migrations
@@ -43,6 +939,15 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/vite.config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- Created Flydocs DAG Planning Map document — 42-node DAG decomposing the Leadership Programme into 7 process groups across 16 waves, with step-by-step DAG Process Builder guide
+  - Files: `Flydocs_DAG_Planning_Map.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
 
 ## [2026-04-05] — DAG Process Builder: Route Wiring & Deploy
 
@@ -813,6 +1718,12 @@ This session executed the IG_Complete_Deployment_Plan.docx from start to finish,
 - Phase 8: Final regression + staging deployment
 
 ---
+
+## [2026-04-06] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/Dockerfile`
+
 
 ## [2026-04-05] — Session Activity
 

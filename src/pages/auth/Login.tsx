@@ -8,6 +8,8 @@ import { EmailField, PasswordField, SocialAuthSection } from "@/components/auth/
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 import { useRequestMagicLink } from "@/hooks/magic-auth/useMagicAuth";
 import { Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { LoginDataPayload } from "@/types/auth/api-types";
 import type { UserRole } from "@/types/roles";
 
@@ -19,6 +21,7 @@ const DEV_ACCOUNTS: { label: string; role: UserRole; email: string; name: string
   { label: "Practitioner", role: "practitioner", email: "practitioner@test.com", name: "Test Practitioner" },
   { label: "Distributor", role: "distributor", email: "distributor@test.com", name: "Test Distributor" },
   { label: "Super Admin", role: "super-admin", email: "admin@test.com", name: "Super Admin" },
+  { label: "Tone", role: "user", email: "tone99@3pp.com", name: "Tone" },
 ];
 
 export default function Login() {
@@ -26,10 +29,13 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { login, isLoading, completeAuthFromPayload } = useAuth();
   const navigate = useNavigate();
   const redirectTo = useAuthRedirectForAuthPages();
   const magicLinkMutation = useRequestMagicLink();
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
   const [providerActive, setProviderActive] = useState<boolean>(() => {
     try {
       return Boolean(sessionStorage.getItem("auth:provider"));
@@ -68,18 +74,55 @@ export default function Login() {
     await completeAuthFromPayload(payload, acct.email, { message: `Dev login: ${acct.label}` });
   };
 
+  const validateEmail = (value: string): boolean => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      toast.error("Please enter your email address.");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Please enter a valid email address.");
+      return false;
+    }
+    return true;
+  };
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    await magicLinkMutation.mutateAsync({ email: email.trim().toLowerCase() });
-    setMagicLinkSent(true);
+    if (!validateEmail(email)) return;
+    setSubmitting(true);
+    try {
+      await magicLinkMutation.mutateAsync({ email: email.trim().toLowerCase() });
+      setMagicLinkSent(true);
+    } catch {
+      // Error already handled by magicAuthAxios interceptor + React Query onError
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
-    try { sessionStorage.removeItem("auth:provider"); } catch { /* storage blocked */ }
     e.preventDefault();
-    await login(email, password);
+    if (!validateEmail(email)) return;
+    if (!password) {
+      toast.error("Please enter your password.");
+      return;
+    }
+    try { sessionStorage.removeItem("auth:provider"); } catch { /* storage blocked */ }
+    setSubmitting(true);
+    try {
+      const result = await login(email, password);
+      if (!result.status) {
+        // login() already shows toast on error via mutation onError
+      }
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const isBusy = isLoading || submitting || magicLinkMutation.isPending;
 
   // Magic link sent confirmation screen
   if (magicLinkSent) {
@@ -91,16 +134,16 @@ export default function Login() {
               <Mail className="size-8 text-teal-600" />
             </div>
           </div>
-          <AuthHeader title="Check your email" subtitle={`We sent a sign-in link to ${email}`} />
+          <AuthHeader title={t('magicLink.checkEmail')} subtitle={t('magicLink.sentTo', { email })} />
           <p className="text-sm text-muted-foreground">
-            Click the link in your email to sign in. The link expires in 15 minutes.
+            {t('magicLink.clickLink')}
           </p>
           <div className="flex flex-col gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => setMagicLinkSent(false)}
             >
-              Try a different email
+              {t('magicLink.tryDifferentEmail')}
             </Button>
             <Button
               variant="ghost"
@@ -110,7 +153,7 @@ export default function Login() {
                 await magicLinkMutation.mutateAsync({ email: email.trim().toLowerCase() });
               }}
             >
-              {magicLinkMutation.isPending ? "Resending..." : "Resend magic link"}
+              {magicLinkMutation.isPending ? t('magicLink.resending') : t('magicLink.resend')}
             </Button>
           </div>
         </div>
@@ -122,7 +165,7 @@ export default function Login() {
   if (showPasswordLogin) {
     return (
       <AuthLayout>
-        <AuthHeader title="Sign In with Password" subtitle="Enter your credentials" />
+        <AuthHeader title={t('login.passwordTitle')} subtitle={t('login.passwordSubtitle')} />
 
         <form className="space-y-4" onSubmit={handlePasswordLogin}>
           <EmailField value={email} onChange={setEmail} />
@@ -130,29 +173,30 @@ export default function Login() {
 
           <div className="mt-6 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2" />
-            <Link className="underline text-muted-foreground" to="/forgot">Forgot password?</Link>
+            <Link className="underline text-muted-foreground" to="/forgot">{t('login.forgotPassword')}</Link>
           </div>
 
-          <Button type="submit" className="w-full mt-8" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Log In"}
+          <Button type="submit" className="w-full mt-8" disabled={isBusy}>
+            {isBusy ? t('login.loggingIn') : t('login.submit')}
           </Button>
         </form>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">or</span></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">{tc('or')}</span></div>
         </div>
 
         <Button
           variant="outline"
           className="w-full"
+          disabled={isBusy}
           onClick={() => setShowPasswordLogin(false)}
         >
-          Sign in with magic link
+          {t('login.signInWithMagicLink')}
         </Button>
 
         <p className="mt-6 text-sm text-muted-foreground text-center">
-          Don't have an account? <Link className="underline" to="/signup">Sign Up</Link>
+          {tc('noAccount')} <Link className="underline" to="/signup">{tc('signUp')}</Link>
         </p>
       </AuthLayout>
     );
@@ -161,13 +205,13 @@ export default function Login() {
   // Primary: Magic link login
   return (
     <AuthLayout>
-      <AuthHeader title="Hello Again" subtitle="Welcome back" />
+      <AuthHeader title={t('login.title')} subtitle={t('login.subtitle')} />
 
       <form className="space-y-4" onSubmit={handleMagicLink}>
         <EmailField value={email} onChange={setEmail} />
 
-        <Button type="submit" className="w-full mt-8" disabled={magicLinkMutation.isPending}>
-          {magicLinkMutation.isPending ? "Sending..." : "Send Sign-In Link"}
+        <Button type="submit" className="w-full mt-8" disabled={isBusy}>
+          {isBusy ? t('login.sending') : t('login.sendSignInLink')}
         </Button>
       </form>
 
@@ -178,24 +222,25 @@ export default function Login() {
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">or</span></div>
+        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">{tc('or')}</span></div>
       </div>
 
       <Button
         variant="outline"
         className="w-full"
+        disabled={isBusy}
         onClick={() => setShowPasswordLogin(true)}
       >
-        Sign in with password
+        {t('login.signInWithPassword')}
       </Button>
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        Don't have an account? <Link className="underline" to="/signup">Sign Up</Link>
+        {tc('noAccount')} <Link className="underline" to="/signup">{tc('signUp')}</Link>
       </p>
 
       {import.meta.env.DEV && (
         <div className="mt-6 border-t pt-4">
-          <p className="text-xs text-muted-foreground text-center mb-3 font-semibold uppercase tracking-wide">Dev Quick Login</p>
+          <p className="text-xs text-muted-foreground text-center mb-3 font-semibold uppercase tracking-wide">{t('login.devQuickLogin')}</p>
           <div className="grid grid-cols-2 gap-2">
             {DEV_ACCOUNTS.map((acct) => (
               <Button
