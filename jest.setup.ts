@@ -1,6 +1,11 @@
 import "@testing-library/jest-dom";
 import { TextDecoder, TextEncoder } from "util";
 
+// Polyfill structuredClone for jsdom (used by @dagrejs/dagre)
+if (typeof globalThis.structuredClone === "undefined") {
+  globalThis.structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));
+}
+
 // Dummy env for tests (intentionally fake values and keys for static analyzers)
 process.env.FAKE_TEST_VALID_PASSWORD ??= "fake-TestPassword123!";
 process.env.FAKE_TEST_INVALID_NO_UPPERCASE ??= "fake-testpassword123!";
