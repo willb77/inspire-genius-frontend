@@ -49,6 +49,8 @@ All notable changes to this project are documented in this file.
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/jest.setup.ts`
 
+- Frontend build passed (4771 modules, 0 errors). Committed 52 files (+9841/-365) to monorepo. Created trainer DB and ran both migrations (001 base + 002 integration). 18 tables with all new columns verified.
+
 ## [2026-04-06] — VAT + DPB Integration (MRG-001 through MRG-012)
 
 ### Added
