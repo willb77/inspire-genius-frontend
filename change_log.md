@@ -2,6 +2,53 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-06] — Login Page Design Concepts
+
+### Added
+- **Login design mockups** — 4 standalone HTML login page concepts for visual review
+  - `login-designs/index.html` — landing page with card links to each design
+  - `login-designs/design-a.html` — Social-First + Tabs (Google hero CTA, tabbed magic link/password toggle, white minimal)
+  - `login-designs/design-b.html` — Immersive Brand Wall (60/40 split, animated gradient mesh, testimonial card, white form panel)
+  - `login-designs/design-c.html` — Conversational Choices (two illustrated choice cards with progressive disclosure animation)
+  - `login-designs/design-d.html` — Dark + App Preview (dark full-screen, form left, 3D perspective dashboard mockup right)
+- Each page includes inter-design nav bar and uses brand colors (`#466bc4` primary, `#2DD4BF` accent) with Logo-Dark.png / Logo-Light.png
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/auth/__tests__/AuthLayout.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/jest.setup.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/jest.setup.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/jest.setup.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/auth/__tests__/Login.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/auth/__tests__/AuthLayout.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/auth/__tests__/Login.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/jest.setup.ts`
+
 ## [2026-04-06] — VAT + DPB Integration (MRG-001 through MRG-012)
 
 ### Added
