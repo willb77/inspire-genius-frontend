@@ -189,6 +189,10 @@ describe("Login Page - Full Coverage", () => {
     // Navigate to password login view (where sessionStorage is cleared on submit)
     fireEvent.click(screen.getByText("Sign in with password"));
 
+    // Fill in email and password so validation passes
+    fireEvent.change(screen.getByLabelText("email"), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText("password"), { target: { value: "Password123!" } });
+
     const form = screen.getByLabelText("email").closest("form")!;
     fireEvent.submit(form);
 
