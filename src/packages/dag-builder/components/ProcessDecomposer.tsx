@@ -26,6 +26,140 @@ type PlanNode = {
   depends_on: string[];
 };
 
+/**
+ * Client-side keyword-based decomposition when LLM planner is unavailable.
+ * Scans the description for keywords matching agent capabilities and builds a multi-step DAG.
+ */
+function clientSideDecompose(
+  description: string,
+  agents: { id: string; displayName: string; description: string; domain: string }[]
+): DagNode[] {
+  const lower = description.toLowerCase();
+  const agentKeywords: Record<string, string[]> = {
+    Aura: ["prism", "profile", "temperament", "personality", "behavioral", "colour", "color", "gold", "green", "blue", "orange", "brain map"],
+    Atlas: ["analytics", "dashboard", "metrics", "data", "stats", "kpi", "performance data", "team analytics", "report"],
+    Echo: ["memory", "history", "pattern", "recall", "past session", "previous"],
+    Forge: ["onboard", "setup", "welcome", "action", "accountability", "milestone"],
+    Nova: ["career", "session", "schedule", "pathway", "development plan"],
+    James: ["admin", "manage", "user", "team", "hiring", "candidate", "job", "recruit", "match"],
+    Sage: ["document", "learning", "skill", "training", "resource", "file"],
+    Sentinel: ["compliance", "audit", "risk", "rule", "policy", "verify", "check"],
+    Bridge: ["communication", "relationship", "notification", "message"],
+    Ascend: ["performance review", "growth", "appraisal", "evaluation", "goal"],
+    Nexus: ["organization", "culture", "context", "knowledge base"],
+    Meridian: ["coach", "session", "synthesize", "summarize", "deliver"],
+    Compass: ["help", "support", "faq", "troubleshoot"],
+  };
+
+  // Score each agent
+  const scored: { id: string; score: number; matchedKeywords: string[] }[] = [];
+  for (const [agentId, keywords] of Object.entries(agentKeywords)) {
+    if (!agents.find((a) => a.id === agentId)) continue;
+    const matched = keywords.filter((kw) => lower.includes(kw));
+    if (matched.length > 0) {
+      scored.push({ id: agentId, score: matched.length, matchedKeywords: matched });
+    }
+  }
+
+  // Sort by score descending, take top matches
+  scored.sort((a, b) => b.score - a.score);
+  const selected = scored.slice(0, Math.max(2, Math.min(5, scored.length)));
+
+  // If no matches, use a sensible default
+  if (selected.length === 0) {
+    const defaultAgent = agents.find((a) => a.id === "Meridian") ?? agents[0];
+    return [{
+      id: "step_0",
+      agentId: defaultAgent.id,
+      label: defaultAgent.displayName,
+      description: description,
+      dependsOn: [],
+      config: { timeout: 30 },
+      position: { x: 0, y: 0 },
+    }];
+  }
+
+  // Build nodes: first node has no deps, subsequent depend on the previous
+  // Data-gathering agents (Atlas, Echo, Nexus) go in Wave 0 (parallel)
+  // Analysis agents go in Wave 1
+  // Synthesis (Meridian) goes last
+  const dataAgents = ["Atlas", "Echo", "Nexus", "Forge"];
+  const wave0: typeof selected = [];
+  const wave1: typeof selected = [];
+  const waveLast: typeof selected = [];
+
+  for (const s of selected) {
+    if (s.id === "Meridian") waveLast.push(s);
+    else if (dataAgents.includes(s.id)) wave0.push(s);
+    else wave1.push(s);
+  }
+
+  // If all ended up in wave1, move first one to wave0
+  if (wave0.length === 0 && wave1.length > 0) {
+    wave0.push(wave1.shift()!);
+  }
+
+  // Always end with Meridian if we have multiple steps
+  if (waveLast.length === 0 && (wave0.length + wave1.length) > 1) {
+    const meridian = agents.find((a) => a.id === "Meridian");
+    if (meridian) {
+      waveLast.push({ id: "Meridian", score: 0, matchedKeywords: [] });
+    }
+  }
+
+  const nodes: DagNode[] = [];
+  const wave0Ids: string[] = [];
+
+  // Wave 0 — parallel data gathering
+  for (let i = 0; i < wave0.length; i++) {
+    const agent = agents.find((a) => a.id === wave0[i].id)!;
+    const nodeId = `step_${nodes.length}`;
+    wave0Ids.push(nodeId);
+    nodes.push({
+      id: nodeId,
+      agentId: agent.id,
+      label: agent.displayName,
+      description: `${agent.description} — ${wave0[i].matchedKeywords.join(", ")}`,
+      dependsOn: [],
+      config: { timeout: 30 },
+      position: { x: 0, y: 0 },
+    });
+  }
+
+  // Wave 1 — analysis (depends on all wave 0)
+  const wave1Ids: string[] = [];
+  for (let i = 0; i < wave1.length; i++) {
+    const agent = agents.find((a) => a.id === wave1[i].id)!;
+    const nodeId = `step_${nodes.length}`;
+    wave1Ids.push(nodeId);
+    nodes.push({
+      id: nodeId,
+      agentId: agent.id,
+      label: agent.displayName,
+      description: `${agent.description} — ${wave1[i].matchedKeywords.join(", ")}`,
+      dependsOn: [...wave0Ids],
+      config: { timeout: 30 },
+      position: { x: 0, y: 0 },
+    });
+  }
+
+  // Final wave — synthesis
+  for (let i = 0; i < waveLast.length; i++) {
+    const agent = agents.find((a) => a.id === waveLast[i].id)!;
+    nodes.push({
+      id: `step_${nodes.length}`,
+      agentId: agent.id,
+      label: agent.displayName,
+      description: "Synthesize all prior agent outputs into a unified response",
+      dependsOn: [...wave0Ids, ...wave1Ids],
+      config: { timeout: 30 },
+      position: { x: 0, y: 0 },
+    });
+  }
+
+  return nodes;
+}
+
 export function ProcessDecomposer({
   ecosystemConfig,
   onAccept,
@@ -70,22 +204,14 @@ export function ProcessDecomposer({
       const edges = deriveEdges(dagNodes);
       const laid = autoLayout(dagNodes, edges);
       setPreview(laid);
-    } catch (err) {
-      // Fallback: create a simple single-step plan
-      const fallback: DagNode[] = [
-        {
-          id: "step_0",
-          agentId: ecosystemConfig.adapter.agents[0]?.id ?? "Meridian",
-          label: ecosystemConfig.adapter.agents[0]?.displayName ?? "Agent",
-          description: description,
-          dependsOn: [],
-          config: { timeout: 30 },
-          position: { x: 100, y: 100 },
-        },
-      ];
-      setPreview(fallback);
+    } catch {
+      // Fallback: client-side keyword-based decomposition
+      const fallback = clientSideDecompose(description, ecosystemConfig.adapter.agents);
+      const fallbackEdges = deriveEdges(fallback);
+      const laid = autoLayout(fallback, fallbackEdges);
+      setPreview(laid);
       setError(
-        "LLM planner unavailable — created a single-step fallback. Edit below or try again."
+        "LLM planner unavailable — used keyword-based decomposition. You can edit the steps below, then Accept & Load."
       );
     } finally {
       setLoading(false);

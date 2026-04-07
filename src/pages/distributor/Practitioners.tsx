@@ -3,8 +3,12 @@ import DistributorLayout from "@/layouts/DistributorLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import ProgressBar from "@/components/dashboard/ProgressBar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useDistributorPractitioners } from "@/hooks/distributor/useDistributor"
 
-const PRACTITIONERS = [
+type Practitioner = { id: string; name: string; region: string; email: string; allocated: number; used: number; util: number; status: string; clients: number; joinDate: string }
+
+const FALLBACK_PRACTITIONERS: Practitioner[] = [
   { id: "p-1", name: "Dr. Sarah Chen", region: "Northeast", email: "sarah.chen@prism.com", allocated: 500, used: 420, util: 84, status: "active", clients: 18, joinDate: "Jan 2025" },
   { id: "p-2", name: "Michael Torres", region: "Southeast", email: "m.torres@prism.com", allocated: 450, used: 385, util: 86, status: "active", clients: 15, joinDate: "Mar 2025" },
   { id: "p-3", name: "Jennifer Okafor", region: "Midwest", email: "j.okafor@prism.com", allocated: 400, used: 310, util: 78, status: "active", clients: 12, joinDate: "Feb 2025" },
@@ -17,7 +21,10 @@ const PRACTITIONERS = [
 
 export default function DistributorPractitioners() {
   const [search, setSearch] = useState("")
-  const filtered = PRACTITIONERS.filter((p) =>
+  const { data: practsData, isLoading, error, refetch } = useDistributorPractitioners()
+
+  const allPractitioners = ((practsData as { practitioners?: Practitioner[] } | undefined)?.practitioners ?? FALLBACK_PRACTITIONERS) as Practitioner[]
+  const filtered = allPractitioners.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.region.toLowerCase().includes(search.toLowerCase())
   )
@@ -50,6 +57,12 @@ export default function DistributorPractitioners() {
       </div>
 
       <DataCard title="Practitioners" badge={8}>
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="mb-4">
           <input
             type="text"
@@ -70,23 +83,30 @@ export default function DistributorPractitioners() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5">
-                    <div className="text-[13px] font-semibold text-[#1f2937]">{p.name}</div>
-                    <div className="text-[11px] text-[#9ca3af]">{p.email}</div>
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.region}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.allocated}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.used}</td>
-                  <td className="px-3 py-2.5 w-[140px]">
-                    <ProgressBar value={p.util} color="#3B5BFF" showPct />
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] font-semibold text-[#374151]">{p.clients}</td>
-                  <td className="px-3 py-2.5"><StatusBadge status={p.status === "leave" ? "leave" : "active"} label={p.status === "leave" ? "On Leave" : "Active"} /></td>
-                  <td className="px-3 py-2.5 text-xs text-[#6b7280]">{p.joinDate}</td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={8} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : filtered.map((p) => (
+                    <tr key={p.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5">
+                        <div className="text-[13px] font-semibold text-[#1f2937]">{p.name}</div>
+                        <div className="text-[11px] text-[#9ca3af]">{p.email}</div>
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.region}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.allocated}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{p.used}</td>
+                      <td className="px-3 py-2.5 w-[140px]">
+                        <ProgressBar value={p.util} color="#3B5BFF" showPct />
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] font-semibold text-[#374151]">{p.clients}</td>
+                      <td className="px-3 py-2.5"><StatusBadge status={p.status === "leave" ? "leave" : "active"} label={p.status === "leave" ? "On Leave" : "Active"} /></td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b7280]">{p.joinDate}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

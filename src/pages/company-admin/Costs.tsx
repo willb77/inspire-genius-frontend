@@ -2,15 +2,17 @@ import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import ProgressBar from "@/components/dashboard/ProgressBar"
 import { Info } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useCompanyCosts } from "@/hooks/company-admin/useCompanyAdmin"
 
-const SUMMARY = [
+const FALLBACK_SUMMARY = [
   { label: "Total Spend (6 mo)", value: "$107,000", change: "+12% vs prior", changeColor: "text-[#EF4444]" },
   { label: "License Cost", value: "$83,200", change: "78% of total", changeColor: "text-[#3B5BFF]" },
   { label: "Training Cost", value: "$23,800", change: "22% of total", changeColor: "text-[#8B5CF6]" },
   { label: "Cost per User", value: "$433", change: "-$18 vs prior", changeColor: "text-[#10B981]" },
 ]
 
-const MONTHLY = [
+const FALLBACK_MONTHLY = [
   { month: "Oct", licenses: 12400, training: 3200, total: 15600 },
   { month: "Nov", licenses: 12400, training: 4100, total: 16500 },
   { month: "Dec", licenses: 13200, training: 2800, total: 16000 },
@@ -19,7 +21,7 @@ const MONTHLY = [
   { month: "Mar", licenses: 15600, training: 3900, total: 19500 },
 ]
 
-const DEPT_COSTS = [
+const FALLBACK_DEPT_COSTS = [
   { name: "Engineering", users: 68, cost: 29400, pct: 27 },
   { name: "Sales", users: 45, cost: 19500, pct: 18 },
   { name: "Marketing", users: 34, cost: 14700, pct: 14 },
@@ -30,9 +32,20 @@ const DEPT_COSTS = [
   { name: "Operations", users: 16, cost: 7100, pct: 7 },
 ]
 
-const maxTotal = Math.max(...MONTHLY.map((m) => m.total))
-
 export default function CompanyAdminCosts() {
+  const { data: costsData, isLoading, error, refetch } = useCompanyCosts()
+
+  const cd = costsData as {
+    summary?: typeof FALLBACK_SUMMARY;
+    monthly?: typeof FALLBACK_MONTHLY;
+    deptCosts?: typeof FALLBACK_DEPT_COSTS;
+  } | undefined
+
+  const SUMMARY = cd?.summary ?? FALLBACK_SUMMARY
+  const MONTHLY = cd?.monthly ?? FALLBACK_MONTHLY
+  const DEPT_COSTS = cd?.deptCosts ?? FALLBACK_DEPT_COSTS
+  const maxTotal = Math.max(...MONTHLY.map((m) => m.total))
+
   return (
     <CompanyAdminLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Cost Management</h1>
@@ -51,7 +64,7 @@ export default function CompanyAdminCosts() {
         {SUMMARY.map((s) => (
           <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
             <div className="text-xs text-[#6b7280]">{s.label}</div>
-            <div className="text-2xl font-bold text-[#111827]">{s.value}</div>
+            {isLoading ? <Skeleton className="h-8 w-20 my-1" /> : <div className="text-2xl font-bold text-[#111827]">{s.value}</div>}
             <div className={`text-[11px] font-semibold mt-0.5 ${s.changeColor}`}>{s.change}</div>
           </div>
         ))}
@@ -79,6 +92,12 @@ export default function CompanyAdminCosts() {
 
       {/* Cost by Department */}
       <DataCard title="Cost by Department">
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -89,17 +108,24 @@ export default function CompanyAdminCosts() {
               </tr>
             </thead>
             <tbody>
-              {DEPT_COSTS.map((d) => (
-                <tr key={d.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{d.name}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{d.users}</td>
-                  <td className="px-3 py-2.5 text-[13px] font-semibold text-[#374151]">${d.cost.toLocaleString()}</td>
-                  <td className="px-3 py-2.5 w-[140px]">
-                    <ProgressBar value={d.pct} color="#3B5BFF" showPct />
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">${Math.round(d.cost / d.users)}</td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={5} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : DEPT_COSTS.map((d) => (
+                    <tr key={d.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5 text-[13px] font-semibold text-[#1f2937]">{d.name}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{d.users}</td>
+                      <td className="px-3 py-2.5 text-[13px] font-semibold text-[#374151]">${d.cost.toLocaleString()}</td>
+                      <td className="px-3 py-2.5 w-[140px]">
+                        <ProgressBar value={d.pct} color="#3B5BFF" showPct />
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">${Math.round(d.cost / d.users)}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

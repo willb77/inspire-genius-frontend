@@ -11,6 +11,8 @@ export { TemplateMetadataPanel } from "./components/TemplateMetadataPanel";
 export { TemplateToolbar } from "./components/TemplateToolbar";
 export { ProcessDecomposer } from "./components/ProcessDecomposer";
 export { CostEstimatePanel } from "./components/CostEstimatePanel";
+export { AgentDetailModal } from "./components/AgentDetailModal";
+export { ManageAgentsModal } from "./components/ManageAgentsModal";
 
 // ─── Hooks ──────────────────────────────────────────────────────
 export { useDagStore } from "./hooks/useDagStore";

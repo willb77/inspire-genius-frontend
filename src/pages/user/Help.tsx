@@ -116,17 +116,18 @@ export default function Help() {
               Prefer to talk? Connect with our AI voice support agent for real-time assistance.
             </p>
           </div>
-          <Button asChild variant="default" className="shrink-0">
-            {/* TODO: Replace href with actual voice help agent URL */}
-            <a href="#voice-help" target="_blank" rel="noopener noreferrer">
-              Speak with Support
-            </a>
+          <Button
+            variant="default"
+            className="shrink-0"
+            onClick={() => window.dispatchEvent(new CustomEvent("voicedesk:open"))}
+          >
+            Speak with Support
           </Button>
         </div>
 
         {/* Issues List */}
         <div className="bg-white rounded-2xl border shadow-sm p-4">
-          <div className="text-left mb-3 font-semibold">Recent Issues</div>
+          <div className="text-left mb-3 font-semibold">Recent Issues (TODO: translate)</div>
           {isListing && (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (

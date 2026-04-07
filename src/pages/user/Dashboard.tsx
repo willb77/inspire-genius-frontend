@@ -6,6 +6,7 @@ import UserCoachCard from "@/components/user/UserCoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAgents } from "@/hooks/coaches/useAgents";
 
 type Agent = {
@@ -18,6 +19,7 @@ type Agent = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation(["dashboard", "common"]);
   const [query, setQuery] = useState("");
   const { data: agentsResp, isLoading: agentsLoading, isError, error, refetch } = useAgents({ page: 1, page_size: 12 });
 
@@ -66,15 +68,15 @@ export default function Dashboard() {
         <div className="bg-transparent rounded-xl p-4" data-tour="dashboard-coach-list">
           <div className="flex items-center justify-between gap-4">
             <div className="text-left flex-1 min-w-0">
-              <h2 className="text-lg font-semibold">Choose a coach to chat</h2>
+              <h2 className="text-lg font-semibold">{t("dashboard:chooseCoach")}</h2>
               <p className="mt-1 max-w-[75%] text-xs text-muted-foreground">
-                Pick a coach card below to open a chat and start your conversation. You can adjust each coach&apos;s settings later from the Manage Coaches page.
+                {t("dashboard:coachDescription")}
               </p>
             </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search.."
+                placeholder={t("dashboard:search")}
                 className="!bg-white pl-9"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -90,27 +92,27 @@ export default function Dashboard() {
             ) : isError ? (
               <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-                <h3 className="text-lg font-semibold">Failed to load coaches</h3>
+                <h3 className="text-lg font-semibold">{t("dashboard:failedLoadCoaches")}</h3>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  {(error as { message?: string })?.message || "Could not connect to the server. Please try again."}
+                  {(error as { message?: string })?.message || t("dashboard:couldNotConnect")}
                 </p>
                 <Button variant="outline" className="mt-4" onClick={() => refetch()}>
                   <RefreshCcw className="h-4 w-4 mr-2" />
-                  Retry
+                  {t("common:retry")}
                 </Button>
               </div>
             ) : agents.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                 <Bot className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-semibold">No coaches available</h3>
+                <h3 className="text-lg font-semibold">{t("dashboard:noCoachesAvailable")}</h3>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                   {query
-                    ? `No coaches match "${query}". Try a different search.`
-                    : "No AI coaches have been assigned to your account yet. Please contact your administrator."}
+                    ? t("dashboard:noCoachesMatch", { query })
+                    : t("dashboard:noCoachesAssigned")}
                 </p>
                 {query && (
                   <Button variant="outline" className="mt-4" onClick={() => setQuery("")}>
-                    Clear search
+                    {t("common:clearSearch")}
                   </Button>
                 )}
               </div>

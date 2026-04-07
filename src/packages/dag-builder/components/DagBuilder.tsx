@@ -25,6 +25,7 @@ import { TemplateMetadataPanel } from "./TemplateMetadataPanel";
 import { TemplateToolbar } from "./TemplateToolbar";
 import { ProcessDecomposer } from "./ProcessDecomposer";
 import { CostEstimatePanel } from "./CostEstimatePanel";
+import { TemplateGallery } from "./TemplateGallery";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1 } },
@@ -85,7 +86,7 @@ function DagBuilderInner({
       {/* Toolbar */}
       <TemplateToolbar
         ecosystemConfig={ecosystemConfig}
-        onSave={handleSave}
+        onSave={handleSave as unknown as (t: DagTemplate) => void}
         onAutoLayout={() => applyLayout("TB")}
       />
 
@@ -141,17 +142,13 @@ function DagBuilderInner({
         )}
 
         {tab === "templates" && (
-          <div className="flex-1 p-8 flex items-center justify-center">
-            <div className="text-center">
-              <FolderOpen size={40} className="text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500">
-                Template gallery — connect to your API to browse saved templates.
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Endpoint: {ecosystemConfig.apiBaseUrl}/v1/admin/templates
-              </p>
-            </div>
-          </div>
+          <TemplateGallery
+            ecosystemConfig={ecosystemConfig}
+            onLoad={(tpl) => {
+              loadTemplate(tpl);
+              setTab("editor");
+            }}
+          />
         )}
       </div>
     </div>

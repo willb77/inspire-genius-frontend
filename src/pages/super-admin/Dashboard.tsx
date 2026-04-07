@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -28,6 +29,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 
 export default function SuperAdminDashboard() {
+  const { t } = useTranslation(["admin", "common"]);
   // Date logic (same as ExportChatModal)
   const today = useMemo(() => new Date(), []);
   const thirtyDaysAgo = useMemo(() => {
@@ -43,7 +45,7 @@ export default function SuperAdminDashboard() {
       <div className="space-y-6">
         {/* Header with Dashboard title and avatars */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("admin:superAdmin.dashboard")}</h1>
           <div className="invisible flex items-center gap-4">
             <div className="flex items-center -space-x-2">
               <Avatar className="h-9 w-9 border-2 border-white">

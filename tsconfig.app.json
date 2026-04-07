@@ -10,6 +10,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@inspiresgenius/dag-builder": [
+        "./src/packages/dag-builder/index.ts"
       ]
     },
 

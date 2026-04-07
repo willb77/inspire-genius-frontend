@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "メッセージを入力してください...",
+    "send": "送信",
+    "newSession": "新しいセッション"
+  },
+  "sessions": {
+    "title": "セッション",
+    "empty": "セッションはまだありません"
+  },
+  "agents": {
+    "title": "エージェント"
+  },
+  "feedback": {
+    "feedback": "フィードバック",
+    "helpful": "役に立った",
+    "notHelpful": "役に立たなかった",
+    "comment": "コメントを追加",
+    "positive": "ポジティブ",
+    "negative": "ネガティブ",
+    "neutral": "中立",
+    "allRatings": "すべての評価",
+    "fiveStars": "5つ星",
+    "fourStars": "4つ星",
+    "threeStars": "3つ星",
+    "twoStars": "2つ星",
+    "oneStar": "1つ星",
+    "history": "フィードバック履歴",
+    "reviewDescription": "AIコーチの回答に対して送信したすべてのフィードバックを確認します。",
+    "totalFeedback": "フィードバック合計",
+    "avgRating": "平均評価",
+    "fiveStarCount": "5つ星",
+    "oneStarCount": "1つ星",
+    "loadingFeedback": "フィードバックを読み込み中...",
+    "failedLoadFeedback": "フィードバックの読み込みに失敗しました。後でもう一度お試しください。",
+    "results": "件の結果",
+    "result": "件の結果"
+  },
+  "practitioner": {
+    "dashboard": "プラクティショナーダッシュボード",
+    "welcomeBack": "おかえりなさい、{name}様。本日は{sessions}件のセッションが予定されており、今週は{followups}件のフォローアップが必要です。",
+    "activeClients": "アクティブなクライアント",
+    "creditsRemaining": "残りクレジット",
+    "sessionsThisMonth": "今月のセッション",
+    "avgClientSatisfaction": "平均クライアント満足度",
+    "todaysSessions": "本日のセッション",
+    "confirmed": "確認済み",
+    "clientPortfolio": "クライアントポートフォリオ",
+    "clientName": "クライアント名",
+    "organization": "組織",
+    "prismScore": "PRISMスコア",
+    "sessions": "セッション",
+    "lastSession": "最終セッション",
+    "followUpsDueThisWeek": "今週のフォローアップ期限",
+    "creditUsage": "クレジット使用状況",
+    "prismAssessment": "PRISM評価",
+    "completeDescription": "PRISM脳マッピングを完了して、パーソナライズされたコーチングインサイトを解放します",
+    "activeAssessment": "実施中の評価",
+    "report": "レポート",
+    "assessmentHistory": "評価履歴"
+  },
+  "quickActions": {
+    "chatWithMeridian": "メリディアンとチャット",
+    "uploadDocument": "ドキュメントをアップロード",
+    "viewPrismReport": "PRISMレポートを表示",
+    "setNewGoal": "新しい目標を設定"
+  },
+  "prism": {
+    "assessment": "PRISM評価",
+    "completeDescription": "PRISM脳マッピングを完了して、パーソナライズされたコーチングインサイトを解放します",
+    "activeAssessment": "実施中の評価",
+    "report": "レポート",
+    "assessmentHistory": "評価履歴"
+  }
+}

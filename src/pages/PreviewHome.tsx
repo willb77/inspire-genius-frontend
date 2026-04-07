@@ -116,18 +116,18 @@ export default function PreviewHome() {
           </CardContent>
         </Card>
 
-        {/* Ask Alex */}
+        {/* Ask Meridian */}
         <Card className="lg:col-span-5 border border-border/40 shadow-none">
           <CardContent className="p-5 flex flex-col h-full">
             <div className="flex items-center gap-2 mb-4">
               <Compass className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-base font-semibold">Ask Alex</h2>
+              <h2 className="text-base font-semibold">Ask Meridian</h2>
               <span className="text-[11px] text-muted-foreground ml-auto">Your AI assistant</span>
             </div>
             <div className="relative flex items-center justify-center flex-1 min-h-[200px] rounded-xl bg-muted/20 mb-4">
               <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">A</div>
-                <p className="text-sm text-muted-foreground">Hey, I'm Alex!</p>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">M</div>
+                <p className="text-sm text-muted-foreground">Hey, I'm Meridian!</p>
                 <p className="text-xs text-muted-foreground">How can I help you?</p>
               </div>
             </div>

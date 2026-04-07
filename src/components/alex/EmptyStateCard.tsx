@@ -7,14 +7,14 @@ export default function EmptyStateCard({ onStart }: { onStart: () => void }) {
     <Card className="border-none shadow-none">
       <CardContent className="space-y-3 relative">
         <div className="relative flex items-center justify-center h-72">
-          <img src="/images/user/home/help-alex.svg" alt="Ask Alex" className="h-64 object-cover" />
+          <img src="/images/user/home/help-alex.svg" alt="Ask Meridian" className="h-64 object-cover" />
           <OnboardingCallout
             title="How can i help you?"
             positionClass="z-10 absolute top-[50%] md:top-36 right-[0%] md:right-[20%] lg:right-[0%]"
             className="!rounded-b-xl !rounded-tr-xl"
           />
           <OnboardingCallout
-            title="Hey ,I’m Alex"
+            title="Hey, I’m Meridian"
             positionClass="z-10 absolute top-[5%] md:top-10 lg:top-10 right-[60%] md:right-[60%] lg:right-[60%]"
             className="!rounded-b-xl !rounded-tr-xl !text-blue-primary"
           />

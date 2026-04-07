@@ -1,10 +1,15 @@
+import { useTranslation } from "react-i18next";
 import ManagerLayout from "@/layouts/ManagerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import ProgressBar from "@/components/dashboard/ProgressBar"
 import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useManagerTeam } from "@/hooks/manager/useManagerTeam"
 
-const MEMBERS = [
+type Member = { id: string; name: string; role: string; avatar: string; bg: string; prism: number; goals: string; training: number; status: string; lastActive: string }
+
+const FALLBACK_MEMBERS: Member[] = [
   { id: "tm-1", name: "Alex Thompson", role: "Senior Developer", avatar: "AT", bg: "#3B82F6", prism: 88, goals: "5/7", training: 92, status: "active", lastActive: "2 hours ago" },
   { id: "tm-2", name: "Maria Garcia", role: "UX Designer", avatar: "MG", bg: "#8B5CF6", prism: 82, goals: "3/5", training: 88, status: "active", lastActive: "1 hour ago" },
   { id: "tm-3", name: "James Wilson", role: "Product Manager", avatar: "JW", bg: "#E53E3E", prism: 91, goals: "6/8", training: 95, status: "meeting", lastActive: "30 min ago" },
@@ -14,11 +19,16 @@ const MEMBERS = [
 ]
 
 export default function ManagerTeam() {
+  const { t } = useTranslation(["admin", "common"]);
+  const { data: teamData, isLoading, error, refetch } = useManagerTeam()
+
+  const members = ((teamData as { members?: Member[] } | undefined)?.members ?? FALLBACK_MEMBERS) as Member[]
+
   return (
     <ManagerLayout>
       <PlaceholderBanner />
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Team Management</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Manage direct reports, assign training, and monitor participation.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">{t("admin:manager.teamManagement")}</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">{t("admin:manager.manageDescription")}</p>
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -37,7 +47,13 @@ export default function ManagerTeam() {
       </div>
 
       {/* Team Members Detail */}
-      <DataCard title="Direct Reports">
+      <DataCard title={t("admin:manager.directReports")}>
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -48,42 +64,49 @@ export default function ManagerTeam() {
               </tr>
             </thead>
             <tbody>
-              {MEMBERS.map((m) => (
-                <tr key={m.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[11px] shrink-0" style={{ backgroundColor: m.bg }}>{m.avatar}</div>
-                      <div>
-                        <div className="text-[13px] font-semibold text-[#1f2937]">{m.name}</div>
-                        <div className="text-[11px] text-[#6b7280]">{m.role}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2 w-[120px]">
-                      <div className="flex-1 h-1.5 bg-[#f3f4f6] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-[#3B5BFF]" style={{ width: `${m.prism}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-[#374151] w-7 text-right">{m.prism}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-[13px] text-[#374151] font-medium">{m.goals}</td>
-                  <td className="px-3 py-3">
-                    <ProgressBar value={m.training} color="#10B981" showPct />
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge status={m.status === "In Meeting" ? "meeting" : m.status.toLowerCase()} label={m.status === "meeting" ? "In Meeting" : m.status.charAt(0).toUpperCase() + m.status.slice(1)} />
-                  </td>
-                  <td className="px-3 py-3 text-xs text-[#6b7280]">{m.lastActive}</td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(6).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={6} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : members.map((m) => (
+                    <tr key={m.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[11px] shrink-0" style={{ backgroundColor: m.bg }}>{m.avatar}</div>
+                          <div>
+                            <div className="text-[13px] font-semibold text-[#1f2937]">{m.name}</div>
+                            <div className="text-[11px] text-[#6b7280]">{m.role}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2 w-[120px]">
+                          <div className="flex-1 h-1.5 bg-[#f3f4f6] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-[#3B5BFF]" style={{ width: `${m.prism}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold text-[#374151] w-7 text-right">{m.prism}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-[13px] text-[#374151] font-medium">{m.goals}</td>
+                      <td className="px-3 py-3">
+                        <ProgressBar value={m.training} color="#10B981" showPct />
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={m.status === "In Meeting" ? "meeting" : m.status.toLowerCase()} label={m.status === "meeting" ? "In Meeting" : m.status.charAt(0).toUpperCase() + m.status.slice(1)} />
+                      </td>
+                      <td className="px-3 py-3 text-xs text-[#6b7280]">{m.lastActive}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>
       </DataCard>
 
       {/* Training Assignments */}
-      <DataCard title="Training Overview">
+      <DataCard title={t("admin:manager.trainingOverview")}>
         <div className="space-y-3">
           {[
             { name: "PRISM Fundamentals", assigned: 14, completed: 13, pct: 93, color: "#3B5BFF" },

@@ -1,22 +1,25 @@
 /**
  * Main React Flow canvas for the DAG editor.
+ *
+ * Uses React Flow's useNodesState/useEdgesState for internal graph state
+ * and syncs to the Zustand store only on explicit user actions (drag-end, connect, drop).
  */
 
-import { useCallback, useMemo, useRef, DragEvent } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import type { DragEvent } from "react";
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useReactFlow,
+  useNodesState,
+  useEdgesState,
   type Node,
   type Edge,
   type OnConnect,
-  type OnNodesChange,
   type NodeTypes,
   BackgroundVariant,
-  applyNodeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -39,114 +42,125 @@ type DagCanvasInnerProps = {
   className?: string;
 };
 
+/**
+ * Convert DagNode[] from store into React Flow Node[] format.
+ */
+function toFlowNodes(
+  dagNodes: DagNode[],
+  agentMap: Map<string, { color?: string; domain: string }>,
+  nodeWaves: Map<string, number>,
+  errorNodes: Set<string>
+): Node[] {
+  return dagNodes.map((n) => {
+    const agent = agentMap.get(n.agentId);
+    const data: AgentNodeData = {
+      ...n,
+      wave: nodeWaves.get(n.id),
+      domainColor: agent?.color,
+      domainLabel: agent?.domain,
+      hasErrors: errorNodes.has(n.id),
+    };
+    return {
+      id: n.id,
+      type: "agentNode",
+      position: n.position,
+      data,
+    };
+  });
+}
+
+function toFlowEdges(dagEdges: { id: string; source: string; target: string }[]): Edge[] {
+  return dagEdges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    animated: true,
+    style: { stroke: "#94a3b8", strokeWidth: 2 },
+  }));
+}
+
 function DagCanvasInner({
   ecosystemConfig,
   readOnly,
   className,
 }: DagCanvasInnerProps) {
-  const {
-    nodes: dagNodes,
-    edges: dagEdges,
-    addNode,
-    addEdge,
-    selectNode,
-    setNodePositions,
-  } = useDagStore();
-  const { fitView } = useReactFlow();
+  const store = useDagStore();
   const wrapper = useRef<HTMLDivElement>(null);
 
-  // Agent lookup for domain info
+  // Agent lookup
   const agentMap = useMemo(() => {
     const map = new Map<string, (typeof ecosystemConfig.adapter.agents)[0]>();
     for (const a of ecosystemConfig.adapter.agents) map.set(a.id, a);
     return map;
   }, [ecosystemConfig.adapter.agents]);
 
-  // Wave lookup
+  // Track store revision to detect external changes (loadTemplate, addNode, etc.)
+  const [storeRev, setStoreRev] = useState(0);
+  useEffect(() => {
+    const unsub = useDagStore.subscribe(() => setStoreRev((r) => r + 1));
+    return unsub;
+  }, []);
+
+  // Compute waves and errors from store
   const nodeWaves = useMemo(() => {
-    const waves = computeWaves(dagNodes);
+    const waves = computeWaves(store.nodes);
     const map = new Map<string, number>();
     for (const wg of waves) {
       for (const nid of wg.nodeIds) map.set(nid, wg.wave);
     }
     return map;
-  }, [dagNodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeRev]);
 
-  // Validation errors per node
-  const validation = useDagStore((s) => s.getValidation());
   const errorNodes = useMemo(() => {
+    const validation = store.getValidation();
     const set = new Set<string>();
     for (const e of validation.errors) {
       if (e.nodeId) set.add(e.nodeId);
     }
     return set;
-  }, [validation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeRev]);
 
-  // Convert to React Flow format
-  const flowNodes: Node[] = useMemo(
-    () =>
-      dagNodes.map((n) => {
-        const agent = agentMap.get(n.agentId);
-        const data: AgentNodeData = {
-          ...n,
-          wave: nodeWaves.get(n.id),
-          domainColor: agent?.color,
-          domainLabel: agent?.domain,
-          hasErrors: errorNodes.has(n.id),
-        };
-        return {
-          id: n.id,
-          type: "agentNode",
-          position: n.position,
-          data,
-          selected: false,
-        };
-      }),
-    [dagNodes, agentMap, nodeWaves, errorNodes]
+  // React Flow's own state — this is the source of truth for rendering.
+  // We sync FROM the store into these when the store changes externally.
+  const [rfNodes, setRfNodes, onNodesChange] = useNodesState<Node>([]);
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // Sync store → React Flow state when store changes
+  useEffect(() => {
+    const newNodes = toFlowNodes(store.nodes, agentMap, nodeWaves, errorNodes);
+    const newEdges = toFlowEdges(store.edges);
+    setRfNodes(newNodes);
+    setRfEdges(newEdges);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeRev, agentMap]);
+
+  // On drag end, sync positions back to store
+  const onNodeDragStop = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      const positions = new Map<string, { x: number; y: number }>();
+      positions.set(node.id, node.position);
+      store.setNodePositions(positions);
+    },
+    [store]
   );
 
-  const flowEdges: Edge[] = useMemo(
-    () =>
-      dagEdges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        animated: true,
-        style: { stroke: "#94a3b8", strokeWidth: 2 },
-      })),
-    [dagEdges]
-  );
-
-  // Callbacks
+  // Connect handler
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly || !params.source || !params.target) return;
-      addEdge(params.source, params.target);
+      store.addEdge(params.source, params.target);
     },
-    [addEdge, readOnly]
-  );
-
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => {
-      // Update positions from drag
-      const posUpdates = new Map<string, { x: number; y: number }>();
-      const updatedNodes = applyNodeChanges(changes, flowNodes);
-      for (const node of updatedNodes) {
-        if (node.position) {
-          posUpdates.set(node.id, node.position);
-        }
-      }
-      if (posUpdates.size > 0) setNodePositions(posUpdates);
-    },
-    [flowNodes, setNodePositions]
+    [store, readOnly]
   );
 
   const onNodeClick = useCallback(
-    (_: unknown, node: Node) => selectNode(node.id),
-    [selectNode]
+    (_: unknown, node: Node) => store.selectNode(node.id),
+    [store]
   );
 
-  const onPaneClick = useCallback(() => selectNode(null), [selectNode]);
+  const onPaneClick = useCallback(() => store.selectNode(null), [store]);
 
   // Drop handler for agent palette drag-and-drop
   const onDragOver = useCallback((e: DragEvent) => {
@@ -176,22 +190,24 @@ function DagCanvasInner({
             y: bounds ? e.clientY - bounds.top - 50 : 100,
           },
         };
-        addNode(newNode);
+        store.addNode(newNode);
       } catch {
         // Invalid drop data
       }
     },
-    [addNode, readOnly]
+    [store, readOnly]
   );
 
   return (
     <div ref={wrapper} className={`w-full h-full ${className ?? ""}`}>
       <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
+        nodes={rfNodes}
+        edges={rfEdges}
         nodeTypes={nodeTypes}
-        onConnect={onConnect}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeDragStop={onNodeDragStop}
+        onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         onDragOver={onDragOver}

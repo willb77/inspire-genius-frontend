@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "اكتب رسالتك...",
+    "send": "إرسال",
+    "newSession": "جلسة جديدة"
+  },
+  "sessions": {
+    "title": "الجلسات",
+    "empty": "لا توجد جلسات بعد"
+  },
+  "agents": {
+    "title": "الوكلاء"
+  },
+  "feedback": {
+    "feedback": "تعليق",
+    "helpful": "مفيد",
+    "notHelpful": "غير مفيد",
+    "comment": "إضافة تعليق",
+    "positive": "إيجابي",
+    "negative": "سلبي",
+    "neutral": "محايد",
+    "allRatings": "جميع التقييمات",
+    "fiveStars": "خمس نجوم",
+    "fourStars": "أربع نجوم",
+    "threeStars": "ثلاث نجوم",
+    "twoStars": "نجمتان",
+    "oneStar": "نجمة واحدة",
+    "history": "سجل التعليقات",
+    "reviewDescription": "راجع جميع التعليقات التي أرسلتها على ردود مدرب الذكاء الاصطناعي.",
+    "totalFeedback": "إجمالي التعليقات",
+    "avgRating": "متوسط التقييم",
+    "fiveStarCount": "خمس نجوم",
+    "oneStarCount": "نجمة واحدة",
+    "loadingFeedback": "جارٍ تحميل التعليقات...",
+    "failedLoadFeedback": "فشل تحميل التعليقات. يرجى المحاولة مرة أخرى لاحقاً.",
+    "results": "نتائج",
+    "result": "نتيجة"
+  },
+  "practitioner": {
+    "dashboard": "لوحة تحكم الممارس",
+    "welcomeBack": "مرحباً بعودتك، {name}. لديك {sessions} جلسات مجدولة اليوم و{followups} متابعات مستحقة هذا الأسبوع.",
+    "activeClients": "العملاء النشطون",
+    "creditsRemaining": "الرصيد المتبقي",
+    "sessionsThisMonth": "جلسات هذا الشهر",
+    "avgClientSatisfaction": "متوسط رضا العملاء",
+    "todaysSessions": "جلسات اليوم",
+    "confirmed": "مؤكد",
+    "clientPortfolio": "ملفات العملاء",
+    "clientName": "اسم العميل",
+    "organization": "المنظمة",
+    "prismScore": "درجة PRISM",
+    "sessions": "الجلسات",
+    "lastSession": "آخر جلسة",
+    "followUpsDueThisWeek": "المتابعات المستحقة هذا الأسبوع",
+    "creditUsage": "استخدام الرصيد",
+    "prismAssessment": "تقييم PRISM",
+    "completeDescription": "أكمل رسم خريطة الدماغ PRISM لإطلاق رؤى التدريب الشخصية",
+    "activeAssessment": "تقييم جارٍ",
+    "report": "تقرير",
+    "assessmentHistory": "سجل التقييمات"
+  },
+  "quickActions": {
+    "chatWithMeridian": "الدردشة مع Meridian",
+    "uploadDocument": "رفع مستند",
+    "viewPrismReport": "عرض تقرير PRISM",
+    "setNewGoal": "تعيين هدف جديد"
+  },
+  "prism": {
+    "assessment": "تقييم PRISM",
+    "completeDescription": "أكمل رسم خريطة الدماغ PRISM لإطلاق رؤى التدريب الشخصية",
+    "activeAssessment": "تقييم جارٍ",
+    "report": "تقرير",
+    "assessmentHistory": "سجل التقييمات"
+  }
+}

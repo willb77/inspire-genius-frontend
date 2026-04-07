@@ -11,7 +11,7 @@ import type {
   ExecutionCostRecord,
   AgentCostRecord,
 } from "../types/cost-tracking";
-import type { DagTemplate, DagNode } from "../types/dag";
+import type { DagTemplate } from "../types/dag";
 import { computeWaves } from "./dag-utils";
 
 // ─── Cost Constants (matching backend MODEL_COSTS) ──────────────

@@ -29,23 +29,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Eye } from 'lucide-react'
 import { QUEST_TYPE_NAMES, STATUS_CONFIG } from '@/constants/prism'
 import type { PrismAssessment, AssessmentStatus } from '@/types/prism/assessment-types'
-
-// TODO: Replace with a real hook that fetches practitioner's client assessments
-// For now, this page is wired to show the structure and will work once the
-// backend endpoint is available
-function usePractitionerAssessments() {
-  return {
-    data: { data: { data: { assessments: [] as PrismAssessment[], total: 0 } } },
-    isLoading: false,
-  }
-}
+import { usePractitionerClients } from '@/hooks/practitioner/usePractitioner'
 
 export default function PrismClients() {
-  const { data, isLoading } = usePractitionerAssessments()
+  const { data, isLoading } = usePractitionerClients()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
 
-  const assessments = data?.data?.data?.assessments ?? []
+  const assessments = ((data as { clients?: PrismAssessment[] } | undefined)?.clients ?? []) as PrismAssessment[]
   const filtered =
     statusFilter === 'all'
       ? assessments

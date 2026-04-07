@@ -116,7 +116,7 @@ export default function AlexChatPanel({
 
   const handleLoadHistory = useCallback(async () => {
     if (!deviceKey) {
-      toast.error("Alex device id not available");
+      toast.error("Meridian device id not available");
       return;
     }
     try {
@@ -144,7 +144,7 @@ export default function AlexChatPanel({
 
   const handleExportChat = useCallback(async (fromDate: Date, toDate: Date) => {
     if (!deviceKey) {
-      toast.error("Alex device id not available");
+      toast.error("Meridian device id not available");
       return;
     }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -398,13 +398,13 @@ export default function AlexChatPanel({
     onOpenChange(next);
   }, [isRecording, onOpenChange, stopRecording]);
 
-  let inputPlaceholder = "Alex is offline";
+  let inputPlaceholder = "Meridian is offline";
   if (isRecording) {
     inputPlaceholder = "";
   } else if (isConnected) {
     inputPlaceholder = "Ask Anything....";
   } else if (isConnecting) {
-    inputPlaceholder = "Connecting to Alex...";
+    inputPlaceholder = "Connecting to Meridian...";
   }
 
   let muteTooltipText = "Mute";
@@ -427,7 +427,7 @@ export default function AlexChatPanel({
         )}
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <div className="text-base font-semibold">Chat with Alex</div>
+          <div className="text-base font-semibold">Chat with Meridian</div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -641,7 +641,7 @@ export default function AlexChatPanel({
                       if (isConnected) updateContinuousMute(next);
                     }}
                     disabled={hasAudio && !isAudioPaused}
-                    aria-label={isMuted ? "Unmute Alex" : "Mute Alex"}
+                    aria-label={isMuted ? "Unmute Meridian" : "Mute Meridian"}
                   >
                     {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
                   </Button>

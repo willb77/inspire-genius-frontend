@@ -2,8 +2,12 @@ import { useState } from "react"
 import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { usePractitionerClients } from "@/hooks/practitioner/usePractitioner"
 
-const CLIENTS = [
+type Client = { id: string; name: string; org: string; email: string; prism: number; sessions: number; status: string; lastSession: string; nextSession: string; notes: string; tier: string }
+
+const FALLBACK_CLIENTS: Client[] = [
   { id: "cl-1", name: "Marcus Chen", org: "TechCorp Inc", email: "marcus@techcorp.com", prism: 82, sessions: 12, status: "active", lastSession: "Mar 15", nextSession: "Mar 22", notes: "Working on delegation skills", tier: "mid" },
   { id: "cl-2", name: "Aisha Patel", org: "GlobalHealth", email: "aisha@globalhealth.com", prism: 78, sessions: 8, status: "active", lastSession: "Mar 14", nextSession: "Mar 21", notes: "Career transition coaching", tier: "mid" },
   { id: "cl-3", name: "James Morrison", org: "Finova Group", email: "james@finova.com", prism: 85, sessions: 15, status: "active", lastSession: "Mar 13", nextSession: "Mar 20", notes: "Leadership development", tier: "high" },
@@ -19,7 +23,10 @@ const prismBg = (tier: string) =>
 
 export default function PractitionerClients() {
   const [search, setSearch] = useState("")
-  const filtered = CLIENTS.filter((c) =>
+  const { data: clientsData, isLoading, error, refetch } = usePractitionerClients()
+
+  const allClients = ((clientsData as { clients?: Client[] } | undefined)?.clients ?? FALLBACK_CLIENTS) as Client[]
+  const filtered = allClients.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.org.toLowerCase().includes(search.toLowerCase())
   )
@@ -52,6 +59,12 @@ export default function PractitionerClients() {
       </div>
 
       <DataCard title="Client Roster" badge={24}>
+        {error && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="mb-4">
           <input
             type="text"
@@ -72,23 +85,30 @@ export default function PractitionerClients() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c) => (
-                <tr key={c.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5">
-                    <div className="text-[13px] font-semibold text-[#1f2937]">{c.name}</div>
-                    <div className="text-[11px] text-[#9ca3af]">{c.email}</div>
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.org}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${prismBg(c.tier)}`}>{c.prism}</span>
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.sessions}</td>
-                  <td className="px-3 py-2.5"><StatusBadge status={c.status} label={c.status.charAt(0).toUpperCase() + c.status.slice(1)} /></td>
-                  <td className="px-3 py-2.5 text-xs text-[#6b7280]">{c.lastSession}</td>
-                  <td className="px-3 py-2.5 text-xs text-[#374151] font-medium">{c.nextSession}</td>
-                  <td className="px-3 py-2.5 text-xs text-[#6b7280] max-w-[140px] truncate">{c.notes}</td>
-                </tr>
-              ))}
+              {isLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={8} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : filtered.map((c) => (
+                    <tr key={c.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5">
+                        <div className="text-[13px] font-semibold text-[#1f2937]">{c.name}</div>
+                        <div className="text-[11px] text-[#9ca3af]">{c.email}</div>
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.org}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${prismBg(c.tier)}`}>{c.prism}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{c.sessions}</td>
+                      <td className="px-3 py-2.5"><StatusBadge status={c.status} label={c.status.charAt(0).toUpperCase() + c.status.slice(1)} /></td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b7280]">{c.lastSession}</td>
+                      <td className="px-3 py-2.5 text-xs text-[#374151] font-medium">{c.nextSession}</td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b7280] max-w-[140px] truncate">{c.notes}</td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>

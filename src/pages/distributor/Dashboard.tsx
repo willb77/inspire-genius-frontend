@@ -1,16 +1,15 @@
+import { useTranslation } from "react-i18next";
 import DistributorLayout from "@/layouts/DistributorLayout"
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useDistributorPractitioners, useDistributorCredits, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
 
-const CREDIT_STATS = [
-  { label: "Total Purchased", value: "10,000", iconClass: "bg-[rgba(59,91,255,0.1)] text-[#3B5BFF]" },
-  { label: "Total Allocated", value: "3,200", iconClass: "bg-[rgba(45,212,191,0.12)] text-[#0D9488]" },
-  { label: "Available Pool", value: "1,800", iconClass: "bg-[rgba(16,185,129,0.1)] text-[#10B981]" },
-  { label: "Used by Practitioners", value: "5,000", iconClass: "bg-[rgba(59,130,246,0.1)] text-[#3B82F6]" },
-]
+type NetworkEntry = { name: string; region: string; alloc: number; used: number; util: number; status: string }
+type Transaction = { date: string; type: string; amount: string; amountClass: string; balance: string }
 
-const CHART_BARS = [
+const FALLBACK_CHART_BARS = [
   { label: "Sep", val: 320, pct: 51.6 },
   { label: "Oct", val: 480, pct: 77.4 },
   { label: "Nov", val: 540, pct: 87.1 },
@@ -19,7 +18,7 @@ const CHART_BARS = [
   { label: "Feb", val: 530, pct: 85.5 },
 ]
 
-const TOP_PRACTITIONERS = [
+const FALLBACK_TOP_PRACTITIONERS = [
   { rank: 1, initials: "SC", name: "Dr. Sarah Chen", credits: 420, pct: 100, bg: "linear-gradient(135deg,#3B5BFF,#8B5CF6)" },
   { rank: 2, initials: "MT", name: "Michael Torres", credits: 385, pct: 91.7, bg: "linear-gradient(135deg,#2DD4BF,#10B981)" },
   { rank: 3, initials: "JO", name: "Jennifer Okafor", credits: 310, pct: 73.8, bg: "linear-gradient(135deg,#ECC94B,#e9c46a)" },
@@ -27,7 +26,7 @@ const TOP_PRACTITIONERS = [
   { rank: 5, initials: "RF", name: "Rebecca Foster", credits: 240, pct: 57.1, bg: "linear-gradient(135deg,#3182CE,#3B82F6)" },
 ]
 
-const NETWORK = [
+const FALLBACK_NETWORK: NetworkEntry[] = [
   { name: "Dr. Sarah Chen", region: "Northeast", alloc: 500, used: 420, util: 84, status: "Active" },
   { name: "Michael Torres", region: "Southeast", alloc: 450, used: 385, util: 86, status: "Active" },
   { name: "Jennifer Okafor", region: "Midwest", alloc: 400, used: 310, util: 78, status: "Active" },
@@ -38,7 +37,7 @@ const NETWORK = [
   { name: "John Parker", region: "Northeast", alloc: 450, used: 370, util: 82, status: "Active" },
 ]
 
-const TRANSACTIONS = [
+const FALLBACK_TRANSACTIONS: Transaction[] = [
   { date: "Mar 15", type: "Purchase", amount: "+500", amountClass: "text-[#10B981]", balance: "Balance: 1,800" },
   { date: "Mar 14", type: "Allocation to Dr. Chen", amount: "-200", amountClass: "text-[#EF4444]", balance: "Balance: 1,300" },
   { date: "Mar 12", type: "Allocation to M. Torres", amount: "-150", amountClass: "text-[#EF4444]", balance: "Balance: 1,450" },
@@ -58,15 +57,35 @@ function txTypeColor(type: string) {
 }
 
 export default function DistributorDashboard() {
+  const { t } = useTranslation(["admin", "common"]);
+
+  const { data: practsData, isLoading: practsLoading, error: practsError, refetch: refetchPracts } = useDistributorPractitioners()
+  const { data: creditsData } = useDistributorCredits()
+  const { data: txData, isLoading: txLoading, error: txError, refetch: refetchTx } = useDistributorTransactions()
+
+  const network = ((practsData as { practitioners?: NetworkEntry[] } | undefined)?.practitioners ?? FALLBACK_NETWORK) as NetworkEntry[]
+  const transactions = ((txData as { transactions?: Transaction[] } | undefined)?.transactions ?? FALLBACK_TRANSACTIONS) as Transaction[]
+
+  const cd = creditsData as { chartBars?: typeof FALLBACK_CHART_BARS; topPractitioners?: typeof FALLBACK_TOP_PRACTITIONERS } | undefined
+  const CHART_BARS = cd?.chartBars ?? FALLBACK_CHART_BARS
+  const TOP_PRACTITIONERS = cd?.topPractitioners ?? FALLBACK_TOP_PRACTITIONERS
+
+  const CREDIT_STATS = [
+    { label: t("admin:distributor.totalPurchased"), value: "10,000", iconClass: "bg-[rgba(59,91,255,0.1)] text-[#3B5BFF]" },
+    { label: t("admin:distributor.totalAllocated"), value: "3,200", iconClass: "bg-[rgba(45,212,191,0.12)] text-[#0D9488]" },
+    { label: t("admin:distributor.availablePool"), value: "1,800", iconClass: "bg-[rgba(16,185,129,0.1)] text-[#10B981]" },
+    { label: t("admin:distributor.usedByPractitioners"), value: "5,000", iconClass: "bg-[rgba(59,130,246,0.1)] text-[#3B82F6]" },
+  ]
+
   return (
     <DistributorLayout>
       <WelcomeBanner
-        title="Distributor Dashboard"
+        title={t("admin:distributor.distributor")}
         subtitle="Welcome back, PRISM Partners Inc. Manage your practitioner network and assessment credit portfolio."
       >
         <div className="flex gap-2.5">
-          <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">Purchase Credits</button>
-          <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">View Reports</button>
+          <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:distributor.purchaseCredits")}</button>
+          <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">{t("admin:distributor.viewReports")}</button>
         </div>
       </WelcomeBanner>
 
@@ -86,7 +105,7 @@ export default function DistributorDashboard() {
       </div>
 
       {/* Credit Usage Trend */}
-      <DataCard title="Credit Usage Trend">
+      <DataCard title={t("admin:distributor.creditUsageTrend")}>
         <div className="flex items-end justify-around h-[180px] pt-2">
           {CHART_BARS.map((b) => (
             <div key={b.label} className="flex flex-col items-center gap-1">
@@ -99,14 +118,14 @@ export default function DistributorDashboard() {
       </DataCard>
 
       {/* Top Practitioners */}
-      <DataCard title="Top Practitioners">
+      <DataCard title={t("admin:distributor.topPractitioners")}>
         {TOP_PRACTITIONERS.map((p) => (
           <div key={p.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
             <span className="text-[13px] font-bold text-[#9ca3af] w-[18px] text-center">{p.rank}</span>
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ background: p.bg }}>{p.initials}</div>
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-semibold text-[#1f2937]">{p.name}</div>
-              <div className="text-[11px] text-[#6b7280]">{p.credits} credits used</div>
+              <div className="text-[11px] text-[#6b7280]">{p.credits} {t("admin:distributor.creditsUsed")}</div>
             </div>
             <div className="w-[120px] h-1.5 rounded-full bg-[#f3f4f6] shrink-0">
               <div className="h-full rounded-full bg-[#3B5BFF] transition-[width] duration-300" style={{ width: `${p.pct}%` }} />
@@ -116,7 +135,13 @@ export default function DistributorDashboard() {
       </DataCard>
 
       {/* Practitioner Network */}
-      <DataCard title="Practitioner Network">
+      <DataCard title={t("admin:distributor.practitionerNetwork")}>
+        {practsError && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetchPracts()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -127,40 +152,56 @@ export default function DistributorDashboard() {
               </tr>
             </thead>
             <tbody>
-              {NETWORK.map((n) => (
-                <tr key={n.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.name}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.region}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.alloc}</td>
-                  <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.used}</td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-[60px] h-[5px] rounded-full bg-[#f3f4f6]">
-                        <div className="h-full rounded-full bg-[#3B5BFF]" style={{ width: `${n.util}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-[#374151]">{n.util}%</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={n.status === "On Leave" ? "leave" : "active"} label={n.status} />
-                  </td>
-                </tr>
-              ))}
+              {practsLoading
+                ? Array(5).fill(0).map((_, i) => (
+                    <tr key={i}><td colSpan={6} className="px-3 py-3">
+                      <Skeleton className="h-8 w-full" />
+                    </td></tr>
+                  ))
+                : network.map((n) => (
+                    <tr key={n.name} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.name}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.region}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.alloc}</td>
+                      <td className="px-3 py-2.5 text-[13px] text-[#374151]">{n.used}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-[60px] h-[5px] rounded-full bg-[#f3f4f6]">
+                            <div className="h-full rounded-full bg-[#3B5BFF]" style={{ width: `${n.util}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold text-[#374151]">{n.util}%</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <StatusBadge status={n.status === "On Leave" ? "leave" : "active"} label={n.status} />
+                      </td>
+                    </tr>
+                  ))
+              }
             </tbody>
           </table>
         </div>
       </DataCard>
 
       {/* Recent Transactions */}
-      <DataCard title="Recent Transactions">
-        {TRANSACTIONS.map((t, i) => (
-          <div key={i} className="flex items-center gap-3.5 py-2.5 border-b border-[#f3f4f6] last:border-b-0 text-[13px]">
-            <span className="w-[70px] text-[#6b7280] text-xs shrink-0">{t.date}</span>
-            <span className={`flex-1 font-medium ${txTypeColor(t.type)}`}>{t.type}</span>
-            <span className={`w-[70px] text-right font-bold ${t.amountClass}`}>{t.amount}</span>
-            <span className="w-[110px] text-right text-[#6b7280] text-xs">{t.balance}</span>
+      <DataCard title={t("admin:distributor.recentTransactions")}>
+        {txError && (
+          <div className="flex items-center gap-2 py-2 text-[13px] text-[#EF4444]">
+            Failed to load data.
+            <button onClick={() => void refetchTx()} className="underline ml-1 text-[#3B5BFF]">Retry</button>
           </div>
-        ))}
+        )}
+        {txLoading
+          ? Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full mb-2" />)
+          : transactions.map((t, i) => (
+              <div key={i} className="flex items-center gap-3.5 py-2.5 border-b border-[#f3f4f6] last:border-b-0 text-[13px]">
+                <span className="w-[70px] text-[#6b7280] text-xs shrink-0">{t.date}</span>
+                <span className={`flex-1 font-medium ${txTypeColor(t.type)}`}>{t.type}</span>
+                <span className={`w-[70px] text-right font-bold ${t.amountClass}`}>{t.amount}</span>
+                <span className="w-[110px] text-right text-[#6b7280] text-xs">{t.balance}</span>
+              </div>
+            ))
+        }
       </DataCard>
     </DistributorLayout>
   )

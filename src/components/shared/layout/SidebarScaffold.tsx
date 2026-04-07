@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
+import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 
 export type NavItemDef = { to: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
 
@@ -80,7 +81,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
     if (typeof window === 'undefined') return true;
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   return (
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
@@ -152,6 +153,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         </div>
         <div className="flex-1 p-4 md:p-6">{children}</div>
         {renderAfterContent}
+        <VoiceDeskWidget userId={user?.id} role={user?.role as string | undefined} />
       </SidebarInset>
     </SidebarProvider>
   );

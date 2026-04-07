@@ -1,35 +1,25 @@
 /**
- * DAG Process Builder page — super-admin access.
- *
- * Wires the @inspiresgenius/dag-builder package into the IG frontend.
+ * DAG Process Builder page.
+ * Public at /dev/process-builder (no auth).
+ * Protected at /super-admin/process-builder (auth required).
  */
 
-import SuperAdminLayout from "@/layouts/SuperAdminLayout";
-// @ts-expect-error — dag-builder workspace package not yet linked to frontend
 import { DagBuilder, createIGConfig } from "@inspiresgenius/dag-builder";
 
-type ProcessTemplate = {
-  id?: string;
-  name: string;
-  steps: unknown[];
-};
+const config = createIGConfig(
+  import.meta.env.VITE_AGENT_ENGINE_URL || "http://localhost:8001"
+);
 
 function ProcessBuilderPage() {
-  const config = createIGConfig(
-    import.meta.env.VITE_AGENT_ENGINE_URL || "http://localhost:8001"
-  );
-
   return (
-    <SuperAdminLayout>
-      <div className="h-[calc(100vh-64px)] -m-6">
-        <DagBuilder
-          ecosystemConfig={config}
-          onSave={(template: ProcessTemplate) => {
-            console.log("Template saved:", template);
-          }}
-        />
-      </div>
-    </SuperAdminLayout>
+    <div className="h-screen w-screen">
+      <DagBuilder
+        ecosystemConfig={config}
+        onSave={(template) => {
+          console.log("Template saved:", template);
+        }}
+      />
+    </div>
   );
 }
 

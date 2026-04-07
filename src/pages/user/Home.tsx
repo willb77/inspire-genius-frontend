@@ -1,6 +1,7 @@
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/constants/routes";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
 import StatCard from "@/components/dashboard/StatCard";
@@ -24,13 +25,6 @@ import {
   CalendarDays,
 } from "lucide-react";
 
-const QUICK_ACTIONS = [
-  { label: "Chat with Meridian", icon: Bot, to: ROUTES.DASHBOARD, bg: "bg-blue-100", iconColor: "text-blue-600" },
-  { label: "Upload Document", icon: Upload, to: ROUTES.DOCUMENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
-  { label: "View PRISM Report", icon: ClipboardList, to: ROUTES.PRISM_ASSESSMENT, bg: "bg-violet-100", iconColor: "text-violet-600" },
-  { label: "Set New Goal", icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
-];
-
 const ACTIVE_STATUSES = new Set([
   ASSESSMENT_STATUS.INITIATED,
   ASSESSMENT_STATUS.QUESTIONNAIRE_SENT,
@@ -44,52 +38,60 @@ const COMPLETED_STATUSES = new Set([
   ASSESSMENT_STATUS.INGESTED,
 ]);
 
-function getReportStatus(status: string | undefined): { label: string; bg: string; text: string } {
-  if (!status) return { label: "No Assessment", bg: "bg-gray-100", text: "text-gray-600" };
-  if (ACTIVE_STATUSES.has(status as never)) return { label: "Pending", bg: "bg-amber-100", text: "text-amber-700" };
-  if (COMPLETED_STATUSES.has(status as never)) return { label: "Active", bg: "bg-emerald-100", text: "text-emerald-700" };
-  if (status === ASSESSMENT_STATUS.ERROR) return { label: "Error", bg: "bg-red-100", text: "text-red-700" };
+function getReportStatus(status: string | undefined, t: (key: string) => string): { label: string; bg: string; text: string } {
+  if (!status) return { label: t("dashboard:noAssessment"), bg: "bg-gray-100", text: "text-gray-600" };
+  if (ACTIVE_STATUSES.has(status as never)) return { label: t("dashboard:pending"), bg: "bg-amber-100", text: "text-amber-700" };
+  if (COMPLETED_STATUSES.has(status as never)) return { label: t("dashboard:active"), bg: "bg-emerald-100", text: "text-emerald-700" };
+  if (status === ASSESSMENT_STATUS.ERROR) return { label: t("common:error"), bg: "bg-red-100", text: "text-red-700" };
   return { label: status, bg: "bg-gray-100", text: "text-gray-600" };
 }
 
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation(["common", "dashboard", "coaching"]);
   const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
 
   // Audit stats — real data from GET /v1/audit/stats
   const { data: auditData, isLoading: auditLoading } = useAuditStats();
   const stats = auditData?.data;
 
+  const QUICK_ACTIONS = [
+    { label: t("coaching:quickActions.chatWithMeridian"), icon: Bot, to: ROUTES.DASHBOARD, bg: "bg-blue-100", iconColor: "text-blue-600" },
+    { label: t("dashboard:uploadDocument"), icon: Upload, to: ROUTES.DOCUMENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
+    { label: t("coaching:quickActions.viewPrismReport"), icon: ClipboardList, to: ROUTES.PRISM_ASSESSMENT, bg: "bg-violet-100", iconColor: "text-violet-600" },
+    { label: t("coaching:quickActions.setNewGoal"), icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
+  ];
+
   const STATS = [
     {
-      label: "Total Sessions",
+      label: t("dashboard:totalSessions"),
       value: auditLoading ? "..." : String(stats?.total_logs ?? 0),
-      change: auditLoading ? "" : `+${stats?.logs_this_week ?? 0} this week`,
+      change: auditLoading ? "" : `+${stats?.logs_this_week ?? 0} ${t("dashboard:thisWeek")}`,
       icon: MessageSquare,
       iconColor: "text-blue-600",
       iconBg: "bg-blue-100",
     },
     {
-      label: "Sessions Today",
+      label: t("dashboard:sessionsToday"),
       value: auditLoading ? "..." : String(stats?.logs_today ?? 0),
-      change: auditLoading ? "" : `${stats?.logs_this_month ?? 0} this month`,
+      change: auditLoading ? "" : `${stats?.logs_this_month ?? 0} ${t("dashboard:thisMonth")}`,
       icon: Target,
       iconColor: "text-emerald-600",
       iconBg: "bg-emerald-100",
     },
     {
-      label: "AI Requests",
+      label: t("dashboard:aiRequests"),
       value: auditLoading ? "..." : String(stats?.ai_usage?.request_count ?? 0),
-      change: auditLoading ? "" : `$${(stats?.ai_usage?.total_cost_usd ?? 0).toFixed(2)} cost`,
+      change: auditLoading ? "" : `$${(stats?.ai_usage?.total_cost_usd ?? 0).toFixed(2)} ${t("dashboard:cost")}`,
       icon: Activity,
       iconColor: "text-violet-600",
       iconBg: "bg-violet-100",
     },
     {
-      label: "This Month",
+      label: t("dashboard:thisMonth"),
       value: auditLoading ? "..." : String(stats?.logs_this_month ?? 0),
-      change: auditLoading ? "" : `${stats?.logs_this_week ?? 0} this week`,
+      change: auditLoading ? "" : `${stats?.logs_this_week ?? 0} ${t("dashboard:thisWeek")}`,
       icon: FileUp,
       iconColor: "text-amber-600",
       iconBg: "bg-amber-100",
@@ -100,7 +102,7 @@ export default function Home() {
   const { data: prismData, isLoading: prismLoading } = usePrismHistory(user?.id ?? null);
   const assessments = (prismData as { data?: { assessments?: Array<{ status: string; initiatedAt?: string | null; completedAt?: string | null }> } } | undefined)?.data?.assessments ?? [];
   const latestAssessment = assessments[0];
-  const reportStatus = getReportStatus(latestAssessment?.status);
+  const reportStatus = getReportStatus(latestAssessment?.status, t);
   const lastReportDate = latestAssessment?.completedAt ?? latestAssessment?.initiatedAt;
   const hasActiveAssessment = assessments.some((a) => ACTIVE_STATUSES.has(a.status as never));
 
@@ -111,8 +113,8 @@ export default function Home() {
   return (
     <UserLayout>
       <WelcomeBanner
-        title={`Welcome back, ${firstName}`}
-        subtitle="Here's an overview of your coaching journey"
+        title={t("dashboard:welcome", { name: firstName })}
+        subtitle={t("dashboard:homeSubtitle")}
       />
 
       {/* Behavioral Report Status + Request Survey */}
@@ -124,9 +126,9 @@ export default function Home() {
                 <FileCheck className="w-5 h-5 text-violet-600" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Behavioral Report Status</h3>
+                <h3 className="text-sm font-semibold">{t("dashboard:behavioralReportStatus")}</h3>
                 {prismLoading ? (
-                  <span className="inline-block mt-0.5 text-xs text-muted-foreground">Loading...</span>
+                  <span className="inline-block mt-0.5 text-xs text-muted-foreground">{t("common:loading")}</span>
                 ) : (
                   <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${reportStatus.bg} ${reportStatus.text}`}>
                     {reportStatus.label}
@@ -139,7 +141,7 @@ export default function Home() {
               <span>
                 {lastReportDate
                   ? `Last report: ${new Date(lastReportDate).toLocaleDateString()}`
-                  : "Last report: Not yet completed"}
+                  : t("dashboard:lastReportNotCompleted")}
               </span>
             </div>
             {latestAssessment && (
@@ -149,7 +151,7 @@ export default function Home() {
                 className="w-full mt-3"
                 onClick={() => navigate("/prism-assessment")}
               >
-                View Report
+                {t("common:viewReport")}
               </Button>
             )}
           </CardContent>
@@ -162,8 +164,8 @@ export default function Home() {
                 <ClipboardList className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold">PRISM Survey</h3>
-                <p className="text-xs text-muted-foreground">Complete your behavioral assessment</p>
+                <h3 className="text-sm font-semibold">{t("dashboard:prismSurvey")}</h3>
+                <p className="text-xs text-muted-foreground">{t("dashboard:completeAssessment")}</p>
               </div>
             </div>
             <Button
@@ -173,8 +175,8 @@ export default function Home() {
               onClick={handleRequestSurvey}
             >
               {hasActiveAssessment
-                ? "Assessment in Progress"
-                : "Request Survey"}
+                ? t("dashboard:assessmentInProgress")
+                : t("dashboard:requestSurvey")}
             </Button>
           </CardContent>
         </Card>
@@ -191,10 +193,10 @@ export default function Home() {
       <QuickActions actions={QUICK_ACTIONS} />
 
       {/* Recent Activity — from audit top actions */}
-      <DataCard title="Recent Activity">
+      <DataCard title={t("dashboard:recentActivity")}>
         <div className="space-y-4">
           {auditLoading ? (
-            <p className="text-sm text-muted-foreground">Loading activity...</p>
+            <p className="text-sm text-muted-foreground">{t("common:loadingActivity")}</p>
           ) : stats?.top_actions && stats.top_actions.length > 0 ? (
             stats.top_actions.slice(0, 5).map((item, i) => {
               const colors = ["bg-emerald-500", "bg-blue-500", "bg-violet-500", "bg-amber-500", "bg-rose-500"];
@@ -203,13 +205,13 @@ export default function Home() {
                   <div className={`w-2 h-2 rounded-full mt-2 ${colors[i % colors.length]}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{item.action.replace(/_/g, " ")}</p>
-                    <p className="text-xs text-muted-foreground">{item.count} occurrences</p>
+                    <p className="text-xs text-muted-foreground">{item.count} {t("common:occurrences")}</p>
                   </div>
                 </div>
               );
             })
           ) : (
-            <p className="text-sm text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground">{t("common:noRecentActivity")}</p>
           )}
         </div>
       </DataCard>

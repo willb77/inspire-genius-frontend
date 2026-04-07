@@ -17,6 +17,7 @@ import { useUpdateProfile } from "@/hooks/onboarding/useUpdateProfile";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 import { Link } from "react-router-dom";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -226,6 +227,11 @@ export default function Settings() {
             />
           </div>
         )}
+
+        {/* Browser Push Notification Preferences */}
+        <div data-tour="settings-push-notifications">
+          <NotificationPreferences />
+        </div>
 
         {/* Legal Card */}
         {role === ROLES.USER && (

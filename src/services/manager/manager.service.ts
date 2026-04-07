@@ -16,3 +16,23 @@ export function getManagerInterviews() {
 export function getManagerCandidates() {
   return api.get<BaseApiResponse<{ candidates: unknown[]; total: number }>>("/api/manager/hiring/candidates")
 }
+
+export function getManagerInterviewSchedule() {
+  return api.get<BaseApiResponse<{ interviews: unknown[]; total: number }>>("/api/manager/interviews/schedule")
+}
+
+export function getManagerTraining() {
+  return api.get<BaseApiResponse<{ programs: unknown[]; total: number }>>("/api/manager/training")
+}
+
+export function getManagerCareerPaths() {
+  return api.get<BaseApiResponse<{ paths: unknown[]; total: number }>>("/api/manager/career-paths")
+}
+
+export function getManagerTeamComposition() {
+  return api.get<BaseApiResponse<{ members: unknown[]; prismDistribution: unknown }>>("/api/manager/team/composition")
+}
+
+export function getManagerLeadership() {
+  return api.get<BaseApiResponse<{ leaders: unknown[]; total: number }>>("/api/manager/leadership")
+}
