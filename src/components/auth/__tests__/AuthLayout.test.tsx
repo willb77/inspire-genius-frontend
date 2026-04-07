@@ -108,7 +108,7 @@ describe("AuthLayout Component (Design B)", () => {
     });
 
     test("form panel has white background", () => {
-      const { container } = render(
+      render(
         <AuthLayout>
           <div data-testid="child">Content</div>
         </AuthLayout>
