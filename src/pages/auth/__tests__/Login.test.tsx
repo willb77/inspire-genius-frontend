@@ -192,7 +192,9 @@ describe("Login Page - Full Coverage", () => {
     const form = screen.getByLabelText("email").closest("form")!;
     fireEvent.submit(form);
 
-    expect(sessionStorage.getItem("auth:provider")).toBeNull();
+    await waitFor(() =>
+      expect(sessionStorage.getItem("auth:provider")).toBeNull()
+    );
   });
 
   /* -------------------------------------------------------------
