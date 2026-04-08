@@ -30,8 +30,8 @@ export default function QuickActions({ actions }: QuickActionsProps) {
   return (
     <div className="mt-5">
       {/* Date Controls */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-[13px] font-semibold text-[#111827]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <div className="text-xs sm:text-[13px] font-semibold text-[#111827]">
           Quick Actions — <span className="text-[#3B5BFF]">{formatDate(today)}</span>
         </div>
         <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
@@ -58,12 +58,12 @@ export default function QuickActions({ actions }: QuickActionsProps) {
             <button
               key={a.label}
               onClick={() => navigate(a.to)}
-              className="bg-white border border-[#e5e7eb] rounded-lg p-4 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all"
+              className="bg-white border border-[#e5e7eb] rounded-lg p-3 sm:p-4 text-center cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all min-h-[44px]"
             >
               <div className={cn("w-10 h-10 rounded-[10px] flex items-center justify-center mx-auto mb-2", a.bg)}>
                 <Icon className={cn("w-5 h-5", a.iconColor)} />
               </div>
-              <div className="text-[13px] font-semibold text-[#1f2937]">{a.label}</div>
+              <div className="text-xs sm:text-[13px] font-semibold text-[#1f2937]">{a.label}</div>
             </button>
           )
         })}

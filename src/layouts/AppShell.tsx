@@ -50,7 +50,7 @@ export default function AppShell({ role, children, className }: AppShellProps) {
           className
         )}
       >
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </main>

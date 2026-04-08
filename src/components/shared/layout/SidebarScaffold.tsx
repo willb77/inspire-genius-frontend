@@ -18,7 +18,7 @@ import { STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
 import { getUIFlag, setUIFlag } from "@/lib/storage";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
@@ -64,6 +64,22 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
         <span>{label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
+  );
+}
+
+function MobileMenuTrigger() {
+  const { toggleSidebar, isMobile } = useSidebar();
+  if (!isMobile) return null;
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleSidebar}
+      aria-label="Open menu"
+      className="md:hidden size-11 shrink-0"
+    >
+      <Menu className="size-5" />
+    </Button>
   );
 }
 
@@ -148,6 +164,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
       <SidebarInset className={cn("", className)}>
         <div className="sticky top-0 z-20 bg-background/80 backdrop-blur">
           <div className="h-14 flex items-center gap-2 px-3">
+            <MobileMenuTrigger />
             <UserTopHeader />
           </div>
         </div>

@@ -66,14 +66,14 @@ export default function Dashboard() {
     <UserLayout>
       <div className="space-y-6">
         <div className="bg-transparent rounded-xl p-4" data-tour="dashboard-coach-list">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="text-left flex-1 min-w-0">
               <h2 className="text-lg font-semibold">{t("dashboard:chooseCoach")}</h2>
-              <p className="mt-1 max-w-[75%] text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {t("dashboard:coachDescription")}
               </p>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 placeholder={t("dashboard:search")}

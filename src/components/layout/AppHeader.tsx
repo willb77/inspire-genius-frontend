@@ -26,7 +26,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
     <header role="banner" className="fixed top-0 left-0 right-0 h-[var(--spacing-header-h)] bg-white border-b border-[#e5e7eb] flex items-center justify-between px-4 z-50">
       {/* Left */}
       <div className="flex items-center gap-2.5">
-        <button onClick={onMenuToggle} className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Menu">
+        <button onClick={onMenuToggle} className="md:hidden w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Menu">
           <Menu className="w-5 h-5 text-[#4b5563]" />
         </button>
         <button onClick={handleLogoClick} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" aria-label="Go to home">
@@ -49,11 +49,11 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <button className="w-9 h-9 rounded-lg flex items-center justify-center relative hover:bg-[#f3f4f6]" aria-label="Notifications">
+        <button className="w-11 h-11 md:w-9 md:h-9 rounded-lg flex items-center justify-center relative hover:bg-[#f3f4f6]" aria-label="Notifications">
           <Bell className="w-[18px] h-[18px] text-[#4b5563]" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444] border-2 border-white" />
         </button>
-        <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Settings" onClick={() => navigate("/settings")}>
+        <button className="w-11 h-11 md:w-9 md:h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Settings" onClick={() => navigate("/settings")}>
           <SettingsIcon className="w-[18px] h-[18px] text-[#4b5563]" />
         </button>
         <button onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-lg hover:bg-[#f3f4f6]" aria-label="Go to home">
