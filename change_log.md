@@ -2,6 +2,397 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-07] — Production Hardening: CI/CD, API Docs, Deployment Runbook, Security Checklist
+
+### Added
+- **CI/CD Pipeline**: Added `frontend:lint` and `frontend:typecheck` validate-stage jobs to `.gitlab-ci.yml`
+  - Files: `.gitlab-ci.yml`
+- **API Documentation**: Created comprehensive `docs/API.md` covering all endpoints across 10 services (120+ endpoints)
+  - Files: `docs/API.md`
+- **Deployment Runbook**: Created `docs/DEPLOYMENT_RUNBOOK.md` with prerequisites, CDK order, rollback procedures, 10 common issues
+  - Files: `docs/DEPLOYMENT_RUNBOOK.md`
+- **Security Checklist**: Created `docs/SECURITY_CHECKLIST.md` — OWASP Top 10 mapped, score 90/100, 7 remediation items
+  - Files: `docs/SECURITY_CHECKLIST.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/document-service/tests/test_doc_routes.py`
+
+## [2026-04-07] — Domain Fix: inspiresgenius.com (not inspiregenius.com)
+
+### Fixed
+- **Domain name corrected** across ALL CDK stacks from `inspiregenius.com` to `inspiresgenius.com`
+  - config.ts, cognito-stack.ts, services-stack.ts, domain-stack.ts, api-gateway-stack.ts
+- **Wrong Route53 zone deleted** (`inspiregenius.com` Z0268689205YAMH3UFDBA)
+- **Correct Route53 zone created** (`inspiresgenius.com` Z08793722GJVQA12R51BN)
+- **All existing DNS records preserved** in new zone: A (root), CNAME (www→Vercel), A (mail), MX, TXT (SPF)
+- **Cognito stack updated** with corrected callback/logout URLs
+
+### Domain Stack Status
+- Stack deploying with correct domain `dev.inspiresgenius.com`
+- ACM cert in `PENDING_VALIDATION` — requires NS records at registrar to resolve
+
+### ACTION REQUIRED: Update NS records at domain registrar
+Update `inspiresgenius.com` nameservers to:
+```
+ns-786.awsdns-34.net
+ns-1843.awsdns-38.co.uk
+ns-110.awsdns-13.com
+ns-1500.awsdns-59.org
+```
+All existing records (website, email, www) are already in Route53 — zero downtime on switch.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Domain fix: corrected from inspiregenius.com to inspiresgenius.com across all CDK stacks. Route53 zone created with existing records preserved. ACM cert pending NS update.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/scripts/smoke-test.sh`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/scripts/load-test.sh`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_agents.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/scripts/README.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_templates.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/docs/API.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_costs.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_audit.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/docs/DEPLOYMENT_RUNBOOK.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_workflows.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_executions.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/docs/SECURITY_CHECKLIST.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_approvals.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_ecosystems.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.gitlab-ci.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/tests/test_simulator.py`
+
+## [2026-04-07] — Domain Stack: Route53 + ACM Cert + CloudFront (9/11)
+
+### Deployed
+- **Route53 hosted zone** created for `inspiregenius.com` (Z0268689205YAMH3UFDBA)
+- **ig-dev-domain** stack deploying — ACM cert for `dev.inspiregenius.com` + CloudFront distribution + S3 frontend bucket
+- **ig-dev-services** updated — added `rlhf-api-lambda-arn` export for API Gateway Wave 6
+
+### Pending (1 manual step)
+- **Domain registrar NS update** — Update `inspiregenius.com` NS records at domain registrar to:
+  - `ns-880.awsdns-46.net`
+  - `ns-1273.awsdns-31.org`
+  - `ns-471.awsdns-58.com`
+  - `ns-1561.awsdns-03.co.uk`
+- Once NS records propagate, ACM cert will auto-validate and domain stack will complete
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Domain stack deploying: Route53 zone created, ACM cert pending NS update at registrar. 9/11 stacks deployed or deploying.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/config.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+## [2026-04-07] — 8/11 CDK Stacks Deployed
+
+### Deployed
+- **ig-dev-agent-engine** ✅ — ECS Fargate cluster, ALB, VPC link, target groups, HTTP integration, task role (Bedrock, RDS Proxy, Transcribe, Polly), 12 CloudWatch alarms. 39 resources.
+- **ig-dev-security** ✅ — WAF WebACL (managed rules + rate limiting), KMS encryption + MCP signing keys, MCP tool secrets, agent latency alarms. 28 resources.
+
+### Fixed
+- WAF description: replaced em-dash with hyphen (regex validation)
+- Cost anomaly monitor: skipped (AWS account limit — existing monitor already present)
+- WAF → API Gateway association: skipped ($default stage ARN incompatible with WAFv2 — manual association needed)
+- Full agent-engine Docker image built and pushed to ECR
+
+### CDK Stack Status — 8 of 11 deployed
+| Stack | Status | Resources |
+|---
+
+## [2026-04-08] — Session Activity
+
+- Tasks 1-9 complete: 200+ tests, CI/CD pipeline, API docs (120+ endpoints), deployment runbook, security checklist (90/100), smoke + load test scripts
+----|--------|-----------|
+| ig-dev-api-gateway | ✅ | HTTP + WebSocket APIs |
+| ig-dev-services | ✅ | 10 Lambdas + RLHF pipeline |
+| ig-dev-monitoring | ✅ | Dashboard + 33 alarms |
+| ig-dev-trainer | ✅ | Lambda + Worker + EventBridge |
+| ig-dev-cognito | ✅ | User Pool + Identity Pool |
+| ig-dev-agent-engine | ✅ NEW | ECS Fargate + ALB + VPC link |
+| ig-dev-security | ✅ NEW | WAF + KMS + secrets |
+| ig-dev-rlhf | ⏭ Skip | Resources in services stack |
+| ig-dev-database | ⏭ Skip | RDS Proxy pre-CDK |
+| ig-dev-domain | ❌ | Needs Route53 hosted zone |
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- 8/11 CDK stacks deployed: agent-engine (39 resources) + security (28 resources). Full Docker image pushed to ECR. RLHF stays in services stack. Domain blocked on Route53.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/domain-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/layouts/AppShell.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/layout/AppHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/layout/AppHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/layout/AppHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/auth/AuthLayout.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Coaches.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/dashboard/QuickActions.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/dashboard/QuickActions.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/dashboard/QuickActions.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/dashboard/WelcomeBanner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/layout/SidebarScaffold.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/layout/SidebarScaffold.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/layout/SidebarScaffold.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/UserTopHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/UserTopHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/onboarding/OnboardingScreen.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/onboarding/OnboardingImage.tsx`
+
+- All 5 remaining tasks complete: NS verified, domain live, ElastiCache added, mobile responsive (11 files), API Gateway routes fixed (38 routes). Meridian 14 agents confirmed 100%.
+
+## [2026-04-07] — Remote Aurora Migration Complete + Agent Engine CDK Fixes
+
+### Deployed
+- **Remote Aurora migration** ✅ — All 17 statements (4 ALTERs + 3 CREATE TABLEs + 10 CREATE INDEXes) executed successfully against `inspires-genius-dev-aurora-cluster`
+  - Tables: `workflow_executions`, `execution_steps`, `pending_approvals`
+  - Columns: `training_templates.template_type`, `training_templates.dag_config`, `cost_entries.source`, `audit_entries.source`
+  - 10 indexes created
+
+### Fixed
+- **Agent Engine CDK stack**: Switched to ECS rolling deploy for dev (CODE_DEPLOY requires ALB association at creation), removed unsupported WebSocket VPC link integrations, imported existing ECR repo
+- **Migration runner**: Re-created temporary Lambda in Aurora VPC (`vpc-04e1e7c2dc0ef9021`) with correct security group (`sg-0f371575e4f064844`) for Aurora access
+
+### Agent Engine Deploy Status
+- ECR image pushed (minimal health-check placeholder)
+- VPC link, ALB, target groups, integrations all created successfully
+- ECS service creation requires full Docker image in ECR + VPC NAT gateway for container image pull
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Remote Aurora migration complete (17/17 statements). Agent engine CDK fixes committed. ECR image pushed.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/security-stack.ts`
+
+## [2026-04-07] — CDK Deploy Fix, Cognito Deployed, Services Updated
+
+### Fixed
+- **CDK deploy root cause found**: `npx cdk` used a different version (2.1117.0) than local binary (2.1114.1), causing synth output to not be written to `cdk.out/`. Fix: use `node_modules/.bin/cdk` for all deploys.
+- **tryBundle stubs**: Changed from `return false` (forces Docker) to write stub files + `return true` for fast local synth
+- **Duplicate trainer resources**: Removed trainer Lambda/Worker/Alarms from services-stack.ts (already in trainer-stack.ts)
+
+### Deployed
+- **ig-dev-cognito** ✅ — User Pool `us-east-1_6b74Mh2p8`, Web App Client, Identity Pool, Cognito Domain `ig-dev`
+- **ig-dev-services** ✅ — Updated all 10 Lambda functions with latest code
+
+### Status — 6 of 11 CDK stacks deployed
+| Stack | Status |
+|-------|--------|
+| ig-dev-api-gateway | ✅ Deployed |
+| ig-dev-services | ✅ Updated |
+| ig-dev-monitoring | ✅ Deployed |
+| ig-dev-trainer | ✅ Deployed |
+| ig-dev-cognito | ✅ Deployed (NEW) |
+| ig-dev-rlhf | ❌ Resources already in services stack |
+| ig-dev-agent-engine | ❌ Needs ALB (ECS CODE_DEPLOY) |
+| ig-dev-security | ❌ Needs agent-engine task role export |
+| ig-dev-domain | ❌ Needs Route53 hosted zone |
+| ig-dev-database | ❌ Needs VPC tag lookup |
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- CDK deploy fix: root cause was npx vs local CDK binary version mismatch. Cognito stack deployed. Services stack updated. 6/11 stacks now live.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+## [2026-04-07] — CDK Deploy, Frontend Deploy, EventBridge Mesh
+
+### Deployed
+- **Frontend** deployed to S3 (`ig-aan-dashboard-dev` + `ig-interactive-dashboard-dev`) with CloudFront invalidation
+- **CDK stacks**: 4/11 deployed (api-gateway, services, monitoring, trainer). Cognito synth passes, CDK deploy output issue being investigated.
+- **EventBridge custom bus** `inspire-genius-events` created in AWS
+
+### Changed
+- All 6 Phase 5 microservices updated from `default` EventBridge bus to `inspire-genius-events`
+  - Files: `services/{coach,org,user,dashboard,support}-service/app/events.py`, `services/document-service/app/config.py`
+- Frontend pushed to GitHub `development` branch (9d326a4)
+- Migration SQL ready for remote Aurora (need migration runner Lambda or SSM tunnel)
+
+### Status
+- **Local DB**: 18 tables migrated (001 base + 002 VAT+DPB integration)
+- **Remote Aurora**: Migration pending (VPC access needed)
+- **CDK blockers**: Cognito + 3 dependent stacks need CDK deploy output investigation
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Frontend deployed to 2 S3 buckets + CloudFront invalidation. 6 services EventBridge bus updated to inspire-genius-events. Custom bus created. Local DB migrated (18 tables).
+  - Files: `services/coach-service/app/events.py,services/org-service/app/events.py,services/user-service/app/events.py,services/dashboard-service/app/events.py,services/support-service/app/events.py,services/document-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
 ## [2026-04-06] — Login Page Design Concepts
 
 ### Added
