@@ -2,6 +2,40 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-08] — P0/P1 Production Readiness Fixes
+
+### Security (P0)
+- **Removed hardcoded secret_key defaults** from 6 service configs (auth, coach, user, org, dashboard, support) — now empty string with Field description; must be set via SECRET_KEY env var
+- **Fixed trainer-service CORS** — replaced `allow_origins=["*"]` with explicit 6-origin allowlist
+- **Added startup config validation** — model_validator in all 6 services warns if cognito_user_pool_id or secret_key is empty
+
+### Backend Fixes (P0/P1)
+- **Implemented 5 trainer event handlers** (worker.py) — goal_evaluation, batch_test, cost_aggregation, template_installed, prompt_published — no longer stub/TODO
+- **Fixed document-service user_id** — replaced hardcoded `"current-user"` with JWT extraction from access-token header
+- **Fixed audit-service RBAC** — added role-based access control: super-admin sees all, company-admin restricted to own company, others get 403
+
+### CDK Infrastructure (P1)
+- **Removed hardcoded CloudFront domain** from cognito-stack.ts callback URLs — now only localhost + env-specific custom domain
+- **Added SQS DLQs** to EventBridge Lambda targets (audit, document) in services-stack.ts — 14-day retention
+- **SNS alarm actions** already wired (verified — no change needed)
+
+### Frontend (P1)
+- **Added 11 missing env vars** to .env.example — VITE_MAGIC_AUTH_URL, VITE_CRYPTO_KEY, VITE_SENTRY_DSN, etc.
+- **Generated production readiness assessment** — Inspire_Genius_Remaining_Work.docx (64 KB, 15 sections)
+- **Created /next command** — comprehensive status report with priority queue
+
+### Files Changed
+- services/{auth,coach,user,org,dashboard,support}-service/app/config.py (6 files)
+- services/trainer-service/app/main.py, app/worker.py
+- services/document-service/app/routes.py
+- services/audit-service/app/routes.py
+- infrastructure/cdk/lib/cognito-stack.ts, services-stack.ts
+- inspire-genius-frontend/.env.example
+- .claude/commands/next.md
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
 ## [2026-04-07] — Production Hardening: CI/CD, API Docs, Deployment Runbook, Security Checklist
 
 ### Added
@@ -265,6 +299,78 @@ All existing records (website, email, www) are already in Route53 — zero downt
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/onboarding/OnboardingImage.tsx`
 
 - All 5 remaining tasks complete: NS verified, domain live, ElastiCache added, mobile responsive (11 files), API Gateway routes fixed (38 routes). Meridian 14 agents confirmed 100%.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/IG_Platform_vs_VAT_DPB_Overlap_Analysis.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/full-go.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/next.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_prod_readiness_doc.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/full-go.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/priority.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/next.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/auth-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/coach-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/user-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/org-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/dashboard-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/support-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/worker.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env.example`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/document-service/app/routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/audit-service/app/routes.py`
 
 ## [2026-04-07] — Remote Aurora Migration Complete + Agent Engine CDK Fixes
 
