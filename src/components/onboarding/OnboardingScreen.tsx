@@ -31,7 +31,7 @@ export const OnboardingScreen = ({
         </div>
 
         <div className="pt-2">
-          <Button className="w-fit px-28 h-10" onClick={() => navigate(nextPath)}>
+          <Button className="w-full sm:w-fit sm:px-28 h-11" onClick={() => navigate(nextPath)}>
             {ctaLabel}
           </Button>
         </div>

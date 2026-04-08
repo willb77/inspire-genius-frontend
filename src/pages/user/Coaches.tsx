@@ -30,12 +30,12 @@ export default function Coaches() {
   return (
     <UserLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-col text-left gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{t("dashboard:manageCoaches")}</h1>
-            <p className="text-xs text-muted-foreground max-w-[75%]">{t("dashboard:coachesConfigDescription")}</p>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{t("dashboard:manageCoaches")}</h1>
+            <p className="text-xs text-muted-foreground">{t("dashboard:coachesConfigDescription")}</p>
           </div>
-          <div className="w-full max-w-xs">
+          <div className="w-full sm:max-w-xs">
             <IconInput
               placeholder={t("dashboard:search")}
               leftIcon={<Search className="size-4" />}
