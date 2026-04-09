@@ -19,12 +19,6 @@ type Props = {
   className?: string;
 };
 
-type PlanNode = {
-  id: string;
-  agent_name: string;
-  input_data: string;
-  depends_on: string[];
-};
 
 /**
  * Client-side keyword-based decomposition when LLM planner is unavailable.
@@ -182,24 +176,31 @@ export function ProcessDecomposer({
 
     try {
       const { data } = await axios.post(
-        `${ecosystemConfig.apiBaseUrl}/v1/orchestrator/plan`,
+        `${ecosystemConfig.apiBaseUrl}/v1/trainer/workflows/decompose`,
         {
-          message: description,
-          available_agents: ecosystemConfig.adapter.agents.map((a) => a.id),
+          description,
+          ecosystem_id: ecosystemConfig.adapter.name,
         }
       );
 
-      const planNodes: PlanNode[] = data.plan?.nodes ?? data.nodes ?? [];
-      const dagNodes: DagNode[] = planNodes.map((pn, i) => ({
-        id: pn.id || `step_${i}`,
-        agentId: pn.agent_name,
-        label:
-          agentLookup.get(pn.agent_name)?.displayName ?? pn.agent_name,
-        description: pn.input_data,
-        dependsOn: pn.depends_on ?? [],
-        config: { timeout: 30 },
-        position: { x: 0, y: 0 },
-      }));
+      const respData = data.data ?? data;
+      const rawNodes = respData.nodes ?? [];
+      const dagNodes: DagNode[] = rawNodes
+        .filter((n: any) => n.type === "agent")
+        .map((n: any, i: number) => ({
+          id: n.id || `step_${i}`,
+          agentId: n.data?.agent_id ?? n.agent_name ?? "Meridian",
+          label:
+            agentLookup.get(n.data?.agent_id ?? n.agent_name)?.displayName ??
+            n.data?.agent_id ?? n.agent_name ?? `Step ${i + 1}`,
+          description: n.data?.task ?? n.input_data ?? "",
+          dependsOn: (respData.edges ?? [])
+            .filter((e: any) => e.target === n.id)
+            .map((e: any) => e.source)
+            .filter((src: string) => rawNodes.find((rn: any) => rn.id === src && rn.type === "agent")),
+          config: { timeout: 30 },
+          position: { x: 0, y: 0 },
+        }));
 
       const edges = deriveEdges(dagNodes);
       const laid = autoLayout(dagNodes, edges);
@@ -223,22 +224,28 @@ export function ProcessDecomposer({
     setLoading(true);
     try {
       const { data } = await axios.post(
-        `${ecosystemConfig.apiBaseUrl}/v1/orchestrator/plan`,
+        `${ecosystemConfig.apiBaseUrl}/v1/trainer/workflows/decompose`,
         {
-          message: `${description}\n\nCurrent plan has ${preview.length} steps. Refinement: ${refinement}`,
-          available_agents: ecosystemConfig.adapter.agents.map((a) => a.id),
+          description: `${description}\n\nRefinement: ${refinement}`,
+          ecosystem_id: ecosystemConfig.adapter.name,
         }
       );
-      const planNodes: PlanNode[] = data.plan?.nodes ?? data.nodes ?? [];
-      const dagNodes: DagNode[] = planNodes.map((pn, i) => ({
-        id: pn.id || `step_${i}`,
-        agentId: pn.agent_name,
-        label: agentLookup.get(pn.agent_name)?.displayName ?? pn.agent_name,
-        description: pn.input_data,
-        dependsOn: pn.depends_on ?? [],
-        config: { timeout: 30 },
-        position: { x: 0, y: 0 },
-      }));
+      const respData = data.data ?? data;
+      const rawNodes = respData.nodes ?? [];
+      const dagNodes: DagNode[] = rawNodes
+        .filter((n: any) => n.type === "agent")
+        .map((n: any, i: number) => ({
+          id: n.id || `step_${i}`,
+          agentId: n.data?.agent_id ?? "Meridian",
+          label: agentLookup.get(n.data?.agent_id)?.displayName ?? n.data?.agent_id ?? `Step ${i + 1}`,
+          description: n.data?.task ?? "",
+          dependsOn: (respData.edges ?? [])
+            .filter((e: any) => e.target === n.id)
+            .map((e: any) => e.source)
+            .filter((src: string) => rawNodes.find((rn: any) => rn.id === src && rn.type === "agent")),
+          config: { timeout: 30 },
+          position: { x: 0, y: 0 },
+        }));
       const edges = deriveEdges(dagNodes);
       setPreview(autoLayout(dagNodes, edges));
       setRefinement("");

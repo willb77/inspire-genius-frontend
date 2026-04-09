@@ -13,7 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactFlowProvider } from "@xyflow/react";
 import { LayoutGrid, Sparkles, FolderOpen } from "lucide-react";
 
-import type { EcosystemConfig } from "../types/ecosystem";
+import type { EcosystemConfig, AgentDefinition } from "../types/ecosystem";
 import type { DagTemplate } from "../types/dag";
 import { useDagStore } from "../hooks/useDagStore";
 import { useAutoLayout } from "../hooks/useAutoLayout";
@@ -41,6 +41,10 @@ export type DagBuilderProps = {
   className?: string;
   onSave?: (template: DagTemplate) => void;
   onTemplateChange?: (template: DagTemplate) => void;
+  /** Callback to navigate to agent training page in VAT. */
+  onTrainAgent?: (agentId: string) => void;
+  /** Callback to register a custom agent in the backend trainer service. */
+  onRegisterAgent?: (agent: AgentDefinition) => Promise<void>;
 };
 
 function DagBuilderInner({
@@ -48,6 +52,8 @@ function DagBuilderInner({
   readOnly,
   className,
   onSave,
+  onTrainAgent,
+  onRegisterAgent,
 }: DagBuilderProps) {
   const [tab, setTab] = useState<Tab>("editor");
   const { loadTemplate, setAvailableAgentIds, nodes, template } =
@@ -121,14 +127,14 @@ function DagBuilderInner({
       <div className="flex-1 flex overflow-hidden">
         {tab === "editor" && (
           <>
-            <AgentPalette adapter={ecosystemConfig.adapter} />
+            <AgentPalette adapter={ecosystemConfig.adapter} onTrainAgent={onTrainAgent} onRegisterAgent={onRegisterAgent} />
             <div className="flex-1 flex flex-col">
               <div className="flex-1">
                 <DagCanvas ecosystemConfig={ecosystemConfig} readOnly={readOnly} />
               </div>
               <CostEstimatePanel ecosystemConfig={ecosystemConfig} />
             </div>
-            <NodePropertyPanel adapter={ecosystemConfig.adapter} />
+            <NodePropertyPanel adapter={ecosystemConfig.adapter} onTrainAgent={onTrainAgent} />
           </>
         )}
 

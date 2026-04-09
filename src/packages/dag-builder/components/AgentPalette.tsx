@@ -3,22 +3,75 @@
  * - Drag agents onto the DagCanvas to create nodes.
  * - Click an agent to open the detail modal with full description & capabilities.
  * - Click "Manage" to add new agents or palettes.
+ * - Shows maturity rings and domain badges when data is available from VAT.
  */
 
-import { useState, useMemo } from "react";
-import type { DragEvent } from "react";
-import { Bot, Search, ChevronDown, ChevronRight, Info, Settings2 } from "lucide-react";
+import { useState, useMemo, type DragEvent } from "react";
+import { Bot, Search, ChevronDown, ChevronRight, Info, Settings2, GraduationCap } from "lucide-react";
 import type { EcosystemAdapter, AgentDefinition } from "../types/ecosystem";
 import { AgentDetailModal } from "./AgentDetailModal";
 import { ManageAgentsModal } from "./ManageAgentsModal";
 
+/** Domain color mapping for badges. */
+const DOMAIN_COLORS: Record<string, string> = {
+  coaching: "#3b82f6",
+  "Personal Development": "#3b82f6",
+  business: "#22c55e",
+  "Career & Talent": "#22c55e",
+  system: "#a855f7",
+  "Org & Enterprise": "#a855f7",
+};
+
+/** Maturity level border colors: green=mature (4-5), yellow=growing (2-3), gray=novice (1). */
+function maturityBorderColor(level?: number): string {
+  if (!level || level <= 1) return "#94a3b8";
+  if (level <= 3) return "#eab308";
+  return "#22c55e";
+}
+
+/** SVG ring for maturity level. */
+function MaturityRing({ level, size = 28 }: { level?: number; size?: number }) {
+  if (level == null) return null;
+  const filled = Math.min(level, 5);
+  const pct = (filled / 5) * 100;
+  const r = (size - 4) / 2;
+  const circ = 2 * Math.PI * r;
+  const strokeColor = maturityBorderColor(level);
+
+  return (
+    <div className="relative flex-shrink-0" title={`Maturity Level ${level}/5`}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={2.5} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={2.5}
+          strokeDasharray={circ}
+          strokeDashoffset={circ * (1 - pct / 100)}
+          strokeLinecap="round"
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-slate-600">
+        {level}
+      </span>
+    </div>
+  );
+}
+
 type AgentPaletteProps = {
   adapter: EcosystemAdapter;
   onAgentsChanged?: () => void;
+  /** Callback to navigate to agent training page. */
+  onTrainAgent?: (agentId: string) => void;
+  /** Callback to register a custom agent in the backend. */
+  onRegisterAgent?: (agent: AgentDefinition) => Promise<void>;
   className?: string;
 };
 
-export function AgentPalette({ adapter, onAgentsChanged, className }: AgentPaletteProps) {
+export function AgentPalette({ adapter, onAgentsChanged, onTrainAgent, onRegisterAgent, className }: AgentPaletteProps) {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [detailAgent, setDetailAgent] = useState<AgentDefinition | null>(null);
@@ -67,7 +120,6 @@ export function AgentPalette({ adapter, onAgentsChanged, className }: AgentPalet
       adapter.domainGroups[domain].push(agent.id);
     }
     onAgentsChanged?.();
-    // Force re-render
     setSearch((s) => s + " ");
     setTimeout(() => setSearch((s) => s.trimEnd()), 0);
   };
@@ -145,6 +197,10 @@ export function AgentPalette({ adapter, onAgentsChanged, className }: AgentPalet
                 ) : (
                   <ChevronDown size={14} />
                 )}
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: DOMAIN_COLORS[domain] ?? "#64748b" }}
+                />
                 {domain}
                 <span className="ml-auto text-slate-400 font-normal normal-case">
                   {agents.length}
@@ -160,34 +216,89 @@ export function AgentPalette({ adapter, onAgentsChanged, className }: AgentPalet
                       className="mx-3 mb-1.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-grab hover:border-blue-300 hover:shadow-sm active:cursor-grabbing transition-all group"
                       style={{
                         borderLeftWidth: 3,
-                        borderLeftColor: agent.color ?? "#64748b",
+                        borderLeftColor: agent.maturityLevel != null
+                          ? maturityBorderColor(agent.maturityLevel)
+                          : (agent.color ?? "#64748b"),
                       }}
                     >
                       <div className="flex items-center gap-2">
-                        <Bot
-                          size={14}
-                          style={{ color: agent.color ?? "#64748b" }}
-                        />
-                        <span className="text-sm font-medium text-slate-800 truncate flex-1">
-                          {agent.displayName}
-                        </span>
-                        {/* Info button — click to open detail modal */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setDetailAgent(agent);
-                          }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          className="p-0.5 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title={`View ${agent.displayName} details`}
-                        >
-                          <Info size={14} />
-                        </button>
+                        {agent.maturityLevel != null ? (
+                          <MaturityRing level={agent.maturityLevel} size={28} />
+                        ) : (
+                          <Bot
+                            size={14}
+                            style={{ color: agent.color ?? "#64748b" }}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-slate-800 truncate block">
+                            {agent.displayName}
+                          </span>
+                          {/* Domain badge */}
+                          <span
+                            className="text-[9px] px-1.5 py-0.5 rounded-full font-medium inline-block mt-0.5"
+                            style={{
+                              backgroundColor: (DOMAIN_COLORS[agent.domain] ?? "#64748b") + "15",
+                              color: DOMAIN_COLORS[agent.domain] ?? "#64748b",
+                            }}
+                          >
+                            {agent.domain}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Train button — navigates to VAT Prompt Studio */}
+                          {onTrainAgent && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onTrainAgent(agent.id);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="p-0.5 text-slate-300 hover:text-amber-500"
+                              title={`Train ${agent.displayName}`}
+                            >
+                              <GraduationCap size={14} />
+                            </button>
+                          )}
+                          {/* Info button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setDetailAgent(agent);
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className="p-0.5 text-slate-300 hover:text-blue-500"
+                            title={`View ${agent.displayName} details`}
+                          >
+                            <Info size={14} />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
                         {agent.description}
                       </p>
+                      {/* Metrics tooltip row */}
+                      {(agent.accuracyScore != null || agent.rlhfRating != null) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {agent.accuracyScore != null && (
+                            <span className="text-[9px] text-slate-400">
+                              Acc: {agent.accuracyScore}%
+                            </span>
+                          )}
+                          {agent.knowledgeDocCount != null && (
+                            <span className="text-[9px] text-slate-400">
+                              Docs: {agent.knowledgeDocCount}
+                            </span>
+                          )}
+                          {agent.rlhfRating != null && (
+                            <span className="text-[9px] text-slate-400">
+                              RLHF: {agent.rlhfRating.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {agent.isCustom && (
                         <span className="text-[9px] bg-amber-100 text-amber-600 px-1 py-0.5 rounded mt-1 inline-block">
                           Custom
@@ -221,6 +332,7 @@ export function AgentPalette({ adapter, onAgentsChanged, className }: AgentPalet
           onAddDomain={handleAddDomain}
           onRemoveAgent={handleRemoveAgent}
           onClose={() => setShowManage(false)}
+          onRegisterAgent={onRegisterAgent}
         />
       )}
     </>

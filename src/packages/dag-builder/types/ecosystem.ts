@@ -20,10 +20,16 @@ export type AgentDefinition = {
   modelTier?: string;
   /** If true, this agent was added dynamically (not a built-in). */
   isCustom?: boolean;
-  /** Agent maturity level from the trainer system. */
+  /** Training maturity level (1–5) from VAT agent registry. */
   maturityLevel?: number;
-  /** Agent training status from the trainer system. */
-  trainerStatus?: string;
+  /** Composite accuracy score (0–100) from evaluation tests + RLHF. */
+  accuracyScore?: number;
+  /** Number of knowledge documents indexed for this agent. */
+  knowledgeDocCount?: number;
+  /** Average user rating from RLHF feedback (0–5). */
+  rlhfRating?: number;
+  /** Agent status from the trainer registry. */
+  trainerStatus?: "active" | "training" | "paused" | "ab-testing";
 };
 
 /**
