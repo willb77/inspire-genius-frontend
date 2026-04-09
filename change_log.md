@@ -2,6 +2,71 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-08] — Platform Build Status Document
+
+### Added
+- **IG_Platform_Build_Status.docx** — Comprehensive prioritised assessment of platform build from mid-March to present
+  - 9 sections: Executive Summary, Completed Work, What's Working, What's Not Working, Yet To Be Completed (prioritised for UAT), Build Timeline, CDK Stack Status, Risk Register, Microservice Health Matrix
+  - Files: `Transformation Documents/IG_Platform_Build_Status.docx`, `IG_Platform_Build_Status.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-08] — Session Summary: Infrastructure Hardening + Priority Reset
+
+### Session Overview
+Long-running session covering infrastructure hardening, login redesign, CI pipeline fixes, CDK deployment, and production readiness audit. Session ended with critical reprioritization: **STOP infrastructure work, FOCUS on 14 agent functional readiness for UAT by Friday 2026-04-11.**
+
+### Added
+- **Design B login skin** — immersive brand wall layout with animated mesh blobs, testimonial card (AuthLayout.tsx)
+- **Login flow fixes** — email/password validation, double-submit prevention, magic auth timeout + error interceptor
+- **Magic link redirect fix** — await completeAuthFromPayload in MagicLinkVerify.tsx (was causing redirect loop)
+- **Google OAuth** — configured on Cognito User Pool via AWS CLI (Google identity provider + web client updated)
+- **ElastiCache Serverless Redis** — created `ig-dev-redis` cluster for agent-engine sessions
+- **RDS Proxy CDK stack** (database-stack.ts) — manages proxy in front of Aurora
+- **Phase 5 Dockerfiles** for 5 services (coach, dashboard, org, support, user)
+- **Phase 5 EventBridge events** for 5 services with domain-specific event sources
+- **Alembic migration scaffolding** for all 10 services (alembic.ini, env.py, script.py.mako, versions/)
+- **11 missing env vars** added to .env.example (VITE_MAGIC_AUTH_URL, VITE_CRYPTO_KEY, etc.)
+- **Production readiness assessment** — Inspire_Genius_Remaining_Work.docx (64 KB, 15 sections)
+- **`/next` command** — comprehensive status report with priority queue
+- **Google OAuth setup guide** — docs/GOOGLE_OAUTH_SETUP.md
+- **SQS DLQs** for EventBridge Lambda targets (audit, document)
+- **VPC configuration** for 8 database-connected Lambdas
+- **X-Ray tracing** enabled on all 14 Lambda functions
+
+### Changed
+- **CDK logRetention → LogGroup** — migrated 15 Lambda functions from deprecated property
+- **CDK placeholder values** — dev values replaced with real Cognito/RDS endpoints; prod marked NEEDS-PROD-VALUE
+- **Cognito callback URLs** — removed hardcoded CloudFront domain
+- **6 service configs** — removed hardcoded secret_key defaults, added startup validation
+- **Trainer-service CORS** — replaced allow_origins=["*"] with explicit allowlist
+- **Trainer-service worker** — implemented 5 stub event handlers (goal_evaluation, batch_test, cost_aggregation, template_installed, prompt_published)
+- **Document-service** — replaced hardcoded user_id with JWT extraction
+- **Audit-service** — added role-based access control (super-admin/company-admin filtering)
+
+### Fixed
+- **CI pipeline** — resolved all TypeScript build errors (DAG builder, trainer pages, routes), auth tests updated for Design B, i18n mock with real English translations, structuredClone polyfill
+- **Frontend deploy** — corrected CloudFront URL (d1nxsns258du4y, not dcoq0ttfmpdvn)
+
+### Deployed
+- **Frontend** to CloudFront (13 commits pushed, all pipelines green)
+- **8 CDK stacks** to dev AWS (services, agent-engine, security, monitoring, cognito, trainer, domain, api-gateway)
+- **Google OAuth** on Cognito User Pool
+
+### Priority Reset (End of Session)
+- **STOP**: Infrastructure, CDK, CI/CD, DevOps, alarms, monitoring work
+- **FOCUS**: 14 agents functional readiness, Milvus, RAG pipeline, document ingestion
+- **Decision**: No Bedrock — use direct Anthropic SDK for LLM access
+- **Deadline**: UAT ready by Friday 2026-04-11
+- **Saved to memory**: project_priority_uat_friday.md, feedback_no_bedrock.md
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_status.py`
+
 ## [2026-04-08] — P0/P1 Production Readiness Fixes
 
 ### Security (P0)
@@ -296,6 +361,54 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/document-service/alembic/versions/.gitkeep`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/alembic/versions/.gitkeep`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic/script.py.mako`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic/versions/.gitkeep`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/rlhf-service/alembic/script.py.mako`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/rlhf-service/alembic/versions/.gitkeep`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/rlhf-service/alembic/env.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/alembic/env.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/project_priority_uat_friday.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/feedback_no_bedrock.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/MEMORY.md`
 
 ## [2026-04-07] — Production Hardening: CI/CD, API Docs, Deployment Runbook, Security Checklist
 
