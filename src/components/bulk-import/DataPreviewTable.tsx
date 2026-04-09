@@ -14,7 +14,7 @@ type DataPreviewTableProps = {
   records: RawUserRecord[]
   onRecordsChange: (records: RawUserRecord[]) => void
   onProceed: (validRecords: BulkUserRecord[]) => void
-  callerRole?: "company-admin" | "super-admin"
+  callerRole?: "manager" | "company-admin" | "super-admin"
 }
 
 const PAGE_SIZE = 50

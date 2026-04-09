@@ -1,7 +1,14 @@
 import { bulkUserSchema } from "@/types/bulk-import"
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
 
-type CallerRole = "company-admin" | "super-admin"
+type CallerRole = "manager" | "company-admin" | "super-admin"
+
+/** Roles that each caller role is NOT allowed to create */
+const DISALLOWED_ROLES: Record<CallerRole, string[]> = {
+  manager: ["company-admin", "super-admin"],
+  "company-admin": ["super-admin"],
+  "super-admin": [],
+}
 
 export function validateRecords(
   records: RawUserRecord[],
@@ -29,14 +36,13 @@ export function validateRecords(
     }
 
     // Role escalation check
-    if (
-      callerRole === "company-admin" &&
-      record.user_type === "super-admin"
-    ) {
+    const disallowed = DISALLOWED_ROLES[callerRole]
+    if (disallowed.includes(record.user_type as string)) {
+      const roleLabel = callerRole === "manager" ? "Managers" : "Company admins"
       errors.push({
         row,
         field: "user_type",
-        message: "Company admins cannot create super-admin users",
+        message: `${roleLabel} cannot create ${record.user_type} users`,
       })
     }
 
@@ -79,8 +85,10 @@ export function revalidateRecord(
     }
   }
 
-  if (callerRole === "company-admin" && record.user_type === "super-admin") {
-    errors.push({ row: 0, field: "user_type", message: "Company admins cannot create super-admin users" })
+  const disallowed = DISALLOWED_ROLES[callerRole]
+  if (disallowed.includes(record.user_type as string)) {
+    const roleLabel = callerRole === "manager" ? "Managers" : "Company admins"
+    errors.push({ row: 0, field: "user_type", message: `${roleLabel} cannot create ${record.user_type} users` })
   }
 
   return errors
