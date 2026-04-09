@@ -100,6 +100,8 @@ const CompanyAdminTraining = React.lazy(() => import("@/pages/company-admin/Trai
 const CompanyAdminLeadership = React.lazy(() => import("@/pages/company-admin/Leadership"));
 const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Settings"));
 const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
+const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
+const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
 const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
@@ -186,6 +188,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
       { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
+      { path: "/super-admin/bulk-import", element: withSuspense(<SuperAdminBulkImport />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
@@ -225,6 +228,7 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/training", element: withSuspense(<CompanyAdminTraining />) },
       { path: "/company-admin/leadership", element: withSuspense(<CompanyAdminLeadership />) },
       { path: "/company-admin/settings", element: withSuspense(<CompanyAdminSettings />) },
+      { path: "/company-admin/bulk-import", element: withSuspense(<CompanyAdminBulkImport />) },
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
 
       // Practitioner pages
