@@ -2,6 +2,172 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-09] — CDK Full Deployment: 9/10 Stacks Deployed, Log Group Fixes
+
+### Deployed
+- **ig-dev-api-gateway** — updated (HTTP API + WebSocket API live)
+- **ig-dev-agent-engine** — updated with ElastiCache Serverless Redis session cache
+- **ig-dev-services** — updated (12 Lambda functions, DynamoDB tables, EventBridge rules, S3 buckets)
+- **ig-dev-trainer** — updated (2 Lambda functions, DynamoDB tables, S3 bucket)
+- **ig-dev-security** — updated (WAF, KMS keys, Secrets Manager, rotation reminder Lambda)
+- **ig-dev-monitoring** — updated (CloudWatch dashboards, composite alarms, SNS topics)
+- **ig-dev-cognito** — updated (User Pool, Identity Pool, web app client)
+- **ig-dev-domain** — updated (CloudFront, Route53 DNS, ACM certificate)
+- **ig-dev-database** — RDS Proxy created, target group pending (Aurora target UNAVAILABLE due to internal error)
+
+### Skipped
+- **ig-dev-rlhf** — all RLHF resources already deployed in ig-dev-services stack (DynamoDB tables, S3 bucket, Lambda functions, Step Functions). Standalone RLHF stack conflicts with identical resource names.
+
+### Fixed
+- **Orphaned CloudWatch Log Groups** — deleted 15 auto-created Lambda log groups that blocked CDK deployment (12 in services stack, 2 in trainer stack, 1 in security stack). CDK now manages all log groups with explicit retention policies.
+- **CDK .gitignore** — added `cdk.out.*` and `cdk.context.json` patterns for parallel deploy output dirs
+
+### Known Issues
+- **RDS Proxy target health** — Aurora writer instance shows UNAVAILABLE ("internal error"). Likely VPC security group or subnet mismatch between proxy and Aurora cluster. Requires manual investigation of SG rules.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/bin/cdk.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/tmp/migrate_lambda/lambda_function.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env.local`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.env.development`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+- File modified
+  - Files: `/tmp/migrate_lambda/lambda_function.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/ingest_prism_knowledge.py`
+
+## [2026-04-08] — Comprehensive Session: Testing, Docs, Infrastructure, Custom Agents
+
+### Added
+- **200+ test files** — 10 trainer-service tests (~150 tests) + 7 Phase 5 service tests (~50 tests)
+- **E2E smoke test script** (`infrastructure/scripts/smoke-test.sh`) — 7 test categories
+- **Load test script** (`infrastructure/scripts/load-test.sh`) — 4 scenarios with latency percentiles
+- **API documentation** (`docs/API.md`) — 120+ endpoints across 10 services
+- **Deployment runbook** (`docs/DEPLOYMENT_RUNBOOK.md`) — CDK order, rollback, 10 common issues
+- **Security checklist** (`docs/SECURITY_CHECKLIST.md`) — OWASP Top 10 mapped, 90/100 score
+- **VAT+DPB User Guide** (`Transformation Documents/VAT_DPB_User_Guide.docx`) — 18 sections, 4 use cases, how-to for every feature
+- **Platform Overlap Analysis** (`Transformation Documents/IG_Platform_vs_VAT_DPB_Overlap_Analysis.docx`) — IG Platform vs VAT+DPB integration overlap
+- **DynamicAgent class** (`services/agent-engine/app/agents/dynamic_agent.py`) — runtime agent that loads prompts from Trainer Service
+- **POST /v1/trainer/agents** — register custom agents in trainer service for full training + execution
+- **ElastiCache Serverless** added to agent-engine CDK stack (Redis 7, 2GB dev / 10GB prod)
+- **Bulk user ingestion** — invitation-service + 6-step import workflow with email delivery
+
+### Changed
+- **GitLab CI** updated with frontend:lint + frontend:typecheck validate jobs
+- **ManageAgentsModal** — "Add Agent" now calls trainer API to register agent end-to-end
+- **WorkflowDesigner** — passes onRegisterAgent + onTrainAgent callbacks to DagBuilder
+- **Mobile responsive** — 11 component files fixed (sidebar collapse, touch targets, responsive grids)
+- **All 6 Phase 5 services** EventBridge bus updated to `inspire-genius-events`
+- **ECS agent-engine** desiredCount set to 2
+
+### Fixed
+- **CDK deploy root cause** — `npx cdk` vs `node_modules/.bin/cdk` version mismatch
+- **API Gateway route conflicts** — 38 Wave 2-6 routes deleted + CDK redeployed
+- **Domain name** corrected from `inspiregenius.com` to `inspiresgenius.com` across all CDK stacks
+- **WAF description** em-dash replaced with hyphen (regex validation)
+- **tryBundle stubs** — changed from `return false` to write stub + `return true`
+- **WebSocket VPC link** removed (AWS doesn't support VPC links for WS APIs)
+- **P0/P1 production readiness** — secrets, CORS, stubs, RBAC, DLQs
+
+### Deployed
+- **9/11 CDK stacks** deployed (api-gateway, services, monitoring, trainer, cognito, agent-engine, security, domain + RLHF in services)
+- **Route53** hosted zone for `inspiresgenius.com` with all existing DNS records preserved
+- **ACM certificate** issued for `dev.inspiresgenius.com`
+- **CloudFront** distribution live
+- **Remote Aurora** migrated (18 tables + 10 indexes)
+- **Frontend** deployed to S3 + CloudFront invalidated + pushed to GitHub
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/database-stack.ts`
+
+## [2026-04-08] — Flydocs Leadership Interview Templates & Agent Prompts
+
+### Added
+- **`Flydocs_Leadership_Interview_Templates.docx`** — Structured interview templates for 7 senior leadership roles (CFO, CPO/CHRO, CTDO, CPO Product, CCO, SVP Engineering, Head of BI & Strategy) with 12 scored questions per role across Vision Alignment, Behavioral Alignment, and Productivity sections; 10 productivity metrics per role (70 total); 5-point scoring rubric and composite scoring guide
+  - File: `Dropbox/AES Material/Inspire-X/Opportunities/Flydocs/Flydocs_Leadership_Interview_Templates.docx`
+- **`Flydocs_Interview_Agent_Prompts.docx`** — Claude Code system prompts for an AI interview agent to conduct guided leadership interviews; includes Master System Prompt (agent persona, interview protocol, scoring rubric, observation capture, metrics gap analysis), 7 role-specific prompts with embedded "What to Look For" criteria and "Red Flag Indicators", Post-Interview Analysis Prompt (weighted composite scoring, metrics maturity levels 1-5, prioritized actions), and Cross-Role Comparison Prompt (team scorecard, cross-functional alignment analysis, enterprise dashboard recommendation)
+  - File: `Dropbox/AES Material/Inspire-X/Opportunities/Flydocs/Flydocs_Interview_Agent_Prompts.docx`
+
+---
+
+## [2026-04-09] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/.gitignore`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- End-to-end custom agent registration: UI → Trainer Service → Agent Engine. ManageAgentsModal now registers agents in backend for full training + execution.
+
 ## [2026-04-08] — Major: Agent Engine + Platform Critical Path (Tasks 1-9, 11-12)
 
 ### Added
@@ -41,6 +207,15 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
 
 ## [2026-04-08] — Fix: Ascend Agent (Career Development) — Wired Up & Documented
 
