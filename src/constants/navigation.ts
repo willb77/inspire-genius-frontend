@@ -59,6 +59,7 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
+  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
   { to: ROUTES.MANAGER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
 ]

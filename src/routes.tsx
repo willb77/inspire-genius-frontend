@@ -90,6 +90,7 @@ const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"))
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
+const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
 const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Dashboard"));
@@ -219,6 +220,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/prism-team", element: withSuspense(<PrismTeam />) },
       { path: "/manager/settings", element: withSuspense(<ManagerSettings />) },
       { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
+      { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
 
       // Company Admin pages
       { path: "/company-admin/dashboard", element: withSuspense(<CompanyAdminDashboard />) },

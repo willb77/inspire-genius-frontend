@@ -2,6 +2,254 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-08] — Major: Agent Engine + Platform Critical Path (Tasks 1-9, 11-12)
+
+### Added
+- **EventBridge integration** for agent engine — 6 event types (session.started/ended, response.generated, tool.used, collaboration.requested, agent.error) wired into Meridian, MCP tools, collaboration, and error handling
+  - Files: `services/agent-engine/app/events/eventbridge.py`, `app/events/__init__.py`
+- **Document ingestion pipeline** — chunking, Gemini embedding, Zilliz Cloud storage with REST API endpoint
+  - Files: `services/agent-engine/app/rag/ingestion.py`, `app/routes/ingestion.py`
+- **Manager Bulk Import page** — 6-step CSV wizard matching Super Admin/Company Admin pattern
+  - Files: `inspire-genius-frontend/src/pages/manager/BulkImport.tsx`
+- **16 API Gateway routes** for role-specific dashboard endpoints (manager, company-admin, practitioner, distributor)
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+
+### Changed
+- **LLM provider switched from Bedrock to Anthropic Direct** — default changed in config, all 15 agents now use Anthropic SDK directly
+  - Files: `services/agent-engine/app/config.py`
+- **RAG enabled for ALL 15 agents** — business and system agents now use `_build_messages_with_rag()` (was coaching-only)
+  - Files: 10 agent files updated (all business + system agents)
+- **Memory propagated to all agents** — MemoryManager injected via context.metadata through orchestrators to individual agents
+  - Files: `services/agent-engine/app/agents/meridian.py`, `app/agents/base_agent.py`
+- **JWT auth wired into agent engine** — WebSocket validates tokens (closes 4001 on invalid), REST extracts user_id from JWT (no more hardcoded "rest-user")
+  - Files: `services/agent-engine/app/main.py`, `app/ws_handler.py`
+- **Tavily API key** wired into config + web_search tool
+  - Files: `services/agent-engine/app/config.py`, `app/tools/web_search.py`
+- **Bulk import validation** extended for manager role with DISALLOWED_ROLES lookup
+  - Files: `inspire-genius-frontend/src/lib/bulk-import/validation.ts`, `src/components/bulk-import/DataPreviewTable.tsx`
+
+### Fixed
+- **pymilvus import** — made conditional with try/except ImportError, graceful fallback to in-memory store
+  - Files: `services/agent-engine/app/memory/semantic.py`
+- **WorkflowDesigner build error** — removed unused props/imports (onTrainAgent, onRegisterAgent)
+  - Files: `inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+### Verified
+- **Ascend + Maven agents** already fully created and registered (from prior session)
+- **Frontend build** — clean (211 precached assets, 0 errors)
+- **All 6 API keys** confirmed in AWS Secrets Manager (Anthropic, OpenAI, Deepgram, Google/Gemini, Zilliz, Tavily)
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-08] — Fix: Ascend Agent (Career Development) — Wired Up & Documented
+
+### Fixed
+- **Ascend was defined but not operational** — had a system prompt and model tier but no agent class file and was not registered in the CoachingOrchestrator
+
+### Added
+- **ascend_agent.py** — AscendAgent class with RAG-enhanced career development capabilities
+  - Files: `services/agent-engine/app/agents/coaching/ascend_agent.py`
+- **CoachingOrchestrator wiring** — imported AscendAgent, registered in DAG executor + agent map, added 17 career-related routing keywords
+  - Files: `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- **IG_Ascend_Career_Agent_Definition.docx** — Full agent definition document (13 sections: identity, purpose, capabilities, system prompt, conversation patterns, PRISM integration, memory usage, routing, agent relationships, use cases by role, files changed, fix history, design rationale)
+  - Files: `Transformation Documents/IG_Ascend_Career_Agent_Definition.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/events/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/web_search.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/events/eventbridge.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/dashboard_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/document_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/support_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/admin_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/memory/semantic.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/prompt_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/rlhf_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/dashboard_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/tools/mcp_server.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/document_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/support_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/admin_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/collaboration/multi_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/BulkImport.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/collaboration/multi_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/prompt_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/rlhf_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/validation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/validation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DataPreviewTable.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/ws_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/ingestion.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/ingestion.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/rag/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
 ## [2026-04-08] — New Agent: Maven (Structured Leadership Interview Agent)
 
 ### Added
@@ -37,6 +285,9 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_ascend_agent_doc.py`
 
 ## [2026-04-08] — Bulk User Ingestion System
 

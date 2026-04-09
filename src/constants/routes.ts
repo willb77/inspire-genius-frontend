@@ -44,6 +44,7 @@ export const ROUTES = {
     LEADERSHIP: "/manager/leadership",
     PRISM_TEAM: "/manager/prism-team",
     ANALYTICS: "/manager/analytics",
+    BULK_IMPORT: "/manager/bulk-import",
     SETTINGS: "/manager/settings",
   },
   COMPANY_ADMIN: {
