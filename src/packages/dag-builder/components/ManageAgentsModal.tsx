@@ -12,6 +12,8 @@ type Props = {
   onAddDomain: (domain: string, agents: AgentDefinition[]) => void;
   onRemoveAgent: (agentId: string) => void;
   onClose: () => void;
+  /** Optional: register agent in the backend trainer service for full training + execution support. */
+  onRegisterAgent?: (agent: AgentDefinition) => Promise<void>;
 };
 
 const DOMAIN_COLORS = [
@@ -25,7 +27,9 @@ export function ManageAgentsModal({
   onAddDomain,
   onRemoveAgent,
   onClose,
+  onRegisterAgent,
 }: Props) {
+  const [registering, setRegistering] = useState(false);
   const [tab, setTab] = useState<"agent" | "palette" | "import">("agent");
 
   // Add Agent form state
@@ -50,7 +54,7 @@ export function ManageAgentsModal({
   // Import state
   const [importJson, setImportJson] = useState("");
 
-  const handleAddAgent = () => {
+  const handleAddAgent = async () => {
     if (!agentId.trim() || !agentName.trim()) return;
     const newAgent: AgentDefinition = {
       id: agentId.trim(),
@@ -67,6 +71,20 @@ export function ManageAgentsModal({
       modelTier: agentModelTier,
       isCustom: true,
     };
+
+    // Register in backend trainer service (if callback provided)
+    if (onRegisterAgent) {
+      setRegistering(true);
+      try {
+        await onRegisterAgent(newAgent);
+      } catch (e) {
+        // Non-blocking — agent still gets added to palette even if backend fails
+        console.warn("Backend registration failed (agent added to palette only):", e);
+      } finally {
+        setRegistering(false);
+      }
+    }
+
     onAddAgent(newAgent);
     // Reset form
     setAgentId("");
@@ -297,12 +315,17 @@ export function ManageAgentsModal({
               </div>
               <button
                 onClick={handleAddAgent}
-                disabled={!agentId.trim() || !agentName.trim()}
+                disabled={!agentId.trim() || !agentName.trim() || registering}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 <Plus size={14} />
-                Add Agent
+                {registering ? "Registering..." : onRegisterAgent ? "Add & Register Agent" : "Add Agent"}
               </button>
+              {onRegisterAgent && (
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Agent will be registered in the trainer service for full training, knowledge, and execution support.
+                </p>
+              )}
             </div>
           )}
 

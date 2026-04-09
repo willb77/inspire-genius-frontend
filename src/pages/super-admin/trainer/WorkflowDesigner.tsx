@@ -7,6 +7,7 @@
  */
 
 import { useMemo, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { useTrainerAgents, useEcosystems } from "@/hooks/trainer/useTrainer"
 import { DagBuilder, createIGConfig } from "@inspiresgenius/dag-builder"
@@ -14,6 +15,7 @@ import type { AgentDefinition, DagTemplate } from "@inspiresgenius/dag-builder"
 import type { AgentConfig } from "@/types/trainer"
 import { toast } from "sonner"
 import { api as axios } from "@/lib/axios"
+import { useQueryClient } from "@tanstack/react-query"
 
 /** Map VAT AgentConfig to DPB AgentDefinition, enriching with maturity data. */
 function vatAgentToDpbAgent(agent: AgentConfig): AgentDefinition {
@@ -35,6 +37,8 @@ function vatAgentToDpbAgent(agent: AgentConfig): AgentDefinition {
 }
 
 export default function WorkflowDesigner() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: agentsResp } = useTrainerAgents()
   const { data: ecosystemsResp } = useEcosystems()
 
@@ -88,12 +92,33 @@ export default function WorkflowDesigner() {
     }
   }, [])
 
+  const handleTrainAgent = useCallback((agentId: string) => {
+    navigate(`/super-admin/agent-trainer/${agentId}/prompt`)
+  }, [navigate])
+
+  const handleRegisterAgent = useCallback(async (agent: AgentDefinition) => {
+    await axios.post("/v1/trainer/agents", {
+      agent_id: agent.id,
+      name: agent.displayName,
+      domain: agent.domain,
+      description: agent.description,
+      full_description: agent.fullDescription,
+      color: agent.color,
+      model_tier: agent.modelTier ?? "claude-sonnet",
+      capabilities: agent.capabilities ?? [],
+    })
+    toast.success(`Agent "${agent.displayName}" registered for training + execution`)
+    queryClient.invalidateQueries({ queryKey: ["trainer", "agents"] })
+  }, [queryClient])
+
   return (
     <SuperAdminLayout>
       <div className="h-[calc(100vh-4rem)]">
         <DagBuilder
           ecosystemConfig={ecosystemConfig}
           onSave={handleSave}
+          onTrainAgent={handleTrainAgent}
+          onRegisterAgent={handleRegisterAgent}
         />
       </div>
     </SuperAdminLayout>
