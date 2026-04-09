@@ -28,6 +28,7 @@ export const ROUTES = {
     VOICE_SETTINGS: "/super-admin/voice-settings",
     PROCESS_BUILDER: "/super-admin/process-builder",
     AGENT_TRAINER: "/super-admin/agent-trainer",
+    BULK_IMPORT: "/super-admin/bulk-import",
   },
   MANAGER: {
     BASE: "/manager",
@@ -56,6 +57,7 @@ export const ROUTES = {
     PRISM_OVERVIEW: "/company-admin/prism-overview",
     ANALYTICS: "/company-admin/analytics",
     SETTINGS: "/company-admin/settings",
+    BULK_IMPORT: "/company-admin/bulk-import",
   },
   PRACTITIONER: {
     BASE: "/practitioner",

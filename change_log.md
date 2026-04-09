@@ -2,6 +2,316 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-08] — New Agent: Maven (Structured Leadership Interview Agent)
+
+### Added
+- **Agent #15: Maven (InterviewAgent)** — Structured leadership interview conductor for any role at any organisation
+  - 3-section evaluation framework: Vision Alignment, Behavioral Alignment, Productivity & Effectiveness
+  - 1-5 scoring rubric with observation capture, red flag detection, and STAR follow-up probes
+  - Real-time metrics gap analysis comparing tracked vs. expected metrics
+  - Structured JSON + narrative assessment report output
+  - Company-agnostic and role-agnostic — adapts dynamically to any interview scenario
+  - Registered in BusinessOrchestrator with keyword routing (interview, assessment, evaluate, candidate, etc.)
+  - Assigned TIER_1_COMPLEX (Sonnet) for maximum reasoning depth
+  - Files: `services/agent-engine/app/agents/business/interview_agent.py` (new), `app/llm/prompts.py`, `app/llm/agent_tiers.py`, `app/agents/orchestrators/business_orchestrator.py`
+- **IG_Maven_Interview_Agent_Definition.docx** — Full agent definition document (11 sections)
+  - Files: `Transformation Documents/IG_Maven_Interview_Agent_Definition.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/ascend_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+## [2026-04-08] — Bulk User Ingestion System
+
+### Added
+- **Bulk User Import feature** — Complete 6-step workflow for importing users and sending invitation emails
+  - **File Parsers** (`src/lib/bulk-import/parsers.ts`): CSV (papaparse), Excel (xlsx/SheetJS), JSON, XML (fast-xml-parser) with field name normalization and alias mapping
+  - **Validation Engine** (`src/lib/bulk-import/validation.ts`): Zod schema validation, duplicate email detection, role escalation prevention
+  - **Types** (`src/types/bulk-import.ts`): Full type definitions for import workflow, invitations, and delivery tracking
+  - **FileUploader** component: Drag-and-drop with format detection, 10MB limit
+  - **DataPreviewTable** component: Inline editing, error highlighting, bulk actions, pagination
+  - **ImportProgress** component: Progress bar, per-user results, CSV export
+  - **InvitationComposer** component: Email template preview with custom message, live preview
+  - **RecipientSelector** component: Select All/Deselect, search, role filter, confirmation dialog
+  - **DeliveryTracker** component: Real-time status (queued/sent/delivered/opened/failed), sortable columns, export
+  - **BulkImportPage** (company-admin + super-admin): 6-step stepper orchestrating all components
+  - **API Service** (`src/services/bulk-import.ts`): Endpoints for bulk import, invitations, tracking
+  - **React Query Hooks** (`src/hooks/useBulkImport.ts`): 5 hooks with polling, mutations, toast notifications
+  - **Invitation Service** (`services/invitation-service/`): FastAPI Lambda microservice with SES email, DynamoDB tracking, EventBridge events, SES webhook handler
+  - **Routes**: `/company-admin/bulk-import` and `/super-admin/bulk-import`
+  - **Navigation**: "Bulk Import" nav items for company-admin and super-admin sidebars
+  - **36 new tests** across 6 test files (parsers, validation, FileUploader, ImportProgress, RecipientSelector, DeliveryTracker)
+  - **Plan Document**: `Bulk_User_Ingestion_Plan.docx` with 12 ordered prompts
+
+### Files Created
+- `src/types/bulk-import.ts`
+- `src/lib/bulk-import/parsers.ts`
+- `src/lib/bulk-import/validation.ts`
+- `src/lib/bulk-import/__tests__/parsers.test.ts`
+- `src/lib/bulk-import/__tests__/validation.test.ts`
+- `src/services/bulk-import.ts`
+- `src/hooks/useBulkImport.ts`
+- `src/components/bulk-import/FileUploader.tsx`
+- `src/components/bulk-import/DataPreviewTable.tsx`
+- `src/components/bulk-import/ImportProgress.tsx`
+- `src/components/bulk-import/InvitationComposer.tsx`
+- `src/components/bulk-import/RecipientSelector.tsx`
+- `src/components/bulk-import/DeliveryTracker.tsx`
+- `src/components/bulk-import/__tests__/FileUploader.test.tsx`
+- `src/components/bulk-import/__tests__/ImportProgress.test.tsx`
+- `src/components/bulk-import/__tests__/RecipientSelector.test.tsx`
+- `src/components/bulk-import/__tests__/DeliveryTracker.test.tsx`
+- `src/pages/company-admin/BulkImport.tsx`
+- `src/pages/super-admin/BulkImport.tsx`
+- `services/invitation-service/` (15 files: app/, tests/, Dockerfile, pyproject.toml)
+
+### Modified
+- `src/constants/routes.ts` — Added BULK_IMPORT routes for company-admin and super-admin
+- `src/constants/navigation.ts` — Added Bulk Import nav items with UserPlus icon
+- `src/routes.tsx` — Added lazy-loaded routes for both bulk import pages
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DataPreviewTable.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/parsers.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/BulkImport.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/parsers.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/FileUploader.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/agent_tiers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_maven_agent_doc.py`
+
+## [2026-04-08] — Comprehensive Platform Audit Report
+
+### Added
+- **IG_Platform_Comprehensive_Audit.md** — Exhaustive markdown audit covering frontend (92 routes, 1,683 tests), all 11 microservices, agent engine (13/14 agents, Ascend missing), CDK infrastructure (10 stacks, 0 deployed), deployment status, git risk (all services untracked), API keys inventory (6 unknown), and 12-task critical path to 14 working collaborative agents (~24 hours estimated effort)
+  - Files: `IG_Platform_Comprehensive_Audit.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/__tests__/parsers.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/schemas.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/__tests__/validation.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/email.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/FileUploader.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/ImportProgress.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/service.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/RecipientSelector.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/webhooks.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/DeliveryTracker.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/tests/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/tests/test_send.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/tests/test_tracking.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/invitation-service/tests/test_webhooks.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/bulk-import.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/routes/agents.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/__tests__/validation.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/trainer-service/app/adapters/inspire_genius.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/FileUploader.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/RecipientSelector.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/dynamic_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/ImportProgress.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ManageAgentsModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ManageAgentsModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/DeliveryTracker.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ManageAgentsModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/ManageAgentsModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/AgentPalette.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/packages/dag-builder/src/components/DagBuilder.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/WorkflowDesigner.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/__tests__/FileUploader.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/InvitationComposer.tsx`
+
 ## [2026-04-08] — Platform Build Status Document
 
 ### Added
@@ -11,6 +321,75 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/bulk-import.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/parsers.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/bulk-import/validation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/bulk-import.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/useBulkImport.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_agent_status.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/FileUploader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/ImportProgress.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/InvitationComposer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DataPreviewTable.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/RecipientSelector.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/bulk-import/DeliveryTracker.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/BulkImport.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/BulkImport.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_Platform_Comprehensive_Audit.md`
 
 ## [2026-04-08] — Session Summary: Infrastructure Hardening + Priority Reset
 
