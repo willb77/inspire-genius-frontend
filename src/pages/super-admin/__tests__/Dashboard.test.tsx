@@ -1,6 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import SuperAdminDashboard from "../Dashboard";
-import React from "react";
 
 // ---------- MOCK LAYOUT ----------
 jest.mock("@/layouts/SuperAdminLayout", () => ({
@@ -10,136 +9,79 @@ jest.mock("@/layouts/SuperAdminLayout", () => ({
   ),
 }));
 
-// ---------- MOCK DASHBOARD COMPONENTS ----------
-jest.mock("@/components/super-admin/dashboard/LicenseExpiring", () => () => (
-  <div data-testid="license-expiring">LicenseExpiring</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/AvgTimeSpentChart", () => () => (
-  <div data-testid="avg-time-spent-chart">AvgTimeSpentChart</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/HelpAndSupport", () => () => (
-  <div data-testid="help-and-support">HelpAndSupport</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/DocumentUploadTrend", () => ({
-  DocumentUploadTrend: () => (
-    <div data-testid="document-upload-trend">DocumentUploadTrend</div>
-  ),
-}));
-
-jest.mock("@/components/super-admin/dashboard/DashboardSystem", () => ({
-  __esModule: true,
-  default: ({ title }: { title: string }) => (
-    <div data-testid="dashboard-system">{title}</div>
-  ),
-}));
-
-jest.mock("@/components/super-admin/dashboard/UsedCoachesChartNew", () => ({
-  UsedCoachesChartNew: () => (
-    <div data-testid="used-coaches-chart">UsedCoachesChartNew</div>
-  ),
-}));
-
-jest.mock("@/components/super-admin/dashboard/LatestUsers", () => () => (
-  <div data-testid="latest-users">LatestUsers</div>
-));
-
-// ---------- MOCK UI COMPONENTS THAT USE PORTALS ----------
-jest.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: { children: React.ReactNode }) => (
+// ---------- MOCK RADIX SELECT (portal-based) ----------
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+    <button>{children}</button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span>{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  PopoverContent: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-jest.mock("@/components/ui/calendar", () => ({
-  Calendar: ({ onSelect, disabled }: any) => (
-    <div>
-      <button
-        data-testid="select-date"
-        onClick={() => onSelect?.(new Date(2024, 0, 1))}
-      >
-        Select Date
-      </button>
-
-      <span data-testid="disabled-check">
-        {disabled?.(new Date("2099-01-01")) ? "disabled" : "enabled"}
-      </span>
-    </div>
-  ),
+  SelectItem: ({
+    children,
+    value,
+  }: {
+    children: React.ReactNode;
+    value: string;
+  }) => <option value={value}>{children}</option>,
 }));
 
 // ---------- TESTS ----------
 describe("SuperAdminDashboard", () => {
-  it("should render dashboard page", () => {
+  it("renders within SuperAdminLayout", () => {
     render(<SuperAdminDashboard />);
-
     expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument();
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
-  it("should render dashboard system cards", () => {
+  it("renders the page title", () => {
     render(<SuperAdminDashboard />);
-
-    expect(screen.getByText("Total Organisations")).toBeInTheDocument();
-    expect(screen.getByText("Businesses Orgs")).toBeInTheDocument();
-    expect(screen.getByText("Educational Orgs")).toBeInTheDocument();
+    expect(screen.getByText("Platform Dashboard")).toBeInTheDocument();
   });
 
-  it("should render all major dashboard sections", () => {
+  it("renders the welcome banner with platform stats", () => {
     render(<SuperAdminDashboard />);
-
-    expect(screen.getByTestId("avg-time-spent-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("used-coaches-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("license-expiring")).toBeInTheDocument();
-    expect(screen.getByTestId("help-and-support")).toBeInTheDocument();
-    expect(screen.getByTestId("document-upload-trend")).toBeInTheDocument();
-    expect(screen.getByTestId("latest-users")).toBeInTheDocument();
+    expect(
+      screen.getByText("Inspire Genius Platform Overview")
+    ).toBeInTheDocument();
+    expect(screen.getByText(/12,847 Active Users/)).toBeInTheDocument();
+    expect(screen.getByText(/48 Organizations/)).toBeInTheDocument();
+    expect(screen.getByText(/78% Trained/)).toBeInTheDocument();
   });
 
-  it("should update fromDate when calendar date is selected", () => {
+  it("renders all 5 KPI stat cards", () => {
     render(<SuperAdminDashboard />);
-
-    const buttons = screen.getAllByTestId("select-date");
-
-    // First calendar = fromDate
-    fireEvent.click(buttons[0]);
-
-    expect(screen.getAllByText("01-01-2024").length).toBeGreaterThan(0);
+    expect(screen.getByText("Total Users")).toBeInTheDocument();
+    expect(screen.getByText("Active Organizations")).toBeInTheDocument();
+    expect(screen.getByText("Training Completion")).toBeInTheDocument();
+    expect(screen.getByText("PRISM Assessed")).toBeInTheDocument();
+    expect(screen.getByText("Platform Cost (MTD)")).toBeInTheDocument();
   });
 
-  it("should disable dates greater than toDate in fromDate calendar", () => {
+  it("renders the three tab triggers", () => {
     render(<SuperAdminDashboard />);
-
-    const disabledCheck = screen.getAllByTestId("disabled-check");
-
-    // FromDate calendar disabled logic
-    expect(disabledCheck[0].textContent).toBe("disabled");
+    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByText("Organizations")).toBeInTheDocument();
+    expect(screen.getByText("Cost Analysis")).toBeInTheDocument();
   });
-  it("should update toDate when calendar date is selected", () => {
+
+  it("renders Departments section on Overview tab", () => {
     render(<SuperAdminDashboard />);
-
-    const buttons = screen.getAllByTestId("select-date");
-
-    // Second calendar = toDate
-    fireEvent.click(buttons[1]);
-
-    expect(screen.getAllByText("01-01-2024").length).toBeGreaterThan(0);
+    expect(screen.getByText("Departments")).toBeInTheDocument();
+    expect(screen.getByText("2,340 employees")).toBeInTheDocument();
+    expect(screen.getByText("1,890 employees")).toBeInTheDocument();
   });
-  it("should show fallback text when date is null", () => {
-    jest
-      .spyOn(React, "useState")
-      .mockImplementationOnce(() => [null, jest.fn()]);
 
+  it("renders Organization Health metrics", () => {
     render(<SuperAdminDashboard />);
-
-    expect(screen.getByText("Pick a date")).toBeInTheDocument();
+    expect(screen.getByText("Organization Health")).toBeInTheDocument();
+    expect(screen.getByText("Employee Engagement")).toBeInTheDocument();
+    expect(screen.getByText("Retention Rate")).toBeInTheDocument();
+    expect(screen.getByText("PRISM Alignment")).toBeInTheDocument();
   });
 });
