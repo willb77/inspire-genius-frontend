@@ -80,7 +80,7 @@ describe("CoachFormModal", () => {
       />,
     );
 
-    expect(screen.queryByText("Add Coach")).not.toBeInTheDocument();
+    expect(screen.queryByText("Add Mentor")).not.toBeInTheDocument();
   });
 
   it("renders add mode with default title", () => {
@@ -93,11 +93,11 @@ describe("CoachFormModal", () => {
       />,
     );
 
-    const headings = screen.getAllByText("Add Coach");
+    const headings = screen.getAllByText("Add Mentor");
     expect(headings.length).toBeGreaterThanOrEqual(1);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Add Coach" }),
+      screen.getByRole("heading", { level: 1, name: "Add Mentor" }),
     ).toBeInTheDocument();
   });
 
@@ -111,7 +111,7 @@ describe("CoachFormModal", () => {
       />,
     );
 
-    expect(screen.getByText("Edit Coach")).toBeInTheDocument();
+    expect(screen.getByText("Edit Mentor")).toBeInTheDocument();
     expect(screen.getByText("Save Changes")).toBeInTheDocument();
   });
 
@@ -141,7 +141,7 @@ describe("CoachFormModal", () => {
       />,
     );
 
-    expect(screen.getByTestId("textarea")).toBeInTheDocument();
+    expect(screen.getAllByTestId("textarea")).toHaveLength(2);
   });
 
   it("does not render status field in add mode", () => {
@@ -207,7 +207,7 @@ describe("CoachFormModal", () => {
     );
 
     const submitButton = screen.getByRole("button", {
-      name: "Add Coach",
+      name: "Add Mentor",
     });
 
     fireEvent.click(submitButton);
@@ -237,7 +237,7 @@ describe("CoachFormModal", () => {
       />,
     );
 
-    expect(screen.getByText("Edit Coach")).toBeInTheDocument();
+    expect(screen.getByText("Edit Mentor")).toBeInTheDocument();
   });
 
   /* -------------------------------------------------
