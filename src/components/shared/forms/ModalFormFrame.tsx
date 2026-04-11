@@ -15,10 +15,11 @@ export type ModalFormFrameProps<T extends FieldValues> = {
   submitLabel: string
   onSubmit: (values: T) => void | Promise<void>
   children: (form: UseFormReturn<T>) => React.ReactNode
+  className?: string
 }
 
 export default function ModalFormFrame<T extends FieldValues>(props: ModalFormFrameProps<T>) {
-  const { open, onOpenChange, title, defaultValues, onSubmit, submitLabel, children } = props
+  const { open, onOpenChange, title, defaultValues, onSubmit, submitLabel, children, className } = props
 
   const form = useForm<T>({
     defaultValues,
@@ -51,7 +52,7 @@ export default function ModalFormFrame<T extends FieldValues>(props: ModalFormFr
   )
 
   return (
-    <ModalDialog open={open} onOpenChange={onOpenChange} title={title} footer={footer}>
+    <ModalDialog open={open} onOpenChange={onOpenChange} title={title} footer={footer} className={className}>
       <Form {...form}>
         <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={(e) => e.preventDefault()}>
           {children(form)}
