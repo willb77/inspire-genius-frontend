@@ -27,19 +27,18 @@ export default function CoachFormModal({
   defaultValues,
   onSubmit,
   submitLabel,
-  // toneOptions = [],
+  toneOptions = [],
 }: CoachFormModalProps) {
   const dv: CoachFormValues = { ...COACH_FORM_DEFAULTS, ...(defaultValues ?? {}) } as CoachFormValues;
-  
 
   return (
     <ModalFormFrame<CoachFormValues>
       open={open}
       onOpenChange={onOpenChange}
-      title={title ?? (mode === "add" ? "Add Coach" : "Edit Coach")}
+      title={title ?? (mode === "add" ? "Add Mentor" : "Edit Mentor")}
       mode={mode}
       defaultValues={dv}
-      submitLabel={submitLabel ?? (mode === "add" ? "Add Coach" : "Save Changes")}
+      submitLabel={submitLabel ?? (mode === "add" ? "Add Mentor" : "Save Changes")}
       onSubmit={onSubmit}
     >
       {(form) => (
@@ -50,7 +49,7 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-xs">Coach Name *</FormLabel>
+                <FormLabel className="block text-xs">Mentor Name *</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter Name" disabled={mode === "edit"} {...field} />
                 </FormControl>
@@ -73,31 +72,8 @@ export default function CoachFormModal({
               </FormItem>
             )}
           />
-{/* 
-          <FormField
-            control={form.control}
-            name="voice_style"
-            rules={COACH_FORM_RULES.voice_style}
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel className="block text-xs">Voice Style</FormLabel>
-                <FormControl>
-                  <MultiSelect
-                    value={String(field.value || "")
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean)}
-                    onChange={(vals) => field.onChange(vals.join(", "))}
-                    options={toneOptions}
-                    placeholder="Select voice styles"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          /> */}
 
-          {mode === "edit" ? (
+          {mode === "edit" && (
             <FormField
               control={form.control}
               name="status"
@@ -120,7 +96,57 @@ export default function CoachFormModal({
                 </FormItem>
               )}
             />
-          ) : null}
+          )}
+
+          <FormField
+            control={form.control}
+            name="persona"
+            rules={COACH_FORM_RULES.persona}
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel className="block text-xs">Persona</FormLabel>
+                <FormControl>
+                  <Textarea
+                    rows={3}
+                    placeholder="Define the mentor's personality, communication style, and approach (e.g. empathetic listener, direct challenger, supportive guide)"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {mode === "edit" && toneOptions.length > 0 && (
+            <FormField
+              control={form.control}
+              name="voice_style"
+              rules={COACH_FORM_RULES.voice_style}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="block text-xs">Voice Style</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={String(field.value || "")}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select voice style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {toneOptions.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
@@ -128,9 +154,13 @@ export default function CoachFormModal({
             rules={COACH_FORM_RULES.voice_description}
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel className="block text-xs">Description</FormLabel>
+                <FormLabel className="block text-xs">System Prompt</FormLabel>
                 <FormControl>
-                  <Textarea rows={6} placeholder="Describe the coach" {...field} />
+                  <Textarea
+                    rows={6}
+                    placeholder="Enter the system prompt that defines how this mentor behaves, responds, and coaches users"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

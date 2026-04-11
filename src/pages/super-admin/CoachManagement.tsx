@@ -24,6 +24,7 @@ type CoachRow = {
   category: string;
   voice_style: string;
   voice_description: string;
+  persona: string;
   total_sessions: number;
   status: "Active" | "Deactivated";
   type?: string;
@@ -59,8 +60,9 @@ export default function CoachManagement() {
       id: a.id,
       name: a.name,
       category: a.category_name ?? "",
-      voice_style: "",
+      voice_style: a.voice_style ?? "",
       voice_description: a.prompts?.[0]?.text ?? "",
+      persona: a.persona ?? "",
       total_sessions: 0,
       status: (a.status?.toLowerCase() === "deactivated" ? "Deactivated" : "Active") as "Active" | "Deactivated",
       type: a.type,
@@ -140,6 +142,8 @@ export default function CoachManagement() {
     const body = {
       agent_id: selected.id,
       prompt: values.voice_description,
+      persona: values.persona,
+      voice_style: values.voice_style,
       status: values.status,
     };
     try {
@@ -200,7 +204,7 @@ export default function CoachManagement() {
           align="end"
           showView={false}
           showResend={false}
-          showEdit={row.type !== "predefined"}
+          showEdit={true}
           showDeactivate={row.status === "Active"}
           onEdit={() => openEdit(row)}
           onDeactivate={() => openDeactivate(row)}

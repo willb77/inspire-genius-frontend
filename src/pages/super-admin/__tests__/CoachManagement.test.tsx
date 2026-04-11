@@ -442,11 +442,11 @@ describe("CoachManagement Page", () => {
     expect(screen.getByTestId("coach-form-modal")).toBeInTheDocument();
   });
 
-  it("does not show edit button for predefined coaches", () => {
+  it("shows edit button for all coaches including predefined", () => {
     renderWithQueryClient(<CoachManagement />);
     const editButtons = screen.getAllByTestId("edit-btn");
-    // Should only be 1 edit button (for custom coach), not 2
-    expect(editButtons.length).toBe(1);
+    // Edit should be available for all coaches
+    expect(editButtons.length).toBe(2);
   });
 
   it("successfully updates a coach", async () => {
@@ -560,6 +560,7 @@ describe("CoachManagement Page", () => {
       category: "AI",
       voice_style: "",
       voice_description: "Voice description for coach one",
+      persona: "",
       total_sessions: 0,
       status: "active",
       type: "custom",
