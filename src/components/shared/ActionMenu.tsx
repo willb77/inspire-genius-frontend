@@ -4,6 +4,7 @@ import {
   Edit,
   Trash2,
   MessageCircleX,
+  UserCheck,
   Mail,
   Bot,
 } from "lucide-react";
@@ -30,6 +31,7 @@ export type ActionMenuProps<Row = unknown> = {
   showView?: boolean;
   showEdit?: boolean;
   showDeactivate?: boolean;
+  showActivate?: boolean;
   showDelete?: boolean;
   // Sub options
   viewOptions?: ReadonlyArray<MenuOption>;
@@ -39,6 +41,7 @@ export type ActionMenuProps<Row = unknown> = {
   onEdit?: (row?: Row, option?: string) => void;
   onResend?: (row?: Row) => void;
   onDeactivate?: (row?: Row) => void;
+  onActivate?: (row?: Row) => void;
   onDelete?: (row?: Row) => void;
   showCoaches?: boolean;
   onCoaches?: (row?: Row) => void;
@@ -52,6 +55,7 @@ export default function ActionMenu<Row = unknown>({
   showView = true,
   showEdit = true,
   showDeactivate = true,
+  showActivate = false,
   showDelete = false,
   viewOptions,
   editOptions,
@@ -59,6 +63,7 @@ export default function ActionMenu<Row = unknown>({
   onEdit,
   onResend,
   onDeactivate,
+  onActivate,
   onDelete,
   showCoaches = false,
   onCoaches,
@@ -152,6 +157,12 @@ export default function ActionMenu<Row = unknown>({
         {showDeactivate && (
           <DropdownMenuItem onClick={() => onDeactivate?.(row)}>
             <MessageCircleX className="w-4 h-4 mr-2 text-gray-500" /> Deactivate
+          </DropdownMenuItem>
+        )}
+
+        {showActivate && (
+          <DropdownMenuItem onClick={() => onActivate?.(row)}>
+            <UserCheck className="w-4 h-4 mr-2 text-emerald-500" /> Activate
           </DropdownMenuItem>
         )}
 

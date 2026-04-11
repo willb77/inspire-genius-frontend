@@ -89,6 +89,7 @@ export default function UserManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [activateOpen, setActivateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<UserRow | null>(null);
 
@@ -153,6 +154,10 @@ export default function UserManagement() {
     setSelected(row);
     setDeleteOpen(true);
   };
+  const openActivate = (row: UserRow) => {
+    setSelected(row);
+    setActivateOpen(true);
+  };
 
   const getRoleIdByName = (roleName: string): string | undefined => {
     const role = roles.find((r) => r.name === roleName);
@@ -202,6 +207,23 @@ export default function UserManagement() {
     });
 
     setDeactivateOpen(false);
+  };
+
+  const handleActivate = async () => {
+    if (!selected) return;
+
+    const body = {
+      first_name: selected.first_name ?? "",
+      last_name: selected.last_name ?? "",
+      is_active: true,
+    };
+
+    await updateMutation.mutateAsync({
+      email: selected.email,
+      payload: body,
+    });
+
+    setActivateOpen(false);
   };
 
   const handleDelete = async () => {
@@ -364,11 +386,13 @@ export default function UserManagement() {
           showEdit={row.status !== "Awaiting"}
           showResend={row.status === "Awaiting"}
           showDeactivate={row.status === "Active"}
+          showActivate={row.status === "Deactivated"}
           showDelete={true}
           onView={() => openView(row)}
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
           onDeactivate={() => openDeactivate(row)}
+          onActivate={() => openActivate(row)}
           onDelete={() => openDelete(row)}
         />
       ),
@@ -519,6 +543,21 @@ export default function UserManagement() {
         confirmLabel="Deactivate"
         confirmVariant="destructive"
         onConfirm={handleDeactivate}
+        confirmLoading={updateMutation.isPending}
+      />
+
+      {/* Activate Confirmation */}
+      <ConfirmActionModal
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        title="Activate User"
+        description="Are you sure you want to reactivate this user? They will be able to log in again."
+        fields={[
+          { label: "Name", value: selected?.name ?? "" },
+          { label: "Email", value: selected?.email ?? "" },
+        ]}
+        confirmLabel="Activate"
+        onConfirm={handleActivate}
         confirmLoading={updateMutation.isPending}
       />
 
