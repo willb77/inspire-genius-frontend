@@ -40,6 +40,7 @@ export default function CoachFormModal({
       defaultValues={dv}
       submitLabel={submitLabel ?? (mode === "add" ? "Add Mentor" : "Save Changes")}
       onSubmit={onSubmit}
+      className="sm:max-w-2xl"
     >
       {(form) => (
         <>

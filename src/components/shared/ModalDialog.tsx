@@ -44,7 +44,7 @@ export default function ModalDialog({
             </Button>
           )}
         </div>
-        <div className="p-6 pt-4">{children}</div>
+        <div className="p-6 pt-4 overflow-y-auto max-h-[calc(100vh-12rem)]">{children}</div>
         {footer && <div className="px-6 pb-6 flex justify-end gap-2">{footer}</div>}
       </DialogContent>
     </Dialog>
