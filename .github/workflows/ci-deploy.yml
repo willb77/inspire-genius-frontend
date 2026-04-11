@@ -89,8 +89,7 @@ jobs:
     name: E2E — ${{ matrix.role }}
     needs: build
     runs-on: ubuntu-latest
-    if: false  # Disabled — login credentials not configured in CI yet
-    continue-on-error: true
+    continue-on-error: true  # Non-blocking until E2E coverage is stabilized
 
     strategy:
       fail-fast: false
