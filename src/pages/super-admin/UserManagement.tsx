@@ -31,7 +31,7 @@ import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { ROLE_LABELS } from "@/types/roles";
-import { Trash2, UserX } from "lucide-react";
+import { Trash2, UserX, UserCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -97,6 +97,8 @@ export default function UserManagement() {
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkActivateOpen, setBulkActivateOpen] = useState(false);
+  const [bulkActivating, setBulkActivating] = useState(false);
 
   // Purge inactive users state
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -195,15 +197,13 @@ export default function UserManagement() {
   const handleDeactivate = async () => {
     if (!selected) return;
 
-    const body = {
-      first_name: selected.first_name ?? "",
-      last_name: selected.last_name ?? "",
-      is_active: false,
-    };
+    const body: Record<string, unknown> = { is_active: false };
+    if (selected.first_name) body.first_name = selected.first_name;
+    if (selected.last_name) body.last_name = selected.last_name;
 
     await updateMutation.mutateAsync({
       email: selected.email,
-      payload: body,
+      payload: body as { first_name: string; last_name: string; is_active?: boolean },
     });
 
     setDeactivateOpen(false);
@@ -212,15 +212,13 @@ export default function UserManagement() {
   const handleActivate = async () => {
     if (!selected) return;
 
-    const body = {
-      first_name: selected.first_name ?? "",
-      last_name: selected.last_name ?? "",
-      is_active: true,
-    };
+    const body: Record<string, unknown> = { is_active: true };
+    if (selected.first_name) body.first_name = selected.first_name;
+    if (selected.last_name) body.last_name = selected.last_name;
 
     await updateMutation.mutateAsync({
       email: selected.email,
-      payload: body,
+      payload: body as { first_name: string; last_name: string; is_active?: boolean },
     });
 
     setActivateOpen(false);
@@ -285,6 +283,44 @@ export default function UserManagement() {
     }
 
     setBulkDeleting(false);
+  };
+
+  const handleBulkActivate = async () => {
+    setBulkActivating(true);
+    const emails = Array.from(selectedEmails);
+
+    const results = await Promise.allSettled(
+      emails.map((email) => {
+        const user = rows.find((r) => r.email === email);
+        const body: Record<string, unknown> = { is_active: true };
+        if (user?.first_name) body.first_name = user.first_name;
+        if (user?.last_name) body.last_name = user.last_name;
+        return updateMutation.mutateAsync({
+          email,
+          payload: body as { first_name: string; last_name: string; is_active?: boolean },
+        });
+      })
+    );
+
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+
+    if (succeeded > 0 && failed === 0) {
+      toast.success(`Activated ${succeeded} user(s)`);
+      setSelectedEmails(new Set());
+    } else if (succeeded > 0) {
+      toast.warning(`Activated ${succeeded} user(s), but ${failed} could not be activated`);
+    } else {
+      toast.error("No users could be activated");
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["super-admin", "user-management"],
+      exact: false,
+    });
+
+    setBulkActivateOpen(false);
+    setBulkActivating(false);
   };
 
   const handlePurgeInactive = async () => {
@@ -417,13 +453,23 @@ export default function UserManagement() {
                 Purge Inactive
               </Button>
               {selectedEmails.size > 0 && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setBulkDeleteOpen(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Delete Selected ({selectedEmails.size})
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                    onClick={() => setBulkActivateOpen(true)}
+                  >
+                    <UserCheck className="size-4" />
+                    Activate Selected ({selectedEmails.size})
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete Selected ({selectedEmails.size})
+                  </Button>
+                </>
               )}
             </>
           }
@@ -590,6 +636,20 @@ export default function UserManagement() {
         confirmVariant="destructive"
         onConfirm={handleBulkDelete}
         confirmLoading={bulkDeleting}
+      />
+
+      {/* Bulk Activate Confirmation */}
+      <ConfirmActionModal
+        open={bulkActivateOpen}
+        onOpenChange={setBulkActivateOpen}
+        title="Activate Selected Users"
+        description={`Are you sure you want to activate ${selectedEmails.size} user(s)? They will be able to log in.`}
+        fields={[
+          { label: "Users to activate", value: `${selectedEmails.size}` },
+        ]}
+        confirmLabel="Activate All"
+        onConfirm={handleBulkActivate}
+        confirmLoading={bulkActivating}
       />
 
       {/* Purge Inactive Users Confirmation */}
