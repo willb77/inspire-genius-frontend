@@ -2,7 +2,6 @@ import { useState } from "react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -27,12 +26,8 @@ import {
 import {
   Users,
   Building2,
-  TrendingUp,
-  TrendingDown,
   Brain,
   DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,11 +46,6 @@ import { useCostDashboard } from "@/hooks/trainer/useTrainer";
 function fmt(n: number | undefined | null, prefix = ""): string {
   if (n == null) return "--";
   return `${prefix}${n.toLocaleString()}`;
-}
-
-function pct(n: number | undefined | null): string {
-  if (n == null) return "--";
-  return `${n}%`;
 }
 
 function KpiSkeleton() {
