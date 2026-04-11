@@ -35,6 +35,7 @@ import { Trash2, UserX, UserCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -197,13 +198,13 @@ export default function UserManagement() {
   const handleDeactivate = async () => {
     if (!selected) return;
 
-    const body: Record<string, unknown> = { is_active: false };
-    if (selected.first_name) body.first_name = selected.first_name;
-    if (selected.last_name) body.last_name = selected.last_name;
-
     await updateMutation.mutateAsync({
       email: selected.email,
-      payload: body as { first_name: string; last_name: string; is_active?: boolean },
+      payload: {
+        ...(selected.first_name ? { first_name: selected.first_name } : {}),
+        ...(selected.last_name ? { last_name: selected.last_name } : {}),
+        is_active: false,
+      },
     });
 
     setDeactivateOpen(false);
@@ -212,13 +213,13 @@ export default function UserManagement() {
   const handleActivate = async () => {
     if (!selected) return;
 
-    const body: Record<string, unknown> = { is_active: true };
-    if (selected.first_name) body.first_name = selected.first_name;
-    if (selected.last_name) body.last_name = selected.last_name;
-
     await updateMutation.mutateAsync({
       email: selected.email,
-      payload: body as { first_name: string; last_name: string; is_active?: boolean },
+      payload: {
+        ...(selected.first_name ? { first_name: selected.first_name } : {}),
+        ...(selected.last_name ? { last_name: selected.last_name } : {}),
+        is_active: true,
+      },
     });
 
     setActivateOpen(false);
@@ -292,12 +293,13 @@ export default function UserManagement() {
     const results = await Promise.allSettled(
       emails.map((email) => {
         const user = rows.find((r) => r.email === email);
-        const body: Record<string, unknown> = { is_active: true };
-        if (user?.first_name) body.first_name = user.first_name;
-        if (user?.last_name) body.last_name = user.last_name;
         return updateMutation.mutateAsync({
           email,
-          payload: body as { first_name: string; last_name: string; is_active?: boolean },
+          payload: {
+            ...(user?.first_name ? { first_name: user.first_name } : {}),
+            ...(user?.last_name ? { last_name: user.last_name } : {}),
+            is_active: true,
+          },
         });
       })
     );
@@ -504,6 +506,7 @@ export default function UserManagement() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
+            <DialogDescription className="sr-only">View user information</DialogDescription>
           </DialogHeader>
           {selected && (
             <div className="space-y-4">

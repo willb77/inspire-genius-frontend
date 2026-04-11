@@ -90,8 +90,8 @@ export async function inviteUser(payload: InviteUserPayload) {
 // ------------------ UPDATE USER ------------------
 
 export type UpdateUserPayload = {
-  first_name: string
-  last_name: string
+  first_name?: string
+  last_name?: string
   is_active?: boolean
 }
 
