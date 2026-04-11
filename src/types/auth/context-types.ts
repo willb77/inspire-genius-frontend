@@ -13,10 +13,21 @@ export type AuthUser = {
   isOnboardingCompleted?: boolean
 }
 
+export type PendingRoleSelection = {
+  roles: UserRole[]
+  payload: LoginDataPayload
+  email: string
+  options?: { message?: string; clearNextStep?: boolean }
+}
+
 export type AuthContextValue = {
   user: AuthUser | null
   isLoading: boolean
   pendingVerification: boolean
+  /** Multi-role selection state — non-null when the user must pick a role */
+  pendingRoleSelection: PendingRoleSelection | null
+  /** Complete login after the user picks a role from the selector */
+  selectRole: (role: UserRole) => Promise<void>
   /** Check if the current user has exactly this role */
   hasRole: (role: UserRole) => boolean
   /** Check if the current user's role is at least this level in the hierarchy */

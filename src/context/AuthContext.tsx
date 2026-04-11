@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./auth-context";
-import { type AuthContextValue, type AuthUser } from "@/types/auth";
+import { type AuthContextValue, type AuthUser, type PendingRoleSelection } from "@/types/auth";
 import {
   getEmail,
   getPassword,
@@ -39,7 +39,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [hydrating, setHydrating] = useState(true);
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [pendingRoleSelection, setPendingRoleSelection] = useState<PendingRoleSelection | null>(null);
   const navigate = useNavigate();
+
+  /** Parse roles from the login payload — handles comma-separated string, array, or single string */
+  const parseRoles = useCallback((payload: LoginDataPayload): UserRole[] => {
+    // Check for explicit `roles` array field
+    const rolesField = (payload as Record<string, unknown>).roles;
+    if (Array.isArray(rolesField)) {
+      return rolesField
+        .map((r) => (typeof r === "string" ? r.trim().toLowerCase() : ""))
+        .filter(isUserRole) as UserRole[];
+    }
+    // Check for comma-separated `role` field
+    const roleStr = payload.role ?? "";
+    if (roleStr.includes(",")) {
+      return roleStr
+        .split(",")
+        .map((r) => r.trim().toLowerCase())
+        .filter(isUserRole) as UserRole[];
+    }
+    // Single role
+    const normalized = roleStr.trim().toLowerCase();
+    if (isUserRole(normalized)) return [normalized];
+    return [];
+  }, []);
 
   // hydrate on mount
   useEffect(() => {
@@ -112,16 +136,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [navigate]
   );
 
-  const completeAuthFromPayload = useCallback(
+  /** Internal: finalize auth with a specific role (no multi-role check) */
+  const finalizeAuth = useCallback(
     async (
       payload: LoginDataPayload,
+      resolvedRole: string | null,
       fallbackEmail: string,
       options?: { message?: string; clearNextStep?: boolean }
     ) => {
       const accessToken = payload.access_token ?? null;
       const refreshToken = payload.refresh_token ?? null;
       const resolvedEmail = (payload.email ?? fallbackEmail) as string;
-      const role = payload.role ?? null;
       const isOnboardingCompleted = computeIsOnboarded(payload.is_onboarded);
       const userId = payload.user_id ?? null;
       const organizationId = payload.organization_id ?? null;
@@ -135,11 +160,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncAuthToken(accessToken);
       }
       if (refreshToken) await setRefreshToken(refreshToken);
-      if (role) await setRole(role);
+      if (resolvedRole) await setRole(resolvedRole);
       await setOnboardingFlag(isOnboardingCompleted);
       await storeUser({
         email: resolvedEmail,
-        role: role ?? undefined,
+        role: resolvedRole ?? undefined,
         accessToken: accessToken ?? undefined,
         refreshToken: refreshToken ?? undefined,
         isOnboardingCompleted,
@@ -159,16 +184,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: resolvedEmail,
         name: null,
         token: accessToken ?? null,
-        role: role ?? null,
+        role: resolvedRole ?? null,
         isOnboardingCompleted,
         fullName,
       });
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
       logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
-      navigateAfterAuth(role, isOnboardingCompleted);
+      navigateAfterAuth(resolvedRole, isOnboardingCompleted);
     },
     [computeIsOnboarded, navigateAfterAuth]
+  );
+
+  const completeAuthFromPayload = useCallback(
+    async (
+      payload: LoginDataPayload,
+      fallbackEmail: string,
+      options?: { message?: string; clearNextStep?: boolean }
+    ) => {
+      const roles = parseRoles(payload);
+      const resolvedEmail = (payload.email ?? fallbackEmail) as string;
+
+      // If multiple roles, pause and show the role selector
+      if (roles.length > 1) {
+        setPendingRoleSelection({ roles, payload, email: resolvedEmail, options });
+        return;
+      }
+
+      // Single role — proceed immediately
+      const role = roles[0] ?? payload.role ?? null;
+      await finalizeAuth(payload, role, fallbackEmail, options);
+    },
+    [parseRoles, finalizeAuth]
+  );
+
+  /** Handle the user's role choice from the role selector modal */
+  const selectRole = useCallback(
+    async (selectedRole: UserRole) => {
+      if (!pendingRoleSelection) return;
+      const { payload, email, options } = pendingRoleSelection;
+      setPendingRoleSelection(null);
+      await finalizeAuth(payload, selectedRole, email, options);
+    },
+    [pendingRoleSelection, finalizeAuth]
   );
 
   const loginMutation = useAuthLoginMutation({
@@ -523,6 +581,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         verifyOtpMutation.isPending ||
         resendOtpMutation.isPending,
       pendingVerification,
+      pendingRoleSelection,
+      selectRole,
       login,
       signup,
       verifyOtp,
@@ -540,6 +600,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       hydrating,
       pendingVerification,
+      pendingRoleSelection,
+      selectRole,
       hasRole,
       isAtLeast,
       login,

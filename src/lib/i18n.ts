@@ -11,10 +11,11 @@ i18n
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common', 'auth', 'coaching', 'dashboard', 'admin'],
-    supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi'],
+    supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb'],
+    load: 'currentOnly',
 
     interpolation: {
-      escapeValue: false, // React already escapes
+      escapeValue: false,
     },
 
     detection: {
@@ -25,6 +26,10 @@ i18n
 
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json',
+    },
+
+    react: {
+      useSuspense: false,
     },
   });
 

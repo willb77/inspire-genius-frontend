@@ -169,6 +169,9 @@ export default function Login() {
 
         <form className="space-y-4" onSubmit={handlePasswordLogin}>
           <EmailField value={email} onChange={setEmail} />
+          <p className="text-xs text-muted-foreground">
+            You can sign in with your primary or secondary email address
+          </p>
           <PasswordField value={password} onChange={setPassword} />
 
           <div className="mt-6 flex items-center justify-between text-sm">
@@ -209,6 +212,9 @@ export default function Login() {
 
       <form className="space-y-4" onSubmit={handleMagicLink}>
         <EmailField value={email} onChange={setEmail} />
+        <p className="text-xs text-muted-foreground">
+          You can sign in with your primary or secondary email address
+        </p>
 
         <Button type="submit" className="w-full mt-8" disabled={isBusy}>
           {isBusy ? t('login.sending') : t('login.sendSignInLink')}
