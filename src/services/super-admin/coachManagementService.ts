@@ -8,6 +8,8 @@ export type AgentItem = {
   created_at?: string;
   type?: string;
   status?: string;
+  persona?: string;
+  voice_style?: string;
   prompts?: Array<{ id: string; text: string; created_at: string }>;
 };
 
@@ -46,6 +48,8 @@ export async function createCoach(body: CreateCoachBody) {
 export type UpdateCoachBody = {
   agent_id: string;
   prompt: string;
+  persona?: string;
+  voice_style?: string;
   status?: string;
 };
 
