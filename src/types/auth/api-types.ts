@@ -10,6 +10,7 @@ export interface LoginDataPayload {
   email?: string | null
   full_name?: string | null
   role?: string | null
+  roles?: string[] | null
   has_profile?: boolean | null
   is_onboarded?: boolean | string | null
   organization_id?: string | null

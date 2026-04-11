@@ -8,7 +8,21 @@ import { Toaster } from '@/components/ui/sonner'
 import { TourProvider } from '@/context/TourContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useDirection } from '@/hooks/useDirection'
+import RoleSelector from '@/components/auth/RoleSelector'
+import { useAuth } from '@/context/useAuth'
 import '@/lib/axios'
+
+function RoleSelectorWrapper() {
+  const { pendingRoleSelection, selectRole } = useAuth()
+  if (!pendingRoleSelection) return null
+  return (
+    <RoleSelector
+      open={true}
+      roles={pendingRoleSelection.roles}
+      onSelect={selectRole}
+    />
+  )
+}
 
 function AppInner() {
   useDirection()
@@ -22,6 +36,7 @@ function App() {
         <AuthProvider>
           <TourProvider>
             <AppInner />
+            <RoleSelectorWrapper />
             <Toaster richColors position="top-right" />
           </TourProvider>
         </AuthProvider>

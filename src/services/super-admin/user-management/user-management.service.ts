@@ -145,15 +145,6 @@ export async function resendInvitation(invitation_id: string) {
 
 // ------------------ PURGE INACTIVE USERS ------------------
 
-export type PurgeInactiveData = {
-  purged: number
-  failed: number
-  purged_emails: string[]
-  failed_emails: string[]
-}
-
-export type PurgeInactiveResponse = BaseApiResponse<PurgeInactiveData>
-
 export type PurgeInactiveResult = {
   succeeded: string[]
   failed: string[]
@@ -161,18 +152,53 @@ export type PurgeInactiveResult = {
 }
 
 /**
- * Calls the backend purge endpoint to hard-delete all deactivated users.
+ * Fetches all inactive/deactivated users and deletes them one by one
+ * using the existing per-user delete endpoint.
  */
 export async function purgeInactiveUsers(): Promise<PurgeInactiveResult> {
-  const { data } = await api.delete<PurgeInactiveResponse>(
-    '/v1/user-management/users/purge/inactive'
+  // First, fetch all inactive users (page through if necessary)
+  const allInactiveEmails: string[] = []
+  let currentPage = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const response = await getUsers({
+      user_status_filter: 'inactive',
+      limit: 50,
+      page: currentPage,
+    })
+    const users = response?.data?.users ?? []
+    for (const u of users) {
+      allInactiveEmails.push(u.email)
+    }
+    hasMore = response?.data?.pagination?.has_more ?? false
+    currentPage++
+  }
+
+  if (allInactiveEmails.length === 0) {
+    return { succeeded: [], failed: [], total: 0 }
+  }
+
+  // Delete each inactive user using the existing endpoint
+  const results = await Promise.allSettled(
+    allInactiveEmails.map((email) => deleteUserByEmail(email))
   )
 
-  const purgeData = data?.data
+  const succeeded: string[] = []
+  const failed: string[] = []
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled' && result.value.status !== false) {
+      succeeded.push(allInactiveEmails[index])
+    } else {
+      failed.push(allInactiveEmails[index])
+    }
+  })
+
   return {
-    succeeded: purgeData?.purged_emails ?? [],
-    failed: purgeData?.failed_emails ?? [],
-    total: (purgeData?.purged ?? 0) + (purgeData?.failed ?? 0),
+    succeeded,
+    failed,
+    total: allInactiveEmails.length,
   }
 }
 
