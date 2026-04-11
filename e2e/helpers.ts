@@ -99,52 +99,51 @@ function buildMeResponse(role: string, email: string) {
  * Called once per test — intercepts all API calls that would fail without a backend.
  */
 async function installApiMocks(page: Page, role: string, email: string) {
-  // Mock login
-  await page.route("**/v1/login", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(buildLoginResponse(role, email)),
-    });
-  });
-
-  // Mock /v1/me
-  await page.route("**/v1/me", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(buildMeResponse(role, email)),
-    });
-  });
-
-  // Mock refresh token
-  await page.route("**/v1/refresh-token", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        status: true,
-        data: {
-          access_token: `mock-refreshed-token-${role}`,
-          refresh_token: `mock-refresh-token-${role}`,
-        },
-      }),
-    });
-  });
-
-  // Mock audit log (fire-and-forget, prevent 404 noise)
-  await page.route("**/v1/audit/**", async (route) => {
-    await route.fulfill({
-      status: 202,
-      contentType: "application/json",
-      body: JSON.stringify({ status: "accepted" }),
-    });
-  });
-
-  // Catch-all for other API calls — return empty success to prevent errors
+  // Intercept ALL API calls with a single handler that dispatches by URL path.
+  // Playwright routes match in LIFO order, so a single route avoids ordering issues.
   await page.route("**/v1/**", async (route) => {
-    // Let already-handled routes pass through, fulfill unhandled ones
-    await route.fulfill({
+    const url = route.request().url();
+
+    if (url.includes("/v1/login")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(buildLoginResponse(role, email)),
+      });
+    }
+
+    if (url.includes("/v1/me")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(buildMeResponse(role, email)),
+      });
+    }
+
+    if (url.includes("/v1/refresh-token")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: true,
+          data: {
+            access_token: `mock-refreshed-token-${role}`,
+            refresh_token: `mock-refresh-token-${role}`,
+          },
+        }),
+      });
+    }
+
+    if (url.includes("/v1/audit")) {
+      return route.fulfill({
+        status: 202,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "accepted" }),
+      });
+    }
+
+    // Catch-all for any other API call — return empty success
+    return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ status: true, data: {}, message: "OK" }),
