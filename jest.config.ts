@@ -8,6 +8,7 @@ const config: JestConfigWithTsJest = {
 
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1", // Vite alias
+    "^@inspiresgenius/dag-builder$": "<rootDir>/src/packages/dag-builder/index.ts",
     "\\.(css|scss|sass)$": "identity-obj-proxy",
   },
 

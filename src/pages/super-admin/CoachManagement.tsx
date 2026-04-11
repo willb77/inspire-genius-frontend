@@ -126,11 +126,11 @@ export default function CoachManagement() {
     };
     try {
       const resp = await createMutation.mutateAsync(body);
-      if (resp?.status) toast.success("Coach created successfully");
-      else toast.error(resp?.message || "Failed to create coach");
+      if (resp?.status) toast.success("Mentor created successfully");
+      else toast.error(resp?.message || "Failed to create mentor");
     } catch (e: unknown) {
       const ax = e as AxiosError<{ message?: string }>;
-      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to create coach";
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to create mentor";
       toast.error(msg);
       throw e;
     }
@@ -144,11 +144,11 @@ export default function CoachManagement() {
     };
     try {
       const resp = await updateMutation.mutateAsync(body);
-      if (resp?.status) toast.success("Coach updated successfully");
-      else toast.error(resp?.message || "Failed to update coach");
+      if (resp?.status) toast.success("Mentor updated successfully");
+      else toast.error(resp?.message || "Failed to update mentor");
     } catch (e: unknown) {
       const ax = e as AxiosError<{ message?: string }>;
-      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to update coach";
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to update mentor";
       toast.error(msg);
       throw e;
     }
@@ -157,12 +157,12 @@ export default function CoachManagement() {
     if (!selected) return;
     try {
       const resp = await deactivateMutation.mutateAsync(selected.id);
-      if (resp?.status) toast.success("Coach deactivated successfully");
-      else toast.error(resp?.message || "Failed to deactivate coach");
+      if (resp?.status) toast.success("Mentor deactivated successfully");
+      else toast.error(resp?.message || "Failed to deactivate mentor");
       setDeactivateOpen(false);
     } catch (e: unknown) {
       const ax = (e as AxiosError<{ message?: string }>);
-      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to deactivate coach";
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to deactivate mentor";
       toast.error(msg);
     }
   };
@@ -212,7 +212,7 @@ export default function CoachManagement() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <ManagementHeader title="Coach Management" addLabel="Add Coach" onAdd={openAdd} />
+        <ManagementHeader title="Mentor Management" addLabel="Add Mentor" onAdd={openAdd} />
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
           {isLoading || isRefetching ? (
@@ -253,7 +253,7 @@ export default function CoachManagement() {
         onOpenChange={setAddOpen}
         mode="add"
         onSubmit={handleAdd}
-        submitLabel={createMutation.isPending ? "Adding Coach..." : "Add Coach"}
+        submitLabel={createMutation.isPending ? "Adding Mentor..." : "Add Mentor"}
         toneOptions={toneOptions}
       />
 
@@ -264,8 +264,8 @@ export default function CoachManagement() {
         mode="edit"
         defaultValues={selected ? { ...selected, status: selected.status?.toLowerCase() } : undefined}
         onSubmit={handleEdit}
-        title="Edit Coach"
-        submitLabel={updateMutation.isPending ? "Updating Coach..." : "Save Changes"}
+        title="Edit Mentor"
+        submitLabel={updateMutation.isPending ? "Updating Mentor..." : "Save Changes"}
         toneOptions={toneOptions}
       />
 
@@ -273,10 +273,10 @@ export default function CoachManagement() {
       <ConfirmActionModal
         open={deactivateOpen}
         onOpenChange={setDeactivateOpen}
-        title="Deactivate Coach"
-        description="Are you sure you want to deactivate the coach? This also implies for all assigned Organizations."
+        title="Deactivate Mentor"
+        description="Are you sure you want to deactivate the mentor? This also implies for all assigned Organizations."
         fields={[
-          { label: "Coach Name", value: selected?.name ?? "" },
+          { label: "Mentor Name", value: selected?.name ?? "" },
           { label: "Category", value: selected?.category ?? "" },
         ]}
         confirmLabel="Deactivate"

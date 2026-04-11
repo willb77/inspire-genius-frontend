@@ -15,10 +15,14 @@ export function NotificationPreferences() {
   } = useNotifications()
 
   const handleToggle = async (checked: boolean) => {
-    if (checked) {
-      await subscribe()
-    } else {
-      await unsubscribe()
+    try {
+      if (checked) {
+        await subscribe()
+      } else {
+        await unsubscribe()
+      }
+    } catch {
+      // Error is handled by the hook
     }
   }
 

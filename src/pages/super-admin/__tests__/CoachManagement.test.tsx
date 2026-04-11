@@ -335,7 +335,7 @@ describe("CoachManagement Page", () => {
   ------------------------------------------------- */
   it("opens add coach modal", () => {
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     expect(screen.getByTestId("coach-form-modal")).toBeInTheDocument();
   });
 
@@ -343,7 +343,7 @@ describe("CoachManagement Page", () => {
     createSpy.mockResolvedValueOnce({ status: true });
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     fireEvent.click(screen.getByText("Submit"));
 
     await waitFor(() => {
@@ -352,7 +352,7 @@ describe("CoachManagement Page", () => {
         category_name: "AI",
         prompt: "Test voice",
       });
-      expect(toast.success).toHaveBeenCalledWith("Coach created successfully");
+      expect(toast.success).toHaveBeenCalledWith("Mentor created successfully");
     });
   });
 
@@ -360,7 +360,7 @@ describe("CoachManagement Page", () => {
     createSpy.mockResolvedValueOnce({ status: false, message: "Custom error" });
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     fireEvent.click(screen.getByText("Submit"));
 
     await waitFor(() => {
@@ -379,7 +379,7 @@ describe("CoachManagement Page", () => {
     createSpy.mockRejectedValueOnce(axiosError);
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     
     const submitButton = screen.getByText("Submit");
     fireEvent.click(submitButton);
@@ -393,7 +393,7 @@ describe("CoachManagement Page", () => {
     createSpy.mockRejectedValueOnce(new Error("Generic error"));
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     
     const submitButton = screen.getByText("Submit");
     fireEvent.click(submitButton);
@@ -407,13 +407,13 @@ describe("CoachManagement Page", () => {
     createSpy.mockRejectedValueOnce({});
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
     
     const submitButton = screen.getByText("Submit");
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to create coach");
+      expect(toast.error).toHaveBeenCalledWith("Failed to create mentor");
     }, { timeout: 3000 });
   });
 
@@ -424,12 +424,12 @@ describe("CoachManagement Page", () => {
     });
 
     renderWithQueryClient(<CoachManagement />);
-    fireEvent.click(screen.getByText("Add Coach"));
+    fireEvent.click(screen.getByText("Add Mentor"));
 
     // Find the modal call where mode is 'add'
     const addModalCall = mockCoachFormModal.mock.calls.find(call => call[0].mode === 'add');
     expect(addModalCall).toBeDefined();
-    expect(addModalCall[0].submitLabel).toBe("Adding Coach...");
+    expect(addModalCall[0].submitLabel).toBe("Adding Mentor...");
   });
 
   /* -------------------------------------------------
@@ -463,7 +463,7 @@ describe("CoachManagement Page", () => {
         prompt: "Test voice",
         status: "active",
       });
-      expect(toast.success).toHaveBeenCalledWith("Coach updated successfully");
+      expect(toast.success).toHaveBeenCalledWith("Mentor updated successfully");
     });
   });
 
@@ -528,7 +528,7 @@ describe("CoachManagement Page", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to update coach");
+      expect(toast.error).toHaveBeenCalledWith("Failed to update mentor");
     }, { timeout: 3000 });
   });
 
@@ -545,7 +545,7 @@ describe("CoachManagement Page", () => {
     // Find the modal call where mode is 'edit'
     const editModalCall = mockCoachFormModal.mock.calls.find(call => call[0].mode === 'edit');
     expect(editModalCall).toBeDefined();
-    expect(editModalCall[0].submitLabel).toBe("Updating Coach...");
+    expect(editModalCall[0].submitLabel).toBe("Updating Mentor...");
   });
 
   it("passes correct default values to edit modal", () => {
@@ -593,7 +593,7 @@ describe("CoachManagement Page", () => {
 
     await waitFor(() => {
       expect(deactivateSpy).toHaveBeenCalledWith("1");
-      expect(toast.success).toHaveBeenCalledWith("Coach deactivated successfully");
+      expect(toast.success).toHaveBeenCalledWith("Mentor deactivated successfully");
     });
   });
 
@@ -652,7 +652,7 @@ describe("CoachManagement Page", () => {
     fireEvent.click(screen.getByText("Confirm"));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to deactivate coach");
+      expect(toast.error).toHaveBeenCalledWith("Failed to deactivate mentor");
     });
   });
 

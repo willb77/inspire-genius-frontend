@@ -226,6 +226,11 @@ export function FileUploader({ onParsed, disabled = false }: FileUploaderProps) 
             <p className="text-xs text-muted-foreground">
               Supports CSV, Excel (.xlsx, .xls), JSON, and XML — max {formatFileSize(MAX_FILE_SIZE)}
             </p>
+            <div className="mt-3 rounded-md bg-muted/50 p-3 text-left w-full max-w-md">
+              <p className="text-xs font-medium mb-1">Required columns:</p>
+              <p className="text-xs text-muted-foreground font-mono">First Name, Last Name, Email</p>
+              <p className="text-xs text-muted-foreground mt-1">Optional: Email 2, Role (user/manager/company-admin)</p>
+            </div>
           </div>
         )}
       </CardContent>

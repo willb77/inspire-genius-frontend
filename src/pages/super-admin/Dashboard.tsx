@@ -34,56 +34,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   GraduationCap,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem";
+import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement";
 
 // ---------------------------------------------------------------------------
-// Static placeholder data
+// Static placeholder data (items without real endpoints)
 // ---------------------------------------------------------------------------
-
-const KPI_CARDS = [
-  {
-    label: "Total Users",
-    value: "12,847",
-    change: "+8.2%",
-    trend: "up" as const,
-    icon: Users,
-    color: "text-blue-600 bg-blue-50",
-  },
-  {
-    label: "Active Organizations",
-    value: "48",
-    change: "+4 this month",
-    trend: "up" as const,
-    icon: Building2,
-    color: "text-indigo-600 bg-indigo-50",
-  },
-  {
-    label: "Training Completion",
-    value: "78%",
-    change: "+5%",
-    trend: "up" as const,
-    icon: GraduationCap,
-    color: "text-emerald-600 bg-emerald-50",
-  },
-  {
-    label: "PRISM Assessed",
-    value: "89%",
-    change: "+8%",
-    trend: "up" as const,
-    icon: Brain,
-    color: "text-violet-600 bg-violet-50",
-  },
-  {
-    label: "Platform Cost (MTD)",
-    value: "$45,678",
-    change: "+12.3%",
-    trend: "up" as const,
-    icon: DollarSign,
-    color: "text-amber-600 bg-amber-50",
-  },
-];
 
 const DEPARTMENTS = [
   { name: "Engineering", employees: 2340, color: "border-l-blue-500" },
@@ -120,23 +79,6 @@ const TEAMS = [
   { name: "Talent", department: "Human Resources", lead: "David Kim", members: 5, prism: 88 },
   { name: "Revenue Ops", department: "Finance", lead: "Rachel Patel", members: 7, prism: 81 },
   { name: "Infrastructure", department: "Engineering", lead: "Alex Rivera", members: 10, prism: 94 },
-];
-
-const TOP_ORGANIZATIONS = [
-  { name: "Acme Corp", users: 2840, sessions: 18420, prism: 91, cost: "$12,340" },
-  { name: "TechVision Ltd", users: 1920, sessions: 14200, prism: 87, cost: "$9,870" },
-  { name: "Global Dynamics", users: 1540, sessions: 11800, prism: 83, cost: "$7,650" },
-  { name: "Pinnacle Group", users: 1280, sessions: 9400, prism: 79, cost: "$6,230" },
-  { name: "Horizon Partners", users: 980, sessions: 7100, prism: 85, cost: "$4,890" },
-  { name: "Atlas Industries", users: 860, sessions: 5800, prism: 76, cost: "$3,740" },
-];
-
-const LATEST_USERS = [
-  { name: "Jordan Lee", email: "jordan@acme.com", org: "Acme Corp", role: "Manager", joined: "Apr 8, 2026" },
-  { name: "Maya Patel", email: "maya@techvision.com", org: "TechVision Ltd", role: "User", joined: "Apr 7, 2026" },
-  { name: "Chris Nguyen", email: "chris@global.com", org: "Global Dynamics", role: "Company Admin", joined: "Apr 7, 2026" },
-  { name: "Priya Sharma", email: "priya@pinnacle.com", org: "Pinnacle Group", role: "User", joined: "Apr 6, 2026" },
-  { name: "Tom Eriksen", email: "tom@horizon.com", org: "Horizon Partners", role: "Practitioner", joined: "Apr 5, 2026" },
 ];
 
 const COST_KPIS = [
@@ -183,12 +125,101 @@ function prismBadgeVariant(score: number) {
   return "bg-red-100 text-red-700";
 }
 
+function KpiSkeleton() {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+        <Skeleton className="h-4 w-20 mb-1" />
+        <Skeleton className="h-7 w-24" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function TableRowSkeleton({ cols }: { cols: number }) {
+  return (
+    <TableRow>
+      {Array.from({ length: cols }).map((_, i) => (
+        <TableCell key={i}>
+          <Skeleton className="h-4 w-full" />
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function SuperAdminDashboard() {
   const [dateRange, setDateRange] = useState("30");
+
+  // ── Real data hooks ──────────────────────────────────────────────
+  const { data: dashboardData, isLoading: isDashboardLoading } =
+    useDashboardSystem();
+
+  const { data: usersData, isLoading: isUsersLoading } = useUserManagement({
+    page: 1,
+    limit: 5,
+  });
+
+  // Derived real values
+  const orgStats = dashboardData?.data?.organization_statistics;
+  const totalUsers = usersData?.data?.pagination?.total;
+  const latestUsers = usersData?.data?.users ?? [];
+
+  const isKpiLoading = isDashboardLoading || isUsersLoading;
+
+  // Build KPI cards with real data where available
+  const kpiCards = [
+    {
+      label: "Total Users",
+      value: totalUsers != null ? totalUsers.toLocaleString() : "--",
+      change: "+8.2%",
+      trend: "up" as const,
+      icon: Users,
+      color: "text-blue-600 bg-blue-50",
+    },
+    {
+      label: "Active Organizations",
+      value: orgStats ? orgStats.total.toLocaleString() : "--",
+      change: orgStats
+        ? `${orgStats.active} active`
+        : "--",
+      trend: "up" as const,
+      icon: Building2,
+      color: "text-indigo-600 bg-indigo-50",
+    },
+    {
+      label: "Training Completion",
+      value: "78%",
+      change: "+5%",
+      trend: "up" as const,
+      icon: GraduationCap,
+      color: "text-emerald-600 bg-emerald-50",
+    },
+    {
+      label: "PRISM Assessed",
+      value: "89%",
+      change: "+8%",
+      trend: "up" as const,
+      icon: Brain,
+      color: "text-violet-600 bg-violet-50",
+    },
+    {
+      label: "Platform Cost (MTD)",
+      value: "$45,678",
+      change: "+12.3%",
+      trend: "up" as const,
+      icon: DollarSign,
+      color: "text-amber-600 bg-amber-50",
+    },
+  ];
 
   return (
     <SuperAdminLayout>
@@ -226,10 +257,16 @@ export default function SuperAdminDashboard() {
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
             <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" /> 12,847 Active Users
+              <Users className="h-4 w-4" />{" "}
+              {totalUsers != null
+                ? `${totalUsers.toLocaleString()} Active Users`
+                : "-- Active Users"}
             </span>
             <span className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4" /> 48 Organizations
+              <Building2 className="h-4 w-4" />{" "}
+              {orgStats
+                ? `${orgStats.total} Organizations`
+                : "-- Organizations"}
             </span>
             <span className="flex items-center gap-1.5">
               <GraduationCap className="h-4 w-4" /> 78% Trained
@@ -242,44 +279,48 @@ export default function SuperAdminDashboard() {
 
         {/* ── KPI Stat Cards ─────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {KPI_CARDS.map((kpi) => {
-            const Icon = kpi.icon;
-            return (
-              <Card key={kpi.label} className="shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div
-                      className={cn(
-                        "flex items-center justify-center h-10 w-10 rounded-lg",
-                        kpi.color
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span
-                      className={cn(
-                        "flex items-center text-xs font-medium",
-                        kpi.trend === "up"
-                          ? "text-emerald-600"
-                          : "text-red-500"
-                      )}
-                    >
-                      {kpi.trend === "up" ? (
-                        <ArrowUpRight className="h-3.5 w-3.5 mr-0.5" />
-                      ) : (
-                        <ArrowDownRight className="h-3.5 w-3.5 mr-0.5" />
-                      )}
-                      {kpi.change}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{kpi.label}</p>
-                  <p className="text-2xl font-bold tracking-tight">
-                    {kpi.value}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {isKpiLoading
+            ? Array.from({ length: 5 }).map((_, i) => <KpiSkeleton key={i} />)
+            : kpiCards.map((kpi) => {
+                const Icon = kpi.icon;
+                return (
+                  <Card key={kpi.label} className="shadow-sm">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div
+                          className={cn(
+                            "flex items-center justify-center h-10 w-10 rounded-lg",
+                            kpi.color
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span
+                          className={cn(
+                            "flex items-center text-xs font-medium",
+                            kpi.trend === "up"
+                              ? "text-emerald-600"
+                              : "text-red-500"
+                          )}
+                        >
+                          {kpi.trend === "up" ? (
+                            <ArrowUpRight className="h-3.5 w-3.5 mr-0.5" />
+                          ) : (
+                            <ArrowDownRight className="h-3.5 w-3.5 mr-0.5" />
+                          )}
+                          {kpi.change}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {kpi.label}
+                      </p>
+                      <p className="text-2xl font-bold tracking-tight">
+                        {kpi.value}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
         </div>
 
         {/* ── Tabs ────────────────────────────────────────────────────── */}
@@ -442,52 +483,51 @@ export default function SuperAdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Organization</TableHead>
-                      <TableHead className="text-right">Users</TableHead>
-                      <TableHead className="text-right">Sessions</TableHead>
-                      <TableHead className="text-center">
-                        PRISM Score
-                      </TableHead>
-                      <TableHead className="text-right">Cost</TableHead>
-                      <TableHead />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {TOP_ORGANIZATIONS.map((org) => (
-                      <TableRow key={org.name}>
-                        <TableCell className="font-medium">
-                          {org.name}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {org.users.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {org.sessions.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "font-semibold",
-                              prismBadgeVariant(org.prism)
-                            )}
-                          >
-                            {org.prism}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {org.cost}
-                        </TableCell>
-                        <TableCell>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </TableCell>
+                {isDashboardLoading ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Organization</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Active</TableHead>
+                        <TableHead className="text-right">Inactive</TableHead>
+                        <TableHead />
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <TableRowSkeleton key={i} cols={5} />
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : orgStats ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Card className="shadow-sm">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Total</p>
+                          <p className="text-2xl font-bold">{orgStats.total}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="shadow-sm">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Active</p>
+                          <p className="text-2xl font-bold text-emerald-600">{orgStats.active}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="shadow-sm">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Inactive</p>
+                          <p className="text-2xl font-bold text-red-500">{orgStats.inactive}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No organization data available.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -504,27 +544,66 @@ export default function SuperAdminDashboard() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Organization</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {LATEST_USERS.map((u) => (
-                      <TableRow key={u.email}>
-                        <TableCell className="font-medium">{u.name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {u.email}
-                        </TableCell>
-                        <TableCell>{u.org}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{u.role}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {u.joined}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {isUsersLoading
+                      ? Array.from({ length: 5 }).map((_, i) => (
+                          <TableRowSkeleton key={i} cols={5} />
+                        ))
+                      : latestUsers.length > 0
+                        ? latestUsers.map((u) => (
+                            <TableRow key={u.user_id}>
+                              <TableCell className="font-medium">
+                                {u.full_name ||
+                                  [u.first_name, u.last_name]
+                                    .filter(Boolean)
+                                    .join(" ") ||
+                                  "--"}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {u.email}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{u.role}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="secondary"
+                                  className={cn(
+                                    u.is_active
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : "bg-gray-100 text-gray-600"
+                                  )}
+                                >
+                                  {u.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {new Date(u.created_at).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="text-center text-muted-foreground py-4"
+                              >
+                                No users found.
+                              </TableCell>
+                            </TableRow>
+                          )}
                   </TableBody>
                 </Table>
               </CardContent>
