@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import PromptWizardForm from "@/components/super-admin/prompt-builder/PromptWizardForm"
 import PromptPreviewPanel from "@/components/super-admin/prompt-builder/PromptPreviewPanel"
@@ -13,12 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Save } from "lucide-react"
+import { Save, RotateCcw, FilePen } from "lucide-react"
 import type { SystemPrompt } from "@/types/prompt-builder"
 
 export default function PromptBuilder() {
   const [selectedCoachId, setSelectedCoachId] = useState("")
   const [promptId, setPromptId] = useState<string | undefined>(undefined)
+
+  const [isHistorical, setIsHistorical] = useState(false)
 
   const [persona, setPersona] = useState("")
   const [tone, setTone] = useState("")
@@ -39,6 +41,14 @@ export default function PromptBuilder() {
   const saveMutation = useSavePrompt()
   const updateMutation = useUpdatePrompt()
 
+  // Auto-load the latest version when versions data arrives
+  useEffect(() => {
+    if (versions.length > 0 && !promptId) {
+      const latest = versions[0]
+      handleSelectVersion(latest)
+    }
+  }, [versions]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSelectVersion = (prompt: SystemPrompt) => {
     setPromptId(prompt.id)
     setPersona(prompt.persona)
@@ -46,6 +56,7 @@ export default function PromptBuilder() {
     setKnowledgeDomain(prompt.knowledge_domain)
     setResponseStyle(prompt.response_style)
     setConstraints(prompt.constraints)
+    setIsHistorical(versions.length > 0 && prompt.id !== versions[0]?.id)
   }
 
   const handleCoachChange = (id: string) => {
@@ -97,6 +108,35 @@ export default function PromptBuilder() {
                 ))}
               </SelectContent>
             </Select>
+            {isHistorical && (
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                disabled={!selectedCoachId || isSaving}
+                className="gap-2 border-amber-500 text-amber-700 hover:bg-amber-50"
+              >
+                <RotateCcw className="size-4" />
+                Rollback to This Version
+              </Button>
+            )}
+            {selectedCoachId && promptId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPromptId(undefined)
+                  setPersona("")
+                  setTone("")
+                  setKnowledgeDomain("")
+                  setResponseStyle("")
+                  setConstraints("")
+                  setIsHistorical(false)
+                }}
+                className="gap-2"
+              >
+                <FilePen className="size-4" />
+                New Prompt
+              </Button>
+            )}
             <Button
               onClick={handleSave}
               disabled={!selectedCoachId || isSaving}

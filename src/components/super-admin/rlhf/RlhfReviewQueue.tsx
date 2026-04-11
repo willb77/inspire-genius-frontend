@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Check, X } from "lucide-react"
+import { Check, Info, X } from "lucide-react"
 import { toast } from "sonner"
 
 type ReviewItem = {
@@ -34,6 +34,13 @@ export default function RlhfReviewQueue() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-md bg-blue-50 border border-blue-200 p-3 mb-4 flex items-start gap-2">
+        <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-blue-800">
+          Showing sample data. This section will be populated with live data once the RLHF service endpoints are deployed.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-semibold text-[#111827]">
           Review Queue <span className="text-[#3B5BFF] text-[13px]">({pending.length} pending)</span>

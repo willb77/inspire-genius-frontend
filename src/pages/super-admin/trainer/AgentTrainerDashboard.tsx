@@ -36,7 +36,12 @@ export default function AgentTrainerDashboard() {
   const { data: agentsResp, isLoading } = useTrainerAgents(ecosystem)
 
   const ecosystems = (ecosystemsResp as any)?.data ?? []
-  const agents: AgentConfig[] = (agentsResp as any)?.data ?? []
+  const agents: AgentConfig[] = (() => {
+    const d = (agentsResp as any)?.data
+    if (Array.isArray(d)) return d
+    if (d?.agents && Array.isArray(d.agents)) return d.agents
+    return []
+  })()
 
   const filtered = agents.filter(a => {
     if (domainFilter !== "all" && a.domain !== domainFilter) return false
@@ -55,7 +60,11 @@ export default function AgentTrainerDashboard() {
           <Select value={ecosystem} onValueChange={setEcosystem}>
             <SelectTrigger className="w-[220px]"><SelectValue placeholder="Ecosystem" /></SelectTrigger>
             <SelectContent>
-              {ecosystems.map((e: any) => <SelectItem key={e.ecosystem_id} value={e.ecosystem_id}>{e.ecosystem_name}</SelectItem>)}
+              {ecosystems.length > 0 ? (
+                ecosystems.map((e: any) => <SelectItem key={e.ecosystem_id} value={e.ecosystem_id}>{e.ecosystem_name}</SelectItem>)
+              ) : (
+                <SelectItem value="inspire-genius">Inspire Genius</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -69,6 +78,19 @@ export default function AgentTrainerDashboard() {
             <Button key={d} variant={domainFilter === d ? "default" : "outline"} size="sm" onClick={() => setDomainFilter(d)} className="capitalize">{d}</Button>
           ))}
         </div>
+
+        {!isLoading && agents.length > 0 && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">How to train agents</h3>
+            <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+              <li>Select an agent card below to open the training dashboard</li>
+              <li>Use <strong>Prompt Studio</strong> to refine the agent's system prompt and personality</li>
+              <li>Upload domain knowledge via <strong>Knowledge Manager</strong></li>
+              <li>Test conversations in the <strong>Conversation Simulator</strong></li>
+              <li>Review training metrics in <strong>Training Plans</strong> to track agent maturity</li>
+            </ol>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,6 +131,24 @@ export default function AgentTrainerDashboard() {
                 </CardContent>
               </Card>
             ))}
+            {filtered.length === 0 && !isLoading && (
+              <Card className="col-span-full">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Brain className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <h3 className="text-lg font-semibold mb-2">No agents found</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mb-4">
+                    {search || domainFilter !== "all"
+                      ? "Try adjusting your search or filter criteria."
+                      : "No agents are configured for this ecosystem yet."}
+                  </p>
+                  {(search || domainFilter !== "all") && (
+                    <Button variant="outline" size="sm" onClick={() => { setSearch(""); setDomainFilter("all"); }}>
+                      Clear filters
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import {
   isSupported as checkSupported,
   subscribe as doSubscribe,
@@ -37,6 +38,7 @@ export function useNotifications() {
       setPermission(Notification.permission)
     } catch (err) {
       console.error('[useNotifications] subscribe failed:', err)
+      toast.error("Failed to enable push notifications. Please check browser permissions.")
     } finally {
       setLoading(false)
     }
@@ -50,6 +52,7 @@ export function useNotifications() {
       if (success) setIsSubscribed(false)
     } catch (err) {
       console.error('[useNotifications] unsubscribe failed:', err)
+      toast.error("Failed to disable push notifications")
     } finally {
       setLoading(false)
     }

@@ -17,6 +17,7 @@ import {
 import Pagination from "@/components/shared/Pagination"
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton"
 import { useAuditLogs, useAuditStats } from "@/hooks/audit/useAudit"
+import { Button } from "@/components/ui/button"
 import { Shield, Activity, Users } from "lucide-react"
 import type { AuditLogEntry } from "@/types/audit"
 
@@ -159,6 +160,17 @@ export default function AuditLog() {
         <div className="h-[calc(100vh-26rem)] overflow-y-auto">
           {logsLoading ? (
             <LoadingSkeleton columns={5} rows={15} />
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Shield className="h-12 w-12 mb-3 opacity-30" />
+              <p className="text-lg font-medium">No audit events found</p>
+              <p className="text-sm mt-1">Audit events will appear here as users interact with the platform.</p>
+              {actionFilter !== "all" && (
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => { setActionFilter("all"); setPage(1); }}>
+                  Clear filters
+                </Button>
+              )}
+            </div>
           ) : (
             <DataTable columns={columns} data={rows} />
           )}

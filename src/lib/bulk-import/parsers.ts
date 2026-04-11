@@ -126,5 +126,5 @@ export async function parseFile(file: File): Promise<RawUserRecord[]> {
   }
 }
 
-export const SUPPORTED_EXTENSIONS = [".csv", ".xlsx", ".xls", ".json", ".xml"]
+export const SUPPORTED_EXTENSIONS = ["csv", "xlsx", "xls", "json", "xml"]
 export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB

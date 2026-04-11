@@ -13,10 +13,10 @@ function createMockFile(content: string, name: string, type: string): File {
 describe("parsers", () => {
   describe("SUPPORTED_EXTENSIONS", () => {
     it("contains expected formats", () => {
-      expect(SUPPORTED_EXTENSIONS).toContain(".csv")
-      expect(SUPPORTED_EXTENSIONS).toContain(".json")
-      expect(SUPPORTED_EXTENSIONS).toContain(".xlsx")
-      expect(SUPPORTED_EXTENSIONS).toContain(".xml")
+      expect(SUPPORTED_EXTENSIONS).toContain("csv")
+      expect(SUPPORTED_EXTENSIONS).toContain("json")
+      expect(SUPPORTED_EXTENSIONS).toContain("xlsx")
+      expect(SUPPORTED_EXTENSIONS).toContain("xml")
     })
   })
 

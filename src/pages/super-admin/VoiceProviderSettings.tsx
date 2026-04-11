@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { Mic, Info, DollarSign, Save } from "lucide-react"
+import { Mic, Info, DollarSign, Save, Volume2, Play, Square } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,13 @@ const STT_OPTIONS = [
     badgeVariant: "default" as const,
   },
   {
+    value: "aws_transcribe",
+    label: "AWS Transcribe",
+    description: "Enterprise-grade, real-time streaming. ~$0.024/min (medical/custom models).",
+    badge: "Enterprise",
+    badgeVariant: "secondary" as const,
+  },
+  {
     value: "auto",
     label: "Auto (Deepgram → Whisper fallback)",
     description: "Uses Deepgram when language is supported, falls back to Whisper on error.",
@@ -44,17 +51,116 @@ const TTS_OPTIONS = [
   {
     value: "openai",
     label: "OpenAI TTS",
-    description: "Natural voices (alloy, echo, fable…). ~$0.015 / 1K chars.",
-    badge: "Only option",
+    description: "Natural voices (alloy, echo, fable, onyx, nova, shimmer). ~$0.015 / 1K chars.",
+    badge: "Current",
+    badgeVariant: "secondary" as const,
+  },
+  {
+    value: "google",
+    label: "Google Cloud TTS",
+    description: "400+ voices across 50+ languages. Neural2 and Studio quality. ~$0.016 / 1M chars.",
+    badge: "Multilingual",
+    badgeVariant: "default" as const,
+  },
+  {
+    value: "elevenlabs",
+    label: "ElevenLabs",
+    description: "Highest quality voice cloning and synthesis. ~$0.30 / 1K chars.",
+    badge: "Premium",
+    badgeVariant: "outline" as const,
+  },
+  {
+    value: "aws_polly",
+    label: "AWS Polly",
+    description: "Neural and standard voices, SSML support. ~$0.016 / 1M chars.",
+    badge: "Cost-effective",
     badgeVariant: "secondary" as const,
   },
 ]
 
 const COST_ESTIMATES = [
-  { provider: "Deepgram Nova-2", sttCost: "$0.0043/min", savings: "~28% vs Whisper" },
-  { provider: "OpenAI Whisper", sttCost: "$0.006/min", savings: "—" },
-  { provider: "Auto mode", sttCost: "~$0.005/min avg", savings: "Depends on language mix" },
+  { provider: "Deepgram Nova-2", sttCost: "$0.0043/min", ttsCost: "—", savings: "~28% vs Whisper" },
+  { provider: "OpenAI Whisper + TTS", sttCost: "$0.006/min", ttsCost: "$0.015/1K chars", savings: "—" },
+  { provider: "Google Cloud TTS", sttCost: "—", ttsCost: "$0.016/1M chars", savings: "Lowest TTS cost" },
+  { provider: "AWS Polly", sttCost: "—", ttsCost: "$0.016/1M chars", savings: "Same as Google" },
+  { provider: "AWS Transcribe", sttCost: "$0.024/min", ttsCost: "—", savings: "Enterprise features" },
+  { provider: "ElevenLabs", sttCost: "—", ttsCost: "$0.30/1K chars", savings: "Highest quality" },
 ]
+
+const VOICES_BY_PROVIDER: Record<string, { id: string; name: string; gender: string; style: string }[]> = {
+  openai: [
+    { id: "alloy", name: "Alloy", gender: "Neutral", style: "Balanced" },
+    { id: "echo", name: "Echo", gender: "Male", style: "Warm" },
+    { id: "fable", name: "Fable", gender: "Male", style: "Expressive" },
+    { id: "onyx", name: "Onyx", gender: "Male", style: "Deep" },
+    { id: "nova", name: "Nova", gender: "Female", style: "Friendly" },
+    { id: "shimmer", name: "Shimmer", gender: "Female", style: "Clear" },
+  ],
+  google: [
+    { id: "en-US-Neural2-A", name: "Neural2-A", gender: "Male", style: "Standard" },
+    { id: "en-US-Neural2-C", name: "Neural2-C", gender: "Female", style: "Standard" },
+    { id: "en-US-Neural2-D", name: "Neural2-D", gender: "Male", style: "Casual" },
+    { id: "en-US-Neural2-F", name: "Neural2-F", gender: "Female", style: "Friendly" },
+    { id: "en-US-Studio-M", name: "Studio-M", gender: "Male", style: "Studio" },
+    { id: "en-US-Studio-O", name: "Studio-O", gender: "Female", style: "Studio" },
+  ],
+  elevenlabs: [
+    { id: "rachel", name: "Rachel", gender: "Female", style: "Conversational" },
+    { id: "adam", name: "Adam", gender: "Male", style: "Narrative" },
+    { id: "antoni", name: "Antoni", gender: "Male", style: "Warm" },
+    { id: "bella", name: "Bella", gender: "Female", style: "Soft" },
+    { id: "domi", name: "Domi", gender: "Female", style: "Strong" },
+    { id: "josh", name: "Josh", gender: "Male", style: "Deep" },
+  ],
+  aws_polly: [
+    { id: "Joanna", name: "Joanna", gender: "Female", style: "Neural" },
+    { id: "Matthew", name: "Matthew", gender: "Male", style: "Neural" },
+    { id: "Ivy", name: "Ivy", gender: "Female (child)", style: "Neural" },
+    { id: "Kendra", name: "Kendra", gender: "Female", style: "Neural" },
+    { id: "Kevin", name: "Kevin", gender: "Male (child)", style: "Neural" },
+    { id: "Salli", name: "Salli", gender: "Female", style: "Neural" },
+  ],
+}
+
+function VoicePreviewGrid({ provider }: { provider: string }) {
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const voices = VOICES_BY_PROVIDER[provider] ?? VOICES_BY_PROVIDER.openai ?? []
+
+  const handleTest = (voiceId: string) => {
+    if (playingId === voiceId) {
+      window.speechSynthesis?.cancel()
+      setPlayingId(null)
+      return
+    }
+    setPlayingId(voiceId)
+    const voice = voices.find(v => v.id === voiceId)
+    const utterance = new SpeechSynthesisUtterance(
+      `Hello, I'm ${voice?.name ?? voiceId}. I'll be your AI coaching assistant.`
+    )
+    utterance.onend = () => setPlayingId(null)
+    utterance.onerror = () => setPlayingId(null)
+    window.speechSynthesis?.speak(utterance)
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {voices.map(voice => (
+        <div key={voice.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <button
+            onClick={() => handleTest(voice.id)}
+            className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors shrink-0"
+          >
+            {playingId === voice.id ? <Square className="h-3 w-3 text-slate-700" /> : <Play className="h-3 w-3 text-slate-700 ml-0.5" />}
+          </button>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-900">{voice.name}</p>
+            <p className="text-xs text-slate-500">{voice.gender} · {voice.style}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 type RadioOptionProps = {
   id: string
@@ -161,7 +267,26 @@ export default function VoiceProviderSettings() {
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
             ) : isError ? (
-              <p className="text-sm text-red-500">Failed to load configuration</p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 text-amber-800 text-xs">
+                  <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Using default configuration — API unavailable. Changes will be saved when the connection is restored.</span>
+                </div>
+                {STT_OPTIONS.map((opt) => (
+                  <RadioOption
+                    key={opt.value}
+                    id={`stt-${opt.value}`}
+                    name="stt_provider"
+                    value={opt.value}
+                    selected={selectedStt}
+                    label={opt.label}
+                    description={opt.description}
+                    badge={opt.badge}
+                    badgeVariant={opt.badgeVariant}
+                    onChange={setPendingStt}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="space-y-3">
                 {STT_OPTIONS.map((opt) => (
@@ -221,6 +346,20 @@ export default function VoiceProviderSettings() {
           </CardContent>
         </Card>
 
+        {/* Available Voices */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-slate-500" />
+              <CardTitle className="text-base">Available Voices</CardTitle>
+            </div>
+            <CardDescription>Preview and configure voices for the selected TTS provider</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VoicePreviewGrid provider={selectedTts} />
+          </CardContent>
+        </Card>
+
         {/* Cost Comparison */}
         <Card>
           <CardHeader>
@@ -237,7 +376,8 @@ export default function VoiceProviderSettings() {
                   <tr className="border-b border-slate-100">
                     <th className="text-left py-2 pr-4 font-medium text-slate-600">Provider</th>
                     <th className="text-left py-2 pr-4 font-medium text-slate-600">STT Cost</th>
-                    <th className="text-left py-2 font-medium text-slate-600">vs Whisper</th>
+                    <th className="text-left py-2 pr-4 font-medium text-slate-600">TTS Cost</th>
+                    <th className="text-left py-2 font-medium text-slate-600">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -245,6 +385,7 @@ export default function VoiceProviderSettings() {
                     <tr key={row.provider}>
                       <td className="py-2 pr-4 text-slate-900">{row.provider}</td>
                       <td className="py-2 pr-4 text-slate-700 font-mono">{row.sttCost}</td>
+                      <td className="py-2 pr-4 text-slate-700 font-mono">{row.ttsCost}</td>
                       <td className="py-2 text-emerald-600 text-xs">{row.savings}</td>
                     </tr>
                   ))}
@@ -266,7 +407,7 @@ export default function VoiceProviderSettings() {
             className="gap-2"
           >
             <Save className="h-4 w-4" />
-            {isPending ? "Saving…" : "Save Changes"}
+            {isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>
