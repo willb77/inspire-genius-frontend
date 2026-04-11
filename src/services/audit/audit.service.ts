@@ -12,7 +12,20 @@ export type AuditStatsResponse = BaseApiResponse<AuditStatsData>
 
 export async function logAuditEvent(payload: AuditLogPayload): Promise<void> {
   try {
-    await api.post("/v1/audit/log", payload)
+    // Use sendBeacon for truly silent fire-and-forget (no console errors)
+    const baseUrl = (api.defaults.baseURL ?? "").replace(/\/$/, "")
+    const url = `${baseUrl}/v1/audit/log`
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" })
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, blob)
+    } else {
+      // Fallback to fetch with keepalive
+      fetch(url, {
+        method: "POST",
+        body: blob,
+        keepalive: true,
+      }).catch(() => {})
+    }
   } catch {
     // fire-and-forget — silent error handling
   }

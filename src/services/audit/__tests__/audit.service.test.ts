@@ -19,12 +19,20 @@ jest.mock("@/lib/axios", () => ({
   api: {
     post: jest.fn(),
     get: jest.fn(),
+    defaults: { baseURL: "https://api.test.com" },
   },
 }))
 
 describe("audit.service.ts", () => {
+  const sendBeaconSpy = jest.fn().mockReturnValue(true)
+
   beforeEach(() => {
     jest.clearAllMocks()
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: sendBeaconSpy,
+      writable: true,
+      configurable: true,
+    })
   })
 
   // ─── logAuditEvent ──────────────────────────────────────────────
@@ -36,18 +44,18 @@ describe("audit.service.ts", () => {
       actor_id: "user-uuid",
     }
 
-    test("should POST to /v1/audit/log with payload", async () => {
-      ;(api.post as jest.Mock).mockResolvedValueOnce({ data: { status: "accepted" } })
-
+    test("should send audit event via sendBeacon", async () => {
       await logAuditEvent(payload)
 
-      expect(api.post).toHaveBeenCalledWith("/v1/audit/log", payload)
+      expect(sendBeaconSpy).toHaveBeenCalledWith(
+        "https://api.test.com/v1/audit/log",
+        expect.any(Blob)
+      )
     })
 
-    test("should not throw on API error (fire-and-forget)", async () => {
-      ;(api.post as jest.Mock).mockRejectedValueOnce(new Error("Network error"))
+    test("should not throw on error (fire-and-forget)", async () => {
+      sendBeaconSpy.mockImplementationOnce(() => { throw new Error("fail") })
 
-      // Should not throw
       await expect(logAuditEvent(payload)).resolves.toBeUndefined()
     })
 
@@ -64,11 +72,11 @@ describe("audit.service.ts", () => {
         ip_address: "192.168.1.1",
       }
 
-      ;(api.post as jest.Mock).mockResolvedValueOnce({ data: { status: "accepted" } })
-
       await logAuditEvent(fullPayload)
 
-      expect(api.post).toHaveBeenCalledWith("/v1/audit/log", fullPayload)
+      expect(sendBeaconSpy).toHaveBeenCalled()
+      const blob = sendBeaconSpy.mock.calls[0][1] as Blob
+      expect(blob.type).toBe("application/json")
     })
   })
 
