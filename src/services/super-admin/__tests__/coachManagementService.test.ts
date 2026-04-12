@@ -3,6 +3,7 @@ import {
   createCoach,
   updateCoach,
   deactivateCoach,
+  deleteCoach,
   getCoachCategories,
 } from "../coachManagementService";
 import { api } from "@/lib/axios";
@@ -139,18 +140,32 @@ describe("agents.service", () => {
   /* --------------------------------
      deactivateCoach
   --------------------------------- */
-  it("deactivates a coach", async () => {
+  it("deactivates a coach via PUT with status deactivated", async () => {
     const mockResponse = { status: true, message: "Deactivated" };
 
-    (api.delete as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    (api.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
 
     const result = await deactivateCoach("agent-1");
 
+    expect(api.put).toHaveBeenCalledWith(
+      "/v1/agents-settings/agents",
+      { status: "deactivated" },
+      { params: { agent_id: "agent-1" } }
+    );
+
+    expect(result).toEqual(mockResponse);
+  });
+
+  it("hard deletes a coach via DELETE", async () => {
+    const mockResponse = { status: true, message: "Deleted" };
+
+    (api.delete as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+
+    const result = await deleteCoach("agent-1");
+
     expect(api.delete).toHaveBeenCalledWith(
-      "/v1/agents-settings/deactivate",
-      {
-        params: { agent_id: "agent-1" },
-      }
+      "/v1/agents-settings/agents",
+      { params: { agent_id: "agent-1" } }
     );
 
     expect(result).toEqual(mockResponse);
