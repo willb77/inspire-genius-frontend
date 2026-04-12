@@ -132,17 +132,21 @@ jest.mock("@/components/ui/skeleton", () => ({
 const createSpy = jest.fn();
 const updateSpy = jest.fn();
 const deactivateSpy = jest.fn();
+const deleteSpy = jest.fn();
 
 const mockUseCoachesList = jest.fn();
 const mockUseCreateCoach = jest.fn();
 const mockUseUpdateCoach = jest.fn();
 const mockUseDeactivateCoach = jest.fn();
 
+const mockUseDeleteCoach = jest.fn();
+
 jest.mock("@/hooks/super-admin/coach-management/useCoaches", () => ({
   useCoachesList: () => mockUseCoachesList(),
   useCreateCoach: () => mockUseCreateCoach(),
   useUpdateCoach: () => mockUseUpdateCoach(),
   useDeactivateCoach: () => mockUseDeactivateCoach(),
+  useDeleteCoach: () => mockUseDeleteCoach(),
 }));
 
 const mockGetTones = jest.fn();
@@ -207,6 +211,11 @@ describe("CoachManagement Page", () => {
 
     mockUseDeactivateCoach.mockReturnValue({
       mutateAsync: deactivateSpy,
+      isPending: false,
+    });
+
+    mockUseDeleteCoach.mockReturnValue({
+      mutateAsync: deleteSpy,
       isPending: false,
     });
 

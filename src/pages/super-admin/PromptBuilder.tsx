@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Save, RotateCcw, FilePen } from "lucide-react"
+import { toast } from "sonner"
 import type { SystemPrompt } from "@/types/prompt-builder"
 
 export default function PromptBuilder() {
@@ -88,11 +89,20 @@ export default function PromptBuilder() {
       response_style: responseStyle,
       constraints,
     }
-    if (promptId) {
-      await updateMutation.mutateAsync({ id: promptId, payload })
-    } else {
-      const resp = await saveMutation.mutateAsync(payload)
-      if (resp?.data?.id) setPromptId(resp.data.id)
+    try {
+      if (promptId) {
+        await updateMutation.mutateAsync({ id: promptId, payload })
+      } else {
+        const resp = await saveMutation.mutateAsync(payload)
+        if (resp?.data?.id) setPromptId(resp.data.id)
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+        (err as Error)?.message ||
+        "Failed to save prompt"
+      toast.error(msg)
     }
   }
 
@@ -160,7 +170,7 @@ export default function PromptBuilder() {
         {/* Two-panel layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left — Wizard form */}
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2">
             <PromptWizardForm
               persona={persona}
               tone={tone}

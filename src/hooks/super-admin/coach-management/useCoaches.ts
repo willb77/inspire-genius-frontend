@@ -4,6 +4,7 @@ import {
   createCoach as svcCreateCoach,
   updateCoach as svcUpdateCoach,
   deactivateCoach as svcDeactivateCoach,
+  deleteCoach as svcDeleteCoach,
   getCoachCategories,
   type AgentsListParams,
   type CreateCoachBody,
@@ -60,7 +61,18 @@ export function useDeactivateCoach() {
     mutationFn: (agentId: string) => svcDeactivateCoach(agentId),
     onSuccess: (_resp, agentId) => {
       qc.invalidateQueries({ queryKey: ["super-admin", "coaches"], exact: false });
-      logAuditEvent({ action: "coach_deleted", actor_email: "admin", target_type: "coach", extra_data: { agent_id: agentId } });
+      logAuditEvent({ action: "coach_deactivated", actor_email: "admin", target_type: "coach", extra_data: { agent_id: agentId } });
+    },
+  });
+}
+
+export function useDeleteCoach() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (agentId: string) => svcDeleteCoach(agentId),
+    onSuccess: (_resp, agentId) => {
+      qc.invalidateQueries({ queryKey: ["super-admin", "coaches"], exact: false });
+      logAuditEvent({ action: "coach_hard_deleted", actor_email: "admin", target_type: "coach", extra_data: { agent_id: agentId } });
     },
   });
 }

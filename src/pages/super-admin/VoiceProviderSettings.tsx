@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Mic, Info, DollarSign, Save, Volume2, Play, Square } from "lucide-react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
@@ -124,7 +124,51 @@ const VOICES_BY_PROVIDER: Record<string, { id: string; name: string; gender: str
 
 function VoicePreviewGrid({ provider }: { provider: string }) {
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([])
   const voices = VOICES_BY_PROVIDER[provider] ?? VOICES_BY_PROVIDER.openai ?? []
+
+  // Load browser voices (async on some browsers)
+  useEffect(() => {
+    const loadVoices = () => {
+      const v = window.speechSynthesis?.getVoices() ?? []
+      if (v.length > 0) setBrowserVoices(v)
+    }
+    loadVoices()
+    window.speechSynthesis?.addEventListener("voiceschanged", loadVoices)
+    return () => window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices)
+  }, [])
+
+  const findBrowserVoice = (gender: string, style: string): SpeechSynthesisVoice | undefined => {
+    if (browserVoices.length === 0) return undefined
+    const isFemale = gender.toLowerCase().includes("female")
+    // Try to find a voice matching gender
+    const genderMatch = browserVoices.filter(v => {
+      const name = v.name.toLowerCase()
+      if (isFemale) return name.includes("female") || name.includes("samantha") || name.includes("karen") || name.includes("victoria") || name.includes("fiona")
+      return name.includes("male") || name.includes("daniel") || name.includes("alex") || name.includes("fred") || name.includes("thomas")
+    })
+    return genderMatch[0] ?? browserVoices[Math.floor(Math.random() * browserVoices.length)]
+  }
+
+  const getVoiceParams = (style: string): { rate: number; pitch: number } => {
+    switch (style.toLowerCase()) {
+      case "deep": return { rate: 0.85, pitch: 0.6 }
+      case "warm": return { rate: 0.92, pitch: 0.85 }
+      case "expressive": return { rate: 1.05, pitch: 1.1 }
+      case "friendly": return { rate: 1.0, pitch: 1.05 }
+      case "clear": return { rate: 0.95, pitch: 1.15 }
+      case "balanced": case "neutral": return { rate: 0.95, pitch: 1.0 }
+      case "soft": return { rate: 0.88, pitch: 1.1 }
+      case "strong": return { rate: 1.0, pitch: 0.8 }
+      case "conversational": return { rate: 0.97, pitch: 1.0 }
+      case "narrative": return { rate: 0.9, pitch: 0.9 }
+      case "standard": return { rate: 0.95, pitch: 1.0 }
+      case "casual": return { rate: 1.02, pitch: 0.95 }
+      case "studio": return { rate: 0.93, pitch: 0.95 }
+      case "neural": return { rate: 0.95, pitch: 1.0 }
+      default: return { rate: 1.0, pitch: 1.0 }
+    }
+  }
 
   const handleTest = (voiceId: string) => {
     if (playingId === voiceId) {
@@ -132,11 +176,22 @@ function VoicePreviewGrid({ provider }: { provider: string }) {
       setPlayingId(null)
       return
     }
+    window.speechSynthesis?.cancel()
     setPlayingId(voiceId)
     const voice = voices.find(v => v.id === voiceId)
     const utterance = new SpeechSynthesisUtterance(
-      `Hello, I'm ${voice?.name ?? voiceId}. I'll be your AI coaching assistant.`
+      `Hello, I'm ${voice?.name ?? voiceId}. I'll be your AI coaching assistant. How can I help you today?`
     )
+
+    // Set voice parameters for distinct sound
+    const params = getVoiceParams(voice?.style ?? "balanced")
+    utterance.rate = params.rate
+    utterance.pitch = params.pitch
+
+    // Try to find a matching browser voice
+    const browserVoice = findBrowserVoice(voice?.gender ?? "neutral", voice?.style ?? "balanced")
+    if (browserVoice) utterance.voice = browserVoice
+
     utterance.onend = () => setPlayingId(null)
     utterance.onerror = () => setPlayingId(null)
     window.speechSynthesis?.speak(utterance)
@@ -152,9 +207,13 @@ function VoicePreviewGrid({ provider }: { provider: string }) {
           >
             {playingId === voice.id ? <Square className="h-3 w-3 text-slate-700" /> : <Play className="h-3 w-3 text-slate-700 ml-0.5" />}
           </button>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-900">{voice.name}</p>
             <p className="text-xs text-slate-500">{voice.gender} · {voice.style}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] text-slate-400">Rate: {getVoiceParams(voice.style).rate}</p>
+            <p className="text-[10px] text-slate-400">Pitch: {getVoiceParams(voice.style).pitch}</p>
           </div>
         </div>
       ))}
