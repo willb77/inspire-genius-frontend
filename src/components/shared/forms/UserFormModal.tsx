@@ -128,7 +128,7 @@ export default function UserFormModal({
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.values(ROLES).map((role) => (
+                      {[ROLES.USER, ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.PRACTITIONER, ROLES.DISTRIBUTOR, ROLES.SUPER_ADMIN].map((role) => (
                         <SelectItem key={role} value={role}>
                           {ROLE_LABELS[role] ?? role}
                         </SelectItem>

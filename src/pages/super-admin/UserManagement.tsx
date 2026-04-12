@@ -20,6 +20,7 @@ import {
   useUserManagement,
   useInviteUser,
   useUpdateUser,
+  useChangeUserRole,
   useDeleteUser,
   useResendInvitation,
   useInactiveUserCount,
@@ -137,6 +138,7 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
   const inviteMutation = useInviteUser();
   const updateMutation = useUpdateUser();
+  const changeRoleMutation = useChangeUserRole();
   const deleteMutation = useDeleteUser();
   const resendMutation = useResendInvitation();
 
@@ -189,10 +191,27 @@ export default function UserManagement() {
         selected.status === "Awaiting" ? undefined : values.status === "Active",
     };
 
-    await updateMutation.mutateAsync({
-      email: selected.email,
-      payload: body,
-    });
+    const promises: Promise<unknown>[] = [
+      updateMutation.mutateAsync({
+        email: selected.email,
+        payload: body,
+      }),
+    ];
+
+    // If role changed, send a separate role-change request
+    if (values.role && values.role !== selected.role) {
+      const roleId = getRoleIdByName(values.role);
+      if (roleId) {
+        promises.push(
+          changeRoleMutation.mutateAsync({
+            email: selected.email,
+            payload: { role_id: roleId },
+          })
+        );
+      }
+    }
+
+    await Promise.all(promises);
   };
 
   const handleDeactivate = async () => {
@@ -574,7 +593,7 @@ export default function UserManagement() {
         onSubmit={handleEdit}
         title="Edit User"
         submitLabel={
-          updateMutation.isPending ? "Updating User..." : "Save Changes"
+          updateMutation.isPending || changeRoleMutation.isPending ? "Updating User..." : "Save Changes"
         }
         allowStatusEdit={selected?.status !== "Awaiting"}
       />

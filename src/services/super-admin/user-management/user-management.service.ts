@@ -87,6 +87,26 @@ export async function inviteUser(payload: InviteUserPayload) {
   return data
 }
 
+// ------------------ CHANGE USER ROLE ------------------
+
+export type ChangeUserRolePayload = {
+  role_id: string
+}
+
+export type ChangeUserRoleData = {
+  updated_fields: string[]
+}
+
+export type ChangeUserRoleResponse = BaseApiResponse<ChangeUserRoleData>
+
+export async function changeUserRole(user_email: string, payload: ChangeUserRolePayload) {
+  const { data } = await api.put<ChangeUserRoleResponse>(
+    `/v1/user-management/users/${encodeURIComponent(user_email)}/role`,
+    payload
+  )
+  return data
+}
+
 // ------------------ UPDATE USER ------------------
 
 export type UpdateUserPayload = {

@@ -14,6 +14,7 @@ import {
   resendInvitation,
   purgeInactiveUsers,
   getInactiveUserCount,
+  changeUserRole,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
@@ -23,6 +24,8 @@ import {
   type DeleteUserResponse,
   type ResendInvitationResponse,
   type PurgeInactiveResult,
+  type ChangeUserRolePayload,
+  type ChangeUserRoleResponse,
 } from "@/services/super-admin/user-management/user-management.service";
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
@@ -103,6 +106,35 @@ export function useUpdateUser() {
         error.response?.data?.message ||
         error.message ||
         "Failed to update user";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useChangeUserRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ChangeUserRoleResponse,
+    AxiosError<BaseApiResponse<null>>,
+    { email: string; payload: ChangeUserRolePayload }
+  >({
+    mutationFn: ({ email, payload }) => changeUserRole(email, payload),
+
+    onSuccess: (_resp, variables) => {
+      toast.success("User role updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+      logAuditEvent({ action: "user_role_changed", actor_email: "admin", target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
+    },
+
+    onError: (error) => {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to change user role";
       toast.error(msg);
     },
   });
