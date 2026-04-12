@@ -4,13 +4,21 @@ import { useMemo, useState } from "react";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import { DataTable, type Column } from "@/components/super-admin/organization/DataTable";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import CoachFormModal from "@/components/shared/forms/CoachFormModal";
 import type { CoachFormValues } from "@/components/shared/forms/coachForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
-import { useCoachesList, useCreateCoach, useUpdateCoach, useDeactivateCoach } from "@/hooks/super-admin/coach-management/useCoaches";
+import {
+  useCoachesList,
+  useCreateCoach,
+  useUpdateCoach,
+  useDeactivateCoach,
+  useDeleteCoach,
+} from "@/hooks/super-admin/coach-management/useCoaches";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AxiosError } from "axios";
@@ -36,6 +44,29 @@ export default function CoachManagement() {
   const [sortKey, setSortKey] = useState<keyof CoachRow | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | undefined>(undefined);
 
+  /* ---------- Selection state ---------- */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (rows: CoachRow[]) => {
+    const allIds = rows.map((r) => r.id);
+    const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  /* ---------- Data fetching ---------- */
   const { data, isLoading, isRefetching } = useCoachesList({ page, limit: pageSize });
   const agents = useMemo(() => {
     const d = data?.data;
@@ -55,6 +86,7 @@ export default function CoachManagement() {
     return list.map((t) => ({ label: t.display_name || t.name, value: t.display_name || t.name }));
   }, [tonesResp]);
 
+  /* ---------- Build rows ---------- */
   const rows: CoachRow[] = useMemo(() => {
     return agents.map((a) => ({
       id: a.id,
@@ -99,32 +131,31 @@ export default function CoachManagement() {
     setPage(1);
   };
 
-  // Action handlers and dialog state
+  /* ---------- Modal state ---------- */
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [activateOpen, setActivateOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [bulkActivateOpen, setBulkActivateOpen] = useState(false);
+  const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<CoachRow | null>(null);
 
+  /* ---------- Mutations ---------- */
   const createMutation = useCreateCoach();
   const updateMutation = useUpdateCoach();
   const deactivateMutation = useDeactivateCoach();
+  const deleteMutation = useDeleteCoach();
 
+  /* ---------- Single-row openers ---------- */
   const openAdd = () => setAddOpen(true);
-  const openEdit = (row: CoachRow) => {
-    setSelected(row);
-    setEditOpen(true);
-  };
-  const openDeactivate = (row: CoachRow) => {
-    setSelected(row);
-    setDeactivateOpen(true);
-  };
-  const openDelete = (row: CoachRow) => {
-    setSelected(row);
-    setDeleteOpen(true);
-  };
+  const openEdit = (row: CoachRow) => { setSelected(row); setEditOpen(true); };
+  const openActivate = (row: CoachRow) => { setSelected(row); setActivateOpen(true); };
+  const openDeactivate = (row: CoachRow) => { setSelected(row); setDeactivateOpen(true); };
+  const openDelete = (row: CoachRow) => { setSelected(row); setDeleteOpen(true); };
 
-
+  /* ---------- Single-row handlers ---------- */
   const handleAdd = async (values: CoachFormValues) => {
     const body = {
       name: values.name,
@@ -142,6 +173,7 @@ export default function CoachManagement() {
       throw e;
     }
   };
+
   const handleEdit = async (values: CoachFormValues) => {
     if (!selected) return;
     const body = {
@@ -162,6 +194,21 @@ export default function CoachManagement() {
       throw e;
     }
   };
+
+  const handleActivate = async () => {
+    if (!selected) return;
+    try {
+      const resp = await updateMutation.mutateAsync({ agent_id: selected.id, prompt: "", status: "active" });
+      if (resp?.status) toast.success("Mentor activated successfully");
+      else toast.error(resp?.message || "Failed to activate mentor");
+      setActivateOpen(false);
+    } catch (e: unknown) {
+      const ax = e as AxiosError<{ message?: string }>;
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to activate mentor";
+      toast.error(msg);
+    }
+  };
+
   const handleDeactivate = async () => {
     if (!selected) return;
     try {
@@ -170,36 +217,117 @@ export default function CoachManagement() {
       else toast.error(resp?.message || "Failed to deactivate mentor");
       setDeactivateOpen(false);
     } catch (e: unknown) {
-      const ax = (e as AxiosError<{ message?: string }>);
+      const ax = e as AxiosError<{ message?: string }>;
       const msg = ax?.response?.data?.message || (e as Error).message || "Failed to deactivate mentor";
       toast.error(msg);
     }
   };
+
   const handleDelete = async () => {
     if (!selected) return;
     try {
-      const resp = await deactivateMutation.mutateAsync(selected.id);
-      if (resp?.status) toast.success("Mentor deleted successfully");
+      const resp = await deleteMutation.mutateAsync(selected.id);
+      if (resp?.status) toast.success("Mentor deleted permanently");
       else toast.error(resp?.message || "Failed to delete mentor");
       setDeleteOpen(false);
+      setSelectedIds((prev) => { const next = new Set(prev); next.delete(selected.id); return next; });
     } catch (e: unknown) {
-      const ax = (e as AxiosError<{ message?: string }>);
+      const ax = e as AxiosError<{ message?: string }>;
       const msg = ax?.response?.data?.message || (e as Error).message || "Failed to delete mentor";
       toast.error(msg);
     }
   };
 
+  /* ---------- Bulk handlers ---------- */
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const handleBulkActivate = async () => {
+    setBulkLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await updateMutation.mutateAsync({ agent_id: id, prompt: "", status: "active" });
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setBulkLoading(false);
+    setBulkActivateOpen(false);
+    if (successCount > 0) toast.success(`${successCount} mentor(s) activated`);
+    if (failCount > 0) toast.error(`${failCount} mentor(s) failed to activate`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDeactivate = async () => {
+    setBulkLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await deactivateMutation.mutateAsync(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setBulkLoading(false);
+    setBulkDeactivateOpen(false);
+    if (successCount > 0) toast.success(`${successCount} mentor(s) deactivated`);
+    if (failCount > 0) toast.error(`${failCount} mentor(s) failed to deactivate`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setBulkLoading(false);
+    setBulkDeleteOpen(false);
+    if (successCount > 0) toast.success(`${successCount} mentor(s) permanently deleted`);
+    if (failCount > 0) toast.error(`${failCount} mentor(s) failed to delete`);
+    setSelectedIds(new Set());
+  };
+
+  /* ---------- Columns ---------- */
+  const allOnPageSelected = sortedRows.length > 0 && sortedRows.every((r) => selectedIds.has(r.id));
+  const someOnPageSelected = sortedRows.some((r) => selectedIds.has(r.id)) && !allOnPageSelected;
 
   const columns: Column<CoachRow>[] = [
+    {
+      key: "select",
+      header: (
+        <Checkbox
+          checked={allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false}
+          onCheckedChange={() => toggleSelectAll(sortedRows)}
+          aria-label="Select all"
+        />
+      ) as unknown as string,
+      render: (row) => (
+        <Checkbox
+          checked={selectedIds.has(row.id)}
+          onCheckedChange={() => toggleSelect(row.id)}
+          aria-label={`Select ${row.name}`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
     { key: "name", header: "Name", sortable: true },
     { key: "category", header: "Category", sortable: true },
-    // { key: "voice_style", header: "Voice Style", sortable: true },
     {
       key: "voice_description",
       header: "Voice Description",
-      render: (row) => <div className="line-clamp-1">{row.voice_description.length>20 ?`${row.voice_description.slice(0, 20)}...` : row.voice_description}</div>,
+      render: (row) => <div className="line-clamp-1">{row.voice_description.length > 20 ? `${row.voice_description.slice(0, 20)}...` : row.voice_description}</div>,
     },
-    // { key: "total_sessions", header: "Total Sessions", sortable: true },
     {
       key: "status",
       header: "Status",
@@ -223,9 +351,11 @@ export default function CoachManagement() {
           showView={false}
           showResend={false}
           showEdit={true}
+          showActivate={row.status === "Deactivated"}
           showDeactivate={row.status === "Active"}
           showDelete={true}
           onEdit={() => openEdit(row)}
+          onActivate={() => openActivate(row)}
           onDeactivate={() => openDeactivate(row)}
           onDelete={() => openDelete(row)}
         />
@@ -237,6 +367,36 @@ export default function CoachManagement() {
     <SuperAdminLayout>
       <div className="space-y-6">
         <ManagementHeader title="Mentor Management" addLabel="Add Mentor" onAdd={openAdd} />
+
+        {/* Bulk action buttons */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-1">{selectedIds.size} selected</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-green-500 text-green-600 hover:bg-green-50"
+              onClick={() => setBulkActivateOpen(true)}
+            >
+              Activate Selected ({selectedIds.size})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-500 text-amber-600 hover:bg-amber-50"
+              onClick={() => setBulkDeactivateOpen(true)}
+            >
+              Deactivate Selected ({selectedIds.size})
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+            >
+              Delete Selected ({selectedIds.size})
+            </Button>
+          </div>
+        )}
 
         <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
           {isLoading || isRefetching ? (
@@ -293,6 +453,21 @@ export default function CoachManagement() {
         toneOptions={toneOptions}
       />
 
+      {/* Activate Coach */}
+      <ConfirmActionModal
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        title="Activate Mentor"
+        description="Are you sure you want to activate this mentor? They will become available for all assigned organizations."
+        fields={[
+          { label: "Mentor Name", value: selected?.name ?? "" },
+          { label: "Category", value: selected?.category ?? "" },
+        ]}
+        confirmLabel="Activate"
+        onConfirm={handleActivate}
+        confirmLoading={updateMutation.isPending}
+      />
+
       {/* Deactivate Coach */}
       <ConfirmActionModal
         open={deactivateOpen}
@@ -309,7 +484,7 @@ export default function CoachManagement() {
         confirmLoading={deactivateMutation.isPending}
       />
 
-      {/* Delete Mentor */}
+      {/* Delete Mentor (hard delete) */}
       <ConfirmActionModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -319,10 +494,48 @@ export default function CoachManagement() {
           { label: "Mentor Name", value: selected?.name ?? "" },
           { label: "Category", value: selected?.category ?? "" },
         ]}
-        confirmLabel="Delete"
+        confirmLabel="Delete Permanently"
         confirmVariant="destructive"
         onConfirm={handleDelete}
-        confirmLoading={deactivateMutation.isPending}
+        confirmLoading={deleteMutation.isPending}
+      />
+
+      {/* Bulk Activate */}
+      <ConfirmActionModal
+        open={bulkActivateOpen}
+        onOpenChange={setBulkActivateOpen}
+        title="Activate Selected Mentors"
+        description={`Are you sure you want to activate ${selectedIds.size} selected mentor(s)? They will become available for all assigned organizations.`}
+        fields={[]}
+        confirmLabel={`Activate ${selectedIds.size} Mentor(s)`}
+        onConfirm={handleBulkActivate}
+        confirmLoading={bulkLoading}
+      />
+
+      {/* Bulk Deactivate */}
+      <ConfirmActionModal
+        open={bulkDeactivateOpen}
+        onOpenChange={setBulkDeactivateOpen}
+        title="Deactivate Selected Mentors"
+        description={`Are you sure you want to deactivate ${selectedIds.size} selected mentor(s)? This will affect all their assigned organizations.`}
+        fields={[]}
+        confirmLabel={`Deactivate ${selectedIds.size} Mentor(s)`}
+        confirmVariant="destructive"
+        onConfirm={handleBulkDeactivate}
+        confirmLoading={bulkLoading}
+      />
+
+      {/* Bulk Delete */}
+      <ConfirmActionModal
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title="Delete Selected Mentors"
+        description={`Are you sure you want to permanently delete ${selectedIds.size} selected mentor(s)? This action cannot be undone.`}
+        fields={[]}
+        confirmLabel={`Delete ${selectedIds.size} Mentor(s) Permanently`}
+        confirmVariant="destructive"
+        onConfirm={handleBulkDelete}
+        confirmLoading={bulkLoading}
       />
 
     </SuperAdminLayout>

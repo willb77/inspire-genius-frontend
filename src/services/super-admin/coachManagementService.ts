@@ -60,7 +60,12 @@ export async function updateCoach(body: UpdateCoachBody) {
 }
 
 export async function deactivateCoach(agentId: string) {
-  const resp = await api.delete(`/v1/agents-settings/deactivate`, { params: { agent_id: agentId } });
+  const resp = await api.put(`/v1/agents-settings/agents`, { status: "deactivated" }, { params: { agent_id: agentId } });
+  return resp.data as { status: boolean; message?: string };
+}
+
+export async function deleteCoach(agentId: string) {
+  const resp = await api.delete(`/v1/agents-settings/agents`, { params: { agent_id: agentId } });
   return resp.data as { status: boolean; message?: string };
 }
 
