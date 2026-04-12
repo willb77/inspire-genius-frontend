@@ -149,6 +149,7 @@ jest.mock("@/hooks/super-admin/user-management/useUserManagement", () => ({
   })),
   useInviteUser: () => ({ mutateAsync: inviteMutate, isPending: false }),
   useUpdateUser: () => ({ mutateAsync: updateMutate, isPending: false }),
+  useChangeUserRole: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useDeleteUser: () => ({ mutateAsync: deleteMutate, isPending: false }),
   useResendInvitation: () => ({ mutateAsync: resendMutate, isPending: false }),
   useInactiveUserCount: () => ({ data: 0, isLoading: false }),
