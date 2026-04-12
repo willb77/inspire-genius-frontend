@@ -103,6 +103,7 @@ export default function CoachManagement() {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<CoachRow | null>(null);
 
   const createMutation = useCreateCoach();
@@ -117,6 +118,10 @@ export default function CoachManagement() {
   const openDeactivate = (row: CoachRow) => {
     setSelected(row);
     setDeactivateOpen(true);
+  };
+  const openDelete = (row: CoachRow) => {
+    setSelected(row);
+    setDeleteOpen(true);
   };
 
 
@@ -170,6 +175,19 @@ export default function CoachManagement() {
       toast.error(msg);
     }
   };
+  const handleDelete = async () => {
+    if (!selected) return;
+    try {
+      const resp = await deactivateMutation.mutateAsync(selected.id);
+      if (resp?.status) toast.success("Mentor deleted successfully");
+      else toast.error(resp?.message || "Failed to delete mentor");
+      setDeleteOpen(false);
+    } catch (e: unknown) {
+      const ax = (e as AxiosError<{ message?: string }>);
+      const msg = ax?.response?.data?.message || (e as Error).message || "Failed to delete mentor";
+      toast.error(msg);
+    }
+  };
 
 
   const columns: Column<CoachRow>[] = [
@@ -206,8 +224,10 @@ export default function CoachManagement() {
           showResend={false}
           showEdit={true}
           showDeactivate={row.status === "Active"}
+          showDelete={true}
           onEdit={() => openEdit(row)}
           onDeactivate={() => openDeactivate(row)}
+          onDelete={() => openDelete(row)}
         />
       ),
     },
@@ -289,7 +309,22 @@ export default function CoachManagement() {
         confirmLoading={deactivateMutation.isPending}
       />
 
- 
+      {/* Delete Mentor */}
+      <ConfirmActionModal
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Mentor"
+        description="Are you sure you want to permanently delete this mentor? This action cannot be undone and will remove the mentor from all assigned organizations."
+        fields={[
+          { label: "Mentor Name", value: selected?.name ?? "" },
+          { label: "Category", value: selected?.category ?? "" },
+        ]}
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={handleDelete}
+        confirmLoading={deactivateMutation.isPending}
+      />
+
     </SuperAdminLayout>
   );
 }
