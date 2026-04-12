@@ -35,19 +35,28 @@ export default function PromptBuilder() {
     return d?.agents ?? []
   }, [coachesData])
 
-  const { data: versionsData, isLoading: versionsLoading } = usePromptVersions(selectedCoachId)
+  const { data: versionsData, isLoading: versionsLoading, isError: versionsError } = usePromptVersions(selectedCoachId)
   const versions = useMemo(() => versionsData?.data?.versions ?? [], [versionsData])
 
   const saveMutation = useSavePrompt()
   const updateMutation = useUpdatePrompt()
 
-  // Auto-load the latest version when versions data arrives
+  // Auto-load the latest version when versions data arrives.
+  // If no versions exist, try to populate from the coach's existing prompt text.
   useEffect(() => {
+    if (!selectedCoachId) return
     if (versions.length > 0 && !promptId) {
       const latest = versions[0]
       handleSelectVersion(latest)
+    } else if (versions.length === 0 && !versionsLoading && !promptId) {
+      // No prompt versions — populate from coach's existing prompt if available
+      const coach = coaches.find((c) => c.id === selectedCoachId)
+      const existingPrompt = (coach as Record<string, unknown>)?.prompts as Array<{ text: string }> | undefined
+      if (existingPrompt?.[0]?.text) {
+        setPersona(existingPrompt[0].text)
+      }
     }
-  }, [versions]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [versions, versionsLoading, selectedCoachId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectVersion = (prompt: SystemPrompt) => {
     setPromptId(prompt.id)
@@ -165,11 +174,29 @@ export default function PromptBuilder() {
               onConstraintsChange={setConstraints}
             />
             {selectedCoachId && (
-              <PromptVersionHistory
-                versions={versions}
-                isLoading={versionsLoading}
-                onSelectVersion={handleSelectVersion}
-              />
+              <>
+                {versionsError && (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+                    <span className="text-amber-600 text-xs mt-0.5">⚠</span>
+                    <p className="text-xs text-amber-800">
+                      Could not load prompt versions from the server. You can still create a new prompt below.
+                    </p>
+                  </div>
+                )}
+                {!versionsLoading && !versionsError && versions.length === 0 && (
+                  <div className="rounded-md bg-blue-50 border border-blue-200 p-3 flex items-start gap-2">
+                    <span className="text-blue-600 text-xs mt-0.5">ℹ</span>
+                    <p className="text-xs text-blue-800">
+                      No prompt versions found for this mentor. Fill in the fields above and click "Save Prompt" to create the first version.
+                    </p>
+                  </div>
+                )}
+                <PromptVersionHistory
+                  versions={versions}
+                  isLoading={versionsLoading}
+                  onSelectVersion={handleSelectVersion}
+                />
+              </>
             )}
           </div>
 
