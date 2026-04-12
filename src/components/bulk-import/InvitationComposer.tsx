@@ -128,6 +128,9 @@ export function InvitationComposer({
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      <p className="text-sm text-muted-foreground mb-4 lg:col-span-2">
+        Compose a custom welcome message for the invitation emails. This message will be included in the email sent to each imported user.
+      </p>
       {/* Left panel - Compose */}
       <Card>
         <CardHeader>

@@ -169,6 +169,9 @@ export function DataPreviewTable({
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground mb-4">
+        Review the imported data below. Fix any errors, then click 'Proceed to Import' when ready.
+      </p>
       {/* Summary bar */}
       <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-4">
