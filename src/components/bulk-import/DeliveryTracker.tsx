@@ -161,6 +161,9 @@ export function DeliveryTracker({ data, isLoading, onResend, isResending }: Deli
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground mb-4">
+        Track the delivery status of invitation emails. You can resend failed invitations individually.
+      </p>
       {/* Summary Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Card>

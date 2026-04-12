@@ -101,6 +101,9 @@ export function RecipientSelector({
 
   return (
     <>
+      <p className="text-sm text-muted-foreground mb-4">
+        Select which imported users should receive invitation emails. Check the box next to each user, or use 'Select All' to include everyone.
+      </p>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

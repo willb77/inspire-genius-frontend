@@ -47,6 +47,9 @@ export function ImportProgress({ isLoading, data, onContinue }: ImportProgressPr
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <p className="text-sm text-muted-foreground mb-4">
+          Your users are being imported into the system. This may take a moment. You'll see the results below when complete.
+        </p>
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
