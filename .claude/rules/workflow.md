@@ -7,10 +7,10 @@
 - Tests: `npm run test` (watch mode), `npm run test:ci` (single run)
 
 ## Deployment
-- CI/CD via GitLab CI (`.gitlab-ci.yml`)
+- CI/CD via GitHub Actions (`.github/workflows/ci-deploy.yml`)
 - Deploys only from `development` branch
-- Pipeline: build → SonarQube scan → deploy to AWS S3 + CloudFront invalidation
-- Environment variables injected at build time via CI variables
+- Pipeline: build → unit tests → deploy to AWS S3 + CloudFront invalidation
+- Environment variables injected at build time via GitHub Secrets
 
 ## Adding a New Role-Specific Page
 1. Create page component in `src/pages/{role}/` (e.g., `src/pages/manager/`, `src/pages/practitioner/`)

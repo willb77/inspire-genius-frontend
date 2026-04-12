@@ -12,21 +12,31 @@ export type PromptListResponse = BaseApiResponse<PromptListData>
 export type PromptVersionResponse = BaseApiResponse<PromptVersionData>
 
 export async function getPrompts() {
-  const { data } = await api.get<PromptListResponse>("/v1/prompts")
+  const { data } = await api.get<PromptListResponse>("/v1/admin/prompts")
   return data
 }
 
 export async function savePrompt(payload: SavePromptPayload) {
-  const { data } = await api.post<PromptResponse>("/v1/prompts", payload)
+  const { data } = await api.post<PromptResponse>("/v1/admin/prompts", payload)
   return data
 }
 
 export async function updatePrompt(id: string, payload: SavePromptPayload) {
-  const { data } = await api.put<PromptResponse>(`/v1/prompts/${encodeURIComponent(id)}`, payload)
+  const { data } = await api.put<PromptResponse>(`/v1/admin/prompts/${encodeURIComponent(id)}`, payload)
   return data
 }
 
 export async function getPromptVersions(coachId: string) {
-  const { data } = await api.get<PromptVersionResponse>(`/v1/prompts/${encodeURIComponent(coachId)}/versions`)
+  // Backend uses agent_id query param on the list endpoint for filtering
+  const { data } = await api.get<PromptVersionResponse>("/v1/admin/prompts", {
+    params: { agent_id: coachId },
+  })
+  // Map the list response to version format expected by the hook
+  if (data?.data && "prompts" in data.data) {
+    return {
+      ...data,
+      data: { versions: (data.data as PromptListData).prompts },
+    } as PromptVersionResponse
+  }
   return data
 }
