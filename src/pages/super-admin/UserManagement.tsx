@@ -247,8 +247,12 @@ export default function UserManagement() {
   const handleDelete = async () => {
     if (!selected) return;
 
-    await deleteMutation.mutateAsync(selected.email);
-    setDeleteOpen(false);
+    try {
+      await deleteMutation.mutateAsync(selected.email);
+      setDeleteOpen(false);
+    } catch {
+      // Error toast already shown by mutation onError callback
+    }
   };
 
   const handleResend = async (row: UserRow) => {
