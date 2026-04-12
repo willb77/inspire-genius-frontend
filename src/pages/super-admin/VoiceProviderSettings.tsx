@@ -138,7 +138,7 @@ function VoicePreviewGrid({ provider }: { provider: string }) {
     return () => window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices)
   }, [])
 
-  const findBrowserVoice = (gender: string, style: string): SpeechSynthesisVoice | undefined => {
+  const findBrowserVoice = (gender: string, _style: string): SpeechSynthesisVoice | undefined => {
     if (browserVoices.length === 0) return undefined
     const isFemale = gender.toLowerCase().includes("female")
     // Try to find a voice matching gender
