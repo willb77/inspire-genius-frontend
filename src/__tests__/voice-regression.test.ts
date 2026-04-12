@@ -99,7 +99,7 @@ describe("VoiceConfigData shape", () => {
 describe("getVoiceConfig", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("calls GET /v1/admin/voice-config and returns data", async () => {
+  it("tries /v1/agents/voice/config first and returns data", async () => {
     const { api } = await import("@/lib/axios");
     const responsePayload = {
       status: true,
@@ -121,13 +121,14 @@ describe("getVoiceConfig", () => {
     const { getVoiceConfig } = await import("@/services/voiceConfigService");
     const result = await getVoiceConfig();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/admin/voice-config");
+    expect(api.get).toHaveBeenCalledWith("/v1/agents/voice/config");
     expect(result.data!.stt_provider).toBe("openai");
     expect(result.data!.valid_stt_providers).toContain("deepgram");
   });
 
-  it("returns deepgram as stt_provider when configured", async () => {
+  it("falls back to /v1/admin/voice-config on error", async () => {
     const { api } = await import("@/lib/axios");
+    (api.get as jest.Mock).mockRejectedValueOnce(new Error("404"));
     (api.get as jest.Mock).mockResolvedValueOnce({
       data: {
         status: true,
@@ -152,8 +153,9 @@ describe("getVoiceConfig", () => {
     expect(result.data!.stt_updated_by).toBe("admin@test.com");
   });
 
-  it("propagates rejection when API call fails", async () => {
+  it("propagates rejection when both API paths fail", async () => {
     const { api } = await import("@/lib/axios");
+    (api.get as jest.Mock).mockRejectedValueOnce(new Error("404"));
     (api.get as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
     const { getVoiceConfig } = await import("@/services/voiceConfigService");
     await expect(getVoiceConfig()).rejects.toThrow("Network error");
@@ -167,7 +169,7 @@ describe("getVoiceConfig", () => {
 describe("updateVoiceConfig", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("calls PUT /v1/admin/voice-config with the payload", async () => {
+  it("tries PUT /v1/agents/voice/config with the payload", async () => {
     const { api } = await import("@/lib/axios");
     (api.put as jest.Mock).mockResolvedValueOnce({
       data: {
@@ -185,7 +187,7 @@ describe("updateVoiceConfig", () => {
     const { updateVoiceConfig } = await import("@/services/voiceConfigService");
     const result = await updateVoiceConfig({ stt_provider: "deepgram" });
 
-    expect(api.put).toHaveBeenCalledWith("/v1/admin/voice-config", { stt_provider: "deepgram" });
+    expect(api.put).toHaveBeenCalledWith("/v1/agents/voice/config", { stt_provider: "deepgram" });
     expect(result.data!.updated_keys).toContain("stt_provider");
     expect(result.data!.stt_provider).toBe("deepgram");
   });
@@ -206,8 +208,9 @@ describe("updateVoiceConfig", () => {
     expect(result.data!.updated_keys).toContain("tts_provider");
   });
 
-  it("propagates rejection on 403", async () => {
+  it("propagates rejection when both paths fail", async () => {
     const { api } = await import("@/lib/axios");
+    (api.put as jest.Mock).mockRejectedValueOnce(new Error("404"));
     (api.put as jest.Mock).mockRejectedValueOnce(new Error("Forbidden"));
     const { updateVoiceConfig } = await import("@/services/voiceConfigService");
     await expect(updateVoiceConfig({ stt_provider: "auto" })).rejects.toThrow("Forbidden");
@@ -224,7 +227,7 @@ describe("updateVoiceConfig", () => {
 
     const { updateVoiceConfig } = await import("@/services/voiceConfigService");
     const result = await updateVoiceConfig({});
-    expect(api.put).toHaveBeenCalledWith("/v1/admin/voice-config", {});
+    expect(api.put).toHaveBeenCalledWith("/v1/agents/voice/config", {});
     expect(result.data!.updated_keys).toHaveLength(0);
   });
 });

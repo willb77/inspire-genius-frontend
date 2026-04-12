@@ -25,11 +25,22 @@ export type VoiceConfigUpdateResponse = BaseApiResponse<{
 }>
 
 export async function getVoiceConfig(): Promise<VoiceConfigResponse> {
-  const { data } = await api.get<VoiceConfigResponse>('/v1/admin/voice-config')
-  return data
+  // Try the API Gateway routed path first, fall back to legacy path
+  try {
+    const { data } = await api.get<VoiceConfigResponse>('/v1/agents/voice/config')
+    return data
+  } catch {
+    const { data } = await api.get<VoiceConfigResponse>('/v1/admin/voice-config')
+    return data
+  }
 }
 
 export async function updateVoiceConfig(payload: VoiceConfigUpdate): Promise<VoiceConfigUpdateResponse> {
-  const { data } = await api.put<VoiceConfigUpdateResponse>('/v1/admin/voice-config', payload)
-  return data
+  try {
+    const { data } = await api.put<VoiceConfigUpdateResponse>('/v1/agents/voice/config', payload)
+    return data
+  } catch {
+    const { data } = await api.put<VoiceConfigUpdateResponse>('/v1/admin/voice-config', payload)
+    return data
+  }
 }
