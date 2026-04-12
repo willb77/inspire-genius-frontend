@@ -6,6 +6,7 @@ import RlhfFeedbackTable from "@/components/super-admin/rlhf/RlhfFeedbackTable"
 import RlhfReviewQueue from "@/components/super-admin/rlhf/RlhfReviewQueue"
 import RlhfModelHistory from "@/components/super-admin/rlhf/RlhfModelHistory"
 import RlhfTrainingStatus from "@/components/super-admin/rlhf/RlhfTrainingStatus"
+import RlhfCorrectionsTab from "@/components/super-admin/rlhf/RlhfCorrectionsTab"
 import { useFeedbackList, useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -36,7 +37,7 @@ function downloadBlob(content: string, filename: string, type: string) {
 export default function RlhfTraining() {
   const [page, setPage] = useState(1)
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-  const [activeTab, setActiveTab] = useState<"overview" | "queue" | "models" | "training">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "queue" | "models" | "training" | "corrections">("overview")
 
   const dateFrom = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
   const dateTo = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined
@@ -118,6 +119,7 @@ export default function RlhfTraining() {
             { key: "queue", label: "Review Queue" },
             { key: "models", label: "Model History" },
             { key: "training", label: "Training Status" },
+            { key: "corrections", label: "Corrections" },
           ] as const).map((tab) => (
             <button
               key={tab.key}
@@ -153,9 +155,11 @@ export default function RlhfTraining() {
           <RlhfReviewQueue />
         ) : activeTab === "models" ? (
           <RlhfModelHistory />
-        ) : (
+        ) : activeTab === "training" ? (
           <RlhfTrainingStatus />
-        )}
+        ) : activeTab === "corrections" ? (
+          <RlhfCorrectionsTab />
+        ) : null}
       </div>
     </SuperAdminLayout>
   )
