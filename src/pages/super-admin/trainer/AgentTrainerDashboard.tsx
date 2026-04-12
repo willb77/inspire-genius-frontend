@@ -51,7 +51,7 @@ export default function AgentTrainerDashboard() {
     const cd = coachesData?.data
     const coachList = Array.isArray(cd) ? cd : (cd as { agents?: unknown[] })?.agents
     if (Array.isArray(coachList) && coachList.length > 0) {
-      return coachList.map((c: Record<string, unknown>) => ({
+      return (coachList as Array<Record<string, unknown>>).map((c) => ({
         agent_id: c.id as string,
         name: c.name as string,
         domain: (c.category_name as string) || "coaching",
