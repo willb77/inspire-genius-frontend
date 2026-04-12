@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { useTrainerAgents, useEcosystems } from "@/hooks/trainer/useTrainer"
+import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -33,15 +34,37 @@ export default function AgentTrainerDashboard() {
   const navigate = useNavigate()
 
   const { data: ecosystemsResp } = useEcosystems()
-  const { data: agentsResp, isLoading } = useTrainerAgents(ecosystem)
+  const { data: agentsResp, isLoading: trainerLoading } = useTrainerAgents(ecosystem)
+
+  // Fallback: if trainer API fails (404), use the coaches list instead
+  const { data: coachesData, isLoading: coachesLoading } = useCoachesList({ page: 1, limit: 100 })
 
   const ecosystems = (ecosystemsResp as any)?.data ?? []
-  const agents: AgentConfig[] = (() => {
+
+  const agents: AgentConfig[] = useMemo(() => {
+    // Try trainer agents first
     const d = (agentsResp as any)?.data
-    if (Array.isArray(d)) return d
-    if (d?.agents && Array.isArray(d.agents)) return d.agents
+    if (Array.isArray(d) && d.length > 0) return d
+    if (d?.agents && Array.isArray(d.agents) && d.agents.length > 0) return d.agents
+
+    // Fallback to coaches list (agent-settings API)
+    const cd = coachesData?.data
+    const coachList = Array.isArray(cd) ? cd : (cd as { agents?: unknown[] })?.agents
+    if (Array.isArray(coachList) && coachList.length > 0) {
+      return coachList.map((c: Record<string, unknown>) => ({
+        agent_id: c.id as string,
+        name: c.name as string,
+        domain: (c.category_name as string) || "coaching",
+        role_subtitle: (c.category_name as string) || "",
+        maturity_level: 1,
+        status: (c.status as string) || "active",
+      })) as AgentConfig[]
+    }
+
     return []
-  })()
+  }, [agentsResp, coachesData])
+
+  const isLoading = trainerLoading && coachesLoading
 
   const filtered = agents.filter(a => {
     if (domainFilter !== "all" && a.domain !== domainFilter) return false
