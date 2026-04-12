@@ -1,101 +1,72 @@
 /**
  * Tests for the audit service API functions.
  */
-// Mock axios BEFORE imports — the audit service creates its own axios instance at module level
-const mockGet = jest.fn()
-jest.mock("axios", () => ({
-  __esModule: true,
-  default: {
-    create: () => ({
-      get: mockGet,
-      interceptors: { request: { use: jest.fn() } },
-    }),
-  },
-}))
-
+import { api } from "@/lib/axios"
 import { logAuditEvent, getAuditLogs, getAuditStats } from "../audit.service"
 import type { AuditLogPayload, AuditLogListParams } from "@/types/audit"
 
 jest.mock("@/lib/axios", () => ({
   api: {
+    post: jest.fn().mockReturnValue({ catch: jest.fn() }),
+    get: jest.fn(),
     defaults: { baseURL: "https://api.test.com", headers: { common: {} } },
   },
 }))
 
+const mockApi = api as jest.Mocked<typeof api>
+
 describe("audit.service.ts", () => {
-  const sendBeaconSpy = jest.fn().mockReturnValue(true)
+  beforeEach(() => jest.clearAllMocks())
 
-  beforeEach(() => {
-    jest.clearAllMocks()
-    Object.defineProperty(navigator, "sendBeacon", {
-      value: sendBeaconSpy,
-      writable: true,
-      configurable: true,
-    })
-  })
-
-  // ─── logAuditEvent ──────────────────────────────────────────────
   describe("logAuditEvent()", () => {
-    const payload: AuditLogPayload = {
-      action: "page.view",
-      actor_type: "user",
-      actor_id: "user-uuid",
-    }
+    const payload: AuditLogPayload = { action: "page.view", actor_type: "user", actor_id: "user-uuid" }
 
-    test("should send audit event via sendBeacon", async () => {
+    test("should POST to /v1/audit/log", async () => {
       await logAuditEvent(payload)
-      expect(sendBeaconSpy).toHaveBeenCalled()
+      expect(mockApi.post).toHaveBeenCalledWith("/v1/audit/log", payload)
     })
 
     test("should not throw on error", async () => {
-      sendBeaconSpy.mockImplementationOnce(() => { throw new Error("fail") })
+      mockApi.post.mockImplementationOnce(() => { throw new Error("fail") })
       await expect(logAuditEvent(payload)).resolves.toBeUndefined()
     })
   })
 
-  // ─── getAuditLogs ───────────────────────────────────────────────
   describe("getAuditLogs()", () => {
-    const mockResponse = {
-      status: "success",
-      data: { logs: [{ id: "log-1", action: "auth.login" }], total: 1, limit: 15 },
-    }
+    const mockResponse = { status: "success", data: { logs: [{ id: "log-1" }], total: 1, limit: 15 } }
 
     test("should GET /v1/audit/logs with params", async () => {
-      mockGet.mockResolvedValueOnce({ data: mockResponse })
+      mockApi.get.mockResolvedValueOnce({ data: mockResponse })
       const result = await getAuditLogs()
-      expect(mockGet).toHaveBeenCalledWith("/v1/audit/logs", { params: {} })
+      expect(mockApi.get).toHaveBeenCalledWith("/v1/audit/logs", { params: {} })
       expect(result).toEqual(mockResponse)
     })
 
     test("should forward filter params", async () => {
       const params: AuditLogListParams = { action: "auth.login", limit: 10, offset: 20 }
-      mockGet.mockResolvedValueOnce({ data: mockResponse })
+      mockApi.get.mockResolvedValueOnce({ data: mockResponse })
       await getAuditLogs(params)
-      expect(mockGet).toHaveBeenCalledWith("/v1/audit/logs", { params })
+      expect(mockApi.get).toHaveBeenCalledWith("/v1/audit/logs", { params })
     })
 
     test("should throw on API error", async () => {
-      mockGet.mockRejectedValueOnce(new Error("Server error"))
+      mockApi.get.mockRejectedValueOnce(new Error("Server error"))
       await expect(getAuditLogs()).rejects.toThrow("Server error")
     })
   })
 
-  // ─── getAuditStats ─────────────────────────────────────────────
   describe("getAuditStats()", () => {
-    const mockStats = {
-      status: "success",
-      data: { total_logs: 500, logs_today: 25 },
-    }
+    const mockStats = { status: "success", data: { total_logs: 500, logs_today: 25 } }
 
     test("should GET /v1/audit/stats", async () => {
-      mockGet.mockResolvedValueOnce({ data: mockStats })
+      mockApi.get.mockResolvedValueOnce({ data: mockStats })
       const result = await getAuditStats()
-      expect(mockGet).toHaveBeenCalledWith("/v1/audit/stats")
+      expect(mockApi.get).toHaveBeenCalledWith("/v1/audit/stats")
       expect(result).toEqual(mockStats)
     })
 
     test("should throw on API error", async () => {
-      mockGet.mockRejectedValueOnce(new Error("Timeout"))
+      mockApi.get.mockRejectedValueOnce(new Error("Timeout"))
       await expect(getAuditStats()).rejects.toThrow("Timeout")
     })
   })
