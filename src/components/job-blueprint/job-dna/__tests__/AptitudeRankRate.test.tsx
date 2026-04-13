@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react'
 import { AptitudeRankRate } from '../AptitudeRankRate'
-import type { DimensionBenchmark } from '@/types/job-blueprint'
 
 // Mock RankRateInput since it has its own test coverage
 jest.mock('../RankRateInput', () => ({

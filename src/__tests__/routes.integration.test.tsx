@@ -4,7 +4,6 @@
  * Tests route rendering, auth protection, role-based access, 404 handling,
  * and onboarding redirect behavior.
  */
-import React from "react";
 import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter, useRoutes } from "react-router-dom";
 import { routes } from "@/routes";
@@ -200,6 +199,8 @@ function makeAuthContext(overrides: Partial<AuthContextValue> = {}): AuthContext
     user: null,
     isLoading: false,
     pendingVerification: false,
+    pendingRoleSelection: null,
+    selectRole: jest.fn().mockResolvedValue(undefined),
     hasRole: jest.fn(() => false),
     isAtLeast: jest.fn(() => false),
     login: jest.fn().mockResolvedValue({ status: true }),

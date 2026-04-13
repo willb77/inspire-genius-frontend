@@ -137,30 +137,29 @@ describe("MSW-style Handler Integration Tests", () => {
   beforeAll(() => {
     originalAdapter = api.defaults.adapter;
     // Install a mock adapter that matches requests against our handler registry
-    api.defaults.adapter = async (config: AxiosRequestConfig) => {
+    api.defaults.adapter = ((config: AxiosRequestConfig) => {
       const method = (config.method ?? "get").toLowerCase();
       const url = `${config.baseURL ?? ""}${config.url ?? ""}`;
       capturedRequests.push({ method, url, data: config.data });
 
       const handler = findHandler(method, url);
       if (handler) {
-        return {
+        return Promise.resolve({
           data: handler.data,
           status: handler.status,
           statusText: "OK",
           headers: {},
           config,
-        };
+        });
       }
-      // No handler found — return 404
-      return {
+      return Promise.resolve({
         data: { status: false, message: "Not found" },
         status: 404,
         statusText: "Not Found",
         headers: {},
         config,
-      };
-    };
+      });
+    }) as typeof api.defaults.adapter;
   });
 
   afterAll(() => {

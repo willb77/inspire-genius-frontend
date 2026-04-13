@@ -13,6 +13,7 @@ describe("PromptVersionHistory", () => {
       knowledge_domain: "knowledge1",
       response_style: "style1",
       constraints: "constraints1",
+      assembled_prompt: "persona1 tone1 knowledge1 style1 constraints1",
       created_at: "2026-03-01T00:00:00Z",
     },
     {
@@ -24,6 +25,7 @@ describe("PromptVersionHistory", () => {
       knowledge_domain: "knowledge2",
       response_style: "style2",
       constraints: "constraints2",
+      assembled_prompt: "persona2 tone2 knowledge2 style2 constraints2",
       created_at: "2026-03-15T00:00:00Z",
     },
   ]

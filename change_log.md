@@ -2,6 +2,79 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-12] -- AWS Spend Optimization Audit
+
+### Added
+- **AWS_Spend_Optimization_Report.docx** — Full AWS account audit with cost breakdown, resource inventory, and optimization recommendations
+  - Files: `Transformation Documents/AWS_Spend_Optimization_Report.docx`
+  - Generator: `generate_aws_audit_doc.py`
+- Audited all live AWS resources: 96 Lambda functions, 2 ECS clusters (8 tasks), 5 RDS instances, 31 DynamoDB tables, 52 S3 buckets, 18 CloudFront distributions, 20 API Gateways, 4 NAT Gateways, 7 WAF ACLs, 3 ALBs, 1 EC2 instance
+- Current spend: ~$991/month. Identified $230-450/month in potential savings (23-45% reduction)
+- Top savings: VPC/NAT consolidation ($130-160/mo), VoiceDeskAI shutdown ($80-120/mo), AAN scaling ($40-60/mo)
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/routes.integration.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/routes.integration.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/__tests__/ProtectedRoute.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/__tests__/VoiceChat.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/job-blueprint/job-dna/__tests__/AptitudeRankRate.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/prism/__tests__/PrismInitiateForm.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/__tests__/ActionMenu.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/__tests__/ActionMenu.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/__tests__/SearchBar.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/prompt-builder/__tests__/PromptVersionHistory.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/__tests__/RlhfFeedbackDetailModal.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/__tests__/RlhfFeedbackTable.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/__tests__/ActionMenu.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/__tests__/msw-handlers.integration.test.ts`
+
 ## [2026-04-09] -- Full Session: Bulk Import, Dashboard Redesign, Test Plan, Commands
 
 ### Added
@@ -1131,3 +1204,9 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_aws_audit_doc.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_aws_audit_doc.py`
