@@ -16,7 +16,7 @@ jest.mock("@/lib/axios", () => ({
   },
 }));
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import FeedbackHistory from "../FeedbackHistory";
 import { useFeedbackList, useFeedbackStats } from "@/hooks/feedback/useFeedback";

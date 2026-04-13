@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import BulkImport from "../BulkImport";
 
 jest.mock("@/layouts/CompanyAdminLayout", () => ({
@@ -22,10 +22,10 @@ jest.mock("@/components/ui/button", () => ({
 
 // ── Step component mocks that expose callbacks ──
 
-let mockOnParsed: ((records: any[]) => void) | null = null;
+let _mockOnParsed: ((records: any[]) => void) | null = null;
 jest.mock("@/components/bulk-import/FileUploader", () => ({
   FileUploader: ({ onParsed }: any) => {
-    mockOnParsed = onParsed;
+    _mockOnParsed = onParsed;
     return (
       <div data-testid="step-upload">
         <button
@@ -44,12 +44,12 @@ jest.mock("@/components/bulk-import/FileUploader", () => ({
   },
 }));
 
-let mockOnProceed: ((records: any[]) => void) | null = null;
-let mockOnRecordsChange: ((records: any[]) => void) | null = null;
+let _mockOnProceed: ((records: any[]) => void) | null = null;
+let _mockOnRecordsChange: ((records: any[]) => void) | null = null;
 jest.mock("@/components/bulk-import/DataPreviewTable", () => ({
   DataPreviewTable: ({ records, onProceed, onRecordsChange }: any) => {
-    mockOnProceed = onProceed;
-    mockOnRecordsChange = onRecordsChange;
+    _mockOnProceed = onProceed;
+    _mockOnRecordsChange = onRecordsChange;
     return (
       <div data-testid="step-validate">
         <span data-testid="record-count">{records?.length ?? 0} records</span>
@@ -74,10 +74,10 @@ jest.mock("@/components/bulk-import/DataPreviewTable", () => ({
   },
 }));
 
-let mockImportContinue: (() => void) | null = null;
+let _mockImportContinue: (() => void) | null = null;
 jest.mock("@/components/bulk-import/ImportProgress", () => ({
   ImportProgress: ({ isLoading, data, onContinue }: any) => {
-    mockImportContinue = onContinue;
+    _mockImportContinue = onContinue;
     return (
       <div data-testid="step-import">
         {isLoading && <span data-testid="import-loading">Importing...</span>}
@@ -90,15 +90,15 @@ jest.mock("@/components/bulk-import/ImportProgress", () => ({
   },
 }));
 
-let mockComposeContinue: (() => void) | null = null;
+let _mockComposeContinue: (() => void) | null = null;
 jest.mock("@/components/bulk-import/InvitationComposer", () => ({
   InvitationComposer: ({
     importedUsers,
-    customMessage,
-    onCustomMessageChange,
+    customMessage: _customMessage,
+    onCustomMessageChange: _onCustomMessageChange,
     onContinue,
   }: any) => {
-    mockComposeContinue = onContinue;
+    _mockComposeContinue = onContinue;
     return (
       <div data-testid="step-compose">
         <span data-testid="imported-count">
@@ -112,16 +112,16 @@ jest.mock("@/components/bulk-import/InvitationComposer", () => ({
   },
 }));
 
-let mockSendAction: (() => void) | null = null;
+let _mockSendAction: (() => void) | null = null;
 jest.mock("@/components/bulk-import/RecipientSelector", () => ({
   RecipientSelector: ({
-    users,
+    users: _users,
     selectedIds,
-    onSelectedIdsChange,
+    onSelectedIdsChange: _onSelectedIdsChange,
     onSend,
-    isSending,
+    isSending: _isSending,
   }: any) => {
-    mockSendAction = onSend;
+    _mockSendAction = onSend;
     return (
       <div data-testid="step-send">
         <span data-testid="recipient-count">
@@ -136,7 +136,7 @@ jest.mock("@/components/bulk-import/RecipientSelector", () => ({
 }));
 
 jest.mock("@/components/bulk-import/DeliveryTracker", () => ({
-  DeliveryTracker: ({ data, isLoading, onResend, isResending }: any) => (
+  DeliveryTracker: ({ data: _data, isLoading, onResend: _onResend, isResending: _isResending }: any) => (
     <div data-testid="step-track">
       {isLoading && <span>Tracking...</span>}
       <span data-testid="tracker-status">Delivery Tracker</span>
@@ -175,12 +175,12 @@ jest.mock("@/hooks/useBulkImport", () => ({
 describe("BulkImportWorkflow — 6-step flow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockOnParsed = null;
-    mockOnProceed = null;
-    mockOnRecordsChange = null;
-    mockImportContinue = null;
-    mockComposeContinue = null;
-    mockSendAction = null;
+    _mockOnParsed = null;
+    _mockOnProceed = null;
+    _mockOnRecordsChange = null;
+    _mockImportContinue = null;
+    _mockComposeContinue = null;
+    _mockSendAction = null;
   });
 
   it("Step 1: starts on upload step and shows FileUploader", () => {

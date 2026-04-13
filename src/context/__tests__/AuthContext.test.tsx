@@ -138,7 +138,6 @@ jest.mock("@/types/roles", () => ({
 // Import AuthProvider after all mocks
 import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../useAuth";
-import { AuthContext } from "../auth-context";
 
 function createWrapper() {
   return ({ children }: { children: React.ReactNode }) => (
