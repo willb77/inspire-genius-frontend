@@ -10,7 +10,6 @@
  * Each is a thin wrapper around AppShell with a hardcoded role prop.
  */
 
-import React from "react";
 import { render, screen } from "@testing-library/react";
 
 /* ── Mock AppShell ── */

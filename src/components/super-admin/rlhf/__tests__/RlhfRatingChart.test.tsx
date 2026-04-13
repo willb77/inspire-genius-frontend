@@ -20,7 +20,7 @@ describe("RlhfRatingChart", () => {
   })
 
   it("renders the bar chart", () => {
-    render(<RlhfRatingChart stats={{ total_count: 10, avg_rating: 3.5, rating_distribution: { "1": 1, "5": 9 } }} />)
+    render(<RlhfRatingChart stats={{ total_count: 10, avg_rating: 3.5, rating_distribution: { "1": 1, "5": 9 }, top_corrections: [] }} />)
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument()
   })
 

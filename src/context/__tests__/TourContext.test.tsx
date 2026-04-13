@@ -2,10 +2,9 @@
  * @jest-environment jsdom
  */
 
-import React from "react";
 import { renderHook, act } from "@testing-library/react";
-import { render, screen } from "@testing-library/react";
-import { TourContext, type TourContextValue, type TourStep } from "../tour-context";
+import { TourContext } from "../tour-context";
+import type { TourContextValue, TourStep } from "../tour-context";
 import { useTour } from "../useTour";
 
 // Mock dependencies for TourProvider

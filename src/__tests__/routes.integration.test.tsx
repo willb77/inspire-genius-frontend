@@ -9,7 +9,7 @@ import { MemoryRouter, useRoutes } from "react-router-dom";
 import { routes } from "@/routes";
 import { AuthContext } from "@/context/auth-context";
 import type { AuthContextValue, AuthUser } from "@/types/auth/context-types";
-import type { UserRole } from "@/types/roles";
+
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 

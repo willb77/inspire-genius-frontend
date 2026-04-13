@@ -19,7 +19,7 @@ jest.mock("recharts", () => ({
   BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
   Bar: () => null,
   PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ children, label }: any) => <div>{children}</div>,
+  Pie: ({ children, label: _label }: any) => <div>{children}</div>,
   Cell: () => null,
   LineChart: ({ children }: any) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,

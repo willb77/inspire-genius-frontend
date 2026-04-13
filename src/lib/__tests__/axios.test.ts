@@ -49,12 +49,12 @@ describe("axios.ts — API instance and helpers", () => {
 
     test("has request interceptors attached", () => {
       // At minimum, our token injection interceptor
-      expect(api.interceptors.request.handlers.length).toBeGreaterThanOrEqual(1);
+      expect((api.interceptors.request as any).handlers.length).toBeGreaterThanOrEqual(1);
     });
 
     test("has response interceptors attached", () => {
       // At minimum, our 401 interceptor
-      expect(api.interceptors.response.handlers.length).toBeGreaterThanOrEqual(1);
+      expect((api.interceptors.response as any).handlers.length).toBeGreaterThanOrEqual(1);
     });
   });
 });

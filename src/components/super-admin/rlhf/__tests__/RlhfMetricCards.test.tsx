@@ -6,6 +6,7 @@ describe("RlhfMetricCards", () => {
     total_count: 150,
     avg_rating: 4.2,
     rating_distribution: { "1": 5, "2": 10, "3": 25, "4": 50, "5": 60 },
+    top_corrections: [],
   }
 
   it("renders all four metric cards", () => {
@@ -36,7 +37,7 @@ describe("RlhfMetricCards", () => {
   })
 
   it("shows dash for avg_rating when not available", () => {
-    render(<RlhfMetricCards stats={{ total_count: 0, avg_rating: 0, rating_distribution: {} }} />)
+    render(<RlhfMetricCards stats={{ total_count: 0, avg_rating: 0, rating_distribution: {}, top_corrections: [] }} />)
     // avg_rating = 0 is falsy, so shows "—"
     expect(screen.getByText("\u2014")).toBeInTheDocument()
   })
