@@ -265,6 +265,7 @@ const genericMessages =
         onTabChange={setActiveTab}
         onOpenDocsSidePanel={() => setDocsOpen(true)}
         onOpenExport={() => setExportOpen(true)}
+        conversationId={conversationId}
       />
 
       {/* Body */}

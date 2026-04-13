@@ -23,6 +23,7 @@ import {
   Mic,
   GitBranch,
   UserPlus,
+  Eye,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -50,6 +51,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.AGENT_TRAINER, icon: Brain, label: "Agent Trainer" },
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
+  { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]
@@ -71,6 +73,7 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.ORGANIZATION, icon: Building2, label: "Organization" },
   { to: ROUTES.COMPANY_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
   { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

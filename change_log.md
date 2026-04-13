@@ -2,6 +2,343 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-13] — Ecosystem Guide v4: Gap Analysis & New Prompts
+
+### Added
+- **Appendix C: Gap Analysis** — Cross-reference of v4 prompts vs Activation Assessment + Status Report. 12-row coverage table identifying 8 gaps.
+- **A.19: Frontend Wiring with Admin Toggle** (5 prompts) — agentApi.ts, 5 service files, super-admin toggle, env vars, tests
+- **A.20: Tool Integration** (1 prompt) — Systematic MCP tool wiring across 10+ agents
+- **A.21: Collaboration Protocol** (1 prompt) — 6 critical inter-agent data flows
+- **A.22: Integration Tests** (1 prompt) — 5 multi-agent workflow end-to-end tests
+- **Appendix D: Enhancements to Existing Prompts** — 8 targeted additions to A.3 (Alex naming), A.5 (Echo state), A.7 (Forge state machine), A.8 (Atlas data connector), A.11 (James structured output), A.13 (Maven settings fix), A.14 (Sentinel audit DB), A.16 (Nexus RLHF Lambda), A.17 (Beacon separation)
+- **Appendix E: Updated Execution Summary** — 51 prompts (was 42), reordered with A.19 first
+- All new content highlighted in **yellow/green** for easy identification
+  - File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Employee_Success_Agent_Ecosystem_Guide_v4.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/migrations/001_create_observability_tables.sql`
+
+## [2026-04-13] — Agent Observability System (Full Stack)
+
+### Added
+- **Phase 1a: Observability Collector (ECS Agent Engine)**
+  - `services/agent-engine/app/observability/models.py` — SQLAlchemy models: `ResponseObservability`, `SessionObservability`
+  - `services/agent-engine/app/observability/collector.py` — `ObservabilityCollector` with async fire-and-forget writes
+  - Wired into `base_agent.py` (3 integration points) and `meridian.py` (2 farewell detection points)
+
+- **Phase 1b: WebSocket Observability Enrichment**
+  - `services/agent-engine/app/websocket/handlers.py` — Added role-based `observability` field to "complete" messages
+  - `services/agent-engine/app/websocket/manager.py` — Extended `post_complete()` for Lambda path
+  - Role filtering: super-admin=all, company-admin=cost/tokens/latency, practitioner=confidence/latency, user=confidence only
+
+- **Phase 2a: Observability Query Lambda Service**
+  - `services/observability-service/` — New Lambda microservice (12 files)
+  - FastAPI + Mangum: 7 REST endpoints (`/v1/observability/*`)
+  - Export formatters: JSON, CSV, PDF (via reportlab)
+  - Unit tests: health, routes, exporters
+
+- **Phase 2b: Retention + Rollup Lambdas**
+  - `services/observability-service/app/retention.py` — S3 Parquet archival (30-day response, 90-day session)
+  - `services/observability-service/app/rollups.py` — Daily aggregation into `observability_rollups` table
+
+- **Phase 3a: Frontend Service Layer**
+  - `src/types/observability.ts` — TypeScript types + role-based field constants
+  - `src/services/observability/observability.service.ts` — 6 API functions
+  - `src/hooks/observability/useObservability.ts` — 6 React Query hooks
+
+- **Phase 3b: Chat Observability Panel**
+  - `src/components/observability/ObservabilityPanel.tsx` — Expandable per-response panel with confidence badge
+  - `src/components/observability/SessionObservabilityDrawer.tsx` — Slide-out session summary drawer
+
+- **Phase 3c: Admin Observability Dashboards**
+  - `src/pages/super-admin/Observability.tsx` — Full dashboard: metrics cards, top agents, cost by model
+  - `src/pages/company-admin/Observability.tsx` — Org-scoped dashboard (fewer fields)
+  - Routes: `/super-admin/observability`, `/company-admin/observability`
+  - Nav items added with Eye icon for both roles
+
+- **Phase 4: CDK Infrastructure (Wave 7)**
+  - `infrastructure/cdk/lib/services-stack.ts` — 3 Lambda functions (query/retention/rollup), S3 archive bucket, CloudWatch alarms
+  - `infrastructure/cdk/lib/api-gateway-stack.ts` — `GET /v1/observability/{proxy+}` route (Wave 7)
+  - S3 lifecycle: Standard 12mo → Glacier 15mo → Delete 27mo
+  - Provisioned concurrency: 2 warm instances for query Lambda in prod
+  - EventBridge schedules: retention at 2am UTC, rollups at 3am UTC
+
+- **Phase 5: Chat UI Integration**
+  - `src/components/alex/AlexChatPanel.tsx` — ObservabilityPanel under each response + SessionDrawer in header
+  - `src/components/user/chat/ChatWindowChatTab.tsx` — ObservabilityPanel under each assistant message
+  - `src/components/user/chat/ChatWindowHeader.tsx` — SessionObservabilityDrawer in coach chat header
+  - `src/components/user/chat/ChatWindow.tsx` — Pass conversationId to header
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/AlexChatPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/AlexChatPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/AlexChatPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/services-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/api-gateway-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindow.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-13] — Agent Engine Activation Assessment
+
+### Added
+- **IG_Agent_Engine_Activation_Assessment.docx** — Impact, risks, LOE, and rework analysis for activating the agent ecosystem. Covers: current state audit (15 agents deployed, 1 production-ready, 14 stubs), per-agent rework estimates (117-154 hrs total), 5-phase implementation plan, 10 risks with mitigations, business impact comparison, recommendations.
+  - File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Agent_Engine_Activation_Assessment.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/observability/ObservabilityPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/observability/SessionObservabilityDrawer.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/Observability.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Observability.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/observability/ObservabilityPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/Observability.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/manager.py`
+
+## [2026-04-13] — Ecosystem Guide v4: Build Prompts for All 18 Agents
+
+### Added
+- **Appendix A: Claude Code Build Prompts** — 42 ordered prompts to build/enhance all 18 agents
+  - A.0 Foundation (2 prompts): Verify architecture, LLM provider factory
+  - A.1-A.6 Coaching domain (12 prompts): Meridian, Aura, Alex, Nova, Echo, Ascend
+  - A.7-A.13 Business domain (11 prompts): Forge, Atlas, Sage, Compass, James, Bridge, Maven
+  - A.14-A.17 System domain (8 prompts): Sentinel, Anchor, Nexus, Beacon
+  - A.18 Career & Talent domain (4 prompts): Grant + new orchestrator
+- **Appendix B: Execution Summary** — Recommended build order, dependency graph
+- Each agent prompt includes: class implementation, system prompt, orchestrator registration, tests, ecosystem integration
+- Agent metadata tables with source file, class name, domain, model tier, orchestrator
+- File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Employee_Success_Agent_Ecosystem_Guide_v4.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/observability.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/observability/observability.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/observability/useObservability.ts`
+
+## [2026-04-13] -- Agent Ecosystem Guide: Maven (#15) + Grant (#16)
+
+### Added
+- **Maven (Agent #15)** — Structured Interview Agent added to `IG_Employee_Success_Agent_Ecosystem_Guide_v3.docx`
+  - Section 4.15: Full agent definition (role, responsibilities, interview framework, scoring rubric, tools, access control, triggers)
+  - Section 4.15.1: Collaborative map (Maven ↔ James, Nova, Ascend, Atlas, Aura, Sentinel, Bridge, Meridian)
+  - Section 4.15.2: Ecosystem interaction (workflows, data flows, platform integration)
+  - Section 4.15.3: 8 Claude Code build prompts (InterviewAgent class, system prompt, model tier, orchestrator registration, session state, report generator, tests, workflow integration)
+- **Grant (Agent #16)** — Education Financial Aid Specialist added to ecosystem guide
+  - Section 4.16: Full agent definition (FAFSA navigation, state aid programs, institutional aid, private scholarship matching, award package evaluation, loan counseling, ongoing aid management, special populations expertise)
+  - Section 4.16.1: Collaborative map (Grant ↔ Alex, Bridge, Echo, Nova, Aura, Sentinel, Meridian)
+  - Section 4.16.2: Ecosystem interaction (financial aid planning, school-to-career pipeline financial track, award letter comparison, at-risk student alerts)
+  - Section 4.16.3: 9 Claude Code build prompts (FinancialAidAgent class, system prompt, model tier, orchestrator registration, scholarship matching engine, award letter parser, knowledge base, tests, ecosystem integration)
+- Updated all ecosystem guide tables: Domain Orchestrators, Agent Summary Matrix, Frontline agents, Leader agents
+- Updated Section 5.2 collaboration workflow with Maven mock interview step
+  - File: `Agent:Mentor info/IG_Employee_Success_Agent_Ecosystem_Guide_v3.docx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/observability/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/observability/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/observability/collector.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/pyproject.toml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/Dockerfile`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/base_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/database.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/models.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/schemas.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/service.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/exporters.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/main.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/retention.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/app/rollups.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/tests/__init__.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/tests/test_health.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/tests/test_routes.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/tests/test_exporters.py`
+
 ## [2026-04-12] -- AWS Spend Optimization Audit
 
 ### Added
@@ -1214,22 +1551,40 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [2026-04-13] — Session Activity
+## [2026-04-13] — Ecosystem Guide v4, Agent Cleanup & Analytics Fix
+
+### Added
+- **IG_Employee_Success_Agent_Ecosystem_Guide_v4.docx** — Merged v3 ecosystem guide with deployed Agent Engine implementation. Added: Compass (Support Navigator), Beacon (Notification Agent), 4th domain orchestrator (Career & Talent), Agent Engine implementation mapping for all 18 agents, version history, technical deployment table.
+  - File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Employee_Success_Agent_Ecosystem_Guide_v4.docx`
+
+## [2026-04-13] — Inactive Agent Cleanup & Analytics Fix
+
+### Fixed
+- **Deleted 11 inactive test agents from Aurora DB** — Cascade deleted through FK dependencies: 56 org_agent_preference_tones, 39 organization_agents, 7 business_agents, 11 prompts, then 11 agents. Only 3 active predefined agents remain (Career Coach, PRISM Coach, Training Coach).
+- **Analytics page** — Filter deactivated agents from "Agent Usage Distribution" pie chart
+- **Agent Trainer Dashboard** — Exclude deactivated agents from trainer grid
+- **Prompt Builder** — Exclude deactivated agents from coaches dropdown
+- **Migration Lambda** — Added `query` and `execute` actions for ad-hoc SQL via Lambda
+
+### Changed
+- `src/pages/super-admin/Analytics.tsx` — filter `status !== "deactivated"` before building agent usage data
+- `src/pages/super-admin/trainer/AgentTrainerDashboard.tsx` — filter deactivated from agent grid
+- `src/pages/super-admin/PromptBuilder.tsx` — filter deactivated from coach dropdown
 
 - File modified
-  - Files: `/tmp/migration-lambda/lambda_function.py`
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 
 - File modified
-  - Files: `/tmp/migration-lambda/lambda_function.py`
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/add_maven_to_ecosystem.py`
 
 - File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/Analytics.tsx`
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/add_maven_to_ecosystem.py`
 
 - File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/AgentTrainerDashboard.tsx`
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/rebuild_ecosystem_doc.py`
 
 - File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/PromptBuilder.tsx`
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/rebuild_ecosystem_doc_v2.py`
 
 
 

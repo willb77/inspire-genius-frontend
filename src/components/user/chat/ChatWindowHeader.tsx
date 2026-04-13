@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, FileText, Upload } from "lucide-react";
+import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
 
 type ChatWindowTab = "chat" | "documents";
 
@@ -16,6 +17,7 @@ type ChatWindowHeaderProps = {
   onTabChange: (tab: ChatWindowTab) => void;
   onOpenDocsSidePanel: () => void;
   onOpenExport: () => void;
+  conversationId?: string;
 };
 
 export default function ChatWindowHeader({
@@ -25,6 +27,7 @@ export default function ChatWindowHeader({
   onTabChange,
   onOpenDocsSidePanel,
   onOpenExport,
+  conversationId,
 }: ChatWindowHeaderProps) {
   const chatTabClass = cn(
     "cursor-pointer px-2 py-1 border-b-2 text-sm",
@@ -83,6 +86,10 @@ export default function ChatWindowHeader({
             Open documents panel to select files to add to chat
           </TooltipContent>
         </Tooltip>
+
+        {conversationId && (
+          <SessionObservabilityDrawer sessionId={conversationId} />
+        )}
 
         <Button
           className="bg-brown-250 hover:bg-brown-250/90 text-white h-9 px-3 rounded-lg"

@@ -102,7 +102,9 @@ const CompanyAdminLeadership = React.lazy(() => import("@/pages/company-admin/Le
 const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Settings"));
 const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
 const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
+const CompanyAdminObservability = React.lazy(() => import("@/pages/company-admin/Observability"));
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
+const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
 const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
@@ -190,6 +192,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
       { path: "/super-admin/bulk-import", element: withSuspense(<SuperAdminBulkImport />) },
+      { path: "/super-admin/observability", element: withSuspense(<SuperAdminObservability />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
@@ -232,6 +235,7 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/settings", element: withSuspense(<CompanyAdminSettings />) },
       { path: "/company-admin/bulk-import", element: withSuspense(<CompanyAdminBulkImport />) },
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
+      { path: "/company-admin/observability", element: withSuspense(<CompanyAdminObservability />) },
 
       // Practitioner pages
       { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
