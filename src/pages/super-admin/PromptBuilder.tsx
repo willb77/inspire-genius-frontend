@@ -32,8 +32,8 @@ export default function PromptBuilder() {
   const { data: coachesData } = useCoachesList({ page: 1, limit: 100 })
   const coaches = useMemo(() => {
     const d = coachesData?.data
-    if (Array.isArray(d)) return d as { id: string; name: string }[]
-    return d?.agents ?? []
+    const list = Array.isArray(d) ? d : d?.agents ?? []
+    return (list as { id: string; name: string; status?: string }[]).filter(a => a.status?.toLowerCase() !== "deactivated")
   }, [coachesData])
 
   const { data: versionsData, isLoading: versionsLoading, isError: versionsError } = usePromptVersions(selectedCoachId)

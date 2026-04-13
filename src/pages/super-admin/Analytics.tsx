@@ -24,9 +24,10 @@ export default function SuperAdminAnalytics() {
 
   // Build agent usage from real coach data
   const coachesRaw = coachesData?.data
-  const coachAgents = Array.isArray(coachesRaw)
+  const coachAgentsAll = Array.isArray(coachesRaw)
     ? coachesRaw
-    : (coachesRaw as { agents?: { name: string }[] })?.agents ?? []
+    : (coachesRaw as { agents?: { name: string; status?: string }[] })?.agents ?? []
+  const coachAgents = coachAgentsAll.filter((a: { status?: string }) => a.status?.toLowerCase() !== "deactivated")
   const agentUsage = coachAgents.length > 0
     ? coachAgents.slice(0, 6).map((agent: { name: string }) => ({ name: agent.name, value: 1 }))
     : [{ name: "No agents", value: 1 }]
