@@ -29,6 +29,7 @@ export const ROUTES = {
     PROCESS_BUILDER: "/super-admin/process-builder",
     AGENT_TRAINER: "/super-admin/agent-trainer",
     BULK_IMPORT: "/super-admin/bulk-import",
+    OBSERVABILITY: "/super-admin/observability",
   },
   MANAGER: {
     BASE: "/manager",
@@ -59,6 +60,7 @@ export const ROUTES = {
     ANALYTICS: "/company-admin/analytics",
     SETTINGS: "/company-admin/settings",
     BULK_IMPORT: "/company-admin/bulk-import",
+    OBSERVABILITY: "/company-admin/observability",
   },
   PRACTITIONER: {
     BASE: "/practitioner",

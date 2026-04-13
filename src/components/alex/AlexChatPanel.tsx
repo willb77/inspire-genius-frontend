@@ -32,6 +32,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
+import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
 import { format } from "date-fns";
 
 const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
@@ -476,6 +478,9 @@ export default function AlexChatPanel({
                 <TooltipContent side="bottom">Export chat</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {deviceKey && (
+              <SessionObservabilityDrawer sessionId={deviceKey} />
+            )}
             <button
               aria-label="Close"
               onClick={handleClosePanel}
@@ -552,6 +557,9 @@ export default function AlexChatPanel({
                             {formatUSTimestamp(new Date(m.timestamp))}
                           </div>
                         </div>
+                        {m.sender === "assistant" && (
+                          <ObservabilityPanel messageId={m.id} />
+                        )}
                       </div>
                     )}
                   </div>

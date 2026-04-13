@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
+import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import type { ChatMessage } from "@/types/chat";
 
 const getDocKindBadgeClass = (kind?: string) => {
@@ -94,6 +95,9 @@ export default function ChatWindowChatTab({
                 conversationId={conversationId}
                 coachId={coachId}
               />
+            )}
+            {m.sender === "assistant" && (
+              <ObservabilityPanel messageId={m.id} />
             )}
           </div>
         </div>
