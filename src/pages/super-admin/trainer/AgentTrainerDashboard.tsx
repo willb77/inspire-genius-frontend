@@ -67,6 +67,7 @@ export default function AgentTrainerDashboard() {
   const isLoading = trainerLoading && coachesLoading
 
   const filtered = agents.filter(a => {
+    if (a.status?.toLowerCase() === "deactivated") return false
     if (domainFilter !== "all" && a.domain !== domainFilter) return false
     if (search && !a.name.toLowerCase().includes(search.toLowerCase())) return false
     return true

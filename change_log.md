@@ -243,6 +243,9 @@ All notable changes to this project are documented in this file.
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/prompt-builder/__tests__/prompt-builder.service.test.ts`
 
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
 ## [2026-04-09] -- Full Session: Bulk Import, Dashboard Redesign, Test Plan, Commands
 
 ### Added
@@ -1019,6 +1022,12 @@ All notable changes to this project are documented in this file.
 ### Known Issues
 - **RDS Proxy target health** — Aurora writer instance shows UNAVAILABLE ("internal error"). Likely VPC security group or subnet mismatch between proxy and Aurora cluster. Requires manual investigation of SG rules.
 
+### CI Test Fixes (Apr 12 evening)
+- Fixed 46+ TypeScript errors across 30+ test files (unused imports, missing type properties, type mismatches)
+- Updated prompt-builder tests to match new `/v1/admin/prompts` API with query params
+- All 2,924 tests passing, CI green, deployed to CloudFront
+- Frontend commits: `60569fa` → `1be422d` (4 fix commits on development branch)
+
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 
@@ -1204,6 +1213,24 @@ All notable changes to this project are documented in this file.
   - File: `Dropbox/AES Material/Inspire-X/Opportunities/Flydocs/Flydocs_Interview_Agent_Prompts.docx`
 
 ---
+
+## [2026-04-13] — Session Activity
+
+- File modified
+  - Files: `/tmp/migration-lambda/lambda_function.py`
+
+- File modified
+  - Files: `/tmp/migration-lambda/lambda_function.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/Analytics.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/trainer/AgentTrainerDashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/PromptBuilder.tsx`
+
 
 
 ## [2026-04-12] — Multi-Day Session: Admin Dashboard Overhaul, Data Migration, RLHF Extension
