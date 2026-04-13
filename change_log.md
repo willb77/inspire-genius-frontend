@@ -240,6 +240,9 @@ All notable changes to this project are documented in this file.
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/company-admin/__tests__/BulkImportWorkflow.test.tsx`
 
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/prompt-builder/__tests__/prompt-builder.service.test.ts`
+
 ## [2026-04-09] -- Full Session: Bulk Import, Dashboard Redesign, Test Plan, Commands
 
 ### Added
