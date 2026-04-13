@@ -3,13 +3,12 @@ import ActionMenu from "../ActionMenu";
 
 /* Mock Radix DropdownMenu — its portal-based content doesn't render in jsdom */
 jest.mock("@/components/ui/dropdown-menu", () => {
-  const React = require("react");
   return {
     DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
       asChild ? <>{children}</> : <button>{children}</button>,
     DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div data-testid="menu-content">{children}</div>,
-    DropdownMenuItem: ({ children, onClick, onSelect }: { children: React.ReactNode; onClick?: () => void; onSelect?: (e: Event) => void }) => (
+    DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void; onSelect?: (e: Event) => void }) => (
       <div role="menuitem" onClick={onClick}>{children}</div>
     ),
     DropdownMenuSeparator: () => <hr />,

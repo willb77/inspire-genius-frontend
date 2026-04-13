@@ -2,7 +2,6 @@
  * @jest-environment jsdom
  */
 
-import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 

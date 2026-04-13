@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react"
 import RlhfFeedbackTable from "../RlhfFeedbackTable"
-import React from "react"
 
 jest.mock("@/components/super-admin/organization/DataTable", () => ({
   DataTable: ({ data }: { data: unknown[] }) => (

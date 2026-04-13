@@ -7,9 +7,10 @@ describe("RlhfFeedbackDetailModal", () => {
     created_at: "2026-03-15T10:30:00Z",
     coach_id: "coach-123",
     user_id: "user-456",
-    rating: 4,
+    rating: 4 as const,
     correction_text: "Better answer here",
     message_id: "msg-789",
+    conversation_id: "conv-001",
   }
 
   it("returns null when entry is null", () => {

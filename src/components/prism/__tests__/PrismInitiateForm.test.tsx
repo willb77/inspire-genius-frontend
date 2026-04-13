@@ -3,7 +3,7 @@ import PrismInitiateForm from "../PrismInitiateForm";
 
 /* Mock the Select components from shadcn which use Radix and fail in jsdom */
 jest.mock("@/components/ui/select", () => ({
-  Select: ({ children, onValueChange, defaultValue, disabled }: {
+  Select: ({ children }: {
     children: React.ReactNode;
     onValueChange?: (v: string) => void;
     defaultValue?: string;
