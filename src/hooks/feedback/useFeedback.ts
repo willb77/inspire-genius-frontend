@@ -32,10 +32,10 @@ export function useSubmitFeedback() {
       queryClient.invalidateQueries({ queryKey: ["feedback"], exact: false })
       logAuditEvent({
         action: "feedback_submitted",
-        actor_email: variables.coach_id,
+        actor_email: variables.agent_id,
         target_type: "feedback",
         target_id: variables.message_id,
-        extra_data: { rating: variables.rating, conversation_id: variables.conversation_id },
+        extra_data: { value: variables.value, session_id: variables.session_id, feedback_type: variables.feedback_type },
       })
     },
     onError: (error) => {
