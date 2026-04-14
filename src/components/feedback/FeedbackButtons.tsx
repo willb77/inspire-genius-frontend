@@ -8,6 +8,7 @@ type FeedbackButtonsProps = {
   responseId: string
   conversationId: string
   coachId: string
+  sessionId?: string
   onFeedback?: (type: "positive" | "negative") => void
   onCorrectionRequest?: () => void
 }
@@ -16,6 +17,7 @@ export default function FeedbackButtons({
   responseId,
   conversationId,
   coachId,
+  sessionId,
   onFeedback,
   onCorrectionRequest,
 }: FeedbackButtonsProps) {
@@ -27,11 +29,11 @@ export default function FeedbackButtons({
     setSelected(type)
     try {
       await submitFeedback.mutateAsync({
+        session_id: sessionId || conversationId,
+        agent_id: coachId,
         message_id: responseId,
-        conversation_id: conversationId,
-        coach_id: coachId,
-        rating: type === "positive" ? 5 : 1,
-        correction_text: undefined,
+        feedback_type: "thumbs",
+        value: type === "positive" ? 1 : -1,
       })
       onFeedback?.(type)
       if (type === "negative" && onCorrectionRequest) {

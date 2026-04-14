@@ -14,7 +14,7 @@ describe("feedback.service", () => {
   beforeEach(() => jest.clearAllMocks())
 
   it("submitFeedback posts to /v1/feedback", async () => {
-    const payload = { coach_id: "c1", message_id: "m1", conversation_id: "conv1", rating: 5, comment: "great" } as never
+    const payload = { session_id: "conv1", agent_id: "c1", message_id: "m1", feedback_type: "rating" as const, value: 5 }
     mockApi.post.mockResolvedValueOnce({ data: { data: { feedback_id: "fb1" } } })
     const result = await submitFeedback(payload)
     expect(mockApi.post).toHaveBeenCalledWith("/v1/feedback", payload)

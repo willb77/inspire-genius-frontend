@@ -9,9 +9,10 @@ type MessageFeedbackProps = {
   messageId: string
   conversationId: string
   coachId: string
+  sessionId?: string
 }
 
-export default function MessageFeedback({ messageId, conversationId, coachId }: MessageFeedbackProps) {
+export default function MessageFeedback({ messageId, conversationId, coachId, sessionId }: MessageFeedbackProps) {
   const [expanded, setExpanded] = useState(false)
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
@@ -23,11 +24,12 @@ export default function MessageFeedback({ messageId, conversationId, coachId }: 
   const handleSubmit = async () => {
     if (rating < 1 || rating > 5) return
     await mutation.mutateAsync({
+      session_id: sessionId || conversationId,
+      agent_id: coachId,
       message_id: messageId,
-      conversation_id: conversationId,
-      coach_id: coachId,
-      rating,
-      correction_text: correction.trim() || undefined,
+      feedback_type: "rating",
+      value: rating,
+      text: correction.trim() || undefined,
     })
     setSubmitted(true)
     setExpanded(false)
@@ -55,7 +57,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId }: 
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="text-[11px] text-muted-foreground/70 hover:text-foreground mt-1 px-1 cursor-pointer"
+        className="text-xs font-semibold text-blue-600 hover:text-blue-800 mt-1.5 px-1 cursor-pointer underline underline-offset-2"
       >
         Rate this response
       </button>
