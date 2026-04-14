@@ -1,4 +1,4 @@
-import { getApi } from '@/lib/agentApi'
+import { api } from '@/lib/axios'
 
 export type AgentSettingResponse<T = unknown> = {
   status?: boolean
@@ -8,7 +8,7 @@ export type AgentSettingResponse<T = unknown> = {
 }
 
 export async function getAgentSetting<T = unknown>(segment: 'tone' | 'accent' | 'gender' | string) {
-  const { data } = await getApi().get<AgentSettingResponse<T>>(`/v1/agents-settings/${segment}`)
+  const { data } = await api.get<AgentSettingResponse<T>>(`/v1/agents-settings/${segment}`)
   return data
 }
 

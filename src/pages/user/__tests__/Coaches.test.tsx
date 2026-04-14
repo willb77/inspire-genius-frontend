@@ -25,6 +25,7 @@ jest.mock("@/lib/agentApi", () => ({
     put: jest.fn(),
     delete: jest.fn(),
   }),
+  useAgentEngine: () => false,
   agentApi: { defaults: { headers: { common: {} } } },
 }));
 
