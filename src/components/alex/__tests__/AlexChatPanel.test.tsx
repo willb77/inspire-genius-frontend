@@ -172,6 +172,13 @@ const mockDemoAudioService = {
   }),
 };
 
+jest.mock("@/components/observability/ObservabilityPanel", () => {
+  return { __esModule: true, default: () => null };
+});
+jest.mock("@/components/observability/SessionObservabilityDrawer", () => {
+  return { __esModule: true, default: () => null };
+});
+
 jest.mock("@/services/demoAudioService", () => {
   return jest.fn().mockImplementation(() => mockDemoAudioService);
 });
