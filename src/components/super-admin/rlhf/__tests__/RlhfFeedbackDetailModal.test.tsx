@@ -4,6 +4,11 @@ import RlhfFeedbackDetailModal from "../RlhfFeedbackDetailModal"
 describe("RlhfFeedbackDetailModal", () => {
   const mockEntry = {
     id: "f1",
+    feedback_id: "f1",
+    session_id: "conv-001",
+    agent_id: "coach-123",
+    feedback_type: "rating" as const,
+    value: 4,
     created_at: "2026-03-15T10:30:00Z",
     coach_id: "coach-123",
     user_id: "user-456",

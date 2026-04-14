@@ -54,10 +54,11 @@ export default function CorrectionModal({
     try {
       await submitFeedback.mutateAsync({
         message_id: responseId,
-        conversation_id: conversationId,
-        coach_id: coachId,
-        rating: 1,
-        correction_text: `[${data.reason}] ${data.correctedText}`,
+        session_id: conversationId,
+        agent_id: coachId,
+        feedback_type: "text",
+        value: 1,
+        text: `[${data.reason}] ${data.correctedText}`,
       })
       toast.success("Correction submitted. Thank you!")
       reset()

@@ -26,8 +26,8 @@ export default function RlhfReviewQueue() {
     toast.success(`Correction ${action}`)
   }
 
-  const pending = corrections.filter((c) => !reviewedIds[c.id])
-  const reviewed = corrections.filter((c) => reviewedIds[c.id])
+  const pending = corrections.filter((c) => !reviewedIds[c.id ?? ""])
+  const reviewed = corrections.filter((c) => reviewedIds[c.id ?? ""])
 
   return (
     <div className="space-y-4">
@@ -66,8 +66,8 @@ export default function RlhfReviewQueue() {
             <CorrectionCard
               key={item.id}
               item={item}
-              onApprove={() => handleAction(item.id, "approved")}
-              onReject={() => handleAction(item.id, "rejected")}
+              onApprove={() => handleAction(item.id ?? "", "approved")}
+              onReject={() => handleAction(item.id ?? "", "rejected")}
             />
           ))}
 
@@ -86,12 +86,12 @@ export default function RlhfReviewQueue() {
                   </span>
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      reviewedIds[item.id] === "approved"
+                      reviewedIds[item.id ?? ""] === "approved"
                         ? "bg-[#D1FAE5] text-[#065F46]"
                         : "bg-[#FEE2E2] text-[#991B1B]"
                     }`}
                   >
-                    {reviewedIds[item.id]}
+                    {reviewedIds[item.id ?? ""]}
                   </span>
                 </div>
               ))}

@@ -25,7 +25,7 @@ jest.mock("../RlhfFeedbackDetailModal", () => ({
 describe("RlhfFeedbackTable", () => {
   const mockData: import("@/types/feedback").FeedbackListData = {
     feedback: [
-      { id: "1", created_at: "2026-03-01T00:00:00Z", coach_id: "c1", user_id: "u1", rating: 5 as const, correction_text: null, message_id: "m1", conversation_id: "conv1" },
+      { id: "1", feedback_id: "1", session_id: "conv1", agent_id: "c1", feedback_type: "rating" as const, value: 5, created_at: "2026-03-01T00:00:00Z", coach_id: "c1", user_id: "u1", rating: 5 as const, correction_text: null, message_id: "m1", conversation_id: "conv1" },
     ],
     pagination: { total: 1, page: 1, limit: 10, has_more: false },
   }

@@ -57,7 +57,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="text-xs font-semibold text-blue-600 hover:text-blue-800 mt-1.5 px-1 cursor-pointer underline underline-offset-2"
+        className="text-sm font-bold text-blue-600 hover:text-blue-800 mt-1.5 px-1 cursor-pointer underline underline-offset-2"
       >
         Rate this response
       </button>
