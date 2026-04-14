@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAgents } from "@/hooks/coaches/useAgents";
+import { useAgentEngine } from "@/lib/agentApi";
 
 type Agent = {
   id: string;
@@ -23,7 +24,9 @@ export default function Dashboard() {
   const [query, setQuery] = useState("");
   const { data: agentsResp, isLoading: agentsLoading, isError, error, refetch } = useAgents({ page: 1, page_size: 12 });
 
-  // Only show active coaches — others are not yet deployed
+  // When Agent Engine is OFF, only show the 3 deployed monolith coaches.
+  // When Agent Engine is ON, show all ecosystem agents.
+  const agentEngineOn = useAgentEngine();
   const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
 
   const agents = useMemo<Agent[]>(() => {
@@ -38,11 +41,13 @@ export default function Dashboard() {
     } else {
       list = [];
     }
-    // Filter to only active coaches
-    list = list.filter((a) => ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()));
+    // Filter to only active coaches when using monolith
+    if (!agentEngineOn) {
+      list = list.filter((a) => ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()));
+    }
     const q = query.trim().toLowerCase();
     return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
-  }, [agentsResp, query]);
+  }, [agentsResp, query, agentEngineOn]);
 
   const toSlug = (s: string) => {
     const input = String(s || "").trim().toLowerCase();

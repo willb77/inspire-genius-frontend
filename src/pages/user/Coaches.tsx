@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAgentEngine } from "@/lib/agentApi";
 
 export default function Coaches() {
   const { t } = useTranslation(["common", "dashboard"]);
@@ -21,18 +22,21 @@ export default function Coaches() {
 
   const updateMutation = useUpdatePreferences();
 
-  // Only show active coaches — others are not yet deployed
+  // When Agent Engine is OFF, only show the 3 deployed monolith coaches.
+  // When Agent Engine is ON, show all ecosystem agents.
+  const agentEngineOn = useAgentEngine();
   const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
 
   const agents = useMemo(() => {
-    const list = rawAgents;
-    // Filter to only active coaches first
-    const active = (Array.isArray(list) ? list : []).filter((a) =>
-      ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()),
-    );
+    let list = Array.isArray(rawAgents) ? rawAgents : [];
+    if (!agentEngineOn) {
+      list = list.filter((a) =>
+        ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()),
+      );
+    }
     const q = query.trim().toLowerCase();
-    return active.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
-  }, [rawAgents, query]);
+    return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
+  }, [rawAgents, query, agentEngineOn]);
 
   return (
     <UserLayout>

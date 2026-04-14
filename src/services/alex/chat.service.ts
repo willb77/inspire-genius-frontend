@@ -1,4 +1,4 @@
-import { getApi } from "@/lib/agentApi";
+import { api } from "@/lib/axios";
 
 export type AlexDeviceIdResponse = {
   status?: boolean;
@@ -8,7 +8,7 @@ export type AlexDeviceIdResponse = {
 };
 
 export async function getAlexDeviceId() {
-  const { data } = await getApi().get<AlexDeviceIdResponse>("/v1/chat/AlexChat/device-id");
+  const { data } = await api.get<AlexDeviceIdResponse>("/v1/chat/AlexChat/device-id");
   // Normalize common shapes
   const raw = data?.data as { device_id?: string; deviceId?: string } | undefined;
   const device_id = (raw?.device_id || raw?.deviceId || (data as unknown as { device_id?: string })?.device_id || "").toString();
@@ -29,7 +29,7 @@ export type AlexHistoryParams = {
 export type AlexHistoryListParams = { limit?: number; offset?: number; device_key?: string };
 export async function getAlexHistoryList(params: AlexHistoryListParams = {}) {
   const { limit = 100, offset = 0, device_key } = params;
-  const { data } = await getApi().get("/v1/chat/AlexChat/history", {
+  const { data } = await api.get("/v1/chat/AlexChat/history", {
     params: { limit, offset, device_key },
   });
   return data;
@@ -61,6 +61,6 @@ export type AlexDownloadResponse = {
 };
 
 export async function downloadAlexChat(params: AlexDownloadParams) {
-  const { data } = await getApi().get<AlexDownloadResponse>("/v1/chat/AlexChat/download", { params });
+  const { data } = await api.get<AlexDownloadResponse>("/v1/chat/AlexChat/download", { params });
   return data;
 }

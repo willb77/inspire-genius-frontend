@@ -1,3 +1,4 @@
+import { api } from "@/lib/axios";
 import {
   getAlexDeviceId,
   getAlexHistoryList,
@@ -8,17 +9,17 @@ import {
   type AlexDownloadResponse,
 } from "../chat.service";
 
-// Mock agentApi's getApi()
-const mockAxios = {
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-};
-
-jest.mock("@/lib/agentApi", () => ({
-  getApi: () => mockAxios,
+// Mock the axios instance
+jest.mock("@/lib/axios", () => ({
+  api: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
 }));
+
+const mockedApi = jest.mocked(api);
 
 describe("getAlexDeviceId", () => {
   beforeEach(() => {
@@ -35,11 +36,11 @@ describe("getAlexDeviceId", () => {
       },
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexDeviceId();
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/device-id");
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/device-id");
     expect(result).toEqual({
       ...mockResponse,
       device_id: "device-123",
@@ -56,7 +57,7 @@ describe("getAlexDeviceId", () => {
       },
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexDeviceId();
 
@@ -71,7 +72,7 @@ describe("getAlexDeviceId", () => {
       device_id: "device-789",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexDeviceId();
 
@@ -86,7 +87,7 @@ describe("getAlexDeviceId", () => {
       data: {},
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexDeviceId();
 
@@ -95,10 +96,10 @@ describe("getAlexDeviceId", () => {
 
   it("should handle API errors", async () => {
     const mockError = new Error("Network error");
-    mockAxios.get.mockRejectedValue(mockError);
+    mockedApi.get.mockRejectedValue(mockError);
 
     await expect(getAlexDeviceId()).rejects.toThrow("Network error");
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/device-id");
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/device-id");
   });
 
   it("should convert non-string device_id to string", async () => {
@@ -111,7 +112,7 @@ describe("getAlexDeviceId", () => {
       },
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexDeviceId();
 
@@ -135,11 +136,11 @@ describe("getAlexHistoryList", () => {
       },
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexHistoryList();
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
       params: {
         limit: 100,
         offset: 0,
@@ -168,11 +169,11 @@ describe("getAlexHistoryList", () => {
       device_key: "device-abc",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexHistoryList(params);
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
       params: {
         limit: 50,
         offset: 10,
@@ -189,11 +190,11 @@ describe("getAlexHistoryList", () => {
       data: { items: [], total: 0 },
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     await getAlexHistoryList({ limit: 25 });
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/history", {
       params: {
         limit: 25,
         offset: 0,
@@ -204,7 +205,7 @@ describe("getAlexHistoryList", () => {
 
   it("should handle API errors", async () => {
     const mockError = new Error("Failed to fetch history");
-    mockAxios.get.mockRejectedValue(mockError);
+    mockedApi.get.mockRejectedValue(mockError);
 
     await expect(getAlexHistoryList()).rejects.toThrow("Failed to fetch history");
   });
@@ -215,7 +216,7 @@ describe("getAlexHistoryList", () => {
       data: null,
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await getAlexHistoryList();
 
@@ -244,11 +245,11 @@ describe("downloadAlexChat", () => {
       end_date: "2024-01-31",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await downloadAlexChat(params);
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
       params,
     });
     expect(result).toEqual(mockResponse);
@@ -275,11 +276,11 @@ describe("downloadAlexChat", () => {
       offset: 0,
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await downloadAlexChat(params);
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
       params,
     });
     expect(result).toEqual(mockResponse);
@@ -302,7 +303,7 @@ describe("downloadAlexChat", () => {
       end_date: "2024-02-28",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await downloadAlexChat(params);
 
@@ -321,10 +322,10 @@ describe("downloadAlexChat", () => {
       end_date: "2024-01-31",
     };
 
-    mockAxios.get.mockRejectedValue(mockError);
+    mockedApi.get.mockRejectedValue(mockError);
 
     await expect(downloadAlexChat(params)).rejects.toThrow("Download failed");
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
       params,
     });
   });
@@ -341,7 +342,7 @@ describe("downloadAlexChat", () => {
       end_date: "2024-01-31",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     const result = await downloadAlexChat(params);
 
@@ -362,11 +363,11 @@ describe("downloadAlexChat", () => {
       timezone: "Asia/Kolkata",
     };
 
-    mockAxios.get.mockResolvedValue({ data: mockResponse });
+    mockedApi.get.mockResolvedValue({ data: mockResponse });
 
     await downloadAlexChat(params);
 
-    expect(mockAxios.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
+    expect(mockedApi.get).toHaveBeenCalledWith("/v1/chat/AlexChat/download", {
       params: expect.objectContaining({
         timezone: "Asia/Kolkata",
       }),
