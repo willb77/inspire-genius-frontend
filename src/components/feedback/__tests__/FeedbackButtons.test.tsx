@@ -39,7 +39,7 @@ describe("FeedbackButtons", () => {
     fireEvent.click(screen.getByLabelText("Thumbs up"))
     await new Promise((r) => setTimeout(r, 0))
     expect(mockMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ rating: 5, message_id: "r1" })
+      expect.objectContaining({ value: 1, feedback_type: "thumbs", message_id: "r1" })
     )
   })
 
@@ -51,7 +51,7 @@ describe("FeedbackButtons", () => {
     fireEvent.click(screen.getByLabelText("Thumbs down"))
     await new Promise((r) => setTimeout(r, 0))
     expect(mockMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ rating: 1, message_id: "r1" })
+      expect.objectContaining({ value: -1, feedback_type: "thumbs", message_id: "r1" })
     )
   })
 })

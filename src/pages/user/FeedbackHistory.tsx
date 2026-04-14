@@ -162,8 +162,8 @@ export default function FeedbackHistory() {
                     <tr key={f.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
                       <td className="px-3 py-2.5 text-xs text-[#6b7280] whitespace-nowrap">{formatDate(f.created_at)}</td>
                       <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151]">{f.coach_id}</td>
-                      <td className="px-3 py-2.5"><StarRating rating={f.rating} /></td>
-                      <td className="px-3 py-2.5"><RatingBadge rating={f.rating} /></td>
+                      <td className="px-3 py-2.5"><StarRating rating={f.rating ?? 0} /></td>
+                      <td className="px-3 py-2.5"><RatingBadge rating={f.rating ?? 0} /></td>
                       <td className="px-3 py-2.5 text-[13px] text-[#374151] max-w-[300px] truncate">
                         {f.correction_text || <span className="text-[#9ca3af]">—</span>}
                       </td>

@@ -52,7 +52,7 @@ export default function RlhfFeedbackTable({
               key={i}
               className={cn(
                 "size-3.5",
-                i <= row.rating
+                i <= (row.rating ?? 0)
                   ? "fill-yellow-400 text-yellow-400"
                   : "text-gray-300"
               )}
