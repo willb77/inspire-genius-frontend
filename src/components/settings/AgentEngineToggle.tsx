@@ -83,6 +83,7 @@ export default function AgentEngineToggle() {
             id="agent-engine-toggle"
             checked={enabled}
             onCheckedChange={handleToggle}
+            className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600"
           />
         </div>
 
