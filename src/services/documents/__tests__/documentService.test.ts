@@ -38,11 +38,14 @@ describe("documentService", () => {
   })
 
   it("listDocumentsV2 gets documents with params", async () => {
-    const list = { documents: [], total: 0, limit: 10, offset: 0, has_more: false }
-    mockApi.get.mockResolvedValueOnce({ data: { data: list } })
+    const apiResp = { data: { date_groups: [], total_count: 0 } }
+    mockApi.get.mockResolvedValueOnce({ data: apiResp })
     const result = await listDocumentsV2({ limit: 10, offset: 0 })
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/documents/", { params: { limit: 10, offset: 0 } })
-    expect(result).toEqual(list)
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/file_service/list/v2", {
+      params: { page: 1, page_size: 10 },
+      withCredentials: true,
+    })
+    expect(result).toEqual({ documents: [], total: 0, limit: 10, offset: 0, has_more: false })
   })
 
   it("getDocument gets single document by id", async () => {
@@ -54,15 +57,16 @@ describe("documentService", () => {
   })
 
   it("getDownloadUrl returns URL string", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: { data: { url: "https://s3.example.com/file" } } })
+    mockApi.get.mockResolvedValueOnce({ data: { data: { download_url: "https://s3.example.com/file" } } })
     const result = await getDownloadUrl("d1")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/file_service/download/d1")
     expect(result).toBe("https://s3.example.com/file")
   })
 
   it("deleteDocumentV2 deletes by id", async () => {
     mockApi.delete.mockResolvedValueOnce({ data: {} })
     await deleteDocumentV2("d1")
-    expect(mockApi.delete).toHaveBeenCalledWith("/v1/documents/d1")
+    expect(mockApi.delete).toHaveBeenCalledWith("/v1/file_service/d1", { withCredentials: true })
   })
 
   it("searchDocuments posts search request", async () => {

@@ -70,8 +70,8 @@ const createWrapper = () => {
 };
 
 const MOCK_AGENTS = [
-  { id: "a1", name: "Meridian", user_gender: { id: "g1", name: "Female" }, user_accent: { id: "ac1", name: "British" }, user_tones: [{ id: "t1", name: "Calm" }] },
-  { id: "a2", name: "Nova", user_gender: null, user_accent: null, user_tones: null },
+  { id: "a1", name: "PRISM Coach", user_gender: { id: "g1", name: "Female" }, user_accent: { id: "ac1", name: "British" }, user_tones: [{ id: "t1", name: "Calm" }] },
+  { id: "a2", name: "Training Coach", user_gender: null, user_accent: null, user_tones: null },
 ];
 
 /* ---- Tests ---- */
@@ -95,8 +95,8 @@ describe("Dashboard Page", () => {
 
   it("renders coach cards from API data", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
-    expect(screen.getByText("Meridian")).toBeInTheDocument();
-    expect(screen.getByText("Nova")).toBeInTheDocument();
+    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
+    expect(screen.getByText("Training Coach")).toBeInTheDocument();
   });
 
   it("shows loading skeletons when loading", () => {
@@ -147,17 +147,17 @@ describe("Dashboard Page", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
 
     const input = screen.getByPlaceholderText(/search/i);
-    fireEvent.change(input, { target: { value: "merid" } });
+    fireEvent.change(input, { target: { value: "prism" } });
 
-    expect(screen.getByText("Meridian")).toBeInTheDocument();
-    expect(screen.queryByText("Nova")).not.toBeInTheDocument();
+    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
+    expect(screen.queryByText("Training Coach")).not.toBeInTheDocument();
   });
 
   it("shows clear search button when no match", () => {
     render(<Dashboard />, { wrapper: createWrapper() });
 
     const input = screen.getByPlaceholderText(/search/i);
-    fireEvent.change(input, { target: { value: "nonexistent" } });
+    fireEvent.change(input, { target: { value: "zzzznonexistent" } });
 
     expect(screen.getByText("No coaches available")).toBeInTheDocument();
     expect(screen.getByText("Clear search")).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe("Dashboard Page", () => {
     fireEvent.click(chatButtons[0]);
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      expect.stringContaining("/dashboard/a1--meridian/chat")
+      expect.stringContaining("/dashboard/a1--prism-coach/chat")
     );
   });
 });

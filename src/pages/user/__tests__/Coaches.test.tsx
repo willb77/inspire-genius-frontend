@@ -102,14 +102,14 @@ const createWrapper = () => {
 const agentsMock = [
   {
     id: "1",
-    name: "Coach Alpha",
+    name: "PRISM Coach",
     user_tones: [{ id: "t1" }],
     user_gender: { id: "g1" },
     user_accent: { id: "a1" },
   },
   {
     id: "2",
-    name: "Coach Beta",
+    name: "Training Coach",
     user_tones: [],
   },
 ];
@@ -146,8 +146,8 @@ describe("Coaches Page", () => {
   it("renders coach cards", () => {
     render(<Coaches />, { wrapper: createWrapper() });
 
-    expect(screen.getByText("Coach Alpha")).toBeInTheDocument();
-    expect(screen.getByText("Coach Beta")).toBeInTheDocument();
+    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
+    expect(screen.getByText("Training Coach")).toBeInTheDocument();
   });
 
   /* ---------- Loading State ---------- */
@@ -172,11 +172,11 @@ describe("Coaches Page", () => {
     render(<Coaches />, { wrapper: createWrapper() });
 
     fireEvent.change(screen.getByTestId("search-input"), {
-      target: { value: "alpha" },
+      target: { value: "prism" },
     });
 
-    expect(screen.getByText("Coach Alpha")).toBeInTheDocument();
-    expect(screen.queryByText("Coach Beta")).not.toBeInTheDocument();
+    expect(screen.getByText("PRISM Coach")).toBeInTheDocument();
+    expect(screen.queryByText("Training Coach")).not.toBeInTheDocument();
   });
 
   /* ---------- Submit Preferences ---------- */
