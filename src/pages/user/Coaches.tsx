@@ -21,10 +21,17 @@ export default function Coaches() {
 
   const updateMutation = useUpdatePreferences();
 
+  // Only show active coaches — others are not yet deployed
+  const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
+
   const agents = useMemo(() => {
     const list = rawAgents;
+    // Filter to only active coaches first
+    const active = (Array.isArray(list) ? list : []).filter((a) =>
+      ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()),
+    );
     const q = query.trim().toLowerCase();
-    return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
+    return active.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [rawAgents, query]);
 
   return (

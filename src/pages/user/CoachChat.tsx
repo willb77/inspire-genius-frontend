@@ -230,7 +230,7 @@ export default function CoachChat() {
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
-      setStatusBanner({ type: "success", text: "Connected. Select Documents to proceed" });
+      setStatusBanner({ type: "success", text: "Connected" });
       return;
     }
     if (resp.type === "auth_error") {
