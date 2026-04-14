@@ -23,9 +23,11 @@ export default function Dashboard() {
   const [query, setQuery] = useState("");
   const { data: agentsResp, isLoading: agentsLoading, isError, error, refetch } = useAgents({ page: 1, page_size: 12 });
 
+  // Only show active coaches — others are not yet deployed
+  const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
+
   const agents = useMemo<Agent[]>(() => {
     if (!agentsResp) return [];
-    // Handle multiple response shapes: { data: Agent[] } | { data: { agents: Agent[] } } | Agent[]
     const payload = agentsResp as Record<string, unknown>;
     const raw = payload?.data ?? payload;
     let list: Agent[];
@@ -36,6 +38,8 @@ export default function Dashboard() {
     } else {
       list = [];
     }
+    // Filter to only active coaches
+    list = list.filter((a) => ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()));
     const q = query.trim().toLowerCase();
     return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [agentsResp, query]);

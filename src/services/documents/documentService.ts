@@ -118,7 +118,12 @@ export async function triggerProcessing(documentId: string): Promise<DocumentOut
   return (resp.data as { data: DocumentOut }).data;
 }
 
-/** List documents with pagination and filters. */
+/** List documents with pagination and filters.
+ *
+ * Uses the monolith /v1/file_service/list/v2 endpoint (which is actually deployed)
+ * and transforms the date-grouped response into the flat DocumentListResponse shape
+ * expected by the Documents page.
+ */
 export async function listDocumentsV2(params?: {
   user_id?: string;
   company_id?: string;
@@ -128,8 +133,65 @@ export async function listDocumentsV2(params?: {
   limit?: number;
   offset?: number;
 }): Promise<DocumentListResponse> {
-  const resp = await api.get("/v1/documents/", { params });
-  return (resp.data as { data: DocumentListResponse }).data;
+  // Map params to the monolith's expected query params
+  const page = params?.offset && params?.limit ? Math.floor(params.offset / params.limit) + 1 : 1;
+  const pageSize = params?.limit ?? 10;
+  const monolithParams: Record<string, unknown> = { page, page_size: pageSize };
+  if (params?.search) monolithParams.search = params.search;
+  // The monolith uses 'date' param in YYYY-MM-DD format (passed as 'status' from Documents page)
+  if (params?.status) monolithParams.date = params.status;
+
+  const resp = await api.get("/v1/file_service/list/v2", {
+    params: monolithParams,
+    withCredentials: true,
+  });
+
+  // Unwrap BaseApiResponse envelope: { status, data: { date_groups, total_count, ... } }
+  const body = resp.data as Record<string, unknown>;
+  const envelope = (body?.data ?? body) as Record<string, unknown>;
+
+  type ApiFile = {
+    id?: string;
+    filename?: string;
+    file_type?: string;
+    file_key?: string;
+    created_at?: string;
+    category_name?: string;
+    [k: string]: unknown;
+  };
+  type ApiGroup = { date_label?: string; date?: string; files?: ApiFile[] };
+
+  const dateGroups = (envelope?.date_groups ?? []) as ApiGroup[];
+  const totalCount = (envelope?.total_count ?? 0) as number;
+
+  // Flatten date_groups into a flat documents array matching DocumentOut shape
+  const documents: DocumentOut[] = dateGroups.flatMap((g) =>
+    (g.files ?? []).map((f): DocumentOut => ({
+      id: String(f.id ?? ""),
+      user_id: "",
+      company_id: null,
+      filename: f.filename ?? "",
+      content_type: "",
+      file_size: 0,
+      status: "ready",
+      status_detail: null,
+      page_count: null,
+      chunk_count: 0,
+      doc_kind: f.file_type ?? "doc",
+      tags: null,
+      metadata: null,
+      created_at: f.created_at ?? "",
+      updated_at: f.created_at ?? "",
+    })),
+  );
+
+  return {
+    documents,
+    total: totalCount,
+    limit: pageSize,
+    offset: params?.offset ?? 0,
+    has_more: documents.length >= pageSize,
+  };
 }
 
 /** Get a single document by ID. */
@@ -138,16 +200,22 @@ export async function getDocument(documentId: string): Promise<DocumentOut> {
   return (resp.data as { data: DocumentOut }).data;
 }
 
-/** Get presigned download URL. */
+/** Get presigned download URL via monolith file_service. */
 export async function getDownloadUrl(documentId: string): Promise<string> {
-  const resp = await api.get(`/v1/documents/${encodeURIComponent(documentId)}/download`);
-  const data = (resp.data as { data: { url: string } }).data;
-  return data.url;
+  const resp = await api.get(`/v1/file_service/download/${encodeURIComponent(documentId)}`);
+  const data = resp.data as Record<string, unknown>;
+  // FileDownloadResponse has download_url at top level or nested in data
+  const inner = (data?.data ?? data) as Record<string, unknown>;
+  const url = (inner?.download_url ?? inner?.url ?? inner?.link) as string | undefined;
+  if (url && typeof url === "string") return url;
+  throw new Error("Unexpected download response shape");
 }
 
-/** Delete a document. */
+/** Delete a document via monolith file_service. */
 export async function deleteDocumentV2(documentId: string): Promise<void> {
-  await api.delete(`/v1/documents/${encodeURIComponent(documentId)}`);
+  await api.delete(`/v1/file_service/${encodeURIComponent(documentId)}`, {
+    withCredentials: true,
+  });
 }
 
 /** Full-text + semantic search across documents. */
