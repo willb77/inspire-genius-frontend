@@ -18,6 +18,7 @@ import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 import { Link } from "react-router-dom";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
+import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -225,6 +226,13 @@ export default function Settings() {
               onUpdateNotificationsChange={setUpdateNotifications}
               onMarketingNotificationsChange={setMarketingNotifications}
             />
+          </div>
+        )}
+
+        {/* Agent Engine Routing (super-admin only) */}
+        {role === ROLES.SUPER_ADMIN && (
+          <div data-tour="settings-agent-engine">
+            <AgentEngineToggle />
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { api } from "@/lib/axios";
+import { getApi } from "@/lib/agentApi";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -41,13 +41,13 @@ export type WsIncomingMessage =
 
 /** Non-streaming chat — POST /v1/agents/chat */
 export async function agentChat(request: AgentChatRequest): Promise<AgentChatResponse> {
-  const { data } = await api.post<AgentChatResponse>("/v1/agents/chat", request);
+  const { data } = await getApi().post<AgentChatResponse>("/v1/agents/chat", request);
   return data;
 }
 
 /** Health check — GET /v1/agents/health */
 export async function agentHealth(): Promise<AgentHealthResponse> {
-  const { data } = await api.get<AgentHealthResponse>("/v1/agents/health");
+  const { data } = await getApi().get<AgentHealthResponse>("/v1/agents/health");
   return data;
 }
 
