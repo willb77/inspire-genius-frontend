@@ -1,4 +1,4 @@
-import { api } from '@/lib/axios'
+import { getApi } from '@/lib/agentApi'
 
 export type AgentsQuery = {
   page: number
@@ -13,7 +13,7 @@ export type AgentsResponse<T = unknown> = {
 }
 
 export async function getAgents(params: AgentsQuery) {
-  const { data } = await api.get<AgentsResponse>(
+  const { data } = await getApi().get<AgentsResponse>(
     `/v1/agents-settings/agents`,
     { params }
   )
