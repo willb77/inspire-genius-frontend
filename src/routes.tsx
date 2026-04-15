@@ -43,6 +43,7 @@ const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
+const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
 const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboard"));
@@ -167,6 +168,7 @@ export const routes: RouteObject[] = [
       { path: "/dashboard", element: withSuspense(<Dashboard />) },
       { path: "/coaches", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
+      { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
       { path: "/documents", element: withSuspense(<Documents />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/help", element: withSuspense(<HelpPage />) },

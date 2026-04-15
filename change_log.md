@@ -2,6 +2,1139 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-14] — Chat with Meridian Integration (10 Prompts)
+
+### Added
+- `src/pages/user/MeridianChat.tsx` — unified AI persona chat interface
+- `src/hooks/agents/useMeridianWebSocket.ts` — Agent Engine WebSocket (token streaming, agent attribution, voice)
+- `src/services/meridian/meridianService.ts` — REST fallback + WS URL builder
+- `src/components/user/chat/MeridianChatHeader.tsx` — Sparkles icon, connection dot, domain badge
+- `src/components/user/chat/AgentRoutingPanel.tsx` — collapsible domain/agent/confidence/latency panel (role-gated)
+- Route `/meridian/chat` in routes.tsx, `MERIDIAN_CHAT` constant in routes.ts
+- `getUserNavItems()` in navigation.ts for toggle-aware sidebar
+- Meridian CTA banner on Dashboard when Agent Engine is ON
+- Tests: MeridianChat page (7) + WebSocket URL builder (8)
+
+### Changed
+- `UserLayout.tsx` — uses `getUserNavItems(useAgentEngine())` for dynamic nav
+- `ChatWindowChatTab.tsx` — agent attribution ("via {agent}") on assistant messages
+- `data-types.ts` — optional `agent`/`domain` fields on ChatMessage
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-14] — G.43/G.44/G.45/G.49: MCP Tools, Collaboration, Grant Enhancement, Workflow Tests
+
+### Changed (G.43 — Wire MCP Tools to 6 Agents)
+- `feedback_agent.py` (Nova): calendar tool — book/schedule/reschedule triggers
+- `document_agent.py` (Sage): document_search tool — search/retrieve triggers
+- `dashboard_agent.py` (Atlas): data_connector tool — query/metrics/sql triggers
+- `notification_agent.py` (Beacon): email_tool — send email/notification triggers
+- `ascend_agent.py` (Ascend): web_search tool — research/trends triggers
+- `onboarding_agent.py` (Forge): calendar + email_tool — schedule/welcome triggers
+- Each agent: `_TOOL_TRIGGERS` regex, `_needs_tool_use()`, `_AVAILABLE_TOOLS`, `tool_aware: True` metadata
+
+### Added (G.44 — 5 Inter-Agent Collaboration Flows)
+- Flow 2: Nova → James (candidate scoring REQUEST on hiring_triage intent)
+- Flow 3: Echo → Nexus (feedback data INFORM on quiz/session completion)
+- Flow 4: Maven → James (assessment results RESPONSE on interview report phase)
+- Flow 5: Forge → Aura (PRISM assessment REQUEST on onboarding PRISM_INITIATED state)
+- Flow 6: Sentinel → All (compliance alert INFORM broadcast on violation detection)
+- All flows: SharedContext writes + AgentMessage accumulation in context.metadata["collaboration_messages"]
+
+### Enhanced (G.45 — Grant Agent Full Implementation)
+- `grant_agent.py`: Added FinancialProfile dataclass (9 fields), `_build_financial_context()`, `_detect_emergency_aid()`, emergency_aid metadata
+- `prompts.py`: Grant prompt expanded — NC state specialization, special populations (first-gen/DACA/military/disability/adult learners), emergency aid detection
+- `test_grant_agent.py`: Expanded from 18 to 36 tests
+
+### Enhanced (G.49 — Multi-Agent Workflow Integration Tests)
+- `test_integration_g49.py`: Added 5 workflow scenarios (12 tests):
+  - Workflow 1: Interview Prep (coaching routing + SharedContext DAG flow)
+  - Workflow 2: Hiring Triage (business routing + FitScoreResult classification)
+  - Workflow 3: Onboarding (Forge flow + OnboardingState + PRISM request)
+  - Workflow 4: RLHF Feedback (Echo collection + Nexus pipeline)
+  - Workflow 5: Compliance Check (Sentinel access control + orchestrator routing)
+
+### Final Test Results
+- **1,032 passed, 5 skipped** across full agent-engine test suite
+- 3 pre-existing failures (legacy_endpoints, mcp_tools) — unrelated
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/layouts/UserLayout.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MeridianChatHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/AgentRoutingPanel.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/chat/data-types.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/meridian/meridianService.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MeridianChatHeader.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/MeridianChat.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianWebSocket.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/layouts/__tests__/UserLayout.test.tsx`
+
+## [2026-04-14] — G.49: Integration Test + Final Fixes
+
+### Added (G.49 — End-to-End Integration Test)
+- `test_integration_g49.py` (new): 34 tests validating the complete 18-agent ecosystem
+  - All 18 agents instantiate with correct name/domain
+  - All 17 specialist prompts have Meridian synthesis directive
+  - All 18 agents mapped in agent_tiers.py
+  - DAG executor factory creates all agents correctly
+  - All 4 orchestrators route to correct domain agents
+  - Meridian end-to-end: intent classification → domain delegation → response
+
+### Fixed
+- `dag_executor.py`: Added missing agents (Ascend, Maven) to factory; fixed Nova/Echo swap in factory mapping
+- Fixed Meridian integration test — Meridian has `respond()` method, not `.name` attribute
+
+### Final Test Results
+- **1,002 passed, 5 skipped** across full agent-engine test suite
+- 3 pre-existing failures (legacy_endpoints, mcp_tools) — unrelated to G.2-G.49 work
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/feedback_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/feedback_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/session_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/feedback_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/session_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/document_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/feedback_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/document_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/career/grant_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/document_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/dashboard_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/dashboard_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_integration_g49.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_grant_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/ascend_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/ascend_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/onboarding_agent.py`
+
+## [2026-04-14] — G.45-G.48: Grant Agent + Career Orchestrator (Phases 10-11)
+
+### Added (G.45/G.46 — Grant Financial Aid Agent + Tests)
+- `career/grant_agent.py` (new): GrantAgent name="Grant", domain="career" — FAFSA guidance, scholarship matching, tuition planning, education financing
+- `_detect_aid_type()`: fafsa/scholarship/tuition_planning/general_aid, `aid_type` in metadata
+- `test_grant_agent.py` (new): 18 tests — identity, aid type detection (8), process, metadata, error handling
+- `prompts.py`: Grant prompt — financial aid navigation, compliance guardrails, Meridian synthesis directive
+- `dag_executor.py`: Added Grant → GrantAgent to factory
+- `conftest.py`: Added "You are Grant" mock response
+
+### Added (G.47/G.48 — Career & Talent Orchestrator + Tests)
+- `career_orchestrator.py` (new): CareerTalentOrchestrator with Bridge/Grant/Alex — template match → LLM planner → keyword fallback
+- `test_career_orchestrator.py` (new): 13 tests — init, keyword routing (6), handle (4)
+- `meridian.py`: Updated career_talent routing from coaching fallback to CareerTalentOrchestrator
+- `planner.py`: Added Grant keywords to planner keyword map
+
+### Test Results
+- **968 passed, 0 failed** across all G.2-G.48 test files (3 pre-existing failures excluded)
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_integration_g49.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_integration_g49.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_integration_g49.py`
+
+## [2026-04-14] — G.8-G.14: Aura Enhancement + Maven Interview Agent
+
+### Changed (G.8 — Aura Agent Enhancement)
+- `prism_agent.py`: Enhanced PrismAgent with SharedContext behavioral publishing, rag=True metadata
+- Aura now publishes `behavioral_profile_{user_id}` to SharedContext after each response
+
+### Changed (G.9 — Aura System Prompt)
+- `prompts.py`: Replaced Aura prompt with Insight Interpreter persona — PRISM Brain Mapping expert with quadrant explanations (Gold=Initiating, Green=Finishing, Blue=Supporting, Orange=Focusing), overdone strengths detection, deep-dive modes
+
+### Added (G.10 — Aura Tests: 14 passing)
+- `test_prism_agent.py`: Identity, process/metadata/RAG, memory injection, error handling, orchestrator registration, SharedContext publishing
+
+### Changed (G.11 — Maven Interview Agent Enhancement)
+- `interview_agent.py`: Added InterviewPhase enum, InterviewState dataclass, session state tracking in working_memory, role-based access control (practitioner/company-admin/super-admin/manager only)
+
+### Changed (G.12 — Maven System Prompt)
+- `prompts.py`: Replaced verbose Maven prompt with focused version — interview conduct, 3-section/12-question framework, internal scoring rubric, metrics gap analysis, access control note
+
+### Added (G.13 — Maven Tests: 23 passing)
+- `test_maven_agent.py`: Identity, access control (5 roles), process/metadata, interview state persistence, phase enum, routing keywords, error handling, agents_settings registration
+
+### Changed (G.14 — Maven in agents_settings.py)
+- `agents_settings.py`: Added `{"id": "maven-001", "name": "Maven", "category_name": "business", "category_id": "business"}` to `_BUILTIN_AGENTS`
+
+  Files: `prism_agent.py`, `interview_agent.py`, `prompts.py`, `agents_settings.py`, `test_prism_agent.py` (new), `test_maven_agent.py` (new)
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/prompt_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_audit_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/rlhf_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_prompt_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/system/notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_notification_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_rlhf_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/career/grant_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_grant_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_career_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/career/grant_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+## [2026-04-14] — G.35-G.42: System Agent Enhancements (Phase 8)
+
+### Changed (G.35/G.36 — Sentinel Audit + Compliance + Tests)
+- `audit_agent.py`: Added access control (company-admin/practitioner/distributor/super-admin only), `_detect_audit_type()` for activity_logs/compliance_check/system_events, `audit_query_type` in metadata
+- `test_audit_agent.py` (new): 30 tests — identity, access control, audit type detection, metadata, error handling, registration
+- `prompts.py`: Sentinel prompt — FERPA/GDPR/SOC2/HIPAA compliance, anomaly detection, audit log structure
+
+### Changed (G.37/G.38 — Anchor Prompt Engineering + Tests)
+- `prompt_agent.py`: Added access control (super-admin/practitioner only), `_detect_prompt_operation()` for create/edit/test/optimize/list, `prompt_operation` in metadata
+- `test_prompt_agent.py` (new): 32 tests — identity, access control, prompt operation detection, metadata, error handling, registration
+- `prompts.py`: Anchor prompt — prompt versioning, A/B testing, safety review, domain-specific optimization
+
+### Changed (G.39/G.40 — Nexus RLHF Pipeline + Tests)
+- `rlhf_agent.py`: Added access control (super-admin/practitioner only), `_detect_pipeline_stage()` for feedback_status/training_progress/model_evaluation/model_registry, `pipeline_stage` in metadata
+- `test_rlhf_agent.py` (new): 36 tests — identity, access control, pipeline stage detection, metadata, error handling, registration
+- `prompts.py`: Nexus prompt — 5-stage pipeline, business translation, cost tracking
+
+### Changed (G.41/G.42 — Beacon Notification Agent + Tests)
+- `notification_agent.py`: **RENAMED** from "Bridge" to "Beacon" — resolves name conflict with PipelineAgent (career domain)
+- `test_notification_agent.py` (new): 17 tests — identity, notification channel detection, metadata, error handling
+- `prompts.py`: Beacon prompt — multi-channel dispatch, notification categories, smart batching
+- Updated: `system_orchestrator.py`, `dag_executor.py`, `planner.py`, `test_orchestrators.py`, `test_meridian.py` — all "Bridge" → "Beacon" for notification routing
+
+### Test Results
+- **541 passed, 0 failed** across all G.2-G.42 test files
+
+---
+
+## [2026-04-14] — G.15-G.34: Coaching & Business Agent Enhancements (Phases 4-7)
+
+### Changed (G.15/G.16 — Alex Student Features + Tests)
+- `alex_agent.py`: Added `_is_student_mode()` detection (student_mode flag + age_group matching), `voice_enabled` metadata, student/voice flags in response metadata
+- `test_alex_agent.py`: 35 tests — identity, greeting, coaching, PRISM, goals, metadata, empathy, multi-turn, student mode (7), voice flag (2)
+
+### Changed (G.17/G.18 — Nova Triple Role + Tests)
+- `feedback_agent.py`: FeedbackAgent renamed from "Echo" to "Nova". Added `_detect_nova_role()` for career_strategy/feedback/hiring_triage intent detection, `nova_role` in metadata
+- `test_feedback_agent.py` (new): 18 tests — identity, career strategy, feedback collection, hiring triage, role detection, error handling, registration
+- `prompts.py`: Nova prompt — career strategy + feedback collection + hiring triage, Meridian synthesis directive
+
+### Changed (G.19/G.20 — Echo Learning/Training + Tests)
+- `session_agent.py`: SessionAgent renamed from "Nova" to "Echo". Added `LearningState` dataclass (current_module, modules_completed, quiz_scores, time_spent, next_recommended, progress_percentage), state persistence in working_memory
+- `test_session_agent.py` (new): 16 tests — identity, learning path, LearningState persistence/resume, progress tracking, quiz scores, metadata, error handling, registration
+- `prompts.py`: Echo prompt — personalized learning paths, AI tutoring, progress tracking, Meridian synthesis directive
+
+### Changed (G.21/G.22 — Ascend Leadership + Tests)
+- `ascend_agent.py`: Added role-based access control (`_ALLOWED_ROLES`: manager+), access denied response for unauthorized roles
+- `test_ascend_agent.py` (new): 14 tests — identity, leadership coaching, access control (5 roles), collaboration hooks, tier assignment, registration
+- `prompts.py`: Ascend prompt — executive coaching, leadership development, Meridian synthesis directive
+
+### Changed (G.23/G.24 — Forge Onboarding + Interpersonal + Tests)
+- `onboarding_agent.py`: Added `OnboardingState` enum (7 states: WELCOME → COMPLETE), state persistence in working_memory, dual-role detection (onboarding + interpersonal)
+- `test_onboarding_agent.py` (new): 16 tests — identity, onboarding flow, state transitions, interpersonal coaching, communication playbook, registration
+- `prompts.py`: Forge prompt — onboarding specialist + interpersonal effectiveness, Meridian synthesis directive
+
+### Changed (G.25/G.26 — Atlas Analytics + Tests)
+- `dashboard_agent.py`: Added `_ALLOWED_TABLES` for SQL query validation, `data_access_levels` in metadata, chart-ready JSON output hooks
+- `test_dashboard_agent.py` (new): 10 tests — identity, team analytics, data access levels, metadata, error handling, registration
+- `prompts.py`: Atlas prompt — organizational analytics, workforce planning, Job Blueprint, Meridian synthesis directive
+
+### Changed (G.27/G.28 — Sage Knowledge + Tests)
+- `document_agent.py`: Enhanced description for research synthesis, evidence-based frameworks
+- `test_document_agent.py` (new): 10 tests — identity, document search, RAG metadata, error handling, registration
+- `prompts.py`: Sage prompt — research synthesis, document processing pipeline, Meridian synthesis directive
+
+### Changed (G.29/G.30 — Compass Support + Tests)
+- `support_agent.py`: Enhanced description for ticket lifecycle, priority triage
+- `test_support_agent.py` (new): 10 tests — identity, FAQ search, ticket management, metadata, error handling, registration
+- `prompts.py`: Compass prompt — support navigator, ticket management, escalation, Meridian synthesis directive
+
+### Changed (G.31/G.32 — James Career Fit + Admin + Tests)
+- `admin_agent.py`: Added `FitScoreResult` dataclass, `classify_candidate()` function (Strong Fit/Potential Fit/Misalignment), fit_analysis in metadata
+- `test_admin_agent.py` (new): 16 tests — identity, admin operations, fit scoring, candidate classification, FitScoreResult structure, error handling, registration
+- `prompts.py`: James prompt — admin + career fit specialist, Job Blueprint methodology, Meridian synthesis directive
+
+### Added (G.33/G.34 — Bridge Pipeline Agent + Tests)
+- `career/pipeline_agent.py` (new): PipelineAgent name="Bridge", domain="career" — school-to-career pipeline matching
+- `career/__init__.py` (new): Career agent package
+- `test_pipeline_agent.py` (new): 10 tests — identity, career domain, employer matching, pipeline tracking, metadata, error handling
+- `dag_executor.py`: Added Bridge → PipelineAgent to factory
+- `prompts.py`: Bridge prompt — school-to-career pipeline, employer partnerships, Meridian synthesis directive
+
+### Fixed
+- `coaching_orchestrator.py`: Fixed Nova/Echo registry mismatch after G.17/G.19 name swaps ("Nova" → self.feedback, "Echo" → self.session)
+- `test_collaboration_wiring.py`: Fixed 2 pre-existing test assertions (tool_use_log key names, custom rule precedence)
+- `conftest.py`: Updated MockLLMProvider with career_talent intent, "You are X" pattern matching for all agents
+
+### Test Results
+- **426 passed, 0 failed** across all G.2-G.34 test files (964 total passed suite-wide)
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration_wiring.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration_wiring.py`
+
+## [2026-04-14] — G.7: Meridian Synthesis Directive Added to All 15 Agent Prompts
+
+### Changed
+- Added Meridian synthesis directive to all 15 non-Meridian agent prompts in `prompts.py`
+- Directive: "Your response will be synthesized by Meridian... focus on providing accurate, thorough, domain-specific content"
+- Agents with directive: Aura, Alex, Nova, Echo, Ascend, Forge, Atlas, Sage, Compass, James, Maven, Bridge, Sentinel, Anchor, Nexus
+- Meridian's own prompt excluded (Meridian IS the user-facing persona)
+- Beacon and Grant not yet in prompts.py (to be added in G.41 and G.45)
+- Updated mock LLM provider in `conftest.py` to use "You are X" pattern matching (avoids false matches on "Meridian" in directive text)
+  - Files: `services/agent-engine/app/llm/prompts.py`, `services/agent-engine/tests/conftest.py`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/prism_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/business/interview_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_prism_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_maven_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_prism_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_prism_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/prism_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_prism_agent.py`
+
+## [2026-04-14] — G.4/G.5/G.6: Alex Separation, 4th Domain, Meridian Tests
+
+### Changed (G.4 — Alex/Meridian Separation)
+- `alex_agent.py`: `name="Meridian"` → `name="Alex"`, updated description to student success advisor
+- `prompts.py`: Added "Alex" system prompt with student mode rules, age-gating, synthesis directive
+- `coaching_orchestrator.py`: "Meridian" → "Alex" in registry, added student keywords, default fallback → Aura
+- `dag_executor.py`, `planner.py`: Updated agent factory and descriptions
+
+### Changed (G.5 — 4th Domain: career_talent)
+- `meridian.py`: Added `career_talent` domain with keywords + phrase matching, 4-domain LLM classification
+- `prompts.py`: Updated intent classifier to support 4 domains
+
+### Changed (G.6a — Meridian System Prompt)
+- `prompts.py`: Enhanced Meridian as wise adaptive mentor with "we" language, 4-domain awareness, voice-optimized
+
+### Added (G.6b — Meridian Tests: 49 passing)
+- 4-domain classification, career_talent routing, keyword fallback, memory injection, EventBridge events, farewell detection
+- Updated 7 test files for Alex/Aura naming
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+## [2026-04-14] — G.2/G.3: Verify Base Architecture & LLM Provider Factory
+
+### Verified (G.2)
+- All 11 core Agent Engine files exist and are structurally correct
+- BaseAgent, AgentContext, AgentResponse, _build_messages_with_rag, process_with_tools — complete
+- Meridian router with LLM intent classification + keyword fallback — working (missing career_talent domain, G.5)
+- 3 orchestrators (coaching, business, system) with template+planner+DAG pipeline — complete
+- Memory integration (4-tier: load_context, format_memory_block, store_interaction, summarize_session) — complete
+- Collaboration protocol (AgentMessage, MessageType: REQUEST/RESPONSE/DELEGATE/INFORM) — complete
+- Permissions (6-role hierarchy, is_at_least, has_permission) — complete
+- Analytics tracker (AnalyticsTracker, cost model, event types) — complete
+
+### Added (G.3)
+- Added 3 missing agents to `AGENT_MODEL_TIERS`: Beacon (Haiku), Grant (Sonnet), Alex (Haiku)
+- Added 3 missing agents to `AGENT_MODEL_TIER` cost map in analytics/tracker.py
+- All 18 agents now mapped: 15 existing + Beacon, Grant, Alex
+- Did NOT change existing tier assignments per spec
+  - Files: `services/agent-engine/app/llm/agent_tiers.py`, `services/agent-engine/app/analytics/tracker.py`
+
+### Known Issues (to be fixed by later G prompts)
+- coaching_orchestrator maps "Meridian" -> alex (should be "Alex") — G.4
+- Meridian only routes 3 domains, missing career_talent — G.5
+- system_orchestrator maps "Bridge" -> notification (should be "Beacon") — G.41
+- No Meridian synthesis directive on agent prompts — G.7
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/coaching/alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/prompts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_meridian.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/conftest.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_alex_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/dag_executor.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestrators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestrators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestrators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestrators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestrators.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/planner.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/synthesizer.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/orchestration/synthesizer.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_orchestration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/tests/test_collaboration.py`
+
+## [2026-04-14] — Ecosystem Guide Appendix G: Prompt Implementation Order
+
+### Added
+- Created `IG_Ecosystem_Guide_Appendix_G.md` — consolidated prompt implementation order (54 prompts across 13 phases)
+  - Merges all corrections from Appendix F (F.1–F.6) inline into Appendix A & C prompts
+  - Merges all enhancements from Appendix D inline (9 enhancements)
+  - Adds Meridian synthesis directive (F.4.1) to all 17 agent system prompts
+  - Adds collaboration model correction (F.3) to all agent system prompts: "Your response will be synthesized by Meridian before delivery to the user"
+  - Phases: Frontend wiring → Foundation → Alex/Meridian separation → Aura → Maven → Remaining coaching → Business → System → Tools → Collaboration → Grant → Integration tests
+  - File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Ecosystem_Guide_Appendix_G.md`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/tmp/generate_appendix_g_docx.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/llm/agent_tiers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/analytics/tracker.py`
+
+## [2026-04-14] — Meridian Chat Integration Guide
+
+### Added
+- Created `Meridian_Chat_Integration_Guide.docx` at project root — comprehensive guide with 10 Claude Code prompts to implement "Chat with Meridian"
+- Document covers: current "Chat with Coach" flow analysis, architecture comparison (Monolith vs Agent Eco-System), detailed implementation prompts for route/nav/page/hook/service/tests/docs, and a next steps checklist
+- Prompts reference specific file paths, component names, and WebSocket protocols from the existing codebase
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+## [2026-04-13] — Filter Inactive Coaches & Fix Agent Document Visibility
+
+### Fixed
+- **Inactive coaches hidden** — Dashboard and Coaches pages now only show PRISM Coach, Training Coach, and Career Coach. All other inactive/undeployed coaches are filtered out.
+  - Files: `inspire-genius-frontend/src/pages/user/Dashboard.tsx`, `inspire-genius-frontend/src/pages/user/Coaches.tsx`
+- **Agent document visibility** — Agents no longer say "I have no visibility into documents" when user documents are selected. Root cause: system prompts lacked instructions telling agents they have access to retrieved document content.
+  - Added `<DOCUMENT_ACCESS_INSTRUCTIONS>` block to all agent knowledge_base assemblies (PrismCoachAgent, CareerAgent, TrainingAgent, DefaultAgent)
+  - Added explicit "you CAN see, read, and reference documents" instruction to the base Meridian system prompt template
+  - Added `<USER_CASE_FILES>` wrapper tags to CareerAgent, TrainingAgent, DefaultAgent (PrismCoachAgent already had them)
+  - Files: `inspire-genius-backend/ai/ai_agent_services/prompts.py`, `prism_coach_agent.py`, `career_agent.py`, `training_agent.py`, `default_agent.py`
+
+---
+
+## [2026-04-14] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/super-admin/__tests__/coachManagementService.test.ts`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Filter inactive coaches (keep PRISM/Training/Career only) & fix agent document visibility (add DOCUMENT_ACCESS_INSTRUCTIONS to all agents)
+  - Files: `Dashboard.tsx,Coaches.tsx,prompts.py,prism_coach_agent.py,career_agent.py,training_agent.py,default_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/context-status.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Coaches.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Coaches.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Coaches.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/documents/__tests__/documentService.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/documents/__tests__/documentService.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/documents/__tests__/documentService.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/axios.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/lib/agentApi.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/super-admin/coachManagementService.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/agents.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/settings.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/chat.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/agent.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/settings/AgentEngineToggle.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/settings/Settings.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/settings/Settings.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/__tests__/agents.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/__tests__/settings.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/__tests__/chat.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/__tests__/agent.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/coaches/__tests__/useCoachData.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Coaches.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/alex/__tests__/useAlexChat.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/shared/settings/__tests__/Settings.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/__tests__/AlexChatPanel.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/config.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/settings/AgentEngineToggle.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/settings.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/chat.service.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/coaches/__tests__/settings.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/alex/__tests__/chat.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Coaches.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Coaches.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Dashboard.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/Coaches.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MessageFeedback.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/feedback/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MessageFeedback.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MessageFeedback.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MessageFeedback.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/feedback/useFeedback.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/feedback/FeedbackButtons.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/feedback/__tests__/feedback.service.test.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/types/feedback/index.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/user/chat/MessageFeedback.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/FeedbackHistory.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/RlhfReviewQueue.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/RlhfReviewQueue.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/RlhfReviewQueue.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/RlhfFeedbackTable.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/RlhfFeedbackDetailModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/__tests__/RlhfFeedbackDetailModal.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/super-admin/rlhf/__tests__/RlhfFeedbackTable.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/feedback/CorrectionModal.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/feedback/__tests__/FeedbackButtons.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_meridian_guide.py`
+
+## [2026-04-13] — Ecosystem Guide v4: Alex/Meridian Correction & Full Coverage Verification
+
+### Added
+- **Appendix F: Corrections & Clarifications** — Corrects Alex/Meridian identity model:
+  - Meridian = router + user-facing persona + synthesizer (users NEVER talk to other agents directly)
+  - Alex = dedicated student success advisor (separate identity, NOT an alias for Meridian)
+  - F.2: Corrected prompt A.3.1 — separates Alex from Meridian non-destructively (change name, add student prompt, update orchestrator)
+  - F.4.1: New prompt — adds Meridian synthesis directive to all 17 specialist agent system prompts
+  - F.5: Full C.1 coverage verification — all 15 gaps now have prompt solutions (was 12)
+  - F.6: Updated total: 54 prompts (was 42 → 51 → 54)
+- All corrections highlighted in **cyan/red** to distinguish from yellow/green additions
+  - File: `Dropbox/AES Material/Inspire-X/Agent:Mentor info/IG_Employee_Success_Agent_Ecosystem_Guide_v4.docx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/components/alex/__tests__/AlexChatPanel.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/Coaches.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/prism_coach_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/career_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/training_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/default_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/prompts.py`
+
+## [2026-04-13] — Fix Document Upload & Agent Access Pipeline
+
+### Fixed
+- **Agent document access (monolith)** — Agents now auto-load ALL user documents when no specific files are selected, instead of requiring manual file selection
+  - `ConnectionHandler._get_all_user_file_ids()`: New method fetches all non-deleted file IDs for the current user
+  - `ConnectionHandler.initialize_prism_agent()`: Auto-loads user files when `file_ids` not provided in WebSocket init
+  - Files: `inspire-genius-backend/ai/ai_agent_services/agent_services/handlers/connection_handler.py`
+- **PrismCoachAgent** — Removed `file_ids` gate that blocked user document search; now always searches when user query warrants it
+  - Files: `inspire-genius-backend/ai/ai_agent_services/agent_services/agents/prism_coach_agent.py`
+- **CareerAgent** — Removed `file_ids` gate; searches user documents by `user_id` regardless of file selection
+  - Files: `inspire-genius-backend/ai/ai_agent_services/agent_services/agents/career_agent.py`
+- **TrainingAgent & DefaultAgent** — Pass `None` instead of empty list for `file_ids` to enable user_id-only search
+  - Files: `inspire-genius-backend/ai/ai_agent_services/agent_services/agents/training_agent.py`, `default_agent.py`
+- **Documents page listing** — Switched from undeployed Document Service (`/v1/documents/`) to monolith file service (`/v1/file_service/list/v2`) with response transformation
+  - Files: `inspire-genius-frontend/src/services/documents/documentService.ts`
+- **Documents page download/delete** — Switched to monolith file service endpoints
+  - Files: `inspire-genius-frontend/src/services/documents/documentService.ts`
+- **CoachChat status banner** — Changed "Connected. Select Documents to proceed" to "Connected" since documents auto-load
+  - Files: `inspire-genius-frontend/src/pages/user/CoachChat.tsx`
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Fix document upload & agent access pipeline: auto-load user docs, remove file_ids gates, switch Documents page to monolith endpoints
+  - Files: `connection_handler.py,prism_coach_agent.py,career_agent.py,training_agent.py,default_agent.py,documentService.ts,CoachChat.tsx`
+
 ## [2026-04-13] — Ecosystem Guide v4: Gap Analysis & New Prompts
 
 ### Added
@@ -22,6 +1155,36 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/observability-service/migrations/001_create_observability_tables.sql`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/handlers/connection_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/handlers/connection_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/prism_coach_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/career_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/training_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/agents/default_agent.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/CoachChat.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-backend/ai/ai_agent_services/agent_services/handlers/connection_handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/documents/documentService.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/documents/documentService.ts`
 
 ## [2026-04-13] — Agent Observability System (Full Stack)
 

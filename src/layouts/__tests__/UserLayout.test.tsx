@@ -34,12 +34,21 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+jest.mock("@/lib/agentApi", () => ({
+  useAgentEngine: () => false,
+}));
+
 const DummyIcon = () => null;
+const mockNavItems = [
+  { to: "/home", icon: DummyIcon, label: "Home" },
+  { to: "/dashboard", icon: DummyIcon, label: "Dashboard" },
+];
 jest.mock("@/constants/navigation", () => ({
   USER_NAV_ITEMS: [
     { to: "/home", icon: DummyIcon, label: "Home" },
     { to: "/dashboard", icon: DummyIcon, label: "Dashboard" },
   ],
+  getUserNavItems: () => mockNavItems,
   SUPER_ADMIN_NAV_SECTIONS: [
     {
       label: "Administration",

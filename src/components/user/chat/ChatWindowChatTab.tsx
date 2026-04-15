@@ -89,6 +89,11 @@ export default function ChatWindowChatTab({
               </div>
               <div className="text-[11px] text-muted-foreground">{m.time}</div>
             </div>
+            {m.kind === "text" && m.sender === "assistant" && m.agent && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                via {m.agent}
+              </p>
+            )}
             {m.sender === "assistant" && coachId && conversationId && (
               <MessageFeedback
                 messageId={m.id}

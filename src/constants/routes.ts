@@ -11,6 +11,7 @@ export const ROUTES = {
   HELP: "/help",
   FEEDBACK: "/feedback",
   ANALYTICS: "/analytics",
+  MERIDIAN_CHAT: "/meridian/chat",
   PRISM_ASSESSMENT: "/prism-assessment",
   SUPER_ADMIN: {
     BASE: "/super-admin",
