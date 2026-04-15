@@ -55,7 +55,7 @@ jobs:
           retention-days: 1
 
   # ─────────────────────────────────────────────
-  # 2. UNIT & INTEGRATION TESTS
+  # 2. UNIT & INTEGRATION TESTS (with coverage)
   # ─────────────────────────────────────────────
   test-unit:
     name: Unit Tests
@@ -72,8 +72,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Run tests with coverage
-        run: npm run test:ci -- --coverage --forceExit
+      - name: Run tests with coverage (60% threshold)
+        run: |
+          npx jest --ci --forceExit --coverage \
+            --coverageThreshold='{"global":{"branches":60,"functions":60,"lines":60,"statements":60}}'
 
       - name: Upload coverage report
         if: always()
@@ -84,7 +86,74 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────
-  # 3. E2E SMOKE TESTS (per role)
+  # 3. DEPENDENCY AUDIT (frontend)
+  # ─────────────────────────────────────────────
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high || true
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit
+          path: npm-audit.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 4. TRIVY FILESYSTEM SCAN
+  # ─────────────────────────────────────────────
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+          format: "table"
+
+      - name: Run Trivy (JSON report)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+          format: "json"
+          output: "trivy-report.json"
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 5. E2E SMOKE TESTS (per role)
   # ─────────────────────────────────────────────
   e2e:
     name: E2E — ${{ matrix.role }}
@@ -146,13 +215,16 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────
-  # 4. DEPLOY TO S3 + CLOUDFRONT
+  # 6. DEPLOY TO STAGING (requires approval)
   # ─────────────────────────────────────────────
-  deploy:
-    name: Deploy to AWS
-    needs: [build, test-unit]
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build, test-unit, dependency-audit, trivy-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.inspiregenius.com
 
     steps:
       - name: Download dist
@@ -171,7 +243,7 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Deploy to S3
+      - name: Deploy to S3 (staging)
         run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
 
       - name: Invalidate CloudFront cache
@@ -180,5 +252,46 @@ jobs:
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
-      - name: Deployment complete
-        run: echo "Deployed to https://d1nxsns258du4y.cloudfront.net"
+      - name: Staging deployment complete
+        run: echo "Deployed to staging — https://d1nxsns258du4y.cloudfront.net"
+
+  # ─────────────────────────────────────────────
+  # 7. DEPLOY TO PRODUCTION (requires approval)
+  # ─────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://app.inspiregenius.com
+
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Deploy to S3 (production)
+        run: aws s3 sync dist/ s3://${{ secrets.PROD_S3_BUCKET }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.PROD_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Production deployment complete
+        run: echo "Deployed to production — https://app.inspiregenius.com"
