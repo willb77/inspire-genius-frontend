@@ -22,6 +22,8 @@ export type ChatMessage =
       sender: "assistant" | "user";
       text: string;
       time: string;
+      agent?: string;
+      domain?: string;
     }
   | {
       id: string;

@@ -18,6 +18,7 @@ import {
   Map,
   Briefcase,
   Brain,
+  Sparkles,
   BarChart3,
   MessageCircle,
   Mic,
@@ -37,6 +38,25 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
+
+/**
+ * Toggle-aware navigation items for the user role.
+ * When Agent Engine is ON, shows "Chat with Meridian" instead of "Chat with Coaches".
+ */
+export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
+  return [
+    { to: ROUTES.HOME, icon: Home, label: "Home" },
+    agentEngineEnabled
+      ? { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian" }
+      : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
+    { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
+    { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
+    { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
+    { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+    { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
+    { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
+  ]
+}
 
 /** Navigation items for the super-admin role */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [

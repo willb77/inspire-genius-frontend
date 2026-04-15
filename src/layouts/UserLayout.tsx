@@ -1,11 +1,12 @@
 import React, { useMemo } from "react";
 import { ROUTES } from "@/constants/routes";
-import { USER_NAV_ITEMS, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
+import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import AlexFloating from "@/components/shared/AlexFloating";
 import { useTour } from "@/context/useTour";
 import { useAuth } from "@/context/useAuth";
+import { useAgentEngine } from "@/lib/agentApi";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -16,20 +17,22 @@ export default function UserLayout({ children, className }: UserLayoutProps) {
   const { isRunning } = useTour();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super-admin";
+  const agentEngineOn = useAgentEngine();
+  const userNavItems = getUserNavItems(agentEngineOn);
 
   /** When a super-admin visits user pages via Role Views, show admin sections
    *  plus user nav items so they can navigate within the user experience. */
   const superAdminSections: NavSectionDef[] = useMemo(
     () => [
       ...SUPER_ADMIN_NAV_SECTIONS,
-      { label: "User Pages", items: USER_NAV_ITEMS },
+      { label: "User Pages", items: userNavItems },
     ],
-    [],
+    [userNavItems],
   );
 
   return (
     <SidebarScaffold
-      navItems={isSuperAdmin ? [] : USER_NAV_ITEMS}
+      navItems={isSuperAdmin ? [] : userNavItems}
       navSections={isSuperAdmin ? superAdminSections : undefined}
       className={className}
       expandOnPath={ROUTES.HOME}

@@ -1,6 +1,6 @@
 import UserLayout from "@/layouts/UserLayout";
 import { Input } from "@/components/ui/input";
-import { Search, AlertCircle, Bot, RefreshCcw } from "lucide-react";
+import { Search, AlertCircle, Bot, RefreshCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserCoachCard from "@/components/user/UserCoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
@@ -9,6 +9,7 @@ import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAgents } from "@/hooks/coaches/useAgents";
 import { useAgentEngine } from "@/lib/agentApi";
+import { ROUTES } from "@/constants/routes";
 
 type Agent = {
   id: string;
@@ -74,6 +75,25 @@ export default function Dashboard() {
   return (
     <UserLayout>
       <div className="space-y-6">
+        {agentEngineOn && (
+          <div className="mb-6 rounded-lg border bg-gradient-to-r from-violet-50 to-indigo-50 p-6 dark:from-violet-950/20 dark:to-indigo-950/20">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-8 w-8 text-violet-500" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">Chat with Meridian</h3>
+                <p className="text-sm text-muted-foreground">
+                  Meridian is your unified AI coaching persona. All 18 agents are accessible through a single conversation.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(ROUTES.MERIDIAN_CHAT)}
+                className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+              >
+                Start Chatting
+              </button>
+            </div>
+          </div>
+        )}
         <div className="bg-transparent rounded-xl p-4" data-tour="dashboard-coach-list">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="text-left flex-1 min-w-0">
