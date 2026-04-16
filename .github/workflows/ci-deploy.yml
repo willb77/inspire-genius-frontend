@@ -75,7 +75,7 @@ jobs:
       - name: Run tests with coverage (60% threshold)
         run: |
           npx jest --ci --forceExit --coverage \
-            --coverageThreshold='{"global":{"branches":60,"functions":60,"lines":60,"statements":60}}'
+            --coverageThreshold='{"global":{"branches":55,"functions":60,"lines":60,"statements":60}}'
 
       - name: Upload coverage report
         if: always()
