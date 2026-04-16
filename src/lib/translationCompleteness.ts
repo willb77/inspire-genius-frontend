@@ -35,6 +35,7 @@ export const LANGUAGES_METADATA: Record<string, LanguageMetadata> = {
   id: { native: 'Bahasa Indonesia', status: 'partial', note: 'Partial (common.json only)' },
   sv: { native: 'Svenska', status: 'partial', note: 'Partial (common.json only)' },
   nb: { native: 'Norsk', status: 'partial', note: 'Partial (common.json only)' },
+  sq: { native: 'Shqip', status: 'complete' },
 };
 
 export const TRANSLATION_NAMESPACES = [

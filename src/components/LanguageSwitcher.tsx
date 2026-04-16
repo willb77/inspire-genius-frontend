@@ -29,6 +29,7 @@ const LANGUAGES = [
   { code: 'id',    label: 'Bahasa Indonesia' },
   { code: 'sv',    label: 'Svenska' },
   { code: 'nb',    label: 'Norsk' },
+  { code: 'sq',    label: 'Shqip' },
 ] as const;
 
 export default function LanguageSwitcher() {
