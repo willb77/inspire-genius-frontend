@@ -185,14 +185,14 @@ jest.mock("@/layouts/UserLayout", () => ({
 
 jest.mock("@/components/user/chat/ChatHistory", () => ({
   __esModule: true,
-  default: (_props: Record<string, unknown>) => (
+  default: () => (
     <div data-testid="chat-history">ChatHistory</div>
   ),
 }));
 
 jest.mock("@/components/user/chat/ChatWindow", () => ({
   __esModule: true,
-  default: (_props: Record<string, unknown>) => (
+  default: () => (
     <div data-testid="chat-window">ChatWindow</div>
   ),
 }));
