@@ -53,6 +53,19 @@ export type UseMeridianWebSocketOptions = {
 // ---------------------------------------------------------------------------
 
 function buildWsUrl(accessToken: string): string {
+  // Prefer dedicated WebSocket URL (API Gateway WebSocket API)
+  const wsEnv =
+    (import.meta.env.VITE_AGENT_WS_URL as string) ||
+    (import.meta.env.VITE_AGENTS_WEBSOCKET_BASE_URL as string);
+
+  if (wsEnv) {
+    const base = wsEnv.replace(/\/$/, "");
+    // If the env already includes a path (e.g. ws://host/ws/chat), use as-is
+    const url = base.includes("/ws/chat") ? base : `${base}/ws/chat`;
+    return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
+  }
+
+  // Fallback: derive from HTTP Agent Engine URL (works for local dev)
   const base =
     (import.meta.env.VITE_AGENT_ENGINE_URL as string) ||
     (import.meta.env.VITE_API_BASE_URL as string) ||
