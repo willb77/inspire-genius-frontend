@@ -72,10 +72,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Run tests with coverage (60% threshold)
-        run: |
-          npx jest --ci --forceExit --coverage \
-            --coverageThreshold='{"global":{"branches":55,"functions":60,"lines":60,"statements":60}}'
+      - name: Run tests with coverage
+        env:
+          COVERAGE_THRESHOLD: '{"global":{"branches":55,"functions":60,"lines":60,"statements":60}}'
+        run: npx jest --ci --forceExit --coverage --coverageThreshold="$COVERAGE_THRESHOLD"
 
       - name: Upload coverage report
         if: always()
