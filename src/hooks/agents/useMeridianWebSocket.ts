@@ -34,11 +34,11 @@ export type UseMeridianWebSocketReturn = {
   connect: (accessToken: string) => void;
   disconnect: () => void;
   sendMessage: (text: string, context?: Record<string, unknown>) => void;
-  startVoice: () => void;
+  startVoice: (voiceConfig?: { gender?: string; accent?: string; language?: string }) => void;
   stopVoice: () => void;
   sendAudioChunk: (chunk: ArrayBuffer | Blob) => void;
   isRecording: boolean;
-  startRecording: () => Promise<void>;
+  startRecording: (voiceConfig?: { gender?: string; accent?: string; language?: string }) => Promise<void>;
   stopRecording: () => void;
 };
 
@@ -268,7 +268,7 @@ export function useMeridianWebSocket(
     (text: string, context?: Record<string, unknown>) => {
       setCurrentResponse("");
       setIsProcessing(true);
-      safeSend(JSON.stringify({ type: "chat", message: text, context }));
+      safeSend(JSON.stringify({ type: "chat", action: "chat", message: text, context }));
     },
     [safeSend],
   );
@@ -277,8 +277,13 @@ export function useMeridianWebSocket(
   // Voice helpers
   // -------------------------------------------------------------------
 
-  const startVoice = useCallback(() => {
-    safeSend(JSON.stringify({ type: "voice_start" }));
+  const startVoice = useCallback((voiceConfig?: { gender?: string; accent?: string; language?: string }) => {
+    safeSend(JSON.stringify({
+      type: "voice_start",
+      gender: voiceConfig?.gender,
+      accent: voiceConfig?.accent,
+      language: voiceConfig?.language ?? "en-US",
+    }));
   }, [safeSend]);
 
   const stopVoice = useCallback(() => {
@@ -298,7 +303,7 @@ export function useMeridianWebSocket(
   // MediaRecorder-based recording (mirrors usePrismAgentWebSocket)
   // -------------------------------------------------------------------
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (voiceConfig?: { gender?: string; accent?: string; language?: string }) => {
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -317,7 +322,7 @@ export function useMeridianWebSocket(
       };
       mr.onstart = () => {
         setIsRecording(true);
-        startVoice();
+        startVoice(voiceConfig);
       };
       mr.onstop = () => {
         setIsRecording(false);
