@@ -2,6 +2,44 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-14] — Critical Bug Fixes: Chat, Zilliz, Voice, Agent Prompts
+
+### Fixed
+- **CI/CD env var mismatch**: `VITE_ALEX_WEBSOCKET_URL` renamed to `VITE_ALEX_WEB_SOCKET_URL` to match frontend code. `VITE_AGENT_WS_URL` now sources from its own secret instead of `VITE_AGENTS_WEBSOCKET_BASE_URL`.
+  - Files: `inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+- **Monolith chat WebSocket URL**: `usePrismAgentWebSocket` no longer appends `/agents/{agentId}` path for production API Gateway WebSocket URLs (API GW ignores URL paths). Messages now include `action: "chat"` for route matching.
+  - Files: `inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+- **WS proxy Lambda**: Updated to handle `init` type messages from usePrismAgentWebSocket and route `text` type messages as chat.
+  - Files: `services/ws-proxy/handler.py`
+- **Meridian chat messages**: Now include `action: "chat"` field for API Gateway route selection.
+  - Files: `inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+- **Zilliz/Milvus CDK config**: Added explicit `AGENT_ENGINE_ZILLIZ_ENDPOINT`, `AGENT_ENGINE_ZILLIZ_COLLECTION_NAME`, and `AGENT_ENGINE_EMBEDDING_DIM` environment variables to ECS task definition. Previously only the API key was injected as a secret.
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
+- **Voice settings all sound the same**: Added `PREFERENCE_VOICE_MAP` (30+ gender/accent-to-Polly-voice mappings) and `PREFERENCE_OPENAI_VOICE_MAP`. Voice handlers now accept `gender`/`accent` params in `voice_start` and `voice_config` messages.
+  - Files: `services/agent-engine/app/voice/tts.py`, `services/agent-engine/app/websocket/voice_handlers.py`
+- **Agent prompts lost on restart**: Agent settings (prompts, status, custom agents) now persist to DynamoDB `agent-config` table. Falls back to in-memory if DynamoDB is unavailable.
+  - Files: `services/agent-engine/app/routes/agents_settings.py`
+
+### Changed
+- Platform readiness report updated with accurate status for all 5 broken components
+  - Files: `generate_platform_readiness_report.py`
+
+## [2026-04-14] — Platform Readiness Report
+
+### Added
+- `generate_platform_readiness_report.py` — Python script to generate comprehensive Word document auditing all 20 platform components
+- `Transformation Documents/IG_Platform_Readiness_Report.docx` — Full readiness report with executive summary, status tables, detailed assessments, fix prompts, infrastructure inventory
+
+### Assessment Summary
+- 17/20 components fully working, 3/20 partially working, 0 not working
+- 99 frontend page components across 6 roles, 68 routes
+- 11 CDK stacks deployed, 14+ Lambda functions, 5 DynamoDB tables
+- 18 agents in Agent Engine with Meridian unified persona
+- 21 languages supported via i18n
+- Primary blockers: Trainer Lambda pydantic_core import, Google OAuth config, ECS manual start
+
+---
+
 ## [2026-04-19] — Interaction Protocol Management UI
 
 ### Added
@@ -18,6 +56,108 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_readiness_report.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/usePrismAgentWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/agent-engine-stack.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/voice/tts.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/voice_handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/voice_handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/voice_handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/websocket/voice_handlers.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/app/routes/agents_settings.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/ws-proxy/handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/ws-proxy/handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_readiness_report.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_readiness_report.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_readiness_report.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_platform_readiness_report.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 ## [2026-04-15] — P2-Docs: Operational Documentation Suite
 

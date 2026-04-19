@@ -32,13 +32,13 @@ jobs:
         run: |
           echo "VITE_NODE_ENV=production" > .env
           echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
-          echo "VITE_ALEX_WEBSOCKET_URL=${{ secrets.VITE_ALEX_WEBSOCKET_URL }}" >> .env
+          echo "VITE_ALEX_WEB_SOCKET_URL=${{ secrets.VITE_ALEX_WEB_SOCKET_URL }}" >> .env
           echo "VITE_AGENTS_WEBSOCKET_BASE_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}" >> .env
           echo "VITE_STORAGE_SECRET=${{ secrets.VITE_STORAGE_SECRET }}" >> .env
           echo "VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}" >> .env
           echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}" >> .env
           echo "VITE_AGENT_ENGINE_URL=${{ secrets.VITE_AGENT_ENGINE_URL }}" >> .env
-          echo "VITE_AGENT_WS_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}" >> .env
+          echo "VITE_AGENT_WS_URL=${{ secrets.VITE_AGENT_WS_URL }}" >> .env
           echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
           echo "VITE_APP_VERSION=${{ github.sha }}" >> .env
 

@@ -70,7 +70,15 @@ export function usePrismAgentWebSocket(
 
   const makeUrl = useCallback((agentId: string) => {
     const trimmed = base.replace(/\/$/, "");
-    return `${trimmed}/agents/${agentId}`;
+    // API Gateway WebSocket API uses route selection from message body, not URL paths.
+    // For local dev (ws://localhost:8001), append /agents/{agentId} as the monolith expects.
+    // For production (wss://*.execute-api.*), connect to the base URL directly and
+    // send the agent_id in the init message payload.
+    if (trimmed.includes("localhost") || trimmed.includes("127.0.0.1")) {
+      return `${trimmed}/agents/${agentId}`;
+    }
+    // Production: connect to base WSS URL (API Gateway ignores URL path segments)
+    return trimmed;
   }, [base]);
 
   const safeSend = useCallback((data: string | ArrayBuffer | Blob) => {
@@ -80,7 +88,12 @@ export function usePrismAgentWebSocket(
   }, []);
 
   const sendTextMessage = useCallback((text: string, isRealtime = false) => {
-    const payload = { type: isRealtime ? "realtime_text" : "text", text } as const;
+    const payload = {
+      type: isRealtime ? "realtime_text" : "text",
+      action: "chat",
+      text,
+      message: text,
+    };
     safeSend(JSON.stringify(payload));
   }, [safeSend]);
 
@@ -156,8 +169,16 @@ export function usePrismAgentWebSocket(
     activeTokenRef.current = null;
   }, []);
 
-  const sendInit = useCallback((token: string, conversationId?: string, fileIds?: string[]) => {
-    const payload = { type: "init", access_token: token, conversation_id: conversationId, file_ids: fileIds && fileIds.length ? fileIds : undefined , mute:false};
+  const sendInit = useCallback((token: string, conversationId?: string, fileIds?: string[], agentId?: string) => {
+    const payload = {
+      type: "init",
+      action: "chat",
+      access_token: token,
+      agent_id: agentId,
+      conversation_id: conversationId,
+      file_ids: fileIds && fileIds.length ? fileIds : undefined,
+      mute: false,
+    };
     safeSend(JSON.stringify(payload));
   }, [safeSend]);
 
@@ -194,7 +215,7 @@ export function usePrismAgentWebSocket(
       setIsConnecting(false);
       reconnectAttempts.current = 0;
       const p = pendingInitRef.current;
-      if (p) sendInit(p.token, p.conversationId, p.fileIds);
+      if (p) sendInit(p.token, p.conversationId, p.fileIds, p.agentId);
     };
 
     ws.onmessage = handleIncoming;
@@ -227,7 +248,7 @@ export function usePrismAgentWebSocket(
     const ws = socketRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       const token = activeTokenRef.current || p.token;
-      sendInit(token, p.conversationId, fileIds);
+      sendInit(token, p.conversationId, fileIds, p.agentId);
     }
   }, [sendInit]);
 
