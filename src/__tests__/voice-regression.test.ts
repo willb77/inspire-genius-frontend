@@ -153,12 +153,15 @@ describe("getVoiceConfig", () => {
     expect(result.data!.stt_updated_by).toBe("admin@test.com");
   });
 
-  it("propagates rejection when both API paths fail", async () => {
+  it("returns fallback config when both API paths fail", async () => {
     const { api } = await import("@/lib/axios");
     (api.get as jest.Mock).mockRejectedValueOnce(new Error("404"));
     (api.get as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
     const { getVoiceConfig } = await import("@/services/voiceConfigService");
-    await expect(getVoiceConfig()).rejects.toThrow("Network error");
+    const result = await getVoiceConfig();
+    expect(result.status).toBe(true);
+    expect(result.data!.tts_provider).toBe("aws_polly");
+    expect(result.message).toMatch(/default|unavailable/i);
   });
 });
 
