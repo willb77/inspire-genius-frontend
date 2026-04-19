@@ -31,6 +31,7 @@ export const ROUTES = {
     AGENT_TRAINER: "/super-admin/agent-trainer",
     BULK_IMPORT: "/super-admin/bulk-import",
     OBSERVABILITY: "/super-admin/observability",
+    INTERACTION_PROTOCOL: "/super-admin/interaction-protocol",
   },
   MANAGER: {
     BASE: "/manager",

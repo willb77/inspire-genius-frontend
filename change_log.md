@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-19] — Interaction Protocol Management UI
+
+### Added
+- `src/pages/super-admin/InteractionProtocol.tsx` — Admin page to view/edit the compressed interaction protocol injected into all agent prompts
+- `src/services/agent/protocolService.ts` — API service for GET/PUT interaction protocol via agent engine
+- Super Admin nav item "Interaction Protocol" at `/super-admin/interaction-protocol`
+
+### Changed
+- `src/constants/routes.ts` — Added `SUPER_ADMIN.INTERACTION_PROTOCOL` route constant
+- `src/constants/navigation.ts` — Added ScrollText nav item for Interaction Protocol
+- `src/routes.tsx` — Added lazy-loaded route for InteractionProtocol page
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
 ## [2026-04-15] — P2-Docs: Operational Documentation Suite
 
 ### Added
@@ -15,8 +32,143 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2026-04-19] — Session Activity
+
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/tmp/generate_protocol_doc.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/agent/protocolService.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/InteractionProtocol.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+
+## [2026-04-17] — Interaction Protocol Injection System
+
+### Added
+- `app/prompts/interaction_protocol.py` -- 10-directive compressed behavioral protocol (~130 tokens), hardcoded fallback
+- `app/prompts/config_store.py` -- DynamoDB-backed config store with 300s TTL cache, graceful fallback to default
+- `app/prompts/phase_detector.py` -- Session-phase conditional injection (skips idle/farewell phases, checks Redis)
+- `scripts/seed_interaction_protocol.py` -- Standalone seed script: creates `ig-agent-config` table + inserts default protocol
+- Admin API endpoints: `GET/PUT /v1/agents-settings/interaction-protocol` for protocol management
+
+### Changed
+- `app/agents/base_agent.py` -- `_build_messages()` now prepends interaction protocol before agent system prompt (with try/except safety)
+- `app/config.py` -- Added `agent_config_table` setting (default: `ig-agent-config`)
+- `app/routes/agents_settings.py` -- Added interaction protocol GET/PUT endpoints
+- `infrastructure/cdk/lib/agent-engine-stack.ts` -- Added `ig-agent-config` DynamoDB table (PAY_PER_REQUEST, RETAIN), IAM grant to ECS task role, env var injection
+- `infrastructure/cdk/lib/database-stack.ts` -- Fixed `RetentionDays.THIRTY_DAYS` -> `ONE_MONTH` (enum name mismatch)
+
+### Deployed
+- DynamoDB table `ig-dev-agent-config` created and seeded with v1 protocol
+- ECS task definition rev 14: added `AGENT_ENGINE_AGENT_CONFIG_TABLE` env var
+- IAM inline policy `AgentConfigDynamoDBAccess` attached to task role
+- Docker image rebuilt and pushed to ECR, ECS redeployed
+- Verified: `GET /v1/agents-settings/interaction-protocol` returns v1 from DynamoDB
+
+
+## [2026-04-16] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/user/__tests__/MeridianChat.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/generate_production_status_doc.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/cdk.context.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/cdk.context.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/cdk.context.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/cdk.context.json`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/infrastructure/cdk/lib/cognito-stack.ts`
+
+- File modified
+  - Files: `/tmp/run_migrations.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+- File modified
+  - Files: `/tmp/generate_agent_ecosystem_audit.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-trainer-lambda.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/build-conversation-crud.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-feedback-routing.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-prism-service.md`
+
+- File modified
+  - Files: `/tmp/update_audit_doc.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-api-gateway-routes.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-sqlite-sql.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/.claude/commands/fix-frontend-paths.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/feedback_verify_before_reporting.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/feedback_dont_break_what_works.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/MEMORY.md`
 
 ## [2026-04-15] — P2-CICD: Enhanced CI/CD Pipeline Security & Quality Gates
 
