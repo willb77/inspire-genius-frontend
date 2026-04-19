@@ -107,6 +107,7 @@ const CompanyAdminObservability = React.lazy(() => import("@/pages/company-admin
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
 const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
+const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
 const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
@@ -197,6 +198,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/bulk-import", element: withSuspense(<SuperAdminBulkImport />) },
       { path: "/super-admin/observability", element: withSuspense(<SuperAdminObservability />) },
       { path: "/super-admin/interaction-protocol", element: withSuspense(<InteractionProtocol />) },
+      { path: "/super-admin/mentor-management", element: withSuspense(<MentorManagement />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 

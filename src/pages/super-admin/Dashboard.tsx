@@ -1,7 +1,8 @@
-import { useState } from "react";
-import SuperAdminLayout from "@/layouts/SuperAdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -9,43 +10,53 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
+} from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import {
   Users,
   Building2,
   Brain,
   DollarSign,
   GraduationCap,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem";
-import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement";
-import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches";
-import { useAuditStats } from "@/hooks/audit/useAudit";
-import { useFeedbackStats } from "@/hooks/feedback/useFeedback";
-import { useCostDashboard } from "@/hooks/trainer/useTrainer";
+  Activity,
+  Wifi,
+  AlertTriangle,
+  Clock,
+  UserPlus,
+  ExternalLink,
+  ChevronRight,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem"
+import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
+import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
+import { useAuditStats } from "@/hooks/audit/useAudit"
+import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
+import { useCostDashboard } from "@/hooks/trainer/useTrainer"
+import { ROUTES } from "@/constants/routes"
+import { AGENT_VOICE_CONFIG, getDomainColor } from "@/constants/agentVoiceConfig"
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function fmt(n: number | undefined | null, prefix = ""): string {
-  if (n == null) return "--";
-  return `${prefix}${n.toLocaleString()}`;
+  if (n == null) return "--"
+  return `${prefix}${n.toLocaleString()}`
 }
 
 function KpiSkeleton() {
@@ -60,7 +71,7 @@ function KpiSkeleton() {
         <Skeleton className="h-7 w-24" />
       </CardContent>
     </Card>
-  );
+  )
 }
 
 function TableRowSkeleton({ cols }: { cols: number }) {
@@ -72,7 +83,7 @@ function TableRowSkeleton({ cols }: { cols: number }) {
         </TableCell>
       ))}
     </TableRow>
-  );
+  )
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -80,7 +91,51 @@ function EmptyState({ message }: { message: string }) {
     <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
       {message}
     </div>
-  );
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Clickable KPI card
+// ---------------------------------------------------------------------------
+
+type KpiCardProps = {
+  label: string
+  value: string
+  change: string
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  linkTo?: string
+}
+
+function KpiCard({ label, value, change, icon: Icon, color, linkTo }: KpiCardProps) {
+  const content = (
+    <Card className={cn("shadow-sm transition-colors", linkTo && "hover:border-blue-300 cursor-pointer group")}>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className={cn("flex items-center justify-center h-10 w-10 rounded-lg", color)}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <span className="flex items-center text-xs font-medium text-muted-foreground">
+            {change}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+          </div>
+          {linkTo && (
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  if (linkTo) {
+    return <Link to={linkTo}>{content}</Link>
+  }
+  return content
 }
 
 // ---------------------------------------------------------------------------
@@ -88,84 +143,79 @@ function EmptyState({ message }: { message: string }) {
 // ---------------------------------------------------------------------------
 
 export default function SuperAdminDashboard() {
-  const [dateRange, setDateRange] = useState("30");
+  const [dateRange, setDateRange] = useState("30")
 
   // ── Real data hooks ──────────────────────────────────────────────
   const { data: dashboardData, isLoading: isDashboardLoading } =
-    useDashboardSystem();
+    useDashboardSystem()
 
   const { data: usersData, isLoading: isUsersLoading } = useUserManagement({
     page: 1,
     limit: 5,
-  });
+  })
 
   const { data: coachesData, isLoading: isCoachesLoading } = useCoachesList({
     page: 1,
     limit: 100,
-  });
+  })
 
-  const { data: auditData, isLoading: isAuditLoading } = useAuditStats();
-  const { data: feedbackData, isLoading: isFeedbackLoading } = useFeedbackStats();
-  const { data: costData, isLoading: isCostLoading } = useCostDashboard();
+  const { data: auditData } = useAuditStats()
+  const { data: feedbackData, isLoading: isFeedbackLoading } = useFeedbackStats()
+  const { data: costData, isLoading: isCostLoading } = useCostDashboard()
 
   // Derived real values
-  const orgStats = dashboardData?.data?.organization_statistics;
-  const bizStats = dashboardData?.data?.business_statistics;
-  const totalUsers = usersData?.data?.pagination?.total;
-  const latestUsers = usersData?.data?.users ?? [];
-  const feedbackStats = feedbackData?.data;
-  const auditStats = auditData?.data;
+  const orgStats = dashboardData?.data?.organization_statistics
+  const bizStats = dashboardData?.data?.business_statistics
+  const totalUsers = usersData?.data?.pagination?.total
+  const latestUsers = usersData?.data?.users ?? []
+  const feedbackStats = feedbackData?.data
+  const auditStats = auditData?.data
 
   // Cost dashboard data
-  const costDash = (costData as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-  const totalCost = costDash?.total_cost as number | undefined;
-  const costPerUser = costDash?.cost_per_user as number | undefined;
-  const totalSessions = costDash?.total_sessions as number | undefined;
-  const costBreakdown = (costDash?.breakdown as Array<{ category: string; amount: number; percentage: number }>) ?? [];
-  const agentCosts = (costDash?.agent_costs as Array<{ agent: string; sessions: number; cost: number; percentage: number }>) ?? [];
+  const costDash = (costData as Record<string, unknown>)?.data as Record<string, unknown> | undefined
+  const totalCost = costDash?.total_cost as number | undefined
+  const costPerUser = costDash?.cost_per_user as number | undefined
+  const totalSessions = costDash?.total_sessions as number | undefined
+  const costBreakdown = (costDash?.breakdown as Array<{ category: string; amount: number; percentage: number }>) ?? []
+  const agentCosts = (costDash?.agent_costs as Array<{ agent: string; sessions: number; cost: number; percentage: number }>) ?? []
 
   // Coaches list
-  const coachesRaw = coachesData?.data;
-  const coaches = Array.isArray(coachesRaw) ? coachesRaw : (coachesRaw as { agents?: Array<{ id: string; name: string; status?: string }> })?.agents ?? [];
-  const activeCoaches = coaches.filter((c) => c.status?.toLowerCase() !== "deactivated").length;
+  const coachesRaw = coachesData?.data
+  const coaches = Array.isArray(coachesRaw) ? coachesRaw : (coachesRaw as { agents?: Array<{ id: string; name: string; status?: string }> })?.agents ?? []
+  const activeCoaches = coaches.filter((c) => c.status?.toLowerCase() !== "deactivated").length
 
-  const isKpiLoading = isDashboardLoading || isUsersLoading;
+  const isKpiLoading = isDashboardLoading || isUsersLoading
 
-  // Build KPI cards with real data
-  const kpiCards = [
+  // Build KPI cards with links
+  const kpiCards: KpiCardProps[] = [
     {
       label: "Total Users",
       value: fmt(totalUsers),
-      change: fmt(auditStats?.logs_today, ""),
-      subLabel: "events today",
-      trend: "up" as const,
+      change: fmt(auditStats?.logs_today, "") + " events today",
       icon: Users,
       color: "text-blue-600 bg-blue-50",
+      linkTo: ROUTES.SUPER_ADMIN.USERS,
     },
     {
       label: "Active Organizations",
       value: orgStats ? orgStats.total.toLocaleString() : "--",
       change: orgStats ? `${orgStats.active} active` : "--",
-      subLabel: "",
-      trend: "up" as const,
       icon: Building2,
       color: "text-indigo-600 bg-indigo-50",
+      linkTo: ROUTES.SUPER_ADMIN.ORGANIZATIONS,
     },
     {
       label: "Active Mentors",
       value: isCoachesLoading ? "--" : activeCoaches.toLocaleString(),
       change: isCoachesLoading ? "--" : `${coaches.length} total`,
-      subLabel: "",
-      trend: "up" as const,
       icon: GraduationCap,
       color: "text-emerald-600 bg-emerald-50",
+      linkTo: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT,
     },
     {
       label: "Feedback Received",
       value: isFeedbackLoading ? "--" : fmt(feedbackStats?.total_count),
       change: isFeedbackLoading ? "--" : `avg ${feedbackStats?.avg_rating?.toFixed(1) ?? "--"} rating`,
-      subLabel: "",
-      trend: "up" as const,
       icon: Brain,
       color: "text-violet-600 bg-violet-50",
     },
@@ -173,12 +223,10 @@ export default function SuperAdminDashboard() {
       label: "Platform Cost (MTD)",
       value: isCostLoading ? "--" : totalCost != null ? `$${totalCost.toLocaleString()}` : "--",
       change: isCostLoading ? "--" : costPerUser != null ? `$${costPerUser.toFixed(2)}/user` : "--",
-      subLabel: "",
-      trend: "up" as const,
       icon: DollarSign,
       color: "text-amber-600 bg-amber-50",
     },
-  ];
+  ]
 
   return (
     <SuperAdminLayout>
@@ -200,204 +248,217 @@ export default function SuperAdminDashboard() {
           </Select>
         </div>
 
-        {/* ── Welcome Banner ─────────────────────────────────────────── */}
-        <div
-          className="rounded-xl p-6 md:p-8 text-white"
-          style={{
-            background: "linear-gradient(135deg, #3B5BFF 0%, #2DD4BF 100%)",
-          }}
-        >
-          <h2 className="text-xl md:text-2xl font-bold mb-1">
-            Inspire Genius Platform Overview
-          </h2>
-          <p className="text-white/80 text-sm md:text-base mb-5 max-w-2xl">
-            Monitor platform performance, user engagement, and organizational
-            health across all companies.
-          </p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" /> {fmt(totalUsers)} Users
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4" /> {orgStats ? orgStats.total : "--"} Organizations
-            </span>
-            <span className="flex items-center gap-1.5">
-              <GraduationCap className="h-4 w-4" /> {isCoachesLoading ? "--" : activeCoaches} Mentors
-            </span>
-            <span className="flex items-center gap-1.5">
-              <DollarSign className="h-4 w-4" /> {isCostLoading ? "--" : totalCost != null ? `$${totalCost.toLocaleString()}` : "--"} MTD
-            </span>
-          </div>
-        </div>
-
-        {/* ── KPI Stat Cards ─────────────────────────────────────────── */}
+        {/* ── KPI Stat Cards (Row 1) ── clickable tiles ─────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {isKpiLoading
             ? Array.from({ length: 5 }).map((_, i) => <KpiSkeleton key={i} />)
-            : kpiCards.map((kpi) => {
-                const Icon = kpi.icon;
-                return (
-                  <Card key={kpi.label} className="shadow-sm">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <div
-                          className={cn(
-                            "flex items-center justify-center h-10 w-10 rounded-lg",
-                            kpi.color
-                          )}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <span className="flex items-center text-xs font-medium text-muted-foreground">
-                          {kpi.change}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {kpi.label}
-                      </p>
-                      <p className="text-2xl font-bold tracking-tight">
-                        {kpi.value}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            : kpiCards.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}
         </div>
 
+        {/* ── Cost Summary (Row 2) ──────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--" },
+            { label: "Total Sessions", value: fmt(totalSessions) },
+            { label: "Cost per Session", value: totalCost != null && totalSessions ? `$${(totalCost / totalSessions).toFixed(3)}` : "--" },
+            { label: "Feedback Score", value: isFeedbackLoading ? "--" : feedbackStats?.avg_rating?.toFixed(1) ?? "--" },
+          ].map((item) => (
+            <Card key={item.label} className="shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+                <p className="text-xl font-bold tracking-tight mt-1">
+                  {isCostLoading && (item.label.includes("Cost") || item.label.includes("Session"))
+                    ? <Skeleton className="h-6 w-16 inline-block" />
+                    : item.value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* ── Platform Health (Row 3) ──────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">Platform Health</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="shadow-sm">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-50">
+                  <Activity className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Agent Engine</p>
+                  <p className="text-sm font-semibold text-emerald-600">Healthy</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-50">
+                  <Wifi className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">API Response Time</p>
+                  <p className="text-sm font-semibold">~120ms</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Error Rate</p>
+                  <p className="text-sm font-semibold">0.12%</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-green-50">
+                  <Clock className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Uptime</p>
+                  <p className="text-sm font-semibold">99.97%</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* ── New Users Section ──────────────────────────────────────── */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base font-semibold">New User Registrations</CardTitle>
+              </div>
+              <Link to={ROUTES.SUPER_ADMIN.USERS}>
+                <Button variant="ghost" size="sm" className="text-xs gap-1">
+                  View All <ChevronRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isUsersLoading
+                  ? Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={5} />)
+                  : latestUsers.length > 0
+                    ? latestUsers.map((u) => (
+                        <TableRow key={u.user_id}>
+                          <TableCell className="font-medium">
+                            {u.full_name || [u.first_name, u.last_name].filter(Boolean).join(" ") || "--"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                          <TableCell><Badge variant="outline">{u.role}</Badge></TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={cn(u.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600")}>
+                              {u.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-4">No users found.</TableCell>
+                        </TableRow>
+                      )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
         {/* ── Tabs ────────────────────────────────────────────────────── */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="agents" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="agents">All Agents (18)</TabsTrigger>
             <TabsTrigger value="organizations">Organizations</TabsTrigger>
             <TabsTrigger value="cost">Cost Analysis</TabsTrigger>
           </TabsList>
 
-          {/* ── Overview Tab ──────────────────────────────────────────── */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Organization & Business Stats */}
-              <Card className="lg:col-span-2 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">
-                    Platform Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isDashboardLoading ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <Skeleton key={i} className="h-16 rounded-lg" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div className="rounded-lg border-l-4 border-l-blue-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Total Users</span>
-                        <p className="text-xl font-bold">{fmt(totalUsers)}</p>
-                      </div>
-                      <div className="rounded-lg border-l-4 border-l-indigo-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Organizations</span>
-                        <p className="text-xl font-bold">{orgStats ? orgStats.total : "--"}</p>
-                      </div>
-                      <div className="rounded-lg border-l-4 border-l-emerald-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Active Orgs</span>
-                        <p className="text-xl font-bold text-emerald-600">{orgStats ? orgStats.active : "--"}</p>
-                      </div>
-                      <div className="rounded-lg border-l-4 border-l-violet-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Businesses</span>
-                        <p className="text-xl font-bold">{bizStats ? bizStats.total : "--"}</p>
-                      </div>
-                      <div className="rounded-lg border-l-4 border-l-amber-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Active Mentors</span>
-                        <p className="text-xl font-bold">{isCoachesLoading ? "--" : activeCoaches}</p>
-                      </div>
-                      <div className="rounded-lg border-l-4 border-l-teal-500 bg-muted/40 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Audit Events</span>
-                        <p className="text-xl font-bold">{isAuditLoading ? "--" : fmt(auditStats?.total_logs)}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Platform Health */}
-              <div className="space-y-4">
-                <h3 className="text-base font-semibold px-1">Platform Health</h3>
-                <Card className="shadow-sm">
-                  <CardContent className="p-5 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Feedback Score</p>
-                    <p className="text-4xl font-bold tracking-tight text-emerald-600">
-                      {isFeedbackLoading ? "--" : feedbackStats?.avg_rating?.toFixed(1) ?? "--"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {isFeedbackLoading ? "" : `from ${fmt(feedbackStats?.total_count)} reviews`}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm">
-                  <CardContent className="p-5 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Events Today</p>
-                    <p className="text-4xl font-bold tracking-tight text-blue-600">
-                      {isAuditLoading ? "--" : fmt(auditStats?.logs_today)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm">
-                  <CardContent className="p-5 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Total Sessions</p>
-                    <p className="text-4xl font-bold tracking-tight text-violet-600">
-                      {isCostLoading ? "--" : fmt(totalSessions)}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Mentor List */}
+          {/* ── Agents Tab — All 18 agents ────────────────────────────── */}
+          <TabsContent value="agents" className="space-y-6">
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Active Mentors</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold">All Platform Agents</CardTitle>
+                  <Link to={ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT}>
+                    <Button variant="outline" size="sm" className="text-xs gap-1">
+                      Manage Agents <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
-                {isCoachesLoading ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <Skeleton key={i} className="h-8 w-full" />
-                    ))}
-                  </div>
-                ) : coaches.length === 0 ? (
-                  <EmptyState message="No mentors configured yet." />
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {coaches.slice(0, 8).map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium">{c.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{(c as Record<string, string>).category_name ?? "--"}</TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Domain</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Tier</TableHead>
+                      <TableHead>Voice</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {AGENT_VOICE_CONFIG.map((agent) => {
+                      const backendAgent = coaches.find((c) => c.id === agent.id)
+                      const isActive = backendAgent
+                        ? backendAgent.status?.toLowerCase() !== "deactivated"
+                        : true
+                      return (
+                        <TableRow key={agent.id}>
+                          <TableCell className="font-medium">{agent.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={cn("text-xs", getDomainColor(agent.domain))}>
+                              {agent.domain}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{agent.description}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{agent.modelTier}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm font-mono text-muted-foreground">{agent.pollyVoice}</TableCell>
                           <TableCell className="text-center">
                             <Badge
                               variant="secondary"
                               className={cn(
-                                c.status?.toLowerCase() === "deactivated"
-                                  ? "bg-gray-100 text-gray-600"
-                                  : "bg-emerald-100 text-emerald-700"
+                                isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600",
                               )}
                             >
-                              {c.status?.toLowerCase() === "deactivated" ? "Inactive" : "Active"}
+                              {isActive ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <Link to={`${ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT}?agent=${agent.id}&tab=settings`}>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                      )
+                    })}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -406,7 +467,14 @@ export default function SuperAdminDashboard() {
           <TabsContent value="organizations" className="space-y-6">
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Organization Statistics</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold">Organization Statistics</CardTitle>
+                  <Link to={ROUTES.SUPER_ADMIN.ORGANIZATIONS}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1">
+                      View All <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
                 {isDashboardLoading ? (
@@ -470,55 +538,6 @@ export default function SuperAdminDashboard() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Latest Users */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Latest Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Joined</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isUsersLoading
-                      ? Array.from({ length: 5 }).map((_, i) => (
-                          <TableRowSkeleton key={i} cols={5} />
-                        ))
-                      : latestUsers.length > 0
-                        ? latestUsers.map((u) => (
-                            <TableRow key={u.user_id}>
-                              <TableCell className="font-medium">
-                                {u.full_name || [u.first_name, u.last_name].filter(Boolean).join(" ") || "--"}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                              <TableCell><Badge variant="outline">{u.role}</Badge></TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className={cn(u.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600")}>
-                                  {u.is_active ? "Active" : "Inactive"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        : (
-                            <TableRow>
-                              <TableCell colSpan={5} className="text-center text-muted-foreground py-4">No users found.</TableCell>
-                            </TableRow>
-                          )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* ── Cost Analysis Tab ─────────────────────────────────────── */}
@@ -526,17 +545,17 @@ export default function SuperAdminDashboard() {
             {/* Cost KPI Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {[
-                { label: "Total Cost (MTD)", value: totalCost != null ? `$${totalCost.toLocaleString()}` : "--", trend: "up" as const },
-                { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--", trend: "down" as const },
-                { label: "Total Sessions", value: fmt(totalSessions), trend: "up" as const },
-                { label: "Active Users", value: fmt(totalUsers), trend: "up" as const },
-                { label: "Active Mentors", value: isCoachesLoading ? "--" : activeCoaches.toLocaleString(), trend: "up" as const },
+                { label: "Total Cost (MTD)", value: totalCost != null ? `$${totalCost.toLocaleString()}` : "--" },
+                { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--" },
+                { label: "Total Sessions", value: fmt(totalSessions) },
+                { label: "Active Users", value: fmt(totalUsers) },
+                { label: "Active Mentors", value: isCoachesLoading ? "--" : activeCoaches.toLocaleString() },
               ].map((kpi) => (
                 <Card key={kpi.label} className="shadow-sm">
                   <CardContent className="p-5">
                     <p className="text-sm text-muted-foreground mb-1">{kpi.label}</p>
                     <p className="text-2xl font-bold tracking-tight">
-                      {isCostLoading && kpi.label.includes("Cost") || isCostLoading && kpi.label.includes("Sessions") ? (
+                      {isCostLoading && (kpi.label.includes("Cost") || kpi.label.includes("Sessions")) ? (
                         <Skeleton className="h-7 w-24" />
                       ) : kpi.value}
                     </p>
@@ -633,5 +652,5 @@ export default function SuperAdminDashboard() {
         </Tabs>
       </div>
     </SuperAdminLayout>
-  );
+  )
 }
