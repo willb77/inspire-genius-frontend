@@ -2,6 +2,96 @@
 
 All notable changes to this project are documented in this file.
 
+## [2026-04-19] — Dashboard Overhaul, Mentor Management & Voice Fix
+
+### Added
+- `src/pages/super-admin/MentorManagement.tsx` — Unified page combining Prompt Builder + Interaction Protocol + Agent Settings with tabs and sidebar agent selector
+- `src/constants/agentVoiceConfig.ts` — All 18 agents with gender-matched Polly voices (female: Salli/Kendra/Ruth, male: Matthew/Stephen/Gregory)
+- Dashboard: clickable KPI tiles, cost summary row, platform health row, new users section
+- Dashboard: full 18-agent list with domain badges, tier, voice, and edit links
+
+### Changed
+- Dashboard: removed duplicate Platform Summary box
+- Navigation: replaced separate Prompt Builder + Interaction Protocol with single "Mentor Management"
+- `src/services/voiceConfigService.ts` — 3-level fallback to fix 404/500 errors
+
+### Fixed
+- Voice settings: male and female agents now use gender-appropriate Polly voices (permanently fixed)
+- Voice config 404/500 console errors resolved via static fallback
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/agentVoiceConfig.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+## [2026-04-19] — Infrastructure Redeploy: Secrets, CDK, ECS, Lambda
+
+### Changed
+- **GitHub Secrets**: Set `VITE_AGENT_WS_URL` and `VITE_ALEX_WEB_SOCKET_URL` on `willb77/inspire-genius-frontend` repo pointing to `wss://fhsei32zkf.execute-api.us-east-1.amazonaws.com/dev`
+- **CDK Agent Engine Stack**: Redeployed `InspireGeniusAgentEngineStack` — stack already up to date, no CloudFormation changes required
+- **ECS Agent Engine**: Rebuilt Docker image, pushed to ECR `ig-dev-agent-engine`, forced new ECS deployment on `ig-dev-agent-engine` cluster/service
+- **ws-proxy Lambda**: Updated `ig-dev-ws-proxy` function code with latest `handler.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/feedback_voice_settings_fix.md`
+
+- File modified
+  - Files: `/Users/williambrown/.claude/projects/-Users-williambrown-Dropbox-AES-Material-Inspire-X-New-IG-Projects-Local-IG-App-UI/memory/MEMORY.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/routes.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/agentVoiceConfig.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/services/voiceConfigService.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/routes.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/constants/navigation.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/super-admin/__tests__/Dashboard.test.tsx`
+
 ## [2026-04-14] — Critical Bug Fixes: Chat, Zilliz, Voice, Agent Prompts
 
 ### Fixed
@@ -149,6 +239,12 @@ All notable changes to this project are documented in this file.
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`

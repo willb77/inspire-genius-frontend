@@ -25,7 +25,6 @@ import {
   GitBranch,
   UserPlus,
   Eye,
-  ScrollText,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -63,9 +62,9 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
-  { to: ROUTES.SUPER_ADMIN.COACHES, icon: Bot, label: "Mentor Management" },
+  { to: ROUTES.SUPER_ADMIN.COACHES, icon: Bot, label: "Mentor List" },
+  { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Mentor Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
-  { to: ROUTES.SUPER_ADMIN.PROMPT_BUILDER, icon: Wand2, label: "Prompt Builder" },
   { to: ROUTES.SUPER_ADMIN.AUDIT_LOG, icon: Shield, label: "Audit Log" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.SUPER_ADMIN.VOICE_SETTINGS, icon: Mic, label: "Voice Settings" },
@@ -73,7 +72,6 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
-  { to: ROUTES.SUPER_ADMIN.INTERACTION_PROTOCOL, icon: ScrollText, label: "Interaction Protocol" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]

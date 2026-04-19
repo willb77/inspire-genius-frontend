@@ -32,6 +32,8 @@ export const ROUTES = {
     BULK_IMPORT: "/super-admin/bulk-import",
     OBSERVABILITY: "/super-admin/observability",
     INTERACTION_PROTOCOL: "/super-admin/interaction-protocol",
+    MENTOR_MANAGEMENT: "/super-admin/mentor-management",
+    COST_ANALYSIS: "/super-admin/cost-analysis",
   },
   MANAGER: {
     BASE: "/manager",

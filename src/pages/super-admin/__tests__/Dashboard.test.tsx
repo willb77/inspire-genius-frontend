@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import SuperAdminDashboard from "../Dashboard";
 
 // ---------- MOCK LAYOUT ----------
@@ -75,7 +76,11 @@ jest.mock("@/hooks/trainer/useTrainer", () => ({
 // ---------- HELPERS ----------
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </MemoryRouter>
+  );
 }
 
 // ---------- TESTS ----------
@@ -90,11 +95,6 @@ describe("SuperAdminDashboard", () => {
     expect(screen.getByText("Platform Dashboard")).toBeInTheDocument();
   });
 
-  it("renders the welcome banner", () => {
-    renderWithProviders(<SuperAdminDashboard />);
-    expect(screen.getByText("Inspire Genius Platform Overview")).toBeInTheDocument();
-  });
-
   it("renders KPI stat cards with real data", () => {
     renderWithProviders(<SuperAdminDashboard />);
     expect(screen.getAllByText("Total Users").length).toBeGreaterThanOrEqual(1);
@@ -104,22 +104,29 @@ describe("SuperAdminDashboard", () => {
     expect(screen.getByText("Platform Cost (MTD)")).toBeInTheDocument();
   });
 
-  it("renders the three tab triggers", () => {
+  it("renders the tabs", () => {
     renderWithProviders(<SuperAdminDashboard />);
-    expect(screen.getAllByText("Overview").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("All Agents (18)")).toBeInTheDocument();
     expect(screen.getAllByText("Organizations").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Cost Analysis")).toBeInTheDocument();
   });
 
-  it("renders Platform Summary on Overview tab", () => {
-    renderWithProviders(<SuperAdminDashboard />);
-    expect(screen.getByText("Platform Summary")).toBeInTheDocument();
-  });
-
-  it("renders Platform Health metrics", () => {
+  it("renders Platform Health tiles", () => {
     renderWithProviders(<SuperAdminDashboard />);
     expect(screen.getByText("Platform Health")).toBeInTheDocument();
-    expect(screen.getByText("Feedback Score")).toBeInTheDocument();
-    expect(screen.getByText("Events Today")).toBeInTheDocument();
+    expect(screen.getByText("Agent Engine")).toBeInTheDocument();
+    expect(screen.getByText("API Response Time")).toBeInTheDocument();
+    expect(screen.getByText("Error Rate")).toBeInTheDocument();
+    expect(screen.getByText("Uptime")).toBeInTheDocument();
+  });
+
+  it("renders New User Registrations section", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("New User Registrations")).toBeInTheDocument();
+  });
+
+  it("renders all 18 agents in the Agents tab", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("All Platform Agents")).toBeInTheDocument();
   });
 });
