@@ -232,16 +232,17 @@ describe("MeridianChat", () => {
     mockUseAgentEngine.mockReturnValue(true);
   });
 
-  it("redirects to /dashboard when Agent Engine toggle is OFF", () => {
+  it("renders even when Agent Engine toggle is OFF", () => {
     mockUseAgentEngine.mockReturnValue(false);
     renderPage();
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+    // Page no longer redirects — it works regardless of toggle
+    expect(screen.getByText("Meridian")).toBeTruthy();
   });
 
-  it("does NOT redirect when Agent Engine toggle is ON", () => {
+  it("renders when Agent Engine toggle is ON", () => {
     mockUseAgentEngine.mockReturnValue(true);
     renderPage();
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByText("Meridian")).toBeTruthy();
   });
 
   it("renders the page with Meridian title", () => {
@@ -264,11 +265,10 @@ describe("MeridianChat", () => {
     expect(screen.getByTestId("chat-window")).toBeInTheDocument();
   });
 
-  it("returns null when agent engine is off (before redirect fires)", () => {
+  it("renders UserLayout even when agent engine is off", () => {
     mockUseAgentEngine.mockReturnValue(false);
-    const { container } = renderPage();
-    // The component returns null when agentEngineOn is false
-    // The only rendered content should be from the wrapper providers
-    expect(container.querySelector("[data-testid='user-layout']")).toBeNull();
+    renderPage();
+    // Page renders normally regardless of agent engine toggle
+    expect(screen.getByTestId("user-layout")).toBeInTheDocument();
   });
 });
