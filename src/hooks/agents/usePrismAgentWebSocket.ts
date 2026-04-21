@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAgentEngine } from "@/lib/agentApi";
 
 export type AgentIncomingType =
   | "init_success"
@@ -66,25 +67,34 @@ export function usePrismAgentWebSocket(
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
-  const base = (import.meta.env.VITE_AGENTS_WEBSOCKET_BASE_URL as string) || "";
+  const agentEngineOn = useAgentEngine();
+  const wsProxyBase = (import.meta.env.VITE_AGENTS_WEBSOCKET_BASE_URL as string) || "";
 
   const makeUrl = useCallback((agentId: string, accessToken?: string) => {
-    const trimmed = base.replace(/\/$/, "");
-    // API Gateway WebSocket API uses route selection from message body, not URL paths.
-    // For local dev (ws://localhost:8001), append /agents/{agentId} as the monolith expects.
-    // For production (wss://*.execute-api.*), connect to the base URL directly and
-    // send the agent_id in the init message payload.
-    if (trimmed.includes("localhost") || trimmed.includes("127.0.0.1")) {
-      return `${trimmed}/agents/${agentId}`;
+    // Local dev: connect directly to the monolith WS endpoint
+    if (wsProxyBase.includes("localhost") || wsProxyBase.includes("127.0.0.1")) {
+      return `${wsProxyBase.replace(/\/$/, "")}/agents/${agentId}`;
     }
-    // Production: connect to base WSS URL. Include access-token as query param
-    // so the ws-proxy $connect handler can authenticate the connection.
-    const url = trimmed;
+
+    // Production: route based on agent engine toggle
+    if (!agentEngineOn) {
+      // Monolith path: connect via CloudFront → monolith origin at /v1/agents/ws/*
+      const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "";
+      const wsBase = apiBase.replace(/^http/, "ws").replace(/\/$/, "");
+      const url = `${wsBase}/v1/agents/ws/${agentId}`;
+      if (accessToken) {
+        return `${url}?access-token=${encodeURIComponent(accessToken)}`;
+      }
+      return url;
+    }
+
+    // Ecosystem path: connect to ws-proxy (API Gateway WebSocket API)
+    const url = wsProxyBase.replace(/\/$/, "");
     if (accessToken) {
       return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
     }
     return url;
-  }, [base]);
+  }, [wsProxyBase, agentEngineOn]);
 
   const safeSend = useCallback((data: string | ArrayBuffer | Blob) => {
     const ws = socketRef.current;
