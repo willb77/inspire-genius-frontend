@@ -20,7 +20,7 @@ import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
 import { exportConversation } from "@/services/agent/agentService";
-import { useAgentEngine } from "@/lib/agentApi";
+// Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
 import { Sparkles } from "lucide-react";
 
@@ -69,12 +69,7 @@ const AGENT_ID = "meridian";
 const COACH_NAME = "Meridian";
 
 export default function MeridianChat() {
-  const agentEngineOn = useAgentEngine();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!agentEngineOn) navigate("/dashboard", { replace: true });
-  }, [agentEngineOn, navigate]);
 
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
@@ -448,13 +443,15 @@ export default function MeridianChat() {
     [renameConvMutation],
   );
 
-  // Connect WS when we have a token
+  // Connect WS when we have a token.
+  // The agentEngineOn toggle controls which REST axios instance is used,
+  // but WS always goes through the ws-proxy / agent engine regardless.
   useEffect(() => {
-    if (!accessToken || !agentEngineOn) return;
+    if (!accessToken) return;
     if (!isConnected && !isConnecting) {
       wsConnect(accessToken);
     }
-  }, [accessToken, agentEngineOn, isConnected, isConnecting, wsConnect]);
+  }, [accessToken, isConnected, isConnecting, wsConnect]);
 
   // Hydrate conversation on mount
   useEffect(() => {
@@ -610,9 +607,6 @@ export default function MeridianChat() {
       }
     };
   }, []);
-
-  // Don't render if agent engine is off (redirect effect will fire)
-  if (!agentEngineOn) return null;
 
   return (
     <UserLayout>

@@ -68,7 +68,7 @@ export function usePrismAgentWebSocket(
 
   const base = (import.meta.env.VITE_AGENTS_WEBSOCKET_BASE_URL as string) || "";
 
-  const makeUrl = useCallback((agentId: string) => {
+  const makeUrl = useCallback((agentId: string, accessToken?: string) => {
     const trimmed = base.replace(/\/$/, "");
     // API Gateway WebSocket API uses route selection from message body, not URL paths.
     // For local dev (ws://localhost:8001), append /agents/{agentId} as the monolith expects.
@@ -77,8 +77,13 @@ export function usePrismAgentWebSocket(
     if (trimmed.includes("localhost") || trimmed.includes("127.0.0.1")) {
       return `${trimmed}/agents/${agentId}`;
     }
-    // Production: connect to base WSS URL (API Gateway ignores URL path segments)
-    return trimmed;
+    // Production: connect to base WSS URL. Include access-token as query param
+    // so the ws-proxy $connect handler can authenticate the connection.
+    const url = trimmed;
+    if (accessToken) {
+      return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
+    }
+    return url;
   }, [base]);
 
   const safeSend = useCallback((data: string | ArrayBuffer | Blob) => {
@@ -201,7 +206,7 @@ export function usePrismAgentWebSocket(
       // Different agent, token, or conversation: reconnect with new params
       disconnect();
     }
-    const url = makeUrl(agentId);
+    const url = makeUrl(agentId, accessToken);
     setIsConnecting(true);
     setError(null);
 
