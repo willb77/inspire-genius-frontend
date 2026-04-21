@@ -60,8 +60,11 @@ function buildWsUrl(accessToken: string): string {
 
   if (wsEnv) {
     const base = wsEnv.replace(/\/$/, "");
-    // If the env already includes a path (e.g. ws://host/ws/chat), use as-is
-    const url = base.includes("/ws/chat") ? base : `${base}/ws/chat`;
+    // API Gateway WebSocket API uses route selection from the message body
+    // (action field), NOT URL paths. Do NOT append /ws/chat — it causes 403.
+    // For local dev (direct ECS connection), append /ws/chat as the server expects it.
+    const isApiGw = base.includes("execute-api") || base.includes("amazonaws.com");
+    const url = isApiGw ? base : (base.includes("/ws/chat") ? base : `${base}/ws/chat`);
     return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
   }
 
