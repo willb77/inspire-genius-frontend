@@ -271,7 +271,14 @@ export function useMeridianWebSocket(
     (text: string, context?: Record<string, unknown>) => {
       setCurrentResponse("");
       setIsProcessing(true);
-      safeSend(JSON.stringify({ type: "chat", action: "chat", message: text, context }));
+      safeSend(JSON.stringify({
+        type: "chat",
+        action: "chat",
+        message: text,
+        context,
+        // Include token for late-auth (ws-proxy pending_auth connections)
+        access_token: activeTokenRef.current ?? undefined,
+      }));
     },
     [safeSend],
   );

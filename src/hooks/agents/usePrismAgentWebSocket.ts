@@ -108,6 +108,8 @@ export function usePrismAgentWebSocket(
       action: "chat",
       text,
       message: text,
+      // Include token for late-auth (ws-proxy pending_auth connections)
+      access_token: activeTokenRef.current ?? undefined,
     };
     safeSend(JSON.stringify(payload));
   }, [safeSend]);
