@@ -319,7 +319,7 @@ export default function MeridianChat() {
     connect: wsConnect,
     disconnect,
     sendMessage,
-    isConnected,
+    isConnected: _isConnected,
     isConnecting,
     isProcessing,
     isRecording,
@@ -443,15 +443,28 @@ export default function MeridianChat() {
     [renameConvMutation],
   );
 
-  // Connect WS when we have a token.
-  // The agentEngineOn toggle controls which REST axios instance is used,
-  // but WS always goes through the ws-proxy / agent engine regardless.
+  // Connect WS once when we have a token.
+  // Uses a ref flag to ensure we only connect once per mount.
+  const wsConnectedOnce = useRef(false);
+  const wsConnectRef = useRef(wsConnect);
+  wsConnectRef.current = wsConnect;
+  const disconnectRef = useRef(disconnect);
+  disconnectRef.current = disconnect;
+
   useEffect(() => {
-    if (!accessToken) return;
-    if (!isConnected && !isConnecting) {
-      wsConnect(accessToken);
-    }
-  }, [accessToken, isConnected, isConnecting, wsConnect]);
+    if (!accessToken || wsConnectedOnce.current) return;
+    wsConnectedOnce.current = true;
+    // Small delay to let the component finish initial render
+    const timer = setTimeout(() => {
+      wsConnectRef.current(accessToken);
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      disconnectRef.current();
+      wsConnectedOnce.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   // Hydrate conversation on mount
   useEffect(() => {
@@ -677,7 +690,41 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
+              // Try WebSocket first, fall back to REST if WS not connected
               sendMessage(t);
+
+              // REST fallback: if WS isn't open, call REST chat endpoint
+              if (!_isConnected) {
+                (async () => {
+                  try {
+                    const { agentApi } = await import("@/lib/agentApi");
+                    const resp = await agentApi.post("/v1/agents/chat", {
+                      message: t,
+                      session_id: conversationId || "fallback",
+                    }, {
+                      headers: { "access-token": accessToken },
+                    });
+                    const data = resp.data;
+                    const timeNow = formatUSTimeSafe(new Date());
+                    setMessages((prev) => [
+                      ...prev.filter((m) => m.kind !== "processing"),
+                      {
+                        id: `msg-${Date.now()}-resp`,
+                        kind: "text" as const,
+                        sender: "assistant" as const,
+                        text: data?.content || data?.message || "No response received.",
+                        time: timeNow,
+                        agent: data?.agent,
+                      },
+                    ]);
+                  } catch (err) {
+                    console.error("REST chat fallback failed:", err);
+                    setMessages((prev) =>
+                      prev.filter((m) => m.kind !== "processing"),
+                    );
+                  }
+                })();
+              }
             }}
             onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}
             isRecording={isRecording}

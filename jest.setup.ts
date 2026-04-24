@@ -1,6 +1,29 @@
 import "@testing-library/jest-dom";
 import { TextDecoder, TextEncoder } from "util";
 
+// Global mock for agentApi — prevents module-level `attachInterceptors(agentApi)`
+// from failing when tests import services that depend on this module.
+// By default, agentApi methods reject so services fall through to the `api` fallback,
+// preserving existing test assertions that check `api.get/post/etc`.
+jest.mock("@/lib/agentApi", () => {
+  const rejectFn = jest.fn().mockRejectedValue(new Error("agentApi mock — fall through to api"));
+  const mockAxios = {
+    get: rejectFn,
+    post: rejectFn,
+    put: rejectFn,
+    patch: rejectFn,
+    delete: rejectFn,
+    defaults: { headers: { common: {} } },
+  };
+  return {
+    __esModule: true,
+    agentApi: mockAxios,
+    getApi: jest.fn().mockReturnValue(mockAxios),
+    useAgentEngine: jest.fn().mockReturnValue(false),
+    syncAuthToken: jest.fn(),
+  };
+});
+
 // Polyfill structuredClone for jsdom (used by @dagrejs/dagre)
 if (typeof globalThis.structuredClone === "undefined") {
   globalThis.structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));

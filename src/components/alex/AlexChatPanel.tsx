@@ -255,6 +255,27 @@ export default function AlexChatPanel({
       lastMessageRef.current = { type: "response", text };
       return;
     }
+    if (response.type === "complete") {
+      // Agent Engine WS proxy sends "complete" with content field
+      setMessages((prev) => prev.filter((m) => m.type !== "processing"));
+      const text = response.content ?? response.text ?? "";
+      if (!text) return;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now()}`,
+          text,
+          sender: "assistant",
+          timestamp: new Date(),
+        },
+      ]);
+      lastMessageRef.current = { type: "complete", text };
+      return;
+    }
+    if (response.type === "connected" || response.type === "init_success") {
+      // Connection acknowledgement from Agent Engine WS proxy — no UI action
+      return;
+    }
     if (response.type === "error") {
       const text = response.message ?? "Unknown error";
       setMessages((prev) => [

@@ -171,7 +171,10 @@ function VoicePreviewGrid({ provider }: { provider: string }) {
   }
 
   // Audio element ref for server-side TTS playback
-  const [audioEl] = useState(() => typeof Audio !== 'undefined' ? new Audio() : null)
+  const [audioEl] = useState<HTMLAudioElement | null>(() => {
+    try { return typeof window !== 'undefined' && typeof Audio !== 'undefined' ? new Audio() : null }
+    catch { return null }
+  })
 
   const handleTest = async (voiceId: string) => {
     if (playingId === voiceId) {

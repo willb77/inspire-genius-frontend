@@ -29,9 +29,13 @@ if (typeof window !== 'undefined') {
  */
 export function useAgentEngine(): boolean {
   try {
-    return localStorage.getItem('agent_engine_enabled') === 'true'
+    const val = localStorage.getItem('agent_engine_enabled')
+    // Default to TRUE (Agent Engine is the primary system).
+    // Only return false if explicitly set to "false".
+    if (val === null) return true
+    return val === 'true'
   } catch {
-    return false
+    return true
   }
 }
 
