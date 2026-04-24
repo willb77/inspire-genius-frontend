@@ -56,7 +56,7 @@ export const useAlexWebSocket = (
   })();
 
   // Mutable ref holding the WebSocket URL (updated with auth token before each connect)
-  const websocketUrlRef = useRef(baseWsUrl);
+  const websocketUrlRef = useRef<string>(baseWsUrl);
 
   const { sendTextMessage, sendAudioChunk, endAudioInput, startContinuousMode, updateContinuousMute, handleBinaryMessage, handleJsonMessage } =
     useWebSocketMessageHandlers(
