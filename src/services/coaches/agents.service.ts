@@ -1,4 +1,4 @@
-import { getApi } from '@/lib/agentApi'
+import { agentApi, getApi } from '@/lib/agentApi'
 
 export type AgentsQuery = {
   page: number
@@ -13,9 +13,20 @@ export type AgentsResponse<T = unknown> = {
 }
 
 export async function getAgents(params: AgentsQuery) {
-  const { data } = await getApi().get<AgentsResponse>(
-    `/v1/agents-settings/agents`,
-    { params }
-  )
-  return data
+  // Agent settings only exist on the Agent Engine (not the monolith).
+  // Always use agentApi regardless of toggle to avoid "no agents" when toggle is OFF.
+  try {
+    const { data } = await agentApi.get<AgentsResponse>(
+      `/v1/agents-settings/agents`,
+      { params }
+    )
+    return data
+  } catch {
+    // Fallback to toggle-based routing
+    const { data } = await getApi().get<AgentsResponse>(
+      `/v1/agents-settings/agents`,
+      { params }
+    )
+    return data
+  }
 }
