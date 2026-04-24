@@ -342,10 +342,9 @@ export default function AlexChatPanel({
 
   const handleSend = useCallback(() => {
     const text = message.trim();
-    if (!text || !isConnected) return;
+    if (!text) return;
     demoAudioServiceRef.current?.resetAudioState();
     setHasAudio(false);
-    sendTextMessage(text);
     setMessage("");
     setIsAudioPaused(false);
     setMessages((prev) => [
@@ -353,6 +352,35 @@ export default function AlexChatPanel({
       { id: `msg-${Date.now()}-user`, text, sender: "user", timestamp: new Date(), },
       { id: `msg-${Date.now()}-assistant`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
     ]);
+    // Try WS if connected, always fire REST as primary path
+    if (isConnected) sendTextMessage(text);
+    // REST primary path
+    (async () => {
+      try {
+        const { agentApi } = await import("@/lib/agentApi");
+        const { getToken } = await import("@/lib/storage");
+        const token = await getToken();
+        const resp = await agentApi.post("/v1/agents/chat", {
+          message: text,
+          session_id: "alex-chat",
+        }, {
+          headers: token ? { "access-token": token } : {},
+          timeout: 120000,
+        });
+        const data = resp.data;
+        if (!isConnected) {
+          setMessages((prev) => [
+            ...prev.filter((m) => !m.isProcessing),
+            { id: `msg-${Date.now()}-resp`, text: data?.content || data?.message || "No response.", sender: "assistant" as const, timestamp: new Date() },
+          ]);
+        }
+      } catch (err) {
+        if (!isConnected) {
+          console.error("REST chat failed:", err);
+          setMessages((prev) => prev.filter((m) => !m.isProcessing));
+        }
+      }
+    })();
   }, [message, isConnected, sendTextMessage]);
 
   const toggleAudioPlayback = useCallback(() => {
