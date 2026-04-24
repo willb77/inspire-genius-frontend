@@ -5,6 +5,12 @@ export const MessageType = {
   START_CONTINUOUS: "start_continuous",
   RESPONSE_CHUNK: "response_chunk",
   RESPONSE: "response",
+  /** Agent Engine WS proxy sends "complete" with the full response */
+  COMPLETE: "complete",
+  /** Agent Engine WS proxy sends "connected" with session_id on connect */
+  CONNECTED: "connected",
+  /** Agent Engine WS proxy acknowledges init messages */
+  INIT_SUCCESS: "init_success",
   AUDIO_CHUNK: "audio_chunk",
   AUDIO_START: "audio_start",
   AUDIO_COMPLETE: "audio_complete",

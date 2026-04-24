@@ -40,16 +40,48 @@ const FALLBACK_VOICE_CONFIG: VoiceConfigResponse = {
   },
 }
 
+/**
+ * Normalize a voice config response — the backend may return the data directly
+ * (flat: `{stt_provider, tts_provider, ...}`) or wrapped in a BaseApiResponse
+ * envelope (`{status, data: {stt_provider, ...}}`).  This helper ensures
+ * the caller always receives the `VoiceConfigResponse` shape.
+ */
+function normalizeVoiceResponse(raw: Record<string, unknown>): VoiceConfigResponse {
+  // Already in wrapped shape?
+  if (raw.data && typeof raw.data === 'object' && 'stt_provider' in (raw.data as Record<string, unknown>)) {
+    return raw as unknown as VoiceConfigResponse
+  }
+  // Flat shape — wrap it
+  if ('stt_provider' in raw || 'tts_provider' in raw) {
+    return {
+      status: true,
+      message: 'Voice configuration loaded',
+      data: {
+        stt_provider: (raw.stt_provider as string) || 'auto',
+        tts_provider: (raw.tts_provider as string) || 'aws_polly',
+        valid_stt_providers: (raw.valid_stt_providers as string[]) || ['openai', 'deepgram', 'aws_transcribe', 'auto'],
+        valid_tts_providers: (raw.valid_tts_providers as string[]) || ['openai', 'google', 'elevenlabs', 'aws_polly'],
+        stt_updated_at: (raw.stt_updated_at as string) || null,
+        tts_updated_at: (raw.tts_updated_at as string) || null,
+        stt_updated_by: (raw.stt_updated_by as string) || null,
+        tts_updated_by: (raw.tts_updated_by as string) || null,
+      },
+    }
+  }
+  // Unknown shape — return as-is and hope for the best
+  return raw as unknown as VoiceConfigResponse
+}
+
 export async function getVoiceConfig(): Promise<VoiceConfigResponse> {
   // Try the API Gateway routed path first, fall back to legacy path,
   // then return a static default so the UI always renders
   try {
-    const { data } = await api.get<VoiceConfigResponse>('/v1/agents/voice/config')
-    return data
+    const { data } = await api.get('/v1/agents/voice/config')
+    return normalizeVoiceResponse(data as Record<string, unknown>)
   } catch {
     try {
-      const { data } = await api.get<VoiceConfigResponse>('/v1/admin/voice-config')
-      return data
+      const { data } = await api.get('/v1/admin/voice-config')
+      return normalizeVoiceResponse(data as Record<string, unknown>)
     } catch {
       // Both endpoints failed — return static defaults
       return FALLBACK_VOICE_CONFIG

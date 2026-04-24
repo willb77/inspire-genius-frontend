@@ -4,7 +4,7 @@ import type { AlexResponse } from "@/components/alex-voice-assistant/types/types
 
 export const useWebSocketConnectionHandlers = (
   socketRef: RefObject<WebSocket | null>,
-  websocketUrl: string,
+  websocketUrl: string | RefObject<string>,
   setIsConnecting: (v: boolean) => void,
   setIsConnected: (v: boolean) => void,
   setError: (v: string | null) => void,
@@ -23,9 +23,12 @@ export const useWebSocketConnectionHandlers = (
     )
       return;
 
+    // Resolve URL from ref or string
+    const resolvedUrl = typeof websocketUrl === "string" ? websocketUrl : websocketUrl.current;
+
     try {
       setIsConnecting(true);
-      socketRef.current = new WebSocket(websocketUrl);
+      socketRef.current = new WebSocket(resolvedUrl);
       // prefer arraybuffer for binary audio for simpler handling
       socketRef.current.binaryType = "arraybuffer";
       if (onMessage) socketRef.current.onmessage = onMessage;
@@ -89,7 +92,15 @@ export const useWebSocketMessageHandlers = (
         setError("Not connected to Alex");
         return;
       }
-      const message = { type: isRealtime ? MessageType.REALTIME_TEXT : MessageType.TEXT, text };
+      // Send in the Agent Engine WS format ("type":"chat","message":"...")
+      // which the WS proxy Lambda forwards to the agent engine.
+      // Also include legacy fields for backward compatibility with the monolith.
+      const message = {
+        type: isRealtime ? MessageType.REALTIME_TEXT : "chat",
+        action: "chat",
+        message: text,
+        text,
+      };
       try {
         socketRef.current.send(JSON.stringify(message));
         setCurrentResponse("");
@@ -119,7 +130,8 @@ export const useWebSocketMessageHandlers = (
 
   const endAudioInput = useCallback(() => {
     if (!socketRef.current || socketRef.current.readyState !== WebSocketState.OPEN) return;
-    const message = { type: MessageType.AUDIO_END };
+    // Send voice_stop for Agent Engine WS, plus legacy audio_end
+    const message = { type: "voice_stop" };
     try {
       socketRef.current.send(JSON.stringify(message));
     } catch {
@@ -129,7 +141,8 @@ export const useWebSocketMessageHandlers = (
 
   const startContinuousMode = useCallback(() => {
     if (!socketRef.current || socketRef.current.readyState !== WebSocketState.OPEN) return;
-    const message = { type: MessageType.START_CONTINUOUS };
+    // Send voice_start for Agent Engine WS, plus legacy start_continuous
+    const message = { type: "voice_start", language: "en-US" };
     try {
       socketRef.current.send(JSON.stringify(message));
     } catch {
@@ -139,7 +152,7 @@ export const useWebSocketMessageHandlers = (
 
   const updateContinuousMute = useCallback((mute: boolean) => {
     if (!socketRef.current || socketRef.current.readyState !== WebSocketState.OPEN) return;
-    const message = { type: MessageType.START_CONTINUOUS, mute } as const;
+    const message = { type: "voice_config", mute };
     try {
       socketRef.current.send(JSON.stringify(message));
     } catch {
@@ -181,6 +194,22 @@ export const useWebSocketMessageHandlers = (
         case MessageType.RESPONSE:
           if (response.text) setCurrentResponse(response.text);
           setIsProcessing(false);
+          onResponse?.(response);
+          break;
+        case MessageType.COMPLETE: {
+          // Agent Engine WS proxy sends "complete" with content field
+          const completeText = response.content ?? response.text ?? "";
+          if (completeText) setCurrentResponse(completeText);
+          setIsProcessing(false);
+          onResponse?.(response);
+          break;
+        }
+        case MessageType.CONNECTED:
+          // Agent Engine WS proxy confirms connection with session_id
+          onResponse?.(response);
+          break;
+        case MessageType.INIT_SUCCESS:
+          // Agent Engine WS proxy acknowledges init
           onResponse?.(response);
           break;
         case MessageType.AUDIO_START:

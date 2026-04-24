@@ -8,7 +8,6 @@
  * - Axios errors are propagated
  */
 
-import { api } from "@/lib/axios";
 import {
   getAgentSetting,
   getTones,
@@ -17,14 +16,21 @@ import {
 } from "../settings.service";
 
 /* --------------------------------------------------------------------------
-   MOCK: Axios instance
-   Prevents real API calls and avoids import.meta.env issues
+   MOCK: agentApi instance (settings.service now uses getApi())
 --------------------------------------------------------------------------- */
-jest.mock("@/lib/axios", () => ({
-  api: {
-    get: jest.fn(),
-  },
-}));
+jest.mock("@/lib/agentApi", () => {
+  const _get = jest.fn();
+  return {
+    __esModule: true,
+    getApi: jest.fn(() => ({ get: _get })),
+    agentApi: { get: _get, defaults: { headers: { common: {} } } },
+    useAgentEngine: jest.fn().mockReturnValue(false),
+    syncAuthToken: jest.fn(),
+  };
+});
+
+import { getApi } from "@/lib/agentApi";
+const mockGet = (getApi as jest.Mock)().get as jest.Mock;
 
 describe("agentSettings.service", () => {
   beforeEach(() => {
@@ -42,13 +48,11 @@ describe("agentSettings.service", () => {
       data: [{ id: "1", name: "Sample" }],
     };
 
-    (api.get as jest.Mock).mockResolvedValueOnce({
-      data: mockResponse,
-    });
+    mockGet.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getAgentSetting("tone");
 
-    expect(api.get).toHaveBeenCalledWith("/v1/agents-settings/tone");
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents-settings/tone");
     expect(result).toEqual(mockResponse);
   });
 
@@ -58,21 +62,17 @@ describe("agentSettings.service", () => {
       data: { custom: true },
     };
 
-    (api.get as jest.Mock).mockResolvedValueOnce({
-      data: mockResponse,
-    });
+    mockGet.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getAgentSetting("custom-segment");
 
-    expect(api.get).toHaveBeenCalledWith(
-      "/v1/agents-settings/custom-segment"
-    );
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents-settings/custom-segment");
     expect(result).toEqual(mockResponse);
   });
 
   test("getAgentSetting throws when API rejects", async () => {
     const error = new Error("Network error");
-    (api.get as jest.Mock).mockRejectedValueOnce(error);
+    mockGet.mockRejectedValueOnce(error);
 
     await expect(getAgentSetting("tone")).rejects.toThrow("Network error");
   });
@@ -83,40 +83,31 @@ describe("agentSettings.service", () => {
 
   test("getTones calls getAgentSetting with 'tone'", async () => {
     const mockResponse = { status: true, data: [] };
-
-    (api.get as jest.Mock).mockResolvedValueOnce({
-      data: mockResponse,
-    });
+    mockGet.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getTones();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/agents-settings/tone");
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents-settings/tone");
     expect(result).toEqual(mockResponse);
   });
 
   test("getAccents calls getAgentSetting with 'accent'", async () => {
     const mockResponse = { status: true, data: [] };
-
-    (api.get as jest.Mock).mockResolvedValueOnce({
-      data: mockResponse,
-    });
+    mockGet.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getAccents();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/agents-settings/accent");
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents-settings/accent");
     expect(result).toEqual(mockResponse);
   });
 
   test("getGenders calls getAgentSetting with 'gender'", async () => {
     const mockResponse = { status: true, data: [] };
-
-    (api.get as jest.Mock).mockResolvedValueOnce({
-      data: mockResponse,
-    });
+    mockGet.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getGenders();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/agents-settings/gender");
+    expect(mockGet).toHaveBeenCalledWith("/v1/agents-settings/gender");
     expect(result).toEqual(mockResponse);
   });
 });
