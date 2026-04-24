@@ -50,27 +50,6 @@ export default function Dashboard() {
     return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
   }, [agentsResp, query, agentEngineOn]);
 
-  const toSlug = (s: string) => {
-    const input = String(s || "").trim().toLowerCase();
-    let out = "";
-    let lastWasDash = false;
-    for (let i = 0; i < input.length; i += 1) {
-      const code = input.charCodeAt(i);
-      const isDigit = code >= 48 && code <= 57;
-      const isLower = code >= 97 && code <= 122;
-      if (isLower || isDigit) {
-        out += input[i] ?? "";
-        lastWasDash = false;
-      } else if (!lastWasDash && out.length > 0) {
-        out += "-";
-        lastWasDash = true;
-      } else {
-        lastWasDash = true;
-      }
-    }
-    if (out.endsWith("-")) out = out.slice(0, -1);
-    return out;
-  };
 
   return (
     <UserLayout>
@@ -161,7 +140,7 @@ export default function Dashboard() {
                       disableButton={false}
                       tone={tone}
                       extraCount={extraCount}
-                      onChat={() => navigate(`/dashboard/${a.id}--${toSlug(a.name)}/chat`)}
+                      onChat={() => navigate(ROUTES.MERIDIAN_CHAT)}
                     />
                   </div>
                 );
