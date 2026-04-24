@@ -695,11 +695,20 @@ export default function MeridianChat() {
               (async () => {
                 try {
                   const { agentApi } = await import("@/lib/agentApi");
+                  // Resolve token: prefer context token, fall back to storage
+                  let token = accessToken;
+                  if (!token) {
+                    try {
+                      const { getToken } = await import("@/lib/storage");
+                      token = (await getToken()) || "";
+                    } catch { /* ignore */ }
+                  }
+                  console.log("[MeridianChat] REST chat →", agentApi.defaults.baseURL, "token:", token ? `${token.slice(0, 15)}...` : "NONE");
                   const resp = await agentApi.post("/v1/agents/chat", {
                     message: t,
                     session_id: conversationId || "default",
                   }, {
-                    headers: { "access-token": accessToken },
+                    headers: token ? { "access-token": token } : {},
                     timeout: 120000,
                   });
                   const data = resp.data;
@@ -716,8 +725,9 @@ export default function MeridianChat() {
                     },
                   ]);
                   if (data?.agent) setAgentAttribution(data.agent);
+                  console.log("[MeridianChat] REST chat response:", resp.status, data?.agent);
                 } catch (err) {
-                  console.error("Chat request failed:", err);
+                  console.error("[MeridianChat] Chat request failed:", err);
                   setMessages((prev) => [
                     ...prev.filter((m) => m.kind !== "processing"),
                     {
