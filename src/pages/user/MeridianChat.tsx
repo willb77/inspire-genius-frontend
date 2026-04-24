@@ -446,25 +446,14 @@ export default function MeridianChat() {
     [renameConvMutation],
   );
 
-  // Connect WS once when we have a token.
-  // Uses a ref flag to ensure we only connect once per mount.
-  const wsConnectedOnce = useRef(false);
-  const wsConnectRef = useRef(wsConnect);
-  wsConnectRef.current = wsConnect;
-  const disconnectRef = useRef(disconnect);
-  disconnectRef.current = disconnect;
-
+  // WS connection is optional — REST is the primary chat path.
+  // Attempt WS connect for potential future streaming, but don't block on it.
   useEffect(() => {
-    if (!accessToken || wsConnectedOnce.current) return;
-    wsConnectedOnce.current = true;
-    // Small delay to let the component finish initial render
-    const timer = setTimeout(() => {
-      wsConnectRef.current(accessToken);
-    }, 500);
+    if (!accessToken) return;
+    const timer = setTimeout(() => wsConnect(accessToken), 1000);
     return () => {
       clearTimeout(timer);
-      disconnectRef.current();
-      wsConnectedOnce.current = false;
+      disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
@@ -801,11 +790,18 @@ export default function MeridianChat() {
                         { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent },
                       ]);
                       if (data?.agent) setAgentAttribution(data.agent);
-                      // Speak the response using browser TTS
+                      // Speak the response using browser TTS with a natural voice
                       if ("speechSynthesis" in window) {
                         const utter = new SpeechSynthesisUtterance(responseText);
-                        utter.rate = 1.0;
-                        utter.pitch = 1.0;
+                        utter.rate = 0.95;
+                        utter.pitch = 1.05;
+                        // Pick a natural-sounding female voice (Meridian)
+                        const voices = window.speechSynthesis.getVoices();
+                        const preferred = voices.find((v) =>
+                          /samantha|karen|victoria|zira|microsoft.*aria|google.*female|fiona/i.test(v.name)
+                        ) || voices.find((v) => /female|woman/i.test(v.name))
+                          || voices.find((v) => v.lang.startsWith("en") && v.localService);
+                        if (preferred) utter.voice = preferred;
                         window.speechSynthesis.speak(utter);
                       }
                     } catch (err) {
