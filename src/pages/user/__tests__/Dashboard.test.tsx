@@ -181,8 +181,6 @@ describe("Dashboard Page", () => {
     const chatButtons = screen.getAllByText("Chat");
     fireEvent.click(chatButtons[0]);
 
-    expect(mockNavigate).toHaveBeenCalledWith(
-      expect.stringContaining("/dashboard/a1--prism-coach/chat")
-    );
+    expect(mockNavigate).toHaveBeenCalledWith("/meridian/chat");
   });
 });
