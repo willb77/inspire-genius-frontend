@@ -100,6 +100,12 @@ export default function MeridianChat() {
   // Agent attribution from WS
   const [agentAttribution, setAgentAttribution] = useState<string | null>(null);
 
+  // ── Browser-based voice input (bypasses WS) ──────────────────
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  const voiceTranscriptRef = useRef("");
+
   // Documents
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
@@ -322,9 +328,6 @@ export default function MeridianChat() {
     isConnected: _isConnected,
     isConnecting,
     isProcessing,
-    isRecording,
-    startRecording,
-    stopRecording,
     currentAgent,
     currentDomain,
   } = useMeridianWebSocket({ onResponse, onAudioData });
@@ -741,8 +744,91 @@ export default function MeridianChat() {
                 }
               })();
             }}
-            onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}
-            isRecording={isRecording}
+            onToggleRecording={() => {
+              if (voiceRecording) {
+                // Stop recording — SpeechRecognition will fire onend/onresult
+                recognitionRef.current?.stop();
+                setVoiceRecording(false);
+                return;
+              }
+              // Start browser-based speech recognition
+              const SpeechRec = (window as unknown as Record<string, unknown>).SpeechRecognition
+                || (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+              if (!SpeechRec) {
+                setStatusBanner({ type: "error", text: "Voice input not supported in this browser" });
+                return;
+              }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const rec = new (SpeechRec as any)();
+              rec.continuous = true;
+              rec.interimResults = false;
+              rec.lang = "en-US";
+              voiceTranscriptRef.current = "";
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              rec.onresult = (e: any) => {
+                let text = "";
+                for (let i = 0; i < e.results.length; i++) {
+                  if (e.results[i].isFinal) text += e.results[i][0].transcript + " ";
+                }
+                voiceTranscriptRef.current = text.trim();
+              };
+              rec.onend = () => {
+                setVoiceRecording(false);
+                const transcript = voiceTranscriptRef.current.trim();
+                if (!transcript) return;
+                // Send transcript through REST chat (same as text send)
+                const sendBtn = document.querySelector<HTMLElement>("[data-tour='chat-window']");
+                if (sendBtn) {
+                  // Trigger the onSendText callback with the transcript
+                  const timeStr = formatUSTimeSafe(new Date());
+                  setMessages((prev) => [
+                    ...prev.filter((m) => m.kind !== "processing"),
+                    { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
+                    { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
+                  ]);
+                  (async () => {
+                    try {
+                      const { agentApi } = await import("@/lib/agentApi");
+                      let token = accessToken;
+                      if (!token) {
+                        try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
+                      }
+                      const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default" }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
+                      const data = resp.data;
+                      const responseText = data?.content || data?.message || "No response.";
+                      setMessages((prev) => [
+                        ...prev.filter((m) => m.kind !== "processing"),
+                        { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent },
+                      ]);
+                      if (data?.agent) setAgentAttribution(data.agent);
+                      // Speak the response using browser TTS
+                      if ("speechSynthesis" in window) {
+                        const utter = new SpeechSynthesisUtterance(responseText);
+                        utter.rate = 1.0;
+                        utter.pitch = 1.0;
+                        window.speechSynthesis.speak(utter);
+                      }
+                    } catch (err) {
+                      console.error("[MeridianChat] Voice chat failed:", err);
+                      setMessages((prev) => [
+                        ...prev.filter((m) => m.kind !== "processing"),
+                        { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
+                      ]);
+                    }
+                  })();
+                }
+              };
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              rec.onerror = (e: any) => {
+                console.error("[MeridianChat] Speech recognition error:", e.error);
+                setVoiceRecording(false);
+                if (e.error === "not-allowed") setStatusBanner({ type: "error", text: "Microphone access denied" });
+              };
+              recognitionRef.current = rec;
+              rec.start();
+              setVoiceRecording(true);
+            }}
+            isRecording={voiceRecording}
             hasAudio={hasAudio}
             isAudioPaused={isAudioPaused}
             isMuted={isMuted}
