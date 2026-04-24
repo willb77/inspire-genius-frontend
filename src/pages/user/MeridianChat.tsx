@@ -318,7 +318,7 @@ export default function MeridianChat() {
   const {
     connect: wsConnect,
     disconnect,
-    sendMessage,
+    sendMessage: _wsSendMessage,
     isConnected: _isConnected,
     isConnecting,
     isProcessing,
@@ -690,41 +690,46 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
-              // Try WebSocket first, fall back to REST if WS not connected
-              sendMessage(t);
-
-              // REST fallback: if WS isn't open, call REST chat endpoint
-              if (!_isConnected) {
-                (async () => {
-                  try {
-                    const { agentApi } = await import("@/lib/agentApi");
-                    const resp = await agentApi.post("/v1/agents/chat", {
-                      message: t,
-                      session_id: conversationId || "fallback",
-                    }, {
-                      headers: { "access-token": accessToken },
-                    });
-                    const data = resp.data;
-                    const timeNow = formatUSTimeSafe(new Date());
-                    setMessages((prev) => [
-                      ...prev.filter((m) => m.kind !== "processing"),
-                      {
-                        id: `msg-${Date.now()}-resp`,
-                        kind: "text" as const,
-                        sender: "assistant" as const,
-                        text: data?.content || data?.message || "No response received.",
-                        time: timeNow,
-                        agent: data?.agent,
-                      },
-                    ]);
-                  } catch (err) {
-                    console.error("REST chat fallback failed:", err);
-                    setMessages((prev) =>
-                      prev.filter((m) => m.kind !== "processing"),
-                    );
-                  }
-                })();
-              }
+              // Always use REST — the WS proxy chain is unreliable.
+              // WS streaming will be re-enabled once the proxy is stable.
+              (async () => {
+                try {
+                  const { agentApi } = await import("@/lib/agentApi");
+                  const resp = await agentApi.post("/v1/agents/chat", {
+                    message: t,
+                    session_id: conversationId || "default",
+                  }, {
+                    headers: { "access-token": accessToken },
+                    timeout: 120000,
+                  });
+                  const data = resp.data;
+                  const timeNow = formatUSTimeSafe(new Date());
+                  setMessages((prev) => [
+                    ...prev.filter((m) => m.kind !== "processing"),
+                    {
+                      id: `msg-${Date.now()}-resp`,
+                      kind: "text" as const,
+                      sender: "assistant" as const,
+                      text: data?.content || data?.message || "No response received.",
+                      time: timeNow,
+                      agent: data?.agent,
+                    },
+                  ]);
+                  if (data?.agent) setAgentAttribution(data.agent);
+                } catch (err) {
+                  console.error("Chat request failed:", err);
+                  setMessages((prev) => [
+                    ...prev.filter((m) => m.kind !== "processing"),
+                    {
+                      id: `msg-${Date.now()}-err`,
+                      kind: "text" as const,
+                      sender: "assistant" as const,
+                      text: "Sorry, I couldn't reach Meridian. Please try again.",
+                      time: formatUSTimeSafe(new Date()),
+                    },
+                  ]);
+                }
+              })();
             }}
             onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}
             isRecording={isRecording}
