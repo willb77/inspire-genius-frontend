@@ -170,31 +170,59 @@ function VoicePreviewGrid({ provider }: { provider: string }) {
     }
   }
 
-  const handleTest = (voiceId: string) => {
+  // Audio element ref for server-side TTS playback
+  const [audioEl] = useState(() => typeof Audio !== 'undefined' ? new Audio() : null)
+
+  const handleTest = async (voiceId: string) => {
     if (playingId === voiceId) {
-      window.speechSynthesis?.cancel()
+      audioEl?.pause()
       setPlayingId(null)
       return
     }
-    window.speechSynthesis?.cancel()
+    audioEl?.pause()
     setPlayingId(voiceId)
     const voice = voices.find(v => v.id === voiceId)
-    const utterance = new SpeechSynthesisUtterance(
-      `Hello, I'm ${voice?.name ?? voiceId}. I'll be your AI coaching assistant. How can I help you today?`
-    )
+    const text = `Hello, I'm ${voice?.name ?? voiceId}. I'll be your AI coaching assistant. How can I help you today?`
 
-    // Set voice parameters for distinct sound
-    const params = getVoiceParams(voice?.style ?? "balanced")
-    utterance.rate = params.rate
-    utterance.pitch = params.pitch
+    // Map voice ID to the actual TTS provider voice name
+    // Polly voices use the name directly (Joanna, Matthew, etc.)
+    // OpenAI voices need the short name (alloy, echo, etc.)
+    let ttsVoice = voiceId
+    if (provider === 'polly') {
+      ttsVoice = voiceId // Polly uses names like "Joanna", "Matthew"
+    } else if (provider === 'openai') {
+      ttsVoice = voiceId.toLowerCase() // OpenAI uses "alloy", "echo", etc.
+    }
 
-    // Try to find a matching browser voice
-    const browserVoice = findBrowserVoice(voice?.gender ?? "neutral", voice?.style ?? "balanced")
-    if (browserVoice) utterance.voice = browserVoice
+    try {
+      // Call server-side TTS for authentic voice preview
+      const { agentApi } = await import('@/lib/agentApi')
+      const response = await agentApi.post(
+        '/v1/agents/voice/synthesize',
+        { text, voice: ttsVoice },
+        { responseType: 'arraybuffer' }
+      )
 
-    utterance.onend = () => setPlayingId(null)
-    utterance.onerror = () => setPlayingId(null)
-    window.speechSynthesis?.speak(utterance)
+      const blob = new Blob([response.data], { type: 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
+      if (audioEl) {
+        audioEl.src = url
+        audioEl.onended = () => { setPlayingId(null); URL.revokeObjectURL(url) }
+        audioEl.onerror = () => { setPlayingId(null); URL.revokeObjectURL(url) }
+        await audioEl.play()
+      }
+    } catch {
+      // Fallback to browser TTS if server TTS fails
+      const utterance = new SpeechSynthesisUtterance(text)
+      const params = getVoiceParams(voice?.style ?? "balanced")
+      utterance.rate = params.rate
+      utterance.pitch = params.pitch
+      const browserVoice = findBrowserVoice(voice?.gender ?? "neutral", voice?.style ?? "balanced")
+      if (browserVoice) utterance.voice = browserVoice
+      utterance.onend = () => setPlayingId(null)
+      utterance.onerror = () => setPlayingId(null)
+      window.speechSynthesis?.speak(utterance)
+    }
   }
 
   return (
