@@ -790,19 +790,29 @@ export default function MeridianChat() {
                         { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent },
                       ]);
                       if (data?.agent) setAgentAttribution(data.agent);
-                      // Speak the response using browser TTS with a natural voice
-                      if ("speechSynthesis" in window) {
-                        const utter = new SpeechSynthesisUtterance(responseText);
-                        utter.rate = 0.95;
-                        utter.pitch = 1.05;
-                        // Pick a natural-sounding female voice (Meridian)
-                        const voices = window.speechSynthesis.getVoices();
-                        const preferred = voices.find((v) =>
-                          /samantha|karen|victoria|zira|microsoft.*aria|google.*female|fiona/i.test(v.name)
-                        ) || voices.find((v) => /female|woman/i.test(v.name))
-                          || voices.find((v) => v.lang.startsWith("en") && v.localService);
-                        if (preferred) utter.voice = preferred;
-                        window.speechSynthesis.speak(utter);
+                      // Speak the response using OpenAI TTS (Shimmer voice)
+                      try {
+                        const ttsResp = await agentApi.post("/v1/agents/tts", {
+                          text: responseText.slice(0, 4096),
+                          voice: "shimmer",
+                        }, {
+                          headers: token ? { "access-token": token } : {},
+                          responseType: "arraybuffer",
+                          timeout: 30000,
+                        });
+                        const audioBlob = new Blob([ttsResp.data], { type: "audio/mpeg" });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        audio.onended = () => URL.revokeObjectURL(audioUrl);
+                        audio.play().catch(() => { /* autoplay blocked */ });
+                        setHasAudio(true);
+                      } catch (ttsErr) {
+                        console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
+                        // Fallback to browser speechSynthesis
+                        if ("speechSynthesis" in window) {
+                          const utter = new SpeechSynthesisUtterance(responseText);
+                          window.speechSynthesis.speak(utter);
+                        }
                       }
                     } catch (err) {
                       console.error("[MeridianChat] Voice chat failed:", err);
