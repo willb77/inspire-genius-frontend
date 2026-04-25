@@ -6,6 +6,7 @@ export type AgentChatRequest = {
   message: string;
   session_id?: string | null;
   context?: Record<string, unknown> | null;
+  file_ids?: string[] | null;
 };
 
 export type AgentChatResponse = {

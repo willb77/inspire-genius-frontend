@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import UserLayout from '@/layouts/UserLayout'
 import PrismInitiateForm from '@/components/prism/PrismInitiateForm'
 import PrismAssessmentCard from '@/components/prism/PrismAssessmentCard'
 import PrismReportViewer from '@/components/prism/PrismReportViewer'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Upload, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { usePrismHistory } from '@/hooks/prism/usePrismHistory'
+import { usePrismImport } from '@/hooks/prism/usePrismImport'
 import { ASSESSMENT_STATUS } from '@/constants/prism'
 
 const ACTIVE_STATUSES: Set<string> = new Set([
@@ -21,7 +24,18 @@ export default function PrismAssessment() {
   const { t } = useTranslation(["common", "coaching"]);
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
+  const importMutation = usePrismImport()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file && user?.id) {
+      importMutation.mutate({ userId: user.id, file })
+    }
+    // Reset so the same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const assessments = data?.data?.assessments ?? []
   const activeAssessment = assessments.find((a) =>
@@ -34,13 +48,37 @@ export default function PrismAssessment() {
   return (
     <UserLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("coaching:prism.assessment")}
-          </h1>
-          <p className="text-muted-foreground">
-            {t("coaching:prism.completeDescription")}
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("coaching:prism.assessment")}
+            </h1>
+            <p className="text-muted-foreground">
+              {t("coaching:prism.completeDescription")}
+            </p>
+          </div>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
+              {importMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-1.5 h-4 w-4" />
+              )}
+              Import Existing Report
+            </Button>
+          </div>
         </div>
 
         {/* Active Assessment */}

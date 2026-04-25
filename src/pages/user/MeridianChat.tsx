@@ -699,6 +699,7 @@ export default function MeridianChat() {
                   const resp = await agentApi.post("/v1/agents/chat", {
                     message: t,
                     session_id: conversationId || "default",
+                    ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
                   }, {
                     headers: token ? { "access-token": token } : {},
                     timeout: 120000,
@@ -782,7 +783,7 @@ export default function MeridianChat() {
                       if (!token) {
                         try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
                       }
-                      const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default" }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
+                      const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default", ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}) }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
                       const data = resp.data;
                       const responseText = data?.content || data?.message || "No response.";
                       setMessages((prev) => [
