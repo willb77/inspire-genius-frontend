@@ -6,6 +6,7 @@ export type {
   DocKind,
   SimpleDoc,
   DocumentRef,
+  RAGSource,
   ChatMessage,
   HistoryItem,
   HistoryGroup

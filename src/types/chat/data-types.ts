@@ -14,6 +14,12 @@ export interface DocumentRef {
   url?: string;
 }
 
+// RAG source attribution
+export interface RAGSource {
+  filename: string;
+  similarity: number;
+}
+
 // Chat message types
 export type ChatMessage =
   | {
@@ -24,6 +30,7 @@ export type ChatMessage =
       time: string;
       agent?: string;
       domain?: string;
+      ragSources?: RAGSource[];
     }
   | {
       id: string;
