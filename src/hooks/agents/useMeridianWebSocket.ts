@@ -18,6 +18,10 @@ export type MeridianResponse = {
     latency_ms?: number;
     ttft_ms?: number;
     token_count?: number;
+    rag_sources?: { filename: string; similarity: number }[];
+    rag_chunks_retrieved?: number;
+    rag_cache_hit?: boolean;
+    rag_avg_similarity?: number;
   };
   observability?: Record<string, unknown>;
 };

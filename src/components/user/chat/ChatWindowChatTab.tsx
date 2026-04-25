@@ -1,12 +1,56 @@
-import type { RefObject } from "react";
+import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay } from "lucide-react";
+import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage, RAGSource } from "@/types/chat";
+
+function SourceAttribution({ sources }: { sources: RAGSource[] }) {
+  const [expanded, setExpanded] = useState(false);
+  // Deduplicate by filename, keep highest similarity
+  const unique = Object.values(
+    sources.reduce<Record<string, RAGSource>>((acc, s) => {
+      if (!acc[s.filename] || acc[s.filename].similarity < s.similarity) {
+        acc[s.filename] = s;
+      }
+      return acc;
+    }, {}),
+  ).sort((a, b) => b.similarity - a.similarity);
+
+  if (unique.length === 0) return null;
+
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <FileText className="h-3 w-3" />
+        <span>Sources ({unique.length})</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {unique.map((s) => (
+            <span
+              key={s.filename}
+              className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+            >
+              <FileText className="h-3 w-3" />
+              {s.filename}
+              <span className="text-[10px] opacity-70">
+                ({Math.round(s.similarity * 100)}%)
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const getDocKindBadgeClass = (kind?: string) => {
   if (kind === "pdf") return "bg-red-50 text-red-600";
@@ -93,6 +137,9 @@ export default function ChatWindowChatTab({
               <p className="mt-1 text-xs text-muted-foreground">
                 via {m.agent}
               </p>
+            )}
+            {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
+              <SourceAttribution sources={m.ragSources} />
             )}
             {m.sender === "assistant" && coachId && conversationId && (
               <MessageFeedback

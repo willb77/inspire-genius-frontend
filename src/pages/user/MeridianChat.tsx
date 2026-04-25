@@ -278,12 +278,13 @@ export default function MeridianChat() {
       if (resp.type === "complete") {
         const text = resp.content ?? "";
         if (resp.agent) setAgentAttribution(resp.agent);
+        const ragSources = resp.metadata?.rag_sources?.filter((s) => s.filename) ?? [];
         if (text) {
           setMessages((prev) => {
             const filtered = prev.filter((m) => m.kind !== "processing");
             const lastMsg = filtered[filtered.length - 1];
             if (lastMsg && lastMsg.sender === "assistant" && lastMsg.kind === "text") {
-              return [...filtered.slice(0, -1), { ...lastMsg, text }];
+              return [...filtered.slice(0, -1), { ...lastMsg, text, agent: resp.agent, ragSources: ragSources.length > 0 ? ragSources : undefined }];
             }
             return [
               ...filtered,
@@ -293,6 +294,8 @@ export default function MeridianChat() {
                 sender: "assistant" as const,
                 text,
                 time: formatUSTimeSafe(new Date()),
+                agent: resp.agent,
+                ragSources: ragSources.length > 0 ? ragSources : undefined,
               },
             ];
           });
@@ -788,7 +791,7 @@ export default function MeridianChat() {
                       const responseText = data?.content || data?.message || "No response.";
                       setMessages((prev) => [
                         ...prev.filter((m) => m.kind !== "processing"),
-                        { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent },
+                        { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
                       ]);
                       if (data?.agent) setAgentAttribution(data.agent);
                       // Speak the response using OpenAI TTS (Shimmer voice)
