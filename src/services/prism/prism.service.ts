@@ -63,6 +63,33 @@ export async function upgradeAssessment(data: UpgradeAssessmentRequest) {
   return resp.data
 }
 
+/** Trigger PRISM report vectorization for RAG retrieval */
+export async function vectorizePrismReport(
+  userId: string,
+  prismData?: Record<string, unknown>,
+  assessmentId?: string,
+) {
+  const { agentApi } = await import('@/lib/agentApi')
+  const resp = await agentApi.post('/v1/agents/documents/vectorize-prism', {
+    user_id: userId,
+    prism_data: prismData ?? null,
+    assessment_id: assessmentId ?? null,
+  })
+  return resp.data
+}
+
+/** Import a PRISM report from a file (PDF, DOCX, CSV, XLS/XLSX) */
+export async function importPrismFile(userId: string, file: File) {
+  const { agentApi } = await import('@/lib/agentApi')
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('user_id', userId)
+  const resp = await agentApi.post('/v1/agents/documents/import-prism', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return resp.data
+}
+
 /** Submit callback — called when user returns from PRISM questionnaire */
 export async function submitQuestionnaireCallback(assessmentId: string) {
   const resp = await api.post<BaseApiResponse<AssessmentStatusResponse>>(

@@ -25,6 +25,7 @@ import {
   GitBranch,
   UserPlus,
   Eye,
+  Network,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -49,6 +50,7 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     agentEngineEnabled
       ? { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian" }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
+    { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
     { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
     { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
@@ -72,6 +74,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
+  { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]

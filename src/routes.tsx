@@ -44,6 +44,7 @@ const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"))
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
+const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
 const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboard"));
@@ -150,6 +151,7 @@ export const routes: RouteObject[] = [
       { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
       { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
       { path: "/dev/process-builder", element: withSuspense(<ProcessBuilderPage />) },
+      { path: "/diagnostic-chat", element: withSuspense(<DiagnosticChat />) },
     ],
   },
 

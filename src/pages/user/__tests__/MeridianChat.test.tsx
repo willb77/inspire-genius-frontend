@@ -190,11 +190,14 @@ jest.mock("@/components/user/chat/ChatHistory", () => ({
   ),
 }));
 
+// ChatWindow mock captures onSendText so we can test file_ids passing
+let capturedChatWindowProps: Record<string, unknown> = {};
 jest.mock("@/components/user/chat/ChatWindow", () => ({
   __esModule: true,
-  default: () => (
-    <div data-testid="chat-window">ChatWindow</div>
-  ),
+  default: (props: Record<string, unknown>) => {
+    capturedChatWindowProps = props;
+    return <div data-testid="chat-window">ChatWindow</div>;
+  },
 }));
 
 const mockNavigate = jest.fn();
@@ -206,7 +209,7 @@ jest.mock("react-router-dom", () => ({
 
 /* ---- Imports (after mocks) ---- */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
@@ -270,5 +273,54 @@ describe("MeridianChat", () => {
     renderPage();
     // Page renders normally regardless of agent engine toggle
     expect(screen.getByTestId("user-layout")).toBeInTheDocument();
+  });
+});
+
+describe("MeridianChat — file_ids passing", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAgentEngine.mockReturnValue(true);
+    capturedChatWindowProps = {};
+  });
+
+  it("passes onSendText callback to ChatWindow", () => {
+    renderPage();
+    expect(capturedChatWindowProps).toHaveProperty("onSendText");
+    expect(typeof capturedChatWindowProps.onSendText).toBe("function");
+  });
+
+  it("REST chat call excludes file_ids when selectedFileIds is empty", async () => {
+    // Mock agentApi.post to return a valid response
+    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
+      agentApi: { post: jest.Mock; get: jest.Mock; defaults: { headers: { common: Record<string, unknown> } } };
+    };
+    agentApi.post.mockResolvedValue({
+      data: { content: "Hello!", agent: "meridian" },
+    });
+
+    renderPage();
+
+    // Trigger onSendText — selectedFileIds starts as []
+    const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
+    await act(async () => {
+      onSendText("Hello Meridian");
+      // Allow the async IIFE inside onSendText to complete
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    await waitFor(() => {
+      expect(agentApi.post).toHaveBeenCalledWith(
+        "/v1/agents/chat",
+        expect.objectContaining({
+          message: "Hello Meridian",
+          session_id: expect.any(String),
+        }),
+        expect.any(Object),
+      );
+    });
+
+    // Verify file_ids is NOT in the payload
+    const callPayload = agentApi.post.mock.calls[0][1];
+    expect(callPayload).not.toHaveProperty("file_ids");
   });
 });
