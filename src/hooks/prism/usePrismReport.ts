@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { getAssessmentReport, vectorizePrismReport } from '@/services/prism/prism.service'
 import type { PrismReportResponse } from '@/types/prism/assessment-types'
-import type { BaseApiResponse } from '@/types/api'
 
 export function usePrismReport(assessmentId: string | null, enabled = true) {
   const query = useQuery({
