@@ -1,3 +1,122 @@
+## [2026-04-25] — feat: Sentence-Level Streaming TTS (VoiceDeskAI Pattern)
+
+### Added
+- `services/agent-engine/app/voice/stream_tts.py` — SentenceAccumulator class
+  - Buffers LLM tokens until sentence boundary (.!?;:\n)
+  - Triggers async OpenAI TTS per sentence (non-blocking)
+  - Returns base64-encoded MP3 AudioChunks ready for WebSocket
+  - Strips markdown before TTS for natural speech
+  - Minimum 20 chars before flush (avoids tiny TTS calls)
+- `inspire-genius-frontend/src/hooks/agents/useAudioQueue.ts` — Audio queue for streaming playback
+  - Queues ArrayBuffer MP3 chunks and plays them sequentially
+  - Each chunk plays to completion before next begins
+  - Stop/clear functionality for interruptions
+
+### Changed
+- `services/agent-engine/app/websocket/handlers.py`
+  - `handle_chat_message()` now checks for `voice: true` in message context
+  - When voice is ON: creates SentenceAccumulator, feeds tokens, sends `{ type: "audio" }` WS messages
+  - When voice is OFF: zero overhead, exact same path as before
+  - All voice errors are non-fatal — text streaming never breaks
+- `inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`
+  - Added `"audio"` to `MeridianMessageType` union
+  - Handle `type: "audio"` messages: decode base64 → forward to `onAudioData` callback
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
+  - Voice recording now uses WebSocket when connected (with `voice: true` context)
+  - Falls back to REST path when WS is not connected (unchanged behavior)
+  - Audio queue replaces DemoAudioService for streaming TTS chunks
+  - Imported `useAudioQueue` hook
+
+### Safety Guarantees (demo-safe)
+- **Text chat is UNTOUCHED** — REST path and WS text streaming work exactly as before
+- **Voice REST fallback preserved** — if WS is not connected, voice uses the same REST path as before
+- **All voice errors are non-fatal** — if TTS fails, text still streams normally
+- **Zero overhead when voice is OFF** — accumulator is None, no imports, no async tasks
+- **No existing files deleted** — all changes are additive
+
+### Architecture
+```
+Before:  User speaks → REST chat (wait 3-15s) → REST TTS (wait 2-5s) → Play MP3
+After:   User speaks → WS chat (stream tokens) → TTS per sentence → Audio chunks play immediately
+Fallback: If WS down → same REST path as before (unchanged)
+```
+
+## [2026-04-25] — Voice Streaming Analysis: Current State vs VoiceDeskAI
+
+### Added
+- `docs/Voice_Streaming_Analysis.docx` — Investigation comparing IG's current voice pipeline (sequential REST: full response → full TTS → play) with VoiceDeskAI's streaming approach (sentence-level TTS over WebSocket with audio queue). Includes architecture diagrams, latency comparison, and implementation recommendation.
+
+### Key Finding
+Current voice latency is 6-25 seconds (wait for complete response + wait for complete TTS). VoiceDeskAI achieves 1-3 seconds to first audio via sentence-level streaming. Recommendation: implement streaming FIRST before multi-agent collaboration, because multi-agent makes response times longer and streaming is a prerequisite for acceptable voice UX.
+
+## [2026-04-25] — Disconnect Monolith: Route All API Traffic Through API Gateway
+
+### Changed
+- `inspire-genius-frontend/src/lib/axios.ts`
+  - `api` axios instance now defaults to `VITE_AGENT_ENGINE_URL` (API Gateway) instead of `VITE_API_BASE_URL` (CloudFront → monolith)
+  - API Gateway routes requests to microservice Lambdas for extracted paths, and falls back to monolith ALB via `ANY /v1/{proxy+}` catch-all for unextracted paths
+  - Added `monolith_enabled` localStorage toggle — set to `"true"` to re-enable CloudFront → monolith routing as backup
+  - Added `resolveApiBaseUrl()`, `isMonolithEnabled()`, `monolithBaseUrl`, `refreshApiBaseUrl()` exports
+- `inspire-genius-frontend/src/lib/agentApi.ts`
+  - `useAgentEngine()` default unchanged (TRUE) — Agent Engine remains primary for agent/chat
+  - Added `isMonolithEnabled()` export for UI/settings use
+  - Updated documentation to reflect two-toggle architecture
+- `inspire-genius-frontend/.env` + `.env.production`
+  - Added comments documenting the new routing behavior
+- `.claude/rules/agents.md`
+  - Rewrote Section 1 to document the two-toggle routing architecture
+  - Documented how to re-enable monolith as backup
+
+### How to Re-enable Monolith
+```javascript
+// In browser console:
+localStorage.setItem('monolith_enabled', 'true')  // route api through CloudFront
+window.location.reload()
+
+// To disable again:
+localStorage.removeItem('monolith_enabled')
+window.location.reload()
+```
+
+### What This Means
+- **All 200+ API endpoints** now route through API Gateway by default
+- The monolith is NOT deleted — it's still reachable via the API Gateway catch-all AND via the `monolith_enabled` toggle
+- No service code was changed — only the axios baseURL resolution logic
+
+## [2026-04-25] — Fix: Wire User Document Upload to pgvector RAG Pipeline
+
+### Changed
+- `inspire-genius-frontend/src/components/user/documents/UploadDocumentsModal.tsx`
+  - Switched from legacy `useUploadDocuments` (monolith `/v1/file_service/upload`) to new `useDocumentUploadMulti` (document-service presigned URL → S3 → process → vectorize)
+  - Expanded file accept types from `.pdf` only to `.pdf,.doc,.docx,.csv,.xls,.xlsx,.txt`
+- `inspire-genius-frontend/src/hooks/documents/useDocumentUpload.ts`
+  - Added Step 4 to upload pipeline: after document-service processing completes, calls Agent Engine `/v1/agents/documents/vectorize` to generate pgvector embeddings
+  - Added `useDocumentUploadMulti()` hook for multi-file sequential upload with per-file progress tracking
+  - Best-effort vectorization: if Agent Engine is unreachable, document is still uploaded and processed (vectorization can be retried later)
+- `inspire-genius-frontend/src/services/documents/documentService.ts`
+  - Added `vectorizeDocument()` function calling Agent Engine `/v1/agents/documents/vectorize` via `agentApi`
+  - Exported `VectorizeRequest` and `VectorizeResponse` types
+
+### Pipeline Summary (all 4 knowledge types)
+- **User Documents** (`/documents` page): Upload → S3 → document-service process → Agent Engine vectorize → pgvector (**NOW WIRED**)
+- **Agent Knowledge** (`/super-admin/knowledge`): Text → Agent Engine `/v1/agents/documents/ingest` → pgvector (was already working)
+- **Cultural Knowledge** (`/super-admin/cultural-content`): Text → Agent Engine `/v1/agents/documents/ingest` → pgvector (was already working)
+- **PRISM Knowledge**: Assessment completion → Agent Engine `/v1/agents/documents/vectorize-prism` → pgvector (was already working)
+- **PRISM File Import** (`/practitioner/prism-clients`): File → Agent Engine `/v1/agents/documents/import-prism` → parse → vectorize → pgvector (was already working)
+
+### Existing Documents
+- `scripts/backfill_document_vectors.py` already exists to vectorize documents with extracted text that haven't been embedded yet
+- Run: `python scripts/backfill_document_vectors.py` (or `--dry-run` to preview)
+
+## [2026-04-25] — RAG System User's Guide
+
+### Added
+- `docs/RAG_Users_Guide.md` — Comprehensive user's guide for all RAG functions
+  - Covers 12 sections: document upload, search, PRISM vectorization, PRISM file import, knowledge base management, cultural content, ingestion API, agent conversation enhancement, source attribution, technical reference, troubleshooting
+  - Role-based feature matrix (all users vs super-admin)
+  - Full API endpoint reference with request/response examples
+  - Technical specs: chunking parameters, embedding models, search thresholds, caching behavior, feedback weighting
+  - Performance benchmarks and troubleshooting guide
 
 ## [2026-04-24] — Claude Code Implementation Prompts for RAG Architecture Plan
 
@@ -2623,4 +2742,1202 @@ Diagnosed and fixed three layers of platform connectivity failures. (1) WebSocke
 - `.gitlab-ci.yml`
 - `.pre-commit-config.yaml`
 - `docker-compose.test.yml`
+
+
+## 2026-04-25 00:01:23 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 00:08:30 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 00:10:03 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 00:10:46 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 00:11:51 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 00:43:23 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 08:49:01 — session summary
+
+RAG Deploy Rebuild: Rebuilt Agent Engine Docker image (fixed stale poetry.lock), pushed to ECR, and forced ECS redeployment. Agent Engine v1.2.0 confirmed healthy. Committed and pushed frontend RAG pipeline changes (PRISM import hook, PrismClients practitioner page, MeridianChat routing, navigation/routes updates) to development branch. Fixed two CI failures: removed unused BaseApiResponse import causing TypeScript build error, and added missing test mocks (usePrismImport, Dialog, Input, Label, lucide icons) to PrismClients test. All CI jobs passed (build, 2975 tests, security scan, deploy). Frontend deployed to S3 + CloudFront. ECS cluster name was ig-dev-agent-engine, not ig-dev-cluster as documented in the skill.
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 08:49:20 — session summary
+
+**Services** (3 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 09:06:59 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (8 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- `services/agent-engine/app/rag/retriever.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 09:11:44 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- `services/agent-engine/app/rag/retriever.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:11:11 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- `services/agent-engine/app/rag/retriever.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/pyproject.toml`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:20:47 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (13 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 3 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:26:55 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (13 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 3 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:35:29 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (13 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 3 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:39:06 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (13 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 3 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:47:05 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 10:55:28 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 11:46:19 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 11:49:55 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 12:31:37 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 14:18:53 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 00:15 — Session Summary
+
+Designed and implemented the Vector Data Architecture & RAG Strategy for Inspire Genius. The session began with a strategy discussion about managing multiple categories of vector data (agent knowledge, cultural context, personal user data) across 18 specialist agents, then moved to full implementation.
+
+Created a comprehensive architecture plan document (IG_Vector_Data_Architecture_Plan.docx, 13 sections covering 3-collection architecture, embedding strategy, PRISM vectorization, document-to-chat pipeline, multi-agent RAG collaboration, RTBF compliance, and cost analysis). Built the core RAG pipeline code: PRISM report vectorizer that decomposes behavioral profiles into 9+ dimension-level vectors, personal data retrieval module with token budget enforcement, and attached document content injection. Extended SharedContext for multi-agent DAG execution with pre-fetched RAG slots. Updated the chat endpoint and frontend to pass file_ids from selected documents through to the RAG pipeline.
+
+Created 12 Claude Code slash commands (/rag-1a through /rag-4c + /rag-deploy-rebuild) as self-contained implementation prompts for each phase of the architecture plan, with clear sequential/parallel execution mapping. Phases 1A-1C code was implemented directly; 1D (file-based PRISM import for PDF/DOCX/CSV/XLS) and Phases 2-4 are prompt-only, ready to execute.
+
+---
+
+**Agents** (8 files):
+- `services/agent-engine/app/rag/prism_vectorizer.py` (NEW)
+- `services/agent-engine/app/rag/personal_data.py` (NEW)
+- `services/agent-engine/app/agents/base_agent.py` — personal data + attached doc retrieval in RAG pipeline
+- `services/agent-engine/app/agents/meridian.py` — pre-DAG RAG injection
+- `services/agent-engine/app/agents/coaching/prism_agent.py` — SharedContext PRISM publish
+- `services/agent-engine/app/agents/business/document_agent.py` — SharedContext doc publish
+- `services/agent-engine/app/collaboration/shared_context.py` — RAG context slots + inject_rag_context()
+- `services/agent-engine/app/main.py` — ChatRequest accepts file_ids[]
+
+**Services** (5 files):
+- `services/agent-engine/app/routes/ingestion.py` — vectorize-prism + vectorize + import-prism endpoints
+- `services/agent-engine/app/events/document_consumer.py` (NEW) — EventBridge document vectorization consumer
+- `services/document-service/app/service.py` — EventBridge emission on document processed
+- `services/document-service/app/eventbridge.py` — emit helper
+- `services/migration-runner/migrations/pgvector_schema.sql` — domain/agent_name columns
+
+**Frontend** (3 files):
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx` — file_ids in text + voice chat
+- `inspire-genius-frontend/src/services/alex/agent.service.ts` — AgentChatRequest includes file_ids
+- `inspire-genius-frontend/change_log.md` — synced
+
+**Docs** (3 files):
+- `inspire-genius-frontend/public/docs/IG_Vector_Data_Architecture_Plan.docx` (NEW) — v1.1 with prompts
+- `change_log.md` — updated
+- `.claude/commands/rag-*.md` (12 files NEW) — implementation prompts
+
+## 2026-04-25 14:42:16 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 14:42:20 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:06:12 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:08:40 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:18:51 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:29:44 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:37:35 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:53:05 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 15:59:28 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 16:52:15 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:00:33 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:14:12 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:38:40 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:49:02 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:50:41 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 17:51:51 — session summary
+
+**Services** (4 files):
+- `services/document-service/app/eventbridge.py`
+- `services/document-service/app/schemas.py`
+- `services/document-service/app/service.py`
+- `services/migration-runner/migrations/pgvector_schema.sql`
+
+**Agents** (14 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/agents/business/document_agent.py`
+- `services/agent-engine/app/agents/coaching/prism_agent.py`
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/collaboration/shared_context.py`
+- `services/agent-engine/app/events/__init__.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/orchestration/dag_executor.py`
+- `services/agent-engine/app/rag/embedding_service.py`
+- `services/agent-engine/app/rag/ingestion.py`
+- _…and 4 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (4 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+- `scripts/ingest_prism_knowledge.py`
 

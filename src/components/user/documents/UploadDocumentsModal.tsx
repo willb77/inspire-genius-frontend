@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import type { SimpleKind, UploadedFile, UploadDocumentsModalProps } from "@/types/documents";
-import { useUploadDocuments } from "@/hooks/documents/useUploadDocuments";
+import { useDocumentUploadMulti } from "@/hooks/documents/useDocumentUpload";
 
 // Category selection removed per requirement
 
@@ -25,7 +25,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
   const serverProgressRef = useRef(0); // raw progress from axios
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const uploadMutation = useUploadDocuments();
+  const uploadMutation = useDocumentUploadMulti();
   const smoothTimerRef = useRef<number | null>(null);
   const colorTimerRef = useRef<number | null>(null);
   const [colorIndex, setColorIndex] = useState(0);
@@ -246,7 +246,7 @@ export default function UploadDocumentsModal({ open, onOpenChange, onUploaded }:
                   multiple
                   className="hidden"
                   onChange={(e) => addFiles(e.target.files)}
-                  accept=".pdf"
+                  accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.txt"
                 />
               </div>
             </div>

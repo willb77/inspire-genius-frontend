@@ -24,8 +24,12 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Check whether the super-admin has toggled Agent Engine routing ON.
- * Reads from localStorage key "agent_engine_enabled".
+ * Check whether the Agent Engine is enabled (default: TRUE).
+ *
+ * The Agent Engine is always the primary system. Setting
+ * `agent_engine_enabled=false` in localStorage falls back to the monolith
+ * for agent/chat endpoints only. General API routing is controlled
+ * separately by `monolith_enabled` in localStorage (see axios.ts).
  */
 export function useAgentEngine(): boolean {
   try {
@@ -41,11 +45,27 @@ export function useAgentEngine(): boolean {
 
 /**
  * Return the appropriate axios instance based on the Agent Engine toggle.
- * - Toggle ON  → agentApi (ECS Fargate)
- * - Toggle OFF → api (monolith / CloudFront proxy)
+ * - Toggle ON  → agentApi (ECS Fargate — default)
+ * - Toggle OFF → api (monolith / CloudFront proxy — backup)
  */
 export function getApi() {
   return useAgentEngine() ? agentApi : api
+}
+
+/**
+ * Check whether the monolith is enabled as the primary API backend.
+ * Default: false (API Gateway / microservices are primary).
+ *
+ * To re-enable the monolith:
+ *   localStorage.setItem('monolith_enabled', 'true')
+ *   window.location.reload()
+ */
+export function isMonolithEnabled(): boolean {
+  try {
+    return localStorage.getItem('monolith_enabled') === 'true'
+  } catch {
+    return false
+  }
 }
 
 export { syncAuthToken }

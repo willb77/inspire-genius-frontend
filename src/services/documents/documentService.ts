@@ -5,6 +5,7 @@
  * The legacy fileService.ts talks to the monolith (v1/file_service/*).
  */
 import { api } from "@/lib/axios";
+import { agentApi } from "@/lib/agentApi";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -218,6 +219,40 @@ export async function deleteDocumentV2(documentId: string): Promise<void> {
   });
 }
 
+// ─── Vectorization (Agent Engine) ───────────────────────────────
+
+type VectorizeRequest = {
+  document_id: string;
+  text?: string;
+  user_id: string;
+  filename?: string;
+  file_type?: string;
+};
+
+type VectorizeResponse = {
+  document_id: string;
+  chunks_stored: number;
+  status: string;
+  message: string;
+};
+
+/**
+ * Trigger pgvector embedding for a document via the Agent Engine.
+ *
+ * Call this after the document-service has finished processing (text extraction).
+ * The Agent Engine fetches the extracted_text from the shared Aurora DB and
+ * generates OpenAI embeddings stored in the document_chunks table.
+ *
+ * This bridges the document-service processing pipeline to the RAG retriever.
+ */
+export async function vectorizeDocument(req: VectorizeRequest): Promise<VectorizeResponse> {
+  const { data } = await agentApi.post<VectorizeResponse>(
+    "/v1/agents/documents/vectorize",
+    req,
+  );
+  return data;
+}
+
 /** Full-text + semantic search across documents. */
 export async function searchDocuments(req: SearchRequest): Promise<SearchResponse> {
   const resp = await api.post("/v1/documents/search", req);
@@ -232,4 +267,6 @@ export type {
   SearchRequest,
   SearchHit,
   SearchResponse,
+  VectorizeRequest,
+  VectorizeResponse,
 };
