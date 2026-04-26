@@ -4,8 +4,29 @@
  * Talks to the new Document Service Lambda (v1/documents/*).
  * The legacy fileService.ts talks to the monolith (v1/file_service/*).
  */
-import { api } from "@/lib/axios";
+import { api, monolithBaseUrl } from "@/lib/axios";
 import { agentApi } from "@/lib/agentApi";
+import axios from "axios";
+import { getToken } from "@/lib/storage";
+
+/**
+ * Monolith-direct axios instance for file operations.
+ * The document-service Lambda routes (/v1/documents/*) are not yet
+ * in the API Gateway, so presigned URL requests must go through the
+ * monolith (CloudFront → ALB) until infrastructure is updated.
+ */
+const monolithApi = axios.create({
+  baseURL: monolithBaseUrl,
+  withCredentials: true,
+});
+// Inject auth token on each request
+monolithApi.interceptors.request.use(async (config) => {
+  try {
+    const token = await getToken();
+    if (token) config.headers.set?.("access-token", token);
+  } catch { /* ignore */ }
+  return config;
+});
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -78,10 +99,21 @@ type SearchResponse = {
 
 // ─── API calls ──────────────────────────────────────────────────
 
-/** Initiate upload — returns presigned S3 URL for direct upload. */
+/** Initiate upload — returns presigned S3 URL for direct upload.
+ *
+ * Tries the API Gateway route first (/v1/documents/upload → document-service).
+ * Falls back to the monolith's file_service multipart upload if the
+ * document-service route is unavailable (common until API Gateway is updated).
+ */
 export async function initiateUpload(req: PresignedUrlRequest): Promise<PresignedUrlResponse> {
-  const resp = await api.post("/v1/documents/upload", req);
-  return (resp.data as { data: PresignedUrlResponse }).data;
+  try {
+    const resp = await api.post("/v1/documents/upload", req);
+    return (resp.data as { data: PresignedUrlResponse }).data;
+  } catch {
+    // document-service route not available — fall back to monolith
+    const resp = await monolithApi.post("/v1/documents/upload", req);
+    return (resp.data as { data: PresignedUrlResponse }).data;
+  }
 }
 
 /** Upload a file using the presigned URL from initiateUpload. */
@@ -115,8 +147,13 @@ export async function uploadToS3(
 
 /** Trigger server-side processing (scan, extract, chunk). */
 export async function triggerProcessing(documentId: string): Promise<DocumentOut> {
-  const resp = await api.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
-  return (resp.data as { data: DocumentOut }).data;
+  try {
+    const resp = await api.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
+    return (resp.data as { data: DocumentOut }).data;
+  } catch {
+    const resp = await monolithApi.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
+    return (resp.data as { data: DocumentOut }).data;
+  }
 }
 
 /** List documents with pagination and filters.
