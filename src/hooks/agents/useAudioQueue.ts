@@ -1,25 +1,28 @@
 import { useCallback, useRef, useState } from "react";
 
 /**
- * Audio queue for streaming TTS playback.
+ * Audio queue for streaming TTS playback with full transport controls.
  *
  * Receives ArrayBuffer chunks of MP3 audio and plays them sequentially.
  * Each chunk plays to completion before the next begins, producing
  * smooth continuous speech from sentence-level TTS chunks.
  *
- * Usage:
- *   const { enqueue, stop, isPlaying } = useAudioQueue();
- *
- *   // In WebSocket handler:
- *   useMeridianWebSocket({
- *     onAudioData: (buf) => enqueue(buf),
- *   });
+ * Controls: enqueue, stop, pause, resume, skip (next chunk).
  */
 export function useAudioQueue() {
   const queueRef = useRef<ArrayBuffer[]>([]);
   const playingRef = useRef(false);
+  const pausedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [queueLength, setQueueLength] = useState(0);
+  // Resolve function for the current audio element's promise — used by skip()
+  const currentResolveRef = useRef<(() => void) | null>(null);
+
+  const updateQueueLength = useCallback(() => {
+    setQueueLength(queueRef.current.length);
+  }, []);
 
   const playNext = useCallback(async () => {
     if (playingRef.current || queueRef.current.length === 0) return;
@@ -27,7 +30,20 @@ export function useAudioQueue() {
     setIsPlaying(true);
 
     while (queueRef.current.length > 0) {
+      // If paused, wait until resumed
+      if (pausedRef.current) {
+        await new Promise<void>((resolve) => {
+          const check = setInterval(() => {
+            if (!pausedRef.current) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 100);
+        });
+      }
+
       const buf = queueRef.current.shift()!;
+      updateQueueLength();
 
       try {
         const blob = new Blob([buf], { type: "audio/mpeg" });
@@ -36,22 +52,25 @@ export function useAudioQueue() {
         await new Promise<void>((resolve) => {
           const audio = new Audio(url);
           audioRef.current = audio;
+          currentResolveRef.current = resolve;
 
-          audio.onended = () => {
+          const cleanup = () => {
             URL.revokeObjectURL(url);
             audioRef.current = null;
+            currentResolveRef.current = null;
+          };
+
+          audio.onended = () => {
+            cleanup();
             resolve();
           };
           audio.onerror = () => {
-            URL.revokeObjectURL(url);
-            audioRef.current = null;
+            cleanup();
             resolve();
           };
 
           audio.play().catch(() => {
-            // Autoplay blocked — skip this chunk
-            URL.revokeObjectURL(url);
-            audioRef.current = null;
+            cleanup();
             resolve();
           });
         });
@@ -62,17 +81,20 @@ export function useAudioQueue() {
 
     playingRef.current = false;
     setIsPlaying(false);
-  }, []);
+    setIsPaused(false);
+    pausedRef.current = false;
+    updateQueueLength();
+  }, [updateQueueLength]);
 
   const enqueue = useCallback(
     (audioBuffer: ArrayBuffer) => {
       queueRef.current.push(audioBuffer);
-      // Start playing if not already
+      updateQueueLength();
       if (!playingRef.current) {
         playNext();
       }
     },
-    [playNext],
+    [playNext, updateQueueLength],
   );
 
   const stop = useCallback(() => {
@@ -84,9 +106,51 @@ export function useAudioQueue() {
       } catch { /* ignore */ }
       audioRef.current = null;
     }
+    if (currentResolveRef.current) {
+      currentResolveRef.current();
+      currentResolveRef.current = null;
+    }
     playingRef.current = false;
+    pausedRef.current = false;
     setIsPlaying(false);
+    setIsPaused(false);
+    updateQueueLength();
+  }, [updateQueueLength]);
+
+  const pause = useCallback(() => {
+    if (!playingRef.current || pausedRef.current) return;
+    pausedRef.current = true;
+    setIsPaused(true);
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch { /* ignore */ }
+    }
   }, []);
 
-  return { enqueue, stop, isPlaying };
+  const resume = useCallback(() => {
+    if (!pausedRef.current) return;
+    pausedRef.current = false;
+    setIsPaused(false);
+    if (audioRef.current) {
+      try { audioRef.current.play().catch(() => { /* autoplay blocked */ }); } catch { /* ignore */ }
+    }
+  }, []);
+
+  const skip = useCallback(() => {
+    if (!playingRef.current) return;
+    // Stop the current audio element and resolve its promise
+    // so playNext() advances to the next chunk
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      } catch { /* ignore */ }
+      audioRef.current = null;
+    }
+    if (currentResolveRef.current) {
+      currentResolveRef.current();
+      currentResolveRef.current = null;
+    }
+  }, []);
+
+  return { enqueue, stop, pause, resume, skip, isPlaying, isPaused, queueLength };
 }

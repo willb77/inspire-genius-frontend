@@ -23,7 +23,18 @@ import { api } from "@/lib/axios";
 import { exportConversation } from "@/services/agent/agentService";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
-import { Sparkles } from "lucide-react";
+import {
+  Sparkles,
+  Wifi,
+  WifiOff,
+  Loader2,
+  Volume2,
+  VolumeX,
+  Pause,
+  Play,
+  SkipForward,
+  Square,
+} from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -309,8 +320,22 @@ export default function MeridianChat() {
     [],
   );
 
+  // Voice-enabled toggle: when ON, WS messages include voice=true for streaming TTS
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    try { return localStorage.getItem("meridian_voice") !== "false"; } catch { return true; }
+  });
+
   // ── Streaming audio queue (sentence-level TTS chunks from WebSocket) ──
-  const { enqueue: enqueueAudio, stop: stopAudio } = useAudioQueue();
+  const {
+    enqueue: enqueueAudio,
+    stop: stopAudio,
+    pause: pauseAudio,
+    resume: resumeAudio,
+    skip: skipAudio,
+    isPlaying: isAudioPlaying,
+    isPaused: isAudioQueuePaused,
+    queueLength: audioQueueLength,
+  } = useAudioQueue();
 
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
@@ -644,6 +669,83 @@ export default function MeridianChat() {
         {isProcessing && (
           <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
         )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Voice toggle */}
+        <button
+          type="button"
+          title={voiceEnabled ? "Voice responses ON — click to mute" : "Voice responses OFF — click to enable"}
+          className={`p-1.5 rounded-md transition-colors ${voiceEnabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted"}`}
+          onClick={() => {
+            const next = !voiceEnabled;
+            setVoiceEnabled(next);
+            try { localStorage.setItem("meridian_voice", String(next)); } catch { /* */ }
+            if (!next) stopAudio();
+          }}
+        >
+          {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        </button>
+
+        {/* Audio transport controls — visible when audio is playing or queued */}
+        {(isAudioPlaying || audioQueueLength > 0) && (
+          <div className="flex items-center gap-1 rounded-lg border bg-background px-2 py-1 shadow-sm">
+            {/* Pause / Resume */}
+            <button
+              type="button"
+              title={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              onClick={() => isAudioQueuePaused ? resumeAudio() : pauseAudio()}
+            >
+              {isAudioQueuePaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+            </button>
+            {/* Skip to next sentence */}
+            <button
+              type="button"
+              title="Skip to next sentence"
+              className="p-1 rounded hover:bg-muted transition-colors"
+              onClick={skipAudio}
+            >
+              <SkipForward className="h-3.5 w-3.5" />
+            </button>
+            {/* Stop all audio */}
+            <button
+              type="button"
+              title="Stop audio"
+              className="p-1 rounded hover:bg-muted transition-colors text-destructive"
+              onClick={stopAudio}
+            >
+              <Square className="h-3.5 w-3.5" />
+            </button>
+            {audioQueueLength > 0 && (
+              <span className="text-[10px] text-muted-foreground ml-1">{audioQueueLength} queued</span>
+            )}
+          </div>
+        )}
+
+        {/* Connection status indicator */}
+        <div
+          title={
+            _isConnected
+              ? "Connected (streaming)"
+              : isConnecting
+                ? "Connecting..."
+                : "Disconnected (using REST)"
+          }
+          className="flex items-center gap-1"
+        >
+          {isConnecting ? (
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+          ) : _isConnected ? (
+            <Wifi className="h-4 w-4 text-green-500" />
+          ) : (
+            <WifiOff className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">
+            {_isConnected ? "Live" : isConnecting ? "Connecting" : "REST"}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -676,6 +778,7 @@ export default function MeridianChat() {
               setHasAudio(false);
               setIsAudioPaused(false);
               setAgentAttribution(null);
+              stopAudio(); // Clear any previous audio queue
               const timeStr = formatUSTimeSafe(new Date());
               setMessages((prev) => [
                 ...prev.filter((m) => m.kind !== "processing"),
@@ -696,12 +799,20 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
-              // Always use REST — the WS proxy chain is unreliable.
-              // WS streaming will be re-enabled once the proxy is stable.
+              // Use WebSocket when connected — streaming text + optional TTS.
+              // Falls back to REST when WS is not available.
+              if (_isConnected) {
+                _wsSendMessage(t, {
+                  ...(voiceEnabled ? { voice: true } : {}),
+                  ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
+                  session_id: conversationId || "default",
+                });
+                return;
+              }
+              // REST fallback
               (async () => {
                 try {
                   const { agentApi } = await import("@/lib/agentApi");
-                  // Resolve token: prefer context token, fall back to storage
                   let token = accessToken;
                   if (!token) {
                     try {
@@ -709,7 +820,6 @@ export default function MeridianChat() {
                       token = (await getToken()) || "";
                     } catch { /* ignore */ }
                   }
-                  console.log("[MeridianChat] REST chat →", agentApi.defaults.baseURL, "token:", token ? `${token.slice(0, 15)}...` : "NONE");
                   const resp = await agentApi.post("/v1/agents/chat", {
                     message: t,
                     session_id: conversationId || "default",
@@ -732,7 +842,6 @@ export default function MeridianChat() {
                     },
                   ]);
                   if (data?.agent) setAgentAttribution(data.agent);
-                  console.log("[MeridianChat] REST chat response:", resp.status, data?.agent);
                 } catch (err) {
                   console.error("[MeridianChat] Chat request failed:", err);
                   setMessages((prev) => [
