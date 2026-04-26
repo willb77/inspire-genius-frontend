@@ -21,7 +21,7 @@ import Pagination from "@/components/shared/Pagination"
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton"
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
