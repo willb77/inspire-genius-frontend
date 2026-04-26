@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Types
 // ---------------------------------------------------------------------------
 
-export type MeridianMessageType = "connected" | "token" | "complete" | "error" | "audio";
+export type MeridianMessageType = "connected" | "token" | "complete" | "error" | "audio" | "ping" | "auth_expired" | "idle_warning" | "idle_timeout" | "rate_limited";
 
 export type MeridianResponse = {
   type: MeridianMessageType;
@@ -57,22 +57,27 @@ export type UseMeridianWebSocketOptions = {
 // ---------------------------------------------------------------------------
 
 function buildWsUrl(accessToken: string): string {
-  // Prefer dedicated WebSocket URL (API Gateway WebSocket API)
+  // Priority 1: Direct WebSocket URL (CloudFront → ALB → ECS, bypasses ws-proxy)
+  const directUrl = import.meta.env.VITE_AGENT_WS_DIRECT_URL as string;
+  if (directUrl) {
+    const base = directUrl.replace(/\/$/, "");
+    const url = base.includes("/ws/chat") ? base : `${base}/ws/chat`;
+    return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
+  }
+
+  // Priority 2: Dedicated WebSocket URL (API Gateway WebSocket API via ws-proxy)
   const wsEnv =
     (import.meta.env.VITE_AGENT_WS_URL as string) ||
     (import.meta.env.VITE_AGENTS_WEBSOCKET_BASE_URL as string);
 
   if (wsEnv) {
     const base = wsEnv.replace(/\/$/, "");
-    // API Gateway WebSocket API uses route selection from the message body
-    // (action field), NOT URL paths. Do NOT append /ws/chat — it causes 403.
-    // For local dev (direct ECS connection), append /ws/chat as the server expects it.
     const isApiGw = base.includes("execute-api") || base.includes("amazonaws.com");
     const url = isApiGw ? base : (base.includes("/ws/chat") ? base : `${base}/ws/chat`);
     return `${url}${url.includes("?") ? "&" : "?"}access-token=${encodeURIComponent(accessToken)}`;
   }
 
-  // Fallback: derive from HTTP Agent Engine URL (works for local dev)
+  // Priority 3: Derive from HTTP Agent Engine URL (local dev)
   const base =
     (import.meta.env.VITE_AGENT_ENGINE_URL as string) ||
     (import.meta.env.VITE_API_BASE_URL as string) ||
@@ -177,7 +182,6 @@ export function useMeridianWebSocket(
 
         case "audio":
           // Base64-encoded MP3 audio chunk from streaming TTS.
-          // Decode and forward to the onAudioData callback for queued playback.
           if (msg.content) {
             try {
               const binary = atob(msg.content);
@@ -187,6 +191,29 @@ export function useMeridianWebSocket(
             } catch { /* ignore decode errors */ }
           }
           break;
+
+        case "ping":
+          // Server heartbeat — respond immediately with pong
+          safeSend(JSON.stringify({ type: "pong" }));
+          return; // Don't forward to onResponse
+
+        case "idle_warning":
+          // Server is about to close for inactivity — keep alive if page is visible
+          if (document.visibilityState === "visible") {
+            safeSend(JSON.stringify({ type: "pong" }));
+          }
+          return; // Don't forward to onResponse
+
+        case "auth_expired":
+          setError(msg.message ?? "Session expired. Please refresh.");
+          setIsProcessing(false);
+          return; // Don't forward — the server closes the connection
+
+        case "rate_limited":
+          setError(msg.message ?? "Rate limited. Please slow down.");
+          // Auto-clear rate limit error after 5 seconds
+          setTimeout(() => setError(null), 5000);
+          return;
 
         case "error":
           setError(msg.message ?? "Agent error");
