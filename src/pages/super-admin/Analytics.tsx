@@ -351,9 +351,14 @@ function AuditLogTab() {
 }
 
 // ─── Mermaid Renderer ─────────────────────────────────────────────
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 3
+const ZOOM_STEP = 0.25
+
 function MermaidDiagram({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1.2)
 
   useEffect(() => {
     let cancelled = false
@@ -364,7 +369,7 @@ function MermaidDiagram({ chart }: { chart: string }) {
           startOnLoad: false,
           theme: "default",
           securityLevel: "loose",
-          flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+          flowchart: { useMaxWidth: false, htmlLabels: true, curve: "basis" },
         })
         if (cancelled || !containerRef.current) return
         const { svg } = await mermaid.render("sitemap-diagram", chart)
@@ -391,10 +396,47 @@ function MermaidDiagram({ chart }: { chart: string }) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="overflow-auto max-h-[calc(100vh-24rem)] bg-white rounded-lg p-4"
-    />
+    <div className="space-y-3">
+      {/* Zoom controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+          disabled={zoom <= ZOOM_MIN}
+        >
+          −
+        </Button>
+        <span className="text-xs text-muted-foreground w-14 text-center">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+          disabled={zoom >= ZOOM_MAX}
+        >
+          +
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setZoom(1.2)}
+          className="text-xs"
+        >
+          Reset
+        </Button>
+      </div>
+
+      {/* Scrollable + zoomable diagram */}
+      <div className="overflow-auto border rounded-lg bg-white" style={{ maxHeight: "calc(100vh - 22rem)" }}>
+        <div
+          ref={containerRef}
+          className="p-6 origin-top-left"
+          style={{ transform: `scale(${zoom})`, transformOrigin: "top left", minWidth: "fit-content" }}
+        />
+      </div>
+    </div>
   )
 }
 
