@@ -13,6 +13,7 @@ import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
 import { useRenameConversation } from "@/hooks/agents/useRenameConversation";
 import { useMeridianWebSocket } from "@/hooks/agents/useMeridianWebSocket";
 import type { MeridianResponse } from "@/hooks/agents/useMeridianWebSocket";
+import { useAudioQueue } from "@/hooks/agents/useAudioQueue";
 import DemoAudioService from "@/services/demoAudioService";
 import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStorage";
 import { useListDocuments } from "@/hooks/documents/useListDocuments";
@@ -307,17 +308,19 @@ export default function MeridianChat() {
     [],
   );
 
+  // ── Streaming audio queue (sentence-level TTS chunks from WebSocket) ──
+  const { enqueue: enqueueAudio, stop: stopAudio, isPlaying: isStreamingAudio } = useAudioQueue();
+
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
-      const svc = demoAudioServiceRef.current;
-      if (!svc) return;
-      svc.initializeAudioContext().then(() => {
-        svc.addAudioChunk(audioData, false);
-        setHasAudio(false);
-        scheduleAudioBufferRefresh();
-      });
+      // Route to the streaming audio queue for sentence-level playback.
+      // This replaces the DemoAudioService path for streaming TTS chunks.
+      if (audioData.byteLength > 0) {
+        enqueueAudio(audioData);
+        setHasAudio(true);
+      }
     },
-    [scheduleAudioBufferRefresh],
+    [enqueueAudio],
   );
 
   // -------------------------------------------------------------------
@@ -769,64 +772,77 @@ export default function MeridianChat() {
                 setVoiceRecording(false);
                 const transcript = voiceTranscriptRef.current.trim();
                 if (!transcript) return;
-                // Send transcript through REST chat (same as text send)
-                const sendBtn = document.querySelector<HTMLElement>("[data-tour='chat-window']");
-                if (sendBtn) {
-                  // Trigger the onSendText callback with the transcript
-                  const timeStr = formatUSTimeSafe(new Date());
-                  setMessages((prev) => [
-                    ...prev.filter((m) => m.kind !== "processing"),
-                    { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
-                    { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
-                  ]);
-                  (async () => {
-                    try {
-                      const { agentApi } = await import("@/lib/agentApi");
-                      let token = accessToken;
-                      if (!token) {
-                        try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
-                      }
-                      const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default", ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}) }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
-                      const data = resp.data;
-                      const responseText = data?.content || data?.message || "No response.";
-                      setMessages((prev) => [
-                        ...prev.filter((m) => m.kind !== "processing"),
-                        { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
-                      ]);
-                      if (data?.agent) setAgentAttribution(data.agent);
-                      // Speak the response using OpenAI TTS (Shimmer voice)
-                      try {
-                        const ttsResp = await agentApi.post("/v1/agents/tts", {
-                          text: responseText.slice(0, 4096),
-                          voice: "shimmer",
-                        }, {
-                          headers: token ? { "access-token": token } : {},
-                          responseType: "arraybuffer",
-                          timeout: 30000,
-                        });
-                        const audioBlob = new Blob([ttsResp.data], { type: "audio/mpeg" });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        const audio = new Audio(audioUrl);
-                        audio.onended = () => URL.revokeObjectURL(audioUrl);
-                        audio.play().catch(() => { /* autoplay blocked */ });
-                        setHasAudio(true);
-                      } catch (ttsErr) {
-                        console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
-                        // Fallback to browser speechSynthesis
-                        if ("speechSynthesis" in window) {
-                          const utter = new SpeechSynthesisUtterance(responseText);
-                          window.speechSynthesis.speak(utter);
-                        }
-                      }
-                    } catch (err) {
-                      console.error("[MeridianChat] Voice chat failed:", err);
-                      setMessages((prev) => [
-                        ...prev.filter((m) => m.kind !== "processing"),
-                        { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
-                      ]);
-                    }
-                  })();
+
+                const timeStr = formatUSTimeSafe(new Date());
+                setMessages((prev) => [
+                  ...prev.filter((m) => m.kind !== "processing"),
+                  { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
+                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
+                ]);
+
+                // ── Try WebSocket path first (streaming voice) ─────────
+                // When WS is connected, send with voice=true so the backend
+                // streams sentence-level TTS audio chunks alongside text tokens.
+                // Falls back to REST if WS is not connected.
+                if (_isConnected) {
+                  stopAudio(); // Clear any previous audio queue
+                  _wsSendMessage(transcript, {
+                    voice: true,
+                    ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
+                    session_id: conversationId || "default",
+                  });
+                  // The WS onResponse handler (above) updates messages when
+                  // tokens arrive and audio plays via onAudioData → audioQueue.
+                  return;
                 }
+
+                // ── REST fallback (sequential: full response → full TTS) ──
+                (async () => {
+                  try {
+                    const { agentApi } = await import("@/lib/agentApi");
+                    let token = accessToken;
+                    if (!token) {
+                      try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
+                    }
+                    const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default", ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}) }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
+                    const data = resp.data;
+                    const responseText = data?.content || data?.message || "No response.";
+                    setMessages((prev) => [
+                      ...prev.filter((m) => m.kind !== "processing"),
+                      { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
+                    ]);
+                    if (data?.agent) setAgentAttribution(data.agent);
+                    // Speak the response using OpenAI TTS (Shimmer voice)
+                    try {
+                      const ttsResp = await agentApi.post("/v1/agents/tts", {
+                        text: responseText.slice(0, 4096),
+                        voice: "shimmer",
+                      }, {
+                        headers: token ? { "access-token": token } : {},
+                        responseType: "arraybuffer",
+                        timeout: 30000,
+                      });
+                      const audioBlob = new Blob([ttsResp.data], { type: "audio/mpeg" });
+                      const audioUrl = URL.createObjectURL(audioBlob);
+                      const audio = new Audio(audioUrl);
+                      audio.onended = () => URL.revokeObjectURL(audioUrl);
+                      audio.play().catch(() => { /* autoplay blocked */ });
+                      setHasAudio(true);
+                    } catch (ttsErr) {
+                      console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
+                      if ("speechSynthesis" in window) {
+                        const utter = new SpeechSynthesisUtterance(responseText);
+                        window.speechSynthesis.speak(utter);
+                      }
+                    }
+                  } catch (err) {
+                    console.error("[MeridianChat] Voice chat failed:", err);
+                    setMessages((prev) => [
+                      ...prev.filter((m) => m.kind !== "processing"),
+                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
+                    ]);
+                  }
+                })();
               };
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               rec.onerror = (e: any) => {

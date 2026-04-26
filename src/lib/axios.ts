@@ -83,9 +83,58 @@ export function attachInterceptors(instance: AxiosInstance) {
   )
 }
 
-// Configure the main Axios instance (monolith / CloudFront proxy)
+/**
+ * Check whether the monolith backend is enabled as the primary API target.
+ * When disabled (default), `api` routes through API Gateway which dispatches
+ * to microservice Lambdas or the Agent Engine.
+ * When enabled, `api` routes through CloudFront → monolith (legacy backup).
+ *
+ * Toggle: localStorage.setItem('monolith_enabled', 'true') to re-enable.
+ */
+function isMonolithEnabled(): boolean {
+  try {
+    return localStorage.getItem('monolith_enabled') === 'true'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Resolve the base URL for the main `api` axios instance.
+ *
+ * Priority:
+ *   1. If monolith_enabled=true → VITE_API_BASE_URL (CloudFront → monolith)
+ *   2. Otherwise → VITE_AGENT_ENGINE_URL (API Gateway → microservices)
+ *   3. Fallback → VITE_API_BASE_URL → localhost:3000
+ *
+ * The API Gateway (VITE_AGENT_ENGINE_URL) routes every /v1/* path:
+ *   - /v1/agents/*     → Agent Engine ALB
+ *   - /v1/auth/*       → auth-service Lambda
+ *   - /v1/documents/*  → document-service Lambda
+ *   - /v1/audit/*      → audit-service Lambda
+ *   - /v1/*            → monolith ALB (Strangler Fig catch-all)
+ *
+ * This means ALL existing service calls keep working — the API Gateway
+ * catch-all forwards unmatched paths to the monolith automatically.
+ */
+function resolveApiBaseUrl(): string {
+  if (isMonolithEnabled()) {
+    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  }
+  // Route through API Gateway (Agent Engine URL) — monolith is still
+  // reachable via the catch-all /v1/{proxy+} route when needed.
+  return (
+    import.meta.env.VITE_AGENT_ENGINE_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    'http://localhost:3000'
+  )
+}
+
+// Configure the main Axios instance.
+// Default: routes through API Gateway (microservices-first).
+// Backup: set localStorage monolith_enabled=true to route through CloudFront → monolith.
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+  baseURL: resolveApiBaseUrl(),
   withCredentials: true,
 })
 
@@ -102,4 +151,13 @@ attachInterceptors(api)
 export function syncAuthToken(token: string | null) {
   if (token) api.defaults.headers.common['access-token'] = token
   else delete api.defaults.headers.common['access-token']
+}
+
+/** The monolith base URL — available for any code that explicitly needs the monolith. */
+export const monolithBaseUrl: string =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+
+/** Re-evaluate the api baseURL after a toggle change (call from settings UI). */
+export function refreshApiBaseUrl(): void {
+  api.defaults.baseURL = resolveApiBaseUrl()
 }

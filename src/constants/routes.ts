@@ -35,6 +35,9 @@ export const ROUTES = {
     INTERACTION_PROTOCOL: "/super-admin/interaction-protocol",
     MENTOR_MANAGEMENT: "/super-admin/mentor-management",
     COST_ANALYSIS: "/super-admin/cost-analysis",
+    KNOWLEDGE_BASE: "/super-admin/knowledge-base",
+    CULTURAL_CONTENT: "/super-admin/cultural-content",
+    PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
   },
   MANAGER: {
     BASE: "/manager",
@@ -66,6 +69,7 @@ export const ROUTES = {
     SETTINGS: "/company-admin/settings",
     BULK_IMPORT: "/company-admin/bulk-import",
     OBSERVABILITY: "/company-admin/observability",
+    CULTURE: "/company-admin/culture",
   },
   PRACTITIONER: {
     BASE: "/practitioner",

@@ -26,6 +26,10 @@ import {
   UserPlus,
   Eye,
   Network,
+  BookOpen,
+  BookHeart,
+  Globe,
+  ShieldCheck,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -74,6 +78,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
+  { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
+  { to: ROUTES.SUPER_ADMIN.CULTURAL_CONTENT, icon: Globe, label: "Cultural Content" },
+  { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
@@ -97,6 +104,7 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
   { to: ROUTES.COMPANY_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.COMPANY_ADMIN.OBSERVABILITY, icon: Eye, label: "AI Observability" },
+  { to: ROUTES.COMPANY_ADMIN.CULTURE, icon: BookHeart, label: "Culture Docs" },
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

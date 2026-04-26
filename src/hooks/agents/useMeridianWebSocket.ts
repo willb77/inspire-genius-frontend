@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Types
 // ---------------------------------------------------------------------------
 
-export type MeridianMessageType = "connected" | "token" | "complete" | "error";
+export type MeridianMessageType = "connected" | "token" | "complete" | "error" | "audio";
 
 export type MeridianResponse = {
   type: MeridianMessageType;
@@ -173,6 +173,19 @@ export function useMeridianWebSocket(
           if (msg.agent) setCurrentAgent(msg.agent);
           if (msg.metadata?.domain) setCurrentDomain(msg.metadata.domain);
           if (msg.session_id) setServerSessionId(msg.session_id);
+          break;
+
+        case "audio":
+          // Base64-encoded MP3 audio chunk from streaming TTS.
+          // Decode and forward to the onAudioData callback for queued playback.
+          if (msg.content) {
+            try {
+              const binary = atob(msg.content);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+              onAudioDataRef.current?.(bytes.buffer);
+            } catch { /* ignore decode errors */ }
+          }
           break;
 
         case "error":

@@ -105,10 +105,14 @@ const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Sett
 const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
 const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
 const CompanyAdminObservability = React.lazy(() => import("@/pages/company-admin/Observability"));
+const CompanyAdminCultureDocs = React.lazy(() => import("@/pages/company-admin/CultureDocs"));
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
 const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
 const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
+const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
+const CulturalContent = React.lazy(() => import("@/pages/super-admin/CulturalContent"));
+const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
 const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
@@ -202,6 +206,9 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/interaction-protocol", element: withSuspense(<InteractionProtocol />) },
       { path: "/super-admin/mentor-management", element: withSuspense(<MentorManagement />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
+      { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
+      { path: "/super-admin/cultural-content", element: withSuspense(<CulturalContent />) },
+      { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
       // Agent Trainer routes
@@ -244,6 +251,7 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/bulk-import", element: withSuspense(<CompanyAdminBulkImport />) },
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
       { path: "/company-admin/observability", element: withSuspense(<CompanyAdminObservability />) },
+      { path: "/company-admin/culture", element: withSuspense(<CompanyAdminCultureDocs />) },
 
       // Practitioner pages
       { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
