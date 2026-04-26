@@ -63,13 +63,6 @@ const TTS_OPTIONS = [
     badgeVariant: "default" as const,
   },
   {
-    value: "elevenlabs",
-    label: "ElevenLabs",
-    description: "Highest quality voice cloning and synthesis. ~$0.30 / 1K chars.",
-    badge: "Premium",
-    badgeVariant: "outline" as const,
-  },
-  {
     value: "aws_polly",
     label: "AWS Polly",
     description: "Neural and standard voices, SSML support. ~$0.016 / 1M chars.",
@@ -84,7 +77,6 @@ const COST_ESTIMATES = [
   { provider: "Google Cloud TTS", sttCost: "—", ttsCost: "$0.016/1M chars", savings: "Lowest TTS cost" },
   { provider: "AWS Polly", sttCost: "—", ttsCost: "$0.016/1M chars", savings: "Same as Google" },
   { provider: "AWS Transcribe", sttCost: "$0.024/min", ttsCost: "—", savings: "Enterprise features" },
-  { provider: "ElevenLabs", sttCost: "—", ttsCost: "$0.30/1K chars", savings: "Highest quality" },
 ]
 
 const VOICES_BY_PROVIDER: Record<string, { id: string; name: string; gender: string; style: string }[]> = {
@@ -103,14 +95,6 @@ const VOICES_BY_PROVIDER: Record<string, { id: string; name: string; gender: str
     { id: "en-US-Neural2-F", name: "Neural2-F", gender: "Female", style: "Friendly" },
     { id: "en-US-Studio-M", name: "Studio-M", gender: "Male", style: "Studio" },
     { id: "en-US-Studio-O", name: "Studio-O", gender: "Female", style: "Studio" },
-  ],
-  elevenlabs: [
-    { id: "rachel", name: "Rachel", gender: "Female", style: "Conversational" },
-    { id: "adam", name: "Adam", gender: "Male", style: "Narrative" },
-    { id: "antoni", name: "Antoni", gender: "Male", style: "Warm" },
-    { id: "bella", name: "Bella", gender: "Female", style: "Soft" },
-    { id: "domi", name: "Domi", gender: "Female", style: "Strong" },
-    { id: "josh", name: "Josh", gender: "Male", style: "Deep" },
   ],
   aws_polly: [
     { id: "Joanna", name: "Joanna", gender: "Female", style: "Neural" },

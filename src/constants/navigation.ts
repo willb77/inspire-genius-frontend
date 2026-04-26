@@ -68,8 +68,7 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
-  { to: ROUTES.SUPER_ADMIN.COACHES, icon: Bot, label: "Mentor List" },
-  { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Mentor Management" },
+  { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Agent Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
   { to: ROUTES.SUPER_ADMIN.AUDIT_LOG, icon: Shield, label: "Audit Log" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
