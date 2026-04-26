@@ -883,29 +883,15 @@ export default function MeridianChat() {
                 if (!transcript) return;
 
                 const timeStr = formatUSTimeSafe(new Date());
+                stopAudio(); // Clear any previous audio queue
                 setMessages((prev) => [
                   ...prev.filter((m) => m.kind !== "processing"),
                   { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
                   { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
                 ]);
 
-                // ── Try WebSocket path first (streaming voice) ─────────
-                // When WS is connected, send with voice=true so the backend
-                // streams sentence-level TTS audio chunks alongside text tokens.
-                // Falls back to REST if WS is not connected.
-                if (_isConnected) {
-                  stopAudio(); // Clear any previous audio queue
-                  _wsSendMessage(transcript, {
-                    voice: true,
-                    ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
-                    session_id: conversationId || "default",
-                  });
-                  // The WS onResponse handler (above) updates messages when
-                  // tokens arrive and audio plays via onAudioData → audioQueue.
-                  return;
-                }
-
-                // ── REST fallback (sequential: full response → full TTS) ──
+                // Voice always uses REST: get text response, then TTS per sentence
+                // through the audio queue for streaming playback with controls.
                 (async () => {
                   try {
                     const { agentApi } = await import("@/lib/agentApi");
@@ -921,22 +907,41 @@ export default function MeridianChat() {
                       { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
                     ]);
                     if (data?.agent) setAgentAttribution(data.agent);
-                    // Speak the response using OpenAI TTS (Shimmer voice)
+
+                    // ── Sentence-level TTS via REST ──────────────────
+                    // Split response into sentences and TTS each one through
+                    // the audio queue. This gives streaming playback with
+                    // pause/resume/skip/stop controls — no WebSocket needed.
                     try {
-                      const ttsResp = await agentApi.post("/v1/agents/tts", {
-                        text: responseText.slice(0, 4096),
-                        voice: "shimmer",
-                      }, {
-                        headers: token ? { "access-token": token } : {},
-                        responseType: "arraybuffer",
-                        timeout: 30000,
-                      });
-                      const audioBlob = new Blob([ttsResp.data], { type: "audio/mpeg" });
-                      const audioUrl = URL.createObjectURL(audioBlob);
-                      const audio = new Audio(audioUrl);
-                      audio.onended = () => URL.revokeObjectURL(audioUrl);
-                      audio.play().catch(() => { /* autoplay blocked */ });
+                      // Split on sentence boundaries (keep punctuation with the sentence)
+                      const sentences = responseText
+                        .replace(/([.!?;:])\s+/g, "$1\n")
+                        .split("\n")
+                        .map((s: string) => s.replace(/[*#_`~[\]]/g, "").trim())
+                        .filter((s: string) => s.length >= 3);
+
+                      if (sentences.length === 0) throw new Error("No sentences to speak");
+
                       setHasAudio(true);
+
+                      // TTS each sentence and enqueue audio for streaming playback
+                      for (const sentence of sentences) {
+                        try {
+                          const ttsResp = await agentApi.post("/v1/agents/voice/synthesize", {
+                            text: sentence.slice(0, 4096),
+                            voice: "shimmer",
+                          }, {
+                            headers: token ? { "access-token": token } : {},
+                            responseType: "arraybuffer",
+                            timeout: 30000,
+                          });
+                          if (ttsResp.data && ttsResp.data.byteLength > 0) {
+                            enqueueAudio(ttsResp.data);
+                          }
+                        } catch {
+                          // Skip failed sentences, continue with next
+                        }
+                      }
                     } catch (ttsErr) {
                       console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
                       if ("speechSynthesis" in window) {
