@@ -196,8 +196,8 @@ export default function MeridianChat() {
     [downloadMutation],
   );
 
-  // Audio buffer refresh
-  const scheduleAudioBufferRefresh = useCallback(() => {
+  // Audio buffer refresh (retained for DemoAudioService compatibility)
+  const _scheduleAudioBufferRefresh = useCallback(() => {
     if (audioBufferUpdateTimeoutRef.current) return;
     const delay = audioBufferFirstRefreshScheduledRef.current ? 1200 : 50;
     audioBufferFirstRefreshScheduledRef.current = true;
@@ -309,7 +309,7 @@ export default function MeridianChat() {
   );
 
   // ── Streaming audio queue (sentence-level TTS chunks from WebSocket) ──
-  const { enqueue: enqueueAudio, stop: stopAudio, isPlaying: isStreamingAudio } = useAudioQueue();
+  const { enqueue: enqueueAudio, stop: stopAudio } = useAudioQueue();
 
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
