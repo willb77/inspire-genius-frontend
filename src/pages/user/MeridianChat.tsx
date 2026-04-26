@@ -728,10 +728,10 @@ export default function MeridianChat() {
         <div
           title={
             _isConnected
-              ? "Connected (streaming)"
+              ? "Voice streaming available"
               : isConnecting
-                ? "Connecting..."
-                : "Disconnected (using REST)"
+                ? "Connecting voice stream..."
+                : "Voice streaming unavailable"
           }
           className="flex items-center gap-1"
         >
@@ -743,7 +743,7 @@ export default function MeridianChat() {
             <WifiOff className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            {_isConnected ? "Live" : isConnecting ? "Connecting" : "REST"}
+            {_isConnected ? "Voice ready" : isConnecting ? "Connecting" : "Voice off"}
           </span>
         </div>
       </div>
@@ -799,17 +799,9 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
-              // Use WebSocket when connected — streaming text + optional TTS.
-              // Falls back to REST when WS is not available.
-              if (_isConnected) {
-                _wsSendMessage(t, {
-                  ...(voiceEnabled ? { voice: true } : {}),
-                  ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
-                  session_id: conversationId || "default",
-                });
-                return;
-              }
-              // REST fallback
+              // Text messages always use REST (reliable, works through API Gateway).
+              // WebSocket is reserved for voice streaming (sentence-level TTS) via
+              // the onToggleRecording handler below.
               (async () => {
                 try {
                   const { agentApi } = await import("@/lib/agentApi");
