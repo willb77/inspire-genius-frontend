@@ -11,7 +11,6 @@ import {
   UsersRound,
   MessageSquarePlus,
   Wand2,
-  Shield,
   Users,
   Building2,
   UserCheck,
@@ -70,8 +69,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.USERS, icon: UsersRound, label: "User Management" },
   { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Agent Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
-  { to: ROUTES.SUPER_ADMIN.AUDIT_LOG, icon: Shield, label: "Audit Log" },
-  { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics & Logs" },
   { to: ROUTES.SUPER_ADMIN.VOICE_SETTINGS, icon: Mic, label: "Voice Settings" },
   { to: ROUTES.SUPER_ADMIN.AGENT_TRAINER, icon: Brain, label: "Agent Trainer" },
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
@@ -82,7 +80,6 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
-  { to: ROUTES.SUPER_ADMIN.PROJECT_LOG, icon: FileText, label: "Project Log" },
 ]
 
 /** Navigation items for the manager role */
