@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -350,6 +350,54 @@ function AuditLogTab() {
   )
 }
 
+// ─── Mermaid Renderer ─────────────────────────────────────────────
+function MermaidDiagram({ chart }: { chart: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function render() {
+      try {
+        const mermaid = (await import("mermaid")).default
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "default",
+          securityLevel: "loose",
+          flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+        })
+        if (cancelled || !containerRef.current) return
+        const { svg } = await mermaid.render("sitemap-diagram", chart)
+        if (!cancelled && containerRef.current) {
+          containerRef.current.innerHTML = svg
+        }
+      } catch (e) {
+        if (!cancelled) setError(String(e))
+      }
+    }
+    render()
+    return () => { cancelled = true }
+  }, [chart])
+
+  if (error) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-500">Failed to render diagram. Showing source:</p>
+        <pre className="bg-slate-50 p-6 rounded-lg text-xs overflow-auto max-h-[calc(100vh-24rem)] font-mono whitespace-pre leading-relaxed">
+          {chart}
+        </pre>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="overflow-auto max-h-[calc(100vh-24rem)] bg-white rounded-lg p-4"
+    />
+  )
+}
+
 // ─── Project Log Tab ──────────────────────────────────────────────
 function ProjectLogTab() {
   const [searchDate, setSearchDate] = useState("")
@@ -409,16 +457,7 @@ function ProjectLogTab() {
             <CardTitle className="text-base">Application Route Map</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-slate-50 p-6 rounded-lg text-xs overflow-auto max-h-[calc(100vh-24rem)] font-mono whitespace-pre leading-relaxed">
-              {SITEMAP_MERMAID}
-            </pre>
-            <p className="text-xs text-muted-foreground mt-3">
-              Copy the above Mermaid syntax to{" "}
-              <a href="https://mermaid.live" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                mermaid.live
-              </a>{" "}
-              to view the interactive diagram.
-            </p>
+            <MermaidDiagram chart={SITEMAP_MERMAID} />
           </CardContent>
         </Card>
       </TabsContent>
