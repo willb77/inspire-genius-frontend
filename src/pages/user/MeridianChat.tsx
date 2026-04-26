@@ -196,8 +196,9 @@ export default function MeridianChat() {
     [downloadMutation],
   );
 
-  // Audio buffer refresh (retained for DemoAudioService compatibility)
-  const _scheduleAudioBufferRefresh = useCallback(() => {
+  // Audio buffer refresh — drives waveform visualization via DemoAudioService.
+  // Streaming TTS uses useAudioQueue instead but this is kept for the audio player.
+  const scheduleAudioBufferRefresh = useCallback(() => {
     if (audioBufferUpdateTimeoutRef.current) return;
     const delay = audioBufferFirstRefreshScheduledRef.current ? 1200 : 50;
     audioBufferFirstRefreshScheduledRef.current = true;
@@ -314,13 +315,20 @@ export default function MeridianChat() {
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
       // Route to the streaming audio queue for sentence-level playback.
-      // This replaces the DemoAudioService path for streaming TTS chunks.
       if (audioData.byteLength > 0) {
         enqueueAudio(audioData);
         setHasAudio(true);
+        // Also feed DemoAudioService for waveform visualization
+        const svc = demoAudioServiceRef.current;
+        if (svc) {
+          svc.initializeAudioContext().then(() => {
+            svc.addAudioChunk(audioData, false);
+            scheduleAudioBufferRefresh();
+          });
+        }
       }
     },
-    [enqueueAudio],
+    [enqueueAudio, scheduleAudioBufferRefresh],
   );
 
   // -------------------------------------------------------------------
