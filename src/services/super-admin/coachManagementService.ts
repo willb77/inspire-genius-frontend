@@ -47,10 +47,13 @@ export async function createCoach(body: CreateCoachBody) {
 
 export type UpdateCoachBody = {
   agent_id: string;
-  prompt: string;
+  prompt?: string;
   persona?: string;
   voice_style?: string;
   status?: string;
+  model_tier?: string;
+  voice_id?: string;
+  llm_provider?: string;
 };
 
 export async function updateCoach(body: UpdateCoachBody) {
@@ -67,6 +70,15 @@ export async function deactivateCoach(agentId: string) {
 export async function deleteCoach(agentId: string) {
   const resp = await getApi().delete(`/v1/agents-settings/agents`, { params: { agent_id: agentId } });
   return resp.data as { status: boolean; message?: string };
+}
+
+export async function testPrompt(agentId: string, message: string, systemPromptOverride: string) {
+  const resp = await getApi().post("/v1/agents/chat", {
+    message,
+    session_id: `test-${agentId}-${Date.now()}`,
+    system_prompt_override: systemPromptOverride,
+  });
+  return resp.data as { content: string; agent: string; session_id: string; confidence: number };
 }
 
 export async function getCoachCategories() {
