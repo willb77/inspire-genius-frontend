@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
@@ -152,7 +152,46 @@ function AgentSidebar({
 // Agent Settings Tab
 // ---------------------------------------------------------------------------
 
+const LLM_PROVIDERS = [
+  { value: "anthropic", label: "Anthropic (Claude)" },
+  { value: "openai", label: "OpenAI (GPT)" },
+  { value: "google", label: "Google (Gemini)" },
+]
+
+const MODEL_TIERS = [
+  { value: "Sonnet", label: "Sonnet — balanced speed & quality" },
+  { value: "Haiku", label: "Haiku — fastest, lightweight tasks" },
+  { value: "Nova", label: "Nova — general purpose" },
+  { value: "Opus", label: "Opus — highest quality, complex reasoning" },
+]
+
 function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachData?: Record<string, unknown> }) {
+  const [modelTier, setModelTier] = useState(agent.modelTier)
+  const [llmProvider, setLlmProvider] = useState((coachData?.llm_provider as string) || "anthropic")
+  const [saving, setSaving] = useState(false)
+  const [dirty, setDirty] = useState(false)
+
+  // Sync when agent changes
+  useEffect(() => {
+    setModelTier((coachData?.model_tier as string) || agent.modelTier)
+    setLlmProvider((coachData?.llm_provider as string) || "anthropic")
+    setDirty(false)
+  }, [agent.id, coachData])
+
+  const handleSaveSettings = async () => {
+    setSaving(true)
+    try {
+      const { updateCoach } = await import("@/services/super-admin/coachManagementService")
+      await updateCoach({ agent_id: agent.id, model_tier: modelTier, llm_provider: llmProvider })
+      toast.success(`${agent.name} settings updated`)
+      setDirty(false)
+    } catch (e) {
+      toast.error("Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -186,12 +225,6 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
               <p className="text-sm">{agent.description}</p>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground">Model Tier</span>
-              <div className="mt-0.5">
-                <Badge variant="outline" className="text-xs">{agent.modelTier}</Badge>
-              </div>
-            </div>
-            <div>
               <span className="text-xs text-muted-foreground">Status</span>
               <div className="mt-0.5">
                 <Badge
@@ -211,33 +244,44 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
         </CardContent>
       </Card>
 
+      {/* LLM & Model Configuration */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Voice Configuration</CardTitle>
-          </div>
+          <CardTitle className="text-base">LLM Configuration</CardTitle>
+          <CardDescription>Select the language model provider and tier for this agent</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-xs text-muted-foreground">TTS Voice</span>
-              <p className="text-sm font-medium">{agent.pollyVoice}</p>
+            <div className="space-y-1.5">
+              <span className="text-xs text-muted-foreground">LLM Provider</span>
+              <Select value={llmProvider} onValueChange={(v) => { setLlmProvider(v); setDirty(true) }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LLM_PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Provider</span>
-              <p className="text-sm">AWS Polly (Neural)</p>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Voice Gender</span>
-              <p className="text-sm">{getGenderLabel(agent.gender)}</p>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Engine</span>
-              <p className="text-sm">Neural</p>
+            <div className="space-y-1.5">
+              <span className="text-xs text-muted-foreground">Model Tier</span>
+              <Select value={modelTier} onValueChange={(v) => { setModelTier(v); setDirty(true) }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MODEL_TIERS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
+        <CardFooter className="border-t pt-4">
+          <Button onClick={handleSaveSettings} size="sm" className="ml-auto gap-2" disabled={!dirty || saving}>
+            <Save className="h-4 w-4" />
+            {saving ? "Saving..." : "Save Settings"}
+          </Button>
+        </CardFooter>
       </Card>
 
       {(() => {
@@ -376,9 +420,93 @@ function PromptBuilderTab({ coachId }: { coachId: string }) {
           )}
           <PromptVersionHistory versions={versions} isLoading={versionsLoading} onSelectVersion={handleSelectVersion} />
         </div>
-        <PromptPreviewPanel persona={persona} tone={tone} knowledgeDomain={knowledgeDomain} responseStyle={responseStyle} constraints={constraints} />
+        <div className="space-y-4">
+          <PromptPreviewPanel persona={persona} tone={tone} knowledgeDomain={knowledgeDomain} responseStyle={responseStyle} constraints={constraints} />
+          <PromptTestPanel coachId={coachId} persona={persona} tone={tone} knowledgeDomain={knowledgeDomain} responseStyle={responseStyle} constraints={constraints} />
+        </div>
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Prompt Test Panel
+// ---------------------------------------------------------------------------
+
+function PromptTestPanel({
+  coachId,
+  persona,
+  tone,
+  knowledgeDomain,
+  responseStyle,
+  constraints,
+}: {
+  coachId: string
+  persona: string
+  tone: string
+  knowledgeDomain: string
+  responseStyle: string
+  constraints: string
+}) {
+  const [testMessage, setTestMessage] = useState("")
+  const [testResult, setTestResult] = useState("")
+  const [testing, setTesting] = useState(false)
+  const [testAgent, setTestAgent] = useState("")
+
+  const handleTest = async () => {
+    if (!testMessage.trim()) {
+      toast.error("Enter a test message")
+      return
+    }
+    setTesting(true)
+    setTestResult("")
+    try {
+      const { assembleTemplateText } = await import("@/services/prompt-builder/prompt-builder.service")
+      const { testPrompt } = await import("@/services/super-admin/coachManagementService")
+      const assembled = assembleTemplateText({ coach_id: coachId, persona, tone, knowledge_domain: knowledgeDomain, response_style: responseStyle, constraints })
+      const resp = await testPrompt(coachId, testMessage, assembled)
+      setTestResult(resp.content)
+      setTestAgent(resp.agent)
+    } catch (e) {
+      const msg = (e as Error)?.message || "Test failed"
+      setTestResult(`Error: ${msg}`)
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Test Prompt</CardTitle>
+        <CardDescription>Send a test message using the current prompt to see how the agent responds</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Textarea
+            value={testMessage}
+            onChange={(e) => setTestMessage(e.target.value)}
+            placeholder="Type a test message... (e.g., 'Hello, how can you help me?')"
+            rows={2}
+            className="flex-1 text-sm"
+          />
+          <Button onClick={handleTest} disabled={testing || !testMessage.trim()} size="sm" className="self-end gap-1.5">
+            {testing ? "Testing..." : "Send Test"}
+          </Button>
+        </div>
+        {testResult && (
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+            {testAgent && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <Bot className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground font-medium">{testAgent}</span>
+              </div>
+            )}
+            <p className="text-sm whitespace-pre-wrap">{testResult}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -658,6 +786,55 @@ function InteractionProtocolTab() {
 // ---------------------------------------------------------------------------
 
 function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const handlePreview = async () => {
+    if (playing) {
+      audioRef.current?.pause()
+      setPlaying(false)
+      return
+    }
+    setPlaying(true)
+    try {
+      const { getApi } = await import("@/lib/agentApi")
+      const api = getApi()
+      // Strip provider prefix for the synthesize endpoint
+      const voiceName = voice!.id.includes("-") ? voice!.id.split("-").slice(1).join("-") : voice!.id
+      const resp = await api.post(
+        "/v1/agents/voice/synthesize",
+        { text: `Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`, voice: voiceName },
+        { responseType: "blob" },
+      )
+      const url = URL.createObjectURL(resp.data)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
+      audio.onerror = () => {
+        setPlaying(false)
+        // Fallback to browser speech synthesis
+        if ("speechSynthesis" in window) {
+          const u = new SpeechSynthesisUtterance(`Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`)
+          u.onend = () => setPlaying(false)
+          window.speechSynthesis.speak(u)
+        } else {
+          toast.error("Voice preview unavailable")
+        }
+      }
+      await audio.play()
+    } catch {
+      // Fallback to browser speech synthesis
+      if ("speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(`Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`)
+        u.onend = () => setPlaying(false)
+        window.speechSynthesis.speak(u)
+      } else {
+        setPlaying(false)
+        toast.error("Voice preview unavailable")
+      }
+    }
+  }
+
   if (!voice) {
     return (
       <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
@@ -668,7 +845,13 @@ function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-lg font-semibold">{voice.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-lg font-semibold">{voice.name}</p>
+          <Button variant="outline" size="sm" onClick={handlePreview} className="gap-1.5 h-7">
+            <Volume2 className="h-3.5 w-3.5" />
+            {playing ? "Stop" : "Preview"}
+          </Button>
+        </div>
         <Badge variant="secondary" className={cn("text-xs", getProviderColor(voice.provider))}>
           {VOICE_PROVIDER_LABELS[voice.provider]}
         </Badge>
@@ -748,13 +931,25 @@ function VoiceConfigTab({ agent }: { agent: AgentVoiceDef }) {
     setAssignments((prev) => ({ ...prev, [targetId]: voiceId }))
   }
 
-  const handleSave = () => {
-    // In a real implementation this would call the voice config API
-    toast.success(
-      voiceMode === "ecosystem"
-        ? `Meridian voice updated to ${getVoiceById(assignments[meridian.id])?.name ?? "unknown"}`
-        : `${agent.name} voice updated to ${getVoiceById(assignments[agent.id])?.name ?? "unknown"}`,
-    )
+  const [voiceSaving, setVoiceSaving] = useState(false)
+
+  const handleSave = async () => {
+    setVoiceSaving(true)
+    try {
+      const { updateCoach } = await import("@/services/super-admin/coachManagementService")
+      const targetId = voiceMode === "ecosystem" ? meridian.id : agent.id
+      const voiceId = assignments[targetId]
+      await updateCoach({ agent_id: targetId, voice_id: voiceId })
+      toast.success(
+        voiceMode === "ecosystem"
+          ? `Meridian voice updated to ${getVoiceById(voiceId)?.name ?? "unknown"}`
+          : `${agent.name} voice updated to ${getVoiceById(voiceId)?.name ?? "unknown"}`,
+      )
+    } catch {
+      toast.error("Failed to save voice configuration")
+    } finally {
+      setVoiceSaving(false)
+    }
   }
 
   return (
@@ -846,9 +1041,9 @@ function VoiceConfigTab({ agent }: { agent: AgentVoiceDef }) {
           <VoicePreview voice={currentVoice} />
         </CardContent>
         <CardFooter className="border-t pt-4">
-          <Button onClick={handleSave} size="sm" className="ml-auto gap-2">
+          <Button onClick={handleSave} size="sm" className="ml-auto gap-2" disabled={voiceSaving}>
             <Save className="h-4 w-4" />
-            Save Voice Config
+            {voiceSaving ? "Saving..." : "Save Voice Config"}
           </Button>
         </CardFooter>
       </Card>
