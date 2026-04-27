@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">988</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">989</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22114,6 +22114,11 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-04-27 — Prompt #988 [Fix: Prompt Builder save/retrieve regressions]</div>
           <div class="prompt-text">Investigate and fix Prompt Builder save/retrieve regressions in Agent Management — Tone/Knowledge/Style/Constraint sections don't display what was saved, and the Interaction Protocol new-entry doesn't save or retrieve. Root cause for the four section fields: getPromptVersions reversed array semantics — backend appends new prompts to the end, but the UI auto-loaded versions[0] (oldest) thinking it was the latest. For Interaction Protocol: frontend was forwarding the existing version, defeating backend auto-increment. Fixes: reverse array in getPromptVersions, take last element in getPrompts and the MentorManagement "Current System Prompt" panel, drop the version forward in protocolService. Also added 30 s TTL refresh on agents_settings DynamoDB caches and dropped interaction-protocol cache TTL to 30 s for cross-task visibility.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-04-27 — Prompt #989 [Fix: My Documents upload + agent-engine pgvector wiring]</div>
+          <div class="prompt-text">Fix the My Documents upload regression (chat-panel upload works after e3da63f, but Documents page upload still appears to fail) and close the long-standing pgvector wiring gap so monolith uploads are vectorized into the agent-engine. Root cause for the Documents page: the sequential best-effort `await vectorizeDocument(...)` inside `useDocumentUploadMulti` blocked on a 30 s asyncpg-connect timeout per file, hanging the upload-modal progress animation past its 3 s "complete" jump and looking broken to the user. Fix: make `vectorizeDocument()` calls fire-and-forget in both `useDocumentUpload` and `useDocumentUploadMulti`; pass the monolith file_id as both `document_id` and `file_id` so the agent-engine can resolve via either alias. Companion agent-engine changes ready to deploy: `_get_asyncpg_conn` now uses TLS automatically when the DSN targets RDS / RDS-Proxy regardless of environment tag (was gated on staging/prod, causing dev timeouts); `/v1/agents/documents/vectorize` accepts either `documents.id` or monolith `files.id` and bridges via S3 download + text extract + documents-row upsert + embed/store. New IAM policy `MonolithS3Read` and ECS task definition revision 18 with `MONOLITH_S3_BUCKET` env var. Investigation found the agent-engine ECS task lives in a different VPC than the Aurora cluster (cross-VPC, no peering, overlapping CIDRs masking the issue at SG level) so vectorization remains blocked at the network layer until VPC peering is added — but the frontend fire-and-forget pattern means users see no upload errors regardless. Frontend CI run: https://github.com/willb77/inspire-genius-frontend/actions/runs/25019422074</div>
         </div>
 
       </div>

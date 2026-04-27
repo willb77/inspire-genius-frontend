@@ -6,21 +6,28 @@
 - Also pass the monolith `file_id` as the `file_id` field (alongside `document_id`) so the agent-engine can resolve via either alias.
 - Files: `inspire-genius-frontend/src/hooks/documents/useDocumentUpload.ts`, `inspire-genius-frontend/src/services/documents/documentService.ts`, `inspire-genius-frontend/src/hooks/documents/__tests__/useDocumentUpload.test.tsx`
 
-### Fixed — Agent Engine (pgvector ID-mismatch + asyncpg timeout)
-- `POST /v1/agents/documents/vectorize` was returning 500 Internal Server Error on every call. Two compounding issues:
-  1. **asyncpg.connect timeout**: `_get_asyncpg_conn()` only enabled SSL when `settings.environment in ("staging","production")`. The dev ECS task uses `environment="dev"` but still talks to RDS Proxy which **requires** TLS — every connect attempt hit a 30s timeout. Now uses TLS automatically when the DSN host looks like an RDS / RDS-Proxy endpoint, regardless of the environment tag. Localhost connections are unaffected.
-  2. **ID mismatch**: the endpoint expected a `documents.id` UUID (document-service table) but the frontend was sending the monolith `files.id`. Even when the asyncpg connect worked, the lookup found nothing → "skipped". The endpoint now accepts either alias (`document_id` or `file_id`), looks up the row in `documents` first, then falls back to monolith `files` — fetches the file from S3 (`MONOLITH_S3_BUCKET` env var, defaults to `inspires-genius-dev-documents`), extracts text, INSERTs a `documents` row keyed by the same UUID, then runs the embed/store pipeline.
-- This closes the long-standing "monolith uploads do not appear in the agent's RAG" gap. Subsequent agent chat queries can now retrieve uploaded documents via pgvector hybrid search.
+### Improved — Agent Engine vectorize endpoint (code-ready, network-blocked)
+- `POST /v1/agents/documents/vectorize` was returning 500 Internal Server Error on every call. Code changes prepared so that once the underlying infrastructure issue (see "Remaining infra blocker" below) is resolved, the endpoint will:
+  - Accept either a `documents.id` UUID **or** a monolith `files.id` UUID (new `file_id` alias field on the request body) so the frontend doesn't need to know which table the ID lives in.
+  - Auto-bridge from monolith to agent-engine: when the ID is found in `files` but not in `documents`, the endpoint downloads the original from `MONOLITH_S3_BUCKET` (defaults to `inspires-genius-dev-documents`), extracts plain text via `app.rag.file_extractors.extract_text` (PDF/DOCX/CSV/XLS), upserts a `documents` row keyed by the same UUID, then embeds + stores chunks in the existing pgvector pipeline.
+  - Handle invalid UUIDs gracefully (`status="skipped"`) so the frontend doesn't see 500 errors during exploratory testing.
+  - Use TLS for asyncpg connections to RDS / RDS-Proxy regardless of the `AGENT_ENGINE_ENVIRONMENT` value — the previous SSL gate caused 30s connect timeouts in dev because dev still talks to RDS Proxy through TLS.
 - New IAM inline policy `MonolithS3Read` attached to `ig-dev-agent-engine-task-role` granting `s3:GetObject` on `inspires-genius-dev-documents/*` and `ig-dev-documents/*`.
-- New ECS task definition revision `ig-dev-agent-engine:18` adds `MONOLITH_S3_BUCKET` and `S3_BUCKET_NAME` env vars and pins the image to digest `sha256:d9b5577...`.
+- New ECS task definition revision `ig-dev-agent-engine:18` adds `MONOLITH_S3_BUCKET` and `S3_BUCKET_NAME` env vars and pins the image to digest `sha256:d9b55770dd39ba0e9e2f078ac54c7497e8671a16b188226a445d7d0ef647e4af`.
 - Files: `services/agent-engine/app/routes/ingestion.py`, `services/agent-engine/app/events/document_consumer.py`
+
+### Remaining infra blocker — agent-engine ECS cannot reach Aurora
+- Investigation found that the ECS task lives in `vpc-0358eaa52fbfe4ca8` (`ig-aan-vpc-dev`) but the only Aurora cluster + RDS Proxies are in `vpc-04e1e7c2dc0ef9021` (`inspires-genius-dev-vpc`). Both VPCs use the same CIDR (`10.0.0.0/16`) which masks the issue at the SG level — the SG rules look like they should allow agent-engine traffic, but cross-VPC packets simply have no route.
+- Until VPC peering is added (or the agent-engine ECS service is moved into `inspires-genius-dev-vpc`), the vectorize endpoint will continue to time out — but the frontend's fire-and-forget pattern means **users see no upload errors**. The pgvector wiring code is fully prepared and will start working immediately once routing is fixed.
+- Lambda `ig-dev-agent-engine` lives in the correct VPC but does **not** include the ingestion router in its current package — adding the vectorize endpoint to the Lambda is a viable second path if VPC peering is not feasible.
 
 ### Verified
 - `npx tsc --noEmit` clean.
 - `npx eslint` clean on touched files.
 - `npx jest src/hooks/documents/__tests__/useDocumentUpload.test.tsx` — both tests pass.
 - ECS service updated to revision 18 with image digest pinned (forced new deployment).
-- Endpoint `POST /v1/agents/documents/vectorize` reachable through API Gateway (was 503 due to ECS task target failure during deploy).
+- Frontend CI run: <https://github.com/willb77/inspire-genius-frontend/actions/runs/25019422074> (in progress at time of commit).
+- Frontend behaviour verified: vectorize call now fires-and-forgets, so 500/503/timeout from the agent-engine no longer blocks the upload modal — the My Documents upload completes immediately on multipart success exactly like the chat-panel upload.
 
 ## [2026-04-27] — fix: Prompt Builder save/retrieve regressions (Agent Management)
 
@@ -6246,6 +6253,32 @@ Analyzed the Multi-Agent Collaborative Model Implementation Plan document to det
 
 
 ## 2026-04-27 16:59:11 — session summary
+
+**Agents** (12 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/events/document_consumer.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/routes/ingestion.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- _…and 2 more_
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 17:16:47 — session summary
 
 **Agents** (12 files):
 - `services/agent-engine/app/agents/meridian.py`
