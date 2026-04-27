@@ -6,16 +6,24 @@ import {
   vectorizeDocument,
 } from "@/services/documents/documentService";
 import type { DocumentOut } from "@/services/documents/documentService";
+import { uploadDocuments } from "@/services/documents/fileService";
 import { logAuditEvent } from "@/services/audit/audit.service";
 
 /**
- * Full RAG-enabled upload flow:
- * 1. POST /v1/documents/upload → get presigned S3 URL + document_id
- * 2. Upload file directly to S3 (XHR with progress)
- * 3. POST /v1/documents/{id}/process → scan, extract text, chunk
- * 4. POST /v1/agents/documents/vectorize → generate pgvector embeddings
+ * Single-file upload via the proven monolith multipart endpoint
+ * (POST /v1/file_service/upload). The monolith handles S3 storage,
+ * virus scanning, text extraction, and Milvus embedding internally.
  *
- * After step 4 the document is searchable by all AI agents via RAG.
+ * The new presigned-URL flow (initiateUpload + S3 PUT + triggerProcessing)
+ * targets a Lambda + API Gateway + document-service infrastructure that
+ * is not yet wired up end-to-end. Until the document-service Lambda is
+ * deployed and routed in API Gateway, fall back to the monolith path
+ * which is the only reliable upload route in production today.
+ *
+ * Best-effort: also triggers pgvector embedding via the Agent Engine
+ * after upload so the new RAG pipeline can retrieve from pgvector.
+ * Vectorization failure does NOT fail the upload — the file is safely
+ * stored regardless.
  */
 export function useDocumentUpload() {
   const queryClient = useQueryClient();
@@ -29,34 +37,52 @@ export function useDocumentUpload() {
       tags?: string[];
       onProgress?: (pct: number) => void;
     }): Promise<DocumentOut> => {
-      // Step 1: Get presigned URL
-      const presigned = await initiateUpload({
-        filename: args.file.name,
-        content_type: args.file.type || "application/octet-stream",
+      // Multipart upload to monolith — proven working path.
+      const resp = (await uploadDocuments([args.file], args.onProgress)) as
+        | {
+            uploaded_files?: Array<{
+              file_id?: string;
+              filename?: string;
+              file_type?: string;
+              file_key?: string;
+            }>;
+          }
+        | undefined;
+
+      const uploaded = resp?.uploaded_files?.[0];
+      const doc: DocumentOut = {
+        id: String(uploaded?.file_id ?? ""),
+        user_id: "",
+        company_id: args.companyId ?? null,
+        filename: uploaded?.filename ?? args.file.name,
+        content_type: uploaded?.file_type ?? args.file.type ?? "",
         file_size: args.file.size,
-        doc_kind: args.docKind,
-        company_id: args.companyId,
-        tags: args.tags,
-      });
+        status: "ready",
+        status_detail: null,
+        page_count: null,
+        chunk_count: 0,
+        doc_kind: args.docKind ?? uploaded?.file_type ?? "doc",
+        tags: args.tags ?? null,
+        metadata: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      // Step 2: Upload to S3
-      await uploadToS3(presigned.upload_url, presigned.upload_fields, args.file, args.onProgress);
-
-      // Step 3: Trigger processing (scan → extract text → chunk)
-      const doc = await triggerProcessing(presigned.document_id);
-
-      // Step 4: Trigger pgvector embedding via Agent Engine (best-effort)
-      // If the Agent Engine is unreachable the document is still uploaded and
-      // processed — it just won't be in the vector store until re-vectorized.
+      // Best-effort pgvector embedding via Agent Engine.
       try {
-        await vectorizeDocument({
-          document_id: doc.id,
-          user_id: doc.user_id,
-          filename: doc.filename,
-          file_type: doc.content_type,
-        });
+        if (doc.id) {
+          await vectorizeDocument({
+            document_id: doc.id,
+            user_id: doc.user_id,
+            filename: doc.filename,
+            file_type: doc.content_type,
+          });
+        }
       } catch (err) {
-        console.warn("[useDocumentUpload] Vectorization failed (document still uploaded):", err);
+        console.warn(
+          "[useDocumentUpload] Vectorization failed (file uploaded successfully):",
+          err,
+        );
       }
 
       return doc;
@@ -74,9 +100,22 @@ export function useDocumentUpload() {
   });
 }
 
+// initiateUpload, uploadToS3, triggerProcessing are intentionally retained
+// in imports for the time when the document-service Lambda is wired up.
+// Suppress unused-symbol warnings until they are reactivated.
+void initiateUpload;
+void uploadToS3;
+void triggerProcessing;
+
 /**
- * Upload multiple files sequentially through the full RAG pipeline.
- * Each file goes through: presigned URL → S3 → process → vectorize.
+ * Upload one or more files via the proven monolith multipart endpoint
+ * (POST /v1/file_service/upload). The monolith handles S3 upload, text
+ * extraction, and Milvus embedding internally.
+ *
+ * After upload, best-effort triggers pgvector embedding via the Agent
+ * Engine for each successfully uploaded file (so future RAG queries can
+ * also retrieve from pgvector). Vectorization failures do not break the
+ * upload flow — the file is uploaded, scanned, and stored regardless.
  */
 export function useDocumentUploadMulti() {
   const queryClient = useQueryClient();
@@ -87,33 +126,48 @@ export function useDocumentUploadMulti() {
       files: File[];
       onProgress?: (pct: number) => void;
     }): Promise<DocumentOut[]> => {
-      const results: DocumentOut[] = [];
+      // Step 1: Multipart upload to monolith /v1/file_service/upload.
+      // This is the proven path that worked before the RAG refactor —
+      // the monolith handles S3 storage, virus scan, text extraction,
+      // and pushes embeddings to its Milvus vector store.
+      const resp = (await uploadDocuments(args.files, args.onProgress)) as
+        | {
+            uploaded_files?: Array<{
+              file_id?: string;
+              filename?: string;
+              file_type?: string;
+              file_key?: string;
+            }>;
+          }
+        | undefined;
 
-      for (let i = 0; i < args.files.length; i++) {
-        const file = args.files[i];
+      const uploaded = resp?.uploaded_files ?? [];
 
-        // Per-file progress scaled to overall progress
-        const fileProgress = (pct: number) => {
-          if (!args.onProgress) return;
-          const base = (i / args.files.length) * 100;
-          const slice = (1 / args.files.length) * 100;
-          args.onProgress(Math.floor(base + (pct / 100) * slice));
-        };
+      // Map monolith response to DocumentOut shape used by callers.
+      const results: DocumentOut[] = uploaded.map((u) => ({
+        id: String(u.file_id ?? ""),
+        user_id: "",
+        company_id: null,
+        filename: u.filename ?? "",
+        content_type: u.file_type ?? "",
+        file_size: 0,
+        status: "ready",
+        status_detail: null,
+        page_count: null,
+        chunk_count: 0,
+        doc_kind: u.file_type ?? "doc",
+        tags: null,
+        metadata: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
 
-        // Step 1: Presigned URL
-        const presigned = await initiateUpload({
-          filename: file.name,
-          content_type: file.type || "application/octet-stream",
-          file_size: file.size,
-        });
-
-        // Step 2: S3 upload
-        await uploadToS3(presigned.upload_url, presigned.upload_fields, file, fileProgress);
-
-        // Step 3: Process
-        const doc = await triggerProcessing(presigned.document_id);
-
-        // Step 4: Vectorize (best-effort)
+      // Step 2: Best-effort pgvector embedding via Agent Engine.
+      // This gives the new RAG pipeline access to the same documents.
+      // Any failure (Agent Engine down, doc-id format mismatch, etc.)
+      // is swallowed — the file is already safely uploaded.
+      for (const doc of results) {
+        if (!doc.id) continue;
         try {
           await vectorizeDocument({
             document_id: doc.id,
@@ -122,10 +176,10 @@ export function useDocumentUploadMulti() {
             file_type: doc.content_type,
           });
         } catch {
-          console.warn(`[useDocumentUploadMulti] Vectorization failed for ${file.name}`);
+          console.warn(
+            `[useDocumentUploadMulti] Vectorization failed for ${doc.filename} (file uploaded successfully)`,
+          );
         }
-
-        results.push(doc);
       }
 
       return results;
@@ -142,3 +196,4 @@ export function useDocumentUploadMulti() {
     },
   });
 }
+
