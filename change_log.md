@@ -1,3 +1,76 @@
+## [2026-04-27] — deploy: HTTPS WebSocket ALB + Route53 DNS
+
+### Deployed
+- **HTTPS listener** on WS ALB (`ig-dev-ws-alb`) with ACM cert for `ws-dev.inspiresgenius.com`
+- **Route53 alias** `ws-dev.inspiresgenius.com` → WS ALB (A record)
+- **HTTP→HTTPS redirect** on port 80
+- **TLS 1.3** via `ELBSecurityPolicy-TLS13-1-2-2021-06`
+- **Target group port fix**: `ws-tg-v2` on port 8000 (was 8001 — uvicorn only listens on 8000)
+- **GitHub Secret** `VITE_AGENT_WS_DIRECT_URL` updated to `wss://ws-dev.inspiresgenius.com`
+- Files: `infrastructure/cdk/lib/agent-engine-stack.ts`, `inspire-genius-frontend/.env.production`
+
+## [2026-04-26] — feat: Direct WebSocket infrastructure + security hardening (Prompts 1-5)
+
+### Added — CDK (Prompts 1-2)
+- Internet-facing WebSocket ALB (`ig-dev-ws-alb`) with WAF web ACL
+- WAF rules: rate limit (100/5min/IP), AWS Common Rules, Known Bad Inputs, IP Reputation, require access-token
+- WAF AllowWebSocketUpgrade rule (priority 0) to prevent managed rules from blocking WS upgrades
+- Target group on port 8000 with `/ws/health` health check
+- 1hr idle timeout, sticky sessions, 2min deregistration delay
+- CloudWatch alarms: WAF blocked requests, ALB 5xx rate
+- Stack outputs: `AgentEngineWsDomain`, `WsWafAclArn`
+
+### Added — Backend (Prompts 3-4)
+- `ConnectionManager` hardened: per-user limit (5), heartbeat (30s ping/10s pong timeout), idle timeout (10min warn/12min disconnect), concurrency cap (200), metrics logging
+- `/ws/health` endpoint for ALB health checks
+- Per-user rate limiting (30 msg/min) with `rate_limited` message
+- Periodic JWT re-validation (5min) with `auth_expired` message
+- Connection lifecycle logging: `ws.connect`, `ws.disconnect`, `ws.metrics`, `ws.auth`, `ws.rate_limited`
+
+### Added — Frontend (Prompt 5)
+- `buildWsUrl()` prefers `VITE_AGENT_WS_DIRECT_URL` (direct ALB path)
+- Handle `ping` → pong, `auth_expired`, `idle_warning`, `rate_limited` message types
+- `VITE_AGENT_WS_DIRECT_URL` env var in `.env` and `.env.production`
+
+## [2026-04-26] — docs: Voice streaming architecture analysis + implementation prompts
+
+### Added
+- `documents/Voice_Streaming_Architecture_Analysis.docx` — Why IG can't use VoiceDeskAI approach today, 5 options for sub-second TTFA, comparison matrix, recommendations
+- `documents/Direct_WebSocket_Security_Production_Analysis.docx` — Attack surface assessment, 4-layer security architecture, production tradeoffs at scale, risk matrix
+- `documents/Direct_WebSocket_Implementation_Prompts.docx` — 8 sequential Claude Code prompts to implement direct WS with CloudFront+WAF security (CDK, backend hardening, frontend, fallback chain, testing)
+
+## [2026-04-26] — fix: Voice response via REST + sentence-level TTS
+
+### Fixed
+- **Voice not responding** — voice handler tried WS (same broken ws-proxy pipeline as text). Now uses REST for everything: get text response via agentApi, split into sentences, TTS each via `/v1/agents/voice/synthesize`, queue for streaming playback.
+- **Wrong TTS endpoint** — was calling `/v1/agents/tts` (doesn't exist), now correctly calls `/v1/agents/voice/synthesize`
+- **Text messages stuck on "Meridian is thinking..."** — ws-proxy→Agent Engine doesn't relay responses. All text uses REST (agentApi) now.
+- Connection indicator updated: "Voice ready" / "Voice off" instead of "Live" / "REST"
+
+## [2026-04-26] — fix: Streaming TTS activation, audio controls, connection status, upload routing
+
+### Fixed
+- **Streaming TTS now activates for ALL messages** — `onSendText` was hardcoded to always use REST; now uses WebSocket when connected with `voice: true` context for sentence-level streaming TTS
+- **SentenceAccumulator eagerly returns audio** — `feed()` now awaits TTS per sentence and returns results immediately instead of deferring to the next sentence boundary (eliminates 3-5s first-sentence delay)
+- **Document upload Network Error** — `initiateUpload`/`triggerProcessing` now fall back to monolith URL when API Gateway route is unavailable (the document-service Lambda route wasn't configured in API Gateway)
+
+### Added
+- **Audio transport controls** — pause/resume, skip (next sentence), stop with queue count indicator. Visible in header when audio is playing.
+- **Voice toggle** — header button to enable/disable streaming TTS (persisted to localStorage)
+- **Connection status indicator** — Live (green Wifi icon) / Connecting (amber spinner) / REST (gray WifiOff). Shows real-time WebSocket connection state.
+- `useAudioQueue` enhanced: `pause()`, `resume()`, `skip()`, `isPaused`, `queueLength`
+  - Files: `src/hooks/agents/useAudioQueue.ts`, `src/pages/user/MeridianChat.tsx`, `src/services/documents/documentService.ts`
+  - Backend: `services/agent-engine/app/voice/stream_tts.py`, `services/agent-engine/app/websocket/handlers.py`
+
+## [2026-04-25] — deploy: Agent Engine ECS + Frontend CI/CD
+
+### Deployed
+- **Agent Engine (ECS Fargate)**: Docker image built, pushed to ECR (`ig-dev-agent-engine:latest`), ECS service force-redeployed
+  - Includes: `stream_tts.py`, updated `handlers.py`, all RAG pipeline code, PRISM vectorizer, cultural context, document consumer
+  - Image digest: `sha256:886713ca23b06ab50e5c6a215ee3c1c24ed87ff1702fc0caa6407cc6f02c314c`
+- **Frontend (S3 + CloudFront)**: CI/CD pipeline triggered on push to `development` branch
+  - Includes: monolith disconnect, document upload RAG wiring, Knowledge Base + Cultural Content pages, streaming audio queue, WS voice path
+
 ## [2026-04-25] — feat: Sentence-Level Streaming TTS (VoiceDeskAI Pattern)
 
 ### Added
@@ -3940,4 +4013,1288 @@ Created 12 Claude Code slash commands (/rag-1a through /rag-4c + /rag-deploy-reb
 - `.pre-commit-config.yaml`
 - `docker-compose.test.yml`
 - `scripts/ingest_prism_knowledge.py`
+
+
+## 2026-04-25 23:14:06 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-25 23:17:51 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 08:16:26 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 08:58:09 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:13:49 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:44:04 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:47:02 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:49:46 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:55:49 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:57:47 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 10:59:32 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 12:57:47 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:22:33 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:22:37 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:39:12 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:41:15 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:44:47 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 13:51:23 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 14:15:43 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 15:16:12 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 15:22:10 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 16:37:22 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 17:18:52 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 17:31:42 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 17:34:27 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 17:53:28 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 17:53:33 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:00:51 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:01:17 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:03:46 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:03:50 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:16:17 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:17:33 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:18:47 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:57:22 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:58:31 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 18:59:12 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 19:10:09 — session summary
+
+**Infrastructure** (1 files):
+- `infrastructure/cdk/bin/cdk.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 19:46:48 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 19:46:53 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 19:51:53 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:00:30 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:00:35 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:13:31 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:14:43 — session summary
+
+**Infrastructure** (2 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:28:27 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:58:44 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:59:10 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 20:59:39 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 21:00:06 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 21:00:27 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (3 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 21:10:07 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 21:48:33 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:12:31 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:15:43 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:22:40 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:26:50 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:26:54 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:35:58 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:37:34 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 22:37:53 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-26 23:30:06 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:02:24 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:03:30 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:05:58 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:19:40 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:25:32 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:25:43 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:28:31 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 00:29:41 — session summary
+
+**Infrastructure** (3 files):
+- `infrastructure/cdk/bin/cdk.ts`
+- `infrastructure/cdk/cdk.context.json`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+**Agents** (6 files):
+- `services/agent-engine/app/agents/base_agent.py`
+- `services/agent-engine/app/main.py`
+- `services/agent-engine/app/prompts/config_store.py`
+- `services/agent-engine/app/routes/agents_settings.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
 
