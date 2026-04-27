@@ -67,7 +67,7 @@ describe("prompt-builder.service", () => {
     expect(mockApiInstance.put).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       { prompt: "## Persona\nUpdated" },
-      { params: { agent_id: "p1" } },
+      { params: { agent_id: "c1" } },
     )
   })
 
