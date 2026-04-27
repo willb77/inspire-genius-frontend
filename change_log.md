@@ -1,3 +1,23 @@
+## [2026-04-27] — fix: Prompt Builder save/retrieve regressions (Agent Management)
+
+### Fixed — Frontend
+- **Prompt Builder Tone/Knowledge/Style/Constraint sections "didn't display what was saved"** — root cause was an off-by-array-direction bug in `getPromptVersions`. The agent-engine backend appends new prompts to the END of the `prompts` array (chronological), but the frontend mapped versions in array order while labelling `version[0]` as the latest. The auto-load `useEffect` in both `PromptBuilder.tsx` and `MentorManagement.tsx` then populated the form from `versions[0]` — which was actually the OLDEST prompt entry. New saves succeeded server-side but the UI re-loaded the very first prompt every time.
+- Fix: reverse the array in `getPromptVersions` so `versions[0]` is the most recent entry; also fix `getPrompts` and the "Current System Prompt" panel in MentorManagement to take `prompts[prompts.length - 1]` instead of `prompts[0]`.
+- Files: `inspire-genius-frontend/src/services/prompt-builder/prompt-builder.service.ts`, `inspire-genius-frontend/src/pages/super-admin/MentorManagement.tsx`
+- **Interaction Protocol "new entry doesn't save / saved entry doesn't retrieve"** — the frontend was forwarding the existing `version` to the backend on every save. Backend code path: `new_version = version if version is not None else current.version + 1`. With an explicit version passed, the backend wrote v3 → v3 → v3 instead of v3 → v4 → v5, so the user kept seeing the same version number and concluded saves had no effect. Removed the version forward; backend now auto-increments on every save (rollback paths can pass version explicitly later if/when a rollback UI is added).
+- Files: `inspire-genius-frontend/src/services/agent/protocolService.ts`
+
+### Fixed — Agent Engine
+- **Multi-task cache staleness on prompt overrides**: `agents_settings.py` loaded `_prompt_overrides`, `_status_overrides`, `_agent_config_overrides`, `_custom_agents` from DynamoDB once at module import and never refreshed. With multiple ECS Fargate tasks, a write made by Task A was invisible to Task B until restart. Added a 30-second TTL refresh on every `GET /v1/agents-settings/agents` call (cheap scan), with atomic dict replacement to avoid partial state. The local task still updates its own cache + DDB synchronously on writes.
+- **Interaction protocol cache TTL** lowered from 300 s → 30 s so writes from one task become visible to other tasks within ~30 s instead of 5 minutes. Reads are a single DDB `get_item` so the additional load is negligible.
+- Files: `services/agent-engine/app/routes/agents_settings.py`, `services/agent-engine/app/prompts/config_store.py`
+
+### Verified
+- `npm test` (4 prompt-builder service tests, 4 hook tests, 6 page tests) — all pass.
+- `npx tsc --noEmit` — clean.
+- ESLint on touched files — only pre-existing warnings, no new errors.
+- Backend Python `py_compile` clean on both modified files.
+
 ## [2026-04-27] — fix: Document upload regressions (chat + Documents page)
 
 ### Fixed — Frontend

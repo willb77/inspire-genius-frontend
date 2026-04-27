@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">987</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">988</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22109,6 +22109,11 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-04-27 — Prompt #987 [Deploy: Multi-Agent Collaboration]</div>
           <div class="prompt-text">Run the RAG deploy-rebuild procedure end-to-end, then verify the multi-agent collaboration changes are working. Build agent-engine Docker image, push to ECR, force ECS redeploy, run health check, inspect CloudWatch logs for tracebacks and multi-agent plan entries, then update session log. Deployed image digest sha256:f781a4f7... — new ECS task b53a1b0c started cleanly with no errors. Frontend commit/push deferred (sandbox blocked git ops in inspire-genius-frontend).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-04-27 — Prompt #988 [Fix: Prompt Builder save/retrieve regressions]</div>
+          <div class="prompt-text">Investigate and fix Prompt Builder save/retrieve regressions in Agent Management — Tone/Knowledge/Style/Constraint sections don't display what was saved, and the Interaction Protocol new-entry doesn't save or retrieve. Root cause for the four section fields: getPromptVersions reversed array semantics — backend appends new prompts to the end, but the UI auto-loaded versions[0] (oldest) thinking it was the latest. For Interaction Protocol: frontend was forwarding the existing version, defeating backend auto-increment. Fixes: reverse array in getPromptVersions, take last element in getPrompts and the MentorManagement "Current System Prompt" panel, drop the version forward in protocolService. Also added 30 s TTL refresh on agents_settings DynamoDB caches and dropped interaction-protocol cache TTL to 30 s for cross-task visibility.</div>
         </div>
 
       </div>

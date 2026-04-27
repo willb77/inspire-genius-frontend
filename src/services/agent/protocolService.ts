@@ -23,12 +23,16 @@ export async function getInteractionProtocol(): Promise<InteractionProtocol> {
 
 export async function updateInteractionProtocol(
   protocolText: string,
-  version?: number,
+  _version?: number,
   agentIds?: string[],
 ): Promise<{ version: number; updated_at: string }> {
+  // NOTE: we intentionally DO NOT forward the existing version to the backend.
+  // When `version` is omitted the backend auto-increments
+  // (current_meta.version + 1), which is the correct behaviour for every
+  // non-rollback save. Passing the current version caused the backend to write
+  // the same version repeatedly, making it look like new saves had no effect.
   const { data } = await agentApi.put("/v1/agents-settings/interaction-protocol", {
     protocol_text: protocolText,
-    version,
     agent_ids: agentIds,
   })
   // Unwrap the BaseApiResponse envelope: { status, data: { version, updated_at } }
