@@ -264,6 +264,13 @@ type VectorizeRequest = {
   user_id: string;
   filename?: string;
   file_type?: string;
+  /**
+   * Optional alias used when the document_id is actually a monolith
+   * `files.id`. The agent-engine endpoint will look up the file_key,
+   * fetch from S3, extract text, create a documents row, and then
+   * vectorize in one step.
+   */
+  file_id?: string;
 };
 
 type VectorizeResponse = {
