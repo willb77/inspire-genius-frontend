@@ -92,14 +92,64 @@ export const GEMINI_VOICES: VoiceOption[] = [
 // ---------------------------------------------------------------------------
 
 export const AWS_POLLY_VOICES: VoiceOption[] = [
-  { id: "polly-joanna",   name: "Joanna",   description: "Female, US English",  provider: "aws_polly", gender: "female" },
-  { id: "polly-kendra",   name: "Kendra",   description: "Female, US English",  provider: "aws_polly", gender: "female" },
-  { id: "polly-salli",    name: "Salli",     description: "Female, US English",  provider: "aws_polly", gender: "female" },
-  { id: "polly-ruth",     name: "Ruth",      description: "Female, US English",  provider: "aws_polly", gender: "female" },
-  { id: "polly-matthew",  name: "Matthew",   description: "Male, US English",    provider: "aws_polly", gender: "male" },
-  { id: "polly-stephen",  name: "Stephen",   description: "Male, US English",    provider: "aws_polly", gender: "male" },
-  { id: "polly-gregory",  name: "Gregory",   description: "Male, US English",    provider: "aws_polly", gender: "male" },
-  { id: "polly-kevin",    name: "Kevin",     description: "Male, US English",    provider: "aws_polly", gender: "male" },
+  // US English Neural
+  { id: "polly-joanna",   name: "Joanna",   description: "Female — US English, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-kendra",   name: "Kendra",   description: "Female — US English, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-salli",    name: "Salli",     description: "Female — US English, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-ruth",     name: "Ruth",      description: "Female — US English, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-ivy",      name: "Ivy",       description: "Female child — US English, Neural", provider: "aws_polly", gender: "female" },
+  { id: "polly-danielle", name: "Danielle",  description: "Female — US English, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-matthew",  name: "Matthew",   description: "Male — US English, Neural",       provider: "aws_polly", gender: "male" },
+  { id: "polly-stephen",  name: "Stephen",   description: "Male — US English, Neural",       provider: "aws_polly", gender: "male" },
+  { id: "polly-gregory",  name: "Gregory",   description: "Male — US English, Neural",       provider: "aws_polly", gender: "male" },
+  { id: "polly-kevin",    name: "Kevin",     description: "Male child — US English, Neural", provider: "aws_polly", gender: "male" },
+  { id: "polly-joey",     name: "Joey",      description: "Male — US English, Neural",       provider: "aws_polly", gender: "male" },
+  { id: "polly-justin",   name: "Justin",    description: "Male child — US English, Neural", provider: "aws_polly", gender: "male" },
+  // British English Neural
+  { id: "polly-amy",      name: "Amy",       description: "Female — British English, Neural", provider: "aws_polly", gender: "female" },
+  { id: "polly-emma",     name: "Emma",      description: "Female — British English, Neural", provider: "aws_polly", gender: "female" },
+  { id: "polly-brian",    name: "Brian",     description: "Male — British English, Neural",   provider: "aws_polly", gender: "male" },
+  { id: "polly-arthur",   name: "Arthur",    description: "Male — British English, Neural",   provider: "aws_polly", gender: "male" },
+  // Australian English
+  { id: "polly-olivia",   name: "Olivia",    description: "Female — Australian English, Neural", provider: "aws_polly", gender: "female" },
+  // Indian English
+  { id: "polly-kajal",    name: "Kajal",     description: "Female — Indian English, Neural",  provider: "aws_polly", gender: "female" },
+  // Spanish
+  { id: "polly-lupe",     name: "Lupe",      description: "Female — US Spanish, Neural",     provider: "aws_polly", gender: "female" },
+  { id: "polly-pedro",    name: "Pedro",     description: "Male — US Spanish, Neural",       provider: "aws_polly", gender: "male" },
+  { id: "polly-lucia",    name: "Lucia",     description: "Female — European Spanish, Neural", provider: "aws_polly", gender: "female" },
+  { id: "polly-sergio",   name: "Sergio",    description: "Male — European Spanish, Neural", provider: "aws_polly", gender: "male" },
+  // French
+  { id: "polly-lea",      name: "Léa",       description: "Female — French, Neural",         provider: "aws_polly", gender: "female" },
+  { id: "polly-remi",     name: "Rémi",      description: "Male — French, Neural",           provider: "aws_polly", gender: "male" },
+  // German
+  { id: "polly-vicki",    name: "Vicki",     description: "Female — German, Neural",         provider: "aws_polly", gender: "female" },
+  { id: "polly-daniel",   name: "Daniel",    description: "Male — German, Neural",           provider: "aws_polly", gender: "male" },
+  // Italian
+  { id: "polly-bianca",   name: "Bianca",    description: "Female — Italian, Neural",        provider: "aws_polly", gender: "female" },
+  { id: "polly-adriano",  name: "Adriano",   description: "Male — Italian, Neural",          provider: "aws_polly", gender: "male" },
+  // Portuguese
+  { id: "polly-camila",   name: "Camila",    description: "Female — Brazilian Portuguese, Neural", provider: "aws_polly", gender: "female" },
+  { id: "polly-thiago",   name: "Thiago",    description: "Male — Brazilian Portuguese, Neural",   provider: "aws_polly", gender: "male" },
+  // Japanese
+  { id: "polly-kazuha",   name: "Kazuha",    description: "Female — Japanese, Neural",       provider: "aws_polly", gender: "female" },
+  { id: "polly-takumi",   name: "Takumi",    description: "Male — Japanese, Neural",         provider: "aws_polly", gender: "male" },
+  // Korean
+  { id: "polly-seoyeon",  name: "Seoyeon",   description: "Female — Korean, Neural",         provider: "aws_polly", gender: "female" },
+  // Hindi
+  { id: "polly-aditi",    name: "Aditi",     description: "Female — Hindi, Standard",        provider: "aws_polly", gender: "female" },
+  // Arabic
+  { id: "polly-hala",     name: "Hala",      description: "Female — Arabic, Neural",         provider: "aws_polly", gender: "female" },
+  // Chinese
+  { id: "polly-zhiyu",    name: "Zhiyu",     description: "Female — Chinese Mandarin, Neural", provider: "aws_polly", gender: "female" },
+  // Dutch
+  { id: "polly-laura",    name: "Laura",     description: "Female — Dutch, Neural",          provider: "aws_polly", gender: "female" },
+  // Polish
+  { id: "polly-ola",      name: "Ola",       description: "Female — Polish, Neural",         provider: "aws_polly", gender: "female" },
+  // Swedish
+  { id: "polly-elin",     name: "Elin",      description: "Female — Swedish, Neural",        provider: "aws_polly", gender: "female" },
+  // Turkish
+  { id: "polly-burcu",    name: "Burcu",     description: "Female — Turkish, Neural",        provider: "aws_polly", gender: "female" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -107,16 +157,133 @@ export const AWS_POLLY_VOICES: VoiceOption[] = [
 // ---------------------------------------------------------------------------
 
 export const GOOGLE_WAVENET_VOICES: VoiceOption[] = [
-  { id: "en-US-Neural2-A", name: "Neural2-A", description: "Male — natural",   provider: "google_wavenet", gender: "male" },
-  { id: "en-US-Neural2-D", name: "Neural2-D", description: "Male — clear",     provider: "google_wavenet", gender: "male" },
-  { id: "en-US-Neural2-I", name: "Neural2-I", description: "Male — calm",      provider: "google_wavenet", gender: "male" },
-  { id: "en-US-Neural2-J", name: "Neural2-J", description: "Male — casual",    provider: "google_wavenet", gender: "male" },
-  { id: "en-US-Neural2-C", name: "Neural2-C", description: "Female — natural", provider: "google_wavenet", gender: "female" },
-  { id: "en-US-Neural2-E", name: "Neural2-E", description: "Female — calm",    provider: "google_wavenet", gender: "female" },
-  { id: "en-US-Neural2-F", name: "Neural2-F", description: "Female — warm",    provider: "google_wavenet", gender: "female" },
-  { id: "en-US-Neural2-G", name: "Neural2-G", description: "Female — bright",  provider: "google_wavenet", gender: "female" },
-  { id: "en-US-Neural2-H", name: "Neural2-H", description: "Female — friendly", provider: "google_wavenet", gender: "female" },
-  { id: "en-US-Polyglot-1", name: "Polyglot-1", description: "Male — versatile", provider: "google_wavenet", gender: "male" },
+  // ── US English Neural2 (highest quality) ──
+  { id: "en-US-Neural2-A", name: "US Neural2-A", description: "Male — natural",    provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-D", name: "US Neural2-D", description: "Male — clear",      provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-I", name: "US Neural2-I", description: "Male — calm",       provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-J", name: "US Neural2-J", description: "Male — casual",     provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-C", name: "US Neural2-C", description: "Female — natural",  provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-E", name: "US Neural2-E", description: "Female — calm",     provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-F", name: "US Neural2-F", description: "Female — warm",     provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-G", name: "US Neural2-G", description: "Female — bright",   provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-H", name: "US Neural2-H", description: "Female — friendly", provider: "google_wavenet", gender: "female" },
+  // ── US English Studio ──
+  { id: "en-US-Studio-M",  name: "US Studio-M",  description: "Male — studio quality",   provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Studio-O",  name: "US Studio-O",  description: "Female — studio quality",  provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Studio-Q",  name: "US Studio-Q",  description: "Male — studio conversational", provider: "google_wavenet", gender: "male" },
+  // ── US English Wavenet ──
+  { id: "en-US-Wavenet-A",  name: "US Wavenet-A",  description: "Male — standard",    provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Wavenet-B",  name: "US Wavenet-B",  description: "Male — deeper",      provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Wavenet-C",  name: "US Wavenet-C",  description: "Female — standard",  provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Wavenet-D",  name: "US Wavenet-D",  description: "Male — casual",      provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Wavenet-E",  name: "US Wavenet-E",  description: "Female — calm",      provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Wavenet-F",  name: "US Wavenet-F",  description: "Female — bright",    provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Wavenet-G",  name: "US Wavenet-G",  description: "Female — warm",      provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Wavenet-H",  name: "US Wavenet-H",  description: "Female — friendly",  provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Wavenet-I",  name: "US Wavenet-I",  description: "Male — warm",        provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Wavenet-J",  name: "US Wavenet-J",  description: "Male — bright",      provider: "google_wavenet", gender: "male" },
+  // ── US English Polyglot ──
+  { id: "en-US-Polyglot-1", name: "US Polyglot-1", description: "Male — versatile multilingual", provider: "google_wavenet", gender: "male" },
+  // ── British English Neural2 ──
+  { id: "en-GB-Neural2-A",  name: "GB Neural2-A",  description: "Female — British, warm",     provider: "google_wavenet", gender: "female" },
+  { id: "en-GB-Neural2-B",  name: "GB Neural2-B",  description: "Male — British, clear",      provider: "google_wavenet", gender: "male" },
+  { id: "en-GB-Neural2-C",  name: "GB Neural2-C",  description: "Female — British, bright",   provider: "google_wavenet", gender: "female" },
+  { id: "en-GB-Neural2-D",  name: "GB Neural2-D",  description: "Male — British, deep",       provider: "google_wavenet", gender: "male" },
+  { id: "en-GB-Neural2-F",  name: "GB Neural2-F",  description: "Female — British, friendly", provider: "google_wavenet", gender: "female" },
+  // ── British English Wavenet ──
+  { id: "en-GB-Wavenet-A",  name: "GB Wavenet-A",  description: "Female — British standard", provider: "google_wavenet", gender: "female" },
+  { id: "en-GB-Wavenet-B",  name: "GB Wavenet-B",  description: "Male — British standard",   provider: "google_wavenet", gender: "male" },
+  { id: "en-GB-Wavenet-C",  name: "GB Wavenet-C",  description: "Female — British warm",     provider: "google_wavenet", gender: "female" },
+  { id: "en-GB-Wavenet-D",  name: "GB Wavenet-D",  description: "Male — British warm",       provider: "google_wavenet", gender: "male" },
+  { id: "en-GB-Wavenet-F",  name: "GB Wavenet-F",  description: "Female — British bright",   provider: "google_wavenet", gender: "female" },
+  // ── British English Studio ──
+  { id: "en-GB-Studio-B",   name: "GB Studio-B",   description: "Male — British studio",     provider: "google_wavenet", gender: "male" },
+  { id: "en-GB-Studio-C",   name: "GB Studio-C",   description: "Female — British studio",   provider: "google_wavenet", gender: "female" },
+  // ── Australian English Neural2 ──
+  { id: "en-AU-Neural2-A",  name: "AU Neural2-A",  description: "Female — Australian, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "en-AU-Neural2-B",  name: "AU Neural2-B",  description: "Male — Australian, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "en-AU-Neural2-C",  name: "AU Neural2-C",  description: "Female — Australian, bright", provider: "google_wavenet", gender: "female" },
+  { id: "en-AU-Neural2-D",  name: "AU Neural2-D",  description: "Male — Australian, deep",    provider: "google_wavenet", gender: "male" },
+  // ── Australian English Wavenet ──
+  { id: "en-AU-Wavenet-A",  name: "AU Wavenet-A",  description: "Female — Australian standard", provider: "google_wavenet", gender: "female" },
+  { id: "en-AU-Wavenet-B",  name: "AU Wavenet-B",  description: "Male — Australian standard",   provider: "google_wavenet", gender: "male" },
+  { id: "en-AU-Wavenet-C",  name: "AU Wavenet-C",  description: "Female — Australian warm",     provider: "google_wavenet", gender: "female" },
+  { id: "en-AU-Wavenet-D",  name: "AU Wavenet-D",  description: "Male — Australian warm",       provider: "google_wavenet", gender: "male" },
+  // ── Indian English Neural2 ──
+  { id: "en-IN-Neural2-A",  name: "IN Neural2-A",  description: "Female — Indian English, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "en-IN-Neural2-B",  name: "IN Neural2-B",  description: "Male — Indian English, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "en-IN-Neural2-C",  name: "IN Neural2-C",  description: "Male — Indian English, deep",    provider: "google_wavenet", gender: "male" },
+  { id: "en-IN-Neural2-D",  name: "IN Neural2-D",  description: "Female — Indian English, bright", provider: "google_wavenet", gender: "female" },
+  // ── Indian English Wavenet ──
+  { id: "en-IN-Wavenet-A",  name: "IN Wavenet-A",  description: "Female — Indian English standard", provider: "google_wavenet", gender: "female" },
+  { id: "en-IN-Wavenet-B",  name: "IN Wavenet-B",  description: "Male — Indian English standard",   provider: "google_wavenet", gender: "male" },
+  { id: "en-IN-Wavenet-C",  name: "IN Wavenet-C",  description: "Male — Indian English warm",       provider: "google_wavenet", gender: "male" },
+  { id: "en-IN-Wavenet-D",  name: "IN Wavenet-D",  description: "Female — Indian English warm",     provider: "google_wavenet", gender: "female" },
+  // ── Spanish Neural2 ──
+  { id: "es-US-Neural2-A",  name: "ES-US Neural2-A", description: "Female — US Spanish",  provider: "google_wavenet", gender: "female" },
+  { id: "es-US-Neural2-B",  name: "ES-US Neural2-B", description: "Male — US Spanish",    provider: "google_wavenet", gender: "male" },
+  { id: "es-US-Neural2-C",  name: "ES-US Neural2-C", description: "Male — US Spanish, deeper", provider: "google_wavenet", gender: "male" },
+  { id: "es-ES-Neural2-A",  name: "ES-ES Neural2-A", description: "Female — European Spanish", provider: "google_wavenet", gender: "female" },
+  { id: "es-ES-Neural2-B",  name: "ES-ES Neural2-B", description: "Male — European Spanish",   provider: "google_wavenet", gender: "male" },
+  { id: "es-ES-Neural2-C",  name: "ES-ES Neural2-C", description: "Female — European Spanish, warm", provider: "google_wavenet", gender: "female" },
+  { id: "es-ES-Neural2-D",  name: "ES-ES Neural2-D", description: "Female — European Spanish, bright", provider: "google_wavenet", gender: "female" },
+  { id: "es-ES-Neural2-E",  name: "ES-ES Neural2-E", description: "Female — European Spanish, calm", provider: "google_wavenet", gender: "female" },
+  { id: "es-ES-Neural2-F",  name: "ES-ES Neural2-F", description: "Male — European Spanish, deep", provider: "google_wavenet", gender: "male" },
+  // ── French Neural2 ──
+  { id: "fr-FR-Neural2-A",  name: "FR Neural2-A",  description: "Female — French, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "fr-FR-Neural2-B",  name: "FR Neural2-B",  description: "Male — French, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "fr-FR-Neural2-C",  name: "FR Neural2-C",  description: "Female — French, bright", provider: "google_wavenet", gender: "female" },
+  { id: "fr-FR-Neural2-D",  name: "FR Neural2-D",  description: "Male — French, deep",    provider: "google_wavenet", gender: "male" },
+  { id: "fr-FR-Neural2-E",  name: "FR Neural2-E",  description: "Female — French, friendly", provider: "google_wavenet", gender: "female" },
+  // ── German Neural2 ──
+  { id: "de-DE-Neural2-A",  name: "DE Neural2-A",  description: "Female — German, warm",   provider: "google_wavenet", gender: "female" },
+  { id: "de-DE-Neural2-B",  name: "DE Neural2-B",  description: "Male — German, clear",    provider: "google_wavenet", gender: "male" },
+  { id: "de-DE-Neural2-C",  name: "DE Neural2-C",  description: "Female — German, bright", provider: "google_wavenet", gender: "female" },
+  { id: "de-DE-Neural2-D",  name: "DE Neural2-D",  description: "Male — German, deep",     provider: "google_wavenet", gender: "male" },
+  { id: "de-DE-Neural2-F",  name: "DE Neural2-F",  description: "Female — German, friendly", provider: "google_wavenet", gender: "female" },
+  // ── Italian Neural2 ──
+  { id: "it-IT-Neural2-A",  name: "IT Neural2-A",  description: "Female — Italian, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "it-IT-Neural2-B",  name: "IT Neural2-B",  description: "Female — Italian, bright", provider: "google_wavenet", gender: "female" },
+  { id: "it-IT-Neural2-C",  name: "IT Neural2-C",  description: "Male — Italian, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "it-IT-Neural2-D",  name: "IT Neural2-D",  description: "Male — Italian, deep",    provider: "google_wavenet", gender: "male" },
+  // ── Portuguese Neural2 ──
+  { id: "pt-BR-Neural2-A",  name: "PT-BR Neural2-A", description: "Female — Brazilian Portuguese, warm", provider: "google_wavenet", gender: "female" },
+  { id: "pt-BR-Neural2-B",  name: "PT-BR Neural2-B", description: "Male — Brazilian Portuguese, clear",  provider: "google_wavenet", gender: "male" },
+  { id: "pt-BR-Neural2-C",  name: "PT-BR Neural2-C", description: "Female — Brazilian Portuguese, bright", provider: "google_wavenet", gender: "female" },
+  // ── Japanese Neural2 ──
+  { id: "ja-JP-Neural2-B",  name: "JP Neural2-B",  description: "Female — Japanese, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "ja-JP-Neural2-C",  name: "JP Neural2-C",  description: "Male — Japanese, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "ja-JP-Neural2-D",  name: "JP Neural2-D",  description: "Male — Japanese, deep",    provider: "google_wavenet", gender: "male" },
+  // ── Korean Neural2 ──
+  { id: "ko-KR-Neural2-A",  name: "KR Neural2-A",  description: "Female — Korean, warm",   provider: "google_wavenet", gender: "female" },
+  { id: "ko-KR-Neural2-B",  name: "KR Neural2-B",  description: "Female — Korean, bright", provider: "google_wavenet", gender: "female" },
+  { id: "ko-KR-Neural2-C",  name: "KR Neural2-C",  description: "Male — Korean, clear",    provider: "google_wavenet", gender: "male" },
+  // ── Chinese Mandarin Neural2 ──
+  { id: "cmn-CN-Neural2-A", name: "CN Neural2-A",  description: "Female — Chinese Mandarin, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "cmn-CN-Neural2-B", name: "CN Neural2-B",  description: "Male — Chinese Mandarin, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "cmn-CN-Neural2-C", name: "CN Neural2-C",  description: "Male — Chinese Mandarin, deep",    provider: "google_wavenet", gender: "male" },
+  { id: "cmn-CN-Neural2-D", name: "CN Neural2-D",  description: "Female — Chinese Mandarin, bright", provider: "google_wavenet", gender: "female" },
+  // ── Hindi Neural2 ──
+  { id: "hi-IN-Neural2-A",  name: "HI Neural2-A",  description: "Female — Hindi, warm",   provider: "google_wavenet", gender: "female" },
+  { id: "hi-IN-Neural2-B",  name: "HI Neural2-B",  description: "Male — Hindi, clear",    provider: "google_wavenet", gender: "male" },
+  { id: "hi-IN-Neural2-C",  name: "HI Neural2-C",  description: "Male — Hindi, deep",     provider: "google_wavenet", gender: "male" },
+  { id: "hi-IN-Neural2-D",  name: "HI Neural2-D",  description: "Female — Hindi, bright", provider: "google_wavenet", gender: "female" },
+  // ── Arabic Neural2 ──
+  { id: "ar-XA-Neural2-A",  name: "AR Neural2-A",  description: "Female — Arabic, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "ar-XA-Neural2-B",  name: "AR Neural2-B",  description: "Male — Arabic, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "ar-XA-Neural2-C",  name: "AR Neural2-C",  description: "Male — Arabic, deep",    provider: "google_wavenet", gender: "male" },
+  { id: "ar-XA-Neural2-D",  name: "AR Neural2-D",  description: "Female — Arabic, bright", provider: "google_wavenet", gender: "female" },
+  // ── Dutch Neural2 ──
+  { id: "nl-NL-Neural2-A",  name: "NL Neural2-A",  description: "Female — Dutch, warm",   provider: "google_wavenet", gender: "female" },
+  { id: "nl-NL-Neural2-B",  name: "NL Neural2-B",  description: "Male — Dutch, clear",    provider: "google_wavenet", gender: "male" },
+  { id: "nl-NL-Neural2-C",  name: "NL Neural2-C",  description: "Male — Dutch, deep",     provider: "google_wavenet", gender: "male" },
+  { id: "nl-NL-Neural2-D",  name: "NL Neural2-D",  description: "Female — Dutch, bright", provider: "google_wavenet", gender: "female" },
+  // ── Turkish Neural2 ──
+  { id: "tr-TR-Neural2-A",  name: "TR Neural2-A",  description: "Female — Turkish, warm",  provider: "google_wavenet", gender: "female" },
+  { id: "tr-TR-Neural2-B",  name: "TR Neural2-B",  description: "Male — Turkish, clear",   provider: "google_wavenet", gender: "male" },
+  { id: "tr-TR-Neural2-C",  name: "TR Neural2-C",  description: "Female — Turkish, bright", provider: "google_wavenet", gender: "female" },
+  { id: "tr-TR-Neural2-D",  name: "TR Neural2-D",  description: "Male — Turkish, deep",    provider: "google_wavenet", gender: "male" },
+  { id: "tr-TR-Neural2-E",  name: "TR Neural2-E",  description: "Male — Turkish, warm",    provider: "google_wavenet", gender: "male" },
 ]
 
 // ---------------------------------------------------------------------------
