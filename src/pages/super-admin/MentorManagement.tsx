@@ -208,7 +208,7 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
       await updateCoach({ agent_id: agent.id, model_tier: modelTier, llm_provider: llmProvider })
       toast.success(`${agent.name} settings updated`)
       setDirty(false)
-    } catch (e) {
+    } catch {
       toast.error("Failed to save settings")
     } finally {
       setSaving(false)
@@ -310,6 +310,8 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
       {(() => {
         const prompts = coachData?.prompts as Array<{ text: string }> | undefined
         if (!prompts || !Array.isArray(prompts) || prompts.length === 0) return null
+        // Backend appends new prompts to the end — the LAST entry is the active one.
+        const latestPrompt = prompts[prompts.length - 1]
         return (
           <Card>
             <CardHeader className="pb-3">
@@ -317,7 +319,7 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
             </CardHeader>
             <CardContent>
               <pre className="text-xs bg-muted/40 rounded-lg p-3 whitespace-pre-wrap max-h-60 overflow-y-auto">
-                {prompts[0]?.text || "No prompt configured"}
+                {latestPrompt?.text || "No prompt configured"}
               </pre>
             </CardContent>
           </Card>

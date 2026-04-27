@@ -65,7 +65,10 @@ export async function getPrompts(): Promise<PromptListResponse> {
     const agents = raw?.data?.agents ?? []
     const items: SystemPrompt[] = agents.map((ag: Record<string, unknown>) => {
       const prompts = ag.prompts as Array<Record<string, unknown>> | undefined
-      const promptText = prompts?.[0]?.content as string || prompts?.[0]?.text as string || ""
+      // Backend stores prompts in chronological order (oldest first); the
+      // current/active prompt is the LAST entry, not the first.
+      const latestPrompt = prompts && prompts.length > 0 ? prompts[prompts.length - 1] : undefined
+      const promptText = (latestPrompt?.content as string) || (latestPrompt?.text as string) || ""
       const parsed = parseTemplateText(promptText)
       return {
         id: (ag.id as string) || "",
@@ -173,10 +176,16 @@ export async function getPromptVersions(coachId: string): Promise<PromptVersionR
       return { status: true, data: { versions: [] } }
     }
 
-    const prompts = (agent.prompts as Array<Record<string, unknown>>) ?? []
+    const rawPrompts = (agent.prompts as Array<Record<string, unknown>>) ?? []
     const systemPrompt = (agent.system_prompt as string) || ""
 
-    // Map each prompt entry to a SystemPrompt version
+    // Backend stores prompts in chronological (insertion) order — oldest first.
+    // The UI expects versions[0] to be the LATEST (newest) version, so we reverse
+    // the array before mapping. The numeric `version` label is then simply
+    // `total - idx`, which correctly assigns the highest version to the newest.
+    const prompts = [...rawPrompts].reverse()
+
+    // Map each prompt entry to a SystemPrompt version (newest first)
     const versions: SystemPrompt[] = prompts.map((p: Record<string, unknown>, idx: number) => {
       const text = (p.content as string) || (p.text as string) || systemPrompt || ""
       const parsed = parseTemplateText(text)
