@@ -808,6 +808,18 @@ function InteractionProtocolTab() {
 // Voice Config Tab (per-agent)
 // ---------------------------------------------------------------------------
 
+/** Convert agentVoiceConfig ID to the format the synthesize endpoint expects. */
+function toSynthVoice(vid: string): string {
+  if (vid.startsWith("polly-")) {
+    const raw = vid.slice(6)
+    return raw.charAt(0).toUpperCase() + raw.slice(1) // "polly-joanna" → "Joanna"
+  }
+  if (vid.startsWith("openai-adv-")) return vid.slice(11) // "openai-adv-arbor" → "arbor"
+  if (vid.startsWith("openai-")) return vid.slice(7)      // "openai-alloy" → "alloy"
+  if (vid.startsWith("gemini-")) return vid.slice(7)      // "gemini-nova" → "nova" (sent to OpenAI)
+  return vid // en-US-Neural2-A passes through
+}
+
 function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -815,57 +827,44 @@ function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
   const handlePreview = async () => {
     if (playing) {
       audioRef.current?.pause()
+      window.speechSynthesis?.cancel()
       setPlaying(false)
       return
     }
     setPlaying(true)
+    const text = `Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`
+    const synthVoice = toSynthVoice(voice!.id)
+
     try {
-      const { getApi } = await import("@/lib/agentApi")
-      const api = getApi()
-      // Convert frontend voice ID to the format the synthesize endpoint expects:
-      // - "polly-joanna" → "Joanna" (capitalize first letter)
-      // - "openai-alloy" → "alloy" (strip prefix, lowercase)
-      // - "openai-adv-arbor" → "arbor" (strip prefix, use OpenAI voice name)
-      // - "gemini-nova" → "alloy" (Gemini not supported server-side, fallback to OpenAI)
-      // - "en-US-Neural2-A" → "en-US-Neural2-A" (keep full Google name)
-      const vid = voice!.id
-      let voiceName = vid
-      if (vid.startsWith("polly-")) {
-        const raw = vid.slice(6)
-        voiceName = raw.charAt(0).toUpperCase() + raw.slice(1)
-      } else if (vid.startsWith("openai-adv-")) {
-        voiceName = vid.slice(11) // strip "openai-adv-", send to OpenAI
-      } else if (vid.startsWith("openai-")) {
-        voiceName = vid.slice(7) // strip "openai-"
-      } else if (vid.startsWith("gemini-")) {
-        voiceName = "alloy" // Gemini voices not available server-side, use OpenAI fallback
-      }
-      // en-US-* voices (Google Neural2) pass through unchanged
-      const resp = await api.post(
+      const { agentApi } = await import("@/lib/agentApi")
+      const resp = await agentApi.post(
         "/v1/agents/voice/synthesize",
-        { text: `Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`, voice: voiceName },
+        { text, voice: synthVoice },
         { responseType: "blob" },
       )
       const url = URL.createObjectURL(resp.data)
       const audio = new Audio(url)
       audioRef.current = audio
       audio.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
-      audio.onerror = () => {
-        setPlaying(false)
-        // Fallback to browser speech synthesis
-        if ("speechSynthesis" in window) {
-          const u = new SpeechSynthesisUtterance(`Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`)
-          u.onend = () => setPlaying(false)
-          window.speechSynthesis.speak(u)
-        } else {
-          toast.error("Voice preview unavailable")
-        }
-      }
+      audio.onerror = () => { setPlaying(false) }
       await audio.play()
     } catch {
-      // Fallback to browser speech synthesis
+      // Server TTS unavailable — use browser speech with varied voice
       if ("speechSynthesis" in window) {
-        const u = new SpeechSynthesisUtterance(`Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`)
+        const voices = window.speechSynthesis.getVoices()
+        const u = new SpeechSynthesisUtterance(text)
+        // Try to find a browser voice that matches the gender
+        const gender = voice!.gender || "neutral"
+        const genderHint = gender === "female" ? "female" : gender === "male" ? "male" : ""
+        if (genderHint && voices.length > 0) {
+          const match = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes(genderHint))
+            || voices.find(v => v.lang.startsWith("en"))
+          if (match) u.voice = match
+        }
+        // Vary pitch/rate slightly per voice to sound different
+        const hash = voice!.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
+        u.pitch = 0.8 + (hash % 5) * 0.1  // 0.8 to 1.2
+        u.rate = 0.85 + (hash % 4) * 0.1   // 0.85 to 1.15
         u.onend = () => setPlaying(false)
         window.speechSynthesis.speak(u)
       } else {
