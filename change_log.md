@@ -1,3 +1,14 @@
+## [2026-04-27] — fix: Document upload regressions (chat + Documents page)
+
+### Fixed — Frontend
+- Chat-interface upload no longer fails with **"Network Error"** and the My Documents upload no longer crashes the page.
+- Root cause: commit `acdb7e4` switched both upload paths to a presigned-URL flow targeting `POST /v1/documents/upload`. That route is registered on API Gateway and forwards to the agent-engine ALB, but the agent-engine endpoint expects a multipart `UploadFile`, not a JSON presigned-URL request — so every upload returned 422 from the ALB. The monolith fallback path (`/v1/documents/upload`) does not exist there either, so the catch threw a network-style error in the browser.
+- Restored the proven monolith multipart endpoint (`POST /v1/file_service/upload`) used before the RAG refactor for both `useDocumentUpload` and `useDocumentUploadMulti`. The monolith handles S3 storage, virus scan, text extraction, and Milvus embedding internally — exactly what worked previously.
+- Best-effort pgvector embedding via `POST /v1/agents/documents/vectorize` is still attempted for each upload, but its failure cannot break the upload flow.
+- Files: `inspire-genius-frontend/src/hooks/documents/useDocumentUpload.ts`, `inspire-genius-frontend/src/hooks/documents/__tests__/useDocumentUpload.test.tsx`
+- Tests: 2 unit tests (success path + vectorize-failure path) — both pass.
+- ESLint + tsc clean.
+
 ## [2026-04-27] — feat: Multi-agent collaboration pipeline + UI indicators (deployed)
 
 ### Changed — Agent Engine
@@ -5860,6 +5871,106 @@ Created 12 Claude Code slash commands (/rag-1a through /rag-4c + /rag-deploy-reb
 
 
 ## 2026-04-27 14:17:24 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 14:20:36 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 15:00:51 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 15:13:09 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 15:22:49 — session summary
 
 **Agents** (10 files):
 - `services/agent-engine/app/agents/meridian.py`
