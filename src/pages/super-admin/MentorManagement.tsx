@@ -166,7 +166,7 @@ const MODEL_TIERS = [
 ]
 
 function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachData?: Record<string, unknown> }) {
-  const [modelTier, setModelTier] = useState(agent.modelTier)
+  const [modelTier, setModelTier] = useState<string>(agent.modelTier)
   const [llmProvider, setLlmProvider] = useState((coachData?.llm_provider as string) || "anthropic")
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
