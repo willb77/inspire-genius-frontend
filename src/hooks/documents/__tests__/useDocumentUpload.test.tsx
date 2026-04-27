@@ -48,7 +48,13 @@ describe("useDocumentUpload", () => {
     act(() => { result.current.mutate({ file }) })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(uploadDocuments).toHaveBeenCalledWith([file], undefined)
-    expect(vectorizeDocument).toHaveBeenCalledWith(expect.objectContaining({ document_id: "d1" }))
+    // Fire-and-forget — verify the call is dispatched with both
+    // document_id and file_id set to the monolith file id (so the
+    // agent-engine endpoint can resolve via either path).
+    expect(vectorizeDocument).toHaveBeenCalledWith(expect.objectContaining({
+      document_id: "d1",
+      file_id: "d1",
+    }))
     expect(result.current.data?.id).toBe("d1")
     expect(result.current.data?.filename).toBe("test.pdf")
   })

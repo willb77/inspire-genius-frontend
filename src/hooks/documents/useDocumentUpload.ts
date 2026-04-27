@@ -69,20 +69,25 @@ export function useDocumentUpload() {
       };
 
       // Best-effort pgvector embedding via Agent Engine.
-      try {
-        if (doc.id) {
-          await vectorizeDocument({
-            document_id: doc.id,
-            user_id: doc.user_id,
-            filename: doc.filename,
-            file_type: doc.content_type,
-          });
-        }
-      } catch (err) {
-        console.warn(
-          "[useDocumentUpload] Vectorization failed (file uploaded successfully):",
-          err,
-        );
+      // FIRE-AND-FORGET — do NOT await. The agent-engine vectorize endpoint
+      // can take 30+ seconds (it opens its own asyncpg connection through
+      // RDS Proxy with SSL) and blocking the upload mutation makes the
+      // Documents page modal hang on its progress animation. Vectorization
+      // success/failure does not affect upload success in any way; the
+      // monolith already stored the file in Milvus during /file_service/upload.
+      if (doc.id) {
+        void vectorizeDocument({
+          document_id: doc.id,
+          user_id: doc.user_id,
+          filename: doc.filename,
+          file_type: doc.content_type,
+          file_id: doc.id, // also pass as monolith file_id alias
+        }).catch((err) => {
+          console.warn(
+            "[useDocumentUpload] Background vectorization failed (file uploaded successfully):",
+            err,
+          );
+        });
       }
 
       return doc;
@@ -163,23 +168,28 @@ export function useDocumentUploadMulti() {
       }));
 
       // Step 2: Best-effort pgvector embedding via Agent Engine.
-      // This gives the new RAG pipeline access to the same documents.
-      // Any failure (Agent Engine down, doc-id format mismatch, etc.)
-      // is swallowed — the file is already safely uploaded.
+      // FIRE-AND-FORGET — do NOT await. The agent-engine vectorize endpoint
+      // can take 30+ seconds per file (asyncpg + RDS Proxy SSL handshake);
+      // sequential awaits here would block the upload-modal progress animation
+      // and make the My Documents page upload appear to hang/fail even though
+      // the multipart upload above succeeded.
+      //
+      // Vectorization is best-effort and does not block upload completion.
+      // Each call is dispatched in parallel; rejection is logged but never
+      // surfaced to the user.
       for (const doc of results) {
         if (!doc.id) continue;
-        try {
-          await vectorizeDocument({
-            document_id: doc.id,
-            user_id: doc.user_id,
-            filename: doc.filename,
-            file_type: doc.content_type,
-          });
-        } catch {
+        void vectorizeDocument({
+          document_id: doc.id,
+          user_id: doc.user_id,
+          filename: doc.filename,
+          file_type: doc.content_type,
+          file_id: doc.id, // also pass as monolith file_id alias
+        }).catch(() => {
           console.warn(
-            `[useDocumentUploadMulti] Vectorization failed for ${doc.filename} (file uploaded successfully)`,
+            `[useDocumentUploadMulti] Background vectorization failed for ${doc.filename} (file uploaded successfully)`,
           );
-        }
+        });
       }
 
       return results;
