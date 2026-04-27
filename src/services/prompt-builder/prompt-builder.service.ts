@@ -127,10 +127,12 @@ export async function savePrompt(payload: SavePromptPayload) {
 
 export async function updatePrompt(id: string, payload: SavePromptPayload) {
   // Use agents-settings PUT to update the prompt for an agent
+  // Always use payload.coach_id as the agent_id (id param may be a prompt UUID, not the agent ID)
   const templateText = assembleTemplateText(payload)
+  const agentId = payload.coach_id || id
   try {
     const { data } = await getApi().put("/v1/agents-settings/agents", { prompt: templateText }, {
-      params: { agent_id: id },
+      params: { agent_id: agentId },
     })
     const resp = data as Record<string, unknown>
     return {

@@ -107,16 +107,16 @@ export const AWS_POLLY_VOICES: VoiceOption[] = [
 // ---------------------------------------------------------------------------
 
 export const GOOGLE_WAVENET_VOICES: VoiceOption[] = [
-  { id: "wavenet-a", name: "en-US-Wavenet-A", description: "Male",   provider: "google_wavenet", gender: "male" },
-  { id: "wavenet-b", name: "en-US-Wavenet-B", description: "Male",   provider: "google_wavenet", gender: "male" },
-  { id: "wavenet-c", name: "en-US-Wavenet-C", description: "Female", provider: "google_wavenet", gender: "female" },
-  { id: "wavenet-d", name: "en-US-Wavenet-D", description: "Male",   provider: "google_wavenet", gender: "male" },
-  { id: "wavenet-e", name: "en-US-Wavenet-E", description: "Female", provider: "google_wavenet", gender: "female" },
-  { id: "wavenet-f", name: "en-US-Wavenet-F", description: "Female", provider: "google_wavenet", gender: "female" },
-  { id: "wavenet-g", name: "en-US-Wavenet-G", description: "Female", provider: "google_wavenet", gender: "female" },
-  { id: "wavenet-h", name: "en-US-Wavenet-H", description: "Female", provider: "google_wavenet", gender: "female" },
-  { id: "wavenet-i", name: "en-US-Wavenet-I", description: "Male",   provider: "google_wavenet", gender: "male" },
-  { id: "wavenet-j", name: "en-US-Wavenet-J", description: "Male",   provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-A", name: "Neural2-A", description: "Male — natural",   provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-D", name: "Neural2-D", description: "Male — clear",     provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-I", name: "Neural2-I", description: "Male — calm",      provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-J", name: "Neural2-J", description: "Male — casual",    provider: "google_wavenet", gender: "male" },
+  { id: "en-US-Neural2-C", name: "Neural2-C", description: "Female — natural", provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-E", name: "Neural2-E", description: "Female — calm",    provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-F", name: "Neural2-F", description: "Female — warm",    provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-G", name: "Neural2-G", description: "Female — bright",  provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Neural2-H", name: "Neural2-H", description: "Female — friendly", provider: "google_wavenet", gender: "female" },
+  { id: "en-US-Polyglot-1", name: "Polyglot-1", description: "Male — versatile", provider: "google_wavenet", gender: "male" },
 ]
 
 // ---------------------------------------------------------------------------

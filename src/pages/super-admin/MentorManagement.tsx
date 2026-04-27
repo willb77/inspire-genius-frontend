@@ -158,25 +158,48 @@ const LLM_PROVIDERS = [
   { value: "google", label: "Google (Gemini)" },
 ]
 
-const MODEL_TIERS = [
-  { value: "Sonnet", label: "Sonnet — balanced speed & quality" },
-  { value: "Haiku", label: "Haiku — fastest, lightweight tasks" },
-  { value: "Nova", label: "Nova — general purpose" },
-  { value: "Opus", label: "Opus — highest quality, complex reasoning" },
-]
+const MODEL_TIERS_BY_PROVIDER: Record<string, { value: string; label: string }[]> = {
+  anthropic: [
+    { value: "Opus", label: "Opus 4 — highest quality, complex reasoning" },
+    { value: "Sonnet", label: "Sonnet 4 — balanced speed & quality" },
+    { value: "Haiku", label: "Haiku 3.5 — fastest, lightweight tasks" },
+  ],
+  openai: [
+    { value: "gpt-4o", label: "GPT-4o — flagship multimodal" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini — fast & affordable" },
+    { value: "o3", label: "o3 — advanced reasoning" },
+    { value: "o4-mini", label: "o4-mini — fast reasoning" },
+  ],
+  google: [
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro — thinking model" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash — fast & efficient" },
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash — next-gen speed" },
+  ],
+}
 
 function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachData?: Record<string, unknown> }) {
-  const [modelTier, setModelTier] = useState<string>(agent.modelTier)
   const [llmProvider, setLlmProvider] = useState((coachData?.llm_provider as string) || "anthropic")
+  const [modelTier, setModelTier] = useState<string>((coachData?.model_tier as string) || agent.modelTier)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   // Sync when agent changes
   useEffect(() => {
+    const provider = (coachData?.llm_provider as string) || "anthropic"
+    setLlmProvider(provider)
     setModelTier((coachData?.model_tier as string) || agent.modelTier)
-    setLlmProvider((coachData?.llm_provider as string) || "anthropic")
     setDirty(false)
   }, [agent.id, coachData])
+
+  const handleProviderChange = (provider: string) => {
+    setLlmProvider(provider)
+    // Auto-select the first model tier for the new provider
+    const tiers = MODEL_TIERS_BY_PROVIDER[provider] || []
+    if (tiers.length > 0) setModelTier(tiers[0].value)
+    setDirty(true)
+  }
+
+  const availableTiers = MODEL_TIERS_BY_PROVIDER[llmProvider] || MODEL_TIERS_BY_PROVIDER.anthropic
 
   const handleSaveSettings = async () => {
     setSaving(true)
@@ -254,7 +277,7 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <span className="text-xs text-muted-foreground">LLM Provider</span>
-              <Select value={llmProvider} onValueChange={(v) => { setLlmProvider(v); setDirty(true) }}>
+              <Select value={llmProvider} onValueChange={handleProviderChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {LLM_PROVIDERS.map((p) => (
@@ -264,11 +287,11 @@ function AgentSettingsTab({ agent, coachData }: { agent: AgentVoiceDef; coachDat
               </Select>
             </div>
             <div className="space-y-1.5">
-              <span className="text-xs text-muted-foreground">Model Tier</span>
+              <span className="text-xs text-muted-foreground">Model</span>
               <Select value={modelTier} onValueChange={(v) => { setModelTier(v); setDirty(true) }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {MODEL_TIERS.map((t) => (
+                  {availableTiers.map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -799,8 +822,9 @@ function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
     try {
       const { getApi } = await import("@/lib/agentApi")
       const api = getApi()
-      // Strip provider prefix for the synthesize endpoint
-      const voiceName = voice!.id.includes("-") ? voice!.id.split("-").slice(1).join("-") : voice!.id
+      // Use the full voice ID — Google voices need the full name (en-US-Neural2-A),
+      // Polly voices use just the name (Joanna), OpenAI uses just the name (alloy)
+      const voiceName = voice!.id
       const resp = await api.post(
         "/v1/agents/voice/synthesize",
         { text: `Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`, voice: voiceName },
