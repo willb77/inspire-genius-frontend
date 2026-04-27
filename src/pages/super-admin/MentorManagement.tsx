@@ -814,9 +814,9 @@ function toSynthVoice(vid: string): string {
     const raw = vid.slice(6)
     return raw.charAt(0).toUpperCase() + raw.slice(1) // "polly-joanna" → "Joanna"
   }
-  if (vid.startsWith("openai-adv-")) return vid.slice(11) // "openai-adv-arbor" → "arbor"
-  if (vid.startsWith("openai-")) return vid.slice(7)      // "openai-alloy" → "alloy"
-  if (vid.startsWith("gemini-")) return vid.slice(7)      // "gemini-nova" → "nova" (sent to OpenAI)
+  if (vid.startsWith("openai-adv-")) return vid.slice(11)  // "openai-adv-arbor" → "arbor" (backend maps to std voice)
+  if (vid.startsWith("openai-")) return vid.slice(7)       // "openai-alloy" → "alloy"
+  if (vid.startsWith("gemini-")) return vid.slice(7)       // "gemini-nova" → "nova" (backend maps to OpenAI)
   return vid // en-US-Neural2-A passes through
 }
 
