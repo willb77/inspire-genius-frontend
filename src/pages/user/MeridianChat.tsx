@@ -23,6 +23,7 @@ import { api } from "@/lib/axios";
 import { exportConversation } from "@/services/agent/agentService";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
+import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import {
   Sparkles,
   Wifi,
@@ -111,6 +112,12 @@ export default function MeridianChat() {
 
   // Agent attribution from WS
   const [agentAttribution, setAgentAttribution] = useState<string | null>(null);
+
+  // Session-level multi-agent collaboration tracking (last synthesized response)
+  const [lastCollaboration, setLastCollaboration] = useState<{
+    contributingAgents: string[];
+    synthesized: boolean;
+  } | null>(null);
 
   // ── Browser-based voice input (bypasses WS) ──────────────────
   const [voiceRecording, setVoiceRecording] = useState(false);
@@ -292,12 +299,33 @@ export default function MeridianChat() {
         const text = resp.content ?? "";
         if (resp.agent) setAgentAttribution(resp.agent);
         const ragSources = resp.metadata?.rag_sources?.filter((s) => s.filename) ?? [];
+        const contributingAgents = resp.metadata?.contributing_agents;
+        const synthesized = resp.metadata?.synthesized;
+
+        // Track session-level collaboration when 2+ agents synthesized a response
+        if (synthesized && contributingAgents && contributingAgents.length > 1) {
+          setLastCollaboration({
+            contributingAgents,
+            synthesized: true,
+          });
+        }
+
         if (text) {
           setMessages((prev) => {
             const filtered = prev.filter((m) => m.kind !== "processing");
             const lastMsg = filtered[filtered.length - 1];
             if (lastMsg && lastMsg.sender === "assistant" && lastMsg.kind === "text") {
-              return [...filtered.slice(0, -1), { ...lastMsg, text, agent: resp.agent, ragSources: ragSources.length > 0 ? ragSources : undefined }];
+              return [
+                ...filtered.slice(0, -1),
+                {
+                  ...lastMsg,
+                  text,
+                  agent: resp.agent,
+                  ragSources: ragSources.length > 0 ? ragSources : undefined,
+                  contributingAgents,
+                  synthesized,
+                },
+              ];
             }
             return [
               ...filtered,
@@ -309,6 +337,8 @@ export default function MeridianChat() {
                 time: formatUSTimeSafe(new Date()),
                 agent: resp.agent,
                 ragSources: ragSources.length > 0 ? ragSources : undefined,
+                contributingAgents,
+                synthesized,
               },
             ];
           });
@@ -375,6 +405,21 @@ export default function MeridianChat() {
   useEffect(() => {
     if (currentAgent) setAgentAttribution(currentAgent);
   }, [currentAgent]);
+
+  // Persist last multi-agent collaboration to sessionStorage so the
+  // Dashboard banner can hydrate it on next render. Clears on tab close.
+  useEffect(() => {
+    if (lastCollaboration) {
+      try {
+        sessionStorage.setItem(
+          "last_collaboration",
+          JSON.stringify(lastCollaboration),
+        );
+      } catch {
+        // ignore
+      }
+    }
+  }, [lastCollaboration]);
 
   // Debounce search
   useEffect(() => {
@@ -668,6 +713,14 @@ export default function MeridianChat() {
         )}
         {isProcessing && (
           <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
+        )}
+
+        {/* Session-level multi-agent collaboration indicator */}
+        {lastCollaboration && (
+          <MultiAgentIndicator
+            contributingAgents={lastCollaboration.contributingAgents}
+            synthesized={lastCollaboration.synthesized}
+          />
         )}
 
         {/* Spacer */}

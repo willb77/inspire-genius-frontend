@@ -1,3 +1,41 @@
+## [2026-04-27] — feat: Multi-agent collaboration pipeline + UI indicators (deployed)
+
+### Changed — Agent Engine
+- **Meridian.route()** now invokes `orchestrator.handle()` (full template → planner → executor → synthesizer pipeline) instead of `select_agent()` only. Single-path response for both single-agent and multi-agent cases.
+  - Streams response word-by-word back to caller
+  - Propagates `synthesized` boolean and `contributing_agents` list into `working_memory`
+  - Files: `services/agent-engine/app/agents/meridian.py`
+- **Synthesizer.stream_combine()** added — yields combined multi-agent response word-by-word for streaming UX
+  - Files: `services/agent-engine/app/orchestration/synthesizer.py`
+- **Planner.domain_agents** added `"career_talent": ["Bridge", "Grant", "Alex"]` so career queries are scoped correctly during agent filtering
+  - Files: `services/agent-engine/app/orchestration/planner.py`
+- **All 4 orchestrators** (`coaching`, `business`, `system`, `career`) gained optional `stream: bool = False` param on `handle()` for streaming pipeline
+  - Files: `services/agent-engine/app/agents/orchestrators/{coaching,business,system,career}_orchestrator.py`
+- **WebSocket complete-frame metadata** (both ECS and Lambda paths) now include `synthesized` and `contributing_agents` so the frontend can render multi-agent attribution
+  - Files: `services/agent-engine/app/websocket/handlers.py`
+
+### Added — Frontend
+- `MultiAgentIndicator` component — session-level badge listing contributing agents (sessionStorage-backed)
+  - Files: `inspire-genius-frontend/src/components/shared/MultiAgentIndicator.tsx`
+- Inline `CollaborationBadge` rendered next to assistant messages in `ChatWindowChatTab` when synthesized response arrives
+  - Files: `inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx`
+
+### Deployed
+- ECS image rebuilt + pushed: `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-dev-agent-engine:latest`
+- Image digest: `sha256:f781a4f709f1e284d07203b35b31200f22dfe3824010515d46b7e0624bc38d14`
+- ECS service `ig-dev-agent-engine` rolled to new task `b53a1b0cb93345c9bfba84f99da09c5d` cleanly (no tracebacks, no 5xx)
+- Health check: `/v1/agents/health` returns `{"status":"healthy","version":"1.2.0"}`
+- Frontend deploy deferred — see caveats in session log
+
+## [2026-04-27] — doc: Multi-Agent Implementation Plan updates
+
+### Updated
+- **Multi_Agent_Collaborative_Model_Implementation_Plan.docx** — added career_talent planner fix to Prompt 5.1 and new Prompt 5.5 (Multi-Agent Activity Indicator)
+  - Prompt 5.1: Added "ADDITIONAL FIX REQUIRED" section for missing `career_talent` domain in Planner._filter_agents_by_domain() — one-line fix to scope career queries to [Bridge, Grant, Alex]
+  - Prompt 5.5: New prompt for real-time Multi-Agent Collaboration indicator on Dashboard and MeridianChat pages — session-level badge showing which agents collaborated
+  - Updated Table of Contents with new 5.5 entry
+  - Files: `inspire-genius-frontend/public/docs/Multi_Agent_Collaborative_Model_Implementation_Plan.docx`
+
 ## [2026-04-27] — deploy: HTTPS WebSocket ALB + Route53 DNS
 
 ### Deployed
@@ -5287,6 +5325,553 @@ Created 12 Claude Code slash commands (/rag-1a through /rag-4c + /rag-deploy-reb
 - `services/agent-engine/app/routes/agents_settings.py`
 - `services/agent-engine/app/voice/multi_tts.py`
 - `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 01:02:26 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 01:19:14 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 01:23:06 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 08:14:30 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 08:15:28 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 08:15:33 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 08:20:48 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 09:02:49 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 09:02:56 — session summary
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 09:41:49 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 10:16:13 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 10:37:18 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 10:48:42 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 10:53:54 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 10:57:26 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:00:01 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:00:08 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:02:38 — session summary
+
+**Agents** (2 files):
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:03:43 — session summary
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:06:33 — session summary
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:24:28 — session summary
+
+**Agents** (4 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:25:13 — session summary
+
+**Agents** (5 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:28:01 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:28:13 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 11:28:19 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 12:44:10 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 13:02:41 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 14:13:57 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 14:15:34 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
+
+**Docs** (3 files):
+- `CLAUDE.md`
+- `IG_Platform_Comprehensive_Audit.md`
+- `database_schema.md`
+
+**Other** (3 files):
+- `.gitlab-ci.yml`
+- `.pre-commit-config.yaml`
+- `docker-compose.test.yml`
+
+
+## 2026-04-27 14:17:24 — session summary
+
+**Agents** (10 files):
+- `services/agent-engine/app/agents/meridian.py`
+- `services/agent-engine/app/agents/orchestrators/business_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/career_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- `services/agent-engine/app/agents/orchestrators/system_orchestrator.py`
+- `services/agent-engine/app/orchestration/planner.py`
+- `services/agent-engine/app/orchestration/synthesizer.py`
+- `services/agent-engine/app/voice/multi_tts.py`
+- `services/agent-engine/app/voice/routes.py`
+- `services/agent-engine/app/websocket/handlers.py`
 
 **Docs** (3 files):
 - `CLAUDE.md`
