@@ -822,9 +822,25 @@ function VoicePreview({ voice }: { voice: VoiceOption | undefined }) {
     try {
       const { getApi } = await import("@/lib/agentApi")
       const api = getApi()
-      // Use the full voice ID — Google voices need the full name (en-US-Neural2-A),
-      // Polly voices use just the name (Joanna), OpenAI uses just the name (alloy)
-      const voiceName = voice!.id
+      // Convert frontend voice ID to the format the synthesize endpoint expects:
+      // - "polly-joanna" → "Joanna" (capitalize first letter)
+      // - "openai-alloy" → "alloy" (strip prefix, lowercase)
+      // - "openai-adv-arbor" → "arbor" (strip prefix, use OpenAI voice name)
+      // - "gemini-nova" → "alloy" (Gemini not supported server-side, fallback to OpenAI)
+      // - "en-US-Neural2-A" → "en-US-Neural2-A" (keep full Google name)
+      const vid = voice!.id
+      let voiceName = vid
+      if (vid.startsWith("polly-")) {
+        const raw = vid.slice(6)
+        voiceName = raw.charAt(0).toUpperCase() + raw.slice(1)
+      } else if (vid.startsWith("openai-adv-")) {
+        voiceName = vid.slice(11) // strip "openai-adv-", send to OpenAI
+      } else if (vid.startsWith("openai-")) {
+        voiceName = vid.slice(7) // strip "openai-"
+      } else if (vid.startsWith("gemini-")) {
+        voiceName = "alloy" // Gemini voices not available server-side, use OpenAI fallback
+      }
+      // en-US-* voices (Google Neural2) pass through unchanged
       const resp = await api.post(
         "/v1/agents/voice/synthesize",
         { text: `Hello, I'm ${voice!.name}. I'll be your AI coaching assistant today.`, voice: voiceName },

@@ -19,6 +19,7 @@ import { ROLES } from "@/constants/routes";
 import { Link } from "react-router-dom";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
+import PrivacySettings from "@/components/settings/PrivacySettings";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -239,6 +240,11 @@ export default function Settings() {
         {/* Browser Push Notification Preferences */}
         <div data-tour="settings-push-notifications">
           <NotificationPreferences />
+        </div>
+
+        {/* Privacy & Data Settings */}
+        <div data-tour="settings-privacy">
+          <PrivacySettings />
         </div>
 
         {/* Legal Card */}
