@@ -31,6 +31,8 @@ export type ChatMessage =
       agent?: string;
       domain?: string;
       ragSources?: RAGSource[];
+      contributingAgents?: string[];
+      synthesized?: boolean;
     }
   | {
       id: string;

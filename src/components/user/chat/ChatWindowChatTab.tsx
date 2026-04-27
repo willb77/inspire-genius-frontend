@@ -1,6 +1,6 @@
 import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
@@ -46,6 +46,30 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
               </span>
             </span>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollaborationBadge({ agents }: { agents: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (agents.length < 2) return null;
+
+  const summary = agents.join(", ");
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Users className="h-3 w-3" />
+        <span>Collaborative response ({agents.length} agents)</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="mt-1 text-xs text-muted-foreground">
+          <span className="opacity-80">Synthesized from {summary}</span>
         </div>
       )}
     </div>
@@ -141,6 +165,13 @@ export default function ChatWindowChatTab({
             {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
               <SourceAttribution sources={m.ragSources} />
             )}
+            {m.kind === "text" &&
+              m.sender === "assistant" &&
+              m.synthesized === true &&
+              m.contributingAgents &&
+              m.contributingAgents.length >= 2 && (
+                <CollaborationBadge agents={m.contributingAgents} />
+              )}
             {m.sender === "assistant" && coachId && conversationId && (
               <MessageFeedback
                 messageId={m.id}

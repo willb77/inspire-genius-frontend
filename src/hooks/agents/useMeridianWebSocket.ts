@@ -22,6 +22,8 @@ export type MeridianResponse = {
     rag_chunks_retrieved?: number;
     rag_cache_hit?: boolean;
     rag_avg_similarity?: number;
+    contributing_agents?: string[];
+    synthesized?: boolean;
   };
   observability?: Record<string, unknown>;
 };

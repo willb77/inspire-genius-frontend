@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import UserCoachCard from "@/components/user/UserCoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
 import { useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAgents } from "@/hooks/coaches/useAgents";
 import { useAgentEngine } from "@/lib/agentApi";
 import { ROUTES } from "@/constants/routes";
+import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 
 type Agent = {
   id: string;
@@ -29,6 +30,24 @@ export default function Dashboard() {
   // When Agent Engine is ON, show all ecosystem agents.
   const agentEngineOn = useAgentEngine();
   const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
+
+  // Hydrate the most recent multi-agent collaboration from sessionStorage
+  // (set by MeridianChat when a synthesized response comes back).
+  const [recentCollaboration, setRecentCollaboration] = useState<{
+    contributingAgents: string[];
+    synthesized: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("last_collaboration");
+      if (stored) {
+        setRecentCollaboration(JSON.parse(stored));
+      }
+    } catch {
+      // ignore malformed payload
+    }
+  }, []);
 
   const agents = useMemo<Agent[]>(() => {
     if (!agentsResp) return [];
@@ -64,6 +83,13 @@ export default function Dashboard() {
                   Meridian is your unified AI coaching persona. All 18 agents are accessible through a single conversation.
                 </p>
               </div>
+              {recentCollaboration && (
+                <MultiAgentIndicator
+                  contributingAgents={recentCollaboration.contributingAgents}
+                  synthesized={recentCollaboration.synthesized}
+                  className="ml-auto"
+                />
+              )}
               <button
                 onClick={() => navigate(ROUTES.MERIDIAN_CHAT)}
                 className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
