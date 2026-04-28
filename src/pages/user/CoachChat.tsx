@@ -2,7 +2,7 @@ import UserLayout from "@/layouts/UserLayout";
 import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { HistoryGroup, ChatMessage } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -72,6 +72,19 @@ export default function CoachChat() {
   }, [coach]);
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
+
+  // Path 4 demo trigger: ?force_full=<file_id>,<file_id> in the URL
+  // forces those documents' full text into the system prompt. Used for
+  // two-document comparison demos. Empty/missing → normal RAG-only flow.
+  const [searchParams] = useSearchParams();
+  const forceFullTextFileIds = useMemo<string[]>(() => {
+    const raw = searchParams.get("force_full");
+    if (!raw) return [];
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [searchParams]);
 
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
@@ -390,7 +403,7 @@ export default function CoachChat() {
             setConversationId(id);
             await secureSetItem("conv", { id });
             setAudioPlayerBuffer(null);
-            connect(agentId, accessToken, selectedFileIds, id);
+            connect(agentId, accessToken, selectedFileIds, id, forceFullTextFileIds);
           }
         },
         onError: (e) => {
@@ -398,7 +411,7 @@ export default function CoachChat() {
         },
       }
     );
-  }, [agentId, accessToken, connect, createConvMutation, queryClient, selectedFileIds]);
+  }, [agentId, accessToken, connect, createConvMutation, queryClient, selectedFileIds, forceFullTextFileIds]);
 
   const handleDeleteConversation = useCallback(async (id: string) => {
     if (!agentId) return;
@@ -465,7 +478,7 @@ export default function CoachChat() {
         }
         const finalIds = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         // Initial connect includes current/hydrated selected files
-        connect(agentId, accessToken, finalIds, conversationId);
+        connect(agentId, accessToken, finalIds, conversationId, forceFullTextFileIds);
 
         prevSelectedIdsRef.current = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         isRefreshed.current = true;
@@ -473,7 +486,7 @@ export default function CoachChat() {
       }
     })();
     return () => { mounted = false; };
-  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles, forceFullTextFileIds]);
 
   // (Removed extra CONNECTING updater to avoid double init)
 
@@ -587,7 +600,7 @@ export default function CoachChat() {
                 setSelectedId(id);
                 setConversationId(id);
                 secureSetItem("conv", { id });
-                connect(agentId, accessToken, selectedFileIds, id);
+                connect(agentId, accessToken, selectedFileIds, id, forceFullTextFileIds);
               }
             },
             onError: (e) => {
