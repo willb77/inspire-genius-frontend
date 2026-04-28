@@ -30,7 +30,14 @@ export interface UsePrismAgentWebSocketReturn {
   isProcessing: boolean;
   transcript: string;
   currentResponse: string;
-  connect: (agentId: string, accessToken: string, fileIds?: string[], conversationId?: string) => void;
+  connect: (
+    agentId: string,
+    accessToken: string,
+    fileIds?: string[],
+    conversationId?: string,
+    /** Path 4: file_ids to force-load as FULL TEXT into the system prompt. Use for two-document comparison demos. */
+    forceFullTextFileIds?: string[],
+  ) => void;
   disconnect: () => void;
   sendTextMessage: (text: string, isRealtime?: boolean) => void;
   startAudioInput: () => void;
@@ -59,7 +66,7 @@ export function usePrismAgentWebSocket(
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
-  const pendingInitRef = useRef<{ agentId: string; token: string; fileIds?: string[]; conversationId?: string } | null>(null);
+  const pendingInitRef = useRef<{ agentId: string; token: string; fileIds?: string[]; conversationId?: string; forceFullTextFileIds?: string[] } | null>(null);
   const activeAgentIdRef = useRef<string | null>(null);
   const activeTokenRef = useRef<string | null>(null);
 
@@ -186,7 +193,7 @@ export function usePrismAgentWebSocket(
     activeTokenRef.current = null;
   }, []);
 
-  const sendInit = useCallback((token: string, conversationId?: string, fileIds?: string[], agentId?: string) => {
+  const sendInit = useCallback((token: string, conversationId?: string, fileIds?: string[], agentId?: string, forceFullTextFileIds?: string[]) => {
     const payload = {
       type: "init",
       action: "chat",
@@ -194,18 +201,23 @@ export function usePrismAgentWebSocket(
       agent_id: agentId,
       conversation_id: conversationId,
       file_ids: fileIds && fileIds.length ? fileIds : undefined,
+      // Path 4: force-load these files as FULL TEXT (not RAG-retrieved chunks).
+      // Used for two-document comparison and similar analysis tasks where top-k
+      // retrieval cannot guarantee both docs contribute to context.
+      force_full_text_file_ids:
+        forceFullTextFileIds && forceFullTextFileIds.length ? forceFullTextFileIds : undefined,
       mute: false,
     };
     safeSend(JSON.stringify(payload));
   }, [safeSend]);
 
-  const connect = useCallback((agentId: string, accessToken: string, fileIds?: string[], conversationId?: string) => {
+  const connect = useCallback((agentId: string, accessToken: string, fileIds?: string[], conversationId?: string, forceFullTextFileIds?: string[]) => {
     // Require a conversation id to initiate
     if (!conversationId) {
       return;
     }
     const prev = pendingInitRef.current;
-    pendingInitRef.current = { agentId, token: accessToken, fileIds, conversationId };
+    pendingInitRef.current = { agentId, token: accessToken, fileIds, conversationId, forceFullTextFileIds };
 
     // If there is an existing or in-flight connection, but target agent/token changed, reconnect
     if (socketRef.current && (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING)) {
@@ -232,7 +244,7 @@ export function usePrismAgentWebSocket(
       setIsConnecting(false);
       reconnectAttempts.current = 0;
       const p = pendingInitRef.current;
-      if (p) sendInit(p.token, p.conversationId, p.fileIds, p.agentId);
+      if (p) sendInit(p.token, p.conversationId, p.fileIds, p.agentId, p.forceFullTextFileIds);
     };
 
     ws.onmessage = handleIncoming;
@@ -250,7 +262,7 @@ export function usePrismAgentWebSocket(
         cleanupReconnectTimer();
         reconnectTimeoutRef.current = setTimeout(() => {
           const p = pendingInitRef.current!;
-          connect(p.agentId, p.token, p.fileIds, p.conversationId);
+          connect(p.agentId, p.token, p.fileIds, p.conversationId, p.forceFullTextFileIds);
         }, delay);
       }
     };
