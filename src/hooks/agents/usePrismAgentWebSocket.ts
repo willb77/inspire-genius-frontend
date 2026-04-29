@@ -85,12 +85,15 @@ export function usePrismAgentWebSocket(
 
     // Production: route based on agent engine toggle
     if (!agentEngineOn) {
-      // Monolith path: connect via CloudFront → monolith origin.
-      // Use /v1/ws/agents/* (not /v1/agents/ws/*) — the latter matches the
-      // CloudFront /v1/agents/* behavior which targets API Gateway, while
-      // /v1/ws/agents/* falls through to the default origin (EC2 monolith).
-      const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "";
-      const wsBase = apiBase.replace(/^http/, "ws").replace(/\/$/, "");
+      // Monolith path: connect via CloudFront → monolith origin (EC2).
+      // VITE_API_BASE_URL points at API Gateway via api-dev.inspiresgenius.com
+      // — that host has no WebSocket route. The CloudFront monolith
+      // distribution at dvw79io0afgrp.cloudfront.net is configured with a
+      // /v1/ws/agents/* behavior that targets the EC2 origin. Use it
+      // explicitly here. VITE_MONOLITH_WS_URL overrides if CI sets it.
+      const monolithWsRaw = (import.meta.env.VITE_MONOLITH_WS_URL as string)
+        || "wss://dvw79io0afgrp.cloudfront.net";
+      const wsBase = monolithWsRaw.replace(/^http/, "ws").replace(/\/$/, "");
       const url = `${wsBase}/v1/ws/agents/${agentId}`;
       if (accessToken) {
         return `${url}?access-token=${encodeURIComponent(accessToken)}`;
