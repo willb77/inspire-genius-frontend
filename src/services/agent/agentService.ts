@@ -1,6 +1,39 @@
+import axios from "axios";
 import { api } from "@/lib/axios";
 import { agentApi } from "@/lib/agentApi";
 import { format } from "date-fns";
+
+/**
+ * When the user is in monolith mode (agent_engine_enabled=false), conversation
+ * CRUD must hit the monolith CloudFront origin directly. The deployed
+ * VITE_API_BASE_URL points at API Gateway, so neither `api` nor `agentApi`
+ * reaches the monolith. Sessions created on agent-engine aren't visible to
+ * the monolith WS handler, which causes "Conversation not found" on WS frames.
+ *
+ * The CloudFront monolith distribution at dvw79io0afgrp.cloudfront.net has
+ * a default-origin behavior pointing at the EC2 monolith.
+ */
+const MONOLITH_DIRECT_URL =
+  (import.meta.env.VITE_MONOLITH_DIRECT_URL as string) ||
+  "https://dvw79io0afgrp.cloudfront.net";
+
+function isAgentEngineOn(): boolean {
+  try {
+    const v = localStorage.getItem("agent_engine_enabled");
+    if (v === null) return true;
+    return v === "true";
+  } catch {
+    return true;
+  }
+}
+
+function getMonolithClient() {
+  const commonHeaders = (api?.defaults?.headers?.common ?? {}) as Record<string, unknown>;
+  return axios.create({
+    baseURL: MONOLITH_DIRECT_URL,
+    headers: commonHeaders as never,
+  });
+}
 
 export type AgentConversationParams = {
   page?: number;
@@ -32,6 +65,13 @@ export async function getAgentConversation(agentId: string, params: AgentConvers
 }
 
 export async function createConversation(agentId: string) {
+  // In monolith mode go straight to the CloudFront monolith — sessions created
+  // on agent-engine wouldn't be visible to the monolith WS handler.
+  if (!isAgentEngineOn()) {
+    const client = getMonolithClient();
+    const resp = await client.post(`/v1/chat/sessions/start`, { agent_id: agentId });
+    return resp.data as unknown;
+  }
   try {
     const resp = await agentApi.post(`/v1/chat/sessions/start`, { agent_id: agentId });
     return resp.data as unknown;
