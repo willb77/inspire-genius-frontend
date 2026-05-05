@@ -1,3 +1,25 @@
+## [2026-05-05 UTC] — verify: PromptStudio JWT-write smoke (Phase −1.9 final smoke green)
+
+### Verified live in prod
+- Baseline captured 2026-05-05 ~13:50 UTC: `ig-dev-agent-config` had 2 items; Meridian `PROMPT_OVERRIDE` last `updated_at` was `2026-04-28T20:38:58Z`, `data` array length 1.
+- User logged in as super-admin via the SPA, edited Meridian's prompt override in `/super-admin/prompt-studio`, clicked Save.
+- Post-save DynamoDB get-item on `pk=AGENT#meridian-001, sk=PROMPT_OVERRIDE`:
+  - `updated_at` advanced to **`2026-05-05T13:54:04Z`** (~now).
+  - `data` array length grew **1 → 2**; history preserved by append. New entry id `ea3d5d2b-b5de-4a92-b33e-52c7c6d50019` with `created_at: 2026-05-05T13:54:04Z` and the user's edited text.
+- Pipeline confirmed end-to-end: PromptStudio UI → trainer Lambda (validates JWT) → DynamoDB `UpdateItem` ✅.
+
+### Open question (not a regression — flagged)
+- `ig-dev-trainer-events` is still empty post-save. Either by design (audit flows via EventBridge → audit-service rather than a direct DynamoDB write) or a gap. Worth a 5-minute follow-up to read the trainer Lambda code and confirm intent.
+
+### Phase −1 acceptance gate (per Combined Plan, lines 1490–1495)
+- All 9 dev stacks `cdk diff` empty (asset-hash skew on 2 stacks is cosmetic) ✅
+- Demo URL works ✅
+- All smoke matrices green ✅ (this entry closes the last deferred item)
+- Branch hygiene complete ✅
+- **🟩 Phase −1 GATE — fully passed.**
+
+---
+
 ## [2026-05-05 UTC] — verify: monolith SECRET_KEY rotation (carry-over closed)
 
 ### Verified

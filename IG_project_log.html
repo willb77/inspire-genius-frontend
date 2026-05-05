@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1000</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1002</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22373,6 +22373,16 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-05 — Prompt #1000 [/full-go do 1 — monolith SECRET_KEY rotation]</div>
           <div class="prompt-text">/full-go do 1 (path a — SSM) — Pre-flight: confirmed AWS identity. Located instance i-029f0b2e216a70acb (AL2023, no IAM profile). Created IAM role+profile ig-dev-backend-ssm-role/ig-dev-backend-ssm-profile (AmazonSSMManagedInstanceCore) and attached. SSM agent did not register within 6 min — fell back to EC2 Instance Connect (60s ephemeral key push, SG already allows :22 from 0.0.0.0/0). VERIFIED IN PROD: /opt/inspire-genius/.env already has SECRET_KEY=817efb5a... (matches CDK rotation from 2026-04-15). Running container inspire-genius-backend-1 (started 2026-04-29, 0 restarts) has same value in environ. /health → HTTP 200 (3.1ms). Carry-over from agents.md was STALE DOCUMENTATION — rotation already complete in prod. Updated agents.md PARTIALLY FIXED → FIXED 2026-05-05. No process/file change made on the instance. Side-observation: monolith env has plaintext AWS access keys exposed in /proc/.../environ — flagged separately, not addressed.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #1001 [PromptStudio smoke test, super-admin logged in]</div>
+          <div class="prompt-text">PromptStudio smoke test — Captured baseline of trainer DynamoDB tables: ig-dev-agent-config 2 items, Meridian PROMPT_OVERRIDE last updated 2026-04-28T20:38:58Z (data array length 1). Trainer-events + trainer-sessions empty.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #1002 [done, edited Meridian prompt and saved]</div>
+          <div class="prompt-text">PromptStudio save confirmed — Post-save get-item on AGENT#meridian-001/PROMPT_OVERRIDE: updated_at advanced 2026-04-28T20:38:58Z → 2026-05-05T13:54:04Z (matches now); data array length grew 1 → 2 (history preserved by append); new entry id ea3d5d2b-b5de-4a92-b33e-52c7c6d50019 with edited text "Say Hi Will !" vs prior "Say Hi Bill!". Pipeline confirmed end-to-end: SPA → trainer Lambda (JWT validated) → DynamoDB UpdateItem ✅. Phase −1.9 smoke matrix now fully green; Phase −1 GATE passed. Open question: ig-dev-trainer-events still empty — audit may flow via EventBridge → audit-service instead, worth a 5-min follow-up.</div>
         </div>
 
       </div>
