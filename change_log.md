@@ -1,3 +1,38 @@
+## [2026-05-05 UTC] — verify: Phase −1 plan-defined smoke matrices
+
+Cross-checked tonight's deploys against the smoke matrices in
+`Transformation Documents/IG_Combined_Platform_Deployment_Plan.docx`
+(lines 1395–1495). Run at ~11:20 UTC (07:20 EDT).
+
+### Results
+| Smoke (plan section) | Result |
+|----------------------|--------|
+| Demo URL — `https://dev.inspiresgenius.com/` | ✅ 200, 1570 B, title "Inspire Genius", SPA root present |
+| −1.7 monolith `/health` 200 | ✅ 200, `{"status":"healthy","uptime_seconds":543300.8,"version":"1.0.0"}` (~6.3 day uptime) via `dvw79io0afgrp.cloudfront.net` (CloudFront E3H8JCT0DJSO1S → ec2-3-212-156-63) |
+| −1.7 agent-engine boots (scale 0→1→0) | ✅ task RUNNING with task-def :17; `/v1/agents/health` 200 `{"status":"healthy","service":"agent-engine","version":"1.2.0","mode":"lambda","active_connections":0}` (HTTP routes use Mangum Lambda by design); scaled back to desired=0 |
+| −1.9 PromptStudio loads | ✅ SPA `/super-admin/*` routes serve 1570 B index; `/v1/trainer/health` 200 v2.0.0 (ecosystems_registered=1); `/v1/admin/prompts` 422 (access-token validation — Lambda alive); trainer Lambdas 13.4 MB + 13.5 MB real bundles, LastModified matches deploy 2026-05-05T03:44:04 |
+| −1.9 prompt edit + save → DynamoDB write | ⏸ deferred — requires super-admin browser session + JWT. DynamoDB layer confirmed: ig-dev-agent-config ACTIVE (2 items, 3857 B), ig-dev-trainer-events + ig-dev-trainer-sessions ACTIVE |
+| −1.10 task definition revision incremented | ⚠ NOT incremented — service still at `ig-dev-agent-engine:17` (registered 2026-04-26). CFN reported UPDATE_COMPLETE on AgentEngineTaskDef because the resource was reconciled, but the synthesized definition matched :17 exactly so no new revision was registered. Plan expectation not strictly met but rollout COMPLETED with no functional change to the running container |
+| −1.10 ws-proxy Lambda ARN unchanged | ✅ `arn:aws:lambda:us-east-1:568505405842:function:ig-dev-ws-proxy` still resolves; LastModified 2026-05-05T04:04:45, CodeSize 6631 B (real bundle > 5 KB stub threshold) |
+
+### Cost
+ECS scale 0 → 1 → 0 cycle ran ~7 minutes (11:20–11:27 UTC). Cost ~$0.05.
+
+### One genuine deviation from plan
+Phase −1.10 task-def revision did not increment. The plan assumed drift
+would touch the task def, but the actual drift was elsewhere (ALB listeners,
+API Gateway routes, ECS service-level config, alarms, scaling policies).
+The synthesized task def matched the existing `:17` revision byte-for-byte;
+ECS only registers a new revision when the definition hash changes. Service
+deployment rollout still ran cleanly to `COMPLETED`. Functionally OK;
+documenting for transparency.
+
+### Endpoints discovered (worth memorizing)
+- HTTP API: `https://8umg6xioz5.execute-api.us-east-1.amazonaws.com`
+- WS API:   `wss://fhsei32zkf.execute-api.us-east-1.amazonaws.com`
+- Monolith CloudFront: `https://dvw79io0afgrp.cloudfront.net` (no alias; origin `ec2-3-212-156-63`)
+- Frontend CloudFront: `https://dev.inspiresgenius.com` (alias for `d28pbt5mdv370.cloudfront.net`, origin S3 `ig-dev-frontend-assets`)
+
 ## [2026-05-05 UTC] — deploy: Phase −1.9 trainer + Phase −1.10 agent-engine — Phase −1 COMPLETE
 
 ### Deployed via GHA `cdk-deploy.yml` workflow_dispatch on `development` branch

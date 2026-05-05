@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">992</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">998</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22333,6 +22333,36 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-05 — Prompt #992 [/bedtime continue to -1.10]</div>
           <div class="prompt-text">/bedtime if there are no errors continue to complete all tasks to -1.10 — Both deploys clean. Phase −1 acceptance gate PASSED: 7/9 stacks empty diff; ig-dev-trainer + ig-dev-services show only Lambda .S3Key asset-hash skew (CDK Docker bundling non-determinism, not real drift). All 9 stacks at UPDATE_COMPLETE. REMAINING_TASKS.md, change_log.md, IG_project_log.html updated. Synced to all 5 copy locations. Push deferred to user authorization.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #993 [commit and push]</div>
+          <div class="prompt-text">commit and push to development — Pushed 2 monorepo commits (e6994a6 fix(cdk) security-stack WAF disable + 000e105 docs Phase −1 closeout) and 1 frontend repo commit (dbef1e8 docs sync). Pre-commit hooks passed (secrets, large-file, merge-conflict, private-key, branch-protection). All on origin/development.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #994 [tag phase-minus-1-complete]</div>
+          <div class="prompt-text">tag phase-minus-1-complete — Annotated tag created on commit 000e105 with full 9-stack manifest + acceptance-gate caveat. Pushed to origin. Visible at https://github.com/willb77/inspire-genius/releases/tag/phase-minus-1-complete</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #995 [what's next]</div>
+          <div class="prompt-text">what's next — Three next-move recommendations: (1) sanity-check dev env (5 min curl + ECS scale test), (2) monolith prod SECRET_KEY rotation (carry-over from agents.md), (3) move to Master Build Plan Phase 0/1. Recommended (1) to close gate properly, then (3).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #996 [confirm working from Combined Plan docx]</div>
+          <div class="prompt-text">Just to confirm we are working off Transformation Documents/IG_Combined_Platform_Deployment_Plan.docx? — Honest answer: hadn't been reading the docx tonight; was working from change_log.md narrative + AWS CFN state. Found 2 copies (Transformation Documents/ is newer, 88KB vs 68KB at root). Offered to read newer copy and cross-check.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #997 [read newer copy and cross-check]</div>
+          <div class="prompt-text">read the newer copy and cross-check — Converted via pandoc → 2007 lines. Cross-check vs plan's Phase −1 acceptance: phase numbering matches; all 9 stacks UPDATE_COMPLETE; ordering respected; CI-only stacks deployed via CI; node_modules/.bin/cdk syntax matches; pre-deploy snapshots taken. Gaps: (1) Phase −1.7 WAF removal is a deviation not contemplated by plan, (2) trainer + services .S3Key skew not strictly "empty", (3) smoke matrices skipped, (4) plan says merge to fix/rag-voice-migration but I used development.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #998 [/full-go run the 3 smoke matrices]</div>
+          <div class="prompt-text">/full-go run the 3 smoke matrices — All ran. Demo URL ✅ 200. Monolith /health ✅ 200 (uptime 6.3 days, v1.0.0) via dvw79io0afgrp.cloudfront.net. Agent-engine boots ✅ scaled 0→1→0, task RUNNING task-def :17, /v1/agents/health 200 mode=lambda. PromptStudio loads ✅ SPA + trainer Lambdas (13.4MB + 13.5MB real bundles), /v1/trainer/health 200 v2.0.0, /v1/admin/prompts 422 (auth required). DynamoDB tables ACTIVE. Prompt edit + save deferred (needs super-admin JWT). −1.10 task-def revision NOT incremented (synth matched :17 exactly; not strict plan-conformant but functionally OK). −1.10 ws-proxy ARN unchanged ✅. Cost ~$0.05.</div>
         </div>
 
       </div>
