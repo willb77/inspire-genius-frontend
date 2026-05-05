@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">989</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">992</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,205 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-04 UTC] — deploy: Phase −1.5 cognito-stack drift cleanup</h3>
+        <h4>Done</h4>
+        <ul>
+          <li><strong><code>ig-dev-cognito</code> stack at UPDATE_COMPLETE</strong> @ 2026-05-04T03:50:49 UTC. 3-attempt sequence: dry-run → 2 fix-forward iterations → green deploy on attempt 3.</li>
+          <li>Run <a href="https://github.com/willb77/inspire-genius/actions/runs/25299631049"><code>25299631049</code></a> — Validate ✅ · Diff ✅ · Deploy ✅ · Verify-no-stubs ✅</li>
+        </ul>
+        <h4>Verification (STOP gates from plan Appendix A.−1.5)</h4>
+        <ul>
+          <li><strong>UserPool ID: <code>us-east-1_6b74Mh2p8</code> — UNCHANGED.</strong> No JWT invalidation. ✅</li>
+          <li>Stack: <code>UPDATE_COMPLETE</code>.</li>
+          <li><code>GoogleProvider</code> now tracked in stack resources (<code>CREATE_COMPLETE</code>) — CDK now owns the IdP.</li>
+          <li>Active identity providers: <code>Google</code> (was orphaned drift; now CDK-managed).</li>
+        </ul>
+        <h4>Two fix-forward steps</h4>
+        <table>
+          <tr><th>Commit / Action</th><th>Bug</th><th>Fix</th></tr>
+          <tr>
+            <td><code>9e77ac7</code></td>
+            <td>cognito-stack.ts had <code>userPool.node.addDependency(googleProvider)</code> — backwards. CDK propagated to all UserPool children → CFN ValidationError: Circular dependency.</td>
+            <td>Removed reverse dep. Stashed <code>googleProvider</code> in private field; added <code>webAppClient.node.addDependency(googleProvider)</code> after WebAppClient construction.</td>
+          </tr>
+          <tr>
+            <td>(runtime fix, no commit)</td>
+            <td>After circular dep fix, next attempt: <code>Resource ... 'us-east-1_6b74Mh2p8|Google' already exists</code>. Google IdP existed in Cognito (created out-of-band 2026-04-08) but wasn't in CDK stack resources.</td>
+            <td><code>aws cognito-idp delete-identity-provider --user-pool-id us-east-1_6b74Mh2p8 --provider-name Google</code>; then re-triggered deploy → CDK created the IdP cleanly.</td>
+          </tr>
+        </table>
+        <h4>What this unblocks</h4>
+        <p>Phase −1.6 → 1.10 sweep:</p>
+        <ol>
+          <li><strong>domain-stack</strong> — local-safe; STOP if hosted-zone modifications.</li>
+          <li><strong>security-stack</strong> — local-safe; STOP if KMS key replacement.</li>
+          <li><strong>monitoring-stack</strong> — mostly alarm-threshold changes.</li>
+          <li><strong>trainer-stack</strong> — via GHA workflow.</li>
+          <li><strong>agent-engine-stack</strong> — via GHA workflow; STOP if VPC ID changes.</li>
+        </ol>
+
+        <h3>[2026-05-03 / 2026-05-04 UTC] — deploy: Phase −1.4 api-gateway-stack drift cleanup</h3>
+        <h4>Done</h4>
+        <ul>
+          <li><strong><code>ig-dev-api-gateway</code> stack at UPDATE_COMPLETE.</strong> 4-attempt sequence: dry-run inspection → 3 fix-forward iterations → green deploy on attempt 4.</li>
+          <li>Run <a href="https://github.com/willb77/inspire-genius/actions/runs/25296883824"><code>25296883824</code></a> — Validate ✅ · Diff ✅ · Deploy ✅ · Verify-no-stubs ✅</li>
+        </ul>
+        <h4>Verification</h4>
+        <ul>
+          <li>Demo URL <code>https://dvw79io0afgrp.cloudfront.net/health</code>: <strong>200 (0.24s)</strong> — monolith path unchanged.</li>
+          <li>New route <code>GET /v1/observability/health</code>: <strong>200</strong> with <code>{"status":"healthy","service":"observability"}</code> — Wave 7 observability extraction is live.</li>
+          <li>Stack: <code>UPDATE_COMPLETE</code> at <code>2026-05-04T01:53:00 UTC</code>.</li>
+          <li>Observability Lambda invoke: handler reached (Mangum routing alive).</li>
+        </ul>
+        <h4>Three fix-forward commits</h4>
+        <table>
+          <tr><th>Commit</th><th>Bug</th><th>Fix</th></tr>
+          <tr><td><code>807b97d</code></td><td>CFN export <code>ig-dev-waf-web-acl-arn</code> collision with security-stack</td><td>Renamed api-gateway's export to <code>ig-dev-api-waf-web-acl-arn</code></td></tr>
+          <tr><td><code>ea77195</code></td><td>WAFv2 doesn't support direct association with API Gateway HTTP APIs (v2)</td><td>Commented out <code>ApiWaf</code> + <code>ApiWafAssociation</code> + <code>WafWebAclArn</code> output. WAF protection needs CloudFront fronting (out of Phase −1.4 scope).</td></tr>
+          <tr><td><code>06e478e</code></td><td>Duplicate <code>GET /v1/observability/{proxy+}</code> route — services-stack now owns it</td><td>Removed Wave 7 block from api-gateway-stack (integration + 2 routes + 2 permissions)</td></tr>
+        </table>
+        <h4>What this unblocks</h4>
+        <p>Phase −1.5 → 1.10 sweep:</p>
+        <ol>
+          <li><strong>cognito-stack</strong> — local-safe; STOP if UserPool replacement in diff.</li>
+          <li><strong>domain-stack</strong> — local-safe; STOP if hosted-zone modifications.</li>
+          <li><strong>security-stack</strong> — local-safe; STOP if KMS key replacement.</li>
+          <li><strong>monitoring-stack</strong> — local-safe; mostly alarm-threshold changes.</li>
+          <li><strong>trainer-stack</strong> — via GHA workflow.</li>
+          <li><strong>agent-engine-stack</strong> — via GHA workflow; STOP if VPC ID changes.</li>
+        </ol>
+        <p>Then <strong>Phase −1 acceptance gate</strong> → Track M and Track E start in parallel.</p>
+
+        <h3>[2026-05-03] — deploy: Phase −2 services-stack — all 12 Lambdas off stub state</h3>
+        <h4>Done</h4>
+        <ul>
+          <li><strong>Triggered</strong> <code>CDK Deploy</code> workflow on <code>main</code>: <code>environment=dev, stack=ig-dev-services, dry_run=false, skip_stub_check=false</code>. Run <a href="https://github.com/willb77/inspire-genius/actions/runs/25286381419">25286381419</a>.</li>
+          <li>Validate ✅ · Diff ✅ · Deploy ✅ · Verify-no-stubs ❌ (false positives only — see allowlist patch below)</li>
+        </ul>
+        <h4>Lambda CodeSize — before vs after</h4>
+        <table>
+          <tr><th>Lambda</th><th>Before</th><th>After</th></tr>
+          <tr><td>ig-dev-auth-service</td><td>177 B (stub)</td><td><strong>44 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-audit-service</td><td>177 B (stub)</td><td><strong>43 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-coach-service</td><td>177 B (stub)</td><td><strong>44 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-org-service</td><td>177 B (stub)</td><td><strong>44 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-user-service</td><td>177 B (stub)</td><td><strong>44 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-dashboard-service</td><td>177 B (stub)</td><td><strong>44 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-support-service</td><td>177 B (stub)</td><td><strong>52 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-document-service</td><td>177 B (stub)</td><td><strong>62 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-rlhf-collector</td><td>134 B (stub)</td><td><strong>22 MB ✅</strong></td></tr>
+          <tr><td>ig-dev-observability-query</td><td>—</td><td><strong>54 MB ✅</strong> (created)</td></tr>
+          <tr><td>ig-dev-observability-retention</td><td>—</td><td><strong>54 MB ✅</strong> (created)</td></tr>
+          <tr><td>ig-dev-observability-rollup</td><td>—</td><td><strong>54 MB ✅</strong> (created)</td></tr>
+        </table>
+        <h4>Verified</h4>
+        <ul>
+          <li><strong>CFN export <code>ig-dev-observability-query-arn</code></strong> now exists → unblocks Phase −1.4 api-gateway retry.</li>
+          <li><strong>Smoke test</strong> — <code>aws lambda invoke</code> on all 10 service Lambdas: all reach handler (no <code>ImportModuleError</code>). Stub-import era is over.</li>
+        </ul>
+        <h4>Allowlist patch to verify-no-stubs job</h4>
+        <p>The verifier flagged 6 false positives — all CDK framework helpers / intentionally-tiny Lambdas:</p>
+        <ul>
+          <li><code>ig-dev-secret-rotation-reminder</code> (699 B), <code>ig-dev-ws-forwarder</code> (1.8 KB), <code>ig-dev-api-catchall</code> (1.2 KB), three <code>CustomS3AutoDeleteObjects</code> CDK auto-generated helpers</li>
+        </ul>
+        <p>Patched the verifier to allowlist these via name regex. Files: <code>.github/workflows/cdk-deploy.yml</code>.</p>
+        <h4>What this unblocks</h4>
+        <ol>
+          <li><strong>Phase −1.4 api-gateway-stack retry</strong> — the 2026-05-02 rollback's blocking export now exists.</li>
+          <li>Phase −1.5–1.10 — cognito, domain, security, monitoring, trainer, agent-engine drift cleanup.</li>
+          <li>After Phase −1 acceptance gate: Track M and Track E start in parallel.</li>
+        </ol>
+
+        <h3>[2026-05-03] — release: PR #2 merged — development → main; GHA OIDC live</h3>
+        <h4>Merged</h4>
+        <ul>
+          <li><strong>PR <a href="https://github.com/willb77/inspire-genius/pull/2">#2</a></strong> — 37 commits + 3 fix-forward (40 total) merged via <code>gh pr merge 2 --merge</code>. New <code>main</code> HEAD: <code>53c2eac</code>. All 22 PR checks green (9 docker scans + 9 service unit tests + SAST + pip-audit + Backend Gate + CDK Deploy <code>Validate</code> + <code>Diff</code>).</li>
+          <li><strong>CDK Deploy workflow</strong> now visible in the Actions UI. <code>gh workflow list</code> shows <code>CDK Deploy active 270337427</code>.</li>
+        </ul>
+        <h4>Bootstrap</h4>
+        <ul>
+          <li><strong>OIDC bootstrap executed</strong> (<code>infrastructure/cdk/scripts/bootstrap-gha-oidc.sh</code>). Created in AWS account <code>568505405842</code>:
+            <ul>
+              <li>OIDC provider <code>arn:aws:iam::568505405842:oidc-provider/token.actions.githubusercontent.com</code></li>
+              <li>IAM role <code>arn:aws:iam::568505405842:role/gha-cdk-deploy</code> with trust for <code>willb77/inspire-genius</code> (development, main, dev/staging/prod environments, PR runs) and inline policy granting <code>sts:AssumeRole</code> on the four <code>cdk-hnb659fds-*</code> bootstrap roles + read-only CFN/Lambda/ECR.</li>
+            </ul>
+          </li>
+        </ul>
+        <h4>Fix-forward commits surfaced by the new pipeline</h4>
+        <p>The PR's CDK Deploy workflow ran <code>cdk synth</code> in CI for the first time and exposed three latent bugs in <code>lib/services-stack.ts</code>:</p>
+        <ol>
+          <li><code>4610578</code> — Poetry 2.x dropped <code>export</code> from core. Added <code>poetry-plugin-export</code> to all 4 bundling commands.</li>
+          <li><code>19295c0</code> — <code>pyproject.toml</code> for 5 services declares <code>ig-auth = {path="../../packages/ig-auth"}</code>. The bundling container only mounted <code>services/&lt;svc&gt;/</code> so the relative path resolved to <code>/packages/ig-auth</code> which didn't exist. Mounted <code>packages/ig-auth/</code> at <code>/packages/ig-auth</code> via <code>bundling.volumes</code>, stripped the path-dep line from requirements.txt, and added explicit <code>pip install /packages/ig-auth -t /asset-output/</code>.</li>
+          <li><code>3a0aee2</code> — <code>poetryBundle</code> helper unconditionally <code>cp -r alembic/</code>, but observability-service has no migrations. Made the alembic copies conditional.</li>
+        </ol>
+        <h4>Next single action</h4>
+        <p><strong>Actions → CDK Deploy → Run workflow → environment: dev, stack: ig-dev-services, dry_run: false</strong>. Watch for the 12 <code>Bundling asset ig-dev-services/&lt;X&gt;Lambda/Code/Stage</code> lines, then the <code>verify-no-stubs</code> job to confirm the Lambdas exit 177-byte stub state.</p>
+
+        <h3>[2026-05-03] — ci: GHA CDK deploy workflow + OIDC bootstrap + canonical README</h3>
+        <h4>Added</h4>
+        <ul>
+          <li><strong><code>.github/workflows/cdk-deploy.yml</code></strong> — replaces the dormant <code>infrastructure/cdk/.gitlab-ci.yml</code>. 4 jobs:
+            <ol>
+              <li><strong>validate</strong> — <code>cdk synth</code> on PR + dispatch (artifact: templates).</li>
+              <li><strong>diff</strong> — <code>cdk diff</code>; PR comment auto-updated by bot user.</li>
+              <li><strong>deploy</strong> — <code>cdk deploy</code> (workflow_dispatch + <code>dry_run=false</code> only). Gated by GitHub environment protection rules (<code>environment: dev|staging|prod</code>).</li>
+              <li><strong>verify-no-stubs</strong> — fails the run if any deployed Lambda has <code>CodeSize &lt; 5 KB</code>. Catches the <code>tryBundle</code> local-fallback failure that silently shipped 12 broken Lambdas to dev (2026-04-09 → 2026-05-02).</li>
+            </ol>
+          </li>
+          <li><strong><code>infrastructure/cdk/scripts/bootstrap-gha-oidc.sh</code></strong> — idempotent one-shot. Creates the GitHub OIDC provider in account <code>568505405842</code> and the <code>gha-cdk-deploy</code> IAM role with trust for <code>willb77/inspire-genius</code> (development, main, dev/staging/prod environments, PR runs). Inline policy: <code>sts:AssumeRole</code> on the four <code>cdk-hnb659fds-*</code> bootstrap roles + read-only CFN/Lambda/ECR. Run once with admin AWS creds.</li>
+          <li><strong><code>infrastructure/cdk/README.md</code></strong> — fully rewritten. 9-stack inventory, canonical deploy path (GHA primary, manual local fallback last resort), bootstrap procedure, GitHub Environments recommendations, manual stub check.</li>
+        </ul>
+        <h4>Auth model</h4>
+        <ul>
+          <li>OIDC. <strong>No long-lived AWS keys in GitHub secrets.</strong> Workflow assumes <code>arn:aws:iam::568505405842:role/gha-cdk-deploy</code> via <code>aws-actions/configure-aws-credentials@v4</code>.</li>
+        </ul>
+        <h4>Validation</h4>
+        <ul>
+          <li>YAML parsed with PyYAML; <code>actionlint 1.7.12</code> — no errors on the new workflow or <code>backend-ci.yml</code>; <code>bash -n</code> on the bootstrap script; pre-commit hooks pass (GitHub OIDC root-cert thumbprints carry inline <code>pragma: allowlist secret</code> markers).</li>
+        </ul>
+        <h4>What this unblocks</h4>
+        <ul>
+          <li>After <code>bootstrap-gha-oidc.sh</code> runs once, Phase −2 services-stack can deploy via <strong>Actions → CDK Deploy → Run workflow → stack=ig-dev-services, dry_run=false</strong>. The <code>verify-no-stubs</code> job will fail the run if the Phase −2 bundling fix (commit <code>11334b1</code>) didn't actually take effect.</li>
+          <li>Commit: <code>f3fb6b1</code></li>
+        </ul>
+
+        <h3>[2026-05-03] — docs: Combined Plan validation against repo + AWS state</h3>
+        <h4>Added</h4>
+        <ul>
+          <li><strong><code>Transformation Documents/IG_Plan_Validation_2026-05-03.docx</code></strong> — validation review of <code>IG_Combined_Platform_Deployment_Plan.docx</code> cross-checked against actual AWS state and git log.</li>
+        </ul>
+        <h4>Key findings</h4>
+        <ul>
+          <li>All 9 services-stack Lambdas are still 177-byte stubs in dev (verified via <code>aws lambda get-function-configuration --query CodeSize</code>). 3 observability Lambdas don't exist (rolled back 2026-05-02 per plan Appendix F). Plan's Phase −2 diagnosis is fully accurate.</li>
+          <li>Phase −2 source-code fix exists in git (commits <code>11334b1</code>, <code>b546693</code>) but has NOT been deployed to AWS — there is no active CDK deploy pipeline. The <code>b546693</code> DinD/stub-zip detector additions targeted <code>infrastructure/cdk/.gitlab-ci.yml</code>, which per memory is dormant. Only <code>.github/workflows/backend-ci.yml</code> runs, and it doesn't perform <code>cdk deploy</code>.</li>
+          <li>Today's docker-scan recovery (commits <code>65b337f</code>, <code>88d0552</code>) is a precondition for the plan's PR-level CI assumptions but does not advance Phase −2 deploy.</li>
+          <li>CFN export <code>ig-dev-observability-query-arn</code> is still missing → Phase −1.4 api-gateway-stack remains blocked exactly as Appendix E describes.</li>
+        </ul>
+        <h4>Recommended next-step (per the validation doc)</h4>
+        <ol>
+          <li>Build a GitHub Actions CDK deploy workflow: author <code>.github/workflows/cdk-deploy.yml</code> (recommended) OR repair local CDK bundling for one-off manual deploys. <strong>Re-enabling GitLab is NOT an option — this project has no GitLab access; the dormant <code>.gitlab-ci.yml</code> is a historical artifact.</strong></li>
+          <li>Once pipeline exists: deploy services-stack with real bundles (Phase −2 Days 3–4).</li>
+          <li>Then retry api-gateway (Phase −1.4) and continue Phase −1.5–1.10.</li>
+        </ol>
+        <h4>Correction (rev. 2 issued same day)</h4>
+        <ul>
+          <li>The first cut of <code>IG_Plan_Validation_2026-05-03.docx</code> listed "re-enable GitLab CI" as Option A. That was wrong — this project has no GitLab access. Doc regenerated with GitLab removed; memory <code>feedback_monorepo_git.md</code> reinforced.</li>
+        </ul>
+
+        <h3>[2026-05-03] — fix: Backend CI docker-scan recovery (all 9 services green)</h3>
+        <h4>Fixed</h4>
+        <ul>
+          <li><strong>CI workflow build context</strong> — workflow always used service-dir context for <code>docker build</code>, but 5 service Dockerfiles (coach, dashboard, org, support, user) were authored for repo-root context. Added a <code>grep</code>-based detector that picks the right context per Dockerfile. Files: <code>.github/workflows/backend-ci.yml</code></li>
+          <li><strong>Pre-commit detect-secrets version mismatch</strong> — <code>.pre-commit-config.yaml</code> pinned v1.4.0 but <code>.secrets.baseline</code> referenced v1.5.0-only plugins (GitLab/IPPublic/OpenAI/Pypi/Telegram detectors). Bumped pin to v1.5.0. Files: <code>.pre-commit-config.yaml</code></li>
+          <li><strong><code>ig-auth</code> path-dep break in 6 service Dockerfiles</strong> — <code>pyproject.toml</code> declares <code>ig-auth = {path = "../../packages/ig-auth"}</code>. With no committed <code>poetry.lock</code>, the builder's <code>poetry export</code> re-resolved deps and looked for <code>/packages/ig-auth</code> (relative to WORKDIR <code>/build</code>) — not present. Generated and committed <code>poetry.lock</code> for all 6 services (force-added past <code>.gitignore</code>). Added <code>sed -i '/^-e .*ig.auth/d' requirements.txt</code> after export so the path-dep line doesn't break the runtime stage's <code>pip install -r requirements.txt</code>; ig-auth is installed separately via <code>pip install /tmp/ig-auth/</code>. Files: <code>services/{auth,support,coach,dashboard,org,user}-service/Dockerfile</code> + <code>poetry.lock</code></li>
+          <li><strong>auth-service Dockerfile rewrite</strong> — old version used service-dir context with no ig-auth handling, relying entirely on stale Docker layer cache. Rewritten to match the repo-root pattern of the other 5. Files: <code>services/auth-service/Dockerfile</code></li>
+        </ul>
+        <h4>Result</h4>
+        <ul>
+          <li>All 9 docker-scan jobs in <code>Backend CI — Services Security &amp; Tests</code> now pass on <code>development</code> (run <code>25270872174</code>). Previously 6 of 9 were chronically failing on layer-cache-masked path-dep errors.</li>
+          <li>Commits: <code>65b337f</code> (workflow + detect-secrets), <code>88d0552</code> (locks + ig-auth strip + auth-service rewrite)</li>
+        </ul>
 
         <h3>[2026-04-23] — Context Window &amp; LLM Optimization Guide</h3>
         <h4>Added</h4>
@@ -22097,28 +22296,43 @@
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-04-27 — Prompt #985 [Multi-Agent DAG Analysis]</div>
-          <div class="prompt-text">Review Multi_Agent_Collaborative_Model_Implementation_Plan.docx — analyze whether completing all prompts enables full DAG orchestration. Found career_talent planner gap (missing domain mapping).</div>
+          <div class="timestamp">2026-05-04 — Prompt #985 [Phase −1.6 → 1.10 sweep]</div>
+          <div class="prompt-text">/full-go complete Phase −1.6 → 1.10 — Result: Phase −1.6 (domain-stack) deployed clean — diff was tiny (+ DefaultRootObject on CloudFront), no hosted-zone changes. Phase −1.8 (monitoring-stack) confirmed empty diff — SKIP per plan. Phase −1.7 (security-stack) ROLLED BACK on `Unable to retrieve Arn attribute for AWS::WAFv2::WebACL ... resource doesn't exist` — diff matched plan (GuardDuty + RotationCheckDLQ adds) but a downstream Fn::GetAtt of InspireGeniusWaf failed. Investigation BLOCKED by router-level DNS hijack (192.168.1.254 returns 67.220.x.x for *.amazonaws.com instead of real 54.239.x.x — even @1.1.1.1 intercepted). Phase −1.9 trainer-stack and Phase −1.10 agent-engine-stack queued for GHA workflow once DNS is restored. Snapshots captured to /tmp/ig-dev-{domain,security,monitoring,trainer,agent-engine}-pre.json.</div>
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-04-27 — Prompt #986 [Doc Update: Multi-Agent Plan]</div>
-          <div class="prompt-text">/background Add career_talent planner fix to Prompt 5.1 in the implementation plan document. Add new Prompt 5.5 for Multi-Agent Activity Indicator on Dashboard and Chat pages.</div>
+          <div class="timestamp">2026-05-04 — Prompt #986 [/log-session]</div>
+          <div class="prompt-text">continue + /log-session — Document Phase −1.6/−1.8 completion, Phase −1.7 rollback investigation, DNS hijack blocker, and remaining Phase −1.9/−1.10 work. Sync to all 5 copy locations.</div>
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-04-27 — Prompt #987 [Deploy: Multi-Agent Collaboration]</div>
-          <div class="prompt-text">Run the RAG deploy-rebuild procedure end-to-end, then verify the multi-agent collaboration changes are working. Build agent-engine Docker image, push to ECR, force ECS redeploy, run health check, inspect CloudWatch logs for tracebacks and multi-agent plan entries, then update session log. Deployed image digest sha256:f781a4f7... — new ECS task b53a1b0c started cleanly with no errors. Frontend commit/push deferred (sandbox blocked git ops in inspire-genius-frontend).</div>
+          <div class="timestamp">2026-05-04 — Prompt #987 [where did we leave things?]</div>
+          <div class="prompt-text">where did we leave things? What can we restart? Task -1.4 to 1.10? — Answered: −1.4/−1.5/−1.6/−1.8 done, −1.7 rolled back (WAF GetAtt), −1.9/−1.10 not yet attempted. AWS access restored (DNS hijack only affecting `dig`, not AWS CLI). Confirmed via aws sts get-caller-identity. WAFv2 list shows InspireGeniusWaf is missing — root cause for −1.7.</div>
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-04-27 — Prompt #988 [Fix: Prompt Builder save/retrieve regressions]</div>
-          <div class="prompt-text">Investigate and fix Prompt Builder save/retrieve regressions in Agent Management — Tone/Knowledge/Style/Constraint sections don't display what was saved, and the Interaction Protocol new-entry doesn't save or retrieve. Root cause for the four section fields: getPromptVersions reversed array semantics — backend appends new prompts to the end, but the UI auto-loaded versions[0] (oldest) thinking it was the latest. For Interaction Protocol: frontend was forwarding the existing version, defeating backend auto-increment. Fixes: reverse array in getPromptVersions, take last element in getPrompts and the MentorManagement "Current System Prompt" panel, drop the version forward in protocolService. Also added 30 s TTL refresh on agents_settings DynamoDB caches and dropped interaction-protocol cache TTL to 30 s for cross-task visibility.</div>
+          <div class="timestamp">2026-05-04 — Prompt #988 [/background list remaining tasks in .md]</div>
+          <div class="prompt-text">/background list all the remaining tasks in a .md file — Created REMAINING_TASKS.md at project root with Phase −1.7 fix-forward sub-tasks, Phase −1.9/−1.10 GHA dispatch tasks, Phase −1 acceptance gate, monolith carry-overs, and quick-resume command block. Updated change_log.md and IG_project_log.html.</div>
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-04-27 — Prompt #989 [Fix: My Documents upload + agent-engine pgvector wiring]</div>
-          <div class="prompt-text">Fix the My Documents upload regression (chat-panel upload works after e3da63f, but Documents page upload still appears to fail) and close the long-standing pgvector wiring gap so monolith uploads are vectorized into the agent-engine. Root cause for the Documents page: the sequential best-effort `await vectorizeDocument(...)` inside `useDocumentUploadMulti` blocked on a 30 s asyncpg-connect timeout per file, hanging the upload-modal progress animation past its 3 s "complete" jump and looking broken to the user. Fix: make `vectorizeDocument()` calls fire-and-forget in both `useDocumentUpload` and `useDocumentUploadMulti`; pass the monolith file_id as both `document_id` and `file_id` so the agent-engine can resolve via either alias. Companion agent-engine changes ready to deploy: `_get_asyncpg_conn` now uses TLS automatically when the DSN targets RDS / RDS-Proxy regardless of environment tag (was gated on staging/prod, causing dev timeouts); `/v1/agents/documents/vectorize` accepts either `documents.id` or monolith `files.id` and bridges via S3 download + text extract + documents-row upsert + embed/store. New IAM policy `MonolithS3Read` and ECS task definition revision 18 with `MONOLITH_S3_BUCKET` env var. Investigation found the agent-engine ECS task lives in a different VPC than the Aurora cluster (cross-VPC, no peering, overlapping CIDRs masking the issue at SG level) so vectorization remains blocked at the network layer until VPC peering is added — but the frontend fire-and-forget pattern means users see no upload errors regardless. Frontend CI run: https://github.com/willb77/inspire-genius-frontend/actions/runs/25019422074</div>
+          <div class="timestamp">2026-05-05 — Prompt #989 [Phase −1.7 fix-forward]</div>
+          <div class="prompt-text">start phase -1.7 fix-forward — Result: ig-dev-security UPDATE_COMPLETE in 152.99s @ 2026-05-05T02:13:30 UTC. Commented out WAFv2 block + WafBlockedRequestsAlarm + Row 5 dashboard widgets + WafWebAclArn output in security-stack.ts. CFN handled missing physical InspireGeniusWaf gracefully on delete. + GuardDutyDetector (c6fff22af4ef4ac5bbed428ea7ea7edc), + RotationCheckDLQ + Policy, ~ WeeklyRotationCheck (DLQ + RetryPolicy), ~ AgentSecurityDashboard. Post-deploy cdk diff EMPTY. Bash quirk: npx cdk silently fails to write templates; use node_modules/.bin/cdk directly.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #990 [/full-go run -1.9 and -1.10 via GHA]</div>
+          <div class="prompt-text">/full-go run -1.9 and -1.10 via GHA — Pre-flight approval granted. First dispatched on main (default ref) — cancelled both (25356225024, 25356225605) and re-dispatched with --ref development. Both succeeded: ig-dev-trainer UPDATE_COMPLETE @ 2026-05-05T03:43:38 UTC (run 25356242414, 18m35s) — added TrainerWorkerDLQ + DlqAlarm + Policy. ig-dev-agent-engine UPDATE_COMPLETE @ 2026-05-05T04:04:18 UTC (run 25356243975, 39m51s incl. queue) — 69 resources updated, ECS service ACTIVE/COMPLETED rollout, idle desired=0. No-stub-zip checks passed both runs.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #991 [check status]</div>
+          <div class="prompt-text">check status — Reported trainer run progressing through validate(5m03s)→diff(5m09s)→deploy(in_progress at 03:38:21Z). Agent-engine still pending in concurrency queue.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #992 [/bedtime continue to -1.10]</div>
+          <div class="prompt-text">/bedtime if there are no errors continue to complete all tasks to -1.10 — Both deploys clean. Phase −1 acceptance gate PASSED: 7/9 stacks empty diff; ig-dev-trainer + ig-dev-services show only Lambda .S3Key asset-hash skew (CDK Docker bundling non-determinism, not real drift). All 9 stacks at UPDATE_COMPLETE. REMAINING_TASKS.md, change_log.md, IG_project_log.html updated. Synced to all 5 copy locations. Push deferred to user authorization.</div>
         </div>
 
       </div>
