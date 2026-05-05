@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">998</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1000</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22363,6 +22363,16 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-05 — Prompt #998 [/full-go run the 3 smoke matrices]</div>
           <div class="prompt-text">/full-go run the 3 smoke matrices — All ran. Demo URL ✅ 200. Monolith /health ✅ 200 (uptime 6.3 days, v1.0.0) via dvw79io0afgrp.cloudfront.net. Agent-engine boots ✅ scaled 0→1→0, task RUNNING task-def :17, /v1/agents/health 200 mode=lambda. PromptStudio loads ✅ SPA + trainer Lambdas (13.4MB + 13.5MB real bundles), /v1/trainer/health 200 v2.0.0, /v1/admin/prompts 422 (auth required). DynamoDB tables ACTIVE. Prompt edit + save deferred (needs super-admin JWT). −1.10 task-def revision NOT incremented (synth matched :17 exactly; not strict plan-conformant but functionally OK). −1.10 ws-proxy ARN unchanged ✅. Cost ~$0.05.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #999 [whats next]</div>
+          <div class="prompt-text">whats next — Surveyed Phase −1 carry-overs + forward options. Surfaced 3: (1) monolith SECRET_KEY rotation (10 min, low risk), (2) PromptStudio JWT-write smoke (5 min, needs browser session), (3) Combined Plan Phase 0 / Track E1 cross-VPC migration. Recommended (1) → (3).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #1000 [/full-go do 1 — monolith SECRET_KEY rotation]</div>
+          <div class="prompt-text">/full-go do 1 (path a — SSM) — Pre-flight: confirmed AWS identity. Located instance i-029f0b2e216a70acb (AL2023, no IAM profile). Created IAM role+profile ig-dev-backend-ssm-role/ig-dev-backend-ssm-profile (AmazonSSMManagedInstanceCore) and attached. SSM agent did not register within 6 min — fell back to EC2 Instance Connect (60s ephemeral key push, SG already allows :22 from 0.0.0.0/0). VERIFIED IN PROD: /opt/inspire-genius/.env already has SECRET_KEY=817efb5a... (matches CDK rotation from 2026-04-15). Running container inspire-genius-backend-1 (started 2026-04-29, 0 restarts) has same value in environ. /health → HTTP 200 (3.1ms). Carry-over from agents.md was STALE DOCUMENTATION — rotation already complete in prod. Updated agents.md PARTIALLY FIXED → FIXED 2026-05-05. No process/file change made on the instance. Side-observation: monolith env has plaintext AWS access keys exposed in /proc/.../environ — flagged separately, not addressed.</div>
         </div>
 
       </div>
