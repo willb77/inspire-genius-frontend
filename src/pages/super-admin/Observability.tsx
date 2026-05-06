@@ -23,6 +23,9 @@ import {
 } from "lucide-react"
 import { useDashboardMetrics } from "@/hooks/observability/useObservability"
 import { cn } from "@/lib/utils"
+// Combined Plan §A.E3.5 — task-agent observability
+import TasksObservabilityTab from "@/components/observability/TasksObservabilityTab"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function Observability() {
   const [timeRange, setTimeRange] = useState("today")
@@ -62,6 +65,18 @@ export default function Observability() {
             </Button>
           </div>
         </div>
+
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="tasks">
+            <TasksObservabilityTab />
+          </TabsContent>
+
+          <TabsContent value="overview" className="space-y-6">
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -198,6 +213,8 @@ export default function Observability() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </SuperAdminLayout>
   )
