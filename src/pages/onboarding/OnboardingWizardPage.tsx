@@ -30,6 +30,7 @@ type FormValues = z.input<typeof schema>
 
 export default function OnboardingWizardPage() {
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
+  const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -56,6 +57,7 @@ export default function OnboardingWizardPage() {
 
   const onSubmit = (values: FormValues) => {
     const parsed = schema.parse(values)
+    setLastRequest(parsed as Record<string, unknown>)
     mutation.mutate(parsed)
   }
 
@@ -63,7 +65,14 @@ export default function OnboardingWizardPage() {
     return (
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <h1 className="text-2xl font-semibold">Onboarding Wizard</h1>
-        <TaskAgentResultCard result={result} onRerun={() => setResult(null)} />
+        <TaskAgentResultCard
+          result={result}
+          onRerun={() => setResult(null)}
+          taskSlug="onboarding"
+          agentId="forge"
+          requestPayload={lastRequest}
+          title="Onboarding plan"
+        />
       </div>
     )
   }

@@ -30,6 +30,7 @@ type FormValues = z.infer<typeof schema>
 
 export default function TeamCompositionPage() {
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
+  const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -65,12 +66,14 @@ export default function TeamCompositionPage() {
       toast.error("At least one member summary is required")
       return
     }
-    mutation.mutate({
+    const payload = {
       team_name: values.team_name,
       team_purpose: values.team_purpose,
       member_summaries: memberSummaries,
       target_skills: targetSkills,
-    })
+    }
+    setLastRequest(payload as Record<string, unknown>)
+    mutation.mutate(payload)
   }
 
   if (result) {
@@ -78,7 +81,14 @@ export default function TeamCompositionPage() {
       <ManagerLayout>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Team Composition</h1>
-          <TaskAgentResultCard result={result} onRerun={() => setResult(null)} />
+          <TaskAgentResultCard
+            result={result}
+            onRerun={() => setResult(null)}
+            taskSlug="team-composition"
+            agentId="atlas"
+            requestPayload={lastRequest}
+            title="Team composition"
+          />
         </div>
       </ManagerLayout>
     )

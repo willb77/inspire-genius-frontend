@@ -31,6 +31,7 @@ type FormValues = z.infer<typeof schema>
 
 export default function InterviewPrepPage() {
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
+  const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,14 +56,24 @@ export default function InterviewPrepPage() {
     },
   })
 
-  const onSubmit = (values: FormValues) => mutation.mutate(values)
+  const onSubmit = (values: FormValues) => {
+    setLastRequest(values as Record<string, unknown>)
+    mutation.mutate(values)
+  }
 
   if (result) {
     return (
       <ManagerLayout>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Interview Prep</h1>
-          <TaskAgentResultCard result={result} onRerun={() => setResult(null)} />
+          <TaskAgentResultCard
+            result={result}
+            onRerun={() => setResult(null)}
+            taskSlug="interview-prep"
+            agentId="maven"
+            requestPayload={lastRequest}
+            title="Interview prep"
+          />
         </div>
       </ManagerLayout>
     )
