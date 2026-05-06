@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1010</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1011</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22424,6 +22424,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-06 — Prompt #1009 [/background close E3 gate v4 — DONE]</div>
           <div class="prompt-text">ROOT CAUSE FOUND. 60s lag was asyncpg connect-on-pool-checkout default in _verify_task_endpoint_registered. ALB access logs showed target_processing_time=-1, ruling out network. Wrapped the agent_configs lookup in asyncio.wait_for(timeout=2.0). Image rev29 (sha256:4c16321bdb53…) deployed. Smoke matrix ALL PASS: 5 task agents 200 OK in 4-18s, auth gate 403 in 108-125ms, ECS=0 → 503 in 187ms, schema valid, EventBridge emit verified. E3 acceptance gate FULLY CLOSED.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1011 [E3 follow-up rollup PM5]</div>
+          <div class="prompt-text">User asked: "are these follow-up issues addressed?" then "yes roll them up". Real root cause: RDS Proxy had 0 registered targets (CDK declared, reality drifted). Registered Aurora cluster, set pool_timeout=5 + asyncpg connect timeout=5 in app/db.py and app/memory/database.py. Image rev30 (sha256:91f5b6b228…) deployed. Smoke matrix PASS again — but now ALL agent-engine routes using Depends(get_db) inherit the 5s timeouts, not just task agents.</div>
+        </div>
         </div>
   
 </div>

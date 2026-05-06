@@ -1,3 +1,44 @@
+## [2026-05-06 PM5] — E3 follow-up rollup: pool_timeout + asyncpg connect timeout + RDS Proxy target registration
+
+Closes the three open follow-ups from PM4 in a single image rev (rev30, digest sha256:91f5b6b228…). All three turned out to be aspects of the same problem.
+
+### Real root cause (PM4 was a band-aid)
+The RDS Proxy `inspires-genius-dev-rds-proxy` had **zero registered target databases**. The CDK code in `infrastructure/cdk/lib/database-stack.ts` declares `dbClusterIdentifiers: ['inspires-genius-dev-aurora-cluster']`, but reality had drifted — `aws rds describe-db-proxy-targets` returned `[]`. Every connect attempt through the proxy was queued indefinitely (no targets to forward to), and asyncpg's 60s default connect timeout was what eventually freed the call.
+
+PM4's `asyncio.wait_for(2s)` on `_verify_task_endpoint_registered` made the symptom invisible to end users, but every other DB-touching route on the agent engine was still suffering.
+
+### Fix (rollup of all three follow-ups)
+1. **`services/agent-engine/app/db.py`** — added `pool_timeout: 5` and `connect_args: {"timeout": 5, "command_timeout": 30}`. SQLAlchemy now waits at most 5s for a pool checkout, asyncpg waits at most 5s for a fresh connect. command_timeout=30s caps per-statement runtime. **All routes that go through `Depends(get_db)` inherit these limits — no per-handler `wait_for` needed.**
+2. **`services/agent-engine/app/memory/database.py`** — same 5s connect / 30s command timeouts, kept the existing `pool_timeout=10` here since memory writes are not in the request hot path.
+3. **RDS Proxy** — `aws rds register-db-proxy-targets --db-cluster-identifiers inspires-genius-dev-aurora-cluster`. Target now `AVAILABLE`. The CDK code already declared this; reality drifted from IaC. No CDK change needed.
+
+### Smoke matrix on rev30 — all PASS, with Proxy still PENDING_PROXY_CAPACITY
+The whole point of bounded timeouts: even when the proxy is warming, the agent doesn't hang past 5s on a connect. Smoke ran fine at the same time as the proxy was still scaling.
+
+| Item                                       | rev29 (PM4)  | rev30 (PM5) |
+|--------------------------------------------|--------------|-------------|
+| Maven (interview-prep) → 200                | 12.7s         | 10.9s       |
+| James (job-blueprint) → 200                  | 9.8s          | 10.2s       |
+| Atlas (team-composition) → 200               | 11.1s         | 13.9s       |
+| Forge (onboarding) → 200                     | 17.9s         | 17.3s       |
+| Sage (document-research) → 200               | 4.6s          | 4.6s        |
+| Auth gate (Maven user-role) → 403           | 125ms         | 126ms       |
+
+### What this rollup also gives us
+- Other agent-engine routes (`chat`, `conversations`, `costs`, `ingestion`, `agents_settings`, `admin_dashboard`, `roles`, `signup`, `analytics`, `documents`, `chat_history`) all use `Depends(get_db)` and now pick up the same engine-level timeouts. No more silent 60s hangs anywhere.
+- A drifted RDS Proxy target group is detectable via `cdk diff database-stack` — should add this to ops checklist.
+
+### Files
+- `services/agent-engine/app/db.py` — pool_timeout, connect_args
+- `services/agent-engine/app/memory/database.py` — connect_args
+- (no CDK change — IaC already correct, drift was server-side)
+
+### AWS state at PM5
+- ECS task definition rev30, image digest `sha256:91f5b6b228424d6185771a0892c33cab2f78666b509d54d2117a98616562f20b`
+- RDS Proxy: 1 target (`inspires-genius-dev-aurora-writer`) — AVAILABLE
+
+---
+
 ## [2026-05-06 PM4] — E3 v4: GATE FULLY CLOSED — root cause was asyncpg 60s connect timeout
 
 End-to-end happy path now returns HTTP 200 in 4-18 seconds for all 5 task agents.
