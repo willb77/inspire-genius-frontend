@@ -1,3 +1,44 @@
+## [2026-05-06 PM3] — E3 v3 attempts: dedicated API GW routes + uvicorn keep-alive (60s lag NOT resolved)
+
+Continued the v2 work to chase the end-user 503 issue. Two more interventions tried, neither fixed it; documenting the dead-ends so the next attempt doesn't repeat them.
+
+### What was attempted
+- **Dedicated API GW integration + 5 specific POST routes** (`integrations/a0rpifc`, then re-pointed to chat's healthy `nj5msbs`). Routes created via `aws apigatewayv2 create-route` for `POST /v1/agents/{maven,james,atlas,forge,sage}/run`. **Outcome: same 60s lag.** The integration / connection-pool theory was wrong — both the dedicated and chat-shared integrations exhibit the lag for these routes.
+- **Uvicorn `--timeout-keep-alive 75`** in `services/agent-engine/Dockerfile` (was 5s default, less than ALB idle 60s). Rebuilt + pushed `e3-keepalive` image (`sha256:21362405579913…`), tagged `:latest`, ECS rev28 deployed. **Outcome: same 60s lag.** The keep-alive interaction with ALB idle was not the cause.
+
+### What we now know empirically
+- POST routes that FastAPI rejects fast (in <50 ms — 401, 403, 404, 405, 422 from missing/invalid headers or routes) come through API GW in 100-200 ms. **No lag.**
+- POST routes that pass FastAPI validation and enter the handler take **exactly 60 seconds** before the container receives the request. Once received, processing is 2-4 seconds.
+- This is independent of integration (catch-all `99963h9`, dedicated `a0rpifc`, or chat's `nj5msbs`).
+- This is independent of HTTP version (HTTP/1.1 default, HTTP/1.0 with `--http1.0`, `Connection: close` header).
+- Auth-gate-rejected POSTs (e.g. `x-user-role: user` on Maven) return in 130 ms — they hit FastAPI then rejection happens before any await, so no I/O is initiated. That confirms the lag is not in the FastAPI handler.
+
+### New hypotheses (for E3 v3)
+1. **API GW HTTP API has a request-body buffering quirk** with HTTP_PROXY → VPC link integrations when the upstream is an ALB. Specifically, when the request body is non-trivial (`Content-Type: application/json` with payload), some path through the integration adds a 60s delay we can't see.
+2. **CloudWatch Logs visibility gap** — maybe the ALB never sends the request to the target until 60s pass. Need ALB access logs enabled to confirm.
+3. **API GW route caching** — when a new route is added, the first POST through it may be slow as API GW caches the route mapping. Doesn't fully explain why even rapid retries hang.
+
+### Recommendation for E3 v3
+Enable ALB access logs on `ig-dev-agent-engine-alb-v2` to see exact arrival/forward timing per request. If ALB receives the request immediately but holds it 60s before forwarding to the target, the issue is in ALB. If ALB never sees the request until 60s, the issue is in API GW or VPC link.
+
+Until that data is in hand, do NOT keep flipping integration/keep-alive/route knobs — every iteration is a 5-min ECS deploy and the data so far rules out the obvious causes.
+
+### What still works (E3 acceptance at the agent-engine layer is unchanged)
+- Routes registered ✓ (proven by 422/403 fast responses)
+- Auth gate denies user role on Maven/James ✓ (verified, 130 ms)
+- Container processes valid POST in 2-4 s ✓ (verified in CloudWatch Logs once the request reaches it)
+- EventBridge `tasks.invocation` events emitted ✓ (verified in container logs)
+
+The only failure mode is the 60s lag between API GW and container — end-user observes 503 from API GW's 30s integration timeout.
+
+### AWS state changes today (PM3)
+- Dockerfile CMD now `uvicorn ... --timeout-keep-alive 75` (kept — better default regardless of root cause).
+- ECS `ig-dev-agent-engine` on task def revision 28 (image digest `sha256:21362405579913…`).
+- ECR `:latest` → digest `sha256:21362405579913…`.
+- API GW HTTP API has 5 new dedicated POST routes for task agents (kept for now — they don't make the lag worse and may help once root cause is known).
+
+---
+
 ## [2026-05-06 PM2] — E3 gate v2: skip_rag fast path + VPC-link lag diagnosis
 
 Follow-up on the API Gateway 30s timeout issue surfaced in PM1.

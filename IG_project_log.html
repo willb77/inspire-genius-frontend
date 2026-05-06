@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1008</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1009</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22417,7 +22417,12 @@
           <div class="prompt-text">/background closing the E3 gate (1–4 above) — pass 2: added skip_rag fast path to base_agent._build_messages_with_rag (task agents now bypass knowledge/personal/cultural retrieval), task router opts in by default. Rebuilt + pushed image (sha256:17fa16c6539e…), task def rev27 deployed. Container processes sage call end-to-end in ~3s now (was 60+s with RAG). REMAINING: POST through API GW catch-all integration sees ~60s lag before reaching container — ALB stale-connection-pool signature. POST /v1/agents/chat (dedicated integration) is fine. Recommend dedicated API GW integration for the 5 task agent routes (E3 v3). Restored ALB idle_timeout to 60s default after a 25s test ruled it out as the fix.</div>
   
 </div>
-  </div>
+  
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1009 [/background close E3 gate v3]</div>
+          <div class="prompt-text">/background closing the E3 gate (1–4 above) — pass 3: tried 5 dedicated API GW POST routes (catch-all replacement) and uvicorn --timeout-keep-alive 75. Neither fixed the 60s lag for valid POSTs. Lag is independent of integration, HTTP version, and Connection header. Auth-rejected POSTs (403 from x-user-role: user) come back in 130ms, so handler entry is fine. Container processes the request in 2-4s once it arrives — but it arrives exactly 60s after API GW receipt. Need ALB access logs enabled to localize the 60s wait. Stopping the knob-flipping until data is available. Image rev28 (sha256:21362405579913…), Dockerfile keep-alive=75 kept, 5 new API GW routes kept.</div>
+  
+</div>
 
   <script>
     document.querySelectorAll('.tab').forEach(tab => {
