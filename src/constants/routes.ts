@@ -38,6 +38,7 @@ export const ROUTES = {
     KNOWLEDGE_BASE: "/super-admin/knowledge-base",
     CULTURAL_CONTENT: "/super-admin/cultural-content",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
+    RESEARCH: "/super-admin/research",
   },
   MANAGER: {
     BASE: "/manager",
@@ -55,6 +56,9 @@ export const ROUTES = {
     ANALYTICS: "/manager/analytics",
     BULK_IMPORT: "/manager/bulk-import",
     SETTINGS: "/manager/settings",
+    JOB_BLUEPRINT: "/manager/job-blueprint",
+    INTERVIEW_PREP: "/manager/interview-prep",
+    TEAM_COMPOSITION: "/manager/team-composition",
   },
   COMPANY_ADMIN: {
     BASE: "/company-admin",
@@ -95,6 +99,7 @@ export const ROUTES = {
     THREE: "/onboarding/three",
     FOUR: "/onboarding/four",
     FIVE: "/onboarding/five",
+    WIZARD: "/onboarding/wizard",
   },
   ONBOARDING_DETAILS: {
     ONE: "/onboarding/details/one",
