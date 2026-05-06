@@ -31,6 +31,7 @@ type FormValues = z.infer<typeof schema>
 
 export default function JobBlueprintPage() {
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
+  const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,7 +56,10 @@ export default function JobBlueprintPage() {
     },
   })
 
-  const onSubmit = (values: FormValues) => mutation.mutate(values)
+  const onSubmit = (values: FormValues) => {
+    setLastRequest(values as Record<string, unknown>)
+    mutation.mutate(values)
+  }
 
   const promptPreview = JSON.stringify(form.watch())
 
@@ -64,7 +68,14 @@ export default function JobBlueprintPage() {
       <ManagerLayout>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Job Blueprint Match</h1>
-          <TaskAgentResultCard result={result} onRerun={() => setResult(null)} />
+          <TaskAgentResultCard
+            result={result}
+            onRerun={() => setResult(null)}
+            taskSlug="job-blueprint"
+            agentId="james"
+            requestPayload={lastRequest}
+            title="Job blueprint match"
+          />
         </div>
       </ManagerLayout>
     )

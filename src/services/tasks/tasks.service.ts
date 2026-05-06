@@ -60,6 +60,27 @@ export interface DocumentResearchRequest {
   session_id?: string
 }
 
+// ─── Save-to-workspace types ──────────────────────────────────────
+
+export interface SaveTaskResultRequest {
+  task_slug: string
+  agent_id: string
+  request_payload: Record<string, unknown>
+  result_payload: Record<string, unknown>
+  confidence?: number
+  title?: string
+  note?: string
+}
+
+export interface SavedTaskResultRow {
+  id: string
+  task_slug: string
+  agent_id: string
+  title: string | null
+  confidence: number | null
+  created_at: string
+}
+
 // ─── API calls ────────────────────────────────────────────────────
 
 const BASE = '/v1/tasks'
@@ -88,5 +109,15 @@ export const tasksService = {
   documentResearch: (body: DocumentResearchRequest) =>
     api
       .post<TaskAgentResponse>(`${BASE}/document-research`, body)
+      .then((r) => r.data),
+
+  saveResult: (body: SaveTaskResultRequest) =>
+    api
+      .post<SavedTaskResultRow>(`${BASE}/results`, body)
+      .then((r) => r.data),
+
+  listResults: (params?: { task_slug?: string; limit?: number }) =>
+    api
+      .get<SavedTaskResultRow[]>(`${BASE}/results`, { params })
       .then((r) => r.data),
 }

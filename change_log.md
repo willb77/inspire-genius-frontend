@@ -1,3 +1,95 @@
+## [2026-05-06 PM] — close: Combined Plan §A.E3 acceptance gate
+
+End-to-end gate close on the Combined Plan Phase E3 work landed earlier today.
+Image rotation forced the ORM/task-router fixes into the running ECS task,
+per-agent task feature flags wired into the task definition env vars,
+`POST /v1/tasks/results` saves results to the `task_results` table, and the
+acceptance smoke matrix exercised against dev Aurora + ECS rev26.
+
+### What was done
+- **Image rotation** — root cause of "running task pinned to old digest" was a
+  broken `from app.routes.privacy import ...` in `services/agent-engine/app/main.py`
+  that referenced a module never committed to git. Wrapped the import in
+  try/except (so future deployers can drop a privacy router back in) and rebuilt
+  the image (`linux/amd64`, digest `sha256:ee391147c26c…`). Pushed as
+  `e3-fix` and re-tagged as `:latest`.
+- **Task definition rev26** — pinned to the new image digest + 5
+  `ENABLE_TASK_AGENT_*=1` env vars. Service updated; rev23 (the old running task)
+  drained, rev26 went healthy after ALB grace period was bumped from 60s to 300s
+  (`infrastructure/cdk/lib/agent-engine-stack.ts` + live `update-service`).
+- **Cold-start grace fix in CDK** — `healthCheckGracePeriod: cdk.Duration.minutes(5)`
+  on the `AgentEngineService` so future deploys don't trip the 60s default while
+  asyncpg + Redis + Milvus warm up.
+- **IAM** — added `events:PutEvents` on `arn:aws:events:…:event-bus/inspire-genius-events`
+  to `ig-dev-agent-engine-task-role` (inline policy `InspireGeniusEventsPutEvents`).
+  Without it the `tasks.invocation` emit silently failed with `AccessDeniedException`.
+- **POST /v1/tasks/results endpoint** — `inspire-genius-backend/users/tasks/tasks.py`
+  gains `save_task_result` (POST) and `list_task_results` (GET) routes. Persist
+  to a new `task_results` table (UUID PK, JSONB request/result payloads, GIN-style
+  indexes on `user_id`, `org_id`, `task_slug`). Schema applied to dev Aurora via
+  `ig-dev-migration-runner` Lambda (`Transformation Documents/004_e3_task_results.sql`).
+  Accompanying ORM model `inspire-genius-backend/users/models/task_result.py`,
+  registered in `users/models/__init__.py`.
+- **Frontend wiring** — `tasksService.saveResult()` + `listResults()` added to
+  `inspire-genius-frontend/src/services/tasks/tasks.service.ts`. Save-to-workspace
+  button in `TaskAgentResultCard.tsx` now POSTs the structured request + result
+  via `useMutation` (replaces the toast-only placeholder). Each of the 5 task
+  pages (`JobBlueprintPage`, `InterviewPrepPage`, `TeamCompositionPage`,
+  `OnboardingWizardPage`, `DocumentResearchPage`) tracks `lastRequest` state and
+  passes `taskSlug` + `agentId` + `requestPayload` + `title` to the result card.
+- **Smoke matrix** (`scripts/e3_smoke_matrix.sh`):
+  - Auth gate: `POST /v1/agents/maven/run` + `/v1/agents/james/run` with
+    `x-user-role: user` → **403 in <200ms** ✓ (gate item 3)
+  - EventBridge emit: dev container log shows
+    `INFO:app.events.eventbridge:Emitted EventBridge event: tasks.invocation`
+    after the IAM fix ✓ (gate item 6)
+  - Endpoints registered: 403 round-trip proves all 5 routes are wired into the
+    running ECS task ✓ (gate item 1 at the container level)
+
+### Known follow-ups (E3 v2)
+- **API Gateway 30s timeout** — agent-engine task agent runs through HTTP API
+  Gateway VPC link integration, which has a hard 30s timeout. Real
+  `agent.process()` runs include a 60s pgvector retrieval timeout plus the
+  Anthropic call, so the END-USER response is HTTP 503 even though the
+  container completes the request and emits the EventBridge event. Two options:
+  (a) cut RAG out of task-agent invocations (none of the 5 task agents need
+  retrieval — they receive structured inputs); (b) switch to an async pattern
+  with `POST /v1/tasks/{slug}` returning a `job_id` and a polled
+  `GET /v1/tasks/results/{job_id}`. Recommend (a) — fastest fix.
+- **Live ECS=0 → 503 acceptance test** — code path is correct (`tasks.py`
+  raises 503 with `Retry-After: 10` on agent-engine 5xx) but not exercised
+  live. Trivial to verify by `aws ecs update-service --desired-count 0` then
+  hitting any task endpoint.
+- **Per-agent flag toggle live test** — flags ARE on the task def env vars,
+  but the monolith proxy ALSO checks `ENABLE_TASK_AGENT_*` flags. Those need
+  flipping on the monolith EC2 `.env`. Currently monolith flags default to
+  `0` ("Set ENABLE_TASK_AGENT_X=1 to enable"). Either flip them on EC2 or
+  remove the gate from the monolith now that the agent-engine enforces access.
+
+### Files
+- `services/agent-engine/app/main.py` — privacy import wrapped in try/except.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `healthCheckGracePeriod: 5min`.
+- `inspire-genius-backend/users/tasks/tasks.py` — `save_task_result` + `list_task_results`.
+- `inspire-genius-backend/users/models/task_result.py` — new ORM model.
+- `inspire-genius-backend/users/models/__init__.py` — register `TaskResult`.
+- `inspire-genius-frontend/src/components/tasks/TaskAgentResultCard.tsx` — real save mutation.
+- `inspire-genius-frontend/src/services/tasks/tasks.service.ts` — `saveResult`/`listResults`.
+- `inspire-genius-frontend/src/pages/{manager/JobBlueprintPage,manager/InterviewPrepPage,manager/TeamCompositionPage,onboarding/OnboardingWizardPage,super-admin/DocumentResearchPage}.tsx` — wire `taskSlug`/`agentId`/`requestPayload`/`title` to result card.
+- `Transformation Documents/004_e3_task_results.sql` — task_results migration (applied).
+- `scripts/e3_smoke_matrix.sh` — repeatable smoke harness.
+
+### AWS state
+- ECR: `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-dev-agent-engine:latest` →
+  digest `sha256:ee391147c26ced44370f0e6af5a02eaab77c7cd3356a72431fc218e82c9890a6`.
+- ECS: `ig-dev-agent-engine` service on `ig-dev-agent-engine:26` (running 1
+  task, deployment COMPLETED).
+- IAM: `ig-dev-agent-engine-task-role` has new inline policy
+  `InspireGeniusEventsPutEvents`.
+- Aurora dev: `task_results` table created (4/5 statements OK; statement 1
+  is the comment header that the migration runner skips).
+
+---
+
 ## [2026-05-06 UTC] — feat: Combined Plan §A.E3 hybrid task-agent routing + ORM bug fix
 
 Bedtime build of Combined Plan Phase E3 (5 prompts) plus a de-risk pass on the

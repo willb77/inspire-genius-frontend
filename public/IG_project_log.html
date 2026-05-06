@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1006</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1007</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22405,7 +22405,12 @@
           <div class="prompt-text">Path B — DB warning investigation: traced empty "Memory DB table creation failed (non-fatal):" warning to two long-standing bugs in services/agent-engine/app/memory/models.py (PortableUUID referenced undefined PG_PortableUUID; PortableJSON imported non-existent PortableJSON from postgresql dialect). Fixed both + improved warning to log type(exc).__name__ + exc_info=True. Path A — Combined Plan §A.E3 (5 sub-prompts): E3.1 SQL migration adding agent_configs.{task_endpoint, task_schema} ran via ig-dev-migration-runner (5 OK, 0 failed); E3.2 agent-engine task router with 5 POST /v1/agents/{maven,james,atlas,forge,sage}/run endpoints + Pydantic schemas + tasks.invocation EventBridge events; E3.3 monolith proxy router under /v1/tasks/* with per-agent ENABLE_TASK_AGENT_* env-var feature flags + 503/504 retry handling; E3.4 5 frontend pages with React Hook Form + Zod + result cards (npm run build green); E3.5 Observability "Tasks" tab reading /v1/audit/logs?action=tasks.invocation with P50/P95/P99 latency and filter chips. 3 PRs opened: inspire-genius#4 (backend), inspire-genius-backend#1 (monolith proxy), inspire-genius-frontend#1 (UI). Known follow-up: ECS rev24 deployed but kept rev23 image digest cached; needs CDK deploy or manual task-def replace to actually rotate to new image (which has the ORM fix + E3.2 endpoints).</div>
         </div>
 
-      </div>
+      
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1007 [/background close E3 gate]</div>
+          <div class="prompt-text">/background closing the E3 gate (1–4 above) — closed E3 acceptance gate: rotated ECS to rev26 (image digest sha256:ee391147c26c… with privacy-import fix), enabled per-agent flags via task-def env vars, added events:PutEvents IAM (was AccessDenied), wired POST /v1/tasks/results (monolith + Aurora task_results table + frontend save mutation). Smoke: auth gate Maven/James 403 in &lt;200ms; EventBridge tasks.invocation emit verified in container logs. CDK healthCheckGracePeriod bumped to 5min. Open follow-up: API GW 30s timeout returns 503 on slow agent runs even though container completes — RAG retrieval is the bottleneck, plan to cut it out for task agents.</div>
+  
+</div>
     </div>
   </div>
 

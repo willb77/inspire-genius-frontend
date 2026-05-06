@@ -30,6 +30,7 @@ type FormValues = z.infer<typeof schema>
 
 export default function DocumentResearchPage() {
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
+  const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -56,11 +57,13 @@ export default function DocumentResearchPage() {
     const tags = values.document_filter_tags
       ? values.document_filter_tags.split(",").map((t) => t.trim()).filter(Boolean)
       : undefined
-    mutation.mutate({
+    const payload = {
       question: values.question,
       document_filter_tags: tags,
       summarize_only: values.summarize_only,
-    })
+    }
+    setLastRequest(payload as Record<string, unknown>)
+    mutation.mutate(payload)
   }
 
   if (result) {
@@ -68,7 +71,14 @@ export default function DocumentResearchPage() {
       <SuperAdminLayout>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Document Research</h1>
-          <TaskAgentResultCard result={result} onRerun={() => setResult(null)} />
+          <TaskAgentResultCard
+            result={result}
+            onRerun={() => setResult(null)}
+            taskSlug="document-research"
+            agentId="sage"
+            requestPayload={lastRequest}
+            title="Document research"
+          />
         </div>
       </SuperAdminLayout>
     )
