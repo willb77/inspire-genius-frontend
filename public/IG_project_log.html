@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1009</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1010</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22421,6 +22421,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-06 — Prompt #1009 [/background close E3 gate v3]</div>
           <div class="prompt-text">/background closing the E3 gate (1–4 above) — pass 3: tried 5 dedicated API GW POST routes (catch-all replacement) and uvicorn --timeout-keep-alive 75. Neither fixed the 60s lag for valid POSTs. Lag is independent of integration, HTTP version, and Connection header. Auth-rejected POSTs (403 from x-user-role: user) come back in 130ms, so handler entry is fine. Container processes the request in 2-4s once it arrives — but it arrives exactly 60s after API GW receipt. Need ALB access logs enabled to localize the 60s wait. Stopping the knob-flipping until data is available. Image rev28 (sha256:21362405579913…), Dockerfile keep-alive=75 kept, 5 new API GW routes kept.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1009 [/background close E3 gate v4 — DONE]</div>
+          <div class="prompt-text">ROOT CAUSE FOUND. 60s lag was asyncpg connect-on-pool-checkout default in _verify_task_endpoint_registered. ALB access logs showed target_processing_time=-1, ruling out network. Wrapped the agent_configs lookup in asyncio.wait_for(timeout=2.0). Image rev29 (sha256:4c16321bdb53…) deployed. Smoke matrix ALL PASS: 5 task agents 200 OK in 4-18s, auth gate 403 in 108-125ms, ECS=0 → 503 in 187ms, schema valid, EventBridge emit verified. E3 acceptance gate FULLY CLOSED.</div>
+        </div>
   
 </div>
 

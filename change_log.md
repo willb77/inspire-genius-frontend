@@ -1,3 +1,72 @@
+## [2026-05-06 PM4] — E3 v4: GATE FULLY CLOSED — root cause was asyncpg 60s connect timeout
+
+End-to-end happy path now returns HTTP 200 in 4-18 seconds for all 5 task agents.
+
+### Root cause
+`_verify_task_endpoint_registered()` in `services/agent-engine/app/routes/task_agents.py`
+opens an asyncpg session via `async_session_factory()` to verify the
+agent_configs row. **`agent_configs` is empty in dev** (the E3.1 migration
+seeded UPDATE-only and the table had no rows yet), so the query returns 0
+rows fast — but the asyncpg CONNECT itself can stall up to 60s when the RDS
+Proxy connection pool is starved.
+
+The 60s connect timeout (asyncpg's default) lined up suspiciously with the
+ALB idle_timeout (60s default) and the API GW HTTP API integration timeout
+(30s hard limit), which is why earlier passes mistook this for a network
+issue. ALB access logs revealed the truth: ALB sent the request to the
+target with `request_processing_time=0.000`, then `target_processing_time=-1`
+(no response received within the idle period).
+
+### Fix
+Wrapped the agent_configs lookup in `asyncio.wait_for(timeout=2.0)`.
+`asyncio.TimeoutError` is caught and treated as a non-fatal warning, same
+as any other lookup failure. `agent.process()` is the source of truth for
+whether the task can run, so a 2-second informational lookup is the right
+trade-off.
+
+### Smoke matrix — ALL PASS
+
+| Item                                                  | Result        |
+|-------------------------------------------------------|---------------|
+| Maven (interview-prep) — super-admin → 200             | PASS (12.7s)  |
+| James (job-blueprint) — super-admin → 200              | PASS (9.8s)   |
+| Atlas (team-composition) — super-admin → 200           | PASS (11.1s)  |
+| Forge (onboarding) — super-admin → 200                 | PASS (17.9s)  |
+| Sage (document-research) — super-admin → 200           | PASS (4.6s)   |
+| Schema: agent_name + content + confidence + metadata   | PASS          |
+| Auth gate: user role on Maven → 403                     | PASS (125ms)  |
+| Auth gate: user role on James → 403                     | PASS (108ms)  |
+| ECS desired_count=0 → 503                                | PASS (187ms)  |
+| `tasks.invocation` EventBridge event emitted            | PASS (PM1)    |
+
+### What also got cleaned up earlier in the session
+- `services/agent-engine/app/main.py` — privacy router import wrapped in try/except.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `healthCheckGracePeriod: 5min` (60s default tripped during cold start).
+- IAM `ig-dev-agent-engine-task-role` — added inline policy `InspireGeniusEventsPutEvents`.
+- `Dockerfile` CMD — `uvicorn ... --timeout-keep-alive 75`.
+- `services/agent-engine/app/agents/base_agent.py` — `skip_rag` fast path for task-agent contexts.
+- ALB access logs enabled (S3 bucket `ig-dev-alb-access-logs-568505405842`).
+- Aurora `task_results` table created via migration-runner Lambda.
+- Monolith `users/tasks/tasks.py` gains `save_task_result` + `list_task_results`.
+- Frontend `TaskAgentResultCard.tsx` wires real Save-to-workspace mutation.
+
+### AWS state at gate close
+- ECR `:latest` → digest `sha256:4c16321bdb53fa9b0560b6c979053d12930347d5174cb081ea93dd4b9402591b`
+- ECS `ig-dev-agent-engine` → task definition rev29, 1 healthy task
+- API GW HTTP API: catch-all `ANY /v1/agents/{proxy+}` is the route used (dedicated POST routes from PM3 were deleted — they didn't help, the catch-all is sufficient)
+- ALB idle_timeout: 60s default (kept)
+
+### Lesson
+The asyncpg/SQLAlchemy default of 60s connect-on-pool-checkout is dangerous
+behind a 30s API gateway. Three follow-ups for the broader codebase:
+1. Audit other agent-engine routes that hit the DB in the request hot path
+   — wrap in `asyncio.wait_for` with a sensible deadline.
+2. Reduce SQLAlchemy `pool_timeout` to e.g. 5s globally.
+3. Check why RDS Proxy was starving — likely too many idle connections from
+   long-running ECS tasks; the bedtime cleanup may have helped.
+
+---
+
 ## [2026-05-06 PM3] — E3 v3 attempts: dedicated API GW routes + uvicorn keep-alive (60s lag NOT resolved)
 
 Continued the v2 work to chase the end-user 503 issue. Two more interventions tried, neither fixed it; documenting the dead-ends so the next attempt doesn't repeat them.
