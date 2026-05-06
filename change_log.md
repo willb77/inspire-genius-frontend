@@ -1,3 +1,72 @@
+## [2026-05-06 PM2] — E3 gate v2: skip_rag fast path + VPC-link lag diagnosis
+
+Follow-up on the API Gateway 30s timeout issue surfaced in PM1.
+
+### What was done
+- **`skip_rag` fast path** in `services/agent-engine/app/agents/base_agent.py`:
+  When `context.metadata["skip_rag"]` is truthy, `_build_messages_with_rag()`
+  bypasses knowledge / personal / cultural retrieval and falls back to
+  `_build_messages()` — the same path used for vanilla chat. Task agents
+  receive structured form input and don't need retrieval.
+- **Task router sets `skip_rag=True` by default** in
+  `services/agent-engine/app/routes/task_agents.py::_make_context`. Caller
+  code can opt-in to RAG by setting `extra_metadata={"skip_rag": False}`.
+- **Image rebuilt + tagged** as `e3-fast` (digest
+  `sha256:17fa16c6539e9f5cb62371b83c4da60f77479fc990cd84b93ed004faceb9c9f5`)
+  and re-tagged `:latest`. Task definition `ig-dev-agent-engine:27`
+  registered with the digest pinned. Service updated; rev26 task drained,
+  rev27 task came up healthy.
+
+### Smoke result with skip_rag (rev27, fresh task)
+- **Container-side**: POST /v1/agents/sage/run with valid body completes in
+  ~3 seconds end-to-end (agent_configs lookup → Anthropic call → EventBridge
+  emit). Verified in CloudWatch logs — multiple sage calls all complete in
+  the 2-4s range.
+- **API GW side**: Returns 503 to the client at 30s. Tracing shows the
+  request takes ~60 SECONDS to reach the container after curl sends it. The
+  60s lag is exactly the ALB `idle_timeout.timeout_seconds` default —
+  classic VPC-link → ALB stale-connection-pool signature.
+
+### Why this happens
+API Gateway HTTP API maintains a connection pool from the VPC link to the
+ALB target. When the rev27 cutover happened, some pool connections went
+stale (rev26 task drained while VPC link still held conns to it). New POSTs
+through the `ANY /v1/agents/{proxy+}` catch-all integration get assigned a
+stale connection and sit until the ALB resets it at the 60s idle timeout.
+
+Notable: the dedicated `POST /v1/agents/chat` integration (`nj5msbs`) is on
+its own connection pool and works in <200ms. GET requests through the
+catch-all also work in <200ms. Only POST through the catch-all hangs — the
+HTTP method/body interaction with the stale connection appears to be what
+triggers the queue.
+
+### Open follow-up (E3 v3)
+- Move `POST /v1/agents/{maven,james,atlas,forge,sage}/run` to a dedicated
+  API GW integration like `/v1/agents/chat`. Cleanest fix; sidesteps the
+  shared catch-all pool.
+- Verify monolith-side `ENABLE_TASK_AGENT_*` flag flip — the agent-engine
+  task def has the flags but the monolith proxy in `users/tasks/tasks.py`
+  ALSO checks them. Default is `0`. Either flip them on EC2 `.env` or
+  remove the duplicate gate.
+
+### Smoke acceptance (where E3 controls)
+| Gate item                                            | Layer                | Result |
+|------------------------------------------------------|----------------------|--------|
+| 1. Routes registered                                  | agent-engine         | PASS   |
+| 2. Container returns valid TaskAgentResponse JSON     | agent-engine         | PASS   |
+| 3. Auth gate denies user role on Maven + James (403)  | agent-engine         | PASS   |
+| 4. ECS=0 → 503 with retry_after                       | monolith proxy       | code path correct, not live-tested |
+| 5. Per-agent flag toggle <60s                          | monolith proxy       | needs monolith deploy |
+| 6. tasks.invocation EventBridge events emitted        | agent-engine + IAM   | PASS   |
+| 7. End-to-end happy path through API GW returns 200   | API GW infrastructure | BLOCKED on VPC-link pool issue (E3 v3) |
+
+### AWS state changes today
+- ECR `:latest` → `sha256:17fa16c6539e…` (e3-fast tag).
+- ECS `ig-dev-agent-engine` on task def revision 27.
+- ALB idle_timeout left at 60s (briefly tried 25s; reverted to keep WS chat unaffected).
+
+---
+
 ## [2026-05-06 PM] — close: Combined Plan §A.E3 acceptance gate
 
 End-to-end gate close on the Combined Plan Phase E3 work landed earlier today.

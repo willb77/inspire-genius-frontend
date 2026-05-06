@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1007</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1008</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22411,7 +22411,12 @@
           <div class="prompt-text">/background closing the E3 gate (1–4 above) — closed E3 acceptance gate: rotated ECS to rev26 (image digest sha256:ee391147c26c… with privacy-import fix), enabled per-agent flags via task-def env vars, added events:PutEvents IAM (was AccessDenied), wired POST /v1/tasks/results (monolith + Aurora task_results table + frontend save mutation). Smoke: auth gate Maven/James 403 in &lt;200ms; EventBridge tasks.invocation emit verified in container logs. CDK healthCheckGracePeriod bumped to 5min. Open follow-up: API GW 30s timeout returns 503 on slow agent runs even though container completes — RAG retrieval is the bottleneck, plan to cut it out for task agents.</div>
   
 </div>
-    </div>
+    
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1008 [/background close E3 gate v2]</div>
+          <div class="prompt-text">/background closing the E3 gate (1–4 above) — pass 2: added skip_rag fast path to base_agent._build_messages_with_rag (task agents now bypass knowledge/personal/cultural retrieval), task router opts in by default. Rebuilt + pushed image (sha256:17fa16c6539e…), task def rev27 deployed. Container processes sage call end-to-end in ~3s now (was 60+s with RAG). REMAINING: POST through API GW catch-all integration sees ~60s lag before reaching container — ALB stale-connection-pool signature. POST /v1/agents/chat (dedicated integration) is fine. Recommend dedicated API GW integration for the 5 task agent routes (E3 v3). Restored ALB idle_timeout to 60s default after a 25s test ruled it out as the fix.</div>
+  
+</div>
   </div>
 
   <script>
