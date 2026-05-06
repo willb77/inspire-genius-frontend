@@ -1,3 +1,135 @@
+## [2026-05-06 UTC] — feat: Combined Plan §A.E3 hybrid task-agent routing + ORM bug fix
+
+Bedtime build of Combined Plan Phase E3 (5 prompts) plus a de-risk pass on the
+"Memory DB table creation failed (non-fatal):" warning that surfaced post-Track E1.
+
+### Path B — DB warning investigation (now fixed)
+The empty exception text in the warning came from two long-standing bugs in
+`services/agent-engine/app/memory/models.py`:
+- `PortableUUID.load_dialect_impl` referenced an undefined `PG_PortableUUID`. Fixed to `PG_UUID(as_uuid=True)`.
+- `PortableJSON.load_dialect_impl` imported a non-existent `PortableJSON` from `sqlalchemy.dialects.postgresql`. Fixed to `JSONB`.
+
+Both bugs only fired against PostgreSQL (SQLite branch was clean). The empty
+exception string came from the `NameError` / `ImportError` having no `__str__`
+content after the `%s` formatter consumed it. Added `repr` + `exc_info=True`
+to the warning so future failures show the exception class up-front.
+
+### Path A — Combined Plan §A.E3 (5 sub-prompts)
+
+**E3.1 — SQL schema extension** (`services/trainer-service/alembic/versions/003_e3_task_agent_routing.sql`)
+- `ALTER TABLE agent_configs ADD COLUMN task_endpoint TEXT, task_schema TEXT` (idempotent).
+- Backfills the 5 task-exposed agents (Maven/James/Atlas/Forge/Sage) by canonical agent_id. UPDATEs are no-op on the empty dev table; the INSERT path in E3.2 runtime registration will populate them.
+- Already applied to dev Aurora via `ig-dev-migration-runner` Lambda — 5 OK, 0 failed.
+
+**E3.2 — Agent-engine task REST router** (`services/agent-engine/app/routes/task_agents.py` + `app/schemas/task_agents.py`)
+- 5 new POST endpoints: `/v1/agents/{maven,james,atlas,forge,sage}/run`.
+- Each validates `x-user-id` + `x-user-role`, enforces per-agent role gate, looks up `agent_configs.task_endpoint`, calls the agent's `process()`, and emits a `tasks.invocation` EventBridge event for E3.5.
+- Image with E3.2 + ORM fix pushed to ECR as `:latest` (`sha256:bcdb254b066b…`).
+
+**E3.3 — Monolith task proxy router** (`inspire-genius-backend/users/tasks/tasks.py` + wired in `prism_inspire/main.py`)
+- 5 new POST endpoints: `/v1/tasks/{job-blueprint,interview-prep,team-composition,onboarding,document-research}`.
+- Each validates the monolith JWT via `verify_token`, forwards `x-user-id` + `x-user-role` to agent-engine, gated by per-agent `ENABLE_TASK_AGENT_<NAME>` env var (default off).
+- On agent-engine 5xx returns 503 + `Retry-After`. On timeout returns 504 + `Retry-After`.
+- Configurable `AGENT_ENGINE_TASK_BASE_URL` env var (default `https://api-dev.inspiresgenius.com`).
+
+**E3.4 — Frontend task pages** (5 new pages + shared components)
+- `/manager/job-blueprint` (James), `/manager/interview-prep` (Maven), `/manager/team-composition` (Atlas), `/onboarding/wizard` (Forge), `/super-admin/research` (Sage).
+- Each: React Hook Form + Zod, pre-submit cost estimate banner, submit → spinner → result card with re-run + save-to-workspace affordances.
+- Routes added in `routes.tsx`; nav items added per the role mapping (Manager: 3, User: 1, Super-admin: 1).
+- `npm run build` → green.
+
+**E3.5 — Observability "Tasks" tab** (`inspire-genius-frontend/src/components/observability/TasksObservabilityTab.tsx`)
+- Reads `tasks.invocation` events from `/v1/audit/logs?action=tasks.invocation`.
+- Per-agent invocation count + P50/P95/P99 latency + error rate.
+- Filter chips: agent (5 + all) and outcome (all/success/error).
+- Wrapped existing Observability page in `Tabs` (Overview / Tasks).
+
+### PRs opened
+- [inspire-genius#4](https://github.com/willb77/inspire-genius/pull/4) — backend: schema migration, task router, ORM fixes (`feat/combined-e3-backend` → `development`)
+- [inspire-genius-backend#1](https://github.com/willb77/inspire-genius-backend/pull/1) — monolith: task proxy router (`feat/combined-e3-monolith-router` → `main`)
+- [inspire-genius-frontend#1](https://github.com/willb77/inspire-genius-frontend/pull/1) — frontend: task pages + observability tab (`feat/combined-e3-task-agents` → `development`)
+
+### Known follow-ups
+- ECS task did not rotate to the new image despite rev24 registration + force-new-deployment + stop-task. Cached digest `1223b9342…` still running. The next CDK `cdk deploy ig-dev-agent-engine` should re-resolve `:latest` and rotate.
+- Per-agent `ENABLE_TASK_AGENT_*` env vars need to be flipped to `"1"` on the monolith EC2 + agent-engine ECS task def to actually expose the routes (default off).
+- E3 acceptance gate (5 task pages render + submit; auth gate denies user role on Maven/James; ECS=0 produces 503; per-agent flags toggle individually) — pending end-to-end smoke after the deploys.
+- "Save to my workspace" button on result card is a placeholder; needs a `POST /v1/tasks/results` monolith endpoint to persist.
+
+---
+
+## [2026-05-06 UTC] — verify: Track E1 migration value + post-migration cleanup
+
+### Aurora reachability confirmed (the migration win)
+ECS startup logs from the post-migration task show:
+- `INFO:app.main:Redis connected: rediss://ig-dev-session-cache-v2-ql2s37.serverless.use1.cache.amazonaws.com:6379/0`
+- `INFO:app.main:MemoryManager initialized (redis=True, db=True, semantic=True)` — **`db=True` is the migration win** (was unreachable from OLD VPC pre-migration; would have been `db=False`)
+- One non-fatal warning: `WARNING:app.main:Memory DB table creation failed (non-fatal):` (empty exception text — likely a DB user permission issue on schema creation, not a connectivity issue; orthogonal to the migration)
+
+### ECS auto-scaling adjusted to min=1
+- Application Auto Scaling target on `service/ig-dev-agent-engine/ig-dev-agent-engine` had `MinCapacity=2`. Adjusted to `MinCapacity=1` to honor the user's "leave at ECS 1" directive.
+- Service stays at `desired=1 / running=1` indefinitely; CPU/Memory tracking policies (70% targets) will scale up to 10 if load demands.
+
+### Sidecar cleanup
+- **Kept**: `ig-dev-ws-forwarder` Lambda (active critical infra — invoked by `services/ws-proxy/handler.py` to handle long-running 30-60s Meridian LLM calls async). Not in CDK; recommend a follow-up to import. Already migrated to NEW VPC during the SG-cleanup unblock.
+- **Deleted (5 OLD-VPC interface endpoints)** that previously served only agent-engine — now orphans. ~$36/mo savings.
+  - `vpce-0a1efc7ab99490d51` (Lambda)
+  - `vpce-051a40fad10fdce77` (Secrets Manager)
+  - `vpce-0f541532ced764c78` (ECR docker)
+  - `vpce-086713f4528c52bf5` (ECR API)
+  - `vpce-05e9033d8b4c47dc2` (CloudWatch Logs)
+- **Deleted OLD orphan SGs**: `sg-0bf7afabb0418de0b` (ServiceSG) and `sg-035497aee3dfe6843` (VpcLinkSG). CFN's stack cleanup had given up retrying after the migration deploy completed; these were left as orphans. Direct `aws ec2 delete-security-group` succeeded after VPC endpoint dependencies were removed.
+- **Kept**: 3 ElastiCache VPC endpoints + S3/DynamoDB gateway endpoints (free) + `ig-dev-redis` cache itself. These serve OTHER workloads in OLD VPC.
+- **OLD VPC decommission deferred**: still has `ig-dev-redis` and may have other workloads — needs a separate evaluation.
+
+### PR merged
+- [#3](https://github.com/willb77/inspire-genius/pull/3) `feat(cdk): Track E1 — agent-engine cross-VPC migration into Aurora VPC` — squash-merged to `development` as `f21e22d`. All CI checks passed (Bandit, cdk synth, pip-audit, 11 service unit-test suites, 9 Docker scans, Backend Gate).
+
+---
+
+## [2026-05-06 UTC] — feat: Track E1 cross-VPC migration (agent-engine into Aurora VPC)
+
+### Phase A — clean rollback of failed migration (drift recovery)
+- Audit confirmed no `-v2` orphans existed in dest VPC (the failed deploy from 2026-05-05 did not leave dangling resources).
+- 5 drifted resources detected on `ig-dev-agent-engine`:
+  - `AgentHttpRoute` — migration-caused (route was manually retargeted to catchall during failed cleanup)
+  - `AgentEngineTaskRole`, `ServiceSecurityGroup`, `WsProxyFunctionServiceRole`, `WsWafAcl` — **pre-existing drift** (cross-stack policy attachments + manual SG/WAF tweaks); not migration-caused, left as-is.
+- Drift-recovery deploy: added `cleanupAgentHttpRoute` context flag in `agent-engine-stack.ts` to wrap `AgentHttpIntegration` + `AgentHttpRoute`. Two deploys:
+  1. `cdk deploy ig-dev-agent-engine -c cleanupAgentHttpRoute=true` — removes orphaned logical/physical mismatch (CFN-tracked `AgentHttpIntegration` pointed at deleted physical `c43r9yq`)
+  2. `cdk deploy ig-dev-agent-engine` — recreates fresh (`99963h9` integration + `ah0tann` route)
+
+### Phase B — re-do migration with all lessons learned
+- **Up-front** name bumps on all 7 replacement-bound resources (vs. mid-deploy iteration last time):
+  - `ig-dev-session-cache` → `-session-cache-v2`
+  - `ig-dev-agent-engine-alb` → `-alb-v2`
+  - `ig-dev-agent-engine-blue` → `-blue-v2`, `-green` → `-green-v2`
+  - `ig-dev-agent-engine-vpc-link` → `-vpc-link-v2`
+  - `ig-dev-ws-alb` → `-ws-alb-v2`
+  - `ig-dev-ws-tg-v2` → `-ws-tg-v3`
+- Re-applied `agentEngineBypass` flag in `api-gateway-stack.ts` to drop wave-route imports during the agent-engine replace.
+- Three-step deploy:
+  1. `cdk deploy ig-dev-api-gateway -c agentEngineBypass=true` — drops 30 wave routes + WavesIntegration (24s)
+  2. `cdk deploy ig-dev-agent-engine` — full cross-VPC replace (65 min, including 30 min of SG-cleanup retries)
+  3. `cdk deploy ig-dev-api-gateway` — recreates 30 wave routes against new VPC link `43v1ew` (33s)
+- **New unblocking trick**: CFN's SG cleanup hung on `DELETE_FAILED` for `ServiceSecurityGroup` + `VpcLinkSecurityGroup` because OLD-VPC VPC endpoints (Lambda, ECR API/dkr, Secrets Manager, CloudWatch Logs) referenced our SGs. Fix: `aws ec2 modify-vpc-endpoint` to swap our SGs for OLD VPC's default SG `sg-0f48ac64c1defa321` on 5 endpoints. Plus migrated orphan `ig-dev-ws-forwarder` Lambda from OLD VPC to NEW VPC (manual, since not in CDK).
+
+### Verified post-migration
+- Stack `ig-dev-agent-engine`: `UPDATE_COMPLETE` ✅
+- New ALB: `internal-ig-dev-agent-engine-alb-v2-1246977982.us-east-1.elb.amazonaws.com`
+- New WS ALB: `ig-dev-ws-alb-v2-2006320198.us-east-1.elb.amazonaws.com`
+- New cache: `ig-dev-session-cache-v2-ql2s37.serverless.use1.cache.amazonaws.com`
+- New VPC link: `43v1ew`
+- ECS service: subnets `subnet-09a9739469e7cc3e7` + `subnet-0199a69ebbb99396a` (new VPC), SG `sg-0f8f779bb868d4efa`, TGs `-blue-v2` + `-ws-tg-v3` ✅
+- Aurora SG `sg-092ede9b8f819ebfc` ingress on 5432 includes new ServiceSG `sg-0f8f779bb868d4efa` ✅
+- DNS `ws-dev.inspiresgenius.com` retargeted to new ALB IPs (54.243.238.14, 32.192.102.21) ✅
+- Demo path: SPA 200, monolith `/health` 200, `/v1/agents/health` 200 (Lambda Mangum mode — ECS still at 0/0/0 by design)
+- Wave-route 503s are expected (no ECS targets); not a migration regression.
+
+### Files changed
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — VPC lookup → `dbVpcId` context (default new VPC), Aurora SG ingress, all 7 name bumps, `cleanupAgentHttpRoute` flag.
+- `infrastructure/cdk/lib/api-gateway-stack.ts` — `agentEngineBypass` flag, 4 wave forEach guards.
+
+---
+
 ## [2026-05-05 UTC] — verify: PromptStudio JWT-write smoke (Phase −1.9 final smoke green)
 
 ### Verified live in prod

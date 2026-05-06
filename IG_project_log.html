@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1002</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1006</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22383,6 +22383,26 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-05 — Prompt #1002 [done, edited Meridian prompt and saved]</div>
           <div class="prompt-text">PromptStudio save confirmed — Post-save get-item on AGENT#meridian-001/PROMPT_OVERRIDE: updated_at advanced 2026-04-28T20:38:58Z → 2026-05-05T13:54:04Z (matches now); data array length grew 1 → 2 (history preserved by append); new entry id ea3d5d2b-b5de-4a92-b33e-52c7c6d50019 with edited text "Say Hi Will !" vs prior "Say Hi Bill!". Pipeline confirmed end-to-end: SPA → trainer Lambda (JWT validated) → DynamoDB UpdateItem ✅. Phase −1.9 smoke matrix now fully green; Phase −1 GATE passed. Open question: ig-dev-trainer-events still empty — audit may flow via EventBridge → audit-service instead, worth a 5-min follow-up.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #1003 [/full-go A) clean rollback then start migration]</div>
+          <div class="prompt-text">Track E1 cross-VPC migration completed end-to-end. Phase A (clean rollback): drift recovery via cleanupAgentHttpRoute context flag — 2 deploys cleared the AgentHttpIntegration/Route logical-physical mismatch CFN had after the prior failed continue-update-rollback. The other 4 drifted resources (TaskRole, ServiceSG, WsProxyServiceRole, WsWafAcl) were pre-existing cross-stack policy attachments — not migration-caused, left as-is. Phase B (re-do migration with lessons learned): re-applied 0a1f209 patch + all 7 name bumps (-v2/-v3) up-front + agentEngineBypass flag. Three-step deploy: (1) api-gateway bypass=true drops 30 wave routes (24s); (2) agent-engine cross-VPC replace (65 min, 30 min in SG cleanup retries); (3) api-gateway WITHOUT bypass recreates wave routes against new VPC link 43v1ew (33s). New trick learned: CFN's stuck SG cleanup unblocked by `aws ec2 modify-vpc-endpoint` — swapped our SGs for OLD VPC default SG sg-0f48ac64c1defa321 on 5 OLD-VPC endpoints (Lambda/ECR-api/ECR-dkr/Secrets/Logs); also migrated orphan ig-dev-ws-forwarder Lambda from OLD to NEW VPC (manual, not in CDK). Verified: stack UPDATE_COMPLETE; ECS service in new VPC subnets/SG; Aurora SG ingress sg-092ede9b8f819ebfc:5432 includes new ServiceSG sg-0f8f779bb868d4efa; ws-dev DNS retargeted to new ALB IPs (54.243.238.14, 32.192.102.21); demo path SPA 200, monolith /health 200, /v1/agents/health 200 (Lambda Mangum mode — ECS at 0/0/0 by design). Wave-route 503s expected (no ECS targets), not a regression.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-05 — Prompt #1004 [scale ECS to 1 and verify wave routes]</div>
+          <div class="prompt-text">ECS scaled 0→1; task healthy at 10.0.22.38:8000 (NEW VPC subnet) in ~45s. End-to-end verification through new VPC link 43v1ew → ALB-v2 → ECS confirmed: (1) /v1/agents/voice/config via AgentHttpRoute → integration 99963h9 → 200 with real config {stt_provider: deepgram, tts_provider: openai, tts_voice: alloy, tts_model: tts-1}; (2) Same path via Wave5 route W5VoiceConfigGet → integration nj5msbs → 200 same response. Wave health endpoints 503→404 transition confirms routing works (404 = reached ECS, no handler in app — placeholder routes; pre-existing app-code issue, not migration regression).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1005 [/bedtime steps 1→2→3→4, leave at ECS 1]</div>
+          <div class="prompt-text">Bedtime cleanup. Step 1 — Aurora reachability confirmed via ECS startup logs: "MemoryManager initialized (redis=True, db=True, semantic=True)". db=True proves migration value (was unreachable from OLD VPC pre-migration). Step 2 — ECS auto-scaling MinCapacity adjusted 2→1 to honor "leave at ECS 1"; service stays at desired=1/running=1. Step 3 — sidecar cleanup: kept ig-dev-ws-forwarder (active infra, invoked by ws-proxy for 30-60s Meridian LLM calls async; recommend CDK adoption follow-up); deleted 5 OLD-VPC interface endpoints (Lambda/Secrets/ECR-api/ECR-dkr/Logs, ~$36/mo savings); deleted 2 orphan OLD SGs (sg-0bf7afabb0418de0b, sg-035497aee3dfe6843) that CFN had given up retrying. ig-dev-redis still in OLD VPC (separate workload); 3 ElastiCache endpoints kept; OLD VPC decommission deferred. Step 4 — PR #3 opened, all CI green (Bandit/cdk synth/pip-audit/11 service tests/9 Docker scans), squash-merged to development as f21e22d.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1006 [/bedtime B then A]</div>
+          <div class="prompt-text">Path B — DB warning investigation: traced empty "Memory DB table creation failed (non-fatal):" warning to two long-standing bugs in services/agent-engine/app/memory/models.py (PortableUUID referenced undefined PG_PortableUUID; PortableJSON imported non-existent PortableJSON from postgresql dialect). Fixed both + improved warning to log type(exc).__name__ + exc_info=True. Path A — Combined Plan §A.E3 (5 sub-prompts): E3.1 SQL migration adding agent_configs.{task_endpoint, task_schema} ran via ig-dev-migration-runner (5 OK, 0 failed); E3.2 agent-engine task router with 5 POST /v1/agents/{maven,james,atlas,forge,sage}/run endpoints + Pydantic schemas + tasks.invocation EventBridge events; E3.3 monolith proxy router under /v1/tasks/* with per-agent ENABLE_TASK_AGENT_* env-var feature flags + 503/504 retry handling; E3.4 5 frontend pages with React Hook Form + Zod + result cards (npm run build green); E3.5 Observability "Tasks" tab reading /v1/audit/logs?action=tasks.invocation with P50/P95/P99 latency and filter chips. 3 PRs opened: inspire-genius#4 (backend), inspire-genius-backend#1 (monolith proxy), inspire-genius-frontend#1 (UI). Known follow-up: ECS rev24 deployed but kept rev23 image digest cached; needs CDK deploy or manual task-def replace to actually rotate to new image (which has the ORM fix + E3.2 endpoints).</div>
         </div>
 
       </div>
