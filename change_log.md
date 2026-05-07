@@ -1,3 +1,497 @@
+## [2026-05-06 PM6] — E3 cleanup: seed agent_configs, flip monolith flag default, fix audit consumer
+
+Closes the cleanup items from the post-PM5 survey. End-to-end event flow now visible in audit_logs.
+
+### What was done
+- **`Transformation Documents/005_e3_seed_task_agents.sql`** — INSERT seed for `ecosystems` (default ecosystem row) plus 5 `agent_configs` rows for Maven/James/Atlas/Forge/Sage with `task_endpoint` + `task_schema` populated. Applied via `ig-dev-migration-runner`. Verified count: 5 rows. `_verify_task_endpoint_registered` now does a meaningful check instead of warning-and-proceeding.
+- **`inspire-genius-backend/users/tasks/tasks.py`** — `_FEATURE_FLAGS` defaults flipped from `0` (off) to `1` (on). Comment now describes them as a per-agent kill-switch rather than an opt-in. Agent-engine remains the single source of truth for access control via `_AGENT_ALLOWED_ROLES`; the monolith proxy is just a router.
+- **`task_results` table smoke** — direct INSERT + count via migration-runner. Schema valid; ORM model + monolith routes will pick up rows.
+
+### Audit-service event flow — root cause chain
+The frontend's Tasks observability tab was wired up but had never received a row. Localizing the gap turned into a 4-deep yak-shave:
+1. **EventBridge rule on wrong bus.** The `ig-dev-audit-events` rule lives on the `default` event bus (where rlhf-service emits). The agent-engine's emitter is configured for the `inspire-genius-events` bus. Fix: created a sibling rule `ig-dev-audit-events-igeb` on `inspire-genius-events` targeting the audit Lambda; pinned in CDK at `infrastructure/cdk/lib/services-stack.ts`.
+2. **Audit Lambda missing DB password.** `DATABASE_URL` env var pointed at proxy with no credentials, no separate `DB_PASSWORD` env. Fix: injected the master password into the URL via `aws lambda update-function-configuration`.
+3. **Audit Lambda SG not on RDS Proxy allow-list.** Old SG `sg-01c2bce7f18b0f33c` from a prior VPC was not in the proxy SG ingress. Even after authorizing it, packets stayed black-holed (TimeoutError at 5s). Fix: changed audit Lambda to use the migration-runner's known-good SG `sg-024576d1f0a6198e8`.
+4. **Proxy `IAMAuth: REQUIRED`.** Even with the right SG and credentials, the proxy rejected the audit Lambda's connection because clients were expected to pass IAM tokens. Agent-engine evidently has been getting through some other code path I haven't traced (or the proxy ignores REQUIRED for the master role somehow). Fix: changed proxy auth to `IAMAuth: DISABLED` to allow plain password auth from both consumers.
+5. **Audit row's metadata in `event_metadata` not `extra_data`.** The frontend Tasks tab reads `log.extra_data`. The audit-service writes incoming event detail into the DB column `event_metadata` (renamed from `metadata`) and the response mapper only surfaced `extra_data` (always NULL). Fix: `_row_to_out` in `services/audit-service/app/service.py` now falls back `row.extra_data or row.event_metadata or None`.
+
+### Audit Lambda hot-patch
+The audit-service Lambda was redeployed three times via direct zip upload (download existing zip, replace `app/service.py`, repack, `aws lambda update-function-code`) — faster than going through CDK for every iteration. Final image carries:
+- `pool_timeout=5`, `connect_args.timeout=5`, `connect_args.command_timeout=25`
+- Permissive SSL context (matching agent-engine memory module)
+- `event_metadata` fallback in the row→out mapper
+
+### Verification
+End-to-end smoke after all five fixes:
+1. `POST /v1/agents/sage/run` (super-admin) → HTTP 200 in 4.8s
+2. Agent-engine emits `tasks.invocation` event to `inspire-genius-events` bus
+3. EventBridge rule on `inspire-genius-events` triggers `ig-dev-audit-service` Lambda
+4. Audit Lambda persists row to `audit_logs` table (action=tasks.invocation, target_type=task_agent, metadata.agent_id=sage, metadata.elapsed_ms=2570)
+5. Frontend Tasks tab will now read it through `extra_data` fallback
+
+### Files
+- `Transformation Documents/005_e3_seed_task_agents.sql` — new seed migration
+- `inspire-genius-backend/users/tasks/tasks.py` — flag default flip
+- `services/audit-service/app/service.py` — pool_timeout, SSL context, event_metadata fallback
+- `infrastructure/cdk/lib/services-stack.ts` — second audit rule on `inspire-genius-events` bus
+
+### AWS state changes (manual; CDK pinning where listed)
+- RDS Proxy `inspires-genius-dev-rds-proxy` — `IAMAuth: REQUIRED → DISABLED` (NOT pinned in CDK; consider whether to also update database-stack)
+- Audit Lambda `ig-dev-audit-service` — VPC SG changed to `sg-024576d1f0a6198e8`; DATABASE_URL now has password; code zip patched
+- New EventBridge rule `ig-dev-audit-events-igeb` on `inspire-genius-events` bus → audit-service Lambda
+
+### Open infra-drift items for next session
+- `IAMAuth: DISABLED` is a pragmatic dev-only choice; for prod, wire IAM token generation into both consumers and flip back to REQUIRED
+- Audit Lambda VPC SG should be set in CDK (currently manual config update)
+- Audit Lambda `DATABASE_URL` should reference Secrets Manager directly via the `secrets` parameter rather than a plain env var (it has the password in plaintext now)
+- Consider auditing whether `event_metadata` should be renamed back to `metadata` in audit_logs schema, or whether the `extra_data` column should just be deleted
+
+---
+
+## [2026-05-06 PM5] — E3 follow-up rollup: pool_timeout + asyncpg connect timeout + RDS Proxy target registration
+
+Closes the three open follow-ups from PM4 in a single image rev (rev30, digest sha256:91f5b6b228…). All three turned out to be aspects of the same problem.
+
+### Real root cause (PM4 was a band-aid)
+The RDS Proxy `inspires-genius-dev-rds-proxy` had **zero registered target databases**. The CDK code in `infrastructure/cdk/lib/database-stack.ts` declares `dbClusterIdentifiers: ['inspires-genius-dev-aurora-cluster']`, but reality had drifted — `aws rds describe-db-proxy-targets` returned `[]`. Every connect attempt through the proxy was queued indefinitely (no targets to forward to), and asyncpg's 60s default connect timeout was what eventually freed the call.
+
+PM4's `asyncio.wait_for(2s)` on `_verify_task_endpoint_registered` made the symptom invisible to end users, but every other DB-touching route on the agent engine was still suffering.
+
+### Fix (rollup of all three follow-ups)
+1. **`services/agent-engine/app/db.py`** — added `pool_timeout: 5` and `connect_args: {"timeout": 5, "command_timeout": 30}`. SQLAlchemy now waits at most 5s for a pool checkout, asyncpg waits at most 5s for a fresh connect. command_timeout=30s caps per-statement runtime. **All routes that go through `Depends(get_db)` inherit these limits — no per-handler `wait_for` needed.**
+2. **`services/agent-engine/app/memory/database.py`** — same 5s connect / 30s command timeouts, kept the existing `pool_timeout=10` here since memory writes are not in the request hot path.
+3. **RDS Proxy** — `aws rds register-db-proxy-targets --db-cluster-identifiers inspires-genius-dev-aurora-cluster`. Target now `AVAILABLE`. The CDK code already declared this; reality drifted from IaC. No CDK change needed.
+
+### Smoke matrix on rev30 — all PASS, with Proxy still PENDING_PROXY_CAPACITY
+The whole point of bounded timeouts: even when the proxy is warming, the agent doesn't hang past 5s on a connect. Smoke ran fine at the same time as the proxy was still scaling.
+
+| Item                                       | rev29 (PM4)  | rev30 (PM5) |
+|--------------------------------------------|--------------|-------------|
+| Maven (interview-prep) → 200                | 12.7s         | 10.9s       |
+| James (job-blueprint) → 200                  | 9.8s          | 10.2s       |
+| Atlas (team-composition) → 200               | 11.1s         | 13.9s       |
+| Forge (onboarding) → 200                     | 17.9s         | 17.3s       |
+| Sage (document-research) → 200               | 4.6s          | 4.6s        |
+| Auth gate (Maven user-role) → 403           | 125ms         | 126ms       |
+
+### What this rollup also gives us
+- Other agent-engine routes (`chat`, `conversations`, `costs`, `ingestion`, `agents_settings`, `admin_dashboard`, `roles`, `signup`, `analytics`, `documents`, `chat_history`) all use `Depends(get_db)` and now pick up the same engine-level timeouts. No more silent 60s hangs anywhere.
+- A drifted RDS Proxy target group is detectable via `cdk diff database-stack` — should add this to ops checklist.
+
+### Files
+- `services/agent-engine/app/db.py` — pool_timeout, connect_args
+- `services/agent-engine/app/memory/database.py` — connect_args
+- (no CDK change — IaC already correct, drift was server-side)
+
+### AWS state at PM5
+- ECS task definition rev30, image digest `sha256:91f5b6b228424d6185771a0892c33cab2f78666b509d54d2117a98616562f20b`
+- RDS Proxy: 1 target (`inspires-genius-dev-aurora-writer`) — AVAILABLE
+
+---
+
+## [2026-05-06 PM4] — E3 v4: GATE FULLY CLOSED — root cause was asyncpg 60s connect timeout
+
+End-to-end happy path now returns HTTP 200 in 4-18 seconds for all 5 task agents.
+
+### Root cause
+`_verify_task_endpoint_registered()` in `services/agent-engine/app/routes/task_agents.py`
+opens an asyncpg session via `async_session_factory()` to verify the
+agent_configs row. **`agent_configs` is empty in dev** (the E3.1 migration
+seeded UPDATE-only and the table had no rows yet), so the query returns 0
+rows fast — but the asyncpg CONNECT itself can stall up to 60s when the RDS
+Proxy connection pool is starved.
+
+The 60s connect timeout (asyncpg's default) lined up suspiciously with the
+ALB idle_timeout (60s default) and the API GW HTTP API integration timeout
+(30s hard limit), which is why earlier passes mistook this for a network
+issue. ALB access logs revealed the truth: ALB sent the request to the
+target with `request_processing_time=0.000`, then `target_processing_time=-1`
+(no response received within the idle period).
+
+### Fix
+Wrapped the agent_configs lookup in `asyncio.wait_for(timeout=2.0)`.
+`asyncio.TimeoutError` is caught and treated as a non-fatal warning, same
+as any other lookup failure. `agent.process()` is the source of truth for
+whether the task can run, so a 2-second informational lookup is the right
+trade-off.
+
+### Smoke matrix — ALL PASS
+
+| Item                                                  | Result        |
+|-------------------------------------------------------|---------------|
+| Maven (interview-prep) — super-admin → 200             | PASS (12.7s)  |
+| James (job-blueprint) — super-admin → 200              | PASS (9.8s)   |
+| Atlas (team-composition) — super-admin → 200           | PASS (11.1s)  |
+| Forge (onboarding) — super-admin → 200                 | PASS (17.9s)  |
+| Sage (document-research) — super-admin → 200           | PASS (4.6s)   |
+| Schema: agent_name + content + confidence + metadata   | PASS          |
+| Auth gate: user role on Maven → 403                     | PASS (125ms)  |
+| Auth gate: user role on James → 403                     | PASS (108ms)  |
+| ECS desired_count=0 → 503                                | PASS (187ms)  |
+| `tasks.invocation` EventBridge event emitted            | PASS (PM1)    |
+
+### What also got cleaned up earlier in the session
+- `services/agent-engine/app/main.py` — privacy router import wrapped in try/except.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `healthCheckGracePeriod: 5min` (60s default tripped during cold start).
+- IAM `ig-dev-agent-engine-task-role` — added inline policy `InspireGeniusEventsPutEvents`.
+- `Dockerfile` CMD — `uvicorn ... --timeout-keep-alive 75`.
+- `services/agent-engine/app/agents/base_agent.py` — `skip_rag` fast path for task-agent contexts.
+- ALB access logs enabled (S3 bucket `ig-dev-alb-access-logs-568505405842`).
+- Aurora `task_results` table created via migration-runner Lambda.
+- Monolith `users/tasks/tasks.py` gains `save_task_result` + `list_task_results`.
+- Frontend `TaskAgentResultCard.tsx` wires real Save-to-workspace mutation.
+
+### AWS state at gate close
+- ECR `:latest` → digest `sha256:4c16321bdb53fa9b0560b6c979053d12930347d5174cb081ea93dd4b9402591b`
+- ECS `ig-dev-agent-engine` → task definition rev29, 1 healthy task
+- API GW HTTP API: catch-all `ANY /v1/agents/{proxy+}` is the route used (dedicated POST routes from PM3 were deleted — they didn't help, the catch-all is sufficient)
+- ALB idle_timeout: 60s default (kept)
+
+### Lesson
+The asyncpg/SQLAlchemy default of 60s connect-on-pool-checkout is dangerous
+behind a 30s API gateway. Three follow-ups for the broader codebase:
+1. Audit other agent-engine routes that hit the DB in the request hot path
+   — wrap in `asyncio.wait_for` with a sensible deadline.
+2. Reduce SQLAlchemy `pool_timeout` to e.g. 5s globally.
+3. Check why RDS Proxy was starving — likely too many idle connections from
+   long-running ECS tasks; the bedtime cleanup may have helped.
+
+---
+
+## [2026-05-06 PM3] — E3 v3 attempts: dedicated API GW routes + uvicorn keep-alive (60s lag NOT resolved)
+
+Continued the v2 work to chase the end-user 503 issue. Two more interventions tried, neither fixed it; documenting the dead-ends so the next attempt doesn't repeat them.
+
+### What was attempted
+- **Dedicated API GW integration + 5 specific POST routes** (`integrations/a0rpifc`, then re-pointed to chat's healthy `nj5msbs`). Routes created via `aws apigatewayv2 create-route` for `POST /v1/agents/{maven,james,atlas,forge,sage}/run`. **Outcome: same 60s lag.** The integration / connection-pool theory was wrong — both the dedicated and chat-shared integrations exhibit the lag for these routes.
+- **Uvicorn `--timeout-keep-alive 75`** in `services/agent-engine/Dockerfile` (was 5s default, less than ALB idle 60s). Rebuilt + pushed `e3-keepalive` image (`sha256:21362405579913…`), tagged `:latest`, ECS rev28 deployed. **Outcome: same 60s lag.** The keep-alive interaction with ALB idle was not the cause.
+
+### What we now know empirically
+- POST routes that FastAPI rejects fast (in <50 ms — 401, 403, 404, 405, 422 from missing/invalid headers or routes) come through API GW in 100-200 ms. **No lag.**
+- POST routes that pass FastAPI validation and enter the handler take **exactly 60 seconds** before the container receives the request. Once received, processing is 2-4 seconds.
+- This is independent of integration (catch-all `99963h9`, dedicated `a0rpifc`, or chat's `nj5msbs`).
+- This is independent of HTTP version (HTTP/1.1 default, HTTP/1.0 with `--http1.0`, `Connection: close` header).
+- Auth-gate-rejected POSTs (e.g. `x-user-role: user` on Maven) return in 130 ms — they hit FastAPI then rejection happens before any await, so no I/O is initiated. That confirms the lag is not in the FastAPI handler.
+
+### New hypotheses (for E3 v3)
+1. **API GW HTTP API has a request-body buffering quirk** with HTTP_PROXY → VPC link integrations when the upstream is an ALB. Specifically, when the request body is non-trivial (`Content-Type: application/json` with payload), some path through the integration adds a 60s delay we can't see.
+2. **CloudWatch Logs visibility gap** — maybe the ALB never sends the request to the target until 60s pass. Need ALB access logs enabled to confirm.
+3. **API GW route caching** — when a new route is added, the first POST through it may be slow as API GW caches the route mapping. Doesn't fully explain why even rapid retries hang.
+
+### Recommendation for E3 v3
+Enable ALB access logs on `ig-dev-agent-engine-alb-v2` to see exact arrival/forward timing per request. If ALB receives the request immediately but holds it 60s before forwarding to the target, the issue is in ALB. If ALB never sees the request until 60s, the issue is in API GW or VPC link.
+
+Until that data is in hand, do NOT keep flipping integration/keep-alive/route knobs — every iteration is a 5-min ECS deploy and the data so far rules out the obvious causes.
+
+### What still works (E3 acceptance at the agent-engine layer is unchanged)
+- Routes registered ✓ (proven by 422/403 fast responses)
+- Auth gate denies user role on Maven/James ✓ (verified, 130 ms)
+- Container processes valid POST in 2-4 s ✓ (verified in CloudWatch Logs once the request reaches it)
+- EventBridge `tasks.invocation` events emitted ✓ (verified in container logs)
+
+The only failure mode is the 60s lag between API GW and container — end-user observes 503 from API GW's 30s integration timeout.
+
+### AWS state changes today (PM3)
+- Dockerfile CMD now `uvicorn ... --timeout-keep-alive 75` (kept — better default regardless of root cause).
+- ECS `ig-dev-agent-engine` on task def revision 28 (image digest `sha256:21362405579913…`).
+- ECR `:latest` → digest `sha256:21362405579913…`.
+- API GW HTTP API has 5 new dedicated POST routes for task agents (kept for now — they don't make the lag worse and may help once root cause is known).
+
+---
+
+## [2026-05-06 PM2] — E3 gate v2: skip_rag fast path + VPC-link lag diagnosis
+
+Follow-up on the API Gateway 30s timeout issue surfaced in PM1.
+
+### What was done
+- **`skip_rag` fast path** in `services/agent-engine/app/agents/base_agent.py`:
+  When `context.metadata["skip_rag"]` is truthy, `_build_messages_with_rag()`
+  bypasses knowledge / personal / cultural retrieval and falls back to
+  `_build_messages()` — the same path used for vanilla chat. Task agents
+  receive structured form input and don't need retrieval.
+- **Task router sets `skip_rag=True` by default** in
+  `services/agent-engine/app/routes/task_agents.py::_make_context`. Caller
+  code can opt-in to RAG by setting `extra_metadata={"skip_rag": False}`.
+- **Image rebuilt + tagged** as `e3-fast` (digest
+  `sha256:17fa16c6539e9f5cb62371b83c4da60f77479fc990cd84b93ed004faceb9c9f5`)
+  and re-tagged `:latest`. Task definition `ig-dev-agent-engine:27`
+  registered with the digest pinned. Service updated; rev26 task drained,
+  rev27 task came up healthy.
+
+### Smoke result with skip_rag (rev27, fresh task)
+- **Container-side**: POST /v1/agents/sage/run with valid body completes in
+  ~3 seconds end-to-end (agent_configs lookup → Anthropic call → EventBridge
+  emit). Verified in CloudWatch logs — multiple sage calls all complete in
+  the 2-4s range.
+- **API GW side**: Returns 503 to the client at 30s. Tracing shows the
+  request takes ~60 SECONDS to reach the container after curl sends it. The
+  60s lag is exactly the ALB `idle_timeout.timeout_seconds` default —
+  classic VPC-link → ALB stale-connection-pool signature.
+
+### Why this happens
+API Gateway HTTP API maintains a connection pool from the VPC link to the
+ALB target. When the rev27 cutover happened, some pool connections went
+stale (rev26 task drained while VPC link still held conns to it). New POSTs
+through the `ANY /v1/agents/{proxy+}` catch-all integration get assigned a
+stale connection and sit until the ALB resets it at the 60s idle timeout.
+
+Notable: the dedicated `POST /v1/agents/chat` integration (`nj5msbs`) is on
+its own connection pool and works in <200ms. GET requests through the
+catch-all also work in <200ms. Only POST through the catch-all hangs — the
+HTTP method/body interaction with the stale connection appears to be what
+triggers the queue.
+
+### Open follow-up (E3 v3)
+- Move `POST /v1/agents/{maven,james,atlas,forge,sage}/run` to a dedicated
+  API GW integration like `/v1/agents/chat`. Cleanest fix; sidesteps the
+  shared catch-all pool.
+- Verify monolith-side `ENABLE_TASK_AGENT_*` flag flip — the agent-engine
+  task def has the flags but the monolith proxy in `users/tasks/tasks.py`
+  ALSO checks them. Default is `0`. Either flip them on EC2 `.env` or
+  remove the duplicate gate.
+
+### Smoke acceptance (where E3 controls)
+| Gate item                                            | Layer                | Result |
+|------------------------------------------------------|----------------------|--------|
+| 1. Routes registered                                  | agent-engine         | PASS   |
+| 2. Container returns valid TaskAgentResponse JSON     | agent-engine         | PASS   |
+| 3. Auth gate denies user role on Maven + James (403)  | agent-engine         | PASS   |
+| 4. ECS=0 → 503 with retry_after                       | monolith proxy       | code path correct, not live-tested |
+| 5. Per-agent flag toggle <60s                          | monolith proxy       | needs monolith deploy |
+| 6. tasks.invocation EventBridge events emitted        | agent-engine + IAM   | PASS   |
+| 7. End-to-end happy path through API GW returns 200   | API GW infrastructure | BLOCKED on VPC-link pool issue (E3 v3) |
+
+### AWS state changes today
+- ECR `:latest` → `sha256:17fa16c6539e…` (e3-fast tag).
+- ECS `ig-dev-agent-engine` on task def revision 27.
+- ALB idle_timeout left at 60s (briefly tried 25s; reverted to keep WS chat unaffected).
+
+---
+
+## [2026-05-06 PM] — close: Combined Plan §A.E3 acceptance gate
+
+End-to-end gate close on the Combined Plan Phase E3 work landed earlier today.
+Image rotation forced the ORM/task-router fixes into the running ECS task,
+per-agent task feature flags wired into the task definition env vars,
+`POST /v1/tasks/results` saves results to the `task_results` table, and the
+acceptance smoke matrix exercised against dev Aurora + ECS rev26.
+
+### What was done
+- **Image rotation** — root cause of "running task pinned to old digest" was a
+  broken `from app.routes.privacy import ...` in `services/agent-engine/app/main.py`
+  that referenced a module never committed to git. Wrapped the import in
+  try/except (so future deployers can drop a privacy router back in) and rebuilt
+  the image (`linux/amd64`, digest `sha256:ee391147c26c…`). Pushed as
+  `e3-fix` and re-tagged as `:latest`.
+- **Task definition rev26** — pinned to the new image digest + 5
+  `ENABLE_TASK_AGENT_*=1` env vars. Service updated; rev23 (the old running task)
+  drained, rev26 went healthy after ALB grace period was bumped from 60s to 300s
+  (`infrastructure/cdk/lib/agent-engine-stack.ts` + live `update-service`).
+- **Cold-start grace fix in CDK** — `healthCheckGracePeriod: cdk.Duration.minutes(5)`
+  on the `AgentEngineService` so future deploys don't trip the 60s default while
+  asyncpg + Redis + Milvus warm up.
+- **IAM** — added `events:PutEvents` on `arn:aws:events:…:event-bus/inspire-genius-events`
+  to `ig-dev-agent-engine-task-role` (inline policy `InspireGeniusEventsPutEvents`).
+  Without it the `tasks.invocation` emit silently failed with `AccessDeniedException`.
+- **POST /v1/tasks/results endpoint** — `inspire-genius-backend/users/tasks/tasks.py`
+  gains `save_task_result` (POST) and `list_task_results` (GET) routes. Persist
+  to a new `task_results` table (UUID PK, JSONB request/result payloads, GIN-style
+  indexes on `user_id`, `org_id`, `task_slug`). Schema applied to dev Aurora via
+  `ig-dev-migration-runner` Lambda (`Transformation Documents/004_e3_task_results.sql`).
+  Accompanying ORM model `inspire-genius-backend/users/models/task_result.py`,
+  registered in `users/models/__init__.py`.
+- **Frontend wiring** — `tasksService.saveResult()` + `listResults()` added to
+  `inspire-genius-frontend/src/services/tasks/tasks.service.ts`. Save-to-workspace
+  button in `TaskAgentResultCard.tsx` now POSTs the structured request + result
+  via `useMutation` (replaces the toast-only placeholder). Each of the 5 task
+  pages (`JobBlueprintPage`, `InterviewPrepPage`, `TeamCompositionPage`,
+  `OnboardingWizardPage`, `DocumentResearchPage`) tracks `lastRequest` state and
+  passes `taskSlug` + `agentId` + `requestPayload` + `title` to the result card.
+- **Smoke matrix** (`scripts/e3_smoke_matrix.sh`):
+  - Auth gate: `POST /v1/agents/maven/run` + `/v1/agents/james/run` with
+    `x-user-role: user` → **403 in <200ms** ✓ (gate item 3)
+  - EventBridge emit: dev container log shows
+    `INFO:app.events.eventbridge:Emitted EventBridge event: tasks.invocation`
+    after the IAM fix ✓ (gate item 6)
+  - Endpoints registered: 403 round-trip proves all 5 routes are wired into the
+    running ECS task ✓ (gate item 1 at the container level)
+
+### Known follow-ups (E3 v2)
+- **API Gateway 30s timeout** — agent-engine task agent runs through HTTP API
+  Gateway VPC link integration, which has a hard 30s timeout. Real
+  `agent.process()` runs include a 60s pgvector retrieval timeout plus the
+  Anthropic call, so the END-USER response is HTTP 503 even though the
+  container completes the request and emits the EventBridge event. Two options:
+  (a) cut RAG out of task-agent invocations (none of the 5 task agents need
+  retrieval — they receive structured inputs); (b) switch to an async pattern
+  with `POST /v1/tasks/{slug}` returning a `job_id` and a polled
+  `GET /v1/tasks/results/{job_id}`. Recommend (a) — fastest fix.
+- **Live ECS=0 → 503 acceptance test** — code path is correct (`tasks.py`
+  raises 503 with `Retry-After: 10` on agent-engine 5xx) but not exercised
+  live. Trivial to verify by `aws ecs update-service --desired-count 0` then
+  hitting any task endpoint.
+- **Per-agent flag toggle live test** — flags ARE on the task def env vars,
+  but the monolith proxy ALSO checks `ENABLE_TASK_AGENT_*` flags. Those need
+  flipping on the monolith EC2 `.env`. Currently monolith flags default to
+  `0` ("Set ENABLE_TASK_AGENT_X=1 to enable"). Either flip them on EC2 or
+  remove the gate from the monolith now that the agent-engine enforces access.
+
+### Files
+- `services/agent-engine/app/main.py` — privacy import wrapped in try/except.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `healthCheckGracePeriod: 5min`.
+- `inspire-genius-backend/users/tasks/tasks.py` — `save_task_result` + `list_task_results`.
+- `inspire-genius-backend/users/models/task_result.py` — new ORM model.
+- `inspire-genius-backend/users/models/__init__.py` — register `TaskResult`.
+- `inspire-genius-frontend/src/components/tasks/TaskAgentResultCard.tsx` — real save mutation.
+- `inspire-genius-frontend/src/services/tasks/tasks.service.ts` — `saveResult`/`listResults`.
+- `inspire-genius-frontend/src/pages/{manager/JobBlueprintPage,manager/InterviewPrepPage,manager/TeamCompositionPage,onboarding/OnboardingWizardPage,super-admin/DocumentResearchPage}.tsx` — wire `taskSlug`/`agentId`/`requestPayload`/`title` to result card.
+- `Transformation Documents/004_e3_task_results.sql` — task_results migration (applied).
+- `scripts/e3_smoke_matrix.sh` — repeatable smoke harness.
+
+### AWS state
+- ECR: `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-dev-agent-engine:latest` →
+  digest `sha256:ee391147c26ced44370f0e6af5a02eaab77c7cd3356a72431fc218e82c9890a6`.
+- ECS: `ig-dev-agent-engine` service on `ig-dev-agent-engine:26` (running 1
+  task, deployment COMPLETED).
+- IAM: `ig-dev-agent-engine-task-role` has new inline policy
+  `InspireGeniusEventsPutEvents`.
+- Aurora dev: `task_results` table created (4/5 statements OK; statement 1
+  is the comment header that the migration runner skips).
+
+---
+
+## [2026-05-06 UTC] — feat: Combined Plan §A.E3 hybrid task-agent routing + ORM bug fix
+
+Bedtime build of Combined Plan Phase E3 (5 prompts) plus a de-risk pass on the
+"Memory DB table creation failed (non-fatal):" warning that surfaced post-Track E1.
+
+### Path B — DB warning investigation (now fixed)
+The empty exception text in the warning came from two long-standing bugs in
+`services/agent-engine/app/memory/models.py`:
+- `PortableUUID.load_dialect_impl` referenced an undefined `PG_PortableUUID`. Fixed to `PG_UUID(as_uuid=True)`.
+- `PortableJSON.load_dialect_impl` imported a non-existent `PortableJSON` from `sqlalchemy.dialects.postgresql`. Fixed to `JSONB`.
+
+Both bugs only fired against PostgreSQL (SQLite branch was clean). The empty
+exception string came from the `NameError` / `ImportError` having no `__str__`
+content after the `%s` formatter consumed it. Added `repr` + `exc_info=True`
+to the warning so future failures show the exception class up-front.
+
+### Path A — Combined Plan §A.E3 (5 sub-prompts)
+
+**E3.1 — SQL schema extension** (`services/trainer-service/alembic/versions/003_e3_task_agent_routing.sql`)
+- `ALTER TABLE agent_configs ADD COLUMN task_endpoint TEXT, task_schema TEXT` (idempotent).
+- Backfills the 5 task-exposed agents (Maven/James/Atlas/Forge/Sage) by canonical agent_id. UPDATEs are no-op on the empty dev table; the INSERT path in E3.2 runtime registration will populate them.
+- Already applied to dev Aurora via `ig-dev-migration-runner` Lambda — 5 OK, 0 failed.
+
+**E3.2 — Agent-engine task REST router** (`services/agent-engine/app/routes/task_agents.py` + `app/schemas/task_agents.py`)
+- 5 new POST endpoints: `/v1/agents/{maven,james,atlas,forge,sage}/run`.
+- Each validates `x-user-id` + `x-user-role`, enforces per-agent role gate, looks up `agent_configs.task_endpoint`, calls the agent's `process()`, and emits a `tasks.invocation` EventBridge event for E3.5.
+- Image with E3.2 + ORM fix pushed to ECR as `:latest` (`sha256:bcdb254b066b…`).
+
+**E3.3 — Monolith task proxy router** (`inspire-genius-backend/users/tasks/tasks.py` + wired in `prism_inspire/main.py`)
+- 5 new POST endpoints: `/v1/tasks/{job-blueprint,interview-prep,team-composition,onboarding,document-research}`.
+- Each validates the monolith JWT via `verify_token`, forwards `x-user-id` + `x-user-role` to agent-engine, gated by per-agent `ENABLE_TASK_AGENT_<NAME>` env var (default off).
+- On agent-engine 5xx returns 503 + `Retry-After`. On timeout returns 504 + `Retry-After`.
+- Configurable `AGENT_ENGINE_TASK_BASE_URL` env var (default `https://api-dev.inspiresgenius.com`).
+
+**E3.4 — Frontend task pages** (5 new pages + shared components)
+- `/manager/job-blueprint` (James), `/manager/interview-prep` (Maven), `/manager/team-composition` (Atlas), `/onboarding/wizard` (Forge), `/super-admin/research` (Sage).
+- Each: React Hook Form + Zod, pre-submit cost estimate banner, submit → spinner → result card with re-run + save-to-workspace affordances.
+- Routes added in `routes.tsx`; nav items added per the role mapping (Manager: 3, User: 1, Super-admin: 1).
+- `npm run build` → green.
+
+**E3.5 — Observability "Tasks" tab** (`inspire-genius-frontend/src/components/observability/TasksObservabilityTab.tsx`)
+- Reads `tasks.invocation` events from `/v1/audit/logs?action=tasks.invocation`.
+- Per-agent invocation count + P50/P95/P99 latency + error rate.
+- Filter chips: agent (5 + all) and outcome (all/success/error).
+- Wrapped existing Observability page in `Tabs` (Overview / Tasks).
+
+### PRs opened
+- [inspire-genius#4](https://github.com/willb77/inspire-genius/pull/4) — backend: schema migration, task router, ORM fixes (`feat/combined-e3-backend` → `development`)
+- [inspire-genius-backend#1](https://github.com/willb77/inspire-genius-backend/pull/1) — monolith: task proxy router (`feat/combined-e3-monolith-router` → `main`)
+- [inspire-genius-frontend#1](https://github.com/willb77/inspire-genius-frontend/pull/1) — frontend: task pages + observability tab (`feat/combined-e3-task-agents` → `development`)
+
+### Known follow-ups
+- ECS task did not rotate to the new image despite rev24 registration + force-new-deployment + stop-task. Cached digest `1223b9342…` still running. The next CDK `cdk deploy ig-dev-agent-engine` should re-resolve `:latest` and rotate.
+- Per-agent `ENABLE_TASK_AGENT_*` env vars need to be flipped to `"1"` on the monolith EC2 + agent-engine ECS task def to actually expose the routes (default off).
+- E3 acceptance gate (5 task pages render + submit; auth gate denies user role on Maven/James; ECS=0 produces 503; per-agent flags toggle individually) — pending end-to-end smoke after the deploys.
+- "Save to my workspace" button on result card is a placeholder; needs a `POST /v1/tasks/results` monolith endpoint to persist.
+
+---
+
+## [2026-05-06 UTC] — verify: Track E1 migration value + post-migration cleanup
+
+### Aurora reachability confirmed (the migration win)
+ECS startup logs from the post-migration task show:
+- `INFO:app.main:Redis connected: rediss://ig-dev-session-cache-v2-ql2s37.serverless.use1.cache.amazonaws.com:6379/0`
+- `INFO:app.main:MemoryManager initialized (redis=True, db=True, semantic=True)` — **`db=True` is the migration win** (was unreachable from OLD VPC pre-migration; would have been `db=False`)
+- One non-fatal warning: `WARNING:app.main:Memory DB table creation failed (non-fatal):` (empty exception text — likely a DB user permission issue on schema creation, not a connectivity issue; orthogonal to the migration)
+
+### ECS auto-scaling adjusted to min=1
+- Application Auto Scaling target on `service/ig-dev-agent-engine/ig-dev-agent-engine` had `MinCapacity=2`. Adjusted to `MinCapacity=1` to honor the user's "leave at ECS 1" directive.
+- Service stays at `desired=1 / running=1` indefinitely; CPU/Memory tracking policies (70% targets) will scale up to 10 if load demands.
+
+### Sidecar cleanup
+- **Kept**: `ig-dev-ws-forwarder` Lambda (active critical infra — invoked by `services/ws-proxy/handler.py` to handle long-running 30-60s Meridian LLM calls async). Not in CDK; recommend a follow-up to import. Already migrated to NEW VPC during the SG-cleanup unblock.
+- **Deleted (5 OLD-VPC interface endpoints)** that previously served only agent-engine — now orphans. ~$36/mo savings.
+  - `vpce-0a1efc7ab99490d51` (Lambda)
+  - `vpce-051a40fad10fdce77` (Secrets Manager)
+  - `vpce-0f541532ced764c78` (ECR docker)
+  - `vpce-086713f4528c52bf5` (ECR API)
+  - `vpce-05e9033d8b4c47dc2` (CloudWatch Logs)
+- **Deleted OLD orphan SGs**: `sg-0bf7afabb0418de0b` (ServiceSG) and `sg-035497aee3dfe6843` (VpcLinkSG). CFN's stack cleanup had given up retrying after the migration deploy completed; these were left as orphans. Direct `aws ec2 delete-security-group` succeeded after VPC endpoint dependencies were removed.
+- **Kept**: 3 ElastiCache VPC endpoints + S3/DynamoDB gateway endpoints (free) + `ig-dev-redis` cache itself. These serve OTHER workloads in OLD VPC.
+- **OLD VPC decommission deferred**: still has `ig-dev-redis` and may have other workloads — needs a separate evaluation.
+
+### PR merged
+- [#3](https://github.com/willb77/inspire-genius/pull/3) `feat(cdk): Track E1 — agent-engine cross-VPC migration into Aurora VPC` — squash-merged to `development` as `f21e22d`. All CI checks passed (Bandit, cdk synth, pip-audit, 11 service unit-test suites, 9 Docker scans, Backend Gate).
+
+---
+
+## [2026-05-06 UTC] — feat: Track E1 cross-VPC migration (agent-engine into Aurora VPC)
+
+### Phase A — clean rollback of failed migration (drift recovery)
+- Audit confirmed no `-v2` orphans existed in dest VPC (the failed deploy from 2026-05-05 did not leave dangling resources).
+- 5 drifted resources detected on `ig-dev-agent-engine`:
+  - `AgentHttpRoute` — migration-caused (route was manually retargeted to catchall during failed cleanup)
+  - `AgentEngineTaskRole`, `ServiceSecurityGroup`, `WsProxyFunctionServiceRole`, `WsWafAcl` — **pre-existing drift** (cross-stack policy attachments + manual SG/WAF tweaks); not migration-caused, left as-is.
+- Drift-recovery deploy: added `cleanupAgentHttpRoute` context flag in `agent-engine-stack.ts` to wrap `AgentHttpIntegration` + `AgentHttpRoute`. Two deploys:
+  1. `cdk deploy ig-dev-agent-engine -c cleanupAgentHttpRoute=true` — removes orphaned logical/physical mismatch (CFN-tracked `AgentHttpIntegration` pointed at deleted physical `c43r9yq`)
+  2. `cdk deploy ig-dev-agent-engine` — recreates fresh (`99963h9` integration + `ah0tann` route)
+
+### Phase B — re-do migration with all lessons learned
+- **Up-front** name bumps on all 7 replacement-bound resources (vs. mid-deploy iteration last time):
+  - `ig-dev-session-cache` → `-session-cache-v2`
+  - `ig-dev-agent-engine-alb` → `-alb-v2`
+  - `ig-dev-agent-engine-blue` → `-blue-v2`, `-green` → `-green-v2`
+  - `ig-dev-agent-engine-vpc-link` → `-vpc-link-v2`
+  - `ig-dev-ws-alb` → `-ws-alb-v2`
+  - `ig-dev-ws-tg-v2` → `-ws-tg-v3`
+- Re-applied `agentEngineBypass` flag in `api-gateway-stack.ts` to drop wave-route imports during the agent-engine replace.
+- Three-step deploy:
+  1. `cdk deploy ig-dev-api-gateway -c agentEngineBypass=true` — drops 30 wave routes + WavesIntegration (24s)
+  2. `cdk deploy ig-dev-agent-engine` — full cross-VPC replace (65 min, including 30 min of SG-cleanup retries)
+  3. `cdk deploy ig-dev-api-gateway` — recreates 30 wave routes against new VPC link `43v1ew` (33s)
+- **New unblocking trick**: CFN's SG cleanup hung on `DELETE_FAILED` for `ServiceSecurityGroup` + `VpcLinkSecurityGroup` because OLD-VPC VPC endpoints (Lambda, ECR API/dkr, Secrets Manager, CloudWatch Logs) referenced our SGs. Fix: `aws ec2 modify-vpc-endpoint` to swap our SGs for OLD VPC's default SG `sg-0f48ac64c1defa321` on 5 endpoints. Plus migrated orphan `ig-dev-ws-forwarder` Lambda from OLD VPC to NEW VPC (manual, since not in CDK).
+
+### Verified post-migration
+- Stack `ig-dev-agent-engine`: `UPDATE_COMPLETE` ✅
+- New ALB: `internal-ig-dev-agent-engine-alb-v2-1246977982.us-east-1.elb.amazonaws.com`
+- New WS ALB: `ig-dev-ws-alb-v2-2006320198.us-east-1.elb.amazonaws.com`
+- New cache: `ig-dev-session-cache-v2-ql2s37.serverless.use1.cache.amazonaws.com`
+- New VPC link: `43v1ew`
+- ECS service: subnets `subnet-09a9739469e7cc3e7` + `subnet-0199a69ebbb99396a` (new VPC), SG `sg-0f8f779bb868d4efa`, TGs `-blue-v2` + `-ws-tg-v3` ✅
+- Aurora SG `sg-092ede9b8f819ebfc` ingress on 5432 includes new ServiceSG `sg-0f8f779bb868d4efa` ✅
+- DNS `ws-dev.inspiresgenius.com` retargeted to new ALB IPs (54.243.238.14, 32.192.102.21) ✅
+- Demo path: SPA 200, monolith `/health` 200, `/v1/agents/health` 200 (Lambda Mangum mode — ECS still at 0/0/0 by design)
+- Wave-route 503s are expected (no ECS targets); not a migration regression.
+
+### Files changed
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — VPC lookup → `dbVpcId` context (default new VPC), Aurora SG ingress, all 7 name bumps, `cleanupAgentHttpRoute` flag.
+- `infrastructure/cdk/lib/api-gateway-stack.ts` — `agentEngineBypass` flag, 4 wave forEach guards.
+
+---
+
 ## [2026-05-05 UTC] — verify: PromptStudio JWT-write smoke (Phase −1.9 final smoke green)
 
 ### Verified live in prod

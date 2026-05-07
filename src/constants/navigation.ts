@@ -57,6 +57,8 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
     { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
     { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+    // Combined Plan §A.E3.4 — Forge onboarding wizard
+    { to: ROUTES.ONBOARDING.WIZARD, icon: Wand2, label: "Onboarding Wizard" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]
@@ -73,6 +75,8 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
+  // Combined Plan §A.E3.4 — Sage document research
+  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.CULTURAL_CONTENT, icon: Globe, label: "Cultural Content" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
@@ -85,6 +89,10 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
+  // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
+  { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
+  { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
+  { to: ROUTES.MANAGER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
   { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
   { to: ROUTES.MANAGER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
