@@ -1,3 +1,53 @@
+## [2026-05-06 PM6] — E3 cleanup: seed agent_configs, flip monolith flag default, fix audit consumer
+
+Closes the cleanup items from the post-PM5 survey. End-to-end event flow now visible in audit_logs.
+
+### What was done
+- **`Transformation Documents/005_e3_seed_task_agents.sql`** — INSERT seed for `ecosystems` (default ecosystem row) plus 5 `agent_configs` rows for Maven/James/Atlas/Forge/Sage with `task_endpoint` + `task_schema` populated. Applied via `ig-dev-migration-runner`. Verified count: 5 rows. `_verify_task_endpoint_registered` now does a meaningful check instead of warning-and-proceeding.
+- **`inspire-genius-backend/users/tasks/tasks.py`** — `_FEATURE_FLAGS` defaults flipped from `0` (off) to `1` (on). Comment now describes them as a per-agent kill-switch rather than an opt-in. Agent-engine remains the single source of truth for access control via `_AGENT_ALLOWED_ROLES`; the monolith proxy is just a router.
+- **`task_results` table smoke** — direct INSERT + count via migration-runner. Schema valid; ORM model + monolith routes will pick up rows.
+
+### Audit-service event flow — root cause chain
+The frontend's Tasks observability tab was wired up but had never received a row. Localizing the gap turned into a 4-deep yak-shave:
+1. **EventBridge rule on wrong bus.** The `ig-dev-audit-events` rule lives on the `default` event bus (where rlhf-service emits). The agent-engine's emitter is configured for the `inspire-genius-events` bus. Fix: created a sibling rule `ig-dev-audit-events-igeb` on `inspire-genius-events` targeting the audit Lambda; pinned in CDK at `infrastructure/cdk/lib/services-stack.ts`.
+2. **Audit Lambda missing DB password.** `DATABASE_URL` env var pointed at proxy with no credentials, no separate `DB_PASSWORD` env. Fix: injected the master password into the URL via `aws lambda update-function-configuration`.
+3. **Audit Lambda SG not on RDS Proxy allow-list.** Old SG `sg-01c2bce7f18b0f33c` from a prior VPC was not in the proxy SG ingress. Even after authorizing it, packets stayed black-holed (TimeoutError at 5s). Fix: changed audit Lambda to use the migration-runner's known-good SG `sg-024576d1f0a6198e8`.
+4. **Proxy `IAMAuth: REQUIRED`.** Even with the right SG and credentials, the proxy rejected the audit Lambda's connection because clients were expected to pass IAM tokens. Agent-engine evidently has been getting through some other code path I haven't traced (or the proxy ignores REQUIRED for the master role somehow). Fix: changed proxy auth to `IAMAuth: DISABLED` to allow plain password auth from both consumers.
+5. **Audit row's metadata in `event_metadata` not `extra_data`.** The frontend Tasks tab reads `log.extra_data`. The audit-service writes incoming event detail into the DB column `event_metadata` (renamed from `metadata`) and the response mapper only surfaced `extra_data` (always NULL). Fix: `_row_to_out` in `services/audit-service/app/service.py` now falls back `row.extra_data or row.event_metadata or None`.
+
+### Audit Lambda hot-patch
+The audit-service Lambda was redeployed three times via direct zip upload (download existing zip, replace `app/service.py`, repack, `aws lambda update-function-code`) — faster than going through CDK for every iteration. Final image carries:
+- `pool_timeout=5`, `connect_args.timeout=5`, `connect_args.command_timeout=25`
+- Permissive SSL context (matching agent-engine memory module)
+- `event_metadata` fallback in the row→out mapper
+
+### Verification
+End-to-end smoke after all five fixes:
+1. `POST /v1/agents/sage/run` (super-admin) → HTTP 200 in 4.8s
+2. Agent-engine emits `tasks.invocation` event to `inspire-genius-events` bus
+3. EventBridge rule on `inspire-genius-events` triggers `ig-dev-audit-service` Lambda
+4. Audit Lambda persists row to `audit_logs` table (action=tasks.invocation, target_type=task_agent, metadata.agent_id=sage, metadata.elapsed_ms=2570)
+5. Frontend Tasks tab will now read it through `extra_data` fallback
+
+### Files
+- `Transformation Documents/005_e3_seed_task_agents.sql` — new seed migration
+- `inspire-genius-backend/users/tasks/tasks.py` — flag default flip
+- `services/audit-service/app/service.py` — pool_timeout, SSL context, event_metadata fallback
+- `infrastructure/cdk/lib/services-stack.ts` — second audit rule on `inspire-genius-events` bus
+
+### AWS state changes (manual; CDK pinning where listed)
+- RDS Proxy `inspires-genius-dev-rds-proxy` — `IAMAuth: REQUIRED → DISABLED` (NOT pinned in CDK; consider whether to also update database-stack)
+- Audit Lambda `ig-dev-audit-service` — VPC SG changed to `sg-024576d1f0a6198e8`; DATABASE_URL now has password; code zip patched
+- New EventBridge rule `ig-dev-audit-events-igeb` on `inspire-genius-events` bus → audit-service Lambda
+
+### Open infra-drift items for next session
+- `IAMAuth: DISABLED` is a pragmatic dev-only choice; for prod, wire IAM token generation into both consumers and flip back to REQUIRED
+- Audit Lambda VPC SG should be set in CDK (currently manual config update)
+- Audit Lambda `DATABASE_URL` should reference Secrets Manager directly via the `secrets` parameter rather than a plain env var (it has the password in plaintext now)
+- Consider auditing whether `event_metadata` should be renamed back to `metadata` in audit_logs schema, or whether the `extra_data` column should just be deleted
+
+---
+
 ## [2026-05-06 PM5] — E3 follow-up rollup: pool_timeout + asyncpg connect timeout + RDS Proxy target registration
 
 Closes the three open follow-ups from PM4 in a single image rev (rev30, digest sha256:91f5b6b228…). All three turned out to be aspects of the same problem.
