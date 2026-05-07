@@ -1,3 +1,43 @@
+## [2026-05-07] — D1 Path B: deleted unused CDK-stub RDS Proxy
+
+### Removed
+- Entire CDK-stub RDS Proxy block from `infrastructure/cdk/lib/database-stack.ts`:
+  RdsProxySg + ingress on AuroraSg, RdsProxyRole + DefaultPolicy, CfnDBProxy,
+  CfnDBProxyTargetGroup, 3 zero-importer CFN exports (RdsProxyEndpoint, RdsProxyArn,
+  RdsProxySecurityGroupId), public readonly proxyEndpoint property, orphan rds import,
+  orphan auroraSgId context lookup.
+- Files: `infrastructure/cdk/lib/database-stack.ts`
+
+### Kept
+- VPC flow logs (unrelated, working)
+- DbSecret import + DbSecretArn output
+
+### Why
+- Both `ig-dev-rds-proxy` (CDK stub) and `inspires-genius-dev-rds-proxy` (Terraform)
+  were live in AWS, but only the TF proxy received traffic. The CDK stub created
+  drift confusion and 3 zero-importer exports without doing any work.
+
+### Pre-flight verification
+- All 3 exports verified zero-importer via `aws cloudformation list-exports`
+- Zero source refs to those exports outside `database-stack.ts`
+- `DatabaseStack` is bare-instantiated in `bin/cdk.ts` — `proxyEndpoint`
+  property never consumed cross-stack
+- Local `cdk diff ig-dev-database --context env=dev`: **6 resource destroys
+  + 3 output removals, zero replacements**
+
+### Decision: Path B over Path A
+Path A would have repointed the 4 consumers (auth-service, audit-service,
+agent-engine, monolith) at the CDK proxy then deleted the TF one — Phase-C-scale
+migration risk. Path B (this) eliminates the drift today; future IaC ownership of
+the live proxy will go via `CfnInclude` / `AwsCustomResource` on the existing TF
+proxy rather than recreating it. JSDoc updated to record this for the next reader.
+
+### Branch / PR
+- Branch: `chore/d1-delete-cdk-proxy-stub`
+- PR: #18 → development
+
+---
+
 ## [2026-05-07 EOD] — Session wrap + D1 handoff authored
 
 End-of-day summary for the 2026-05-07 session (Prompts #1014–1020).

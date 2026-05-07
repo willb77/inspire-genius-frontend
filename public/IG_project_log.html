@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1020</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1021</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22455,6 +22455,9 @@
           <div class="timestamp">2026-05-07 — Prompt #1020 [end-of-session log + D1 handoff]</div>
           <div class="prompt-text">Session wrap-up. Today's deliverables: Phase C minimum (kill-switch + system-status banner) deployed; D2 RDS Proxy IAMAuth pinned via AwsCustomResource; D3/D4 verified already closed by yesterday's PR #7 deploy; tech-debt items 3 (pre-synth CDK clean) + 4 (.secrets.baseline filter) merged; M.1 verified live (monolith /opt/inspire-genius/.env SECRET_KEY matches auth-service Lambda). 13 PRs merged total across both repos. New file D1_HANDOFF.md authored — self-contained brief for the next session covering current state of both proxies (CDK ig-dev-rds-proxy unused, zero importers, zero source-code refs outside database-stack.ts; TF inspires-genius-dev-rds-proxy in use by all 4 consumers), recommended Path B (delete CDK stub) with synth+diff+deploy commands, alternative Path A (repoint consumers + delete TF) for completeness, open questions for human decision, lessons logged today (stale .js trap, OIDC feature-branch trap, Unicode-adjacent-to-$VAR, AWS CLI shorthand mangling, manual-AWS-collides-with-CDK), tooling already in place (npm run clean, ssm_send helper, .secrets.baseline filters). Memory file feedback_drift_pin_lessons_2026_05_07.md added with the same lessons for cross-session recall. Standing by for clean session.</div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1021 [D1 Path B — delete unused CDK-stub RDS Proxy]</div>
+          <div class="prompt-text">Continued from compacted session. Re-verified D1_HANDOFF.md pre-flight: both proxies present, the 3 CDK exports (RdsProxyEndpoint/Arn/SgId) still have zero importers, all consumers still on the Terraform proxy. Edited infrastructure/cdk/lib/database-stack.ts: deleted the entire RDS Proxy block (RdsProxySg + ingress, RdsProxyRole + policy, CfnDBProxy, CfnDBProxyTargetGroup, 3 zero-importer outputs), removed the unused public readonly proxyEndpoint property, dropped the orphaned rds import and auroraSgId context lookup, updated JSDoc to record why the stub was removed and what the future path looks like (CfnInclude / AwsCustomResource on the Terraform proxy rather than recreating). Local cdk diff against env=dev showed exactly 6 resource destroys (SG, SG ingress, IAM Role, IAM Policy, DBProxy, TargetGroup) + 3 output removals, zero replacements. DbSecretArn output preserved. PR #18 opened against development. Branch chore/d1-delete-cdk-proxy-stub. Pre-commit hooks (detect-secrets, large-files, merge-conflict, private-key, branch-guard) all passed.</div>
         </div>
         </div>
         </div>
