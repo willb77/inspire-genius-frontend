@@ -1,3 +1,52 @@
+## [2026-05-07 PM] — M (monolith SECRET_KEY) tooling — SSM Run Command script
+
+Closes the ergonomics gap on REMAINING_TASKS.md M.1/M.2. Adds a
+reproducible, idempotent verify-or-rotate script. PR #13 merged.
+
+### Pre-work findings
+- Auth-service Lambda `SECRET_KEY` first 8 chars match the rotation
+  target documented in `agents.md` memory dated 2026-05-05.
+- Monolith EC2 `i-029f0b2e216a70acb` (tag `inspires-genius-dev-backend`)
+  is the **only** monolith instance — there is no separate prod EC2.
+  REMAINING_TASKS.md was incorrectly framing this as "production" work.
+- SSM agent on the EC2 is Online → no SSH dependency for rotation.
+
+### What landed
+- `infrastructure/scripts/rotate-monolith-secret-key.sh`:
+  - Reads source-of-truth value at runtime from
+    `aws lambda get-function-configuration ig-dev-auth-service` (no
+    secret hardcoded in the script or its history)
+  - Reads `/opt/inspire-genius/.env` current value via SSM Run Command
+    (`AWS-RunShellScript`)
+  - Compares; exits 0 if match
+  - On mismatch: `--check` (read-only, exit 1), no flag (interactive),
+    `--yes` (non-interactive). Backs up `.env` to `.env.bak.<ts>`
+    before writing, restarts `docker-compose up -d --force-recreate
+    inspire-genius-backend`, health-checks `/health`.
+- `REMAINING_TASKS.md` updated: M.1/M.2 now point at the script;
+  corrected "production monolith" framing.
+
+### Why script-not-deploy
+This script is a tool for the operator — it touches a shared system
+and is most useful when run on demand. The right home is the
+`infrastructure/scripts/` directory next to `secrets-setup.sh`,
+`backup.sh`, `dr-failover.sh`, etc. — all hand-run operational tools.
+
+### Verification
+- `bash -n` syntax check ✓
+- Live `--check` invocation **deliberately not run** (would be a prod
+  read of credentials via SSM; safety-gated, requires user
+  authorization to execute).
+
+### Files
+- `infrastructure/scripts/rotate-monolith-secret-key.sh` (new, +exec bit)
+- `REMAINING_TASKS.md` — M.1/M.2 reflective of new tooling
+
+### Commits
+- monorepo `dda1257` — chore: monolith SECRET_KEY rotation script via SSM Run Command (PR #13)
+
+---
+
 ## [2026-05-07 mid] — Tech-debt items 3+4: pre-synth cleanup + secrets-baseline filter
 
 Two prevention items, both surfaced by yesterday's Phase C deploy session.

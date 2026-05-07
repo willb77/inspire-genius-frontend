@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1017</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1018</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22445,6 +22445,9 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1017 [tech-debt items 3+4 — pre-synth + secrets baseline]</div>
           <div class="prompt-text">User: yes proceed with 3 and 4. Two prevention items shipped via PR #11 (merged 13:47 UTC). (3) Pre-synth CDK cleanup: new "npm run clean" script in infrastructure/cdk/package.json removes lib/*.{js,d.ts} + bin/cdk.{js,d.ts}, chained from build/cdk/synth/diff scripts. GHA cdk-deploy.yml gets defensive "Clean stale CDK build artifacts" step before validate, diff, and deploy. .claude/rules/cdk.md documents the ts-node-shadowed-by-stale-.js trap so future sessions don't re-discover it. (4) detect-secrets baseline: added exclude-secrets regex filter for __INJECTED__, POSTGRES_SCRAM_SHA_256, &lt;placeholder&gt;, placeholder. Future PRs documenting Secrets-Manager runtime injection won't need pragma:allowlist annotations. Item 2 (M.1/M.2 monolith SECRET_KEY rotation) deferred — touches prod EC2 via SSH, out of /full-go autonomous scope. D1 (dual RDS Proxy) reserved for clean session.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1018 [prep SSM doc for M — monolith SECRET_KEY]</div>
+          <div class="prompt-text">User: prep the SSM doc for M. Verified pre-work — auth-service Lambda SECRET_KEY = 817efb5a86a86d86…, monolith EC2 i-029f0b2e216a70acb (tag inspires-genius-dev-backend, dev only — no separate prod) running with SSM agent Online. Wrote infrastructure/scripts/rotate-monolith-secret-key.sh: reads source-of-truth value at runtime from auth-service Lambda (no secret hardcoded), reads /opt/inspire-genius/.env via SSM Run Command, compares; on mismatch supports --check (read-only), interactive (default), and --yes (non-interactive) modes; backs up .env before writing, restarts docker-compose service, hits /health. NOT executed — script is a tool for the user to invoke when ready. PR #13 merged. Updated REMAINING_TASKS.md M.1/M.2 to reference the script and corrected the "production monolith" framing (only dev exists). Bash syntax-check passed; live --check rightly blocked by safety gate (it would have been a prod read of credentials via SSM, needs explicit user authorization to run).</div>
         </div>
         </div>
         </div>
