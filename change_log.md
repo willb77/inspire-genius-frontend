@@ -1,3 +1,96 @@
+## [2026-05-07 AM] — D2/D3/D4 drift items closed
+
+Three drift items from the post-PM7 survey are now resolved on dev. D2 needed
+real CDK work; D3 and D4 turned out to already be closed by yesterday's deploy.
+
+### D3 — Audit Lambda VPC SG (already closed)
+Pre-work verification:
+```bash
+aws lambda get-function-configuration --function-name ig-dev-audit-service \
+  --query "VpcConfig.SecurityGroupIds"
+# → ["sg-01c2bce7f18b0f33c"]
+aws ec2 describe-security-groups --group-ids sg-01c2bce7f18b0f33c \
+  --query "SecurityGroups[0].Tags"
+# → aws:cloudformation:logical-id = LambdaDataSgA7FE6C5C, stack = ig-dev-services
+```
+The audit Lambda is on the CDK-managed `LambdaDataSg`. PM6's manual SG change
+(`sg-024576d1f0a6198e8`) was reverted to CDK control during yesterday's
+PR #7 deploy, and the new TfRdsProxySg ingress rule from `lambdaDataSg` means
+the proxy now accepts the connection without needing the migration-runner SG.
+
+### D4 — Audit Lambda DATABASE_URL Secrets Manager pattern (already closed)
+Pre-work verification:
+```bash
+aws lambda get-function-configuration --function-name ig-dev-audit-service \
+  --query "Environment.Variables"
+# → DATABASE_URL=postgresql+asyncpg://ig_admin:<placeholder>@inspires-genius-dev-rds-proxy.../inspire_genius (literal __INJECTED__ token, runtime-resolved from Secrets Manager)
+#   DB_PASSWORD_SECRET_ARN=arn:aws:secretsmanager:us-east-1:568505405842:secret:inspires-genius-dev/aurora/master-credentials
+```
+Yesterday's PM7 + PR #7 work landed `_resolve_database_url()` runtime injection
+from Secrets Manager. No plaintext password in env vars.
+
+### D2 — RDS Proxy IAMAuth (real work)
+The TF-managed proxy `inspires-genius-dev-rds-proxy` was manually flipped from
+IAMAuth=REQUIRED to DISABLED in PM6 so audit/auth Lambdas could connect with
+the master password (Lambdas don't generate IAM tokens at startup today).
+That had no IaC home — if Terraform's owner re-applies the proxy template,
+REQUIRED would silently come back and every DB call would fail.
+
+Implemented via `AwsCustomResource` in `services-stack.ts` that calls
+`rds:ModifyDBProxy` on every CDK deploy. Dev-only via `if (!isProd)`; prod is
+skipped until consumers grow IAM-token support.
+
+```typescript
+new AwsCustomResource(this, 'TfProxyAuthPin', {
+  onCreate: {
+    service: 'RDS',
+    action: 'modifyDBProxy',
+    parameters: {
+      DBProxyName: tfProxyName,
+      Auth: [{ AuthScheme: 'SECRETS', SecretArn: ..., IAMAuth: 'DISABLED', ... }],
+    },
+    physicalResourceId: PhysicalResourceId.of(`${tfProxyName}-auth-disabled`),
+  },
+  onUpdate: { /* same */ },
+  policy: AwsCustomResourcePolicy.fromStatements([...rds:ModifyDBProxy, rds:DescribeDBProxies]),
+});
+```
+
+PR #9 → merged → workflow_dispatch run 25496125102 deployed cleanly:
+- `TfProxyAuthPinA246B53E` CREATE_COMPLETE at 12:53:44 UTC
+- Stack `UPDATE_COMPLETE` at 12:53:50 UTC
+
+Smoke (post-deploy 12:54 UTC):
+```bash
+aws rds describe-db-proxies --db-proxy-name inspires-genius-dev-rds-proxy \
+  --query "DBProxies[0].Auth[0]"
+```
+```json
+{
+  "IAMAuth": "DISABLED",
+  "AuthScheme": "SECRETS",
+  "ClientPasswordAuthType": "POSTGRES_SCRAM_SHA_256"  // pragma: allowlist secret
+}
+```
+
+### What's still open
+- **D1 — dual RDS Proxy drift.** CDK creates `ig-dev-rds-proxy` (unused);
+  consumers point at TF-managed `inspires-genius-dev-rds-proxy`. Bigger
+  architecture decision: either repoint consumers onto CDK proxy + delete TF
+  proxy, or delete the CDK stub and add an explicit imported reference.
+  Either path requires database-stack.ts changes. Deferred.
+- **Prod IAMAuth=REQUIRED.** When prod consumer Lambdas grow IAM-token
+  generation at startup, flip `tfProxyAuthMode` to honor `isProd ? 'REQUIRED'
+  : 'DISABLED'` (logic is already in place; just needs to be activated).
+
+### Files
+- `infrastructure/cdk/lib/services-stack.ts` — `AwsCustomResource` for D2
+
+### Commits
+- monorepo `6430bf9` — feat(cdk): D2 — pin RDS Proxy IAMAuth via AwsCustomResource (PR #9)
+
+---
+
 ## [2026-05-07 PM] — Phase C minimum DEPLOYED to dev + smoke green
 
 End-to-end live on dev. The kill-switch + system-status endpoint + auth-service
