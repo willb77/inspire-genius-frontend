@@ -1,3 +1,89 @@
+## [2026-05-07 PM] — Phase C minimum DEPLOYED to dev + smoke green
+
+End-to-end live on dev. The kill-switch + system-status endpoint + auth-service
+drift pin are running in production-equivalent infra.
+
+### Deploy attempts (3 dispatches)
+1. **Workflow dispatch on `chore/e3-cdk-drift-pinning`** — OIDC failed.
+   `gha-cdk-deploy` trust policy only matches `refs/heads/development|main`,
+   `environment:dev/staging/prod`, or `pull_request`. Feature branches denied.
+2. **PR #6** opened to use `pull_request` claim — validate + diff PASS.
+   Merged to development.
+3. **Workflow dispatch on `development`** for `ig-dev-services` (run
+   25474428783) — CFN deploy FAILED: `Invalid rule description` on the new
+   `TfRdsProxySg` ingress. EC2 SG descriptions reject characters outside
+   `[a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*]`. The PM7 commit had used U+2192
+   RIGHTWARDS ARROW (`→`) in `'Lambda data SG → TF-managed RDS Proxy'`.
+   Stack rolled back cleanly.
+4. **PR #7** opened with one-char fix → ASCII `'Lambda data SG to TF-managed
+   RDS Proxy'`. Validate + diff pass. Merged.
+5. **Workflow dispatch on `development`** for `ig-dev-services` (run
+   25475512406) — CFN deploy FAILED: `AuditEventRuleIgebEA8D6041` already
+   exists. The PM6 commit text said the second EventBridge rule was "pinned
+   in CDK," but because the local CDK synth was running stale .js artifacts
+   from 2026-04-27, the pinning never actually deployed. The manual AWS rule
+   `ig-dev-audit-events-igeb` was orphaned drift, not CDK-managed.
+6. Deleted the manual rule + targets via `aws events remove-targets` +
+   `delete-rule`. Re-dispatched (run 25476172167) — SUCCESS.
+7. **Workflow dispatch on `development`** for `ig-dev-agent-engine` (run
+   25474431735) — SUCCESS in parallel. Task def rev 32 confirmed with
+   `FEATURE_ECOSYSTEM_DISABLED=false` via `aws ecs describe-task-definition`.
+
+### Smoke test (post-deploy 04:55 UTC)
+- Scaled `ig-dev-agent-engine` 0 → 1, waited stable.
+- `curl https://8umg6xioz5.execute-api.us-east-1.amazonaws.com/v1/agents/system-status`
+  → HTTP 200 in 185ms, body
+  `{"service":"agent-engine","version":"1.1.0","ecosystem_enabled":true,"active_connections":0}`.
+- `curl -X POST .../v1/agents/chat -d '{}'` → HTTP 422 (Pydantic validator
+  for missing access-token + message), NOT 503 — confirms kill-switch is OFF.
+- Deployed CFN template confirmed: `AuthLambda DATABASE_URL` =
+  `postgresql+asyncpg://ig_admin:<placeholder>@inspires-genius-dev-rds-proxy...` (literal `__INJECTED__` token, runtime-resolved from Secrets Manager),
+  `DB_PASSWORD_SECRET_ARN` =
+  `arn:aws:secretsmanager:us-east-1:568505405842:secret:inspires-genius-dev/aurora/master-credentials`.
+- Scaled agent-engine back to desired=0 (cost-saving idle).
+
+### What's pinned in CDK that wasn't before
+- ✓ `FEATURE_ECOSYSTEM_DISABLED` env var on agent-engine task def (D7-style new pinning)
+- ✓ `ig-dev-audit-events-igeb` EventBridge rule on `inspire-genius-events` bus
+- ✓ `TfRdsProxySg` ingress + `LambdaDataSg` egress to TF proxy (the actual
+  drift fix from PM7)
+- ✓ Auth Lambda `DATABASE_URL` with Secrets Manager runtime injection (D5/D6)
+- ✓ Audit Lambda `DATABASE_URL` with Secrets Manager runtime injection (D4 partial)
+
+### Critical lessons logged
+- **Stale `.js` artifacts shadow `.ts` source under ts-node.** Every local
+  `cdk diff/synth` since 2026-04-27 was producing stale templates. CI was
+  fine (clean checkout) but no human-driven local diff was reliable.
+  `bin/cdk.{js,d.ts}` and `lib/*.{js,d.ts}` are gitignored but persist
+  across runs; node's module resolver finds the .js before ts-node's hook
+  fires. Should add a pre-synth step (or .gitignore-aware rm) to the next
+  workflow change.
+- **OIDC trust policy doesn't allow feature-branch workflow_dispatch.**
+  PR-then-merge is the only path for feature work to deploy. Consider
+  adding `environment: dev` to the validate/diff jobs (the deploy job
+  already has it) so feature branches can at least diff via dispatch.
+- **Manual AWS resources collide with CDK on first real deploy.** Anything
+  created via aws cli during incident response needs an explicit cdk import
+  or a delete+recreate plan. Add to ops checklist.
+
+### Commits
+- monorepo `31f0aaa` — Phase C kill-switch + auth-service drift pin (PR #6)
+- monorepo `54c7417` — log Phase C minimum landing
+- monorepo `390ff1c` — fix(cdk): ASCII-only TfRdsProxySg ingress description (PR #7)
+- frontend `4b8398d` — system-status poll + EcosystemStatusBanner
+- frontend `4dd34f2` — log sync
+
+### Phase C minimum status: COMPLETE on dev
+- [x] Backend kill-switch (`FEATURE_ECOSYSTEM_DISABLED`)
+- [x] `GET /v1/agents/system-status`
+- [x] CDK env-var pin on agent-engine ECS task def
+- [x] Frontend service + hook + banner
+- [x] Deploy + smoke green
+
+Next: D2/D3/D4 drift work pending user approval.
+
+---
+
 ## [2026-05-07] — Phase C minimum landed: kill-switch + system-status banner + auth-service drift pin
 
 End-to-end Coexistence Harness lite — frontend now polls the agent-engine

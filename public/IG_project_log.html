@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1014</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1015</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22436,6 +22436,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1014 [Phase C minimum — kill-switch + drift survey]</div>
           <div class="prompt-text">User: full-go on Phase C minimum. Did: (1) Backend kill-switch already in working tree (FEATURE_ECOSYSTEM_DISABLED env-var check in agent-engine main.py + task_agents.py, returns 503 ECOSYSTEM_DISABLED + GET /v1/agents/system-status reports {ecosystem_enabled, version, active_connections}). (2) Pinned env var in CDK agent-engine-stack.ts ECS task def, default 'false', overridable via --context featureEcosystemDisabled=true. (3) Frontend wiring: src/services/agent/systemStatusService.ts + src/hooks/agents/useSystemStatus.ts (refetchInterval 30s) + src/components/shared/EcosystemStatusBanner.tsx (amber banner under header when ecosystem_enabled=false OR endpoint unreachable) + AppShell mount. (4) Auth-service drift pin from working tree committed: services-stack.ts auth Lambda DATABASE_URL switched to ig_admin:__INJECTED__@ + DB_PASSWORD_SECRET_ARN + auroraSecret.grantRead(authLambdaRole). 7 new files / 4 modified across 2 repos, 2 commits pushed. Critical infra finding: ts-node entry was being shadowed by stale .js artifacts from 2026-04-27 in lib/ and bin/ — every recent local CDK synth was running stale code, hiding all .ts edits since that date. Deleted bin/cdk.{js,d.ts} + lib/*.{js,d.ts}; ts-node now correctly drives bin/cdk.ts per cdk.json. GHA deploys dispatched (run 25473848009 ig-dev-services, run 25473858698 ig-dev-agent-engine).</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1015 [Phase C minimum — DEPLOYED + smoke green]</div>
+          <div class="prompt-text">Phase C minimum LIVE on dev. Path took 3 GHA dispatches: (1) feature-branch dispatch failed OIDC trust policy (chore/* not allowlisted; only refs/heads/development|main and pull_request match). Opened PR #6, used pull_request claim — passed. Merged. (2) workflow_dispatch on development for ig-dev-services failed: U+2192 RIGHTWARDS ARROW (→) in TfRdsProxySg ingress description. EC2 SG descriptions reject anything outside [a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*]. Opened PR #7 with one-char fix → ASCII 'to'. Merged. (3) Re-dispatch failed: AuditEventRuleIgeb already exists (created manually in PM6, never actually pinned because of the stale .js bug). Deleted manual rule + targets via aws cli. (4) Final dispatch SUCCESS — run 25476172167. ig-dev-agent-engine run 25474431735 succeeded earlier in parallel (rev 32 task def with FEATURE_ECOSYSTEM_DISABLED=false confirmed via aws ecs describe-task-definition). Smoke: GET /v1/agents/system-status → HTTP 200 in 185ms, body {service:agent-engine, version:1.1.0, ecosystem_enabled:true, active_connections:0}. POST /v1/agents/chat (no body) → 422 (Pydantic validator), NOT 503 → kill-switch correctly OFF. Deployed AuthLambda template confirms DATABASE_URL=ig_admin:__INJECTED__@ + DB_PASSWORD_SECRET_ARN. ECS scaled back to desired=0 after smoke. PAUSE for D2/D3/D4 drift work approval.</div>
+        </div>
         </div>
         </div>
         </div>
