@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1016</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1017</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22442,6 +22442,9 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1016 [D2/D3/D4 drift wrap-up]</div>
           <div class="prompt-text">User: proceed with D2/D3/D4. Pre-work verification revealed D3 + D4 were already closed by the PR #7 deploy: aws lambda get-function-configuration on ig-dev-audit-service shows VpcConfig.SecurityGroupIds=[sg-01c2bce7f18b0f33c] which is the CDK-managed LambdaDataSg (CFN tags confirm), and env DATABASE_URL=ig_admin:__INJECTED__@ + DB_PASSWORD_SECRET_ARN with no plaintext password. Only D2 (RDS Proxy IAMAuth) needed real work. Implemented via AwsCustomResource in services-stack.ts that calls rds:ModifyDBProxy on every CDK deploy to enforce IAMAuth=DISABLED on the TF-managed proxy inspires-genius-dev-rds-proxy. Dev only — prod gated by isProd check, intentionally skipped until consumers grow IAM-token support. PR #9 opened → CI passed (validate+diff via pull_request OIDC claim). Merged. Workflow dispatch run 25496125102 deployed cleanly: TfProxyAuthPinA246B53E CREATE_COMPLETE at 12:53:44, stack UPDATE_COMPLETE at 12:53:50. Smoke green: aws rds describe-db-proxies → Auth[0].IAMAuth = "DISABLED", AuthScheme=SECRETS, ClientPasswordAuthType=POSTGRES_SCRAM_SHA_256. All three drift items now closed. D1 (dual RDS Proxy) deferred — bigger architecture change requires repointing consumers off TF-managed proxy onto CDK proxy or deleting the unused CDK stub.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1017 [tech-debt items 3+4 — pre-synth + secrets baseline]</div>
+          <div class="prompt-text">User: yes proceed with 3 and 4. Two prevention items shipped via PR #11 (merged 13:47 UTC). (3) Pre-synth CDK cleanup: new "npm run clean" script in infrastructure/cdk/package.json removes lib/*.{js,d.ts} + bin/cdk.{js,d.ts}, chained from build/cdk/synth/diff scripts. GHA cdk-deploy.yml gets defensive "Clean stale CDK build artifacts" step before validate, diff, and deploy. .claude/rules/cdk.md documents the ts-node-shadowed-by-stale-.js trap so future sessions don't re-discover it. (4) detect-secrets baseline: added exclude-secrets regex filter for __INJECTED__, POSTGRES_SCRAM_SHA_256, &lt;placeholder&gt;, placeholder. Future PRs documenting Secrets-Manager runtime injection won't need pragma:allowlist annotations. Item 2 (M.1/M.2 monolith SECRET_KEY rotation) deferred — touches prod EC2 via SSH, out of /full-go autonomous scope. D1 (dual RDS Proxy) reserved for clean session.</div>
         </div>
         </div>
         </div>

@@ -1,3 +1,50 @@
+## [2026-05-07 mid] — Tech-debt items 3+4: pre-synth cleanup + secrets-baseline filter
+
+Two prevention items, both surfaced by yesterday's Phase C deploy session.
+PR #11 merged 13:47 UTC.
+
+### Item 3 — Pre-synth CDK cleanup
+Defends against the trap where stale `lib/*.{js,d.ts}` and `bin/cdk.{js,d.ts}`
+artifacts shadow `.ts` source under ts-node. Every local `cdk synth/diff/deploy`
+that runs in this state silently uses the stale code, hiding `.ts` edits.
+
+- `infrastructure/cdk/package.json` — new `clean` script:
+  ```
+  "clean": "find lib bin -maxdepth 2 \\( -name '*.js' -o -name '*.d.ts' \\) -not -path '*/node_modules/*' -delete 2>/dev/null || true"
+  ```
+  And `build`, `cdk`, `synth`, `diff` all chain through it.
+- `.github/workflows/cdk-deploy.yml` — adds a defensive
+  "Clean stale CDK build artifacts" step before each of validate, diff, deploy
+  jobs. Cheap on fresh runners, catches accidentally-committed artifacts.
+- `.claude/rules/cdk.md` — new "ts-node + stale .js trap" section so future
+  sessions learn the rule without rediscovering it.
+
+### Item 4 — detect-secrets baseline cleanup
+- `.secrets.baseline` — adds `exclude-secrets` regex filter:
+  `__INJECTED__`, `POSTGRES_SCRAM_SHA_256`, `<placeholder>`, `placeholder`.
+- Regenerated baseline with current `exclude-files` patterns.
+- Future PRs documenting the Secrets-Manager runtime injection pattern
+  (which always references these literals) won't need
+  `# pragma: allowlist secret` annotations.
+
+### Files
+- `infrastructure/cdk/package.json` — clean script + chained build/cdk/synth/diff
+- `.github/workflows/cdk-deploy.yml` — Clean stale CDK build artifacts step (3 places)
+- `.claude/rules/cdk.md` — new section documenting the trap
+- `.secrets.baseline` — exclude-secrets filter + regenerated entries
+
+### Commits
+- monorepo `046d067` — chore: pre-synth CDK cleanup + secrets-baseline false-positive filter (PR #11)
+
+### Deferred
+- **Item 2 (M.1/M.2 monolith SECRET_KEY rotation)** — touches prod EC2
+  via SSH, out of /full-go autonomous scope. Need user-driven SSH session
+  or SSM Run Command document.
+- **Item 1 (D1 dual RDS Proxy)** — reserved for a fresh session; the
+  database-stack rework warrants dedicated context.
+
+---
+
 ## [2026-05-07 AM] — D2/D3/D4 drift items closed
 
 Three drift items from the post-PM7 survey are now resolved on dev. D2 needed
