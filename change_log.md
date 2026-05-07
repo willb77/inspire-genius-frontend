@@ -1,3 +1,59 @@
+## [2026-05-07 PM2] — M.1 verified live + 2 script bugs fixed
+
+User authorized live `--check` execution against
+`i-029f0b2e216a70acb`. First run revealed two bugs in the script,
+both fixed in PR #15.
+
+### Bug 1: Unicode ellipsis adjacent to `$VAR`
+`U+2026 HORIZONTAL ELLIPSIS` in log strings sat right after
+`$INSTANCE_ID` and `$AUTH_FN`. Bash parsed it as `${INSTANCE_ID...}`
+which under `set -u` is unbound. Same class as yesterday's
+`U+2192 →` SG description issue (PR #7). Replaced all 7 occurrences
+with ASCII three-dot.
+
+### Bug 2: AWS CLI shorthand mangled SSM script content
+`--parameters "commands=[...]"` shorthand corrupted the inline shell;
+`set -e` arrived on the EC2 as `set -i`, causing the SSM Run Command
+to die with "set: -i: invalid option". New `ssm_send()` helper writes
+parameters to a temp JSON file via `python3 -c "json.dumps(...)"`
+and uses `--parameters file://`, bypassing the shorthand parser.
+
+### Re-run result (live)
+```
+[10:12:43] Reading SECRET_KEY from auth-service Lambda (ig-dev-auth-service)...
+[10:12:44]   target = 817efb5a...2a8f (len=64)
+[10:12:44] Verifying SSM agent on i-029f0b2e216a70acb...
+[10:12:45] Reading current SECRET_KEY from i-029f0b2e216a70acb:/opt/inspire-genius/.env...
+[10:12:46]   ssm command id: a1019a3a-b32c-4317-bfab-067e6056421b  (polling...)
+[10:12:48]   current = 817efb5a...2a8f (len=64)
+[10:12:48] SECRET_KEY already matches — no rotation needed
+```
+
+### Result
+- **M.1 — DONE.** Monolith `/opt/inspire-genius/.env` SECRET_KEY
+  already matches auth-service Lambda. Same target value as the
+  2026-05-05 `agents.md` memory verification.
+- **M.2 — on hold.** No rotation has actually happened, so there's
+  nothing to validate via `/v1/auth/validate-token` yet. M.2 reactivates
+  if a future rotation does land.
+
+### Lesson cross-cut
+We've now hit the same shape of Unicode-in-`set -u`-context bug twice
+in 24 hours: yesterday in CDK (`→` in SG description) and today in
+this script (`...` in log message). Worth adding to `.claude/rules/`
+or a pre-commit hook: scan for non-ASCII chars adjacent to `$VAR`
+expansions in shell scripts and `addEgressRule`/`addIngressRule`
+description args in CDK. Future-Claude tax.
+
+### Files
+- `infrastructure/scripts/rotate-monolith-secret-key.sh` — ASCII fixes + `ssm_send()` helper
+- `REMAINING_TASKS.md` — M.1 marked done
+
+### Commits
+- monorepo `78fab81` — fix(scripts): ASCII ellipsis + JSON-file SSM params (PR #15)
+
+---
+
 ## [2026-05-07 PM] — M (monolith SECRET_KEY) tooling — SSM Run Command script
 
 Closes the ergonomics gap on REMAINING_TASKS.md M.1/M.2. Adds a
