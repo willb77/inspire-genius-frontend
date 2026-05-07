@@ -4,6 +4,7 @@ import AppHeader from "@/components/layout/AppHeader"
 import AppSidebar from "@/components/layout/AppSidebar"
 import RightPanel from "@/components/layout/RightPanel"
 import SkipToContent from "@/components/shared/SkipToContent"
+import { EcosystemStatusBanner } from "@/components/shared/EcosystemStatusBanner"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
@@ -28,6 +29,7 @@ export default function AppShell({ role, children, className }: AppShellProps) {
     <div className="min-h-screen bg-[#f9fafb]">
       <SkipToContent />
       <AppHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
+      <EcosystemStatusBanner />
       <AppSidebar
         role={sidebarRole}
         open={sidebarOpen}

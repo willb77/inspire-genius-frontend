@@ -54,6 +54,11 @@ jest.mock("@/components/shared/SkipToContent", () => ({
   default: () => <a data-testid="skip-to-content" />,
 }));
 
+jest.mock("@/components/shared/EcosystemStatusBanner", () => ({
+  __esModule: true,
+  EcosystemStatusBanner: () => null,
+}));
+
 import AppShell from "../AppShell";
 
 describe("AppShell", () => {
