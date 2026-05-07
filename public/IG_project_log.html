@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1012</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1013</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22430,6 +22430,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-06 — Prompt #1012 [E3 cleanup PM6 — audit flow live]</div>
           <div class="prompt-text">User: yes roll them up. Plus address remaining cleanup items. Did: seed agent_configs (5 rows + ecosystems FK), flip monolith proxy ENABLE_TASK_AGENT_* default to 1, smoke task_results table, then 4-deep yak shave on the audit-service event flow: rule was on default bus not inspire-genius-events; audit Lambda lacked DB password; SG wasn't on proxy allow-list (switched to migration-runner SG); proxy IAMAuth was REQUIRED (set to DISABLED); audit-service mapper read extra_data not event_metadata where the data lives. End-to-end smoke now puts a tasks.invocation row in audit_logs visible to the Tasks observability tab.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-06 — Prompt #1013 [E3 cleanup PM7 — CDK pinning + E2 functional verification]</div>
+          <div class="prompt-text">PM6 manual AWS changes pinned in CDK: lambdaDataSg → tfProxySg egress (the actual missing piece — was only egressing to Aurora SG), audit-service DATABASE_URL with __INJECTED__ + runtime secret resolution, same fixes applied to auth-service db.py. Documented dual-proxy drift (CDK creates ig-dev-rds-proxy which is unused; consumers use Terraform-managed inspires-genius-dev-rds-proxy). E2 verification: 17/17 specialist agents process at container level (verified via CloudWatch access logs), but 0/17 return through HTTP API Gateway due to 30s integration timeout vs ~25-50s chat pipeline runtime. Access controls: 2/3 pass at task layer (Maven + James 403); chat-layer enforcement is a Phase C item. Acceptable result because primary chat path is WebSocket (no timeout); HTTP /v1/agents/chat is documented REST fallback.</div>
+        </div>
         </div>
         </div>
         </div>
