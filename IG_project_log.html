@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1013</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1014</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22433,6 +22433,9 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-06 — Prompt #1013 [E3 cleanup PM7 — CDK pinning + E2 functional verification]</div>
           <div class="prompt-text">PM6 manual AWS changes pinned in CDK: lambdaDataSg → tfProxySg egress (the actual missing piece — was only egressing to Aurora SG), audit-service DATABASE_URL with __INJECTED__ + runtime secret resolution, same fixes applied to auth-service db.py. Documented dual-proxy drift (CDK creates ig-dev-rds-proxy which is unused; consumers use Terraform-managed inspires-genius-dev-rds-proxy). E2 verification: 17/17 specialist agents process at container level (verified via CloudWatch access logs), but 0/17 return through HTTP API Gateway due to 30s integration timeout vs ~25-50s chat pipeline runtime. Access controls: 2/3 pass at task layer (Maven + James 403); chat-layer enforcement is a Phase C item. Acceptable result because primary chat path is WebSocket (no timeout); HTTP /v1/agents/chat is documented REST fallback.</div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1014 [Phase C minimum — kill-switch + drift survey]</div>
+          <div class="prompt-text">User: full-go on Phase C minimum. Did: (1) Backend kill-switch already in working tree (FEATURE_ECOSYSTEM_DISABLED env-var check in agent-engine main.py + task_agents.py, returns 503 ECOSYSTEM_DISABLED + GET /v1/agents/system-status reports {ecosystem_enabled, version, active_connections}). (2) Pinned env var in CDK agent-engine-stack.ts ECS task def, default 'false', overridable via --context featureEcosystemDisabled=true. (3) Frontend wiring: src/services/agent/systemStatusService.ts + src/hooks/agents/useSystemStatus.ts (refetchInterval 30s) + src/components/shared/EcosystemStatusBanner.tsx (amber banner under header when ecosystem_enabled=false OR endpoint unreachable) + AppShell mount. (4) Auth-service drift pin from working tree committed: services-stack.ts auth Lambda DATABASE_URL switched to ig_admin:__INJECTED__@ + DB_PASSWORD_SECRET_ARN + auroraSecret.grantRead(authLambdaRole). 7 new files / 4 modified across 2 repos, 2 commits pushed. Critical infra finding: ts-node entry was being shadowed by stale .js artifacts from 2026-04-27 in lib/ and bin/ — every recent local CDK synth was running stale code, hiding all .ts edits since that date. Deleted bin/cdk.{js,d.ts} + lib/*.{js,d.ts}; ts-node now correctly drives bin/cdk.ts per cdk.json. GHA deploys dispatched (run 25473848009 ig-dev-services, run 25473858698 ig-dev-agent-engine).</div>
         </div>
         </div>
         </div>

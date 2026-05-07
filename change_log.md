@@ -1,3 +1,86 @@
+## [2026-05-07] — Phase C minimum landed: kill-switch + system-status banner + auth-service drift pin
+
+End-to-end Coexistence Harness lite — frontend now polls the agent-engine
+for ecosystem health every 30s and surfaces an amber banner across the app
+shell when the platform-wide kill-switch flips or the endpoint is unreachable.
+
+### Backend (agent-engine, already in working tree from session prep)
+- `services/agent-engine/app/main.py` — `_ecosystem_disabled()` reads
+  `FEATURE_ECOSYSTEM_DISABLED` env var. Returns 503 `ECOSYSTEM_DISABLED`
+  on `POST /v1/agents/chat` when set. New `GET /v1/agents/system-status`
+  reports `{service, version, ecosystem_enabled, active_connections}`.
+- `services/agent-engine/app/routes/task_agents.py` — same gate on the 5
+  task agents (Maven, James, Atlas, Forge, Sage) via `_run_task`.
+
+### CDK
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `FEATURE_ECOSYSTEM_DISABLED`
+  pinned in the ECS task def env block, default `'false'`, override per-deploy
+  with `--context featureEcosystemDisabled=true`. Toggling it forces a task-def
+  revision and ~60s rolling restart.
+- `infrastructure/cdk/lib/services-stack.ts` — auth Lambda `DATABASE_URL`
+  switched to `ig_admin:__INJECTED__@…` placeholder; runtime resolution via
+  `_resolve_database_url()` (audit-service pattern from PM7). Added
+  `DB_PASSWORD_SECRET_ARN` env var + `auroraSecret.grantRead(authLambdaRole)`.
+  Closes drift items D5 + D6 from the post-PM7 survey.
+
+### Frontend (`inspire-genius-frontend/`)
+- `src/services/agent/systemStatusService.ts` — typed `getSystemStatus()`
+  hits `agentApi.get('/v1/agents/system-status')`.
+- `src/hooks/agents/useSystemStatus.ts` — react-query wrapper, `refetchInterval=30000`,
+  `staleTime=15000`, `retry=1`.
+- `src/components/shared/EcosystemStatusBanner.tsx` — amber banner with
+  `AlertTriangle` icon, `role="status" aria-live="polite"`, fixed under
+  the header at `top: var(--spacing-header-h)`. Renders on
+  `ecosystem_enabled=false` OR fetch error.
+- `src/layouts/AppShell.tsx` — banner mounted once for all roles.
+- Tests: `src/services/agent/__tests__/systemStatusService.test.ts`
+  (happy path + error path); `AppShell.test.tsx` mocks the banner so the
+  existing 7 tests still pass.
+
+### Critical infra finding — stale .js shadowing .ts
+While diff'ing for the deploy, discovered that `npx cdk` was loading
+`bin/cdk.js` (compiled 2026-04-27) which transitively required
+`lib/*.js` from the same date. The `.ts` edits accumulated since then
+were never reaching synth — `cdk diff` showed empty even when
+`cdk.json` declared `"app": "npx ts-node --prefer-ts-exts bin/cdk.ts"`.
+Root cause: when `bin/cdk.js` exists, node's module resolver finds it
+before ts-node's hook fires. Fix: deleted `bin/cdk.{js,d.ts}` + all
+`lib/*.{js,d.ts}` (gitignored artifacts); ts-node now correctly drives
+`bin/cdk.ts`. Synth verified — `AuthLambda DATABASE_URL` now reflects
+the `__INJECTED__` placeholder.
+
+This explains why PM7's commit message noted "Auth-service db.py change
+needs CDK rebuild to actually deploy" — every local synth since
+2026-04-27 was running stale code. CI bundling (DinD `CDK_DOCKER_BUNDLING=1`)
+was unaffected because GHA actions check out clean and the .gitignore
+excludes the .js, but local devs would have been silently behind.
+
+### Phase C deferred (per change_log PM7 plan)
+- Server-side `users.preferred_system` + `organizations.preferred_system`
+- CI smoke matrix (5-prompt canned suite per system per PR)
+- Per-message `system='monolith'|'ecosystem'` tagging on chat_message
+- SystemSwitch UI failover banner (separate from EcosystemStatusBanner)
+- Per-task system override declarations
+
+### Files
+- `services/agent-engine/app/main.py`, `services/agent-engine/app/routes/task_agents.py`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`, `infrastructure/cdk/lib/services-stack.ts`
+- `inspire-genius-frontend/src/services/agent/systemStatusService.ts` + test
+- `inspire-genius-frontend/src/hooks/agents/useSystemStatus.ts`
+- `inspire-genius-frontend/src/components/shared/EcosystemStatusBanner.tsx`
+- `inspire-genius-frontend/src/layouts/AppShell.tsx` + test mock
+
+### Deploys
+- GHA `cdk-deploy.yml` dispatched on `chore/e3-cdk-drift-pinning`:
+  - `ig-dev-services` — run 25473848009 (auth Lambda secrets pin + audit drift)
+  - `ig-dev-agent-engine` — run 25473858698 (FEATURE_ECOSYSTEM_DISABLED env var)
+
+### Commits
+- monorepo: `31f0aaa` `feat(phase-c): kill-switch + auth-service drift pin`
+- frontend: `4b8398d` `feat(phase-c): poll /v1/agents/system-status, banner on degrade`
+
+---
+
 ## [2026-05-06 PM7] — Pin PM6 manual changes in CDK + E2 functional verification
 
 ### CDK drift pinning (PM6 manual changes)
