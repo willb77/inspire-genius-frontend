@@ -1,3 +1,92 @@
+## [2026-05-07 EOD] — Session wrap + D1 handoff authored
+
+End-of-day summary for the 2026-05-07 session (Prompts #1014–1020).
+
+### Deliverables landed today
+
+| Scope | Status | PRs |
+|-------|--------|-----|
+| Phase C minimum (kill-switch + status banner + auth-service drift pin) | ✅ deployed + smoked | #6, #7, #8 + frontend #2 |
+| D2 RDS Proxy IAMAuth pin via AwsCustomResource | ✅ deployed + smoked | #9, #10 + frontend #3 |
+| D3 audit Lambda VPC SG | ✅ already closed by PR #7 | (verification only) |
+| D4 audit Lambda DATABASE_URL Secrets Manager pattern | ✅ already closed by PR #7 | (verification only) |
+| Item 3 — pre-synth CDK cleanup (npm run clean + workflow step + cdk.md rule) | ✅ merged | #11, #12 + frontend #4 |
+| Item 4 — .secrets.baseline false-positive filter | ✅ merged | (in #11) |
+| M (monolith SECRET_KEY rotation) tooling | ✅ merged + verified live | #13, #15, #16 + frontend #5, #6 |
+| **Total: 13 PRs across both repos** | | |
+
+### D1 deferred — handoff doc authored
+
+`D1_HANDOFF.md` — self-contained brief at the project root. The next
+session can read it cold and pick up D1 with full context. Highlights:
+
+- Both proxies functionally identical; CDK proxy `ig-dev-rds-proxy` is
+  truly orphaned (zero importers via `cloudformation list-exports`,
+  zero source refs outside `database-stack.ts`).
+- All 4 consumers point at TF `inspires-genius-dev-rds-proxy`:
+  `ig-dev-auth-service`, `ig-dev-audit-service`, `ig-dev-agent-engine`,
+  monolith EC2.
+- Recommended **Path B** (delete CDK stub) — low blast radius, fully
+  reversible, expected diff is just 4 resource deletions + 3 output
+  removals.
+- Alt **Path A** (repoint consumers + delete TF proxy) documented for
+  completeness, but classed as Phase-C-scale migration risk.
+- Pre-deploy safety checks, deploy commands, post-deploy verification,
+  open questions, and tooling-already-in-place sections.
+
+### Lessons cross-cut (logged in D1_HANDOFF.md §6 + memory)
+
+1. **Stale `.js` shadows `.ts` under ts-node.** Hit weeks of "pinned in
+   CDK" claims that never deployed. Fixed by `npm run clean` chained
+   from build/synth/diff/cdk + defensive step in CI + rule in
+   `.claude/rules/cdk.md`.
+2. **OIDC trust policy excludes feature-branch `workflow_dispatch`.**
+   `gha-cdk-deploy` only allows `refs/heads/development|main`,
+   `pull_request`, or `environment:dev/staging/prod`. Validate/diff
+   jobs lack the env declaration, so feature-branch dispatch dies on
+   sts:AssumeRoleWithWebIdentity. Workaround: PR-then-merge.
+3. **Unicode chars adjacent to `$VAR` under `set -u` blow up.**
+   `→` in CDK SG description (PR #7), `…` in shell log strings (PR #15),
+   both within 24h. Use ASCII next to bash variable expansions and AWS
+   resource description fields.
+4. **AWS CLI `--parameters "commands=[...]"` shorthand mangles content.**
+   `set -e` arrived on the target as `set -i`. Fix: temp JSON via
+   `python3 -c "json.dumps(...)"` + `--parameters file://`.
+5. **Manual AWS resources collide with CDK on first real deploy.**
+   The audit `inspires-genius-events` rule was "pinned in CDK" textually
+   but never reached CFN due to the stale-`.js` trap. When the real
+   deploy happened, the manual rule blocked CDK. Always log a manual
+   `aws cli` action + an explicit `cdk import` or delete+recreate plan.
+
+### Files changed (across all PRs today)
+
+Backend / CDK:
+- `services/agent-engine/app/main.py`, `services/agent-engine/app/routes/task_agents.py` — kill-switch
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `FEATURE_ECOSYSTEM_DISABLED` env var
+- `infrastructure/cdk/lib/services-stack.ts` — auth Lambda secrets injection, `TfProxyAuthPin` AwsCustomResource, U+2192 → ASCII fix
+- `infrastructure/cdk/package.json` — `clean` + chained scripts
+- `.github/workflows/cdk-deploy.yml` — Clean stale CDK build artifacts step
+- `.secrets.baseline` — exclude-secrets filter
+- `.claude/rules/cdk.md` — ts-node trap section
+- `infrastructure/scripts/rotate-monolith-secret-key.sh` (new) — SSM-based verify/rotate
+
+Frontend:
+- `inspire-genius-frontend/src/services/agent/systemStatusService.ts` (new)
+- `inspire-genius-frontend/src/hooks/agents/useSystemStatus.ts` (new)
+- `inspire-genius-frontend/src/components/shared/EcosystemStatusBanner.tsx` (new)
+- `inspire-genius-frontend/src/layouts/AppShell.tsx` — banner mount
+
+Docs:
+- `D1_HANDOFF.md` (new) — self-contained brief for next session
+- `REMAINING_TASKS.md` — M.1 done, scope correction
+- `change_log.md`, `IG_project_log.html` — synced to all 5 copy locations
+
+### Standing
+- All scoped Phase C / drift / tooling work complete on dev.
+- D1 reserved for clean session per user direction; handoff doc authored.
+
+---
+
 ## [2026-05-07 PM2] — M.1 verified live + 2 script bugs fixed
 
 User authorized live `--check` execution against
