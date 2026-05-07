@@ -1,3 +1,26 @@
+## [2026-05-07] — V.1 monolith voice/chat verified resolved (no outage)
+
+### Verified
+- Container `inspire-genius-backend-1` up 8 days, **0 restarts** (started 2026-04-29T04:24:06Z)
+- Monolith EC2 `i-029f0b2e216a70acb`: 55-day uptime, load 0.08
+- All deps healthy: Milvus, Postgres, MinIO, etcd
+- WebSocket endpoint `/v1/agents/ws/alex-chat` accepts upgrade locally: `HTTP/1.1 101 Switching Protocols` from uvicorn
+- Last 2h of monolith logs: zero errors except a benign ASGI race produced by this probe (WS closed before first message)
+- Production traffic hitting `/v1/frontend-text` every 15-30 min — monolith is in active use for non-WS routes
+
+### Conclusion
+The 2026-04-21 voice/chat outage self-resolved when the container restarted on 2026-04-29. V.1 ✅, V.2 moot (no RCA needed), V.3 collapsed into W.1 (the real open question is whether to wire production WS routing to the monolith or leave it unreachable from prod).
+
+### Cosmetic follow-up (optional)
+Minor ASGI race in `alex_agent.py` when a client opens WS and disconnects before sending the first message produces:
+`Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.`
+Real users don't hit this path. Track as hygiene if monolith stays in service.
+
+### Files
+- `REMAINING_TASKS.md` — V.1/V.2/V.3 boxes checked, finding documented
+
+---
+
 ## [2026-05-07 EOD] — D1 closed: Path B deployed + verified
 
 ### Deployed
