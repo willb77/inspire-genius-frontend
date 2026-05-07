@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1021</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1022</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22458,6 +22458,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1021 [D1 Path B — delete unused CDK-stub RDS Proxy]</div>
           <div class="prompt-text">Continued from compacted session. Re-verified D1_HANDOFF.md pre-flight: both proxies present, the 3 CDK exports (RdsProxyEndpoint/Arn/SgId) still have zero importers, all consumers still on the Terraform proxy. Edited infrastructure/cdk/lib/database-stack.ts: deleted the entire RDS Proxy block (RdsProxySg + ingress, RdsProxyRole + policy, CfnDBProxy, CfnDBProxyTargetGroup, 3 zero-importer outputs), removed the unused public readonly proxyEndpoint property, dropped the orphaned rds import and auroraSgId context lookup, updated JSDoc to record why the stub was removed and what the future path looks like (CfnInclude / AwsCustomResource on the Terraform proxy rather than recreating). Local cdk diff against env=dev showed exactly 6 resource destroys (SG, SG ingress, IAM Role, IAM Policy, DBProxy, TargetGroup) + 3 output removals, zero replacements. DbSecretArn output preserved. PR #18 opened against development. Branch chore/d1-delete-cdk-proxy-stub. Pre-commit hooks (detect-secrets, large-files, merge-conflict, private-key, branch-guard) all passed.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1022 [D1 deploy + verify + close + EOD log]</div>
+          <div class="prompt-text">Both PR CIs completed successfully — monorepo #18 (synth 4m58s + diff in CI) and frontend #8 (Build/Audit/Trivy/Unit Tests all pass). CI's diff comment confirmed the same 6 destroys + 3 output removals from local diff; ig-dev-services showed "no differences" (TfProxyAuthPin from PR #9 preserved); ig-dev-trainer showed 2 Lambda S3Key drift (collateral from npm run clean rebuild — Lambda code unchanged, deferred from this PR's scope by targeting deploy at ig-dev-database only). Merged PR #18 (commit 6363e3f) and frontend PR #8 to development. Dispatched CDK Deploy run 25525243953 on development with stack=ig-dev-database, dry_run=false — completed in 22 minutes (synth 5m8s + diff 5m14s + deploy 10m30s + stub-zip verify 37s), stack UPDATE_COMPLETE at 22:36:50 UTC. Post-deploy verification: aws rds describe-db-proxies shows only inspires-genius-dev-rds-proxy (TF) — CDK stub gone; aws cloudformation list-exports filter on rds-proxy returns empty (all 3 zero-importer exports removed); auth + audit Lambda DATABASE_URL still point at TF proxy (consumers untouched); auth Lambda SECRET_KEY still 817efb5a...2a8f (M.1 untouched). D1 closed. D1_HANDOFF.md annotated with ✅ CLOSED header at the top; memory pointer project_d1_handoff.md removed (lessons file feedback_drift_pin_lessons_2026_05_07.md stays). EOD wrap.</div>
         </div>
         </div>
         </div>
