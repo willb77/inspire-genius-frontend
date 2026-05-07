@@ -93,6 +93,12 @@ const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
+// Combined Plan §A.E3.4 — task-agent pages
+const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprintPage"));
+const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
+const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
+const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
+const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/DocumentResearchPage"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
 const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Dashboard"));
@@ -170,6 +176,8 @@ export const routes: RouteObject[] = [
       { path: "/onboarding/five", element: withSuspense(<OnboardingFive />) },
       { path: "/onboarding/details/one", element: withSuspense(<OnboardingDetailsOne />) },
       { path: "/onboarding/details/two", element: withSuspense(<OnboardingDetailsTwo />) },
+      // Combined Plan §A.E3.4 — onboarding wizard (Forge)
+      { path: "/onboarding/wizard", element: withSuspense(<OnboardingWizard />) },
 
       // User pages
       { path: "/home", element: withSuspense(<Home />) },
@@ -198,6 +206,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
       { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
+      // Combined Plan §A.E3.4 — document research (Sage)
+      { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
       { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
@@ -231,6 +241,10 @@ export const routes: RouteObject[] = [
       { path: "/manager/candidates", element: withSuspense(<ManagerCandidates />) },
       { path: "/manager/interviews", element: withSuspense(<ManagerInterviews />) },
       { path: "/manager/job-dna", element: withSuspense(<ManagerJobDna />) },
+      // Combined Plan §A.E3.4 — task-agent pages
+      { path: "/manager/job-blueprint", element: withSuspense(<ManagerJobBlueprint />) },
+      { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
+      { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
       { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
       { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
       { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
