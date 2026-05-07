@@ -1,3 +1,32 @@
+## [2026-05-07 EOD] — D1 closed: Path B deployed + verified
+
+### Deployed
+- CDK Deploy run **25525243953** on `development` (workflow_dispatch,
+  stack=`ig-dev-database`, dry_run=false). All 4 jobs green: synth (5m8s),
+  diff (5m14s), deploy (10m30s), stub-zip verify (37s). Stack ended at
+  UPDATE_COMPLETE at 22:36:50 UTC.
+
+### Verified post-deploy in AWS
+- `aws rds describe-db-proxies` → only `inspires-genius-dev-rds-proxy` (TF).
+  CDK stub `ig-dev-rds-proxy` is gone.
+- `aws cloudformation list-exports` filter on `rds-proxy` → empty
+  (3 zero-importer exports removed: `ig-dev-rds-proxy-endpoint`, `-arn`, `-sg-id`).
+- Auth Lambda `DATABASE_URL` → still TF proxy (consumer untouched).
+- Audit Lambda `DATABASE_URL` → still TF proxy (consumer untouched).
+- Auth Lambda `SECRET_KEY` = `817efb5a…2a8f` (M.1 untouched).
+
+### Closed
+- `D1_HANDOFF.md` annotated with ✅ CLOSED header at the top, document
+  kept as historical record for future IaC-ownership work.
+- Memory file `project_d1_handoff.md` will be removed; the lessons file
+  `feedback_drift_pin_lessons_2026_05_07.md` stays (evergreen).
+
+### PRs merged
+- Monorepo PR #18 → development (merge commit `6363e3f`)
+- Frontend PR #8 → development (logs sync)
+
+---
+
 ## [2026-05-07] — D1 Path B: deleted unused CDK-stub RDS Proxy
 
 ### Removed
