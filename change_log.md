@@ -1,22 +1,74 @@
-## [2026-05-07] — Phase C item 2: CI smoke matrix
+## [2026-05-07] — Phase C item 4: SystemSwitch UI failover affordance
 
 ### Added
-`services/agent-engine/tests/test_coexistence_smoke.py` — 5 canned prompts (coaching, business, system, career_talent, fallback) with parametrized assertions:
+- `src/components/shared/SystemSwitch.tsx` — one-tap user-action toggle that flips agent routing between Agent Engine (default) and Monolith. Distinct from `EcosystemStatusBanner` (read-only platform telemetry). Writes to `agent_engine_enabled` localStorage, invalidates `chat`/`coaches`/`agents-settings` React Query caches, shows a Sonner toast, and reloads the page so axios baseURL resolves fresh. Switching to Monolith surfaces the W.1 deprecation note in the toast.
+- `src/lib/browser.ts` — tiny `reloadPage()` helper, factored out so jsdom's read-only `window.location.reload` is mockable in tests
+- `src/components/shared/__tests__/SystemSwitch.test.tsx` — 7 tests covering: default-on, default-off-from-storage, flip writes localStorage + triggers reload, flip both directions, toast call + W.1 deprecation text, button disabled after click, accessible aria-label. **7/7 pass.**
 
-1. Keyword-fallback classification routes each prompt to its expected domain
-2. Meridian still constructs with all 4 domain orchestrators
-3. Each orchestrator's agent roster is non-empty
-4. Meta-test: the smoke matrix stays balanced across all 4 domains
+### Changed
+- `src/layouts/AppShell.tsx` — renders `SystemSwitch` as a fixed top-right widget for super-admin only (matches `AgentEngineToggle` settings-page scope). Existing AppShell tests still pass (7/7).
 
-### Why this shape
-The end-to-end smoke (real HTTP calls to dev URLs with auth) lives in the deploy pipeline. This PR adds the **in-CI prevention layer** — a fast, hermetic test suite that runs in `Backend CI` under the existing `services/**` path filter and catches the most common regressions before deploy.
+### Why distinct from EcosystemStatusBanner
+- Banner: passive read-only "the system is degraded" telemetry
+- Switch: active user action "I want to change which system handles MY chats"
 
-### What it catches
-Import errors in any specialist agent; keyword-set drift breaking prompt routing; an orchestrator silently dropping all its agents; accidentally removing a domain from the routing table.
+Both can be useful when ecosystem is up too — sometimes a super-admin wants to test the monolith path manually for diagnostics.
+
+---
+
+## [2026-05-07] — Phase C item 3: per-message system tagging on chat_messages
+
+### Added
+- `public.chat_messages.system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'`
+- CHECK constraint `chat_messages_system_check` enforcing `IN ('ecosystem', 'monolith')`
+- Migration: `services/migration-runner/migrations/phase_c_item_3_chat_message_system_tag.sql` (idempotent)
+
+### Applied on dev (verified)
+2/2 statements OK on first run + 2/2 OK on re-run. 8656 existing rows defaulted to `'ecosystem'` — defensible given W.1 (prod WS only ever reached the Agent Engine).
+
+### Reader wired
+`services/agent-engine/app/routes/chat_history.py`: `ChatMessage` Pydantic now has `system: str = "ecosystem"` default; SELECT includes `COALESCE(system, 'ecosystem') AS system`.
+
+### Writer wiring DEFERRED
+The agent-engine path that writes chat messages currently lives in the monolith. New rows default to `'ecosystem'` which matches W.1 reality.
+
+### Pre-existing chat_history.py SELECT mismatch noted (not blocking Phase C close)
 
 ### Files
-- `services/agent-engine/tests/test_coexistence_smoke.py` (new)
-- `REMAINING_TASKS.md` (Item 2 ✅)
+- `services/migration-runner/migrations/phase_c_item_3_chat_message_system_tag.sql` (new)
+- `services/agent-engine/app/routes/chat_history.py`
+- `REMAINING_TASKS.md` (Item 3 ✅)
+
+---
+
+## [2026-05-07] — Migration-runner splitter hardening
+
+### Background
+Items 1a + 1b shipped after iterating around 4 splitter quirks in `services/migration-runner/handler.py`. This PR codifies those workarounds into the splitter itself so future migration authors don't trip over the same things.
+
+### Fixed
+1. **Line comments (`-- ...`) are stripped before splitting.** Previously `;` inside a `--` comment would falsely trigger a statement split.
+2. **Comment-only statements are dropped cleanly; comment-headers no longer hide SQL.** Previously a multi-line `-- divider` block immediately before a SQL statement caused the entire block (including the SQL) to be skipped silently.
+3. **Top-level `BEGIN` / `COMMIT` / `ROLLBACK` are skipped as no-ops** with a `skipped` count in the response, since pg8000.native has no top-level transaction support. Authors can keep familiar `BEGIN`/`COMMIT` pairs in migration SQL without errors; idempotent DDL guards (`IF NOT EXISTS`, `pg_constraint` lookups) remain the intended pattern.
+4. **`$$`-blocks and tagged `$tag$ ... $tag$` blocks are preserved**; `;` inside them no longer splits.
+
+### Also
+- Single-quoted string literals protect `;` and `--` from being mistaken for separators / comments
+- `/* ... */` block comments are stripped
+- `pg8000` is now lazy-imported inside `handler()` so the splitter is testable without the AWS dependency
+
+### New
+- `services/migration-runner/tests/__init__.py`
+- `services/migration-runner/tests/test_split_sql.py` — 15 tests covering each quirk + regression tests that the actual Phase C 1a + 1b SQL files split into the 11 / 7 statements that ran successfully on dev. All pass locally.
+
+### Not in this PR
+Re-deploying the migration-runner Lambda. This is a code-only change; the next time someone re-bundles + deploys the migration-runner, the new splitter takes effect. Keeping the bundle change isolated for safer rollout.
+
+### Files
+- `services/migration-runner/handler.py` (rewrote `_split_sql`, new `_strip_comments`, transaction-control no-op handling, lazy pg8000 import)
+- `services/migration-runner/tests/test_split_sql.py` (new)
+- `services/migration-runner/tests/__init__.py` (new)
+- `REMAINING_TASKS.md` (4 quirks marked ✅ + cross-reference to test file)
 
 ---
 
