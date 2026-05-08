@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1033</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1034</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22502,6 +22502,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1033 [/log-session — full-day session summary]</div>
           <div class="prompt-text">Single full-day session that closed every D-series drift item, every Phase C item, every today-relevant carry-over (V, W, M.1), plus O.2 (WAF re-enable) — code shipped + deployed + verified live on dev. 31 monorepo PRs + 18 frontend PRs merged. Highlights: D1 Path B deleted unused CDK-stub RDS Proxy (CDK Deploy run 25525243953); D2 RDS Proxy IAMAuth pinned via AwsCustomResource; V.1 verified monolith voice/chat NOT down (stale 2026-04-21 diagnosis — container has 0 restarts since 2026-04-29); W.1 Option A deprecated monolith path; M.1 verified live (no rotation needed); Phase C item 1a applied org_service schema (11/11 OK); item 1b applied user_service schema (7/7 OK); item 2 added 5-prompt CI smoke matrix; item 3 added system column to public.chat_messages (8656 existing rows defaulted); item 4 SystemSwitch UI component (7 tests); item 5 PATCH endpoints (8 tests); migration-runner splitter hardened (4 quirks codified, 15 tests); O.2 WAFv2 deployed at CloudFront edge — ig-dev-api-waf live with 5 AWS managed rules + 2 custom rate limits, attached to distribution E3EFVMBYYVF012 via webAclId, smoke confirms HTTP/2 200 with no false-positives. Drift queue now empty. Phase C fully closed. Remaining low-priority items: O.3 (alarm-count comment), M.2 (placeholder for future rotation), Phase D-ish writer migration monolith→agent-engine.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1034 [/background — Monday production-ready plan authored]</div>
+          <div class="prompt-text">Reviewed IG_Combined_Platform_Deployment_Plan.docx (2026-05-02), PHASE_D_PLAN.docx (2026-05-07), and REMAINING_TASKS.md against the last two days of work; then authored Transformation Documents/MONDAY_PROD_READY_PLAN.md + .docx with 8 paste-able Claude Code prompts targeting Monday 2026-05-12. The plan covers Phase D Rungs R1–R4 + §5 + §6 (production-readiness ladder) plus Combined Plan Track E2 (18-agent verification) plus a final bookkeeping sweep: P1 migration-runner Lambda redeploy, P2 asset-hash sweep on services+trainer (eliminates 17 phantom S3Key diffs), P3 ECS warm-up posture (scheduled scaling), P4 chat_message writer migration monolith→agent-engine with 24h canary, P5 18-agent verification 17/17+4/4+3/3, P6 PRISM ingestion E2E, P7 prod cutover runbook (DOC ONLY — 3-week prod build stays deferred), P8 REMAINING_TASKS sweep + EOD wrap. Explicitly out of scope: live prod cutover, Track M (dead per W.1), Track E3 task endpoints, Phase S, Phase H load test. Includes risk register (9 risks with mitigations) and 11-item definition-of-done checklist. .md is the source of truth (tracked); .docx is gitignored per repo convention but lives locally for the user to open in Word. Logo-Dark.png embedded at top.</div>
         </div>
         </div>
         </div>
