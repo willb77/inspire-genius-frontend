@@ -1,18 +1,40 @@
-## [2026-05-07] — Phase C item 4: SystemSwitch UI failover affordance
+## [2026-05-07] — O.2: WAFv2 re-enabled at the CloudFront edge
 
-### Added
-- `src/components/shared/SystemSwitch.tsx` — one-tap user-action toggle that flips agent routing between Agent Engine (default) and Monolith. Distinct from `EcosystemStatusBanner` (read-only platform telemetry). Writes to `agent_engine_enabled` localStorage, invalidates `chat`/`coaches`/`agents-settings` React Query caches, shows a Sonner toast, and reloads the page so axios baseURL resolves fresh. Switching to Monolith surfaces the W.1 deprecation note in the toast.
-- `src/lib/browser.ts` — tiny `reloadPage()` helper, factored out so jsdom's read-only `window.location.reload` is mockable in tests
-- `src/components/shared/__tests__/SystemSwitch.test.tsx` — 7 tests covering: default-on, default-off-from-storage, flip writes localStorage + triggers reload, flip both directions, toast call + W.1 deprecation text, button disabled after click, accessible aria-label. **7/7 pass.**
+### Background
+Phase −1.7 (2026-05-04) commented out the `InspireGeniusWaf` `wafv2.CfnWebACL` block + alarm + dashboard widgets + output because the WebACL was REGIONAL-scoped and tried to attach to API Gateway HTTP API v2 — which doesn't support direct WAFv2 association. The dev API surface has been running without WAF protection ever since.
+
+### Decision
+The dev CloudFront distribution `E3EFVMBYYVF012` (defined in `domain-stack.ts`) **already fronts the API** via the `/api/*` behavior and the **monolith WS** via `/v1/agents/ws/*`, so no new edge-fronting distribution was needed. Just flip the WAF scope from `REGIONAL` to `CLOUDFRONT` and attach via `webAclId` on the existing distribution.
 
 ### Changed
-- `src/layouts/AppShell.tsx` — renders `SystemSwitch` as a fixed top-right widget for super-admin only (matches `AgentEngineToggle` settings-page scope). Existing AppShell tests still pass (7/7).
+- `infrastructure/cdk/lib/security-stack.ts`:
+  - Re-enabled `InspireGeniusWaf` `wafv2.CfnWebACL` with `scope: 'CLOUDFRONT'`
+  - Re-enabled `WafBlockedRequestsAlarm` (CW); CLOUDFRONT-scoped metrics use `Region: 'Global'` dimension
+  - Re-enabled Row 5 dashboard widgets (allowed-vs-blocked, per-rule blocked-by-rule)
+  - Re-enabled `WafWebAclArn` `CfnOutput` exporting the ACL ARN
+- `infrastructure/cdk/lib/domain-stack.ts`:
+  - Imports `${stackPrefix}-waf-web-acl-arn` and passes it as `webAclId` on the `cloudfront.Distribution`
 
-### Why distinct from EcosystemStatusBanner
-- Banner: passive read-only "the system is degraded" telemetry
-- Switch: active user action "I want to change which system handles MY chats"
+### Rules in the ACL (5 + custom rate limits)
+- AWS Managed: `CommonRuleSet` (with `SizeRestrictions_BODY` excluded so /v1/feedback JSONL bodies aren't blocked)
+- AWS Managed: `KnownBadInputsRuleSet`
+- AWS Managed: `SQLiRuleSet`
+- AWS Managed: `AmazonIpReputationList`
+- Custom: `RateLimitPerIp` — 1000 req / 5 min / IP (block)
+- Custom: `FeedbackEndpointRateLimit` — 60 req / 5 min / IP scoped to `/v1/feedback*` (block)
 
-Both can be useful when ecosystem is up too — sometimes a super-admin wants to test the monolith path manually for diagnostics.
+### Local cdk diff (env=dev) — clean
+- ig-dev-security: + WAFv2::WebACL InspireGeniusWaf, + CloudWatch::Alarm WafBlockedRequestsAlarm, ~ AgentSecurityDashboard (Row 5 widgets added), + Output WafWebAclArn
+- ig-dev-domain: ~ Distribution.DistributionConfig.WebACLId added (no replacement, no downtime)
+- All other affected stacks: no differences
+
+### Not in this PR
+The actual deploy. Workflow_dispatch on the dev `CDK Deploy` workflow (stack=`ig-dev-security` followed by `ig-dev-domain`, since SecurityStack now exports a value DomainStack imports). After merge.
+
+### Files
+- `infrastructure/cdk/lib/security-stack.ts`
+- `infrastructure/cdk/lib/domain-stack.ts`
+- `REMAINING_TASKS.md` (O.2 ✅)
 
 ---
 
@@ -32,12 +54,43 @@ Both can be useful when ecosystem is up too — sometimes a super-admin wants to
 ### Writer wiring DEFERRED
 The agent-engine path that writes chat messages currently lives in the monolith. New rows default to `'ecosystem'` which matches W.1 reality.
 
-### Pre-existing chat_history.py SELECT mismatch noted (not blocking Phase C close)
-
 ### Files
 - `services/migration-runner/migrations/phase_c_item_3_chat_message_system_tag.sql` (new)
 - `services/agent-engine/app/routes/chat_history.py`
-- `REMAINING_TASKS.md` (Item 3 ✅)
+
+---
+
+## [2026-05-07] — Phase C item 2: CI smoke matrix
+
+### Added
+`services/agent-engine/tests/test_coexistence_smoke.py` — 5 canned prompts (coaching, business, system, career_talent, fallback) with parametrized assertions:
+
+1. Keyword-fallback classification routes each prompt to its expected domain
+2. Meridian still constructs with all 4 domain orchestrators
+3. Each orchestrator's agent roster is non-empty
+4. Meta-test: the smoke matrix stays balanced across all 4 domains
+
+### What it catches
+Import errors in any specialist agent; keyword-set drift breaking prompt routing; an orchestrator silently dropping all its agents; accidentally removing a domain from the routing table.
+
+### Files
+- `services/agent-engine/tests/test_coexistence_smoke.py` (new)
+
+---
+
+## [2026-05-07] — Phase C item 5: PATCH endpoints accepting preferred_system
+
+### Added
+- `UserProfileUpdate.preferred_system: str | None` (user-service)
+- `OrgUpdate.preferred_system: str | None` (org-service)
+- Service-layer validation against `VALID_PREFERRED_SYSTEMS = {'ecosystem', 'monolith'}`; route maps `ValueError` to HTTP 400
+
+### Tests added
+- `services/user-service/tests/test_profiles.py::TestUpdateProfile` — 4 new tests
+- `services/org-service/tests/test_orgs.py::TestUpdateOrg` — 4 new tests
+
+### What this enables
+Phase C 1a + 1b provide the columns; Item 5 adds the API surface. Callers can read/write user-level and org-level system preference end-to-end.
 
 ---
 
