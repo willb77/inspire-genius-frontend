@@ -3,7 +3,13 @@
  */
 
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PrismTeam from "../PrismTeam";
+
+function renderWithQuery(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 jest.mock("@/layouts/ManagerLayout", () => ({
   __esModule: true,
@@ -61,12 +67,12 @@ describe("PrismTeam", () => {
   });
 
   it("renders within ManagerLayout", () => {
-    render(<PrismTeam />);
+    renderWithQuery(<PrismTeam />);
     expect(screen.getByTestId("manager-layout")).toBeInTheDocument();
   });
 
   it("renders page heading", () => {
-    render(<PrismTeam />);
+    renderWithQuery(<PrismTeam />);
     expect(screen.getByText("Team PRISM Assessments")).toBeInTheDocument();
     expect(
       screen.getByText("Track your team members' PRISM assessment progress")
@@ -74,19 +80,19 @@ describe("PrismTeam", () => {
   });
 
   it("renders stat cards", () => {
-    render(<PrismTeam />);
+    renderWithQuery(<PrismTeam />);
     expect(screen.getByText("Team Members")).toBeInTheDocument();
     expect(screen.getByText("Completed")).toBeInTheDocument();
     expect(screen.getByText("Completion Rate")).toBeInTheDocument();
   });
 
   it("shows empty state when no assessments", () => {
-    render(<PrismTeam />);
+    renderWithQuery(<PrismTeam />);
     expect(screen.getByText("No team assessments yet.")).toBeInTheDocument();
   });
 
   it("renders stats with zero values when no data", () => {
-    render(<PrismTeam />);
+    renderWithQuery(<PrismTeam />);
     // Multiple "0" values appear (Team Members and Completed)
     expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("0%")).toBeInTheDocument();
