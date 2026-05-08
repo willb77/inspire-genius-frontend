@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1042</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1044</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22600,6 +22600,71 @@
         </div>
         </div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:49:07</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:50:52</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/manager/useManagerTeamPrism.ts</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:51:04</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/PrismTeam.tsx</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:51:16</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/__tests__/PrismTeam.test.tsx</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:52:14</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/manager/useManagerTeamPrism.ts</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:54:31</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/__tests__/VERIFICATION.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:55:08</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:55:49</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:56:20</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:57:06</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1044 [/full-go run P7 — Manager Dashboard verify+fix on dev]</div>
+          <div class="prompt-text">Phase D R7 / P7 from MONDAY_PROD_READY_PLAN.md. Verified the 6 in-scope manager pages (Dashboard, Team, PrismTeam, Analytics, BulkImport, Settings) end-to-end as far as static + automated checks can confirm. (1) Pre-flight inventory: all 6 page files exist; traced 11 frontend endpoints through hooks → services → API Gateway routes; cross-checked against `aws apigatewayv2 get-routes --api-id 8umg6xioz5` — 5 exact-match (`GET /api/manager/team`, `/hiring/stats`, `/hiring/interviews`, `GET /v1/me`, `POST /v1/change-password`) + 6 reachable via catch-alls (`ANY /api/analytics/{proxy+}`, `ANY /api/v1/{proxy+}`); all 11 endpoints have backing routes. (2) `npx tsc --noEmit` clean. (3) `npx jest --ci` 6 page suites: 6/6 passed, 36/36 tests. (4) `npx jest --ci` 6 supporting suites (hooks/services/shared Settings): 6/6 passed, 37/37 tests. (5) Single fix shipped: `PrismTeam.tsx` had an inline TODO stub returning a triple-nested `{ data: { data: { data: { assessments: [], total: 0 } } } }` — replaced with a typed `useManagerTeamPrism()` hook in `src/hooks/manager/useManagerTeamPrism.ts` (`initialData: { assessments: [], total: 0 }`, `staleTime: Infinity`) so the empty-state UI renders immediately, and added a clear `TODO(phase-d-r7-followup)` block pointing at the missing `/api/manager/team/prism-assessments` backend endpoint. The page now reads `data?.assessments ?? []` cleanly. Test wrapped in `QueryClientProvider`. (6) Verification report at `inspire-genius-frontend/src/pages/manager/__tests__/VERIFICATION.md` with the full acceptance matrix, follow-up list, and PR contents. **Deferred per Monday plan §P7 fix-policy >2hr rule:** building the manager-team-prism backend endpoint, live browser walk-through with seeded test org, multi-tenant isolation live test, backend audit that `/api/analytics/manager` pivots on `chat_messages.system`, and end-to-end CSV upload + SES delivery (account is sandboxed out of prod-DB reads). PR title: `feat(phase-d-r7): manager dashboard verify+fix on dev`.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:57:52</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:58:03</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
 
 </div>
 

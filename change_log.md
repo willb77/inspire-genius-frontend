@@ -1,3 +1,49 @@
+## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
+
+### Verified
+6 in-scope manager pages — `Dashboard`, `Team`, `PrismTeam`, `Analytics`, `BulkImport`, `Settings` — pass static + automated verification. The other 9 manager pages are explicitly deferred per the Monday plan.
+
+### Pre-flight inventory
+- All 6 page files exist under `inspire-genius-frontend/src/pages/manager/`.
+- 11 frontend API endpoints traced through hooks → services → API Gateway routes.
+- API Gateway cross-check (`aws apigatewayv2 get-routes --api-id 8umg6xioz5`): 5 exact-match (`GET /api/manager/team`, `GET /api/manager/hiring/stats`, `GET /api/manager/hiring/interviews`, `GET /v1/me`, `POST /v1/change-password`) + 6 reachable via catch-alls (`ANY /api/analytics/{proxy+}`, `ANY /api/v1/{proxy+}`). All 11 endpoints have backing routes.
+
+### Automated verification
+- `npx tsc --noEmit` → clean (no errors).
+- `npx jest --ci` 6 page suites → **6/6 passed, 36/36 tests.**
+- `npx jest --ci` 6 supporting suites (hooks/services/shared `Settings`) → **6/6 passed, 37/37 tests.**
+
+### Fix shipped (< 2 hour fix per Monday plan policy)
+Replaced an inline TODO stub in `PrismTeam.tsx` that returned `{ data: { data: { data: { assessments: [], total: 0 } } } }` and read it as `data?.data?.data?.assessments` — the triple-nested wrap would have been silently wrong the moment a real endpoint was wired. Replaced with a typed `useManagerTeamPrism()` hook (`initialData: { assessments: [], total: 0 }`, `staleTime: Infinity`) so the empty-state UI renders immediately, and a clear `TODO(phase-d-r7-followup)` block pointing at the missing `/api/manager/team/prism-assessments` endpoint. Test wrapped in `QueryClientProvider`.
+
+### Files
+- `inspire-genius-frontend/src/pages/manager/PrismTeam.tsx` — stub removed; uses `useManagerTeamPrism`; reads `data?.assessments`.
+- `inspire-genius-frontend/src/hooks/manager/useManagerTeamPrism.ts` — **(new)** typed React-Query hook with `initialData` and TODO follow-up note.
+- `inspire-genius-frontend/src/pages/manager/__tests__/PrismTeam.test.tsx` — `renderWithQuery` helper wraps each render in a `QueryClientProvider`.
+- `inspire-genius-frontend/src/pages/manager/__tests__/VERIFICATION.md` — **(new)** P7 verification report (acceptance matrix + follow-ups).
+- `REMAINING_TASKS.md` — added Phase D R7 / P7 entry under section 4.
+
+### Acceptance (this PR)
+- ✅ 6/6 manager pages render without 500 in unit tests + tsc.
+- ✅ All 11 backing endpoints have API Gateway routes.
+- ✅ Verification report file checked in.
+- ⚠️ Live browser walk-through with a seeded test org, multi-tenant isolation live test, backend audit that `/api/analytics/manager` pivots on `chat_messages.system`, and end-to-end CSV upload + SES delivery — **deferred** per the Monday plan §P7 fix-policy "> 2 hour" rule. The DB-seed and live-traffic verification path was sandboxed out of prod-DB reads on this account.
+
+### Follow-ups (NOT this PR)
+- Backend: build `GET /api/manager/team/prism-assessments` returning all assessments for the calling manager's direct reports.
+- Next P7 follow-up session: live browser walk-through; multi-tenant isolation live test; backend audit of analytics-by-system pivot; live SES delivery via BulkImport.
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
 ## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
 
 ### Added
@@ -19,6 +65,24 @@
 - All 5 mirror locations updated: `./IG_project_log.html`, `./inspire-genius-frontend/public/IG_project_log.html`, `./inspire-genius-frontend/IG_project_log.html`, `./change_log.md`, `./inspire-genius-frontend/change_log.md`.
 
 ---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/manager/useManagerTeamPrism.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/PrismTeam.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/__tests__/PrismTeam.test.tsx`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/hooks/manager/useManagerTeamPrism.ts`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/inspire-genius-frontend/src/pages/manager/__tests__/VERIFICATION.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md`
 
 ## [2026-05-08] — P4 close-out: PR #41 (monorepo) + PR #2 (backend) merged
 
