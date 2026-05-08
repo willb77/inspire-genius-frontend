@@ -1,3 +1,45 @@
+## [2026-05-08] — P1 complete: migration-runner Lambda redeployed with hardened splitter
+
+### Deployed
+- `ig-dev-migration-runner` Lambda code updated to PR #25's hardened SQL splitter (`handler.py` from monorepo HEAD)
+- CodeSha256: `l/qFfvi+wzcwLn4NEjSZ2ZCXqXdGtOTGPce/5DvMc2s=` → `8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=`
+- LastModified: 2026-04-23T21:26:37Z → 2026-05-08T13:24:47Z
+- Handler config corrected: `lambda_function.handler` → `handler.handler` (filename in current source is `handler.py`)
+
+### Verified end-to-end on dev
+Two smoke tests against live `ig-dev-migration-runner`:
+1. `SELECT 1;` → 1 succeeded, 0 failed, 0 skipped (boot + Aurora connectivity OK)
+2. `-- comment with semicolon ; should not split\nBEGIN;\nSELECT 1;\nCOMMIT;\n` → 1 succeeded, 0 failed, 2 skipped (BEGIN + COMMIT correctly skipped as `_TXN_NOOPS`; comment-only statement stripped; line-comment semicolon did not split)
+
+All 4 splitter quirks codified in PR #25 are confirmed live:
+- Quirk 1: `;` inside `--` line comments no longer splits
+- Quirk 2: comment-only statements no longer reach pg8000
+- Quirk 3: BEGIN/COMMIT/ROLLBACK skipped as no-ops (pg8000.native rejects raw transaction control)
+- Quirk 4: `$VAR` and `$$ … $$` blocks survive parsing
+
+### Process note (one to remember)
+- The migration-runner Lambda is **NOT CDK-managed** — no references in `infrastructure/cdk/lib/` or `bin/`
+- Deploy path: `services/migration-runner/deploy.sh` packages `handler.py` + pg8000, creates/updates Lambda directly
+- For code-only updates (no SQL execution), use `aws lambda update-function-code --zip-file fileb://...` against the prebuilt `/tmp/migration-lambda.zip`
+- Triggering the CDK Deploy GHA for `ig-dev-services` did NOT touch this Lambda (validate/diff/deploy/stub-check all green at workflow run `25557114531`, but no diff for migration-runner because it's outside CDK)
+
+### Files
+- `services/migration-runner/handler.py` (no change — already at PR #25 HEAD on `development`)
+- Lambda code package built locally and pushed via AWS CLI
+
+### Run IDs
+- CDK Deploy (no-op for migration-runner): `25557114531` — success in 17m
+- Manual `update-function-code` + `update-function-configuration` against `ig-dev-migration-runner`: 2026-05-08 ~13:24 UTC
+- Smoke invocations: 2026-05-08 13:25 UTC, both 200 OK
+
+### What's next from MONDAY_PROD_READY_PLAN.md
+- **P2** — Asset-hash sweep on services + trainer (~2 hr; eliminates 17 phantom S3Key diffs)
+- **P3** — ECS warm-up posture (scheduled scaling)
+- **P4** + **P7** (parallel) — chat_message writer migration + Manager dashboard verify-and-fix
+- **P5** + **P8** (parallel) — 18-agent verification + Super-admin BulkImport/MentorManagement
+
+---
+
 ## [2026-05-08] — Monday production-ready plan revised (Option 3: + dashboards)
 
 ### Revised
