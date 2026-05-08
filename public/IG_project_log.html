@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1034</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1035</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22506,6 +22506,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1034 [/background — Monday production-ready plan authored]</div>
           <div class="prompt-text">Reviewed IG_Combined_Platform_Deployment_Plan.docx (2026-05-02), PHASE_D_PLAN.docx (2026-05-07), and REMAINING_TASKS.md against the last two days of work; then authored Transformation Documents/MONDAY_PROD_READY_PLAN.md + .docx with 8 paste-able Claude Code prompts targeting Monday 2026-05-12. The plan covers Phase D Rungs R1–R4 + §5 + §6 (production-readiness ladder) plus Combined Plan Track E2 (18-agent verification) plus a final bookkeeping sweep: P1 migration-runner Lambda redeploy, P2 asset-hash sweep on services+trainer (eliminates 17 phantom S3Key diffs), P3 ECS warm-up posture (scheduled scaling), P4 chat_message writer migration monolith→agent-engine with 24h canary, P5 18-agent verification 17/17+4/4+3/3, P6 PRISM ingestion E2E, P7 prod cutover runbook (DOC ONLY — 3-week prod build stays deferred), P8 REMAINING_TASKS sweep + EOD wrap. Explicitly out of scope: live prod cutover, Track M (dead per W.1), Track E3 task endpoints, Phase S, Phase H load test. Includes risk register (9 risks with mitigations) and 11-item definition-of-done checklist. .md is the source of truth (tracked); .docx is gitignored per repo convention but lives locally for the user to open in Word. Logo-Dark.png embedded at top.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1035 [Monday plan revised — Option 3: manager + super-admin dashboards added]</div>
+          <div class="prompt-text">User requested Option 3: extend the Monday plan with two new prompts for manager dashboard + super-admin (specifically: bulk user import + agent management). Probed frontend surfaces — manager has 15 pages including BulkImport.tsx; super-admin has 25 including BulkImport.tsx + MentorManagement.tsx (the agent management page; "mentors" = agents in this terminology including Meridian). Added P7 (Manager dashboard verify+fix on 6 highest-leverage pages: Dashboard/Team/PrismTeam/Analytics/BulkImport/Settings, with multi-tenant isolation + both-systems chat data flow) and P8 (Super-admin BulkImport.tsx + MentorManagement.tsx verify+fix: 5-row CSV across 2 orgs with mixed valid/invalid emails, audit log entries, per-row failure surfacing; agent prompt round-trip through DynamoDB, disable/enable, runs_in_systems filter). Renumbered prior P7/P8 → P9/P10. Total prompts: 10. Critical-path diagram updated with parallel-session marks for P4+P7 and P5+P8 (the dashboard work runs alongside the writer-migration and agent-verification tracks). Risk register adds 4 new rows (manager-dashboard backend dependencies, SES sandbox limitations, MentorManagement DynamoDB connectivity, P5+P8 parallelism interference). Definition of done expanded 11 → 14 items. Out-of-scope list explicitly excludes the other 14 super-admin pages and 9 of 15 manager pages (deferred to week-after-Monday). Re-rendered .docx (47 KB, 133 paragraphs).</div>
         </div>
         </div>
         </div>
