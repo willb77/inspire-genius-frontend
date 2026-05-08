@@ -1,3 +1,38 @@
+## [2026-05-08] — P3 deploy LIVE on dev: 4 scheduled actions verified
+
+### Deployed
+- **GHA run** [`25563206143`](https://github.com/willb77/inspire-genius/actions/runs/25563206143) — `CDK Deploy` workflow against `ig-dev-agent-engine` on env=dev, dispatched from `development` after PR #35 merge. All 4 jobs SUCCESS:
+  - `Validate (cdk synth)` — pass
+  - `Diff (cdk diff)` — pass (matched PR #35's expected diff exactly)
+  - `Deploy (cdk deploy)` — pass
+  - `Verify no stub Lambda zips` — pass
+
+### Verified live on dev (post-deploy `aws describe-*` queries)
+- **4 scheduled actions** registered on `service/ig-dev-agent-engine/ig-dev-agent-engine`:
+  - `businessHoursScaleUp` — `cron(0 13 ? * MON-FRI *)` — min=1, max=4
+  - `offHoursScaleDown` — `cron(0 1 ? * TUE-SAT *)` — min=0, max=4
+  - `weekendStart` — `cron(0 5 ? * SAT *)` — min=0, max=4
+  - `weekendEnd` — `cron(0 5 ? * MON *)` — min=0, max=4
+- **ScalableTarget** Min=0 / Max=4 (was 2/10 pre-deploy)
+- **ECS service** structurally unchanged: taskDefinition `ig-dev-agent-engine:32`, desired/running=0 (cost-saving state preserved across deploy — the deploy did not restart any task)
+- **TaskCountAlarm** removed (intentional — would flap with floor=0 in dev). `aws cloudwatch describe-alarms --alarm-name-prefix ig-dev-agent-engine-task-count` returns `[]`.
+
+### Next observable scheduled event
+- **Mon 2026-05-11 at 13:00 UTC (8am EST)** — `businessHoursScaleUp` fires, sets min=1, agent-engine ECS auto-warms to 1 task for the work day.
+- Today is Friday 15:40 UTC. Weekend triggers tonight/tomorrow are no-ops (they keep min=0).
+
+### Status
+- **Phase D ladder R1–R4** is now fully LIVE on dev:
+  - R1 = monorepo PR #36 (P1 — migration-runner Lambda redeployed)
+  - R2 = monorepo PRs #38 + #40 (P2 — Lambda asset-hash pinned)
+  - R3 = monorepo PRs #37 + #41 + backend PR #2 (P4 — chat_message writer migration + canary flip)
+  - R4 = monorepo PR #35 + this deploy (P3 — ECS scheduled scaling)
+
+### Mirror
+- Mirrors monorepo PR #44 (`docs/p3-deploy-outcome`).
+
+---
+
 ## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
 
 ### Added
