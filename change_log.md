@@ -1,3 +1,37 @@
+## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end
+
+Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev.
+
+### Done in this thread
+- **P1** — `ig-dev-migration-runner` Lambda redeployed with PR #25's hardened SQL splitter
+  - CodeSha256 `l/qFfvi+...` → `8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=`
+  - Handler `lambda_function.handler` → `handler.handler` (filename moved to `handler.py`)
+  - Smoke 1 (`SELECT 1;`): 1 succeeded, 0 failed, 0 skipped
+  - Smoke 2 (line-comment + BEGIN/COMMIT + SELECT): 1 succeeded, 0 failed, 2 skipped — confirms all 4 quirks live
+- **P2** — `assetHashType: cdk.AssetHashType.SOURCE` on all 17 Lambda `fromAsset` calls (15 services + 2 trainer)
+  - GHA deploys: services run `25561875526` (no changes), trainer run `25561893410` (UPDATE_COMPLETE on 2)
+  - Future `cdk diff ig-dev-services ig-dev-trainer` is stable until real source changes
+
+### PRs merged in this thread
+- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase past parallel-session R3+R4)
+- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+
+### Carry-overs / process notes (now in CLAUDE memory if not already)
+1. **`ig-dev-migration-runner` is outside CDK.** No references in `infrastructure/cdk/lib/` or `bin/`. Code changes require manual `aws lambda update-function-code` against a locally-built `handler.py` + `pg8000` zip.
+2. **Local `cdk diff` is hash-polluted.** With `assetHashType: SOURCE`, local `__pycache__`, `*.pyc`, and `.venv` artifacts get hashed in. CI checks out clean, so its hash differs from local. Treat CI as the source of truth for drift detection. Future improvement: `assetHashOptions.exclude: ['__pycache__', '*.pyc', '.venv', '*.egg-info']` (deferred — outside P2 scope).
+3. **Parallel-session collisions cost rebases.** Hit twice this thread: PR #35 (R4 ECS scaling) and PR #37 (R3 chat writer migration) landed during the P2 deploy window, requiring docs PR #39 → #40 re-creation with prompt-entry renumber from #1037 → #1039. Pattern to watch: any work that touches `change_log.md` + `IG_project_log.html` collides with every other parallel session doing the same.
+
+### What's next (Monday plan delta)
+Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs:
+- **P5** — 18-agent verification (17/17 + 4/4 + 3/3)
+- **P6** — PRISM ingestion E2E
+- **P8** — Super-admin BulkImport + MentorManagement verify+fix
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 
 ### Verified
@@ -37,6 +71,12 @@ Replaced an inline TODO stub in `PrismTeam.tsx` that returned `{ data: { data: {
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`

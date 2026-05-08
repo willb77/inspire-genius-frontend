@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1044</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1050</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22653,6 +22653,60 @@
           <div class="timestamp">2026-05-08 12:58:03</div>
           <div class="prompt-text">[NOTIFICATION] Session stopped</div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:58:33</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:59:08</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:59:23</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 12:59:33</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:01:16</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:01:41</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1049 [/log-session — session wrap: P1 + P2 deployed end-to-end]</div>
+          <div class="prompt-text">Session-summary entry for the P1 + P2 thread (already individually logged at #1036 and #1039). This conversation ran from a post-compact resume through both rungs of the Monday-prod-ready ladder. **P1 outcome:** ig-dev-migration-runner now runs PR #25's hardened SQL splitter (CodeSha256 8w4Oh/...; deploy via `aws lambda update-function-code` because the Lambda is not CDK-managed); both smoke invocations green on dev (1 succ/0 fail/0 skip and 1 succ/0 fail/2 skip exercising line-comment, _TXN_NOOPS, and SELECT paths). **P2 outcome:** all 17 Lambda fromAsset calls (15 services + 2 trainer) pinned to assetHashType: SOURCE; CDK Deploy GHA runs 25561875526 (services, no-op) + 25561893410 (trainer, UPDATE_COMPLETE on 2 Lambdas); future cdk diff is stable for both stacks until real source changes. **5 PRs merged in this conversation:** monorepo #36 (P1 docs), #38 (P2 code), #40 (P2 docs); frontend #22 (P1 docs), #23 (P2 docs). **Process insights captured for future:** (a) migration-runner Lambda is outside CDK — code changes need manual aws lambda update-function-code; (b) local cdk diff with assetHashType: SOURCE is hash-sensitive to __pycache__/.venv pollution in source tree, so CI is the source of truth for drift; (c) parallel-session work on the same change_log + IG_project_log triggers rebase-and-renumber pain — saw it twice during this thread (PRs #35 R4 + #37 R3 landed mid-deploy). **Remaining Monday plan:** P3 (R4 ECS scaling) and P4 (R3 chat writer) merged by parallel sessions; P7 (R7 manager dashboard) also merged; unstarted are P5 (18-agent verification), P6 (PRISM ingestion E2E), P8 (super-admin BulkImport + MentorManagement).</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:02:36</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:03:08</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:03:10</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:03:15</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+
+
+
+
+
+
+
+
+
+
 
 
 
