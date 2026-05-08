@@ -33,3 +33,8 @@ dist-ssr
 
 # unit test / coverage reports
 coverage
+# Generated/external documents shouldn't be tracked in the frontend repo
+public/docs/*.docx
+public/docs/*.pdf
+.env.local.bak
+.env.*.bak
