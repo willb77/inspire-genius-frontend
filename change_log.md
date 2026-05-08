@@ -1,3 +1,37 @@
+## [2026-05-08] — O.2 deployed + verified on dev
+
+### Deploys
+1. **`ig-dev-security`** (run `25534735031`, ~17 min): created `ig-dev-api-waf` WAFv2 WebACL with CLOUDFRONT scope (ARN `arn:aws:wafv2:us-east-1:568505405842:global/webacl/ig-dev-api-waf/fa698b08-b2f7-47da-89ed-1cdd0763e9b7`), `WafBlockedRequestsAlarm` CloudWatch alarm, Row 5 dashboard widgets, and the `ig-dev-waf-web-acl-arn` CFN export.
+2. **`ig-dev-domain`** (run `25535300072`, ~22 min): attached `webAclId` to CloudFront distribution `E3EFVMBYYVF012` (`dev.inspiresgenius.com`). No replacement, in-place update.
+
+### Verified post-deploy
+- `aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1` shows `ig-dev-api-waf` ✓
+- `aws cloudfront get-distribution-config --id E3EFVMBYYVF012` returns `WebACLId` set to the new ACL ARN ✓
+- `curl -sI https://dev.inspiresgenius.com/` → **HTTP/2 200**, 1570 bytes (SPA index.html). No WAF false-positive on bare GET ✓
+
+### What's now protected
+All traffic through `dev.inspiresgenius.com`:
+- SPA assets (default behavior, S3 origin)
+- `/api/*` → API Gateway HTTP API
+- `/v1/agents/ws/*` → monolith WebSocket origin
+
+### Active rules
+1. AWS Managed: CommonRuleSet (with `SizeRestrictions_BODY` excluded for /v1/feedback)
+2. AWS Managed: KnownBadInputsRuleSet
+3. AWS Managed: SQLiRuleSet
+4. AWS Managed: AmazonIpReputationList
+5. Custom: `RateLimitPerIp` — 1000 req / 5 min / IP (block)
+6. Custom: `FeedbackEndpointRateLimit` — 60 req / 5 min / IP scoped to `/v1/feedback*` (block)
+
+### Active observability
+- `ig-dev-waf-blocked-requests-high` alarm (threshold: 200 blocked / 5 min on dev) → SNS `securityAlarmTopic`
+- AgentSecurityDashboard Row 5 widgets: allowed-vs-blocked + per-rule blocked-by-rule
+
+### O.2 closed
+`REMAINING_TASKS.md` updated; this entry plus the prior 2026-05-07 O.2 entry document the full re-enable.
+
+---
+
 ## [2026-05-07] — O.2: WAFv2 re-enabled at the CloudFront edge
 
 ### Background
