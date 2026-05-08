@@ -1,3 +1,33 @@
+## [2026-05-08] — Monday production-ready plan revised (Option 3: + dashboards)
+
+### Revised
+Added two new prompts to `MONDAY_PROD_READY_PLAN.md` per the user's explicit ask:
+- **P7** — Manager Dashboard verify-and-fix (6 highest-leverage pages: Dashboard / Team / PrismTeam / Analytics / BulkImport / Settings) — multi-tenant isolation, both monolith + ecosystem chat data flow, RBAC verification
+- **P8** — Super-admin Bulk Import + Agent Management verify-and-fix:
+  - **8a Bulk Import** — `BulkImport.tsx` + `invitation-service` flow, 5-row CSV across 2 orgs with mixed valid/invalid emails, audit log entries, per-row failure surfacing
+  - **8b Agent Management** — `MentorManagement.tsx` + trainer-service flow, all 18 agents listed, prompt edit round-trips through DynamoDB, disable/enable test, runs_in_systems filter
+
+Renumbered prior P7/P8 → P9/P10. Total prompts: **10**.
+
+### Updated sections
+- Critical-path diagram now shows P4+P7 and P5+P8 as parallel sessions
+- Risk register: 4 new rows covering manager-dashboard backend dependencies, SES sandbox limitations, MentorManagement DynamoDB connectivity, P5+P8 parallelism interference
+- Definition of done: 11 → 14 items; adds manager 6/6 pages and super-admin BulkImport+MentorManagement gates
+
+### Out of scope (still)
+- The other 14 super-admin pages (Phase S § Combined Plan)
+- 9 of the 15 manager pages (Hiring, Interviews, JobDna, Leadership, TeamBuilding, Candidates, CareerManagement, InterviewPrepPage, JobBlueprintPage)
+- Practitioner / Distributor dashboards
+- Live prod cutover (3-week build per PHASE_D_PLAN.docx §6)
+- Phase H load test
+- Track M (dead per W.1)
+
+### Files
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.md` (revised, +220 lines)
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.docx` (re-rendered, 47 KB, 133 paragraphs, Logo-Dark.png embedded — gitignored, lives in Dropbox)
+
+---
+
 ## [2026-05-08] — Monday production-ready plan authored
 
 ### Added
