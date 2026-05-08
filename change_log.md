@@ -1,3 +1,37 @@
+## [2026-05-07] — Phase C item 1b: user-service schema isolation + applied on dev
+
+### What shipped
+Mirrors 1a's pattern for user-service. Net result: both extracted services (user + org) now own their own Postgres schemas, isolated from the monolith's `public.*` tables.
+
+- `services/user-service/app/database.py` — `MetaData(schema=user_service)` on Base + `search_path=user_service,public` on Postgres connect via asyncpg `server_settings`. SQLite (used in tests) falls back to no-schema.
+- New migration `services/migration-runner/migrations/phase_c_user_service_schema.sql`:
+  - `CREATE SCHEMA IF NOT EXISTS user_service` + `GRANT USAGE/CREATE` to `ig_admin`
+  - `CREATE TABLE IF NOT EXISTS user_service.user_profiles` matching the user-service ORM (id varchar 36 PK, user_id varchar 64 unique indexed, display_name, bio, avatar_url, role varchar 32 indexed, preferences json, **preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'**, created_at, updated_at)
+  - `CHECK (preferred_system IN ('ecosystem', 'monolith'))`
+  - Indexes on `user_id` and `role`
+  - Idempotent throughout, no `;` in comments, no comment headers preceding SQL (the migration-runner splitter quirks logged from 1a)
+
+### Applied on dev (verified)
+- `aws lambda invoke ig-dev-migration-runner` — 7/7 statements OK on first run + 7/7 OK on re-run (idempotent confirmed).
+- `information_schema.schemata` — `user_service` present.
+- `user_service.user_profiles` columns — all 10 expected columns including `preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'` ✓.
+- `pg_constraint` — `user_profiles_preferred_system_check` CHECK present.
+
+### Phase C Item 1 — fully closed
+- ✅ 1a (org-service): merged + applied on dev (PR #23)
+- ✅ 1b (user-service): this PR + applied on dev
+- Phase C item 5 (per-task overrides) is now unblocked — both schemas exist with `preferred_system` columns
+
+### Monolith left alone
+- `public.user_profiles` (cognito-keyed identity) and `public.users` are untouched — they remain under monolith ownership
+
+### Files
+- `services/user-service/app/database.py` (schema + search_path)
+- `services/migration-runner/migrations/phase_c_user_service_schema.sql` (new)
+- `REMAINING_TASKS.md` (Item 1b ✅; Item 1 closed)
+
+---
+
 ## [2026-05-07] — Phase C item 1a: org-service schema isolation + applied on dev
 
 ### Background
