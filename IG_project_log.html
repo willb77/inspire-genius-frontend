@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1035</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1036</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22510,6 +22510,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1035 [Monday plan revised — Option 3: manager + super-admin dashboards added]</div>
           <div class="prompt-text">User requested Option 3: extend the Monday plan with two new prompts for manager dashboard + super-admin (specifically: bulk user import + agent management). Probed frontend surfaces — manager has 15 pages including BulkImport.tsx; super-admin has 25 including BulkImport.tsx + MentorManagement.tsx (the agent management page; "mentors" = agents in this terminology including Meridian). Added P7 (Manager dashboard verify+fix on 6 highest-leverage pages: Dashboard/Team/PrismTeam/Analytics/BulkImport/Settings, with multi-tenant isolation + both-systems chat data flow) and P8 (Super-admin BulkImport.tsx + MentorManagement.tsx verify+fix: 5-row CSV across 2 orgs with mixed valid/invalid emails, audit log entries, per-row failure surfacing; agent prompt round-trip through DynamoDB, disable/enable, runs_in_systems filter). Renumbered prior P7/P8 → P9/P10. Total prompts: 10. Critical-path diagram updated with parallel-session marks for P4+P7 and P5+P8 (the dashboard work runs alongside the writer-migration and agent-verification tracks). Risk register adds 4 new rows (manager-dashboard backend dependencies, SES sandbox limitations, MentorManagement DynamoDB connectivity, P5+P8 parallelism interference). Definition of done expanded 11 → 14 items. Out-of-scope list explicitly excludes the other 14 super-admin pages and 9 of 15 manager pages (deferred to week-after-Monday). Re-rendered .docx (47 KB, 133 paragraphs).</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1036 [/full-go P1 — migration-runner Lambda redeployed with hardened splitter]</div>
+          <div class="prompt-text">Executed Monday plan rung P1. Triggered CDK Deploy GHA workflow run 25557114531 against ig-dev-services on env=dev (validate/diff/deploy/stub-check all green in 17 min) — but discovered ig-dev-migration-runner is NOT CDK-managed (no references in infrastructure/cdk/lib/ or bin/), so the GHA deploy was a no-op for this Lambda. Pivoted to manual deploy: built /tmp/migration-lambda.zip (handler.py from monorepo HEAD with PR #25 hardened splitter + pg8000 deps via pip3 install -t), pushed via aws lambda update-function-code, then aws lambda update-function-configuration to fix Handler from stale lambda_function.handler → handler.handler (filename moved to handler.py). CodeSha256 went l/qFfvi+wzcwLn4NEjSZ2ZCXqXdGtOTGPce/5DvMc2s= → 8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=; LastModified 2026-04-23T21:26:37Z → 2026-05-08T13:24:47Z. Verified end-to-end on dev with two smoke invocations: (1) SELECT 1; → 1 succeeded/0 failed/0 skipped; (2) "-- comment with semicolon ; should not split\nBEGIN;\nSELECT 1;\nCOMMIT;\n" → 1 succeeded/0 failed/2 skipped (BEGIN + COMMIT correctly recognized as _TXN_NOOPS, comment-only line stripped, line-comment semicolon did not split). All 4 splitter quirks codified in PR #25 demonstrably live. Process note for P2: any future migration-runner code change must be deployed via aws lambda update-function-code, not CDK — adding to MONDAY_PROD_READY_PLAN as known divergence.</div>
         </div>
         </div>
         </div>
