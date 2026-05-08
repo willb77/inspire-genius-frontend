@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1036</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1039</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,30 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-08] — feat(phase-d-r4): ECS scheduled scaling for agent-engine on dev</h3>
+        <h4>Added</h4>
+        <ul>
+          <li>Per-environment <code>agentEngineScaling</code> block on <code>EnvironmentConfig</code> in <code>infrastructure/cdk/lib/config.ts</code>: <code>scheduledScalingEnabled</code>, <code>staticMin</code>, <code>staticMax</code>, <code>taskCountAlarmEnabled</code>, plus three <code>(min, max)</code> windows (<code>businessHours</code>, <code>offHours</code>, <code>weekend</code>). Dev enabled with floor 0 / ceiling 4. Staging+prod placeholders left at <code>scheduledScalingEnabled=false</code> pending their own PR.</li>
+          <li>Four scheduled <code>applicationautoscaling</code> actions on <code>ig-dev-agent-engine</code> scalable target (gated by <code>scheduledScalingEnabled</code>):
+            <ul>
+              <li><code>businessHoursScaleUp</code> — <code>cron(0 13 ? * MON-FRI *)</code> — Mon–Fri 8am EST → min 1, max 4</li>
+              <li><code>offHoursScaleDown</code> — <code>cron(0 1 ? * TUE-SAT *)</code> — Mon–Fri 8pm EST → min 0, max 4</li>
+              <li><code>weekendStart</code> — <code>cron(0 5 ? * SAT *)</code> — Sat 00:00 EST → min 0, max 4</li>
+              <li><code>weekendEnd</code> — <code>cron(0 5 ? * MON *)</code> — Mon 00:00 EST → min 0, max 4</li>
+            </ul>
+          </li>
+        </ul>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>infrastructure/cdk/lib/agent-engine-stack.ts</code> — replaced legacy three-action <code>(isProd || isStaging)</code> block with config-driven branch. Static target now reads from <code>envConfig.agentEngineScaling</code>.</li>
+          <li><code>TaskCountAlarm</code> made conditional on <code>taskCountAlarmEnabled</code>; disabled in dev because the new floor=0 would flap the alarm.</li>
+          <li><code>.claude/commands/agent-stop.md</code> + <code>.claude/commands/agent-start.md</code> — drive the scalable target's min/max instead of the ECS service desiredCount, so ad-hoc cost saves don't fight the schedule.</li>
+        </ul>
+        <h4>cdk diff (dev)</h4>
+        <ul>
+          <li><code>cdk diff ig-dev-agent-engine -c env=dev</code> shows: 4 ScheduledAction adds, ScalableTarget Min 2→0 / Max 10→4, TaskCountAlarm destroy. No service or task-definition changes.</li>
+        </ul>
 
         <h3>[2026-05-04 UTC] — deploy: Phase −1.5 cognito-stack drift cleanup</h3>
         <h4>Done</h4>
@@ -22514,6 +22538,18 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1036 [/full-go P1 — migration-runner Lambda redeployed with hardened splitter]</div>
           <div class="prompt-text">Executed Monday plan rung P1. Triggered CDK Deploy GHA workflow run 25557114531 against ig-dev-services on env=dev (validate/diff/deploy/stub-check all green in 17 min) — but discovered ig-dev-migration-runner is NOT CDK-managed (no references in infrastructure/cdk/lib/ or bin/), so the GHA deploy was a no-op for this Lambda. Pivoted to manual deploy: built /tmp/migration-lambda.zip (handler.py from monorepo HEAD with PR #25 hardened splitter + pg8000 deps via pip3 install -t), pushed via aws lambda update-function-code, then aws lambda update-function-configuration to fix Handler from stale lambda_function.handler → handler.handler (filename moved to handler.py). CodeSha256 went l/qFfvi+wzcwLn4NEjSZ2ZCXqXdGtOTGPce/5DvMc2s= → 8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=; LastModified 2026-04-23T21:26:37Z → 2026-05-08T13:24:47Z. Verified end-to-end on dev with two smoke invocations: (1) SELECT 1; → 1 succeeded/0 failed/0 skipped; (2) "-- comment with semicolon ; should not split\nBEGIN;\nSELECT 1;\nCOMMIT;\n" → 1 succeeded/0 failed/2 skipped (BEGIN + COMMIT correctly recognized as _TXN_NOOPS, comment-only line stripped, line-comment semicolon did not split). All 4 splitter quirks codified in PR #25 demonstrably live. Process note for P2: any future migration-runner code change must be deployed via aws lambda update-function-code, not CDK — adding to MONDAY_PROD_READY_PLAN as known divergence.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1037 [P3 of Monday plan — Phase D R4 dev ECS scheduled scaling]</div>
+          <div class="prompt-text">Executed P3 of MONDAY_PROD_READY_PLAN.md (Phase D Rung 4 from PHASE_D_PLAN.docx §3) on a feature-branch worktree in parallel with P1+P2 and P4. Goal: implement scheduled scaling on the ig-dev-agent-engine scalable target so business-hours capacity is warm and idle hours scale-down automatically — without /agent-stop involvement. Verified empty list of scheduled actions before starting. Added a per-environment `agentEngineScaling` block to lib/config.ts (scheduledScalingEnabled, staticMin, staticMax, taskCountAlarmEnabled, three (min,max) windows). Dev gets `scheduledScalingEnabled=true` with floor 0 / ceiling 4; staging+prod placeholders with `scheduledScalingEnabled=false` so the legacy posture stays intact pending their own PR. Refactored agent-engine-stack.ts to read the config and register four scheduled actions when enabled: businessHoursScaleUp cron(0 13 ? * MON-FRI *) min 1 max 4, offHoursScaleDown cron(0 1 ? * TUE-SAT *) min 0 max 4, weekendStart cron(0 5 ? * SAT *) min 0 max 4, weekendEnd cron(0 5 ? * MON *) min 0 max 4. Made TaskCountAlarm conditional on taskCountAlarmEnabled (disabled in dev because floor=0 would flap it). Updated /agent-stop and /agent-start to drive the scalable target's min/max instead of the ECS service desiredCount, so ad-hoc cost saves don't fight the schedule. Rebased onto current dev (after #36 P1 docs and #38 P2 asset-hash merged) before final push.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1038 [P4 — Phase D R3 chat_message writer migration]</div>
+          <div class="prompt-text">P4 of the Monday-prod-ready plan (Phase D §2). Migrate the chat_message writer from the deprecated monolith into the agent-engine. Created app/repositories/chat_message_repository.py with async insert() that sets system='ecosystem' explicitly (no longer relies on the Phase C column default). Added canary column chat_messages.writer via idempotent migration phase_d_chat_writer_canary.sql. Gated behind CHAT_MESSAGE_WRITER config flag (default 'monolith'). Wired writer into all four chat entry points (FastAPI WS, Lambda WS, Mangum WS, REST /v1/agents/chat) at the same sequence points the monolith uses. 17 unit tests cover happy path, validation errors, txn semantics, and writer-flag wiring. Originally opened against a stale base (3a0aee2, 30 commits behind dev) which would have reverted Phase C work; rebased onto current development twice (first after #36 + #38 merged, then again after #39 P3 merged). Steps 11–12 (24h canary observation, hard-disable monolith path) deferred to follow-up PR.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1039 [/full-go P2 — Lambda asset-hash pinned to SOURCE on services + trainer]</div>
+          <div class="prompt-text">Executed Monday plan rung P2 (Phase D Rung 2). Captured baseline cdk diff confirming exactly 17 phantom Code.S3Key changes (15 services + 2 trainer) — caused by pip install --target writing timestamps into bundled output, making default assetHashType: OUTPUT non-deterministic. Fix: added `assetHashType: cdk.AssetHashType.SOURCE` to all 17 lambda.Code.fromAsset calls in services-stack.ts (15 — audit/auth/coach/org/user-mgmt/dashboard/support/document/4×rlhf/3×observability) and trainer-stack.ts (2 — TrainerLambda/TrainerWorker). Local validation: tsc clean, two consecutive cdk synth runs produce byte-identical templates for both stacks, cdk diff shows ONLY 17 Lambda::Function S3Key changes (no policy/role/env drift — within spec). PR #38 squash-merged. Deployed: services-stack run 25561875526 → "✅ ig-dev-services (no changes)" (CDK detected new SOURCE hash already matched deployed CFN, no rotation needed); trainer-stack run 25561893410 → UPDATE_COMPLETE on TrainerLambda + TrainerWorker (rotated to new stable hashes). Acceptance met: future cdk diff on both stacks empty until real source changes. Process note: local cdk diff is hash-sensitive to __pycache__/*.pyc/.venv artifacts in source tree (CI checks out clean tree, so produces different hash than local) — treat CI as source of truth for drift detection; future improvement is assetHashOptions.exclude on those patterns (deferred, outside P2 scope). Docs PR re-created against latest development (PR #39 closed) after parallel-session R3+R4 PRs landed during P2 deploy window.</div>
         </div>
         </div>
         </div>
