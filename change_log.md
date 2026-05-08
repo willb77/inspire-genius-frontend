@@ -1,3 +1,45 @@
+## [2026-05-07] — Phase C item 1: preferred_system columns
+
+### Added
+- `user_profiles.preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'`
+- `organizations.preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'`
+- DB-layer CHECK constraints enforcing `IN ('ecosystem', 'monolith')` for both
+- `VALID_PREFERRED_SYSTEMS` constant in both services' `models.py`
+- `preferred_system` field on `UserProfileOut` and `OrgOut` Pydantic schemas (safe `getattr` fallback for rows without the column applied yet)
+
+### New files
+- `services/migration-runner/migrations/phase_c_preferred_system.sql` — idempotent (gated on `information_schema.columns`) ALTER TABLE migration with rollback
+- `.gitignore` exception added for `services/migration-runner/migrations/*.sql`
+
+### Why
+Phase C item 1 from the deferred list. Backs the per-user/per-org system preference referenced in change_log §"Phase C deferred". Default `'ecosystem'` matches the runtime kill-switch (Agent Engine primary) and the W.1 deprecation decision.
+
+### Not in scope (deferred to Phase C item 5)
+PATCH endpoints accepting `preferred_system` updates. Item 5 (per-task system override declarations) is the natural home for that surface; building it before this column existed would have been backwards.
+
+### Apply on dev (manual deploy step)
+```bash
+SQL=$(cat "services/migration-runner/migrations/phase_c_preferred_system.sql")
+aws lambda invoke --function-name ig-dev-migration-runner \
+  --payload "{\"sql\": $(echo "$SQL" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}" \
+  --cli-binary-format raw-in-base64-out /tmp/result.json
+```
+
+### Verification
+- `python3 -m py_compile` on all 4 modified files — clean
+- Existing org-service tests check field-presence (not exact-shape); additive change is safe
+
+### Files
+- `services/user-service/app/models.py`
+- `services/user-service/app/schemas.py`
+- `services/org-service/app/models.py`
+- `services/org-service/app/schemas.py`
+- `services/migration-runner/migrations/phase_c_preferred_system.sql` (new)
+- `.gitignore` (allow new migration SQL through)
+- `REMAINING_TASKS.md` (Phase C section added; Item 1 ✅, Items 2–5 still ❌)
+
+---
+
 ## [2026-05-07] — W.1 Option A: monolith WS path formally deprecated
 
 ### Decision
