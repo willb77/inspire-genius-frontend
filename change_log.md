@@ -1,3 +1,25 @@
+## [2026-05-07] — Phase C item 2: CI smoke matrix
+
+### Added
+`services/agent-engine/tests/test_coexistence_smoke.py` — 5 canned prompts (coaching, business, system, career_talent, fallback) with parametrized assertions:
+
+1. Keyword-fallback classification routes each prompt to its expected domain
+2. Meridian still constructs with all 4 domain orchestrators
+3. Each orchestrator's agent roster is non-empty
+4. Meta-test: the smoke matrix stays balanced across all 4 domains
+
+### Why this shape
+The end-to-end smoke (real HTTP calls to dev URLs with auth) lives in the deploy pipeline. This PR adds the **in-CI prevention layer** — a fast, hermetic test suite that runs in `Backend CI` under the existing `services/**` path filter and catches the most common regressions before deploy.
+
+### What it catches
+Import errors in any specialist agent; keyword-set drift breaking prompt routing; an orchestrator silently dropping all its agents; accidentally removing a domain from the routing table.
+
+### Files
+- `services/agent-engine/tests/test_coexistence_smoke.py` (new)
+- `REMAINING_TASKS.md` (Item 2 ✅)
+
+---
+
 ## [2026-05-07] — Phase C item 1b: user-service schema isolation + applied on dev
 
 ### What shipped
