@@ -1,3 +1,37 @@
+## [2026-05-07] — Phase C item 1a: org-service schema isolation + applied on dev
+
+### Background
+Yesterday's Phase C item 1 PR (#22) landed the SQLAlchemy column adds, but applying the migration on dev surfaced two structural problems: the dev DB's `user_profiles` is the monolith's table (different shape entirely from user-service's ORM), and `organizations` didn't exist at all. The first migration attempt failed cleanly (no monolith data was modified — postgres aborted the transaction). After option analysis (rename / separate schema / merge / defer), chose **Option B: separate Postgres schema per extracted service** with a staged rollout (org-service first, since it's 100% net-new and zero risk).
+
+### What shipped (1a — org-service)
+- `services/org-service/app/database.py` — `MetaData(schema=...)` on Base + `search_path=org_service,public` on Postgres connect. SQLite (used in tests) falls back to no-schema.
+- New migration `services/migration-runner/migrations/phase_c_org_service_schema.sql` — `CREATE SCHEMA IF NOT EXISTS org_service` + `org_service.organizations` (with `preferred_system` column + `CHECK IN ('ecosystem', 'monolith')`) + `org_service.org_members` (with `uq_org_user` unique constraint) + indexes per ORM. Idempotent throughout.
+- Removed broken predecessor `services/migration-runner/migrations/phase_c_preferred_system.sql` from PR #22 (assumed `organizations` existed in `public`, would have collided with monolith's `user_profiles` if a similar migration ran for users).
+
+### Applied on dev (verified)
+- `aws lambda invoke ig-dev-migration-runner` — 11/11 statements OK (run 1) and 11/11 OK (re-run, confirms idempotent).
+- `information_schema.schemata` — `org_service` present.
+- `org_service.organizations` columns — `preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'` ✓.
+- `pg_constraint` — `organizations_preferred_system_check` (CHECK) and `uq_org_user` (UNIQUE) both present.
+- Cleaned up `test_org_service` schema left over from splitter debugging.
+
+### Migration-runner Lambda quirks logged for future authors
+1. `_split_sql` splits on `;` even inside `--` line comments — no `;` allowed in comment text
+2. Statements whose stripped form starts with `--` are silently skipped — no multi-line comment headers immediately preceding SQL
+3. pg8000.native has no top-level transaction support — don't use `BEGIN;`/`COMMIT;` as raw SQL; rely on idempotent DDL guards
+4. Follow-up: harden the splitter (proper comment stripping)
+
+### Item 1 split into 1a (✅) + 1b (❌, pending user-service)
+1b will mirror 1a's pattern: new `user_service` schema, schema-aware `database.py`, new migration. user-service's ORM already has `preferred_system` declared from PR #22 — just needs its own table to actually exist.
+
+### Files
+- `services/org-service/app/database.py` (schema + search_path)
+- `services/migration-runner/migrations/phase_c_org_service_schema.sql` (new)
+- `services/migration-runner/migrations/phase_c_preferred_system.sql` (deleted)
+- `REMAINING_TASKS.md` (Item 1 split into 1a/1b, splitter quirks logged)
+
+---
+
 ## [2026-05-07] — Phase C item 1: preferred_system columns
 
 ### Added

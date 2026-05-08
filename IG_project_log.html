@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1025</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1026</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22474,6 +22474,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1025 [Phase C item 1 — preferred_system columns]</div>
           <div class="prompt-text">Shipped Phase C item 1 from the deferred list. Added user_profiles.preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem' (services/user-service/app/models.py + UserProfileOut in schemas.py with safe getattr fallback) and organizations.preferred_system VARCHAR(16) NOT NULL DEFAULT 'ecosystem' (services/org-service/app/models.py + OrgOut in schemas.py). DB-layer CHECK constraints enforce IN ('ecosystem', 'monolith') for both. New idempotent ALTER TABLE script services/migration-runner/migrations/phase_c_preferred_system.sql (gated on information_schema.columns + pg_constraint to be safe to re-run, with rollback section commented at the bottom). Added .gitignore exception for services/migration-runner/migrations/*.sql so future migration SQL is trackable. PATCH endpoints accepting preferred_system updates intentionally NOT shipped this round — that surface belongs to Phase C item 5. Verification: python3 -m py_compile clean on all 4 modified .py files; existing org-service tests check field-presence (not exact-shape) so the additive change is safe. Apply on dev: aws lambda invoke --function-name ig-dev-migration-runner with the SQL payload (deferred to a separate manual step).</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1026 [Phase C item 1a — apply on dev → schema-isolation rollout]</div>
+          <div class="prompt-text">Applying the original Phase C migration on dev surfaced two structural problems: dev DB's user_profiles is the monolith's table (different shape than user-service's ORM expects), and organizations didn't exist at all. First migration attempt failed cleanly — postgres aborted the transaction; no data was modified. Presented options (rename / separate schema / merge / defer) and chose Option B with staged rollout: separate Postgres schema per extracted service, starting with org-service since it's 100% net-new. Updated services/org-service/app/database.py — Base now uses MetaData(schema=org_service) on Postgres, search_path=org_service,public set on connect; SQLite tests fall back to no-schema. Wrote new services/migration-runner/migrations/phase_c_org_service_schema.sql — CREATE SCHEMA org_service + org_service.organizations + org_service.org_members + indexes + CHECK constraint on preferred_system + uq_org_user UNIQUE. Removed the broken phase_c_preferred_system.sql predecessor. Applied via aws lambda invoke ig-dev-migration-runner: 11/11 statements OK (run 1) and 11/11 OK on re-run (idempotent confirmed). Verified org_service schema present, organizations.preferred_system column with default 'ecosystem', CHECK and UNIQUE constraints in place. Cleaned up test_org_service schema left over from splitter debugging. Logged 4 migration-runner Lambda quirks in REMAINING_TASKS.md: (1) splitter splits on ; even inside -- line comments, (2) statements starting with -- after stripping are silently skipped, (3) pg8000.native has no top-level transaction support — don't use BEGIN/COMMIT raw, (4) follow-up: harden the splitter. Item 1 now split into 1a (org-service ✅) and 1b (user-service ❌, pending — same pattern, requires user_service schema + new migration).</div>
         </div>
         </div>
         </div>
