@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1031</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1032</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22494,6 +22494,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1031 [O.2 — WAFv2 re-enabled at the CloudFront edge]</div>
           <div class="prompt-text">Phase −1.7 disabled WAFv2 because the REGIONAL-scoped ACL couldn't attach to API Gateway HTTP API v2. Probe revealed the dev CloudFront distribution E3EFVMBYYVF012 already fronts the SPA + the HTTP API (/api/* behavior) + the monolith WS (/v1/agents/ws/*) — so no new edge-fronting distribution was needed. Just flip the WAF scope from REGIONAL to CLOUDFRONT and attach via webAclId on the existing distribution. Re-enabled InspireGeniusWaf wafv2.CfnWebACL in security-stack.ts with scope=CLOUDFRONT (5 AWS-managed rules: CommonRuleSet with SizeRestrictions_BODY excluded for /v1/feedback, KnownBadInputs, SQLi, IpReputation; plus 2 custom rate limits: 1000/5min/IP global + 60/5min/IP scoped to /v1/feedback). Re-enabled WafBlockedRequestsAlarm (Region='Global' dimension for CLOUDFRONT-scoped metrics), Row 5 dashboard widgets (allowed-vs-blocked + per-rule blocked-by-rule), and the WafWebAclArn CfnOutput. Wired webAclId onto the cloudfront.Distribution in domain-stack.ts via cdk.Fn.importValue. Local cdk diff: + WebACL + Alarm + dashboard row + output on security-stack; + WebACLId field on Distribution (no replacement) on domain-stack. All other affected stacks empty. Deploy via workflow_dispatch after merge.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1032 [O.2 deployed + verified on dev]</div>
+          <div class="prompt-text">Dispatched workflow_dispatch on CDK Deploy for ig-dev-security (run 25534735031, ~17m) — created the WAFv2 WebACL with CLOUDFRONT scope (ARN .../ig-dev-api-waf/fa698b08-...), the WafBlockedRequestsAlarm, Row 5 dashboard widgets, and the cross-stack export. Then dispatched ig-dev-domain (run 25535300072, ~22m) — attached webAclId to CloudFront distribution E3EFVMBYYVF012 (dev.inspiresgenius.com). No replacement, in-place CloudFront update. Verified post-deploy: aws wafv2 list-web-acls shows ig-dev-api-waf present; aws cloudfront get-distribution-config returns WebACLId set; curl -sI https://dev.inspiresgenius.com/ returns HTTP/2 200 with the SPA index.html (no WAF false-positive on bare GET). WAF now actively inspecting all traffic to the dev distribution: SPA defaults, /api/* → API Gateway, /v1/agents/ws/* → monolith. 5 managed rules + 2 custom rate limits live; CloudWatch alarm + Row 5 widgets populating. O.2 fully closed.</div>
         </div>
         </div>
         </div>
