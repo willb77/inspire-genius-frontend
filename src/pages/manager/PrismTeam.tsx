@@ -21,21 +21,13 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Eye, Users } from 'lucide-react'
 import { QUEST_TYPE_NAMES } from '@/constants/prism'
-import type { PrismAssessment } from '@/types/prism/assessment-types'
-
-// TODO: Replace with real hook for manager's team assessments
-function useTeamAssessments() {
-  return {
-    data: { data: { data: { assessments: [] as PrismAssessment[], total: 0 } } },
-    isLoading: false,
-  }
-}
+import { useManagerTeamPrism } from '@/hooks/manager/useManagerTeamPrism'
 
 export default function PrismTeam() {
-  const { data, isLoading } = useTeamAssessments()
+  const { data, isLoading } = useManagerTeamPrism()
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
 
-  const assessments = data?.data?.data?.assessments ?? []
+  const assessments = data?.assessments ?? []
 
   const completedCount = assessments.filter(
     (a) => a.status === 'report_ready' || a.status === 'ingested',
