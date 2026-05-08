@@ -1,3 +1,30 @@
+## [2026-05-07] — W.1 Option A: monolith WS path formally deprecated
+
+### Decision
+Choosing **Option A** (formally retire) over Option B (wire prod WS routing to monolith). The Agent Engine is canonical; investing in a CloudFront WebSocket behavior to rescue a system we're strangling has a poor cost/benefit. V.1 already proved the monolith app is healthy — the open question was strategic, not technical.
+
+### Changed
+- `.claude/rules/agents.md` — deprecation header at the top of "Agent Systems" rule. Contributors are now told: do not add new functionality to monolith agents; bug fixes only when the equivalent Agent Engine fix is harder; deletion is a future cleanup.
+- `inspire-genius-frontend/src/components/settings/AgentEngineToggle.tsx`:
+  - **Bug fix:** displayed toggle state now defaults to ON when localStorage is unset, matching `useAgentEngine()`'s default-true behavior. Super-admin no longer sees a misleading "off" position while routing is actually going to the Agent Engine.
+  - Card subtitle: "Agent Engine is the canonical system. The Monolith path is retained as an emergency fallback only."
+  - Warning callout rewritten: explicit that switching to Monolith leaves prod chat/voice unreachable (production WS routing only reaches the Agent Engine).
+
+### Closed in REMAINING_TASKS.md
+- ✅ W.1 — Option (a) chosen
+- ✅ W.2 — covered by the agents.md update
+- ✅ W.3 — explicitly not pursued (rationale recorded)
+
+### Future cleanup (low priority)
+- Delete `inspire-genius-backend/ai/.../agents/` once Phase C item 5 ships and the fallback is no longer needed (≥30 days).
+- Remove `AgentEngineToggle` component entirely once the monolith fallback has no operational value.
+
+### Tests
+- `npx tsc --noEmit` clean
+- `npx jest src/components/settings` — 40/40 pass
+
+---
+
 ## [2026-05-07] — V.1 monolith voice/chat verified resolved (no outage)
 
 ### Verified

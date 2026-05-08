@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1023</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1024</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22466,6 +22466,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-07 — Prompt #1023 [V.1 monolith voice/chat verified resolved]</div>
           <div class="prompt-text">Probed the 2026-04-21 monolith voice/chat outage. From the public path, CloudFront → API Gateway returns 503 on the WS path (production WS URL is intentionally pointed at ws-proxy → Agent Engine ALB; W.1 is the open routing question). From inside the EC2 via SSM Run Command on i-029f0b2e216a70acb: container inspire-genius-backend-1 up 8 days, 0 restarts since 2026-04-29; EC2 uptime 55 days; Milvus, Postgres, MinIO, etcd all healthy; local /health = 200; local WS upgrade /v1/agents/ws/alex-chat returns HTTP/1.1 101 Switching Protocols from uvicorn — handshake accepted. Last 2h of logs: zero errors except a single ASGI race produced by the probe itself (closed WS before first message; benign edge case in alex_agent's connection handler). Production traffic continues to hit /v1/frontend-text every 15-30 min — monolith is in active use for non-WS routes. Conclusion: the 2026-04-21 outage self-resolved during the 2026-04-29 container restart. V.1 ✅, V.2 moot (no RCA needed), V.3 collapsed into W.1 (the real question is wire up prod WS routing or formally retire). REMAINING_TASKS.md and change_log.md updated; cosmetic ASGI-race follow-up tracked as hygiene-only.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-07 — Prompt #1024 [W.1 Option A — formally deprecate monolith WS path]</div>
+          <div class="prompt-text">Chose Option A (retire) over Option B (wire CloudFront WS to monolith). Updated .claude/rules/agents.md with a deprecation header at the top of the Agent Systems rule: contributors should not add new functionality to monolith agents; bug fixes acceptable only when the equivalent Agent Engine fix is harder; deletion is a future cleanup. Updated AgentEngineToggle.tsx: fixed a latent UI bug where the displayed toggle defaulted to "off" while useAgentEngine() actually defaults to true (so super-admin saw a misleading off-position when routing was already going to the Agent Engine); rewrote subtitle to "Agent Engine is the canonical system. The Monolith path is retained as an emergency fallback only"; warning callout now states explicitly that switching to Monolith leaves prod chat/voice unreachable. Closed W.1/W.2/W.3 in REMAINING_TASKS.md with a low-priority future-cleanup tail. Verification: tsc --noEmit clean; jest on src/components/settings 40/40 pass.</div>
         </div>
         </div>
         </div>

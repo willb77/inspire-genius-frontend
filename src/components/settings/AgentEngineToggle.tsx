@@ -17,9 +17,14 @@ export default function AgentEngineToggle() {
   const queryClient = useQueryClient()
   const [enabled, setEnabled] = useState(() => {
     try {
-      return localStorage.getItem("agent_engine_enabled") === "true"
+      const val = localStorage.getItem("agent_engine_enabled")
+      // Default ON when unset — matches useAgentEngine() in agentApi.ts.
+      // The Monolith path is officially deprecated as of 2026-05-07; this
+      // toggle is retained for super-admin emergency fallback only.
+      if (val === null) return true
+      return val === "true"
     } catch {
-      return false
+      return true
     }
   })
 
@@ -72,6 +77,10 @@ export default function AgentEngineToggle() {
         <CardTitle className="text-lg font-semibold">
           Agent Engine Routing
         </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Agent Engine is the canonical system. The Monolith path is
+          retained as an emergency fallback only.
+        </p>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
         {/* Toggle */}
@@ -116,8 +125,10 @@ export default function AgentEngineToggle() {
         <div className="flex gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Switching routing affects Agent Management, Analytics, Chat, Voice,
-            and Prompt Builder. Auth is compatible — no re-login required.
+            Monolith path is officially deprecated (2026-05-07). Production
+            WebSocket routing only reaches the Agent Engine; switching to
+            Monolith here will leave chat/voice unreachable from prod. Use
+            only as an emergency fallback for non-WS routes.
           </span>
         </div>
       </CardContent>
