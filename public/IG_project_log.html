@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1032</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1033</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22498,6 +22498,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1032 [O.2 deployed + verified on dev]</div>
           <div class="prompt-text">Dispatched workflow_dispatch on CDK Deploy for ig-dev-security (run 25534735031, ~17m) — created the WAFv2 WebACL with CLOUDFRONT scope (ARN .../ig-dev-api-waf/fa698b08-...), the WafBlockedRequestsAlarm, Row 5 dashboard widgets, and the cross-stack export. Then dispatched ig-dev-domain (run 25535300072, ~22m) — attached webAclId to CloudFront distribution E3EFVMBYYVF012 (dev.inspiresgenius.com). No replacement, in-place CloudFront update. Verified post-deploy: aws wafv2 list-web-acls shows ig-dev-api-waf present; aws cloudfront get-distribution-config returns WebACLId set; curl -sI https://dev.inspiresgenius.com/ returns HTTP/2 200 with the SPA index.html (no WAF false-positive on bare GET). WAF now actively inspecting all traffic to the dev distribution: SPA defaults, /api/* → API Gateway, /v1/agents/ws/* → monolith. 5 managed rules + 2 custom rate limits live; CloudWatch alarm + Row 5 widgets populating. O.2 fully closed.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1033 [/log-session — full-day session summary]</div>
+          <div class="prompt-text">Single full-day session that closed every D-series drift item, every Phase C item, every today-relevant carry-over (V, W, M.1), plus O.2 (WAF re-enable) — code shipped + deployed + verified live on dev. 31 monorepo PRs + 18 frontend PRs merged. Highlights: D1 Path B deleted unused CDK-stub RDS Proxy (CDK Deploy run 25525243953); D2 RDS Proxy IAMAuth pinned via AwsCustomResource; V.1 verified monolith voice/chat NOT down (stale 2026-04-21 diagnosis — container has 0 restarts since 2026-04-29); W.1 Option A deprecated monolith path; M.1 verified live (no rotation needed); Phase C item 1a applied org_service schema (11/11 OK); item 1b applied user_service schema (7/7 OK); item 2 added 5-prompt CI smoke matrix; item 3 added system column to public.chat_messages (8656 existing rows defaulted); item 4 SystemSwitch UI component (7 tests); item 5 PATCH endpoints (8 tests); migration-runner splitter hardened (4 quirks codified, 15 tests); O.2 WAFv2 deployed at CloudFront edge — ig-dev-api-waf live with 5 AWS managed rules + 2 custom rate limits, attached to distribution E3EFVMBYYVF012 via webAclId, smoke confirms HTTP/2 200 with no false-positives. Drift queue now empty. Phase C fully closed. Remaining low-priority items: O.3 (alarm-count comment), M.2 (placeholder for future rotation), Phase D-ish writer migration monolith→agent-engine.</div>
         </div>
         </div>
         </div>

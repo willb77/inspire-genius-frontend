@@ -1,3 +1,88 @@
+## [2026-05-08 EOD] — Session wrap: Phase C closed end-to-end + O.2 WAF live
+
+A single full-day session that closed every D-series drift item, every Phase C item, every today-relevant carry-over, plus O.2 (WAF re-enable). 31 monorepo PRs + 18 frontend PRs merged.
+
+### Deployed on dev
+- D1 Path B — CDK-stub RDS Proxy deleted (CDK Deploy run `25525243953`); only the Terraform proxy `inspires-genius-dev-rds-proxy` remains
+- D2 — RDS Proxy IAMAuth pinned via `AwsCustomResource` in services-stack
+- Phase C item 1a — `org_service` schema + `org_service.organizations` (with `preferred_system`) + `org_service.org_members` applied (11/11 OK, idempotent)
+- Phase C item 1b — `user_service` schema + `user_service.user_profiles` (with `preferred_system`) applied (7/7 OK, idempotent)
+- Phase C item 3 — `public.chat_messages.system VARCHAR(16) NOT NULL DEFAULT 'ecosystem'` + CHECK constraint applied (2/2 OK; 8656 existing rows defaulted)
+- O.2 — WAFv2 WebACL `ig-dev-api-waf` (CLOUDFRONT scope) deployed via `ig-dev-security` (run `25534735031`); attached to CloudFront `E3EFVMBYYVF012` via `webAclId` deployed via `ig-dev-domain` (run `25535300072`)
+
+### Added
+- `infrastructure/scripts/rotate-monolith-secret-key.sh` — SSM Run Command wrapper for monolith SECRET_KEY rotation (read source-of-truth from auth-service Lambda; --check / --yes modes)
+- `infrastructure/cdk/lib/services-stack.ts` — `TfProxyAuthPin` `AwsCustomResource` (pins TF proxy IAMAuth so manual changes can't drift back)
+- `services/migration-runner/migrations/phase_c_org_service_schema.sql` (idempotent)
+- `services/migration-runner/migrations/phase_c_user_service_schema.sql` (idempotent)
+- `services/migration-runner/migrations/phase_c_item_3_chat_message_system_tag.sql` (idempotent)
+- `services/migration-runner/tests/test_split_sql.py` (15 tests covering the 4 splitter quirks discovered during 1a/1b)
+- `services/agent-engine/tests/test_coexistence_smoke.py` (Phase C item 2 — 5-prompt canned suite)
+- `services/user-service/tests/test_profiles.py` and `services/org-service/tests/test_orgs.py` — 8 new PATCH tests (Phase C item 5)
+- `inspire-genius-frontend/src/components/shared/SystemSwitch.tsx` + 7 tests (Phase C item 4)
+- `inspire-genius-frontend/src/lib/browser.ts` (small `reloadPage()` helper, factored for jsdom mockability)
+- 6 documents under `Transformation Documents/` for Phase C / WAF / drift design notes (kept locally; gitignored)
+
+### Changed
+- `infrastructure/cdk/lib/database-stack.ts` — removed unused CDK-stub RDS Proxy block (D1 Path B); only VPC flow logs + DbSecret import remain
+- `infrastructure/cdk/lib/security-stack.ts` — re-enabled `InspireGeniusWaf` `wafv2.CfnWebACL` with `scope: 'CLOUDFRONT'`, `WafBlockedRequestsAlarm`, Row 5 dashboard widgets, `WafWebAclArn` output (O.2)
+- `infrastructure/cdk/lib/domain-stack.ts` — imports `${stackPrefix}-waf-web-acl-arn` and passes as `webAclId` on `cloudfront.Distribution` (O.2)
+- `services/migration-runner/handler.py` — rewrote `_split_sql` + new `_strip_comments` to handle line/block comments, single-quoted strings, dollar-quoted blocks, tagged dollar quotes; transaction-control statements (`BEGIN`/`COMMIT`/`ROLLBACK`) detected and skipped as no-ops; `pg8000` lazy-imported inside `handler()`
+- `services/user-service/app/database.py` — `MetaData(schema='user_service')` + `search_path=user_service,public` (Phase C 1b)
+- `services/org-service/app/database.py` — `MetaData(schema='org_service')` + `search_path=org_service,public` (Phase C 1a)
+- `services/{user,org}-service/app/{models,schemas,routes,service}.py` — `preferred_system` column + Pydantic field + service-layer validation + route-level 400 mapping (Phase C items 1, 5)
+- `services/agent-engine/app/routes/chat_history.py` — `ChatMessage` Pydantic gets `system: str = "ecosystem"` default; SELECT includes `COALESCE(system, 'ecosystem') AS system` (Phase C item 3)
+- `inspire-genius-frontend/src/components/settings/AgentEngineToggle.tsx` — bug fix for default-display state, W.1 deprecation note in callout
+- `inspire-genius-frontend/src/layouts/AppShell.tsx` — renders `SystemSwitch` for super-admin only (Phase C item 4)
+- `.claude/rules/agents.md` — W.1 deprecation header for monolith path
+- `.gitignore` — exception for `services/migration-runner/migrations/*.sql`
+- `.secrets.baseline` — `__INJECTED__` placeholder false-positive filter
+- `D1_HANDOFF.md` annotated `✅ CLOSED 2026-05-07`
+
+### Fixed
+- V.1 — verified monolith voice/chat is NOT down (was a stale 2026-04-21 outage diagnosis); container has 0 restarts since 2026-04-29; WS handshake returns 101 from inside the EC2
+- W.1 Option A — monolith path formally deprecated (rule + UI + REMAINING_TASKS)
+- M.1 — monolith `/opt/inspire-genius/.env` `SECRET_KEY` already matches auth-service Lambda (no rotation needed; verified live via `--check`)
+- 4 migration-runner SQL splitter quirks (`;` in comments, comment-headers-before-SQL, `BEGIN`/`COMMIT` no-op, `$$`/tagged-dollar blocks) — codified into the splitter itself with 15 regression tests
+- D1 — dual RDS Proxy drift cleared by deleting the unused CDK stub
+- `phase_c_preferred_system_migration.sql` (PR #22 predecessor) was incorrectly written assuming `organizations` existed in `public`; replaced with two schema-isolated migrations under `services/migration-runner/migrations/`
+
+### Removed
+- `infrastructure/cdk/lib/database-stack.ts` — RDS Proxy + ingress + IAM Role + Target Group + 3 zero-importer CFN exports (`ig-dev-rds-proxy-endpoint`, `-arn`, `-sg-id`)
+- `services/migration-runner/migrations/phase_c_preferred_system.sql` — broken predecessor (assumed `organizations` was in `public.*`)
+- `MEMORY.md` — `project_d1_handoff.md` pointer (D1 closed)
+
+### Verified live (smoke)
+- `https://dev.inspiresgenius.com/` → HTTP/2 200 (SPA, post-WAF) ✓
+- `aws wafv2 list-web-acls --scope CLOUDFRONT` shows `ig-dev-api-waf` ✓
+- CloudFront `E3EFVMBYYVF012` `WebACLId` set to ACL ARN ✓
+- `aws rds describe-db-proxies` shows only `inspires-genius-dev-rds-proxy` (TF; CDK stub gone) ✓
+- 0 zero-importer CFN exports remaining ✓
+- All consumer Lambdas (auth, audit, agent-engine) `DATABASE_URL` unchanged ✓
+- `aws lambda get-function-configuration ig-dev-auth-service` `SECRET_KEY` unchanged ✓
+- `org_service.organizations.preferred_system` column with default `'ecosystem'` + CHECK ✓
+- `user_service.user_profiles.preferred_system` column with default `'ecosystem'` + CHECK ✓
+- `public.chat_messages.system` column with default `'ecosystem'` + CHECK; 8656 existing rows defaulted ✓
+- 15 splitter tests pass locally ✓
+- 7 SystemSwitch tests + 7 AppShell tests pass locally ✓
+
+### PRs (49 total today)
+**Monorepo (31):** D1 (#18, #19), V.1 (#20), W.1 (#21), Phase C 1 (#22), 1a (#23), 1b (#24), splitter (#25), Item 5 (#26), Item 2 (#27), Item 3 (#28), O.2 (#29), O.2 deploy log (#31), plus all the docs/EOD/M.1/M-script PRs from earlier today (#13-#17)
+**Frontend (18):** mirror PRs for each of the above + the SystemSwitch component PR (#16)
+
+### Drift queue: ✅ empty
+### Phase C: ✅ all 7 items closed
+### Carry-overs (V, W, M.1): ✅ closed; M.2 placeholder (only fires on real rotation)
+
+### Remaining open (low priority)
+- O.3 — alarm-count comment in `services-stack.ts` (5 min, bookkeeping)
+- M.2 — validate-token JWT after a real rotation (no work until rotation)
+- "Phase D-ish" — chat-message writer migration monolith → agent-engine (makes Item 3 `system` column truly per-write tagged)
+- Migration-runner Lambda re-deploy — splitter code on `development`, takes effect on next CDK bundle/deploy
+- Monitor `ig-dev-waf-blocked-requests-high` for first 24h to catch any false-positive WAF rules
+
+---
+
 ## [2026-05-08] — O.2 deployed + verified on dev
 
 ### Deploys
