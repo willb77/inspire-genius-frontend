@@ -1,3 +1,105 @@
+## [2026-05-08] — P2 complete: Lambda asset-hash pinned to SOURCE on services + trainer
+
+### Fixed
+Phase D Rung 2 — pinned `assetHashType: cdk.AssetHashType.SOURCE` on all 17 Lambda `fromAsset` calls so CDK hashes the source tree instead of the bundled zip output. Eliminates the 15 + 2 phantom `Code.S3Key` diffs that appeared on every `cdk diff ig-dev-services ig-dev-trainer` run.
+
+### Root cause
+`pip install --target` writes timestamps into the bundled output, so the default `assetHashType: OUTPUT` produced a different zip filename on every synth even when nothing real changed. That masked actual drift detection in Phase D Rung 2's "is anything actually drifted?" question.
+
+### Files
+- `infrastructure/cdk/lib/services-stack.ts` (15 inserts: audit, auth, coach, org, user-mgmt, dashboard, support, document, 4× rlhf, 3× observability)
+- `infrastructure/cdk/lib/trainer-stack.ts` (2 inserts: TrainerLambda, TrainerWorker)
+- No Lambda runtime, code, or behavior change
+
+### Local validation
+- `tsc --noEmit` clean
+- Two consecutive `cdk synth` runs (10s apart) produce **byte-identical** templates for both stacks
+- `cdk diff` shows exactly 17 changes, all `[~] AWS::Lambda::Function .S3Key:` only — no policy/role/env/permission drift
+
+### Deployed on dev
+- **ig-dev-services** (CDK Deploy run `25561875526`, ~17 min): outcome "✅ ig-dev-services (no changes)" — CDK detected the new SOURCE-pinned hash already matches what's deployed in CFN, so no rotation needed
+- **ig-dev-trainer** (CDK Deploy run `25561893410`, ~16 min): outcome `UPDATE_COMPLETE` on TrainerLambda + TrainerWorker; stack rotated to new SOURCE-pinned hashes
+
+### Acceptance
+- ✅ Both deploys ended with `UPDATE_COMPLETE` (or no-op for services)
+- ✅ CI synth produces deterministic, content-stable hashes
+- ✅ Future `cdk diff ig-dev-services ig-dev-trainer` will be empty until real source changes
+
+### Process note (worth remembering)
+**Local `cdk diff` is hash-sensitive to artifacts in the source tree** — `__pycache__`, `*.pyc`, `.venv` directories from local pytest/uvicorn runs all get hashed into the SOURCE hash. This makes a local diff appear non-empty even when CI is stable. Workarounds:
+- Treat CI as the source of truth for "is there drift?"
+- For local-CI parity, clear `services/<svc>/__pycache__` and `services/<svc>/.venv` before synthing
+- Future improvement: add `assetHashOptions.exclude: ['__pycache__', '*.pyc', '.venv', '*.egg-info']` to make SOURCE hash insensitive to these artifacts (deferred — outside P2 scope)
+
+### Parallel-session note
+PRs #35 (R4 ECS scheduled scaling) and #37 (R3 chat_message writer migration) landed on `development` while P2 deploy was running on dev. No code conflicts (different files); only doc-sync collisions resolved by re-basing this docs PR on the latest development tip and renumbering the prompt entry from #1037 → #1039.
+
+### PR
+- Monorepo PR **#38** — `chore/phase-d-r2-pin-asset-hash-source` → `development` (squash-merged)
+
+---
+
+## [2026-05-08] — feat(phase-d-r3): chat_message writer migration monolith → agent-engine
+
+### Added
+- **`services/agent-engine/app/repositories/chat_message_repository.py`** — canonical async writer for `public.chat_messages`. Validates `system` ∈ {ecosystem, monolith}, `writer` ∈ {agent-engine, monolith}, and `role` ∈ {user, assistant, system}. Rejects null / empty / whitespace-only content. Sets `system` and `writer` **explicitly** on every insert (no longer relies on the Phase C column default). Connects through `app.db.async_session_factory` (RDS Proxy via asyncpg). Caller-owned and repo-owned transaction modes — commits on success, rolls back on exception.
+- **`services/agent-engine/app/repositories/__init__.py`** — package marker for the new repositories module.
+- **`services/migration-runner/migrations/phase_d_chat_writer_canary.sql`** — idempotent migration adding `chat_messages.writer VARCHAR(32) NULL` plus `idx_chat_messages_writer_created_at`. Gated on `information_schema.columns` so re-applying is a no-op. No CHECK constraint — the canary period is short.
+- **`services/agent-engine/tests/test_chat_message_repository.py`** — 13 unit tests covering happy path, all validation errors (null/empty/whitespace content, unknown system/writer/role, missing session_id/user_id), caller-owned vs repo-owned transactions, commit-on-success, rollback-on-exception, and an allow-list snapshot regression guard.
+- **`services/agent-engine/tests/test_chat_message_writer_wiring.py`** — 4 tests verifying the `CHAT_MESSAGE_WRITER` flag actually gates the writer call; assistant-side persistence args; failure-swallowing; default-flag regression guard. (Split from the Phase C `test_coexistence_smoke.py` smoke matrix to keep concerns separate.)
+
+### Changed
+- **`services/agent-engine/app/config.py`** — added `chat_message_writer: str = "monolith"` setting (env var `AGENT_ENGINE_CHAT_MESSAGE_WRITER`). Default keeps the legacy monolith writer in charge until we flip the flag on dev for the canary observation.
+- **`services/agent-engine/app/websocket/handlers.py`** — wired `_persist_chat_message_if_enabled()` helper into both `handle_chat_message` (FastAPI/ECS path) and `handle_chat_message_lambda` (API Gateway/Lambda path). Persists user message immediately after intake validation and assistant message immediately after the `complete` frame is shipped — same sequence points the monolith writer uses. Failures are non-fatal (logged at DEBUG) so a DB hiccup never breaks the live streaming path.
+- **`services/agent-engine/app/ws_handler.py`** — wired the writer into `_stream_agent_response` (Mangum Lambda path). Same sequence points; same non-fatal failure handling.
+- **`services/agent-engine/app/main.py`** — wired the writer into the non-streaming REST `/v1/agents/chat` fallback so all four chat entry points (FastAPI WS, Lambda WS, Mangum WS, REST) write through the same repository. Preserves the dev-side `_ecosystem_disabled()` guard that was added in parallel.
+
+### Phase D R3 acceptance status
+- Steps 4–10 of `Transformation Documents/MONDAY_PROD_READY_PLAN.md` §P4 are in this PR.
+- Steps 11–12 (24h canary observation, hard-disable monolith writer) are explicitly a follow-up after the canary closes — see PR description for the observation methodology.
+- This PR was rebased onto `origin/development` twice — first after #36 (P1) merged, then again after #35/#39 (P3) merged. Original branch base predated Phase C work and would have reverted ~30 commits if merged as-is.
+- Pre-existing `app.routes.privacy` import error in `app/main.py` blocks the full pytest run via `tests/conftest.py`; the new tests pass under `pytest --noconftest` (17/17 green). The privacy-router fix is a sibling task, not in this PR's scope.
+
+## [2026-05-08] — feat(phase-d-r4): ECS scheduled scaling for agent-engine on dev
+
+### Added
+- Per-environment `agentEngineScaling` block on `EnvironmentConfig` in `lib/config.ts`
+  with `scheduledScalingEnabled`, `staticMin`, `staticMax`, `taskCountAlarmEnabled`,
+  and three (min, max) windows (`businessHours`, `offHours`, `weekend`).
+  Dev enabled with floor=0/ceiling=4; staging+prod left as `scheduledScalingEnabled=false`
+  placeholders pending their own PR.
+- Four scheduled `applicationautoscaling` actions on the dev `ig-dev-agent-engine`
+  scalable target (gated by `scheduledScalingEnabled`):
+  - `businessHoursScaleUp` — cron(0 13 ? * MON-FRI *) — Mon–Fri 8am EST → min 1, max 4
+  - `offHoursScaleDown`   — cron(0 1 ? * TUE-SAT *)   — Mon–Fri 8pm EST → min 0, max 4
+  - `weekendStart`        — cron(0 5 ? * SAT *)       — Sat 00:00 EST → min 0, max 4
+  - `weekendEnd`          — cron(0 5 ? * MON *)       — Mon 00:00 EST → min 0, max 4
+
+### Changed
+- `lib/agent-engine-stack.ts` — replaced the legacy three-action `(isProd || isStaging)`
+  block with a config-driven branch. New code reads `envConfig.agentEngineScaling`,
+  pins the scalable target to `(staticMin, staticMax)`, and registers the four
+  scheduled actions when `scheduledScalingEnabled=true`. Legacy `else if` keeps the
+  old posture for prod/staging until their own PR enables differentiated windows.
+- `TaskCountAlarm` is now conditional on `taskCountAlarmEnabled`. Disabled in dev
+  because the new floor=0 during off-hours/weekends would flap the alarm.
+- `.claude/commands/agent-stop.md` — replaces direct ECS `update-service --desired-count 0`
+  with a two-step flow: `register-scalable-target --min 0 --max 0` (so the schedule
+  cannot lift the floor) followed by `update-service --desired-count 0` to drain
+  current tasks immediately.
+- `.claude/commands/agent-start.md` — restores the scalable target to (0, 4) so the
+  schedule resumes governing capacity, with an optional desiredCount=1 nudge for an
+  immediate task outside business hours.
+
+### Notes
+- `cdk diff ig-dev-agent-engine --context env=dev` shows exactly: 4 ScheduledAction adds,
+  scalable target Min 2→0 / Max 10→4, TaskCountAlarm destroyed. No service or
+  task-definition changes.
+- This PR was rebased onto `origin/development` after #36 (P1 docs) and #38 (P2 asset-hash) merged.
+- Files touched: `infrastructure/cdk/lib/config.ts`, `infrastructure/cdk/lib/agent-engine-stack.ts`,
+  `.claude/commands/agent-stop.md`, `.claude/commands/agent-start.md`,
+  `REMAINING_TASKS.md`, `change_log.md`, `IG_project_log.html`.
+
 ## [2026-05-08] — P1 complete: migration-runner Lambda redeployed with hardened splitter
 
 ### Deployed
