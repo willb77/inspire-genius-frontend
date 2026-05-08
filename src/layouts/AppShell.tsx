@@ -5,6 +5,7 @@ import AppSidebar from "@/components/layout/AppSidebar"
 import RightPanel from "@/components/layout/RightPanel"
 import SkipToContent from "@/components/shared/SkipToContent"
 import { EcosystemStatusBanner } from "@/components/shared/EcosystemStatusBanner"
+import { SystemSwitch } from "@/components/shared/SystemSwitch"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
@@ -30,6 +31,12 @@ export default function AppShell({ role, children, className }: AppShellProps) {
       <SkipToContent />
       <AppHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
       <EcosystemStatusBanner />
+      {/* Phase C item 4: explicit per-conversation system override (super-admin only). */}
+      {user?.role === "super-admin" && (
+        <div className="fixed right-4 top-[calc(var(--spacing-header-h)+0.5rem)] z-30 hidden md:block">
+          <SystemSwitch />
+        </div>
+      )}
       <AppSidebar
         role={sidebarRole}
         open={sidebarOpen}
