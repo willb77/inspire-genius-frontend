@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1039</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1040</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,30 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
+        <h4>Changed</h4>
+        <p>Operationalised the Phase D R3 chat_message writer migration that PR #37 had shipped as code. After flipping the canary flag, all new chat-message rows on dev are written by <code>services/agent-engine/app/repositories/chat_message_repository.py</code> instead of the monolith <code>add_message_to_conversation</code>.</p>
+        <h4>Steps performed</h4>
+        <ul>
+          <li><strong>Migration applied</strong> — <code>phase_d_chat_writer_canary.sql</code> invoked via <code>aws lambda invoke ig-dev-migration-runner</code>. Idempotent <code>ALTER</code> added <code>chat_messages.writer VARCHAR(32) NULL</code> plus the helper <code>idx_chat_messages_writer_created_at</code> index.</li>
+          <li><strong>Inventory clean</strong> — 7-day SELECT returned 0 rows; no unknown writers in the canary window.</li>
+          <li><strong>Image rebuilt</strong> — <code>services/agent-engine</code> Docker image rebuilt for <code>linux/amd64</code> and pushed to ECR with both <code>latest</code> and <code>phase-d-r3</code> tags. Manifest digest <code>sha256:6e4f88357e48...</code>. The previous <code>latest</code> was from 2026-05-06, predating PR #37.</li>
+          <li><strong>Task-def rev 34 deployed</strong> — registered with <code>AGENT_ENGINE_CHAT_MESSAGE_WRITER=agent-engine</code>. Earlier rev 33 used the unprefixed name <code>CHAT_MESSAGE_WRITER</code>, which silently fell through to the <code>"monolith"</code> default because <code>pydantic-settings</code> on <code>Settings</code> uses <code>env_prefix="AGENT_ENGINE_"</code>. ECS Exec into the running rev-34 task confirmed <code>settings.chat_message_writer == 'agent-engine'</code>.</li>
+          <li><strong>CDK persisted</strong> — <code>infrastructure/cdk/lib/agent-engine-stack.ts</code> now sets <code>AGENT_ENGINE_CHAT_MESSAGE_WRITER</code> (overridable via <code>--context chatMessageWriter=monolith</code> for emergency rollback).</li>
+          <li><strong>Monolith writer guard</strong> — <code>inspire-genius-backend/ai/chat_services/chat_schema.py::add_message_to_conversation</code> now reads <code>MONOLITH_CHAT_WRITER_ENABLED</code> (default <code>"true"</code>). When set to <code>"false"</code>/<code>"0"</code>/<code>"no"</code> the function returns <code>None</code> without inserting. After the 24h canary closes the operator flips this env var to disable the legacy writer in a single change, no code redeploy.</li>
+          <li><strong>migration-runner improvement</strong> — <code>services/migration-runner/handler.py</code> now returns the per-statement <code>results</code> list inside the response body so SELECT verification queries surface row data without tailing CloudWatch logs.</li>
+        </ul>
+        <h4>Acceptance (this PR)</h4>
+        <ul>
+          <li>✅ Migration column + index visible in dev DB</li>
+          <li>✅ Fresh ECR image built + pushed; ECS task-def rev 34 running with the right env-var name</li>
+          <li>✅ <code>settings.chat_message_writer == 'agent-engine'</code> confirmed inside the running container</li>
+          <li>✅ Monolith writer guard ships at default <code>"true"</code> → no behaviour change today</li>
+          <li>⏸ 24h canary observation + monolith hard-removal (steps 11-12 of the Monday plan) remain a follow-up</li>
+        </ul>
+        <h4>Process note (worth remembering)</h4>
+        <p><strong><code>pydantic-settings</code> env prefixes silently demote unprefixed env vars to defaults.</strong> The first task-def revision used <code>CHAT_MESSAGE_WRITER</code>; pydantic ignored it and the container reported <code>'monolith'</code>. Always grep the <code>Settings</code> class for <code>env_prefix</code> before naming new env vars, and prefer ECS Exec + <code>from app.config import settings; print(...)</code> over reading task-def JSON to verify a flip actually landed.</p>
 
         <h3>[2026-05-08] — feat(phase-d-r4): ECS scheduled scaling for agent-engine on dev</h3>
         <h4>Added</h4>
@@ -22550,6 +22574,11 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 — Prompt #1039 [/full-go P2 — Lambda asset-hash pinned to SOURCE on services + trainer]</div>
           <div class="prompt-text">Executed Monday plan rung P2 (Phase D Rung 2). Captured baseline cdk diff confirming exactly 17 phantom Code.S3Key changes (15 services + 2 trainer) — caused by pip install --target writing timestamps into bundled output, making default assetHashType: OUTPUT non-deterministic. Fix: added `assetHashType: cdk.AssetHashType.SOURCE` to all 17 lambda.Code.fromAsset calls in services-stack.ts (15 — audit/auth/coach/org/user-mgmt/dashboard/support/document/4×rlhf/3×observability) and trainer-stack.ts (2 — TrainerLambda/TrainerWorker). Local validation: tsc clean, two consecutive cdk synth runs produce byte-identical templates for both stacks, cdk diff shows ONLY 17 Lambda::Function S3Key changes (no policy/role/env drift — within spec). PR #38 squash-merged. Deployed: services-stack run 25561875526 → "✅ ig-dev-services (no changes)" (CDK detected new SOURCE hash already matched deployed CFN, no rotation needed); trainer-stack run 25561893410 → UPDATE_COMPLETE on TrainerLambda + TrainerWorker (rotated to new stable hashes). Acceptance met: future cdk diff on both stacks empty until real source changes. Process note: local cdk diff is hash-sensitive to __pycache__/*.pyc/.venv artifacts in source tree (CI checks out clean tree, so produces different hash than local) — treat CI as source of truth for drift detection; future improvement is assetHashOptions.exclude on those patterns (deferred, outside P2 scope). Docs PR re-created against latest development (PR #39 closed) after parallel-session R3+R4 PRs landed during P2 deploy window.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1040 [/full-go review the monday plan and run P4]</div>
+          <div class="prompt-text">Operationalised the Phase D R3 chat_message writer canary that PR #37 had shipped as code. (1) Applied phase_d_chat_writer_canary.sql to dev DB via aws lambda invoke ig-dev-migration-runner — writer column + idx_chat_messages_writer_created_at index live. (2) 7-day inventory query: 0 unexpected writer values. (3) Rebuilt agent-engine Docker image for linux/amd64 and pushed to ECR with both `latest` and `phase-d-r3` tags (digest sha256:6e4f88357e48...). (4) Registered ECS task-def rev 34 with AGENT_ENGINE_CHAT_MESSAGE_WRITER=agent-engine — first attempt at rev 33 used the unprefixed name CHAT_MESSAGE_WRITER and silently fell through to the "monolith" pydantic default because Settings uses env_prefix="AGENT_ENGINE_". ECS Exec into the running rev-34 task confirmed settings.chat_message_writer == 'agent-engine'. (5) Persisted env var in infrastructure/cdk/lib/agent-engine-stack.ts (overridable via --context chatMessageWriter=monolith for emergency rollback). (6) Added MONOLITH_CHAT_WRITER_ENABLED env-var guard to inspire-genius-backend/ai/chat_services/chat_schema.py::add_message_to_conversation — defaults to "true" today; flip to "false" after the 24h canary closes to cut over to step 11. (7) Improved services/migration-runner/handler.py to return per-statement results in the response body so SELECT verification queries surface row data without tailing CloudWatch. Steps 11-12 (24h canary observation + monolith hard-removal) remain a deliberate follow-up.</div>
         </div>
         </div>
         </div>

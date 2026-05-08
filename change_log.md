@@ -1,3 +1,36 @@
+## [2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine
+
+### Changed
+Operationalised the Phase D R3 chat_message writer migration that PR #37 had shipped as code. After flipping the canary flag, all new chat-message rows on dev are written by `services/agent-engine/app/repositories/chat_message_repository.py` instead of the monolith `add_message_to_conversation`.
+
+### Steps performed
+- **Migration applied** — `phase_d_chat_writer_canary.sql` invoked via `aws lambda invoke ig-dev-migration-runner`. Idempotent ALTER added `chat_messages.writer VARCHAR(32) NULL` plus the helper `idx_chat_messages_writer_created_at` index. Statement count: 2/2 succeeded.
+- **Inventory clean** — `SELECT writer, COUNT(*) FROM public.chat_messages WHERE created_at > NOW() - INTERVAL '7 days'` returned 0 rows; no unknown writers in the canary window.
+- **Image rebuilt** — `services/agent-engine` Docker image rebuilt for `linux/amd64` and pushed to `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-dev-agent-engine` with both `latest` and `phase-d-r3` tags. Manifest digest `sha256:6e4f88357e4819a4d00afc493e56d64bf653557e3bf7473c53f9bda25408c7bf`. The previous `latest` was from 2026-05-06, predating PR #37.
+- **Task-def rev 34 deployed** — registered with `AGENT_ENGINE_CHAT_MESSAGE_WRITER=agent-engine`. Earlier rev 33 was registered with the wrong env-var name `CHAT_MESSAGE_WRITER`, which silently fell through to the `"monolith"` default because pydantic-settings on `Settings` uses `env_prefix="AGENT_ENGINE_"`. ECS Exec into the running rev-34 task confirmed `settings.chat_message_writer == 'agent-engine'`.
+- **CDK persisted** — `infrastructure/cdk/lib/agent-engine-stack.ts` now sets `AGENT_ENGINE_CHAT_MESSAGE_WRITER` (overridable via `--context chatMessageWriter=monolith` for emergency rollback). Future CDK redeploys will not silently revert the canary flip.
+- **Monolith writer guard** — `inspire-genius-backend/ai/chat_services/chat_schema.py::add_message_to_conversation` now reads `MONOLITH_CHAT_WRITER_ENABLED` (default `"true"`). When set to `"false"`/`"0"`/`"no"` the function returns `None` without inserting. Prepares step 11 of the Monday plan: after 24h of clean canary the operator flips this env var to disable the legacy writer in a single change, no code redeploy.
+- **migration-runner improvement** — `services/migration-runner/handler.py` now returns the per-statement `results` list (with up to 10 row samples) inside the response body. SELECT verification queries previously surfaced only as counts, which forced operators to tail CloudWatch logs to read row data. Lambda code updated in place via `aws lambda update-function-code` (zip rebuilt locally with `pip install pg8000 -t`).
+
+### Files
+- `services/migration-runner/handler.py` — returns `results` and uses `default=str` for JSON serialisation
+- `services/migration-runner/migrations/phase_d_chat_writer_canary.sql` — already shipped in PR #37; applied to dev today
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — added `AGENT_ENGINE_CHAT_MESSAGE_WRITER` env var (with `chatMessageWriter` CDK-context override)
+- `inspire-genius-backend/ai/chat_services/chat_schema.py` — added `MONOLITH_CHAT_WRITER_ENABLED` env-var guard at top of `add_message_to_conversation`
+- `REMAINING_TASKS.md` — added Phase D R3 / P4 entry under section 4
+
+### Acceptance (this PR)
+- ✅ Migration column + index visible in dev DB
+- ✅ Fresh ECR image built + pushed; ECS task-def rev 34 running with the right env-var name
+- ✅ `settings.chat_message_writer == 'agent-engine'` confirmed inside the running container
+- ✅ Monolith writer guard ships at default `"true"` → no behaviour change today
+- ⏸ 24h canary observation + monolith hard-removal (steps 11-12 of the Monday plan) remain a follow-up
+
+### Process note (worth remembering)
+**`pydantic-settings` env prefixes silently demote unprefixed env vars to defaults.** The first task-def revision used `CHAT_MESSAGE_WRITER`; pydantic ignored it and the container reported `'monolith'`. Always grep the `Settings` class for `env_prefix` before naming new env vars, and prefer ECS Exec + `from app.config import settings; print(...)` over reading task-def JSON to verify a flip actually landed.
+
+---
+
 ## [2026-05-08] — P2 complete: Lambda asset-hash pinned to SOURCE on services + trainer
 
 ### Fixed
