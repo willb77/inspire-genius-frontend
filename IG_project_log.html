@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1050</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1055</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,44 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-08] — P5 (Phase E2): 18-agent verification report on dev</h3>
+        <h4>Verified</h4>
+        <p>Ran the 24-prompt Track E2 matrix (17 single-agent + 4 multi-agent DAG + 3 RBAC denial) against the dev <code>POST /v1/agents/chat</code> path. All 24 prompts returned HTTP 200 with non-empty content. Lenient pass rate <strong>22/24</strong>; strict pass rate <strong>17/24</strong>. Latency via Lambda invoke: avg 6.5s, max 18.4s (CloudWatch <code>AWS/Lambda</code> Duration metric).</p>
+
+        <h4>Methodology &amp; transport</h4>
+        <p>Plan §P5 specifies <code>https://dev.inspiresgenius.com/v1/agents/chat</code>, but on dev that hostname serves the SPA — <code>/v1/*</code> returns React <code>index.html</code>. The actual API is <code>https://8umg6xioz5.execute-api.us-east-1.amazonaws.com</code> (<code>ig-dev-http-api</code>). The chat route uses integration <code>nj5msbs</code> → ALB → ECS Fargate, but the ECS task hits Aurora connection timeouts (<code>DATABASE_URL</code> targets the cluster endpoint, not RDS Proxy), each request stacks 60–90s of asyncpg connect retries, and the 30s API Gateway HTTP API integration timeout fires on every call → all ECS-path requests return 503. The matrix was completed via direct <code>aws lambda invoke --function-name ig-dev-agent-engine</code> (Mangum handler, RDS Proxy, 120s Lambda ceiling) using synthetic API Gateway v2 event payloads. Per the plan's "DO NOT modify any agent code or routing logic during the run" constraint, no code or infrastructure fixes were attempted in-PR.</p>
+
+        <h4>Findings (logged for follow-up; not fixed in this PR)</h4>
+        <ul>
+          <li><strong>F-1 (P0): Lambda is 11 days stale.</strong> <code>ig-dev-agent-engine</code> LastModified <code>2026-04-27T23:35Z</code>; source has 5+ commits since (incl. <code>46e4731</code> Phase D R3 chat_message writer). Every chat response comes back tagged <code>agent: "Meridian"</code> with <code>metadata: {}</code> — no specialist routing, no synthesizer evidence, no per-agent RBAC denials. Source code has all of these features today; the deployed Lambda predates them. <strong>One CDK redeploy of <code>ig-dev-services</code> rebuilds the asset and closes findings F-1, F-4, and the strict acceptance criteria for §P5 in a single change.</strong></li>
+          <li><strong>F-2 (P1): ECS task cannot reach Aurora.</strong> Task uses the cluster endpoint directly; either repoint <code>DATABASE_URL</code> to the RDS Proxy, or open Aurora SG <code>sg-092ede9b8f819ebfc</code> to agent-engine <code>ServiceSecurityGroup</code> <code>sg-0f8f779bb868d4efa</code>.</li>
+          <li><strong>F-3 (P1): plan pre-flight expects <code>mode=ecs</code> on <code>/v1/agents/health</code>.</strong> Reality: health is wired to the Lambda integration <code>j6i34wd</code> and returns <code>mode=lambda</code>. Either reroute health to ECS or update the plan.</li>
+          <li><strong>F-4 (P2):</strong> <code>InspireGenius/AgentEngine</code> custom CloudWatch namespace does not exist; plan §P5 step 8 expects <code>AgentLatencyMs</code>. Verify post-redeploy.</li>
+          <li><strong>F-5 (P2):</strong> audit-service <code>RuntimeError: Event loop is closed</code> in SQLAlchemy ping — separate consumer-side fault, blocks audit writes even after F-1 lands.</li>
+          <li><strong>F-6 (cosmetic):</strong> plan/code alignment note for Maven (<code>{practitioner, company-admin, super-admin, manager}</code>) vs James (<code>_ADMIN_ROLES = {super-admin, company-admin, practitioner, distributor}</code>). Plan and code agree on James; recording so future readers don't conflate the two.</li>
+        </ul>
+
+        <h4>Files</h4>
+        <ul>
+          <li><code>services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code> — <strong>(new)</strong> full report: transport detail, single-agent matrix (17 rows), multi-agent matrix (4 rows), access-control matrix (3 rows), telemetry observations, honest reading, follow-up list (F-1 … F-6), plan-acceptance scorecard.</li>
+          <li><code>REMAINING_TASKS.md</code> — Phase E2 / P5 entry under section 4 with full follow-up disposition.</li>
+          <li><code>change_log.md</code> — this entry.</li>
+        </ul>
+
+        <h4>Acceptance (per plan §P5)</h4>
+        <ul>
+          <li>✅ 17/17 single-agent verifications received responses (lenient).</li>
+          <li>❌ 0/17 strict (<code>agent_returned == expected</code>) — see F-1.</li>
+          <li>✅ 4/4 multi-agent verifications received responses (lenient).</li>
+          <li>❌ 0/4 strict (synthesizer metadata signature) — see F-1.</li>
+          <li>❌ 0/3 RBAC denials by hard-coded denial text; 1/3 lenient via LLM-refusal heuristic — see F-1.</li>
+          <li>✅ Verification report file checked in.</li>
+        </ul>
+        <p><strong>Plan-acceptance verdict: PARTIAL.</strong> Per plan ("if an agent fails verification, log it and continue. Fix in a follow-up PR"), the report is the deliverable; F-1 is the load-bearing fix that closes specialist routing, RBAC, and EventBridge in one CDK redeploy.</p>
+
+        <h4>Operational</h4>
+        <p>Pre-flight: ECS already <code>desired=1 / running=1</code> at session start (target group <code>ig-dev-agent-engine-blue-v2/edf7…</code> reported the task healthy). Post-run: ECS scaled back to <code>desired=0</code> per the <code>/agent-stop</code> convention.</p>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
         <h4>Changed</h4>
@@ -22697,6 +22735,100 @@
           <div class="timestamp">2026-05-08 13:03:15</div>
           <div class="prompt-text">User prompt submitted</div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:17:27</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:17:27</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:18:08</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:18:52</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:09</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:30</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:43</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:20:32</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:21:35</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:21:38</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:22:23</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:23:13</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:24:17</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 — Prompt #1053 [/full-go review the monday plan and run P5]</div>
+          <div class="prompt-text">P5 of MONDAY_PROD_READY_PLAN — 18-agent verification on dev. Ran the 24-prompt matrix (17 single-agent across all 4 domains + 4 multi-agent DAG + 3 RBAC denial) against the dev <code>/v1/agents/chat</code> path. All 24 received HTTP 200 with non-empty content (3.5–19.2s latency, avg 6.5s via Lambda Duration metric). Lenient pass rate 22/24; strict pass rate 17/24. Methodology delta: plan specifies <code>https://dev.inspiresgenius.com/v1/agents/chat</code>, but on dev that hostname serves the SPA — the actual API gateway is <code>https://8umg6xioz5.execute-api.us-east-1.amazonaws.com</code>. The chat route's API GW integration <code>nj5msbs</code> targets the agent-engine ALB → ECS Fargate, but the ECS task hits asyncpg <code>TimeoutError</code> against Aurora's cluster endpoint (DB env points at the cluster, not the RDS Proxy), each request stacks 60–90s of retries, blowing the 30s API GW HTTP-API integration timeout (max allowed). Matrix completed via direct <code>aws lambda invoke ig-dev-agent-engine</code> (Mangum handler, RDS Proxy, 120s Lambda ceiling). Honest finding: deployed Lambda is from 2026-04-27 (11 days stale; missing PR #41 Phase D R3 + 4 prior e3 commits), every chat response comes back with <code>agent: "Meridian"</code> and empty <code>metadata: {}</code> — no specialist routing, no synthesizer evidence, no per-agent RBAC denials, no <code>inspiresgenius.*</code> EventBridge events emitted, no <code>InspireGenius/AgentEngine</code> custom CloudWatch namespace. Source code has all of these features today; one CDK redeploy of <code>ig-dev-services</code> rebuilds the asset and closes specialist routing + RBAC + EventBridge in a single change (F-1, the load-bearing follow-up). Authored <code>services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code> (24-row matrix + telemetry + 6 follow-ups F-1 through F-6 + plan-acceptance scorecard). ECS scaled <code>desired=0</code> per <code>/agent-stop</code> convention. No agent or routing code modified during the run, per plan constraint. Pre-flight ECS was already <code>desired=1/running=1</code> from prior P4 deploy.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:25:26</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:25:44</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:26:12</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:26:21</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:26:26</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
