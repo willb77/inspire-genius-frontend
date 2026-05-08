@@ -1,3 +1,74 @@
+## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
+
+### Added
+- Aggregated activity from 5 parallel Claude Code terminals into `IG_project_log.html` as Prompt #1042. Snapshot covers each session's start time, edit volume, and current focus.
+
+### Session snapshot (2026-05-08 12:38 EDT)
+- **T1 `8acbd4f3`** — /full-go pre-flight kickoff 16:35 UTC. 26 bash calls, 0 edits yet (just starting).
+- **T2 `9df3dee5`** — /full-go P4 follow-up 15:42 UTC. 11 edits across IG_project_log.html, infrastructure/cdk/lib/agent-engine-stack.ts, services/migration-runner/handler.py, inspire-genius-backend/ai/chat_services/chat_schema.py, REMAINING_TASKS.md, change_log.md. Authored Prompts #1040 + #1041 (P4 canary + close-out).
+- **T3 `51138969`** — driver session since 2026-05-07 02:35 UTC. 1592 user messages, 251 edits. Top files: IG_project_log.html (×55), change_log.md (×46), REMAINING_TASKS.md (×18), services-stack.ts (×14), MONDAY_PROD_READY_PLAN.md (×14). Authored Prompts #1035–#1039.
+- **T4 `9f2b9d56`** — /bedtime → Monday plan review since 03:14 UTC. 1 edit (PHASE_D_PLAN.md). PR marked ready for review.
+- **T5 `ba770fb0`** — Monday plan P3 deploy since 13:07 UTC. Rebased+merged PR #35 + #37, triggered CDK deploy for P3, started background monitor. Working in `.claude/worktrees/rebase-pr35` and `.claude/worktrees/rebase-pr37`.
+
+### Notes
+- 34 typed user prompts across all 5 sessions today (slash-command bodies excluded).
+- `.claude/hooks/update_project_log.py` is currently a no-op stub (`sys.exit(0)`); cross-session auto-logging is therefore disabled and this entry was assembled manually from per-session `.jsonl` transcripts under `~/.claude/projects/-Users-...Local_IG-App_UI/`.
+- Concurrent-write race: T2 incremented the prompt-count badge mid-edit (1040 → 1041). Re-read and re-applied; this aggregator landed as Prompt #1042.
+
+### Sync
+- All 5 mirror locations updated: `./IG_project_log.html`, `./inspire-genius-frontend/public/IG_project_log.html`, `./inspire-genius-frontend/IG_project_log.html`, `./change_log.md`, `./inspire-genius-frontend/change_log.md`.
+
+---
+
+## [2026-05-08] — P4 close-out: PR #41 (monorepo) + PR #2 (backend) merged
+
+### Merged
+- **Monorepo PR #41** — `feat(phase-d-r3): operationalise chat_message writer canary on dev` → `development`. Merge commit `75ee6ce`, merged 2026-05-08T16:37:59Z. CI checks all SUCCESS (Backend Gate, SAST Bandit, pip-audit, agent-engine + 9 service tests, Docker scans, cdk synth + diff).
+- **Backend PR #2** — `feat(phase-d-r3): add MONOLITH_CHAT_WRITER_ENABLED guard on add_message_to_conversation` → `main`. Merge commit `e684366`, merged 2026-05-08T16:38:03Z.
+
+### Pre-merge verification
+- `aws ecs describe-task-definition ig-dev-agent-engine:34` → `AGENT_ENGINE_CHAT_MESSAGE_WRITER=agent-engine` confirmed on the running task.
+- `aws lambda get-function-configuration ig-dev-migration-runner` → `LastModified=2026-05-08T15:56:30Z` (current).
+
+### Status
+- **P4 primary work**: ✅ shipped (PR #37 code + PR #41 ops + PR #2 backend guard).
+- **Steps 11-12**: deferred per the Monday plan. After 24h+ of clean `chat_messages.writer='agent-engine'` rows, the operator flips `MONOLITH_CHAT_WRITER_ENABLED=false` on the monolith ECS task to disable the legacy writer in a single env-var change (no code redeploy). Final `REMAINING_TASKS.md` ⏸ → ✅ flip and writer-column drop (Phase E) follow.
+
+---
+
+## [2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine
+
+### Changed
+Operationalised the Phase D R3 chat_message writer migration that PR #37 had shipped as code. After flipping the canary flag, all new chat-message rows on dev are written by `services/agent-engine/app/repositories/chat_message_repository.py` instead of the monolith `add_message_to_conversation`.
+
+### Steps performed
+- **Migration applied** — `phase_d_chat_writer_canary.sql` invoked via `aws lambda invoke ig-dev-migration-runner`. Idempotent ALTER added `chat_messages.writer VARCHAR(32) NULL` plus the helper `idx_chat_messages_writer_created_at` index. Statement count: 2/2 succeeded.
+- **Inventory clean** — `SELECT writer, COUNT(*) FROM public.chat_messages WHERE created_at > NOW() - INTERVAL '7 days'` returned 0 rows; no unknown writers in the canary window.
+- **Image rebuilt** — `services/agent-engine` Docker image rebuilt for `linux/amd64` and pushed to `568505405842.dkr.ecr.us-east-1.amazonaws.com/ig-dev-agent-engine` with both `latest` and `phase-d-r3` tags. Manifest digest `sha256:6e4f88357e4819a4d00afc493e56d64bf653557e3bf7473c53f9bda25408c7bf`. The previous `latest` was from 2026-05-06, predating PR #37.
+- **Task-def rev 34 deployed** — registered with `AGENT_ENGINE_CHAT_MESSAGE_WRITER=agent-engine`. Earlier rev 33 was registered with the wrong env-var name `CHAT_MESSAGE_WRITER`, which silently fell through to the `"monolith"` default because pydantic-settings on `Settings` uses `env_prefix="AGENT_ENGINE_"`. ECS Exec into the running rev-34 task confirmed `settings.chat_message_writer == 'agent-engine'`.
+- **CDK persisted** — `infrastructure/cdk/lib/agent-engine-stack.ts` now sets `AGENT_ENGINE_CHAT_MESSAGE_WRITER` (overridable via `--context chatMessageWriter=monolith` for emergency rollback). Future CDK redeploys will not silently revert the canary flip.
+- **Monolith writer guard** — `inspire-genius-backend/ai/chat_services/chat_schema.py::add_message_to_conversation` now reads `MONOLITH_CHAT_WRITER_ENABLED` (default `"true"`). When set to `"false"`/`"0"`/`"no"` the function returns `None` without inserting. Prepares step 11 of the Monday plan: after 24h of clean canary the operator flips this env var to disable the legacy writer in a single change, no code redeploy.
+- **migration-runner improvement** — `services/migration-runner/handler.py` now returns the per-statement `results` list (with up to 10 row samples) inside the response body. SELECT verification queries previously surfaced only as counts, which forced operators to tail CloudWatch logs to read row data. Lambda code updated in place via `aws lambda update-function-code` (zip rebuilt locally with `pip install pg8000 -t`).
+
+### Files
+- `services/migration-runner/handler.py` — returns `results` and uses `default=str` for JSON serialisation
+- `services/migration-runner/migrations/phase_d_chat_writer_canary.sql` — already shipped in PR #37; applied to dev today
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — added `AGENT_ENGINE_CHAT_MESSAGE_WRITER` env var (with `chatMessageWriter` CDK-context override)
+- `inspire-genius-backend/ai/chat_services/chat_schema.py` — added `MONOLITH_CHAT_WRITER_ENABLED` env-var guard at top of `add_message_to_conversation`
+- `REMAINING_TASKS.md` — added Phase D R3 / P4 entry under section 4
+
+### Acceptance (this PR)
+- ✅ Migration column + index visible in dev DB
+- ✅ Fresh ECR image built + pushed; ECS task-def rev 34 running with the right env-var name
+- ✅ `settings.chat_message_writer == 'agent-engine'` confirmed inside the running container
+- ✅ Monolith writer guard ships at default `"true"` → no behaviour change today
+- ⏸ 24h canary observation + monolith hard-removal (steps 11-12 of the Monday plan) remain a follow-up
+
+### Process note (worth remembering)
+**`pydantic-settings` env prefixes silently demote unprefixed env vars to defaults.** The first task-def revision used `CHAT_MESSAGE_WRITER`; pydantic ignored it and the container reported `'monolith'`. Always grep the `Settings` class for `env_prefix` before naming new env vars, and prefer ECS Exec + `from app.config import settings; print(...)` over reading task-def JSON to verify a flip actually landed.
+
+---
+
 ## [2026-05-08] — P2 complete: Lambda asset-hash pinned to SOURCE on services + trainer
 
 ### Fixed
