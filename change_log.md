@@ -1,3 +1,45 @@
+## [2026-05-08] — Monday production-ready plan authored
+
+### Added
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.md` — paste-able Claude Code prompts (P1–P8) for the 4-day push to Monday production-readiness
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.docx` — pandoc-rendered Word version (gitignored per repo convention; lives locally in Dropbox)
+
+### Plan summary
+8 sequential prompts covering Phase D Rungs R1-R4 + §5 + §6 (the production-readiness ladder) plus Combined Plan Track E2 (18-agent verification) plus a final bookkeeping sweep:
+
+1. **P1** — Migration-runner Lambda redeploy (~30 min)
+2. **P2** — Asset-hash sweep on services + trainer (~2 hr; eliminates 17 phantom S3Key diffs)
+3. **P3** — ECS warm-up posture (scheduled scaling) (~half day)
+4. **P4** — chat_message writer migration monolith → agent-engine (~1-2 days, includes 24h canary)
+5. **P5** — 18-agent verification 17/17 + 4/4 + 3/3 (~1 day)
+6. **P6** — PRISM ingestion E2E (~half day)
+7. **P7** — Production cutover runbook (DOC ONLY; 3-week prod build stays out of Monday scope)
+8. **P8** — REMAINING_TASKS sweep + EOD wrap
+
+### What's NOT in the plan (intentional)
+- Live prod cutover (3 weeks; runbook in scope, execution deferred)
+- Track M (dead per W.1)
+- Track E3 task endpoints (post-Monday)
+- Phase S 16-page super-admin verification (4-6 days; post-Monday)
+- Phase H load test (depends on prod existing)
+
+### Risk register included
+9 risks ranked by likelihood × impact with explicit mitigations.
+
+### Definition of done
+11-item checklist for Monday 2026-05-12 evening sign-off.
+
+### References
+- `IG_Combined_Platform_Deployment_Plan.docx` (2026-05-02) — source for Track E2 + Phase S/D/H
+- `PHASE_D_PLAN.docx` (2026-05-07) — source for Rungs R1-R6 with the §6 prod cutover detail
+- `REMAINING_TASKS.md` — current state of carry-overs + Phase C close-out
+
+### Files
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.md` (new, tracked)
+- `Transformation Documents/MONDAY_PROD_READY_PLAN.docx` (new, gitignored — local Dropbox copy)
+
+---
+
 ## [2026-05-08 EOD] — Session wrap: Phase C closed end-to-end + O.2 WAF live
 
 A single full-day session that closed every D-series drift item, every Phase C item, every today-relevant carry-over, plus O.2 (WAF re-enable). 31 monorepo PRs + 18 frontend PRs merged.
