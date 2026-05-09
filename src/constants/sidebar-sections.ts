@@ -72,7 +72,6 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
       { to: "/company-admin/users", icon: Users, label: "Team Management" },
       { to: "/company-admin/costs", icon: BarChart3, label: "Costs & Expenses" },
       { to: "/company-admin/organization", icon: Grid3x3, label: "Organization" },
-      { to: "/company-admin/training", icon: BookOpen, label: "Training" },
       { to: "/company-admin/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
