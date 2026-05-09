@@ -1,44 +1,27 @@
-## [2026-05-09] — Wave 0 Lane A: Super-Admin Deletes (D2 + D1 + D8)
+## [2026-05-09] — Phase E R-2.1: agent-engine ECS reaches RDS Proxy
 
-Executed the three Super-Admin page deletes from IG Dashboard Rationalization Plan v2 §3 Wave 0 Lane 0.A on a single feature branch `refactor/dash/wave-0a-sa-deletes` against frontend `development`.
+### Fixed
+- **F-2 connectivity** — `POST /v1/agents/chat` now completes inside the 30 s API Gateway window from a real client.
+  - Root cause was NOT the `DATABASE_URL` host (already pointed at the proxy since task-def rev 33).
+    Real cause: the RDS Proxy SG (`sg-0f371575e4f064844`) had ingress on 5432 from `sg-024576d1f0a6198e8` and `sg-01c2bce7f18b0f33c` only — agent-engine ECS task SG (`sg-0f8f779bb868d4efa`) was missing.
+  - CDK previously added ingress to the Aurora *cluster* SG (`sg-092ede9b8f819ebfc`) but the ECS task never connects there directly — only the proxy does.
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts` — new `dbProxySgId` context (`sg-0f371575e4f064844` default), import the proxy SG with `mutable: true`, add ingress rule from agent-engine `serviceSg` on 5432.
+- Added an R-2.1 invariant comment block on the `AGENT_ENGINE_DATABASE_URL` line in the same stack so the next person who edits it does not regress to the cluster endpoint.
 
-### Removed
-- `inspire-genius-frontend/src/pages/super-admin/CoachManagement.tsx` (D2) — duplicate Super-Admin coach CRUD page; `MentorManagement.tsx` is the canonical Agent Management page.
-- `inspire-genius-frontend/src/pages/super-admin/AuditLog.tsx` (D1) — standalone Audit Log page; the Audit Log tab on `Analytics.tsx` is fully functional.
-- `inspire-genius-frontend/src/pages/super-admin/TeamManagement.tsx` (D8) — hardcoded 8-row stub with no API wiring; `UserManagement.tsx` covers all real platform users.
-- Colocated test files: `__tests__/CoachManagement.test.tsx`, `__tests__/AuditLog.test.tsx`, `__tests__/TeamManagement.test.tsx`.
+### Verified
+- `cdk diff ig-dev-agent-engine` showed only the new `SecurityGroupIngress` resource + a description-only update on the existing Aurora ingress rule — no replacement of ALB, VPC, ECR, IAM, or DB resources.
+- Deployed locally via `npx cdk deploy ig-dev-agent-engine -c env=dev` (GHA OIDC trust excludes feature branches, known trap from 2026-05-07).
+- Smoke test (10 chat requests through `https://8umg6xioz5.execute-api.us-east-1.amazonaws.com/v1/agents/chat` with magic-auth HS256 JWT): **10/10 HTTP 200, median 8.45 s, p95 21.81 s, max 25.48 s**. Acceptance per reset plan §R-2.1: ✅.
+- ECS log scan over the smoke window: **0 `asyncpg.TimeoutError`** (was 62 in the equivalent 5 min window pre-fix).
+- chat_messages writer canary value `'agent-engine'` confirmed on every insert call (the inserts themselves currently fail on a separate pre-existing schema bug — see Surfaced below).
 
-### Changed
-- `src/constants/routes.ts` — dropped `ROUTES.SUPER_ADMIN.COACHES`, `AUDIT_LOG`, and `TEAM` constants.
-- `src/routes.tsx` — removed lazy imports for the three deleted pages; added `<Navigate replace />` redirects:
-  - `/super-admin/team` → `/super-admin/users`
-  - `/super-admin/coaches` → `/super-admin/mentor-management`
-  - `/super-admin/audit-log` → `/super-admin/analytics?tab=audit`
-- `src/pages/super-admin/Analytics.tsx` — added `useSearchParams` deep-link handling so `?tab=audit|project|analytics` selects the matching tab on mount and stays in sync as the user switches; tab change writes `?tab=…` (or clears it for the default `analytics` tab) via `setSearchParams(..., { replace: true })`.
-- `src/pages/super-admin/Analytics.tsx`, `src/pages/super-admin/ProjectLog.tsx` — Mermaid sitemap diagrams updated to reference `/super-admin/mentor-management` instead of the deleted `/super-admin/coaches` and to drop the `/super-admin/audit-log` node.
-- `src/__tests__/routes.integration.test.tsx` — removed page-module mocks and `superAdminRoutes` test cases for the three deleted pages.
-- `src/pages/super-admin/__tests__/Analytics.test.tsx` — wrapped `renderWithProviders` in `MemoryRouter` so `useSearchParams` resolves under test.
+### Surfaced (out of R-2.1 scope, tracked elsewhere)
+- `chat_messages.message_id` column is missing in dev — Alembic drift. Inserts succeed end-to-end at the writer-canary level but raise `UndefinedColumnError`; logs confirm writer='agent-engine' on every attempt, so the canary instrumentation works. Belongs in R-2.4 (telemetry / audit closure).
+- pgvector parameter binding: `ProgrammingError: syntax error at or near ":"` for personal-data and cultural-context retrievers. Was previously masked by the connection-timeout retries; surfaces now that connections actually go through. Belongs in R-2.5 (memory persistence audit).
+- Manager-role coaching (Ascend) prompts trigger a 3-node multi-agent plan that takes ~34 s end-to-end — exceeds API Gateway's 30 s window. Pre-existing app-level perf, not a connectivity issue. R-2.2 will reproduce this on the matrix.
 
-### Verification
-- `npm run build` — clean (TypeScript + Vite).
-- `npx eslint` against the touched files — clean (zero new lint errors).
-- `npx jest src/pages/super-admin/__tests__/ src/layouts/__tests__/SuperAdminLayout.test.tsx src/__tests__/routes.integration.test.tsx` — **19 suites, 286 tests passing.**
-
-### Constraints honored
-- `MentorManagement.tsx` untouched (Wave 2 owns the rename).
-- No changes under `services/`, `agent-engine`, or `infrastructure/cdk/`.
-- Nav (`SUPER_ADMIN_NAV_ITEMS`) had no entries for the deleted routes — no nav edits needed.
-
-## [2026-05-09] — Drafted Wave 0 Lane Prompts (0.B–0.I) for IG Dashboard Rationalization v2
-
-### Added
-- New Word document: `Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx` (~61 KB).
-  - Paste-ready Claude Code prompts for Wave 0 Lanes 0.B through 0.I per `IG_Dashboard_Rationalization_Plan_2.docx` v2 §3.
-  - Each lane prompt is fully self-contained (branch, build, lint, test, commit, push, log, sync, open PR).
-  - Lane 0.B bundles P1.6 + P1.7 + P1.8 (NAV-heavy, single PR). Lanes 0.C–0.I are single-unit PRs (P1.4, P1.3, P5.1, P5.3, P3.1, P6.1, P5.2 respectively).
-  - Each lane includes a metadata table (wave, PR title, P-units, preconditions, platform-rung dependency) and notes on file-collision groups.
-  - Lane 0.I documents the soft R-2.4 dependency (data-pending banner pending audit-service EventBridge pipeline closure) per v2 §4.3.
-  - Files: `Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx`, generator at `/tmp/build_wave0_prompts_doc.py`
+### Pull Request
+- `fix/phase-e-r2.1/ecs-rds-proxy` → `development` (PR pending) — title `fix(phase-e-r2.1): point agent-engine ECS at RDS Proxy`.
 
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 

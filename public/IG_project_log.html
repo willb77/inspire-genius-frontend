@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1054</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1052</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -104,53 +104,32 @@
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
 
-        <h3>[2026-05-09] — Wave 0 Lane A: Super-Admin Deletes (D2 + D1 + D8)</h3>
-        <p>Executed the three Super-Admin page deletes from IG Dashboard Rationalization Plan v2 §3 Wave 0 Lane 0.A on a single feature branch <code>refactor/dash/wave-0a-sa-deletes</code> against frontend <code>development</code>.</p>
-        <h4>Removed</h4>
+        <h3>[2026-05-09] — Phase E R-2.1: agent-engine ECS reaches RDS Proxy</h3>
+        <h4>Fixed</h4>
+        <p>Closed F-2 from <code>PLATFORM_VERIFICATION_RESET.md</code> §R-2.1. <code>POST /v1/agents/chat</code> now completes inside the 30 s API Gateway window from a real client. Root cause was NOT the <code>DATABASE_URL</code> host (already pointed at the proxy since task-def rev 33) — the actual cause was the RDS Proxy SG <code>sg-0f371575e4f064844</code> missing ingress on 5432 from the agent-engine ECS task SG <code>sg-0f8f779bb868d4efa</code>. CDK previously added ingress on the Aurora <em>cluster</em> SG, but the ECS task never connects to that SG — only the proxy does.</p>
+        <h4>Files</h4>
         <ul>
-          <li><code>inspire-genius-frontend/src/pages/super-admin/CoachManagement.tsx</code> (D2) — duplicate Super-Admin coach CRUD page; <code>MentorManagement.tsx</code> is the canonical Agent Management page.</li>
-          <li><code>inspire-genius-frontend/src/pages/super-admin/AuditLog.tsx</code> (D1) — standalone Audit Log page; the Audit Log tab on <code>Analytics.tsx</code> is fully functional.</li>
-          <li><code>inspire-genius-frontend/src/pages/super-admin/TeamManagement.tsx</code> (D8) — hardcoded 8-row stub with no API wiring; <code>UserManagement.tsx</code> covers all real platform users.</li>
-          <li>Colocated test files: <code>__tests__/CoachManagement.test.tsx</code>, <code>__tests__/AuditLog.test.tsx</code>, <code>__tests__/TeamManagement.test.tsx</code>.</li>
+          <li><code>infrastructure/cdk/lib/agent-engine-stack.ts</code> — new <code>dbProxySgId</code> context (default <code>sg-0f371575e4f064844</code>); imported the proxy SG with <code>mutable: true</code> and added an ingress rule from the agent-engine <code>serviceSg</code> on 5432. Added an R-2.1 invariant comment block on <code>AGENT_ENGINE_DATABASE_URL</code> so the next person who edits this stack does not regress to the cluster endpoint.</li>
         </ul>
-        <h4>Changed</h4>
+        <h4>Smoke test (10 chat requests via API Gateway, magic-auth HS256 JWT)</h4>
         <ul>
-          <li><code>src/constants/routes.ts</code> — dropped <code>ROUTES.SUPER_ADMIN.COACHES</code>, <code>AUDIT_LOG</code>, and <code>TEAM</code> constants.</li>
-          <li><code>src/routes.tsx</code> — removed lazy imports for the three deleted pages; added <code>&lt;Navigate replace /&gt;</code> redirects:
-            <ul>
-              <li><code>/super-admin/team</code> → <code>/super-admin/users</code></li>
-              <li><code>/super-admin/coaches</code> → <code>/super-admin/mentor-management</code></li>
-              <li><code>/super-admin/audit-log</code> → <code>/super-admin/analytics?tab=audit</code></li>
-            </ul>
-          </li>
-          <li><code>src/pages/super-admin/Analytics.tsx</code> — added <code>useSearchParams</code> deep-link handling so <code>?tab=audit|project|analytics</code> selects the matching tab on mount and stays in sync as the user switches; tab change writes <code>?tab=…</code> (or clears it for the default <code>analytics</code> tab) via <code>setSearchParams(..., { replace: true })</code>.</li>
-          <li><code>src/pages/super-admin/Analytics.tsx</code>, <code>src/pages/super-admin/ProjectLog.tsx</code> — Mermaid sitemap diagrams updated to reference <code>/super-admin/mentor-management</code> instead of <code>/super-admin/coaches</code> and to drop the <code>/super-admin/audit-log</code> node.</li>
-          <li><code>src/__tests__/routes.integration.test.tsx</code> — removed page-module mocks and <code>superAdminRoutes</code> test cases for the three deleted pages.</li>
-          <li><code>src/pages/super-admin/__tests__/Analytics.test.tsx</code> — wrapped <code>renderWithProviders</code> in <code>MemoryRouter</code> so <code>useSearchParams</code> resolves under test.</li>
+          <li><strong>10 / 10</strong> HTTP 200 (was 0 / 10 pre-fix, all 503 at 30 s).</li>
+          <li>median <strong>8.45 s</strong> (acceptance &lt; 15 s — pass).</li>
+          <li>p95 <strong>21.81 s</strong> (acceptance &lt; 25 s — pass).</li>
+          <li>max 25.48 s (one Alex outlier, RAG cold path).</li>
+          <li><strong>0 <code>asyncpg.TimeoutError</code></strong> in <code>/ecs/ig-dev-agent-engine</code> over the smoke window (was 62 in the equivalent pre-fix 5 min window).</li>
+          <li>chat_messages writer canary value <code>'agent-engine'</code> confirmed on every insert call.</li>
         </ul>
-        <h4>Verification</h4>
+        <h4>Deploy path</h4>
+        <p><code>cdk diff ig-dev-agent-engine</code> showed only the new <code>SecurityGroupIngress</code> resource plus a description-only update on the existing Aurora ingress rule — no replacement of ALB, VPC, ECR, IAM, or DB resources. Deployed locally via <code>npx cdk deploy ig-dev-agent-engine -c env=dev</code> because the GHA OIDC trust policy (<code>gha-cdk-deploy</code>) excludes feature-branch <code>workflow_dispatch</code> — known trap from <code>feedback_drift_pin_lessons_2026_05_07.md</code>.</p>
+        <h4>Surfaced (out of R-2.1 scope, tracked in later rungs)</h4>
         <ul>
-          <li><code>npm run build</code> — clean (TypeScript + Vite).</li>
-          <li><code>npx eslint</code> against the touched files — clean (zero new lint errors).</li>
-          <li><code>npx jest src/pages/super-admin/__tests__/ src/layouts/__tests__/SuperAdminLayout.test.tsx src/__tests__/routes.integration.test.tsx</code> — <strong>19 suites, 286 tests passing.</strong></li>
+          <li><strong>chat_messages.message_id column missing</strong> — Alembic drift on dev. Inserts fail with <code>UndefinedColumnError</code>. Belongs in R-2.4.</li>
+          <li><strong>pgvector parameter binding</strong> — <code>ProgrammingError: syntax error at or near ":"</code> for personal-data + cultural-context retrievers. Was previously masked by connection-timeout retries. Belongs in R-2.5.</li>
+          <li><strong>Manager-role coaching (Ascend) multi-agent plan latency</strong> — 3-node DAG takes ~34 s end-to-end, exceeds 30 s API Gateway ceiling. Pre-existing app-level perf, not a connectivity issue. R-2.2 will reproduce on the matrix.</li>
         </ul>
-        <h4>Constraints honored</h4>
-        <ul>
-          <li><code>MentorManagement.tsx</code> untouched (Wave 2 owns the rename).</li>
-          <li>No changes under <code>services/</code>, <code>agent-engine</code>, or <code>infrastructure/cdk/</code>.</li>
-          <li>Nav (<code>SUPER_ADMIN_NAV_ITEMS</code>) had no entries for the deleted routes — no nav edits needed.</li>
-        </ul>
-
-        <h3>[2026-05-09] — Drafted Wave 0 Lane Prompts (0.B–0.I) for IG Dashboard Rationalization v2</h3>
-        <h4>Added</h4>
-        <ul>
-          <li>New Word document: <code>Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx</code> (~61&nbsp;KB).</li>
-          <li>Paste-ready Claude Code prompts for Wave&nbsp;0 Lanes&nbsp;0.B through 0.I per <code>IG_Dashboard_Rationalization_Plan_2.docx</code> v2 §3.</li>
-          <li>Each lane prompt is fully self-contained (branch, build, lint, test, commit, push, log, sync, open PR).</li>
-          <li>Lane&nbsp;0.B bundles P1.6 + P1.7 + P1.8 (NAV-heavy, single PR). Lanes 0.C–0.I are single-unit PRs (P1.4, P1.3, P5.1, P5.3, P3.1, P6.1, P5.2 respectively).</li>
-          <li>Each lane includes a metadata table (wave, PR title, P-units, preconditions, platform-rung dependency) and notes on file-collision groups.</li>
-          <li>Lane&nbsp;0.I documents the soft R-2.4 dependency (data-pending banner pending audit-service EventBridge pipeline closure) per v2 §4.3.</li>
-        </ul>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.1/ecs-rds-proxy</code> → <code>development</code> — title <em>fix(phase-e-r2.1): point agent-engine ECS at RDS Proxy</em>.</p>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
         <h4>Changed</h4>
@@ -1646,15 +1625,6 @@
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1054 [Wave 0 Lane A — Super-Admin deletes (D2 + D1 + D8)]</div>
-          <div class="prompt-text">/full-go Wave 0 Lane A — super-admin deletes batch (P1.1 + P1.2 + P1.5). Branch refactor/dash/wave-0a-sa-deletes off frontend development. Delete CoachManagement.tsx (D2), AuditLog.tsx (D1), TeamManagement.tsx (D8) plus their tests; remove the 3 ROUTES.SUPER_ADMIN constants; redirect /super-admin/team → /users, /super-admin/audit-log → /analytics?tab=audit, /super-admin/coaches → /mentor-management; wire ?tab=audit deep-link into Analytics.tsx; build, lint, run jest on super-admin nav/routes; sync logs to all 5 copies; commit, push, open PR against frontend development.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1053 [Wave-0 prompt drafting]</div>
-          <div class="prompt-text">/full-go draft the prompts for 0.B–0.I in a word document from IG_Dashboard_Rationalization_Plan_2.docx</div>
-        </div>
-
         <h2>Session Prompts <span class="path-badge">session history</span></h2>
         <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
 
