@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1054</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1055</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22716,6 +22716,10 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-09 — Activity [Lane 0.C complete]</div>
           <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4 / D6) complete. Canonical hook now lives in `src/hooks/analytics/useAnalytics.ts`; `src/hooks/company-admin/useCompanyAdmin.ts` exports a `@deprecated` re-export with TODO(wave-1) cleanup marker. After Lane 0.B's deletes (Leadership.tsx + Training.tsx), only Dashboard.tsx still imports the deprecated alias; Analytics.tsx is already on the canonical. All callers tolerate the canonical shape via existing `as` casts + fallbacks. Tests: `npx jest src/hooks` → 66 suites / 346 tests passing; canonical `useCompanyAnalytics` test added in useAnalytics.test.tsx with QueryClientProvider wrapper, plus practitioner+distributor coverage filled in. `npm run build` clean. ESLint on touched files clean. PR #31 merged.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1055 [Wave 0 Lane 0.D / P1.3]</div>
+          <div class="prompt-text">/full-go — refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5). Two Used Coaches charts existed; the recharts version had a syntax error (`type=&quot;number&quot;axisLine`). Fixed the syntax, deleted the manual SVG version, renamed New.tsx → UsedCoachesChart.tsx, wired into the Super-Admin Dashboard agents tab, ported Jest test with proper mock typings. Polyfilled ResizeObserver in jest.setup.ts so SuperAdminDashboard.test.tsx renders the chart without crashing. Build/lint/jest clean.</div>
         </div>
 
 
