@@ -1,3 +1,25 @@
+## [2026-05-09] — refactor(dash) Wave 0 Lane 0.D — Used Coaches chart consolidation (P1.3 / D5)
+
+### Changed
+- Fixed JSX syntax error in `UsedCoachesChartNew.tsx` (`type="number"axisLine` missing space; split-line `type` import modifier).
+- Wired the recharts-based chart into the Super-Admin Dashboard "Agents" tab (above the All Platform Agents table).
+  - Files: `src/pages/super-admin/Dashboard.tsx`
+
+### Removed
+- Deleted manual SVG implementation `UsedCoachesChart.tsx` (non-recharts version).
+- Renamed `UsedCoachesChartNew.tsx` → `UsedCoachesChart.tsx` (default export `UsedCoachesChart`).
+  - Files: `src/components/super-admin/dashboard/UsedCoachesChart.tsx`
+
+### Tests
+- Ported `UsedCoachesChartNew.test.tsx` → `UsedCoachesChart.test.tsx` with proper mock typings (replaced ad-hoc `any` props with `ChildrenProps` / `YAxisProps` / `ChartTooltipProps`).
+- Polyfilled `ResizeObserver` in `jest.setup.ts` so `SuperAdminDashboard.test.tsx` (which doesn't mock recharts) renders the chart without crashing on `ReferenceError: ResizeObserver is not defined`.
+- All 46 super-admin dashboard Jest tests pass; full Dashboard test suite (7 cases) passes.
+- `npm run build` clean; ESLint clean on changed files.
+
+PR: refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5) on `refactor/wave-0d-used-coaches-chart`.
+
+---
+
 ## [2026-05-09] — refactor(dash) Wave 0 / Lane 0.C: dedupe `useCompanyAnalytics` (D6)
 
 ### Changed
