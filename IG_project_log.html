@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1051</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1054</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22698,12 +22698,24 @@
           <div class="prompt-text">User prompt submitted</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1051 [Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4)]</div>
+          <div class="timestamp">2026-05-09 — Prompt #1050 [/full-go Wave 0 Lane 0.B — P1.6]</div>
+          <div class="prompt-text">P1.6 (M7) WIRED — User Analytics. Replaced hardcoded recharts mock data in <code>src/pages/user/Analytics.tsx</code> with the existing <code>useUserAnalytics()</code> hook (<code>src/hooks/analytics/useAnalytics.ts</code> → <code>/v1/analytics/user</code>). Renders <code>total_sessions</code>, <code>session_trends</code>, <code>goals_by_status</code>, and <code>training</code> from the live response. Removed mock-only "Most-Used Agents", "Satisfaction Trend", and "PRISM Growth Trajectory" charts (no backend source). Empty-state: when all four metrics are zero, render "No analytics yet" DataCard plus a one-shot Sonner <code>toast.info</code> instead of misleading random charts. Loading via Skeleton; error shows Retry. Tests rewritten to mock the hook and cover loading / data / empty / error paths.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1051 [/full-go Wave 0 Lane 0.B — P1.7]</div>
+          <div class="prompt-text">P1.7 (M8a) DELETED — Company Admin Leadership. Backend evidence: <code>services/dashboard-service/app/routes.py:173</code> (<code>/api/company/analytics</code>) returns <code>CompanyAnalyticsOut(total_users, active_users, avg_prism_score, training_completion)</code> — no <code>leaders</code> array. <code>services/user-service/</code> has no leadership pipeline endpoint. <code>grep</code> across <code>services/dashboard-service</code> and <code>services/user-service</code> returns no leadership data sources. Deleted <code>src/pages/company-admin/Leadership.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.LEADERSHIP</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Manager Leadership untouched.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1052 [/full-go Wave 0 Lane 0.B — P1.8]</div>
+          <div class="prompt-text">P1.8 (M8b) DELETED — Company Admin Training. Same evidence as P1.7 — <code>/api/company/analytics</code> returns no <code>programs</code> array, and there is no <code>/api/company/training</code> or <code>/api/company/programs</code> endpoint anywhere in <code>services/</code>. Deleted <code>src/pages/company-admin/Training.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.TRAINING</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Re-pointed Company Admin Dashboard's "Training Completion" tile click-through from <code>/company-admin/training</code> (now deleted) to <code>/company-admin/analytics</code>. Manager Training untouched.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1053 [Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4)]</div>
           <div class="prompt-text">/full-go You're working Wave 0 Lane 0.C of `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` v2. Single unit (P1.4); single PR. Dedupe useCompanyAnalytics() across /hooks/analytics/useAnalytics.ts and /hooks/company-admin/useCompanyAdmin.ts — promote analytics version to canonical, replace company-admin definition with deprecated re-export, audit callers, add Jest test with QueryClientProvider wrapper. PR title: refactor(dash)/wave-0c: dedupe useCompanyAnalytics (D6).</div>
         </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-09 — Activity [Lane 0.C complete]</div>
-          <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4 / D6) complete. Canonical hook now lives in `src/hooks/analytics/useAnalytics.ts`; `src/hooks/company-admin/useCompanyAdmin.ts` exports a `@deprecated` re-export with TODO(wave-1) cleanup marker. 4 callers (Dashboard.tsx, Analytics.tsx, Leadership.tsx, Training.tsx) all tolerate the canonical shape via existing `as` casts + fallbacks — no caller patches needed. Tests: `npx jest src/hooks` → 66 suites / 346 tests passing; canonical `useCompanyAnalytics` test added in useAnalytics.test.tsx with QueryClientProvider wrapper, plus practitioner+distributor coverage filled in. `npm run build` clean. ESLint on touched files clean.</div>
+          <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4 / D6) complete. Canonical hook now lives in `src/hooks/analytics/useAnalytics.ts`; `src/hooks/company-admin/useCompanyAdmin.ts` exports a `@deprecated` re-export with TODO(wave-1) cleanup marker. After Lane 0.B's deletes (Leadership.tsx + Training.tsx), only Dashboard.tsx still imports the deprecated alias; Analytics.tsx is already on the canonical. All callers tolerate the canonical shape via existing `as` casts + fallbacks. Tests: `npx jest src/hooks` → 66 suites / 346 tests passing; canonical `useCompanyAnalytics` test added in useAnalytics.test.tsx with QueryClientProvider wrapper, plus practitioner+distributor coverage filled in. `npm run build` clean. ESLint on touched files clean. PR #31 merged.</div>
         </div>
 
 

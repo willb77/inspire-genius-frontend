@@ -9,8 +9,8 @@ export function useCompanyUsers() {
 /**
  * @deprecated Use `useCompanyAnalytics` from `@/hooks/analytics/useAnalytics` directly.
  * This re-export preserves existing imports during the dashboard rationalization migration.
- * TODO(wave-1): Update all callers (Dashboard.tsx, Leadership.tsx, Training.tsx) to import from
- * `@/hooks/analytics/useAnalytics` and delete this re-export.
+ * TODO(wave-1): Update remaining caller (`src/pages/company-admin/Dashboard.tsx`) to import
+ * from `@/hooks/analytics/useAnalytics` and delete this re-export.
  */
 export const useCompanyAnalytics = useCompanyAnalyticsCanonical
 
