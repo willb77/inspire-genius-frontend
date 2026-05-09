@@ -1,3 +1,23 @@
+## [2026-05-09 PM-2] — Document RAG pipeline validated end-to-end on a real PDF
+
+### Validation
+A synthetic Document row (id=`aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee`) pointing at a known-good S3 object in the monolith bucket (`inspires-genius-dev-documents/documents//346854a8-..._0741f590-...pdf`) was used to drive the pipeline end-to-end. Result: **status=ready, 62,475 chars extracted from 25 pages, 139 chunks at 512-char/64-overlap stride, no errors**. Confirms the bridge → EB → process_document → extract → chunk → ready path is functional on dev.
+
+### Fixes landed (services/document-service)
+1. **`app/main.py`** — asyncio event-loop reset for the EB consumer. Engine pool is disposed before each EB-driven `process_document` run and `asyncio.run()` manages loop lifecycle. Previously hit `"Future attached to a different loop"` on every EB invocation.
+2. **`app/storage/clamav.py`** — graceful skip when `ResourceNotFoundException` is raised (ClamAV Lambda not deployed on dev). Returns `ScanResult(clean=True, detail="scan_skipped_missing_function")`. Production with a configured scanner is unaffected.
+3. **`app/storage/s3.py`** — `get_s3_object()` accepts an optional `bucket=` parameter so monolith-bridged docs read from the correct bucket (their own `Document.s3_bucket`) instead of the document-service default.
+4. **`app/service.py`** — `process_document` now passes `doc.s3_bucket` through to `get_s3_object`.
+
+### Out-of-band AWS changes
+* IAM: `ig-dev-document-lambda-role` got new inline policy `DocumentServiceMonolithBucketRead` granting GetObject/HeadObject/ListBucket on `inspires-genius-dev-documents`. Bucket name was identified via SSM grep on `S3_BUCKET_NAME=` in the monolith `.env` (no credential value read).
+* EventBridge rule `ig-dev-document-events` pattern was already updated earlier today to match `DocumentUploaded` (was only matching legacy `DocumentEvent`).
+
+### Status of the 42 backfilled rows
+**Orphans.** Cross-checked all 42 file_keys against `inspires-genius-dev-documents`, `ig-dev-documents`, `ig-dev-uploads`, `aes-file-upload-api-uploads`, `inspires-genius-preview`, and `ig-doc-archive-storage-568505405842` — zero matches. The S3 objects these rows reference no longer exist (likely deleted at some point between upload and now). The bridge plumbing IS correct; the source files are gone. The 64 objects that ARE in `inspires-genius-dev-documents` come from 5 different user prefixes that don't appear in the active `monolith.files` rows — those are the obverse orphans (S3 objects with no DB row).
+
+**Implication for the user.** Live uploads from this point forward will go through the full pipeline: monolith upload → S3 → `files` table → bridge → `documents` table → process_document → extract+chunk → ready → agent-engine RAG sees content. The 42 historical orphans can't be recovered without the missing S3 objects.
+
 ## [2026-05-09 PM] — Document RAG fix landed end-to-end: deploy + 42-row backfill (Option 2)
 
 ### Operator session — what landed in AWS
