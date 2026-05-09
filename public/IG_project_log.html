@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1050</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1053</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22696,6 +22696,18 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 13:03:15</div>
           <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1050 [/full-go Wave 0 Lane 0.B — P1.6]</div>
+          <div class="prompt-text">P1.6 (M7) WIRED — User Analytics. Replaced hardcoded recharts mock data in <code>src/pages/user/Analytics.tsx</code> with the existing <code>useUserAnalytics()</code> hook (<code>src/hooks/analytics/useAnalytics.ts</code> → <code>/v1/analytics/user</code>). Renders <code>total_sessions</code>, <code>session_trends</code>, <code>goals_by_status</code>, and <code>training</code> from the live response. Removed mock-only "Most-Used Agents", "Satisfaction Trend", and "PRISM Growth Trajectory" charts (no backend source). Empty-state: when all four metrics are zero, render "No analytics yet" DataCard plus a one-shot Sonner <code>toast.info</code> instead of misleading random charts. Loading via Skeleton; error shows Retry. Tests rewritten to mock the hook and cover loading / data / empty / error paths.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1051 [/full-go Wave 0 Lane 0.B — P1.7]</div>
+          <div class="prompt-text">P1.7 (M8a) DELETED — Company Admin Leadership. Backend evidence: <code>services/dashboard-service/app/routes.py:173</code> (<code>/api/company/analytics</code>) returns <code>CompanyAnalyticsOut(total_users, active_users, avg_prism_score, training_completion)</code> — no <code>leaders</code> array. <code>services/user-service/</code> has no leadership pipeline endpoint. <code>grep</code> across <code>services/dashboard-service</code> and <code>services/user-service</code> returns no leadership data sources. Deleted <code>src/pages/company-admin/Leadership.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.LEADERSHIP</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Manager Leadership untouched.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1052 [/full-go Wave 0 Lane 0.B — P1.8]</div>
+          <div class="prompt-text">P1.8 (M8b) DELETED — Company Admin Training. Same evidence as P1.7 — <code>/api/company/analytics</code> returns no <code>programs</code> array, and there is no <code>/api/company/training</code> or <code>/api/company/programs</code> endpoint anywhere in <code>services/</code>. Deleted <code>src/pages/company-admin/Training.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.TRAINING</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Re-pointed Company Admin Dashboard's "Training Completion" tile click-through from <code>/company-admin/training</code> (now deleted) to <code>/company-admin/analytics</code>. Manager Training untouched.</div>
         </div>
 
 

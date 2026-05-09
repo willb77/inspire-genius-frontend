@@ -1,3 +1,77 @@
+## [2026-05-09] — Wave 0 Lane 0.B: stub deletes / wires (M7 + M8a + M8b)
+
+Three units of the Dashboard Rationalization Plan v2, bundled into one PR
+(branch `refactor/wave-0b-stub-deletes-wires`) because they all touch
+`src/constants/sidebar-sections.ts` and `src/routes.tsx` and would
+otherwise create cheap-but-noisy merge conflicts across three parallel
+PRs.
+
+### Changed — P1.6 (M7) WIRED — User Analytics
+- `src/pages/user/Analytics.tsx`: replaced hardcoded recharts mock data
+  with the existing `useUserAnalytics()` hook
+  (`src/hooks/analytics/useAnalytics.ts:4` → `/v1/analytics/user`).
+  - Renders `total_sessions`, `session_trends`, `goals_by_status`,
+    `training.{total,completed,completion_pct}` from the live response.
+  - Removed mock-only "Most-Used Agents", "Satisfaction Trend", and
+    "PRISM Growth Trajectory" charts — those have no backend source and
+    would have continued to drift back to mocks.
+  - Empty-state: when the hook returns and all four metrics are zero,
+    render a "No analytics yet" empty-state DataCard plus a one-shot
+    Sonner `toast.info` instead of misleading random charts.
+  - Loading state via `Skeleton`; error state shows a Retry button that
+    calls `refetch()`.
+- `src/pages/user/__tests__/Analytics.test.tsx`: rewritten to mock the
+  new hook and cover loading / data / empty / error paths.
+
+### Removed — P1.7 (M8a) DELETED — Company Admin Leadership
+- `src/pages/company-admin/Leadership.tsx` and its
+  `__tests__/Leadership.test.tsx`.
+  - Backend evidence: `services/dashboard-service/app/routes.py:173`
+    (`/api/company/analytics`) returns
+    `CompanyAnalyticsOut(total_users, active_users, avg_prism_score, training_completion)`
+    — no `leaders` array. `services/user-service/` has no leadership
+    pipeline endpoint. `grep -rn "leadership\|/leaders"` across
+    `services/dashboard-service` and `services/user-service` returns no
+    leadership data sources.
+  - The page rendered `FALLBACK_LEADERS` mock data unconditionally.
+- `src/__tests__/routes.integration.test.tsx`: removed the
+  `CompanyAdminLeadership` stub mapping.
+- `src/constants/routes.ts`: removed `ROUTES.COMPANY_ADMIN.LEADERSHIP`.
+- `src/constants/sidebar-sections.ts`: removed the company-admin
+  Leadership nav entry. (Manager Leadership is unrelated, untouched.)
+- `src/routes.tsx`: removed the lazy import + route entry.
+
+### Removed — P1.8 (M8b) DELETED — Company Admin Training
+- `src/pages/company-admin/Training.tsx` and its
+  `__tests__/Training.test.tsx`.
+  - Same evidence as P1.7 — `/api/company/analytics` returns no
+    `programs` array, and there is no `/api/company/training` or
+    `/api/company/programs` endpoint anywhere in `services/`.
+  - The page rendered `FALLBACK_PROGRAMS` mock data unconditionally.
+- `src/__tests__/routes.integration.test.tsx`: removed the
+  `CompanyAdminTraining` stub mapping.
+- `src/constants/routes.ts`: removed `ROUTES.COMPANY_ADMIN.TRAINING`.
+- `src/constants/sidebar-sections.ts`: removed the company-admin
+  Training nav entry. (Manager Training is unrelated, untouched.)
+- `src/routes.tsx`: removed the lazy import + route entry.
+- `src/pages/company-admin/Dashboard.tsx`: re-pointed the
+  "Training Completion" stat tile click-through from
+  `/company-admin/training` (now deleted) to `/company-admin/analytics`.
+
+### Verified
+- `npm run build` clean (Vite + tsc).
+- `npx eslint` clean on all changed files.
+- `npx jest` clean for changed-area tests: 11 suites, 131 tests pass
+  (`src/pages/user/__tests__/Analytics.test.tsx`,
+  `src/pages/company-admin/__tests__/*`,
+  `src/__tests__/routes.integration.test.tsx`).
+
+### Reference
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` §3 Wave 0
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` §6 P1.6 / P1.7 / P1.8
+
+---
+
 ## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end
 
 Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev.
