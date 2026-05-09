@@ -95,8 +95,6 @@ const pageModules: Record<string, string> = {
   "@/pages/user/FeedbackHistory": "FeedbackHistoryPage",
   "@/pages/user/Analytics": "UserAnalyticsPage",
   "@/pages/super-admin/Dashboard": "SuperAdminDashboardPage",
-  "@/pages/super-admin/TeamManagement": "TeamManagementPage",
-  "@/pages/super-admin/CoachManagement": "CoachManagementPage",
   "@/pages/super-admin/OrganizationManagement": "OrganizationManagementPage",
   "@/pages/super-admin/UserManagement": "UserManagementPage",
   "@/pages/super-admin/IssuesDetailsPage": "IssuesDetailsPage",
@@ -108,7 +106,6 @@ const pageModules: Record<string, string> = {
   "@/pages/super-admin/ProjectLog": "ProjectLogPage",
   "@/pages/super-admin/RlhfTraining": "RlhfTrainingPage",
   "@/pages/super-admin/PromptBuilder": "PromptBuilderPage",
-  "@/pages/super-admin/AuditLog": "AuditLogPage",
   "@/pages/super-admin/Analytics": "SuperAdminAnalyticsPage",
   "@/pages/super-admin/VoiceProviderSettings": "VoiceProviderSettingsPage",
   "@/pages/super-admin/ProcessBuilder": "ProcessBuilderPage",
@@ -456,10 +453,12 @@ describe("Route Integration Tests", () => {
   });
 
   describe("Role-based access: super-admin role", () => {
+    // Wave 0 Lane A — /super-admin/team and /super-admin/coaches now redirect
+    // to /super-admin/users and /super-admin/mentor-management respectively;
+    // /super-admin/audit-log redirects to /super-admin/analytics?tab=audit.
+    // Direct redirect behavior is exercised in the redirects describe block below.
     const superAdminRoutes = [
       { path: "/super-admin/dashboard", testId: "SuperAdminDashboardPage" },
-      { path: "/super-admin/team", testId: "TeamManagementPage" },
-      { path: "/super-admin/coaches", testId: "CoachManagementPage" },
       { path: "/super-admin/users", testId: "UserManagementPage" },
       { path: "/super-admin/settings", testId: "SuperAdminSettingsPage" },
     ];

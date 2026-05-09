@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1050</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1054</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,54 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-09] — Wave 0 Lane A: Super-Admin Deletes (D2 + D1 + D8)</h3>
+        <p>Executed the three Super-Admin page deletes from IG Dashboard Rationalization Plan v2 §3 Wave 0 Lane 0.A on a single feature branch <code>refactor/dash/wave-0a-sa-deletes</code> against frontend <code>development</code>.</p>
+        <h4>Removed</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/src/pages/super-admin/CoachManagement.tsx</code> (D2) — duplicate Super-Admin coach CRUD page; <code>MentorManagement.tsx</code> is the canonical Agent Management page.</li>
+          <li><code>inspire-genius-frontend/src/pages/super-admin/AuditLog.tsx</code> (D1) — standalone Audit Log page; the Audit Log tab on <code>Analytics.tsx</code> is fully functional.</li>
+          <li><code>inspire-genius-frontend/src/pages/super-admin/TeamManagement.tsx</code> (D8) — hardcoded 8-row stub with no API wiring; <code>UserManagement.tsx</code> covers all real platform users.</li>
+          <li>Colocated test files: <code>__tests__/CoachManagement.test.tsx</code>, <code>__tests__/AuditLog.test.tsx</code>, <code>__tests__/TeamManagement.test.tsx</code>.</li>
+        </ul>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/constants/routes.ts</code> — dropped <code>ROUTES.SUPER_ADMIN.COACHES</code>, <code>AUDIT_LOG</code>, and <code>TEAM</code> constants.</li>
+          <li><code>src/routes.tsx</code> — removed lazy imports for the three deleted pages; added <code>&lt;Navigate replace /&gt;</code> redirects:
+            <ul>
+              <li><code>/super-admin/team</code> → <code>/super-admin/users</code></li>
+              <li><code>/super-admin/coaches</code> → <code>/super-admin/mentor-management</code></li>
+              <li><code>/super-admin/audit-log</code> → <code>/super-admin/analytics?tab=audit</code></li>
+            </ul>
+          </li>
+          <li><code>src/pages/super-admin/Analytics.tsx</code> — added <code>useSearchParams</code> deep-link handling so <code>?tab=audit|project|analytics</code> selects the matching tab on mount and stays in sync as the user switches; tab change writes <code>?tab=…</code> (or clears it for the default <code>analytics</code> tab) via <code>setSearchParams(..., { replace: true })</code>.</li>
+          <li><code>src/pages/super-admin/Analytics.tsx</code>, <code>src/pages/super-admin/ProjectLog.tsx</code> — Mermaid sitemap diagrams updated to reference <code>/super-admin/mentor-management</code> instead of <code>/super-admin/coaches</code> and to drop the <code>/super-admin/audit-log</code> node.</li>
+          <li><code>src/__tests__/routes.integration.test.tsx</code> — removed page-module mocks and <code>superAdminRoutes</code> test cases for the three deleted pages.</li>
+          <li><code>src/pages/super-admin/__tests__/Analytics.test.tsx</code> — wrapped <code>renderWithProviders</code> in <code>MemoryRouter</code> so <code>useSearchParams</code> resolves under test.</li>
+        </ul>
+        <h4>Verification</h4>
+        <ul>
+          <li><code>npm run build</code> — clean (TypeScript + Vite).</li>
+          <li><code>npx eslint</code> against the touched files — clean (zero new lint errors).</li>
+          <li><code>npx jest src/pages/super-admin/__tests__/ src/layouts/__tests__/SuperAdminLayout.test.tsx src/__tests__/routes.integration.test.tsx</code> — <strong>19 suites, 286 tests passing.</strong></li>
+        </ul>
+        <h4>Constraints honored</h4>
+        <ul>
+          <li><code>MentorManagement.tsx</code> untouched (Wave 2 owns the rename).</li>
+          <li>No changes under <code>services/</code>, <code>agent-engine</code>, or <code>infrastructure/cdk/</code>.</li>
+          <li>Nav (<code>SUPER_ADMIN_NAV_ITEMS</code>) had no entries for the deleted routes — no nav edits needed.</li>
+        </ul>
+
+        <h3>[2026-05-09] — Drafted Wave 0 Lane Prompts (0.B–0.I) for IG Dashboard Rationalization v2</h3>
+        <h4>Added</h4>
+        <ul>
+          <li>New Word document: <code>Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx</code> (~61&nbsp;KB).</li>
+          <li>Paste-ready Claude Code prompts for Wave&nbsp;0 Lanes&nbsp;0.B through 0.I per <code>IG_Dashboard_Rationalization_Plan_2.docx</code> v2 §3.</li>
+          <li>Each lane prompt is fully self-contained (branch, build, lint, test, commit, push, log, sync, open PR).</li>
+          <li>Lane&nbsp;0.B bundles P1.6 + P1.7 + P1.8 (NAV-heavy, single PR). Lanes 0.C–0.I are single-unit PRs (P1.4, P1.3, P5.1, P5.3, P3.1, P6.1, P5.2 respectively).</li>
+          <li>Each lane includes a metadata table (wave, PR title, P-units, preconditions, platform-rung dependency) and notes on file-collision groups.</li>
+          <li>Lane&nbsp;0.I documents the soft R-2.4 dependency (data-pending banner pending audit-service EventBridge pipeline closure) per v2 §4.3.</li>
+        </ul>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
         <h4>Changed</h4>
@@ -1598,6 +1646,15 @@
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1054 [Wave 0 Lane A — Super-Admin deletes (D2 + D1 + D8)]</div>
+          <div class="prompt-text">/full-go Wave 0 Lane A — super-admin deletes batch (P1.1 + P1.2 + P1.5). Branch refactor/dash/wave-0a-sa-deletes off frontend development. Delete CoachManagement.tsx (D2), AuditLog.tsx (D1), TeamManagement.tsx (D8) plus their tests; remove the 3 ROUTES.SUPER_ADMIN constants; redirect /super-admin/team → /users, /super-admin/audit-log → /analytics?tab=audit, /super-admin/coaches → /mentor-management; wire ?tab=audit deep-link into Analytics.tsx; build, lint, run jest on super-admin nav/routes; sync logs to all 5 copies; commit, push, open PR against frontend development.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1053 [Wave-0 prompt drafting]</div>
+          <div class="prompt-text">/full-go draft the prompts for 0.B–0.I in a word document from IG_Dashboard_Rationalization_Plan_2.docx</div>
+        </div>
+
         <h2>Session Prompts <span class="path-badge">session history</span></h2>
         <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
 
@@ -22697,6 +22754,41 @@
           <div class="timestamp">2026-05-08 13:03:15</div>
           <div class="prompt-text">User prompt submitted</div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:17:27</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:17:27</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:18:08</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:18:52</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:09</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:30</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:19:43</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+
+
+
+
+
+
+
 
 
 

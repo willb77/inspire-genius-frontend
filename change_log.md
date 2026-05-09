@@ -1,36 +1,44 @@
-## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end
+## [2026-05-09] — Wave 0 Lane A: Super-Admin Deletes (D2 + D1 + D8)
 
-Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev.
+Executed the three Super-Admin page deletes from IG Dashboard Rationalization Plan v2 §3 Wave 0 Lane 0.A on a single feature branch `refactor/dash/wave-0a-sa-deletes` against frontend `development`.
 
-### Done in this thread
-- **P1** — `ig-dev-migration-runner` Lambda redeployed with PR #25's hardened SQL splitter
-  - CodeSha256 `l/qFfvi+...` → `8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=`
-  - Handler `lambda_function.handler` → `handler.handler` (filename moved to `handler.py`)
-  - Smoke 1 (`SELECT 1;`): 1 succeeded, 0 failed, 0 skipped
-  - Smoke 2 (line-comment + BEGIN/COMMIT + SELECT): 1 succeeded, 0 failed, 2 skipped — confirms all 4 quirks live
-- **P2** — `assetHashType: cdk.AssetHashType.SOURCE` on all 17 Lambda `fromAsset` calls (15 services + 2 trainer)
-  - GHA deploys: services run `25561875526` (no changes), trainer run `25561893410` (UPDATE_COMPLETE on 2)
-  - Future `cdk diff ig-dev-services ig-dev-trainer` is stable until real source changes
+### Removed
+- `inspire-genius-frontend/src/pages/super-admin/CoachManagement.tsx` (D2) — duplicate Super-Admin coach CRUD page; `MentorManagement.tsx` is the canonical Agent Management page.
+- `inspire-genius-frontend/src/pages/super-admin/AuditLog.tsx` (D1) — standalone Audit Log page; the Audit Log tab on `Analytics.tsx` is fully functional.
+- `inspire-genius-frontend/src/pages/super-admin/TeamManagement.tsx` (D8) — hardcoded 8-row stub with no API wiring; `UserManagement.tsx` covers all real platform users.
+- Colocated test files: `__tests__/CoachManagement.test.tsx`, `__tests__/AuditLog.test.tsx`, `__tests__/TeamManagement.test.tsx`.
 
-### PRs merged in this thread
-- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase past parallel-session R3+R4)
-- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+### Changed
+- `src/constants/routes.ts` — dropped `ROUTES.SUPER_ADMIN.COACHES`, `AUDIT_LOG`, and `TEAM` constants.
+- `src/routes.tsx` — removed lazy imports for the three deleted pages; added `<Navigate replace />` redirects:
+  - `/super-admin/team` → `/super-admin/users`
+  - `/super-admin/coaches` → `/super-admin/mentor-management`
+  - `/super-admin/audit-log` → `/super-admin/analytics?tab=audit`
+- `src/pages/super-admin/Analytics.tsx` — added `useSearchParams` deep-link handling so `?tab=audit|project|analytics` selects the matching tab on mount and stays in sync as the user switches; tab change writes `?tab=…` (or clears it for the default `analytics` tab) via `setSearchParams(..., { replace: true })`.
+- `src/pages/super-admin/Analytics.tsx`, `src/pages/super-admin/ProjectLog.tsx` — Mermaid sitemap diagrams updated to reference `/super-admin/mentor-management` instead of the deleted `/super-admin/coaches` and to drop the `/super-admin/audit-log` node.
+- `src/__tests__/routes.integration.test.tsx` — removed page-module mocks and `superAdminRoutes` test cases for the three deleted pages.
+- `src/pages/super-admin/__tests__/Analytics.test.tsx` — wrapped `renderWithProviders` in `MemoryRouter` so `useSearchParams` resolves under test.
 
-### Carry-overs / process notes (now in CLAUDE memory if not already)
-1. **`ig-dev-migration-runner` is outside CDK.** No references in `infrastructure/cdk/lib/` or `bin/`. Code changes require manual `aws lambda update-function-code` against a locally-built `handler.py` + `pg8000` zip.
-2. **Local `cdk diff` is hash-polluted.** With `assetHashType: SOURCE`, local `__pycache__`, `*.pyc`, and `.venv` artifacts get hashed in. CI checks out clean, so its hash differs from local. Treat CI as the source of truth for drift detection. Future improvement: `assetHashOptions.exclude: ['__pycache__', '*.pyc', '.venv', '*.egg-info']` (deferred — outside P2 scope).
-3. **Parallel-session collisions cost rebases.** Hit twice this thread: PR #35 (R4 ECS scaling) and PR #37 (R3 chat writer migration) landed during the P2 deploy window, requiring docs PR #39 → #40 re-creation with prompt-entry renumber from #1037 → #1039. Pattern to watch: any work that touches `change_log.md` + `IG_project_log.html` collides with every other parallel session doing the same.
+### Verification
+- `npm run build` — clean (TypeScript + Vite).
+- `npx eslint` against the touched files — clean (zero new lint errors).
+- `npx jest src/pages/super-admin/__tests__/ src/layouts/__tests__/SuperAdminLayout.test.tsx src/__tests__/routes.integration.test.tsx` — **19 suites, 286 tests passing.**
 
-### What's next (Monday plan delta)
-Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs:
-- **P5** — 18-agent verification (17/17 + 4/4 + 3/3)
-- **P6** — PRISM ingestion E2E
-- **P8** — Super-admin BulkImport + MentorManagement verify+fix
+### Constraints honored
+- `MentorManagement.tsx` untouched (Wave 2 owns the rename).
+- No changes under `services/`, `agent-engine`, or `infrastructure/cdk/`.
+- Nav (`SUPER_ADMIN_NAV_ITEMS`) had no entries for the deleted routes — no nav edits needed.
 
----
+## [2026-05-09] — Drafted Wave 0 Lane Prompts (0.B–0.I) for IG Dashboard Rationalization v2
 
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+### Added
+- New Word document: `Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx` (~61 KB).
+  - Paste-ready Claude Code prompts for Wave 0 Lanes 0.B through 0.I per `IG_Dashboard_Rationalization_Plan_2.docx` v2 §3.
+  - Each lane prompt is fully self-contained (branch, build, lint, test, commit, push, log, sync, open PR).
+  - Lane 0.B bundles P1.6 + P1.7 + P1.8 (NAV-heavy, single PR). Lanes 0.C–0.I are single-unit PRs (P1.4, P1.3, P5.1, P5.3, P3.1, P6.1, P5.2 respectively).
+  - Each lane includes a metadata table (wave, PR title, P-units, preconditions, platform-rung dependency) and notes on file-collision groups.
+  - Lane 0.I documents the soft R-2.4 dependency (data-pending banner pending audit-service EventBridge pipeline closure) per v2 §4.3.
+  - Files: `Transformation Documents/IG_Dashboard_Rationalization_Wave0_Prompts.docx`, generator at `/tmp/build_wave0_prompts_doc.py`
 
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 
@@ -78,12 +86,39 @@ Replaced an inline TODO stub in `PrismTeam.tsx` that returned `{ data: { data: {
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
+## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end (PR #43)
+
+Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev. Captured here for completeness alongside the P3 / P4 / P7 entries from parallel sessions.
+
+### PRs merged in this thread
+- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase), `#43` (P1+P2 combined session wrap)
+- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+
+### What's next (Monday plan delta)
+Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs: **P5** — 18-agent verification, **P6** — PRISM ingestion E2E, **P8** — Super-admin BulkImport + MentorManagement verify+fix.
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 ## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
 
 ### Added

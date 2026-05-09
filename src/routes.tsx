@@ -48,8 +48,6 @@ const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
 const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboard"));
-const TeamManagement = React.lazy(() => import("@/pages/super-admin/TeamManagement"));
-const CoachManagement = React.lazy(() => import("@/pages/super-admin/CoachManagement"));
 const OrganizationManagement = React.lazy(() => import("@/pages/super-admin/OrganizationManagement"));
 const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManagement"));
 const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
@@ -61,7 +59,6 @@ const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
 const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
-const AuditLog = React.lazy(() => import("@/pages/super-admin/AuditLog"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
 const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
@@ -194,8 +191,10 @@ export const routes: RouteObject[] = [
 
       // Super Admin pages
       { path: "/super-admin/dashboard", element: withSuspense(<SuperAdminDashboard />) },
-      { path: "/super-admin/team", element: withSuspense(<TeamManagement />) },
-      { path: "/super-admin/coaches", element: withSuspense(<CoachManagement />) },
+      // Wave 0 Lane A — D8: TeamManagement stub deleted; UserManagement covers all platform users
+      { path: "/super-admin/team", element: <Navigate to="/super-admin/users" replace /> },
+      // Wave 0 Lane A — D2: CoachManagement deleted; MentorManagement is the canonical Agent Management page
+      { path: "/super-admin/coaches", element: <Navigate to="/super-admin/mentor-management" replace /> },
       { path: "/super-admin/:userId/coaches", element: withSuspense(<UserCoaches />) },
       { path: "/super-admin/organizations", element: withSuspense(<OrganizationManagement />) },
       { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
@@ -209,7 +208,8 @@ export const routes: RouteObject[] = [
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
-      { path: "/super-admin/audit-log", element: withSuspense(<AuditLog />) },
+      // Wave 0 Lane A — D1: AuditLog standalone page deleted; canonical view is the Audit Log tab on Analytics
+      { path: "/super-admin/audit-log", element: <Navigate to="/super-admin/analytics?tab=audit" replace /> },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
       { path: "/super-admin/bulk-import", element: withSuspense(<SuperAdminBulkImport />) },
       { path: "/super-admin/observability", element: withSuspense(<SuperAdminObservability />) },
