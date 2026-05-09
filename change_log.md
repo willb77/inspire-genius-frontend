@@ -82,6 +82,62 @@
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md`
+
+## [2026-05-09] — IG Dashboard Rationalization Plan v2: wave-based execution against PLATFORM_VERIFICATION_RESET
+
+### Authored
+`Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md` (+ rendered `.docx`) — supersedes v1 §7 ("Co-Run Schedule Against Monday Production-Ready Plan") with a wave-based execution plan tuned for the corrected platform schedule.
+
+### Why v2
+v1's §7 assumed the Monday plan would deliver by 2026-05-12 and ordered IG prompts against `MONDAY_PROD_READY_PLAN.md` P1–P10. That plan was paused (see today's earlier P5 recalibration entry); the user's stated priority shifted from "Monday deadline" to "accuracy and completeness." `PLATFORM_VERIFICATION_RESET.md` replaced the Monday-plan ordering with R-2.1 → R-2.12 (8–12 working days). The IG plan needs a co-run schedule against *that* sequence.
+
+### Dependency model captured
+Three independent constraint classes:
+- **File-conflict groups** — NAV, ROUTES, APP-ROUTES, MM, MGR-DASH, SA-DASH, CO-DASH, OBS, TASK-AGENT-FORMS. Within each group, only one IG prompt at a time without manual conflict resolution.
+- **Platform-rung dependencies** — 7 IG prompts (P3.2 data, P5.2 data, P7.1, P7.2, P7.3, P7.4, P7.5) have soft-or-hard dependencies on R-2.2, R-2.4, R-2.10. The other 23 are platform-independent.
+- **Inter-IG sequencing** — P3.1 → P3.2-P3.5; P6.1 → P6.2; P5.2 → P7.4; everything → P8 final sweep.
+
+### Wave-based execution plan
+- **Wave 0 (run NOW, 9 lanes parallel-safe):** 14 IG prompts. Lanes 0.A super-admin deletes (P1.1+P1.2+P1.5 batched), 0.B stub deletes (P1.6+P1.7+P1.8 batched), 0.C P1.4 hooks dedupe, 0.D P1.3 chart fix, 0.E P5.1 KB merge, 0.F P5.3 Distributor Network, 0.G P3.1 ChartKit primitives, 0.H P6.1 DashboardFrame, 0.I P5.2 CostBoard (frontend ships now; data-pending banner until R-2.4 closes).
+- **Wave 1 (after Wave 0 lands, 5 lanes):** P3.2-P3.5 (Analytics ChartKit consumers) + P6.2 (DashboardFrame adoption in 6).
+- **Wave 2 (after R-2.2 lands, 2 lanes):** P7.1 Diagnostic Chat + P2.1/P2.2/P2.3 batched (MentorManagement deep-link batch — coord with R-2.10).
+- **Wave 3 (after R-2.4 lands, mostly evidence):** P7.4 Manager Cost data validation + P7.5 ObservabilityBoard data validation + P3.2 data validation.
+- **Wave 4 (after R-2.10 lands, 5 lanes):** P4.1/P4.2/P4.3 manager hubs + P7.2 TaskAgent forms → Practitioner + P7.3 Practitioner Onboarding Wizard. Coordinate with R-2.6 RBAC audit (semantic, not file collision).
+- **Wave 5:** P8 final sweep + R-2.12 close-out merged into one combined log entry.
+
+### Honest schedule estimate
+8–12 working days. Days 1–4 close Wave 0 + R-2.1 + R-2.2. Days 5–6 close Wave 1 + R-2.3–R-2.8. Days 7–8 close Wave 4 + R-2.9–R-2.10. Day 10 closes Wave 5 + R-2.12. Days 11–12 are buffer.
+
+### Files
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md` — **(new)** v2 plan (markdown source).
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` — **(new)** rendered Word version with Logo-Dark.png header.
+- v1 plan unchanged: `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` remains the canonical reference for the 30 paste-ready prompts (v2 only re-orders execution).
+- `REMAINING_TASKS.md` — IG plan v2 entry.
+- `IG_project_log.html` + `change_log.md` — this entry.
+
+### What this commit does and does not claim
+- **Does**: wave-by-wave map of which IG prompts can run now, which need R-2.x preconditions, and which need to coordinate with platform rungs that touch the same files. Status board for tracking. Concrete "what to do RIGHT NOW" section listing 9 immediately-runnable lanes.
+- **Does not**: modify any of the 30 IG prompts. Their text is canonical at v1 §6. Does not promise calendar dates beyond review-velocity-dependent estimates. Does not perform any code changes — pure planning artefact.
+
+---
+
 ## [2026-05-09] — P5 recalibration + Platform Verification Reset
 
 ### Recalibrated

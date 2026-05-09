@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1062</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1068</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,50 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-09] — IG Dashboard Rationalization Plan v2: wave-based execution against PLATFORM_VERIFICATION_RESET</h3>
+
+        <h4>Authored</h4>
+        <p><code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md</code> (+ rendered <code>.docx</code>) — supersedes v1 §7 ("Co-Run Schedule Against Monday Production-Ready Plan") with a wave-based execution plan tuned for the corrected platform schedule.</p>
+
+        <h4>Why v2</h4>
+        <p>v1's §7 assumed the Monday plan would deliver by 2026-05-12 and ordered IG prompts against <code>MONDAY_PROD_READY_PLAN.md</code> P1–P10. That plan was paused (see today's earlier P5 recalibration entry); the user's stated priority shifted from "Monday deadline" to "accuracy and completeness." <code>PLATFORM_VERIFICATION_RESET.md</code> replaced the Monday-plan ordering with R-2.1 → R-2.12 (8–12 working days). The IG plan needs a co-run schedule against <em>that</em> sequence.</p>
+
+        <h4>Dependency model captured</h4>
+        <p>Three independent constraint classes:</p>
+        <ul>
+          <li><strong>File-conflict groups</strong> — NAV, ROUTES, APP-ROUTES, MM, MGR-DASH, SA-DASH, CO-DASH, OBS, TASK-AGENT-FORMS. Within each group, only one IG prompt at a time without manual conflict resolution.</li>
+          <li><strong>Platform-rung dependencies</strong> — 7 IG prompts (P3.2 data, P5.2 data, P7.1, P7.2, P7.3, P7.4, P7.5) have soft-or-hard dependencies on R-2.2, R-2.4, R-2.10. The other 23 are platform-independent.</li>
+          <li><strong>Inter-IG sequencing</strong> — P3.1 → P3.2-P3.5; P6.1 → P6.2; P5.2 → P7.4; everything → P8 final sweep.</li>
+        </ul>
+
+        <h4>Wave-based execution plan</h4>
+        <ul>
+          <li><strong>Wave 0 (run NOW, 9 lanes parallel-safe):</strong> 14 IG prompts. Lanes 0.A super-admin deletes (P1.1+P1.2+P1.5 batched), 0.B stub deletes (P1.6+P1.7+P1.8 batched), 0.C P1.4 hooks dedupe, 0.D P1.3 chart fix, 0.E P5.1 KB merge, 0.F P5.3 Distributor Network, 0.G P3.1 ChartKit primitives, 0.H P6.1 DashboardFrame, 0.I P5.2 CostBoard (frontend ships now; data-pending banner until R-2.4 closes).</li>
+          <li><strong>Wave 1 (after Wave 0 lands, 5 lanes):</strong> P3.2-P3.5 (Analytics ChartKit consumers) + P6.2 (DashboardFrame adoption in 6).</li>
+          <li><strong>Wave 2 (after R-2.2 lands, 2 lanes):</strong> P7.1 Diagnostic Chat + P2.1/P2.2/P2.3 batched (MentorManagement deep-link batch — coord with R-2.10).</li>
+          <li><strong>Wave 3 (after R-2.4 lands, mostly evidence):</strong> P7.4 Manager Cost data validation + P7.5 ObservabilityBoard data validation + P3.2 data validation.</li>
+          <li><strong>Wave 4 (after R-2.10 lands, 5 lanes):</strong> P4.1/P4.2/P4.3 manager hubs + P7.2 TaskAgent forms → Practitioner + P7.3 Practitioner Onboarding Wizard. Coordinate with R-2.6 RBAC audit (semantic, not file collision).</li>
+          <li><strong>Wave 5:</strong> P8 final sweep + R-2.12 close-out merged into one combined log entry.</li>
+        </ul>
+
+        <h4>Honest schedule estimate</h4>
+        <p>8–12 working days. Days 1–4 close Wave 0 + R-2.1 + R-2.2. Days 5–6 close Wave 1 + R-2.3–R-2.8. Days 7–8 close Wave 4 + R-2.9–R-2.10. Day 10 closes Wave 5 + R-2.12. Days 11–12 are buffer.</p>
+
+        <h4>Files</h4>
+        <ul>
+          <li><code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md</code> — <strong>(new)</strong> v2 plan (markdown source).</li>
+          <li><code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx</code> — <strong>(new)</strong> rendered Word version with Logo-Dark.png header.</li>
+          <li>v1 plan unchanged: <code>Transformation Documents/IG_Dashboard_Rationalization_Plan.docx</code> remains the canonical reference for the 30 paste-ready prompts (v2 only re-orders execution).</li>
+          <li><code>REMAINING_TASKS.md</code> — IG plan v2 entry.</li>
+          <li><code>IG_project_log.html</code> + <code>change_log.md</code> — this entry.</li>
+        </ul>
+
+        <h4>What this commit does and does not claim</h4>
+        <ul>
+          <li><strong>Does</strong>: wave-by-wave map of which IG prompts can run now, which need R-2.x preconditions, and which need to coordinate with platform rungs that touch the same files. Status board for tracking. Concrete "what to do RIGHT NOW" section listing 9 immediately-runnable lanes.</li>
+          <li><strong>Does not</strong>: modify any of the 30 IG prompts. Their text is canonical at v1 §6. Does not promise calendar dates beyond review-velocity-dependent estimates. Does not perform any code changes — pure planning artefact.</li>
+        </ul>
 
         <h3>[2026-05-09] — P5 recalibration + Platform Verification Reset</h3>
 
@@ -22989,6 +23033,85 @@ R-2.12  Reconcile docs + close out (was P10)           ~1 hr</code></pre>
           <div class="timestamp">2026-05-09 00:04:08</div>
           <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:07:17</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:30:14</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:31:09</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:31:40</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:32:49</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:33:47</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:44:47</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:45:48</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:49:53</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:55:37</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:57:15</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:58:41</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:59:20</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1068 [/full-go review the two new plans + author IG Dashboard Rationalization Plan v2]</div>
+          <div class="prompt-text">Reviewed <code>services/agent-engine/PHASE_E2_VERIFICATION_REPORT.docx</code> (recalibrated) + <code>Transformation Documents/PLATFORM_VERIFICATION_RESET.docx</code> (the corrected R-2.1 → R-2.12 ordering). Cross-referenced against the v1 IG Dashboard Rationalization Plan's 30 paste-ready prompts. Authored <code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.md</code> (+ rendered <code>.docx</code> with Logo-Dark.png header) capturing: (1) what changed since v1 — Monday-deadline frame replaced with accuracy-first frame; (2) three independent constraint classes — file-conflict groups (NAV/ROUTES/APP-ROUTES/MM/MGR-DASH/SA-DASH/CO-DASH/OBS/TASK-AGENT-FORMS), platform-rung dependencies (7 IG prompts blocked on R-2.2 / R-2.4 / R-2.10), inter-IG sequencing (P3.1→P3.2-P3.5; P6.1→P6.2; P5.2→P7.4; everything→P8); (3) wave-based execution plan — Wave 0 (run NOW, 9 parallel-safe lanes covering 14 IG prompts including Lane 0.A super-admin deletes batched, Lane 0.B stub deletes batched, Lane 0.C/D hooks+chart, Lane 0.E KB merge, Lane 0.F Distributor Network, Lane 0.G ChartKit primitives, Lane 0.H DashboardFrame, Lane 0.I CostBoard with data-pending banner), Wave 1 (after Wave 0, 5 lanes — ChartKit consumers + DashboardFrame adopt), Wave 2 (after R-2.2, 2 lanes — Diagnostic Chat + MentorManagement deep-link batch coord with R-2.10), Wave 3 (after R-2.4, evidence only), Wave 4 (after R-2.10, 5 lanes — manager hubs + practitioner forms + onboarding wizard), Wave 5 (P8 final sweep + R-2.12 close-out merged); (4) per-prompt status board with new reset-rung gating; (5) max-parallelism schedule across 8–12 working days. v1 plan unchanged — its 30 paste-ready prompts remain the canonical reference; v2 only re-orders execution. Doc-only sweep — no code changes. <strong>Concrete "what to do RIGHT NOW" section</strong> lists 9 immediately-runnable lanes for Wave 0 + R-2.1 in parallel session.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 01:00:06</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 01:00:35</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md</code></div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
