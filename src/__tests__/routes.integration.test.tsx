@@ -142,7 +142,6 @@ const pageModules: Record<string, string> = {
   "@/pages/company-admin/Organization": "CompanyAdminOrganizationPage",
   "@/pages/company-admin/Costs": "CompanyAdminCostsPage",
   "@/pages/company-admin/Training": "CompanyAdminTrainingPage",
-  "@/pages/company-admin/Leadership": "CompanyAdminLeadershipPage",
   "@/pages/company-admin/Settings": "CompanyAdminSettingsPage",
   "@/pages/company-admin/Analytics": "CompanyAdminAnalyticsPage",
   "@/pages/company-admin/BulkImport": "CompanyAdminBulkImportPage",

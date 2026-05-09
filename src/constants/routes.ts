@@ -67,7 +67,6 @@ export const ROUTES = {
     ORGANIZATION: "/company-admin/organization",
     COSTS: "/company-admin/costs",
     TRAINING: "/company-admin/training",
-    LEADERSHIP: "/company-admin/leadership",
     PRISM_OVERVIEW: "/company-admin/prism-overview",
     ANALYTICS: "/company-admin/analytics",
     SETTINGS: "/company-admin/settings",

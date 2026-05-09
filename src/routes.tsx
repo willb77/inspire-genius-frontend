@@ -106,7 +106,6 @@ const CompanyAdminUsers = React.lazy(() => import("@/pages/company-admin/Users")
 const CompanyAdminOrganization = React.lazy(() => import("@/pages/company-admin/Organization"));
 const CompanyAdminCosts = React.lazy(() => import("@/pages/company-admin/Costs"));
 const CompanyAdminTraining = React.lazy(() => import("@/pages/company-admin/Training"));
-const CompanyAdminLeadership = React.lazy(() => import("@/pages/company-admin/Leadership"));
 const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Settings"));
 const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
 const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
@@ -260,7 +259,6 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/organization", element: withSuspense(<CompanyAdminOrganization />) },
       { path: "/company-admin/costs", element: withSuspense(<CompanyAdminCosts />) },
       { path: "/company-admin/training", element: withSuspense(<CompanyAdminTraining />) },
-      { path: "/company-admin/leadership", element: withSuspense(<CompanyAdminLeadership />) },
       { path: "/company-admin/settings", element: withSuspense(<CompanyAdminSettings />) },
       { path: "/company-admin/bulk-import", element: withSuspense(<CompanyAdminBulkImport />) },
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
