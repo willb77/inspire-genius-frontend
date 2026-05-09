@@ -1,3 +1,23 @@
+## [2026-05-09] — refactor(dash) Wave 0 / Lane 0.C: dedupe `useCompanyAnalytics` (D6)
+
+### Changed
+- Promoted `useCompanyAnalytics` in `src/hooks/analytics/useAnalytics.ts` to the canonical hook for company analytics, matching the role-family pattern used by `useUserAnalytics` / `useManagerAnalytics` / etc.
+- Replaced the inline `useCompanyAnalytics` definition in `src/hooks/company-admin/useCompanyAdmin.ts` with a JSDoc `@deprecated` re-export of the canonical hook. This preserves existing imports without churn while flagging the location for cleanup in Wave 1. (Lane 0.B subsequently deleted `Leadership.tsx` and `Training.tsx`, leaving `Dashboard.tsx` as the sole remaining caller of the deprecated alias.)
+- Reasoning: The two implementations were structurally identical (single `useQuery` wrapper); the company-admin variant only differed in its typed `BaseApiResponse<{...}>` and queryKey. Per Lane 0.C, the canonical lives at `/hooks/analytics/useAnalytics.ts` and the `company-admin` location becomes a one-line re-export.
+
+### Tests
+- Added `useCompanyAnalytics` test to the canonical suite at `src/hooks/analytics/__tests__/useAnalytics.test.tsx` with `QueryClientProvider` wrapper, plus filled-in coverage for `usePractitionerAnalytics` and `useDistributorAnalytics` so the family is uniformly tested.
+- Updated `src/hooks/company-admin/__tests__/useCompanyAdmin.test.tsx` to mock `@/services/analytics/analytics.service` for the deprecated re-export path; renamed the test to flag the deprecation.
+- `npx jest src/hooks` → 66 suites, 346 tests passing.
+- `npm run build` and ESLint on touched files both clean.
+
+### Files
+- `inspire-genius-frontend/src/hooks/company-admin/useCompanyAdmin.ts`
+- `inspire-genius-frontend/src/hooks/company-admin/__tests__/useCompanyAdmin.test.tsx`
+- `inspire-genius-frontend/src/hooks/analytics/__tests__/useAnalytics.test.tsx`
+
+---
+
 ## [2026-05-09] — Wave 0 Lane 0.B: stub deletes / wires (M7 + M8a + M8b)
 
 Three units of the Dashboard Rationalization Plan v2, bundled into one PR
