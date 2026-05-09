@@ -1,3 +1,35 @@
+## [2026-05-09 PM] — Document RAG fix landed end-to-end: deploy + 42-row backfill (Option 2)
+
+### Operator session — what landed in AWS
+- **CDK deploy ig-dev-services**: `INTERNAL_SERVICE_TOKEN` env var on document-service Lambda; new `POST /v1/documents/ingest-from-monolith` route on API Gateway HTTP API.
+- **Aurora**: created `document_service` PostgreSQL role with grants on `documents`, `document_chunks`, `SELECT` on monolith `files`, sequences + default privileges. Created via `ig-dev-migration-runner` Lambda.
+- **Secrets Manager**: new secret `inspires-genius-dev/aurora/document-service-credentials` with the role's password.
+- **RDS Proxy** `inspires-genius-dev-rds-proxy`: added the new secret to the Auth list; updated the proxy's IAM role policy (`inspires-genius-dev-rds-proxy-role` / `inspires-genius-dev-rds-proxy-secrets`) to grant `GetSecretValue` on the new secret.
+- **Lambda** `ig-dev-document-service`: re-bundled with `--platform=linux/amd64` (Apple Silicon was building ARM wheels → `pydantic_core._pydantic_core` ImportError); uploaded to S3; applied. Env vars added: `INTERNAL_SERVICE_TOKEN`, `DOC_SERVICE_DB_CREDENTIALS_SECRET_ARN`. Cold-start hydration in `config.py` reads the secret and builds the asyncpg URL.
+- **API Gateway**: explicit POST routes for `/v1/documents/ingest-from-monolith` and `/v1/documents/admin/backfill` → `integrations/69nf4bc` (document-service Lambda). Without these, the catch-all `POST /v1/documents/{proxy+}` on integration `nj5msbs` (agent-engine ALB) intercepted with 405.
+- **EventBridge** rule `ig-dev-document-events`: pattern updated from `["DocumentEvent"]` to also match `DocumentUploaded`/`DocumentProcessed`/`DocumentDeleted` (the doc-service emits the specific types but the rule was only matching the legacy fallback).
+- **Backfill** executed via the new `/v1/documents/admin/backfill` endpoint (server-side, no DB credentials leaving the VPC). Two batches (limit=10, then limit=50) ingested all 42 active monolith `files` rows. Final state: 42 documents from 11 distinct users, idempotency confirmed by re-run.
+
+### Code committed (this branch, `fix/document-rag/p0-p1-bridge`)
+- `services/document-service/app/config.py` — `_hydrate_database_url_from_secret()` cold-start fetch.
+- `services/document-service/app/models.py` — removed unmapped `search_vector` (DB column is `tsvector`, mapping as `Text` caused `DatatypeMismatchError`).
+- `services/document-service/app/service.py` + `routes.py` — `backfill_from_files_table()` + `POST /v1/documents/admin/backfill`.
+- `services/document-service/app/database.py` — `connect_args={"ssl": "require"}` for asyncpg (RDS Proxy enforces TLS).
+- `infrastructure/cdk/lib/services-stack.ts` — `linux/amd64` platform pin in `poetryBundle`; `secretsmanager:GetSecretValue` IAM (replaces vestigial `rds-db:connect`); explicit `DocumentIngestFromMonolithRoute` API Gateway route; `DOC_SERVICE_DB_CREDENTIALS_SECRET_ARN` env var.
+
+### Smoke results
+- T1 missing token → 422 (auth required) ✓
+- T2 wrong token → 401 ✓
+- T3 invalid UUID → 400 ✓
+- T4 valid insert → 200, `created=true` ✓
+- T5 idempotent → 200, `created=false` ✓
+- Backfill batch 1 (limit=10) → 200, `created=10` ✓
+- Backfill batch 2 (limit=50) → 200, `created=32 existing=10` (idempotent) ✓
+- DB count after backfill: `42 documents, 11 distinct users` ✓
+
+### Known follow-up — NOT in this commit
+The 42 backfilled rows have `status='pending'` and `extracted_text=NULL`. The bridge sets `s3_bucket=ig-dev-documents` (the document-service default) but the monolith stores files in a different bucket. `process_document()` therefore can't read the file body. The agent-engine RAG path can match by `file_id` now (it returns these rows instead of zero), but extracted content is empty until the `s3_bucket` on these rows is corrected and processing is re-run. **Next step**: identify the monolith bucket, UPDATE document rows to point at it, re-emit `document.uploaded` for each. ~½ day of work.
+
 ## [2026-05-09] — Document RAG fix: P0 monolith bridge + P1 WS file_ids + P2 probe + P3 Meridian diagnostics
 
 ### Added
