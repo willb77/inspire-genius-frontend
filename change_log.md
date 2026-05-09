@@ -1,4 +1,139 @@
-## [2026-05-08] — P5 (Phase E2): 18-agent verification on dev
+## [2026-05-08] — Dashboard Rationalization Plan: Monday co-run schedule added
+
+### Changed
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` — added §7 "Co-Run Schedule Against Monday Production-Ready Plan" with five sub-sections:
+  - §7.1 Monday-phase blast radius (what P5/P6/P7/P8/P9/P10 actually touches)
+  - §7.2 Conflict matrix — every IG prompt × every Monday phase (✅/✖/Δ across 30 IG prompts × 6 Monday phases)
+  - §7.3 Recommended interleaved schedule
+  - §7.4 Key recommendations (best parallel slot, worst conflicts, sequencing constraints, log discipline, PR-title prefixing)
+  - §7.5 Maximum-parallelism scenario (12-row Fri-PM-through-Mon-PM swimlane compressing the 9-day IG plan into Monday's 4-day window)
+- Renumbered: Standardization §7→§8, Risks §8→§9, DoD §9→§10, Reduction Targets §10→§11.
+
+### Key findings from the co-run analysis
+- Hard conflicts during Monday P8: IG P2.1, P2.2, P2.3 all touch MentorManagement.tsx — defer to Monday AM (P9 doc-only window).
+- Hard conflicts during Monday P7: IG P3.2 (Manager Analytics refactor), P4.2 (Team Hub), P6.2 (DashboardFrame adoption) all touch manager pages — defer to after P7 closes.
+- Best parallel slot: Sunday AM. Monday P5 + P8 only lock backend agent runtime + two super-admin pages; up to 6 IG lanes can run simultaneously.
+- Friday PM is unblocked and ideal for kicking off all 8 Phase 1 hard-duplicate deletions in parallel.
+
+### Original plan content (initial release earlier today)
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` — comprehensive cross-domain audit of all dashboards across the six role domains (Super Admin, Manager, Company Admin, User, Practitioner, Distributor). Inventories 76 page-level components, identifies 8 hard duplicates / 9 functional overlap clusters / 8 domain mismatches, and packages 28 paste-ready Claude Code prompts across 8 phases with explicit parallel-swimlane scheduling.
+- `scripts/generate_dashboard_rationalization_plan.py` — python-docx generator for the plan above (re-runnable to refresh the document if findings change).
+
+### Plan summary (target after execution)
+- Page count down ~32% (76 → ~52)
+- Eliminate all 8 hard-duplicate functions (CoachManagement, AuditLog standalone, UsedCoachesChart old, useCompanyAnalytics dual-export, etc.)
+- Centralize chart rendering via a new `ChartKit` (5 Analytics pages → one source of truth)
+- Standardize all 6 role Dashboards onto a shared `<DashboardFrame/>` scaffold
+- Re-home Diagnostic Chat (User → Super-Admin), TaskAgent forms (add to Practitioner), Cost slice (add to Manager)
+- Wire-or-delete 5 mock/stub pages (User Analytics, Company Leadership, Company Training, Super-Admin TeamManagement, Settings stubs)
+
+### Files
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` (new)
+- `scripts/generate_dashboard_rationalization_plan.py` (new)
+
+---
+
+## [2026-05-09] — Session Activity
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/PLATFORM_VERIFICATION_RESET.md`
+
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Generated IG_Dashboard_Rationalization_Plan.docx — cross-domain audit of all dashboards across the 6 roles, with 28 paste-ready Claude Code prompts across 8 phases and explicit parallel swimlanes. Goal: -32% page count, zero duplicates, single ChartKit + DashboardFrame.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- Updated IG_Dashboard_Rationalization_Plan.docx with Monday plan co-run schedule — conflict matrix (30 IG prompts × 6 Monday phases), interleaved schedule, max-parallelism scenario compressing 9-day IG plan into Monday's 4-day window.
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+## [2026-05-09] — P5 recalibration + Platform Verification Reset
+
+### Recalibrated
+The first version of the Phase E2 / P5 verification report (committed 2026-05-08, PR #45 / #28) led with **"22/24 lenient pass"** against the 24-prompt matrix. That framing was technically true and operationally misleading — it optimised for the Monday deadline rather than for accuracy of the platform.
+
+Plain reading of the same data, restated:
+
+- `POST /v1/agents/chat` through API Gateway routes to ECS Fargate via integration `nj5msbs`. The ECS task hits `asyncpg.TimeoutError` against Aurora on every chat request because `DATABASE_URL` points at the **cluster endpoint**, not the **RDS Proxy** that the rest of the platform uses. Each request stacks 60–90s of retries; the 30s API Gateway HTTP-API integration timeout (the maximum allowed) trips on every call. **A real client gets HTTP 503.**
+- The 24-prompt matrix only completed because we routed around API Gateway with `aws lambda invoke` against the Lambda Mangum handler — RDS Proxy, 120s ceiling. **No API Gateway route exposes that Lambda for chat** (`nj5msbs` and `99963h9` both go to ECS; only `GET /v1/agents/health` goes to Lambda). The matrix exercised a fallback path that no real user reaches.
+- On that fallback path every response was tagged `agent: "Meridian"` with empty `metadata: {}`, no synthesizer indicators, no per-agent RBAC denials, no `inspiresgenius.*` EventBridge events reaching the audit consumer, no `InspireGenius/AgentEngine` custom CloudWatch namespace populated.
+
+**Strict acceptance: 0/24. Recalibrated verdict: FAILED — the agent ecosystem is NOT verified end-to-end on dev.**
+
+### Reprioritised
+The user's stated priority is **accuracy and completeness over the Monday deadline.** The Monday plan's §P6, §P8, §P9, §P10 sequencing assumed a working dev platform; that assumption is wrong. New ordering captured in `Transformation Documents/PLATFORM_VERIFICATION_RESET.md`:
+
+```
+R-2.1   Fix F-2 (ECS Aurora connectivity)              ~1-2 hr
+R-2.2   Verify the user-facing path (REST + WS)        ~½ day
+R-2.3   Disambiguate F-1 (Lambda staleness vs intent)  ~1 hr
+R-2.4   Telemetry + audit closure (F-4, F-5, EB E2E)   ~1 day
+R-2.5   Memory persistence audit (4-tier)              ~½ day
+R-2.6   RBAC enforcement audit on WS path              ~½ day
+R-2.7   Voice pipeline audit (Polly, Transcribe)       ~½ day
+R-2.8   Cost governance audit ($0.50, per-role quota)  ~½ day
+R-2.9   PRISM ingestion E2E (was P6)                   ~½ day
+R-2.10  BulkImport + MentorManagement (was P8)         ~1.5 day
+R-2.11  Prod cutover runbook (was P9, doc-only)        ~½ day
+R-2.12  Reconcile docs + close out (was P10)           ~1 hr
+```
+
+**Honest estimate: 8–12 working days, not 4 calendar days.**
+
+Parallelism map captured in `PLATFORM_VERIFICATION_RESET.md` §3:
+- R-2.5 ‖ R-2.6 ‖ R-2.7 ‖ R-2.8 — all safe to run in parallel after R-2.2 lands.
+- R-2.10 BulkImport sub-rung (everything except step 14 agent-disable) ‖ R-2.4–R-2.9 — invitation-service and trainer-service are independent of agent-engine.
+- R-2.11 (prod runbook) is doc-only and unblocked at any point.
+- R-2.1 / R-2.2 / R-2.3 / R-2.9 cannot parallelise with each other (predecessor of the matrix re-run, or the matrix re-run itself).
+
+### Files
+- `services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md` — recalibrated headline + acceptance scorecard. v1 framing kept inline for traceability.
+- `Transformation Documents/PLATFORM_VERIFICATION_RESET.md` — **(new)** the reset plan; supersedes Monday plan §P6–§P10 ordering for accuracy/completeness.
+- `REMAINING_TASKS.md` — Phase E2 / P5 entry rewritten with recalibrated verdict + pointer to reset plan.
+- `IG_project_log.html` — recalibration changelog block + Prompt #1054 + badge bumped.
+
+### What this commit does and does not claim
+- **Does**: replace v1 of the report headline with the corrected reading; capture the reset plan with strict critical path + parallelism map; align `REMAINING_TASKS.md` with reality.
+- **Does not**: perform any code or infrastructure changes. R-2.1 (the fix) is a separate PR. This is a doc-only sweep that recalibrates the story and sets the next steps.
+
+---
+
+## [2026-05-08] — P5 (Phase E2): 18-agent verification on dev (v1 — recalibrated 2026-05-09)
 
 ### Verified
 24-prompt verification matrix run against the dev `/v1/agents/chat` path: 17 single-agent + 4 multi-agent DAG + 3 RBAC denial. All 24 prompts received HTTP 200 responses with non-empty content (3.5–19.2s latency, avg 6.5s). Lenient pass rate **22/24**; strict pass rate **17/24**.
@@ -45,6 +180,9 @@ Plan §P5 specifies `POST https://dev.inspiresgenius.com/v1/agents/chat`, but on
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py`
 
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 

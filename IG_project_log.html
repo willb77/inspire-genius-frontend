@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1055</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1062</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -104,9 +104,63 @@
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
 
-        <h3>[2026-05-08] — P5 (Phase E2): 18-agent verification report on dev</h3>
+        <h3>[2026-05-09] — P5 recalibration + Platform Verification Reset</h3>
+
+        <h4>Recalibrated</h4>
+        <p>The first version of the Phase E2 / P5 verification report (committed 2026-05-08, PR #45 / #28) led with <strong>"22/24 lenient pass"</strong> against the 24-prompt matrix. That framing was technically true and operationally misleading — it optimised for the Monday deadline rather than for accuracy of the platform.</p>
+
+        <p>Plain reading of the same data, restated:</p>
+        <ul>
+          <li><code>POST /v1/agents/chat</code> through API Gateway routes to ECS Fargate via integration <code>nj5msbs</code>. The ECS task hits <code>asyncpg.TimeoutError</code> against Aurora on every chat request because <code>DATABASE_URL</code> points at the <strong>cluster endpoint</strong>, not the <strong>RDS Proxy</strong> that the rest of the platform uses. Each request stacks 60–90s of retries; the 30s API Gateway HTTP-API integration timeout (the maximum allowed) trips on every call. <strong>A real client gets HTTP 503.</strong></li>
+          <li>The 24-prompt matrix only completed because we routed around API Gateway with <code>aws lambda invoke</code> against the Lambda Mangum handler — RDS Proxy, 120s ceiling. <strong>No API Gateway route exposes that Lambda for chat</strong> (<code>nj5msbs</code> and <code>99963h9</code> both go to ECS; only <code>GET /v1/agents/health</code> goes to Lambda). The matrix exercised a fallback path that no real user reaches.</li>
+          <li>On that fallback path every response was tagged <code>agent: "Meridian"</code> with empty <code>metadata: {}</code>, no synthesizer indicators, no per-agent RBAC denials, no <code>inspiresgenius.*</code> EventBridge events reaching the audit consumer, no <code>InspireGenius/AgentEngine</code> custom CloudWatch namespace populated.</li>
+        </ul>
+
+        <p><strong>Strict acceptance: 0/24. Recalibrated verdict: FAILED — the agent ecosystem is NOT verified end-to-end on dev.</strong></p>
+
+        <h4>Reprioritised</h4>
+        <p>The user's stated priority is <strong>accuracy and completeness over the Monday deadline.</strong> The Monday plan's §P6, §P8, §P9, §P10 sequencing assumed a working dev platform; that assumption is wrong. New ordering captured in <code>Transformation Documents/PLATFORM_VERIFICATION_RESET.md</code>:</p>
+
+        <pre><code>R-2.1   Fix F-2 (ECS Aurora connectivity)              ~1-2 hr
+R-2.2   Verify the user-facing path (REST + WS)        ~½ day
+R-2.3   Disambiguate F-1 (Lambda staleness vs intent)  ~1 hr
+R-2.4   Telemetry + audit closure (F-4, F-5, EB E2E)   ~1 day
+R-2.5   Memory persistence audit (4-tier)              ~½ day
+R-2.6   RBAC enforcement audit on WS path              ~½ day
+R-2.7   Voice pipeline audit (Polly, Transcribe)       ~½ day
+R-2.8   Cost governance audit ($0.50, per-role quota)  ~½ day
+R-2.9   PRISM ingestion E2E (was P6)                   ~½ day
+R-2.10  BulkImport + MentorManagement (was P8)         ~1.5 day
+R-2.11  Prod cutover runbook (was P9, doc-only)        ~½ day
+R-2.12  Reconcile docs + close out (was P10)           ~1 hr</code></pre>
+
+        <p><strong>Honest estimate: 8–12 working days, not 4 calendar days.</strong></p>
+
+        <h4>Parallelism map</h4>
+        <ul>
+          <li>R-2.5 ‖ R-2.6 ‖ R-2.7 ‖ R-2.8 — all safe to run in parallel after R-2.2 lands.</li>
+          <li>R-2.10 BulkImport sub-rung (everything except step 14 agent-disable) ‖ R-2.4–R-2.9 — invitation-service and trainer-service are independent of agent-engine.</li>
+          <li>R-2.11 (prod runbook) is doc-only and unblocked at any point.</li>
+          <li>R-2.1 / R-2.2 / R-2.3 / R-2.9 cannot parallelise with each other (predecessor of the matrix re-run, or the matrix re-run itself).</li>
+        </ul>
+
+        <h4>Files</h4>
+        <ul>
+          <li><code>services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code> — recalibrated headline + acceptance scorecard. v1 framing kept inline for traceability.</li>
+          <li><code>Transformation Documents/PLATFORM_VERIFICATION_RESET.md</code> — <strong>(new)</strong> the reset plan; supersedes Monday plan §P6–§P10 ordering for accuracy/completeness.</li>
+          <li><code>REMAINING_TASKS.md</code> — Phase E2 / P5 entry rewritten with recalibrated verdict + pointer to reset plan.</li>
+          <li><code>IG_project_log.html</code> + <code>change_log.md</code> — this entry.</li>
+        </ul>
+
+        <h4>What this commit does and does not claim</h4>
+        <ul>
+          <li><strong>Does</strong>: replace v1 of the report headline with the corrected reading; capture the reset plan with strict critical path + parallelism map; align <code>REMAINING_TASKS.md</code> with reality.</li>
+          <li><strong>Does not</strong>: perform any code or infrastructure changes. R-2.1 (the fix) is a separate PR. This is a doc-only sweep that recalibrates the story and sets the next steps.</li>
+        </ul>
+
+        <h3>[2026-05-08] — P5 (Phase E2): 18-agent verification report on dev (v1 — recalibrated 2026-05-09)</h3>
         <h4>Verified</h4>
-        <p>Ran the 24-prompt Track E2 matrix (17 single-agent + 4 multi-agent DAG + 3 RBAC denial) against the dev <code>POST /v1/agents/chat</code> path. All 24 prompts returned HTTP 200 with non-empty content. Lenient pass rate <strong>22/24</strong>; strict pass rate <strong>17/24</strong>. Latency via Lambda invoke: avg 6.5s, max 18.4s (CloudWatch <code>AWS/Lambda</code> Duration metric).</p>
+        <p>Ran the 24-prompt Track E2 matrix (17 single-agent + 4 multi-agent DAG + 3 RBAC denial) against the dev <code>POST /v1/agents/chat</code> path. All 24 prompts returned HTTP 200 with non-empty content. Lenient pass rate <strong>22/24</strong>; strict pass rate <strong>17/24</strong>. Latency via Lambda invoke: avg 6.5s, max 18.4s (CloudWatch <code>AWS/Lambda</code> Duration metric). <strong>v1 framing kept here for traceability; canonical reading is the recalibration block above.</strong></p>
 
         <h4>Methodology &amp; transport</h4>
         <p>Plan §P5 specifies <code>https://dev.inspiresgenius.com/v1/agents/chat</code>, but on dev that hostname serves the SPA — <code>/v1/*</code> returns React <code>index.html</code>. The actual API is <code>https://8umg6xioz5.execute-api.us-east-1.amazonaws.com</code> (<code>ig-dev-http-api</code>). The chat route uses integration <code>nj5msbs</code> → ALB → ECS Fargate, but the ECS task hits Aurora connection timeouts (<code>DATABASE_URL</code> targets the cluster endpoint, not RDS Proxy), each request stacks 60–90s of asyncpg connect retries, and the 30s API Gateway HTTP API integration timeout fires on every call → all ECS-path requests return 503. The matrix was completed via direct <code>aws lambda invoke --function-name ig-dev-agent-engine</code> (Mangum handler, RDS Proxy, 120s Lambda ceiling) using synthetic API Gateway v2 event payloads. Per the plan's "DO NOT modify any agent code or routing logic during the run" constraint, no code or infrastructure fixes were attempted in-PR.</p>
@@ -22811,6 +22865,160 @@
           <div class="timestamp">2026-05-08 13:26:26</div>
           <div class="prompt-text">User prompt submitted</div>
         </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:29:09</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:35:04</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:35:45</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:35:59</div>
+          <div class="prompt-text">[COMMIT] Generated IG_Dashboard_Rationalization_Plan.docx — cross-domain audit of all dashboards across the 6 roles, with 28 paste-ready Claude Code prompts across 8 phases and explicit parallel swimlanes. Goal: -32% page count, zero duplicates, single ChartKit + DashboardFrame.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:37:22</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:43:27</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:47:29</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:47:43</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:47:52</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:48:01</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/scripts/generate_dashboard_rationalization_plan.py</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:49:10</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:49:17</div>
+          <div class="prompt-text">[COMMIT] Updated IG_Dashboard_Rationalization_Plan.docx with Monday plan co-run schedule — conflict matrix (30 IG prompts × 6 Monday phases), interleaved schedule, max-parallelism scenario compressing 9-day IG plan into Monday&#x27;s 4-day window.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:50:07</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:55:41</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 13:57:10</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:40:38</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:47:16</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:50:42</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:51:54</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:55:59</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:56:18</div>
+          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:56:27</div>
+          <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:57:27</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-08 23:57:55</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:00:05</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/Transformation Documents/PLATFORM_VERIFICATION_RESET.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:00:51</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/REMAINING_TASKS.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:02:06</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:02:46</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1062 [/full-go recalibrate, reprioritize and provide the new next steps]</div>
+          <div class="prompt-text">User priority shift: "I am more concerned about accuracy and completeness of the platform than the Monday deadline." Acknowledged that the original P5 verification report (committed 2026-05-08, PR #45 / #28) led with "22/24 lenient pass" — technically correct, operationally misleading, and deadline-biased. Plain reading restated: <code>POST /v1/agents/chat</code> through API Gateway returns HTTP 503 to a real client because ECS Fargate cannot reach Aurora (DB env points at the cluster endpoint, not RDS Proxy); each chat request stacks 60–90s of asyncpg timeouts and blows the 30s API GW HTTP-API integration timeout (the maximum allowed). The 24-prompt matrix only completed because we routed around API Gateway with <code>aws lambda invoke</code> against a Lambda Mangum handler that no API Gateway route exposes for chat — a fallback path that no real user reaches. Strict acceptance: 0/24. Recalibrated verdict: FAILED — agent ecosystem NOT verified end-to-end on dev. Authored <code>Transformation Documents/PLATFORM_VERIFICATION_RESET.md</code> (the reset plan that supersedes Monday plan §P6–§P10 ordering). New ordering R-2.1 → R-2.12 with parallelism map: F-2 fix first, then user-facing path verification (REST + WS), then disambiguate F-1, then telemetry/audit closure, memory persistence audit, RBAC on WS, voice pipeline, cost governance, PRISM E2E (was P6), BulkImport+MentorManagement (was P8), prod runbook (was P9, doc-only), close-out (was P10). Honest estimate: 8–12 working days, not 4. Recalibration touches: <code>services/agent-engine/PHASE_E2_VERIFICATION_REPORT.md</code> (headline + acceptance rewritten; v1 framing kept inline for traceability), <code>Transformation Documents/PLATFORM_VERIFICATION_RESET.md</code> (new), <code>REMAINING_TASKS.md</code> (P5 entry rewritten), <code>change_log.md</code> + <code>IG_project_log.html</code> (recalibration block prepended; v1 entry preserved). Doc-only sweep — no code or infra changes; R-2.1 is a separate PR. Pushed onto existing PR #45 (monorepo) + #28 (frontend mirror).</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:03:46</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 00:04:08</div>
+          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
