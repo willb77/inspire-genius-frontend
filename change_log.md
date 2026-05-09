@@ -1,36 +1,50 @@
-## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end
+## [2026-05-09] — Document RAG fix: P0 monolith bridge + P1 WS file_ids + P2 probe + P3 Meridian diagnostics
 
-Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev.
+### Added
+- **P0 bridge endpoint** — `services/document-service/app/routes.py:130` `POST /v1/documents/ingest-from-monolith` (internal-service auth via `X-Internal-Service-Token`). Inserts a Document row using the monolith `files.id` so agent-engine RAG can match on it without translation. Idempotent + emits `document.uploaded` to drive the existing extract/chunk pipeline. 5 pytests.
+- **Monolith bridge helper** — `inspire-genius-backend/ai/file_services/document_bridge.py` fires async POSTs to the bridge endpoint after every successful upload (fire-and-forget; failures logged but never block the upload response).
+- **Backfill script** — `scripts/backfill_files_to_documents.py` (idempotent, supports `--user-id`, `--limit`, `--dry-run`, `--include-deleted`). Reads monolith `files` and replays each through the bridge.
+- **P2 RAG verification probe** — `services/agent-engine/app/routes/debug_rag.py` `GET /v1/debug/rag/document-context?file_ids=...` returns per-file `exists_in_documents_table`/`status`/`chunk_count`/`extracted_text_length`/`source` + a one-line advice string. Super-admin only. 6 pytests.
+- **P3 Meridian intent diagnostics** — `services/agent-engine/app/agents/meridian.py` `_classify_intent_llm` now emits `event=meridian.intent verdict=... keyword_pick=... keyword_scores={...}` per call. Routing logic unchanged — observability only. 6 pytests.
+- **Option A cutover plan** — `Transformation Documents/IG_File_Upload_Cutover_Plan.docx` (5-phase plan to retire `/v1/file_service/upload` and route all uploads through document-service directly; gitignored, lives in Dropbox).
 
-### Done in this thread
-- **P1** — `ig-dev-migration-runner` Lambda redeployed with PR #25's hardened SQL splitter
-  - CodeSha256 `l/qFfvi+...` → `8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=`
-  - Handler `lambda_function.handler` → `handler.handler` (filename moved to `handler.py`)
-  - Smoke 1 (`SELECT 1;`): 1 succeeded, 0 failed, 0 skipped
-  - Smoke 2 (line-comment + BEGIN/COMMIT + SELECT): 1 succeeded, 0 failed, 2 skipped — confirms all 4 quirks live
-- **P2** — `assetHashType: cdk.AssetHashType.SOURCE` on all 17 Lambda `fromAsset` calls (15 services + 2 trainer)
-  - GHA deploys: services run `25561875526` (no changes), trainer run `25561893410` (UPDATE_COMPLETE on 2)
-  - Future `cdk diff ig-dev-services ig-dev-trainer` is stable until real source changes
+### Changed
+- **agent-engine WS handler** (`services/agent-engine/app/websocket/handlers.py`) both delivery paths (`handle_chat_message` ECS + `handle_chat_message_lambda`) now lift `file_ids` from the WS payload into `context.metadata`, mirroring the REST handler. Without this the WS streaming path silently dropped document context. 5 pytests.
+- **agent-engine main** (`services/agent-engine/app/main.py`) — wired the new debug router.
+- **document-service auth** (`services/document-service/app/auth.py`) — added `require_internal_service` dep + `_internal_service_token()` reader for the bridge endpoint.
+- **document-service schemas + service + routes** — `IngestFromMonolithRequest`/`Response` plus the `ingest_from_monolith()` service function (idempotent insert, optional sync vs async processing).
+- **frontend WS hook** (`inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`) `sendMessage(text, context, fileIds?)` now forwards `selectedFileIds` so future WS chat callsites match the REST behaviour.
+- **CDK** (`infrastructure/cdk/lib/services-stack.ts`) — `INTERNAL_SERVICE_TOKEN` env var on the document-service Lambda, sourced from `cdk -c internalServiceToken=...` context.
 
-### PRs merged in this thread
-- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase past parallel-session R3+R4)
-- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+### Operator follow-up
+- `cdk deploy ig-dev-services -c internalServiceToken=$IG_INTERNAL_TOKEN`
+- Set the same token on the monolith ECS task definition env, plus `DOCUMENT_SERVICE_URL=https://api.dev.inspiregenius.com`.
+- Run `python scripts/backfill_files_to_documents.py --dry-run` then live to backfill historical uploads.
+- Smoke: upload a fresh PDF, hit `GET /v1/debug/rag/document-context?file_ids=<new-id>`, expect `status=ready` + `chunk_count>0`.
 
-### Carry-overs / process notes (now in CLAUDE memory if not already)
-1. **`ig-dev-migration-runner` is outside CDK.** No references in `infrastructure/cdk/lib/` or `bin/`. Code changes require manual `aws lambda update-function-code` against a locally-built `handler.py` + `pg8000` zip.
-2. **Local `cdk diff` is hash-polluted.** With `assetHashType: SOURCE`, local `__pycache__`, `*.pyc`, and `.venv` artifacts get hashed in. CI checks out clean, so its hash differs from local. Treat CI as the source of truth for drift detection. Future improvement: `assetHashOptions.exclude: ['__pycache__', '*.pyc', '.venv', '*.egg-info']` (deferred — outside P2 scope).
-3. **Parallel-session collisions cost rebases.** Hit twice this thread: PR #35 (R4 ECS scaling) and PR #37 (R3 chat writer migration) landed during the P2 deploy window, requiring docs PR #39 → #40 re-creation with prompt-entry renumber from #1037 → #1039. Pattern to watch: any work that touches `change_log.md` + `IG_project_log.html` collides with every other parallel session doing the same.
+## [2026-05-09] — refactor(dash) Wave 0 Lane 0.D — Used Coaches chart consolidation (P1.3 / D5)
 
-### What's next (Monday plan delta)
-Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs:
-- **P5** — 18-agent verification (17/17 + 4/4 + 3/3)
-- **P6** — PRISM ingestion E2E
-- **P8** — Super-admin BulkImport + MentorManagement verify+fix
+### Changed
+- Fixed JSX syntax error in the recharts-based "Used Coaches" chart
+  (`type="number"axisLine` missing space; split-line `type` import modifier).
+- Wired the recharts chart into the Super-Admin Dashboard "Agents" tab
+  (above the All Platform Agents table).
+  - Files: `inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`
 
----
+### Removed
+- Deleted manual SVG implementation `UsedCoachesChart.tsx`.
+- Renamed `UsedCoachesChartNew.tsx` → `UsedCoachesChart.tsx` with a
+  default export.
+  - Files: `inspire-genius-frontend/src/components/super-admin/dashboard/UsedCoachesChart.tsx`
 
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+### Tests
+- Ported Jest test to `UsedCoachesChart.test.tsx` and replaced ad-hoc
+  `any` mock prop types with explicit `ChildrenProps`/`YAxisProps`/
+  `ChartTooltipProps` aliases (passes ESLint).
+- All 46 super-admin dashboard tests pass; `npm run build` clean.
+
+PR: refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5) on
+`refactor/wave-0d-used-coaches-chart` (frontend repo).
 
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 
@@ -78,12 +92,39 @@ Replaced an inline TODO stub in `PrismTeam.tsx` that returned `{ data: { data: {
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
+## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end (PR #43)
+
+Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev. Captured here for completeness alongside the P3 / P4 / P7 entries from parallel sessions.
+
+### PRs merged in this thread
+- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase), `#43` (P1+P2 combined session wrap)
+- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+
+### What's next (Monday plan delta)
+Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs: **P5** — 18-agent verification, **P6** — PRISM ingestion E2E, **P8** — Super-admin BulkImport + MentorManagement verify+fix.
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 ## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
 
 ### Added
