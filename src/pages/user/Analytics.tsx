@@ -44,18 +44,18 @@ export default function UserAnalytics() {
 
   const totalSessions = analytics?.total_sessions ?? 0
   const sessionTrends: SessionTrendPoint[] = analytics?.session_trends ?? []
-  const goalsByStatus = analytics?.goals_by_status ?? {}
   const training: TrainingSummary = analytics?.training ?? { total: 0, completed: 0, completion_pct: 0 }
 
-  const goalsChart = useMemo(
-    () =>
-      Object.entries(goalsByStatus).map(([status, count]) => ({
-        status: formatStatus(status),
-        count,
-        fill: STATUS_COLORS[status] ?? "#3B5BFF",
-      })),
-    [goalsByStatus],
-  )
+  const goalsChart = useMemo(() => {
+    const entries = Object.entries(analytics?.goals_by_status ?? {})
+    return entries.map(([status, count]) => ({
+      status: formatStatus(status),
+      count,
+      fill: STATUS_COLORS[status] ?? "#3B5BFF",
+    }))
+  }, [analytics?.goals_by_status])
+
+  const goalsTotal = goalsChart.reduce((acc, g) => acc + g.count, 0)
 
   const isEmpty =
     isSuccess &&
@@ -93,7 +93,7 @@ export default function UserAnalytics() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatTile label="Total Sessions" value={totalSessions} icon={Activity} color="#3B5BFF" loading={isLoading} />
-        <StatTile label="Goals Tracked" value={Object.values(goalsByStatus).reduce((a, b) => a + b, 0)} icon={Target} color="#10B981" loading={isLoading} />
+        <StatTile label="Goals Tracked" value={goalsTotal} icon={Target} color="#10B981" loading={isLoading} />
         <StatTile label="Training Completed" value={training.completed} icon={BookOpen} color="#8B5CF6" loading={isLoading} />
         <StatTile label="Training Completion" value={`${training.completion_pct}%`} icon={BarChart3} color="#D97706" loading={isLoading} />
       </div>
