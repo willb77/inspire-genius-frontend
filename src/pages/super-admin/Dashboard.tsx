@@ -41,6 +41,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import UsedCoachesChart from "@/components/super-admin/dashboard/UsedCoachesChart"
 import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
@@ -394,6 +395,12 @@ export default function SuperAdminDashboard() {
 
           {/* ── Agents Tab — All 18 agents ────────────────────────────── */}
           <TabsContent value="agents" className="space-y-6">
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <UsedCoachesChart />
+              </CardContent>
+            </Card>
+
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
