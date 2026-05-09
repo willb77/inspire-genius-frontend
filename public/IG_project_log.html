@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1050</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1051</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -22696,6 +22696,14 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-08 13:03:15</div>
           <div class="prompt-text">User prompt submitted</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1051 [Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4)]</div>
+          <div class="prompt-text">/full-go You're working Wave 0 Lane 0.C of `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` v2. Single unit (P1.4); single PR. Dedupe useCompanyAnalytics() across /hooks/analytics/useAnalytics.ts and /hooks/company-admin/useCompanyAdmin.ts — promote analytics version to canonical, replace company-admin definition with deprecated re-export, audit callers, add Jest test with QueryClientProvider wrapper. PR title: refactor(dash)/wave-0c: dedupe useCompanyAnalytics (D6).</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Activity [Lane 0.C complete]</div>
+          <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4 / D6) complete. Canonical hook now lives in `src/hooks/analytics/useAnalytics.ts`; `src/hooks/company-admin/useCompanyAdmin.ts` exports a `@deprecated` re-export with TODO(wave-1) cleanup marker. 4 callers (Dashboard.tsx, Analytics.tsx, Leadership.tsx, Training.tsx) all tolerate the canonical shape via existing `as` casts + fallbacks — no caller patches needed. Tests: `npx jest src/hooks` → 66 suites / 346 tests passing; canonical `useCompanyAnalytics` test added in useAnalytics.test.tsx with QueryClientProvider wrapper, plus practitioner+distributor coverage filled in. `npm run build` clean. ESLint on touched files clean.</div>
         </div>
 
 
