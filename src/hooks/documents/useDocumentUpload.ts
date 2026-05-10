@@ -82,6 +82,11 @@ export function useDocumentUpload() {
           filename: doc.filename,
           file_type: doc.content_type,
           file_id: doc.id, // also pass as monolith file_id alias
+          // 2026-05-09 fix: pass the S3 key so agent-engine can fetch
+          // the file body, extract text, and populate Aurora documents.
+          // Without this the vectorize endpoint silently returns
+          // "skipped" because the doc isn't in Aurora yet.
+          file_key: uploaded?.file_key,
         }).catch((err) => {
           console.warn(
             "[useDocumentUpload] Background vectorization failed (file uploaded successfully):",
@@ -177,7 +182,9 @@ export function useDocumentUploadMulti() {
       // Vectorization is best-effort and does not block upload completion.
       // Each call is dispatched in parallel; rejection is logged but never
       // surfaced to the user.
-      for (const doc of results) {
+      for (let i = 0; i < results.length; i++) {
+        const doc = results[i];
+        const u = uploaded[i];
         if (!doc.id) continue;
         void vectorizeDocument({
           document_id: doc.id,
@@ -185,6 +192,11 @@ export function useDocumentUploadMulti() {
           filename: doc.filename,
           file_type: doc.content_type,
           file_id: doc.id, // also pass as monolith file_id alias
+          // 2026-05-09 fix: pass the S3 key so agent-engine can fetch
+          // the file from S3, extract text, populate Aurora documents,
+          // and vectorize. Without this, vectorize silently no-ops
+          // because the doc isn't in Aurora yet.
+          file_key: u?.file_key,
         }).catch(() => {
           console.warn(
             `[useDocumentUploadMulti] Background vectorization failed for ${doc.filename} (file uploaded successfully)`,
