@@ -8,8 +8,18 @@ on:
 
 env:
   NODE_VERSION: "20"
-  S3_BUCKET: inspires-genius-dev-frontend
-  CLOUDFRONT_DISTRIBUTION_ID: EQNFTOWMBMKSA
+  # 2026-05-10 fix: previously deployed to inspires-genius-dev-frontend +
+  # EQNFTOWMBMKSA (a CloudFront distribution with no DNS alias — nobody saw
+  # the deploys). The live dev domain dev.inspiresgenius.com is served by
+  # CloudFront E3EFVMBYYVF012 from bucket ig-dev-frontend-assets. Pointing
+  # CI at the right bucket so every push to `development` actually reaches
+  # users.
+  # NOTE: deploy-production below uses the same env vars and is therefore
+  # ALSO targeting the dev bucket — fine because it has a manual approval
+  # gate and prod is not yet cut over. Wire env-scoped variables before
+  # enabling the production stage.
+  S3_BUCKET: ig-dev-frontend-assets
+  CLOUDFRONT_DISTRIBUTION_ID: E3EFVMBYYVF012
   AWS_REGION: us-east-1
 
 jobs:
@@ -256,7 +266,7 @@ jobs:
             --paths "/*"
 
       - name: Staging deployment complete
-        run: echo "Deployed to staging — https://d1nxsns258du4y.cloudfront.net"
+        run: echo "Deployed to dev — https://dev.inspiresgenius.com"
 
   # ─────────────────────────────────────────────
   # 7. DEPLOY TO PRODUCTION (requires approval)
