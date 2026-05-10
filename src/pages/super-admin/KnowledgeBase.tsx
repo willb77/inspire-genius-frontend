@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,7 @@ import {
   useRevectorize,
 } from "@/hooks/super-admin/knowledge/useKnowledge"
 import type { KnowledgeDocument } from "@/services/super-admin/knowledge/knowledge.service"
+import { cn } from "@/lib/utils"
 import {
   BookOpen,
   Plus,
@@ -44,6 +46,18 @@ const DOMAINS = [
   { value: "prism_report", label: "PRISM Reports" },
   { value: "cultural", label: "Cultural Context" },
 ]
+
+const FILTER_CHIPS: { value: string; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "cultural", label: "Cultural Only" },
+  { value: "coaching", label: "Coaching Only" },
+  { value: "business", label: "Business Only" },
+  { value: "system", label: "System Only" },
+  { value: "career", label: "Career Only" },
+  { value: "general", label: "General Only" },
+]
+
+const VALID_DOMAINS = new Set(DOMAINS.map((d) => d.value))
 
 const PAGE_SIZE = 20
 
@@ -76,9 +90,35 @@ function formatDate(dateStr: string | null) {
 }
 
 export default function KnowledgeBase() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialDomain = useMemo(() => {
+    const raw = searchParams.get("domain")
+    return raw && VALID_DOMAINS.has(raw) ? raw : "all"
+  }, [searchParams])
+
   const [page, setPage] = useState(1)
-  const [domainFilter, setDomainFilter] = useState("all")
+  const [domainFilter, setDomainFilter] = useState(initialDomain)
   const [uploadOpen, setUploadOpen] = useState(false)
+
+  // Keep state synced when the URL changes externally (e.g., from a redirect or chip click).
+  useEffect(() => {
+    setDomainFilter((current) =>
+      current === initialDomain ? current : initialDomain,
+    )
+    setPage(1)
+  }, [initialDomain])
+
+  function applyDomainFilter(next: string) {
+    setDomainFilter(next)
+    setPage(1)
+    const nextParams = new URLSearchParams(searchParams)
+    if (next === "all") {
+      nextParams.delete("domain")
+    } else {
+      nextParams.set("domain", next)
+    }
+    setSearchParams(nextParams, { replace: true })
+  }
 
   const params = {
     limit: PAGE_SIZE,
@@ -208,6 +248,33 @@ export default function KnowledgeBase() {
           </Button>
         </div>
 
+        {/* Saved-filter chips */}
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label="Domain filter presets"
+        >
+          {FILTER_CHIPS.map((chip) => {
+            const active = domainFilter === chip.value
+            return (
+              <button
+                key={chip.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => applyDomainFilter(chip.value)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-sm transition-colors",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {chip.label}
+              </button>
+            )
+          })}
+        </div>
+
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -253,7 +320,7 @@ export default function KnowledgeBase() {
               <CardTitle>Documents</CardTitle>
               <Select
                 value={domainFilter}
-                onValueChange={(v) => { setDomainFilter(v); setPage(1) }}
+                onValueChange={applyDomainFilter}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
