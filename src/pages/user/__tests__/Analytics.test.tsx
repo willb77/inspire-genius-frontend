@@ -19,7 +19,12 @@ jest.mock("@/lib/axios", () => ({
 import { render, screen } from "@testing-library/react";
 import UserAnalytics from "../Analytics";
 
-/* ---- Mocks ---- */
+const mockToastInfo = jest.fn();
+jest.mock("sonner", () => ({
+  toast: {
+    info: (...args: unknown[]) => mockToastInfo(...args),
+  },
+}));
 
 jest.mock("@/layouts/UserLayout", () => ({
   __esModule: true,
@@ -38,62 +43,105 @@ jest.mock("@/components/dashboard/DataCard", () => ({
   ),
 }));
 
-jest.mock("@/components/dashboard/PlaceholderBanner", () => ({
-  __esModule: true,
-  default: () => <div data-testid="placeholder-banner" />,
+jest.mock("@/components/ui/skeleton", () => ({
+  Skeleton: () => <div data-testid="skeleton" />,
 }));
 
 // Mock recharts to avoid SVG rendering issues in jsdom
 jest.mock("recharts", () => ({
-  LineChart: ({ children }: any) => <div data-testid="line-chart">{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
+  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   Bar: () => null,
-  PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ children }: any) => <div>{children}</div>,
-  Cell: () => null,
-  AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
-  Area: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Legend: () => null,
 }));
 
-/* ---- Tests ---- */
+const mockUseUserAnalytics = jest.fn();
+jest.mock("@/hooks/analytics/useAnalytics", () => ({
+  useUserAnalytics: () => mockUseUserAnalytics(),
+}));
+
+const mockRefetch = jest.fn();
+
+function setHookState(state: Partial<{ data: unknown; isLoading: boolean; isSuccess: boolean; error: unknown }>) {
+  mockUseUserAnalytics.mockReturnValue({
+    data: state.data,
+    isLoading: state.isLoading ?? false,
+    isSuccess: state.isSuccess ?? false,
+    error: state.error ?? null,
+    refetch: mockRefetch,
+  });
+}
 
 describe("UserAnalytics Page", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders inside UserLayout", () => {
+    setHookState({ isLoading: true });
     render(<UserAnalytics />);
     expect(screen.getByTestId("user-layout")).toBeInTheDocument();
   });
 
   it("renders page title", () => {
+    setHookState({ isLoading: true });
     render(<UserAnalytics />);
-    expect(screen.getByText(/Your Analytics/)).toBeInTheDocument();
+    expect(screen.getByText("Your Analytics")).toBeInTheDocument();
   });
 
-  it("renders placeholder banner", () => {
+  it("renders loading skeletons while fetching", () => {
+    setHookState({ isLoading: true });
     render(<UserAnalytics />);
-    expect(screen.getByTestId("placeholder-banner")).toBeInTheDocument();
+    expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
   });
 
-  it("renders all chart cards", () => {
+  it("renders charts when data is present", () => {
+    setHookState({
+      isSuccess: true,
+      data: {
+        total_sessions: 12,
+        session_trends: [
+          { period: "2026-01", count: 4 },
+          { period: "2026-02", count: 8 },
+        ],
+        goals_by_status: { completed: 3, in_progress: 2 },
+        training: { total: 5, completed: 4, completion_pct: 80 },
+      },
+    });
     render(<UserAnalytics />);
-    expect(screen.getByText("Sessions Per Week")).toBeInTheDocument();
-    expect(screen.getByText("Goals Progress")).toBeInTheDocument();
-    expect(screen.getByText("Most-Used Agents")).toBeInTheDocument();
-    expect(screen.getByText("Satisfaction Trend")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Growth Trajectory")).toBeInTheDocument();
-  });
-
-  it("renders chart components", () => {
-    render(<UserAnalytics />);
-    expect(screen.getAllByTestId("line-chart")).toHaveLength(2);
-    expect(screen.getByTestId("area-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByText("Session Activity")).toBeInTheDocument();
+    expect(screen.getByText("Goals by Status")).toBeInTheDocument();
+    expect(screen.getByTestId("line-chart")).toBeInTheDocument();
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
+  });
+
+  it("shows empty-state UI and toast when no data", () => {
+    setHookState({
+      isSuccess: true,
+      data: {
+        total_sessions: 0,
+        session_trends: [],
+        goals_by_status: {},
+        training: { total: 0, completed: 0, completion_pct: 0 },
+      },
+    });
+    render(<UserAnalytics />);
+    expect(screen.getByText("No analytics yet")).toBeInTheDocument();
+    expect(mockToastInfo).toHaveBeenCalledTimes(1);
+    expect(mockToastInfo).toHaveBeenCalledWith(expect.stringContaining("No analytics yet"));
+  });
+
+  it("shows error message with retry on error", () => {
+    setHookState({ error: new Error("fail") });
+    render(<UserAnalytics />);
+    expect(screen.getByText("Failed to load analytics.")).toBeInTheDocument();
   });
 });

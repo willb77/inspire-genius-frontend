@@ -1,60 +1,85 @@
-"use client";
+"use client"
 
-import { MoreVertical, Star } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
+
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 const chartData = [
-  { coach: "Job Search", usage: 18000, rating: 4.4 },
-  { coach: "Personal", usage: 15000, rating: 4.3 },
-  { coach: "Human Resources", usage: 12000, rating: 4.6 },
-  { coach: "Education", usage: 8000, rating: 3.8 },
-  { coach: "Wellness", usage: 6000, rating: 4.1 },
-  { coach: "Others", usage: 4000, rating: 3.9 },
-];
+  { month: "Job Search", desktop: 186, mobile: 80 },
+  { month: "Personal", desktop: 305, mobile: 200 },
+  { month: "Human Resources", desktop: 237, mobile: 120 },
+  { month: "Education", desktop: 73, mobile: 190 },
+  { month: "Wellness", desktop: 209, mobile: 130 },
+  { month: "Others", desktop: 214, mobile: 140 },
+]
+
+const chartConfig = {
+  desktop: {
+    label: "Desktop",
+    color: "var(--chart-2)",
+  },
+  mobile: {
+    label: "Mobile",
+    color: "var(--chart-2)",
+  },
+  label: {
+    color: "var(--background)",
+  },
+} satisfies ChartConfig
 
 export default function UsedCoachesChart() {
-  const maxUsage = 20000; // for scaling bar width
-
   return (
-    <div className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
-        <CardTitle className="text-lg font-semibold">
-          Most Used Coaches
-        </CardTitle>
-        <button className="p-1 hover:bg-gray-100 rounded">
-          <MoreVertical className="h-4 w-4 text-gray-600" />
-        </button>
+    <div>
+      <CardHeader className="text-left pb-2">
+        <CardTitle>Most Used Coaches</CardTitle>
       </CardHeader>
-
-      <CardContent className="space-y-4">
-        {chartData.map((item, index) => (
-          <div key={index} className="flex items-center gap-4 pb-4">
-            {/* Coach Name */}
-            <div className="w-36 text-sm font-medium text-gray-700">
-              {item.coach}
-            </div>
-
-            {/* Bar + Rating */}
-            <div className="flex-1 relative h-5">
-              <div
-                className="h-5 bg-blue-700 rounded-sm"
-                style={{ width: `${(item.usage / maxUsage) * 100}%` }}
+      <CardContent>
+        <ChartContainer config={chartConfig}>
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout="vertical"
+            margin={{
+              right: 16,
+            }}
+          >
+            <CartesianGrid horizontal={false} />
+            <YAxis
+              dataKey="month"
+              type="category"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <XAxis
+              dataKey="desktop"
+              type="number"
+              axisLine={false}
+              tickLine={false}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent indicator="line" />}
+            />
+            <Bar dataKey="desktop" layout="vertical" fill="#3b82f6" radius={4}>
+              <LabelList
+                dataKey="desktop"
+                position="right"
+                offset={8}
+                className="fill-foreground"
+                fontSize={12}
               />
-
-              <div
-                className="absolute top-0 flex items-center gap-1 text-sm font-medium text-gray-900"
-                style={{
-                  left: `${(item.usage / maxUsage) * 100}%`,
-                  transform: "translateX(4px)",
-                }}
-              >
-                <span>{item.rating}</span>
-                <Star className="h-3 w-3" />
-              </div>
-            </div>
-          </div>
-        ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </div>
-  );
+  )
 }
