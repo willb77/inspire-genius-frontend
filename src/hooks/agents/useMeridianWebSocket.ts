@@ -39,7 +39,7 @@ export type UseMeridianWebSocketReturn = {
   currentResponse: string;
   connect: (accessToken: string) => void;
   disconnect: () => void;
-  sendMessage: (text: string, context?: Record<string, unknown>) => void;
+  sendMessage: (text: string, context?: Record<string, unknown>, fileIds?: string[]) => void;
   startVoice: (voiceConfig?: { gender?: string; accent?: string; language?: string }) => void;
   stopVoice: () => void;
   sendAudioChunk: (chunk: ArrayBuffer | Blob) => void;
@@ -314,7 +314,7 @@ export function useMeridianWebSocket(
   // -------------------------------------------------------------------
 
   const sendMessage = useCallback(
-    (text: string, context?: Record<string, unknown>) => {
+    (text: string, context?: Record<string, unknown>, fileIds?: string[]) => {
       setCurrentResponse("");
       setIsProcessing(true);
       safeSend(JSON.stringify({
@@ -322,6 +322,10 @@ export function useMeridianWebSocket(
         action: "chat",
         message: text,
         context,
+        // P1 fix (2026-05-09): forward selected document IDs so the
+        // agent-engine RAG path can retrieve them. Mirrors the REST
+        // /v1/agents/chat payload at MeridianChat.tsx:871,955.
+        ...(fileIds && fileIds.length > 0 ? { file_ids: fileIds } : {}),
         // Include token for late-auth (ws-proxy pending_auth connections)
         access_token: activeTokenRef.current ?? undefined,
       }));
