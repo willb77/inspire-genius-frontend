@@ -1,3 +1,24 @@
+## [2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)
+
+### Changed
+- `src/pages/super-admin/KnowledgeBase.tsx` now reads a `?domain=` query param (cultural | coaching | business | system | career | general | prism_report | all) to pre-filter documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via `setSearchParams({ replace: true })`.
+- `src/routes.tsx` — `/super-admin/cultural-content` is now a `<Navigate>` redirect to `/super-admin/knowledge-base?domain=cultural`. Removed the `CulturalContent` lazy import.
+- `src/constants/navigation.ts` — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base page filter chips. Pruned the unused `Globe` icon import.
+- `src/constants/routes.ts` — added `KNOWLEDGE_BASE_CULTURAL` deep-link constant and marked `CULTURAL_CONTENT` as `@deprecated`.
+
+### Added
+- `src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5 unit tests covering URL → filter wiring (default, `?domain=cultural` narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).
+
+### Removed
+- `src/pages/super-admin/CulturalContent.tsx` — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.
+
+### Verification
+- `npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5/5 passing.
+- `npm run build` — clean (tsc + Vite).
+- `npm run lint` against the changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to deletion of `CulturalContent.tsx`).
+
+---
+
 ## [2026-05-09] — refactor(dash) Wave 0 Lane 0.D — Used Coaches chart consolidation (P1.3 / D5)
 
 ### Changed

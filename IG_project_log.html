@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1055</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1056</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,29 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)</h3>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>src/pages/super-admin/KnowledgeBase.tsx</code> now reads a <code>?domain=</code> query param (cultural | coaching | business | system | career | general | prism_report | all) and pre-filters documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via <code>setSearchParams({ replace: true })</code>.</li>
+          <li><code>src/routes.tsx</code> — <code>/super-admin/cultural-content</code> is now a <code>&lt;Navigate&gt;</code> redirect to <code>/super-admin/knowledge-base?domain=cultural</code>. Removed the <code>CulturalContent</code> lazy import.</li>
+          <li><code>src/constants/navigation.ts</code> — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base filter chips. Pruned the unused <code>Globe</code> icon import.</li>
+          <li><code>src/constants/routes.ts</code> — added <code>KNOWLEDGE_BASE_CULTURAL</code> deep-link constant and marked <code>CULTURAL_CONTENT</code> as <code>@deprecated</code>.</li>
+        </ul>
+        <h4>Added</h4>
+        <ul>
+          <li><code>src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5 unit tests covering URL → filter wiring (default, <code>?domain=cultural</code> narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).</li>
+        </ul>
+        <h4>Removed</h4>
+        <ul>
+          <li><code>src/pages/super-admin/CulturalContent.tsx</code> — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.</li>
+        </ul>
+        <h4>Verification</h4>
+        <ul>
+          <li><code>npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5/5 passing.</li>
+          <li><code>npm run build</code> — clean (tsc + Vite).</li>
+          <li><code>npm run lint</code> against changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to the deletion of <code>CulturalContent.tsx</code>).</li>
+        </ul>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
         <h4>Changed</h4>
@@ -22720,6 +22743,14 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-09 — Prompt #1055 [Wave 0 Lane 0.D / P1.3]</div>
           <div class="prompt-text">/full-go — refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5). Two Used Coaches charts existed; the recharts version had a syntax error (`type=&quot;number&quot;axisLine`). Fixed the syntax, deleted the manual SVG version, renamed New.tsx → UsedCoachesChart.tsx, wired into the Super-Admin Dashboard agents tab, ported Jest test with proper mock typings. Polyfilled ResizeObserver in jest.setup.ts so SuperAdminDashboard.test.tsx renders the chart without crashing. Build/lint/jest clean.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1056 [Wave 0 Lane 0.E / P5.1 — KnowledgeBase + CulturalContent merge]</div>
+          <div class="prompt-text">/full-go You're working Wave 0 Lane 0.E of IG_Dashboard_Rationalization_Plan_2.docx. P5.1 — merge KnowledgeBase + CulturalContent (O7). KnowledgeBase.tsx now accepts `?domain=` query param; saved-filter chips at top; CulturalContent.tsx removed; route now redirects to KB?domain=cultural; Cultural Content nav entry removed (NavItemDef has no children support, so users access via filter chips); Globe icon import pruned; CULTURAL_CONTENT route constant marked @deprecated, KNOWLEDGE_BASE_CULTURAL deep-link constant added; new Jest test with 5 cases (default, ?domain=cultural narrows, chip pressed-state, chip click reissues query, invalid domain falls back). Build clean, jest 5/5 passing, lint on changed files clean, repo lint baseline reduced from 838 → 825 errors via CulturalContent.tsx deletion.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Activity [Lane 0.E complete]</div>
+          <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7) complete. Files changed: src/pages/super-admin/KnowledgeBase.tsx (useSearchParams + chips + URL sync), src/routes.tsx (CulturalContent → Navigate redirect, lazy import removed), src/constants/navigation.ts ("Cultural Content" entry removed, Globe import pruned), src/constants/routes.ts (KNOWLEDGE_BASE_CULTURAL added, CULTURAL_CONTENT @deprecated). Files added: src/pages/super-admin/__tests__/KnowledgeBase.test.tsx (5 tests, all passing). Files removed: src/pages/super-admin/CulturalContent.tsx. Worked in isolated worktree at .claude/worktrees/frontend-wave-0e/ to avoid the kind of cross-lane working-tree clobber that wiped my first attempt when Lane 0.F (distributor) checked out a different branch in the shared inspire-genius-frontend/ directory.</div>
         </div>
 
 

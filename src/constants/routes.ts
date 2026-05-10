@@ -36,6 +36,8 @@ export const ROUTES = {
     MENTOR_MANAGEMENT: "/super-admin/mentor-management",
     COST_ANALYSIS: "/super-admin/cost-analysis",
     KNOWLEDGE_BASE: "/super-admin/knowledge-base",
+    KNOWLEDGE_BASE_CULTURAL: "/super-admin/knowledge-base?domain=cultural",
+    /** @deprecated Wave 0.E (P5.1) — redirects to `KNOWLEDGE_BASE` with `?domain=cultural`. Prefer `KNOWLEDGE_BASE_CULTURAL`. */
     CULTURAL_CONTENT: "/super-admin/cultural-content",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
