@@ -130,6 +130,7 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
+const DistributorNetworkHub = React.lazy(() => import("@/pages/distributor/NetworkHub"));
 const DistributorPractitioners = React.lazy(() => import("@/pages/distributor/Practitioners"));
 const DistributorCredits = React.lazy(() => import("@/pages/distributor/Credits"));
 const DistributorTerritory = React.lazy(() => import("@/pages/distributor/Territory"));
@@ -277,6 +278,7 @@ export const routes: RouteObject[] = [
 
       // Distributor pages
       { path: "/distributor/dashboard", element: withSuspense(<DistributorDashboard />) },
+      { path: "/distributor/network", element: withSuspense(<DistributorNetworkHub />) },
       { path: "/distributor/practitioners", element: withSuspense(<DistributorPractitioners />) },
       { path: "/distributor/credits", element: withSuspense(<DistributorCredits />) },
       { path: "/distributor/territory", element: withSuspense(<DistributorTerritory />) },

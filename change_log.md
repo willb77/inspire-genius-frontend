@@ -1,127 +1,197 @@
-## [2026-05-09 PM-3] — Document RAG: three actual bugs in vectorize/retrieve, fixed and verified
-
-### What was actually broken (all three silent)
-1. **`personal_data.py:retrieve_attached_documents`** — query was `WHERE id::text IN (...) AND is_active = true`. The `documents` table has no `is_active` column. PG raised `UndefinedColumnError`, the outer `try/except` swallowed it, and the function returned an empty string for every chat with `file_ids`. **Every chat with selected docs has been silently failing for as long as this code has existed.**
-2. **`ingestion.py:vectorize_document`** — only worked if the document was already in Aurora `documents` with `extracted_text` populated. Monolith uploads land in S3 + monolith local postgres `files`, NOT Aurora. So vectorize returned `status="skipped"` for every real upload while still HTTP 200. The frontend never noticed because it dispatched fire-and-forget.
-3. **`embedding_service.py:embed_and_store_chunks`** — INSERT was missing the NOT NULL `content` column. `document_chunks` has both `chunk_text` (agent-engine) and `content` (document-service migration). Even when the endpoint reached chunking, the INSERT failed with `null value in column "content"`.
-
-### Fixes
-- `personal_data.py`: removed `AND is_active = true`, replaced with `AND extracted_text IS NOT NULL`. Switched alias to `content_type AS file_type`.
-- `ingestion.py:vectorize_document`: when text is empty AND not in Aurora AND `file_key` provided, fetches from S3 (default bucket `inspires-genius-dev-documents`), extracts text via `app.rag.file_extractors.extract_text`, UPSERTs `documents` row with `id = monolith files.id`, then vectorizes — all in one call.
-- `embedding_service.py`: INSERT now writes the same value to both `chunk_text` and `content`.
-- `inspire-genius-frontend/src/services/documents/documentService.ts` + `useDocumentUpload.ts`: pass `file_key` (and optional `s3_bucket`) from the monolith upload response to `vectorizeDocument()`.
-
-### Verification (post-deploy)
-- Synthetic test row: vectorize a real S3 PDF → 7 chunks, status=`completed`. ✓
-- User's two recent uploads (`Raw data - Tracey Poirier.xlsx`, `John Boyd PRISM Data.xlsx`) — vectorized via the new path, 6 chunks each, real PRISM content extracted. ✓
-- Mirrored `retrieve_attached_documents` SQL query against the two `file_id`s the chat panel sends — returns content for both. ✓
-
-### AWS deploy actions
-- Built + pushed agent-engine Docker image (linux/amd64) twice (vectorize fix + chunks-content fix). Tags: `2026-05-09-vectorize-fix`, `2026-05-09-chunks-content-fix`.
-- `aws ecs update-service --force-new-deployment` × 2; both rollouts COMPLETED.
-
-### What still needs to happen for live uploads
-The frontend `file_key` passthrough is on `inspire-genius-frontend@refactor/wave-0f-distributor-network-hub`, not yet on `development`. **For NEW uploads to vectorize automatically, that commit needs to be cherry-picked to `development` and the frontend deployed.** The two existing uploads are already vectorized and Meridian can read them right now.
-
-## [2026-05-09 PM-2] — Document RAG pipeline validated end-to-end on a real PDF
-
-### Validation
-A synthetic Document row (id=`aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee`) pointing at a known-good S3 object in the monolith bucket (`inspires-genius-dev-documents/documents//346854a8-..._0741f590-...pdf`) was used to drive the pipeline end-to-end. Result: **status=ready, 62,475 chars extracted from 25 pages, 139 chunks at 512-char/64-overlap stride, no errors**. Confirms the bridge → EB → process_document → extract → chunk → ready path is functional on dev.
-
-### Fixes landed (services/document-service)
-1. **`app/main.py`** — asyncio event-loop reset for the EB consumer. Engine pool is disposed before each EB-driven `process_document` run and `asyncio.run()` manages loop lifecycle. Previously hit `"Future attached to a different loop"` on every EB invocation.
-2. **`app/storage/clamav.py`** — graceful skip when `ResourceNotFoundException` is raised (ClamAV Lambda not deployed on dev). Returns `ScanResult(clean=True, detail="scan_skipped_missing_function")`. Production with a configured scanner is unaffected.
-3. **`app/storage/s3.py`** — `get_s3_object()` accepts an optional `bucket=` parameter so monolith-bridged docs read from the correct bucket (their own `Document.s3_bucket`) instead of the document-service default.
-4. **`app/service.py`** — `process_document` now passes `doc.s3_bucket` through to `get_s3_object`.
-
-### Out-of-band AWS changes
-* IAM: `ig-dev-document-lambda-role` got new inline policy `DocumentServiceMonolithBucketRead` granting GetObject/HeadObject/ListBucket on `inspires-genius-dev-documents`. Bucket name was identified via SSM grep on `S3_BUCKET_NAME=` in the monolith `.env` (no credential value read).
-* EventBridge rule `ig-dev-document-events` pattern was already updated earlier today to match `DocumentUploaded` (was only matching legacy `DocumentEvent`).
-
-### Status of the 42 backfilled rows
-**Orphans.** Cross-checked all 42 file_keys against `inspires-genius-dev-documents`, `ig-dev-documents`, `ig-dev-uploads`, `aes-file-upload-api-uploads`, `inspires-genius-preview`, and `ig-doc-archive-storage-568505405842` — zero matches. The S3 objects these rows reference no longer exist (likely deleted at some point between upload and now). The bridge plumbing IS correct; the source files are gone. The 64 objects that ARE in `inspires-genius-dev-documents` come from 5 different user prefixes that don't appear in the active `monolith.files` rows — those are the obverse orphans (S3 objects with no DB row).
-
-**Implication for the user.** Live uploads from this point forward will go through the full pipeline: monolith upload → S3 → `files` table → bridge → `documents` table → process_document → extract+chunk → ready → agent-engine RAG sees content. The 42 historical orphans can't be recovered without the missing S3 objects.
-
-## [2026-05-09 PM] — Document RAG fix landed end-to-end: deploy + 42-row backfill (Option 2)
-
-### Operator session — what landed in AWS
-- **CDK deploy ig-dev-services**: `INTERNAL_SERVICE_TOKEN` env var on document-service Lambda; new `POST /v1/documents/ingest-from-monolith` route on API Gateway HTTP API.
-- **Aurora**: created `document_service` PostgreSQL role with grants on `documents`, `document_chunks`, `SELECT` on monolith `files`, sequences + default privileges. Created via `ig-dev-migration-runner` Lambda.
-- **Secrets Manager**: new secret `inspires-genius-dev/aurora/document-service-credentials` with the role's password.
-- **RDS Proxy** `inspires-genius-dev-rds-proxy`: added the new secret to the Auth list; updated the proxy's IAM role policy (`inspires-genius-dev-rds-proxy-role` / `inspires-genius-dev-rds-proxy-secrets`) to grant `GetSecretValue` on the new secret.
-- **Lambda** `ig-dev-document-service`: re-bundled with `--platform=linux/amd64` (Apple Silicon was building ARM wheels → `pydantic_core._pydantic_core` ImportError); uploaded to S3; applied. Env vars added: `INTERNAL_SERVICE_TOKEN`, `DOC_SERVICE_DB_CREDENTIALS_SECRET_ARN`. Cold-start hydration in `config.py` reads the secret and builds the asyncpg URL.
-- **API Gateway**: explicit POST routes for `/v1/documents/ingest-from-monolith` and `/v1/documents/admin/backfill` → `integrations/69nf4bc` (document-service Lambda). Without these, the catch-all `POST /v1/documents/{proxy+}` on integration `nj5msbs` (agent-engine ALB) intercepted with 405.
-- **EventBridge** rule `ig-dev-document-events`: pattern updated from `["DocumentEvent"]` to also match `DocumentUploaded`/`DocumentProcessed`/`DocumentDeleted` (the doc-service emits the specific types but the rule was only matching the legacy fallback).
-- **Backfill** executed via the new `/v1/documents/admin/backfill` endpoint (server-side, no DB credentials leaving the VPC). Two batches (limit=10, then limit=50) ingested all 42 active monolith `files` rows. Final state: 42 documents from 11 distinct users, idempotency confirmed by re-run.
-
-### Code committed (this branch, `fix/document-rag/p0-p1-bridge`)
-- `services/document-service/app/config.py` — `_hydrate_database_url_from_secret()` cold-start fetch.
-- `services/document-service/app/models.py` — removed unmapped `search_vector` (DB column is `tsvector`, mapping as `Text` caused `DatatypeMismatchError`).
-- `services/document-service/app/service.py` + `routes.py` — `backfill_from_files_table()` + `POST /v1/documents/admin/backfill`.
-- `services/document-service/app/database.py` — `connect_args={"ssl": "require"}` for asyncpg (RDS Proxy enforces TLS).
-- `infrastructure/cdk/lib/services-stack.ts` — `linux/amd64` platform pin in `poetryBundle`; `secretsmanager:GetSecretValue` IAM (replaces vestigial `rds-db:connect`); explicit `DocumentIngestFromMonolithRoute` API Gateway route; `DOC_SERVICE_DB_CREDENTIALS_SECRET_ARN` env var.
-
-### Smoke results
-- T1 missing token → 422 (auth required) ✓
-- T2 wrong token → 401 ✓
-- T3 invalid UUID → 400 ✓
-- T4 valid insert → 200, `created=true` ✓
-- T5 idempotent → 200, `created=false` ✓
-- Backfill batch 1 (limit=10) → 200, `created=10` ✓
-- Backfill batch 2 (limit=50) → 200, `created=32 existing=10` (idempotent) ✓
-- DB count after backfill: `42 documents, 11 distinct users` ✓
-
-### Known follow-up — NOT in this commit
-The 42 backfilled rows have `status='pending'` and `extracted_text=NULL`. The bridge sets `s3_bucket=ig-dev-documents` (the document-service default) but the monolith stores files in a different bucket. `process_document()` therefore can't read the file body. The agent-engine RAG path can match by `file_id` now (it returns these rows instead of zero), but extracted content is empty until the `s3_bucket` on these rows is corrected and processing is re-run. **Next step**: identify the monolith bucket, UPDATE document rows to point at it, re-emit `document.uploaded` for each. ~½ day of work.
-
-## [2026-05-09] — Document RAG fix: P0 monolith bridge + P1 WS file_ids + P2 probe + P3 Meridian diagnostics
+## [2026-05-10] — refactor(dash) Wave 0 Lane 0.F — Distributor Network hub (P5.3 / O9)
 
 ### Added
-- **P0 bridge endpoint** — `services/document-service/app/routes.py:130` `POST /v1/documents/ingest-from-monolith` (internal-service auth via `X-Internal-Service-Token`). Inserts a Document row using the monolith `files.id` so agent-engine RAG can match on it without translation. Idempotent + emits `document.uploaded` to drive the existing extract/chunk pipeline. 5 pytests.
-- **Monolith bridge helper** — `inspire-genius-backend/ai/file_services/document_bridge.py` fires async POSTs to the bridge endpoint after every successful upload (fire-and-forget; failures logged but never block the upload response).
-- **Backfill script** — `scripts/backfill_files_to_documents.py` (idempotent, supports `--user-id`, `--limit`, `--dry-run`, `--include-deleted`). Reads monolith `files` and replays each through the bridge.
-- **P2 RAG verification probe** — `services/agent-engine/app/routes/debug_rag.py` `GET /v1/debug/rag/document-context?file_ids=...` returns per-file `exists_in_documents_table`/`status`/`chunk_count`/`extracted_text_length`/`source` + a one-line advice string. Super-admin only. 6 pytests.
-- **P3 Meridian intent diagnostics** — `services/agent-engine/app/agents/meridian.py` `_classify_intent_llm` now emits `event=meridian.intent verdict=... keyword_pick=... keyword_scores={...}` per call. Routing logic unchanged — observability only. 6 pytests.
-- **Option A cutover plan** — `Transformation Documents/IG_File_Upload_Cutover_Plan.docx` (5-phase plan to retire `/v1/file_service/upload` and route all uploads through document-service directly; gitignored, lives in Dropbox).
+- `src/pages/distributor/NetworkHub.tsx` — single tabbed page (`Practitioners` · `Territory`) wrapping `DistributorLayout`. Reads/writes `?tab=practitioners|territory`; accepts a `defaultTab` prop so legacy routes can land on a specific tab.
+- `src/pages/distributor/network/PractitionersBody.tsx` — extracted body of the old Practitioners page as a named export rendered inside the hub.
+- `src/pages/distributor/network/TerritoryBody.tsx` — extracted body of the old Territory page.
+- `src/pages/distributor/__tests__/NetworkHub.test.tsx` — 8 tests: default tab, query-param honor, click switches body in both directions, invalid query falls back to defaultTab.
+- `ROUTES.DISTRIBUTOR.NETWORK = "/distributor/network"` in `src/constants/routes.ts`; new lazy route in `src/routes.tsx`.
 
 ### Changed
-- **agent-engine WS handler** (`services/agent-engine/app/websocket/handlers.py`) both delivery paths (`handle_chat_message` ECS + `handle_chat_message_lambda`) now lift `file_ids` from the WS payload into `context.metadata`, mirroring the REST handler. Without this the WS streaming path silently dropped document context. 5 pytests.
-- **agent-engine main** (`services/agent-engine/app/main.py`) — wired the new debug router.
-- **document-service auth** (`services/document-service/app/auth.py`) — added `require_internal_service` dep + `_internal_service_token()` reader for the bridge endpoint.
-- **document-service schemas + service + routes** — `IngestFromMonolithRequest`/`Response` plus the `ingest_from_monolith()` service function (idempotent insert, optional sync vs async processing).
-- **frontend WS hook** (`inspire-genius-frontend/src/hooks/agents/useMeridianWebSocket.ts`) `sendMessage(text, context, fileIds?)` now forwards `selectedFileIds` so future WS chat callsites match the REST behaviour.
-- **CDK** (`infrastructure/cdk/lib/services-stack.ts`) — `INTERNAL_SERVICE_TOKEN` env var on the document-service Lambda, sourced from `cdk -c internalServiceToken=...` context.
+- `src/pages/distributor/Practitioners.tsx` and `Territory.tsx` are now thin wrappers that render `<NetworkHub defaultTab="practitioners|territory" />` so the legacy paths still resolve and pre-select the right tab.
+- `src/pages/distributor/Dashboard.tsx` — replaced the full "Top Practitioners" leaderboard block with a compact summary card (avatar stack + tagline + "View Network →") that links to `/distributor/network?tab=practitioners`.
+- `src/constants/navigation.ts` — collapsed the Practitioners + Territory nav entries into a single "Network" entry pointing at `/distributor/network`. Removed the now-unused `Map` icon import.
+- `src/constants/sidebar-sections.ts` — distributor section: replaced the two entries with a single "Network" link; Allocate Credits row dropped (lived under Territory).
+- `src/pages/distributor/__tests__/Practitioners.test.tsx` and `Territory.test.tsx` rewritten as smoke tests that assert the hub mounts with the correct default tab.
+- `src/pages/distributor/__tests__/Dashboard.test.tsx` — wrapped renders in `MemoryRouter` and replaced the leaderboard assertions with a check that the new summary link points at `/distributor/network?tab=practitioners`.
 
-### Operator follow-up
-- `cdk deploy ig-dev-services -c internalServiceToken=$IG_INTERNAL_TOKEN`
-- Set the same token on the monolith ECS task definition env, plus `DOCUMENT_SERVICE_URL=https://api.dev.inspiregenius.com`.
-- Run `python scripts/backfill_files_to_documents.py --dry-run` then live to backfill historical uploads.
-- Smoke: upload a fresh PDF, hit `GET /v1/debug/rag/document-context?file_ids=<new-id>`, expect `status=ready` + `chunk_count>0`.
+### Verification
+- `npx jest src/pages/distributor` — 77/77 passing across 13 suites.
+- `npm run build` — clean (tsc + Vite, 9.9s).
+- `npx eslint` against changed files — 0 new errors.
+
+---
+
+## [2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)
+
+### Changed
+- `src/pages/super-admin/KnowledgeBase.tsx` now reads a `?domain=` query param (cultural | coaching | business | system | career | general | prism_report | all) to pre-filter documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via `setSearchParams({ replace: true })`.
+- `src/routes.tsx` — `/super-admin/cultural-content` is now a `<Navigate>` redirect to `/super-admin/knowledge-base?domain=cultural`. Removed the `CulturalContent` lazy import.
+- `src/constants/navigation.ts` — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base page filter chips. Pruned the unused `Globe` icon import.
+- `src/constants/routes.ts` — added `KNOWLEDGE_BASE_CULTURAL` deep-link constant and marked `CULTURAL_CONTENT` as `@deprecated`.
+
+### Added
+- `src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5 unit tests covering URL → filter wiring (default, `?domain=cultural` narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).
+
+### Removed
+- `src/pages/super-admin/CulturalContent.tsx` — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.
+
+### Verification
+- `npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5/5 passing.
+- `npm run build` — clean (tsc + Vite).
+- `npm run lint` against the changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to deletion of `CulturalContent.tsx`).
+
+---
 
 ## [2026-05-09] — refactor(dash) Wave 0 Lane 0.D — Used Coaches chart consolidation (P1.3 / D5)
 
 ### Changed
-- Fixed JSX syntax error in the recharts-based "Used Coaches" chart
-  (`type="number"axisLine` missing space; split-line `type` import modifier).
-- Wired the recharts chart into the Super-Admin Dashboard "Agents" tab
-  (above the All Platform Agents table).
-  - Files: `inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`
+- Fixed JSX syntax error in `UsedCoachesChartNew.tsx` (`type="number"axisLine` missing space; split-line `type` import modifier).
+- Wired the recharts-based chart into the Super-Admin Dashboard "Agents" tab (above the All Platform Agents table).
+  - Files: `src/pages/super-admin/Dashboard.tsx`
 
 ### Removed
-- Deleted manual SVG implementation `UsedCoachesChart.tsx`.
-- Renamed `UsedCoachesChartNew.tsx` → `UsedCoachesChart.tsx` with a
-  default export.
-  - Files: `inspire-genius-frontend/src/components/super-admin/dashboard/UsedCoachesChart.tsx`
+- Deleted manual SVG implementation `UsedCoachesChart.tsx` (non-recharts version).
+- Renamed `UsedCoachesChartNew.tsx` → `UsedCoachesChart.tsx` (default export `UsedCoachesChart`).
+  - Files: `src/components/super-admin/dashboard/UsedCoachesChart.tsx`
 
 ### Tests
-- Ported Jest test to `UsedCoachesChart.test.tsx` and replaced ad-hoc
-  `any` mock prop types with explicit `ChildrenProps`/`YAxisProps`/
-  `ChartTooltipProps` aliases (passes ESLint).
-- All 46 super-admin dashboard tests pass; `npm run build` clean.
+- Ported `UsedCoachesChartNew.test.tsx` → `UsedCoachesChart.test.tsx` with proper mock typings (replaced ad-hoc `any` props with `ChildrenProps` / `YAxisProps` / `ChartTooltipProps`).
+- Polyfilled `ResizeObserver` in `jest.setup.ts` so `SuperAdminDashboard.test.tsx` (which doesn't mock recharts) renders the chart without crashing on `ReferenceError: ResizeObserver is not defined`.
+- All 46 super-admin dashboard Jest tests pass; full Dashboard test suite (7 cases) passes.
+- `npm run build` clean; ESLint clean on changed files.
 
-PR: refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5) on
-`refactor/wave-0d-used-coaches-chart` (frontend repo).
+PR: refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5) on `refactor/wave-0d-used-coaches-chart`.
+
+---
+
+## [2026-05-09] — refactor(dash) Wave 0 / Lane 0.C: dedupe `useCompanyAnalytics` (D6)
+
+### Changed
+- Promoted `useCompanyAnalytics` in `src/hooks/analytics/useAnalytics.ts` to the canonical hook for company analytics, matching the role-family pattern used by `useUserAnalytics` / `useManagerAnalytics` / etc.
+- Replaced the inline `useCompanyAnalytics` definition in `src/hooks/company-admin/useCompanyAdmin.ts` with a JSDoc `@deprecated` re-export of the canonical hook. This preserves existing imports without churn while flagging the location for cleanup in Wave 1. (Lane 0.B subsequently deleted `Leadership.tsx` and `Training.tsx`, leaving `Dashboard.tsx` as the sole remaining caller of the deprecated alias.)
+- Reasoning: The two implementations were structurally identical (single `useQuery` wrapper); the company-admin variant only differed in its typed `BaseApiResponse<{...}>` and queryKey. Per Lane 0.C, the canonical lives at `/hooks/analytics/useAnalytics.ts` and the `company-admin` location becomes a one-line re-export.
+
+### Tests
+- Added `useCompanyAnalytics` test to the canonical suite at `src/hooks/analytics/__tests__/useAnalytics.test.tsx` with `QueryClientProvider` wrapper, plus filled-in coverage for `usePractitionerAnalytics` and `useDistributorAnalytics` so the family is uniformly tested.
+- Updated `src/hooks/company-admin/__tests__/useCompanyAdmin.test.tsx` to mock `@/services/analytics/analytics.service` for the deprecated re-export path; renamed the test to flag the deprecation.
+- `npx jest src/hooks` → 66 suites, 346 tests passing.
+- `npm run build` and ESLint on touched files both clean.
+
+### Files
+- `inspire-genius-frontend/src/hooks/company-admin/useCompanyAdmin.ts`
+- `inspire-genius-frontend/src/hooks/company-admin/__tests__/useCompanyAdmin.test.tsx`
+- `inspire-genius-frontend/src/hooks/analytics/__tests__/useAnalytics.test.tsx`
+
+---
+
+## [2026-05-09] — Wave 0 Lane 0.B: stub deletes / wires (M7 + M8a + M8b)
+
+Three units of the Dashboard Rationalization Plan v2, bundled into one PR
+(branch `refactor/wave-0b-stub-deletes-wires`) because they all touch
+`src/constants/sidebar-sections.ts` and `src/routes.tsx` and would
+otherwise create cheap-but-noisy merge conflicts across three parallel
+PRs.
+
+### Changed — P1.6 (M7) WIRED — User Analytics
+- `src/pages/user/Analytics.tsx`: replaced hardcoded recharts mock data
+  with the existing `useUserAnalytics()` hook
+  (`src/hooks/analytics/useAnalytics.ts:4` → `/v1/analytics/user`).
+  - Renders `total_sessions`, `session_trends`, `goals_by_status`,
+    `training.{total,completed,completion_pct}` from the live response.
+  - Removed mock-only "Most-Used Agents", "Satisfaction Trend", and
+    "PRISM Growth Trajectory" charts — those have no backend source and
+    would have continued to drift back to mocks.
+  - Empty-state: when the hook returns and all four metrics are zero,
+    render a "No analytics yet" empty-state DataCard plus a one-shot
+    Sonner `toast.info` instead of misleading random charts.
+  - Loading state via `Skeleton`; error state shows a Retry button that
+    calls `refetch()`.
+- `src/pages/user/__tests__/Analytics.test.tsx`: rewritten to mock the
+  new hook and cover loading / data / empty / error paths.
+
+### Removed — P1.7 (M8a) DELETED — Company Admin Leadership
+- `src/pages/company-admin/Leadership.tsx` and its
+  `__tests__/Leadership.test.tsx`.
+  - Backend evidence: `services/dashboard-service/app/routes.py:173`
+    (`/api/company/analytics`) returns
+    `CompanyAnalyticsOut(total_users, active_users, avg_prism_score, training_completion)`
+    — no `leaders` array. `services/user-service/` has no leadership
+    pipeline endpoint. `grep -rn "leadership\|/leaders"` across
+    `services/dashboard-service` and `services/user-service` returns no
+    leadership data sources.
+  - The page rendered `FALLBACK_LEADERS` mock data unconditionally.
+- `src/__tests__/routes.integration.test.tsx`: removed the
+  `CompanyAdminLeadership` stub mapping.
+- `src/constants/routes.ts`: removed `ROUTES.COMPANY_ADMIN.LEADERSHIP`.
+- `src/constants/sidebar-sections.ts`: removed the company-admin
+  Leadership nav entry. (Manager Leadership is unrelated, untouched.)
+- `src/routes.tsx`: removed the lazy import + route entry.
+
+### Removed — P1.8 (M8b) DELETED — Company Admin Training
+- `src/pages/company-admin/Training.tsx` and its
+  `__tests__/Training.test.tsx`.
+  - Same evidence as P1.7 — `/api/company/analytics` returns no
+    `programs` array, and there is no `/api/company/training` or
+    `/api/company/programs` endpoint anywhere in `services/`.
+  - The page rendered `FALLBACK_PROGRAMS` mock data unconditionally.
+- `src/__tests__/routes.integration.test.tsx`: removed the
+  `CompanyAdminTraining` stub mapping.
+- `src/constants/routes.ts`: removed `ROUTES.COMPANY_ADMIN.TRAINING`.
+- `src/constants/sidebar-sections.ts`: removed the company-admin
+  Training nav entry. (Manager Training is unrelated, untouched.)
+- `src/routes.tsx`: removed the lazy import + route entry.
+- `src/pages/company-admin/Dashboard.tsx`: re-pointed the
+  "Training Completion" stat tile click-through from
+  `/company-admin/training` (now deleted) to `/company-admin/analytics`.
+
+### Verified
+- `npm run build` clean (Vite + tsc).
+- `npx eslint` clean on all changed files.
+- `npx jest` clean for changed-area tests: 11 suites, 131 tests pass
+  (`src/pages/user/__tests__/Analytics.test.tsx`,
+  `src/pages/company-admin/__tests__/*`,
+  `src/__tests__/routes.integration.test.tsx`).
+
+### Reference
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` §3 Wave 0
+- `Transformation Documents/IG_Dashboard_Rationalization_Plan.docx` §6 P1.6 / P1.7 / P1.8
+
+---
+
+## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end
+
+Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev.
+
+### Done in this thread
+- **P1** — `ig-dev-migration-runner` Lambda redeployed with PR #25's hardened SQL splitter
+  - CodeSha256 `l/qFfvi+...` → `8w4Oh/6u3uDkSbhlKfYjqysVlG7D+CdELh3oYEMT4z4=`
+  - Handler `lambda_function.handler` → `handler.handler` (filename moved to `handler.py`)
+  - Smoke 1 (`SELECT 1;`): 1 succeeded, 0 failed, 0 skipped
+  - Smoke 2 (line-comment + BEGIN/COMMIT + SELECT): 1 succeeded, 0 failed, 2 skipped — confirms all 4 quirks live
+- **P2** — `assetHashType: cdk.AssetHashType.SOURCE` on all 17 Lambda `fromAsset` calls (15 services + 2 trainer)
+  - GHA deploys: services run `25561875526` (no changes), trainer run `25561893410` (UPDATE_COMPLETE on 2)
+  - Future `cdk diff ig-dev-services ig-dev-trainer` is stable until real source changes
+
+### PRs merged in this thread
+- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase past parallel-session R3+R4)
+- Frontend: `#22` (P1 docs), `#23` (P2 docs)
+
+### Carry-overs / process notes (now in CLAUDE memory if not already)
+1. **`ig-dev-migration-runner` is outside CDK.** No references in `infrastructure/cdk/lib/` or `bin/`. Code changes require manual `aws lambda update-function-code` against a locally-built `handler.py` + `pg8000` zip.
+2. **Local `cdk diff` is hash-polluted.** With `assetHashType: SOURCE`, local `__pycache__`, `*.pyc`, and `.venv` artifacts get hashed in. CI checks out clean, so its hash differs from local. Treat CI as the source of truth for drift detection. Future improvement: `assetHashOptions.exclude: ['__pycache__', '*.pyc', '.venv', '*.egg-info']` (deferred — outside P2 scope).
+3. **Parallel-session collisions cost rebases.** Hit twice this thread: PR #35 (R4 ECS scaling) and PR #37 (R3 chat writer migration) landed during the P2 deploy window, requiring docs PR #39 → #40 re-creation with prompt-entry renumber from #1037 → #1039. Pattern to watch: any work that touches `change_log.md` + `IG_project_log.html` collides with every other parallel session doing the same.
+
+### What's next (Monday plan delta)
+Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs:
+- **P5** — 18-agent verification (17/17 + 4/4 + 3/3)
+- **P6** — PRISM ingestion E2E
+- **P8** — Super-admin BulkImport + MentorManagement verify+fix
+
+---
+
+- File modified
+  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 
 ## [2026-05-08] — P7 (Phase D R7): Manager Dashboard verify+fix on dev
 
@@ -169,39 +239,12 @@ Replaced an inline TODO stub in `PrismTeam.tsx` that returned `{ data: { data: {
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
-## [2026-05-08] — Session wrap: P1 + P2 deployed end-to-end (PR #43)
-
-Single-thread Monday-plan execution covering migration-runner hardening (P1) and CDK asset-hash pinning (P2). Both verified live on dev. Captured here for completeness alongside the P3 / P4 / P7 entries from parallel sessions.
-
-### PRs merged in this thread
-- Monorepo: `#36` (P1 docs), `#38` (P2 code), `#40` (P2 docs after rebase), `#43` (P1+P2 combined session wrap)
-- Frontend: `#22` (P1 docs), `#23` (P2 docs)
-
-### What's next (Monday plan delta)
-Parallel sessions completed P3 (R4 ECS scheduled scaling), P4 (R3 chat writer migration + canary flip), and P7 (R7 manager dashboard). Unstarted rungs: **P5** — 18-agent verification, **P6** — PRISM ingestion E2E, **P8** — Super-admin BulkImport + MentorManagement verify+fix.
-
----
-
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
-
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
 - File modified
   - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
 
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
-
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html`
-
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
-
-- File modified
-  - Files: `/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md`
 ## [2026-05-08] — Cross-session log + sync sweep (5 parallel terminals)
 
 ### Added

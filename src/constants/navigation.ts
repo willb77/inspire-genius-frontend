@@ -14,7 +14,6 @@ import {
   Users,
   Building2,
   UserCheck,
-  Map,
   Briefcase,
   Brain,
   Sparkles,
@@ -122,8 +121,7 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
 /** Navigation items for the distributor role */
 export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.DISTRIBUTOR.PRACTITIONERS, icon: Briefcase, label: "Practitioners" },
-  { to: ROUTES.DISTRIBUTOR.TERRITORY, icon: Map, label: "Territory" },
+  { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
