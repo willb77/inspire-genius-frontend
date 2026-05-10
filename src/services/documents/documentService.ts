@@ -271,6 +271,19 @@ type VectorizeRequest = {
    * vectorize in one step.
    */
   file_id?: string;
+  /**
+   * S3 object key from the monolith upload response. When provided
+   * (alongside the default monolith bucket), the agent-engine
+   * vectorize endpoint fetches the file directly from S3, extracts
+   * text, upserts the documents row, and chunks. Without this, the
+   * endpoint can only vectorize documents already present in the
+   * Aurora documents table.
+   * Bug fix 2026-05-09 — uploads via the chat Document dialog
+   * silently failed to vectorize because this field was missing.
+   */
+  file_key?: string;
+  /** Optional S3 bucket override (defaults to inspires-genius-dev-documents). */
+  s3_bucket?: string;
 };
 
 type VectorizeResponse = {
