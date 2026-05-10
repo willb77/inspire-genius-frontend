@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import DistributorLayout from "@/layouts/DistributorLayout"
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
 import DataCard from "@/components/dashboard/DataCard"
@@ -117,21 +119,31 @@ export default function DistributorDashboard() {
         </div>
       </DataCard>
 
-      {/* Top Practitioners */}
+      {/* Top Practitioners — compact summary linking to Network */}
       <DataCard title={t("admin:distributor.topPractitioners")}>
-        {TOP_PRACTITIONERS.map((p) => (
-          <div key={p.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
-            <span className="text-[13px] font-bold text-[#9ca3af] w-[18px] text-center">{p.rank}</span>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ background: p.bg }}>{p.initials}</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-[#1f2937]">{p.name}</div>
-              <div className="text-[11px] text-[#6b7280]">{p.credits} {t("admin:distributor.creditsUsed")}</div>
+        <Link
+          to="/distributor/network?tab=practitioners"
+          className="flex items-center justify-between gap-4 rounded-lg border border-[#e5e7eb] bg-white px-4 py-3 hover:border-[#3B5BFF] hover:bg-[#f8faff] transition-colors group"
+          data-testid="top-practitioners-summary-link"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex -space-x-2 shrink-0">
+              {TOP_PRACTITIONERS.slice(0, 3).map((p) => (
+                <div key={p.name} className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[10px] ring-2 ring-white" style={{ background: p.bg }}>{p.initials}</div>
+              ))}
             </div>
-            <div className="w-[120px] h-1.5 rounded-full bg-[#f3f4f6] shrink-0">
-              <div className="h-full rounded-full bg-[#3B5BFF] transition-[width] duration-300" style={{ width: `${p.pct}%` }} />
+            <div className="min-w-0">
+              <div className="text-[13px] font-semibold text-[#1f2937] truncate">
+                {TOP_PRACTITIONERS[0]?.name} leads with {TOP_PRACTITIONERS[0]?.credits} {t("admin:distributor.creditsUsed")}
+              </div>
+              <div className="text-[11px] text-[#6b7280]">View full roster, allocation, and territory coverage</div>
             </div>
           </div>
-        ))}
+          <span className="text-[12px] font-semibold text-[#3B5BFF] flex items-center gap-1 shrink-0 group-hover:gap-1.5 transition-all">
+            View Network
+            <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </Link>
       </DataCard>
 
       {/* Practitioner Network */}
