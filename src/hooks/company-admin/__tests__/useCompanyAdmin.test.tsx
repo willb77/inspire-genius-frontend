@@ -8,9 +8,12 @@ import { useCompanyUsers, useCompanyAnalytics, useCompanyDepartments, useCompany
 
 jest.mock("@/services/company-admin/company-admin.service", () => ({
   getCompanyUsers: jest.fn().mockResolvedValue({ data: { data: { users: [], total: 0 } } }),
-  getCompanyAnalytics: jest.fn().mockResolvedValue({ data: { data: { totalUsers: 10 } } }),
   getCompanyDepartments: jest.fn().mockResolvedValue({ data: { data: { departments: [] } } }),
   getCompanyCosts: jest.fn().mockResolvedValue({ data: { data: {} } }),
+}))
+
+jest.mock("@/services/analytics/analytics.service", () => ({
+  getCompanyAnalytics: jest.fn().mockResolvedValue({ data: { data: { totalUsers: 10 } } }),
 }))
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -25,7 +28,7 @@ describe("useCompanyAdmin hooks", () => {
     expect(result.current.data).toEqual({ users: [], total: 0 })
   })
 
-  it("useCompanyAnalytics fetches analytics", async () => {
+  it("useCompanyAnalytics (deprecated re-export) fetches via canonical analytics hook", async () => {
     const { result } = renderHook(() => useCompanyAnalytics(), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual({ totalUsers: 10 })

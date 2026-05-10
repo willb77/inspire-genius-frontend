@@ -100,7 +100,7 @@ export default function CompanyAdminDashboard() {
           const link =
             s.label === t("admin:companyAdmin.totalEmployees") ? "/company-admin/users"
             : s.label === t("admin:companyAdmin.activeTeams") ? "/company-admin/organization"
-            : s.label === t("admin:companyAdmin.trainingCompletion") ? "/company-admin/training"
+            : s.label === t("admin:companyAdmin.trainingCompletion") ? "/company-admin/analytics"
             : s.label === t("admin:companyAdmin.prismAssessed") ? "/company-admin/analytics"
             : undefined
           return (

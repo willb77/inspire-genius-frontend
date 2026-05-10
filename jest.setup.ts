@@ -29,6 +29,18 @@ if (typeof globalThis.structuredClone === "undefined") {
   globalThis.structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));
 }
 
+// Polyfill ResizeObserver for jsdom (used by recharts ResponsiveContainer
+// and any other component that observes element size).
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverPolyfill {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  globalThis.ResizeObserver =
+    ResizeObserverPolyfill as unknown as typeof globalThis.ResizeObserver;
+}
+
 // Mock react-i18next with real English translations so tests can match rendered text.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const _i18nBundles: Record<string, Record<string, unknown>> = {};
