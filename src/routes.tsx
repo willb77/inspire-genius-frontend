@@ -39,6 +39,7 @@ const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
+const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
@@ -52,6 +53,7 @@ const TeamManagement = React.lazy(() => import("@/pages/super-admin/TeamManageme
 const CoachManagement = React.lazy(() => import("@/pages/super-admin/CoachManagement"));
 const OrganizationManagement = React.lazy(() => import("@/pages/super-admin/OrganizationManagement"));
 const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManagement"));
+const SuperAdminUserMemory = React.lazy(() => import("@/pages/super-admin/UserMemory"));
 const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
 const IssueDetailPage = React.lazy(() => import("@/pages/super-admin/IssueDetailPage"));
 const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
@@ -186,6 +188,7 @@ export const routes: RouteObject[] = [
       { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
       { path: "/documents", element: withSuspense(<Documents />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
       { path: "/help", element: withSuspense(<HelpPage />) },
       { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
@@ -199,6 +202,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/organizations", element: withSuspense(<OrganizationManagement />) },
       { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
       { path: "/super-admin/users", element: withSuspense(<UserManagement />) },
+      { path: "/super-admin/users/:userId/memory", element: withSuspense(<SuperAdminUserMemory />) },
       { path: "/super-admin/dashboard/issues", element: withSuspense(<IssuesDetailsPage />) },
       { path: "/super-admin/issues/:id", element: withSuspense(<IssueDetailPage />) },
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
