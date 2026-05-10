@@ -1,3 +1,28 @@
+## [2026-05-09 PM-3] — Document RAG: three actual bugs in vectorize/retrieve, fixed and verified
+
+### What was actually broken (all three silent)
+1. **`personal_data.py:retrieve_attached_documents`** — query was `WHERE id::text IN (...) AND is_active = true`. The `documents` table has no `is_active` column. PG raised `UndefinedColumnError`, the outer `try/except` swallowed it, and the function returned an empty string for every chat with `file_ids`. **Every chat with selected docs has been silently failing for as long as this code has existed.**
+2. **`ingestion.py:vectorize_document`** — only worked if the document was already in Aurora `documents` with `extracted_text` populated. Monolith uploads land in S3 + monolith local postgres `files`, NOT Aurora. So vectorize returned `status="skipped"` for every real upload while still HTTP 200. The frontend never noticed because it dispatched fire-and-forget.
+3. **`embedding_service.py:embed_and_store_chunks`** — INSERT was missing the NOT NULL `content` column. `document_chunks` has both `chunk_text` (agent-engine) and `content` (document-service migration). Even when the endpoint reached chunking, the INSERT failed with `null value in column "content"`.
+
+### Fixes
+- `personal_data.py`: removed `AND is_active = true`, replaced with `AND extracted_text IS NOT NULL`. Switched alias to `content_type AS file_type`.
+- `ingestion.py:vectorize_document`: when text is empty AND not in Aurora AND `file_key` provided, fetches from S3 (default bucket `inspires-genius-dev-documents`), extracts text via `app.rag.file_extractors.extract_text`, UPSERTs `documents` row with `id = monolith files.id`, then vectorizes — all in one call.
+- `embedding_service.py`: INSERT now writes the same value to both `chunk_text` and `content`.
+- `inspire-genius-frontend/src/services/documents/documentService.ts` + `useDocumentUpload.ts`: pass `file_key` (and optional `s3_bucket`) from the monolith upload response to `vectorizeDocument()`.
+
+### Verification (post-deploy)
+- Synthetic test row: vectorize a real S3 PDF → 7 chunks, status=`completed`. ✓
+- User's two recent uploads (`Raw data - Tracey Poirier.xlsx`, `John Boyd PRISM Data.xlsx`) — vectorized via the new path, 6 chunks each, real PRISM content extracted. ✓
+- Mirrored `retrieve_attached_documents` SQL query against the two `file_id`s the chat panel sends — returns content for both. ✓
+
+### AWS deploy actions
+- Built + pushed agent-engine Docker image (linux/amd64) twice (vectorize fix + chunks-content fix). Tags: `2026-05-09-vectorize-fix`, `2026-05-09-chunks-content-fix`.
+- `aws ecs update-service --force-new-deployment` × 2; both rollouts COMPLETED.
+
+### What still needs to happen for live uploads
+The frontend `file_key` passthrough is on `inspire-genius-frontend@refactor/wave-0f-distributor-network-hub`, not yet on `development`. **For NEW uploads to vectorize automatically, that commit needs to be cherry-picked to `development` and the frontend deployed.** The two existing uploads are already vectorized and Meridian can read them right now.
+
 ## [2026-05-09 PM-2] — Document RAG pipeline validated end-to-end on a real PDF
 
 ### Validation
