@@ -85,6 +85,7 @@ export const ROUTES = {
   DISTRIBUTOR: {
     BASE: "/distributor",
     DASHBOARD: "/distributor/dashboard",
+    NETWORK: "/distributor/network",
     PRACTITIONERS: "/distributor/practitioners",
     CREDITS: "/distributor/credits",
     TERRITORY: "/distributor/territory",

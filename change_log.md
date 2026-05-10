@@ -1,3 +1,48 @@
+## [2026-05-10] — refactor(dash) Wave 0 Lane 0.F — Distributor Network hub (P5.3 / O9)
+
+### Added
+- `src/pages/distributor/NetworkHub.tsx` — single tabbed page (`Practitioners` · `Territory`) wrapping `DistributorLayout`. Reads/writes `?tab=practitioners|territory`; accepts a `defaultTab` prop so legacy routes can land on a specific tab.
+- `src/pages/distributor/network/PractitionersBody.tsx` — extracted body of the old Practitioners page as a named export rendered inside the hub.
+- `src/pages/distributor/network/TerritoryBody.tsx` — extracted body of the old Territory page.
+- `src/pages/distributor/__tests__/NetworkHub.test.tsx` — 8 tests: default tab, query-param honor, click switches body in both directions, invalid query falls back to defaultTab.
+- `ROUTES.DISTRIBUTOR.NETWORK = "/distributor/network"` in `src/constants/routes.ts`; new lazy route in `src/routes.tsx`.
+
+### Changed
+- `src/pages/distributor/Practitioners.tsx` and `Territory.tsx` are now thin wrappers that render `<NetworkHub defaultTab="practitioners|territory" />` so the legacy paths still resolve and pre-select the right tab.
+- `src/pages/distributor/Dashboard.tsx` — replaced the full "Top Practitioners" leaderboard block with a compact summary card (avatar stack + tagline + "View Network →") that links to `/distributor/network?tab=practitioners`.
+- `src/constants/navigation.ts` — collapsed the Practitioners + Territory nav entries into a single "Network" entry pointing at `/distributor/network`. Removed the now-unused `Map` icon import.
+- `src/constants/sidebar-sections.ts` — distributor section: replaced the two entries with a single "Network" link; Allocate Credits row dropped (lived under Territory).
+- `src/pages/distributor/__tests__/Practitioners.test.tsx` and `Territory.test.tsx` rewritten as smoke tests that assert the hub mounts with the correct default tab.
+- `src/pages/distributor/__tests__/Dashboard.test.tsx` — wrapped renders in `MemoryRouter` and replaced the leaderboard assertions with a check that the new summary link points at `/distributor/network?tab=practitioners`.
+
+### Verification
+- `npx jest src/pages/distributor` — 77/77 passing across 13 suites.
+- `npm run build` — clean (tsc + Vite, 9.9s).
+- `npx eslint` against changed files — 0 new errors.
+
+---
+
+## [2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)
+
+### Changed
+- `src/pages/super-admin/KnowledgeBase.tsx` now reads a `?domain=` query param (cultural | coaching | business | system | career | general | prism_report | all) to pre-filter documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via `setSearchParams({ replace: true })`.
+- `src/routes.tsx` — `/super-admin/cultural-content` is now a `<Navigate>` redirect to `/super-admin/knowledge-base?domain=cultural`. Removed the `CulturalContent` lazy import.
+- `src/constants/navigation.ts` — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base page filter chips. Pruned the unused `Globe` icon import.
+- `src/constants/routes.ts` — added `KNOWLEDGE_BASE_CULTURAL` deep-link constant and marked `CULTURAL_CONTENT` as `@deprecated`.
+
+### Added
+- `src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5 unit tests covering URL → filter wiring (default, `?domain=cultural` narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).
+
+### Removed
+- `src/pages/super-admin/CulturalContent.tsx` — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.
+
+### Verification
+- `npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx` — 5/5 passing.
+- `npm run build` — clean (tsc + Vite).
+- `npm run lint` against the changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to deletion of `CulturalContent.tsx`).
+
+---
+
 ## [2026-05-09] — refactor(dash) Wave 0 Lane 0.D — Used Coaches chart consolidation (P1.3 / D5)
 
 ### Changed

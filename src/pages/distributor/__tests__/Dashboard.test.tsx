@@ -2,7 +2,15 @@
  * @jest-environment jsdom
  */
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import DistributorDashboard from "../Dashboard";
+
+const renderDashboard = () =>
+  render(
+    <MemoryRouter>
+      <DistributorDashboard />
+    </MemoryRouter>
+  );
 
 jest.mock("@/layouts/DistributorLayout", () => ({
   __esModule: true,
@@ -55,30 +63,32 @@ describe("DistributorDashboard", () => {
   });
 
   it("renders inside DistributorLayout", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getByTestId("distributor-layout")).toBeInTheDocument();
   });
 
   it("renders welcome banner", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getByTestId("welcome-banner")).toBeInTheDocument();
   });
 
   it("renders credit stat cards", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getByText("admin:distributor.totalPurchased")).toBeInTheDocument();
     expect(screen.getByText("admin:distributor.totalAllocated")).toBeInTheDocument();
     expect(screen.getByText("admin:distributor.availablePool")).toBeInTheDocument();
   });
 
-  it("renders top practitioners", () => {
-    render(<DistributorDashboard />);
-    expect(screen.getAllByText("Dr. Sarah Chen").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Michael Torres").length).toBeGreaterThan(0);
+  it("renders top practitioners summary linking to Network hub", () => {
+    renderDashboard();
+    const link = screen.getByTestId("top-practitioners-summary-link");
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/distributor/network?tab=practitioners");
+    expect(screen.getByText(/Dr\. Sarah Chen leads with/)).toBeInTheDocument();
   });
 
   it("renders practitioner network table", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getByText("Name")).toBeInTheDocument();
     expect(screen.getByText("Region")).toBeInTheDocument();
     expect(screen.getByText("Allocated")).toBeInTheDocument();
@@ -86,30 +96,30 @@ describe("DistributorDashboard", () => {
 
   it("shows loading skeletons for practitioners", () => {
     mockUseDistributorPractitioners.mockReturnValue({ ...hookDefaults, isLoading: true });
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
   });
 
   it("shows error state for practitioners", () => {
     mockUseDistributorPractitioners.mockReturnValue({ ...hookDefaults, error: new Error("fail") });
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getAllByText("Failed to load data.").length).toBeGreaterThan(0);
   });
 
   it("shows loading skeletons for transactions", () => {
     mockUseDistributorTransactions.mockReturnValue({ ...hookDefaults, isLoading: true });
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
   });
 
   it("renders fallback transactions", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getAllByText("Purchase").length).toBeGreaterThan(0);
     expect(screen.getAllByText("+500").length).toBeGreaterThan(0);
   });
 
   it("renders credit usage trend bars", () => {
-    render(<DistributorDashboard />);
+    renderDashboard();
     expect(screen.getByText("Sep")).toBeInTheDocument();
     expect(screen.getByText("Feb")).toBeInTheDocument();
   });
