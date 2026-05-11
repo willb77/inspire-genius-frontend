@@ -66,6 +66,7 @@ const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder
 const AuditLog = React.lazy(() => import("@/pages/super-admin/AuditLog"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
 const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
+const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
 
 // ── Agent Trainer pages ────────────────────────────────────────────────────
@@ -220,6 +221,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/mentor-management", element: withSuspense(<MentorManagement />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
+      { path: "/super-admin/prism-management", element: withSuspense(<PrismManagement />) },
       { path: "/super-admin/cultural-content", element: withSuspense(<CulturalContent />) },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
