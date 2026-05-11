@@ -1,3 +1,308 @@
+## [2026-05-11] — Cross-session memory + M.4 privacy/RTBF UI shipped end-to-end on dev
+
+Closes the cross-session memory amnesia gap **and** the M.4 user-facing memory privacy work in a single session. Three monorepo PRs and one frontend PR merged in sequence; agent-engine ECS container rebuilt and rolled to pick up the new code; API Gateway routed; smoke-verified end-to-end.
+
+### PRs merged (in order)
+
+| # | Repo | Title | Merge | Notes |
+|---|------|-------|-------|-------|
+| 54 | inspire-genius | feat(memory): cross-session conversation history + catch-all session log | `b672ba7` | Conflicts resolved against `origin/development` via `-X ours` merge; index verification note added to `REMAINING_TASKS.md` §5 |
+| 56 | inspire-genius | feat(memory): M.4 backend — privacy / RTBF endpoints | `1996298` | 8 endpoints under `/v1/memory/*`; `emit_memory_action()` helper added to `app/events/eventbridge.py`; 13/13 tests pass |
+| 39 | inspire-genius-frontend | feat(memory): M.4 frontend — /settings/privacy + super-admin variant | `dc504b8` | 2 pages + service + hook + 8/8 tests passing; `npm run build` clean |
+| 63 | inspire-genius | feat(api-gw): route `/v1/memory/{proxy+}` to ECS | `1d30245` | 1-line addition to `wave5Routes` in `api-gateway-stack.ts` — reuses existing VPC-link integration |
+
+### Backend changes (agent-engine)
+
+- `app/routes/privacy.py` (new) — 4 self-service (`/v1/memory/me*`) + 4 super-admin (`/v1/memory/users/{user_id}*`) endpoints for view / export / delete of stored memory tiers (long-term insights/milestones/PRISM, short-term summaries + cross-session conversation history grouped by `session_id`, semantic entry metadata).
+- `app/events/eventbridge.py` — new `emit_memory_action(actor_id, target_user_id, action, scope)` for privacy audit emit; every endpoint emits one event on `inspiresgenius.agent-engine` so the audit-service captures the operator-vs-target attribution.
+- `tests/test_privacy.py` — 13 tests covering auth gates (401/422), super-admin gate (403), structured snapshot shape, export attachment header, full-purge call signature, 404 on missing insight, audit emit attribution.
+
+### Frontend changes (inspire-genius-frontend)
+
+- `src/types/memory.ts` (new) — `MemorySnapshot` + per-tier types.
+- `src/services/privacy/memory.service.ts` (new) — `agentApi`-based service (4 self-service + 4 super-admin) plus `downloadBlob()` helper for the JSON export.
+- `src/hooks/privacy/useMemoryPrivacy.ts` (new) — React Query hooks (queries + mutations with cache invalidation).
+- `src/pages/user/SettingsPrivacy.tsx` (new) — `/settings/privacy` page: insight list with per-row delete, conversation-history counts, "Download my data", destructive "Delete all" gated by `ConfirmDialog`.
+- `src/pages/super-admin/UserMemory.tsx` (new) — `/super-admin/users/:userId/memory` operator view; same UX, audit-attributed to the operator's `sub`.
+- `src/routes.tsx` + `src/constants/routes.ts` — new lazy routes + constants (`ROUTES.SETTINGS_PRIVACY`, `ROUTES.SUPER_ADMIN.USER_MEMORY`).
+
+### Deploy chain (2026-05-11 dev)
+
+1. `cdk deploy ig-dev-agent-engine` (GHA workflow_dispatch, run `25643302746`) — ECS stack updated. **Caveat:** the agent-engine Docker image is built/pushed **outside** CDK; this deploy alone did not pick up the new code.
+2. `cdk deploy ig-dev-api-gateway` (run `25644571042`) — added `ANY /v1/memory/{proxy+}` route → ECS ALB integration (`nj5msbs`).
+3. Manual Docker build + push: `docker buildx build --platform linux/amd64 --push` from `services/agent-engine/` against `development` HEAD; pushed as both `:2026-05-11-m4-privacy` and `:latest` (digest `sha256:fcb12cf7aec00d1c59845a61ae2afbd274dd8cf509d3ded1346c503e827c0a56`).
+4. `aws ecs update-service --force-new-deployment` on `ig-dev-agent-engine` — service rolled, old task drained ~3 min, new task with privacy router live.
+
+### Verification — privacy endpoint end-to-end
+
+| Probe | Result |
+|-------|--------|
+| `GET /v1/memory/me` (no token) | `422` — `{"detail":[{"type":"missing","loc":["header","access-token"]...}]}` ✅ FastAPI validation |
+| `GET /v1/memory/me` (bogus token) | `401` — `{"detail":"Invalid token: Malformed token"}` ✅ Auth rejects |
+| `GET /v1/memory/me` (valid HS256 JWT, `sub=test-user-123`) | `200` — full structured snapshot with `user_id`, all 3 tiers ✅ |
+
+Before the manual image push, all three probes returned `404` from FastAPI — confirmed via agent-engine CloudWatch logs (`INFO:app.main:privacy router not present; skipping`) that the running container's `app/routes/privacy.py` import failed silently (file not in image yet). Post-push, the import succeeds and the router is mounted.
+
+### Index verification (no migration needed)
+
+Verified `ix_conv_msg_user_created` on `conversation_messages(user_id, created_at)` already exists in `services/agent-engine/alembic/versions/001_create_memory_tables.py` line 46. Companion `ix_sess_sum_user_created` on `session_summaries(user_id, created_at)` also present (line 62). The new `ShortTermMemory.get_recent_messages_across_sessions()` query path is fully index-covered; no Alembic migration required. Recorded in `REMAINING_TASKS.md` §5.
+
+### Issues surfaced (not closed by this session)
+
+- **Orphan agent-engine Mangum Lambda** (`ig-dev-agent-engine`, hand-patched 2026-04-27) — not in any CDK stack, last code update 2 weeks before the M.4 backend merge. Routes that target it via API Gateway (`/v1/agents/health`, `/v1/chat/sessions/start`, `/v1/admin/voice-config`) still serve the stale 2026-04-27 code. The M.4 endpoints intentionally avoid this Lambda (route added directly to the ECS ALB integration).
+- **8 pre-existing stub Lambdas** flagged by the post-deploy stub-zip check on the agent-engine deploy: `ig-dev-observability-{retention,rollup,query}`, `ig-dev-rlhf-{processor,evaluation,collector,stepfn}`, `ig-dev-audit-service` — all 494–538 bytes (real bundles should be 13–48 MB). These pre-date this session; their stacks need to be re-deployed via the GHA workflow (which sets `CDK_DOCKER_BUNDLING=1`) to pick up real bundles.
+
+### Promotion gate
+
+Per the merge-gate decision: **hold staging/prod** for a few days while this soaks on dev. The dev frontend at `dev.inspiresgenius.com/settings/privacy` will load real data for a signed-in user; `/super-admin/users/:userId/memory` works for super-admin operators; every action audit-emits.
+
+---
+
+## [2026-05-10 evening] — R-2.3 closed: F-1 Lambda staleness disambiguated
+
+**`/full-go r-2.3`** autonomous run. Verdict: the `ig-dev-agent-engine` Lambda is **STALE** (24 commits / 13 days behind source) but **NOT on the primary chat path**. The R-2.2 "agent=Meridian, metadata={}" finding was an ECS-side bug already fixed in subsequent commits.
+
+### Added
+- `R2_3_F1_DISAMBIGUATION_REPORT.md` — full evidence report (verdict, 9 evidence sub-sections, follow-up options)
+- `R2_3_F1_DISAMBIGUATION_REPORT.docx` — Word-format mirror with Logo-Dark.png header
+
+### Changed
+- `REMAINING_TASKS.md` — §4 now records R-2.3 as DONE with full verdict + evidence summary, plus a new follow-up item for the orphan-Lambda disposition (Option 1/2/3) and the env-var credential rotation.
+
+### Key findings
+- Lambda `LastModified=2026-04-27T23:35Z`; `version="1.2.0"` (source is `1.0.0`); 31 invocations in last 24h on 8 peripheral routes (`/v1/agents/health`, `/v1/chat/sessions/start`, `/v1/chat/conversations` GET+DELETE, `/v1/admin/voice-config`, `/v1/agents-settings/{*}` CRUD).
+- ECS deployed today at `2026-05-10T20:19:30 EDT` (task-def rev 35, image `phase-e-r2.2-followup-multi-domain`, digest `sha256:60dbe49e...`) and serves `POST /v1/agents/chat` + `ANY /v1/agents/{proxy+}` via VPC Link integration `99963h9`.
+- `app/main.py:528` shows the Lambda was designed as the **full** Mangum-wrapped FastAPI app, not a thin shim — confirming "stale, not intentional."
+- No CDK stack creates this Lambda — it is an orphan from the original Phase 2 Strangler Fig extraction.
+- The R-2.2 metadata-propagation + planner-routing bugs are fixed in commits `69d81e8`, `218de1f`, `dbfb48c`, `3e31f55`, `5a4142a`, `5c0e180`, `9d8fbb3` — R-2.2 24-prompt matrix needs re-running against current ECS image (R-2.4 follow-up unblocks the rest).
+
+### Next step on priority path
+R-2.4 (telemetry + audit closure): F-5 audit-service event-loop bug, EventBridge `inspiresgenius.*` end-to-end, F-4 `InspireGenius/AgentEngine` CloudWatch namespace.
+
+---
+
+## [2026-05-10 PM] — P1.2 (code-only) closed: Zilliz + monolith Milvus migration scripts
+
+P1 commit 2 of the vector store consolidation. **Code only — execution pending operator with Zilliz credentials.**
+
+### Added
+- `services/agent-engine/scripts/migrate_zilliz_to_pgvector.py` — paginate Zilliz `inspire_genius_docs`, join to Aurora `public.parent_ids` for source text, re-embed via OpenAI `text-embedding-3-small` (1536-dim), UPSERT Aurora `documents` + INSERT `document_chunks` via the live `EmbeddingService.embed_and_store_chunks` path.
+- `services/agent-engine/scripts/migrate_monolith_milvus_to_pgvector.py` — same pattern for the monolith's self-hosted Milvus `users_db` collection (pymilvus ORM).
+- `services/agent-engine/scripts/__init__.py` — makes `scripts/` importable.
+- `services/agent-engine/tests/test_migrate_zilliz_to_pgvector.py` — 12 unit tests (checkpoint roundtrip, parent-document fetch, UPSERT, Zilliz REST mocking, pagination, dry-run).
+
+### Features (both scripts)
+- `--dry-run` — count source rows, no writes.
+- Idempotent via checkpoint file; resumable on Ctrl-C / fatal error.
+- Per-batch progress logging with row/sec + estimated OpenAI cost.
+- Exit codes: 0=success, 1=missing prereqs, 2=fatal.
+
+### Why re-embed (not reuse Zilliz vectors)
+Zilliz collection uses Gemini at 3072-dim; pgvector schema is OpenAI `text-embedding-3-small` at 1536-dim. Dimensions don't mix in cosine — must re-embed.
+
+### Tests + checks
+- 12/12 pass in `test_migrate_zilliz_to_pgvector.py`.
+- Both scripts compile (`python -m py_compile`).
+- Both scripts respond to `--help` with exit 0.
+
+### Operator workflow (when ready)
+```bash
+cd services/agent-engine
+export AGENT_ENGINE_ZILLIZ_API_KEY=... AGENT_ENGINE_OPENAI_API_KEY=... AGENT_ENGINE_DATABASE_URL=...
+.venv/bin/python -m scripts.migrate_zilliz_to_pgvector --dry-run     # sanity check
+.venv/bin/python -m scripts.migrate_zilliz_to_pgvector                # real run, resumable
+.venv/bin/python -m scripts.migrate_monolith_milvus_to_pgvector       # same flags
+```
+
+### Cost estimate
+At OpenAI text-embedding-3-small ~$0.02/1M tokens, the entire Zilliz collection (~thousands of chunks) re-embeds for **<$1**.
+
+### Operator gotcha
+The agent-engine ECS task definition has drifted from CDK source (5 sandbox env vars only). Running the migration requires either:
+- (a) `cdk deploy ig-dev-agent-engine` to inject Zilliz/OpenAI keys (wider blast radius — separate work item), OR
+- (b) running locally with credentials you export yourself.
+
+### Merged
+- PR #64 (`feat/p1-2-zilliz-milvus-migration` → `development`) → merge `48762ff`.
+
+### Remaining in P1
+- **Execute P1 commit 2** — run both migration scripts in production. Operator-supervised; <$1 OpenAI cost; idempotent and resumable. Output goes into Aurora `document_chunks`.
+- **P1 commit 3** — remove `_search_zilliz` + Zilliz fallback branches + drop `pymilvus` dep. **0.5 day. Gated by P2 retrieval-parity verification AND successful execution of commit 2.**
+
+---
+
+## [2026-05-10 PM] — P1.1 closed: use_pgvector flag flipped to True
+
+P1 commit 1 of the vector store consolidation (REMAINING_TASKS.md §7).
+
+### Change
+- `services/agent-engine/app/config.py` — `use_pgvector: bool = False` → `True` (one-line change).
+
+The CDK source (`infrastructure/cdk/lib/agent-engine-stack.ts:420`) already sets `AGENT_ENGINE_USE_PGVECTOR='true'`, but the deployed ECS task definition had drifted and ran without the env var — so the code default was what actually applied. Flipping the default makes the deployed task use the pgvector path immediately, regardless of CDK drift.
+
+### Effect on runtime behavior
+- **Knowledge Base / Cultural Content text ingest** now writes to Aurora `document_chunks` (pgvector) instead of Zilliz Cloud `inspire_genius_docs`.
+- **General RAG retrieval** now reads pgvector instead of `_search_zilliz`.
+- **Chat-uploaded docs** (already writing to pgvector) are now also visible to ambient semantic retrieval, not just `retrieve_attached_documents`.
+
+### Deployed
+- Built `linux/amd64` Docker image; pushed to ECR as `2026-05-10-pgvector-flag-flip` (digest `sha256:e8100e798fc5f8...`).
+- ECS force-new-deployment on `ig-dev-agent-engine`; rollout COMPLETED.
+- Running task digest matches the new image.
+
+### Verified
+- Vectorize smoke test: `chunks_stored=1, status=completed` (HTTP 200).
+- **CloudWatch logs confirm OpenAI embeddings path:** `POST https://api.openai.com/v1/embeddings 200 OK` — that's the pgvector + `text-embedding-3-small` (1536-dim) code path. Pre-flip path used Gemini for Zilliz.
+- Health endpoint: HTTP 200.
+
+### Merged
+- PR #61 (`fix/p1-pgvector-flag-flip` → `development`) → merge commit `45d3cba` via fast-forward.
+
+### Rollback
+Set `USE_PGVECTOR=false` on the ECS task (or revert this commit and redeploy).
+
+### Remaining in P1
+- **P1 commit 2** — Backfill Zilliz `inspire_genius_docs` + monolith Milvus `users_db` into Aurora `document_chunks` (re-embed via OpenAI 1536-dim because Zilliz uses Gemini and dimensions don't mix). **1–2 days.**
+- **P1 commit 3** — Remove `_search_zilliz` and the Zilliz fallback branches in `retriever.py`, `personal_data.py`. Drop `zilliz_*` from config + CDK; drop `pymilvus` from `pyproject.toml`. **0.5 day. Gated by P2 retrieval-parity verification.**
+
+---
+
+## [2026-05-10 PM] — Backlog: Vector Store Consolidation (P1–P4) added to REMAINING_TASKS.md §7
+
+Captures the four remaining work items from the 2026-05-10 doc-RAG roadmap (IG_Document_RAG_Session_Log_and_Roadmap.docx §6) as a backlog section. P0 (is_active SQL bug) marked closed via PR #58.
+
+### Items added under §7 Document RAG / Vector Store Consolidation Follow-ups
+- **P1** — Consolidate to pgvector exclusively. Three commits: (1) flag flip — `use_pgvector=True` + CDK env var, 30 min; (2) backfill Zilliz `inspire_genius_docs` and monolith Milvus `users_db` into Aurora `document_chunks` (re-embed with OpenAI 1536-dim because Zilliz uses Gemini), 1–2 days; (3) remove `_search_zilliz`, the `if not settings.use_pgvector` branches, and drop `pymilvus` dep, 0.5 day. **3–5 days total.** Depends on P0.
+- **P2** — Verify pgvector retrieval parity. 50-query A/B test (10 PRISM, 10 cultural, 10 KB, 10 attached, 10 general) against the pre-flip Zilliz baseline. Recall@5 within 10%, latency ≤ Zilliz. Gates P1 commit 3 merge. **0.5 day.**
+- **P3** — Wire `decision_rules` engine into Meridian.respond pre-LLM step. Enables strict response constraints (e.g. "PRISM never used in compliance contexts", "salary questions redirect to HR") that don't depend on LLM judgment. Table + CRUD already exist; just needs the evaluator + meridian.py hook. **1–2 days.** Parallel with P1.
+- **P4** — Super-admin PRISM CRUD UI. Today practitioners can view + import only; no edit, no delete, no super-admin surface. Backend `routes/prism.py` (PATCH/DELETE/GET/POST gated by `require_super_admin` with re-vectorize on update) + frontend `PrismManagement.tsx` mirroring `KnowledgeBase.tsx`. **2–3 days.** Parallel with P1+P3.
+
+Recommended sequence: ~7 working days with parallel scheduling across three engineers / sessions. Sequential one-engineer estimate: 7–10 days.
+
+### Files
+- `REMAINING_TASKS.md` — new §7 inserted between §6 (Dashboard Rationalization) and Quick Resume Commands. +179 lines. Bumped `Last updated` header to 2026-05-10.
+
+### Merged
+- PR #60 (`docs/backlog-pgvector-consolidation` → `development`) → merge commit `d3075bf`.
+
+### Carry-overs (NOT in P1–P4)
+- ClamAV scan stub — files vectorize without virus scanning; deferred to R-2.11 prod cutover gate
+- CI deploy-production reuses dev env vars — manual-approval-gated; wire env-scoped variables before prod cutover
+- Monolith file_service Milvus writes to `users_db` — dead writes after P1 closes; remove once monolith Alex path is deprecated
+
+---
+
+## [2026-05-10 PM] — P0 closed: is_active column bug fixed across 4 RAG files
+
+The `documents` table on Aurora has no `is_active` column. The four agent-engine RAG files were silently failing on every personal-data, cultural-context, and general-semantic retrieval query. Same schema mismatch we already patched in `retrieve_attached_documents` on commit 05c1488.
+
+### Fixed
+- `services/agent-engine/app/rag/personal_data.py` — 2 query sites
+- `services/agent-engine/app/rag/cultural_context.py` — 1 site (list literal)
+- `services/agent-engine/app/rag/retriever.py` — 2 sites
+- `services/agent-engine/app/rag/embedding_service.py` — 2 sites (asyncpg, ANDed with `d.agent_id`)
+
+7 total replacements: `d.is_active = true` → `d.extracted_text IS NOT NULL`. Captures the intended semantics (skip rows that haven't been extracted) without referencing a non-existent column.
+
+### Verified
+- 15/15 directly-affected tests pass (`test_personal_data_retrieval` + `test_cultural_context`)
+- 7 `test_rag_retriever` failures are pre-existing (`RAGResult` vs `str` type mismatch from prior refactor; test file unchanged from origin/development)
+
+### Deployed
+- Built linux/amd64 Docker image, pushed to ECR as `2026-05-10-isactive-fix` (digest `sha256:4a5c6f39...`)
+- Force-new-deployment on `ig-dev-agent-engine` ECS service; rollout COMPLETED
+- Verified running task digest matches: `sha256:4a5c6f3913a9d819549c1e1210075c06b0666677f514d928959f38a4d622840e`
+- Smoke tests passed: vectorize text path HTTP 200 with `chunks_stored=1, status=completed`; health HTTP 200
+
+### Merged
+- PR #58 (`fix/rag-isactive-bug` → `development`) → merge commit `68baaf1`
+
+### Impact
+P0 from the IG_Document_RAG_Session_Log_and_Roadmap roadmap is closed. Personal-data semantic retrieval, cultural-context retrieval, and general semantic retrieval now have a working WHERE predicate. Combined with the user-confirmed R-2.9b chat-attach path, the document RAG pipeline is now functional on both attached-by-id and ambient/semantic paths against pgvector.
+
+P1 (consolidate to pgvector by flipping `use_pgvector=True` and migrating Zilliz/Milvus content) remains the next item — without it, the deployed default still routes general retrieval through Zilliz Cloud, which doesn't contain chat-uploaded docs.
+
+---
+
+## [2026-05-10 PM] — Backlog: Memory & Conversational Continuity follow-ups (M.1–M.4)
+
+Logged the four PR #54 follow-up items into `REMAINING_TASKS.md` as a new section 5, with effort estimates, why-deferred rationale, sub-task breakdowns, and a recommended sequence. Bumped the `Last updated` header to 2026-05-10.
+
+### Items added
+- **M.1** — Wire `query_embedding` into `load_context()` so the semantic tier is actually queried. **~3 days** (3 hr wire-only + 2–3 d real persistent vector backend on pgvector or Milvus).
+- **M.2** — Persist `_conversations` / `_messages` dicts in `services/agent-engine/app/routes/conversations.py` to Aurora (new `conversations` table; reuse `chat_messages` for messages). **~1.5 days.**
+- **M.3** — Background consolidation job for inactive sessions (EventBridge scheduled rule + Lambda + DLQ + 3-alarm set). **~1.5–2 days.** Optimisation only — defer until traffic shows it matters.
+- **M.4** — User-facing UI for view / export / delete of stored memory (GDPR / RTBF). 4 backend endpoints + frontend `/settings/privacy` + super-admin `/super-admin/users/:id/memory`. **~2.5 days.**
+
+Recommended sequence: M.2 first (unblocks M.4's "list my conversations" view) → M.4 + M.1 in parallel → M.3 last. Sequential total ~8.5–9 days; ~5 days with two devs split.
+
+### Files
+- `REMAINING_TASKS.md` — new `## 5. Memory & Conversational Continuity Follow-ups` section.
+
+## [2026-05-10] — Cross-session conversational continuity + catch-all session log
+
+Closes the cross-session memory gap surfaced by the 2026-05-09 audit: returning users now see their prior conversation history (not just structured insights), and the session log fires on every turn instead of only on farewell keywords.
+
+### Agent Engine — `services/agent-engine/app/memory/`
+- `short_term.py` — added `get_recent_messages_across_sessions(user_id, exclude_session_id, message_limit, session_limit)` that fetches the user's recent messages from up to N prior sessions in two queries (one to find recent session_ids, one to pull their messages), excluding the current session.
+- `manager.py`
+  - `recall()` now accepts `include_prior_sessions`, `prior_session_message_limit`, `prior_session_count`, `prior_session_summary_limit`. When enabled, the short-term tier additionally returns `prior_sessions` (cross-session messages) and `prior_summaries` (recent session summaries for the user).
+  - `consolidate()` now accepts `clear_working: bool = True`. When `False`, the session summary and any insights are persisted but the session's working-memory namespace is preserved — the path used for incremental, every-turn consolidation.
+- `integration.py`
+  - `load_context()` now defaults to `include_prior_sessions=True` and surfaces a new `prior_session_history` key plus expanded `session_summaries` (current + prior). Tunables are exposed for callers.
+  - `format_memory_block()` renders cross-session continuity inside `<USER_MEMORY>` as a new `<prior_conversations>` block (grouped by session_id, with `<turn role="…">` children, per-message char cap + XML escaping) and a `<session_summaries>` block carrying a `session=` attribute. Token-budget-aware.
+  - `summarize_session()` threads `clear_working` through to `MemoryManager.consolidate()`.
+
+### Agent Engine — `services/agent-engine/app/agents/meridian.py`
+- Both `respond()` (REST) and `route()` (streaming) now call `summarize_session(..., clear_working=is_farewell)` on **every turn**. The session log is no longer keyword-gated — `detect_farewell()` only decides whether to flip `clear_working=True` and whether to fire the `session_ended` EventBridge event + observability finalisation.
+- Net effect: insights from sessions where the user *doesn't* say "goodbye" are no longer lost when the 7-day short-term retention expires; the running summary is durable from turn 1.
+
+### Tests
+- `tests/test_memory_integration.py` — added `TestCrossSessionHistory` (6 tests: prior sessions excluded by current sid, summary aggregation, opt-out, rendering, XML escaping, truncation) and `TestClearWorkingFlag` (3 tests: default clear, opt-out preserves working memory, summarize_session threads the flag). 57/57 passing.
+- `tests/test_meridian.py` — `TestFarewellDetection` rewritten to reflect the new contract: every turn calls `summarize_session()` with `clear_working` mirroring farewell detection; `emit_session_ended` only fires on farewell. 4 tests, all passing.
+- Full memory + meridian sweep: 180/180 passing. Broader agent-engine sweep introduces 0 new failures (delta vs origin/development = 0 tests).
+
+### Behavioral impact for end users
+A returning user (post-deploy) will now see, in addition to PRISM scores / goals / corrections / preferences:
+- The transcript snippets of their prior sessions (capped, attributed to their session_id).
+- A list of session summaries from prior sessions (with timestamps and session_ids).
+- Insights extracted from sessions that ended without an explicit farewell — previously lost when short-term expired.
+
+## [2026-05-09 PM-3] — Document RAG: three actual bugs in vectorize/retrieve, fixed and verified
+
+### Root cause of remaining gap
+After 2026-05-09's three-bug agent-engine fix and the 7-doc backfill, the chat-attached-document RAG path was code-fixed but NOT visible to users. Investigation discovered the live `dev.inspiresgenius.com` is fronted by CloudFront `E3EFVMBYYVF012` from S3 bucket `ig-dev-frontend-assets`, while the frontend CI workflow was deploying to `inspires-genius-dev-frontend` via CloudFront `EQNFTOWMBMKSA` (a distribution with no DNS alias). Every push to `development` was landing in a bucket nobody serves from. Confirmed by `curl https://dev.inspiresgenius.com/assets/index-CE8bZuvC.js | grep -c file_key` returning `0` despite the source having 4 occurrences.
+
+### Changed
+- `inspire-genius-frontend/.github/workflows/ci-deploy.yml` (PR #38, merge `d555cb2`) — `S3_BUCKET=ig-dev-frontend-assets`, `CLOUDFRONT_DISTRIBUTION_ID=E3EFVMBYYVF012`. Includes inline doc on production-stage caveat (production stage reuses these vars; gated by manual approval; needs env-scoped vars before prod cutover).
+- `Transformation Documents/PLATFORM_VERIFICATION_RESET.docx` — §1.1 status flip (R-2.1 ✅ done with commit `e97be4e`), R-2.9 acceptance rewritten for the two-service bridge architecture, new R-2.9b sub-rung for chat-attached document RAG path, R-2.5 annotated with pgvector dependency.
+
+### Merged to development
+- monorepo PR #49 → merge commit `2229604` (12 commits: full document-rag P0+P1+P2+P3 fixes, three-bug fix, end-to-end validation, CSV cp1252 fallback, monolith bridge tests + backfill + CDK env wiring)
+- frontend PR #38 → merge commit `d555cb2` (1 commit: CI bucket reconcile)
+
+### Verified
+- Frontend CI run `25630742379` on `development` post-merge: Build, Unit Tests, Audit, Trivy all green; Deploy to Staging completed; bundle landed in `s3://ig-dev-frontend-assets`; CloudFront `E3EFVMBYYVF012` invalidation `I8DBU9II7CYHZXE4PRT0AGQSOX` issued at `14:21:03Z` and completed.
+- Live `dev.inspiresgenius.com` chunks contain `file_key`: `MeridianChat-DtGZnqFM.js` (1 occurrence), `UploadDocumentsModal-DG0P6Oqe.js` (2 occurrences), `CoachChat-DjCysubq.js` (1 occurrence).
+- Agent-engine ECS service `ig-dev-agent-engine`: task definition rev 35 running image digest `sha256:40df9f4f...` = ECR tag `2026-05-10-csv-encoding-fix` (the manual deploy holding all backend fixes — file_key handling, Aurora documents UPSERT, embedding INSERT into both `chunk_text` and `content`, retrieve_attached_documents fix, CSV encoding fallback).
+- Agent-engine vectorize endpoint smoke tests via `https://8umg6xioz5.execute-api.us-east-1.amazonaws.com/v1/agents/documents/vectorize`:
+  - Direct text path: `{"chunks_stored":1,"status":"completed"}` (HTTP 200) — pipeline writes pgvector chunks successfully.
+  - file_key path with bogus key: HTTP 500 `{"detail":"Vectorization failed: ... NoSuchKey ..."}` — confirms `file_key`, `s3_bucket` fields accepted and S3 fetch logic wired.
+- Agent-engine `/v1/agents/health`: HTTP 200 `{"status":"healthy","mode":"lambda","version":"1.2.0"}`.
+
+### Remaining (user-side browser verification)
+1. Hard-refresh `dev.inspiresgenius.com` (Cmd-Shift-R, bypass service worker).
+2. Open Chat. Use Document attach dialog. Upload PDF/DOCX/CSV/XLSX or select one of the seven verified-vectorized docs.
+3. Ask Meridian a fact-specific question whose answer is in the doc.
+4. Expect cited content from the doc (not generic hallucination). Per R-2.9b acceptance: at least one PDF, one DOCX, one CSV, one XLSX successfully attached and cited.
+
+### Open issues not closed by this fix
+- pgvector general-search syntax error in `_search_personal_pgvector` / `cultural_context` / `retriever` — affects agent's general semantic memory recall (NOT attached-doc retrieval, which is plain SQL). Listed under R-2.5 in PLATFORM_VERIFICATION_RESET.docx.
+- ClamAV scan is a no-op stub. Files vectorize without virus scanning. R-2.9 acceptance carries this as deferred to R-2.11 prod cutover gate.
+- CI workflow's `deploy-production` stage reuses the same S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID env vars and so will write to the dev bucket if approved. Safe today (manual approval gate, prod not cut over). Wire env-scoped variables before enabling production deploy.
+
+---
+
 ## [2026-05-10] — refactor(dash) Wave 0 Lane 0.F — Distributor Network hub (P5.3 / O9)
 
 ### Added
