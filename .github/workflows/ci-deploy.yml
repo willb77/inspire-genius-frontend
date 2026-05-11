@@ -230,21 +230,16 @@ jobs:
   # ─────────────────────────────────────────────
   # 6. DEPLOY TO DEV (auto-deploys every push to `development`)
   # ─────────────────────────────────────────────
-  # Previously named `deploy-staging` — renamed 2026-05-11 to reflect what
-  # this job actually does. It publishes to the `dev.inspiresgenius.com`
-  # bucket + CloudFront distribution; there is no separate staging tier today.
-  #
-  # The `environment.name` is still `staging` because the corresponding
-  # GitHub environment in repo Settings → Environments owns the protection
-  # rules / secrets bound to it. Rename the GitHub environment from
-  # `staging` → `dev` in repo settings to complete the rename here.
+  # Publishes to `dev.inspiresgenius.com` (bucket `ig-dev-frontend-assets`,
+  # CloudFront `E3EFVMBYYVF012`). No staging tier today; if one is added,
+  # introduce a separate `deploy-staging` job + `staging` GitHub environment.
   deploy-dev:
     name: Deploy to Dev
     needs: [build, test-unit, dependency-audit, trivy-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
-      name: staging
+      name: dev
       url: https://dev.inspiresgenius.com
 
     steps:
