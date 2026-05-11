@@ -228,16 +228,24 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────
-  # 6. DEPLOY TO STAGING (requires approval)
+  # 6. DEPLOY TO DEV (auto-deploys every push to `development`)
   # ─────────────────────────────────────────────
-  deploy-staging:
-    name: Deploy to Staging
+  # Previously named `deploy-staging` — renamed 2026-05-11 to reflect what
+  # this job actually does. It publishes to the `dev.inspiresgenius.com`
+  # bucket + CloudFront distribution; there is no separate staging tier today.
+  #
+  # The `environment.name` is still `staging` because the corresponding
+  # GitHub environment in repo Settings → Environments owns the protection
+  # rules / secrets bound to it. Rename the GitHub environment from
+  # `staging` → `dev` in repo settings to complete the rename here.
+  deploy-dev:
+    name: Deploy to Dev
     needs: [build, test-unit, dependency-audit, trivy-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
       name: staging
-      url: https://staging.inspiregenius.com
+      url: https://dev.inspiresgenius.com
 
     steps:
       - name: Download dist
@@ -256,7 +264,7 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Deploy to S3 (staging)
+      - name: Deploy to S3 (dev)
         run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
 
       - name: Invalidate CloudFront cache
@@ -265,7 +273,7 @@ jobs:
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
-      - name: Staging deployment complete
+      - name: Dev deployment complete
         run: echo "Deployed to dev — https://dev.inspiresgenius.com"
 
   # ─────────────────────────────────────────────
@@ -273,7 +281,7 @@ jobs:
   # ─────────────────────────────────────────────
   deploy-production:
     name: Deploy to Production
-    needs: [deploy-staging]
+    needs: [deploy-dev]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
