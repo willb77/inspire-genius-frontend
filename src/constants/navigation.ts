@@ -77,6 +77,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // Combined Plan §A.E3.4 — Sage document research
   { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
+  { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
   { to: ROUTES.SUPER_ADMIN.CULTURAL_CONTENT, icon: Globe, label: "Cultural Content" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
