@@ -281,7 +281,7 @@ jobs:
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
       name: production
-      url: https://app.inspiregenius.com
+      url: https://app.inspiresgenius.com
 
     steps:
       - name: Download dist
@@ -310,4 +310,4 @@ jobs:
             --paths "/*"
 
       - name: Production deployment complete
-        run: echo "Deployed to production — https://app.inspiregenius.com"
+        run: echo "Deployed to production — https://app.inspiresgenius.com"
