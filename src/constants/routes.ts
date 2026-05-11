@@ -39,6 +39,7 @@ export const ROUTES = {
     COST_ANALYSIS: "/super-admin/cost-analysis",
     KNOWLEDGE_BASE: "/super-admin/knowledge-base",
     CULTURAL_CONTENT: "/super-admin/cultural-content",
+    PRISM_MANAGEMENT: "/super-admin/prism-management",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
   },
