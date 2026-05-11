@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1057</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1077</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -104,27 +104,187 @@
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
 
-        <h3>[2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)</h3>
-        <h4>Changed</h4>
+        <h3>[2026-05-11] — Cross-session memory + M.4 privacy/RTBF UI shipped end-to-end on dev</h3>
+        <p>Closes the cross-session memory amnesia gap <strong>and</strong> the M.4 user-facing memory privacy work in a single session. Three monorepo PRs and one frontend PR merged in sequence; agent-engine ECS container rebuilt and rolled to pick up the new code; API Gateway routed; smoke-verified end-to-end.</p>
+        <h4>PRs merged (in order)</h4>
         <ul>
-          <li><code>src/pages/super-admin/KnowledgeBase.tsx</code> now reads a <code>?domain=</code> query param (cultural | coaching | business | system | career | general | prism_report | all) and pre-filters documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via <code>setSearchParams({ replace: true })</code>.</li>
-          <li><code>src/routes.tsx</code> — <code>/super-admin/cultural-content</code> is now a <code>&lt;Navigate&gt;</code> redirect to <code>/super-admin/knowledge-base?domain=cultural</code>. Removed the <code>CulturalContent</code> lazy import.</li>
-          <li><code>src/constants/navigation.ts</code> — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base filter chips. Pruned the unused <code>Globe</code> icon import.</li>
-          <li><code>src/constants/routes.ts</code> — added <code>KNOWLEDGE_BASE_CULTURAL</code> deep-link constant and marked <code>CULTURAL_CONTENT</code> as <code>@deprecated</code>.</li>
+          <li><strong>#54</strong> <code>inspire-genius</code> — <em>feat(memory): cross-session conversation history + catch-all session log</em> → merge <code>b672ba7</code>. Conflicts resolved against <code>origin/development</code> via <code>-X ours</code>; index verification note added to <code>REMAINING_TASKS.md §5</code>.</li>
+          <li><strong>#56</strong> <code>inspire-genius</code> — <em>feat(memory): M.4 backend — privacy / RTBF endpoints</em> → merge <code>1996298</code>. 8 endpoints under <code>/v1/memory/*</code>; <code>emit_memory_action()</code> helper in <code>app/events/eventbridge.py</code>; 13/13 tests pass.</li>
+          <li><strong>#39</strong> <code>inspire-genius-frontend</code> — <em>feat(memory): M.4 frontend — /settings/privacy + super-admin variant</em> → merge <code>dc504b8</code>. 2 pages + service + hook + 8/8 tests; <code>npm run build</code> clean.</li>
+          <li><strong>#63</strong> <code>inspire-genius</code> — <em>feat(api-gw): route <code>/v1/memory/{proxy+}</code> to ECS</em> → merge <code>1d30245</code>. One-line addition to <code>wave5Routes</code> in <code>api-gateway-stack.ts</code> reusing the existing VPC-link integration.</li>
         </ul>
+        <h4>Backend (agent-engine)</h4>
+        <ul>
+          <li><code>app/routes/privacy.py</code> (new) — 4 self-service (<code>/v1/memory/me*</code>) + 4 super-admin (<code>/v1/memory/users/{user_id}*</code>) endpoints for view / export / delete of stored memory tiers.</li>
+          <li><code>app/events/eventbridge.py</code> — new <code>emit_memory_action(actor_id, target_user_id, action, scope)</code> for privacy audit emit; every endpoint emits one event on <code>inspiresgenius.agent-engine</code>.</li>
+          <li><code>tests/test_privacy.py</code> — 13 tests (auth gates, super-admin gate, structured snapshot, export attachment header, full-purge call signature, 404 on missing insight, audit emit attribution).</li>
+        </ul>
+        <h4>Frontend (inspire-genius-frontend)</h4>
+        <ul>
+          <li><code>src/types/memory.ts</code> + <code>src/services/privacy/memory.service.ts</code> + <code>src/hooks/privacy/useMemoryPrivacy.ts</code> (all new) — service → hook → component pattern preserved.</li>
+          <li><code>src/pages/user/SettingsPrivacy.tsx</code> (new) — <code>/settings/privacy</code>: insight list with per-row delete, conversation counts, &ldquo;Download my data&rdquo;, destructive &ldquo;Delete all&rdquo; gated by <code>ConfirmDialog</code>.</li>
+          <li><code>src/pages/super-admin/UserMemory.tsx</code> (new) — <code>/super-admin/users/:userId/memory</code> operator view; audit-attributed to the operator&apos;s <code>sub</code>.</li>
+          <li><code>src/routes.tsx</code> + <code>src/constants/routes.ts</code> — new lazy routes + constants (<code>ROUTES.SETTINGS_PRIVACY</code>, <code>ROUTES.SUPER_ADMIN.USER_MEMORY</code>).</li>
+        </ul>
+        <h4>Deploy chain (2026-05-11 dev)</h4>
+        <ol>
+          <li><code>cdk deploy ig-dev-agent-engine</code> (GHA run <code>25643302746</code>). <strong>Caveat:</strong> the agent-engine Docker image is built/pushed <em>outside</em> CDK; this deploy alone did not pick up the new code.</li>
+          <li><code>cdk deploy ig-dev-api-gateway</code> (run <code>25644571042</code>) — added <code>ANY /v1/memory/{proxy+}</code> → ECS ALB integration <code>nj5msbs</code>.</li>
+          <li>Manual <code>docker buildx build --platform linux/amd64 --push</code> from <code>services/agent-engine/</code> against <code>development</code> HEAD; pushed as <code>:2026-05-11-m4-privacy</code> + <code>:latest</code> (digest <code>sha256:fcb12cf7aec00d1c59845a61ae2afbd274dd8cf509d3ded1346c503e827c0a56</code>).</li>
+          <li><code>aws ecs update-service --force-new-deployment</code> — old task drained ~3 min, new task with privacy router live.</li>
+        </ol>
+        <h4>Verification (live dev probes)</h4>
+        <ul>
+          <li><code>GET /v1/memory/me</code> no token → <code>422</code> &ldquo;Field required&rdquo; ✅</li>
+          <li><code>GET /v1/memory/me</code> bogus token → <code>401</code> &ldquo;Invalid token: Malformed token&rdquo; ✅</li>
+          <li><code>GET /v1/memory/me</code> valid HS256 JWT → <code>200</code> with full structured snapshot ✅</li>
+        </ul>
+        <p>Pre-image-push: all probes returned <code>404</code>; agent-engine CloudWatch logged <code>INFO:app.main:privacy router not present; skipping</code>, confirming the optional-import block was firing because <code>privacy.py</code> wasn&apos;t in the running image. Post-push, the router mounts cleanly.</p>
+        <h4>Issues surfaced (not closed)</h4>
+        <ul>
+          <li><strong>Orphan agent-engine Mangum Lambda</strong> (<code>ig-dev-agent-engine</code>, hand-patched 2026-04-27) — not in any CDK stack; routes that target it via API Gateway (<code>/v1/agents/health</code>, <code>/v1/chat/sessions/start</code>, <code>/v1/admin/voice-config</code>) still serve stale 2026-04-27 code. The M.4 endpoints intentionally avoid this Lambda.</li>
+          <li><strong>8 pre-existing stub Lambdas</strong> flagged by the post-deploy stub-zip check: <code>ig-dev-observability-{retention,rollup,query}</code>, <code>ig-dev-rlhf-{processor,evaluation,collector,stepfn}</code>, <code>ig-dev-audit-service</code> — all 494–538 bytes. Pre-date this session; need a fresh GHA deploy with <code>CDK_DOCKER_BUNDLING=1</code> honored to pick up real bundles.</li>
+        </ul>
+        <p><strong>Promotion gate:</strong> hold staging/prod for a few days while this soaks on dev. <code>dev.inspiresgenius.com/settings/privacy</code> now loads real data; <code>/super-admin/users/:userId/memory</code> works for super-admin operators; every action audit-emits.</p>
+
+        <h3>[2026-05-10 evening] — R-2.3 closed: F-1 Lambda staleness disambiguated</h3>
+        <p><code>/full-go r-2.3</code> autonomous run. <strong>Verdict: STALE — not intentional thin shim.</strong> The <code>ig-dev-agent-engine</code> Lambda is 24 commits / 13 days behind source, but <strong>not on the primary chat path</strong>. The R-2.2 &ldquo;agent=Meridian, metadata={}&rdquo; finding was an ECS-side bug already fixed in subsequent commits.</p>
         <h4>Added</h4>
         <ul>
-          <li><code>src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5 unit tests covering URL → filter wiring (default, <code>?domain=cultural</code> narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).</li>
+          <li><code>R2_3_F1_DISAMBIGUATION_REPORT.md</code> — full evidence report (verdict, 9 evidence sub-sections, follow-up options).</li>
+          <li><code>R2_3_F1_DISAMBIGUATION_REPORT.docx</code> — Word-format mirror with Logo-Dark.png header.</li>
         </ul>
-        <h4>Removed</h4>
+        <h4>Changed</h4>
         <ul>
-          <li><code>src/pages/super-admin/CulturalContent.tsx</code> — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.</li>
+          <li><code>REMAINING_TASKS.md §4</code> — records R-2.3 DONE with full verdict + evidence summary; adds new follow-up item for orphan-Lambda disposition (Option 1/2/3) and env-var credential rotation.</li>
         </ul>
-        <h4>Verification</h4>
+        <h4>Key findings</h4>
         <ul>
-          <li><code>npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5/5 passing.</li>
-          <li><code>npm run build</code> — clean (tsc + Vite).</li>
-          <li><code>npm run lint</code> against changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to the deletion of <code>CulturalContent.tsx</code>).</li>
+          <li>Lambda <code>LastModified=2026-04-27T23:35Z</code>; reports <code>version="1.2.0"</code> while source is <code>1.0.0</code>. 31 invocations in last 24h on 8 peripheral routes (<code>/v1/agents/health</code>, <code>/v1/chat/sessions/start</code>, <code>/v1/chat/conversations</code> GET+DELETE, <code>/v1/admin/voice-config</code>, <code>/v1/agents-settings/{*}</code> CRUD).</li>
+          <li>ECS deployed today (<code>2026-05-10T20:19:30 EDT</code>, task-def rev 35, image <code>phase-e-r2.2-followup-multi-domain</code>, digest <code>sha256:60dbe49e...</code>) and serves <code>POST /v1/agents/chat</code> + <code>ANY /v1/agents/{proxy+}</code> via VPC Link integration <code>99963h9</code>.</li>
+          <li><code>services/agent-engine/app/main.py:528</code> shows the Lambda was designed as the <strong>full</strong> Mangum-wrapped FastAPI app, not a thin shim &mdash; confirming &ldquo;stale, not intentional.&rdquo;</li>
+          <li>No CDK stack manages this Lambda &mdash; it is an orphan from the original Phase 2 Strangler Fig extraction.</li>
+          <li>R-2.2 metadata-propagation + planner-routing bugs are fixed in commits <code>69d81e8</code>, <code>218de1f</code>, <code>dbfb48c</code>, <code>3e31f55</code>, <code>5a4142a</code>, <code>5c0e180</code>, <code>9d8fbb3</code>. R-2.2 24-prompt matrix needs re-run against current ECS image.</li>
+        </ul>
+        <p><strong>Next step on priority path:</strong> R-2.4 (telemetry + audit closure &mdash; F-5 audit-service event-loop bug, EventBridge <code>inspiresgenius.*</code> end-to-end, F-4 <code>InspireGenius/AgentEngine</code> CloudWatch namespace).</p>
+
+                                        <h3>[2026-05-10 PM] — P1.2 (code-only) closed: Zilliz + monolith Milvus migration scripts</h3>
+        <p>P1 commit 2 of the vector store consolidation. <strong>Code only — execution pending operator with Zilliz credentials</strong> (path 2 of the original plan).</p>
+        <h4>Added</h4>
+        <ul>
+          <li><code>services/agent-engine/scripts/migrate_zilliz_to_pgvector.py</code> — paginate Zilliz <code>inspire_genius_docs</code>, join Aurora <code>parent_ids</code>, re-embed via OpenAI 1536-dim, UPSERT documents + document_chunks.</li>
+          <li><code>services/agent-engine/scripts/migrate_monolith_milvus_to_pgvector.py</code> — same for monolith Milvus <code>users_db</code> (pymilvus ORM).</li>
+          <li><code>services/agent-engine/tests/test_migrate_zilliz_to_pgvector.py</code> — 12 unit tests.</li>
+        </ul>
+        <h4>Features</h4>
+        <ul>
+          <li><code>--dry-run</code>, idempotent via checkpoint, resumable on Ctrl-C, progress + cost logging.</li>
+          <li>Exit codes: 0=success, 1=missing prereqs, 2=fatal.</li>
+        </ul>
+        <p>Tests: 12/12 pass. Compile clean. <code>--help</code> works on both scripts.</p>
+        <p>Cost estimate: <strong>&lt;$1</strong> for the full Zilliz collection at OpenAI <code>text-embedding-3-small</code> pricing.</p>
+        <p>Merged: PR #64 → <code>48762ff</code>.</p>
+        <p><strong>Remaining in P1:</strong> operator-supervised execution of commit 2; then commit 3 (dead-code removal) gated by P2 retrieval-parity verification.</p>
+
+<h3>[2026-05-10 PM] — P1.1 closed: use_pgvector flag flipped to True</h3>
+        <p>P1 commit 1 of the vector store consolidation (REMAINING_TASKS.md §7). One-line change in <code>services/agent-engine/app/config.py</code>: <code>use_pgvector: bool = False</code> → <code>True</code>.</p>
+        <h4>Runtime effect</h4>
+        <ul>
+          <li>Knowledge Base / Cultural Content text ingest → Aurora <code>document_chunks</code> (pgvector) instead of Zilliz Cloud</li>
+          <li>General RAG retrieval → pgvector instead of <code>_search_zilliz</code></li>
+          <li>Chat-uploaded docs now visible to ambient semantic retrieval, not just <code>retrieve_attached_documents</code></li>
+        </ul>
+        <h4>Verified</h4>
+        <ul>
+          <li>ECR image <code>2026-05-10-pgvector-flag-flip</code> (digest <code>sha256:e8100e79...</code>), ECS rollout COMPLETED, running task matches</li>
+          <li>Vectorize smoke: <code>chunks_stored=1, status=completed</code> HTTP 200</li>
+          <li>CloudWatch confirms OpenAI embeddings path: <code>POST https://api.openai.com/v1/embeddings 200 OK</code> (pgvector + <code>text-embedding-3-small</code>; pre-flip used Gemini for Zilliz)</li>
+        </ul>
+        <p>Merged: PR #61 → <code>45d3cba</code> (fast-forward).</p>
+        <p><strong>Remaining in P1:</strong> commit 2 (Zilliz + monolith Milvus backfill, 1–2 days) and commit 3 (dead-code removal, 0.5 day, gated by P2 retrieval-parity verification).</p>
+
+<h3>[2026-05-10 PM] — Backlog: Vector Store Consolidation (P1–P4) added to REMAINING_TASKS.md §7</h3>
+        <p>Captures the four remaining work items from the 2026-05-10 doc-RAG roadmap as a backlog section. P0 (<code>is_active</code> SQL bug) marked closed via PR #58.</p>
+        <h4>Items added under §7 Document RAG / Vector Store Consolidation Follow-ups</h4>
+        <ul>
+          <li><strong>P1</strong> (3–5 days) — Consolidate to pgvector exclusively. Three commits: flag flip → Zilliz + Milvus backfill → dead-code removal. Depends on P0.</li>
+          <li><strong>P2</strong> (0.5 day) — Verify pgvector retrieval parity with 50-query A/B test. Gates P1 commit 3 merge.</li>
+          <li><strong>P3</strong> (1–2 days) — Wire <code>decision_rules</code> engine into Meridian.respond pre-LLM step. Parallel with P1.</li>
+          <li><strong>P4</strong> (2–3 days) — Super-admin PRISM CRUD UI (backend <code>routes/prism.py</code> + frontend <code>PrismManagement.tsx</code>). Parallel with P1+P3.</li>
+        </ul>
+        <p>Recommended sequence: ~7 working days with parallel scheduling. Sequential one-engineer estimate: 7–10 days.</p>
+        <p>Carry-overs not in P1–P4: ClamAV scan stub, CI deploy-production env vars, monolith file_service Milvus writes.</p>
+        <p>Merged: PR #60 → <code>d3075bf</code>.</p>
+
+<h3>[2026-05-10 PM] — P0 closed: is_active column bug fixed across 4 RAG files</h3>
+        <p>The <code>documents</code> table on Aurora has no <code>is_active</code> column. The four agent-engine RAG files were silently failing on every personal-data, cultural-context, and general-semantic retrieval query.</p>
+        <h4>Fixed (7 total replacements)</h4>
+        <ul>
+          <li><code>services/agent-engine/app/rag/personal_data.py</code> — 2 query sites</li>
+          <li><code>services/agent-engine/app/rag/cultural_context.py</code> — 1 site (list literal)</li>
+          <li><code>services/agent-engine/app/rag/retriever.py</code> — 2 sites</li>
+          <li><code>services/agent-engine/app/rag/embedding_service.py</code> — 2 sites (asyncpg)</li>
+        </ul>
+        <p>Replacement pattern: <code>d.is_active = true</code> → <code>d.extracted_text IS NOT NULL</code>.</p>
+        <h4>Deployed</h4>
+        <ul>
+          <li>ECR tag <code>2026-05-10-isactive-fix</code>, digest <code>sha256:4a5c6f39...</code></li>
+          <li>ECS rollout COMPLETED on <code>ig-dev-agent-engine</code></li>
+          <li>Vectorize endpoint smoke test: <code>chunks_stored=1, status=completed</code></li>
+          <li>Health endpoint: HTTP 200</li>
+        </ul>
+        <p>Merged via PR #58 → <code>68baaf1</code>. P0 from the IG_Document_RAG_Session_Log_and_Roadmap roadmap is closed.</p>
+
+<h3>[2026-05-10 PM] — Backlog: Memory &amp; Conversational Continuity follow-ups (M.1–M.4)</h3>
+        <p>Logged the four PR #54 follow-up items into <code>REMAINING_TASKS.md</code> as a new section 5, with effort estimates, why-deferred rationale, sub-task breakdowns, and a recommended sequence.</p>
+        <ul>
+          <li><strong>M.1</strong> — Wire <code>query_embedding</code> into <code>load_context()</code> so the semantic tier is actually queried. <strong>~3 days</strong> (3 hr wire-only + 2–3 d real persistent vector backend on pgvector or Milvus).</li>
+          <li><strong>M.2</strong> — Persist <code>_conversations</code> / <code>_messages</code> dicts in <code>services/agent-engine/app/routes/conversations.py</code> to Aurora (new <code>conversations</code> table; reuse <code>chat_messages</code> for messages). <strong>~1.5 days.</strong></li>
+          <li><strong>M.3</strong> — Background consolidation job for inactive sessions (EventBridge scheduled rule + Lambda + DLQ + 3-alarm set). <strong>~1.5–2 days.</strong> Optimisation only — defer until traffic shows it matters.</li>
+          <li><strong>M.4</strong> — User-facing UI for view / export / delete of stored memory (GDPR / RTBF). 4 backend endpoints + frontend <code>/settings/privacy</code> + super-admin <code>/super-admin/users/:id/memory</code>. <strong>~2.5 days.</strong></li>
+        </ul>
+        <p>Recommended sequence: M.2 first (unblocks M.4's "list my conversations" view) → M.4 + M.1 in parallel → M.3 last. Sequential total ~8.5–9 days; ~5 days with two devs split.</p>
+
+        <h3>[2026-05-10] — Cross-session conversational continuity + catch-all session log</h3>
+        <p>Closes the cross-session memory gap surfaced by the 2026-05-09 audit: returning users now see their prior conversation history (not just structured insights), and the session log fires on every turn instead of only on farewell keywords.</p>
+
+        <h4>Agent Engine — <code>services/agent-engine/app/memory/</code></h4>
+        <ul>
+          <li><code>short_term.py</code> — added <code>get_recent_messages_across_sessions(user_id, exclude_session_id, message_limit, session_limit)</code>. Two-query implementation: one to find recent session_ids (excluding the current one), one to pull their messages.</li>
+          <li><code>manager.py</code>:
+            <ul>
+              <li><code>recall()</code> now accepts <code>include_prior_sessions</code>, <code>prior_session_message_limit</code>, <code>prior_session_count</code>, <code>prior_session_summary_limit</code>. When enabled, the short-term tier additionally returns <code>prior_sessions</code> + <code>prior_summaries</code>.</li>
+              <li><code>consolidate()</code> now accepts <code>clear_working: bool = True</code>. When <code>False</code>, the summary + insights are persisted but the session's working-memory namespace is preserved — the path used for incremental, every-turn consolidation.</li>
+            </ul>
+          </li>
+          <li><code>integration.py</code>:
+            <ul>
+              <li><code>load_context()</code> now defaults to <code>include_prior_sessions=True</code> and surfaces a new <code>prior_session_history</code> key plus expanded <code>session_summaries</code> (current + prior).</li>
+              <li><code>format_memory_block()</code> renders cross-session continuity inside <code>&lt;USER_MEMORY&gt;</code> as a new <code>&lt;prior_conversations&gt;</code> block (grouped by <code>session_id</code>, with <code>&lt;turn role="…"&gt;</code> children, per-message char cap + XML escaping) and a <code>&lt;session_summaries&gt;</code> block carrying a <code>session=</code> attribute. Token-budget-aware.</li>
+              <li><code>summarize_session()</code> threads <code>clear_working</code> through to <code>MemoryManager.consolidate()</code>.</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h4>Agent Engine — <code>services/agent-engine/app/agents/meridian.py</code></h4>
+        <ul>
+          <li>Both <code>respond()</code> (REST) and <code>route()</code> (streaming) now call <code>summarize_session(..., clear_working=is_farewell)</code> on <strong>every turn</strong>. The session log is no longer keyword-gated — <code>detect_farewell()</code> only decides whether to flip <code>clear_working=True</code> and whether to fire the <code>session_ended</code> EventBridge event + observability finalisation.</li>
+          <li>Net effect: insights from sessions where the user does not say "goodbye" are no longer lost when the 7-day short-term retention expires; the running summary is durable from turn 1.</li>
+        </ul>
+
+        <h4>Tests</h4>
+        <ul>
+          <li><code>tests/test_memory_integration.py</code> — added <code>TestCrossSessionHistory</code> (6 tests: prior sessions excluded by current sid, summary aggregation, opt-out, rendering, XML escaping, truncation) and <code>TestClearWorkingFlag</code> (3 tests: default clear, opt-out preserves working memory, summarize_session threads the flag). 57/57 passing.</li>
+          <li><code>tests/test_meridian.py</code> — <code>TestFarewellDetection</code> rewritten to reflect the new contract: every turn calls <code>summarize_session()</code> with <code>clear_working</code> mirroring farewell detection; <code>emit_session_ended</code> only fires on farewell. 4 tests, all passing.</li>
+          <li>Full memory + meridian sweep: <strong>180/180 passing.</strong> Broader agent-engine sweep introduces 0 new failures (delta vs origin/development = 0 tests).</li>
+        </ul>
+
+        <h4>Behavioral impact for end users (post-deploy)</h4>
+        <p>A returning user will now see, in addition to PRISM scores / goals / corrections / preferences:</p>
+        <ul>
+          <li>Transcript snippets of their prior sessions (capped, attributed to their <code>session_id</code>).</li>
+          <li>A list of session summaries from prior sessions (with timestamps + <code>session_id</code>s).</li>
+          <li>Insights extracted from sessions that ended without an explicit farewell — previously lost when short-term expired.</li>
         </ul>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
@@ -1621,6 +1781,46 @@
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-11 — Prompt #1077 [Cross-session memory + M.4 end-to-end on dev]</div>
+          <div class="prompt-text">/full-go execute next, in order: (1) check conversation_messages indexes + push to PR #54; (2) scaffold M.4 backend + frontend on a new branch as draft PR; (3) merge PR #54 → dev first, then merge M.4; (4) hold staging/prod promotion until M.4 has soaked in dev. Then in sequence: sort GitHub Actions billing → re-trigger CI → merge PRs in order #54, #56, #39 → deploy backend to dev → add /v1/memory/{proxy+} API GW route (PR #63) → rebuild + push agent-engine Docker image → force-roll ECS → verify privacy endpoint responds. Log this session and update the project docs.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1061 [Backlog memory follow-ups M.1–M.4]</div>
+          <div class="prompt-text">add this to a backlog to address later. (Re: the four PR #54 follow-ups — wire query_embedding into load_context(), persist conversations dict to Aurora, background consolidation job, user-facing memory UI.)</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1060 [Cross-session memory + catch-all session log]</div>
+          <div class="prompt-text">/full-go make full conversation memory work across sessions, add cross-session conversation history to the memory loader, enable conversational continuity, and change the session log trigger away from key words "goodbye" / "bye" / "end session" and make it a catch all.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1059 [continue]</div>
+          <div class="prompt-text">continue</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1058 [verify-first directive]</div>
+          <div class="prompt-text">why didn't you verify this before the last fix? It seems like you done this before, You take a cursory look at the issue and make assumptions. This is wasting time. Verify this will work now. I need the documents that are uploaded from the 'Document' dialoge in 'Chat' to upload, and vertorize documents so the agent engine can see, read them, and use them to create the response.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1057 [validate one doc end-to-end]</div>
+          <div class="prompt-text">go ahead, validate one doc first</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1056 [Option 2 cold-start secret fetch]</div>
+          <div class="prompt-text">/full-go proceed with Option 2, cold-start secret fetch</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1055 [recommendation question]</div>
+          <div class="prompt-text">recommendation? is it 2? I am always partial to strategic solutions that don't create technical debt.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-09 — Prompt #1054 [Document RAG fix — P0+P1+P2+P3]</div>
+          <div class="prompt-text">/full-go do all 5: P1 WS handler edits, P0 EventBridge bridge Lambda + replay historical events, P2 verification probe, Option A planning doc, P3 Meridian routing diagnostics</div>
+        </div>
+
         <h2>Session Prompts <span class="path-badge">session history</span></h2>
         <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
 
@@ -22777,12 +22977,95 @@
 
 
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1058 [/full-go: doc-RAG final fix]</div>
+          <div class="prompt-text">fully fix the issues. 1. PR fix/document-rag/p0-p1-bridge → development and merge. 2. CI deploys frontend AND backend off development to the dev environment (note: CI bucket reconcile may still be needed depending on whether that was merged earlier). 3. Hard-refresh browser and run R-2.9b's test (the four-format check we just wrote into the docx). Make sure this is the final fix of this issue. be complete in what you recommends and do.</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1059 [/full-go approval]</div>
+          <div class="prompt-text">yes</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1062 [whats next]</div>
+          <div class="prompt-text">whats next</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1063 [/full-go: do #1 and #2]</div>
+          <div class="prompt-text">do #1 and then #2</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1064 [/full-go approval]</div>
+          <div class="prompt-text">yes 1 is working I tested it.</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1065 [add to backlog]</div>
+          <div class="prompt-text">add the remain fix of the pgvector to the back log</div>
+        </div>
 
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1066 [continue]</div>
+          <div class="prompt-text">continue</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1067 [status check]</div>
+          <div class="prompt-text">what was done, what needs to be done?</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1068 [P1.1 execute]</div>
+          <div class="prompt-text">run P1 commit 1</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1069 [run P1 commit 2]</div>
+          <div class="prompt-text">run P1 commit 2</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1070 [path 2 approval]</div>
+          <div class="prompt-text">yes path 2</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1071 [diagnose: Stream idle timeout error]</div>
+          <div class="prompt-text">why do I get these errors 'API Error: Stream idle timeout - partial response received'</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1072 [diagnose: slow uplink (0.56 Mbps up)]</div>
+          <div class="prompt-text">the new work here is slow .56 up 67.4 down — ping output shows 0% loss / ~10ms to api.anthropic.com</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1073 [memory: agent engine base priority]</div>
+          <div class="prompt-text">My priority is to get the agent engine working, accepting request or prompts, responding correctly to PRISM, career, job, and training (softskills, hard skills) correctly. The other functions can be added incrementally if this base functionality is functional. Add this to memory.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1074 [R-2.x list status audit]</div>
+          <div class="prompt-text">what from this list has been completed and what hasn't? Can I run them sequentially in one terminal — R-2.1 through R-2.12</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1075 [/full-go r-2.3]</div>
+          <div class="prompt-text">/full-go r-2.3 — disambiguate F-1 (Lambda staleness vs intentional thin shim)</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Prompt #1076 [/full-go approval]</div>
+          <div class="prompt-text">yes</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-10 — Activity [R-2.3 closed: F-1 Lambda staleness disambiguated]</div>
+          <div class="prompt-text">Verdict: STALE (24 commits / 13 days behind source) but NOT on the primary chat path. Authored R2_3_F1_DISAMBIGUATION_REPORT.md + .docx; updated REMAINING_TASKS.md §4 with full evidence + new orphan-Lambda follow-up item. Lambda LastModified=2026-04-27T23:35Z; reports version="1.2.0" while source is "1.0.0"; 31 invocations/24h on 8 peripheral routes. ECS deployed today 2026-05-10T20:19:30 EDT (task-def rev 35, image phase-e-r2.2-followup-multi-domain, digest sha256:60dbe49e...) serves POST /v1/agents/chat + ANY /v1/agents/{proxy+}. main.py:528 confirms Lambda was designed as full FastAPI app under Mangum — not a thin shim. R-2.2 metadata={} bug already fixed in commits 69d81e8 + planner-routing series (218de1f, dbfb48c, 3e31f55, 5a4142a, 5c0e180, 9d8fbb3). R-2.2 needs re-run against current ECS image, no Lambda redeploy required. Next on priority path: R-2.4 (telemetry + audit closure).</div>
+        </div>
 </div>
 
   <script>
