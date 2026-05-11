@@ -34,7 +34,9 @@ import {
   Pause,
   Play,
   SkipForward,
-  Square,
+  Rewind,
+  FastForward,
+  X,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -362,10 +364,77 @@ export default function MeridianChat() {
     pause: pauseAudio,
     resume: resumeAudio,
     skip: skipAudio,
+    seekBy: seekAudio,
     isPlaying: isAudioPlaying,
     isPaused: isAudioQueuePaused,
     queueLength: audioQueueLength,
   } = useAudioQueue();
+
+  // Stream cancellation: tracks in-flight TTS requests so Cancel can abort
+  // the per-sentence /v1/agents/voice/synthesize loop, not just stop the queue.
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const ttsCancelledRef = useRef(false);
+
+  const speakText = useCallback(
+    async (text: string) => {
+      const responseText = (text || "").trim();
+      if (!responseText) return;
+      const sentences = responseText
+        .replace(/([.!?;:])\s+/g, "$1\n")
+        .split("\n")
+        .map((s: string) => s.replace(/[*#_`~[\]]/g, "").trim())
+        .filter((s: string) => s.length >= 3);
+      if (sentences.length === 0) return;
+
+      const controller = new AbortController();
+      ttsAbortRef.current = controller;
+      ttsCancelledRef.current = false;
+
+      try {
+        const { agentApi } = await import("@/lib/agentApi");
+        let token = accessToken;
+        if (!token) {
+          try {
+            const { getToken } = await import("@/lib/storage");
+            token = (await getToken()) || "";
+          } catch { /* ignore */ }
+        }
+        setHasAudio(true);
+        for (const sentence of sentences) {
+          if (ttsCancelledRef.current) break;
+          try {
+            const ttsResp = await agentApi.post(
+              "/v1/agents/voice/synthesize",
+              { text: sentence.slice(0, 4096), voice: "shimmer" },
+              {
+                headers: token ? { "access-token": token } : {},
+                responseType: "arraybuffer",
+                timeout: 30000,
+                signal: controller.signal,
+              },
+            );
+            if (ttsCancelledRef.current) break;
+            if (ttsResp.data && ttsResp.data.byteLength > 0) {
+              enqueueAudio(ttsResp.data);
+            }
+          } catch {
+            // Skip failed sentences (including aborts); continue unless cancelled.
+            if (ttsCancelledRef.current) break;
+          }
+        }
+      } finally {
+        if (ttsAbortRef.current === controller) ttsAbortRef.current = null;
+      }
+    },
+    [accessToken, enqueueAudio],
+  );
+
+  const handleCancelStream = useCallback(() => {
+    ttsCancelledRef.current = true;
+    try { ttsAbortRef.current?.abort(); } catch { /* ignore */ }
+    ttsAbortRef.current = null;
+    stopAudio();
+  }, [stopAudio]);
 
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
@@ -744,6 +813,15 @@ export default function MeridianChat() {
         {/* Audio transport controls — visible when audio is playing or queued */}
         {(isAudioPlaying || audioQueueLength > 0) && (
           <div className="flex items-center gap-1 rounded-lg border bg-background px-2 py-1 shadow-sm">
+            {/* Rewind 5s within current sentence */}
+            <button
+              type="button"
+              title="Rewind 5 seconds"
+              className="p-1 rounded hover:bg-muted transition-colors"
+              onClick={() => seekAudio(-5)}
+            >
+              <Rewind className="h-3.5 w-3.5" />
+            </button>
             {/* Pause / Resume */}
             <button
               type="button"
@@ -752,6 +830,15 @@ export default function MeridianChat() {
               onClick={() => isAudioQueuePaused ? resumeAudio() : pauseAudio()}
             >
               {isAudioQueuePaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+            </button>
+            {/* Fast-forward 5s within current sentence */}
+            <button
+              type="button"
+              title="Fast-forward 5 seconds"
+              className="p-1 rounded hover:bg-muted transition-colors"
+              onClick={() => seekAudio(5)}
+            >
+              <FastForward className="h-3.5 w-3.5" />
             </button>
             {/* Skip to next sentence */}
             <button
@@ -762,14 +849,14 @@ export default function MeridianChat() {
             >
               <SkipForward className="h-3.5 w-3.5" />
             </button>
-            {/* Stop all audio */}
+            {/* Cancel — stop playback AND abort in-flight TTS stream */}
             <button
               type="button"
-              title="Stop audio"
+              title="Cancel stream"
               className="p-1 rounded hover:bg-muted transition-colors text-destructive"
-              onClick={stopAudio}
+              onClick={handleCancelStream}
             >
-              <Square className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" />
             </button>
             {audioQueueLength > 0 && (
               <span className="text-[10px] text-muted-foreground ml-1">{audioQueueLength} queued</span>
@@ -962,39 +1049,10 @@ export default function MeridianChat() {
                     if (data?.agent) setAgentAttribution(data.agent);
 
                     // ── Sentence-level TTS via REST ──────────────────
-                    // Split response into sentences and TTS each one through
-                    // the audio queue. This gives streaming playback with
-                    // pause/resume/skip/stop controls — no WebSocket needed.
+                    // Delegate to speakText so this path shares the same
+                    // queue + abort behavior as per-message Replay.
                     try {
-                      // Split on sentence boundaries (keep punctuation with the sentence)
-                      const sentences = responseText
-                        .replace(/([.!?;:])\s+/g, "$1\n")
-                        .split("\n")
-                        .map((s: string) => s.replace(/[*#_`~[\]]/g, "").trim())
-                        .filter((s: string) => s.length >= 3);
-
-                      if (sentences.length === 0) throw new Error("No sentences to speak");
-
-                      setHasAudio(true);
-
-                      // TTS each sentence and enqueue audio for streaming playback
-                      for (const sentence of sentences) {
-                        try {
-                          const ttsResp = await agentApi.post("/v1/agents/voice/synthesize", {
-                            text: sentence.slice(0, 4096),
-                            voice: "shimmer",
-                          }, {
-                            headers: token ? { "access-token": token } : {},
-                            responseType: "arraybuffer",
-                            timeout: 30000,
-                          });
-                          if (ttsResp.data && ttsResp.data.byteLength > 0) {
-                            enqueueAudio(ttsResp.data);
-                          }
-                        } catch {
-                          // Skip failed sentences, continue with next
-                        }
-                      }
+                      await speakText(responseText);
                     } catch (ttsErr) {
                       console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
                       if ("speechSynthesis" in window) {
@@ -1062,6 +1120,7 @@ export default function MeridianChat() {
             onToggleDocSelect={handleToggleDocSelect}
             docOnDelete={docOnDelete}
             docOnDownload={docOnDownload}
+            onReplayMessage={speakText}
           />
         </div>
       </div>
