@@ -41,6 +41,8 @@ export interface ChatWindowProps {
   onCloseAudioPlayer?: () => void;
   setShowAudioPlayer?: (open: boolean) => void;
   showAudioPlayer?: boolean;
+  // Replay voice for a specific assistant message (TTS at queue tail).
+  onReplayMessage?: (text: string) => void;
 }
 
 // ChatHistory component props
