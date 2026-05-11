@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1077</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1059</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -104,187 +104,258 @@
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
 
-        <h3>[2026-05-11] — Cross-session memory + M.4 privacy/RTBF UI shipped end-to-end on dev</h3>
-        <p>Closes the cross-session memory amnesia gap <strong>and</strong> the M.4 user-facing memory privacy work in a single session. Three monorepo PRs and one frontend PR merged in sequence; agent-engine ECS container rebuilt and rolled to pick up the new code; API Gateway routed; smoke-verified end-to-end.</p>
-        <h4>PRs merged (in order)</h4>
-        <ul>
-          <li><strong>#54</strong> <code>inspire-genius</code> — <em>feat(memory): cross-session conversation history + catch-all session log</em> → merge <code>b672ba7</code>. Conflicts resolved against <code>origin/development</code> via <code>-X ours</code>; index verification note added to <code>REMAINING_TASKS.md §5</code>.</li>
-          <li><strong>#56</strong> <code>inspire-genius</code> — <em>feat(memory): M.4 backend — privacy / RTBF endpoints</em> → merge <code>1996298</code>. 8 endpoints under <code>/v1/memory/*</code>; <code>emit_memory_action()</code> helper in <code>app/events/eventbridge.py</code>; 13/13 tests pass.</li>
-          <li><strong>#39</strong> <code>inspire-genius-frontend</code> — <em>feat(memory): M.4 frontend — /settings/privacy + super-admin variant</em> → merge <code>dc504b8</code>. 2 pages + service + hook + 8/8 tests; <code>npm run build</code> clean.</li>
-          <li><strong>#63</strong> <code>inspire-genius</code> — <em>feat(api-gw): route <code>/v1/memory/{proxy+}</code> to ECS</em> → merge <code>1d30245</code>. One-line addition to <code>wave5Routes</code> in <code>api-gateway-stack.ts</code> reusing the existing VPC-link integration.</li>
-        </ul>
-        <h4>Backend (agent-engine)</h4>
-        <ul>
-          <li><code>app/routes/privacy.py</code> (new) — 4 self-service (<code>/v1/memory/me*</code>) + 4 super-admin (<code>/v1/memory/users/{user_id}*</code>) endpoints for view / export / delete of stored memory tiers.</li>
-          <li><code>app/events/eventbridge.py</code> — new <code>emit_memory_action(actor_id, target_user_id, action, scope)</code> for privacy audit emit; every endpoint emits one event on <code>inspiresgenius.agent-engine</code>.</li>
-          <li><code>tests/test_privacy.py</code> — 13 tests (auth gates, super-admin gate, structured snapshot, export attachment header, full-purge call signature, 404 on missing insight, audit emit attribution).</li>
-        </ul>
-        <h4>Frontend (inspire-genius-frontend)</h4>
-        <ul>
-          <li><code>src/types/memory.ts</code> + <code>src/services/privacy/memory.service.ts</code> + <code>src/hooks/privacy/useMemoryPrivacy.ts</code> (all new) — service → hook → component pattern preserved.</li>
-          <li><code>src/pages/user/SettingsPrivacy.tsx</code> (new) — <code>/settings/privacy</code>: insight list with per-row delete, conversation counts, &ldquo;Download my data&rdquo;, destructive &ldquo;Delete all&rdquo; gated by <code>ConfirmDialog</code>.</li>
-          <li><code>src/pages/super-admin/UserMemory.tsx</code> (new) — <code>/super-admin/users/:userId/memory</code> operator view; audit-attributed to the operator&apos;s <code>sub</code>.</li>
-          <li><code>src/routes.tsx</code> + <code>src/constants/routes.ts</code> — new lazy routes + constants (<code>ROUTES.SETTINGS_PRIVACY</code>, <code>ROUTES.SUPER_ADMIN.USER_MEMORY</code>).</li>
-        </ul>
-        <h4>Deploy chain (2026-05-11 dev)</h4>
-        <ol>
-          <li><code>cdk deploy ig-dev-agent-engine</code> (GHA run <code>25643302746</code>). <strong>Caveat:</strong> the agent-engine Docker image is built/pushed <em>outside</em> CDK; this deploy alone did not pick up the new code.</li>
-          <li><code>cdk deploy ig-dev-api-gateway</code> (run <code>25644571042</code>) — added <code>ANY /v1/memory/{proxy+}</code> → ECS ALB integration <code>nj5msbs</code>.</li>
-          <li>Manual <code>docker buildx build --platform linux/amd64 --push</code> from <code>services/agent-engine/</code> against <code>development</code> HEAD; pushed as <code>:2026-05-11-m4-privacy</code> + <code>:latest</code> (digest <code>sha256:fcb12cf7aec00d1c59845a61ae2afbd274dd8cf509d3ded1346c503e827c0a56</code>).</li>
-          <li><code>aws ecs update-service --force-new-deployment</code> — old task drained ~3 min, new task with privacy router live.</li>
-        </ol>
-        <h4>Verification (live dev probes)</h4>
-        <ul>
-          <li><code>GET /v1/memory/me</code> no token → <code>422</code> &ldquo;Field required&rdquo; ✅</li>
-          <li><code>GET /v1/memory/me</code> bogus token → <code>401</code> &ldquo;Invalid token: Malformed token&rdquo; ✅</li>
-          <li><code>GET /v1/memory/me</code> valid HS256 JWT → <code>200</code> with full structured snapshot ✅</li>
-        </ul>
-        <p>Pre-image-push: all probes returned <code>404</code>; agent-engine CloudWatch logged <code>INFO:app.main:privacy router not present; skipping</code>, confirming the optional-import block was firing because <code>privacy.py</code> wasn&apos;t in the running image. Post-push, the router mounts cleanly.</p>
-        <h4>Issues surfaced (not closed)</h4>
-        <ul>
-          <li><strong>Orphan agent-engine Mangum Lambda</strong> (<code>ig-dev-agent-engine</code>, hand-patched 2026-04-27) — not in any CDK stack; routes that target it via API Gateway (<code>/v1/agents/health</code>, <code>/v1/chat/sessions/start</code>, <code>/v1/admin/voice-config</code>) still serve stale 2026-04-27 code. The M.4 endpoints intentionally avoid this Lambda.</li>
-          <li><strong>8 pre-existing stub Lambdas</strong> flagged by the post-deploy stub-zip check: <code>ig-dev-observability-{retention,rollup,query}</code>, <code>ig-dev-rlhf-{processor,evaluation,collector,stepfn}</code>, <code>ig-dev-audit-service</code> — all 494–538 bytes. Pre-date this session; need a fresh GHA deploy with <code>CDK_DOCKER_BUNDLING=1</code> honored to pick up real bundles.</li>
-        </ul>
-        <p><strong>Promotion gate:</strong> hold staging/prod for a few days while this soaks on dev. <code>dev.inspiresgenius.com/settings/privacy</code> now loads real data; <code>/super-admin/users/:userId/memory</code> works for super-admin operators; every action audit-emits.</p>
-
-        <h3>[2026-05-10 evening] — R-2.3 closed: F-1 Lambda staleness disambiguated</h3>
-        <p><code>/full-go r-2.3</code> autonomous run. <strong>Verdict: STALE — not intentional thin shim.</strong> The <code>ig-dev-agent-engine</code> Lambda is 24 commits / 13 days behind source, but <strong>not on the primary chat path</strong>. The R-2.2 &ldquo;agent=Meridian, metadata={}&rdquo; finding was an ECS-side bug already fixed in subsequent commits.</p>
-        <h4>Added</h4>
-        <ul>
-          <li><code>R2_3_F1_DISAMBIGUATION_REPORT.md</code> — full evidence report (verdict, 9 evidence sub-sections, follow-up options).</li>
-          <li><code>R2_3_F1_DISAMBIGUATION_REPORT.docx</code> — Word-format mirror with Logo-Dark.png header.</li>
-        </ul>
-        <h4>Changed</h4>
-        <ul>
-          <li><code>REMAINING_TASKS.md §4</code> — records R-2.3 DONE with full verdict + evidence summary; adds new follow-up item for orphan-Lambda disposition (Option 1/2/3) and env-var credential rotation.</li>
-        </ul>
+        <h3>[2026-05-11] — R-2.6 closed: RBAC enforcement audit (REST + WS) — PASS, no code changes</h3>
+        <p><code>/full-go r-2.6</code> autonomous run. <strong>Verdict: PASS.</strong> RBAC is correctly implemented + tested across the agent engine; no code changes required.</p>
         <h4>Key findings</h4>
         <ul>
-          <li>Lambda <code>LastModified=2026-04-27T23:35Z</code>; reports <code>version="1.2.0"</code> while source is <code>1.0.0</code>. 31 invocations in last 24h on 8 peripheral routes (<code>/v1/agents/health</code>, <code>/v1/chat/sessions/start</code>, <code>/v1/chat/conversations</code> GET+DELETE, <code>/v1/admin/voice-config</code>, <code>/v1/agents-settings/{*}</code> CRUD).</li>
-          <li>ECS deployed today (<code>2026-05-10T20:19:30 EDT</code>, task-def rev 35, image <code>phase-e-r2.2-followup-multi-domain</code>, digest <code>sha256:60dbe49e...</code>) and serves <code>POST /v1/agents/chat</code> + <code>ANY /v1/agents/{proxy+}</code> via VPC Link integration <code>99963h9</code>.</li>
-          <li><code>services/agent-engine/app/main.py:528</code> shows the Lambda was designed as the <strong>full</strong> Mangum-wrapped FastAPI app, not a thin shim &mdash; confirming &ldquo;stale, not intentional.&rdquo;</li>
-          <li>No CDK stack manages this Lambda &mdash; it is an orphan from the original Phase 2 Strangler Fig extraction.</li>
-          <li>R-2.2 metadata-propagation + planner-routing bugs are fixed in commits <code>69d81e8</code>, <code>218de1f</code>, <code>dbfb48c</code>, <code>3e31f55</code>, <code>5a4142a</code>, <code>5c0e180</code>, <code>9d8fbb3</code>. R-2.2 24-prompt matrix needs re-run against current ECS image.</li>
+          <li><strong>6-role hierarchy</strong> in <code>app/permissions/roles.py</code> with <code>is_at_least()</code> helper + named-permission map. 33 dedicated tests pass.</li>
+          <li><strong>Role propagation</strong>: JWT → <code>auth_deps.require_auth</code> → <code>AgentContext(role=...)</code> at both REST and WS (<code>handlers.py:213, 458</code>) entry points.</li>
+          <li><strong>5/5 gated specialist agents enforce role</strong>: Ascend (manager+), Maven (manager/practitioner/admin), Sentinel (company-admin+), Anchor (super-admin + practitioner), Nexus (super-admin + practitioner).</li>
+          <li><strong>James/AdminAgent dual-tier</strong>: gated at orchestrator level via <code>business_orchestrator._is_admin_query</code> + <code>_ADMIN_ROLES</code> — by design (James also serves Job Blueprint career-fit for all roles).</li>
+          <li><strong>Structured denial</strong>: <code>AgentResponse.metadata = {access_denied: True, required_roles: [...]}</code>. EventBridge emits <code>agent.admin.access_denied</code>.</li>
+          <li><strong>Tool-level RBAC</strong> + per-role quotas in <code>app/permissions/tool_access.py</code> + <code>quotas.py</code>.</li>
         </ul>
-        <p><strong>Next step on priority path:</strong> R-2.4 (telemetry + audit closure &mdash; F-5 audit-service event-loop bug, EventBridge <code>inspiresgenius.*</code> end-to-end, F-4 <code>InspireGenius/AgentEngine</code> CloudWatch namespace).</p>
+        <h4>Test verification (no live token-minting needed)</h4>
+        <ul>
+          <li><code>tests/test_permissions.py</code> + <code>test_audit_agent.py</code>: <strong>65/65 PASS</strong></li>
+          <li><code>tests/test_orchestrators.py</code> -k "access_denied or role": <strong>4/4 PASS</strong></li>
+          <li><code>test_mcp_tools.py</code> + <code>test_roles_analytics.py</code> + <code>test_debug_rag.py::test_require_super_admin_rejects_lower_roles</code>: <strong>73/74 PASS</strong> (1 unrelated email-tool failure)</li>
+          <li><strong>Total RBAC-relevant: 69+ tests passing, 0 RBAC failures</strong></li>
+        </ul>
+        <h4>Why R-2.2 saw "0/3 strict pass" on RBAC denials</h4>
+        <p>The R-2.2 matcher scanned <code>response.content</code> for keywords like <code>"denied"</code>/<code>"forbidden"</code>. Agents use polite natural-language phrasing; the structural signal lives in <code>response.metadata.access_denied</code> (boolean). <strong>R-2.2 fix (no agent-engine change)</strong>: switch matcher to <code>response.metadata.get("access_denied") is True</code>. Flips RBAC sub-score 0/3 → expected 3/3.</p>
+        <h4>Files</h4>
+        <ul>
+          <li><strong>Created</strong>: <code>R2_6_RBAC_AUDIT_REPORT.md</code> + <code>.docx</code> (with Logo-Dark.png header)</li>
+          <li><strong>Updated</strong>: <code>REMAINING_TASKS.md §4</code> (R-2.6 DONE — PASS; re-added R-2.3 + R-2.4 entries overwritten by a baseline reset)</li>
+          <li><strong>Synced</strong>: <code>change_log.md</code>, <code>IG_project_log.html</code> to all 5 copy locations</li>
+        </ul>
+        <h4>Hygiene follow-ups (not part of R-2.6)</h4>
+        <ol>
+          <li>Centralize per-agent role checks via <code>is_at_least()</code> instead of per-file <code>_ALLOWED_ROLES</code> sets.</li>
+          <li>Surface <code>access_denied</code> at top-level response (not just metadata).</li>
+          <li>Document James's dual-tier design in <code>.claude/rules/agents.md</code>.</li>
+          <li>Update R-2.2 strict matcher to read <code>metadata.access_denied</code>.</li>
+        </ol>
+        <p><strong>Next on priority path:</strong> R-2.2 — 24-prompt matrix re-run against current ECS image (<code>phase-e-r2.2-followup-multi-domain</code> with planner-routing + synthesizer-metadata + RBAC matcher fixes).</p>
 
-                                        <h3>[2026-05-10 PM] — P1.2 (code-only) closed: Zilliz + monolith Milvus migration scripts</h3>
-        <p>P1 commit 2 of the vector store consolidation. <strong>Code only — execution pending operator with Zilliz credentials</strong> (path 2 of the original plan).</p>
-        <h4>Added</h4>
+        <h3>[2026-05-11] — Phase E R-2.2-followup: strict gaps — fast-mode fan-out + dominant-contributor attribution + RDS Proxy SG pin</h3>
+        <h4>Fixed</h4>
+        <p>Closes the three remaining strict-acceptance gaps from PR #72's residual list:</p>
+        <ol>
+          <li><strong>Fast-mode fan-out</strong> (M2/M3 blocker) — when <code>MultiDomainCoordinator</code> tags a sub-context with <code>multi_domain_leg=&lt;domain&gt;</code>, each orchestrator's <code>handle()</code> now short-circuits past templates + LLM planner and goes straight to keyword <code>select_agent()</code> + <code>agent.process()</code>. Each leg comfortably under the 35 s per-leg budget.</li>
+          <li><strong>Dominant-contributor attribution</strong> (S2/S6 blocker) — <code>Synthesizer.combine()</code> scores each contributor by <code>confidence * len(content)</code>; top scorer ≥ 2× runner-up AND <code>confidence &gt;= 0.5</code> stamps the synthesised response with that specialist's <code>agent_name</code> (not "Meridian"). Co-equal contributions still brand "Meridian".</li>
+          <li><strong>RDS Proxy SG ingress pin (CDK)</strong> — Phase E R-2.1's ingress rule on <code>sg-0f371575e4f064844</code> was dropped by a parallel deploy on 2026-05-10. Now codified in <code>infrastructure/cdk/lib/agent-engine-stack.ts</code> via a new <code>dbProxySgId</code> context lookup.</li>
+        </ol>
+        <h4>Changes</h4>
         <ul>
-          <li><code>services/agent-engine/scripts/migrate_zilliz_to_pgvector.py</code> — paginate Zilliz <code>inspire_genius_docs</code>, join Aurora <code>parent_ids</code>, re-embed via OpenAI 1536-dim, UPSERT documents + document_chunks.</li>
-          <li><code>services/agent-engine/scripts/migrate_monolith_milvus_to_pgvector.py</code> — same for monolith Milvus <code>users_db</code> (pymilvus ORM).</li>
-          <li><code>services/agent-engine/tests/test_migrate_zilliz_to_pgvector.py</code> — 12 unit tests.</li>
+          <li><code>services/agent-engine/app/agents/orchestrators/{business,coaching,system,career}_orchestrator.py</code> — fast-mode branch at the top of <code>handle()</code>.</li>
+          <li><code>services/agent-engine/app/orchestration/synthesizer.py</code> — <code>_pick_dominant()</code> helper + attribution branch. Adds <code>metadata.attribution</code> + <code>metadata.dominant_agent</code>.</li>
+          <li><code>infrastructure/cdk/lib/agent-engine-stack.ts</code> — <code>dbProxySgId</code> context lookup + <code>dbProxySg.addIngressRule(serviceSg, ec2.Port.tcp(5432), …)</code>.</li>
+          <li><code>services/agent-engine/tests/test_synthesizer_metadata.py</code> — 3 new tests. <code>services/agent-engine/tests/test_orchestrator_fast_mode.py</code> (NEW) — 5 tests pinning fast-mode short-circuit on all four orchestrators.</li>
+          <li><strong>13 tests pass</strong> on the new+modified suites; adjacent suites all pass.</li>
         </ul>
-        <h4>Features</h4>
+        <h4>Verification plan (post-deploy)</h4>
         <ul>
-          <li><code>--dry-run</code>, idempotent via checkpoint, resumable on Ctrl-C, progress + cost logging.</li>
-          <li>Exit codes: 0=success, 1=missing prereqs, 2=fatal.</li>
+          <li><strong>M2-Atlas+Echo / M3-Sentinel+Sage</strong>: expected to flip strict-pass — fast-mode legs return inside 35 s.</li>
+          <li><strong>S2-Alex / S6-Forge</strong>: expected to flip strict-pass — <code>agent_name == "Alex"/"Forge"</code> from dominant-contributor branding.</li>
+          <li>Target: <strong>22/24</strong> WS strict (from 20/24 high-water).</li>
         </ul>
-        <p>Tests: 12/12 pass. Compile clean. <code>--help</code> works on both scripts.</p>
-        <p>Cost estimate: <strong>&lt;$1</strong> for the full Zilliz collection at OpenAI <code>text-embedding-3-small</code> pricing.</p>
-        <p>Merged: PR #64 → <code>48762ff</code>.</p>
-        <p><strong>Remaining in P1:</strong> operator-supervised execution of commit 2; then commit 3 (dead-code removal) gated by P2 retrieval-parity verification.</p>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/strict-gaps</code> → <code>fix/phase-e-r2.2-followup/final-rungs</code> — stacked on PR #72. Final stack order: #46 → #48 → #55 → #57 → #59 → #66 → #72 → this PR.</p>
 
-<h3>[2026-05-10 PM] — P1.1 closed: use_pgvector flag flipped to True</h3>
-        <p>P1 commit 1 of the vector store consolidation (REMAINING_TASKS.md §7). One-line change in <code>services/agent-engine/app/config.py</code>: <code>use_pgvector: bool = False</code> → <code>True</code>.</p>
-        <h4>Runtime effect</h4>
+        <h3>[2026-05-11] — Phase E R-2.2-followup: orchestrator latency caps + admin-query precision (WS 20/24, M1 + M4 strict-pass)</h3>
+        <h4>Fixed</h4>
+        <p>Two fixes addressing rungs #3 and #4 from the surfaced-rungs list:</p>
+        <ol>
+          <li><strong>Orchestrator latency caps</strong> (rung #4) — single-domain timeout cap (40 s) in <code>Meridian.respond()</code> with fall-through to keyword <code>select_agent</code>; per-leg timeout (35 s) in <code>run_multi_domain</code> with slow-leg drop.</li>
+          <li><strong>BusinessOrchestrator admin-query precision</strong> (root cause of M2 fast-fail, originally framed as #3 silent-drop) — <code>_is_admin_query</code> now requires one high-precision admin verb (admin / invite / billing / permission) OR two-or-more lower-precision tokens. Pre-fix M2's manager-role prompt matched single token "team" and short-circuited to James access-denied in 1.97 s.</li>
+        </ol>
+        <h4>Changes</h4>
         <ul>
-          <li>Knowledge Base / Cultural Content text ingest → Aurora <code>document_chunks</code> (pgvector) instead of Zilliz Cloud</li>
-          <li>General RAG retrieval → pgvector instead of <code>_search_zilliz</code></li>
-          <li>Chat-uploaded docs now visible to ambient semantic retrieval, not just <code>retrieve_attached_documents</code></li>
+          <li><code>services/agent-engine/app/agents/meridian.py</code> — <code>SINGLE_DOMAIN_TIMEOUT_S = 40.0</code> with fall-through.</li>
+          <li><code>services/agent-engine/app/agents/multi_domain_coordinator.py</code> — <code>PER_LEG_TIMEOUT_S_DEFAULT = 35.0</code> (first iteration's 25 s was too tight — regressed M4; bumped on second iteration).</li>
+          <li><code>services/agent-engine/app/agents/orchestrators/business_orchestrator.py</code> — two-tier admin precision rule.</li>
+          <li><code>services/agent-engine/tests/test_admin_query_precision.py</code> (NEW, 8 tests) + 1 new multi-domain timeout test. <strong>53/53 tests pass</strong> locally.</li>
+        </ul>
+        <h4>Verification on dev</h4>
+        <table>
+          <tr><th>Block</th><th>Pre-stack</th><th>PR #66</th><th>This PR</th></tr>
+          <tr><td>Single-agent</td><td>10/17</td><td>15/17</td><td><strong>15/17</strong></td></tr>
+          <tr><td>Multi-agent</td><td>0/4</td><td>1/4</td><td><strong>2/4 (M1 + M4 strict-pass)</strong></td></tr>
+          <tr><td>RBAC denial</td><td>2/3</td><td>3/3</td><td><strong>3/3</strong></td></tr>
+          <tr><td><strong>Total</strong></td><td>12/24</td><td>19/24</td><td><strong>20/24 (new high water mark)</strong></td></tr>
+        </table>
+        <p><strong>M1-Forge+Aura: PASS</strong> — <code>synth=True, contributing=['Aura', 'Compass', 'Echo', 'Forge']</code>. <strong>M4-Grant+Bridge: PASS</strong> — <code>contributing=['Bridge', 'Grant']</code>.</p>
+        <h4>Remaining strict gaps (each a separate rung)</h4>
+        <ul>
+          <li>M2-Atlas+Echo / M3-Sentinel+Sage: both fan-out legs running planner+DAG+synthesis exceed 35 s budget. Needs fast-mode keyword-routing inside coordinator legs.</li>
+          <li>S2-Alex / S6-Forge: templates with multi-contributor synthesis brand result Meridian.</li>
+          <li>REST 30 s API GW ceiling: structural; WS is the production path.</li>
+        </ul>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/final-rungs</code> → <code>development</code> — stacked on PR #66. Final stack: #46 → #48 → #55 → #57 → #59 → #66 → this PR.</p>
+
+        <h3>[2026-05-10] — Phase E R-2.2-followup: cross-domain coordinator + single-contributor attribution</h3>
+        <h4>Fixed</h4>
+        <p>Closes the architectural finding from PR #59. M1/M2/M3 require agents from <strong>two</strong> domains; today's Meridian routes to one orchestrator at a time. This PR adds a multi-domain coordinator that detects compound prompts and fans out across orchestrators in parallel.</p>
+        <h4>Changes</h4>
+        <ul>
+          <li><code>services/agent-engine/app/agents/multi_domain_coordinator.py</code> (NEW) — <code>detect_compound_domains</code> (keyword threshold-2 heuristic) and <code>run_multi_domain</code> (async fan-out via <code>asyncio.gather</code>, results synthesised via <code>Synthesizer.combine</code>, <code>contributing_agents</code> recomputed as the UNION of per-domain contributors, not "Meridian").</li>
+          <li><code>services/agent-engine/app/agents/meridian.py</code> — wire the coordinator into <code>respond()</code>; expand <code>_COACHING/_BUSINESS/_SYSTEM/_CAREER_TALENT_KEYWORDS</code> sets to cover the R-2.2 prompt vocabulary.</li>
+          <li><code>services/agent-engine/app/orchestration/synthesizer.py</code> — single-contributor attribution: when only one node in a multi-node DAG has content, return that specialist's response (not "Meridian"). Fixes S2/S6/S17-style Meridian fallback.</li>
+          <li>13 new tests (12 coordinator + 1 synthesizer). 43/43 R-2.2 tests pass.</li>
+        </ul>
+        <h4>Operational sidequest — RDS Proxy SG ingress regressed mid-session</h4>
+        <p>ECS deployment showed <code>asyncpg.TimeoutError</code> on the new task. The RDS Proxy SG <code>sg-0f371575e4f064844</code> inbound rules no longer included agent-engine task SG <code>sg-0f8f779bb868d4efa</code> — PR #46's ingress rule had been dropped by a subsequent CDK deploy from a different branch. Re-added directly via <code>aws ec2 authorize-security-group-ingress</code>. <strong>Action item</strong>: pin in CDK or guard against parallel-stack drift.</p>
+        <h4>Verification on dev</h4>
+        <p>R-2.2 WS matrix with full stack deployed:</p>
+        <table>
+          <tr><th>Block</th><th>Pre-stack</th><th>PR #59</th><th>This PR</th></tr>
+          <tr><td>Single-agent</td><td>10/17</td><td>15/17</td><td><strong>15/17</strong> (S17-Grant flipped to PASS; was Meridian)</td></tr>
+          <tr><td>Multi-agent</td><td>0/4</td><td>1/4</td><td><strong>1/4</strong> (M4 ✅; M1 intermittent — passed mid-iteration)</td></tr>
+          <tr><td>RBAC denial</td><td>2/3</td><td>3/3</td><td><strong>3/3</strong></td></tr>
+          <tr><td><strong>Total</strong></td><td>12/24</td><td>19/24</td><td><strong>19/24</strong></td></tr>
+        </table>
+        <p>The numeric total matches PR #59 but composition is different — S17 flipped to PASS (real progress) and M1 caught an intermittent ALB timeout. In the mid-iteration run with <code>SECOND_PLACE_MIN=1</code>, M1 and M4 both passed strict — clear evidence the coordinator works on the M1 path.</p>
+        <h4>Remaining strict failures (each a separate rung)</h4>
+        <ul>
+          <li>S2-Alex / S6-Forge — templates produce 2+ contributors → synthesizer LLM brands result Meridian. Single-contributor fix doesn't help here.</li>
+          <li>M1 intermittent — fan-out vs ALB 60 s ceiling. Needs per-leg timeout cap.</li>
+          <li>M2 1.97 s fast-fail — WS persistent-connection silent-drop (PR #48 surfaced rung).</li>
+          <li>M3 <code>contributing=[Sentinel]</code> — business-orchestrator planner didn't return Sage cleanly on the business leg of fan-out.</li>
+        </ul>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/multi-domain-coordinator</code> → <code>development</code> — built on top of PR #59. Stack order: #46 → #48 → #55 → #57 → #59 → this PR.</p>
+
+        <h3>[2026-05-10] — Phase E R-2.2-followup: planner few-shot multi-node decomposition + cross-domain architectural finding</h3>
+        <h4>Fixed</h4>
+        <p>After PR #57 the WS matrix still showed M1 Forge+Aura collapsed to a single-node <code>[Forge]</code> plan and M3 Sentinel+Sage to <code>[Sentinel]</code> only. The "produce a MULTI-NODE plan" guideline alone wasn't strong enough — the LLM read it but still collapsed.</p>
+        <h4>Changes</h4>
+        <ul>
+          <li><code>services/agent-engine/app/orchestration/planner.py</code> — embedded five worked examples in <code>PLANNING_PROMPT</code> (simple single-topic Alex; M4 Grant+Bridge; M1 Forge+Aura; M2 Atlas+Echo; M3 Sentinel+Sage). Added an explicit guideline: "NEVER collapse to a single-node plan even if one agent could plausibly cover both topics."</li>
+          <li><code>services/agent-engine/tests/test_planner_routing.py</code> — 6 new tests pin the prompt structure (each compound example present + ≥ 4 multi-node examples + explicit forbid-collapse guideline). 27/27 pass.</li>
+        </ul>
+        <h4>Verification</h4>
+        <p>Built <code>linux/amd64</code> image, pushed to ECR (digest <code>sha256:2c7eee68...</code>), forced ECS deployment. R-2.2 WS matrix re-run:</p>
+        <ul>
+          <li>Single-agent: 15/17 (unchanged)</li>
+          <li>Multi-agent: 1/4 (unchanged numerically but quality improved)</li>
+          <li>RBAC denial: 3/3 (unchanged)</li>
+          <li><strong>Total 19/24</strong></li>
+        </ul>
+        <p><strong>Quality delta within multi-agent:</strong> M1 went from single-node <code>[Forge]</code> to genuine multi-node <code>[Compass, Forge]</code> — the few-shot pattern is firing. Strict gate still fails because LLM picked Compass instead of Aura.</p>
+        <h4>Architectural finding — strict 24/24 needs cross-orchestrator coordination</h4>
+        <p>M1, M2, M3 expectations require agents from <strong>two different domains</strong>:</p>
+        <ul>
+          <li>M1: Aura (coaching) + Forge (business)</li>
+          <li>M2: Atlas (business) + Echo (coaching)</li>
+          <li>M3: Sentinel (system) + Sage (business)</li>
+          <li>M4: Grant + Bridge — both in <code>career_talent</code> → passes ✅</li>
+        </ul>
+        <p>Today's architecture routes each message to <strong>one</strong> domain orchestrator whose <code>Planner</code> only sees that domain's agents. No amount of prompt tightening can produce <code>[Aura, Forge]</code> from a single planner call — Aura is not in Business's agent list and Forge is not in Coaching's. <strong>Strict 24/24 acceptance for M1/M2/M3 requires a Meridian-level multi-domain coordinator</strong> that fans a compound prompt into two single-domain orchestrator calls and re-synthesises the result. Recommend treating this as a new R-2.2-followup rung (or folding into Phase G).</p>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/planner-fewshot</code> → <code>development</code> — built on top of PR #57.</p>
+
+        <h3>[2026-05-10] — Phase E R-2.2-followup: planner routing (Nova/Echo, Maven/Beacon/Grant, career_talent)</h3>
+        <h4>Fixed</h4>
+        <p>The R-2.2 matrix's M4-Grant+Bridge prompt returned <code>[Alex, Aura]</code> (planner picked the wrong agents) because three planner code paths had drifted out of sync with the canonical agent roster.</p>
+        <ol>
+          <li><strong><code>AGENT_DESCRIPTIONS</code> had 14 entries instead of 17.</strong> Maven, Beacon, Grant absent. Nova/Echo descriptions swapped. Bridge described as a notifications agent — that's Beacon.</li>
+          <li><strong><code>_parse_plan</code> validated against <code>AGENT_DESCRIPTIONS</code>.</strong> When the LLM correctly picked "Grant", validation silently rewrote it to "Aura" — that was the M4 root cause.</li>
+          <li><strong><code>_filter_agents_by_domain</code> missing <code>career_talent</code> entirely.</strong> <code>system</code> had Bridge (pipeline) instead of Beacon (notifications). <code>business</code> was missing Maven.</li>
+        </ol>
+        <p>Also added compound-prompt guidance to the planning prompt so the LLM explicitly produces multi-node plans for "AND"-joined queries.</p>
+        <h4>Changes</h4>
+        <ul>
+          <li><code>services/agent-engine/app/orchestration/planner.py</code> — full rewrite of <code>AGENT_DESCRIPTIONS</code> (17 specialists), <code>_parse_plan</code> validates against <code>self._available_agents | AGENT_DESCRIPTIONS</code>, <code>_filter_agents_by_domain</code> adds <code>career_talent</code>, <code>_keyword_select</code> swaps Nova/Echo back.</li>
+          <li><code>services/agent-engine/tests/test_planner_routing.py</code> (NEW, 21 tests) — pins every fault site.</li>
+        </ul>
+        <h4>Verification</h4>
+        <p>Built <code>linux/amd64</code> Docker image, pushed to ECR (digest <code>sha256:e5f6cabd...</code>), forced ECS deployment. 21/21 unit tests pass. R-2.2 REST matrix re-run:</p>
+        <table>
+          <tr><th>Block</th><th>Pre-fix</th><th>Post-fix</th></tr>
+          <tr><td>Single-agent</td><td>11/17</td><td><strong>15/17</strong></td></tr>
+          <tr><td>Multi-agent</td><td>0/4</td><td>0/4 (M4 now exposes REST 30s ceiling)</td></tr>
+          <tr><td>RBAC denial</td><td>2/3</td><td><strong>3/3</strong></td></tr>
+          <tr><td><strong>Total</strong></td><td>13/24</td><td><strong>18/24</strong></td></tr>
+        </table>
+        <p>Now passing: S3-Nova (was Echo), S5-Ascend (was 30s timeout), S11-Maven (was 30s timeout), S16-Bridge (was 30s timeout), S17-Grant (was Meridian fallback), AC1-user-denied-Ascend (RBAC now fires correctly).</p>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/planner-routing-v2</code> → <code>development</code> — built on top of PR #55 (synthesizer metadata).</p>
+
+        <h3>[2026-05-10] — Phase E R-2.2-followup: synthesizer metadata propagation</h3>
+        <h4>Fixed</h4>
+        <p><code>metadata.synthesized</code> (bool) and <code>metadata.contributing_agents</code> (list[str]) are now populated on <strong>every</strong> chat-response return path. R-2.2 strict acceptance gates these fields; pre-fix three synthesizer paths and the orchestrators' single-agent direct path returned <code>AgentResponse</code>s with no metadata, which made the gate impossible to pass even when an orchestrator DAG had run and an agent had returned content.</p>
+        <h4>Changes</h4>
+        <ul>
+          <li><code>services/agent-engine/app/orchestration/synthesizer.py</code> — every return path now sets <code>metadata.synthesized</code> + <code>contributing_agents</code> + <code>node_count</code>. Single-result early-return preserves the original agent's response but enriches metadata; empty / low-confidence fallbacks tag the failure mode (<code>fallback: 'no_results'</code> or <code>'all_nodes_low_confidence'</code>) for diagnostics.</li>
+          <li>4 orchestrators (coaching / business / system / career) — always route through <code>synthesizer.combine()</code> when the DAG ran (template OR planner multi-agent), and enrich metadata on the single-agent direct path with <code>synthesized=False</code>, <code>contributing_agents=[that_one_agent]</code>, and an <code>orchestrator_path</code> label (<code>single_agent_direct</code> / <code>template</code> / <code>multi_agent_dag</code>).</li>
+          <li><code>services/agent-engine/tests/test_synthesizer_metadata.py</code> (NEW) — pins the invariant on all 4 synthesizer return paths. 4/4 passing locally.</li>
+        </ul>
+        <h4>Verification</h4>
+        <p>Built <code>linux/amd64</code> Docker image, pushed to ECR with <code>phase-e-r2.2-followup</code> + <code>latest</code> tags (digest <code>sha256:0aefcdd6...</code>), forced a new ECS deployment on <code>ig-dev-agent-engine</code>. Re-ran the R-2.2 REST matrix post-deploy. M1 now reports <code>contributing=['Forge']</code> (was <code>[]</code> pre-fix) — observability gap closed. Strict acceptance still <strong>FAILS</strong> because the other R-2.2 follow-up rungs (Meridian fallback routing, planner picks wrong agents, AC1 RBAC sequencing, REST 30 s ceiling) remain open and were explicitly out of scope per the reset plan's rung boundaries.</p>
+        <h4>Word-format verification reports (memory rule: always .docx)</h4>
+        <p>Generated <code>services/agent-engine/PHASE_E2_REST_VERIFICATION_REPORT.docx</code> and <code>services/agent-engine/PHASE_E2_WS_VERIFICATION_REPORT.docx</code> from the .md sources in PR #48 with the IG Logo-Dark.png header. Added two specific exceptions in <code>.gitignore</code> so the artefacts can be committed alongside the .md sources.</p>
+        <h4>Pull request</h4>
+        <p><code>fix/phase-e-r2.2-followup/synthesizer-metadata</code> → <code>development</code> — title <em>fix(phase-e-r2.2-followup): synthesizer metadata propagation</em>.</p>
+
+        <h3>[2026-05-10] — fix(document-rag) FINAL — frontend bucket reconcile + end-to-end pipeline verified</h3>
+        <h4>Root cause of remaining gap</h4>
+        <p>After 2026-05-09's three-bug agent-engine fix and 7-doc backfill, the chat-attached-document RAG path was code-fixed but NOT visible to users. Investigation discovered the live <code>dev.inspiresgenius.com</code> is fronted by CloudFront <code>E3EFVMBYYVF012</code> from S3 bucket <code>ig-dev-frontend-assets</code>, while the frontend CI workflow was deploying to <code>inspires-genius-dev-frontend</code> via CloudFront <code>EQNFTOWMBMKSA</code> (a distribution with no DNS alias). Every push to <code>development</code> was landing in a bucket nobody serves from.</p>
+        <h4>Changed</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/.github/workflows/ci-deploy.yml</code> (PR #38, merge <code>d555cb2</code>) — <code>S3_BUCKET=ig-dev-frontend-assets</code>, <code>CLOUDFRONT_DISTRIBUTION_ID=E3EFVMBYYVF012</code>.</li>
+          <li><code>Transformation Documents/PLATFORM_VERIFICATION_RESET.docx</code> — §1.1 Discoveries section, R-2.9 acceptance rewritten for two-service bridge architecture, new R-2.9b sub-rung for chat-attached document RAG, R-2.5 annotated with pgvector dependency.</li>
+        </ul>
+        <h4>Merged</h4>
+        <ul>
+          <li>monorepo PR #49 → <code>2229604</code> (12 commits — full document-rag P0+P1+P2+P3 fixes plus three-bug fix and CSV cp1252 fallback)</li>
+          <li>frontend PR #38 → <code>d555cb2</code> (CI bucket reconcile)</li>
         </ul>
         <h4>Verified</h4>
         <ul>
-          <li>ECR image <code>2026-05-10-pgvector-flag-flip</code> (digest <code>sha256:e8100e79...</code>), ECS rollout COMPLETED, running task matches</li>
-          <li>Vectorize smoke: <code>chunks_stored=1, status=completed</code> HTTP 200</li>
-          <li>CloudWatch confirms OpenAI embeddings path: <code>POST https://api.openai.com/v1/embeddings 200 OK</code> (pgvector + <code>text-embedding-3-small</code>; pre-flip used Gemini for Zilliz)</li>
+          <li>Frontend CI run <code>25630742379</code> on <code>development</code> post-merge: Build, Unit Tests, Audit, Trivy all green; Deploy to Staging completed; bundle landed in <code>s3://ig-dev-frontend-assets</code>; CloudFront invalidation <code>I8DBU9II7CYHZXE4PRT0AGQSOX</code> issued at <code>14:21:03Z</code> and completed.</li>
+          <li>Live <code>dev.inspiresgenius.com</code> chunks contain <code>file_key</code>: <code>MeridianChat-DtGZnqFM.js</code> ×1, <code>UploadDocumentsModal-DG0P6Oqe.js</code> ×2, <code>CoachChat-DjCysubq.js</code> ×1.</li>
+          <li>Agent-engine ECS service <code>ig-dev-agent-engine</code>: task definition rev 35 running image digest <code>sha256:40df9f4f...</code> = ECR tag <code>2026-05-10-csv-encoding-fix</code>.</li>
+          <li>Vectorize endpoint smoke tests: direct text path returned <code>{"chunks_stored":1,"status":"completed"}</code> (HTTP 200); file_key path with bogus key returned HTTP 500 NoSuchKey (proves S3 fetch logic accepts file_key field).</li>
+          <li>Agent-engine <code>/v1/agents/health</code>: HTTP 200 healthy.</li>
         </ul>
-        <p>Merged: PR #61 → <code>45d3cba</code> (fast-forward).</p>
-        <p><strong>Remaining in P1:</strong> commit 2 (Zilliz + monolith Milvus backfill, 1–2 days) and commit 3 (dead-code removal, 0.5 day, gated by P2 retrieval-parity verification).</p>
-
-<h3>[2026-05-10 PM] — Backlog: Vector Store Consolidation (P1–P4) added to REMAINING_TASKS.md §7</h3>
-        <p>Captures the four remaining work items from the 2026-05-10 doc-RAG roadmap as a backlog section. P0 (<code>is_active</code> SQL bug) marked closed via PR #58.</p>
-        <h4>Items added under §7 Document RAG / Vector Store Consolidation Follow-ups</h4>
+        <h4>Remaining (user-side browser verification)</h4>
+        <ol>
+          <li>Hard-refresh <code>dev.inspiresgenius.com</code> (Cmd-Shift-R, bypass service worker).</li>
+          <li>Open Chat. Use Document attach dialog. Upload PDF/DOCX/CSV/XLSX or select one of the seven verified-vectorized docs.</li>
+          <li>Ask Meridian a fact-specific question whose answer is in the doc.</li>
+          <li>Expect cited content from the doc. Per R-2.9b: at least one PDF, one DOCX, one CSV, one XLSX successfully attached and cited.</li>
+        </ol>
+        <h4>Open issues not closed by this fix</h4>
         <ul>
-          <li><strong>P1</strong> (3–5 days) — Consolidate to pgvector exclusively. Three commits: flag flip → Zilliz + Milvus backfill → dead-code removal. Depends on P0.</li>
-          <li><strong>P2</strong> (0.5 day) — Verify pgvector retrieval parity with 50-query A/B test. Gates P1 commit 3 merge.</li>
-          <li><strong>P3</strong> (1–2 days) — Wire <code>decision_rules</code> engine into Meridian.respond pre-LLM step. Parallel with P1.</li>
-          <li><strong>P4</strong> (2–3 days) — Super-admin PRISM CRUD UI (backend <code>routes/prism.py</code> + frontend <code>PrismManagement.tsx</code>). Parallel with P1+P3.</li>
-        </ul>
-        <p>Recommended sequence: ~7 working days with parallel scheduling. Sequential one-engineer estimate: 7–10 days.</p>
-        <p>Carry-overs not in P1–P4: ClamAV scan stub, CI deploy-production env vars, monolith file_service Milvus writes.</p>
-        <p>Merged: PR #60 → <code>d3075bf</code>.</p>
-
-<h3>[2026-05-10 PM] — P0 closed: is_active column bug fixed across 4 RAG files</h3>
-        <p>The <code>documents</code> table on Aurora has no <code>is_active</code> column. The four agent-engine RAG files were silently failing on every personal-data, cultural-context, and general-semantic retrieval query.</p>
-        <h4>Fixed (7 total replacements)</h4>
-        <ul>
-          <li><code>services/agent-engine/app/rag/personal_data.py</code> — 2 query sites</li>
-          <li><code>services/agent-engine/app/rag/cultural_context.py</code> — 1 site (list literal)</li>
-          <li><code>services/agent-engine/app/rag/retriever.py</code> — 2 sites</li>
-          <li><code>services/agent-engine/app/rag/embedding_service.py</code> — 2 sites (asyncpg)</li>
-        </ul>
-        <p>Replacement pattern: <code>d.is_active = true</code> → <code>d.extracted_text IS NOT NULL</code>.</p>
-        <h4>Deployed</h4>
-        <ul>
-          <li>ECR tag <code>2026-05-10-isactive-fix</code>, digest <code>sha256:4a5c6f39...</code></li>
-          <li>ECS rollout COMPLETED on <code>ig-dev-agent-engine</code></li>
-          <li>Vectorize endpoint smoke test: <code>chunks_stored=1, status=completed</code></li>
-          <li>Health endpoint: HTTP 200</li>
-        </ul>
-        <p>Merged via PR #58 → <code>68baaf1</code>. P0 from the IG_Document_RAG_Session_Log_and_Roadmap roadmap is closed.</p>
-
-<h3>[2026-05-10 PM] — Backlog: Memory &amp; Conversational Continuity follow-ups (M.1–M.4)</h3>
-        <p>Logged the four PR #54 follow-up items into <code>REMAINING_TASKS.md</code> as a new section 5, with effort estimates, why-deferred rationale, sub-task breakdowns, and a recommended sequence.</p>
-        <ul>
-          <li><strong>M.1</strong> — Wire <code>query_embedding</code> into <code>load_context()</code> so the semantic tier is actually queried. <strong>~3 days</strong> (3 hr wire-only + 2–3 d real persistent vector backend on pgvector or Milvus).</li>
-          <li><strong>M.2</strong> — Persist <code>_conversations</code> / <code>_messages</code> dicts in <code>services/agent-engine/app/routes/conversations.py</code> to Aurora (new <code>conversations</code> table; reuse <code>chat_messages</code> for messages). <strong>~1.5 days.</strong></li>
-          <li><strong>M.3</strong> — Background consolidation job for inactive sessions (EventBridge scheduled rule + Lambda + DLQ + 3-alarm set). <strong>~1.5–2 days.</strong> Optimisation only — defer until traffic shows it matters.</li>
-          <li><strong>M.4</strong> — User-facing UI for view / export / delete of stored memory (GDPR / RTBF). 4 backend endpoints + frontend <code>/settings/privacy</code> + super-admin <code>/super-admin/users/:id/memory</code>. <strong>~2.5 days.</strong></li>
-        </ul>
-        <p>Recommended sequence: M.2 first (unblocks M.4's "list my conversations" view) → M.4 + M.1 in parallel → M.3 last. Sequential total ~8.5–9 days; ~5 days with two devs split.</p>
-
-        <h3>[2026-05-10] — Cross-session conversational continuity + catch-all session log</h3>
-        <p>Closes the cross-session memory gap surfaced by the 2026-05-09 audit: returning users now see their prior conversation history (not just structured insights), and the session log fires on every turn instead of only on farewell keywords.</p>
-
-        <h4>Agent Engine — <code>services/agent-engine/app/memory/</code></h4>
-        <ul>
-          <li><code>short_term.py</code> — added <code>get_recent_messages_across_sessions(user_id, exclude_session_id, message_limit, session_limit)</code>. Two-query implementation: one to find recent session_ids (excluding the current one), one to pull their messages.</li>
-          <li><code>manager.py</code>:
-            <ul>
-              <li><code>recall()</code> now accepts <code>include_prior_sessions</code>, <code>prior_session_message_limit</code>, <code>prior_session_count</code>, <code>prior_session_summary_limit</code>. When enabled, the short-term tier additionally returns <code>prior_sessions</code> + <code>prior_summaries</code>.</li>
-              <li><code>consolidate()</code> now accepts <code>clear_working: bool = True</code>. When <code>False</code>, the summary + insights are persisted but the session's working-memory namespace is preserved — the path used for incremental, every-turn consolidation.</li>
-            </ul>
-          </li>
-          <li><code>integration.py</code>:
-            <ul>
-              <li><code>load_context()</code> now defaults to <code>include_prior_sessions=True</code> and surfaces a new <code>prior_session_history</code> key plus expanded <code>session_summaries</code> (current + prior).</li>
-              <li><code>format_memory_block()</code> renders cross-session continuity inside <code>&lt;USER_MEMORY&gt;</code> as a new <code>&lt;prior_conversations&gt;</code> block (grouped by <code>session_id</code>, with <code>&lt;turn role="…"&gt;</code> children, per-message char cap + XML escaping) and a <code>&lt;session_summaries&gt;</code> block carrying a <code>session=</code> attribute. Token-budget-aware.</li>
-              <li><code>summarize_session()</code> threads <code>clear_working</code> through to <code>MemoryManager.consolidate()</code>.</li>
-            </ul>
-          </li>
+          <li>pgvector general-search syntax error in <code>_search_personal_pgvector</code> / <code>cultural_context</code> / <code>retriever</code> — affects agent's general semantic memory recall (NOT attached-doc retrieval). Listed under R-2.5.</li>
+          <li>ClamAV scan is a no-op stub. Files vectorize without virus scanning. Carried as deferred to R-2.11 prod cutover gate.</li>
+          <li>CI workflow's <code>deploy-production</code> stage reuses the same env vars and so will write to the dev bucket if approved. Safe today (manual approval gate); wire env-scoped variables before enabling production deploy.</li>
         </ul>
 
-        <h4>Agent Engine — <code>services/agent-engine/app/agents/meridian.py</code></h4>
+        <h3>[2026-05-10] — refactor(dash) Wave 0 Lane 0.E — Merge KnowledgeBase + CulturalContent (P5.1 / O7)</h3>
+        <h4>Changed</h4>
         <ul>
-          <li>Both <code>respond()</code> (REST) and <code>route()</code> (streaming) now call <code>summarize_session(..., clear_working=is_farewell)</code> on <strong>every turn</strong>. The session log is no longer keyword-gated — <code>detect_farewell()</code> only decides whether to flip <code>clear_working=True</code> and whether to fire the <code>session_ended</code> EventBridge event + observability finalisation.</li>
-          <li>Net effect: insights from sessions where the user does not say "goodbye" are no longer lost when the 7-day short-term retention expires; the running summary is durable from turn 1.</li>
+          <li><code>src/pages/super-admin/KnowledgeBase.tsx</code> now reads a <code>?domain=</code> query param (cultural | coaching | business | system | career | general | prism_report | all) and pre-filters documents on first render. Saved-filter chips at the top let admins switch presets in one click; chip clicks and the existing dropdown both sync the URL via <code>setSearchParams({ replace: true })</code>.</li>
+          <li><code>src/routes.tsx</code> — <code>/super-admin/cultural-content</code> is now a <code>&lt;Navigate&gt;</code> redirect to <code>/super-admin/knowledge-base?domain=cultural</code>. Removed the <code>CulturalContent</code> lazy import.</li>
+          <li><code>src/constants/navigation.ts</code> — removed the standalone "Cultural Content" sidebar entry; cultural docs are now accessed through the Knowledge Base filter chips. Pruned the unused <code>Globe</code> icon import.</li>
+          <li><code>src/constants/routes.ts</code> — added <code>KNOWLEDGE_BASE_CULTURAL</code> deep-link constant and marked <code>CULTURAL_CONTENT</code> as <code>@deprecated</code>.</li>
         </ul>
-
-        <h4>Tests</h4>
+        <h4>Added</h4>
         <ul>
-          <li><code>tests/test_memory_integration.py</code> — added <code>TestCrossSessionHistory</code> (6 tests: prior sessions excluded by current sid, summary aggregation, opt-out, rendering, XML escaping, truncation) and <code>TestClearWorkingFlag</code> (3 tests: default clear, opt-out preserves working memory, summarize_session threads the flag). 57/57 passing.</li>
-          <li><code>tests/test_meridian.py</code> — <code>TestFarewellDetection</code> rewritten to reflect the new contract: every turn calls <code>summarize_session()</code> with <code>clear_working</code> mirroring farewell detection; <code>emit_session_ended</code> only fires on farewell. 4 tests, all passing.</li>
-          <li>Full memory + meridian sweep: <strong>180/180 passing.</strong> Broader agent-engine sweep introduces 0 new failures (delta vs origin/development = 0 tests).</li>
+          <li><code>src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5 unit tests covering URL → filter wiring (default, <code>?domain=cultural</code> narrows results, chip pressed-state, chip click reissues query, invalid domain falls back to all).</li>
         </ul>
-
-        <h4>Behavioral impact for end users (post-deploy)</h4>
-        <p>A returning user will now see, in addition to PRISM scores / goals / corrections / preferences:</p>
+        <h4>Removed</h4>
         <ul>
-          <li>Transcript snippets of their prior sessions (capped, attributed to their <code>session_id</code>).</li>
-          <li>A list of session summaries from prior sessions (with timestamps + <code>session_id</code>s).</li>
-          <li>Insights extracted from sessions that ended without an explicit farewell — previously lost when short-term expired.</li>
+          <li><code>src/pages/super-admin/CulturalContent.tsx</code> — superseded by the Knowledge Base domain filter. The legacy URL still resolves via the redirect route.</li>
+        </ul>
+        <h4>Verification</h4>
+        <ul>
+          <li><code>npx jest src/pages/super-admin/__tests__/KnowledgeBase.test.tsx</code> — 5/5 passing.</li>
+          <li><code>npm run build</code> — clean (tsc + Vite).</li>
+          <li><code>npm run lint</code> against changed files — 0 new errors (pre-existing repo baseline reduced from 838 → 825 errors thanks to the deletion of <code>CulturalContent.tsx</code>).</li>
         </ul>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
@@ -1781,46 +1852,6 @@
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-11 — Prompt #1077 [Cross-session memory + M.4 end-to-end on dev]</div>
-          <div class="prompt-text">/full-go execute next, in order: (1) check conversation_messages indexes + push to PR #54; (2) scaffold M.4 backend + frontend on a new branch as draft PR; (3) merge PR #54 → dev first, then merge M.4; (4) hold staging/prod promotion until M.4 has soaked in dev. Then in sequence: sort GitHub Actions billing → re-trigger CI → merge PRs in order #54, #56, #39 → deploy backend to dev → add /v1/memory/{proxy+} API GW route (PR #63) → rebuild + push agent-engine Docker image → force-roll ECS → verify privacy endpoint responds. Log this session and update the project docs.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1061 [Backlog memory follow-ups M.1–M.4]</div>
-          <div class="prompt-text">add this to a backlog to address later. (Re: the four PR #54 follow-ups — wire query_embedding into load_context(), persist conversations dict to Aurora, background consolidation job, user-facing memory UI.)</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1060 [Cross-session memory + catch-all session log]</div>
-          <div class="prompt-text">/full-go make full conversation memory work across sessions, add cross-session conversation history to the memory loader, enable conversational continuity, and change the session log trigger away from key words "goodbye" / "bye" / "end session" and make it a catch all.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1059 [continue]</div>
-          <div class="prompt-text">continue</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1058 [verify-first directive]</div>
-          <div class="prompt-text">why didn't you verify this before the last fix? It seems like you done this before, You take a cursory look at the issue and make assumptions. This is wasting time. Verify this will work now. I need the documents that are uploaded from the 'Document' dialoge in 'Chat' to upload, and vertorize documents so the agent engine can see, read them, and use them to create the response.</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1057 [validate one doc end-to-end]</div>
-          <div class="prompt-text">go ahead, validate one doc first</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1056 [Option 2 cold-start secret fetch]</div>
-          <div class="prompt-text">/full-go proceed with Option 2, cold-start secret fetch</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1055 [recommendation question]</div>
-          <div class="prompt-text">recommendation? is it 2? I am always partial to strategic solutions that don't create technical debt.</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1054 [Document RAG fix — P0+P1+P2+P3]</div>
-          <div class="prompt-text">/full-go do all 5: P1 WS handler edits, P0 EventBridge bridge Lambda + replay historical events, P2 verification probe, Option A planning doc, P3 Meridian routing diagnostics</div>
-        </div>
-
         <h2>Session Prompts <span class="path-badge">session history</span></h2>
         <p style="margin-bottom: 1rem;">Prompts submitted during this Claude Code session:</p>
 
@@ -22985,86 +23016,6 @@
         <div class="prompt-entry">
           <div class="timestamp">2026-05-10 — Prompt #1059 [/full-go approval]</div>
           <div class="prompt-text">yes</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1062 [whats next]</div>
-          <div class="prompt-text">whats next</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1063 [/full-go: do #1 and #2]</div>
-          <div class="prompt-text">do #1 and then #2</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1064 [/full-go approval]</div>
-          <div class="prompt-text">yes 1 is working I tested it.</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1065 [add to backlog]</div>
-          <div class="prompt-text">add the remain fix of the pgvector to the back log</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1066 [continue]</div>
-          <div class="prompt-text">continue</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1067 [status check]</div>
-          <div class="prompt-text">what was done, what needs to be done?</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1068 [P1.1 execute]</div>
-          <div class="prompt-text">run P1 commit 1</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1069 [run P1 commit 2]</div>
-          <div class="prompt-text">run P1 commit 2</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1070 [path 2 approval]</div>
-          <div class="prompt-text">yes path 2</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1071 [diagnose: Stream idle timeout error]</div>
-          <div class="prompt-text">why do I get these errors 'API Error: Stream idle timeout - partial response received'</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1072 [diagnose: slow uplink (0.56 Mbps up)]</div>
-          <div class="prompt-text">the new work here is slow .56 up 67.4 down — ping output shows 0% loss / ~10ms to api.anthropic.com</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1073 [memory: agent engine base priority]</div>
-          <div class="prompt-text">My priority is to get the agent engine working, accepting request or prompts, responding correctly to PRISM, career, job, and training (softskills, hard skills) correctly. The other functions can be added incrementally if this base functionality is functional. Add this to memory.</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1074 [R-2.x list status audit]</div>
-          <div class="prompt-text">what from this list has been completed and what hasn't? Can I run them sequentially in one terminal — R-2.1 through R-2.12</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1075 [/full-go r-2.3]</div>
-          <div class="prompt-text">/full-go r-2.3 — disambiguate F-1 (Lambda staleness vs intentional thin shim)</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Prompt #1076 [/full-go approval]</div>
-          <div class="prompt-text">yes</div>
-        </div>
-
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-10 — Activity [R-2.3 closed: F-1 Lambda staleness disambiguated]</div>
-          <div class="prompt-text">Verdict: STALE (24 commits / 13 days behind source) but NOT on the primary chat path. Authored R2_3_F1_DISAMBIGUATION_REPORT.md + .docx; updated REMAINING_TASKS.md §4 with full evidence + new orphan-Lambda follow-up item. Lambda LastModified=2026-04-27T23:35Z; reports version="1.2.0" while source is "1.0.0"; 31 invocations/24h on 8 peripheral routes. ECS deployed today 2026-05-10T20:19:30 EDT (task-def rev 35, image phase-e-r2.2-followup-multi-domain, digest sha256:60dbe49e...) serves POST /v1/agents/chat + ANY /v1/agents/{proxy+}. main.py:528 confirms Lambda was designed as full FastAPI app under Mangum — not a thin shim. R-2.2 metadata={} bug already fixed in commits 69d81e8 + planner-routing series (218de1f, dbfb48c, 3e31f55, 5a4142a, 5c0e180, 9d8fbb3). R-2.2 needs re-run against current ECS image, no Lambda redeploy required. Next on priority path: R-2.4 (telemetry + audit closure).</div>
         </div>
 </div>
 
