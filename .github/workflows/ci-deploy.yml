@@ -14,10 +14,15 @@ env:
   # CloudFront E3EFVMBYYVF012 from bucket ig-dev-frontend-assets. Pointing
   # CI at the right bucket so every push to `development` actually reaches
   # users.
-  # NOTE: deploy-production below uses the same env vars and is therefore
-  # ALSO targeting the dev bucket — fine because it has a manual approval
-  # gate and prod is not yet cut over. Wire env-scoped variables before
-  # enabling the production stage.
+  #
+  # 2026-05-12: deploy-production stage removed. It was a placebo — same
+  # env vars as deploy-dev meant approvals wrote to the dev bucket. To
+  # re-introduce when a real prod environment exists: (1) stand up prod
+  # S3 bucket + CloudFront + DNS for app.inspiresgenius.com, (2) move
+  # S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID out of this `env:` block and
+  # into environment-scoped GitHub variables on the `dev` and `production`
+  # environments so they resolve to different values, (3) re-add the
+  # deploy-production job (see git history of this file pre-2026-05-12).
   S3_BUCKET: ig-dev-frontend-assets
   CLOUDFRONT_DISTRIBUTION_ID: E3EFVMBYYVF012
   # 2026-05-11: Also mirror deploys to the legacy distribution so users
@@ -286,51 +291,10 @@ jobs:
         run: echo "Deployed to dev — https://dev.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
 
   # ─────────────────────────────────────────────
-  # 7. DEPLOY TO PRODUCTION (requires approval)
+  # 7. DEPLOY TO PRODUCTION
   # ─────────────────────────────────────────────
-  deploy-production:
-    name: Deploy to Production
-    needs: [deploy-dev]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
-    environment:
-      name: production
-      url: https://app.inspiresgenius.com
-
-    steps:
-      - name: Download dist
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Deploy to S3 (production)
-        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
-
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-
-      - name: Deploy to S3 (legacy d1nxsns258du4y mirror)
-        run: aws s3 sync dist/ s3://${{ env.LEGACY_S3_BUCKET }} --delete
-
-      - name: Invalidate legacy CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ env.LEGACY_CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-
-      - name: Production deployment complete
-        run: echo "Deployed to production — https://app.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
+  # Removed 2026-05-12. The job used the same S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID
+  # as deploy-dev, so approvals wrote to the dev bucket — a placebo gate that
+  # accumulated waiting runs without doing real work. Re-introduce when a real
+  # production environment exists (see env-block comment above for the
+  # checklist). See git history for the original job definition.
