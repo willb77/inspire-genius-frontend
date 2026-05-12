@@ -1,26 +1,3 @@
-## [2026-05-11 PM] — CI fix: deploy-production URL typo (inspiregenius → inspiresgenius)
-
-Closed the only follow-up from the 2026-05-11 PM CI rename session (PR #44 doc note). The `deploy-production` job in `inspire-genius-frontend/.github/workflows/ci-deploy.yml` had `app.inspiregenius.com` (missing `s`) in two places — same typo `staging.inspiregenius.com` had before #42 fixed it.
-
-### Diff (inspire-genius-frontend#45, merge `b1d44ee`)
-```diff
--      url: https://app.inspiregenius.com
-+      url: https://app.inspiresgenius.com
-```
-```diff
--        run: echo "Deployed to production — https://app.inspiregenius.com"
-+        run: echo "Deployed to production — https://app.inspiresgenius.com"
-```
-
-### Impact
-Informational only — production is still gated behind manual approval and not yet cut over. The URL only shows in the GitHub Deployments UI after a prod approval. Fixing now so it's correct when prod is enabled rather than discovering it during cutover.
-
-### Verification
-- `yaml.safe_load` parses cleanly; `deploy-production.environment.url == 'https://app.inspiresgenius.com'`
-- `grep inspiregenius .github/workflows/ci-deploy.yml` returns no matches
-
----
-
 ## [2026-05-11 late PM] — Phase E PR stack settled (9 PRs landed: 3 merged + 6 closed-as-superseded)
 
 Closure of the Phase E R-2.1 / R-2.2 / R-2.4 PR backlog. Of the 9 open PRs in the stack, 3 merged onto `development` and 6 were closed — final `development` state is equivalent to merging all 9, with cleaner merge history.
@@ -47,10 +24,10 @@ Closing the 6 superseded PRs is equivalent to merging them — same final `devel
 ### Substantive code now on `development`
 - `services/agent-engine/app/orchestration/synthesizer.py` — `_pick_dominant()` dominant-contributor heuristic + `attribution` metadata
 - `services/agent-engine/app/agents/multi_domain_coordinator.py` — cross-domain coordinator with `multi_domain_leg` fast-mode + 35s per-leg timeout
-- `services/agent-engine/app/agents/orchestrators/{business,coaching,system,career}_orchestrator.py` — fast-mode short-circuit + admin-query two-tier precision rule (`_HIGH_PRECISION` admin keywords)
-- `services/agent-engine/app/agents/meridian.py` — `SINGLE_DOMAIN_TIMEOUT_S = 40.0` cap + expanded `_COACHING/_BUSINESS/_SYSTEM/_CAREER_TALENT_KEYWORDS`
+- `services/agent-engine/app/agents/orchestrators/{business,coaching,system,career}_orchestrator.py` — fast-mode short-circuit + admin-query two-tier precision rule
+- `services/agent-engine/app/agents/meridian.py` — `SINGLE_DOMAIN_TIMEOUT_S = 40.0` cap + expanded keyword sets
 - `services/agent-engine/app/orchestration/planner.py` — 17-agent `AGENT_DESCRIPTIONS` roster + few-shot decomposition prompt + per-domain agent filter
-- `infrastructure/cdk/lib/agent-engine-stack.ts` — `dbProxySgId` context lookup + RDS Proxy SG ingress pin from agent-engine `serviceSg`
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `dbProxySgId` context lookup + RDS Proxy SG ingress pin
 - `services/agent-engine/scripts/r22_ws_strict_gaps_matrix.py` — reproducible 24-prompt WS matrix script (secret read from `R22_MAGIC_AUTH_SECRET` env)
 
 ### Branch cleanup
@@ -59,7 +36,7 @@ All 8 stack branches deleted. Local merge worktree (`/tmp/merge-stack`) removed.
 ### Process notes (for future stack merges)
 - When the TOP of a stack is merged with a merge commit (vs squash), it brings the entire lineage with it. The lower PRs then have no unique content left.
 - Trial-merge before rebase: `git worktree add /tmp/check --detach origin/development && cd /tmp/check && git merge --no-commit --no-ff <branch>` to identify real conflicts non-destructively. Only `IG_project_log.html` + `change_log.md` conflicted across all 5 base PRs; auto-resolve with `git merge -X theirs` was safe.
-- For a stack where dev moves out from under it: `git merge -X theirs origin/development` resolves log conflicts deterministically by taking dev's log entries (which are the canonical post-merge state).
+- For a stack where dev moves out from under it: `git merge -X theirs origin/development` resolves log conflicts deterministically by taking dev's log entries.
 
 ---
 
