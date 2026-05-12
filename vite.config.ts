@@ -2,12 +2,29 @@ import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
-import { defineConfig, loadEnv } from "vite"
+import { defineConfig, loadEnv, type Plugin } from "vite"
+
+// Emits dist/version.json so the client can detect a stale bundle and
+// force-reload. See src/lib/buildVersion.ts for the consumer side.
+function versionManifestPlugin(version: string): Plugin {
+  return {
+    name: "ig-version-manifest",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify({ version, builtAt: new Date().toISOString() }),
+      })
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_")
   const isDev = mode === "development"
+  const appVersion = env.VITE_APP_VERSION || "dev"
 
   // ── URLs from environment (.env / .env.production / etc.) ────
   const apiBase = env.VITE_API_BASE_URL || "http://localhost:5173"
@@ -68,6 +85,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      versionManifestPlugin(appVersion),
       VitePWA({
         registerType: "autoUpdate",
         workbox: {

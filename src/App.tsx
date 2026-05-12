@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useRoutes } from 'react-router-dom'
 import { routes } from './routes'
 import './App.css'
@@ -10,6 +11,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useDirection } from '@/hooks/useDirection'
 import RoleSelector from '@/components/auth/RoleSelector'
 import { useAuth } from '@/context/useAuth'
+import { checkForUpdate } from '@/lib/buildVersion'
 import '@/lib/axios'
 
 function RoleSelectorWrapper() {
@@ -26,6 +28,12 @@ function RoleSelectorWrapper() {
 
 function AppInner() {
   useDirection()
+  useEffect(() => {
+    // Catches stale long-lived tabs: if the bundle was deployed after this
+    // tab loaded, the next time the user activates the page the check
+    // triggers a clean reload.
+    void checkForUpdate()
+  }, [])
   return useRoutes(routes)
 }
 
