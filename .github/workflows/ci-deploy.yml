@@ -20,6 +20,11 @@ env:
   # enabling the production stage.
   S3_BUCKET: ig-dev-frontend-assets
   CLOUDFRONT_DISTRIBUTION_ID: E3EFVMBYYVF012
+  # 2026-05-11: Also mirror deploys to the legacy distribution so users
+  # who still load https://d1nxsns258du4y.cloudfront.net stay in sync.
+  # Long-term plan: migrate consumers to dev.inspiresgenius.com and retire.
+  LEGACY_S3_BUCKET: inspires-genius-dev-frontend
+  LEGACY_CLOUDFRONT_DISTRIBUTION_ID: EQNFTOWMBMKSA
   AWS_REGION: us-east-1
 
 jobs:
@@ -268,8 +273,17 @@ jobs:
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
+      - name: Deploy to S3 (legacy d1nxsns258du4y mirror)
+        run: aws s3 sync dist/ s3://${{ env.LEGACY_S3_BUCKET }} --delete
+
+      - name: Invalidate legacy CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.LEGACY_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
       - name: Dev deployment complete
-        run: echo "Deployed to dev — https://dev.inspiresgenius.com"
+        run: echo "Deployed to dev — https://dev.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
 
   # ─────────────────────────────────────────────
   # 7. DEPLOY TO PRODUCTION (requires approval)
@@ -309,5 +323,14 @@ jobs:
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
+      - name: Deploy to S3 (legacy d1nxsns258du4y mirror)
+        run: aws s3 sync dist/ s3://${{ env.LEGACY_S3_BUCKET }} --delete
+
+      - name: Invalidate legacy CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.LEGACY_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
       - name: Production deployment complete
-        run: echo "Deployed to production — https://app.inspiresgenius.com"
+        run: echo "Deployed to production — https://app.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
