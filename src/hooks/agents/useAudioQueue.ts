@@ -152,5 +152,16 @@ export function useAudioQueue() {
     }
   }, []);
 
-  return { enqueue, stop, pause, resume, skip, isPlaying, isPaused, queueLength };
+  // Seek within the currently-playing chunk. Positive = forward, negative = back.
+  // Clamped to [0, duration]; safe to call when nothing is playing.
+  const seekBy = useCallback((seconds: number) => {
+    const a = audioRef.current;
+    if (!a) return;
+    const target = a.currentTime + seconds;
+    const dur = Number.isFinite(a.duration) ? a.duration : target;
+    const clamped = Math.max(0, Math.min(dur, target));
+    try { a.currentTime = clamped; } catch { /* ignore */ }
+  }, []);
+
+  return { enqueue, stop, pause, resume, skip, seekBy, isPlaying, isPaused, queueLength };
 }
