@@ -14,11 +14,8 @@ import {
   Eye,
   Zap,
   Clock,
-  Coins,
   Brain,
-  AlertTriangle,
   Users,
-  Download,
   RefreshCw,
 } from "lucide-react"
 import { useDashboardMetrics } from "@/hooks/observability/useObservability"
@@ -26,6 +23,8 @@ import { cn } from "@/lib/utils"
 // Combined Plan §A.E3.5 — task-agent observability
 import TasksObservabilityTab from "@/components/observability/TasksObservabilityTab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// Wave 0 Lane 0.I — shared CostBoard panel (P5.2)
+import CostBoard from "@/components/super-admin/CostBoard"
 
 export default function Observability() {
   const [timeRange, setTimeRange] = useState("today")
@@ -78,7 +77,7 @@ export default function Observability() {
 
           <TabsContent value="overview" className="space-y-6">
 
-        {/* Summary Cards */}
+        {/* Non-cost performance metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             icon={<Zap className="h-4 w-4" />}
@@ -93,9 +92,9 @@ export default function Observability() {
             loading={isLoading}
           />
           <MetricCard
-            icon={<Coins className="h-4 w-4" />}
-            title="Total Cost"
-            value={`$${(metrics?.total_cost_today ?? 0).toFixed(4)}`}
+            icon={<Users className="h-4 w-4" />}
+            title="Unique Users"
+            value={metrics?.unique_users_today ?? 0}
             loading={isLoading}
           />
           <MetricCard
@@ -110,30 +109,10 @@ export default function Observability() {
           />
         </div>
 
-        {/* Secondary Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
-            icon={<Users className="h-4 w-4" />}
-            title="Unique Users"
-            value={metrics?.unique_users_today ?? 0}
-            loading={isLoading}
-          />
-          <MetricCard
-            icon={<Brain className="h-4 w-4" />}
-            title="Total Tokens"
-            value={(metrics?.total_tokens_today ?? 0).toLocaleString()}
-            loading={isLoading}
-          />
-          <MetricCard
-            icon={<AlertTriangle className="h-4 w-4" />}
-            title="Error Rate"
-            value={`${((metrics?.error_rate ?? 0) * 100).toFixed(1)}%`}
-            loading={isLoading}
-            alert={!!metrics && metrics.error_rate > 0.05}
-          />
-        </div>
+        {/* Shared platform spend panel (Wave 0 Lane 0.I — P5.2) */}
+        <CostBoard scope="platform" />
 
-        {/* Top Agents */}
+        {/* Top Agents by Usage (non-cost) */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Top Agents by Usage</CardTitle>
@@ -171,45 +150,6 @@ export default function Observability() {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">No agent data available</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Cost by Model */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Cost by Model Tier</CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs">
-              <Download className="h-3 w-3 mr-1" />
-              Export
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : metrics?.cost_by_model && metrics.cost_by_model.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.cost_by_model.map((item) => (
-                  <div
-                    key={item.model_tier}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-xs">
-                        {item.model_tier?.replace("tier_", "Tier ").replace("_", " ") ?? "Unknown"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {item.count} responses
-                      </span>
-                    </div>
-                    <span className="font-mono text-sm font-medium">
-                      ${item.cost.toFixed(4)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">No cost data available</div>
             )}
           </CardContent>
         </Card>

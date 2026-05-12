@@ -118,43 +118,6 @@
           <li><code>grep inspiregenius .github/workflows/ci-deploy.yml</code> → no matches</li>
         </ul>
 
-        <h3>[2026-05-11 late PM] — Phase E PR stack settled (9 PRs landed: 3 merged + 6 closed-as-superseded)</h3>
-        <p>Closure of the Phase E R-2.1 / R-2.2 / R-2.4 PR backlog. Of the 9 open PRs in the stack, 3 merged onto <code>development</code> and 6 were closed — final <code>development</code> state is equivalent to merging all 9, with cleaner merge history.</p>
-        <h4>Settled state</h4>
-        <table>
-          <tr><th>PR</th><th>Final state</th><th>How</th></tr>
-          <tr><td>#45 chore(phase-e2): 18-agent verification</td><td><strong>MERGED</strong></td><td>squash <code>b8960cc</code></td></tr>
-          <tr><td>#46 fix(r-2.1): point agent-engine ECS at RDS Proxy</td><td><strong>CLOSED</strong></td><td>substantive ingress rule already on dev via #74; only comment-wording diff left</td></tr>
-          <tr><td>#48 fix(r-2.4): chat_messages Phase C columns</td><td><strong>MERGED</strong></td><td>squash <code>11c1567</code></td></tr>
-          <tr><td>#55 synthesizer metadata</td><td><strong>CLOSED</strong></td><td>zero unique commits — code identical to dev</td></tr>
-          <tr><td>#57 planner routing</td><td><strong>CLOSED</strong></td><td>content on dev via #74</td></tr>
-          <tr><td>#59 planner few-shot</td><td><strong>CLOSED</strong></td><td>content on dev via #74 (auto-closed when parent branch deleted)</td></tr>
-          <tr><td>#66 cross-domain coordinator</td><td><strong>CLOSED</strong></td><td>content on dev via #74</td></tr>
-          <tr><td>#72 latency caps + admin precision</td><td><strong>CLOSED</strong></td><td>content on dev via #74 (auto-closed)</td></tr>
-          <tr><td>#74 strict gaps</td><td><strong>MERGED</strong></td><td>merge commit <code>c65a552</code> — brought #57+#59+#66+#72 along</td></tr>
-        </table>
-        <h4>Why 6 PRs closed instead of merged</h4>
-        <p>PR #74 was merged into <code>development</code> with a <strong>merge commit</strong> (not squash) at 2026-05-11 20:20Z. Because #74's branch was the top of the stack (<code>#46 → #48 → #55 → #57 → #59 → #66 → #72 → #74</code>), the merge commit carried the <em>entire</em> upstream lineage onto <code>development</code> in one landing. By the time the serial squash-merge sequence started for the lower PRs, their substantive content was already on dev — <code>git log origin/development..origin/&lt;branch&gt;</code> returned zero unique substantive commits.</p>
-        <p>Closing the 6 superseded PRs is equivalent to merging them — same final <code>development</code> state, cleaner merge history.</p>
-        <h4>Substantive code now on <code>development</code></h4>
-        <ul>
-          <li><code>services/agent-engine/app/orchestration/synthesizer.py</code> — <code>_pick_dominant()</code> dominant-contributor heuristic + <code>attribution</code> metadata</li>
-          <li><code>services/agent-engine/app/agents/multi_domain_coordinator.py</code> — cross-domain coordinator with <code>multi_domain_leg</code> fast-mode + 35s per-leg timeout</li>
-          <li>4 orchestrators — fast-mode short-circuit + admin-query two-tier precision rule</li>
-          <li><code>meridian.py</code> — <code>SINGLE_DOMAIN_TIMEOUT_S = 40.0</code> cap + expanded keyword sets</li>
-          <li><code>planner.py</code> — 17-agent <code>AGENT_DESCRIPTIONS</code> + few-shot decomposition + per-domain filter</li>
-          <li><code>infrastructure/cdk/lib/agent-engine-stack.ts</code> — <code>dbProxySgId</code> + RDS Proxy SG ingress pin</li>
-          <li><code>services/agent-engine/scripts/r22_ws_strict_gaps_matrix.py</code> — reproducible 24-prompt WS matrix script</li>
-        </ul>
-        <h4>Branch cleanup</h4>
-        <p>All 8 stack branches deleted. Local merge worktree (<code>/tmp/merge-stack</code>) removed.</p>
-        <h4>Process notes for future stack merges</h4>
-        <ul>
-          <li>When the TOP of a stack is merged with a merge commit (vs squash), it brings the entire lineage with it. The lower PRs then have no unique content left.</li>
-          <li>Trial-merge before rebase: <code>git worktree add /tmp/check --detach origin/development &amp;&amp; cd /tmp/check &amp;&amp; git merge --no-commit --no-ff &lt;branch&gt;</code> to identify real conflicts non-destructively.</li>
-          <li>For a stack where dev moves out from under it: <code>git merge -X theirs origin/development</code> resolves log conflicts deterministically by taking dev's log entries.</li>
-        </ul>
-
         <h3>[2026-05-11 late PM] — R-2.2 closed at <strong>24/24 STRICT PASS</strong> (first-ever)</h3>
         <p>Live matrix re-run on deployed image <code>r22-residuals-v2</code> (digest <code>sha256:96d337cd9a5d05e80b0cc25fdfd1b49a8526fe3a35d779491d247a2e520a5f3a</code>) hit <strong>24/24 strict pass</strong> — first time in this matrix's history.</p>
         <pre><code>=== Result: 24/24 strict pass ===
@@ -23891,6 +23854,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-11 — Prompt #1082 [/full-go: all 4 remaining]</div>
           <div class="prompt-text">yes run P1 commit 3 and 1. Decide on monolith Milvus 2. P1 commit 3 — remove _search_zilliz and the pymilvus dependency 3. Quick P2 sanity 4. P3 / P4 — proceed as the roadmap describes</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 — Prompt #1084 [/full-go: Wave 0 Lane 0.I — CostBoard]</div>
+          <div class="prompt-text">Wave 0 Lane 0.I — P5.2 single PR. Create `inspire-genius-frontend/src/components/super-admin/CostBoard.tsx` accepting scope="platform" | "org" | "dept", dispatching to per-scope hooks (usePlatformCost, useOrgCost, useDeptCost). Mount &lt;CostBoard scope="platform"/&gt; in super-admin Dashboard and Observability; mount &lt;CostBoard scope="org"/&gt; in company-admin Observability. Show four metrics — cost by mentor, cost by model tier, total tokens, error rate. Add data-pending banner ("Cost telemetry is enabled but the audit-service EventBridge pipeline is still being verified — values may be empty until R-2.4 closes.") with TODO(R-2.4) comment. Tests: render at all three scopes, assert banner under empty data, assert real data renders. Branch `refactor/wave-0i-costboard-operations`. PR title `refactor(dash)/wave-0i: CostBoard + super-admin Operations (O3 partial)`.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 — Activity #act-w0i-costboard [Wave 0 Lane 0.I]</div>
+          <div class="prompt-text">Shipped: new shared `CostBoard.tsx` panel (KPI strip + Cost by Mentor table + Cost by Model Tier rows + data-pending banner gated on R-2.4 closure) under `inspire-genius-frontend/src/components/super-admin/`. New per-scope hooks at `inspire-genius-frontend/src/hooks/cost-board/` — usePlatformCost composes useCostDashboard + useDashboardMetrics; useOrgCost proxies observability dashboard with an orgId placeholder; useDeptCost is a Wave-3 placeholder. Mounted &lt;CostBoard scope="platform"/&gt; in super-admin Dashboard (Cost Analysis tab) + Observability (Overview tab); mounted &lt;CostBoard scope="org"/&gt; in company-admin Observability. Removed the duplicated Cost Distribution + Cost-by-Mentor + per-page Cost-by-Model-Tier + per-page Total Cost / Total Tokens / Error Rate MetricCards from the three pages (those four metrics now live behind the shared panel). Updated super-admin and company-admin Observability page tests to mock `<CostBoard>` at the component boundary (no React-Query provider needed) and assert the scoped mount. 11 new CostBoard tests + updates kept the directory sweep at 67/67 suites, 702/702 tests green. `npm run build` + `npx tsc --noEmit` + `npx eslint` clean on all touched files. Plan reference §3 Wave 0 / Lane 0.I + §4.3 of IG_Dashboard_Rationalization_Plan_2.docx. Banner will be removed in Wave 3 once R-2.4 telemetry is fully verified end-to-end (see `TODO(R-2.4)` in CostBoard.tsx).</div>
         </div>
 </div>
 

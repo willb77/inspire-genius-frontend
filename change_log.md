@@ -1,3 +1,47 @@
+## [2026-05-12] — Wave 0 Lane 0.I — CostBoard + super-admin Operations (P5.2)
+
+### Added
+- Shared platform-spend panel at `inspire-genius-frontend/src/components/super-admin/CostBoard.tsx`. Single component contract: `<CostBoard scope="platform" | "org" | "dept" />` dispatches to scope-specific hooks and renders four metrics (cost-by-mentor, cost-by-model-tier, total tokens, error rate). When the scope hook returns empty data, the component renders a data-pending banner pointing at R-2.4. The banner is gated by a `TODO(R-2.4)` comment that calls out the Wave 3 removal step.
+  - Files: `inspire-genius-frontend/src/components/super-admin/CostBoard.tsx`
+- Per-scope cost hooks composed from the existing trainer cost-dashboard + observability dashboard-metrics endpoints. Platform hook merges both sources; org hook proxies observability with an `orgId` placeholder for when R-2.4 ships org filtering; dept hook is a Wave-3 placeholder returning empty data.
+  - Files: `inspire-genius-frontend/src/hooks/cost-board/usePlatformCost.ts`, `useOrgCost.ts`, `useDeptCost.ts`
+- CostBoard component tests: scope dispatch, banner visibility under empty/loading/error/populated states, real-data rendering across KPI strip + mentor table + model-tier rows (11 tests, all green).
+  - Files: `inspire-genius-frontend/src/components/super-admin/__tests__/CostBoard.test.tsx`
+
+### Changed
+- Mounted `<CostBoard scope="platform"/>` in super-admin Dashboard's Cost Analysis tab and in super-admin Observability's Overview tab. The Dashboard's hand-rolled Cost Distribution + Cost-by-Mentor cards and the Observability page's standalone "Cost by Model Tier" + "Total Cost"/"Total Tokens"/"Error Rate" metric cards are gone — those four metrics now live behind the shared panel. Top Agents by Usage (non-cost) and non-cost KPIs stay on Observability.
+  - Files: `inspire-genius-frontend/src/pages/super-admin/Dashboard.tsx`, `inspire-genius-frontend/src/pages/super-admin/Observability.tsx`
+- Mounted `<CostBoard scope="org"/>` in company-admin Observability. Removed the duplicate Total Cost / Error Rate / Cost-by-Model-Tier blocks.
+  - Files: `inspire-genius-frontend/src/pages/company-admin/Observability.tsx`
+- Updated existing page tests for both Observability pages to mock `<CostBoard>` at the component boundary (no React-Query provider needed) and asserted the scoped CostBoard mount. Dropped assertions on metric labels that have moved into CostBoard.
+  - Files: `inspire-genius-frontend/src/pages/super-admin/__tests__/Observability.test.tsx`, `inspire-genius-frontend/src/pages/company-admin/__tests__/Observability.test.tsx`
+
+### Verified
+- `npm run build` clean (tsc + vite)
+- `npx eslint` clean on all touched files
+- `npx jest src/components/super-admin src/pages/super-admin src/pages/company-admin` — 67/67 suites, 702/702 tests pass
+
+### Notes
+- Plan reference: §3 Wave 0 / Lane 0.I and §4.3 of `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx`; §6 P5.2 of v1. Ships in Wave 0 with empty-state UI; the data-pending banner is removed in Wave 3 once R-2.4's audit-service EventBridge pipeline is fully verified end-to-end.
+
+---
+
+## [2026-05-12] — Frontend CI: removed Deploy to Production stage + Dropbox Smart Sync eviction mitigation
+
+### Removed
+- `deploy-production` job in `inspire-genius-frontend/.github/workflows/ci-deploy.yml` (and the stale "deploy-production below uses the same env vars" env comment block). Pipeline now terminates at `deploy-dev` (which still mirrors to both `ig-dev-frontend-assets` + legacy `inspires-genius-dev-frontend` buckets and invalidates both CloudFront distributions). Production cutover is not on the near-term roadmap; the stage was advisory + paused behind manual approval anyway, but its presence in CI implied a path that doesn't exist.
+  - Files: `inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+
+### Fixed
+- Dropbox Smart Sync eviction trap. Five files reverted by Dropbox eviction in a single session (hook script + 5 audio-control sources + workflow YAML, on 3 separate occasions). Marked the three git-tracked runtime/CI directories Dropbox-ignored so git stays the sole source of truth:
+  - `xattr -w com.dropbox.ignored 1 .claude/hooks/`
+  - `xattr -w com.dropbox.ignored 1 .github/workflows/`
+  - `xattr -w com.dropbox.ignored 1 inspire-genius-frontend/.github/workflows/`
+- Source code under `inspire-genius-frontend/src/` and `services/*/app/` is **not** marked ignored — those still need Dropbox cross-machine sync. Pinning source folders offline (to stop Smart Sync from making them online-only) requires a Finder right-click ("Smart Sync → Local") that cannot be scripted without the Dropbox CLI (not installed; legacy `Dropbox (Previous).app` is the running client).
+- Reversible: `xattr -d com.dropbox.ignored <path>`.
+
+---
+
 ## [2026-05-11 PM] — CI fix: deploy-production URL typo (inspiregenius → inspiresgenius)
 
 Closed the only follow-up from the 2026-05-11 PM CI rename session (PR #44 doc note). The `deploy-production` job in `inspire-genius-frontend/.github/workflows/ci-deploy.yml` had `app.inspiregenius.com` (missing `s`) in two places — same typo `staging.inspiregenius.com` had before #42 fixed it.
