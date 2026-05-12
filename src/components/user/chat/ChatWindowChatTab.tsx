@@ -1,6 +1,6 @@
 import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
@@ -95,6 +95,7 @@ type ChatWindowChatTabProps = {
   genericMessages: string;
   coachId?: string;
   conversationId?: string;
+  onReplayMessage?: (text: string) => void;
 };
 
 export default function ChatWindowChatTab({
@@ -109,6 +110,7 @@ export default function ChatWindowChatTab({
   genericMessages,
   coachId,
   conversationId,
+  onReplayMessage,
 }: ChatWindowChatTabProps) {
   const renderMessage = (m: ChatMessage) => {
     if (m.kind === "text") {
@@ -146,6 +148,17 @@ export default function ChatWindowChatTab({
                 >
                   <Copy className="size-4 text-black" />
                 </button>
+                {m.sender === "assistant" && onReplayMessage && m.text && (
+                  <button
+                    aria-label="Replay voice"
+                    title="Replay voice"
+                    type="button"
+                    className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
+                    onClick={() => onReplayMessage(m.text)}
+                  >
+                    <Volume2 className="size-4 text-black" />
+                  </button>
+                )}
                 {audioPlayerBuffer &&
                   m.sender === "assistant" &&
                   m.id === lastMessageId && (

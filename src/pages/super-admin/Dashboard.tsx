@@ -41,6 +41,8 @@ import {
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import UsedCoachesChart from "@/components/super-admin/dashboard/UsedCoachesChart"
+import CostBoard from "@/components/super-admin/CostBoard"
 import { useDashboardSystem } from "@/hooks/super-admin/dashboard/useDashboardSystem"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
@@ -176,8 +178,6 @@ export default function SuperAdminDashboard() {
   const totalCost = costDash?.total_cost as number | undefined
   const costPerUser = costDash?.cost_per_user as number | undefined
   const totalSessions = costDash?.total_sessions as number | undefined
-  const costBreakdown = (costDash?.breakdown as Array<{ category: string; amount: number; percentage: number }>) ?? []
-  const agentCosts = (costDash?.agent_costs as Array<{ agent: string; sessions: number; cost: number; percentage: number }>) ?? []
 
   // Coaches list
   const coachesRaw = coachesData?.data
@@ -395,6 +395,12 @@ export default function SuperAdminDashboard() {
           {/* ── Agents Tab — All 18 agents ────────────────────────────── */}
           <TabsContent value="agents" className="space-y-6">
             <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <UsedCoachesChart />
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold">All Platform Agents</CardTitle>
@@ -541,11 +547,11 @@ export default function SuperAdminDashboard() {
           </TabsContent>
 
           {/* ── Cost Analysis Tab ─────────────────────────────────────── */}
+          {/* Wave 0 Lane 0.I — shared CostBoard panel (P5.2) */}
           <TabsContent value="cost" className="space-y-6">
-            {/* Cost KPI Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Platform-wide rollup KPIs that aren't part of CostBoard's contract */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Total Cost (MTD)", value: totalCost != null ? `$${totalCost.toLocaleString()}` : "--" },
                 { label: "Cost per User", value: costPerUser != null ? `$${costPerUser.toFixed(2)}` : "--" },
                 { label: "Total Sessions", value: fmt(totalSessions) },
                 { label: "Active Users", value: fmt(totalUsers) },
@@ -555,7 +561,7 @@ export default function SuperAdminDashboard() {
                   <CardContent className="p-5">
                     <p className="text-sm text-muted-foreground mb-1">{kpi.label}</p>
                     <p className="text-2xl font-bold tracking-tight">
-                      {isCostLoading && (kpi.label.includes("Cost") || kpi.label.includes("Sessions")) ? (
+                      {isCostLoading && (kpi.label.includes("Sessions")) ? (
                         <Skeleton className="h-7 w-24" />
                       ) : kpi.value}
                     </p>
@@ -564,90 +570,7 @@ export default function SuperAdminDashboard() {
               ))}
             </div>
 
-            {/* Cost Distribution + Top Users by Cost */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Cost Breakdown */}
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">Cost Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isCostLoading ? (
-                    <div className="space-y-4">
-                      {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-                    </div>
-                  ) : costBreakdown.length > 0 ? (
-                    <div className="space-y-4">
-                      {costBreakdown.map((item) => (
-                        <div key={item.category} className="space-y-1.5">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">{item.category}</span>
-                            <span className="text-muted-foreground">
-                              ${item.amount.toLocaleString()} ({item.percentage}%)
-                            </span>
-                          </div>
-                          <div className="h-2.5 w-full rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400 transition-all"
-                              style={{ width: `${item.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState message="Cost data will appear once the cost tracking service is active." />
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Agent Costs */}
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">Cost by Mentor</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isCostLoading ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-                    </div>
-                  ) : agentCosts.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Mentor</TableHead>
-                          <TableHead className="text-right">Sessions</TableHead>
-                          <TableHead className="text-right">Cost</TableHead>
-                          <TableHead className="w-[120px]">%</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {agentCosts.map((a) => (
-                          <TableRow key={a.agent}>
-                            <TableCell className="font-medium">{a.agent}</TableCell>
-                            <TableCell className="text-right">{a.sessions.toLocaleString()}</TableCell>
-                            <TableCell className="text-right font-medium">${a.cost.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 flex-1 rounded-full bg-muted">
-                                  <div
-                                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400"
-                                    style={{ width: `${a.percentage}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-muted-foreground w-8 text-right">{a.percentage}%</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <EmptyState message="Mentor cost data will appear once the cost tracking service is active." />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <CostBoard scope="platform" />
           </TabsContent>
         </Tabs>
       </div>

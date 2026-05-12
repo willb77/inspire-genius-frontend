@@ -71,7 +71,8 @@ export default function ChatWindow({
   audioPlayerBuffer,
   onCloseAudioPlayer,
   setShowAudioPlayer,
-  showAudioPlayer
+  showAudioPlayer,
+  onReplayMessage,
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -300,6 +301,7 @@ const genericMessages =
             genericMessages={genericMessages}
             coachId={coachId}
             conversationId={conversationId}
+            onReplayMessage={onReplayMessage}
           />
         ) : (
           <DocumentsPanel

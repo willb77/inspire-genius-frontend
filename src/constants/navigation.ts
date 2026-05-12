@@ -14,7 +14,6 @@ import {
   Users,
   Building2,
   UserCheck,
-  Map,
   Briefcase,
   Brain,
   Sparkles,
@@ -78,6 +77,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // Combined Plan §A.E3.4 — Sage document research
   { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
+  { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
   { to: ROUTES.SUPER_ADMIN.CULTURAL_CONTENT, icon: Globe, label: "Cultural Content" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
@@ -122,8 +122,7 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
 /** Navigation items for the distributor role */
 export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.DISTRIBUTOR.PRACTITIONERS, icon: Briefcase, label: "Practitioners" },
-  { to: ROUTES.DISTRIBUTOR.TERRITORY, icon: Map, label: "Territory" },
+  { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]

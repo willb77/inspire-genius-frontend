@@ -4,7 +4,7 @@ const weeks = (n: number) => Array.from({ length: n }, (_, i) => `W${i + 1}`)
 const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
 
 export const analyticsHandlers = [
-  http.get("/api/analytics/user", () =>
+  http.get("/v1/analytics/user", () =>
     HttpResponse.json({ success: true, data: {
       sessionsPerWeek: weeks(12).map((w) => ({ week: w, sessions: Math.floor(Math.random() * 8) + 2 })),
       goalsProgress: weeks(12).map((w) => ({ week: w, completed: Math.floor(Math.random() * 3), total: 8 })),
@@ -18,7 +18,7 @@ export const analyticsHandlers = [
       ],
     } })
   ),
-  http.get("/api/analytics/manager", () =>
+  http.get("/v1/analytics/manager", () =>
     HttpResponse.json({ success: true, data: {
       teamEngagement: [
         { name: "Alex T.", sessions: 12 }, { name: "Maria G.", sessions: 9 }, { name: "James W.", sessions: 14 },
@@ -32,7 +32,7 @@ export const analyticsHandlers = [
       timeToHire: [{ position: "Frontend", days: 21 }, { position: "Backend", days: 28 }, { position: "PM", days: 18 }, { position: "Designer", days: 24 }],
     } })
   ),
-  http.get("/api/analytics/company", () =>
+  http.get("/v1/analytics/company", () =>
     HttpResponse.json({ success: true, data: {
       deptComparison: [
         { dept: "Engineering", engagement: 88, training: 82, prism: 84 }, { dept: "Marketing", engagement: 76, training: 76, prism: 79 },
@@ -44,7 +44,7 @@ export const analyticsHandlers = [
       costPerUser: months.map((m) => ({ month: m, cost: +(380 + Math.random() * 80).toFixed(0) })),
     } })
   ),
-  http.get("/api/analytics/practitioner", () =>
+  http.get("/v1/analytics/practitioner", () =>
     HttpResponse.json({ success: true, data: {
       clientEngagement: [
         { client: "Marcus C.", sessions: 12 }, { client: "Aisha P.", sessions: 8 }, { client: "James M.", sessions: 15 },
@@ -54,7 +54,7 @@ export const analyticsHandlers = [
       prismRates: [{ name: "Completed", value: 18 }, { name: "In Progress", value: 4 }, { name: "Not Started", value: 2 }],
     } })
   ),
-  http.get("/api/analytics/distributor", () =>
+  http.get("/v1/analytics/distributor", () =>
     HttpResponse.json({ success: true, data: {
       creditsByRegion: [
         { region: "Northeast", credits: 890 }, { region: "Southeast", credits: 770 }, { region: "Midwest", credits: 620 },
@@ -67,7 +67,7 @@ export const analyticsHandlers = [
       creditFlow: months.map((m) => ({ month: m, purchased: Math.floor(Math.random() * 400) + 300, allocated: Math.floor(Math.random() * 300) + 200, used: Math.floor(Math.random() * 250) + 150 })),
     } })
   ),
-  http.get("/api/analytics/platform", () =>
+  http.get("/v1/analytics/platform", () =>
     HttpResponse.json({ success: true, data: {
       totalUsers: 12847, mau: 8234, dau: 3421,
       agentUsage: [{ name: "Meridian", value: 12500 }, { name: "Aura", value: 8200 }, { name: "Nova", value: 7800 }, { name: "Atlas", value: 5600 }, { name: "Echo", value: 4200 }, { name: "Other", value: 7378 }],

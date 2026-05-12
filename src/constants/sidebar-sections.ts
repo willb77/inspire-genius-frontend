@@ -81,9 +81,8 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     roles: ["distributor", "super-admin"],
     items: [
       { to: "/distributor/dashboard", icon: Home, label: "Distributor Home" },
-      { to: "/distributor/practitioners", icon: User, label: "Practitioners" },
+      { to: "/distributor/network", icon: User, label: "Network" },
       { to: "/distributor/credits", icon: PlusCircle, label: "Credits" },
-      { to: "/distributor/territory", icon: BarChart3, label: "Allocate Credits" },
       { to: "/distributor/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
