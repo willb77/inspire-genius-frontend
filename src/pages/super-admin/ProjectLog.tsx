@@ -39,17 +39,16 @@ const SITEMAP_MERMAID = `graph TD
 
   Q["/super-admin"] --> Q1["/super-admin/dashboard"]
   Q --> Q2["/super-admin/users"]
-  Q --> Q3["/super-admin/coaches"]
+  Q --> Q3["/super-admin/mentor-management"]
   Q --> Q4["/super-admin/rlhf-training"]
   Q --> Q5["/super-admin/prompt-builder"]
-  Q --> Q6["/super-admin/audit-log"]
-  Q --> Q7["/super-admin/analytics"]
-  Q --> Q8["/super-admin/voice-settings"]
-  Q --> Q9["/super-admin/agent-trainer"]
-  Q --> Q10["/super-admin/process-builder"]
-  Q --> Q11["/super-admin/bulk-import"]
-  Q --> Q12["/super-admin/settings"]
-  Q --> Q13["/super-admin/project-log"]
+  Q --> Q6["/super-admin/analytics"]
+  Q --> Q7["/super-admin/voice-settings"]
+  Q --> Q8["/super-admin/agent-trainer"]
+  Q --> Q9["/super-admin/process-builder"]
+  Q --> Q10["/super-admin/bulk-import"]
+  Q --> Q11["/super-admin/settings"]
+  Q --> Q12["/super-admin/project-log"]
 
   style A fill:#ef4444,color:#fff
   style B fill:#3b82f6,color:#fff
