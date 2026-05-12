@@ -31,7 +31,7 @@ export type ChatHistoryWithAudioProps = ChatHistoryProps & {
   renameIsPending?: boolean;
 };
 
-export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation, onRenameConversation, renameIsPending }: ChatHistoryWithAudioProps) {
+export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isError, errorMessage, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation, onRenameConversation, renameIsPending }: ChatHistoryWithAudioProps) {
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [renameOpen, setRenameOpen] = useState(false);
@@ -141,6 +141,11 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                 </ul>
               </div>
             ))}
+          </div>
+        ) : null}
+        {!isLoading && isError && groups.every((g) => g.items.length === 0) ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            {errorMessage ?? "Couldn't load conversation history — the backend may be unavailable. Refresh to retry."}
           </div>
         ) : null}
         {groups.map((group) => {

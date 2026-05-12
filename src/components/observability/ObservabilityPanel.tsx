@@ -34,7 +34,7 @@ export default function ObservabilityPanel({ messageId, className }: Observabili
   const [expanded, setExpanded] = useState(false)
   const { user } = useAuth()
   const role = (user?.role ?? "user") as keyof typeof OBSERVABILITY_FIELDS_BY_ROLE
-  const { data, isLoading } = useResponseObservability(messageId, expanded)
+  const { data, isLoading, isError } = useResponseObservability(messageId, expanded)
   const exportMutation = useExportResponse()
 
   const allowedFields = OBSERVABILITY_FIELDS_BY_ROLE[role]
@@ -141,6 +141,10 @@ export default function ObservabilityPanel({ messageId, className }: Observabili
                 </div>
               )}
             </>
+          ) : isError ? (
+            <div className="text-destructive">
+              Couldn't load observability data — the backend may be unavailable.
+            </div>
           ) : (
             <div className="text-muted-foreground">No observability data available</div>
           )}
