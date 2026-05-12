@@ -2,32 +2,13 @@ import { useTranslation } from "react-i18next";
 import ManagerLayout from "@/layouts/ManagerLayout"
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
 import DataCard from "@/components/dashboard/DataCard"
-import ProgressBar from "@/components/dashboard/ProgressBar"
 import StatusBadge from "@/components/dashboard/StatusBadge"
-import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
 import { useAuth } from "@/context/useAuth"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerTeam, useManagerHiringStats, useManagerInterviews } from "@/hooks/manager/useManagerTeam"
 
 type Interview = { time: string; name: string; pos: string; color: string }
 type TeamMember = { initials: string; name: string; role: string; prism: number; bg: string; status: string }
-
-const FALLBACK_INTERVIEWS: Interview[] = [
-  { time: "9:00 AM", name: "Sarah Chen", pos: "Frontend Developer", color: "#38A169" },
-  { time: "10:30 AM", name: "Marcus Johnson", pos: "Product Manager", color: "#3B82F6" },
-  { time: "1:00 PM", name: "Elena Rodriguez", pos: "UX Designer", color: "#3B5BFF" },
-  { time: "2:30 PM", name: "David Kim", pos: "Backend Engineer", color: "#2DD4BF" },
-  { time: "4:00 PM", name: "Lisa Wang", pos: "Data Analyst", color: "#8B5CF6" },
-]
-
-const FALLBACK_TEAM: TeamMember[] = [
-  { initials: "AT", name: "Alex Thompson", role: "Senior Developer", prism: 88, bg: "#3B82F6", status: "Active" },
-  { initials: "MG", name: "Maria Garcia", role: "UX Designer", prism: 82, bg: "#8B5CF6", status: "Active" },
-  { initials: "JW", name: "James Wilson", role: "Product Manager", prism: 91, bg: "#E53E3E", status: "In Meeting" },
-  { initials: "SL", name: "Sarah Lee", role: "Data Analyst", prism: 79, bg: "#2DD4BF", status: "Active" },
-  { initials: "CM", name: "Chris Martin", role: "DevOps Engineer", prism: 85, bg: "#6B7280", status: "Away" },
-  { initials: "PP", name: "Priya Patel", role: "QA Lead", prism: 87, bg: "#10B981", status: "Active" },
-]
 
 export default function ManagerDashboard() {
   const { t } = useTranslation(["admin", "common"]);
@@ -39,37 +20,30 @@ export default function ManagerDashboard() {
   const { data: interviewData, isLoading: interviewLoading, error: interviewError, refetch: refetchInterviews } = useManagerInterviews()
 
   const stats = hiringStatsData as { openPositions?: number; totalCandidates?: number; interviewsThisWeek?: number; avgTimeToHire?: number } | undefined
+  const teamTotal = (teamData as { total?: number } | undefined)?.total ?? 0
 
   const STATS = [
-    { label: t("admin:manager.teamMembers"), value: String((teamData as { total?: number } | undefined)?.total ?? 14), change: "+2 this quarter", changeColor: "text-[#10B981]" },
-    { label: t("admin:manager.goals"), value: "23", change: "+5 this month", changeColor: "text-[#3B5BFF]" },
-    { label: t("admin:manager.prismScore"), value: "82", change: "+3 pts", changeColor: "text-[#10B981]" },
-    { label: t("admin:manager.trainingOverview"), value: "91%", change: "+8%", changeColor: "text-[#10B981]" },
-  ]
-
-  const PRISM_BARS = [
-    { label: "Gold (Drive)", pct: 78, color: "#E53E3E" },
-    { label: "Green (Influence)", pct: 85, color: "#38A169" },
-    { label: "Yellow (Steadiness)", pct: 72, color: "#ECC94B" },
-    { label: "Blue (Compliance)", pct: 88, color: "#3182CE" },
+    { label: t("admin:manager.teamMembers"), value: String(teamTotal) },
+    { label: t("admin:manager.goals"), value: "0" },
+    { label: t("admin:manager.prismScore"), value: "—" },
+    { label: t("admin:manager.trainingOverview"), value: "—" },
   ]
 
   const MINI_STATS = [
-    { val: String(stats?.openPositions ?? 3), label: "Open Positions", color: "#3B5BFF" },
-    { val: String(stats?.totalCandidates ?? 47), label: "Total Candidates", color: "#0D9488" },
-    { val: String(stats?.interviewsThisWeek ?? 8), label: "Interviews This Week", color: "#3B82F6" },
-    { val: String(stats?.avgTimeToHire ?? 23), label: "Avg Time to Hire (days)", color: "#8B5CF6" },
+    { val: String(stats?.openPositions ?? 0), label: "Open Positions", color: "#3B5BFF" },
+    { val: String(stats?.totalCandidates ?? 0), label: "Total Candidates", color: "#0D9488" },
+    { val: String(stats?.interviewsThisWeek ?? 0), label: "Interviews This Week", color: "#3B82F6" },
+    { val: String(stats?.avgTimeToHire ?? 0), label: "Avg Time to Hire (days)", color: "#8B5CF6" },
   ]
 
-  const interviews = ((interviewData as { interviews?: Interview[] } | undefined)?.interviews ?? FALLBACK_INTERVIEWS) as Interview[]
-  const team = ((teamData as { members?: TeamMember[] } | undefined)?.members ?? FALLBACK_TEAM) as TeamMember[]
+  const interviews = ((interviewData as { interviews?: Interview[] } | undefined)?.interviews ?? []) as Interview[]
+  const team = ((teamData as { members?: TeamMember[] } | undefined)?.members ?? []) as TeamMember[]
 
   return (
     <ManagerLayout>
-      <PlaceholderBanner />
       <WelcomeBanner
         title={t("admin:manager.title")}
-        subtitle={`Welcome back, ${name}. Your team of 14 is performing well this quarter.`}
+        subtitle={`Welcome back, ${name}.`}
       >
         <div className="flex gap-2">
           <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:manager.viewReports")}</button>
@@ -87,19 +61,9 @@ export default function ManagerDashboard() {
             ) : (
               <div className="text-2xl font-bold text-[#111827]">{s.value}</div>
             )}
-            <div className={`text-[11px] font-semibold mt-0.5 ${s.changeColor}`}>{s.change}</div>
           </div>
         ))}
       </div>
-
-      {/* Team PRISM Overview */}
-      <DataCard title={t("admin:manager.teamPrismOverview")}>
-        <div className="space-y-2.5">
-          {PRISM_BARS.map((b) => (
-            <ProgressBar key={b.label} label={b.label} value={b.pct} color={b.color} />
-          ))}
-        </div>
-      </DataCard>
 
       {/* Hiring Pipeline */}
       <DataCard title={t("admin:manager.hiringPipeline")}>
@@ -137,6 +101,8 @@ export default function ManagerDashboard() {
                 <Skeleton className="h-8 w-full" />
               </div>
             ))
+          : interviews.length === 0
+          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">No interviews scheduled.</p>
           : interviews.map((i) => (
               <div key={i.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
                 <span className="text-xs font-semibold text-[#6b7280] w-[70px] shrink-0">{i.time}</span>
@@ -162,6 +128,8 @@ export default function ManagerDashboard() {
                 <Skeleton className="h-8 w-full" />
               </div>
             ))
+          : team.length === 0
+          ? <p className="py-6 text-center text-[13px] text-[#6b7280]">No direct reports yet.</p>
           : team.map((m) => (
               <div key={m.name} className="flex items-center gap-3 py-2.5 border-b border-[#f3f4f6] last:border-b-0">
                 <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white font-bold text-[11px] shrink-0" style={{ backgroundColor: m.bg }}>{m.initials}</div>
