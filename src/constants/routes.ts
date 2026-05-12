@@ -18,8 +18,6 @@ export const ROUTES = {
   SUPER_ADMIN: {
     BASE: "/super-admin",
     DASHBOARD: "/super-admin/dashboard",
-    TEAM: "/super-admin/team",
-    COACHES: "/super-admin/coaches",
     ORGANIZATIONS: "/super-admin/organizations",
     USERS: "/super-admin/users",
     USER_MEMORY: "/super-admin/users/:userId/memory",
@@ -27,7 +25,6 @@ export const ROUTES = {
     PROJECT_LOG: "/super-admin/project-log",
     RLHF_TRAINING: "/super-admin/rlhf-training",
     PROMPT_BUILDER: "/super-admin/prompt-builder",
-    AUDIT_LOG: "/super-admin/audit-log",
     ANALYTICS: "/super-admin/analytics",
     VOICE_SETTINGS: "/super-admin/voice-settings",
     PROCESS_BUILDER: "/super-admin/process-builder",

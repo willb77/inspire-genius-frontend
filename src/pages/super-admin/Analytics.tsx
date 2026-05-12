@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "react-router-dom"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -81,7 +82,7 @@ const SITEMAP_MERMAID = `graph TD
 
   Q["/super-admin"] --> Q1["/super-admin/dashboard"]
   Q --> Q2["/super-admin/users"]
-  Q --> Q3["/super-admin/agent-management"]
+  Q --> Q3["/super-admin/mentor-management"]
   Q --> Q4["/super-admin/rlhf-training"]
   Q --> Q5["/super-admin/prompt-builder"]
   Q --> Q6["/super-admin/analytics"]
@@ -508,8 +509,39 @@ function ProjectLogTab() {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────
+const VALID_TABS = ["analytics", "audit", "project"] as const
+type AnalyticsTab = (typeof VALID_TABS)[number]
+
+function isAnalyticsTab(value: string | null): value is AnalyticsTab {
+  return value !== null && (VALID_TABS as readonly string[]).includes(value)
+}
+
 export default function SuperAdminAnalytics() {
-  const [activeTab, setActiveTab] = useState("analytics")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab: AnalyticsTab = isAnalyticsTab(searchParams.get("tab"))
+    ? (searchParams.get("tab") as AnalyticsTab)
+    : "analytics"
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialTab)
+
+  // Keep ?tab=… in sync if a deep-link arrives after mount (e.g. redirect from /super-admin/audit-log)
+  useEffect(() => {
+    const param = searchParams.get("tab")
+    if (isAnalyticsTab(param) && param !== activeTab) {
+      setActiveTab(param)
+    }
+  }, [searchParams, activeTab])
+
+  const handleTabChange = (next: string) => {
+    if (!isAnalyticsTab(next)) return
+    setActiveTab(next)
+    const params = new URLSearchParams(searchParams)
+    if (next === "analytics") {
+      params.delete("tab")
+    } else {
+      params.set("tab", next)
+    }
+    setSearchParams(params, { replace: true })
+  }
 
   return (
     <SuperAdminLayout>
@@ -519,7 +551,7 @@ export default function SuperAdminAnalytics() {
           <p className="text-[13px] text-[#6b7280] mt-1">Platform analytics, audit trail, and project documentation.</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
           <TabsList className="w-fit">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-3.5 w-3.5" />
