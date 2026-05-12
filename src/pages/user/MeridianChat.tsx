@@ -21,6 +21,7 @@ import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
 import { exportConversation } from "@/services/agent/agentService";
+import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
@@ -497,7 +498,7 @@ export default function MeridianChat() {
   }, [searchQuery]);
 
   // Conversations
-  const { data: conversationData, isLoading: isLoadingConversations } = useAgentConversation(
+  const { data: conversationData, isLoading: isLoadingConversations, isError: isConversationsError } = useAgentConversation(
     AGENT_ID,
     { page: 1, limit: 100, search: debouncedSearch },
   );
@@ -730,12 +731,18 @@ export default function MeridianChat() {
           base64_pdf?: string;
           base64_csv?: string;
         };
-        if (!resp || !resp.status) return;
+        if (!resp || !resp.status) {
+          toast.error("Couldn't export chat — the backend returned no data.");
+          return;
+        }
         const payload = resp.data ?? resp;
         const base64 = payload.base64_pdf || payload.base64_csv;
         const mime = payload.mime_type || "application/pdf";
         const fileName = payload.file_name || `conversation_${conversationId}.pdf`;
-        if (!base64) return;
+        if (!base64) {
+          toast.error("Couldn't export chat — no content in the selected range.");
+          return;
+        }
         const byteChars = atob(base64);
         const byteNumbers = new Array(byteChars.length);
         for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
@@ -751,6 +758,7 @@ export default function MeridianChat() {
         URL.revokeObjectURL(url);
       } catch (e) {
         console.error("Failed to export conversation", e);
+        toast.error("Couldn't export chat — please try again.");
       }
     },
     [conversationId],
@@ -898,6 +906,7 @@ export default function MeridianChat() {
             hasConversations={hasConversations}
             onCreateNewConversation={handleCreateConversation}
             isLoading={isLoadingConversations || createConvMutation.isPending}
+            isError={isConversationsError}
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             isAudioRunning={hasAudio && !isAudioPaused}
