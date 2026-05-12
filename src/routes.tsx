@@ -115,7 +115,6 @@ const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Obs
 const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
 const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
 const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
-const CulturalContent = React.lazy(() => import("@/pages/super-admin/CulturalContent"));
 const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
@@ -222,7 +221,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
       { path: "/super-admin/prism-management", element: withSuspense(<PrismManagement />) },
-      { path: "/super-admin/cultural-content", element: withSuspense(<CulturalContent />) },
+      // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
+      { path: "/super-admin/cultural-content", element: <Navigate to="/super-admin/knowledge-base?domain=cultural" replace /> },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
