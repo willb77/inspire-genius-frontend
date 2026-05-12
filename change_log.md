@@ -105,6 +105,54 @@ Open issue: users log in and continue to see the old UI until they manually hard
 
 ---
 
+## [2026-05-12] — PR #50 merged + verified: orphan hooks wired to `enabled: false`
+
+**Verdict:** Closes the last DevTools 404 noise across all four role dashboards. Verified end-to-end on the dev deploy with fresh HARs — zero 4xx across User / Manager / Company / Super Admin.
+
+### Hooks disabled (default `enabled: false`, opt-in `{ enabled: true }`)
+- `useDashboardSystem` — `GET /v1/dashboard/system` (super-admin) — backlog #9 Bug A
+- `useFeedbackStats` — `GET /v1/admin/feedback/stats` (super-admin) — backlog #9 Bug B
+- `usePrismHistory` — `GET /v1/prism/history/{userId}` (user) — backlog #10.U
+
+Each was firing 3× per page load via React Query default retries → 9 DevTools 404s per super-admin or user dashboard visit. Now zero.
+
+### Consumer change
+- `DashboardSystem.tsx` skeleton check switched from `isPending` to `isPending && fetchStatus === "fetching"` so the disabled hook renders `0` instead of an infinite skeleton.
+
+### Test changes
+- All three disabled-hook test files now pass `{ enabled: true }` to verify query logic still works once endpoints are implemented.
+- `DashboardSystem.test.tsx` skeleton case mocks `fetchStatus: 'fetching'` alongside `isPending: true`.
+- `useDashboardSystem` `options` parameter loosened to `Partial<UseQueryOptions<...>>` so callers can pass `{ enabled: true }` without supplying `queryKey` (caught by `tsc -b` after the first push).
+
+### CI / Deploy
+- Final CI: Build / Trivy / Audit / Unit Tests (17m6s, 2978 tests) — all green.
+- Squash-merged to `development` → `eaae231`.
+- Deploy to Dev: success. Deploy to Production: cancelled (manual approval gate, as designed).
+
+### Browser verification (fresh HARs against `d1nxsns258du4y.cloudfront.net`)
+| Role | Entries | 4xx/5xx |
+|---|---|---|
+| User | 3 | 0 |
+| Manager | 6 | 0 |
+| Company | 5 | 0 |
+| Super Admin | 5 | 0 |
+
+The three orphan endpoints no longer appear in any of the four HARs.
+
+### Files
+- `src/hooks/super-admin/dashboard/useDashboardSystem.ts`
+- `src/hooks/feedback/useFeedback.ts`
+- `src/hooks/prism/usePrismHistory.ts`
+- `src/components/super-admin/dashboard/DashboardSystem.tsx`
+- `src/hooks/super-admin/dashboard/__tests__/useDashboardSystem.test.tsx`
+- `src/hooks/feedback/__tests__/useFeedback.test.tsx`
+- `src/hooks/prism/__tests__/usePrismHooks.test.tsx`
+- `src/components/super-admin/dashboard/__tests__/DashboardSystem.test.tsx`
+
+PR: https://github.com/willb77/inspire-genius-frontend/pull/50 — squash commit `eaae231`.
+
+---
+
 ## [2026-05-12] — Meridian chat backend fixes: observability Layer 2 + conversations from Aurora
 
 `/full-go` autonomous run continuing the four-bug fix from the prior session.
