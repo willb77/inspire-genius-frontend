@@ -47,7 +47,7 @@ describe("useFeedback hooks", () => {
 
   it("useFeedbackStats fetches stats", async () => {
     (getFeedbackStats as jest.Mock).mockResolvedValueOnce({ data: { avg_rating: 4.5 } })
-    const { result } = renderHook(() => useFeedbackStats({}), { wrapper })
+    const { result } = renderHook(() => useFeedbackStats({}, { enabled: true }), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(getFeedbackStats).toHaveBeenCalledWith({})
   })
