@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1084</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1085</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,35 +103,6 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
-
-        <h3>[2026-05-09] — refactor(dash) Wave 0 / Lane 0.G: ChartKit primitives (P3.1)</h3>
-        <h4>Added</h4>
-        <p>Shared chart kit at <code>inspire-genius-frontend/src/components/analytics/charts/</code> extracting the five charts that the Manager / Company / Super-Admin / Practitioner / Distributor Analytics pages re-implement today. This lane only adds the kit; Wave 1 (lanes 1.A–1.D) refactors each role's Analytics page onto these primitives.</p>
-        <ul>
-          <li><code>EngagementChart.tsx</code> — recharts <code>BarChart</code>; props <code>{ data, xKey, valueKey, title, subtitle }</code> plus the common state contract.</li>
-          <li><code>GoalsBreakdownChart.tsx</code> — recharts <code>PieChart</code> with default colour palette.</li>
-          <li><code>CostTrendChart.tsx</code> — recharts <code>LineChart</code>; supports primary + optional secondary series for dual-line (cost vs. baseline / forecast).</li>
-          <li><code>UtilizationAreaChart.tsx</code> — recharts <code>AreaChart</code>; multi-series with optional <code>stacked</code> mode.</li>
-          <li><code>FunnelChart.tsx</code> — recharts vertical <code>BarChart</code> with stage <code>LabelList</code>.</li>
-          <li><code>LoadingSkeleton.tsx</code> — uniform skeleton shared by every chart's loading state.</li>
-          <li><code>ChartShell.tsx</code> (internal) — wraps each chart in <code>&lt;DataCard&gt;</code> and enforces the four contract states (loading → skeleton, error → inline pill, empty → user-supplied node, otherwise → chart).</li>
-          <li><code>README.md</code> documenting the kit, prop contract, examples, and the migration map for Wave 1 lanes 1.A–1.D.</li>
-        </ul>
-        <h4>Common prop contract</h4>
-        <p><code>{ data, loading, error, emptyState, title, subtitle }</code> on every chart. <code>subtitle</code> renders as a small grey line above the chart inside the <code>&lt;DataCard&gt;</code>.</p>
-        <h4>Tests</h4>
-        <p><code>npx jest src/components/analytics/charts</code> → <strong>6 suites, 22 tests passing.</strong> Each chart asserts loading skeleton, error pill, empty state, and happy-path render with seeded data. Recharts is mocked through <code>test-support/rechartsMock.ts</code>.</p>
-        <h4>Verification</h4>
-        <ul>
-          <li><code>npm run build</code> — clean (Vite + tsc).</li>
-          <li><code>npx eslint src/components/analytics/charts</code> — zero errors. Repo-wide <code>npm run lint</code> has 1700+ pre-existing errors unrelated to this lane.</li>
-        </ul>
-        <h4>Branch / PR</h4>
-        <ul>
-          <li>Branch: <code>refactor/wave-0g-chartkit-primitives</code> (off <code>development</code>)</li>
-          <li>PR title: <code>refactor(dash)/wave-0g: ChartKit primitives (O1)</code></li>
-          <li>Gating predecessor for Wave 1 lanes 1.A–1.D.</li>
-        </ul>
 
         <h3>[2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — <strong>PASS 7/7 strict</strong></h3>
         <p><code>/full-go r-2.9</code> autonomous run. <strong>Verdict: PASS 7/7 strict</strong> on live R-2.9a CRUD matrix against <code>r22-residuals-v2</code> (digest <code>sha256:96d337cd...</code>).</p>
@@ -818,6 +789,35 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
           <li>Transcript snippets of their prior sessions (capped, attributed to their <code>session_id</code>).</li>
           <li>A list of session summaries from prior sessions (with timestamps + <code>session_id</code>s).</li>
           <li>Insights extracted from sessions that ended without an explicit farewell — previously lost when short-term expired.</li>
+        </ul>
+
+        <h3>[2026-05-09] — refactor(dash) Wave 0 / Lane 0.G: ChartKit primitives (P3.1)</h3>
+        <h4>Added</h4>
+        <p>Shared chart kit at <code>inspire-genius-frontend/src/components/analytics/charts/</code> extracting the five charts that the Manager / Company / Super-Admin / Practitioner / Distributor Analytics pages re-implement today. This lane only adds the kit; Wave 1 (lanes 1.A–1.D) refactors each role's Analytics page onto these primitives.</p>
+        <ul>
+          <li><code>EngagementChart.tsx</code> — recharts <code>BarChart</code>; props <code>{ data, xKey, valueKey, title, subtitle }</code> plus the common state contract.</li>
+          <li><code>GoalsBreakdownChart.tsx</code> — recharts <code>PieChart</code> with default colour palette.</li>
+          <li><code>CostTrendChart.tsx</code> — recharts <code>LineChart</code>; supports primary + optional secondary series for dual-line (cost vs. baseline / forecast).</li>
+          <li><code>UtilizationAreaChart.tsx</code> — recharts <code>AreaChart</code>; multi-series with optional <code>stacked</code> mode.</li>
+          <li><code>FunnelChart.tsx</code> — recharts vertical <code>BarChart</code> with stage <code>LabelList</code>.</li>
+          <li><code>LoadingSkeleton.tsx</code> — uniform skeleton shared by every chart's loading state.</li>
+          <li><code>ChartShell.tsx</code> (internal) — wraps each chart in <code>&lt;DataCard&gt;</code> and enforces the four contract states (loading → skeleton, error → inline pill, empty → user-supplied node, otherwise → chart).</li>
+          <li><code>README.md</code> documenting the kit, prop contract, examples, and the migration map for Wave 1 lanes 1.A–1.D.</li>
+        </ul>
+        <h4>Common prop contract</h4>
+        <p><code>{ data, loading, error, emptyState, title, subtitle }</code> on every chart. <code>subtitle</code> renders as a small grey line above the chart inside the <code>&lt;DataCard&gt;</code>.</p>
+        <h4>Tests</h4>
+        <p><code>npx jest src/components/analytics/charts</code> → <strong>6 suites, 22 tests passing.</strong> Each chart asserts loading skeleton, error pill, empty state, and happy-path render with seeded data. Recharts is mocked through <code>test-support/rechartsMock.ts</code>.</p>
+        <h4>Verification</h4>
+        <ul>
+          <li><code>npm run build</code> — clean (Vite + tsc).</li>
+          <li><code>npx eslint src/components/analytics/charts</code> — zero errors. Repo-wide <code>npm run lint</code> has 1700+ pre-existing errors unrelated to this lane.</li>
+        </ul>
+        <h4>Branch / PR</h4>
+        <ul>
+          <li>Branch: <code>refactor/wave-0g-chartkit-primitives</code> (frontend repo, off <code>development</code>)</li>
+          <li>PR: <a href="https://github.com/willb77/inspire-genius-frontend/pull/34">willb77/inspire-genius-frontend#34</a></li>
+          <li>Gating predecessor for Wave 1 lanes 1.A–1.D.</li>
         </ul>
 
         <h3>[2026-05-08] — P4 (Phase D R3) canary flipped on dev: chat_message writer = agent-engine</h3>
@@ -2314,6 +2314,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 PM — Prompt #1085 [/full-go Meridian backend fixes — observability Layer 2 + conversations from Aurora]</div>
+          <div class="prompt-text">/full-go: (1) Verify A — check deploy monitor, live-curl observability, confirm 500→200. (2) Merge C — PR #53. (3) Do B-fix Path α — rewrite agent-engine conversations.py to query chat_messages instead of process-local dict. (4) Deploy B-fix to ig-dev-agent-engine via image rebuild + ECS roll. Result: PR #53, #87, #88 all merged; observability hydrates DB creds from master Aurora secret; conversations now read from chat_messages table.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-11 PM — Prompt #1083 [CI deploy-staging → deploy-dev rename, end-to-end]</div>
           <div class="prompt-text">check that the dev site loads /settings/privacy → look into the waiting CI runs → rename deploy-staging to deploy-dev → merge it once CI is green → why rename the GitHub environment from staging to dev? → no plans for staging, rename it → wait for first dev deploy then delete it → log this session.</div>
@@ -23458,64 +23462,25 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
           <div class="prompt-text">User prompt submitted</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:17:27</div>
-          <div class="prompt-text">[NOTIFICATION] Session stopped</div>
+          <div class="timestamp">2026-05-09 — Prompt #1050 [/full-go Wave 0 Lane 0.B — P1.6]</div>
+          <div class="prompt-text">P1.6 (M7) WIRED — User Analytics. Replaced hardcoded recharts mock data in <code>src/pages/user/Analytics.tsx</code> with the existing <code>useUserAnalytics()</code> hook (<code>src/hooks/analytics/useAnalytics.ts</code> → <code>/v1/analytics/user</code>). Renders <code>total_sessions</code>, <code>session_trends</code>, <code>goals_by_status</code>, and <code>training</code> from the live response. Removed mock-only "Most-Used Agents", "Satisfaction Trend", and "PRISM Growth Trajectory" charts (no backend source). Empty-state: when all four metrics are zero, render "No analytics yet" DataCard plus a one-shot Sonner <code>toast.info</code> instead of misleading random charts. Loading via Skeleton; error shows Retry. Tests rewritten to mock the hook and cover loading / data / empty / error paths.</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:17:27</div>
-          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+          <div class="timestamp">2026-05-09 — Prompt #1051 [/full-go Wave 0 Lane 0.B — P1.7]</div>
+          <div class="prompt-text">P1.7 (M8a) DELETED — Company Admin Leadership. Backend evidence: <code>services/dashboard-service/app/routes.py:173</code> (<code>/api/company/analytics</code>) returns <code>CompanyAnalyticsOut(total_users, active_users, avg_prism_score, training_completion)</code> — no <code>leaders</code> array. <code>services/user-service/</code> has no leadership pipeline endpoint. <code>grep</code> across <code>services/dashboard-service</code> and <code>services/user-service</code> returns no leadership data sources. Deleted <code>src/pages/company-admin/Leadership.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.LEADERSHIP</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Manager Leadership untouched.</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:18:08</div>
-          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+          <div class="timestamp">2026-05-09 — Prompt #1052 [/full-go Wave 0 Lane 0.B — P1.8]</div>
+          <div class="prompt-text">P1.8 (M8b) DELETED — Company Admin Training. Same evidence as P1.7 — <code>/api/company/analytics</code> returns no <code>programs</code> array, and there is no <code>/api/company/training</code> or <code>/api/company/programs</code> endpoint anywhere in <code>services/</code>. Deleted <code>src/pages/company-admin/Training.tsx</code> + test, removed <code>ROUTES.COMPANY_ADMIN.TRAINING</code>, sidebar nav entry, integration test stub mapping, and routes.tsx lazy import + route. Re-pointed Company Admin Dashboard's "Training Completion" tile click-through from <code>/company-admin/training</code> (now deleted) to <code>/company-admin/analytics</code>. Manager Training untouched.</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:18:52</div>
-          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/change_log.md</code></div>
+          <div class="timestamp">2026-05-09 — Prompt #1053 [Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4)]</div>
+          <div class="prompt-text">/full-go You're working Wave 0 Lane 0.C of `Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx` v2. Single unit (P1.4); single PR. Dedupe useCompanyAnalytics() across /hooks/analytics/useAnalytics.ts and /hooks/company-admin/useCompanyAdmin.ts — promote analytics version to canonical, replace company-admin definition with deprecated re-export, audit callers, add Jest test with QueryClientProvider wrapper. PR title: refactor(dash)/wave-0c: dedupe useCompanyAnalytics (D6).</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:19:09</div>
-          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
+          <div class="timestamp">2026-05-09 — Activity [Lane 0.C complete]</div>
+          <div class="prompt-text">[ACTIVITY] Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4 / D6) complete. Canonical hook now lives in `src/hooks/analytics/useAnalytics.ts`; `src/hooks/company-admin/useCompanyAdmin.ts` exports a `@deprecated` re-export with TODO(wave-1) cleanup marker. After Lane 0.B's deletes (Leadership.tsx + Training.tsx), only Dashboard.tsx still imports the deprecated alias; Analytics.tsx is already on the canonical. All callers tolerate the canonical shape via existing `as` casts + fallbacks. Tests: `npx jest src/hooks` → 66 suites / 346 tests passing; canonical `useCompanyAnalytics` test added in useAnalytics.test.tsx with QueryClientProvider wrapper, plus practitioner+distributor coverage filled in. `npm run build` clean. ESLint on touched files clean. PR #31 merged.</div>
         </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:19:30</div>
-          <div class="prompt-text">[EDIT] File modified<br/><code>/Users/williambrown/Dropbox/AES Material/Inspire-X/New IG Projects/Local_IG-App_UI/IG_project_log.html</code></div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-08 13:19:43</div>
-          <div class="prompt-text">User prompt submitted</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1053 [/full-go Wave 0 Lane 0.G — ChartKit primitives]</div>
-          <div class="prompt-text">/full-go: Wave 0 Lane 0.G of IG_Dashboard_Rationalization_Plan_2.docx (P3.1). Build a shared ChartKit at <code>inspire-genius-frontend/src/components/analytics/charts/</code> with EngagementChart, GoalsBreakdownChart, CostTrendChart, UtilizationAreaChart, FunnelChart, LoadingSkeleton — common prop contract <code>{ data, loading, error, emptyState, title, subtitle }</code>, wrapped in <code>&lt;DataCard&gt;</code>. Add unit tests for each chart's four contract states. Document in README. DO NOT modify Analytics pages — Wave 1 will. Open PR <code>refactor(dash)/wave-0g: ChartKit primitives (O1)</code> off <code>development</code>.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Session activity (Wave 0 Lane 0.G)</div>
-          <div class="prompt-text">Branch <code>refactor/wave-0g-chartkit-primitives</code> created off <code>origin/development</code>. New files: 6 chart components (EngagementChart, GoalsBreakdownChart, CostTrendChart, UtilizationAreaChart, FunnelChart, LoadingSkeleton), 2 internal helpers (ChartShell, ErrorPill), <code>types.ts</code>, barrel <code>index.ts</code>, <code>README.md</code>, 6 test suites under <code>__tests__/</code>, plus <code>test-support/rechartsMock.ts</code>. Verification: <code>npm run build</code> clean, <code>npx eslint src/components/analytics/charts</code> zero errors, <code>npx jest src/components/analytics/charts</code> 22/22 passing across 6 suites.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1054 [Wave 0 / Lane 0.C — dedupe useCompanyAnalytics (P1.4)]</div>
-          <div class="prompt-text">/full-go You're working Wave 0 Lane 0.C of <code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx</code> v2. Single unit (P1.4); single PR. Dedupe <code>useCompanyAnalytics()</code> across <code>/hooks/analytics/useAnalytics.ts</code> and <code>/hooks/company-admin/useCompanyAdmin.ts</code> — promote analytics version to canonical, replace company-admin definition with deprecated re-export, audit callers, add Jest test with QueryClientProvider wrapper. PR title: <code>refactor(dash)/wave-0c: dedupe useCompanyAnalytics (D6)</code>.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Session activity (Wave 0 Lane 0.C)</div>
-          <div class="prompt-text">Branch <code>refactor/wave-0c-dedupe-useCompanyAnalytics</code> created off <code>origin/development</code> via dedicated frontend worktree at <code>.claude/worktrees/frontend-wave-0c</code> (avoids collisions with parallel agents on the main checkout). Modified: <code>src/hooks/company-admin/useCompanyAdmin.ts</code> — inline <code>useCompanyAnalytics</code> replaced with <code>@deprecated</code> re-export of the canonical hook from <code>@/hooks/analytics/useAnalytics</code>; TODO(wave-1) marker for follow-up cleanup. Tests updated: <code>src/hooks/company-admin/__tests__/useCompanyAdmin.test.tsx</code> (mocks <code>analytics.service</code> for the re-export path), <code>src/hooks/analytics/__tests__/useAnalytics.test.tsx</code> (added canonical <code>useCompanyAnalytics</code> test with QueryClientProvider, plus practitioner+distributor coverage). Caller audit: 4 callers — Dashboard, Analytics, Leadership, Training — all use <code>as &lt;shape&gt; | undefined</code> casts with hard-coded fallbacks, so canonical shape is tolerated; no caller patches needed. Verification: <code>npx jest src/hooks</code> → 66 suites / 346 tests passing; <code>npm run build</code> clean; ESLint on touched files clean. Committed as <code>904b537</code>.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Prompt #1055 [Wave 0 / Lane 0.H — DashboardFrame primitive (P6.1)]</div>
-          <div class="prompt-text">/full-go You're working Wave 0 Lane 0.H of <code>Transformation Documents/IG_Dashboard_Rationalization_Plan_2.docx</code> v2. Single unit (P6.1); single PR. Build <code>&lt;DashboardFrame/&gt;</code> at <code>inspire-genius-frontend/src/components/dashboard/DashboardFrame.tsx</code> with slots <code>{title, subtitle, kpis, primary, side}</code> reusing existing primitives (WelcomeBanner, StatCard, DataCard, ProgressBar). Add <code>&lt;DashboardFrame.KpiStrip/&gt;</code> with responsive 1→2x2→1x4 layout. Document slot contract in <code>README.md</code>. Add unit test that renders all slots and asserts they appear. DO NOT modify any role Dashboard.tsx — Wave 1 Lane 1.E will. PR title: <code>refactor(dash)/wave-0h: DashboardFrame primitive</code>.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-09 — Session activity (Wave 0 Lane 0.H)</div>
-          <div class="prompt-text">Branch <code>refactor/wave-0h-dashboardframe-primitive</code> created off <code>origin/development</code> in the frontend repo (concurrent Wave 0A/0B WIP from other branches stashed beforehand to keep the PR isolated to Lane 0.H). New files: <code>src/components/dashboard/DashboardFrame.tsx</code> (slot-based layout — title/subtitle render via existing <code>WelcomeBanner</code>; <code>kpis</code> wraps an optional <code>DashboardFrame.KpiStrip</code> grid; <code>primary</code> spans 2/3 of the desktop grid; optional <code>side</code> rail spans 1/3 and stacks below on mobile/tablet; primary expands to full width when no side is provided), <code>src/components/dashboard/README.md</code> (slot contract + expected children types + Wave 1 Lane 1.E migration note covering all 6 role dashboards), <code>src/components/dashboard/__tests__/DashboardFrame.test.tsx</code> (7 tests covering: title/subtitle, banner actions, KPI strip with 4 StatCard children + listitem semantics, primary section with 2 DataCard children, side rail rendering, side-rail omission, all-slots-together render). KpiStrip responsive contract: <code>grid-cols-1 sm:grid-cols-2 lg:grid-cols-4</code> (stacks → 2x2 → 1x4). Verification: <code>npx jest src/components/dashboard</code> → 31 suites / 106 tests passing; <code>npx eslint</code> on new files → 0 errors; <code>npm run build</code> clean. NO role Dashboard.tsx files modified.</div>
-        </div>
-
-
-
-
-
-
-
         <div class="prompt-entry">
           <div class="timestamp">2026-05-09 — Prompt #1055 [Wave 0 Lane 0.D / P1.3]</div>
           <div class="prompt-text">/full-go — refactor(dash)/wave-0d: fix UsedCoachesChartNew (D5). Two Used Coaches charts existed; the recharts version had a syntax error (`type=&quot;number&quot;axisLine`). Fixed the syntax, deleted the manual SVG version, renamed New.tsx → UsedCoachesChart.tsx, wired into the Super-Admin Dashboard agents tab, ported Jest test with proper mock typings. Polyfilled ResizeObserver in jest.setup.ts so SuperAdminDashboard.test.tsx renders the chart without crashing. Build/lint/jest clean.</div>
