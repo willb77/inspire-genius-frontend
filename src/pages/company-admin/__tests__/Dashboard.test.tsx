@@ -91,13 +91,6 @@ describe("CompanyAdminDashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders placeholder data notice", () => {
-    render(<CompanyAdminDashboard />);
-    expect(
-      screen.getByText("admin:companyAdmin.placeholder")
-    ).toBeInTheDocument();
-  });
-
   it("renders stat cards with translated labels", () => {
     render(<CompanyAdminDashboard />);
     expect(
@@ -114,31 +107,11 @@ describe("CompanyAdminDashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders department data cards", () => {
+  it("renders empty-state when no departments returned", () => {
     render(<CompanyAdminDashboard />);
-    // Department names appear in departments cards and teams table
-    expect(screen.getAllByText("Engineering").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Marketing").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Sales").length).toBeGreaterThan(0);
-  });
-
-  it("renders teams table with fallback data", () => {
-    render(<CompanyAdminDashboard />);
-    expect(screen.getByText("Frontend Team")).toBeInTheDocument();
-    expect(screen.getByText("Backend Team")).toBeInTheDocument();
-    expect(screen.getByText("Enterprise Sales")).toBeInTheDocument();
-  });
-
-  it("renders training progress bars", () => {
-    render(<CompanyAdminDashboard />);
-    expect(screen.getAllByTestId("progress-bar").length).toBeGreaterThan(0);
-  });
-
-  it("renders organization health metrics", () => {
-    render(<CompanyAdminDashboard />);
-    expect(screen.getByText("Employee Engagement")).toBeInTheDocument();
-    expect(screen.getByText("Retention Rate")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Alignment")).toBeInTheDocument();
+    expect(
+      screen.getByText(/No departments yet/)
+    ).toBeInTheDocument();
   });
 
   it("navigates on stat card click", () => {
