@@ -20,8 +20,8 @@ export default function SessionObservabilityDrawer({
   className,
 }: SessionObservabilityDrawerProps) {
   const [open, setOpen] = useState(false)
-  const { data: session, isLoading: sessionLoading } = useSessionObservability(sessionId, open)
-  const { data: responses, isLoading: responsesLoading } = useSessionResponses(sessionId, open)
+  const { data: session, isLoading: sessionLoading, isError: sessionError } = useSessionObservability(sessionId, open)
+  const { data: responses, isLoading: responsesLoading, isError: responsesError } = useSessionResponses(sessionId, open)
   const exportMutation = useExportSession()
 
   const handleExport = (format: ObservabilityExportFormat) => {
@@ -57,6 +57,10 @@ export default function SessionObservabilityDrawer({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {sessionLoading ? (
               <div className="text-sm text-muted-foreground">Loading session data...</div>
+            ) : sessionError ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                Couldn't load session data — the observability backend may be unavailable. Try again later.
+              </div>
             ) : session ? (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -126,6 +130,10 @@ export default function SessionObservabilityDrawer({
                   <div className="text-xs text-muted-foreground mb-2">Response Timeline</div>
                   {responsesLoading ? (
                     <div className="text-xs text-muted-foreground">Loading...</div>
+                  ) : responsesError ? (
+                    <div className="text-xs text-destructive">
+                      Couldn't load response timeline.
+                    </div>
                   ) : (
                     <div className="space-y-1.5 max-h-60 overflow-y-auto">
                       {responses?.map((r, i) => (
