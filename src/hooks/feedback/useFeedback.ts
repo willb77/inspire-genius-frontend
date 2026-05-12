@@ -55,11 +55,18 @@ export function useFeedbackList(params: FeedbackListParams) {
   })
 }
 
+/**
+ * `GET /v1/admin/feedback/stats` has no backend implementation — 404s on the
+ * monolith catch-all. Disabled by default. See IG_backlog.md #9 Bug B.
+ *
+ * To re-enable: remove `enabled: false` once the backend route is built.
+ */
 export function useFeedbackStats(params: Pick<FeedbackListParams, "coach_id" | "date_from" | "date_to"> = {}) {
   return useQuery<FeedbackStatsResponse, AxiosError<BaseApiResponse<null>>>({
     queryKey: QK.stats(params),
     queryFn: () => getFeedbackStats(params),
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: false,
   })
 }

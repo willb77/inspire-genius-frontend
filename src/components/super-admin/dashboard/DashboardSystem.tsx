@@ -8,7 +8,11 @@ export default function DashboardSystem({
   value,
   icon,
 }: DashboardSystemCardProps) {
-  const { data, isPending } = useDashboardSystem();
+  const { data, isPending, fetchStatus } = useDashboardSystem();
+
+  // The hook is currently disabled (no backend) — treat the idle state as
+  // "no data" rather than "loading forever". See IG_backlog.md #9 Bug A.
+  const isLoading = isPending && fetchStatus === "fetching";
 
   const totalOrgs = data?.data?.organization_statistics.total ?? 0;
   const corporate = data?.data?.business_statistics.by_type.corporate ?? 0;
@@ -29,7 +33,7 @@ export default function DashboardSystem({
           {icon}
         </div>
         <div className="text-2xl font-semibold text-gray-900 text-left">
-          {isPending ? <Skeleton className="h-7 w-20" /> : displayValue}
+          {isLoading ? <Skeleton className="h-7 w-20" /> : displayValue}
         </div>
       </CardContent>
     </Card>
