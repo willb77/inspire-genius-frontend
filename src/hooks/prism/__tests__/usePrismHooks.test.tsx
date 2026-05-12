@@ -40,7 +40,7 @@ describe("PRISM hooks", () => {
     it("fetches assessments for user", async () => {
       const data = { data: { assessments: [{ id: "a1" }], total: 1 } };
       (getUserAssessments as jest.Mock).mockResolvedValueOnce(data)
-      const { result } = renderHook(() => usePrismHistory("u1"), { wrapper })
+      const { result } = renderHook(() => usePrismHistory("u1", { enabled: true }), { wrapper })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(getUserAssessments).toHaveBeenCalledWith("u1")
     })
