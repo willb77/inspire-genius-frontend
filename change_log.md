@@ -11,8 +11,14 @@
 
 ### Merged / shipped
 - PR #53 (frontend) — error-surfacing on broken features. Merged.
-- PR #87 (monorepo) — observability Layer 2 RDS Proxy role auth fix. Merged + CDK deployed (ig-dev-services).
-- PR #88 (monorepo) — agent-engine conversations from Aurora. Merged; agent-engine image auto-rebuild + ECS rollout via `agent-engine-image.yml`.
+- PR #87 (monorepo) — observability Layer 2 RDS Proxy role auth fix. Merged + CDK deployed (ig-dev-services). Auth now succeeds.
+- PR #88 (monorepo) — agent-engine conversations from Aurora. Merged; agent-engine image auto-rebuild + ECS rollout via `agent-engine-image.yml`. Verified: `/v1/chat/conversations` returns 200 with structured JSON; ECS task writing to `chat_messages`.
+- PR #89 (monorepo) — observability Layer 3: graceful empty state for missing analytics tables. Merged + CDK deploy queued (run `25752473758`). Converts 500 → 404/empty so frontend's PR #53 error path renders correctly.
+
+### Three-layer observability story
+1. **Layer 1 (TLS)** — fixed earlier in PR #86. RDS Proxy required TLS; asyncpg connect_args now passes SSL context.
+2. **Layer 2 (auth)** — PR #87. Lambda now reads master Aurora secret via cold-start hydration; RDS Proxy authenticates cleanly.
+3. **Layer 3 (schema)** — PR #89. The read-side tables (`response_observability`, `session_observability`, `observability_rollups`) don't exist yet in Aurora because the agent-engine writer side isn't wired. Service layer now catches `UndefinedTableError` → 404/empty. Once the writer ships, the catches become no-ops.
 
 ### Memory entries created earlier in session (still relevant)
 - `project_observability_service_rds_proxy_role.md` — TLS + role auth two-layer lesson
