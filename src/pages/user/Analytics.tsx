@@ -1,63 +1,175 @@
+import { useEffect, useMemo, useRef } from "react"
+import { toast } from "sonner"
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts"
 import UserLayout from "@/layouts/UserLayout"
 import DataCard from "@/components/dashboard/DataCard"
-import PlaceholderBanner from "@/components/dashboard/PlaceholderBanner"
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Activity, Target, BookOpen, BarChart3 } from "lucide-react"
+import { useUserAnalytics } from "@/hooks/analytics/useAnalytics"
 
-const SESSIONS = Array.from({ length: 12 }, (_, i) => ({ week: `W${i + 1}`, sessions: Math.floor(Math.random() * 6) + 3 }))
-const GOALS = Array.from({ length: 12 }, (_, i) => ({ week: `W${i + 1}`, completed: Math.min(i, 5), total: 8 }))
-const AGENTS = [{ name: "Meridian", value: 35 }, { name: "Aura", value: 22 }, { name: "Nova", value: 18 }, { name: "Atlas", value: 14 }, { name: "Echo", value: 11 }]
-const SATISFACTION = [{ month: "Oct", score: 4.1 }, { month: "Nov", score: 4.3 }, { month: "Dec", score: 4.0 }, { month: "Jan", score: 4.5 }, { month: "Feb", score: 4.6 }, { month: "Mar", score: 4.8 }]
-const PRISM_GROWTH = [
-  { assessment: "Initial", R: 65, Y: 58, G: 72, B: 60 },
-  { assessment: "Q1", R: 68, Y: 62, G: 75, B: 64 },
-  { assessment: "Q2", R: 72, Y: 65, G: 78, B: 68 },
-  { assessment: "Current", R: 75, Y: 70, G: 82, B: 72 },
-]
-const COLORS = ["#3B5BFF", "#2DD4BF", "#8B5CF6", "#10B981", "#EF4444"]
+type SessionTrendPoint = { period: string; count: number }
+type TrainingSummary = { total: number; completed: number; completion_pct: number }
+type UserAnalyticsData = {
+  total_sessions?: number
+  goals_by_status?: Record<string, number>
+  session_trends?: SessionTrendPoint[]
+  training?: TrainingSummary
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  completed: "#10B981",
+  in_progress: "#3B5BFF",
+  not_started: "#9ca3af",
+  cancelled: "#EF4444",
+}
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 export default function UserAnalytics() {
+  const { data, isLoading, isSuccess, error, refetch } = useUserAnalytics()
+  const analytics = data as UserAnalyticsData | undefined
+
+  const totalSessions = analytics?.total_sessions ?? 0
+  const sessionTrends: SessionTrendPoint[] = analytics?.session_trends ?? []
+  const training: TrainingSummary = analytics?.training ?? { total: 0, completed: 0, completion_pct: 0 }
+
+  const goalsChart = useMemo(() => {
+    const entries = Object.entries(analytics?.goals_by_status ?? {})
+    return entries.map(([status, count]) => ({
+      status: formatStatus(status),
+      count,
+      fill: STATUS_COLORS[status] ?? "#3B5BFF",
+    }))
+  }, [analytics?.goals_by_status])
+
+  const goalsTotal = goalsChart.reduce((acc, g) => acc + g.count, 0)
+
+  const isEmpty =
+    isSuccess &&
+    totalSessions === 0 &&
+    sessionTrends.length === 0 &&
+    goalsChart.length === 0 &&
+    training.total === 0
+
+  const emptyToastShownRef = useRef(false)
+  useEffect(() => {
+    if (isEmpty && !emptyToastShownRef.current) {
+      toast.info("No analytics yet — your charts will populate as you complete sessions and goals.")
+      emptyToastShownRef.current = true
+    }
+    if (!isEmpty) {
+      emptyToastShownRef.current = false
+    }
+  }, [isEmpty])
+
   return (
     <UserLayout>
-      <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics (TODO: translate)</h1>
-      <p className="text-[13px] text-[#6b7280] mb-5">Track your coaching journey, goals, and personal growth.</p>
+      <h1 className="text-xl font-bold text-[#111827] mb-1">Your Analytics</h1>
+      <p className="text-[13px] text-[#6b7280] mb-5">
+        Track your coaching journey, goals, and training progress.
+      </p>
 
-      <PlaceholderBanner />
+      {error && (
+        <div className="flex items-center gap-2 py-2 mb-4 text-[13px] text-[#EF4444]">
+          Failed to load analytics.
+          <button onClick={() => void refetch()} className="underline ml-1 text-[#3B5BFF]">
+            Retry
+          </button>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <DataCard title="Sessions Per Week" className="!mt-0">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={SESSIONS}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="week" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="sessions" stroke="#3B5BFF" strokeWidth={2} dot={{ r: 3 }} /></LineChart>
-          </ResponsiveContainer>
-        </DataCard>
-
-        <DataCard title="Goals Progress" className="!mt-0">
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={GOALS}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="week" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Area type="monotone" dataKey="completed" stroke="#10B981" fill="#D1FAE5" /><Area type="monotone" dataKey="total" stroke="#9ca3af" fill="transparent" strokeDasharray="5 5" /></AreaChart>
-          </ResponsiveContainer>
-        </DataCard>
-
-        <DataCard title="Most-Used Agents" className="!mt-0">
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart><Pie data={AGENTS} dataKey="value" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-              {AGENTS.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
-            </Pie><Tooltip /></PieChart>
-          </ResponsiveContainer>
-        </DataCard>
-
-        <DataCard title="Satisfaction Trend" className="!mt-0">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={SATISFACTION}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="month" tick={{ fontSize: 11 }} /><YAxis domain={[3, 5]} tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="score" stroke="#2DD4BF" strokeWidth={2} /></LineChart>
-          </ResponsiveContainer>
-        </DataCard>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Total Sessions" value={totalSessions} icon={Activity} color="#3B5BFF" loading={isLoading} />
+        <StatTile label="Goals Tracked" value={goalsTotal} icon={Target} color="#10B981" loading={isLoading} />
+        <StatTile label="Training Completed" value={training.completed} icon={BookOpen} color="#8B5CF6" loading={isLoading} />
+        <StatTile label="Training Completion" value={`${training.completion_pct}%`} icon={BarChart3} color="#D97706" loading={isLoading} />
       </div>
 
-      <DataCard title="PRISM Growth Trajectory">
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={PRISM_GROWTH}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="assessment" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Legend />
-            <Bar dataKey="R" fill="#E53E3E" name="Red" /><Bar dataKey="Y" fill="#ECC94B" name="Yellow" /><Bar dataKey="G" fill="#38A169" name="Green" /><Bar dataKey="B" fill="#3182CE" name="Blue" />
-          </BarChart>
-        </ResponsiveContainer>
-      </DataCard>
+      {isEmpty ? (
+        <DataCard title="No analytics yet">
+          <div className="py-8 text-center">
+            <p className="text-[13px] text-[#6b7280]">
+              Once you complete your first session or goal, your activity will appear here.
+            </p>
+          </div>
+        </DataCard>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <DataCard title="Session Activity" className="!mt-0">
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : sessionTrends.length === 0 ? (
+              <p className="py-8 text-center text-[13px] text-[#6b7280]">No session activity yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={sessionTrends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="period" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="count" stroke="#3B5BFF" strokeWidth={2} dot={{ r: 3 }} name="Sessions" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </DataCard>
+
+          <DataCard title="Goals by Status" className="!mt-0">
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : goalsChart.length === 0 ? (
+              <p className="py-8 text-center text-[13px] text-[#6b7280]">No goals tracked yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={goalsChart}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="status" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" name="Goals" fill="#3B5BFF" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </DataCard>
+        </div>
+      )}
     </UserLayout>
+  )
+}
+
+type StatTileProps = {
+  label: string
+  value: number | string
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  color: string
+  loading: boolean
+}
+
+function StatTile({ label, value, icon: Icon, color, loading }: StatTileProps) {
+  return (
+    <div className="bg-white border border-[#e5e7eb] rounded-lg p-3.5">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className="w-4 h-4" style={{ color }} />
+        <span className="text-xs text-[#6b7280]">{label}</span>
+      </div>
+      {loading ? (
+        <Skeleton className="h-8 w-16" />
+      ) : (
+        <div className="text-2xl font-bold text-[#111827]">{value}</div>
+      )}
+    </div>
   )
 }

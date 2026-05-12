@@ -6,14 +6,14 @@ import {
   Eye,
   Zap,
   Clock,
-  Coins,
   Brain,
-  AlertTriangle,
   Users,
   RefreshCw,
 } from "lucide-react"
 import { useDashboardMetrics } from "@/hooks/observability/useObservability"
 import { cn } from "@/lib/utils"
+// Wave 0 Lane 0.I — shared CostBoard panel (P5.2)
+import CostBoard from "@/components/super-admin/CostBoard"
 
 export default function CompanyAdminObservability() {
   const { data: metrics, isLoading, refetch } = useDashboardMetrics()
@@ -41,6 +41,7 @@ export default function CompanyAdminObservability() {
           </Button>
         </div>
 
+        {/* Non-cost performance metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             icon={<Zap className="h-4 w-4" />}
@@ -55,9 +56,9 @@ export default function CompanyAdminObservability() {
             loading={isLoading}
           />
           <MetricCard
-            icon={<Coins className="h-4 w-4" />}
-            title="Total Cost"
-            value={`$${(metrics?.total_cost_today ?? 0).toFixed(4)}`}
+            icon={<Users className="h-4 w-4" />}
+            title="Unique Users"
+            value={metrics?.unique_users_today ?? 0}
             loading={isLoading}
           />
           <MetricCard
@@ -72,21 +73,8 @@ export default function CompanyAdminObservability() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <MetricCard
-            icon={<Users className="h-4 w-4" />}
-            title="Unique Users"
-            value={metrics?.unique_users_today ?? 0}
-            loading={isLoading}
-          />
-          <MetricCard
-            icon={<AlertTriangle className="h-4 w-4" />}
-            title="Error Rate"
-            value={`${((metrics?.error_rate ?? 0) * 100).toFixed(1)}%`}
-            loading={isLoading}
-            alert={!!metrics && metrics.error_rate > 0.05}
-          />
-        </div>
+        {/* Shared org-spend panel (Wave 0 Lane 0.I — P5.2) */}
+        <CostBoard scope="org" />
 
         <Card>
           <CardHeader>
@@ -125,35 +113,6 @@ export default function CompanyAdminObservability() {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">No agent data available</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Cost by Model Tier</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : metrics?.cost_by_model && metrics.cost_by_model.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.cost_by_model.map((item) => (
-                  <div
-                    key={item.model_tier}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50"
-                  >
-                    <Badge variant="outline" className="text-xs">
-                      {item.model_tier?.replace("tier_", "Tier ").replace("_", " ") ?? "Unknown"}
-                    </Badge>
-                    <span className="font-mono text-sm font-medium">
-                      ${item.cost.toFixed(4)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">No cost data available</div>
             )}
           </CardContent>
         </Card>

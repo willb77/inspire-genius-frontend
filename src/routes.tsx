@@ -39,6 +39,7 @@ const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
+const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
@@ -50,6 +51,7 @@ const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 const SuperAdminDashboard = React.lazy(() => import("@/pages/super-admin/Dashboard"));
 const OrganizationManagement = React.lazy(() => import("@/pages/super-admin/OrganizationManagement"));
 const UserManagement = React.lazy(() => import("@/pages/super-admin/UserManagement"));
+const SuperAdminUserMemory = React.lazy(() => import("@/pages/super-admin/UserMemory"));
 const IssuesDetailsPage = React.lazy(() => import("@/pages/super-admin/IssuesDetailsPage"));
 const IssueDetailPage = React.lazy(() => import("@/pages/super-admin/IssueDetailPage"));
 const LicenceDetailsPage = React.lazy(() => import("@/pages/super-admin/LicenceDetailsPage"));
@@ -61,6 +63,7 @@ const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining")
 const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
 const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
+const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
 
 // ── Agent Trainer pages ────────────────────────────────────────────────────
@@ -102,8 +105,6 @@ const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Das
 const CompanyAdminUsers = React.lazy(() => import("@/pages/company-admin/Users"));
 const CompanyAdminOrganization = React.lazy(() => import("@/pages/company-admin/Organization"));
 const CompanyAdminCosts = React.lazy(() => import("@/pages/company-admin/Costs"));
-const CompanyAdminTraining = React.lazy(() => import("@/pages/company-admin/Training"));
-const CompanyAdminLeadership = React.lazy(() => import("@/pages/company-admin/Leadership"));
 const CompanyAdminSettings = React.lazy(() => import("@/pages/company-admin/Settings"));
 const CompanyAdminAnalytics = React.lazy(() => import("@/pages/company-admin/Analytics"));
 const CompanyAdminBulkImport = React.lazy(() => import("@/pages/company-admin/BulkImport"));
@@ -127,6 +128,7 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
+const DistributorNetworkHub = React.lazy(() => import("@/pages/distributor/NetworkHub"));
 const DistributorPractitioners = React.lazy(() => import("@/pages/distributor/Practitioners"));
 const DistributorCredits = React.lazy(() => import("@/pages/distributor/Credits"));
 const DistributorTerritory = React.lazy(() => import("@/pages/distributor/Territory"));
@@ -184,6 +186,7 @@ export const routes: RouteObject[] = [
       { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
       { path: "/documents", element: withSuspense(<Documents />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
       { path: "/help", element: withSuspense(<HelpPage />) },
       { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
@@ -199,6 +202,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/organizations", element: withSuspense(<OrganizationManagement />) },
       { path: "/super-admin/organizations/:id/view", element: withSuspense(<OrganizationView />) },
       { path: "/super-admin/users", element: withSuspense(<UserManagement />) },
+      { path: "/super-admin/users/:userId/memory", element: withSuspense(<SuperAdminUserMemory />) },
       { path: "/super-admin/dashboard/issues", element: withSuspense(<IssuesDetailsPage />) },
       { path: "/super-admin/issues/:id", element: withSuspense(<IssueDetailPage />) },
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
@@ -217,6 +221,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/mentor-management", element: withSuspense(<MentorManagement />) },
       { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
       { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
+      { path: "/super-admin/prism-management", element: withSuspense(<PrismManagement />) },
       { path: "/super-admin/cultural-content", element: withSuspense(<CulturalContent />) },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
@@ -259,8 +264,6 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/users", element: withSuspense(<CompanyAdminUsers />) },
       { path: "/company-admin/organization", element: withSuspense(<CompanyAdminOrganization />) },
       { path: "/company-admin/costs", element: withSuspense(<CompanyAdminCosts />) },
-      { path: "/company-admin/training", element: withSuspense(<CompanyAdminTraining />) },
-      { path: "/company-admin/leadership", element: withSuspense(<CompanyAdminLeadership />) },
       { path: "/company-admin/settings", element: withSuspense(<CompanyAdminSettings />) },
       { path: "/company-admin/bulk-import", element: withSuspense(<CompanyAdminBulkImport />) },
       { path: "/company-admin/analytics", element: withSuspense(<CompanyAdminAnalytics />) },
@@ -277,6 +280,7 @@ export const routes: RouteObject[] = [
 
       // Distributor pages
       { path: "/distributor/dashboard", element: withSuspense(<DistributorDashboard />) },
+      { path: "/distributor/network", element: withSuspense(<DistributorNetworkHub />) },
       { path: "/distributor/practitioners", element: withSuspense(<DistributorPractitioners />) },
       { path: "/distributor/credits", element: withSuspense(<DistributorCredits />) },
       { path: "/distributor/territory", element: withSuspense(<DistributorTerritory />) },
