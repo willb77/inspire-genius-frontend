@@ -32,7 +32,7 @@ describe('useDashboardSystem hook', () => {
   it('should call getDashboardSystem API', async () => {
     ;(getDashboardSystem as jest.Mock).mockResolvedValueOnce({})
 
-    const { result } = renderHook(() => useDashboardSystem(), {
+    const { result } = renderHook(() => useDashboardSystem({ enabled: true }), {
       wrapper: createWrapper(),
     })
 
@@ -67,7 +67,7 @@ describe('useDashboardSystem hook', () => {
 
     ;(getDashboardSystem as jest.Mock).mockResolvedValueOnce(mockResponse)
 
-    const { result } = renderHook(() => useDashboardSystem(), {
+    const { result } = renderHook(() => useDashboardSystem({ enabled: true }), {
       wrapper: createWrapper(),
     })
 
@@ -81,7 +81,7 @@ describe('useDashboardSystem hook', () => {
   it('should be in loading state initially', async () => {
     ;(getDashboardSystem as jest.Mock).mockResolvedValueOnce({})
 
-    const { result } = renderHook(() => useDashboardSystem(), {
+    const { result } = renderHook(() => useDashboardSystem({ enabled: true }), {
       wrapper: createWrapper(),
     })
 
@@ -97,7 +97,7 @@ describe('useDashboardSystem hook', () => {
 
     ;(getDashboardSystem as jest.Mock).mockRejectedValueOnce(error)
 
-    const { result } = renderHook(() => useDashboardSystem(), {
+    const { result } = renderHook(() => useDashboardSystem({ enabled: true }), {
       wrapper: createWrapper(),
     })
 

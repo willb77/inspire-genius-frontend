@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import Observability from "../Observability";
+import { useDashboardMetrics } from "@/hooks/observability/useObservability";
 
 jest.mock("@/layouts/SuperAdminLayout", () => ({
   __esModule: true,
@@ -18,6 +19,15 @@ jest.mock("@/hooks/observability/useObservability", () => ({
     isLoading: false,
     refetch: jest.fn(),
   })),
+}));
+
+// CostBoard owns its own hooks; mock at the component boundary so this
+// page test doesn't need to wire React Query.
+jest.mock("@/components/super-admin/CostBoard", () => ({
+  __esModule: true,
+  default: ({ scope }: { scope: string }) => (
+    <div data-testid={`cost-board-mock-${scope}`} />
+  ),
 }));
 
 describe("SuperAdmin Observability", () => {
@@ -44,15 +54,17 @@ describe("SuperAdmin Observability", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders metric card titles", () => {
+  it("renders the non-cost metric cards", () => {
     render(<Observability />);
     expect(screen.getByText("Responses Today")).toBeInTheDocument();
     expect(screen.getByText("Avg Latency")).toBeInTheDocument();
-    expect(screen.getByText("Total Cost")).toBeInTheDocument();
     expect(screen.getByText("Avg Confidence")).toBeInTheDocument();
     expect(screen.getByText("Unique Users")).toBeInTheDocument();
-    expect(screen.getByText("Total Tokens")).toBeInTheDocument();
-    expect(screen.getByText("Error Rate")).toBeInTheDocument();
+  });
+
+  it("renders the platform-scoped CostBoard panel", () => {
+    render(<Observability />);
+    expect(screen.getByTestId("cost-board-mock-platform")).toBeInTheDocument();
   });
 
   it("renders Top Agents card", () => {
@@ -60,24 +72,17 @@ describe("SuperAdmin Observability", () => {
     expect(screen.getByText("Top Agents by Usage")).toBeInTheDocument();
   });
 
-  it("renders Cost by Model Tier card", () => {
-    render(<Observability />);
-    expect(screen.getByText("Cost by Model Tier")).toBeInTheDocument();
-  });
-
   it("renders time range selector", () => {
     render(<Observability />);
     expect(screen.getByText("Today")).toBeInTheDocument();
   });
 
-  it("shows no data messages when metrics are empty", () => {
+  it("shows no data message when top_agents is empty", () => {
     render(<Observability />);
     expect(screen.getByText("No agent data available")).toBeInTheDocument();
-    expect(screen.getByText("No cost data available")).toBeInTheDocument();
   });
 
   it("shows loading state when isLoading is true", () => {
-    const { useDashboardMetrics } = require("@/hooks/observability/useObservability");
     (useDashboardMetrics as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -90,12 +95,10 @@ describe("SuperAdmin Observability", () => {
   });
 
   it("renders metric values when data is present", () => {
-    const { useDashboardMetrics } = require("@/hooks/observability/useObservability");
     (useDashboardMetrics as jest.Mock).mockReturnValue({
       data: {
         total_responses_today: 100,
         avg_latency_ms: 180,
-        total_cost_today: 2.3456,
         avg_confidence: 0.92,
         unique_users_today: 25,
         total_tokens_today: 50000,
@@ -104,10 +107,7 @@ describe("SuperAdmin Observability", () => {
           { agent: "Meridian", count: 50, avg_confidence: 0.95 },
           { agent: "Sage", count: 30, avg_confidence: 0.88 },
         ],
-        cost_by_model: [
-          { model_tier: "tier_1", cost: 1.2, count: 40 },
-          { model_tier: "tier_2", cost: 1.1456, count: 60 },
-        ],
+        cost_by_model: [],
       },
       isLoading: false,
       refetch: jest.fn(),
@@ -116,16 +116,9 @@ describe("SuperAdmin Observability", () => {
     render(<Observability />);
     expect(screen.getByText("100")).toBeInTheDocument();
     expect(screen.getByText("180ms")).toBeInTheDocument();
-    expect(screen.getByText("$2.3456")).toBeInTheDocument();
     expect(screen.getByText("92%")).toBeInTheDocument();
     expect(screen.getByText("25")).toBeInTheDocument();
-    expect(screen.getByText("50,000")).toBeInTheDocument();
     expect(screen.getByText("Meridian")).toBeInTheDocument();
     expect(screen.getByText("Sage")).toBeInTheDocument();
-  });
-
-  it("renders Export button", () => {
-    render(<Observability />);
-    expect(screen.getByText("Export")).toBeInTheDocument();
   });
 });

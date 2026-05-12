@@ -8,6 +8,7 @@ export const ROUTES = {
   COACHES: "/coaches",
   DOCUMENTS: "/documents",
   SETTINGS: "/settings",
+  SETTINGS_PRIVACY: "/settings/privacy",
   HELP: "/help",
   FEEDBACK: "/feedback",
   ANALYTICS: "/analytics",
@@ -21,6 +22,7 @@ export const ROUTES = {
     COACHES: "/super-admin/coaches",
     ORGANIZATIONS: "/super-admin/organizations",
     USERS: "/super-admin/users",
+    USER_MEMORY: "/super-admin/users/:userId/memory",
     SETTINGS: "/super-admin/settings",
     PROJECT_LOG: "/super-admin/project-log",
     RLHF_TRAINING: "/super-admin/rlhf-training",
@@ -39,6 +41,7 @@ export const ROUTES = {
     KNOWLEDGE_BASE_CULTURAL: "/super-admin/knowledge-base?domain=cultural",
     /** @deprecated Wave 0.E (P5.1) — redirects to `KNOWLEDGE_BASE` with `?domain=cultural`. Prefer `KNOWLEDGE_BASE_CULTURAL`. */
     CULTURAL_CONTENT: "/super-admin/cultural-content",
+    PRISM_MANAGEMENT: "/super-admin/prism-management",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
   },
@@ -87,6 +90,7 @@ export const ROUTES = {
   DISTRIBUTOR: {
     BASE: "/distributor",
     DASHBOARD: "/distributor/dashboard",
+    NETWORK: "/distributor/network",
     PRACTITIONERS: "/distributor/practitioners",
     CREDITS: "/distributor/credits",
     TERRITORY: "/distributor/territory",
