@@ -11,7 +11,7 @@ import { getDashboardSystem, type DashboardSystemResponse } from '@/services/sup
  * pass `enabled: true` in `options` for tests / specific consumers that
  * mock the service.
  */
-export function useDashboardSystem(options?: UseQueryOptions<DashboardSystemResponse, AxiosError>) {
+export function useDashboardSystem(options?: Partial<UseQueryOptions<DashboardSystemResponse, AxiosError>>) {
   return useQuery<DashboardSystemResponse, AxiosError>({
     queryKey: ['dashboard-system'],
     queryFn: () => getDashboardSystem(),
