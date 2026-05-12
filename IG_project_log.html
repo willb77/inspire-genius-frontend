@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1083</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1084</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,47 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — <strong>PASS 7/7 strict</strong></h3>
+        <p><code>/full-go r-2.9</code> autonomous run. <strong>Verdict: PASS 7/7 strict</strong> on live R-2.9a CRUD matrix against <code>r22-residuals-v2</code> (digest <code>sha256:96d337cd...</code>).</p>
+        <h4>Live matrix results</h4>
+        <pre><code>=== R-2.9a PRISM live matrix ===
+  [PASS] T1 POST create        lat= 2.7s  http=201  id=3e22d08c-...
+  [PASS] T2 GET single         lat= 0.1s  http=200
+  [PASS] T3 GET list           lat= 0.2s  http=200  total=1
+  [PASS] T4 PATCH update       lat= 2.6s  http=200
+  [PASS] T5 DELETE             lat= 0.2s  http=204
+  [PASS] T6 GET deleted (404)  lat= 0.2s  http=404
+  [PASS] T7 RBAC user → 403    lat= 0.1s  http=403
+
+=== Result: 7/7 strict pass ===</code></pre>
+        <h4>Blocking schema bug found + fixed</h4>
+        <p>First matrix run scored 1/7. ECS log: <code>asyncpg.exceptions.UndefinedColumnError: column "created_at" of relation "prism_results" does not exist</code>. Alembic migration <code>001_create_memory_tables.py</code> created <code>prism_results</code> without <code>created_at</code>/<code>updated_at</code>; the P4 super-admin CRUD (PR #71) referenced both.</p>
+        <p>Fix via SQL migration <code>r29_prism_results_audit_columns.sql</code> applied through <code>aws lambda invoke ig-dev-migration-runner</code> — 3 succeeded, 0 failed. Existing rows back-filled. <strong>No agent-engine code change or ECS redeploy needed.</strong></p>
+        <h4>Test coverage</h4>
+        <ul>
+          <li><strong>Unit tests</strong>: 39/39 pass (<code>test_prism_routes.py</code> + <code>test_prism_vectorizer.py</code> + <code>test_prism_agent.py</code>)</li>
+          <li><strong>Live matrix</strong>: 7/7 strict pass post-migration</li>
+        </ul>
+        <h4>4 priority domains — all now strict-verified</h4>
+        <table style="border-collapse:collapse;width:100%;">
+          <tr><th>Domain</th><th>Tests</th></tr>
+          <tr><td>PRISM</td><td>R-2.9 (7/7) + R-2.2 S1-Aura</td></tr>
+          <tr><td>Career</td><td>R-2.2 S16-Bridge, S17-Grant, M4-Grant+Bridge</td></tr>
+          <tr><td>Job</td><td>R-2.2 S10-James, S11-Maven</td></tr>
+          <tr><td>Training</td><td>R-2.2 S2-Alex, S5-Ascend, S6-Forge, M1-Forge+Aura</td></tr>
+        </table>
+        <h4>Files</h4>
+        <ul>
+          <li><strong>Created</strong>: <code>services/migration-runner/migrations/r29_prism_results_audit_columns.sql</code>, <code>services/agent-engine/scripts/r29_prism_acceptance.py</code>, <code>R2_9_PRISM_INGESTION_REPORT.md</code> + <code>.docx</code></li>
+          <li><strong>Updated</strong>: <code>REMAINING_TASKS.md §4</code> (R-2.9 DONE — PASS 7/7)</li>
+        </ul>
+        <h4>Hygiene follow-ups (not part of R-2.9)</h4>
+        <ol>
+          <li>Re-align Alembic migration <code>001_create_memory_tables.py</code> to include new columns.</li>
+          <li>Update ORM model <code>app/memory/models.py::PrismResult</code>.</li>
+          <li>Add CI integration variant against ephemeral Postgres.</li>
+        </ol>
 
         <h3>[2026-05-11 PM] — CI fix: <code>deploy-production</code> URL typo (<code>inspiregenius</code> → <code>inspiresgenius</code>)</h3>
         <p>Closed the only follow-up from the 2026-05-11 PM CI rename session (noted in #44). The <code>deploy-production</code> job in <code>inspire-genius-frontend/.github/workflows/ci-deploy.yml</code> had <code>app.inspiregenius.com</code> (missing <code>s</code>) in two places — same typo <code>staging.inspiregenius.com</code> had before #42 fixed it.</p>

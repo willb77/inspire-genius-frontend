@@ -1,3 +1,48 @@
+## [2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — PASS 7/7 strict
+
+**`/full-go r-2.9`** autonomous run. **Verdict: PASS 7/7 strict** on live R-2.9a CRUD matrix against `r22-residuals-v2` (digest `sha256:96d337cd...`).
+
+### Live matrix results
+```
+=== R-2.9a PRISM live matrix === test_user_id=9c697054-2452-49f0-b826-a16c8542700c
+  [PASS] T1 POST create        lat= 2.7s  http=201  id=3e22d08c-...
+  [PASS] T2 GET single         lat= 0.1s  http=200
+  [PASS] T3 GET list           lat= 0.2s  http=200  total=1
+  [PASS] T4 PATCH update       lat= 2.6s  http=200
+  [PASS] T5 DELETE             lat= 0.2s  http=204
+  [PASS] T6 GET deleted (404)  lat= 0.2s  http=404
+  [PASS] T7 RBAC user → 403    lat= 0.1s  http=403
+
+=== Result: 7/7 strict pass ===
+```
+
+### Blocking schema bug found + fixed
+First matrix run scored 1/7. ECS log: `asyncpg.exceptions.UndefinedColumnError: column "created_at" of relation "prism_results" does not exist`. Alembic migration `001_create_memory_tables.py` created `prism_results` without `created_at`/`updated_at`; the P4 super-admin CRUD (PR #71) referenced both.
+
+Fix shipped via SQL migration `services/migration-runner/migrations/r29_prism_results_audit_columns.sql` applied through `aws lambda invoke ig-dev-migration-runner` — 3 succeeded, 0 failed. Existing rows back-filled with `NOW()` default. No agent-engine code change or ECS redeploy needed.
+
+### Test coverage
+- **Unit tests**: 39/39 pass (`test_prism_routes.py` + `test_prism_vectorizer.py` + `test_prism_agent.py`)
+- **Live matrix**: 7/7 strict pass post-migration
+
+### Files
+- **Created**: `services/migration-runner/migrations/r29_prism_results_audit_columns.sql`, `services/agent-engine/scripts/r29_prism_acceptance.py`, `R2_9_PRISM_INGESTION_REPORT.md` + `.docx`
+- **Updated**: `REMAINING_TASKS.md §4` (R-2.9 DONE — PASS 7/7)
+- **Synced**: `change_log.md`, `IG_project_log.html` to 5 copies
+
+### 4 priority domains — all now strict-verified
+- **PRISM** — R-2.9 (7/7) + R-2.2 S1-Aura
+- **Career** — R-2.2 S16-Bridge, S17-Grant, M4-Grant+Bridge
+- **Job** — R-2.2 S10-James, S11-Maven
+- **Training** — R-2.2 S2-Alex, S5-Ascend, S6-Forge, M1-Forge+Aura
+
+### Hygiene follow-ups (not part of R-2.9)
+1. Re-align Alembic migration `001_create_memory_tables.py` to include new columns.
+2. Update ORM model `app/memory/models.py::PrismResult`.
+3. Add CI integration variant against ephemeral Postgres.
+
+---
+
 ## [2026-05-12] — Wave 0 Lane 0.I — CostBoard + super-admin Operations (P5.2)
 
 ### Added
