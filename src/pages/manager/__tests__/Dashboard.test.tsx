@@ -42,11 +42,6 @@ jest.mock("@/components/dashboard/StatusBadge", () => ({
   default: ({ label }: any) => <span data-testid="status-badge">{label}</span>,
 }));
 
-jest.mock("@/components/dashboard/PlaceholderBanner", () => ({
-  __esModule: true,
-  default: () => <div data-testid="placeholder-banner" />,
-}));
-
 jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
@@ -100,11 +95,6 @@ describe("ManagerDashboard", () => {
     expect(screen.getByTestId("manager-layout")).toBeInTheDocument();
   });
 
-  it("renders placeholder banner", () => {
-    render(<ManagerDashboard />);
-    expect(screen.getByTestId("placeholder-banner")).toBeInTheDocument();
-  });
-
   it("renders welcome banner with manager title", () => {
     render(<ManagerDashboard />);
     expect(screen.getByTestId("welcome-banner")).toBeInTheDocument();
@@ -126,22 +116,14 @@ describe("ManagerDashboard", () => {
     expect(screen.getByText("admin:manager.trainingOverview")).toBeInTheDocument();
   });
 
-  it("renders PRISM overview progress bars", () => {
+  it("renders empty-state when no interviews", () => {
     render(<ManagerDashboard />);
-    expect(screen.getByText("Gold (Drive)")).toBeInTheDocument();
-    expect(screen.getByText("Green (Influence)")).toBeInTheDocument();
+    expect(screen.getByText("No interviews scheduled.")).toBeInTheDocument();
   });
 
-  it("renders fallback team members when no API data", () => {
+  it("renders empty-state when no team members", () => {
     render(<ManagerDashboard />);
-    expect(screen.getByText("Alex Thompson")).toBeInTheDocument();
-    expect(screen.getByText("Maria Garcia")).toBeInTheDocument();
-  });
-
-  it("renders fallback interviews when no API data", () => {
-    render(<ManagerDashboard />);
-    expect(screen.getByText("Sarah Chen")).toBeInTheDocument();
-    expect(screen.getByText("Marcus Johnson")).toBeInTheDocument();
+    expect(screen.getByText("No direct reports yet.")).toBeInTheDocument();
   });
 
   it("shows loading skeletons when data is loading", () => {
