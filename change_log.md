@@ -1,3 +1,27 @@
+## [2026-05-13 PM] — chat upload deep-debug: 4 more layers + GRANT + frontend PR #63
+
+Continued from the earlier wesley/CORS work in this same session. Upload still failed after the bucket-CORS fix — peeled four more independent bugs underneath plus a DB-permission gap.
+
+### Fixed (live + in PR #98)
+- **Lambda CORS allowlist** — `services/document-service/app/main.py:35` had `inspiregenius.com` (missing the `s`) and was missing both CloudFront aliases. Every preflight returned `400 "Disallowed CORS origin"`. Replaced with env-driven `DOC_SERVICE_CORS_ORIGINS` (default `dev.inspiresgenius.com` + both CloudFront aliases + localhost:5173/3000).
+- **Mangum event-loop crash** — `RuntimeError: There is no current event loop in thread 'MainThread'`. After an EventBridge `document.uploaded` event ran `asyncio.run()` (closes its loop), the next warm-container API call hit `asyncio.get_event_loop()` — Python 3.12 no longer auto-creates one. Added `set_event_loop(new_event_loop())` guard at the Mangum entry in `main.py:handler`.
+- **API Gateway route mispointing** — `infrastructure/cdk/lib/api-gateway-stack.ts:233-247` re-declared `GET/POST /v1/documents/{proxy+}` pointing at the `wavesIntegration` (agent-engine ALB), silently overriding the `ANY /v1/documents/{proxy+}` → document-service Lambda route from `services-stack.ts`. More-specific routes win in HTTP API Gateway, so frontend chat calls went to the agent-engine ALB which 307-redirected to `http://` (HTTPS downgrade → CORS error in browser). Live route IDs `73hjkk1` + `apjiqxr` repointed to `integrations/69nf4bc`; CDK definitions for those two routes deleted with an explanatory comment.
+- **Duplicate-processing race** — `initiate_upload` emits a `document.uploaded` EventBridge event AND the frontend explicitly calls `POST /v1/documents/{id}/process` after S3 upload — both invoke `process_document`. Second invocation 500'd with `UniqueViolationError` on `idx_chunks_doc_chunk`. Added top-of-function status guard (skip if already past `pending`) + `IntegrityError` catch on chunk commit.
+- **Third asyncio-loop trap** — SQLAlchemy `QueuePool` retained connections bound to the asyncio loop that first opened them; subsequent warm-start invocations 500'd with `RuntimeError: Event loop is closed` when SQLAlchemy tried to terminate stale connections. Switched to `NullPool` in `database.py`. RDS Proxy still pools server-side, so server-side pressure is unchanged.
+- **Frontend `useAuditStats` 403** (separate PR #63) — user-role `Home` page (`pages/user/Home.tsx:56`) unconditionally calls `useAuditStats()`. Backend correctly restricts `/v1/audit/stats` to `{super-admin, company-admin}` (exact set match, not hierarchical), so every non-admin login produced twin 403s in console. Gated the hook with `hasRole("super-admin") || hasRole("company-admin")`.
+
+### Operational
+- **`GRANT SELECT ON public.users TO document_service`** applied live (idempotent). Doc-service Lambda's canonical-sub remap (`services/document-service/app/auth.py:85` from PR #93) silently warned `permission denied for table users` for every Magic-Auth user, leaving their JWT sub un-remapped. New uploads from Magic-Auth users now attribute to the canonical `public.users.user_id`; historical rows stay where they were written.
+- Two stuck documents healed mid-debug: `b8e0b684-…` (Phil Gant CSV, 14 chunks) and `0f00f61f-…` (11 chunks) — both had chunks already inserted by the winner of the duplicate-processing race; promoted to `status=ready` directly. No data loss.
+- The same `permission denied for table users` likely also fires for **agent-engine** under its own DB role. Not investigated this session; identical fix pattern (`GRANT SELECT ON public.users TO <agent_engine_role>`) if symptoms surface.
+
+### PR status
+- **PR #98** (monorepo, `fix/document-bucket-cors-chat-uploads`): 6 fix commits + 2 doc commits. Covers bucket CORS, Lambda CORS allowlist, Mangum loop guard, route fix, idempotency, NullPool.
+- **PR #63** (frontend, `fix/audit-stats-403-on-login`): hook-level gate.
+- All hotfixes already deployed via direct AWS-CLI updates. PRs exist purely so the next CDK/Lambda redeploy doesn't synth them away.
+
+---
+
 ## [2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)
 
 Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.

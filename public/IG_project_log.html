@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1093</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1094</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,30 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-13 PM] — chat upload deep-debug: 4 more layers + GRANT + frontend PR #63</h3>
+        <p>Continued from the earlier wesley/CORS work in this same session. Upload still failed after the bucket-CORS fix — peeled four more independent bugs underneath plus an unrelated DB permission gap.</p>
+        <h4>Fixed (live + in PR #98)</h4>
+        <ul>
+          <li><strong>Lambda CORS allowlist</strong>: <code>services/document-service/app/main.py:35</code> had <code>inspiregenius.com</code> (missing the <code>s</code>) and was missing both CloudFront aliases. Every preflight returned <code>400 "Disallowed CORS origin"</code>. Fix: env-driven <code>DOC_SERVICE_CORS_ORIGINS</code> with correct defaults (<code>dev.inspiresgenius.com</code> + both aliases + localhost ports).</li>
+          <li><strong>Mangum event-loop crash</strong>: <code>RuntimeError: There is no current event loop in thread 'MainThread'</code>. After an EventBridge <code>document.uploaded</code> event ran <code>asyncio.run()</code> (which closes the loop), the next warm-container API call hit <code>asyncio.get_event_loop()</code> — Python 3.12 no longer auto-creates. Fix: <code>set_event_loop(new_event_loop())</code> guard at the Mangum entry in <code>main.py:handler</code>.</li>
+          <li><strong>API Gateway route mispointing</strong>: <code>infrastructure/cdk/lib/api-gateway-stack.ts:233-247</code> declared <code>GET/POST /v1/documents/{proxy+}</code> pointing at the <code>wavesIntegration</code> (agent-engine ALB), silently overriding the <code>ANY /v1/documents/{proxy+}</code> → document-service Lambda route from <code>services-stack.ts</code>. More-specific routes win in HTTP API Gateway. Symptom: chat document list and any <code>{proxy+}</code> GET/POST routed to agent-engine, which 307-redirected to <code>http://</code> (HTTPS-downgrade → CORS error). Live route IDs <code>73hjkk1</code> + <code>apjiqxr</code> repointed to <code>integrations/69nf4bc</code> (document-service Lambda). CDK definitions for those two routes deleted with an explanatory comment so they can't be re-added.</li>
+          <li><strong>Duplicate-processing race</strong>: <code>initiate_upload</code> emits a <code>document.uploaded</code> EB event AND the frontend explicitly calls <code>POST /v1/documents/{id}/process</code> after S3 upload — both invoke <code>process_document</code>. Second invocation hit <code>UniqueViolationError</code> on <code>idx_chunks_doc_chunk</code>. Fix: top-of-function status guard (skip if not <code>pending</code>) + <code>IntegrityError</code> catch on chunk commit (treat as benign race).</li>
+          <li><strong>Third asyncio-loop trap</strong>: SQLAlchemy <code>QueuePool</code> (pool_size=5, max_overflow=10) retained connections bound to the asyncio loop that first opened them. Subsequent warm-start invocations 500'd with <code>RuntimeError: Event loop is closed</code> or <code>got Future attached to a different loop</code> when SQLAlchemy tried to terminate stale connections. Fix: <code>NullPool</code> in <code>database.py</code>. RDS Proxy still pools server-side, so server-side connection pressure is unchanged; the Lambda just stops caching its own pool across asyncio contexts.</li>
+          <li><strong>Frontend <code>useAuditStats</code> 403</strong> (separate PR #63): user-role <code>Home</code> page calls <code>useAuditStats()</code> on every login. Backend correctly restricts <code>/v1/audit/stats</code> to <code>{super-admin, company-admin}</code> (audit-service exact set match, not hierarchical). Result: 403s in console for every non-admin login. Fix: gate the query at the hook level with <code>hasRole("super-admin") || hasRole("company-admin")</code>.</li>
+        </ul>
+        <h4>Operational</h4>
+        <ul>
+          <li><strong>GRANT SELECT ON public.users TO document_service</strong> — was missing. The doc-service Lambda's canonical-sub remap (<code>services/document-service/app/auth.py:85</code> from PR #93) silently warned <code>permission denied for table users</code> for every Magic-Auth user, leaving their JWT sub un-remapped. New uploads from Magic-Auth users now attribute to the canonical <code>public.users.user_id</code> instead of their Magic-Auth sub. Historical rows under the Magic-Auth subs stay where they were written.</li>
+          <li><strong>Two stuck docs healed mid-debug</strong>: <code>b8e0b684-…</code> (Phil Gant CSV, 14 chunks) and <code>0f00f61f-…</code> (11 chunks) both promoted to <code>status=ready</code> since chunks were already in pgvector — the 500 the user saw was the LOSER of the duplicate-processing race, not data loss.</li>
+          <li>The same canonical-sub remap warning likely also fires in <strong>agent-engine</strong> under its own DB role. Not investigated this session; same fix pattern applies if symptoms surface.</li>
+        </ul>
+        <h4>PR status</h4>
+        <ul>
+          <li><strong>PR #98</strong> (monorepo, <code>fix/document-bucket-cors-chat-uploads</code>): 6 fix commits + 2 doc commits. Covers bucket CORS, Lambda CORS allowlist, Mangum guard, route fix, idempotency, NullPool.</li>
+          <li><strong>PR #63</strong> (frontend, <code>fix/audit-stats-403-on-login</code>): hook-level gate.</li>
+          <li>All hotfixes already deployed live via <code>aws s3api put-bucket-cors</code>, <code>aws lambda update-function-code</code>, and <code>aws apigatewayv2 update-route</code>. PRs prevent CDK/Lambda redeploys from reverting.</li>
+        </ul>
 
         <h3>[2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)</h3>
         <p>Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.</p>
@@ -2372,6 +2396,19 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 PM — Prompt #1094 [chat upload deep-debug: 4 more layers + GRANT + frontend PR #63]</div>
+          <div class="prompt-text">Continues #1093 after user reported the chat upload STILL not working from https://d1nxsns258du4y.cloudfront.net/. Peeled four more layers under the bucket-CORS fix:
+(1) Lambda CORS allowlist had `inspiregenius.com` typo (missing 's') AND was missing both CloudFront aliases → every preflight returned 400 "Disallowed CORS origin". Made env-driven via DOC_SERVICE_CORS_ORIGINS; hotfix deployed via update-function-code.
+(2) Mangum 500: `RuntimeError: There is no current event loop in thread 'MainThread'`. After EventBridge `document.uploaded` event ran `asyncio.run()` and closed the loop, the next warm-container API call hit `asyncio.get_event_loop()` which on Python 3.12 no longer auto-creates. Added explicit set_event_loop(new_event_loop()) guard at the Mangum entry.
+(3) API Gateway routing bug: `GET/POST /v1/documents/{proxy+}` declared in api-gateway-stack.ts overrode the `ANY /v1/documents/{proxy+}` → document-service Lambda route from services-stack.ts (more-specific routes win in HTTP API Gateway). Traffic was hitting the agent-engine ALB which 307-redirected to http:// (HTTPS-downgrade → CORS error). Live-updated route IDs 73hjkk1 + apjiqxr to point at integrations/69nf4bc (document-service Lambda).
+(4) Duplicate-processing race: `initiate_upload` emits a `document.uploaded` EB event AND the frontend explicitly calls `POST /v1/documents/{id}/process` — both ran process_document → second hit UniqueViolationError on `idx_chunks_doc_chunk`. Added top-of-function status guard + IntegrityError catch on commit.
+(5) Third asyncio-loop trap: QueuePool retained connections bound to a closed event loop, throwing `RuntimeError: Event loop is closed` on subsequent terminations. Switched to NullPool — every async_session() opens a fresh connection. RDS Proxy pools server-side anyway.
+(6) GRANT SELECT ON public.users TO document_service (live, idempotent). Was missing → canonical-sub remap silently failed with "permission denied for table users" for every Magic-Auth user.
+Also frontend PR #63 to gate `useAuditStats` to {super-admin, company-admin} since /v1/audit/stats is restricted there but the user-role Home page was calling it on every login (twin 403s in console).
+Two stuck docs healed mid-debug: `b8e0b684-…` (Phil Gant CSV, 14 chunks) and `0f00f61f-…` (11 chunks) both promoted to status=ready since chunks were already in pgvector — the 500 the user saw was the LOSER of the race, not data loss.
+All fixes live + sourced in PR #98 (now 6 commits + 2 doc commits). Frontend audit fix in separate PR #63.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1093 [wesley magic-link + chat upload CORS hotfix]</div>
           <div class="prompt-text">"My users are still having trouble loging in. Please review the magic link path for wesley@excalibureducation.com" → "remove Wesley from the cognito build and add him to the Magic-Auth" → "yes role = user, organization = IG" → "1a and 2c, contact willb77@3pp.com" → "his document upload from chat is not working with pdf" → "B" (scoped CORS origins) → "no one can upload documents from chat will this fix it for all?" → "ok do B" → "do 1, 2, and 3" (commit CDK, clean orphans, update logs). Result: wesley removed from Cognito, added to Magic-Auth (user_id 5c71fd82-…), and to public.users with matching user_id (canonical-sub remap is no-op for him). Diagnosed chat upload outage: ig-dev-documents bucket had no CORS → 42 orphan documents accumulated since 2026-05-09. Applied live CORS hotfix with scoped origins (dev.inspiresgenius.com + 2 CloudFront aliases + localhost:5173); preflight verified 200. Baked into CDK (services-stack.ts:704) and opened PR #98 against development. Deleted 42 orphan rows.</div>
