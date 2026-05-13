@@ -10,6 +10,9 @@
  *
  * Called on app boot (long-lived stale tab) and immediately after
  * login (the case users actually report).
+ *
+ * End-to-end verified live on dev 2026-05-13 (CloudFront E3EFVMBYYVF012
+ * CACHING_DISABLED behaviors + S3 no-cache metadata).
  */
 
 export const BUILD_VERSION =
