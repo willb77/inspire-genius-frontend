@@ -37,15 +37,24 @@ describe("documentService", () => {
     expect(result).toEqual(doc)
   })
 
-  it("listDocumentsV2 gets documents with params", async () => {
-    const apiResp = { data: { date_groups: [], total_count: 0 } }
+  it("listDocumentsV2 gets documents from /v1/documents/", async () => {
+    const apiResp = {
+      data: {
+        documents: [{ id: "d1", filename: "a.pdf" }],
+        total: 1,
+        limit: 10,
+        offset: 0,
+        has_more: false,
+      },
+    }
     mockApi.get.mockResolvedValueOnce({ data: apiResp })
     const result = await listDocumentsV2({ limit: 10, offset: 0 })
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/file_service/list/v2", {
-      params: { page: 1, page_size: 10 },
-      withCredentials: true,
-    })
-    expect(result).toEqual({ documents: [], total: 0, limit: 10, offset: 0, has_more: false })
+    expect(mockApi.get).toHaveBeenCalledWith(
+      "/v1/documents/",
+      { params: { limit: 10, offset: 0 } },
+    )
+    expect(result.documents[0].id).toBe("d1")
+    expect(result.total).toBe(1)
   })
 
   it("getDocument gets single document by id", async () => {
@@ -56,17 +65,17 @@ describe("documentService", () => {
     expect(result).toEqual(doc)
   })
 
-  it("getDownloadUrl returns URL string", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: { data: { download_url: "https://s3.example.com/file" } } })
+  it("getDownloadUrl hits document-service download route", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: { url: "https://s3.example.com/file" } } })
     const result = await getDownloadUrl("d1")
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/file_service/download/d1")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/documents/d1/download")
     expect(result).toBe("https://s3.example.com/file")
   })
 
-  it("deleteDocumentV2 deletes by id", async () => {
+  it("deleteDocumentV2 hits document-service delete route", async () => {
     mockApi.delete.mockResolvedValueOnce({ data: {} })
     await deleteDocumentV2("d1")
-    expect(mockApi.delete).toHaveBeenCalledWith("/v1/file_service/d1", { withCredentials: true })
+    expect(mockApi.delete).toHaveBeenCalledWith("/v1/documents/d1")
   })
 
   it("searchDocuments posts search request", async () => {

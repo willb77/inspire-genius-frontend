@@ -1,76 +1,98 @@
 /**
  * @jest-environment jsdom
+ *
+ * useDocumentUpload tests — post-B.2 rewire (2026-05-13). The hook now
+ * routes through document-service: presigned URL → S3 PUT → /process.
  */
 import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import React from "react"
 import { useDocumentUpload } from "../useDocumentUpload"
-import { uploadDocuments } from "@/services/documents/fileService"
-import { vectorizeDocument } from "@/services/documents/documentService"
+import {
+  initiateUpload,
+  uploadToS3,
+  triggerProcessing,
+} from "@/services/documents/documentService"
 
-jest.mock("@/services/documents/fileService", () => ({
-  uploadDocuments: jest.fn(),
-}))
 jest.mock("@/services/documents/documentService", () => ({
-  // Stubs for the still-imported (but currently unused) presigned-URL helpers.
   initiateUpload: jest.fn(),
   uploadToS3: jest.fn(),
   triggerProcessing: jest.fn(),
-  vectorizeDocument: jest.fn(),
 }))
 jest.mock("@/services/audit/audit.service", () => ({
   logAuditEvent: jest.fn(),
 }))
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>
 }
 
-describe("useDocumentUpload", () => {
+describe("useDocumentUpload (B.2 flow)", () => {
   beforeEach(() => jest.clearAllMocks())
 
-  it("uploads via monolith multipart and best-effort vectorizes", async () => {
-    (uploadDocuments as jest.Mock).mockResolvedValueOnce({
-      uploaded_files: [
-        { file_id: "d1", filename: "test.pdf", file_type: "pdf", file_key: "k" },
-      ],
-    });
-    (vectorizeDocument as jest.Mock).mockResolvedValueOnce({
+  it("runs presigned URL → S3 → process and returns the DocumentOut", async () => {
+    ;(initiateUpload as jest.Mock).mockResolvedValueOnce({
       document_id: "d1",
-      chunks_stored: 1,
-      status: "completed",
-      message: "ok",
+      upload_url: "https://s3.example/u",
+      upload_fields: { key: "k" },
+      s3_key: "user/d1.pdf",
+      expires_in: 900,
+    })
+    ;(uploadToS3 as jest.Mock).mockResolvedValueOnce(undefined)
+    ;(triggerProcessing as jest.Mock).mockResolvedValueOnce({
+      id: "d1",
+      filename: "test.pdf",
+      doc_kind: "pdf",
+      status: "processing",
     })
 
     const file = new File(["data"], "test.pdf", { type: "application/pdf" })
     const { result } = renderHook(() => useDocumentUpload(), { wrapper })
-    act(() => { result.current.mutate({ file }) })
+    act(() => {
+      result.current.mutate({ file })
+    })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(uploadDocuments).toHaveBeenCalledWith([file], undefined)
-    // Fire-and-forget — verify the call is dispatched with both
-    // document_id and file_id set to the monolith file id (so the
-    // agent-engine endpoint can resolve via either path).
-    expect(vectorizeDocument).toHaveBeenCalledWith(expect.objectContaining({
-      document_id: "d1",
-      file_id: "d1",
-    }))
+
+    expect(initiateUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filename: "test.pdf",
+        content_type: "application/pdf",
+        file_size: file.size,
+      }),
+    )
+    expect(uploadToS3).toHaveBeenCalledWith(
+      "https://s3.example/u",
+      { key: "k" },
+      file,
+      undefined,
+    )
+    expect(triggerProcessing).toHaveBeenCalledWith("d1")
     expect(result.current.data?.id).toBe("d1")
     expect(result.current.data?.filename).toBe("test.pdf")
   })
 
-  it("still succeeds even when vectorization throws", async () => {
-    (uploadDocuments as jest.Mock).mockResolvedValueOnce({
-      uploaded_files: [
-        { file_id: "d2", filename: "x.pdf", file_type: "pdf", file_key: "k" },
-      ],
-    });
-    (vectorizeDocument as jest.Mock).mockRejectedValueOnce(new Error("boom"))
+  it("propagates errors from triggerProcessing", async () => {
+    ;(initiateUpload as jest.Mock).mockResolvedValueOnce({
+      document_id: "d2",
+      upload_url: "https://s3.example/u",
+      upload_fields: {},
+      s3_key: "user/d2.pdf",
+      expires_in: 900,
+    })
+    ;(uploadToS3 as jest.Mock).mockResolvedValueOnce(undefined)
+    ;(triggerProcessing as jest.Mock).mockRejectedValueOnce(
+      new Error("processing failed"),
+    )
 
     const file = new File(["data"], "x.pdf", { type: "application/pdf" })
     const { result } = renderHook(() => useDocumentUpload(), { wrapper })
-    act(() => { result.current.mutate({ file }) })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.id).toBe("d2")
+    act(() => {
+      result.current.mutate({ file })
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error?.message).toBe("processing failed")
   })
 })
