@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1085</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1086</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2314,6 +2314,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 PM — Prompt #1086 [Stale-bundle detection: auto-reload on login when deploy is fresher than tab]</div>
+          <div class="prompt-text">"I continue to get stale webpage when other log in. I know to do a hard refresh but other users don't. Can you add a setting to reload and refresh the page on login if there is a difference between what the user has locally and what is being served?" → "do both" (frontend version check + CDN cache headers). Implemented: Vite plugin emits dist/version.json from VITE_APP_VERSION (github.sha); src/lib/buildVersion.ts checkForUpdate() fetches /version.json with cache:no-store, force-reloads on mismatch (with service-worker unregister + Cache API clear + sessionStorage loop guard); wired into AuthContext.finalizeAuth (after token persist, before navigate) + App.AppInner mount. CDN: domain-stack.ts adds CACHING_DISABLED behaviors for /index.html + /version.json; ci-deploy.yml rewrites Cache-Control to no-cache on both files post-sync (both buckets). PRs: frontend #54, monorepo #90.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-12 PM — Prompt #1085 [/full-go Meridian backend fixes — observability Layer 2 + conversations from Aurora]</div>
           <div class="prompt-text">/full-go: (1) Verify A — check deploy monitor, live-curl observability, confirm 500→200. (2) Merge C — PR #53. (3) Do B-fix Path α — rewrite agent-engine conversations.py to query chat_messages instead of process-local dict. (4) Deploy B-fix to ig-dev-agent-engine via image rebuild + ECS roll. Result: PR #53, #87, #88 all merged; observability hydrates DB creds from master Aurora secret; conversations now read from chat_messages table.</div>

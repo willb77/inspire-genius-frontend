@@ -1,3 +1,41 @@
+## [2026-05-12 PM] — Stale-bundle detection: auto-reload on login when deploy is fresher than tab
+
+Open issue: users log in and continue to see the old UI until they manually hard-refresh. Adds a build-time version stamp + client check that force-reloads when the deployed bundle differs from the one in the browser.
+
+### Added
+- Vite plugin (`versionManifestPlugin`) emits `dist/version.json` from `VITE_APP_VERSION` (CI already injects `github.sha` here, no new env var needed).
+  - File: `inspire-genius-frontend/vite.config.ts`
+- `src/lib/buildVersion.ts` — `checkForUpdate()` fetches `/version.json?t=<now>` with `cache: 'no-store'`, compares to the compiled `BUILD_VERSION`, and on mismatch:
+  - unregisters all service workers
+  - clears every Cache API entry
+  - calls `window.location.reload()`
+  - sessionStorage flag (`__ig_reload_in_progress`) prevents reload loops
+  - File: `inspire-genius-frontend/src/lib/buildVersion.ts`
+- Unit tests for the dev-mode short-circuit and the loop-prevention contract
+  - File: `inspire-genius-frontend/src/lib/__tests__/buildVersion.test.ts`
+
+### Changed
+- `AuthContext.finalizeAuth` calls `checkForUpdate()` after tokens persist, before the post-login navigate. The reload picks up the freshly-saved session via hydrate-on-mount so the user lands on the right page on fresh code.
+  - File: `inspire-genius-frontend/src/context/AuthContext.tsx`
+- `App.AppInner` mount hook calls `checkForUpdate()` so long-lived stale tabs also self-correct.
+  - File: `inspire-genius-frontend/src/App.tsx`
+- `ci-deploy.yml` rewrites Cache-Control to `no-cache, no-store, must-revalidate` on `index.html` + `version.json` after the S3 sync (both dev bucket + legacy `d1nxsns258du4y` mirror). Without this, S3 inherits the default `Cache-Control` and the gate is itself served stale.
+  - File: `inspire-genius-frontend/.github/workflows/ci-deploy.yml`
+- CDK domain stack adds `CACHING_DISABLED` CloudFront behaviors for `/index.html` and `/version.json`. Reuses existing S3 origin + SecurityHeadersPolicy.
+  - File: `infrastructure/cdk/lib/domain-stack.ts`
+
+### Shipped / in flight
+- PR #54 (frontend) — `feat(frontend): stale-bundle detection on login + app boot` — opened.
+- PR #90 (monorepo) — `infra(cdn): no-cache CloudFront behaviors for index.html + version.json` — opened.
+- Two coordinated PRs because the CDN behavior change has to land for the client check to see fresh `version.json`; deploying one without the other still works (fail-open) but the detector latency is reduced from up-to-24h to 0 once both ship.
+
+### Verification
+- `npm run build` with `VITE_APP_VERSION=test-sha-abc123` produces `dist/version.json` with `{"version":"test-sha-abc123","builtAt":"…"}`.
+- `npx cdk diff ig-dev-domain` shows only the two new CacheBehaviors; no other resource diffs.
+- `npx jest src/lib/__tests__/buildVersion.test.ts` — 2/2 pass.
+
+---
+
 ## [2026-05-12] — Meridian chat backend fixes: observability Layer 2 + conversations from Aurora
 
 `/full-go` autonomous run continuing the four-bug fix from the prior session.
