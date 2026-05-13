@@ -139,9 +139,13 @@ export type DeleteUserData = {
 
 export type DeleteUserResponse = BaseApiResponse<DeleteUserData>
 
-export async function deleteUserByEmail(user_email: string) {
+export async function deleteUserByEmail(
+  user_email: string,
+  options: { force?: boolean } = {}
+) {
   const { data } = await api.delete<DeleteUserResponse>(
-    `/v1/user-management/users/${encodeURIComponent(user_email)}`
+    `/v1/user-management/users/${encodeURIComponent(user_email)}`,
+    { params: options.force ? { force: true } : undefined }
   )
   return data
 }
@@ -171,54 +175,85 @@ export type PurgeInactiveResult = {
   total: number
 }
 
+type PurgeFailureEntry = { email: string; reason: string }
+
+type PurgeInactiveServerData = {
+  succeeded: string[]
+  failed: Array<string | PurgeFailureEntry>
+  total: number
+}
+
 /**
- * Fetches all inactive/deactivated users and deletes them one by one
- * using the existing per-user delete endpoint.
+ * Server-side purge of all inactive/deactivated users. Calls the
+ * `POST /v1/user-management/users/purge-inactive` endpoint (P0-1 fix,
+ * 2026-05-13) which iterates every `is_deleted=True` user and force-purges
+ * them with Cognito disable + FK SET NULL safety.
+ *
+ * Falls back to the legacy client-side loop if the server endpoint is
+ * unavailable (older backend deploys) so the UI degrades gracefully.
  */
 export async function purgeInactiveUsers(): Promise<PurgeInactiveResult> {
-  // First, fetch all inactive users (page through if necessary)
-  const allInactiveEmails: string[] = []
-  let currentPage = 1
-  let hasMore = true
+  try {
+    const { data } = await api.post<BaseApiResponse<PurgeInactiveServerData>>(
+      '/v1/user-management/users/purge-inactive'
+    )
+    const payload = data?.data ?? { succeeded: [], failed: [], total: 0 }
+    const failedEmails = (payload.failed ?? []).map((f) =>
+      typeof f === 'string' ? f : f.email
+    )
+    return {
+      succeeded: payload.succeeded ?? [],
+      failed: failedEmails,
+      total: payload.total ?? 0,
+    }
+  } catch (err) {
+    // Fallback: legacy client-side loop with force=true. Useful while the
+    // bulk endpoint is rolling out, and as a safety net if it 404s.
+    const allInactiveEmails: string[] = []
+    let currentPage = 1
+    let hasMore = true
 
-  while (hasMore) {
-    const response = await getUsers({
-      user_status_filter: 'inactive',
-      limit: 50,
-      page: currentPage,
+    while (hasMore) {
+      const response = await getUsers({
+        user_status_filter: 'inactive',
+        limit: 50,
+        page: currentPage,
+      })
+      const users = response?.data?.users ?? []
+      for (const u of users) {
+        allInactiveEmails.push(u.email)
+      }
+      hasMore = response?.data?.pagination?.has_more ?? false
+      currentPage++
+    }
+
+    if (allInactiveEmails.length === 0) {
+      // Re-throw the original error if there was nothing to fall back to
+      throw err
+    }
+
+    const results = await Promise.allSettled(
+      allInactiveEmails.map((email) =>
+        deleteUserByEmail(email, { force: true })
+      )
+    )
+
+    const succeeded: string[] = []
+    const failed: string[] = []
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value.status !== false) {
+        succeeded.push(allInactiveEmails[index])
+      } else {
+        failed.push(allInactiveEmails[index])
+      }
     })
-    const users = response?.data?.users ?? []
-    for (const u of users) {
-      allInactiveEmails.push(u.email)
+
+    return {
+      succeeded,
+      failed,
+      total: allInactiveEmails.length,
     }
-    hasMore = response?.data?.pagination?.has_more ?? false
-    currentPage++
-  }
-
-  if (allInactiveEmails.length === 0) {
-    return { succeeded: [], failed: [], total: 0 }
-  }
-
-  // Delete each inactive user using the existing endpoint
-  const results = await Promise.allSettled(
-    allInactiveEmails.map((email) => deleteUserByEmail(email))
-  )
-
-  const succeeded: string[] = []
-  const failed: string[] = []
-
-  results.forEach((result, index) => {
-    if (result.status === 'fulfilled' && result.value.status !== false) {
-      succeeded.push(allInactiveEmails[index])
-    } else {
-      failed.push(allInactiveEmails[index])
-    }
-  })
-
-  return {
-    succeeded,
-    failed,
-    total: allInactiveEmails.length,
   }
 }
 

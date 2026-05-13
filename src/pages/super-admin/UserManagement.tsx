@@ -15,6 +15,7 @@ import Pagination from "@/components/shared/Pagination";
 import UserFormModal from "@/components/shared/forms/UserFormModal";
 import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
+import DestructiveConfirmModal from "@/components/shared/forms/DestructiveConfirmModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
 import {
   useUserManagement,
@@ -248,7 +249,14 @@ export default function UserManagement() {
     if (!selected) return;
 
     try {
-      await deleteMutation.mutateAsync(selected.email);
+      // P0-1: when the row is already deactivated, pass force=true so the
+      // backend hard-deletes rather than refusing with "already deactivated".
+      const isDeactivated = selected.status === "Deactivated";
+      await deleteMutation.mutateAsync(
+        isDeactivated
+          ? { email: selected.email, force: true }
+          : selected.email
+      );
       setDeleteOpen(false);
     } catch {
       // Error toast already shown by mutation onError callback
@@ -268,8 +276,10 @@ export default function UserManagement() {
     setBulkDeleting(true);
     const emails = Array.from(selectedEmails);
 
+    // P0-1: pass force=true so soft-deleted rows in the bulk selection are
+    // purged rather than refused.
     const results = await Promise.allSettled(
-      emails.map((email) => deleteUserByEmail(email))
+      emails.map((email) => deleteUserByEmail(email, { force: true }))
     );
 
     const succeeded: string[] = [];
@@ -633,8 +643,8 @@ export default function UserManagement() {
         confirmLoading={updateMutation.isPending}
       />
 
-      {/* Delete Confirmation */}
-      <ConfirmActionModal
+      {/* Delete Confirmation — type-confirm gate (P0-1) */}
+      <DestructiveConfirmModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Delete User"
@@ -644,13 +654,12 @@ export default function UserManagement() {
           { label: "Email", value: selected?.email ?? "" },
         ]}
         confirmLabel="Delete"
-        confirmVariant="destructive"
         onConfirm={handleDelete}
         confirmLoading={deleteMutation.isPending}
       />
 
-      {/* Bulk Delete Confirmation */}
-      <ConfirmActionModal
+      {/* Bulk Delete Confirmation — type-confirm gate (P0-1) */}
+      <DestructiveConfirmModal
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title="Delete Selected Users"
@@ -659,7 +668,6 @@ export default function UserManagement() {
           { label: "Users to delete", value: `${selectedEmails.size}` },
         ]}
         confirmLabel="Delete All"
-        confirmVariant="destructive"
         onConfirm={handleBulkDelete}
         confirmLoading={bulkDeleting}
       />
@@ -678,12 +686,13 @@ export default function UserManagement() {
         confirmLoading={bulkActivating}
       />
 
-      {/* Purge Inactive Users Confirmation */}
-      <ConfirmActionModal
+      {/* Purge Inactive Users Confirmation — type "PURGE" gate (P0-1) */}
+      <DestructiveConfirmModal
         open={purgeOpen}
         onOpenChange={setPurgeOpen}
         title="Purge Inactive Users"
         description="This will permanently delete all deactivated users from the system. This action cannot be undone."
+        confirmPhrase="PURGE"
         fields={[
           {
             label: "Inactive users to purge",
@@ -693,7 +702,6 @@ export default function UserManagement() {
           },
         ]}
         confirmLabel="Purge All"
-        confirmVariant="destructive"
         onConfirm={handlePurgeInactive}
         confirmLoading={purgeMutation.isPending}
       />

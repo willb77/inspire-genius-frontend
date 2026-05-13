@@ -85,6 +85,14 @@ jest.mock(
     props.open ? <button onClick={props.onConfirm}>Confirm</button> : null
 );
 
+// P0-1: type-confirm modal. In tests we bypass the typed-phrase gate by
+// rendering a "Confirm" button that fires onConfirm directly.
+jest.mock(
+  "@/components/shared/forms/DestructiveConfirmModal",
+  () => (props: any) =>
+    props.open ? <button onClick={props.onConfirm}>Confirm</button> : null
+);
+
 /* -------------------------------------------------
  MOCK BADGE
 ------------------------------------------------- */

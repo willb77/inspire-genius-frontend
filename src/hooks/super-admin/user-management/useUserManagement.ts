@@ -30,6 +30,17 @@ import {
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
 import { logAuditEvent } from "@/services/audit/audit.service";
+import { useAuth } from "@/context/useAuth";
+
+/**
+ * Resolve the calling super-admin's email for audit log attribution.
+ * Replaces the hard-coded `'admin'` literal that previously made it
+ * impossible to know who performed a destructive action (P0-1, 2026-05-13).
+ */
+function useActorEmail(): string {
+  const { user } = useAuth();
+  return user?.email ?? "admin";
+}
 
 type SimpleQueryOptions = Omit<
   UseQueryOptions<GetUsersResponse, AxiosError<BaseApiResponse<null>>>,
@@ -55,6 +66,7 @@ export function useUserManagement(
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
+  const actorEmail = useActorEmail();
 
   return useMutation<
     InviteUserResponse,
@@ -69,7 +81,7 @@ export function useInviteUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_created", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
+      logAuditEvent({ action: "user_created", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -84,6 +96,7 @@ export function useInviteUser() {
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
+  const actorEmail = useActorEmail();
 
   return useMutation<
     UpdateUserResponse,
@@ -98,7 +111,7 @@ export function useUpdateUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_updated", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
+      logAuditEvent({ action: "user_updated", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -113,6 +126,7 @@ export function useUpdateUser() {
 
 export function useChangeUserRole() {
   const queryClient = useQueryClient();
+  const actorEmail = useActorEmail();
 
   return useMutation<
     ChangeUserRoleResponse,
@@ -127,7 +141,7 @@ export function useChangeUserRole() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_role_changed", actor_email: "admin", target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
+      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
     },
 
     onError: (error) => {
@@ -142,21 +156,32 @@ export function useChangeUserRole() {
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
+  const actorEmail = useActorEmail();
 
   return useMutation<
     DeleteUserResponse,
     AxiosError<BaseApiResponse<null>>,
-    string
+    string | { email: string; force?: boolean }
   >({
-    mutationFn: (email) => deleteUserByEmail(email),
+    mutationFn: (arg) => {
+      if (typeof arg === "string") return deleteUserByEmail(arg);
+      return deleteUserByEmail(arg.email, { force: arg.force });
+    },
 
-    onSuccess: (resp, email) => {
+    onSuccess: (resp, arg) => {
+      const email = typeof arg === "string" ? arg : arg.email;
+      const forced = typeof arg === "object" && !!arg.force;
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_deleted", actor_email: "admin", target_type: "user", extra_data: { email } });
+      logAuditEvent({
+        action: "user_deleted",
+        actor_email: actorEmail,
+        target_type: "user",
+        extra_data: { email, forced },
+      });
     },
 
     onError: (error) => {
@@ -208,6 +233,7 @@ export function useInactiveUserCount(enabled = false) {
 
 export function usePurgeInactiveUsers() {
   const queryClient = useQueryClient();
+  const actorEmail = useActorEmail();
 
   return useMutation<PurgeInactiveResult, AxiosError<BaseApiResponse<null>>>({
     mutationFn: () => purgeInactiveUsers(),
@@ -234,11 +260,12 @@ export function usePurgeInactiveUsers() {
 
       logAuditEvent({
         action: "user_deleted",
-        actor_email: "admin",
+        actor_email: actorEmail,
         target_type: "user",
         extra_data: {
           purged_count: result.succeeded.length,
           failed_count: result.failed.length,
+          purge_inactive: true,
         },
       });
     },

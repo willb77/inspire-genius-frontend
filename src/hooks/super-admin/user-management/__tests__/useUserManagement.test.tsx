@@ -22,7 +22,26 @@ jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
     error: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
   },
+}));
+
+/* -----------------------------------------
+   MOCK useAuth (P0-1 — useUserManagement now reads
+   actor_email from the calling super-admin)
+----------------------------------------- */
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({
+    user: { email: "super-admin@test.com" },
+  }),
+}));
+
+/* -----------------------------------------
+   MOCK audit service (no network in tests)
+----------------------------------------- */
+jest.mock("@/services/audit/audit.service", () => ({
+  logAuditEvent: jest.fn(),
 }));
 
 import { renderHook, act, waitFor } from "@testing-library/react";
