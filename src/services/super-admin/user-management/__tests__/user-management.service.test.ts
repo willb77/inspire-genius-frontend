@@ -4,6 +4,7 @@ import {
   updateUserByEmail,
   deleteUserByEmail,
   resendInvitation,
+  purgeInactiveUsers,
   type InviteUserPayload,
   type UpdateUserPayload,
 } from "../user-management.service";
@@ -172,5 +173,44 @@ describe("Super Admin User Management Service", () => {
       `/v1/user-management/invitations/${encodeURIComponent(invitationId)}/resend`
     );
     expect(result).toEqual(mockResponse);
+  });
+
+  /* -----------------------------------------
+     purgeInactiveUsers — server-side single POST
+  ----------------------------------------- */
+  it("should POST to /users/purge-inactive and return the result envelope data", async () => {
+    const mockResponse = {
+      message: "Purge complete: 2/3 succeeded",
+      data: {
+        total: 3,
+        succeeded: ["a@x.com", "b@x.com"],
+        failed: [{ email: "c@x.com", reason: "FK violation on issue_comments" }],
+      },
+    };
+
+    (api.post as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+
+    const result = await purgeInactiveUsers();
+
+    expect(api.post).toHaveBeenCalledWith(
+      "/v1/user-management/users/purge-inactive"
+    );
+    expect(result.total).toBe(3);
+    expect(result.succeeded).toEqual(["a@x.com", "b@x.com"]);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0]).toEqual({
+      email: "c@x.com",
+      reason: "FK violation on issue_comments",
+    });
+  });
+
+  it("should fall back to empty result when data field is missing", async () => {
+    (api.post as jest.Mock).mockResolvedValueOnce({
+      data: { message: "ok" },
+    });
+
+    const result = await purgeInactiveUsers();
+
+    expect(result).toEqual({ total: 0, succeeded: [], failed: [] });
   });
 });

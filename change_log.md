@@ -1,3 +1,145 @@
+## [2026-05-13] — /fix-destructive-confirm-modal shipped: typed-confirmation friction for irreversible actions
+
+Item 6 of the User Management review (`USER_MANAGEMENT_REVIEW_2026-05-13.md` §7). Adds a reusable destructive-action confirmation primitive and wires it into the three irreversible flows.
+
+### Added
+- `inspire-genius-frontend/src/components/shared/forms/DestructiveConfirmModal.tsx` — new reusable component. Built on the project's `ModalDialog` primitive (same surface as the existing `ConfirmActionModal`). Operator must type a phrase verbatim (trim-tolerant) before the destructive button enables. Title carries `AlertTriangle` icon. Confirm button stays disabled while `loading`. Input is autoFocused, `autoComplete="off"`, `spellCheck={false}`, `autoCorrect="off"` so browsers don't autofill/autocorrect the phrase. `useEffect` resets typed input when `open` flips to `false` so reopen never shows stale text. Props: `confirmPhrase` (required), `confirmHint`, `confirmLabel`, `cancelLabel`, `loading`, `onConfirm`.
+- `inspire-genius-frontend/src/components/shared/forms/__tests__/DestructiveConfirmModal.test.tsx` — **9/9 PASS**: hidden when closed; renders title+phrase; button disabled until match; trims whitespace; calls onConfirm; calls onOpenChange(false) on cancel; input clears on close+reopen; "Working..." label while loading; fixed-phrase variant for "PURGE INACTIVE".
+
+### Changed
+- `inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx`:
+  - New state `forceDeleteOpen` + new handler `handleForceDelete`. Row-menu Delete on a **Deactivated** row now routes to the new `DestructiveConfirmModal` (typing the email), not the plain confirm. Active / Awaiting rows stay on the lighter `ConfirmActionModal` since their delete is reversible (soft delete → can be reactivated).
+  - **Purge Inactive** modal — swapped from `ConfirmActionModal` to `DestructiveConfirmModal` with phrase `PURGE INACTIVE`. Button label dynamically reads `Purge N user(s)` based on `inactiveCount`.
+  - **Bulk Delete** modal — swapped from `ConfirmActionModal` to `DestructiveConfirmModal` with phrase `DELETE N` (where N is the selected count). Button label `Delete N user(s)`.
+  - `handleDelete` simplified — no longer branches on `selected.status` (force-path moved out).
+  - `deleteOpen` modal copy honed for soft-delete only (active / awaiting): "deactivate the user (soft delete) ... You can purge them later from the Deactivated list."
+- Existing tests pass unchanged: `UserManagement.test.tsx` 16/16, `useUserManagement.test.tsx` 16/16, `user-management.service.test.ts` 14/14, `ConfirmActionModal.test.tsx` 5/5, **new** `DestructiveConfirmModal.test.tsx` 9/9 — total **55/55 across the User Management surface area**.
+
+### Not changed
+- `ConfirmActionModal` — kept as-is. Continues to serve reversible actions (deactivate, activate, soft-delete of active users, resend invitation).
+
+### Spec deviations
+- The spec sketched a raw `Dialog` / `DialogContent` build. The repo already has a `ModalDialog` primitive (`src/components/shared/ModalDialog.tsx`) that handles the close button, scroll, and accessibility plumbing — built on top of it for consistency with `ConfirmActionModal`. AlertTriangle icon moved from `DialogTitle` to the body (next to the description) since `ModalDialog` renders title plain.
+- Spec mentioned wiring future Org / Business destructive flows in the same PR — those pages aren't built yet, so the modal is positioned for future consumers but not yet imported elsewhere.
+
+### Verification
+- `npx tsc --noEmit` exit 0
+- `npx eslint <touched files>` exit 0 (one fix mid-run: removed an `eslint-disable-next-line jsx-a11y/no-autofocus` comment — the rule plugin isn't installed in this repo, so the disable comment itself errors)
+- Frontend tests: **55/55 PASS** on the User Management surface area
+- `npm run build` clean (PWA bundle regenerated)
+
+### Deploy
+Frontend-only change. Merge to `development` → CI deploys SPA.
+
+---
+
+## [2026-05-13] — /fix-user-purge-endpoint shipped: server-side bulk purge with savepoints
+
+Item 5 of the User Management review (`USER_MANAGEMENT_REVIEW_2026-05-13.md` §7). Replaces the client-side `Promise.allSettled` fanout with a single server-side endpoint that processes each soft-deleted user inside its own SAVEPOINT.
+
+### Why this matters
+The previous `purgeInactiveUsers()` in the frontend paged through `GET /users?user_status_filter=inactive`, collected every email, then fired N parallel DELETEs. Problems: no transaction boundary, no backpressure, one CloudFront→API-Gateway→monolith round-trip per user (slow), summary audit log with no per-row reasons, and the inability to retry atomically. After `/fix-user-purge` shipped with `force=true`, the fanout *worked* — but it was still N HTTP calls instead of 1.
+
+### Added
+- `inspire-genius-backend/users/auth_service/schema.py::purge_inactive_users()` — selects all `is_deleted=True` users, iterates inside SAVEPOINTs (`session.begin_nested()`), calls `_hard_delete_user()` (delivered by `/fix-user-purge`) per row, rolls back the savepoint on failure without aborting the batch. Returns `{total, succeeded[], failed[{email,reason}]}`. Failure reasons truncated to 200 chars. Sequential Cognito deletes inside the loop — ~200ms each, so ~20s for 100 users fits the 29s API Gateway timeout. Documented in a docstring that Step Functions or SQS fan-out is the right next step if tenants ever have >~100 inactive users routinely.
+- `inspire-genius-backend/users/auth_service/user_management.py::purge_inactive` — new route `POST /v1/user-management/users/purge-inactive`, super-admin only via `require_admin_role()`. Standard `create_response` envelope.
+- `inspire-genius-backend/tests/test_purge_inactive.py` — 5 tests, **5/5 PASS**: empty input returns `total=0`; all-success path; savepoint isolation (one failure doesn't abort others); failure reason truncated to 200 chars; outer exception returns error envelope.
+
+### Changed
+- `inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts` — `purgeInactiveUsers()` rewritten from ~50 LOC client-side loop to a single `api.post('/v1/user-management/users/purge-inactive')`. New types: `PurgeFailure = {email, reason}`, `PurgeInactiveResult = {total, succeeded[], failed[]}`. Falls back to empty result if the envelope `data` field is missing.
+- `inspire-genius-frontend/src/hooks/super-admin/user-management/useUserManagement.ts::usePurgeInactiveUsers` — toast logic rewritten for the new shape (info/success/warning/error branches on `total`/`succeeded`/`failed`). Per-row failure reasons surfaced via `console.warn` for triage. Audit action renamed `"user_deleted"` → `"users_bulk_purged"` with `{total, succeeded_count, failed_count}` extras.
+- `inspire-genius-frontend/src/services/super-admin/user-management/__tests__/user-management.service.test.ts` — 2 new tests covering the POST contract and the data-missing fallback.
+
+### Verification
+- Backend: `python3 -m py_compile` ✓; **15/15 PASS** across `test_delete_user.py` + `test_edit_user.py` + `test_purge_inactive.py`.
+- Frontend: `npx tsc --noEmit` exit 0; `npx eslint <touched files>` exit 0; **44/44 PASS** across hook + service + page test suites; `npm run build` clean.
+
+### Behavior differences from the spec
+- **No EventBridge emission** — the monolith does not have an EventBridge utility (`grep emit_event` returned zero hits in the monolith). The frontend's existing `logAuditEvent` call carries the audit signal end-to-end through the audit-service. If a backend-emitted event is later required (e.g., to trigger downstream automation), it can be wired in alongside the auth-service's existing emitter pattern.
+- **Rate limiting** — the spec mentions adding it if a global decorator exists. No such monolith decorator exists today; the route inherits `require_admin_role()` which is the only gate. Acceptable for a manual super-admin action.
+
+### Deploy steps (not done this session)
+1. Redeploy monolith backend container (picks up `schema.py` + `user_management.py`).
+2. Merge to `development` → frontend CI deploys SPA.
+3. Live curl smoke per the spec's verification section.
+
+---
+
+## [2026-05-13] — /fix-user-cognito-disable shipped: explicit admin_disable/enable_user wired into soft-delete + reactivation
+
+Item 4 of the User Management review (`USER_MANAGEMENT_REVIEW_2026-05-13.md` §7). Makes the Cognito enable/disable call explicit at the call site and locks the behavior in with regression tests.
+
+### Discovery during implementation
+The review (§3 item 3) claimed soft-delete only wrote a Cognito attribute and left the account enabled. Investigation revealed `update_cognito_user_attributes(..., {'is_active': False})` already routes through `CognitoUserHandler._update_status` (cognito_utils.py:833) which DOES call `admin_disable_user`. So the original behavior was already correct, just hidden two layers deep. Likewise the §3 item 7 "half-state bug" (`is_active` flips without clearing `is_deleted` during reactivation) was already handled by `UserEditValidator.process_status_update` (schema.py:1166): `user.is_deleted = not user.is_active`.
+
+The fix still ships because:
+1. **Intent clarity** — a reader of `delete_user_by_email` no longer has to trace through `update_cognito_user_attributes` → `CognitoUserHandler.update_user_attributes` → `_update_status` to see that disable is happening. The explicit `disable_cognito_user(cognito_username)` line states it.
+2. **Refactor safety** — if someone later "simplifies" the `is_active` special-case in `CognitoUserHandler`, the disable behavior silently disappears without the explicit call.
+3. **Regression coverage** — tests now mock `admin_disable_user` / `admin_enable_user` at the schema level and assert they're called. Previously zero test coverage on this contract.
+
+### Added
+- `inspire-genius-backend/users/aws_wrapper/cognito_utils.py` — `disable_cognito_user(username)` and `enable_cognito_user(username)` helpers. Idempotent; `UserNotFoundException` treated as success (already-disabled / never-existed → callers don't need to special-case). Module-level docstring on `disable_cognito_user` explicitly documents the redundancy with `_update_status` so future refactors don't double-fix or remove either.
+- `inspire-genius-backend/tests/test_edit_user.py` — new test file, 4 tests, all PASS: reactivation calls `enable_cognito_user`, deactivation via Edit calls `disable_cognito_user`, name-only edit touches neither, Cognito flip failure doesn't break the edit (DB commit already happened).
+- Two new cases in `tests/test_delete_user.py` (PASS): soft-delete explicitly calls `disable_cognito_user`, soft-delete still succeeds when `disable_cognito_user` raises.
+
+### Changed
+- `inspire-genius-backend/users/auth_service/schema.py` — imports `disable_cognito_user` + `enable_cognito_user`. Soft-delete branch calls `disable_cognito_user(cognito_username)` BEFORE the existing `update_cognito_user_attributes` call. `edit_active_user` post-commit branch explicitly calls `enable_cognito_user` or `disable_cognito_user` (based on `edit_data['is_active']`) before the validator's `update_cognito_user` Cognito attribute sync. Inline comments document the deliberate idempotent redundancy.
+
+### Not changed
+- `infrastructure/cdk/lib/services-stack.ts` — IAM audit confirmed `cognito-idp:AdminEnableUser` (line 502) + `cognito-idp:AdminDisableUser` (line 503) already grant the monolith role. No CDK change needed.
+- `CognitoUserHandler._update_status` left as-is. It's a useful general-purpose attribute updater; the new explicit helpers complement it rather than replace it.
+
+### Verification
+- Backend `python3 -m py_compile` ✓ all touched files.
+- Backend pytest: **10/10 PASS** (`test_delete_user.py` 6 + `test_edit_user.py` 4).
+- No frontend changes (this is a backend-only fix).
+
+### Deploy steps (not done in this session)
+1. Redeploy monolith backend container to pick up `schema.py` + `cognito_utils.py`.
+2. Live test: invite + accept a test user → DELETE them → `aws cognito-idp admin-get-user --query 'Enabled'` returns `false` (verifies disable). PUT `/users/{email}/edit` with `is_active=true` → query returns `true` (verifies enable). Attempt login as the soft-deleted user → 401 "User is disabled" from Cognito.
+
+---
+
+## [2026-05-13] — /fix-user-purge shipped: force-flag DELETE + Alembic FK migration + real audit actor
+
+Implements items 1-3 of the User Management review (USER_MANAGEMENT_REVIEW_2026-05-13.md §7). Deactivated users can now actually be purged.
+
+### Added
+- `inspire-genius-backend/users/auth_service/schema.py` — new `_hard_delete_user()` helper extracted from the existing hard-delete block. Nulls `issues.reported_by` and `organization_agents.assigned_by` via `update()` before deleting the user, so the IntegrityError landmine (NO ACTION FKs from the previous review) doesn't bite. Runtime null-out is belt-and-suspenders alongside the new migration.
+- `inspire-genius-backend/prism_inspire/alembic/versions/d7f3b9a14c20_user_fk_set_null_for_audit_columns.py` — Alembic migration. `issues.reported_by`: NOT NULL → NULL + `ON DELETE SET NULL`. `organization_agents.assigned_by`: re-create FK with `ON DELETE SET NULL`. `down_revision: f6a7b8c9d0e1` (current head). FK constraint names confirmed against `37104f8ccde6_added_issues_license_and_organization_.py`: `fk_issues_reported_by_users`, `fk_organization_agents_assigned_by_users`.
+- `inspire-genius-backend/tests/test_delete_user.py` — 5 tests, **5/5 PASS**: soft-delete on first call, refuse with force hint on second call, force-purge succeeds, hard delete still works for pending-invitation users, Cognito failure doesn't abort Aurora delete.
+
+### Changed
+- `inspire-genius-backend/users/auth_service/schema.py::delete_user_by_email` — accepts new `force: bool = False` arg. New branch: when `user.is_deleted and force` → hard delete via `_hard_delete_user()`. The `if user.is_deleted` refusal path now includes `can_force_purge: True` in the data payload and a message instructing the caller to pass `force=true`. Soft-delete branch's `deletion_type` renamed from `"invitation_only"` → `"soft_delete"` (was a frontend/backend mismatch).
+- `inspire-genius-backend/users/auth_service/user_management.py::delete_user` — route signature accepts `force: bool = Query(False, ...)`. Docstring + OpenAPI description updated. Threads `force` through to `delete_user_by_email`.
+- `inspire-genius-backend/users/models/issue.py` — `Issue.reported_by` now `nullable=True` + `ondelete="SET NULL"` to match the migration.
+- `inspire-genius-backend/users/models/user.py` — `OrganizationAgent.assigned_by` now `ondelete="SET NULL"` to match.
+- `inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts` — `deleteUserByEmail(email, force = false)` now appends `?force=true`. Type `DeleteUserData.deletion_type` tightened to `'hard_delete' | 'soft_delete'` (the literal `string` escape hatch is gone). `purgeInactiveUsers()` now passes `force=true` per-call — without this the client-side loop hits the "already deactivated" refusal on every row (the original bug).
+- `inspire-genius-frontend/src/hooks/super-admin/user-management/useUserManagement.ts` — `useDeleteUser` signature changed from `(email: string)` → `({ email, force? })`. All 5 audit-logging hooks (invite, update, change-role, delete, purge) now pull `actor_email` from `useAuth().user?.email` instead of the hardcoded `"admin"` literal.
+- `inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx` — `handleDelete` passes `force: selected.status === "Deactivated"`. `handleBulkDelete` does the same per-row. The Delete confirm modal's title/body/button label now branch on status: "Permanently Delete User" for deactivated rows ("PERMANENTLY remove their record from the database and Cognito") vs. honest "deactivate (soft delete)" copy for active rows.
+- `inspire-genius-frontend/src/pages/super-admin/__tests__/UserManagement.test.tsx` — updated delete-test assertion to the new `{ email, force }` shape.
+- `inspire-genius-frontend/src/hooks/super-admin/user-management/__tests__/useUserManagement.test.tsx` — added `jest.mock` for `@/context/useAuth` + `@/services/audit/audit.service` and updated delete-test inputs to the new shape.
+
+### Verification
+- Backend syntax check: `python3 -m py_compile` ✓ all touched files.
+- Backend unit tests: **5/5 PASS** on `tests/test_delete_user.py` (asyncio-strict env, Python 3.12).
+- Frontend type check: `npx tsc --noEmit` exit 0.
+- Frontend lint: `npx eslint <touched files>` exit 0.
+- Frontend tests: **44/44 PASS** across `useUserManagement.test.tsx` (16) + `user-management.service.test.ts` (12) + `UserManagement.test.tsx` (16).
+- Frontend production build: `npm run build` ✓ (PWA generated, 8767 KiB precache).
+
+### Deploy + smoke required (not done in this session)
+1. Apply the Alembic migration via `services/migration-runner` Lambda against dev Aurora (one-shot invoke; no ECS roll needed).
+2. Redeploy the monolith backend container to pick up the schema.py + user_management.py changes.
+3. Frontend deploys via the existing `ci-deploy.yml` workflow on merge to `development`.
+4. Live curl: DELETE `/v1/user-management/users/<email>` on an active user → `soft_delete`. Same again → 200 with `success:false, can_force_purge:true`. Same with `?force=true` → `hard_delete, cognito_deleted:true`.
+5. Browser smoke per the review report §5.
+
+### Backlog (P2, not in scope of this PR)
+- Other FKs to `users.user_id` without `ondelete` still RESTRICT a hard delete: `user_profiles.assigned_by`, `organization_admin.assigned_by`, another `assigned_by` in `user.py:199`, `user_invitations.invited_by`, `issue_comments.commented_by`, `issue_attachments.uploaded_by`. None of them block the *current* force-purge code path because `_hard_delete_user()` only nulls the two FKs we have constraint names for + the migration only fixes those two. Real-world soft-deleted users who have commented on an issue or uploaded an attachment **will still fail to purge** with a generic IntegrityError. Recommend a follow-up migration to set them all to `SET NULL` in one sweep.
+
+---
+
 ## [2026-05-13] — User Management top-to-bottom review (no code changes yet)
 
 Triggered by an operator question: *"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"*
