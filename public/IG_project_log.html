@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1090</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1092</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2350,6 +2350,14 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1092 [/log-session — Meridian review deliverables]</div>
+          <div class="prompt-text">Captures the /bedtime review deliverables: MERIDIAN_REVIEW_2026-05-13.md (sub-agent-generated, with my correction box at top — TL;DR P0 #1 claim about chat_messages missing Phase C columns was wrong, table actually has 29 cols), MERIDIAN_REVIEW_PROMPTS.md (12 ready-to-paste /full-go prompts, one per finding), plus Word renderings of both via the generalised scripts/build_meridian_review_docx.py. Verified P0 obs-tables-missing, P1 SECURITY RAG tenant leak in _search_pgvector, and P1 ObservabilityPanel msg-id mismatch.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1090 [Stale-bundle detection: merge, CDK deploy, end-to-end verification]</div>
+          <div class="prompt-text">Continues prompt #1086. User: "merge them in order: #90, #54, #91, #55" → "trigger the CDK deploy" → "test it by pushing a dummy commit". Merged all four PRs (#90 3cb059d → #54 d04b280 → #91 e1d8c9d → #55 ba472fe). Fired CDK workflow_dispatch with environment=dev dry_run=false; run 25774950234 completed all 4 jobs (Validate, Diff, Deploy, Verify). Confirmed CloudFront E3EFVMBYYVF012 now applies CACHING_DISABLED policy 4135ea2d-6df8-44a3-9df3-4b5a84be39ad to /index.html and /version.json; live HEAD probes return cache-control:no-cache,no-store,must-revalidate and x-cache:Miss. PR #58 (c12b03a) was a comment-only commit to buildVersion.ts to test the full gate — pre-merge SHA on /version.json was 6820e288...; expecting c12b03af... after deploy lands. Closes the operator-reported "stale webpage on login" issue structurally.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1089 [/bedtime detailed User Management review]</div>
           <div class="prompt-text">/bedtime — detailed top-to-bottom review of User Management. Find any issues, supply solutions and advise on next steps. Answer: "There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?" Root cause: `delete_user_by_email()` in `inspire-genius-backend/users/auth_service/schema.py:741-873` explicitly returns success:false "already deactivated" whenever `user.is_deleted=True` — no force flag, no separate purge path. Frontend "Purge inactive" button (`user-management.service.ts:178`) loops through inactive emails and hits the same refusing endpoint, so the list never shrinks. Secondary issues: missing Cognito `admin_disable_user` on soft delete (Cognito stays enabled), FK landmines on `issues.reported_by` + `organization_agents.assigned_by` (NO ACTION will block force-purge of users who have reported issues), hardcoded `actor_email:"admin"` in audit logs, `deletion_type` type mismatch (`"invitation_only"` vs declared `"soft_delete"`), three overlapping invite paths, orphaned `services/user-service/`, stubbed company-admin Users page. Full report: USER_MANAGEMENT_REVIEW_2026-05-13.md. Patch sketch: add `?force=true` to DELETE endpoint, new server-side `POST /v1/user-management/users/purge-inactive`, Alembic FK migration to `ON DELETE SET NULL`, Cognito `admin_disable_user` on soft delete. ~2-3 hours of dev. No code changes this session — review only.</div>
@@ -23993,13 +24001,23 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-12 — Prompt #1090 [orphan hooks → enabled: false]</div>
+          <div class="timestamp">2026-05-12 — Prompt #1087 [orphan hooks → enabled: false]</div>
           <div class="prompt-text">wire those last 3 orphan hooks to enabled: false → verify what in browser? → SupAd/User/Mgmt/Comp HARs → SupAd HAR re-upload → log this session.</div>
         </div>
 
         <div class="prompt-entry">
           <div class="timestamp">2026-05-12 — Activity #act-pr50-orphan-hooks [PR #50 shipped + verified]</div>
           <div class="prompt-text">PR #50 (chore/disable-orphan-hooks → development, squashed to eaae231) closes the last DevTools 404 noise across all four role dashboards. Three React Query hooks whose endpoints have no backend implementation are now `enabled: false` by default with an opt-in `{ enabled: true }` second arg for tests / future re-enable: useDashboardSystem (GET /v1/dashboard/system — backlog #9 Bug A), useFeedbackStats (GET /v1/admin/feedback/stats — backlog #9 Bug B), usePrismHistory (GET /v1/prism/history/{userId} — backlog #10.U). Each was firing 3× per page load via React Query default retries → 9 DevTools 404s per super-admin or user dashboard visit. Consumer change: DashboardSystem.tsx skeleton check now `isPending && fetchStatus === "fetching"` so the disabled hook renders `0` instead of an infinite skeleton (all five other consumers use `isLoading`, which is `false` when `enabled: false`, so they were unaffected). Test fixtures updated: useDashboardSystem.test.tsx (4 cases) + useFeedback.test.tsx (1 case) + usePrismHooks.test.tsx (1 case) pass `{ enabled: true }`; DashboardSystem.test.tsx skeleton case mocks `fetchStatus: 'fetching'`. useDashboardSystem `options` parameter loosened to `Partial<UseQueryOptions<...>>` so callers can pass `{ enabled: true }` without supplying `queryKey` (caught by `tsc -b` in CI after the first push). Final CI: Build/Trivy/Audit/Unit Tests (17m6s, 2978 tests) all green; squash-merged. Dev deploy succeeded (Deploy to Production cancelled, as designed — manual approval gate). Browser-verified against d1nxsns258du4y.cloudfront.net with fresh HARs for all four roles: User 3/3 entries 200, Manager 6/6 entries 200/202, Company 5/5 entries 200/202, Super Admin 5/5 entries 200. Zero 4xx, zero 5xx across all four dashboards; the three orphan endpoints no longer appear in any HAR. Console "asynchronous response by returning true" error identified as benign browser-extension noise (chrome.runtime.onMessage), not from our app.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1091 [/log-session — Wave 0 close-out + roadmap doc]</div>
+          <div class="prompt-text">merge the final 4 Wave 0 PRs (#29, #33, #34, #36) → then create a Word document of the post-Wave-0 roadmap in priority + parallel order. After that: /log-session.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Activity #act-wave0-closeout [Wave 0 final 4 PRs merged + roadmap doc]</div>
+          <div class="prompt-text">Closed out Wave 0 of the IG Dashboard Rationalization Plan v2. Merged the last 4 open Wave 0 PRs into inspire-genius-frontend:development (squash): PR #33 Lane 0.H DashboardFrame primitive (e8259884, clean), PR #34 Lane 0.G ChartKit primitives (1c9ba679 — doc-file conflicts only, resolved by keeping both Lane 0.G content and origin/development's R-2.9 entry; CI Build 1m26s + Unit Tests 16m32s green), PR #29 Lane 0.A super-admin deletes D2+D1+D8 (3ec7d165 — doc-file conflicts only, took --theirs since wave-0a's local R-2.1 doc-mirror was already superseded by dev's authoritative content; CI Unit Tests 15m57s green), PR #36 Lane 0.E KnowledgeBase + CulturalContent merge O7 (8b8b4889 — real code conflicts in src/constants/navigation.ts and src/routes.tsx; kept dev's PRISM Management additions and wave-0e's Cultural Content removal + redirect; re-merged twice; CI Unit Tests 16m29s green). Wave 0 now 100% complete — 9/9 lanes shipped. Then authored Transformation Documents/IG_Dashboard_Rationalization_Post_Wave0_Roadmap.docx (~55 KB, with Logo-Dark.png header) — priority-ordered Tier 1 (Run NOW, no platform gate, Wave 1 lanes 1.A→1.E) / Tier 2 (Run NOW, gates cleared, Wave 2 + Wave 3 evidence) / Tier 3 (Gated on R-2.10, Wave 4) / Tier 4 (Final sweep, Wave 5) with per-tier lane tables, recommended parallel batches, and §4.1/§4.2/§4.3 cross-refs to the v2 plan. Wave 1 is unblocked next (5 parallel-safe lanes: P3.2/P3.3/P3.4/P3.5 ChartKit consumers + P6.2 DashboardFrame adopt across 6 role dashboards).</div>
         </div>
 </div>
 
