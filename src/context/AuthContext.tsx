@@ -23,6 +23,7 @@ import {
   getNextStep,
 } from "@/lib/storage";
 import { syncAuthToken } from "@/lib/axios";
+import { checkForUpdate } from "@/lib/buildVersion";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
 import { NEXT_STEPS, ROUTES } from "@/constants/routes";
@@ -191,6 +192,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
       logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
+
+      // If a new bundle has been deployed since this tab was opened, reload
+      // before navigating so the user lands on the fresh code. Tokens were
+      // already persisted above, so hydrate-on-mount picks up the session
+      // post-reload and the navigate becomes redundant.
+      const reloading = await checkForUpdate();
+      if (reloading) return;
+
       navigateAfterAuth(resolvedRole, isOnboardingCompleted);
     },
     [computeIsOnboarded, navigateAfterAuth]
