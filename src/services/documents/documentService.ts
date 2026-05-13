@@ -1,32 +1,17 @@
 /**
- * Document Service client — presigned URL uploads, processing, search.
+ * Document Service client — presigned URL uploads, processing, list,
+ * download, delete, search.
  *
- * Talks to the new Document Service Lambda (v1/documents/*).
- * The legacy fileService.ts talks to the monolith (v1/file_service/*).
+ * Routes through API Gateway → /v1/documents/* → document-service Lambda,
+ * which writes to Aurora `documents` + `document_chunks` (pgvector).
+ *
+ * Per the 2026-05-10 pgvector consolidation decision, this is the
+ * canonical document path. The legacy monolith /v1/file_service/*
+ * endpoints write to the doomed Milvus users_db and are being retired
+ * with the monolith Alex agent (see `.claude/rules/agents.md` W.1).
  */
-import { api, monolithBaseUrl } from "@/lib/axios";
+import { api } from "@/lib/axios";
 import { agentApi } from "@/lib/agentApi";
-import axios from "axios";
-import { getToken } from "@/lib/storage";
-
-/**
- * Monolith-direct axios instance for file operations.
- * The document-service Lambda routes (/v1/documents/*) are not yet
- * in the API Gateway, so presigned URL requests must go through the
- * monolith (CloudFront → ALB) until infrastructure is updated.
- */
-const monolithApi = axios.create({
-  baseURL: monolithBaseUrl,
-  withCredentials: true,
-});
-// Inject auth token on each request
-monolithApi.interceptors.request.use(async (config) => {
-  try {
-    const token = await getToken();
-    if (token) config.headers.set?.("access-token", token);
-  } catch { /* ignore */ }
-  return config;
-});
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -101,19 +86,14 @@ type SearchResponse = {
 
 /** Initiate upload — returns presigned S3 URL for direct upload.
  *
- * Tries the API Gateway route first (/v1/documents/upload → document-service).
- * Falls back to the monolith's file_service multipart upload if the
- * document-service route is unavailable (common until API Gateway is updated).
+ * Posts to /v1/documents/upload on the document-service (via API Gateway).
+ * Per the 2026-05-10 pgvector consolidation decision, this is the canonical
+ * upload path; the monolith /v1/file_service/* path is being retired with
+ * the monolith Alex agent and writes to the doomed Milvus users_db.
  */
 export async function initiateUpload(req: PresignedUrlRequest): Promise<PresignedUrlResponse> {
-  try {
-    const resp = await api.post("/v1/documents/upload", req);
-    return (resp.data as { data: PresignedUrlResponse }).data;
-  } catch {
-    // document-service route not available — fall back to monolith
-    const resp = await monolithApi.post("/v1/documents/upload", req);
-    return (resp.data as { data: PresignedUrlResponse }).data;
-  }
+  const resp = await api.post("/v1/documents/upload", req);
+  return (resp.data as { data: PresignedUrlResponse }).data;
 }
 
 /** Upload a file using the presigned URL from initiateUpload. */
@@ -145,22 +125,20 @@ export async function uploadToS3(
   });
 }
 
-/** Trigger server-side processing (scan, extract, chunk). */
+/** Trigger server-side processing (scan, extract, chunk, embed → pgvector). */
 export async function triggerProcessing(documentId: string): Promise<DocumentOut> {
-  try {
-    const resp = await api.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
-    return (resp.data as { data: DocumentOut }).data;
-  } catch {
-    const resp = await monolithApi.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
-    return (resp.data as { data: DocumentOut }).data;
-  }
+  const resp = await api.post(`/v1/documents/${encodeURIComponent(documentId)}/process`);
+  return (resp.data as { data: DocumentOut }).data;
 }
 
 /** List documents with pagination and filters.
  *
- * Uses the monolith /v1/file_service/list/v2 endpoint (which is actually deployed)
- * and transforms the date-grouped response into the flat DocumentListResponse shape
- * expected by the Documents page.
+ * Hits document-service GET /v1/documents/ directly (pgvector-backed
+ * `documents` table). Returns canonical DocumentListResponse shape.
+ *
+ * Per 2026-05-10 pgvector consolidation: document-service is the
+ * source of truth. The legacy monolith /v1/file_service/list/v2
+ * still exists but reads from the doomed Milvus users_db.
  */
 export async function listDocumentsV2(params?: {
   user_id?: string;
@@ -171,65 +149,17 @@ export async function listDocumentsV2(params?: {
   limit?: number;
   offset?: number;
 }): Promise<DocumentListResponse> {
-  // Map params to the monolith's expected query params
-  const page = params?.offset && params?.limit ? Math.floor(params.offset / params.limit) + 1 : 1;
-  const pageSize = params?.limit ?? 10;
-  const monolithParams: Record<string, unknown> = { page, page_size: pageSize };
-  if (params?.search) monolithParams.search = params.search;
-  // The monolith uses 'date' param in YYYY-MM-DD format (passed as 'status' from Documents page)
-  if (params?.status) monolithParams.date = params.status;
-
-  const resp = await api.get("/v1/file_service/list/v2", {
-    params: monolithParams,
-    withCredentials: true,
-  });
-
-  // Unwrap BaseApiResponse envelope: { status, data: { date_groups, total_count, ... } }
-  const body = resp.data as Record<string, unknown>;
-  const envelope = (body?.data ?? body) as Record<string, unknown>;
-
-  type ApiFile = {
-    id?: string;
-    filename?: string;
-    file_type?: string;
-    file_key?: string;
-    created_at?: string;
-    category_name?: string;
-    [k: string]: unknown;
-  };
-  type ApiGroup = { date_label?: string; date?: string; files?: ApiFile[] };
-
-  const dateGroups = (envelope?.date_groups ?? []) as ApiGroup[];
-  const totalCount = (envelope?.total_count ?? 0) as number;
-
-  // Flatten date_groups into a flat documents array matching DocumentOut shape
-  const documents: DocumentOut[] = dateGroups.flatMap((g) =>
-    (g.files ?? []).map((f): DocumentOut => ({
-      id: String(f.id ?? ""),
-      user_id: "",
-      company_id: null,
-      filename: f.filename ?? "",
-      content_type: "",
-      file_size: 0,
-      status: "ready",
-      status_detail: null,
-      page_count: null,
-      chunk_count: 0,
-      doc_kind: f.file_type ?? "doc",
-      tags: null,
-      metadata: null,
-      created_at: f.created_at ?? "",
-      updated_at: f.created_at ?? "",
-    })),
-  );
-
-  return {
-    documents,
-    total: totalCount,
-    limit: pageSize,
+  const query: Record<string, unknown> = {
+    limit: params?.limit ?? 20,
     offset: params?.offset ?? 0,
-    has_more: documents.length >= pageSize,
   };
+  if (params?.company_id) query.company_id = params.company_id;
+  if (params?.doc_kind) query.doc_kind = params.doc_kind;
+  if (params?.status) query.status = params.status;
+  if (params?.search) query.search = params.search;
+
+  const resp = await api.get("/v1/documents/", { params: query });
+  return (resp.data as { data: DocumentListResponse }).data;
 }
 
 /** Get a single document by ID. */
@@ -238,22 +168,19 @@ export async function getDocument(documentId: string): Promise<DocumentOut> {
   return (resp.data as { data: DocumentOut }).data;
 }
 
-/** Get presigned download URL via monolith file_service. */
+/** Get presigned download URL from document-service. */
 export async function getDownloadUrl(documentId: string): Promise<string> {
-  const resp = await api.get(`/v1/file_service/download/${encodeURIComponent(documentId)}`);
-  const data = resp.data as Record<string, unknown>;
-  // FileDownloadResponse has download_url at top level or nested in data
-  const inner = (data?.data ?? data) as Record<string, unknown>;
-  const url = (inner?.download_url ?? inner?.url ?? inner?.link) as string | undefined;
-  if (url && typeof url === "string") return url;
+  const resp = await api.get(`/v1/documents/${encodeURIComponent(documentId)}/download`);
+  // ApiResponse envelope: { status, data: { url } }
+  const inner = ((resp.data as Record<string, unknown>)?.data ?? resp.data) as Record<string, unknown>;
+  const url = (inner?.url ?? inner?.download_url ?? inner?.link) as string | undefined;
+  if (typeof url === "string") return url;
   throw new Error("Unexpected download response shape");
 }
 
-/** Delete a document via monolith file_service. */
+/** Delete a document via document-service. */
 export async function deleteDocumentV2(documentId: string): Promise<void> {
-  await api.delete(`/v1/file_service/${encodeURIComponent(documentId)}`, {
-    withCredentials: true,
-  });
+  await api.delete(`/v1/documents/${encodeURIComponent(documentId)}`);
 }
 
 // ─── Vectorization (Agent Engine) ───────────────────────────────
