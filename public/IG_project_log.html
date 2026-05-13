@@ -2351,6 +2351,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
         <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1090 [Stale-bundle detection: merge, CDK deploy, end-to-end verification]</div>
+          <div class="prompt-text">Continues prompt #1086. User: "merge them in order: #90, #54, #91, #55" → "trigger the CDK deploy" → "test it by pushing a dummy commit". Merged all four PRs (#90 3cb059d → #54 d04b280 → #91 e1d8c9d → #55 ba472fe). Fired CDK workflow_dispatch with environment=dev dry_run=false; run 25774950234 completed all 4 jobs (Validate, Diff, Deploy, Verify). Confirmed CloudFront E3EFVMBYYVF012 now applies CACHING_DISABLED policy 4135ea2d-6df8-44a3-9df3-4b5a84be39ad to /index.html and /version.json; live HEAD probes return cache-control:no-cache,no-store,must-revalidate and x-cache:Miss. PR #58 (c12b03a) was a comment-only commit to buildVersion.ts to test the full gate — pre-merge SHA on /version.json was 6820e288...; expecting c12b03af... after deploy lands. Closes the operator-reported "stale webpage on login" issue structurally.</div>
+        </div>
+        <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1089 [/bedtime detailed User Management review]</div>
           <div class="prompt-text">/bedtime — detailed top-to-bottom review of User Management. Find any issues, supply solutions and advise on next steps. Answer: "There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?" Root cause: `delete_user_by_email()` in `inspire-genius-backend/users/auth_service/schema.py:741-873` explicitly returns success:false "already deactivated" whenever `user.is_deleted=True` — no force flag, no separate purge path. Frontend "Purge inactive" button (`user-management.service.ts:178`) loops through inactive emails and hits the same refusing endpoint, so the list never shrinks. Secondary issues: missing Cognito `admin_disable_user` on soft delete (Cognito stays enabled), FK landmines on `issues.reported_by` + `organization_agents.assigned_by` (NO ACTION will block force-purge of users who have reported issues), hardcoded `actor_email:"admin"` in audit logs, `deletion_type` type mismatch (`"invitation_only"` vs declared `"soft_delete"`), three overlapping invite paths, orphaned `services/user-service/`, stubbed company-admin Users page. Full report: USER_MANAGEMENT_REVIEW_2026-05-13.md. Patch sketch: add `?force=true` to DELETE endpoint, new server-side `POST /v1/user-management/users/purge-inactive`, Alembic FK migration to `ON DELETE SET NULL`, Cognito `admin_disable_user` on soft delete. ~2-3 hours of dev. No code changes this session — review only.</div>
         </div>
@@ -23993,7 +23997,7 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         </div>
 
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-12 — Prompt #1090 [orphan hooks → enabled: false]</div>
+          <div class="timestamp">2026-05-12 — Prompt #1087 [orphan hooks → enabled: false]</div>
           <div class="prompt-text">wire those last 3 orphan hooks to enabled: false → verify what in browser? → SupAd/User/Mgmt/Comp HARs → SupAd HAR re-upload → log this session.</div>
         </div>
 
