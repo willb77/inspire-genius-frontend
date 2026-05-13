@@ -1,3 +1,28 @@
+## [2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)
+
+Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.
+
+### Fixed
+- `wesley@excalibureducation.com` now provisioned across all three auth surfaces:
+  - **Cognito** — deleted (he was stuck in `RESET_REQUIRED` since 2026-05-12, blocking the password-reset path that auth-service uses).
+  - **Magic-Auth** (`inspires_genius.magic_auth.users`) — inserted via `POST /api/auth/add-user`, user_id `5c71fd82-64f1-4c94-8807-a2966f7d3676`, role `user`, is_active=true, email_verified=true.
+  - **Canonical** (`inspire_genius.public.users`) — inserted with the SAME user_id so the agent-engine canonical-sub remap (PR #93) is a no-op for him; auth_provider=`cognito` (the enum has no `magic_link` value yet — kept for consistency with existing rows). No `user_profiles`/`org_users` linkage per 2c choice; "IG" organisation was not created.
+- Chat document upload bucket (`ig-dev-documents`) now has CORS. Symptom: every browser-direct presigned POST since 2026-05-09 silently failed (file never landed in S3) while the document-service Lambda happily wrote a DB row + returned a presigned URL. Accumulated **42 orphan documents** with `file_size=0 status=pending` across 9 different user_ids. Wesley's CV PDF actually went through via the monolith bridge (server-to-server, no browser CORS needed) which is why `inspires-genius-dev-documents` has his file but the document-service bucket was empty.
+
+### Added
+- `infrastructure/cdk/lib/services-stack.ts:704` — `cors:` block on `DocumentsBucket` with scoped origins (`https://dev.inspiresgenius.com`, both CloudFront aliases, `http://localhost:5173`) matching magic-auth's `FRONTEND_ORIGINS` env. Methods: POST/GET/HEAD/PUT. Without this commit the next `cdk deploy` would synth a template without the rule and silently revert the hotfix. **PR #98** opened against `development`.
+
+### Operational
+- Live hotfix applied to `ig-dev-documents` via `aws s3api put-bucket-cors` before the CDK commit; preflight verified from `https://dev.inspiresgenius.com` returns `200` + the expected `access-control-allow-*` headers.
+- 42 orphan `public.documents` rows deleted (`file_size=0 AND status='pending' AND s3_bucket='ig-dev-documents'`). Zero `document_chunks` attached — fully recoverable-loss-free; users whose past upload silently failed need to re-upload.
+
+### Known follow-ups (not done this session)
+- `auth_provider_enum` has no `magic_link` value. Wesley is tagged `cognito` to fit the existing enum. If we want to track auth source accurately, that's an `ALTER TYPE … ADD VALUE` migration.
+- The other bucket `ig-dev-uploads` (used for internal Lambda code packaging only) also lacks CORS but isn't browser-facing — left alone.
+- The Magic-Auth ⇄ canonical sub mismatch from the memory entry still exists for older users whose Magic-Auth user_id ≠ their `public.users.user_id` (will's 7 docs under `346854a8-…` for example). PR #93 remaps the JWT sub correctly going forward, but historical rows stay where they were written.
+
+---
+
 ## [2026-05-13] — Meridian review deliverables: MD report + ready-to-run prompts + Word renderings
 
 Wraps the `/bedtime` review session. Captures the review artifacts so they can be paged through in Word and re-run as prompts.

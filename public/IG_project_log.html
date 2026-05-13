@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1092</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1093</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,28 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)</h3>
+        <p>Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.</p>
+        <h4>Fixed — wesley@excalibureducation.com</h4>
+        <ul>
+          <li><strong>Cognito</strong>: deleted (he was stuck in <code>RESET_REQUIRED</code> since 2026-05-12, blocking the password-reset path that auth-service uses).</li>
+          <li><strong>Magic-Auth</strong> (<code>inspires_genius.magic_auth.users</code>): inserted via <code>POST /api/auth/add-user</code>, user_id <code>5c71fd82-64f1-4c94-8807-a2966f7d3676</code>, role <code>user</code>, is_active=true, email_verified=true.</li>
+          <li><strong>Canonical</strong> (<code>inspire_genius.public.users</code>): inserted with the SAME user_id so the agent-engine canonical-sub remap (PR #93) is a no-op for him; <code>auth_provider=cognito</code> (the enum has no <code>magic_link</code> value yet — kept for consistency with existing rows). No <code>user_profiles</code>/<code>org_users</code> linkage; "IG" organisation was not created.</li>
+        </ul>
+        <h4>Fixed — chat document upload was broken for ALL users since 2026-05-09</h4>
+        <ul>
+          <li><strong>Symptom</strong>: every browser-direct presigned POST silently failed (file never landed in S3) while the document-service Lambda happily wrote a DB row + returned a presigned URL. Accumulated <strong>42 orphan documents</strong> with <code>file_size=0 status=pending</code> across 9 different user_ids.</li>
+          <li><strong>Root cause</strong>: <code>ig-dev-documents</code> bucket had no CORS configuration, so the browser blocked every cross-origin POST. The other bucket <code>inspires-genius-dev-documents</code> (used by the monolith bridge, server-to-server, no browser CORS) had CORS and worked — that's why wesley's CV PDF actually went through that path on 2026-05-12 but his chat uploads didn't.</li>
+          <li><strong>Live hotfix</strong>: <code>aws s3api put-bucket-cors</code> on <code>ig-dev-documents</code> with scoped origins (<code>https://dev.inspiresgenius.com</code>, both CloudFront aliases, <code>http://localhost:5173</code>) matching magic-auth's <code>FRONTEND_ORIGINS</code> env. Methods POST/GET/HEAD/PUT. Preflight verified live.</li>
+          <li><strong>CDK durability</strong>: <code>infrastructure/cdk/lib/services-stack.ts:704</code> — added <code>cors:</code> block to the <code>DocumentsBucket</code> definition with the same scope. Without it the next <code>cdk deploy</code> would synth a template without the rule and silently revert the hotfix. <strong><a href="https://github.com/willb77/inspire-genius/pull/98">PR #98</a></strong> opened against <code>development</code>.</li>
+          <li><strong>Orphan cleanup</strong>: 42 <code>public.documents</code> rows deleted (<code>file_size=0 AND status='pending' AND s3_bucket='ig-dev-documents'</code>). Zero <code>document_chunks</code> attached — no recoverable data; affected users need to re-upload.</li>
+        </ul>
+        <h4>Known follow-ups</h4>
+        <ul>
+          <li><code>auth_provider_enum</code> has no <code>magic_link</code> value. Wesley is tagged <code>cognito</code> to fit the existing enum. If we want to track auth source accurately, that's an <code>ALTER TYPE … ADD VALUE</code> migration.</li>
+          <li>Magic-Auth ⇄ canonical sub mismatch from PR #93 still affects older users whose Magic-Auth user_id ≠ <code>public.users.user_id</code> (will's 7 docs under <code>346854a8-…</code>). PR #93 remaps JWT sub going forward; historical rows stay where they were written.</li>
+        </ul>
 
         <h3>[2026-05-13] — User Management top-to-bottom review (no code changes yet)</h3>
         <p>Triggered by an operator question: <em>"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"</em></p>
@@ -2350,6 +2372,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1093 [wesley magic-link + chat upload CORS hotfix]</div>
+          <div class="prompt-text">"My users are still having trouble loging in. Please review the magic link path for wesley@excalibureducation.com" → "remove Wesley from the cognito build and add him to the Magic-Auth" → "yes role = user, organization = IG" → "1a and 2c, contact willb77@3pp.com" → "his document upload from chat is not working with pdf" → "B" (scoped CORS origins) → "no one can upload documents from chat will this fix it for all?" → "ok do B" → "do 1, 2, and 3" (commit CDK, clean orphans, update logs). Result: wesley removed from Cognito, added to Magic-Auth (user_id 5c71fd82-…), and to public.users with matching user_id (canonical-sub remap is no-op for him). Diagnosed chat upload outage: ig-dev-documents bucket had no CORS → 42 orphan documents accumulated since 2026-05-09. Applied live CORS hotfix with scoped origins (dev.inspiresgenius.com + 2 CloudFront aliases + localhost:5173); preflight verified 200. Baked into CDK (services-stack.ts:704) and opened PR #98 against development. Deleted 42 orphan rows.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1092 [/log-session — Meridian review deliverables]</div>
           <div class="prompt-text">Captures the /bedtime review deliverables: MERIDIAN_REVIEW_2026-05-13.md (sub-agent-generated, with my correction box at top — TL;DR P0 #1 claim about chat_messages missing Phase C columns was wrong, table actually has 29 cols), MERIDIAN_REVIEW_PROMPTS.md (12 ready-to-paste /full-go prompts, one per finding), plus Word renderings of both via the generalised scripts/build_meridian_review_docx.py. Verified P0 obs-tables-missing, P1 SECURITY RAG tenant leak in _search_pgvector, and P1 ObservabilityPanel msg-id mismatch.</div>
