@@ -80,7 +80,11 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
+<<<<<<< Updated upstream
       <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1086</span></button>
+=======
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1088</span></button>
+>>>>>>> Stashed changes
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2314,6 +2318,14 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1088 [/bedtime full review: Observability + History + Sources]</div>
+          <div class="prompt-text">/bedtime — detailed top-to-bottom review of Observability, History, and Sources. Find any issues, supply solutions and advise on next steps. Full review report written to MERIDIAN_REVIEW_2026-05-13.md at repo root.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 early AM — Prompt #1087 [canonical-sub remap, do A + B]</div>
+          <div class="prompt-text">do a and B. merge my account willb77@3pp.com has two different user_ids: 3468e498-… (Cognito in public.users) and 346854a8-… (Magic-Auth JWT). they should be the same regardless of login method. Result: PR #93 merged — agent-engine remaps Magic-Auth sub → canonical public.users.user_id via email lookup at auth boundary (require_auth + WS /ws/chat handler). 10-min in-memory TTL cache. Verified live in CloudWatch: "Remapping sub for willb77@3pp.com: 346854a8-… -> 3468e498-…". Fixes the chat_messages FK violation that had silently rolled back every Magic-Auth-authenticated chat write.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-12 PM — Prompt #1086 [Stale-bundle detection: auto-reload on login when deploy is fresher than tab]</div>
           <div class="prompt-text">"I continue to get stale webpage when other log in. I know to do a hard refresh but other users don't. Can you add a setting to reload and refresh the page on login if there is a difference between what the user has locally and what is being served?" → "do both" (frontend version check + CDN cache headers). Implemented: Vite plugin emits dist/version.json from VITE_APP_VERSION (github.sha); src/lib/buildVersion.ts checkForUpdate() fetches /version.json with cache:no-store, force-reloads on mismatch (with service-worker unregister + Cache API clear + sessionStorage loop guard); wired into AuthContext.finalizeAuth (after token persist, before navigate) + App.AppInner mount. CDN: domain-stack.ts adds CACHING_DISABLED behaviors for /index.html + /version.json; ci-deploy.yml rewrites Cache-Control to no-cache on both files post-sync (both buckets). PRs: frontend #54, monorepo #90.</div>

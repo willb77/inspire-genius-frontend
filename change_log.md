@@ -1,3 +1,46 @@
+## [2026-05-13 early AM] — Meridian backend end-to-end: History + Observability + Sources unblocked
+
+Continuation of the four-Meridian-bug fix. Started with observability Layer 2 (RDS Proxy role auth), expanded through three more independent issues uncovered only by live-curl after each deploy.
+
+### Added
+- `services/agent-engine/app/auth_deps.py` — `_resolve_canonical_sub()` looks up `public.users.user_id` by JWT email and rewrites `claims["sub"]` at the auth boundary. 10-minute in-memory TTL cache. WS `/ws/chat` handler invokes the same remap so both REST and WS paths normalize.
+  - **Why:** the Magic-Auth Lambda (`inspires-genius-magic-auth`) runs against a **separate** Aurora DB `inspires_genius` (underscore) with its own `magic_auth.users` table; the main app uses `inspire_genius.public.users`. The two assign **different UUIDs** for the same email. `chat_messages.user_id` has a FK to `public.users.user_id`, so every Magic-Auth-authenticated chat write rolled back silently with `ForeignKeyViolationError`.
+- `services/observability-service/app/database.py` — `_hydrate_credentials_from_secret()` (cold-start) reads master Aurora secret via Secrets Manager when `OBS_SERVICE_DB_CREDENTIALS_SECRET_ARN` is set. Mirror of the document-service pattern.
+- `services/observability-service/app/service.py` — every query wrapped in `ProgrammingError` catch keyed off `"does not exist" / "undefinedtable"` → returns `None / [] / empty DashboardMetrics` so missing analytics tables render as empty state, not HTTP 500.
+
+### Changed
+- `services/agent-engine/app/routes/conversations.py` — full rewrite. Was a stub backed by two module-level Python dicts (`_conversations`, `_messages`) that wiped on every ECS task cold start. Now reads from canonical `public.chat_messages` table:
+  - `list_conversations` — `GROUP BY session_id` filtered to caller's user_id; title = latest `__CONV_TITLE__:<title>` sentinel system row OR first user message snippet (80 char).
+  - `get_messages` — paginated SELECT; sentinel rows filtered out.
+  - `delete_conversation` — DELETE scoped by `(session_id, user_id)`.
+  - `rename_conversation` — INSERT `role='system'` sentinel row tagged `__CONV_TITLE__:`. No Alembic migration required.
+  - `download_conversation` — CSV serialise from same source.
+  - `start_session` — pure UUID minter; first WS/REST message implicitly creates the conversation.
+- `services/agent-engine/app/main.py` — `include_router(conversations_router)` (router file existed since PR #88 but was never wired into the FastAPI app; ECS returned 404 for `/v1/chat/conversations*` until PR #92). Plus WS handler now invokes `_resolve_canonical_sub`.
+- `infrastructure/cdk/lib/services-stack.ts` — observability Lambda IAM policy swapped from dead `rds-db:connect` (against never-registered `observability_service` Postgres role) to `secretsmanager:GetSecretValue` scoped to the master Aurora secret. Env now carries `OBS_SERVICE_DB_CREDENTIALS_SECRET_ARN`.
+- `inspire-genius-frontend/src/services/observability/observability.service.ts` — every `/v1/observability/*` call wrapped in axios 404 catch → returns `null / []`. React Query's `isError` stays false; drawer renders existing empty state instead of PR #53's error toast.
+
+### Fixed
+- **Observability 500s → 404/empty** (three layers): (1) TLS — PR #86 (prior session). (2) RDS Proxy role auth — PR #87. (3) missing analytics tables → graceful empty — PR #89. Backend deploys: CDK run `25751321331`, `25752473758`.
+- **Conversation routes 404 → 200** — PR #92 registers the router in `main.py`. Plus API Gateway re-route from stale Mangum Lambda integration `j6i34wd` (last code update 2026-04-27) to ALB VPC-link integration `nj5msbs` (live ECS) for 6 routes: `GET /v1/chat/conversations`, `POST /v1/chat/sessions/start`, `GET/PATCH/DELETE /v1/chat/conversations/{id}`, `GET /v1/chat/conversations/{id}/messages`, `GET /v1/chat/conversations/{id}/download`.
+- **chat_message write FK violation** — PR #93 canonical-sub remap. Verified via CloudWatch: `INFO:app.auth_deps:Remapping sub for willb77@3pp.com: 346854a8-... -> 3468e498-...`. Future chats from Magic-Auth users now persist.
+- **Frontend "backend unavailable" toast on 404** — PR #56 (frontend) treats 404 as empty data.
+
+### Shipped / merged
+- Monorepo PRs: **#87, #88, #89, #92, #93** — all squash-merged to `development`.
+- Frontend PRs: **#53, #56** — both squash-merged to `development`.
+- Infra: 6 × API Gateway `update-route` (Lambda → ALB); 3 × CDK deploys; 4 × agent-engine image rebuild + ECS roll; 1 × autoscaling min-capacity 0→1 (off-hours scheduled scaling had taken dev to zero tasks during deploy window).
+
+### Operational notes
+- Off-hours scheduled scaling sets dev ECS min=0 — manually bumped to min=1 to keep the service warm overnight. Worth reviewing whether `agent-engine-image.yml`'s `force-new-deployment` should temporarily lift the min.
+- The Magic-Auth Lambda (`inspires-genius-magic-auth`, deployed 2026-04-21) is out-of-tree; a proper long-term fix would be to make it look up `public.users` directly. The agent-engine remap is the pragmatic interception point until then.
+
+### Known follow-ups (not blocking)
+- Observability writer side is not wired — `response_observability` / `session_observability` / `observability_rollups` tables don't exist in Aurora. The read endpoints now degrade gracefully to empty, but the panel will stay empty until the agent-engine analytics module starts populating those tables.
+- The stale Mangum Lambda `ig-dev-agent-engine` (last code 2026-04-27) is still wired to other routes via the same `j6i34wd` integration. Worth auditing what else points at it.
+
+---
+
 ## [2026-05-12 PM] — Stale-bundle detection: auto-reload on login when deploy is fresher than tab
 
 Open issue: users log in and continue to see the old UI until they manually hard-refresh. Adds a build-time version stamp + client check that force-reloads when the deployed bundle differs from the one in the browser.
@@ -65,6 +108,57 @@ Open issue: users log in and continue to see the old UI until they manually hard
 
 ---
 
+<<<<<<< Updated upstream
+=======
+## [2026-05-12] — PR #50 merged + verified: orphan hooks wired to `enabled: false`
+
+**Verdict:** Closes the last DevTools 404 noise across all four role dashboards. Verified end-to-end on the dev deploy with fresh HARs — zero 4xx across User / Manager / Company / Super Admin.
+
+### Hooks disabled (default `enabled: false`, opt-in `{ enabled: true }`)
+- `useDashboardSystem` — `GET /v1/dashboard/system` (super-admin) — backlog #9 Bug A
+- `useFeedbackStats` — `GET /v1/admin/feedback/stats` (super-admin) — backlog #9 Bug B
+- `usePrismHistory` — `GET /v1/prism/history/{userId}` (user) — backlog #10.U
+
+Each was firing 3× per page load via React Query default retries → 9 DevTools 404s per super-admin or user dashboard visit. Now zero.
+
+### Consumer change
+- `DashboardSystem.tsx` skeleton check switched from `isPending` to `isPending && fetchStatus === "fetching"` so the disabled hook renders `0` instead of an infinite skeleton.
+
+### Test changes
+- All three disabled-hook test files now pass `{ enabled: true }` to verify query logic still works once endpoints are implemented.
+- `DashboardSystem.test.tsx` skeleton case mocks `fetchStatus: 'fetching'` alongside `isPending: true`.
+- `useDashboardSystem` `options` parameter loosened to `Partial<UseQueryOptions<...>>` so callers can pass `{ enabled: true }` without supplying `queryKey` (caught by `tsc -b` after the first push).
+
+### CI / Deploy
+- Final CI: Build / Trivy / Audit / Unit Tests (17m6s, 2978 tests) — all green.
+- Squash-merged to `development` → `eaae231`.
+- Deploy to Dev: success. Deploy to Production: cancelled (manual approval gate, as designed).
+
+### Browser verification (fresh HARs against `d1nxsns258du4y.cloudfront.net`)
+| Role | Entries | 4xx/5xx |
+|---|---|---|
+| User | 3 | 0 |
+| Manager | 6 | 0 |
+| Company | 5 | 0 |
+| Super Admin | 5 | 0 |
+
+The three orphan endpoints no longer appear in any of the four HARs.
+
+### Files
+- `src/hooks/super-admin/dashboard/useDashboardSystem.ts`
+- `src/hooks/feedback/useFeedback.ts`
+- `src/hooks/prism/usePrismHistory.ts`
+- `src/components/super-admin/dashboard/DashboardSystem.tsx`
+- `src/hooks/super-admin/dashboard/__tests__/useDashboardSystem.test.tsx`
+- `src/hooks/feedback/__tests__/useFeedback.test.tsx`
+- `src/hooks/prism/__tests__/usePrismHooks.test.tsx`
+- `src/components/super-admin/dashboard/__tests__/DashboardSystem.test.tsx`
+
+PR: https://github.com/willb77/inspire-genius-frontend/pull/50 — squash commit `eaae231`.
+
+---
+
+>>>>>>> Stashed changes
 ## [2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — PASS 7/7 strict
 
 **`/full-go r-2.9`** autonomous run. **Verdict: PASS 7/7 strict** on live R-2.9a CRUD matrix against `r22-residuals-v2` (digest `sha256:96d337cd...`).
