@@ -1,11 +1,22 @@
 /**
  * Culture Document Service — upload, list, delete org culture docs.
  *
- * Culture docs are stored as regular documents with doc_kind="corporate_culture"
- * and domain="cultural" in the backend. The document-service handles upload
- * and vectorization; this service layer adds culture-specific filters.
+ * Culture docs are regular documents tagged `doc_kind="corporate_culture"`.
+ * Per the 2026-05-10 pgvector consolidation, all flows route at the
+ * document-service via the B.2 presigned-URL pipeline (Aurora `documents`
+ * + `document_chunks` / pgvector).
+ *
+ * The previous monolith path (`/v1/file_service/*`) wrote to the doomed
+ * Milvus `users_db` and is being retired with the monolith Alex agent.
  */
-import { api } from "@/lib/axios"
+import {
+  initiateUpload,
+  uploadToS3,
+  triggerProcessing,
+  listDocumentsV2,
+  deleteDocumentV2,
+  type DocumentOut,
+} from "@/services/documents/documentService"
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -23,45 +34,57 @@ export type CultureDocListResponse = {
   total: number
 }
 
-// ─── API calls ──────────────────────────────────────────────────
+const CULTURE_DOC_KIND = "corporate_culture"
 
-/** List culture documents for the current user's organization. */
-export async function listCultureDocs(): Promise<CultureDocListResponse> {
-  const resp = await api.get("/v1/documents/culture")
-  const data = resp.data as { data?: CultureDocListResponse } & CultureDocListResponse
-  return data.data ?? data
+function toCultureDoc(d: DocumentOut): CultureDoc {
+  return {
+    id: d.id,
+    filename: d.filename,
+    file_type: d.doc_kind ?? d.content_type ?? "doc",
+    status: d.status,
+    created_at: d.created_at,
+    updated_at: d.updated_at,
+  }
 }
 
-/** Upload a culture document.
+// ─── API calls ──────────────────────────────────────────────────
+
+/** List culture documents (filtered server-side by doc_kind). */
+export async function listCultureDocs(): Promise<CultureDocListResponse> {
+  const result = await listDocumentsV2({
+    doc_kind: CULTURE_DOC_KIND,
+    limit: 100,
+  })
+  return {
+    documents: result.documents.map(toCultureDoc),
+    total: result.total,
+  }
+}
+
+/** Upload a culture document via the B.2 presigned-URL flow.
  *
- * Uses multipart form upload via the monolith file_service,
- * tagging with category "corporate_culture".
+ * 1. POST /v1/documents/upload with doc_kind=corporate_culture → presigned URL
+ * 2. PUT directly to S3 (no backend in upload byte path)
+ * 3. POST /v1/documents/{id}/process → scan + extract + chunk + embed → pgvector
  */
 export async function uploadCultureDoc(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<CultureDoc> {
-  const formData = new FormData()
-  formData.append("file", file)
-  formData.append("file_type", "corporate_culture")
-  formData.append("domain", "cultural")
-
-  const resp = await api.post("/v1/file_service/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    withCredentials: true,
-    onUploadProgress: (e) => {
-      if (onProgress && e.total) {
-        onProgress(Math.floor((e.loaded / e.total) * 100))
-      }
-    },
+  const presigned = await initiateUpload({
+    filename: file.name,
+    content_type: file.type || "application/octet-stream",
+    file_size: file.size,
+    doc_kind: CULTURE_DOC_KIND,
   })
-  const data = resp.data as { data?: CultureDoc } & CultureDoc
-  return data.data ?? data
+
+  await uploadToS3(presigned.upload_url, presigned.upload_fields, file, onProgress)
+
+  const doc = await triggerProcessing(presigned.document_id)
+  return toCultureDoc(doc)
 }
 
 /** Delete a culture document. */
 export async function deleteCultureDoc(documentId: string): Promise<void> {
-  await api.delete(`/v1/file_service/${encodeURIComponent(documentId)}`, {
-    withCredentials: true,
-  })
+  await deleteDocumentV2(documentId)
 }
