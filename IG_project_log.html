@@ -80,11 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-<<<<<<< Updated upstream
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1086</span></button>
-=======
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1088</span></button>
->>>>>>> Stashed changes
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1089</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -107,6 +103,42 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-13] — User Management top-to-bottom review (no code changes yet)</h3>
+        <p>Triggered by an operator question: <em>"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"</em></p>
+        <h4>Root cause (the dead end)</h4>
+        <p><code>delete_user_by_email()</code> in <code>inspire-genius-backend/users/auth_service/schema.py:741-873</code> returns <code>success: false, "User is already deactivated"</code> whenever <code>user.is_deleted = True</code>. There is no hard-delete branch for soft-deleted users, no <code>force</code> flag, and no separate purge endpoint. The frontend "Purge inactive users" button (<code>user-management.service.ts:178-223</code>) iterates inactive emails through this same endpoint, so every call is refused and the rows persist. Soft-delete is hit on the first click; second click is permanently rejected.</p>
+        <h4>Other issues found</h4>
+        <ul>
+          <li><strong>FK landmine for future fix</strong>: <code>issues.reported_by</code> and <code>organization_agents.assigned_by</code> are NO ACTION (implicit RESTRICT). A force-purge of real soft-deleted users will trip this. Fix: Alembic migration to <code>ON DELETE SET NULL</code> + null those columns before delete.</li>
+          <li><strong>Cognito drift on soft delete</strong>: only <code>update_cognito_user_attributes(is_active=False)</code> is called; the account itself is not disabled. <code>admin_disable_user</code> is missing.</li>
+          <li><strong>Audit log gap</strong>: <code>useUserManagement.ts</code> logs <code>actor_email: "admin"</code> as a literal string, not the calling super-admin.</li>
+          <li><strong>Type mismatch</strong>: <code>DeleteUserData.deletion_type</code> declares <code>'soft_delete'</code> but backend returns <code>"invitation_only"</code>.</li>
+          <li><strong>Three overlapping invite paths</strong>: monolith single, monolith bulk, microservice DynamoDB+SES. Frontend uses only the single monolith path.</li>
+          <li><strong>Orphaned <code>services/user-service/</code></strong>: full CRUD built, frontend never calls it. Also defines a different <code>user_profiles</code> schema than the monolith (collision waiting to happen).</li>
+          <li><strong>Company-admin Users page is a stub</strong>: <code>/api/company/users</code> doesn't exist.</li>
+          <li><code>UserManagement.tsx</code> bulk-delete reimplements the purge logic instead of reusing the hook (~700 LOC page).</li>
+        </ul>
+        <h4>Recommended fix (~2-3 hours)</h4>
+        <ul>
+          <li>Extend <code>DELETE /v1/user-management/users/{email}</code> to accept <code>?force=true</code> — super-admin only — that hard-deletes already-soft-deleted users.</li>
+          <li>New <code>POST /v1/user-management/users/purge-inactive</code> (server-side transactional fanout) to replace the client-side <code>Promise.allSettled</code> loop.</li>
+          <li>Alembic migration: <code>ALTER ... ON DELETE SET NULL</code> on <code>issues.reported_by</code> + <code>organization_agents.assigned_by</code>.</li>
+          <li>Add <code>cognito_client.admin_disable_user()</code> to the soft-delete branch; keep <code>admin_delete_user()</code> for force-purge.</li>
+          <li>Frontend: relabel row action to "Permanently delete" for deactivated rows, call <code>deleteUserByEmail(email, true)</code>; "Purge inactive" header button hits the new server endpoint.</li>
+          <li>Fix <code>actor_email</code> to read from <code>AuthContext</code>; rename <code>"invitation_only"</code> → <code>"soft_delete"</code>.</li>
+        </ul>
+        <h4>Why no code yet</h4>
+        <p>This is a <code>/bedtime</code> review only. The original author chose the audit-safety stance (no hard-delete of verified users); the patch reverses that for super-admin via a <code>force</code> flag, which is a product decision worth confirming before shipping. Full patch sketch + verification curl is in <code>USER_MANAGEMENT_REVIEW_2026-05-13.md</code>.</p>
+        <h4>Files cited</h4>
+        <ul>
+          <li><code>USER_MANAGEMENT_REVIEW_2026-05-13.md</code> (new, repo root)</li>
+          <li><code>inspire-genius-backend/users/auth_service/schema.py:741-873</code></li>
+          <li><code>inspire-genius-backend/users/auth_service/user_management.py</code></li>
+          <li><code>inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts</code></li>
+          <li><code>inspire-genius-frontend/src/hooks/super-admin/user-management/useUserManagement.ts</code></li>
+          <li><code>inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx</code></li>
+        </ul>
 
         <h3>[2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — <strong>PASS 7/7 strict</strong></h3>
         <p><code>/full-go r-2.9</code> autonomous run. <strong>Verdict: PASS 7/7 strict</strong> on live R-2.9a CRUD matrix against <code>r22-residuals-v2</code> (digest <code>sha256:96d337cd...</code>).</p>
@@ -2318,6 +2350,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1089 [/bedtime detailed User Management review]</div>
+          <div class="prompt-text">/bedtime — detailed top-to-bottom review of User Management. Find any issues, supply solutions and advise on next steps. Answer: "There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?" Root cause: `delete_user_by_email()` in `inspire-genius-backend/users/auth_service/schema.py:741-873` explicitly returns success:false "already deactivated" whenever `user.is_deleted=True` — no force flag, no separate purge path. Frontend "Purge inactive" button (`user-management.service.ts:178`) loops through inactive emails and hits the same refusing endpoint, so the list never shrinks. Secondary issues: missing Cognito `admin_disable_user` on soft delete (Cognito stays enabled), FK landmines on `issues.reported_by` + `organization_agents.assigned_by` (NO ACTION will block force-purge of users who have reported issues), hardcoded `actor_email:"admin"` in audit logs, `deletion_type` type mismatch (`"invitation_only"` vs declared `"soft_delete"`), three overlapping invite paths, orphaned `services/user-service/`, stubbed company-admin Users page. Full report: USER_MANAGEMENT_REVIEW_2026-05-13.md. Patch sketch: add `?force=true` to DELETE endpoint, new server-side `POST /v1/user-management/users/purge-inactive`, Alembic FK migration to `ON DELETE SET NULL`, Cognito `admin_disable_user` on soft delete. ~2-3 hours of dev. No code changes this session — review only.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1088 [/bedtime full review: Observability + History + Sources]</div>
           <div class="prompt-text">/bedtime — detailed top-to-bottom review of Observability, History, and Sources. Find any issues, supply solutions and advise on next steps. Full review report written to MERIDIAN_REVIEW_2026-05-13.md at repo root.</div>
@@ -23954,6 +23990,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-12 — Activity #act-w0i-costboard [Wave 0 Lane 0.I]</div>
           <div class="prompt-text">Shipped: new shared `CostBoard.tsx` panel (KPI strip + Cost by Mentor table + Cost by Model Tier rows + data-pending banner gated on R-2.4 closure) under `inspire-genius-frontend/src/components/super-admin/`. New per-scope hooks at `inspire-genius-frontend/src/hooks/cost-board/` — usePlatformCost composes useCostDashboard + useDashboardMetrics; useOrgCost proxies observability dashboard with an orgId placeholder; useDeptCost is a Wave-3 placeholder. Mounted &lt;CostBoard scope="platform"/&gt; in super-admin Dashboard (Cost Analysis tab) + Observability (Overview tab); mounted &lt;CostBoard scope="org"/&gt; in company-admin Observability. Removed the duplicated Cost Distribution + Cost-by-Mentor + per-page Cost-by-Model-Tier + per-page Total Cost / Total Tokens / Error Rate MetricCards from the three pages (those four metrics now live behind the shared panel). Updated super-admin and company-admin Observability page tests to mock `<CostBoard>` at the component boundary (no React-Query provider needed) and assert the scoped mount. 11 new CostBoard tests + updates kept the directory sweep at 67/67 suites, 702/702 tests green. `npm run build` + `npx tsc --noEmit` + `npx eslint` clean on all touched files. Plan reference §3 Wave 0 / Lane 0.I + §4.3 of IG_Dashboard_Rationalization_Plan_2.docx. Banner will be removed in Wave 3 once R-2.4 telemetry is fully verified end-to-end (see `TODO(R-2.4)` in CostBoard.tsx).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 — Prompt #1087 [orphan hooks → enabled: false]</div>
+          <div class="prompt-text">wire those last 3 orphan hooks to enabled: false → verify what in browser? → SupAd/User/Mgmt/Comp HARs → SupAd HAR re-upload → log this session.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-12 — Activity #act-pr50-orphan-hooks [PR #50 shipped + verified]</div>
+          <div class="prompt-text">PR #50 (chore/disable-orphan-hooks → development, squashed to eaae231) closes the last DevTools 404 noise across all four role dashboards. Three React Query hooks whose endpoints have no backend implementation are now `enabled: false` by default with an opt-in `{ enabled: true }` second arg for tests / future re-enable: useDashboardSystem (GET /v1/dashboard/system — backlog #9 Bug A), useFeedbackStats (GET /v1/admin/feedback/stats — backlog #9 Bug B), usePrismHistory (GET /v1/prism/history/{userId} — backlog #10.U). Each was firing 3× per page load via React Query default retries → 9 DevTools 404s per super-admin or user dashboard visit. Consumer change: DashboardSystem.tsx skeleton check now `isPending && fetchStatus === "fetching"` so the disabled hook renders `0` instead of an infinite skeleton (all five other consumers use `isLoading`, which is `false` when `enabled: false`, so they were unaffected). Test fixtures updated: useDashboardSystem.test.tsx (4 cases) + useFeedback.test.tsx (1 case) + usePrismHooks.test.tsx (1 case) pass `{ enabled: true }`; DashboardSystem.test.tsx skeleton case mocks `fetchStatus: 'fetching'`. useDashboardSystem `options` parameter loosened to `Partial<UseQueryOptions<...>>` so callers can pass `{ enabled: true }` without supplying `queryKey` (caught by `tsc -b` in CI after the first push). Final CI: Build/Trivy/Audit/Unit Tests (17m6s, 2978 tests) all green; squash-merged. Dev deploy succeeded (Deploy to Production cancelled, as designed — manual approval gate). Browser-verified against d1nxsns258du4y.cloudfront.net with fresh HARs for all four roles: User 3/3 entries 200, Manager 6/6 entries 200/202, Company 5/5 entries 200/202, Super Admin 5/5 entries 200. Zero 4xx, zero 5xx across all four dashboards; the three orphan endpoints no longer appear in any HAR. Console "asynchronous response by returning true" error identified as benign browser-extension noise (chrome.runtime.onMessage), not from our app.</div>
         </div>
 </div>
 

@@ -1,3 +1,29 @@
+## [2026-05-13] — User Management top-to-bottom review (no code changes yet)
+
+Triggered by an operator question: *"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"*
+
+### Findings
+- **Root cause located** in `inspire-genius-backend/users/auth_service/schema.py:741-873` (`delete_user_by_email`). When a user has `is_deleted=True`, the function explicitly returns `success: false, "User is already deactivated"` and exits. There is no hard-delete branch for soft-deleted users, no `force` flag, and no separate purge endpoint. The frontend "Purge inactive users" button (`user-management.service.ts:178-223`) iterates inactive emails through this same endpoint, so every call is refused and the rows persist.
+- **FK landmine** for any future hard-delete fix: `issues.reported_by` and `organization_agents.assigned_by` both use NO ACTION (implicit RESTRICT). The current code path never trips this because it only hard-deletes unverified users, who can't have populated those columns — but a force-purge of soft-deleted users will trip it on real operators.
+- **Cognito drift on soft delete:** soft-delete only writes the `is_active=False` attribute via `update_cognito_user_attributes`; the Cognito account itself is **not** disabled. `admin_disable_user` is missing from the path. Soft-deleted users can still potentially get tokens.
+- **Audit log gap:** every mutation in `useUserManagement.ts` logs `actor_email: "admin"` as a hard-coded literal instead of the calling super-admin's email.
+- **Type mismatch:** `DeleteUserData.deletion_type` declares `'soft_delete' | 'hard_delete' | string` but the backend returns `"invitation_only"` for the soft branch.
+- **Three overlapping invite paths** (monolith single, monolith bulk, microservice DynamoDB+SES) — frontend uses only the monolith single path.
+- **`pages/company-admin/Users.tsx` is a stub** — backend `/api/company/users` doesn't exist.
+- **`services/user-service/` is orphaned** — full CRUD built, frontend never calls it. Also defines a *different* `user_profiles` schema than the monolith (display_name/bio/avatar/preferences vs first_name/last_name/role/org_id/business_id).
+
+### Deliverables
+- `USER_MANAGEMENT_REVIEW_2026-05-13.md` (repo root) — full report with:
+  - architecture map (FE → service → hook → monolith → schema → Cognito)
+  - patch sketch (force-flag DELETE, server-side `POST /users/purge-inactive`, Alembic FK migration to `SET NULL`, Cognito `admin_disable_user` add)
+  - live-curl + browser verification plan
+  - 8-step recommended next-step list
+
+### Why no code yet
+This is a `/bedtime` review only — the patch needs operator confirmation that "Permanently delete" is the right product semantics (vs. the audit-safety stance the original author chose). Recommended fix is ~2-3 hours of dev + a one-line Alembic migration; flagged for the next active session.
+
+---
+
 ## [2026-05-13 early AM] — Meridian backend end-to-end: History + Observability + Sources unblocked
 
 Continuation of the four-Meridian-bug fix. Started with observability Layer 2 (RDS Proxy role auth), expanded through three more independent issues uncovered only by live-curl after each deploy.
@@ -108,8 +134,6 @@ Open issue: users log in and continue to see the old UI until they manually hard
 
 ---
 
-<<<<<<< Updated upstream
-=======
 ## [2026-05-12] — PR #50 merged + verified: orphan hooks wired to `enabled: false`
 
 **Verdict:** Closes the last DevTools 404 noise across all four role dashboards. Verified end-to-end on the dev deploy with fresh HARs — zero 4xx across User / Manager / Company / Super Admin.
@@ -158,7 +182,6 @@ PR: https://github.com/willb77/inspire-genius-frontend/pull/50 — squash commit
 
 ---
 
->>>>>>> Stashed changes
 ## [2026-05-12] — R-2.9 closed: PRISM ingestion + scoring E2E — PASS 7/7 strict
 
 **`/full-go r-2.9`** autonomous run. **Verdict: PASS 7/7 strict** on live R-2.9a CRUD matrix against `r22-residuals-v2` (digest `sha256:96d337cd...`).
