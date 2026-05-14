@@ -26,6 +26,7 @@ import {
   BookOpen,
   BookHeart,
   ShieldCheck,
+  SearchCheck,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -73,6 +74,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
+  { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
   // Combined Plan §A.E3.4 — Sage document research
   { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
