@@ -1,11 +1,15 @@
 import { useCallback } from "react"
 import CompanyAdminLayout from "@/layouts/CompanyAdminLayout"
-import DataCard from "@/components/dashboard/DataCard"
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import {
+  EngagementChart,
+  GoalsBreakdownChart,
+  CostTrendChart,
+  UtilizationAreaChart,
+  type GoalsBreakdownDatum,
+} from "@/components/analytics/charts"
 import { Button } from "@/components/ui/button"
 import { FileJson, FileSpreadsheet, Info } from "lucide-react"
 import { toast } from "sonner"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useCompanyAnalytics as useCompanyAnalyticsHook } from "@/hooks/analytics/useAnalytics"
 
 const FALLBACK_DEPT = [
@@ -14,9 +18,9 @@ const FALLBACK_DEPT = [
   { dept: "Product", engagement: 80, training: 73, prism: 83 }, { dept: "Design", engagement: 78, training: 85, prism: 88 },
 ]
 const FALLBACK_ENGAGEMENT = Array.from({ length: 12 }, (_, i) => ({ month: `M${i + 1}`, pct: 70 + Math.floor(Math.random() * 20) }))
-const FALLBACK_LICENSE = [{ name: "Active", value: 192 }, { name: "Unused", value: 55 }, { name: "Pending", value: 12 }]
+const FALLBACK_LICENSE: GoalsBreakdownDatum[] = [{ name: "Active", value: 192 }, { name: "Unused", value: 55 }, { name: "Pending", value: 12 }]
 const FALLBACK_COST_TREND = [{ month: "Oct", cost: 410 }, { month: "Nov", cost: 395 }, { month: "Dec", cost: 420 }, { month: "Jan", cost: 445 }, { month: "Feb", cost: 430 }, { month: "Mar", cost: 433 }]
-const L_COLORS = ["#10B981", "#e5e7eb", "#3B5BFF"]
+const LICENSE_COLORS = ["#10B981", "#e5e7eb", "#3B5BFF"]
 
 function download(content: string, name: string, type: string) {
   const b = new Blob([content], { type }); const u = URL.createObjectURL(b)
@@ -40,6 +44,8 @@ export default function CompanyAdminAnalytics() {
 
   const exportCSV = useCallback(() => { download("dept,engagement,training,prism\n" + DEPT.map((d) => `${d.dept},${d.engagement},${d.training},${d.prism}`).join("\n"), "company-analytics.csv", "text/csv"); toast.success("Exported CSV") }, [DEPT])
   const exportJSON = useCallback(() => { download(JSON.stringify(DEPT, null, 2), "company-analytics.json", "application/json"); toast.success("Exported JSON") }, [DEPT])
+
+  const errorString = error ? "Failed to load analytics data." : undefined
 
   return (
     <CompanyAdminLayout>
@@ -70,41 +76,44 @@ export default function CompanyAdminAnalytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <DataCard title="Department Comparison" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[220px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={DEPT}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="dept" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Legend />
-                <Bar dataKey="engagement" fill="#3B5BFF" name="Engagement" /><Bar dataKey="training" fill="#2DD4BF" name="Training" /><Bar dataKey="prism" fill="#8B5CF6" name="PRISM" />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <EngagementChart
+          title="Department Comparison"
+          data={DEPT}
+          xKey="dept"
+          valueKey="engagement"
+          loading={isLoading}
+          error={errorString}
+          height={220}
+        />
 
-        <DataCard title="Company Engagement Trend" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[220px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={ENGAGEMENT}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="month" tick={{ fontSize: 11 }} /><YAxis domain={[60, 100]} tick={{ fontSize: 11 }} /><Tooltip /><Area type="monotone" dataKey="pct" stroke="#3B5BFF" fill="rgba(59,91,255,0.1)" /></AreaChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <UtilizationAreaChart
+          title="Company Engagement Trend"
+          data={ENGAGEMENT}
+          xKey="month"
+          series={[{ key: "pct", label: "Engagement %", color: "#3B5BFF" }]}
+          loading={isLoading}
+          error={errorString}
+          height={220}
+        />
 
-        <DataCard title="License Utilization" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart><Pie data={LICENSE} dataKey="value" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
-                {LICENSE.map((_, i) => <Cell key={i} fill={L_COLORS[i]} />)}
-              </Pie><Tooltip /></PieChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <GoalsBreakdownChart
+          title="License Utilization"
+          data={LICENSE}
+          colors={LICENSE_COLORS}
+          loading={isLoading}
+          error={errorString}
+          height={200}
+        />
 
-        <DataCard title="Cost per User Trend" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={COST_TREND}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="month" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="cost" stroke="#EF4444" strokeWidth={2} name="$/user" /></LineChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <CostTrendChart
+          title="Cost per User Trend"
+          data={COST_TREND}
+          xKey="month"
+          primary={{ key: "cost", label: "$/user", color: "#EF4444" }}
+          loading={isLoading}
+          error={errorString}
+          height={200}
+        />
       </div>
     </CompanyAdminLayout>
   )

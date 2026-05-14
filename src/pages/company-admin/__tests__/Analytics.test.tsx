@@ -4,6 +4,7 @@
 
 import { render, screen } from "@testing-library/react";
 import CompanyAdminAnalytics from "../Analytics";
+import { useCompanyAnalytics as useCompanyAnalyticsHookMock } from "@/hooks/analytics/useAnalytics";
 
 jest.mock("@/layouts/CompanyAdminLayout", () => ({
   __esModule: true,
@@ -14,7 +15,7 @@ jest.mock("@/layouts/CompanyAdminLayout", () => ({
 
 jest.mock("@/components/dashboard/DataCard", () => ({
   __esModule: true,
-  default: ({ title, className, children }: any) => (
+  default: ({ title, className, children }: { title: string; className?: string; children: React.ReactNode }) => (
     <div data-testid={`data-card-${title}`} className={className}>
       {children}
     </div>
@@ -22,7 +23,7 @@ jest.mock("@/components/dashboard/DataCard", () => ({
 }));
 
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, ...rest }: any) => (
+  Button: ({ children, onClick, ...rest }: { children: React.ReactNode; onClick?: () => void } & Record<string, unknown>) => (
     <button onClick={onClick} {...rest}>
       {children}
     </button>
@@ -33,22 +34,22 @@ jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
 
-// Mock recharts
+// Mock recharts so ChartKit renders without needing canvas
 jest.mock("recharts", () => ({
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
+  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   Bar: () => null,
-  PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
+  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
   Pie: () => null,
   Cell: () => null,
-  LineChart: ({ children }: any) => <div data-testid="line-chart">{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,
-  AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
   Area: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Legend: () => null,
 }));
 
@@ -100,7 +101,7 @@ describe("CompanyAdminAnalytics", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders chart data cards", () => {
+  it("renders ChartKit chart cards via DataCard titles", () => {
     render(<CompanyAdminAnalytics />);
     expect(
       screen.getByTestId("data-card-Department Comparison")
@@ -123,9 +124,7 @@ describe("CompanyAdminAnalytics", () => {
   });
 
   it("shows error message with retry on error", () => {
-    const { useCompanyAnalytics } =
-      require("@/hooks/analytics/useAnalytics");
-    (useCompanyAnalytics as jest.Mock).mockReturnValue({
+    (useCompanyAnalyticsHookMock as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error("fail"),
@@ -133,15 +132,14 @@ describe("CompanyAdminAnalytics", () => {
     });
 
     render(<CompanyAdminAnalytics />);
+    // Two error surfaces: the page-level retry banner + each chart's ErrorPill
     expect(
-      screen.getByText("Failed to load analytics data.")
-    ).toBeInTheDocument();
+      screen.getAllByText(/Failed to load analytics data/i).length
+    ).toBeGreaterThan(0);
   });
 
-  it("shows skeletons when loading", () => {
-    const { useCompanyAnalytics } =
-      require("@/hooks/analytics/useAnalytics");
-    (useCompanyAnalytics as jest.Mock).mockReturnValue({
+  it("shows ChartKit loading skeletons when loading", () => {
+    (useCompanyAnalyticsHookMock as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
@@ -149,6 +147,8 @@ describe("CompanyAdminAnalytics", () => {
     });
 
     render(<CompanyAdminAnalytics />);
-    expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByTestId("chartkit-loading-skeleton").length
+    ).toBeGreaterThan(0);
   });
 });
