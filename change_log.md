@@ -1,3 +1,239 @@
+## [2026-05-14] — RAG tenant-leak defense in depth: propagate document_id end-to-end (PRs #117 + frontend #68)
+
+Defense-in-depth follow-on to the earlier-2026-05-13 tenant-scope WHERE filter in `services/agent-engine/app/rag/retriever.py:_search_pgvector`. The filter (lines 184-191, also mirrored on the FTS fallback at 234-241) is already in place and was verified via direct SQL: querying as willb77's canonical sub `3468e498-...` returns only the 19 prism_canonical/empty-string global rows + their own docs; zero leakage from `user_id='unknown'` (10 docs / 88 chunks), zero leakage from `'346854a8-...'` (pre-remap willb77, 4 docs / 12 chunks), zero leakage from any other user.
+
+This PR pair propagates `document_id` through the response pipeline so the frontend can dedupe Sources on `(document_id, filename)` instead of just `filename` — preventing two tenants with the same filename from collapsing into one row if the WHERE filter ever regresses, and unlocking a future "click through to source document" UX.
+
+### Changed
+- `services/agent-engine/app/rag/retriever.py` — `_search_pgvector` hit dict now includes `document_id` (str UUID) and `chunk_index`. The SELECT already exposes them; they just weren't being copied into the output dict.
+- `services/agent-engine/app/websocket/handlers.py` (line 317) — WS `complete` frame's `rag_sources` entries now include `document_id`.
+- `services/agent-engine/app/agents/meridian.py` (line 1025) — REST response metadata's `rag_sources` entries also include `document_id`.
+- `inspire-genius-frontend/src/types/chat/data-types.ts` — `RAGSource` type adds `document_id?: string | null`.
+- `inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx` — `SourceAttribution` dedupes on `${document_id ?? ""}::${filename}` instead of `filename` alone. React key updated to match.
+
+### Shipped
+- **PR #117** (`willb77/inspire-genius`, branch `fix/rag/document-id-propagation`) — squash-merged.
+- **Frontend PR #68** (`willb77/inspire-genius-frontend`, branch `fix/rag/document-id-source-dedup`) — squash-merged.
+- Auto-triggered: `agent-engine-image.yml` (image rebuild + ECS roll) + `ci-deploy.yml` (S3 sync + CloudFront invalidation for dev bucket + legacy d1nxsns258du4y mirror).
+
+### SQL verification (as willb77 canonical sub `3468e498-9001-7014-dc77-b8d89010f148`)
+| user_id row | docs | embedded chunks | visible? |
+|---|---|---|---|
+| `''` (prism_canonical / global) | 19 | 39 | ✅ yes |
+| `'unknown'` (legacy uploads) | 10 | 88 | ❌ correctly excluded |
+| `'346854a8-...'` (pre-remap willb77) | 4 | 12 | ❌ correctly excluded |
+| `'3468e498-...'` (willb77 canonical) | 6 | 0 | own docs — 0 embedded (separate embedding-pipeline issue) |
+
+Zero cross-tenant leakage observed end-to-end.
+
+### Out of scope (tracked separately)
+- Pre-remap willb77 documents under `346854a8-...` need migration to canonical sub via SQL `UPDATE documents SET user_id = '3468e498-...' WHERE user_id = '346854a8-...'` or re-upload.
+- `user_id='unknown'` legacy uploads (10 docs from candidate PRISM assessment workflow) — data hygiene pass needed; either purge or assign to an owner.
+- willb77's own 6 docs have 0 embedded chunks — the embedding pipeline isn't running on user uploads. Separate bug.
+
+### References
+- Sourced from `MERIDIAN_REVIEW_2026-05-13.md` §3 P1 SECURITY.
+- Prompt template: `MERIDIAN_REVIEW_PROMPTS.md` "P1 SECURITY — Plug the RAG cross-tenant data leak".
+
+---
+
+## [2026-05-14] — Explainability Phase 1: super-admin read-only conversation + turn views (PRs #110 + frontend #67)
+
+Phase 1 of `IG_Super_Admin_Explainability_Plan.docx` §§4-6. Two PRs (backend + frontend) opened — neither merged. Builds on Phase 0 (PR #106) which added the `chat_messages.metadata` JSONB column.
+
+### Added — backend (`willb77/inspire-genius` PR #110, branch `feat/explainability-phase1-readonly-views`)
+- `services/agent-engine/app/routes/explainability.py` — three GET endpoints all gated by `require_super_admin`:
+  - `GET /v1/explainability/conversations` — paginated list (filters: `user_id`, `org_id`, `agent`, `date_from/to`, `page`, `limit`)
+  - `GET /v1/explainability/conversations/{session_id}` — turn-by-turn timeline with rendered analysis
+  - `GET /v1/explainability/turns/{turn_id}` — single turn with full 5-section render
+- `services/agent-engine/app/services/explainability_renderer.py` — pure renderer, no LLM calls. Sections 1-3 read from `metadata` JSONB; section 4 from heuristic risk flags (low confidence, missing sticky-route, weak RAG sources, cross-user / cross-session leaks, large DAGs); section 5 from the static `AGENT_ROLES` table mirrored from `.claude/rules/agents.md`.
+- `services/agent-engine/app/services/__init__.py` — package marker.
+- `services/migration-runner/migrations/explainability_phase1_chat_messages_agent_index.sql` — adds functional index `ix_chat_messages_metadata_agent_name` on `LOWER(metadata->>'agent_name')`. Idempotent. Applied to dev (1/1 OK, re-apply OK).
+- `services/agent-engine/tests/test_explainability_routes.py` — **26/26 pass**: 8 renderer unit tests, 4 role-gating tests, 6 list endpoint tests, 3 conversation-detail tests, 5 turn-detail tests.
+
+### Added — frontend (`willb77/inspire-genius-frontend` PR #67, same branch name)
+- 3-column shell at `/super-admin/explainability/c/:sessionId/t/:turnId`:
+  - `ConversationList` (left rail, paginated, agent + user_id filters, `RoutingHealth` badge per row)
+  - `TurnTimeline` (middle, ordered by created_at, RoutingTraceBadge + 1-line content preview)
+  - `TurnAnalysisCard` (right rail, 5-section render of selected turn)
+- `RoutingTraceBadge` + `HealthBadge` reusable badges; `SourceProvenanceTag` RAG source pill with tooltip
+- Service / hook / types in `src/services/super-admin/explainability/`, `src/hooks/super-admin/explainability/`, `src/types/explainability/`
+- Nav item `Explainability` in `SUPER_ADMIN_NAV_ITEMS` (icon `SearchCheck`)
+- 3 routes registered in `src/routes.tsx`
+- **17/17 jest tests pass** across 5 components + service module
+
+### Critical fixes vs the closed-PR salvage (PR #104 + frontend PR #66)
+- **MUST-fix #1**: every SELECT that surfaces `agent_name` uses `COALESCE(NULLIF(metadata->>'agent_name', ''), agent_name)` so pre-Phase-0 rows (metadata={}) resolve via the column AND migrated rows with column=NULL but `metadata.agent_name` set still resolve. Both halves covered by the test fixture (`TURN_NO_META` + `TURN_METADATA_ONLY_AGENT`).
+- **MUST-fix #2**: index migration only adds `ix_chat_messages_metadata_agent_name`; both `idx_chat_messages_session_created` (Phase D) and `ix_chat_messages_session_created` (2026-05-13 partial deploy) already exist — skipped via `IF NOT EXISTS`.
+
+### Hard limits respected
+- No IAM changes
+- No frontend changes in the backend PR; no monolith changes
+- Phase 2 (Ask follow-ups) and Phase 3 (RLHF labelling) deliberately not built — read-only only
+
+### Smoke (dev)
+- `chat_messages` has 9660 rows across 407 sessions; only 2 currently have populated `metadata` (Phase 0 writer not yet deployed to ECS)
+- COALESCE expression validated against live data — top 5 sessions all resolve to Aura
+
+---
+
+## [2026-05-14] — Phase 0 explainability: wire upstream producers into metadata builder (PR #111)
+
+Post-deploy gap from PR #106: the `chat_messages.metadata` JSONB column was reading `routing_trace`, `memory_recall_provenance`, and observability fields off `context.working_memory`, but the user-facing producers (P1-8, P1-10, observability collector) never wrote those keys. Every assistant row was landing with `routing_trace=null`, `memory_recall_provenance=null`, and zero cost/tokens. This wires the producer side end-to-end so the Aurora verification query lights up all six target fields on a fresh chat turn.
+
+### Added
+- `services/agent-engine/app/agents/meridian.py` — `_record_routing_trace()` helper writes `context.working_memory["routing_trace"]` with a uniform `{prior_agent, intent_score, carry_decision, reason, hard_handoff_override}` shape. Called from every routing branch in both `respond()` and `route()`: meta-conversation, explicit @-invocation, sticky-routing, classifier verdict. Also writes `context.working_memory["last_observability"]` from the `AgentResponse.metadata` after `respond()` so the REST chat-write call site reads cost / tokens / model uniformly.
+- `services/agent-engine/app/memory/integration.py` — `build_recall_provenance(mem_context, current_session_id)` flattens the structured `load_context()` result into one `{tier, session_id, age_seconds}` entry per recalled fragment (corrections, goals, preferences, current-session turns, prior-session turns, summaries, PRISM scores). `_age_seconds_from_ts` helper tolerates ISO strings, datetime objects, and missing values; clamps future timestamps to 0.
+- `services/agent-engine/app/observability/collector.py` — `build_observability_dict(model, input_tokens, output_tokens, latency_ms, ttft_ms, provider)` composes the dict shape the builder reads. Token fields are omitted when the caller passes `None` so the stream path (where the provider doesn't emit usage) doesn't write a misleading zero. `cost_usd` always emitted. `estimate_cost` is exposed as a public alias of `_estimate_cost` so callers reuse `MODEL_COSTS`.
+- `services/agent-engine/tests/test_metadata_builder_wiring.py` — 18 cases covering each producer (routing trace, recall provenance, observability dict) plus end-to-end assertions that all six target fields populate when upstreams produce, and a guard that the builder still emits explicit `null` when producers haven't run.
+
+### Changed
+- `services/agent-engine/app/agents/base_agent.py` — `_build_messages_with_rag` calls `build_recall_provenance` immediately after `load_context()` while `mem_context` is in scope, and stashes the result in `context.working_memory["memory_recall_provenance"]`. `stream()` populates `context.working_memory["last_observability"]` synchronously *before* kicking off the fire-and-forget observability task so WS chat-write call sites see it immediately.
+- `services/agent-engine/app/memory/__init__.py` — re-exports `build_recall_provenance`.
+- `services/agent-engine/app/ws_handler.py` + `services/agent-engine/app/websocket/handlers.py` (both stream call sites) — additionally pass `tokens_out=token_count` to `build_response_metadata` so the streamed-chunk count populates the `tokens_out` field (providers don't emit usage on `.stream()`).
+
+### Tests
+- New `test_metadata_builder_wiring.py`: 18/18 pass
+- Regression: `test_meridian.py`, `test_meridian_sticky_routing.py`, `test_meridian_meta_conversation.py`, `test_meridian_intent_diagnostics.py`, `test_alex_agent.py`, `test_synthesizer_metadata.py`, `test_chat_message_metadata.py`, `test_memory_integration.py`, `test_chat_message_writer_wiring.py`: 346/346 pass
+
+### Commits
+- `d92d877` feat(agent-engine/explainability): wire upstream producers into Phase 0 metadata builder
+
+### PR
+- [#111](https://github.com/willb77/inspire-genius/pull/111) — opened against `development`, not merged
+
+### Open follow-up
+- After merge: re-run the Aurora verification query to confirm `routing_trace`, `memory_recall_provenance`, `cost_usd`, `latency_ms`, `model_used`, `tokens_in/out` populate on a fresh chat turn.
+
+---
+
+## [2026-05-14] — Aura: conditional PRISM reference library + pgvector canonical ingest
+
+End-to-end pipeline shipped on a single session: the canonical PRISM guide is now both (a) conditionally injected into Aura's system prompt for keyword-matched turns, and (b) ingested as `domain='coaching'` documents in Aurora pgvector for semantic-similarity retrieval by any coaching-domain agent. Belt-and-braces — keyword router catches deterministic shapes; RAG catches everything else.
+
+### Added
+- `services/agent-engine/app/agents/coaching/prism_knowledge.py` — `PrismSection` enum with 19 sections from the canonical doc (intensity, maps, 4 colours, 8 dimensions, overdone, opposites, axes, intro/extra, SKEW/SD). `select_sections(message, profile_summary)` deterministic keyword/regex router (no LLM). `render_sections()` with `_TOKEN_BUDGET_CHARS=10000` soft cap + drop-order (colours → INTRO_EXTRA → AXES → MAPS → SKEW_SD → dimensions → INTENSITY; OVERDONE and DIMENSION_OPPOSITES always survive).
+- `PrismAgent._inject_prism_reference()` — pulls profile from `SharedContext`, calls `select_sections`, appends `<PRISM_REFERENCE>` block to the system message. Stashes `aura_prism_sections` / `aura_prism_section_count` / `aura_prism_chars` on `context.metadata` for downstream observability. Emits structured `aura.prism_reference section_count=N chars=M sections=...` on every Aura turn.
+- Aura static prompt (`app/llm/prompts.py`) gained the REFERENCE LIBRARY stanza, Red/Orange synonym note, score-band behaviour rules. Corrected the quadrant mapping (was `Gold=Initiating, Green=Finishing`; doc says `Gold=Finishing+Evaluating, Green=Innovating+Initiating`).
+- `services/agent-engine/scripts/ingest_prism_canonical_doc.py` — CLI with `--dry-run`; pulls section bodies from `_SECTIONS` (no double source of truth); UPSERTs into `documents` with stable uuid5 ids, `domain='coaching'`, `doc_kind='prism_canonical'`, `user_id=""` (matches the 2026-05-13 privacy filter at retriever.py); calls `EmbeddingService.embed_and_store_chunks` for vectors.
+- `services/agent-engine/scripts/verify_prism_rag.py` — read-only probe; runs 4 PRISM-shaped queries through `retrieve_coaching_knowledge(domain='coaching')` and exits non-zero if all four return 0 chunks.
+- `.github/workflows/agent-engine-prism-ingest.yml` — `workflow_dispatch` only; resolves the service's network config; ECS `RunTask` against the agent-engine task definition with `command=["python","scripts/ingest_prism_canonical_doc.py"]` (+ optional `--dry-run`); reads exit code by container name (sidecar-proof); pinned `image_tag` mode registers a throwaway task-def revision.
+- `infrastructure/cdk/scripts/bootstrap-gha-oidc.sh` — three new policy statements on `gha-cdk-deploy-policy`: `PrismIngestRunTask` (RunTask + RegisterTaskDefinition + DescribeTaskDefinition, scoped to cluster), `PrismIngestPassRole` (scoped to the two agent-engine task roles + `PassedToService=ecs-tasks`), `PrismIngestReadLogs` (GetLogEvents on the agent-engine log group). Re-running the script applied wave-a's previously-unapplied `LiftAutoscalingForDeploy` as a bystander, unblocking everyone's agent-engine rolls.
+- `services/agent-engine/tests/test_prism_knowledge.py` — 22 router/render/injection tests.
+- Memory captures: RAG-privacy-filter-user_id, ECS-multi-container-exit, workflow_dispatch-default-branch.
+
+### Changed
+- `services/agent-engine/tests/test_meridian.py::test_routes_to_feedback` — fixed stale expectation from before commit `676814a` swapped Nova/Echo (Nova handles feedback per `agents.md`; Echo handles learning/sessions).
+
+### Fixed
+- Aura quadrant mapping in static prompt (factual error vs canonical doc).
+- `_inject_prism_reference` budget cap previously had nothing to drop when 8 dimensions fired together — extended `_DROP_ORDER` to include all 8 dimensions (alphabetical) and `INTENSITY_RATINGS` as last-resort.
+
+### Production state after this session
+- 19 `documents` rows + 39 `document_chunks` rows in Aurora pgvector with `domain='coaching'` (run `25838417781`).
+- All 4 verify probe queries return matching canonical chunks (task `6fc0a33b`); top similarities 0.404–0.711.
+- Agent-engine image rolled to commit `d94fdef`.
+
+### Commits
+- `03dd786` feat(aura): conditional PRISM reference library, keyword-routed per turn
+- `972e320` fix(aura): extend PRISM budget drop-order to cover dimensions
+- `0af0cb2` chore(aura): observability + ingest script + Meridian test fix
+- `3e7e198` ci(aura): GHA workflow to ingest PRISM canonical doc via ECS RunTask
+- `5307511` chore(oidc): grant gha-cdk-deploy ECS RunTask perms for PRISM ingest
+- `0f7d1ae` fix(aura/ingest): relocate ingest script under agent-engine Docker context
+- `e3fb56b` fix(ci/prism-ingest): read exit code by container name, not index
+- `29fc7e9` fix(aura/ingest): use live documents schema (content_type, NOT NULL cols)
+- `d94fdef` fix(aura/ingest): user_id="" so canonical docs are everyone-readable
+- `9296fc5` chore(aura): script to verify PRISM canonical RAG retrievability
+- PR #102 (merged to main) — ci: register agent-engine-prism-ingest workflow on main
+
+### Open follow-ups
+- `app/rag/ingestion.py:269` references columns that don't exist in live schema (`file_type`); dead/stale code — should be removed or aligned with `app/routes/ingestion.py:264`.
+- CloudWatch metric filter on `aura.prism_reference` log line — wire into monitoring-stack.ts for section-count distribution dashboard.
+- Apply the conditional-reference pattern to career/job/training agents — deferred pending P0-3 direction (Trainer Aurora `agent_prompts` → DynamoDB).
+
+---
+
+## [2026-05-14] — P1-9 meta-conversation intent: memory recall bypasses specialists (PR #108)
+
+Wave E item P1-9 — fixes Bug B from `IG_Meridian_Routing_Examples_2026-05-13.docx` Example 3. The original misroute: "do you remember past responses — give a brief summary" was hijacked by Echo (SessionAgent) because "remember" / "reflection" / "session" / "summary" all match its `capabilities=["feedback-collection", "reflection"]`. The fix introduces a `meta_conversation` intent class detected BEFORE the specialist classifier runs, so memory-recall and summary requests are answered directly by Meridian using the short-term memory transcript.
+
+### Added
+- `services/agent-engine/app/agents/meridian.py`:
+  - `_META_CONVERSATION_PATTERNS` — 14 regex patterns covering documented meta phrasings ("do you remember", "summarize our conversation", "what did we discuss", "recap", "tl;dr", "remind me what we covered", "your previous response", etc.)
+  - `_META_CONVERSATION_REGEX` — compiled once at module load, case-insensitive
+  - `_count_meta_conversation_hits()` — counts distinct pattern matches
+  - `_is_meta_conversation()` — dominance-checks meta hits against the top single-domain keyword score so "remember to follow up about my PRISM profile" still routes to coaching
+  - `Meridian._handle_meta_conversation()` — direct LLM call with system prompt + transcript of last 30 short-term messages; gracefully handles empty history with a "we're just getting started" response (no LLM call)
+  - Wired into both `Meridian.respond()` (REST) and `Meridian.route()` (streaming) BEFORE sticky routing
+  - Explicit `@agent` invocation always overrides meta routing
+  - `logger.info("meta_conversation_routing_applied ...")` on every fire (CloudWatch auditable)
+- `services/agent-engine/tests/test_meridian_meta_conversation.py` — **64 new tests** covering detector unit tests (22 meta phrasings + 7 domain counter-examples), parametrized pattern coverage (25 documented phrases), end-to-end `Meridian.respond()` with non-empty history / empty history / sticky-routing override / explicit-invocation override / incidental-keyword false positive, the Example 3 regression replay, and the streaming path.
+
+### Test results
+- Full agent-engine: **1521 passed, 60 failed, 5 skipped**.
+- Baseline on P1-8 branch (without these changes): 1457 passed / 60 failed / 5 skipped.
+- Net delta: **+64 passing, 0 new failures**. 60 pre-existing failures (websocket/voice/handler suites) unchanged.
+
+### Coordination
+- Base branch: `wave-e/p1-8-sticky-routing` (PR #107) because P1-8 is unmerged and both PRs touch `meridian.py`. When P1-8 merges, PR #108 retargets to `development` automatically.
+- PR #105 (P1-10 memory provenance) is independent; once merged, the meta handler can filter recalled items to `[session: current]` for cleaner summaries.
+
+---
+
+## [2026-05-14] — P1-8 sticky routing: follow-up turns stick to prior agent (PR #107)
+
+Wave E item P1-8 — fixes Bug A from `IG_Meridian_Routing_Examples_2026-05-13.docx` Example 2. Every Meridian turn used to classify intent from scratch, so a James (AdminAgent) follow-up "develop deliverables and timelines" got hijacked by Echo (SessionAgent / coaching) when the new message scored marginally higher on Echo's training-plan keywords than on James's admin keywords. Sticky routing now keeps the prior agent unless the new domain shows a strong topic-shift signal.
+
+### Added
+- `services/agent-engine/app/agents/meridian.py`:
+  - `STICKY_ROUTING_TOPIC_SHIFT_MARGIN = 2` (named constant at top of file)
+  - `_AGENT_TO_DOMAIN` — canonical agent -> domain map (17 specialists)
+  - `_NON_STICKY_AGENTS` frozenset (DefaultAgent / Meridian / empty)
+  - `_extract_explicit_invocation()` — forward-compat `@agent` mention detector
+  - `_should_sticky_to_prior_agent()` — score-margin decision helper
+  - `_get_prior_agent_name()` — `working_memory["last_agent"]` first, then `short_term.get_history()` for REST sessions that rebuild AgentContext per call
+  - `Meridian._resolve_agent_by_name()` — direct agent dispatch helper used by sticky to bypass the orchestrator's keyword selector
+  - Wired into both `Meridian.respond()` (REST) and `Meridian.route()` (streaming WS)
+  - `logger.info("sticky_routing_applied ...")` on every fire (CloudWatch auditable)
+- `services/agent-engine/tests/test_meridian_sticky_routing.py` — **27 new tests** covering decision-helper invariants, `@-mention` parsing, prior-agent lookup (working_memory + short_term + failure paths), end-to-end `Meridian.respond()` with the regression scenario from Example 2 (James -> Echo hijack now retained as James), and `_AGENT_TO_DOMAIN` drift guards.
+
+### Test results
+- Full agent-engine: **1457 passed, 60 failed, 5 skipped**.
+- 60 failures are all pre-existing (verified via `git stash` round-trip against baseline `d94fdef`) in voice/websocket/orchestrator/RAG/support suites.
+- Net delta: **+27 passing, 0 new failures**.
+
+### Coordination
+- P1-9 (meta-conversation intent) is the next Wave E item and also edits `meridian.py`. If P1-8 merges first, P1-9 branches from `development`; otherwise P1-9 branches from `wave-e/p1-8-sticky-routing`.
+- PR #105 (P1-10 memory provenance) is independent.
+
+---
+
+## [2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)
+
+Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.
+
+### Fixed
+- `wesley@excalibureducation.com` now provisioned across all three auth surfaces:
+  - **Cognito** — deleted (he was stuck in `RESET_REQUIRED` since 2026-05-12, blocking the password-reset path that auth-service uses).
+  - **Magic-Auth** (`inspires_genius.magic_auth.users`) — inserted via `POST /api/auth/add-user`, user_id `5c71fd82-64f1-4c94-8807-a2966f7d3676`, role `user`, is_active=true, email_verified=true.
+  - **Canonical** (`inspire_genius.public.users`) — inserted with the SAME user_id so the agent-engine canonical-sub remap (PR #93) is a no-op for him; auth_provider=`cognito` (the enum has no `magic_link` value yet — kept for consistency with existing rows). No `user_profiles`/`org_users` linkage per 2c choice; "IG" organisation was not created.
+- Chat document upload bucket (`ig-dev-documents`) now has CORS. Symptom: every browser-direct presigned POST since 2026-05-09 silently failed (file never landed in S3) while the document-service Lambda happily wrote a DB row + returned a presigned URL. Accumulated **42 orphan documents** with `file_size=0 status=pending` across 9 different user_ids. Wesley's CV PDF actually went through via the monolith bridge (server-to-server, no browser CORS needed) which is why `inspires-genius-dev-documents` has his file but the document-service bucket was empty.
+
+### Added
+- `infrastructure/cdk/lib/services-stack.ts:704` — `cors:` block on `DocumentsBucket` with scoped origins (`https://dev.inspiresgenius.com`, both CloudFront aliases, `http://localhost:5173`) matching magic-auth's `FRONTEND_ORIGINS` env. Methods: POST/GET/HEAD/PUT. Without this commit the next `cdk deploy` would synth a template without the rule and silently revert the hotfix. **PR #98** opened against `development`.
+
+### Operational
+- Live hotfix applied to `ig-dev-documents` via `aws s3api put-bucket-cors` before the CDK commit; preflight verified from `https://dev.inspiresgenius.com` returns `200` + the expected `access-control-allow-*` headers.
+- 42 orphan `public.documents` rows deleted (`file_size=0 AND status='pending' AND s3_bucket='ig-dev-documents'`). Zero `document_chunks` attached — fully recoverable-loss-free; users whose past upload silently failed need to re-upload.
+
+### Known follow-ups (not done this session)
+- `auth_provider_enum` has no `magic_link` value. Wesley is tagged `cognito` to fit the existing enum. If we want to track auth source accurately, that's an `ALTER TYPE … ADD VALUE` migration.
+- The other bucket `ig-dev-uploads` (used for internal Lambda code packaging only) also lacks CORS but isn't browser-facing — left alone.
+- The Magic-Auth ⇄ canonical sub mismatch from the memory entry still exists for older users whose Magic-Auth user_id ≠ their `public.users.user_id` (will's 7 docs under `346854a8-…` for example). PR #93 remaps the JWT sub correctly going forward, but historical rows stay where they were written.
+
+---
+
 ## [2026-05-13] — Meridian review deliverables: MD report + ready-to-run prompts + Word renderings
 
 Wraps the `/bedtime` review session. Captures the review artifacts so they can be paged through in Word and re-run as prompts.

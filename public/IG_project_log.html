@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1092</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1097</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,117 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-14] — Explainability Phase 1: super-admin read-only conversation + turn views (PR #110 + frontend PR #67)</h3>
+        <p>Phase 1 of <code>IG_Super_Admin_Explainability_Plan.docx</code> §§4-6. Two PRs (backend + frontend) opened — neither merged. Builds on Phase 0 (PR #106) which added the <code>chat_messages.metadata</code> JSONB column.</p>
+        <h4>Added — backend (PR #110, branch <code>feat/explainability-phase1-readonly-views</code>)</h4>
+        <ul>
+          <li><code>app/routes/explainability.py</code> — three GET endpoints all gated by <code>require_super_admin</code>: <code>/v1/explainability/conversations</code> (paginated list, filters: user_id, org_id, agent, date_from/to, page, limit), <code>/v1/explainability/conversations/{session_id}</code> (turn-by-turn timeline with rendered analysis), <code>/v1/explainability/turns/{turn_id}</code> (single turn with full 5-section render).</li>
+          <li><code>app/services/explainability_renderer.py</code> — pure renderer, no LLM calls. Sections 1-3 from <code>metadata</code> JSONB; section 4 from heuristic risk flags (low confidence, missing sticky-route, weak RAG sources, cross-user/cross-session leaks, large DAGs); section 5 from static <code>AGENT_ROLES</code> table mirrored from <code>.claude/rules/agents.md</code>.</li>
+          <li>Migration <code>explainability_phase1_chat_messages_agent_index.sql</code> — adds functional index <code>ix_chat_messages_metadata_agent_name</code> on <code>LOWER(metadata-&gt;&gt;'agent_name')</code>. Idempotent. Applied to dev (1/1 OK, re-apply OK).</li>
+          <li><code>tests/test_explainability_routes.py</code> — <strong>26/26 pass</strong>: 8 renderer unit tests, 4 role-gating tests, 6 list endpoint tests, 3 conversation-detail tests, 5 turn-detail tests.</li>
+        </ul>
+        <h4>Added — frontend (PR #67, same branch name)</h4>
+        <ul>
+          <li>3-column shell at <code>/super-admin/explainability/c/:sessionId/t/:turnId</code>: ConversationList (left), TurnTimeline (middle), TurnAnalysisCard (right).</li>
+          <li>Reusable <code>RoutingTraceBadge</code> + <code>HealthBadge</code>; <code>SourceProvenanceTag</code> RAG source pill with tooltip.</li>
+          <li>Service / hook / types follow super-admin pattern; uses <code>agentApi</code> direct (not monolith proxy).</li>
+          <li>Nav item <code>Explainability</code> in <code>SUPER_ADMIN_NAV_ITEMS</code> (icon SearchCheck); 3 routes registered.</li>
+          <li><strong>17/17 jest tests pass</strong>.</li>
+        </ul>
+        <h4>Critical fixes vs the closed-PR salvage (PR #104 + frontend PR #66)</h4>
+        <ul>
+          <li><strong>MUST-fix #1</strong>: every SELECT that surfaces <code>agent_name</code> uses <code>COALESCE(NULLIF(metadata-&gt;&gt;'agent_name', ''), agent_name)</code> so pre-Phase-0 rows resolve via the column AND migrated rows with column=NULL but <code>metadata.agent_name</code> set still resolve. Both halves covered by tests.</li>
+          <li><strong>MUST-fix #2</strong>: index migration only adds <code>ix_chat_messages_metadata_agent_name</code>; the two session_created indexes already exist on dev — skipped via IF NOT EXISTS.</li>
+        </ul>
+        <h4>Smoke (dev)</h4>
+        <p>chat_messages has 9660 rows across 407 sessions; only 2 currently have populated metadata (Phase 0 writer not yet deployed to ECS). COALESCE expression validated against live data — top 5 sessions all resolve to Aura.</p>
+
+
+        <h3>[2026-05-14] — P1-9 meta-conversation intent: memory recall bypasses specialists (PR #108)</h3>
+        <p>Wave E item P1-9 — fixes <strong>Bug B</strong> from <code>IG_Meridian_Routing_Examples_2026-05-13.docx</code> Example 3. The original misroute: "do you remember past responses — give a brief summary" was hijacked by Echo (SessionAgent) because "remember" / "reflection" / "session" / "summary" all match its <code>capabilities=["feedback-collection", "reflection"]</code>. The fix introduces a <code>meta_conversation</code> intent class detected BEFORE the specialist classifier runs, so memory-recall and summary requests are answered directly by Meridian using the short-term memory transcript.</p>
+        <h4>Added</h4>
+        <ul>
+          <li><code>services/agent-engine/app/agents/meridian.py</code>:
+            <ul>
+              <li><code>_META_CONVERSATION_PATTERNS</code> — 14 regex patterns covering documented meta phrasings ("do you remember", "summarize our conversation", "what did we discuss", "recap", "tl;dr", "remind me what we covered", "your previous response", etc.)</li>
+              <li><code>_META_CONVERSATION_REGEX</code> — compiled once at module load, case-insensitive</li>
+              <li><code>_count_meta_conversation_hits()</code> — counts distinct pattern matches</li>
+              <li><code>_is_meta_conversation()</code> — dominance-checks meta hits against the top single-domain keyword score so "remember to follow up about my PRISM profile" still routes to coaching</li>
+              <li><code>Meridian._handle_meta_conversation()</code> — direct LLM call with system prompt + transcript of last 30 short-term messages; gracefully handles empty history with a "we're just getting started" copy (no LLM call)</li>
+              <li>Wired into both <code>Meridian.respond()</code> (REST) and <code>Meridian.route()</code> (streaming) BEFORE sticky routing</li>
+              <li>Explicit <code>@agent</code> invocation always overrides meta routing</li>
+              <li><code>logger.info("meta_conversation_routing_applied ...")</code> on every fire — CloudWatch auditable</li>
+            </ul>
+          </li>
+          <li><code>services/agent-engine/tests/test_meridian_meta_conversation.py</code> — <strong>64 new tests</strong> covering detector unit tests (22 meta phrasings + 7 domain counter-examples), parametrized pattern coverage (25 documented phrases), end-to-end <code>Meridian.respond()</code> with non-empty history / empty history / sticky-routing override / explicit-invocation override / incidental-keyword false positive, the Example 3 regression replay, and the streaming path.</li>
+        </ul>
+        <h4>Test results</h4>
+        <ul>
+          <li>Full agent-engine: <strong>1521 passed, 60 failed, 5 skipped</strong>.</li>
+          <li>Baseline on P1-8 branch (without these changes): 1457 passed / 60 failed / 5 skipped.</li>
+          <li>Net delta: <strong>+64 passing, 0 new failures</strong>. 60 pre-existing failures (websocket/voice/handler suites) unchanged.</li>
+        </ul>
+        <h4>Coordination</h4>
+        <ul>
+          <li>Base branch: <code>wave-e/p1-8-sticky-routing</code> (PR #107) because P1-8 is unmerged and both PRs touch <code>meridian.py</code>. When P1-8 merges, PR #108 retargets to <code>development</code> automatically.</li>
+          <li>PR #105 (P1-10 memory provenance) is independent; once merged, the meta handler can filter recalled items to <code>[session: current]</code> for cleaner summaries.</li>
+        </ul>
+        <p><strong><a href="https://github.com/willb77/inspire-genius/pull/108">PR #108</a></strong> opened against <code>wave-e/p1-8-sticky-routing</code>.</p>
+
+        <h3>[2026-05-14] — P1-8 sticky routing: follow-up turns stick to prior agent (PR #107)</h3>
+        <p>Wave E item P1-8 — fixes <strong>Bug A</strong> from <code>IG_Meridian_Routing_Examples_2026-05-13.docx</code> Example 2. Every Meridian turn used to classify intent from scratch, so a James (AdminAgent) follow-up "develop deliverables and timelines" got hijacked by Echo (SessionAgent / coaching) when the new message scored marginally higher on Echo's training-plan keywords than on James's admin keywords. Sticky routing now keeps the prior agent unless the new domain shows a strong topic-shift signal (>= <code>STICKY_ROUTING_TOPIC_SHIFT_MARGIN</code> = 2 keyword hits above the prior domain).</p>
+        <h4>Added</h4>
+        <ul>
+          <li><code>services/agent-engine/app/agents/meridian.py</code>:
+            <ul>
+              <li><code>STICKY_ROUTING_TOPIC_SHIFT_MARGIN</code> named constant at top of file</li>
+              <li><code>_AGENT_TO_DOMAIN</code> map (17 specialists -> 4 domains)</li>
+              <li><code>_NON_STICKY_AGENTS</code> frozenset (DefaultAgent / Meridian / empty)</li>
+              <li><code>_extract_explicit_invocation()</code> — forward-compat <code>@agent</code> mention detector</li>
+              <li><code>_should_sticky_to_prior_agent()</code> — pure score-margin decision helper</li>
+              <li><code>_get_prior_agent_name()</code> — <code>working_memory["last_agent"]</code> first, then <code>short_term.get_history()</code> for REST sessions</li>
+              <li><code>Meridian._resolve_agent_by_name()</code> — direct agent dispatch helper that bypasses orchestrator keyword selector for the sticky case</li>
+              <li>Wired into both <code>respond()</code> (REST) and <code>route()</code> (streaming WS)</li>
+              <li><code>logger.info("sticky_routing_applied ...")</code> on every fire — CloudWatch auditable</li>
+            </ul>
+          </li>
+          <li><code>services/agent-engine/tests/test_meridian_sticky_routing.py</code> — <strong>27 new tests</strong> covering decision-helper invariants, <code>@-mention</code> parsing, prior-agent lookup (<code>working_memory</code> + <code>short_term</code> + failure paths), end-to-end <code>Meridian.respond()</code> with the regression scenario from Example 2 (James -> Echo hijack now retained as James), and <code>_AGENT_TO_DOMAIN</code> drift guards.</li>
+        </ul>
+        <h4>Test results</h4>
+        <ul>
+          <li>Full agent-engine: <strong>1457 passed, 60 failed, 5 skipped</strong>.</li>
+          <li>60 failures are all pre-existing (verified via <code>git stash</code> round-trip against baseline <code>d94fdef</code>) in voice/websocket/orchestrator/RAG/support suites.</li>
+          <li>Net delta: <strong>+27 passing, 0 new failures</strong>.</li>
+        </ul>
+        <h4>Coordination</h4>
+        <ul>
+          <li>P1-9 (meta-conversation intent) is the next Wave E item and also edits <code>meridian.py</code>. If P1-8 merges first, P1-9 branches from <code>development</code>; otherwise P1-9 branches from <code>wave-e/p1-8-sticky-routing</code>.</li>
+          <li>PR #105 (P1-10 memory provenance) is independent — touches <code>app/memory/integration.py</code>.</li>
+        </ul>
+        <p><strong><a href="https://github.com/willb77/inspire-genius/pull/107">PR #107</a></strong> opened against <code>development</code>.</p>
+
+        <h3>[2026-05-13] — wesley onboarded + chat document-upload CORS hotfix (PR #98)</h3>
+        <p>Two operator-reported issues fixed in one session: a single user couldn't log in via magic link, and nobody could upload documents from chat. Both turned out to be infrastructure drift the canonical-sub remap (PR #93) didn't cover.</p>
+        <h4>Fixed — wesley@excalibureducation.com</h4>
+        <ul>
+          <li><strong>Cognito</strong>: deleted (he was stuck in <code>RESET_REQUIRED</code> since 2026-05-12, blocking the password-reset path that auth-service uses).</li>
+          <li><strong>Magic-Auth</strong> (<code>inspires_genius.magic_auth.users</code>): inserted via <code>POST /api/auth/add-user</code>, user_id <code>5c71fd82-64f1-4c94-8807-a2966f7d3676</code>, role <code>user</code>, is_active=true, email_verified=true.</li>
+          <li><strong>Canonical</strong> (<code>inspire_genius.public.users</code>): inserted with the SAME user_id so the agent-engine canonical-sub remap (PR #93) is a no-op for him; <code>auth_provider=cognito</code> (the enum has no <code>magic_link</code> value yet — kept for consistency with existing rows). No <code>user_profiles</code>/<code>org_users</code> linkage; "IG" organisation was not created.</li>
+        </ul>
+        <h4>Fixed — chat document upload was broken for ALL users since 2026-05-09</h4>
+        <ul>
+          <li><strong>Symptom</strong>: every browser-direct presigned POST silently failed (file never landed in S3) while the document-service Lambda happily wrote a DB row + returned a presigned URL. Accumulated <strong>42 orphan documents</strong> with <code>file_size=0 status=pending</code> across 9 different user_ids.</li>
+          <li><strong>Root cause</strong>: <code>ig-dev-documents</code> bucket had no CORS configuration, so the browser blocked every cross-origin POST. The other bucket <code>inspires-genius-dev-documents</code> (used by the monolith bridge, server-to-server, no browser CORS) had CORS and worked — that's why wesley's CV PDF actually went through that path on 2026-05-12 but his chat uploads didn't.</li>
+          <li><strong>Live hotfix</strong>: <code>aws s3api put-bucket-cors</code> on <code>ig-dev-documents</code> with scoped origins (<code>https://dev.inspiresgenius.com</code>, both CloudFront aliases, <code>http://localhost:5173</code>) matching magic-auth's <code>FRONTEND_ORIGINS</code> env. Methods POST/GET/HEAD/PUT. Preflight verified live.</li>
+          <li><strong>CDK durability</strong>: <code>infrastructure/cdk/lib/services-stack.ts:704</code> — added <code>cors:</code> block to the <code>DocumentsBucket</code> definition with the same scope. Without it the next <code>cdk deploy</code> would synth a template without the rule and silently revert the hotfix. <strong><a href="https://github.com/willb77/inspire-genius/pull/98">PR #98</a></strong> opened against <code>development</code>.</li>
+          <li><strong>Orphan cleanup</strong>: 42 <code>public.documents</code> rows deleted (<code>file_size=0 AND status='pending' AND s3_bucket='ig-dev-documents'</code>). Zero <code>document_chunks</code> attached — no recoverable data; affected users need to re-upload.</li>
+        </ul>
+        <h4>Known follow-ups</h4>
+        <ul>
+          <li><code>auth_provider_enum</code> has no <code>magic_link</code> value. Wesley is tagged <code>cognito</code> to fit the existing enum. If we want to track auth source accurately, that's an <code>ALTER TYPE … ADD VALUE</code> migration.</li>
+          <li>Magic-Auth ⇄ canonical sub mismatch from PR #93 still affects older users whose Magic-Auth user_id ≠ <code>public.users.user_id</code> (will's 7 docs under <code>346854a8-…</code>). PR #93 remaps JWT sub going forward; historical rows stay where they were written.</li>
+        </ul>
 
         <h3>[2026-05-13] — User Management top-to-bottom review (no code changes yet)</h3>
         <p>Triggered by an operator question: <em>"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"</em></p>
@@ -2350,6 +2461,26 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1097 [/full-go RAG tenant-leak defense in depth — document_id propagation]</div>
+          <div class="prompt-text">/full-go P1 SECURITY from MERIDIAN_REVIEW_PROMPTS.md. The base WHERE-clause user_id filter in _search_pgvector was already in place (comment-dated 2026-05-13). This PR pair propagated document_id end-to-end so the frontend Sources dedup is keyed on (document_id, filename) instead of just filename — defense in depth against same-name docs across tenants + unlocks future click-through UX. Backend PR #117 (retriever.py hit dict + handlers.py WS complete frame + meridian.py REST metadata); frontend PR #68 (RAGSource type + ChatWindowChatTab dedup + React key). Both merged. SQL verification (as willb77 canonical sub 3468e498-...): zero leakage from user_id='unknown' (88 chunks across 10 docs) or pre-remap '346854a8-...' (12 chunks across 4 docs); only the 19 prism_canonical/empty-string global rows + own docs visible. Tracked: pre-remap willb77 doc migration, 'unknown' user_id legacy uploads, willb77's own embedding pipeline. Auto-triggered agent-engine-image.yml image rebuild + ECS roll + frontend ci-deploy.yml.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1096 [/full-go Explainability Phase 1 — read-only views]</div>
+          <div class="prompt-text">/full-go Build Phase 1 of the super-admin Explainability surface per IG_Super_Admin_Explainability_Plan.docx §§4-6. PREREQUISITE Phase 0 (P1-11) MERGED — verified metadata column exists. Salvage diffs from closed PR #104 (backend, 58KB) + closed PR #66 (frontend, 50KB) staged at /tmp. Built backend: app/routes/explainability.py (3 GET endpoints, super-admin gated), app/services/explainability_renderer.py (5-section renderer with COALESCE for pre-Phase-0 rows), migration adding only ix_chat_messages_metadata_agent_name (the two session_created indexes already exist), 26 tests pass. Built frontend: ConversationList + TurnTimeline + TurnAnalysisCard + RoutingTraceBadge + SourceProvenanceTag, 5 component tests, service test, types, hook, page, 3 routes, nav entry, 17 tests pass. Migration applied to dev — idempotent. Concurrent agent on parallel branch caused several branch-hop races during the session — recovered each time via stash + checkout. Commits 8700eae + 24668ef on monorepo, single commit on frontend. PRs #110 + #67 opened against development. NOT merged per instructions.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1095 [/bedtime P1-9 meta-conversation intent — Wave E]</div>
+          <div class="prompt-text">/bedtime — execute P1-9 (meta-conversation questions misrouted to specialists) from IG_Drift_and_Open_Items_Prioritized.docx Wave E. Branched from wave-e/p1-8-sticky-routing (PR #107 unmerged, both touch meridian.py). Added _META_CONVERSATION_PATTERNS (14 regex patterns) + _is_meta_conversation() detector + Meridian._handle_meta_conversation() that pulls last 30 short-term messages and answers via LLM with system prompt scoped to the transcript. Wired into respond() and route() BEFORE sticky routing so meta-questions always bypass any prior specialist. Honors @-agent invocations. 64 new tests in test_meridian_meta_conversation.py including Example 3 regression (do you remember past responses — give a brief summary → Meridian, not Echo). Full agent-engine: 1521 passed / 60 failed / 5 skipped (baseline on P1-8: 1457 / 60 / 5; delta +64 passing / 0 new failures). PR #108 opened against wave-e/p1-8-sticky-routing.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1094 [/bedtime P1-8 sticky routing — Wave E]</div>
+          <div class="prompt-text">/bedtime — execute P1-8 (conversations don't sticky-route) from IG_Drift_and_Open_Items_Prioritized.docx Wave E. Implement sticky routing in Meridian.respond()/route() so follow-up turns are kept on the prior agent when the new classification doesn't beat the prior agent's domain by >= STICKY_ROUTING_TOPIC_SHIFT_MARGIN (2 keyword hits). Add @-mention forward-compat, fallback / Meridian-direct boundary handling, working_memory + short_term prior-agent lookup. 27 new tests in test_meridian_sticky_routing.py including the Example 2 regression (James -> Echo hijack now retained as James). Net delta vs baseline d94fdef: +27 passing, 0 new failures (60 pre-existing failures unchanged). PR #107 opened against development.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1093 [wesley magic-link + chat upload CORS hotfix]</div>
+          <div class="prompt-text">"My users are still having trouble loging in. Please review the magic link path for wesley@excalibureducation.com" → "remove Wesley from the cognito build and add him to the Magic-Auth" → "yes role = user, organization = IG" → "1a and 2c, contact willb77@3pp.com" → "his document upload from chat is not working with pdf" → "B" (scoped CORS origins) → "no one can upload documents from chat will this fix it for all?" → "ok do B" → "do 1, 2, and 3" (commit CDK, clean orphans, update logs). Result: wesley removed from Cognito, added to Magic-Auth (user_id 5c71fd82-…), and to public.users with matching user_id (canonical-sub remap is no-op for him). Diagnosed chat upload outage: ig-dev-documents bucket had no CORS → 42 orphan documents accumulated since 2026-05-09. Applied live CORS hotfix with scoped origins (dev.inspiresgenius.com + 2 CloudFront aliases + localhost:5173); preflight verified 200. Baked into CDK (services-stack.ts:704) and opened PR #98 against development. Deleted 42 orphan rows.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1092 [/log-session — Meridian review deliverables]</div>
           <div class="prompt-text">Captures the /bedtime review deliverables: MERIDIAN_REVIEW_2026-05-13.md (sub-agent-generated, with my correction box at top — TL;DR P0 #1 claim about chat_messages missing Phase C columns was wrong, table actually has 29 cols), MERIDIAN_REVIEW_PROMPTS.md (12 ready-to-paste /full-go prompts, one per finding), plus Word renderings of both via the generalised scripts/build_meridian_review_docx.py. Verified P0 obs-tables-missing, P1 SECURITY RAG tenant leak in _search_pgvector, and P1 ObservabilityPanel msg-id mismatch.</div>
