@@ -1,7 +1,10 @@
 import PractitionerLayout from "@/layouts/PractitionerLayout"
-import DataCard from "@/components/dashboard/DataCard"
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { Skeleton } from "@/components/ui/skeleton"
+import {
+  EngagementChart,
+  CostTrendChart,
+  GoalsBreakdownChart,
+  type GoalsBreakdownDatum,
+} from "@/components/analytics/charts"
 import { usePractitionerAnalytics } from "@/hooks/analytics/useAnalytics"
 
 const FALLBACK_CLIENTS = [
@@ -9,8 +12,8 @@ const FALLBACK_CLIENTS = [
   { client: "Lisa F.", sessions: 14 }, { client: "Marcus C.", sessions: 12 }, { client: "Aisha P.", sessions: 8 },
 ]
 const FALLBACK_WEEKLY = Array.from({ length: 12 }, (_, i) => ({ week: `W${i + 1}`, sessions: Math.floor(Math.random() * 5) + 5 }))
-const FALLBACK_PRISM_RATES = [{ name: "Completed", value: 18 }, { name: "In Progress", value: 4 }, { name: "Not Started", value: 2 }]
-const P_COLORS = ["#10B981", "#ECC94B", "#e5e7eb"]
+const FALLBACK_PRISM_RATES: GoalsBreakdownDatum[] = [{ name: "Completed", value: 18 }, { name: "In Progress", value: 4 }, { name: "Not Started", value: 2 }]
+const PRISM_COLORS = ["#10B981", "#ECC94B", "#e5e7eb"]
 
 export default function PractitionerAnalytics() {
   const { data: analyticsData, isLoading, error, refetch } = usePractitionerAnalytics()
@@ -25,6 +28,8 @@ export default function PractitionerAnalytics() {
   const WEEKLY = ad?.weekly ?? FALLBACK_WEEKLY
   const PRISM_RATES = ad?.prismRates ?? FALLBACK_PRISM_RATES
 
+  const errorString = error ? "Failed to load analytics data." : undefined
+
   return (
     <PractitionerLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Practice Analytics</h1>
@@ -38,41 +43,46 @@ export default function PractitionerAnalytics() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <DataCard title="Client Engagement (Top 6)" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={CLIENTS}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="client" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="sessions" fill="#3B5BFF" radius={[4, 4, 0, 0]} /></BarChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <EngagementChart
+          title="Client Engagement (Top 6)"
+          data={CLIENTS}
+          xKey="client"
+          valueKey="sessions"
+          loading={isLoading}
+          error={errorString}
+          height={200}
+        />
 
-        <DataCard title="Weekly Session Frequency" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={WEEKLY}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="week" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="sessions" stroke="#2DD4BF" strokeWidth={2} /></LineChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <CostTrendChart
+          title="Weekly Session Frequency"
+          data={WEEKLY}
+          xKey="week"
+          primary={{ key: "sessions", label: "Sessions", color: "#2DD4BF" }}
+          loading={isLoading}
+          error={errorString}
+          height={200}
+        />
 
-        <DataCard title="PRISM Completion Rates" className="!mt-0 lg:col-span-2">
-          {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <div className="flex items-center gap-8">
-              <ResponsiveContainer width={200} height={200}>
-                <PieChart><Pie data={PRISM_RATES} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {PRISM_RATES.map((_, i) => <Cell key={i} fill={P_COLORS[i]} />)}
-                </Pie><Tooltip /></PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2">
-                {PRISM_RATES.map((r, i) => (
-                  <div key={r.name} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: P_COLORS[i] }} />
-                    <span className="text-[13px] text-[#374151]">{r.name}: <strong>{r.value}</strong> clients</span>
-                  </div>
-                ))}
-              </div>
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-[1fr_minmax(200px,_240px)] gap-5 items-start">
+          <GoalsBreakdownChart
+            title="PRISM Completion Rates"
+            data={PRISM_RATES}
+            colors={PRISM_COLORS}
+            loading={isLoading}
+            error={errorString}
+            height={220}
+          />
+          {!isLoading && !error && (
+            <div className="space-y-2 self-center">
+              {PRISM_RATES.map((r, i) => (
+                <div key={r.name} className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: PRISM_COLORS[i] }} />
+                  <span className="text-[13px] text-[#374151]">{r.name}: <strong>{r.value}</strong> clients</span>
+                </div>
+              ))}
             </div>
           )}
-        </DataCard>
+        </div>
       </div>
     </PractitionerLayout>
   )
