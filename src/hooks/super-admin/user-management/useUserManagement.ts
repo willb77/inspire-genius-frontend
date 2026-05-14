@@ -30,6 +30,7 @@ import {
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
 import { logAuditEvent } from "@/services/audit/audit.service";
+import { useAuth } from "@/context/useAuth";
 
 type SimpleQueryOptions = Omit<
   UseQueryOptions<GetUsersResponse, AxiosError<BaseApiResponse<null>>>,
@@ -55,6 +56,8 @@ export function useUserManagement(
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     InviteUserResponse,
@@ -69,7 +72,7 @@ export function useInviteUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_created", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
+      logAuditEvent({ action: "user_created", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -84,6 +87,8 @@ export function useInviteUser() {
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     UpdateUserResponse,
@@ -98,7 +103,7 @@ export function useUpdateUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_updated", actor_email: "admin", target_type: "user", extra_data: { email: variables.email } });
+      logAuditEvent({ action: "user_updated", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -113,6 +118,8 @@ export function useUpdateUser() {
 
 export function useChangeUserRole() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     ChangeUserRoleResponse,
@@ -127,7 +134,7 @@ export function useChangeUserRole() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_role_changed", actor_email: "admin", target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
+      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
     },
 
     onError: (error) => {
@@ -140,23 +147,32 @@ export function useChangeUserRole() {
   });
 }
 
+export type DeleteUserVariables = { email: string; force?: boolean };
+
 export function useDeleteUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     DeleteUserResponse,
     AxiosError<BaseApiResponse<null>>,
-    string
+    DeleteUserVariables
   >({
-    mutationFn: (email) => deleteUserByEmail(email),
+    mutationFn: ({ email, force = false }) => deleteUserByEmail(email, force),
 
-    onSuccess: (resp, email) => {
+    onSuccess: (resp, vars) => {
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_deleted", actor_email: "admin", target_type: "user", extra_data: { email } });
+      logAuditEvent({
+        action: "user_deleted",
+        actor_email: actorEmail,
+        target_type: "user",
+        extra_data: { email: vars.email, force: vars.force ?? false },
+      });
     },
 
     onError: (error) => {
@@ -208,23 +224,30 @@ export function useInactiveUserCount(enabled = false) {
 
 export function usePurgeInactiveUsers() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<PurgeInactiveResult, AxiosError<BaseApiResponse<null>>>({
     mutationFn: () => purgeInactiveUsers(),
 
     onSuccess: (result) => {
-      if (result.succeeded.length > 0 && result.failed.length === 0) {
+      if (result.total === 0) {
+        toast.info("No inactive users found to purge");
+      } else if (result.failed.length === 0) {
         toast.success(
           `Purged ${result.succeeded.length} inactive user(s)`
         );
-      } else if (result.succeeded.length > 0 && result.failed.length > 0) {
+      } else if (result.succeeded.length > 0) {
         toast.warning(
-          `Purged ${result.succeeded.length} user(s), but ${result.failed.length} could not be removed`
+          `Purged ${result.succeeded.length} user(s); ${result.failed.length} failed.`
         );
-      } else if (result.total === 0) {
-        toast.info("No inactive users found to purge");
+        // Per-user failure reasons are useful for triage but don't belong in a toast.
+        console.warn("Purge failures:", result.failed);
       } else {
-        toast.error("Failed to purge inactive users");
+        toast.error(
+          `Failed to purge inactive users (${result.failed.length} errors)`
+        );
+        console.warn("Purge failures:", result.failed);
       }
 
       queryClient.invalidateQueries({
@@ -233,11 +256,12 @@ export function usePurgeInactiveUsers() {
       });
 
       logAuditEvent({
-        action: "user_deleted",
-        actor_email: "admin",
+        action: "users_bulk_purged",
+        actor_email: actorEmail,
         target_type: "user",
         extra_data: {
-          purged_count: result.succeeded.length,
+          total: result.total,
+          succeeded_count: result.succeeded.length,
           failed_count: result.failed.length,
         },
       });

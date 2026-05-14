@@ -131,18 +131,21 @@ export async function updateUserByEmail(user_email: string, payload: UpdateUserP
 
 export type DeleteUserData = {
   email: string
-  deletion_type: 'hard_delete' | 'soft_delete' | string
-  user_was_active: boolean
-  had_pending_invitation: boolean
-  cognito_deleted: boolean
+  deletion_type?: 'hard_delete' | 'soft_delete'
+  user_was_active?: boolean
+  had_pending_invitation?: boolean
+  cognito_deleted?: boolean
+  already_soft_deleted?: boolean
+  can_force_purge?: boolean
 }
 
 export type DeleteUserResponse = BaseApiResponse<DeleteUserData>
 
-export async function deleteUserByEmail(user_email: string) {
-  const { data } = await api.delete<DeleteUserResponse>(
-    `/v1/user-management/users/${encodeURIComponent(user_email)}`
-  )
+export async function deleteUserByEmail(user_email: string, force = false) {
+  const url = `/v1/user-management/users/${encodeURIComponent(user_email)}${
+    force ? '?force=true' : ''
+  }`
+  const { data } = await api.delete<DeleteUserResponse>(url)
   return data
 }
 
@@ -165,61 +168,40 @@ export async function resendInvitation(invitation_id: string) {
 
 // ------------------ PURGE INACTIVE USERS ------------------
 
-export type PurgeInactiveResult = {
-  succeeded: string[]
-  failed: string[]
-  total: number
+export type PurgeFailure = {
+  email: string
+  reason: string
 }
 
+export type PurgeInactiveResult = {
+  total: number
+  succeeded: string[]
+  failed: PurgeFailure[]
+}
+
+export type PurgeInactiveResponse = BaseApiResponse<PurgeInactiveResult>
+
 /**
- * Fetches all inactive/deactivated users and deletes them one by one
- * using the existing per-user delete endpoint.
+ * Hard-deletes every deactivated (is_deleted=True) user via a single
+ * server-side endpoint. Backend processes each user inside its own SAVEPOINT
+ * so partial failures don't abort the batch — the response carries
+ * per-user succeeded/failed lists.
+ *
+ * Replaces the previous client-side fanout that paged through inactive
+ * users and issued N parallel DELETEs (problems: no transaction boundary,
+ * no backpressure, one round-trip per user, partial-failure state).
  */
 export async function purgeInactiveUsers(): Promise<PurgeInactiveResult> {
-  // First, fetch all inactive users (page through if necessary)
-  const allInactiveEmails: string[] = []
-  let currentPage = 1
-  let hasMore = true
-
-  while (hasMore) {
-    const response = await getUsers({
-      user_status_filter: 'inactive',
-      limit: 50,
-      page: currentPage,
-    })
-    const users = response?.data?.users ?? []
-    for (const u of users) {
-      allInactiveEmails.push(u.email)
-    }
-    hasMore = response?.data?.pagination?.has_more ?? false
-    currentPage++
-  }
-
-  if (allInactiveEmails.length === 0) {
-    return { succeeded: [], failed: [], total: 0 }
-  }
-
-  // Delete each inactive user using the existing endpoint
-  const results = await Promise.allSettled(
-    allInactiveEmails.map((email) => deleteUserByEmail(email))
+  const { data } = await api.post<PurgeInactiveResponse>(
+    '/v1/user-management/users/purge-inactive'
   )
-
-  const succeeded: string[] = []
-  const failed: string[] = []
-
-  results.forEach((result, index) => {
-    if (result.status === 'fulfilled' && result.value.status !== false) {
-      succeeded.push(allInactiveEmails[index])
-    } else {
-      failed.push(allInactiveEmails[index])
+  return (
+    data.data ?? {
+      total: 0,
+      succeeded: [],
+      failed: [],
     }
-  })
-
-  return {
-    succeeded,
-    failed,
-    total: allInactiveEmails.length,
-  }
+  )
 }
 
 /**
