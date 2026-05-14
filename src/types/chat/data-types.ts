@@ -18,6 +18,11 @@ export interface DocumentRef {
 export interface RAGSource {
   filename: string;
   similarity: number;
+  // Server-side document id (UUID). Used to dedupe Sources when two
+  // tenants happen to have files with the same name (defense in depth
+  // — the backend already filters by user_id at the WHERE clause), and
+  // to underpin a future "click through to source" UX.
+  document_id?: string | null;
 }
 
 // Chat message types

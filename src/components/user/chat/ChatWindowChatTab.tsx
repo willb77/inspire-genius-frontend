@@ -10,11 +10,14 @@ import type { ChatMessage, RAGSource } from "@/types/chat";
 
 function SourceAttribution({ sources }: { sources: RAGSource[] }) {
   const [expanded, setExpanded] = useState(false);
-  // Deduplicate by filename, keep highest similarity
+  // Dedup on (document_id, filename) so two tenants who happen to have
+  // files with the same name don't collapse into one row. document_id
+  // is server-side (UUID); when absent we fall back to filename alone.
   const unique = Object.values(
     sources.reduce<Record<string, RAGSource>>((acc, s) => {
-      if (!acc[s.filename] || acc[s.filename].similarity < s.similarity) {
-        acc[s.filename] = s;
+      const key = `${s.document_id ?? ""}::${s.filename}`;
+      if (!acc[key] || acc[key].similarity < s.similarity) {
+        acc[key] = s;
       }
       return acc;
     }, {}),
@@ -36,7 +39,7 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
         <div className="mt-1 flex flex-wrap gap-1">
           {unique.map((s) => (
             <span
-              key={s.filename}
+              key={`${s.document_id ?? ""}::${s.filename}`}
               className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
             >
               <FileText className="h-3 w-3" />
