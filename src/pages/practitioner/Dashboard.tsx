@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import PractitionerLayout from "@/layouts/PractitionerLayout"
-import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
+import DashboardFrame from "@/components/dashboard/DashboardFrame"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -73,29 +73,27 @@ export default function PractitionerDashboard() {
     { label: t("coaching:practitioner.avgClientSatisfaction"), value: "4.8/5", change: "+0.2", changeColor: "text-[#10B981]" },
   ]
 
-  return (
-    <PractitionerLayout>
-      <WelcomeBanner
-        title={t("coaching:practitioner.dashboard")}
-        subtitle={t("coaching:practitioner.welcomeBack")}
-      >
-        <div className="flex gap-6">
-          <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">24</strong> {t("coaching:practitioner.activeClients")}</div>
-          <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">84</strong> PRISM Score</div>
+  const bannerActions = (
+    <div className="flex gap-6">
+      <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">24</strong> {t("coaching:practitioner.activeClients")}</div>
+      <div className="text-[13px] font-semibold opacity-85"><strong className="text-lg block opacity-100">84</strong> PRISM Score</div>
+    </div>
+  )
+
+  const statsKpi = (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {STATS.map((s) => (
+        <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-[10px] p-4 hover:shadow-sm transition-shadow">
+          <div className="text-xs text-[#6b7280] mb-1">{s.label}</div>
+          <div className="text-2xl font-extrabold text-[#111827]">{s.value}</div>
+          <div className={`text-[11px] font-semibold mt-1 ${s.changeColor}`}>{s.change}</div>
         </div>
-      </WelcomeBanner>
+      ))}
+    </div>
+  )
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-        {STATS.map((s) => (
-          <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-[10px] p-4 hover:shadow-sm transition-shadow">
-            <div className="text-xs text-[#6b7280] mb-1">{s.label}</div>
-            <div className="text-2xl font-extrabold text-[#111827]">{s.value}</div>
-            <div className={`text-[11px] font-semibold mt-1 ${s.changeColor}`}>{s.change}</div>
-          </div>
-        ))}
-      </div>
-
+  const primary = (
+    <>
       {/* Today's Sessions */}
       <DataCard title={t("coaching:practitioner.todaysSessions")}>
         {sessionsError && (
@@ -198,6 +196,18 @@ export default function PractitionerDashboard() {
           ))}
         </div>
       </DataCard>
+    </>
+  )
+
+  return (
+    <PractitionerLayout>
+      <DashboardFrame
+        title={t("coaching:practitioner.dashboard")}
+        subtitle={t("coaching:practitioner.welcomeBack")}
+        bannerActions={bannerActions}
+        kpis={statsKpi}
+        primary={primary}
+      />
     </PractitionerLayout>
   )
 }
