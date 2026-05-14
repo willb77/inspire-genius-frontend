@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -30,8 +47,24 @@ import type {
   PrismRow,
   PrismUpdateRequest,
 } from "@/services/super-admin/prism/prism.service";
+import { useAuth } from "@/context/useAuth";
+import { ROLES, ROUTES } from "@/constants/routes";
+
+const SCORE_FIELDS = ["gold", "green", "blue", "orange"] as const;
+type ScoreField = (typeof SCORE_FIELDS)[number];
 
 export default function PrismManagement() {
+  // Defense-in-depth: ProtectedRoute already enforces auth, but block
+  // non-super-admin renders here as well.
+  const { hasRole } = useAuth();
+  if (!hasRole(ROLES.SUPER_ADMIN)) {
+    return <Navigate to={ROUTES.HOME} replace />;
+  }
+
+  return <PrismManagementInner />;
+}
+
+function PrismManagementInner() {
   const [search, setSearch] = useState("");
   const [editingRow, setEditingRow] = useState<PrismRow | null>(null);
   const [deletingRow, setDeletingRow] = useState<PrismRow | null>(null);
@@ -69,9 +102,14 @@ export default function PrismManagement() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs mb-4"
+              aria-label="Search PRISM rows by user_id"
             />
             {isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div
+                role="status"
+                aria-label="Loading PRISM rows"
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
                 <Loader2 className="size-4 animate-spin" /> Loading…
               </div>
             ) : (
@@ -84,13 +122,13 @@ export default function PrismManagement() {
                     <TableHead>Blue</TableHead>
                     <TableHead>Orange</TableHead>
                     <TableHead>Version</TableHead>
-                    <TableHead>Assessed</TableHead>
+                    <TableHead>Last Assessed</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(data?.rows ?? []).map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} data-testid={`prism-row-${row.id}`}>
                       <TableCell className="font-mono text-xs">
                         {row.user_id}
                       </TableCell>
@@ -107,7 +145,7 @@ export default function PrismManagement() {
                           size="sm"
                           variant="ghost"
                           onClick={() => setEditingRow(row)}
-                          aria-label="Edit"
+                          aria-label={`Edit PRISM row for ${row.user_id}`}
                         >
                           <Pencil className="size-4" />
                         </Button>
@@ -115,7 +153,7 @@ export default function PrismManagement() {
                           size="sm"
                           variant="ghost"
                           onClick={() => setDeletingRow(row)}
-                          aria-label="Delete"
+                          aria-label={`Delete PRISM row for ${row.user_id}`}
                         >
                           <Trash2 className="size-4 text-red-500" />
                         </Button>
@@ -124,7 +162,10 @@ export default function PrismManagement() {
                   ))}
                   {(data?.rows ?? []).length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-muted-foreground py-6"
+                      >
                         No PRISM rows match this filter.
                       </TableCell>
                     </TableRow>
@@ -167,27 +208,27 @@ export default function PrismManagement() {
       />
 
       {/* Delete confirm */}
-      <Dialog
+      <AlertDialog
         open={!!deletingRow}
         onOpenChange={(open) => !open && setDeletingRow(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete PRISM row?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This permanently deletes the PRISM scores for user{" "}
-            <span className="font-mono">{deletingRow?.user_id}</span> and
-            removes the related document chunks from pgvector. This cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setDeletingRow(null)}>
-              Cancel
-            </Button>
-            <Button
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete PRISM row?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the PRISM scores for user{" "}
+              <span className="font-mono">{deletingRow?.user_id}</span> and
+              removes the related document chunks from pgvector. This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               disabled={deleteM.isPending}
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 if (deletingRow) {
                   deleteM.mutate(deletingRow.id, {
                     onSuccess: () => setDeletingRow(null),
@@ -199,11 +240,48 @@ export default function PrismManagement() {
                 <Loader2 className="size-4 animate-spin mr-2" />
               )}
               Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SuperAdminLayout>
+  );
+}
+
+// ─── Score Slider Field ─────────────────────────────────────────────
+
+function ScoreSlider({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={id}>{label} (0–100)</Label>
+        <span
+          className="text-sm font-mono tabular-nums"
+          data-testid={`score-${id}-value`}
+        >
+          {value}
+        </span>
+      </div>
+      <Slider
+        id={id}
+        aria-label={`${label} score`}
+        min={0}
+        max={100}
+        step={1}
+        value={[value]}
+        onValueChange={(values) => onChange(values[0] ?? 0)}
+      />
+    </div>
   );
 }
 
@@ -227,10 +305,20 @@ function PrismCreateDialog({
   pending: boolean;
 }) {
   const [userId, setUserId] = useState("");
-  const [gold, setGold] = useState(50);
-  const [green, setGreen] = useState(50);
-  const [blue, setBlue] = useState(50);
-  const [orange, setOrange] = useState(50);
+  const [scores, setScores] = useState<Record<ScoreField, number>>({
+    gold: 50,
+    green: 50,
+    blue: 50,
+    orange: 50,
+  });
+
+  // Reset to defaults whenever the dialog reopens
+  useEffect(() => {
+    if (open) {
+      setUserId("");
+      setScores({ gold: 50, green: 50, blue: 50, orange: 50 });
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,27 +336,16 @@ function PrismCreateDialog({
               placeholder="user UUID or email"
             />
           </div>
-          {(
-            [
-              ["gold", gold, setGold],
-              ["green", green, setGreen],
-              ["blue", blue, setBlue],
-              ["orange", orange, setOrange],
-            ] as const
-          ).map(([label, value, setter]) => (
-            <div key={label} className="grid gap-2">
-              <Label htmlFor={`prism-${label}`}>
-                {label.charAt(0).toUpperCase() + label.slice(1)} (0–100)
-              </Label>
-              <Input
-                id={`prism-${label}`}
-                type="number"
-                min={0}
-                max={100}
-                value={value}
-                onChange={(e) => setter(Number(e.target.value))}
-              />
-            </div>
+          {SCORE_FIELDS.map((field) => (
+            <ScoreSlider
+              key={field}
+              id={`prism-${field}`}
+              label={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={scores[field]}
+              onChange={(next) =>
+                setScores((prev) => ({ ...prev, [field]: next }))
+              }
+            />
           ))}
         </div>
         <DialogFooter>
@@ -278,7 +355,13 @@ function PrismCreateDialog({
           <Button
             disabled={!userId.trim() || pending}
             onClick={() =>
-              onSubmit({ user_id: userId.trim(), gold, green, blue, orange })
+              onSubmit({
+                user_id: userId.trim(),
+                gold: scores.gold,
+                green: scores.green,
+                blue: scores.blue,
+                orange: scores.orange,
+              })
             }
           >
             {pending && <Loader2 className="size-4 animate-spin mr-2" />}
@@ -304,18 +387,24 @@ function PrismEditDialog({
   pending: boolean;
 }) {
   const open = !!row;
-  const [gold, setGold] = useState(row?.gold ?? 0);
-  const [green, setGreen] = useState(row?.green ?? 0);
-  const [blue, setBlue] = useState(row?.blue ?? 0);
-  const [orange, setOrange] = useState(row?.orange ?? 0);
+  const [scores, setScores] = useState<Record<ScoreField, number>>({
+    gold: 0,
+    green: 0,
+    blue: 0,
+    orange: 0,
+  });
 
-  // Reset when a new row is selected
-  if (row && row.gold !== gold && row.id !== "init-sentinel") {
-    setGold(row.gold);
-    setGreen(row.green);
-    setBlue(row.blue);
-    setOrange(row.orange);
-  }
+  // Sync local state whenever a new row is selected
+  useEffect(() => {
+    if (row) {
+      setScores({
+        gold: row.gold,
+        green: row.green,
+        blue: row.blue,
+        orange: row.orange,
+      });
+    }
+  }, [row]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -327,27 +416,20 @@ function PrismEditDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {(
-            [
-              ["gold", gold, setGold],
-              ["green", green, setGreen],
-              ["blue", blue, setBlue],
-              ["orange", orange, setOrange],
-            ] as const
-          ).map(([label, value, setter]) => (
-            <div key={label} className="grid gap-2">
-              <Label htmlFor={`edit-prism-${label}`}>
-                {label.charAt(0).toUpperCase() + label.slice(1)} (0–100)
-              </Label>
-              <Input
-                id={`edit-prism-${label}`}
-                type="number"
-                min={0}
-                max={100}
-                value={value}
-                onChange={(e) => setter(Number(e.target.value))}
-              />
-            </div>
+          <div className="grid gap-2">
+            <Label>User</Label>
+            <Input value={row?.user_id ?? ""} readOnly disabled />
+          </div>
+          {SCORE_FIELDS.map((field) => (
+            <ScoreSlider
+              key={field}
+              id={`edit-prism-${field}`}
+              label={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={scores[field]}
+              onChange={(next) =>
+                setScores((prev) => ({ ...prev, [field]: next }))
+              }
+            />
           ))}
         </div>
         <DialogFooter>
@@ -356,7 +438,14 @@ function PrismEditDialog({
           </Button>
           <Button
             disabled={pending}
-            onClick={() => onSubmit({ gold, green, blue, orange })}
+            onClick={() =>
+              onSubmit({
+                gold: scores.gold,
+                green: scores.green,
+                blue: scores.blue,
+                orange: scores.orange,
+              })
+            }
           >
             {pending && <Loader2 className="size-4 animate-spin mr-2" />}
             Save changes
