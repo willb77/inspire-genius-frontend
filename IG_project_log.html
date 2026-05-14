@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1093</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1092</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,104 +103,6 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
-
-        <h3>[2026-05-13] — /fix-destructive-confirm-modal shipped: typed-confirmation friction for irreversible actions</h3>
-        <p>Item 6 of the User Management review. <strong>Adds a reusable destructive-confirmation primitive; wired into 3 irreversible flows. 9 new tests + 55/55 across UM surface; tsc + eslint + production build clean.</strong></p>
-        <h4>New component</h4>
-        <p><code>DestructiveConfirmModal</code> in <code>src/components/shared/forms/</code> — built on the project's <code>ModalDialog</code> primitive (same surface as <code>ConfirmActionModal</code>). Operator must type <code>confirmPhrase</code> verbatim (trim-tolerant) before the destructive button enables. AlertTriangle icon next to body, autoFocused input with <code>autoComplete="off"</code> / <code>spellCheck={false}</code> / <code>autoCorrect="off"</code> so browsers don't autofill or autocorrect the phrase. <code>useEffect</code> resets the typed value when <code>open</code> flips to false.</p>
-        <h4>Wired into UserManagement.tsx</h4>
-        <ul>
-          <li><strong>Row-menu Delete on Deactivated row</strong> → new modal, type the user's email to confirm. Active / Awaiting rows stay on the lighter <code>ConfirmActionModal</code> (soft-delete is reversible).</li>
-          <li><strong>Bulk Delete</strong> → new modal, type <code>DELETE N</code> (N = selected count).</li>
-          <li><strong>Purge Inactive</strong> → new modal, type <code>PURGE INACTIVE</code>; button label dynamically reads <code>Purge N user(s)</code>.</li>
-        </ul>
-        <h4>Spec deviations</h4>
-        <ul>
-          <li>Built on existing <code>ModalDialog</code> primitive instead of raw <code>Dialog</code>/<code>DialogContent</code>, matching <code>ConfirmActionModal</code>'s pattern. Icon moved from <code>DialogTitle</code> to body since <code>ModalDialog</code> renders title plain.</li>
-          <li>Future Org/Business destructive flows aren't built yet — modal is positioned for reuse but no other call sites today.</li>
-        </ul>
-        <h4>Tests</h4>
-        <p><strong>9/9 new</strong> in <code>DestructiveConfirmModal.test.tsx</code>: hidden when closed; renders title+phrase; button disabled until match; trims whitespace; calls onConfirm; cancel fires onOpenChange(false); input clears on close+reopen; "Working..." while loading; fixed-phrase variant ("PURGE INACTIVE"). <strong>55/55 total</strong> across the User Management surface (UserManagement page + hooks + service + ConfirmActionModal + DestructiveConfirmModal).</p>
-        <h4>Other</h4>
-        <p>Removed a stray <code>eslint-disable-next-line jsx-a11y/no-autofocus</code> — that plugin isn't installed here, so the disable comment itself errored. Production build (<code>npm run build</code>) clean.</p>
-        <h4>Deploy</h4>
-        <p>Frontend-only. Merge to <code>development</code> → CI deploys SPA. No backend redeploy needed.</p>
-
-        <h3>[2026-05-13] — /fix-user-purge-endpoint shipped: server-side bulk purge with SAVEPOINT isolation</h3>
-        <p>Item 5 of the User Management review. <strong>Replaces ~50 LOC client-side fanout (N HTTP calls) with a single server-side endpoint. Backend 15/15 + frontend 44/44 tests PASS; tsc + eslint + production build clean.</strong></p>
-        <h4>Server-side function</h4>
-        <p><code>purge_inactive_users()</code> in <code>users/auth_service/schema.py</code> selects all <code>is_deleted=True</code> users, iterates them inside <code>session.begin_nested()</code> SAVEPOINTs, calls <code>_hard_delete_user()</code> (delivered by /fix-user-purge) per row, rolls back the savepoint on per-row failure without aborting the batch. Returns <code>{total, succeeded[], failed[{email, reason}]}</code>. Failure reasons truncated to 200 chars. Sequential Cognito deletes inside the loop (~200ms each) fits the 29s API Gateway timeout for ~100 users. Docstring notes Step Functions / SQS as the right next step if tenants ever have >~100 inactive users.</p>
-        <h4>Route</h4>
-        <p>New <code>POST /v1/user-management/users/purge-inactive</code> in <code>user_management.py</code>, super-admin only via <code>require_admin_role()</code>. Standard <code>create_response</code> envelope.</p>
-        <h4>Frontend simplification</h4>
-        <p>Old: <code>purgeInactiveUsers()</code> paged through inactive users, fired N parallel DELETEs, aggregated client-side. New: single <code>api.post('/v1/user-management/users/purge-inactive')</code> ~10 LOC. Types tightened to <code>PurgeFailure {email,reason}</code> + <code>PurgeInactiveResult {total, succeeded[], failed[]}</code>. Hook toast logic rewritten for new shape (info/success/warning/error). Audit action renamed <code>"user_deleted"</code> → <code>"users_bulk_purged"</code> with <code>{total, succeeded_count, failed_count}</code> extras.</p>
-        <h4>Files touched</h4>
-        <ul>
-          <li><strong>Added</strong>: <code>users/auth_service/schema.py::purge_inactive_users</code>, <code>users/auth_service/user_management.py::purge_inactive</code> route, <code>tests/test_purge_inactive.py</code> (5 tests).</li>
-          <li><strong>Changed</strong>: <code>frontend/.../user-management.service.ts</code> (rewritten purge function + types), <code>frontend/.../useUserManagement.ts::usePurgeInactiveUsers</code> (toast + audit), <code>__tests__/user-management.service.test.ts</code> (2 new purge tests).</li>
-        </ul>
-        <h4>Spec deviations</h4>
-        <ul>
-          <li><strong>No EventBridge emission</strong> — monolith has no emit utility (verified by grep). The frontend's existing <code>logAuditEvent</code> call carries the audit signal end-to-end. Can be wired in later if downstream automation needs it.</li>
-          <li><strong>No rate limiting</strong> — no global monolith rate-limit decorator exists; route relies on <code>require_admin_role()</code>. Acceptable for a manual super-admin action.</li>
-        </ul>
-        <h4>Tests</h4>
-        <p><strong>15/15 backend PASS</strong> across <code>test_delete_user.py</code> (6) + <code>test_edit_user.py</code> (4) + <code>test_purge_inactive.py</code> (5). <strong>44/44 frontend PASS</strong> across hook (16) + service (12) + page (16). Frontend <code>tsc --noEmit</code> + <code>eslint</code> + <code>npm run build</code> all clean.</p>
-        <h4>Deploy + smoke</h4>
-        <ol>
-          <li>Redeploy monolith backend container.</li>
-          <li>Merge to <code>development</code> → frontend CI deploys SPA.</li>
-          <li>Live curl: <code>POST /v1/user-management/users/purge-inactive</code> → <code>{total: N, succeeded: [...], failed: []}</code>. <code>SELECT count(*) FROM users WHERE is_deleted = true</code> → 0. DevTools Network tab: single POST instead of N DELETEs.</li>
-        </ol>
-
-        <h3>[2026-05-13] — /fix-user-cognito-disable shipped: explicit admin_disable/enable_user in soft-delete + reactivation</h3>
-        <p>Item 4 of the User Management review. <strong>10/10 backend tests PASS, no frontend changes, deploy = monolith container redeploy only.</strong></p>
-        <h4>Discovery during implementation</h4>
-        <p>The review claimed soft-delete left Cognito enabled. Investigation showed <code>update_cognito_user_attributes(..., {'is_active': False})</code> already routes through <code>CognitoUserHandler._update_status</code> (<code>cognito_utils.py:833</code>) which calls <code>admin_disable_user</code>. The "half-state bug" (is_active flips without clearing is_deleted on reactivation) was also already handled by <code>process_status_update</code> (<code>schema.py:1166</code>): <code>user.is_deleted = not user.is_active</code>. So the original code WAS correct — just two layers deep and zero test coverage.</p>
-        <h4>Why ship anyway</h4>
-        <ul>
-          <li><strong>Intent clarity</strong> — a reader of <code>delete_user_by_email</code> no longer has to trace three layers to see that Cognito disable happens.</li>
-          <li><strong>Refactor safety</strong> — if someone later simplifies the <code>is_active</code> special-case in <code>CognitoUserHandler</code>, the explicit call protects against silent regression.</li>
-          <li><strong>Regression coverage</strong> — tests now mock <code>admin_disable_user</code> / <code>admin_enable_user</code> at the schema level and assert they're called. Was zero coverage on this contract.</li>
-        </ul>
-        <h4>Files touched</h4>
-        <ul>
-          <li><strong>Added</strong>: <code>users/aws_wrapper/cognito_utils.py</code> — <code>disable_cognito_user()</code> + <code>enable_cognito_user()</code> helpers, idempotent, UserNotFoundException treated as success.</li>
-          <li><strong>Added</strong>: <code>tests/test_edit_user.py</code> — 4 tests covering reactivation, deactivation-via-Edit, name-only edit no-op, Cognito-failure-doesn't-break-edit.</li>
-          <li><strong>Added</strong>: 2 new cases in <code>tests/test_delete_user.py</code> — soft-delete calls disable, soft-delete survives Cognito failure.</li>
-          <li><strong>Changed</strong>: <code>users/auth_service/schema.py</code> — imports new helpers; soft-delete branch explicitly calls <code>disable_cognito_user</code> before the attribute update; <code>edit_active_user</code> calls enable/disable based on <code>edit_data['is_active']</code> before the validator's Cognito sync. Inline comments document the deliberate idempotent redundancy.</li>
-          <li><strong>Not changed</strong>: <code>infrastructure/cdk/lib/services-stack.ts</code> — IAM audit confirmed <code>AdminEnableUser</code> (line 502) + <code>AdminDisableUser</code> (line 503) already granted.</li>
-        </ul>
-        <h4>Tests</h4>
-        <p><strong>10/10 PASS</strong>: <code>test_delete_user.py</code> 6 + <code>test_edit_user.py</code> 4 (Python 3.12, pytest 9.0.2, asyncio-strict).</p>
-        <h4>Deploy + smoke (not done in this session)</h4>
-        <ol>
-          <li>Redeploy monolith backend container.</li>
-          <li>Live test: invite + accept test user → DELETE → <code>aws cognito-idp admin-get-user --query 'Enabled'</code> = <code>false</code>. PUT <code>/users/{email}/edit</code> with <code>is_active=true</code> → query = <code>true</code>. Login as soft-deleted user → 401 "User is disabled" from Cognito.</li>
-        </ol>
-
-        <h3>[2026-05-13] — /fix-user-purge shipped: force-flag DELETE + Alembic FK migration + real audit actor</h3>
-        <p>Implements items 1-3 of the User Management review. Deactivated users can now actually be purged. <strong>Backend 5/5 + frontend 44/44 tests pass; tsc + eslint + production build clean. Deploy via migration-runner Lambda + monolith redeploy + frontend CI.</strong></p>
-        <h4>Root-cause fix</h4>
-        <p><code>delete_user_by_email()</code> now accepts <code>force: bool = False</code>. New branch: when <code>user.is_deleted and force</code> → hard-delete via a new <code>_hard_delete_user()</code> helper extracted from the existing block. The refusal path for soft-deleted users without force now includes <code>can_force_purge: True</code> in the payload + an instructive message. The original client-side <code>purgeInactiveUsers()</code> loop was failing on every row because the backend refused; now it passes <code>force=true</code> per-row and the list actually shrinks.</p>
-        <h4>FK safety</h4>
-        <p>New Alembic migration <code>d7f3b9a14c20_user_fk_set_null_for_audit_columns.py</code> makes <code>issues.reported_by</code> nullable + sets both <code>issues.reported_by</code> and <code>organization_agents.assigned_by</code> to <code>ON DELETE SET NULL</code>. FK constraint names verified against <code>37104f8ccde6_added_issues_license_and_organization_</code>: <code>fk_issues_reported_by_users</code>, <code>fk_organization_agents_assigned_by_users</code>. <code>_hard_delete_user()</code> also nulls these via SQLAlchemy <code>update()</code> at runtime as belt-and-suspenders.</p>
-        <h4>Audit log truth</h4>
-        <p>All 5 audit-logging hooks (invite / update / change-role / delete / purge) now read <code>actor_email</code> from <code>useAuth().user?.email</code>. Was hardcoded <code>"admin"</code> literal — every super-admin action looked anonymous.</p>
-        <h4>Files touched</h4>
-        <ul>
-          <li><strong>Backend</strong>: <code>users/auth_service/schema.py</code> (delete_user_by_email + helper), <code>users/auth_service/user_management.py</code> (route accepts force), <code>users/models/issue.py</code> + <code>users/models/user.py</code> (ORM ondelete=SET NULL), <code>prism_inspire/alembic/versions/d7f3b9a14c20_*.py</code> (new), <code>tests/test_delete_user.py</code> (new, 5 tests)</li>
-          <li><strong>Frontend</strong>: <code>services/.../user-management.service.ts</code> (force arg + purge fix + tightened type), <code>hooks/.../useUserManagement.ts</code> (useDeleteUser signature + actor_email), <code>pages/super-admin/UserManagement.tsx</code> (handleDelete + handleBulkDelete + modal copy), <code>__tests__/useUserManagement.test.tsx</code> + <code>__tests__/UserManagement.test.tsx</code> (signature updates + useAuth mock)</li>
-        </ul>
-        <h4>Deploy steps (not done in this session)</h4>
-        <ol>
-          <li>Apply Alembic migration via <code>services/migration-runner</code> Lambda against dev Aurora.</li>
-          <li>Redeploy monolith backend container to pick up schema.py + user_management.py changes.</li>
-          <li>Merge to <code>development</code> → frontend CI deploys SPA.</li>
-          <li>Live-curl smoke: active user → <code>soft_delete</code> → 200 refusal with <code>can_force_purge:true</code> → <code>?force=true</code> → <code>hard_delete, cognito_deleted:true</code>.</li>
-        </ol>
-        <h4>P2 follow-up (not in this PR)</h4>
-        <p>6 other FKs to <code>users.user_id</code> still RESTRICT a hard delete: <code>user_profiles.assigned_by</code>, <code>organization_admin.assigned_by</code>, one more in <code>user.py:199</code>, <code>user_invitations.invited_by</code>, <code>issue_comments.commented_by</code>, <code>issue_attachments.uploaded_by</code>. Real-world soft-deleted users who have commented on issues or uploaded attachments will still fail to purge with a generic IntegrityError. Recommend a follow-up migration to set them all to <code>SET NULL</code> in one sweep.</p>
 
         <h3>[2026-05-13] — User Management top-to-bottom review (no code changes yet)</h3>
         <p>Triggered by an operator question: <em>"There are a number of users whose status is deactivated, but I can't delete them from the list. Why can't they be purged?"</em></p>
@@ -2449,20 +2351,12 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-13 — Prompt #1093 [/fix-destructive-confirm-modal — typed-confirmation friction]</div>
-          <div class="prompt-text">/fix-destructive-confirm-modal — item 6 of the User Management review. Added reusable `DestructiveConfirmModal` (src/components/shared/forms/) built on the project's `ModalDialog` primitive: operator must type a phrase verbatim (trim-tolerant) before the destructive button enables; AlertTriangle icon, autoFocused input, autoComplete=off, spellCheck=false, autoCorrect=off; input resets on close. Wired into UserManagement.tsx three places: (1) row-menu Delete on Deactivated rows now opens force-delete modal requiring the email typed; (2) Bulk Delete now requires "DELETE N" phrase; (3) Purge Inactive now requires "PURGE INACTIVE" phrase. Active/Awaiting deletes stay on the lighter ConfirmActionModal since they're reversible (soft-delete). Tests: 9/9 new component tests + 55/55 total across UM surface area. tsc + eslint + npm build clean. One micro-fix: removed an `eslint-disable-next-line jsx-a11y/no-autofocus` comment since that plugin isn't installed in this repo (the disable comment itself errored). Frontend-only deploy via CI on merge.</div>
+          <div class="timestamp">2026-05-13 — Prompt #1092 [/log-session — Meridian review deliverables]</div>
+          <div class="prompt-text">Captures the /bedtime review deliverables: MERIDIAN_REVIEW_2026-05-13.md (sub-agent-generated, with my correction box at top — TL;DR P0 #1 claim about chat_messages missing Phase C columns was wrong, table actually has 29 cols), MERIDIAN_REVIEW_PROMPTS.md (12 ready-to-paste /full-go prompts, one per finding), plus Word renderings of both via the generalised scripts/build_meridian_review_docx.py. Verified P0 obs-tables-missing, P1 SECURITY RAG tenant leak in _search_pgvector, and P1 ObservabilityPanel msg-id mismatch.</div>
         </div>
         <div class="prompt-entry">
-          <div class="timestamp">2026-05-13 — Prompt #1092 [/fix-user-purge-endpoint — server-side bulk purge with savepoints]</div>
-          <div class="prompt-text">/fix-user-purge-endpoint — item 5 of the User Management review. Replaces the client-side `Promise.allSettled` fanout (~50 LOC, N HTTP calls) with a single server-side endpoint that processes each soft-deleted user inside its own SAVEPOINT (`session.begin_nested()`). Added: `purge_inactive_users()` schema function (Returns `{total, succeeded[], failed[{email,reason}]}`, savepoint per row so one failure doesn't abort the batch, failure reason truncated to 200 chars), `POST /v1/user-management/users/purge-inactive` route with `require_admin_role()`, `tests/test_purge_inactive.py` (5 tests, all PASS). Changed: frontend service `purgeInactiveUsers()` now a single `api.post`, new types `PurgeFailure` + `PurgeInactiveResult`, hook toast logic rewritten for new shape (info/success/warning/error branches), audit action renamed `users_bulk_purged` with `{total, succeeded_count, failed_count}`. Backend pytest 15/15 (delete+edit+purge), frontend tsc + eslint + jest 44/44 + npm build all clean. Skipped from spec: EventBridge emit (monolith has no emit utility — frontend logAuditEvent carries the signal). Deploy: monolith container redeploy + frontend CI on merge.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-13 — Prompt #1091 [/fix-user-cognito-disable — explicit admin_disable/enable_user]</div>
-          <div class="prompt-text">/fix-user-cognito-disable — item 4 of the User Management review. DISCOVERY during implementation: the review's claim that soft-delete leaves Cognito enabled was wrong — `update_cognito_user_attributes(..., {'is_active': False})` already routes through `CognitoUserHandler._update_status` (cognito_utils.py:833) which calls `admin_disable_user`. The "half-state bug" was also already handled by `process_status_update` (schema.py:1166): `user.is_deleted = not user.is_active`. Fix still shipped for intent clarity (no more tracing 3 layers to see disable happens), refactor safety (if someone simplifies _update_status, the explicit call still protects), and regression coverage (was zero tests on this contract). Added: `disable_cognito_user(username)` + `enable_cognito_user(username)` helpers in cognito_utils.py (idempotent, UserNotFoundException → success), tests/test_edit_user.py (4 tests). Changed: schema.py soft-delete branch calls `disable_cognito_user` before the attribute update; `edit_active_user` post-commit calls enable/disable before validator's Cognito sync. IAM audit: services-stack.ts:502+503 already grants AdminEnableUser + AdminDisableUser — no CDK change. Tests: 10/10 backend PASS. No frontend changes. Deploy: monolith container redeploy only.</div>
-        </div>
-        <div class="prompt-entry">
-          <div class="timestamp">2026-05-13 — Prompt #1090 [/fix-user-purge — execute items 1-3 of UM review]</div>
-          <div class="prompt-text">/fix-user-purge — shipped force-flag DELETE + Alembic FK migration + real audit actor. Backend: `delete_user_by_email(force=False)` adds new branch `if user.is_deleted and force` → calls extracted `_hard_delete_user()` helper that nulls `issues.reported_by` + `organization_agents.assigned_by` before deleting the user (belt-and-suspenders for the FK migration). Renamed `deletion_type: "invitation_only"` → `"soft_delete"`. Route accepts `?force=true` query param. Alembic migration `d7f3b9a14c20_user_fk_set_null_for_audit_columns.py` makes `issues.reported_by` nullable + sets both FKs to `ON DELETE SET NULL` (FK names verified against `37104f8ccde6`). Frontend: `deleteUserByEmail(email, force=false)` appends `?force=true`, `purgeInactiveUsers()` passes `force=true` per-row (the actual unblock — the old client-side loop hit the "already deactivated" refusal every time), `useDeleteUser` signature is now `{email, force?}`, all 5 audit hooks pull `actor_email` from `useAuth().user?.email` (was hardcoded `"admin"`), Delete confirm modal branches title/body/button on status. Tests: backend 5/5 new + frontend 44/44 existing all pass. Build: tsc + eslint + production build all clean. Deploy steps documented in change_log.md (migration via migration-runner Lambda, then monolith redeploy, then frontend on merge).</div>
+          <div class="timestamp">2026-05-13 — Prompt #1090 [Stale-bundle detection: merge, CDK deploy, end-to-end verification]</div>
+          <div class="prompt-text">Continues prompt #1086. User: "merge them in order: #90, #54, #91, #55" → "trigger the CDK deploy" → "test it by pushing a dummy commit". Merged all four PRs (#90 3cb059d → #54 d04b280 → #91 e1d8c9d → #55 ba472fe). Fired CDK workflow_dispatch with environment=dev dry_run=false; run 25774950234 completed all 4 jobs (Validate, Diff, Deploy, Verify). Confirmed CloudFront E3EFVMBYYVF012 now applies CACHING_DISABLED policy 4135ea2d-6df8-44a3-9df3-4b5a84be39ad to /index.html and /version.json; live HEAD probes return cache-control:no-cache,no-store,must-revalidate and x-cache:Miss. PR #58 (c12b03a) was a comment-only commit to buildVersion.ts to test the full gate — pre-merge SHA on /version.json was 6820e288...; expecting c12b03af... after deploy lands. Closes the operator-reported "stale webpage on login" issue structurally.</div>
         </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Prompt #1089 [/bedtime detailed User Management review]</div>
@@ -24114,6 +24008,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-12 — Activity #act-pr50-orphan-hooks [PR #50 shipped + verified]</div>
           <div class="prompt-text">PR #50 (chore/disable-orphan-hooks → development, squashed to eaae231) closes the last DevTools 404 noise across all four role dashboards. Three React Query hooks whose endpoints have no backend implementation are now `enabled: false` by default with an opt-in `{ enabled: true }` second arg for tests / future re-enable: useDashboardSystem (GET /v1/dashboard/system — backlog #9 Bug A), useFeedbackStats (GET /v1/admin/feedback/stats — backlog #9 Bug B), usePrismHistory (GET /v1/prism/history/{userId} — backlog #10.U). Each was firing 3× per page load via React Query default retries → 9 DevTools 404s per super-admin or user dashboard visit. Consumer change: DashboardSystem.tsx skeleton check now `isPending && fetchStatus === "fetching"` so the disabled hook renders `0` instead of an infinite skeleton (all five other consumers use `isLoading`, which is `false` when `enabled: false`, so they were unaffected). Test fixtures updated: useDashboardSystem.test.tsx (4 cases) + useFeedback.test.tsx (1 case) + usePrismHooks.test.tsx (1 case) pass `{ enabled: true }`; DashboardSystem.test.tsx skeleton case mocks `fetchStatus: 'fetching'`. useDashboardSystem `options` parameter loosened to `Partial<UseQueryOptions<...>>` so callers can pass `{ enabled: true }` without supplying `queryKey` (caught by `tsc -b` in CI after the first push). Final CI: Build/Trivy/Audit/Unit Tests (17m6s, 2978 tests) all green; squash-merged. Dev deploy succeeded (Deploy to Production cancelled, as designed — manual approval gate). Browser-verified against d1nxsns258du4y.cloudfront.net with fresh HARs for all four roles: User 3/3 entries 200, Manager 6/6 entries 200/202, Company 5/5 entries 200/202, Super Admin 5/5 entries 200. Zero 4xx, zero 5xx across all four dashboards; the three orphan endpoints no longer appear in any HAR. Console "asynchronous response by returning true" error identified as benign browser-extension noise (chrome.runtime.onMessage), not from our app.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Prompt #1091 [/log-session — Wave 0 close-out + roadmap doc]</div>
+          <div class="prompt-text">merge the final 4 Wave 0 PRs (#29, #33, #34, #36) → then create a Word document of the post-Wave-0 roadmap in priority + parallel order. After that: /log-session.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-13 — Activity #act-wave0-closeout [Wave 0 final 4 PRs merged + roadmap doc]</div>
+          <div class="prompt-text">Closed out Wave 0 of the IG Dashboard Rationalization Plan v2. Merged the last 4 open Wave 0 PRs into inspire-genius-frontend:development (squash): PR #33 Lane 0.H DashboardFrame primitive (e8259884, clean), PR #34 Lane 0.G ChartKit primitives (1c9ba679 — doc-file conflicts only, resolved by keeping both Lane 0.G content and origin/development's R-2.9 entry; CI Build 1m26s + Unit Tests 16m32s green), PR #29 Lane 0.A super-admin deletes D2+D1+D8 (3ec7d165 — doc-file conflicts only, took --theirs since wave-0a's local R-2.1 doc-mirror was already superseded by dev's authoritative content; CI Unit Tests 15m57s green), PR #36 Lane 0.E KnowledgeBase + CulturalContent merge O7 (8b8b4889 — real code conflicts in src/constants/navigation.ts and src/routes.tsx; kept dev's PRISM Management additions and wave-0e's Cultural Content removal + redirect; re-merged twice; CI Unit Tests 16m29s green). Wave 0 now 100% complete — 9/9 lanes shipped. Then authored Transformation Documents/IG_Dashboard_Rationalization_Post_Wave0_Roadmap.docx (~55 KB, with Logo-Dark.png header) — priority-ordered Tier 1 (Run NOW, no platform gate, Wave 1 lanes 1.A→1.E) / Tier 2 (Run NOW, gates cleared, Wave 2 + Wave 3 evidence) / Tier 3 (Gated on R-2.10, Wave 4) / Tier 4 (Final sweep, Wave 5) with per-tier lane tables, recommended parallel batches, and §4.1/§4.2/§4.3 cross-refs to the v2 plan. Wave 1 is unblocked next (5 parallel-safe lanes: P3.2/P3.3/P3.4/P3.5 ChartKit consumers + P6.2 DashboardFrame adopt across 6 role dashboards).</div>
         </div>
 </div>
 

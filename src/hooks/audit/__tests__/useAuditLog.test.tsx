@@ -23,6 +23,16 @@ jest.mock("@/services/audit/audit.service", () => ({
   getAuditStats: jest.fn(),
 }))
 
+// useAuditStats was changed to gate by role (super-admin or company-admin).
+// These tests don't need to verify the gate itself — that's covered by the
+// hook's role-check contract — so stub useAuth to grant access.
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({
+    hasRole: () => true,
+    isAtLeast: () => true,
+  }),
+}))
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
