@@ -20,10 +20,14 @@ import {
 } from "@/components/super-admin/organization/DataTable"
 import Pagination from "@/components/shared/Pagination"
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton"
+// Wave 1 Lane 1.C (P3.4) — Analytics tab charts now use the shared ChartKit
+// primitives (PR #34). Recharts only stays in this file for the audit-log /
+// project-log / sitemap tabs that aren't part of this lane.
 import {
-  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts"
+  EngagementChart,
+  GoalsBreakdownChart,
+  type GoalsBreakdownDatum,
+} from "@/components/analytics/charts"
 import { useUserManagement } from "@/hooks/super-admin/user-management/useUserManagement"
 import { useCoachesList } from "@/hooks/super-admin/coach-management/useCoaches"
 import { useAuditLogs, useAuditStats } from "@/hooks/audit/useAudit"
@@ -118,9 +122,9 @@ function AnalyticsTab() {
     ? coachesRaw
     : (coachesRaw as { agents?: { name: string; status?: string }[] })?.agents ?? []
   const coachAgents = coachAgentsAll.filter((a: { status?: string }) => a.status?.toLowerCase() !== "deactivated")
-  const agentUsage = coachAgents.length > 0
+  const agentUsage: GoalsBreakdownDatum[] = coachAgents.length > 0
     ? coachAgents.slice(0, 6).map((agent: { name: string }) => ({ name: agent.name, value: 1 }))
-    : [{ name: "No agents", value: 1 }]
+    : []
 
   // Build org comparison from real organization data
   const orgsList = orgsData?.data?.organizations ?? []
@@ -155,17 +159,14 @@ function AnalyticsTab() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <DataCard title="Agent Usage Distribution" className="!mt-0">
-          {coachesLoading ? (
-            <div className="flex items-center justify-center h-[220px] text-sm text-[#6b7280]">Loading agents...</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart><Pie data={agentUsage} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                {agentUsage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie><Tooltip /></PieChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <GoalsBreakdownChart
+          title="Agent Usage Distribution"
+          data={agentUsage}
+          colors={COLORS}
+          loading={coachesLoading}
+          height={220}
+          emptyState="No active agents."
+        />
 
         <DataCard title="Organizations" className="!mt-0">
           {orgsLoading ? (
@@ -190,19 +191,15 @@ function AnalyticsTab() {
         </DataCard>
       </div>
 
-      <DataCard title="Top Audit Actions">
-        {auditLoading ? (
-          <div className="flex items-center justify-center h-[220px] text-sm text-[#6b7280]">Loading audit data...</div>
-        ) : systemHealthData.length === 0 ? (
-          <div className="flex items-center justify-center h-[220px] text-sm text-[#6b7280]">No audit data available yet</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={systemHealthData}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="day" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip />
-              <Bar dataKey="responseTime" fill="#3B5BFF" name="Event Count" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </DataCard>
+      <EngagementChart
+        title="Top Audit Actions"
+        data={systemHealthData}
+        xKey="day"
+        valueKey="responseTime"
+        loading={auditLoading}
+        height={220}
+        emptyState="No audit data available yet."
+      />
     </>
   )
 }
