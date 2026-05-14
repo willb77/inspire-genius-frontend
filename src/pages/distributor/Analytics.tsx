@@ -1,6 +1,9 @@
 import DistributorLayout from "@/layouts/DistributorLayout"
 import DataCard from "@/components/dashboard/DataCard"
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import {
+  EngagementChart,
+  UtilizationAreaChart,
+} from "@/components/analytics/charts"
 import ProgressBar from "@/components/dashboard/ProgressBar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDistributorAnalytics } from "@/hooks/analytics/useAnalytics"
@@ -32,6 +35,8 @@ export default function DistributorAnalytics() {
   const PRAC_UTIL = ad?.pracUtil ?? FALLBACK_PRAC_UTIL
   const CREDIT_FLOW = ad?.creditFlow ?? FALLBACK_CREDIT_FLOW
 
+  const errorString = error ? "Failed to load analytics data." : undefined
+
   return (
     <DistributorLayout>
       <h1 className="text-xl font-bold text-[#111827] mb-1">Territory Analytics</h1>
@@ -45,13 +50,15 @@ export default function DistributorAnalytics() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <DataCard title="Credits Used by Region" className="!mt-0">
-          {isLoading ? <Skeleton className="h-[220px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={CREDITS_BY_REGION}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="region" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="credits" fill="#3B5BFF" radius={[4, 4, 0, 0]} /></BarChart>
-            </ResponsiveContainer>
-          )}
-        </DataCard>
+        <EngagementChart
+          title="Credits Used by Region"
+          data={CREDITS_BY_REGION}
+          xKey="region"
+          valueKey="credits"
+          loading={isLoading}
+          error={errorString}
+          height={220}
+        />
 
         <DataCard title="Practitioner Utilization" className="!mt-0">
           {isLoading
@@ -67,17 +74,19 @@ export default function DistributorAnalytics() {
         </DataCard>
       </div>
 
-      <DataCard title="Credit Flow (6 months)">
-        {isLoading ? <Skeleton className="h-[240px] w-full" /> : (
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={CREDIT_FLOW}><CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" /><XAxis dataKey="month" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Legend />
-              <Area type="monotone" dataKey="purchased" stroke="#3B5BFF" fill="rgba(59,91,255,0.1)" name="Purchased" />
-              <Area type="monotone" dataKey="allocated" stroke="#2DD4BF" fill="rgba(45,212,191,0.1)" name="Allocated" />
-              <Area type="monotone" dataKey="used" stroke="#8B5CF6" fill="rgba(139,92,246,0.1)" name="Used" />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </DataCard>
+      <UtilizationAreaChart
+        title="Credit Flow (6 months)"
+        data={CREDIT_FLOW}
+        xKey="month"
+        series={[
+          { key: "purchased", label: "Purchased", color: "#3B5BFF" },
+          { key: "allocated", label: "Allocated", color: "#2DD4BF" },
+          { key: "used", label: "Used", color: "#8B5CF6" },
+        ]}
+        loading={isLoading}
+        error={errorString}
+        height={240}
+      />
     </DistributorLayout>
   )
 }

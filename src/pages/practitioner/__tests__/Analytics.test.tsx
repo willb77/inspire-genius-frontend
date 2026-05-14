@@ -10,24 +10,31 @@ jest.mock("@/layouts/PractitionerLayout", () => ({
 }));
 jest.mock("@/components/dashboard/DataCard", () => ({
   __esModule: true,
-  default: ({ title, children }: any) => <div data-testid={`data-card-${title}`}>{children}</div>,
+  default: ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div data-testid={`data-card-${title}`}>{children}</div>
+  ),
 }));
 jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
+// Wave 1 Lane 1.D — page now uses ChartKit; mock recharts so the kit
+// renders without canvas.
 jest.mock("recharts", () => ({
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
+  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   Bar: () => null,
-  PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
-  Pie: ({ children, label: _label }: any) => <div>{children}</div>,
+  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
+  Pie: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
   Cell: () => null,
-  LineChart: ({ children }: any) => <div data-testid="line-chart">{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
+  Area: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Legend: () => null,
 }));
 
 const mockUsePractitionerAnalytics = jest.fn();
@@ -54,27 +61,27 @@ describe("PractitionerAnalytics", () => {
     expect(screen.getByTestId("practitioner-layout")).toBeInTheDocument();
   });
 
-  it("renders charts with fallback data", () => {
+  it("renders ChartKit chart cards via DataCard titles", () => {
     render(<PractitionerAnalytics />);
-    expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("line-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("data-card-Client Engagement (Top 6)")).toBeInTheDocument();
+    expect(screen.getByTestId("data-card-Weekly Session Frequency")).toBeInTheDocument();
+    expect(screen.getByTestId("data-card-PRISM Completion Rates")).toBeInTheDocument();
   });
 
-  it("shows loading skeletons", () => {
+  it("shows ChartKit loading skeletons", () => {
     mockUsePractitionerAnalytics.mockReturnValue({ ...hookDefaults, isLoading: true });
     render(<PractitionerAnalytics />);
-    expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("chartkit-loading-skeleton").length).toBeGreaterThan(0);
   });
 
   it("shows error message and retry", () => {
     mockUsePractitionerAnalytics.mockReturnValue({ ...hookDefaults, error: new Error("fail") });
     render(<PractitionerAnalytics />);
-    expect(screen.getByText(/Failed to load analytics data/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Failed to load analytics data/).length).toBeGreaterThan(0);
     expect(screen.getByText("Retry")).toBeInTheDocument();
   });
 
-  it("renders PRISM completion legend", () => {
+  it("renders PRISM completion legend (only when data is ready)", () => {
     render(<PractitionerAnalytics />);
     expect(screen.getByText(/Completed/)).toBeInTheDocument();
     expect(screen.getByText(/In Progress/)).toBeInTheDocument();
