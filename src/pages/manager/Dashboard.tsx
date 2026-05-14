@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import ManagerLayout from "@/layouts/ManagerLayout"
-import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
+import DashboardFrame from "@/components/dashboard/DashboardFrame"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import { useAuth } from "@/context/useAuth"
@@ -39,32 +39,30 @@ export default function ManagerDashboard() {
   const interviews = ((interviewData as { interviews?: Interview[] } | undefined)?.interviews ?? []) as Interview[]
   const team = ((teamData as { members?: TeamMember[] } | undefined)?.members ?? []) as TeamMember[]
 
-  return (
-    <ManagerLayout>
-      <WelcomeBanner
-        title={t("admin:manager.title")}
-        subtitle={`Welcome back, ${name}.`}
-      >
-        <div className="flex gap-2">
-          <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:manager.viewReports")}</button>
-          <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">{t("admin:manager.schedule1on1")}</button>
+  const bannerActions = (
+    <div className="flex gap-2">
+      <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:manager.viewReports")}</button>
+      <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">{t("admin:manager.schedule1on1")}</button>
+    </div>
+  )
+
+  const statsKpi = (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {STATS.map((s) => (
+        <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 hover:shadow-sm transition-shadow">
+          <div className="text-xs text-[#6b7280] mb-1">{s.label}</div>
+          {(teamLoading || hiringLoading) ? (
+            <Skeleton className="h-8 w-16 my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-[#111827]">{s.value}</div>
+          )}
         </div>
-      </WelcomeBanner>
+      ))}
+    </div>
+  )
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-        {STATS.map((s) => (
-          <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 hover:shadow-sm transition-shadow">
-            <div className="text-xs text-[#6b7280] mb-1">{s.label}</div>
-            {(teamLoading || hiringLoading) ? (
-              <Skeleton className="h-8 w-16 my-1" />
-            ) : (
-              <div className="text-2xl font-bold text-[#111827]">{s.value}</div>
-            )}
-          </div>
-        ))}
-      </div>
-
+  const primary = (
+    <>
       {/* Hiring Pipeline */}
       <DataCard title={t("admin:manager.hiringPipeline")}>
         {hiringError && (
@@ -148,6 +146,18 @@ export default function ManagerDashboard() {
             ))
         }
       </DataCard>
+    </>
+  )
+
+  return (
+    <ManagerLayout>
+      <DashboardFrame
+        title={t("admin:manager.title")}
+        subtitle={`Welcome back, ${name}.`}
+        bannerActions={bannerActions}
+        kpis={statsKpi}
+        primary={primary}
+      />
     </ManagerLayout>
   )
 }

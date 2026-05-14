@@ -3,7 +3,7 @@ import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/constants/routes";
-import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
+import DashboardFrame from "@/components/dashboard/DashboardFrame";
 import StatCard from "@/components/dashboard/StatCard";
 import QuickActions from "@/components/dashboard/QuickActions";
 import DataCard from "@/components/dashboard/DataCard";
@@ -110,15 +110,10 @@ export default function Home() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  return (
-    <UserLayout>
-      <WelcomeBanner
-        title={t("dashboard:welcome", { name: firstName })}
-        subtitle={t("dashboard:homeSubtitle")}
-      />
-
+  const primary = (
+    <>
       {/* Behavioral Report Status + Request Survey */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border border-[#e5e7eb]">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -182,13 +177,6 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {STATS.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
-      </div>
-
       {/* Quick Actions — full width */}
       <QuickActions actions={QUICK_ACTIONS} />
 
@@ -215,6 +203,25 @@ export default function Home() {
           )}
         </div>
       </DataCard>
+    </>
+  )
+
+  const statsKpi = (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {STATS.map((s) => (
+        <StatCard key={s.label} {...s} />
+      ))}
+    </div>
+  )
+
+  return (
+    <UserLayout>
+      <DashboardFrame
+        title={t("dashboard:welcome", { name: firstName })}
+        subtitle={t("dashboard:homeSubtitle")}
+        kpis={statsKpi}
+        primary={primary}
+      />
     </UserLayout>
   );
 }
