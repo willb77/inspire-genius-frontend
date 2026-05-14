@@ -610,7 +610,10 @@ describe("UserManagement Page", () => {
       // Wait for mutation
     });
 
-    expect(deleteMutate).toHaveBeenCalledWith("test@test.com");
+    expect(deleteMutate).toHaveBeenCalledWith({
+      email: "test@test.com",
+      force: false,
+    });
   });
 
   it("changes page using pagination", async () => {

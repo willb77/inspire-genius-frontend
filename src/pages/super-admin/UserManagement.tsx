@@ -15,6 +15,7 @@ import Pagination from "@/components/shared/Pagination";
 import UserFormModal from "@/components/shared/forms/UserFormModal";
 import type { UserFormValues } from "@/components/shared/forms/userForm.constants";
 import ConfirmActionModal from "@/components/shared/forms/ConfirmActionModal";
+import DestructiveConfirmModal from "@/components/shared/forms/DestructiveConfirmModal";
 import ManagementHeader from "@/components/super-admin/ManagementHeader";
 import {
   useUserManagement,
@@ -93,6 +94,9 @@ export default function UserManagement() {
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [activateOpen, setActivateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // Force-delete (typed-confirmation friction) — used when removing an already
+  // soft-deleted user, since the Aurora row + Cognito account go away for good.
+  const [forceDeleteOpen, setForceDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<UserRow | null>(null);
 
   // Bulk selection state
@@ -157,7 +161,15 @@ export default function UserManagement() {
   };
   const openDelete = (row: UserRow) => {
     setSelected(row);
-    setDeleteOpen(true);
+    // Deactivated users are already soft-deleted; deleting them again is the
+    // irreversible hard-delete (Aurora + Cognito). Route those to the
+    // typed-confirmation modal. Everything else (Active, Awaiting) is reversible
+    // and uses the lighter ConfirmActionModal.
+    if (row.status === "Deactivated") {
+      setForceDeleteOpen(true);
+    } else {
+      setDeleteOpen(true);
+    }
   };
   const openActivate = (row: UserRow) => {
     setSelected(row);
@@ -247,9 +259,26 @@ export default function UserManagement() {
   const handleDelete = async () => {
     if (!selected) return;
 
+    // This modal is now only opened for non-Deactivated rows (Active or
+    // Awaiting) — the Deactivated branch routes through handleForceDelete.
+    // force=false: backend takes the soft-delete branch for Active users.
     try {
-      await deleteMutation.mutateAsync(selected.email);
+      await deleteMutation.mutateAsync({ email: selected.email, force: false });
       setDeleteOpen(false);
+    } catch {
+      // Error toast already shown by mutation onError callback
+    }
+  };
+
+  const handleForceDelete = async () => {
+    if (!selected) return;
+
+    // Typed-confirmation modal opens for deactivated rows. force=true tells
+    // the backend to hard-delete (Aurora row + Cognito account + cascading
+    // related rows). Irreversible.
+    try {
+      await deleteMutation.mutateAsync({ email: selected.email, force: true });
+      setForceDeleteOpen(false);
     } catch {
       // Error toast already shown by mutation onError callback
     }
@@ -268,8 +297,14 @@ export default function UserManagement() {
     setBulkDeleting(true);
     const emails = Array.from(selectedEmails);
 
+    // Force-delete is required per-row when the user is already deactivated;
+    // backend refuses a plain DELETE on is_deleted=True rows.
     const results = await Promise.allSettled(
-      emails.map((email) => deleteUserByEmail(email))
+      emails.map((email) => {
+        const row = rows.find((r) => r.email === email);
+        const force = row?.status === "Deactivated";
+        return deleteUserByEmail(email, force);
+      })
     );
 
     const succeeded: string[] = [];
@@ -633,12 +668,17 @@ export default function UserManagement() {
         confirmLoading={updateMutation.isPending}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation — soft-delete path (Active / Awaiting rows).
+          Deactivated rows route to the DestructiveConfirmModal below. */}
       <ConfirmActionModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Delete User"
-        description="Are you sure you want to permanently delete this user? This action cannot be undone."
+        description={
+          selected?.status === "Active"
+            ? "This will deactivate the user (soft delete). Their record is retained for audit; they will no longer be able to log in. You can purge them later from the Deactivated list."
+            : "Are you sure you want to delete this user?"
+        }
         fields={[
           { label: "Name", value: selected?.name ?? "" },
           { label: "Email", value: selected?.email ?? "" },
@@ -649,19 +689,47 @@ export default function UserManagement() {
         confirmLoading={deleteMutation.isPending}
       />
 
-      {/* Bulk Delete Confirmation */}
-      <ConfirmActionModal
+      {/* Force-Delete Confirmation — hard-delete path for already-deactivated
+          rows. Requires the operator to type the user's email verbatim. */}
+      <DestructiveConfirmModal
+        open={forceDeleteOpen}
+        onOpenChange={setForceDeleteOpen}
+        title="Permanently delete user"
+        description={
+          <>
+            This will <strong>permanently</strong> delete{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              {selected?.email ?? ""}
+            </code>{" "}
+            from the database and Cognito, along with all related records
+            (conversations, files, feedback) via cascade. This action cannot be undone.
+          </>
+        }
+        confirmPhrase={selected?.email ?? ""}
+        confirmHint="user's email"
+        confirmLabel="Permanently delete"
+        loading={deleteMutation.isPending}
+        onConfirm={handleForceDelete}
+      />
+
+      {/* Bulk Delete — typed-confirmation friction since multiple users in one click. */}
+      <DestructiveConfirmModal
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title="Delete Selected Users"
-        description={`Are you sure you want to permanently delete ${selectedEmails.size} user(s)? This action cannot be undone.`}
-        fields={[
-          { label: "Users to delete", value: `${selectedEmails.size}` },
-        ]}
-        confirmLabel="Delete All"
-        confirmVariant="destructive"
+        title="Delete selected users"
+        description={
+          <>
+            This will delete <strong>{selectedEmails.size}</strong> selected
+            user(s). Active rows are soft-deleted (reversible); already-deactivated
+            rows are permanently removed from the database and Cognito with all
+            cascading data. Use with care.
+          </>
+        }
+        confirmPhrase={`DELETE ${selectedEmails.size}`}
+        confirmHint="phrase"
+        confirmLabel={`Delete ${selectedEmails.size} user(s)`}
+        loading={bulkDeleting}
         onConfirm={handleBulkDelete}
-        confirmLoading={bulkDeleting}
       />
 
       {/* Bulk Activate Confirmation */}
@@ -678,24 +746,32 @@ export default function UserManagement() {
         confirmLoading={bulkActivating}
       />
 
-      {/* Purge Inactive Users Confirmation */}
-      <ConfirmActionModal
+      {/* Purge Inactive Users — typed-confirmation friction.
+          Hits the new server-side POST /v1/user-management/users/purge-inactive. */}
+      <DestructiveConfirmModal
         open={purgeOpen}
         onOpenChange={setPurgeOpen}
-        title="Purge Inactive Users"
-        description="This will permanently delete all deactivated users from the system. This action cannot be undone."
-        fields={[
-          {
-            label: "Inactive users to purge",
-            value: isLoadingInactiveCount
-              ? "Loading..."
-              : `${inactiveCount ?? 0}`,
-          },
-        ]}
-        confirmLabel="Purge All"
-        confirmVariant="destructive"
+        title="Purge all deactivated users"
+        description={
+          <>
+            This will <strong>permanently</strong> delete{" "}
+            <strong>
+              {isLoadingInactiveCount ? "…" : (inactiveCount ?? 0)}
+            </strong>{" "}
+            deactivated user(s) from the database and Cognito. Their
+            conversations, files, and feedback will be deleted via cascade. This
+            action cannot be undone.
+          </>
+        }
+        confirmPhrase="PURGE INACTIVE"
+        confirmHint="phrase"
+        confirmLabel={
+          isLoadingInactiveCount
+            ? "Purge"
+            : `Purge ${inactiveCount ?? 0} user(s)`
+        }
+        loading={purgeMutation.isPending}
         onConfirm={handlePurgeInactive}
-        confirmLoading={purgeMutation.isPending}
       />
     </SuperAdminLayout>
   );

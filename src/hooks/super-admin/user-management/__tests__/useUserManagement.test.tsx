@@ -25,6 +25,24 @@ jest.mock("sonner", () => ({
   },
 }));
 
+/* -----------------------------------------
+   MOCK AUTH CONTEXT
+   Hooks now read useAuth().user?.email to populate the audit actor.
+   Tests render without an AuthProvider, so stub the hook.
+----------------------------------------- */
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({
+    user: { email: "test-admin@3pp.com" },
+  }),
+}));
+
+/* -----------------------------------------
+   MOCK AUDIT SERVICE — fire-and-forget; no assertions
+----------------------------------------- */
+jest.mock("@/services/audit/audit.service", () => ({
+  logAuditEvent: jest.fn(),
+}));
+
 import { renderHook, act, waitFor } from "@testing-library/react";
 import {
   QueryClient,
@@ -266,7 +284,7 @@ describe("useUserManagement Hooks", () => {
     });
 
     await act(async () => {
-      await result.current.mutateAsync("test@example.com");
+      await result.current.mutateAsync({ email: "test@example.com" });
     });
 
     expect(toast.success).toHaveBeenCalledWith("User deleted");
@@ -281,7 +299,7 @@ describe("useUserManagement Hooks", () => {
 
     await act(async () => {
       try {
-        await result.current.mutateAsync("test@example.com");
+        await result.current.mutateAsync({ email: "test@example.com" });
       } catch {}
     });
 
