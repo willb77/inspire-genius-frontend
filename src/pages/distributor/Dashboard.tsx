@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import DistributorLayout from "@/layouts/DistributorLayout"
-import WelcomeBanner from "@/components/dashboard/WelcomeBanner"
+import DashboardFrame from "@/components/dashboard/DashboardFrame"
 import DataCard from "@/components/dashboard/DataCard"
 import StatusBadge from "@/components/dashboard/StatusBadge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -79,33 +79,31 @@ export default function DistributorDashboard() {
     { label: t("admin:distributor.usedByPractitioners"), value: "5,000", iconClass: "bg-[rgba(59,130,246,0.1)] text-[#3B82F6]" },
   ]
 
-  return (
-    <DistributorLayout>
-      <WelcomeBanner
-        title={t("admin:distributor.distributor")}
-        subtitle="Welcome back, PRISM Partners Inc. Manage your practitioner network and assessment credit portfolio."
-      >
-        <div className="flex gap-2.5">
-          <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:distributor.purchaseCredits")}</button>
-          <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">{t("admin:distributor.viewReports")}</button>
-        </div>
-      </WelcomeBanner>
+  const bannerActions = (
+    <div className="flex gap-2.5">
+      <button className="bg-white/20 text-white rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/30 transition-colors">{t("admin:distributor.purchaseCredits")}</button>
+      <button className="bg-transparent text-white border border-white/30 rounded-md px-3.5 py-[7px] text-xs font-semibold hover:bg-white/10 transition-colors">{t("admin:distributor.viewReports")}</button>
+    </div>
+  )
 
-      {/* Credit Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-        {CREDIT_STATS.map((s) => (
-          <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 flex items-center gap-3 hover:shadow-sm transition-shadow">
-            <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 ${s.iconClass}`}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
-            </div>
-            <div>
-              <div className="text-[11px] text-[#6b7280]">{s.label}</div>
-              <div className="text-xl font-extrabold text-[#111827]">{s.value}</div>
-            </div>
+  const statsKpi = (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {CREDIT_STATS.map((s) => (
+        <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-3.5 flex items-center gap-3 hover:shadow-sm transition-shadow">
+          <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 ${s.iconClass}`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
           </div>
-        ))}
-      </div>
+          <div>
+            <div className="text-[11px] text-[#6b7280]">{s.label}</div>
+            <div className="text-xl font-extrabold text-[#111827]">{s.value}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
+  const primary = (
+    <>
       {/* Credit Usage Trend */}
       <DataCard title={t("admin:distributor.creditUsageTrend")}>
         <div className="flex items-end justify-around h-[180px] pt-2">
@@ -215,6 +213,18 @@ export default function DistributorDashboard() {
             ))
         }
       </DataCard>
+    </>
+  )
+
+  return (
+    <DistributorLayout>
+      <DashboardFrame
+        title={t("admin:distributor.distributor")}
+        subtitle="Welcome back, PRISM Partners Inc. Manage your practitioner network and assessment credit portfolio."
+        bannerActions={bannerActions}
+        kpis={statsKpi}
+        primary={primary}
+      />
     </DistributorLayout>
   )
 }
