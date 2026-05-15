@@ -126,6 +126,10 @@ const PractitionerCredits = React.lazy(() => import("@/pages/practitioner/Credit
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
 const PractitionerSettings = React.lazy(() => import("@/pages/practitioner/Settings"));
 const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Analytics"));
+// Wave 4 Lane 4.D — practitioner task-agent forms (mirrors manager)
+const PractitionerJobBlueprint = React.lazy(() => import("@/pages/practitioner/JobBlueprintPage"));
+const PractitionerInterviewPrep = React.lazy(() => import("@/pages/practitioner/InterviewPrepPage"));
+const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
@@ -288,6 +292,10 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
       { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
       { path: "/practitioner/analytics", element: withSuspense(<PractitionerAnalytics />) },
+      // Wave 4 Lane 4.D (P7.2) — task-agent forms now available to practitioner
+      { path: "/practitioner/job-blueprint", element: withSuspense(<PractitionerJobBlueprint />) },
+      { path: "/practitioner/interview-prep", element: withSuspense(<PractitionerInterviewPrep />) },
+      { path: "/practitioner/team-composition", element: withSuspense(<PractitionerTeamComposition />) },
 
       // Distributor pages
       { path: "/distributor/dashboard", element: withSuspense(<DistributorDashboard />) },
