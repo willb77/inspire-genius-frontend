@@ -253,6 +253,11 @@ export default function MeridianChat() {
   // WebSocket response handler
   // -------------------------------------------------------------------
 
+  // Hoisted ahead of `onResponse` so the complete-frame handler can
+  // invalidate the conversation list cache without waiting for the
+  // 30s staleTime — fresh chats now appear in History immediately.
+  const queryClientWs = useQueryClient();
+
   const onResponse = useCallback(
     (resp: MeridianResponse) => {
       if (resp.type === "connected") {
@@ -355,10 +360,23 @@ export default function MeridianChat() {
           });
         }
         lastMessageRef.current = { type: "complete", text };
+
+        // Refresh the History panel without waiting for the
+        // useAgentConversation staleTime (30s default). Without this
+        // the user can finish a chat and not see it appear in History
+        // for up to 30 seconds — a long-standing UX papercut.
+        try {
+          queryClientWs.invalidateQueries({
+            queryKey: ["agent", "conversation"],
+            exact: false,
+          });
+        } catch {
+          // never break the WS handler over a cache miss
+        }
         return;
       }
     },
-    [],
+    [queryClientWs],
   );
 
   // Voice-enabled toggle: when ON, WS messages include voice=true for streaming TTS
