@@ -119,6 +119,10 @@ export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
   { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
+  // Wave 4 Lane 4.D (P7.2) — task-agent forms (Maven/James/Atlas) for practitioner
+  { to: ROUTES.PRACTITIONER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
+  { to: ROUTES.PRACTITIONER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
+  { to: ROUTES.PRACTITIONER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]

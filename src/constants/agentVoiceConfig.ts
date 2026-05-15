@@ -371,15 +371,15 @@ export const AGENT_VOICE_CONFIG: AgentVoiceDef[] = [
   { id: "compass-001", name: "Compass", domain: "business", gender: "female", description: "Career navigation and direction finder",       pollyVoice: "Kendra",  voiceId: "polly-kendra",  modelTier: "Haiku" },
   { id: "james-001",   name: "James",   domain: "business", gender: "male",   description: "Professional development and skills coach",    pollyVoice: "Stephen", voiceId: "polly-stephen", modelTier: "Sonnet" },
   { id: "maven-001",   name: "Maven",   domain: "business", gender: "male",   description: "Industry expertise and market insights",       pollyVoice: "Gregory", voiceId: "polly-gregory", modelTier: "Haiku" },
-  { id: "bridge-001",  name: "Bridge",  domain: "business", gender: "female", description: "Team collaboration and communication coach",   pollyVoice: "Ruth",    voiceId: "polly-ruth",    modelTier: "Haiku" },
 
   // -- System Domain --
   { id: "sentinel-001", name: "Sentinel", domain: "system", gender: "male",   description: "Platform security and compliance monitor",   pollyVoice: "Matthew", voiceId: "polly-matthew", modelTier: "Haiku" },
   { id: "anchor-001",   name: "Anchor",   domain: "system", gender: "male",   description: "System reliability and performance guardian", pollyVoice: "Stephen", voiceId: "polly-stephen", modelTier: "Haiku" },
   { id: "nexus-001",    name: "Nexus",    domain: "system", gender: "male",   description: "Integration and connectivity orchestrator",   pollyVoice: "Gregory", voiceId: "polly-gregory", modelTier: "Haiku" },
+  { id: "beacon-001",   name: "Beacon",   domain: "system", gender: "female", description: "Talent discovery and recruitment specialist", pollyVoice: "Kendra",  voiceId: "polly-kendra",  modelTier: "Sonnet" },
 
   // -- Career & Talent Domain --
-  { id: "beacon-001", name: "Beacon", domain: "career", gender: "female", description: "Talent discovery and recruitment specialist",  pollyVoice: "Kendra",  voiceId: "polly-kendra",  modelTier: "Sonnet" },
+  { id: "bridge-001", name: "Bridge", domain: "career", gender: "female", description: "Team collaboration and communication coach",     pollyVoice: "Ruth",    voiceId: "polly-ruth",    modelTier: "Haiku" },
   { id: "grant-001",  name: "Grant",  domain: "career", gender: "male",   description: "Learning and professional certification coach", pollyVoice: "Matthew", voiceId: "polly-matthew", modelTier: "Haiku" },
 ]
 
