@@ -1,3 +1,33 @@
+## [2026-05-15] — Explainability Phase 1 reachable: API GW route + deploy + live smoke (PR #115)
+
+PRs #110 (backend) + frontend #67 from 2026-05-14 shipped the Phase 1 super-admin Explainability surface and were merged + ECS-deployed, but the endpoints returned 404 from API Gateway because no route forwarded `/v1/explainability/*` to the agent-engine ALB. This session closes the gap end-to-end: CDK route + deploy + browser-reachable verification.
+
+### Added
+- `infrastructure/cdk/lib/api-gateway-stack.ts` — one new Wave 5 route:
+  - `GET /v1/explainability/{proxy+}` → `wavesIntegration` (HTTP_PROXY → agent-engine ALB via VPC Link). Single proxy covers all 3 GET endpoints from PR #110 (conversations list, conversation detail by session_id, turn detail by turn_id). Reuses the same integration that already serves `/v1/agents/chat`, `/v1/agents/voice/*`, and `/v1/memory/*`.
+
+### Deploy
+- PR #115 merged via squash to `development` (commit `4b806b7`).
+- Manual `cdk-deploy.yml` workflow_dispatch run `25887547661` against `ig-dev-api-gateway` with `dry_run=false` — all 4 jobs success (synth + diff + deploy + verify-no-stub-zips).
+- API Gateway now exposes the route: RouteId `ktvbb8p`, RouteKey `GET /v1/explainability/{proxy+}`, Target `integrations/nj5msbs` (agent-engine ALB integration).
+
+### Verified
+- **Before**: `GET /v1/explainability/conversations` → 404 (no route)
+- **After**: `GET /v1/explainability/conversations` → 422 with FastAPI `{"detail":[{"type":"missing","loc":["header","access-token"],"msg":"Field required"}]}` — proves the request reaches `app/routes/explainability.py:require_auth`. Auth gate working.
+- `/v1/agents/health` → 200 (sanity)
+- Frontend opened at `https://dev.inspiresgenius.com/super-admin/explainability` for super-admin-logged-in browser smoke.
+
+### Caveat (not blocking, tracked separately)
+- Producer-side wiring (Phase 0 metadata population from upstream agent flows) lives on `fix/phase0-upstream-wiring` and is owned by a parallel agent terminal. Until that lands, only 2/9660 chat_messages rows have populated `metadata`, so the Phase 1 UI mostly renders Section 4 "metadata not captured for this turn" notes. The 5-section shell + COALESCE + role-gating are all functional.
+
+### Files
+- `infrastructure/cdk/lib/api-gateway-stack.ts` (1 file, 7 insertions)
+
+### Commit
+- `80b0c82` (squashed to `4b806b7` on merge)
+
+---
+
 ## [2026-05-15] — P2 batch: pagination + cache invalidation + CW alarm + startup schema check (PRs #130 + frontend #80)
 
 Bundles four MERIDIAN_REVIEW_PROMPTS.md P2 items into one agent-engine image rebuild + one CDK deploy + one frontend deploy.
@@ -22,6 +52,15 @@ Bundles four MERIDIAN_REVIEW_PROMPTS.md P2 items into one agent-engine image reb
 ### Cross-ref
 - `MERIDIAN_REVIEW_2026-05-13.md` cross-cutting concerns.
 - `MERIDIAN_REVIEW_PROMPTS.md` — "P2 — Pagination on conversation list", "P2 — Cache invalidation on WS complete", "P2 — CloudWatch alarm on chat_message_repository.insert failed", "P2 — Startup schema check in agent-engine lifespan".
+
+### Smoke verification
+
+- Agent-engine + frontend deploys: ✅ success.
+- Startup schema check fires on ECS boot: `"Schema check: chat_messages has all 9 Phase C columns"` + `"Schema check: all 3 observability tables present"` (confirmed via CloudWatch).
+- Pagination: `GET /v1/chat/conversations?page=1&limit=3` → 3 items / `total_count: 9` / DESC by created_at. `page=2` → next 3 items / `total_count: 9` / no overlap.
+
+### Follow-on
+- First CDK deploy attempt (run 25903872727) failed at the new `MetricFilter` resource with: *"Invalid metric transformation: dimensions and default value are mutually exclusive properties"*. Dropped `defaultValue: 0` from the MetricFilter (keeping `dimensions: {Service: …}` since it matches the convention every other custom metric uses; `treatMissingData: NOT_BREACHING` on the alarm covers the missing-window case). Fix committed at `58a7876`; re-triggered cdk-deploy run 25904483302.
 
 ---
 
