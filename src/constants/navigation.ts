@@ -78,6 +78,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
   // Combined Plan §A.E3.4 — Sage document research
   { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
+  { to: ROUTES.SUPER_ADMIN.RESEARCH_LIBRARY, icon: BookHeart, label: "Research Library" },
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },

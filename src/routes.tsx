@@ -99,6 +99,7 @@ const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewP
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/DocumentResearchPage"));
+const SuperAdminResearchLibrary = React.lazy(() => import("@/pages/super-admin/ResearchLibraryPage"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
 const CompanyAdminDashboard = React.lazy(() => import("@/pages/company-admin/Dashboard"));
@@ -213,6 +214,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
+      // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results
+      { path: "/super-admin/research-library", element: withSuspense(<SuperAdminResearchLibrary />) },
       { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
       // Wave 0 Lane A — D1: AuditLog standalone page deleted; canonical view is the Audit Log tab on Analytics
       { path: "/super-admin/audit-log", element: <Navigate to="/super-admin/analytics?tab=audit" replace /> },

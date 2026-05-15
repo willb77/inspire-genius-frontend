@@ -81,6 +81,18 @@ export interface SavedTaskResultRow {
   created_at: string
 }
 
+export interface SavedTaskResultDetail extends SavedTaskResultRow {
+  request_payload: Record<string, unknown>
+  result_payload: Record<string, unknown>
+  note: string | null
+}
+
+export interface SavedTaskResultsList {
+  status: boolean
+  total: number
+  data: SavedTaskResultRow[]
+}
+
 // ─── API calls ────────────────────────────────────────────────────
 
 const BASE = '/v1/tasks'
@@ -116,8 +128,32 @@ export const tasksService = {
       .post<SavedTaskResultRow>(`${BASE}/results`, body)
       .then((r) => r.data),
 
-  listResults: (params?: { task_slug?: string; limit?: number }) =>
+  /**
+   * List the caller's own saved task results.
+   *
+   * Agent-engine returns `{ status, total, data: [...] }`. The monolith
+   * (rollback path) returned a bare array of rows. We accept either
+   * shape so the page works regardless of which API Gateway route wins
+   * during a partial rollout.
+   */
+  listResults: (params?: { task_slug?: string; limit?: number; offset?: number }) =>
     api
-      .get<SavedTaskResultRow[]>(`${BASE}/results`, { params })
+      .get<SavedTaskResultsList | SavedTaskResultRow[]>(`${BASE}/results`, { params })
+      .then((r) => {
+        const payload = r.data
+        if (Array.isArray(payload)) {
+          return { status: true, total: payload.length, data: payload } as SavedTaskResultsList
+        }
+        return payload
+      }),
+
+  getResult: (id: string) =>
+    api
+      .get<SavedTaskResultDetail>(`${BASE}/results/${id}`)
       .then((r) => r.data),
+
+  deleteResult: (id: string) =>
+    api
+      .delete<void>(`${BASE}/results/${id}`)
+      .then(() => undefined),
 }
