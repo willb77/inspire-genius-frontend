@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1105</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1106</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,19 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-15] — Explainability Phase 2 hotfix: API GW POST route (PR #139)</h3>
+        <p>Phase 2 (PR #134) shipped <code>POST /v1/explainability/turns/{turn_id}/ask</code> but PR #115 (Phase 1 API GW) had only registered the <strong>GET</strong> catch-all. Every Ask submission 404'd at the gateway before reaching agent-engine. Smoke verification: agent-engine logs showed <code>GET</code> endpoints both <code>200 OK</code>, <strong>zero POST events ever arrived at the ECS task</strong>. User-facing symptom in the AskBox: "Turn not found — it may have been deleted."</p>
+        <h4>Fixed</h4>
+        <ul>
+          <li><code>infrastructure/cdk/lib/api-gateway-stack.ts</code> — added one Wave 5 route entry: <code>{ routeKey: 'POST /v1/explainability/{proxy+}', id: 'W5ExplainabilityPostAny' }</code>. Reuses the existing <code>wavesIntegration</code> (HTTP_PROXY → agent-engine ALB via VPC Link), same as the GET counterpart.</li>
+          <li>PR #139 squash-merged at 2026-05-15T22:40 UTC; CDK Deploy run <code>25944841731</code> from <code>development</code> succeeded after ~17 min (synth + diff + deploy + stub-zip check). Verified live: <code>aws apigatewayv2 get-routes --api-id 8umg6xioz5</code> now lists both <code>GET</code> and <code>POST /v1/explainability/{proxy+}</code>.</li>
+        </ul>
+        <h4>Lesson</h4>
+        <ul>
+          <li>The CDK PR auto-trigger run only does synth + diff (<code>dry_run=true</code>). Real deploy requires manual <code>workflow_dispatch</code> with <code>dry_run=false</code>. First deploy attempt against the <code>fix/*</code> branch directly failed at the OIDC step (trust policy excludes feature branches per memory <code>feedback_drift_pin_lessons_2026_05_07.md</code>). Second attempt against <code>development</code> succeeded.</li>
+          <li>AnthropicDirect is wired on the agent-engine task via <code>AGENT_ENGINE_ANTHROPIC_API_KEY</code> Secrets Manager binding, so the Analyzer returns real Sonnet 4 responses (not the offline stub).</li>
+        </ul>
 
         <h3>[2026-05-15] — Explainability Phase 2: Analyzer agent + Ask follow-up panel (PR #134 + frontend PR #86)</h3>
         <p>Phase 2 of <code>IG_Super_Admin_Explainability_Plan.docx</code> §§5.2-5.4 + 6 — adds the right-pane Ask follow-up UX on top of the Phase 1 Explainability shell. Both PRs OPEN, NOT merged per spec.</p>
@@ -2510,6 +2523,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1106 [Phase 2 Ask 404 — diagnose + fix API GW POST route]</div>
+          <div class="prompt-text">Smoke test on /super-admin/explainability Ask panel returned "Turn not found — it may have been deleted." Diagnosed: agent-engine logs (`/ecs/ig-dev-agent-engine`, last 30 min) showed GET /v1/explainability/turns/{id} + GET .../asks both 200 OK, but ZERO POST events. Confirmed via `aws apigatewayv2 get-routes`: PR #115 (Phase 1) had registered only `GET /v1/explainability/{proxy+}`, no POST. Every Ask submission was 404'ing at the gateway before reaching the ECS task. Fixed by PR #139 — one-line CDK addition `{ routeKey: 'POST /v1/explainability/{proxy+}', id: 'W5ExplainabilityPostAny' }` reusing the existing `wavesIntegration`. First deploy attempt against the `fix/*` branch failed at OIDC step (trust policy excludes feature branches per memory `feedback_drift_pin_lessons_2026_05_07.md`); merged PR #139 to development first, then `gh workflow run "CDK Deploy" --ref development -f environment=dev -f stack=ig-dev-api-gateway -f dry_run=false` (run `25944841731`) succeeded after ~17 min. Verified live: API GW now lists both GET + POST. AnthropicDirect is wired via `AGENT_ENGINE_ANTHROPIC_API_KEY` Secrets Manager binding, so the Analyzer returns real Sonnet 4 responses (not the offline stub).</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Prompt #1105 [run the next P3 batch — streaming usage + source URL + quick wins]</div>
           <div class="prompt-text">Closes out MERIDIAN_REVIEW_PROMPTS.md. P3 streaming usage: AnthropicDirectProvider.stream now captures usage from get_final_message() and stashes on 3 ContextVars (LAST_STREAM_USAGE/MODEL/PROVIDER); BaseAgent.stream reads them after the async-for loop. Before: response_observability rows on WS path had input_tokens=0 / output_tokens=0 / $0 cost. After: real numbers. P3 source URL: /v1/documents/{id}/download was 500-ing (queried non-existent user_documents table) — fixed to query canonical documents with RAG tenant-scope filter + CAST(:doc_id AS UUID). Frontend SourceAttribution renders chips as clickable buttons when document_id present → fetches /download → window.opens presigned URL. Quick wins: rename_conversation now requires a non-sentinel row (prevents ghost conversations); every WHERE user_id/session_id in conversations.py now wraps in CAST(... AS UUID). PR #140 (monorepo, 4 files / 107+25) + PR #88 (frontend, 1 file / 62+11) merged. Auto-triggered agent-engine-image.yml + ci-deploy.yml. MERIDIAN_REVIEW_PROMPTS.md fully consumed.</div>

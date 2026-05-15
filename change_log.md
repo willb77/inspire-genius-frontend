@@ -1,3 +1,17 @@
+## [2026-05-15] — Explainability Phase 2 hotfix: API GW POST route (PR #139)
+
+Phase 2 (PR #134) shipped `POST /v1/explainability/turns/{turn_id}/ask` but PR #115 (Phase 1 API GW) had only registered the **GET** catch-all. Every Ask submission 404'd at the gateway before reaching agent-engine. Smoke verification: agent-engine logs showed `GET /v1/explainability/turns/{id}` and `GET .../asks` both `200 OK`, **zero POST events ever arrived at the ECS task**. User-facing symptom in the AskBox: "Turn not found — it may have been deleted."
+
+### Fixed
+- `infrastructure/cdk/lib/api-gateway-stack.ts` — added one Wave 5 route entry: `{ routeKey: 'POST /v1/explainability/{proxy+}', id: 'W5ExplainabilityPostAny' }`. Reuses the existing `wavesIntegration` (HTTP_PROXY → agent-engine ALB via VPC Link), same as the GET counterpart.
+- PR #139 squash-merged at 2026-05-15T22:40 UTC; CDK Deploy run `25944841731` from `development` succeeded after ~17 min (synth + diff + deploy + stub-zip check). Verified live: `aws apigatewayv2 get-routes --api-id 8umg6xioz5` now lists both `GET` and `POST /v1/explainability/{proxy+}`.
+
+### Lesson
+- The CDK PR auto-trigger run only does synth + diff (`dry_run=true`). The real deploy requires a manual `workflow_dispatch` with `dry_run=false`. The first deploy attempt was triggered against the `fix/*` branch directly and failed at the OIDC step (trust policy excludes feature branches — see `feedback_drift_pin_lessons_2026_05_07.md`). Second attempt against `development` succeeded.
+- AnthropicDirect is wired on the agent-engine task via `AGENT_ENGINE_ANTHROPIC_API_KEY` Secrets Manager binding, so the Analyzer returns real Sonnet 4 responses (not the offline stub).
+
+---
+
 ## [2026-05-15] — P3 batch + quick-wins: streaming usage capture + source URL + UUID cast + rename validation (PRs #140 + frontend #88)
 
 Closes out the MERIDIAN_REVIEW_PROMPTS.md P3 section and the quick-win cluster.
