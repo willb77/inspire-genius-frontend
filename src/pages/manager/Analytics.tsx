@@ -8,6 +8,7 @@ import {
   type GoalsBreakdownDatum,
 } from "@/components/analytics/charts"
 import DataCard from "@/components/dashboard/DataCard"
+import CostBoard from "@/components/super-admin/CostBoard"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useManagerAnalytics } from "@/hooks/analytics/useAnalytics"
@@ -114,6 +115,13 @@ export default function ManagerAnalytics() {
           </ResponsiveContainer>
         )}
       </DataCard>
+
+      {/* Wave 3 Lane 3.A (P7.4) — manager Cost Slice. Mounts the shared
+          <CostBoard scope="dept" /> panel. Data validation in Wave 3 once
+          R-2.4 telemetry visibly populates the dept-scoped endpoint. */}
+      <div className="mt-5">
+        <CostBoard scope="dept" />
+      </div>
     </ManagerLayout>
   )
 }
