@@ -1,3 +1,29 @@
+## [2026-05-14] — Observability tables migration applied (Phase E R-2.4, PR #119)
+
+P0 fix from `MERIDIAN_REVIEW_2026-05-13.md` §1. The agent-engine writer (`services/agent-engine/app/observability/collector.py`) and the read Lambda (`services/observability-service/`) have referenced `response_observability` / `session_observability` / `observability_rollups` since they were authored, but the tables had **never been materialised** on dev. Every `record_response()` + `finalize_session()` call silently failed inside the collector's swallowed `except Exception`. The reader's PR #89 graceful-empty catch made the symptom look like a quiet "no data yet" state.
+
+### Added
+- `services/migration-runner/migrations/phase_e_r24_observability_tables.sql`
+  - `response_observability` — one row per LLM call. Mirrors `app/observability/models.py:ResponseObservability`. Indexes on `session_id`, `user_id`, `agent_name`, `created_at`, `message_id`.
+  - `session_observability` — aggregated per-session row. UNIQUE on `session_id`; index on `user_id`.
+  - `observability_rollups` — daily aggregates table (reader-side only for now). Created so a future aggregator lands without another migration.
+  - Idempotent (every CREATE/INDEX uses `IF NOT EXISTS`).
+
+### Applied + verified
+- Migration runner: **11/11 statements succeeded, 0 failed, 0 skipped**.
+- `information_schema.tables` confirms all three tables present in `inspire_genius.public`.
+- Reader smoke: `GET /v1/observability/sessions/test-session-no-rows/responses` → **HTTP 200 `[]`** (was returning the missing-table graceful-empty before; now comes from a real table query).
+- All three tables currently empty — writer will populate on the next Meridian chat.
+
+### Shipped
+- PR #119 (`willb77/inspire-genius`, branch `chore/migration/observability-tables`) — squash-merged.
+
+### Cross-ref
+- `MERIDIAN_REVIEW_2026-05-13.md` §1 P0.
+- `MERIDIAN_REVIEW_PROMPTS.md` "P0 — Apply observability tables migration".
+
+---
+
 ## [2026-05-14] — RAG tenant-leak defense in depth: propagate document_id end-to-end (PRs #117 + frontend #68)
 
 Defense-in-depth follow-on to the earlier-2026-05-13 tenant-scope WHERE filter in `services/agent-engine/app/rag/retriever.py:_search_pgvector`. The filter (lines 184-191, also mirrored on the FTS fallback at 234-241) is already in place and was verified via direct SQL: querying as willb77's canonical sub `3468e498-...` returns only the 19 prism_canonical/empty-string global rows + their own docs; zero leakage from `user_id='unknown'` (10 docs / 88 chunks), zero leakage from `'346854a8-...'` (pre-remap willb77, 4 docs / 12 chunks), zero leakage from any other user.

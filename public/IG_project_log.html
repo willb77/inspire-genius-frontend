@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1097</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1099</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2461,6 +2461,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1099 [P0 observability tables migration — applied + verified]</div>
+          <div class="prompt-text">do P0 obs tables migration. Wrote services/migration-runner/migrations/phase_e_r24_observability_tables.sql mirroring app/observability/models.py — three tables (response_observability, session_observability, observability_rollups) all with IF NOT EXISTS. Invoked migration-runner: 11/11 statements succeeded. information_schema confirms all three tables now in inspire_genius.public. Reader smoke: GET /v1/observability/sessions/test-session-no-rows/responses → HTTP 200 [] (real table query, not the PR #89 graceful-empty catch). PR #119 merged. Tables currently empty; ObservabilityCollector.record_response will populate response_observability on next Meridian chat, Meridian.respond's farewell detector populates session_observability on session end.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-14 — Prompt #1097 [/full-go RAG tenant-leak defense in depth — document_id propagation]</div>
           <div class="prompt-text">/full-go P1 SECURITY from MERIDIAN_REVIEW_PROMPTS.md. The base WHERE-clause user_id filter in _search_pgvector was already in place (comment-dated 2026-05-13). This PR pair propagated document_id end-to-end so the frontend Sources dedup is keyed on (document_id, filename) instead of just filename — defense in depth against same-name docs across tenants + unlocks future click-through UX. Backend PR #117 (retriever.py hit dict + handlers.py WS complete frame + meridian.py REST metadata); frontend PR #68 (RAGSource type + ChatWindowChatTab dedup + React key). Both merged. SQL verification (as willb77 canonical sub 3468e498-...): zero leakage from user_id='unknown' (88 chunks across 10 docs) or pre-remap '346854a8-...' (12 chunks across 4 docs); only the 19 prism_canonical/empty-string global rows + own docs visible. Tracked: pre-remap willb77 doc migration, 'unknown' user_id legacy uploads, willb77's own embedding pipeline. Auto-triggered agent-engine-image.yml image rebuild + ECS roll + frontend ci-deploy.yml.</div>
@@ -24149,6 +24153,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-13 — Activity #act-wave0-closeout [Wave 0 final 4 PRs merged + roadmap doc]</div>
           <div class="prompt-text">Closed out Wave 0 of the IG Dashboard Rationalization Plan v2. Merged the last 4 open Wave 0 PRs into inspire-genius-frontend:development (squash): PR #33 Lane 0.H DashboardFrame primitive (e8259884, clean), PR #34 Lane 0.G ChartKit primitives (1c9ba679 — doc-file conflicts only, resolved by keeping both Lane 0.G content and origin/development's R-2.9 entry; CI Build 1m26s + Unit Tests 16m32s green), PR #29 Lane 0.A super-admin deletes D2+D1+D8 (3ec7d165 — doc-file conflicts only, took --theirs since wave-0a's local R-2.1 doc-mirror was already superseded by dev's authoritative content; CI Unit Tests 15m57s green), PR #36 Lane 0.E KnowledgeBase + CulturalContent merge O7 (8b8b4889 — real code conflicts in src/constants/navigation.ts and src/routes.tsx; kept dev's PRISM Management additions and wave-0e's Cultural Content removal + redirect; re-merged twice; CI Unit Tests 16m29s green). Wave 0 now 100% complete — 9/9 lanes shipped. Then authored Transformation Documents/IG_Dashboard_Rationalization_Post_Wave0_Roadmap.docx (~55 KB, with Logo-Dark.png header) — priority-ordered Tier 1 (Run NOW, no platform gate, Wave 1 lanes 1.A→1.E) / Tier 2 (Run NOW, gates cleared, Wave 2 + Wave 3 evidence) / Tier 3 (Gated on R-2.10, Wave 4) / Tier 4 (Final sweep, Wave 5) with per-tier lane tables, recommended parallel batches, and §4.1/§4.2/§4.3 cross-refs to the v2 plan. Wave 1 is unblocked next (5 parallel-safe lanes: P3.2/P3.3/P3.4/P3.5 ChartKit consumers + P6.2 DashboardFrame adopt across 6 role dashboards).</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Prompt #1098 [/full-go all 5 Wave 1 lanes in parallel]</div>
+          <div class="prompt-text">all 5 Wave 1 lanes in parallel — P3.2 manager Analytics (soft hold R-2.6), P3.3 company-admin Analytics, P3.4 super-admin Analytics tab, P3.5 practitioner+distributor Analytics, P6.2 DashboardFrame adopt across 6 role dashboards.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-14 — Activity #act-wave1-all-lanes [Wave 1 lanes 1.A-1.E opened as 5 PRs]</div>
+          <div class="prompt-text">All 5 Wave 1 lanes shipped as parallel feature branches with PRs against inspire-genius-frontend:development. PR #69 (Lane 1.B, P3.3, company-admin Analytics → ChartKit), PR #70 (Lane 1.C, P3.4, super-admin Analytics tab → ChartKit — Audit/ProjectLog/Sitemap tabs unchanged), PR #71 (Lane 1.D, P3.5, practitioner + distributor Analytics → ChartKit, single PR per v1 plan), PR #72 (Lane 1.A, P3.2, manager Analytics → ChartKit, SOFT HOLD on merge per plan §4.2 until R-2.6 RBAC evidence captured; Time to Hire kept as direct recharts since the kit has no horizontal-bar variant), PR #73 (Lane 1.E, P6.2, DashboardFrame adopt across 5 of 6 role dashboards — company-admin/manager/practitioner/distributor/user-Home; super-admin Dashboard intentionally excluded due to custom non-gradient header + tabbed layout incompatibility with DashboardFrame's gradient banner; tracked as Wave 5 follow-up). All branches off origin/development tip with no inter-lane file conflicts. Verification per lane: npx tsc --noEmit clean, npx eslint clean on touched files, targeted Jest suites all green (7/7 + 6/6 + 12/12 + 6/6 + 42/42 = 73 tests total). Lane 1.E also passed npm run build.</div>
         </div>
 </div>
 
