@@ -1,3 +1,36 @@
+## [2026-05-15] — Observability final-stretch: assistant_message_id + disconnect finalize (PRs #123 + frontend #78)
+
+Closes the last two MERIDIAN_REVIEW_PROMPTS.md items that gated the per-message Session-Info panel from actually displaying anything. Now that the observability tables exist (PR #119 yesterday) AND the message_id join key flows end-to-end (this PR pair) AND session_observability gets a row on tab-close (also this pair), the panel can finally resolve real rows.
+
+### P1 — assistant_message_id end-to-end (PR #123 + frontend #78)
+- `services/agent-engine/app/websocket/handlers.py` — both `handle_chat_message` (ECS) and `handle_chat_message_lambda` pre-mint a UUID after the user-message write, stash it in `context.metadata["assistant_message_id"]`, thread it into `_persist_chat_message_if_enabled` (now accepts `message_id` and returns the persisted id), and echo it in the WS `complete` frame's metadata (regular + cache-hit paths).
+- `services/agent-engine/app/agents/base_agent.py` — the three `record_response` call sites (`process` / `process_with_tools` / `stream`) pass `context.metadata.get("assistant_message_id")` so the `response_observability.message_id` matches `chat_messages.message_id`.
+- `services/agent-engine/app/main.py` — REST `/v1/agents/chat` mirrors the pattern; `ChatResponse.metadata.assistant_message_id` echoes back.
+- Frontend `inspire-genius-frontend/src/pages/user/MeridianChat.tsx` — three call sites updated (WS `complete`, REST chat, voice REST) to use the server-side UUID as the React message key. Falls back to the local `msg-${Date.now()}` string only when absent.
+
+### P2 — Session finalization on WS disconnect (same PR #123)
+- `services/agent-engine/app/websocket/handlers.py:handle_disconnect` now fires `observability_collector.finalize_session(effective_session)` as a fire-and-forget task. Catches the case where the user closes the tab without saying "goodbye" — the farewell-detector path only.
+- `services/agent-engine/app/observability/collector.py:finalize_session` made idempotent: if a `SessionObservability` row already exists for the session_id, returns its id without re-inserting. Farewell wins; disconnect-without-farewell still gets a row.
+
+### Shipped
+- PR #123 (`willb77/inspire-genius`, branch `fix/observability/message-id-and-disconnect-finalize`) — squash-merged at `8a0bee7`.
+- Frontend PR #78 (`willb77/inspire-genius-frontend`, branch `fix/observability/use-server-assistant-message-id`) — squash-merged.
+- Auto-triggered: `agent-engine-image.yml` (image rebuild + ECS roll) + `ci-deploy.yml` (S3 sync + CloudFront invalidation for both buckets).
+
+### What this unlocks
+- The per-message `ObservabilityPanel` can finally resolve rows.
+- `session_observability` will see roughly every session, not just the ones that politely say goodbye.
+
+### Out of scope (next from MERIDIAN_REVIEW_PROMPTS.md)
+- P2 — Pagination on conversation list.
+- P2 — Cache invalidation on WS complete.
+- P2 — CloudWatch alarm on `chat_message_repository.insert failed`.
+- P2 — Startup schema check in agent-engine lifespan.
+- P3 — Source URL + click-through.
+- P3 — Capture streaming usage for observability (currently 0 tokens / $0 cost on stream path).
+
+---
+
 ## [2026-05-15] — Wave 1 finalized + Wave 2/3 batch: 4 PRs merged (Lanes 1.A / 2.A / 3.A / 3.B)
 
 Wave 1 fully closed (R-2.6 RBAC audit confirmed done, so Lane 1.A's soft hold per plan §4.2 lifted) and the first Wave 2/3 batch landed in parallel. All four lanes touched different files — no inter-lane conflicts.

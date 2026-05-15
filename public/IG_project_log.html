@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1100</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1101</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2461,6 +2461,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1101 [run P1 + P2 from MERIDIAN_REVIEW_PROMPTS — observability final stretch]</div>
+          <div class="prompt-text">run p1, p2. Closes the last two MERIDIAN_REVIEW_PROMPTS.md items gating the per-message Session-Info panel. P1: assistant_message_id pre-minted in handle_chat_message + handle_chat_message_lambda + REST /v1/agents/chat, stashed in context.metadata, threaded into _persist_chat_message_if_enabled (now returns the persisted id + accepts caller-supplied message_id), echoed in WS `complete` frame and ChatResponse.metadata; the three base_agent record_response call sites pass it. Frontend MeridianChat.tsx reads it at three call sites (WS, REST, voice REST) and uses as React message key. P2: handle_disconnect fires observability_collector.finalize_session as fire-and-forget; finalize_session made idempotent via existing-row check. PR #123 (monorepo) + PR #78 (frontend) merged. Auto-triggered agent-engine-image.yml image rebuild + ECS roll + ci-deploy.yml.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-14 — Prompt #1099 [P0 observability tables migration — applied + verified]</div>
           <div class="prompt-text">do P0 obs tables migration. Wrote services/migration-runner/migrations/phase_e_r24_observability_tables.sql mirroring app/observability/models.py — three tables (response_observability, session_observability, observability_rollups) all with IF NOT EXISTS. Invoked migration-runner: 11/11 statements succeeded. information_schema confirms all three tables now in inspire_genius.public. Reader smoke: GET /v1/observability/sessions/test-session-no-rows/responses → HTTP 200 [] (real table query, not the PR #89 graceful-empty catch). PR #119 merged. Tables currently empty; ObservabilityCollector.record_response will populate response_observability on next Meridian chat, Meridian.respond's farewell detector populates session_observability on session end.</div>

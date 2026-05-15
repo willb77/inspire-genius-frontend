@@ -304,6 +304,13 @@ export default function MeridianChat() {
         const ragSources = resp.metadata?.rag_sources?.filter((s) => s.filename) ?? [];
         const contributingAgents = resp.metadata?.contributing_agents;
         const synthesized = resp.metadata?.synthesized;
+        // Server-side persisted assistant_message_id (UUID). Use it as
+        // the React message key + ObservabilityPanel lookup so the
+        // per-message panel can join response_observability cleanly.
+        // Falls back to a JS-local id on the cache-hit + legacy paths.
+        const assistantMessageId =
+          (resp.metadata as { assistant_message_id?: string } | undefined)
+            ?.assistant_message_id ?? `msg-${Date.now()}`;
 
         // Track session-level collaboration when 2+ agents synthesized a response
         if (synthesized && contributingAgents && contributingAgents.length > 1) {
@@ -322,6 +329,7 @@ export default function MeridianChat() {
                 ...filtered.slice(0, -1),
                 {
                   ...lastMsg,
+                  id: assistantMessageId,
                   text,
                   agent: resp.agent,
                   ragSources: ragSources.length > 0 ? ragSources : undefined,
@@ -333,7 +341,7 @@ export default function MeridianChat() {
             return [
               ...filtered,
               {
-                id: `msg-${Date.now()}`,
+                id: assistantMessageId,
                 kind: "text" as const,
                 sender: "assistant" as const,
                 text,
@@ -971,10 +979,16 @@ export default function MeridianChat() {
                   });
                   const data = resp.data;
                   const timeNow = formatUSTimeSafe(new Date());
+                  // Prefer the server-side persisted UUID for the React key
+                  // and ObservabilityPanel lookup. Falls back to a local id
+                  // when the response shape doesn't carry it.
+                  const restAssistantId =
+                    (data?.metadata as { assistant_message_id?: string } | undefined)
+                      ?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                   setMessages((prev) => [
                     ...prev.filter((m) => m.kind !== "processing"),
                     {
-                      id: `msg-${Date.now()}-resp`,
+                      id: restAssistantId,
                       kind: "text" as const,
                       sender: "assistant" as const,
                       text: data?.content || data?.message || "No response received.",
@@ -1051,9 +1065,12 @@ export default function MeridianChat() {
                     const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default", ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}) }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
                     const data = resp.data;
                     const responseText = data?.content || data?.message || "No response.";
+                    const restAssistantIdVoice =
+                      (data?.metadata as { assistant_message_id?: string } | undefined)
+                        ?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: `msg-${Date.now()}-resp`, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
+                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
                     ]);
                     if (data?.agent) setAgentAttribution(data.agent);
 
