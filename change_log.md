@@ -1,3 +1,31 @@
+## [2026-05-15] — Explainability Phase 2 — Analyzer agent + Ask follow-up panel (PR #134 + frontend PR #86)
+
+Builds the right-pane Ask panel on top of the Phase 1 Explainability shell. Operators can now type a follow-up question on any chat turn ("Why James and not Aura?") and get a structured 5-section analysis from a new Analyzer agent. Phase 2 of `IG_Super_Admin_Explainability_Plan.docx` §§5.2-5.4 + 6.
+
+### Added (backend — PR #134)
+- `services/agent-engine/app/agents/explainability/analyzer_agent.py` — stateless Analyzer with the verbatim §5.3 system prompt. Uses the registered LLM provider at `TIER_1_COMPLEX` (Sonnet 4 in prod). Falls back to a deterministic offline stub when no provider is registered. Per-call cost estimated against published Anthropic Direct rates and surfaced in the response.
+- `services/agent-engine/app/routes/explainability.py` — adds `POST /v1/explainability/turns/{turn_id}/ask` and `GET /v1/explainability/turns/{turn_id}/asks`. Gated by the existing `require_super_admin`. Soft per-sub throttle: 30/hour + 200/day (sliding-window in-process counter).
+- `services/migration-runner/migrations/explainability_phase2_asks_table.sql` — creates `public.explainability_asks` (`id`, `turn_id`, `session_id`, `asked_by`, `question`, `answer`, `model_used`, `cost_usd`, `created_at`) + 3 indexes. **Already applied to ig-dev** via `ig-dev-migration-runner` (6/6 succeeded, idempotent on re-apply).
+- `services/agent-engine/tests/test_explainability_phase2_ask.py` — 16 tests; 42/42 explainability suite passes (26 Phase 1 + 16 Phase 2).
+
+### Added (frontend — PR #86)
+- `inspire-genius-frontend/src/components/explainability/AskBox.tsx` — threaded follow-up panel rendered below `TurnAnalysisCard` in column 3. Textarea, submit, throttle/error display, quota readout, auto-scroll. Each row shows operator question + Analyzer answer + model + cost + timestamp.
+- `inspire-genius-frontend/src/services/super-admin/explainability/explainability.service.ts` — `askTurn(turnId, body)` and `listTurnAsks(turnId)`.
+- `inspire-genius-frontend/src/hooks/super-admin/explainability/useExplainability.ts` — `useTurnAsks` + `useAsk` (mutation invalidates the asks list on success).
+- `inspire-genius-frontend/src/types/explainability/types.ts` — `AskRecord`, `AskResponse`, `AskList`, `AskRequest`.
+- `inspire-genius-frontend/src/pages/super-admin/Explainability.tsx` — third column wraps `<TurnAnalysisCard>` above `<AskBox>` (same column-3 footprint).
+- `inspire-genius-frontend/src/components/explainability/__tests__/AskBox.test.tsx` — 6 tests; 20/20 explainability frontend suite passes.
+
+### Fixed
+- Phase 2 migration's original FK `turn_id → chat_messages(message_id) ON DELETE CASCADE` failed Postgres validation (42830 — `message_id` not unique on the deployed schema). Probed via `ig-dev-migration-runner` and confirmed `chat_messages.id` is the PK. Phase 1 routes already reference by `message_id`, so Phase 2 keeps `turn_id` as a **soft reference** (no FK). Hardening to a unique index + FK deferred to Phase 3.
+
+### PR status
+- Backend: https://github.com/willb77/inspire-genius/pull/134 — open, **NOT merged** (per spec)
+- Frontend: https://github.com/willb77/inspire-genius-frontend/pull/86 — open, **NOT merged** (per spec)
+- Migration applied to ig-dev; Phase 1's `/v1/explainability/{proxy+}` API GW catch-all (PR #115) already routes the new POST + GET endpoints, so no CDK change needed for Phase 2.
+
+---
+
 ## [2026-05-15] — Wave 2.B + 4.D shipped: MentorManagement deep-links + TaskAgent forms for practitioner
 
 Two of five planned Wave 2/4 lanes merged tonight from the /bedtime session. The remaining three (4.A Hiring Hub, 4.B Team Hub, 4.C Development Hub) were attempted but disrupted by parallel-agent branch churn — deferred to a follow-up session.
