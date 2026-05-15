@@ -1,3 +1,28 @@
+## [2026-05-15] — Wesley follow-up cleanup: agent-engine GRANT verified unnecessary, magic_link alembic shipped (PR #122)
+
+Continuation of the 2026-05-13 wesley/chat-upload deep-debug session, closing out the 5-item follow-up list I'd left at session end.
+
+### Verified (no action needed)
+- **Agent-engine canonical-sub remap GRANT** — investigated whether the same `permission denied for table users` warning that broke doc-service on 2026-05-13 also affects agent-engine. Confirmed agent-engine task def (`ig-dev-agent-engine:40`) connects as `ig_admin` (Aurora master role), which already has SELECT on all of `public.*`. CloudWatch `/ecs/ig-dev-agent-engine` shows `INFO:app.auth_deps:Remapping sub for willb77@3pp.com: 346854a8-… -> 3468e498-…` firing successfully — zero `permission denied` hits in the last 24 h. No GRANT applied.
+- **Frontend audit/stats 403 fix is live** — PR #63 (merged 2026-05-13 22:38) shipped via the `development` auto-deploy at 2026-05-14 18:56 UTC. Non-admin logins no longer call `/v1/audit/stats`.
+
+### Added (PR #122 — merged 2026-05-15 05:08 UTC, commit `8009029f`)
+- `services/auth-service/alembic/versions/a4b1c2d3e4f5_add_magic_link_to_auth_provider_enum.py` — first alembic migration in that service's `versions/` directory (was just `.gitkeep`). Idempotent `ALTER TYPE public.auth_provider_enum ADD VALUE IF NOT EXISTS 'magic_link'`. Downgrade is a no-op (PostgreSQL doesn't support dropping enum values; reversal would require recreate-and-swap with a recovery plan for existing rows).
+- The schema change itself had been applied live on dev 2026-05-14 via the migration-runner Lambda — this file is reproducible source of truth for fresh Aurora bootstraps. wesley's row is the first `auth_provider = 'magic_link'`.
+
+### Operational notes
+- Detect-secrets pre-commit hook flagged the alembic revision-id hex `a4b1c2d3e4f5` as a potential credential and aborted the first commit attempt silently (no error line, just "Restored changes from patch" — easy to miss). Added `# pragma: allowlist secret  # alembic revision id, not a credential` to suppress. Worth noting that hex-looking revision IDs in alembic migrations will always trip this hook; the pragma is the standard fix.
+- Confirmed the merge unblocks fresh-Aurora bootstrap reproducibility but the live state was already correct before the merge — no deploy needed to realize the value.
+
+### Status of original 5-item follow-up list
+1. Agent-engine GRANT — **not needed** (verified above)
+2. `magic_link` enum + wesley row + alembic — **done** (live 2026-05-14, PR #122 merged 2026-05-15)
+3. Frontend audit/stats 403 — **live** via 2026-05-14 18:56 UTC deploy
+4. Orphan-docs reupload comms — user-facing, out of code scope
+5. `update_project_log.py` hook — user opened it in IDE but never described an action; left alone
+
+---
+
 ## [2026-05-15] — Observability final-stretch: assistant_message_id + disconnect finalize (PRs #123 + frontend #78)
 
 Closes the last two MERIDIAN_REVIEW_PROMPTS.md items that gated the per-message Session-Info panel from actually displaying anything. Now that the observability tables exist (PR #119 yesterday) AND the message_id join key flows end-to-end (this PR pair) AND session_observability gets a row on tab-close (also this pair), the panel can finally resolve real rows.
