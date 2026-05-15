@@ -1,3 +1,32 @@
+## [2026-05-15] — P3 batch + quick-wins: streaming usage capture + source URL + UUID cast + rename validation (PRs #140 + frontend #88)
+
+Closes out the MERIDIAN_REVIEW_PROMPTS.md P3 section and the quick-win cluster.
+
+### Added
+- `services/agent-engine/app/llm/provider.py` — three new ContextVars (`LAST_STREAM_USAGE`, `LAST_STREAM_MODEL`, `LAST_STREAM_PROVIDER`). `AnthropicDirectProvider.stream()` calls `stream.get_final_message()` after the text loop completes and stashes the usage object on those ContextVars so the streaming-path consumer can fold real token + cost data into the observability row.
+- `services/agent-engine/app/agents/base_agent.py:stream` — reads those ContextVars and feeds them into `_StreamObs.usage / .model / .provider`. Before this fix every WS-streamed response wrote a `response_observability` row with `input_tokens=0 / output_tokens=0 / estimated_cost_usd=0`; CW dashboards significantly under-reported real cost.
+
+### Fixed
+- `services/agent-engine/app/routes/documents.py:download_document` was 500-ing silently because it queried `user_documents` — a table that doesn't exist on this DB (verified via information_schema). Rewritten to query the canonical `documents` table on `id = CAST(:doc_id AS UUID)` with the same tenant-scope filter the RAG retriever uses (own user OR empty/NULL user_id for the shared global corpus). Now correctly issues a presigned URL for any Source the user can see in chat.
+- `services/agent-engine/app/routes/conversations.py:rename_conversation` — added a non-sentinel-row check before stamping a title sentinel. Without it, PATCH against an empty session created a ghost conversation in History (sentinel row pinned a row in the GROUP BY query while msg_count stayed 0).
+- `services/agent-engine/app/routes/conversations.py` — every `WHERE user_id = :uid` and `WHERE session_id = :sid` now wraps the param in `CAST(... AS UUID)`. Columns are UUID-typed; asyncpg coerces strings in practice but the explicit cast surfaces type mismatches loudly rather than silently masking as empty results.
+
+### Frontend (PR #88)
+- `inspire-genius-frontend/src/components/user/chat/ChatWindowChatTab.tsx` — `SourceAttribution` renders each Source as a clickable button when the backend has stamped a `document_id` (which it has done since PR #117). Click fetches `/v1/documents/{document_id}/download` via the auth-injecting `agentApi` axios client and `window.open()`s the returned presigned URL in a new tab. Sources without `document_id` stay non-clickable. Fetch-then-open chosen over `<a href>` (can't carry JWT) and over embedding a global presigned URL in chat metadata (would leak document read access to anyone who can see the WS frame).
+
+### Shipped
+- **PR #140** (`willb77/inspire-genius`, branch `feat/p3-batch/streaming-usage-source-url-quick-wins`) — squash-merged. 4 files / 107 insertions / 25 deletions.
+- **Frontend PR #88** (`willb77/inspire-genius-frontend`, branch `feat/p3/sources-click-through`) — squash-merged. 1 file / 62 insertions / 11 deletions.
+- Auto-triggered: `agent-engine-image.yml` (run 25945335861) + `ci-deploy.yml` (run 25945337971).
+
+### Cross-ref
+- `MERIDIAN_REVIEW_2026-05-13.md` §1 P2 (streaming usage), §3 P2 (source URL), §2 P1 (rename + UUID cast).
+- `MERIDIAN_REVIEW_PROMPTS.md` — "P3 — Capture streaming usage so observability isn't zero-cost", "P3 — Source URL + click-through", "Quick-win cluster (~1 day)".
+
+**`MERIDIAN_REVIEW_PROMPTS.md` now fully consumed.**
+
+---
+
 ## [2026-05-15] — Explainability Phase 2 — Analyzer agent + Ask follow-up panel (PR #134 + frontend PR #86)
 
 Builds the right-pane Ask panel on top of the Phase 1 Explainability shell. Operators can now type a follow-up question on any chat turn ("Why James and not Aura?") and get a structured 5-section analysis from a new Analyzer agent. Phase 2 of `IG_Super_Admin_Explainability_Plan.docx` §§5.2-5.4 + 6.
@@ -161,7 +190,7 @@ MetricFilter (CDK auto-named): `ChatMessageWriteFailureMetricFilterB5347D9C-8EV3
 - **WS-complete cache invalidation**: Frontend deployed via `ci-deploy.yml` run `25903856275`. Code change verified in build artifact.
 - **CW alarm**: Resources live (see above), state `OK`.
 
-### Lesson learned — CloudWatch Logs MetricFilter constraints
+### Lesson learned — CloudWatch Logs MetricFilter constraints (worth a memory entry)
 
 CloudWatch Logs `AWS::Logs::MetricFilter` has two undocumented combination rules that cost 30 minutes of deploy-fix-redeploy iteration:
 
