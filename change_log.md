@@ -1,3 +1,62 @@
+## [2026-05-15] — Wave 2.B + 4.D shipped: MentorManagement deep-links + TaskAgent forms for practitioner
+
+Two of five planned Wave 2/4 lanes merged tonight from the /bedtime session. The remaining three (4.A Hiring Hub, 4.B Team Hub, 4.C Development Hub) were attempted but disrupted by parallel-agent branch churn — deferred to a follow-up session.
+
+### Merged
+
+- **PR #81 / Lane 2.B** — MentorManagement deep-link batch (P2.1 + P2.2 + P2.3). Three standalone super-admin pages now redirect to the canonical MentorManagement tabs: `/super-admin/prompt-builder` → `?tab=prompt`, `/super-admin/interaction-protocol` → `?tab=protocol`, `/super-admin/voice-settings` → `?tab=voice`. Route constants marked `@deprecated`. Merge commit `8e837db3`.
+- **PR #82 / Lane 4.D** — TaskAgent forms → Practitioner (P7.2). The three task-agent forms (Job Blueprint / Interview Prep / Team Composition) are now available to the practitioner role. Form bodies extracted into `src/components/task-agents/` so both manager and practitioner pages reuse the same component. Three new practitioner routes + nav items added. Merge commit `e731c83b`.
+
+### Deferred
+
+- **Lane 4.A** — Manager Hiring Hub (collapse Hiring + Candidates + Interviews + JobDna). Started but disrupted by parallel-agent branch churn that wiped partial work.
+- **Lane 4.B** — Manager Team Hub (collapse Team + PrismTeam + TeamBuilding). Not started.
+- **Lane 4.C** — Manager Development Hub (collapse Leadership + Training + CareerManagement). Not started.
+
+### Wave roadmap
+
+| Wave | Status |
+|---|---|
+| Wave 1 | 5/5 done |
+| Wave 2 | 2/2 done |
+| Wave 3 | 2/3 done — Lane 3.C still evidence-only retest |
+| Wave 4 | 1/5 done (4.D) — 4.A, 4.B, 4.C, 4.E open |
+| Wave 5 | 0/1 — final P8 sweep |
+
+---
+
+## [2026-05-15] — Save-to-workspace fix + Research Library page (PR #131 + frontend PR #84/#85)
+
+Closes the "Document research → Save to my workspace fails" defect surfaced today. Root cause: the monolith handler at `inspire-genius-backend/users/tasks/tasks.py:295` called `uuid.UUID(sub)` directly inside `_user_uuid_from_claims`. Magic-Auth callers carry a non-UUID `sub`, so every save 400'd before the row reached `task_results`. Per memory `feedback_monolith_sunset_no_new_debt.md`, the fix moves the four endpoints to agent-engine (which already has the canonical-sub remap from PR #93) instead of patching the monolith.
+
+### Added
+- `services/agent-engine/app/routes/task_results.py` — four endpoints (`POST/GET/GET/DELETE /v1/tasks/results`), gated by `require_auth` so Magic-Auth subs are remapped to `public.users.user_id` before the UUID parse; all reads/writes filtered to the caller's own rows; dialect-detect SQL for both Postgres (`CAST … AS JSONB`) and the SQLite test fixture.
+- `services/agent-engine/tests/test_task_results.py` — 12 tests pinning save success, slug validation, non-UUID sub rejection (the exact monolith failure mode), per-user isolation, slug filter, ordering, detail access control, delete idempotency.
+- `inspire-genius-frontend/src/pages/super-admin/ResearchLibraryPage.tsx` — new `/super-admin/research-library` page. Card grid of saved task-agent runs, search by title, filter by task type (defaults to `document-research`), detail panel renders the **question** + agent's **response** side-by-side, with own-only delete.
+- `inspire-genius-frontend/src/hooks/tasks/useTaskResults.ts` — React Query hooks (`useListTaskResults`, `useTaskResultDetail`, `useSaveTaskResult`, `useDeleteTaskResult`) with key-scoped cache invalidation.
+
+### Changed
+- `infrastructure/cdk/lib/api-gateway-stack.ts` — Wave 5 routes: `POST/GET /v1/tasks/results` + `GET/DELETE /v1/tasks/results/{resultId}`. More specific than the `ANY /v1/{proxy+}` monolith catch-all, so they win precedence. The monolith handler stays in place as a rollback path.
+- `services/agent-engine/app/main.py` — register `task_results_router`.
+- `inspire-genius-frontend/src/services/tasks/tasks.service.ts` — add `getResult(id)`, `deleteResult(id)`; `listResults()` now returns `SavedTaskResultsList` and accepts both the new agent-engine envelope `{ status, total, data }` and the legacy monolith bare-array (rollback-safe during partial rollout).
+- `inspire-genius-frontend/src/constants/routes.ts` + `navigation.ts` + `routes.tsx` — wire `/super-admin/research-library` route, sidebar entry, and lazy import.
+
+### Deploy
+- PR #131 (backend) — merged to `development` at 06:54 UTC. Auto-triggered the Agent Engine — Build & Push Image workflow (image rebuild) and a fresh CDK Deploy run for the api-gateway-stack routes.
+- PR #84 (frontend) — auto-merged into `main` (gh defaulted to repo's default base). PR #85 re-applies the same change set onto `development` for the dev deploy pipeline.
+
+### Verified locally
+- 12 new task_results tests pass; 57 adjacent tests still pass (explainability + chat_message_repo + metadata_builder_wiring).
+- `cdk synth ig-dev-api-gateway` clean (deprecation warnings only).
+- `npx tsc --noEmit` (frontend) clean.
+
+### Traps re-hit (per memory)
+- Dropbox Smart Sync reverted both `tasks.service.ts` and the agent-engine `main.py` mid-edit at least three times; my new `useTaskResults.ts` was wiped after every Write. Mitigation: marked every touched path with `xattr -w com.dropbox.ignored 1` and switched to atomic shell-heredoc + `git add` for newly-created files. Third re-hit of memory `feedback_dropbox_ignored_xattr.md`.
+- Dropbox shuffled HEAD between branches at every commit (the commit landed on `development` instead of the feature branch twice; on `refactor/wave-4a-hiring-hub` once). Standard recovery: `git branch --force <feature> HEAD` + `git update-ref refs/heads/development <prior-tip>`, then re-checkout.
+- `gh pr create` defaulted to `main` as the PR base for both repos. Caught after PR #84 auto-merged into main; reopened as PR #85 onto development.
+
+---
+
 ## [2026-05-15] — Explainability Phase 1 reachable: API GW route + deploy + live smoke (PR #115)
 
 PRs #110 (backend) + frontend #67 from 2026-05-14 shipped the Phase 1 super-admin Explainability surface and were merged + ECS-deployed, but the endpoints returned 404 from API Gateway because no route forwarded `/v1/explainability/*` to the agent-engine ALB. This session closes the gap end-to-end: CDK route + deploy + browser-reachable verification.

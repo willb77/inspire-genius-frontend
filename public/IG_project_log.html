@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1103</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1104</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -24206,6 +24206,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Activity #act-wave1-finalize-wave2-3-batch [Wave 1 closed + Wave 2/3 batch shipped]</div>
           <div class="prompt-text">Wave 1 fully closed (R-2.6 RBAC audit confirmed done, so Lane 1.A soft hold per plan §4.2 lifted) and the first Wave 2/3 batch landed in parallel. Merged 4 frontend PRs: PR #72 Lane 1.A P3.2 manager Analytics → ChartKit (merge commit 19e61dfb); PR #74 Lane 2.A P7.1 Diagnostic Chat → super-admin "Agent Trace Console" — public /diagnostic-chat now `<Navigate>` redirect to /super-admin/agent-trace-console gated by ProtectedRoute, removed from user nav, super-admin nav renamed (merge commit c7a6e81c); PR #75 Lane 3.A P7.4 manager Cost Slice — useDeptCost now mirrors useOrgCost wrapping useDashboardMetrics(deptId), `<CostBoard scope="dept"/>` mounted on manager Analytics below Time to Hire, data-pending banner persists until R-2.4 adds dept filtering (merge commit f2f71aac); PR #76 Lane 3.B P7.5 shared `<ObservabilityBoard scope="platform" | "org"/>` panel + per-scope hooks (usePlatformObservability / useOrgObservability) — mirror of the CostBoard pattern, replaces duplicated KPI + Top Agents blocks on super-admin Observability + company-admin Observability; pages now own only header chrome (merge commit 25c66078). All 4 PRs had clean CI (Build / Trivy / Audit / Unit Tests 15-17 min each); zero inter-lane file conflicts. Wave 1: 5/5 done. Wave 2: 1/2 done (Lane 2.B now unblocked by R-2.10 closure). Wave 3: 2/3 done (Lane 3.C is evidence-only retest). Next runnable batch: Wave 2.B + the full Wave 4 fan-out (5 lanes: 4.A/4.B/4.C manager hubs, 4.D TaskAgent forms, 4.E Practitioner Onboarding Wizard) — all unblocked by R-2.10 closure.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1104 [/bedtime — run 2.B + 4.A + 4.B + 4.C + 4.D]</div>
+          <div class="prompt-text">run 2.B + 4.A + 4.B + 4.C + 4.D in the background, full permissions, no interruptions.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Activity #act-bedtime-w24 [/bedtime — 2 of 5 PRs shipped]</div>
+          <div class="prompt-text">Shipped Lane 2.B (PR #81, merge commit 8e837db3) — MentorManagement deep-link batch P2.1+P2.2+P2.3: /super-admin/prompt-builder / interaction-protocol / voice-settings now redirect to the canonical MentorManagement tabs (?tab=prompt / protocol / voice). Three route constants @deprecated. One-shot conflict resolution against the newly-merged /super-admin/research-library route on dev. Shipped Lane 4.D (PR #82, merge commit e731c83b) — TaskAgent forms for practitioner P7.2: three task-agent forms (Job Blueprint / Interview Prep / Team Composition) now available to practitioner. Form bodies extracted into src/components/task-agents/ as layout-agnostic shared components; both manager and practitioner pages now wrap the bodies in their respective layouts. Three new practitioner routes + nav items. DEFERRED Lanes 4.A (Hiring Hub) / 4.B (Team Hub) / 4.C (Development Hub) — each requires consolidating 3-4 existing manager pages into a tabbed hub (~600 lines per hub). Attempted 4.A: started extracting body components (HiringPipelineBody + CandidatesBody drafted on disk) but parallel-agent activity wiped the branch mid-flight. Three hub consolidations remain for a follow-up session. Plan reference §3 Wave 2 / Wave 4 of IG_Dashboard_Rationalization_Plan_2.docx. Both shipped PRs: full CI green (Build/Trivy/Audit/Unit Tests 15-17 min); frontend routes integration test 54/54.</div>
         </div>
 </div>
 
