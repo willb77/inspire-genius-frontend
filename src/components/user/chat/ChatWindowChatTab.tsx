@@ -3,10 +3,38 @@ import { motion } from "framer-motion";
 import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import type { ChatMessage, RAGSource } from "@/types/chat";
+
+async function openSourceDocument(documentId: string, filename: string) {
+  // P3 — open source document via the existing per-user download
+  // endpoint. We fetch the presigned URL with our auth headers (the
+  // axios interceptor injects access-token) and then window.open() it.
+  // A plain <a href> would not carry the JWT, and a global presigned
+  // URL in the chat metadata would expose document access to anyone
+  // who can read the chat payload.
+  try {
+    const resp = await agentApi.get<{ status: boolean; url: string }>(
+      `/v1/documents/${documentId}/download`,
+    );
+    if (resp.data?.url) {
+      window.open(resp.data.url, "_blank", "noopener,noreferrer");
+    } else {
+      toast.error(`Couldn't open "${filename}" — backend returned no URL.`);
+    }
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response?.status;
+    if (status === 404) {
+      toast.error(`Couldn't open "${filename}" — document not found or access denied.`);
+    } else {
+      toast.error(`Couldn't open "${filename}" — please try again.`);
+    }
+  }
+}
 
 function SourceAttribution({ sources }: { sources: RAGSource[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -37,18 +65,41 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
       </button>
       {expanded && (
         <div className="mt-1 flex flex-wrap gap-1">
-          {unique.map((s) => (
-            <span
-              key={`${s.document_id ?? ""}::${s.filename}`}
-              className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-            >
-              <FileText className="h-3 w-3" />
-              {s.filename}
-              <span className="text-[10px] opacity-70">
-                ({Math.round(s.similarity * 100)}%)
+          {unique.map((s) => {
+            const sharedKey = `${s.document_id ?? ""}::${s.filename}`;
+            const sharedClass =
+              "inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground";
+            const contents = (
+              <>
+                <FileText className="h-3 w-3" />
+                {s.filename}
+                <span className="text-[10px] opacity-70">
+                  ({Math.round(s.similarity * 100)}%)
+                </span>
+              </>
+            );
+            // When the backend knows the document_id, render as a
+            // clickable button that opens the per-user presigned URL.
+            // Otherwise (legacy / global-only sources) show as a chip.
+            if (s.document_id) {
+              return (
+                <button
+                  key={sharedKey}
+                  type="button"
+                  onClick={() => openSourceDocument(s.document_id as string, s.filename)}
+                  className={`${sharedClass} hover:bg-accent hover:text-foreground cursor-pointer`}
+                  title={`Open ${s.filename}`}
+                >
+                  {contents}
+                </button>
+              );
+            }
+            return (
+              <span key={sharedKey} className={sharedClass}>
+                {contents}
               </span>
-            </span>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
