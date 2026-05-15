@@ -25,13 +25,16 @@ export const ROUTES = {
     SETTINGS: "/super-admin/settings",
     PROJECT_LOG: "/super-admin/project-log",
     RLHF_TRAINING: "/super-admin/rlhf-training",
+    /** @deprecated Wave 2 Lane 2.B (P2.1 / D3) — redirects to MentorManagement → Prompt tab. */
     PROMPT_BUILDER: "/super-admin/prompt-builder",
     ANALYTICS: "/super-admin/analytics",
+    /** @deprecated Wave 2 Lane 2.B (P2.3 / D7) — redirects to MentorManagement → Voice tab. */
     VOICE_SETTINGS: "/super-admin/voice-settings",
     PROCESS_BUILDER: "/super-admin/process-builder",
     AGENT_TRAINER: "/super-admin/agent-trainer",
     BULK_IMPORT: "/super-admin/bulk-import",
     OBSERVABILITY: "/super-admin/observability",
+    /** @deprecated Wave 2 Lane 2.B (P2.2 / D4) — redirects to MentorManagement → Protocol tab. */
     INTERACTION_PROTOCOL: "/super-admin/interaction-protocol",
     MENTOR_MANAGEMENT: "/super-admin/mentor-management",
     COST_ANALYSIS: "/super-admin/cost-analysis",

@@ -60,9 +60,11 @@ const OrganizationView = React.lazy(() => import("@/pages/super-admin/Organizati
 const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
-const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
+// Wave 2 Lane 2.B — PromptBuilder standalone deprecated; tab embedded in MentorManagement.
+// const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
-const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
+// Wave 2 Lane 2.B — VoiceProviderSettings standalone deprecated; tab embedded in MentorManagement.
+// const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
 const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
 
@@ -112,7 +114,8 @@ const CompanyAdminObservability = React.lazy(() => import("@/pages/company-admin
 const CompanyAdminCultureDocs = React.lazy(() => import("@/pages/company-admin/CultureDocs"));
 const SuperAdminBulkImport = React.lazy(() => import("@/pages/super-admin/BulkImport"));
 const SuperAdminObservability = React.lazy(() => import("@/pages/super-admin/Observability"));
-const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
+// Wave 2 Lane 2.B — InteractionProtocol standalone deprecated; tab embedded in MentorManagement.
+// const InteractionProtocol = React.lazy(() => import("@/pages/super-admin/InteractionProtocol"));
 const MentorManagement = React.lazy(() => import("@/pages/super-admin/MentorManagement"));
 const KnowledgeBase = React.lazy(() => import("@/pages/super-admin/KnowledgeBase"));
 const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCompliance"));
@@ -213,15 +216,21 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
-      { path: "/super-admin/prompt-builder", element: withSuspense(<PromptBuilder />) },
+      // Wave 2 Lane 2.B (P2.1 / D3) — PromptBuilder standalone superseded by the
+      // MentorManagement → Prompt tab. Public path redirects so external links work.
+      { path: "/super-admin/prompt-builder", element: <Navigate to="/super-admin/mentor-management?tab=prompt" replace /> },
       // Wave 0 Lane A — D1: AuditLog standalone page deleted; canonical view is the Audit Log tab on Analytics
       { path: "/super-admin/audit-log", element: <Navigate to="/super-admin/analytics?tab=audit" replace /> },
       { path: "/super-admin/analytics", element: withSuspense(<SuperAdminAnalytics />) },
       { path: "/super-admin/bulk-import", element: withSuspense(<SuperAdminBulkImport />) },
       { path: "/super-admin/observability", element: withSuspense(<SuperAdminObservability />) },
-      { path: "/super-admin/interaction-protocol", element: withSuspense(<InteractionProtocol />) },
+      // Wave 2 Lane 2.B (P2.2 / D4) — InteractionProtocol standalone superseded by
+      // the MentorManagement → Protocol tab. Public path redirects.
+      { path: "/super-admin/interaction-protocol", element: <Navigate to="/super-admin/mentor-management?tab=protocol" replace /> },
       { path: "/super-admin/mentor-management", element: withSuspense(<MentorManagement />) },
-      { path: "/super-admin/voice-settings", element: withSuspense(<VoiceProviderSettings />) },
+      // Wave 2 Lane 2.B (P2.3 / D7) — VoiceProviderSettings standalone superseded by
+      // the MentorManagement → Voice tab. Public path redirects.
+      { path: "/super-admin/voice-settings", element: <Navigate to="/super-admin/mentor-management?tab=voice" replace /> },
       { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
       { path: "/super-admin/prism-management", element: withSuspense(<PrismManagement />) },
       // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
