@@ -1,3 +1,69 @@
+## [2026-05-15] — Wave 1 finalized + Wave 2/3 batch: 4 PRs merged (Lanes 1.A / 2.A / 3.A / 3.B)
+
+Wave 1 fully closed (R-2.6 RBAC audit confirmed done, so Lane 1.A's soft hold per plan §4.2 lifted) and the first Wave 2/3 batch landed in parallel. All four lanes touched different files — no inter-lane conflicts.
+
+### Merged
+
+- **PR #72 / Lane 1.A / P3.2** — manager Analytics → ChartKit, soft-hold lifted after R-2.6 closure confirmed. Merge commit `19e61dfb`.
+- **PR #74 / Lane 2.A / P7.1** — Diagnostic Chat → super-admin "Agent Trace Console". Public `/diagnostic-chat` is now a `<Navigate>` redirect to `/super-admin/agent-trace-console` (gated by `ProtectedRoute`). Removed the entry from user nav; super-admin nav renamed. `DIAGNOSTIC_CHAT` route constant marked @deprecated. Merge commit `c7a6e81c`.
+- **PR #75 / Lane 3.A / P7.4** — manager Cost Slice. `useDeptCost` now mirrors `useOrgCost` (wraps `useDashboardMetrics(deptId)` and normalises into CostBoardData shape). `<CostBoard scope="dept"/>` mounted on manager Analytics below the Time to Hire card. Data-pending banner stays until R-2.4 adds dept filtering. Merge commit `f2f71aac`.
+- **PR #76 / Lane 3.B / P7.5** — shared `<ObservabilityBoard scope="platform" | "org"/>` panel + per-scope hooks (`usePlatformObservability` / `useOrgObservability`). Mirror of the CostBoard pattern. Replaces the duplicated 4-up KPI + Top Agents blocks on super-admin Observability + company-admin Observability; pages now own only their header chrome. 9 new ObservabilityBoard tests + reworked page tests (mock the board at component boundary). Merge commit `25c66078`.
+
+### Verification
+
+- All 4 PRs: `npx tsc --noEmit` clean, `npx eslint` clean on touched files, targeted Jest suites green, full CI green (Build / Trivy / Dependency Audit / Unit Tests 15-17 min each).
+- Wave 1 close-out: 5/5 lanes shipped (1.A / 1.B / 1.C / 1.D / 1.E).
+- Wave 2: 1/2 lanes shipped (Lane 2.A); **Lane 2.B (MentorManagement deep-link) is now unblocked** — R-2.10 closure confirmed by the user.
+- Wave 3: 2/3 lanes shipped (3.A / 3.B); Lane 3.C is evidence-only, will retest manager Analytics once telemetry visibly populates.
+
+### Notes
+
+- Plan §4.2 soft-hold mechanism worked as designed — Lane 1.A shipped behind R-2.6 evidence without blocking any other lane.
+- ObservabilityBoard mirrors CostBoard's contract verbatim (scope dispatch + data-pending banner + per-scope hook). Future ScopeBoard primitives can use the same pattern.
+- Next runnable batch: **Wave 2 Lane 2.B** (MentorManagement deep-link batch — P2.1+P2.2+P2.3) and the full **Wave 4 fan-out** (5 lanes: 4.A/4.B/4.C manager hubs, 4.D TaskAgent forms, 4.E Practitioner Onboarding Wizard) — all unblocked by R-2.10 closure.
+
+---
+
+## [2026-05-14] — P1-13 closure: SNS alarm destinations wired end-to-end (Slack + gmail backup, PRs #112 / #114 / #116 / #118)
+
+Closed the P1-13 gap surfaced by a `describe-alarms` audit: 6 trainer alarms had `AlarmActions=[]` and both SNS topics had **zero subscribers**, so the 74 already-wired alarms also delivered nowhere. Empirical email-delivery testing then revealed `@3pp.com` and `@inspiresgenius.com` are recipient-side blackholes for AWS-originated mail (3 SES bounces per domain over the last 6 months). Final wiring: Slack via AWS Chatbot as primary, gmail as backup.
+
+### Added
+- `infrastructure/cdk/lib/trainer-stack.ts` — imports `cloudwatch_actions` + `sns`; looks up the existing critical/warning topics via `cdk.Fn.importValue` against the CFN exports defined by `services-stack.ts`; attaches `addAlarmAction` to all 6 trainer alarms (`TrainerDurationAlarm`, `TrainerErrorAlarm`, `TrainerThrottleAlarm`, `TrainerWorkerDurationAlarm`, `TrainerWorkerErrorAlarm`, `TrainerWorkerDlqAlarm`). Severity mapping mirrors services-stack (duration → warning, errors/throttles/DLQ → critical).
+- `infrastructure/cdk/lib/services-stack.ts` — `aws-cdk-lib/aws-chatbot` import; `SlackChannelConfiguration` construct gated on two new context vars (`slackWorkspaceId`, `slackChannelId`). Auto-provisions an IAM ConfigurationRole with read-only CW + SNS perms. `LoggingLevel.ERROR` keeps the `/aws/chatbot/ig-dev-alarms` log group quiet except on Chatbot-side failures. Per-env opt-in: no IDs in context → no Chatbot resources.
+
+### Changed
+- `infrastructure/cdk/cdk.context.json` — `alarmEmail` flipped `aes@3pp.com` → `willb7@3pp.com` (PR #113, intermediate) → `wb0677@gmail.com` (PR #114, final) after empirical 3pp.com / inspiresgenius.com blackhole testing. Added `slackWorkspaceId=T09FBDU5Z7Y` + `slackChannelId=C0B412YCU9X` (PR #118) once the user completed the Chatbot console + Slack workspace prereqs.
+
+### Deploy
+- GHA `cdk-deploy.yml` workflow_dispatch on `development` ran four times this session: services-stack alone (#25881188703), services + trainer (#25885801226), services again with Slack IDs (#25897080412), all green. Each fired the 4-job pipeline (validate → diff → deploy → verify-no-stubs). Trainer deploy carried `caf74fe`'s Secrets Manager migration (`TRAINER_DATABASE_URL` → split `HOST/NAME/PORT/SSL/USER` + `DB_SECRET_ARN`) as bystander drift — verified harmless via `GET /v1/trainer/health` returning 200 post-deploy.
+
+### Verified
+- `aws cloudwatch describe-alarms --alarm-name-prefix ig-dev-trainer` → all 6 alarms now show `AlarmActions` length = 1.
+- `aws sns list-subscriptions-by-topic` → `wb0677@gmail.com` confirmed (real ARN, not `PendingConfirmation`) on both topics. CFN-managed via SNS Subscribe's idempotency on existing confirmed (endpoint, protocol, topic) — no duplicate created when CDK's `create` ran against the manually-subscribed address.
+- `aws chatbot describe-slack-channel-configurations --region us-east-2` → `ig-dev-alarms` config `State=ENABLED`, both topic ARNs subscribed, `SlackChannelName=ig_alarms` (Chatbot resolved the ID against the workspace).
+- Real Slack delivery proven via `aws cloudwatch set-alarm-state --alarm-name ig-dev-auth-errors --state-value ALARM` — message arrived in #ig_alarms. Free-form `sns publish` does NOT work (Chatbot only formats AWS-service events — see `/aws/chatbot/ig-dev-alarms` CW log: `Event received is not supported`).
+
+### Hard-won traps (memory-worthy)
+- **OIDC trust excludes feature branches** (re-discovery from `feedback_drift_pin_lessons_2026_05_07.md`): `gha-cdk-deploy` role trusts `refs/heads/{development,main}` + `environment:{dev,staging,prod}` + `pull_request`, NOT arbitrary feature branches via workflow_dispatch. First deploy attempt on `fix/p1-13-sns-subscribe-willb7` failed at validate-job OIDC. Workaround: merge to development first, then dispatch.
+- **3pp.com / inspiresgenius.com are blackholes for AWS-originated mail.** SES suppression list has 3 unrelated `@3pp.com` bounces (`WB0677@3pp.com`, `tone77@3pp.com`, `testuser@3pp.com`) over Q4–Q1; same pattern at `inspiresgenius.com` (`uploads@`, `demo@`). `NumberOfNotificationsDelivered=1` in CloudWatch but inbox arrival = 0 — recipient-side filter, not AWS-side. Don't use these domains for any AWS notification destination going forward.
+- **AWS Chatbot only relays AWS-service events, not free-form SNS publishes.** Documented at https://docs.aws.amazon.com/chatbot/latest/adminguide/related-services.html. Smoke-testing a Chatbot config requires forcing a real alarm transition (`set-alarm-state`); naive `aws sns publish` looks like nothing happened because Chatbot drops it with "Event received is not supported".
+- **Pending SNS email subscriptions can't be force-deleted via API.** `aws sns unsubscribe` returns `InvalidParameter: Cannot unsubscribe a subscription that is pending confirmation`. Wait 3 days for auto-expiry, or click the cancel link in the (undelivered) email.
+
+### Commits / PRs
+- [#112](https://github.com/willb77/inspire-genius/pull/112) `4c663a9` — trainer alarm wiring
+- [#113](https://github.com/willb77/inspire-genius/pull/113) — intermediate alarmEmail willb7@3pp.com (blackholed)
+- [#114](https://github.com/willb77/inspire-genius/pull/114) `8c3a773` — alarmEmail → wb0677@gmail.com
+- [#116](https://github.com/willb77/inspire-genius/pull/116) `b96f949` — Chatbot SlackChannelConfiguration construct
+- [#118](https://github.com/willb77/inspire-genius/pull/118) `cc1f2a9` — wire Slack workspace + channel IDs
+
+### Open follow-ups
+- 4 pending subs (`willb7@3pp.com` + `wabrown@inspiresgenius.com` × 2 topics) auto-expire ≤ 2026-05-17.
+- After ~3 days of clean Slack delivery, consider removing the gmail email subs to single-channel everything via Slack (or keep gmail as belt-and-suspenders permanently — cost is $0).
+- Update the `bootstrap-gha-oidc.sh` ALLOWED_SUBS to add `repo:willb77/inspire-genius:ref:refs/heads/fix/*` if we want feature-branch deploys via workflow_dispatch; currently they must merge-then-deploy.
+
+---
+
 ## [2026-05-14] — Observability tables migration applied (Phase E R-2.4, PR #119)
 
 P0 fix from `MERIDIAN_REVIEW_2026-05-13.md` §1. The agent-engine writer (`services/agent-engine/app/observability/collector.py`) and the read Lambda (`services/observability-service/`) have referenced `response_observability` / `session_observability` / `observability_rollups` since they were authored, but the tables had **never been materialised** on dev. Every `record_response()` + `finalize_session()` call silently failed inside the collector's swallowed `except Exception`. The reader's PR #89 graceful-empty catch made the symptom look like a quiet "no data yet" state.
