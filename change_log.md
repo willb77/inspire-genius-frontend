@@ -136,6 +136,40 @@ Bundles four MERIDIAN_REVIEW_PROMPTS.md P2 items into one agent-engine image reb
 - Manual:
   - `cdk-deploy.yml` workflow_dispatch (`environment=dev stack=ig-dev-agent-engine dry_run=false`) — run 25903872727. Lands the CW MetricFilter + Alarm.
 
+### CDK MetricFilter iterations + final verification
+
+The CloudWatch alarm needed three CDK attempts to land:
+
+1. **`25903872727` (FAILED)** — CFN 400: *"Invalid metric transformation: dimensions and default value are mutually exclusive properties"*. Removed `defaultValue: 0` (commit `58a7876`).
+2. **`25904483302` (FAILED)** — CFN 400: *"The specified filter pattern does not support dimensions"*. CloudWatch Logs requires a JSON / space-delimited filter pattern (`[$.field = "..."]`) when you attach `dimensions`; the literal-string pattern `"chat_message_repository.insert failed"` is incompatible. Removed `dimensions` from the MetricFilter and `dimensionsMap` from the Alarm metric (commit `9561343`).
+3. **`25905148596` (SUCCESS)** — MetricFilter + Alarm created without dimensions; alarm wired to existing `ig-dev-agent-engine-alarms` SNS topic.
+
+**Final live state** (verified via `aws cloudwatch describe-alarms`):
+- `AlarmName`: `ig-dev-agent-engine-chat-write-failures`
+- `Namespace/MetricName`: `InspireGenius/AgentEngine/ChatMessageWriteFailures`
+- `Threshold`: `Sum > 10` over `period: 300s`, `EvaluationPeriods: 1`
+- `TreatMissingData`: `notBreaching`
+- `AlarmActions`: `arn:aws:sns:us-east-1:568505405842:ig-dev-agent-engine-alarms`
+- `StateValue`: `OK` (no recent insert failures)
+
+MetricFilter (CDK auto-named): `ChatMessageWriteFailureMetricFilterB5347D9C-8EV3PRNaNwvw` on `/ecs/ig-dev-agent-engine` with pattern `"chat_message_repository.insert failed"`.
+
+### Smoke verification — all 4 P2 items live on dev
+
+- **Pagination**: `GET /v1/chat/conversations?agent_id=meridian&page=1&limit=3` → 3 items / `total_count: 9` / DESC by `created_at`. `page=2&limit=3` → next 3 / no overlap. SQL `HAVING` correctly excludes sentinel-only sessions at the DB.
+- **Startup schema check**: CloudWatch `/ecs/ig-dev-agent-engine` shows `INFO:app.main:Schema check: chat_messages has all 9 Phase C columns` + `INFO:app.main:Schema check: all 3 observability tables present` on every cold start.
+- **WS-complete cache invalidation**: Frontend deployed via `ci-deploy.yml` run `25903856275`. Code change verified in build artifact.
+- **CW alarm**: Resources live (see above), state `OK`.
+
+### Lesson learned — CloudWatch Logs MetricFilter constraints
+
+CloudWatch Logs `AWS::Logs::MetricFilter` has two undocumented combination rules that cost 30 minutes of deploy-fix-redeploy iteration:
+
+1. **`dimensions` and `defaultValue` are mutually exclusive.** Setting both → CFN 400 at create time.
+2. **`dimensions` requires a JSON / space-delimited filter pattern.** Literal-string patterns (`"my error string"`) are incompatible. To attach dimensions you'd need something like `[..., service_name=*, ...]` and reference `$.service_name`.
+
+For simple "count this log line" patterns, drop both `dimensions` and `defaultValue` — the metric lives namespace-only in CW, and the alarm matches by leaving `dimensionsMap` unset.
+
 ### Cross-ref
 - `MERIDIAN_REVIEW_2026-05-13.md` cross-cutting concerns.
 - `MERIDIAN_REVIEW_PROMPTS.md` — "P2 — Pagination on conversation list", "P2 — Cache invalidation on WS complete", "P2 — CloudWatch alarm on chat_message_repository.insert failed", "P2 — Startup schema check in agent-engine lifespan".
