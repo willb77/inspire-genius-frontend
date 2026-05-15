@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1103</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1105</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,34 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-15] — Explainability Phase 2: Analyzer agent + Ask follow-up panel (PR #134 + frontend PR #86)</h3>
+        <p>Phase 2 of <code>IG_Super_Admin_Explainability_Plan.docx</code> §§5.2-5.4 + 6 — adds the right-pane Ask follow-up UX on top of the Phase 1 Explainability shell. Both PRs OPEN, NOT merged per spec.</p>
+        <h4>Added — backend (PR #134, branch <code>feat/explainability-phase2-analyzer-asks</code>)</h4>
+        <ul>
+          <li><code>services/agent-engine/app/agents/explainability/analyzer_agent.py</code> — new stateless Analyzer agent with the verbatim §5.3 system prompt. Uses the registered LLM provider at <code>TIER_1_COMPLEX</code> (Sonnet 4 in prod). Falls back to a deterministic 5-section offline stub when no provider is registered (test environments / dev without an Anthropic key) so the schema is exercised end-to-end. Per-call cost estimated against published Anthropic Direct rates.</li>
+          <li><code>services/agent-engine/app/routes/explainability.py</code> — adds <code>POST /v1/explainability/turns/{turn_id}/ask</code> + <code>GET /v1/explainability/turns/{turn_id}/asks</code>. Gated by the existing Phase 1 <code>require_super_admin</code> dependency. Soft per-sub throttle: 30 asks/hour + 200/day via in-process sliding-window counter (hard cap belongs in API GW).</li>
+          <li><code>services/migration-runner/migrations/explainability_phase2_asks_table.sql</code> — creates <code>public.explainability_asks</code> (<code>id</code> UUID PK, <code>turn_id</code>, <code>session_id</code>, <code>asked_by</code>, <code>question</code>, <code>answer</code>, <code>model_used</code>, <code>cost_usd</code>, <code>created_at</code>) + 3 indexes. <strong>Already applied to ig-dev</strong> via <code>ig-dev-migration-runner</code> (6/6 succeeded, idempotent on re-apply).</li>
+          <li><code>services/agent-engine/tests/test_explainability_phase2_ask.py</code> — 16 new pytest tests; <strong>42/42 explainability suite passes</strong> (26 Phase 1 + 16 Phase 2).</li>
+        </ul>
+        <h4>Added — frontend (PR #86, branch <code>feat/explainability-phase2-ask-panel</code>)</h4>
+        <ul>
+          <li><code>src/components/explainability/AskBox.tsx</code> — threaded follow-up panel below <code>TurnAnalysisCard</code> in column 3. Textarea (max 2000 chars), submit button, throttle/error display, quota readout, auto-scroll. Each thread row shows operator question + Analyzer answer + model + cost + timestamp.</li>
+          <li><code>src/services/super-admin/explainability/explainability.service.ts</code> — <code>askTurn(turnId, body)</code> + <code>listTurnAsks(turnId)</code>.</li>
+          <li><code>src/hooks/super-admin/explainability/useExplainability.ts</code> — <code>useTurnAsks</code> query (5s staleTime) + <code>useAsk</code> mutation that invalidates the asks list on success.</li>
+          <li><code>src/types/explainability/types.ts</code> — <code>AskRecord</code>, <code>AskResponse</code>, <code>AskList</code>, <code>AskRequest</code> matching FastAPI Pydantic schemas.</li>
+          <li><code>src/pages/super-admin/Explainability.tsx</code> — third column wraps <code>&lt;TurnAnalysisCard&gt;</code> above <code>&lt;AskBox&gt;</code> (same column-3 footprint).</li>
+          <li><code>src/components/explainability/__tests__/AskBox.test.tsx</code> — 6 new jest tests; <strong>20/20 explainability frontend suite passes</strong>.</li>
+        </ul>
+        <h4>Fixed</h4>
+        <ul>
+          <li>Migration's original FK <code>turn_id → chat_messages(message_id) ON DELETE CASCADE</code> failed Postgres validation (<code>42830</code> — <code>message_id</code> not unique on the deployed schema). Probed via <code>ig-dev-migration-runner</code>: <code>chat_messages.id</code> is the actual PK; <code>message_id</code> is the logical id used by Phase 1 routes for URL <code>turn_id</code> references. Phase 2 keeps <code>turn_id</code> as a soft reference (no FK constraint). Hardening to a unique index + FK deferred to Phase 3.</li>
+        </ul>
+        <h4>Notes</h4>
+        <ul>
+          <li>Phase 1 PR #115's <code>/v1/explainability/{proxy+}</code> API GW catch-all already routes the new POST + GET endpoints — no CDK change needed for Phase 2.</li>
+          <li>Hard limits respected: no IAM changes, no monolith touch, agent-engine + explainability-frontend only.</li>
+        </ul>
 
         <h3>[2026-05-15] — Wesley follow-up cleanup: agent-engine GRANT verified unnecessary, magic_link alembic shipped (PR #122)</h3>
         <p>Continuation of the 2026-05-13 wesley/chat-upload deep-debug session, closing out the original 5-item follow-up list.</p>
@@ -2482,6 +2510,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1105 [/bedtime run phase 2 — Explainability Analyzer + Ask panel]</div>
+          <div class="prompt-text">Phase 2 of IG_Super_Admin_Explainability_Plan.docx §§5.2-5.4 + 6 — built end-to-end while user is offline. Backend (PR #134, branch feat/explainability-phase2-analyzer-asks): Analyzer agent at services/agent-engine/app/agents/explainability/analyzer_agent.py with the verbatim §5.3 system prompt; uses TIER_1_COMPLEX (Sonnet 4 in prod) via the registered LLM provider, falls back to a deterministic offline stub when no provider exists. Per-call cost estimated against published Anthropic Direct rates and surfaced in the response. Routes: POST /v1/explainability/turns/{turn_id}/ask + GET /v1/explainability/turns/{turn_id}/asks gated by the existing require_super_admin. Soft per-sub throttle 30/hour + 200/day via in-process sliding window. Migration explainability_phase2_asks_table.sql creates public.explainability_asks (id UUID PK, turn_id UUID, session_id UUID, asked_by VARCHAR(64), question, answer, model_used, cost_usd, created_at) + 3 indexes. **Schema correction**: original FK turn_id → chat_messages(message_id) failed Postgres validation (42830 — message_id not unique on deployed schema; PK is `id`). Probed via ig-dev-migration-runner and confirmed; treat turn_id as soft reference. Migration applied to ig-dev (6/6 OK, idempotent). 16 new pytest tests; 42/42 explainability suite passes. Frontend (PR #86, branch feat/explainability-phase2-ask-panel): AskBox.tsx threaded panel below TurnAnalysisCard in column 3 (textarea, submit, throttle/error display, quota readout, auto-scroll); useTurnAsks query + useAsk mutation; 6 jest tests (20/20 explainability frontend suite passes). Phase 1 PR #115's `/v1/explainability/{proxy+}` API GW catch-all already routes the new endpoints — no CDK change needed. Both PRs OPEN, NOT merged per spec. No IAM changes, no monolith touch, agent-engine + explainability-frontend only.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Prompt #1103 [run the next P2 batch — pagination + cache + CW alarm + startup schema check]</div>
           <div class="prompt-text">Bundles 4 MERIDIAN_REVIEW_PROMPTS.md P2 items. SQL-side pagination on /v1/chat/conversations (LIMIT/OFFSET + HAVING in the GROUP BY query + separate COUNT). Frontend WS-complete invalidateQueries({queryKey: ["agent","conversation"]}) so fresh chats appear in History within ~100-300ms (refetch RTT) instead of waiting for 30s staleTime. CloudWatch MetricFilter + Alarm on "chat_message_repository.insert failed" log line (>10 in 5 min → SNS). Startup schema check in lifespan: chat_messages Phase C columns missing → CRITICAL + refuse to start; observability tables missing → WARNING + app.state.observability_enabled=False for degraded mode. PR #130 (monorepo, 168+/6-) + PR #80 (frontend) merged. Auto-triggered agent-engine image rebuild + ECS roll + frontend ci-deploy.yml. Manual cdk-deploy.yml workflow_dispatch for ig-dev-agent-engine (run 25903872727) to land the alarm.</div>
@@ -24206,6 +24238,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Activity #act-wave1-finalize-wave2-3-batch [Wave 1 closed + Wave 2/3 batch shipped]</div>
           <div class="prompt-text">Wave 1 fully closed (R-2.6 RBAC audit confirmed done, so Lane 1.A soft hold per plan §4.2 lifted) and the first Wave 2/3 batch landed in parallel. Merged 4 frontend PRs: PR #72 Lane 1.A P3.2 manager Analytics → ChartKit (merge commit 19e61dfb); PR #74 Lane 2.A P7.1 Diagnostic Chat → super-admin "Agent Trace Console" — public /diagnostic-chat now `<Navigate>` redirect to /super-admin/agent-trace-console gated by ProtectedRoute, removed from user nav, super-admin nav renamed (merge commit c7a6e81c); PR #75 Lane 3.A P7.4 manager Cost Slice — useDeptCost now mirrors useOrgCost wrapping useDashboardMetrics(deptId), `<CostBoard scope="dept"/>` mounted on manager Analytics below Time to Hire, data-pending banner persists until R-2.4 adds dept filtering (merge commit f2f71aac); PR #76 Lane 3.B P7.5 shared `<ObservabilityBoard scope="platform" | "org"/>` panel + per-scope hooks (usePlatformObservability / useOrgObservability) — mirror of the CostBoard pattern, replaces duplicated KPI + Top Agents blocks on super-admin Observability + company-admin Observability; pages now own only header chrome (merge commit 25c66078). All 4 PRs had clean CI (Build / Trivy / Audit / Unit Tests 15-17 min each); zero inter-lane file conflicts. Wave 1: 5/5 done. Wave 2: 1/2 done (Lane 2.B now unblocked by R-2.10 closure). Wave 3: 2/3 done (Lane 3.C is evidence-only retest). Next runnable batch: Wave 2.B + the full Wave 4 fan-out (5 lanes: 4.A/4.B/4.C manager hubs, 4.D TaskAgent forms, 4.E Practitioner Onboarding Wizard) — all unblocked by R-2.10 closure.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1104 [/bedtime — run 2.B + 4.A + 4.B + 4.C + 4.D]</div>
+          <div class="prompt-text">run 2.B + 4.A + 4.B + 4.C + 4.D in the background, full permissions, no interruptions.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Activity #act-bedtime-w24 [/bedtime — 2 of 5 PRs shipped]</div>
+          <div class="prompt-text">Shipped Lane 2.B (PR #81, merge commit 8e837db3) — MentorManagement deep-link batch P2.1+P2.2+P2.3: /super-admin/prompt-builder / interaction-protocol / voice-settings now redirect to the canonical MentorManagement tabs (?tab=prompt / protocol / voice). Three route constants @deprecated. One-shot conflict resolution against the newly-merged /super-admin/research-library route on dev. Shipped Lane 4.D (PR #82, merge commit e731c83b) — TaskAgent forms for practitioner P7.2: three task-agent forms (Job Blueprint / Interview Prep / Team Composition) now available to practitioner. Form bodies extracted into src/components/task-agents/ as layout-agnostic shared components; both manager and practitioner pages now wrap the bodies in their respective layouts. Three new practitioner routes + nav items. DEFERRED Lanes 4.A (Hiring Hub) / 4.B (Team Hub) / 4.C (Development Hub) — each requires consolidating 3-4 existing manager pages into a tabbed hub (~600 lines per hub). Attempted 4.A: started extracting body components (HiringPipelineBody + CandidatesBody drafted on disk) but parallel-agent activity wiped the branch mid-flight. Three hub consolidations remain for a follow-up session. Plan reference §3 Wave 2 / Wave 4 of IG_Dashboard_Rationalization_Plan_2.docx. Both shipped PRs: full CI green (Build/Trivy/Audit/Unit Tests 15-17 min); frontend routes integration test 54/54.</div>
         </div>
 </div>
 
