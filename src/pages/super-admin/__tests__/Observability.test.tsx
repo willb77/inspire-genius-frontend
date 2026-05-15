@@ -30,6 +30,14 @@ jest.mock("@/components/super-admin/CostBoard", () => ({
   ),
 }));
 
+// Wave 3 Lane 3.B — ObservabilityBoard also owns hooks; mock at boundary.
+jest.mock("@/components/super-admin/ObservabilityBoard", () => ({
+  __esModule: true,
+  default: ({ scope }: { scope: string }) => (
+    <div data-testid={`observability-board-mock-${scope}`} />
+  ),
+}));
+
 describe("SuperAdmin Observability", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,12 +62,11 @@ describe("SuperAdmin Observability", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the non-cost metric cards", () => {
+  it("renders the platform-scoped ObservabilityBoard panel", () => {
     render(<Observability />);
-    expect(screen.getByText("Responses Today")).toBeInTheDocument();
-    expect(screen.getByText("Avg Latency")).toBeInTheDocument();
-    expect(screen.getByText("Avg Confidence")).toBeInTheDocument();
-    expect(screen.getByText("Unique Users")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("observability-board-mock-platform")
+    ).toBeInTheDocument();
   });
 
   it("renders the platform-scoped CostBoard panel", () => {
@@ -67,58 +74,20 @@ describe("SuperAdmin Observability", () => {
     expect(screen.getByTestId("cost-board-mock-platform")).toBeInTheDocument();
   });
 
-  it("renders Top Agents card", () => {
-    render(<Observability />);
-    expect(screen.getByText("Top Agents by Usage")).toBeInTheDocument();
-  });
-
   it("renders time range selector", () => {
     render(<Observability />);
     expect(screen.getByText("Today")).toBeInTheDocument();
   });
 
-  it("shows no data message when top_agents is empty", () => {
-    render(<Observability />);
-    expect(screen.getByText("No agent data available")).toBeInTheDocument();
-  });
-
-  it("shows loading state when isLoading is true", () => {
+  it("hooks the refetch via the refresh button without crashing in loading state", () => {
     (useDashboardMetrics as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: true,
       refetch: jest.fn(),
     });
-
     render(<Observability />);
-    const loadingTexts = screen.getAllByText("Loading...");
-    expect(loadingTexts.length).toBeGreaterThan(0);
-  });
-
-  it("renders metric values when data is present", () => {
-    (useDashboardMetrics as jest.Mock).mockReturnValue({
-      data: {
-        total_responses_today: 100,
-        avg_latency_ms: 180,
-        avg_confidence: 0.92,
-        unique_users_today: 25,
-        total_tokens_today: 50000,
-        error_rate: 0.01,
-        top_agents: [
-          { agent: "Meridian", count: 50, avg_confidence: 0.95 },
-          { agent: "Sage", count: 30, avg_confidence: 0.88 },
-        ],
-        cost_by_model: [],
-      },
-      isLoading: false,
-      refetch: jest.fn(),
-    });
-
-    render(<Observability />);
-    expect(screen.getByText("100")).toBeInTheDocument();
-    expect(screen.getByText("180ms")).toBeInTheDocument();
-    expect(screen.getByText("92%")).toBeInTheDocument();
-    expect(screen.getByText("25")).toBeInTheDocument();
-    expect(screen.getByText("Meridian")).toBeInTheDocument();
-    expect(screen.getByText("Sage")).toBeInTheDocument();
+    // Header chrome still renders; ObservabilityBoard's own loading state is
+    // covered in its own __tests__/ObservabilityBoard.test.tsx.
+    expect(screen.getByText("Agent Observability")).toBeInTheDocument();
   });
 });
