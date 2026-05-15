@@ -44,6 +44,21 @@ jest.mock("@/lib/axios", () => ({
 
   },
 
+  attachInterceptors: jest.fn(),
+
+}));
+
+jest.mock("@/lib/agentApi", () => ({
+  getApi: () => ({
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  }),
+  agentApi: {
+    get: jest.fn(),
+    defaults: { headers: { common: {} } },
+  },
 }));
 
 

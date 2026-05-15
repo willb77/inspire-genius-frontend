@@ -7,6 +7,7 @@ import { OtpInputField } from "@/components/shared/OtpInputField";
 import { useAuth } from "@/context/useAuth";
 import { useAuthRedirectForAuthPages } from "@/hooks/useAuthRedirectForAuthPages";
 import { getNextStep } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
 // Navigation is handled inside AuthContext; no local routing needed here
 
 export default function OTP() {
@@ -16,6 +17,8 @@ export default function OTP() {
   const { verifyOtp, resendOtp, isLoading } = useAuth();
   const redirectTo = useAuthRedirectForAuthPages();
   const [hideLogin, setHideLogin] = useState(false);
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
 
   useEffect(() => {
     if (redirectTo) navigate(redirectTo, { replace: true });
@@ -65,8 +68,8 @@ export default function OTP() {
   return (
     <AuthLayout>
       <AuthHeader
-        title="Almost Done"
-        subtitle="Please type the code we sent you in your email"
+        title={t('otp.title')}
+        subtitle={t('otp.subtitle')}
       />
 
       <div className="space-y-6 w-full">
@@ -83,7 +86,7 @@ export default function OTP() {
           disabled={value.length !== 6 || isLoading}
           onClick={handleVerify}
         >
-          {isLoading ? "Verifying..." : "Verify"}
+          {isLoading ? t('otp.verifying') : t('otp.submit')}
         </Button>
 
         <div className="text-xs flex items-center justify-center gap-4">
@@ -96,18 +99,18 @@ export default function OTP() {
             className={secondsLeft > 0 ? "text-muted-foreground" : "text-primary underline"}
             onClick={handleResend}
           >
-            Resend code
+            {t('otp.resendCode')}
           </button>
         </div>
 
         {!hideLogin && (
           <p className="text-sm text-muted-foreground mt-auto">
-            Already have an account?{" "}
+            {tc('hasAccount')}{" "}
             <a
               className="underline text-blue-primary font-semibold"
               href="/login"
             >
-              Log In
+              {tc('logIn')}
             </a>
           </p>
         )}

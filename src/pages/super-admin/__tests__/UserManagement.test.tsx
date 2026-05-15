@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import UserManagement from "../UserManagement";
 import { toast } from "sonner";
 
@@ -102,6 +103,16 @@ jest.mock("sonner", () => ({
 }));
 
 /* -------------------------------------------------
+ MOCK ROLES HOOK
+------------------------------------------------- */
+jest.mock("@/hooks/super-admin/useRoles", () => ({
+  useRoles: () => ({
+    data: { data: { roles: [{ id: "1", name: "user" }, { id: "2", name: "super-admin" }] } },
+    isPending: false,
+  }),
+}));
+
+/* -------------------------------------------------
  MOCK USER MANAGEMENT HOOKS
 ------------------------------------------------- */
 const inviteMutate = jest.fn();
@@ -138,15 +149,31 @@ jest.mock("@/hooks/super-admin/user-management/useUserManagement", () => ({
   })),
   useInviteUser: () => ({ mutateAsync: inviteMutate, isPending: false }),
   useUpdateUser: () => ({ mutateAsync: updateMutate, isPending: false }),
+  useChangeUserRole: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useDeleteUser: () => ({ mutateAsync: deleteMutate, isPending: false }),
   useResendInvitation: () => ({ mutateAsync: resendMutate, isPending: false }),
+  useInactiveUserCount: () => ({ data: 0, isLoading: false }),
+  usePurgeInactiveUsers: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
 /* -------------------------------------------------
  TESTS
 ------------------------------------------------- */
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
+function renderPage() {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <UserManagement />
+    </QueryClientProvider>
+  );
+}
+
 describe("UserManagement Page", () => {
   beforeEach(() => {
+    queryClient.clear();
     // Reset mock data before each test
     mockFormSubmitData = {
       first_name: "John",
@@ -171,7 +198,7 @@ describe("UserManagement Page", () => {
       data: null,
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByTestId("loading-skeleton")).toBeInTheDocument();
   });
 
@@ -191,12 +218,12 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByTestId("loading-skeleton")).toBeInTheDocument();
   });
 
   it("renders user data", () => {
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("test@test.com")).toBeInTheDocument();
   });
 
@@ -228,7 +255,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Active User")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
   });
@@ -261,7 +288,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Active User 2")).toBeInTheDocument();
   });
 
@@ -293,14 +320,14 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Deactivated")).toBeInTheDocument();
   });
 
   it("opens add user modal and submits", async () => {
     inviteMutate.mockResolvedValueOnce({});
     
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Add User"));
@@ -323,31 +350,12 @@ describe("UserManagement Page", () => {
     });
   });
 
-  it("edits user with Awaiting status (is_active undefined)", async () => {
-    updateMutate.mockResolvedValueOnce({});
-    
-    render(<UserManagement />);
+  it("shows Resend instead of Edit for Awaiting status users", async () => {
+    renderPage();
 
-    await act(async () => {
-      fireEvent.click(screen.getByText("Edit"));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Submit"));
-    });
-
-    await act(async () => {
-      // Wait for mutation
-    });
-
-    expect(updateMutate).toHaveBeenCalledWith({
-      email: "test@test.com",
-      payload: {
-        first_name: "John",
-        last_name: "Doe",
-        is_active: undefined,
-      },
-    });
+    // Awaiting users should show Resend, not Edit
+    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    expect(screen.getByText("Resend")).toBeInTheDocument();
   });
 
   it("edits user with Active status (is_active true)", async () => {
@@ -380,7 +388,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Edit"));
@@ -442,7 +450,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Edit"));
@@ -504,7 +512,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Edit"));
@@ -532,7 +540,7 @@ describe("UserManagement Page", () => {
   it("resends invitation", async () => {
     resendMutate.mockResolvedValueOnce({});
     
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Resend"));
@@ -573,7 +581,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Resend"));
@@ -588,7 +596,7 @@ describe("UserManagement Page", () => {
   it("deletes user", async () => {
     deleteMutate.mockResolvedValueOnce({});
     
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Delete"));
@@ -602,11 +610,14 @@ describe("UserManagement Page", () => {
       // Wait for mutation
     });
 
-    expect(deleteMutate).toHaveBeenCalledWith("test@test.com");
+    expect(deleteMutate).toHaveBeenCalledWith({
+      email: "test@test.com",
+      force: false,
+    });
   });
 
   it("changes page using pagination", async () => {
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Next Page"));
@@ -628,7 +639,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText(/of 0 results/i)).toBeInTheDocument();
   });
 
@@ -648,7 +659,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Show 0 to 0 of 0 results")).toBeInTheDocument();
   });
 
@@ -678,7 +689,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Show 1 to 10 of 25 results")).toBeInTheDocument();
   });
 
@@ -732,8 +743,8 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
-    expect(screen.getByText("Invitation Sent")).toBeInTheDocument();
+    renderPage();
+    expect(screen.getByText("Sent")).toBeInTheDocument();
     expect(screen.getByText("Accepted")).toBeInTheDocument();
     expect(screen.getByText("Expired")).toBeInTheDocument();
   });
@@ -766,7 +777,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("noname@test.com")).toBeInTheDocument();
   });
 
@@ -786,7 +797,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     // The pagination should still render with at least 1 page
     expect(screen.getByText("Next Page")).toBeInTheDocument();
   });
@@ -795,7 +806,7 @@ describe("UserManagement Page", () => {
     // This test ensures the async/await in handleAdd is covered
     inviteMutate.mockResolvedValueOnce({});
     
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Add User"));
@@ -813,7 +824,7 @@ describe("UserManagement Page", () => {
   });
 
   it("handles handleEdit when selected is null", async () => {
-    render(<UserManagement />);
+    renderPage();
 
     // Open the modal but don't select a user (this shouldn't happen in practice)
     // The early return in handleEdit should prevent the mutation
@@ -823,7 +834,7 @@ describe("UserManagement Page", () => {
   });
 
   it("handles handleDeactivate when selected is null", async () => {
-    render(<UserManagement />);
+    renderPage();
 
     // The early return in handleDeactivate should prevent the mutation
     // when selected is null (shouldn't happen in practice)
@@ -831,7 +842,7 @@ describe("UserManagement Page", () => {
   });
 
   it("handles handleDelete when selected is null", async () => {
-    render(<UserManagement />);
+    renderPage();
 
     // The early return in handleDelete should prevent the mutation
     // when selected is null (shouldn't happen in practice)
@@ -874,7 +885,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Edit"));
@@ -920,7 +931,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Show 11 to 20 of 25 results")).toBeInTheDocument();
   });
 
@@ -950,7 +961,7 @@ describe("UserManagement Page", () => {
       },
     });
 
-    render(<UserManagement />);
+    renderPage();
     expect(screen.getByText("Show 21 to 25 of 25 results")).toBeInTheDocument();
   });
 });

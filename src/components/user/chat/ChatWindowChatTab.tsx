@@ -1,11 +1,83 @@
-import type { RefObject } from "react";
+import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay } from "lucide-react";
+import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
-import type { ChatMessage } from "@/types/chat";
+import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
+import type { ChatMessage, RAGSource } from "@/types/chat";
+
+function SourceAttribution({ sources }: { sources: RAGSource[] }) {
+  const [expanded, setExpanded] = useState(false);
+  // Dedup on (document_id, filename) so two tenants who happen to have
+  // files with the same name don't collapse into one row. document_id
+  // is server-side (UUID); when absent we fall back to filename alone.
+  const unique = Object.values(
+    sources.reduce<Record<string, RAGSource>>((acc, s) => {
+      const key = `${s.document_id ?? ""}::${s.filename}`;
+      if (!acc[key] || acc[key].similarity < s.similarity) {
+        acc[key] = s;
+      }
+      return acc;
+    }, {}),
+  ).sort((a, b) => b.similarity - a.similarity);
+
+  if (unique.length === 0) return null;
+
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <FileText className="h-3 w-3" />
+        <span>Sources ({unique.length})</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {unique.map((s) => (
+            <span
+              key={`${s.document_id ?? ""}::${s.filename}`}
+              className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+            >
+              <FileText className="h-3 w-3" />
+              {s.filename}
+              <span className="text-[10px] opacity-70">
+                ({Math.round(s.similarity * 100)}%)
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollaborationBadge({ agents }: { agents: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (agents.length < 2) return null;
+
+  const summary = agents.join(", ");
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Users className="h-3 w-3" />
+        <span>Collaborative response ({agents.length} agents)</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="mt-1 text-xs text-muted-foreground">
+          <span className="opacity-80">Synthesized from {summary}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const getDocKindBadgeClass = (kind?: string) => {
   if (kind === "pdf") return "bg-red-50 text-red-600";
@@ -26,6 +98,7 @@ type ChatWindowChatTabProps = {
   genericMessages: string;
   coachId?: string;
   conversationId?: string;
+  onReplayMessage?: (text: string) => void;
 };
 
 export default function ChatWindowChatTab({
@@ -40,6 +113,7 @@ export default function ChatWindowChatTab({
   genericMessages,
   coachId,
   conversationId,
+  onReplayMessage,
 }: ChatWindowChatTabProps) {
   const renderMessage = (m: ChatMessage) => {
     if (m.kind === "text") {
@@ -77,6 +151,17 @@ export default function ChatWindowChatTab({
                 >
                   <Copy className="size-4 text-black" />
                 </button>
+                {m.sender === "assistant" && onReplayMessage && m.text && (
+                  <button
+                    aria-label="Replay voice"
+                    title="Replay voice"
+                    type="button"
+                    className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
+                    onClick={() => onReplayMessage(m.text)}
+                  >
+                    <Volume2 className="size-4 text-black" />
+                  </button>
+                )}
                 {audioPlayerBuffer &&
                   m.sender === "assistant" &&
                   m.id === lastMessageId && (
@@ -88,12 +173,30 @@ export default function ChatWindowChatTab({
               </div>
               <div className="text-[11px] text-muted-foreground">{m.time}</div>
             </div>
+            {m.kind === "text" && m.sender === "assistant" && m.agent && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                via {m.agent}
+              </p>
+            )}
+            {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
+              <SourceAttribution sources={m.ragSources} />
+            )}
+            {m.kind === "text" &&
+              m.sender === "assistant" &&
+              m.synthesized === true &&
+              m.contributingAgents &&
+              m.contributingAgents.length >= 2 && (
+                <CollaborationBadge agents={m.contributingAgents} />
+              )}
             {m.sender === "assistant" && coachId && conversationId && (
               <MessageFeedback
                 messageId={m.id}
                 conversationId={conversationId}
                 coachId={coachId}
               />
+            )}
+            {m.sender === "assistant" && (
+              <ObservabilityPanel messageId={m.id} />
             )}
           </div>
         </div>

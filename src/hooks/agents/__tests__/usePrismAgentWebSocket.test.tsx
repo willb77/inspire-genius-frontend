@@ -1,6 +1,11 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { usePrismAgentWebSocket } from "../usePrismAgentWebSocket";
 
+// Mock useAgentEngine — default to true (ecosystem) so the ws-proxy URL is used
+jest.mock("@/lib/agentApi", () => ({
+  useAgentEngine: jest.fn(() => true),
+}));
+
 type WsSentMessage = string | ArrayBuffer | Blob;
 
 const readBlobAsArrayBuffer = (blob: Blob): Promise<ArrayBuffer> => {

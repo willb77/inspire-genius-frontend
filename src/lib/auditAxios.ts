@@ -1,13 +1,6 @@
-import axios from "axios"
-
-export const auditApi = axios.create({
-  baseURL: import.meta.env.VITE_AUDIT_SERVICE_URL || "http://localhost:8008",
-})
-
-auditApi.interceptors.request.use((config) => {
-  const apiKey = import.meta.env.VITE_AUDIT_API_KEY
-  if (apiKey) {
-    config.headers.set?.("X-API-Key", apiKey)
-  }
-  return config
-})
+/**
+ * @deprecated Audit now uses the main `api` instance from @/lib/axios.
+ * This file is kept only for backward-compatibility re-exports.
+ * New code should import `api` from "@/lib/axios" directly.
+ */
+export { api as auditApi } from "@/lib/axios"

@@ -1,6 +1,101 @@
 import "@testing-library/jest-dom";
 import { TextDecoder, TextEncoder } from "util";
 
+// Global mock for agentApi — prevents module-level `attachInterceptors(agentApi)`
+// from failing when tests import services that depend on this module.
+// By default, agentApi methods reject so services fall through to the `api` fallback,
+// preserving existing test assertions that check `api.get/post/etc`.
+jest.mock("@/lib/agentApi", () => {
+  const rejectFn = jest.fn().mockRejectedValue(new Error("agentApi mock — fall through to api"));
+  const mockAxios = {
+    get: rejectFn,
+    post: rejectFn,
+    put: rejectFn,
+    patch: rejectFn,
+    delete: rejectFn,
+    defaults: { headers: { common: {} } },
+  };
+  return {
+    __esModule: true,
+    agentApi: mockAxios,
+    getApi: jest.fn().mockReturnValue(mockAxios),
+    useAgentEngine: jest.fn().mockReturnValue(false),
+    syncAuthToken: jest.fn(),
+  };
+});
+
+// Polyfill structuredClone for jsdom (used by @dagrejs/dagre)
+if (typeof globalThis.structuredClone === "undefined") {
+  globalThis.structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));
+}
+
+// Polyfill ResizeObserver for jsdom (used by recharts ResponsiveContainer
+// and any other component that observes element size).
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverPolyfill {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  globalThis.ResizeObserver =
+    ResizeObserverPolyfill as unknown as typeof globalThis.ResizeObserver;
+}
+
+// Mock react-i18next with real English translations so tests can match rendered text.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const _i18nBundles: Record<string, Record<string, unknown>> = {};
+function _loadNs(ns: string): Record<string, unknown> {
+  if (!_i18nBundles[ns]) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _i18nBundles[ns] = require(`./public/locales/en/${ns}.json`);
+    } catch {
+      _i18nBundles[ns] = {};
+    }
+  }
+  return _i18nBundles[ns];
+}
+function _resolve(bundle: Record<string, unknown>, key: string): string {
+  const parts = key.split(".");
+  let cur: unknown = bundle;
+  for (const p of parts) {
+    if (cur && typeof cur === "object" && p in cur) cur = (cur as Record<string, unknown>)[p];
+    else return key; // fallback to key
+  }
+  return typeof cur === "string" ? cur : key;
+}
+
+jest.mock("react-i18next", () => ({
+  useTranslation: (ns?: string | string[]) => {
+    // Default namespace is the first element if array, else the string, else "common"
+    const defaultNs = Array.isArray(ns) ? ns[0] : (ns || "common");
+    return {
+      t: (key: string, opts?: Record<string, unknown>) => {
+        // Handle "namespace:key" format (e.g., "dashboard:manageCoaches")
+        let resolveNs = defaultNs;
+        let resolveKey = key;
+        if (key.includes(":")) {
+          const [prefix, ...rest] = key.split(":");
+          resolveNs = prefix;
+          resolveKey = rest.join(":");
+        }
+        const bundle = _loadNs(resolveNs);
+        let val = _resolve(bundle, resolveKey);
+        // Handle {{var}} interpolation
+        if (opts && typeof opts === "object") {
+          for (const [k, v] of Object.entries(opts)) {
+            val = val.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v));
+          }
+        }
+        return val;
+      },
+      i18n: { changeLanguage: jest.fn(), language: "en" },
+    };
+  },
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: "3rdParty", init: jest.fn() },
+}));
+
 // Dummy env for tests (intentionally fake values and keys for static analyzers)
 process.env.FAKE_TEST_VALID_PASSWORD ??= "fake-TestPassword123!";
 process.env.FAKE_TEST_INVALID_NO_UPPERCASE ??= "fake-testpassword123!";

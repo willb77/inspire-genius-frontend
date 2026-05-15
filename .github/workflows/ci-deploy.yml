@@ -1,0 +1,325 @@
+name: CI/CD — Build, Test & Deploy
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+
+env:
+  NODE_VERSION: "20"
+  # 2026-05-10 fix: previously deployed to inspires-genius-dev-frontend +
+  # EQNFTOWMBMKSA (a CloudFront distribution with no DNS alias — nobody saw
+  # the deploys). The live dev domain dev.inspiresgenius.com is served by
+  # CloudFront E3EFVMBYYVF012 from bucket ig-dev-frontend-assets. Pointing
+  # CI at the right bucket so every push to `development` actually reaches
+  # users.
+  #
+  # 2026-05-12: deploy-production stage removed. It was a placebo — same
+  # env vars as deploy-dev meant approvals wrote to the dev bucket. To
+  # re-introduce when a real prod environment exists: (1) stand up prod
+  # S3 bucket + CloudFront + DNS for app.inspiresgenius.com, (2) move
+  # S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID out of this `env:` block and
+  # into environment-scoped GitHub variables on the `dev` and `production`
+  # environments so they resolve to different values, (3) re-add the
+  # deploy-production job (see git history of this file pre-2026-05-12).
+  S3_BUCKET: ig-dev-frontend-assets
+  CLOUDFRONT_DISTRIBUTION_ID: E3EFVMBYYVF012
+  # 2026-05-11: Also mirror deploys to the legacy distribution so users
+  # who still load https://d1nxsns258du4y.cloudfront.net stay in sync.
+  # Long-term plan: migrate consumers to dev.inspiresgenius.com and retire.
+  LEGACY_S3_BUCKET: inspires-genius-dev-frontend
+  LEGACY_CLOUDFRONT_DISTRIBUTION_ID: EQNFTOWMBMKSA
+  AWS_REGION: us-east-1
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. BUILD
+  # ─────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Generate .env
+        run: |
+          echo "VITE_NODE_ENV=production" > .env
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
+          echo "VITE_AGENT_ENGINE_URL=${{ secrets.VITE_AGENT_ENGINE_URL || 'https://8umg6xioz5.execute-api.us-east-1.amazonaws.com' }}" >> .env
+          echo "VITE_ALEX_WEB_SOCKET_URL=${{ secrets.VITE_ALEX_WEB_SOCKET_URL }}" >> .env
+          echo "VITE_AGENTS_WEBSOCKET_BASE_URL=${{ secrets.VITE_AGENTS_WEBSOCKET_BASE_URL }}" >> .env
+          echo "VITE_AGENT_WS_URL=${{ secrets.VITE_AGENT_WS_URL }}" >> .env
+          echo "VITE_STORAGE_SECRET=${{ secrets.VITE_STORAGE_SECRET }}" >> .env
+          echo "VITE_CRYPTO_KEY=${{ secrets.VITE_CRYPTO_KEY }}" >> .env
+          echo "VITE_CRYPTO_SALT=${{ secrets.VITE_CRYPTO_SALT }}" >> .env
+          echo "VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}" >> .env
+          echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}" >> .env
+          echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
+          echo "VITE_APP_VERSION=${{ github.sha }}" >> .env
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # 2. UNIT & INTEGRATION TESTS (with coverage)
+  # ─────────────────────────────────────────────
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests with coverage
+        env:
+          COVERAGE_THRESHOLD: '{"global":{"branches":55,"functions":60,"lines":60,"statements":60}}'
+        run: npx jest --ci --forceExit --coverage --coverageThreshold="$COVERAGE_THRESHOLD"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 3. DEPENDENCY AUDIT (frontend)
+  # ─────────────────────────────────────────────
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high || true
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit
+          path: npm-audit.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 4. TRIVY FILESYSTEM SCAN
+  # ─────────────────────────────────────────────
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+          format: "table"
+
+      - name: Run Trivy (JSON report)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+          format: "json"
+          output: "trivy-report.json"
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 5. E2E SMOKE TESTS (per role)
+  # ─────────────────────────────────────────────
+  e2e:
+    name: E2E — ${{ matrix.role }}
+    needs: build
+    runs-on: ubuntu-latest
+    if: false  # Disabled — route mocking needs further debugging
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [user, manager, company-admin, practitioner, distributor, super-admin]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        run: npx vite preview --port 4173 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 15); do
+            curl -s http://localhost:4173 > /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server failed to start" && exit 1
+
+      - name: Run E2E tests — @${{ matrix.role }}
+        env:
+          CI: "true"
+          BASE_URL: http://localhost:4173
+        run: npx playwright test --project=chromium --grep="@${{ matrix.role }}"
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.role }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # 6. DEPLOY TO DEV (auto-deploys every push to `development`)
+  # ─────────────────────────────────────────────
+  # Publishes to `dev.inspiresgenius.com` (bucket `ig-dev-frontend-assets`,
+  # CloudFront `E3EFVMBYYVF012`). No staging tier today; if one is added,
+  # introduce a separate `deploy-staging` job + `staging` GitHub environment.
+  deploy-dev:
+    name: Deploy to Dev
+    needs: [build, test-unit, dependency-audit, trivy-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+    environment:
+      name: dev
+      url: https://dev.inspiresgenius.com
+
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Deploy to S3 (dev)
+        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
+
+      # index.html + version.json drive the stale-bundle detector. Synced
+      # objects inherit S3's default Cache-Control; rewrite the metadata so
+      # CloudFront and browsers always revalidate.
+      - name: Set no-cache headers on index.html + version.json (dev)
+        run: |
+          aws s3 cp s3://${{ env.S3_BUCKET }}/index.html s3://${{ env.S3_BUCKET }}/index.html \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html; charset=utf-8"
+          aws s3 cp s3://${{ env.S3_BUCKET }}/version.json s3://${{ env.S3_BUCKET }}/version.json \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "application/json"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Deploy to S3 (legacy d1nxsns258du4y mirror)
+        run: aws s3 sync dist/ s3://${{ env.LEGACY_S3_BUCKET }} --delete
+
+      - name: Set no-cache headers on index.html + version.json (legacy)
+        run: |
+          aws s3 cp s3://${{ env.LEGACY_S3_BUCKET }}/index.html s3://${{ env.LEGACY_S3_BUCKET }}/index.html \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html; charset=utf-8"
+          aws s3 cp s3://${{ env.LEGACY_S3_BUCKET }}/version.json s3://${{ env.LEGACY_S3_BUCKET }}/version.json \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "application/json"
+
+      - name: Invalidate legacy CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.LEGACY_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Dev deployment complete
+        run: echo "Deployed to dev — https://dev.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
+
+  # ─────────────────────────────────────────────
+  # 7. DEPLOY TO PRODUCTION
+  # ─────────────────────────────────────────────
+  # Removed 2026-05-12. The job used the same S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID
+  # as deploy-dev, so approvals wrote to the dev bucket — a placebo gate that
+  # accumulated waiting runs without doing real work. Re-introduce when a real
+  # production environment exists (see env-block comment above for the
+  # checklist). See git history for the original job definition.

@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "메시지를 입력하세요...",
+    "send": "전송",
+    "newSession": "새 세션"
+  },
+  "sessions": {
+    "title": "세션",
+    "empty": "아직 세션이 없습니다"
+  },
+  "agents": {
+    "title": "에이전트"
+  },
+  "feedback": {
+    "feedback": "피드백",
+    "helpful": "도움이 됨",
+    "notHelpful": "도움이 안 됨",
+    "comment": "댓글 추가",
+    "positive": "긍정적",
+    "negative": "부정적",
+    "neutral": "중립",
+    "allRatings": "모든 평가",
+    "fiveStars": "별 5개",
+    "fourStars": "별 4개",
+    "threeStars": "별 3개",
+    "twoStars": "별 2개",
+    "oneStar": "별 1개",
+    "history": "피드백 내역",
+    "reviewDescription": "AI 코치 답변에 제출한 모든 피드백을 검토합니다.",
+    "totalFeedback": "총 피드백",
+    "avgRating": "평균 평점",
+    "fiveStarCount": "별 5개",
+    "oneStarCount": "별 1개",
+    "loadingFeedback": "피드백 불러오는 중...",
+    "failedLoadFeedback": "피드백을 불러오지 못했습니다. 나중에 다시 시도해 주세요.",
+    "results": "결과",
+    "result": "결과"
+  },
+  "practitioner": {
+    "dashboard": "전문가 대시보드",
+    "welcomeBack": "돌아오신 것을 환영합니다, {name}님. 오늘 {sessions}개의 세션이 예정되어 있으며 이번 주 {followups}개의 후속 조치가 있습니다.",
+    "activeClients": "활성 고객",
+    "creditsRemaining": "잔여 크레딧",
+    "sessionsThisMonth": "이번 달 세션",
+    "avgClientSatisfaction": "평균 고객 만족도",
+    "todaysSessions": "오늘의 세션",
+    "confirmed": "확인됨",
+    "clientPortfolio": "고객 포트폴리오",
+    "clientName": "고객명",
+    "organization": "조직",
+    "prismScore": "PRISM 점수",
+    "sessions": "세션",
+    "lastSession": "최근 세션",
+    "followUpsDueThisWeek": "이번 주 후속 조치 기한",
+    "creditUsage": "크레딧 사용 현황",
+    "prismAssessment": "PRISM 평가",
+    "completeDescription": "PRISM 두뇌 매핑을 완료하여 개인화된 코칭 인사이트를 잠금 해제하세요",
+    "activeAssessment": "진행 중인 평가",
+    "report": "보고서",
+    "assessmentHistory": "평가 내역"
+  },
+  "quickActions": {
+    "chatWithMeridian": "메리디안과 채팅",
+    "uploadDocument": "문서 업로드",
+    "viewPrismReport": "PRISM 보고서 보기",
+    "setNewGoal": "새 목표 설정"
+  },
+  "prism": {
+    "assessment": "PRISM 평가",
+    "completeDescription": "PRISM 두뇌 매핑을 완료하여 개인화된 코칭 인사이트를 잠금 해제하세요",
+    "activeAssessment": "진행 중인 평가",
+    "report": "보고서",
+    "assessmentHistory": "평가 내역"
+  }
+}

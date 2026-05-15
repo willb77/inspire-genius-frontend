@@ -11,6 +11,8 @@ import type { HelpFormValues } from "@/types/help/component-types";
 import { useForm } from "react-hook-form";
 import { useIssueTypes } from "@/hooks/help/useIssueTypes";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 
 const getPriorityVariant = (priority: string) => {
@@ -103,9 +105,29 @@ export default function Help() {
           />
         </div>
 
+        {/* Voice Help — TODO: Replace href with actual voice help agent URL */}
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center justify-center size-12 rounded-full bg-blue-100 text-blue-600 shrink-0">
+            <Phone className="size-6" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-semibold tracking-tight">Voice Help</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Prefer to talk? Connect with our AI voice support agent for real-time assistance.
+            </p>
+          </div>
+          <Button
+            variant="default"
+            className="shrink-0"
+            onClick={() => window.dispatchEvent(new CustomEvent("voicedesk:open"))}
+          >
+            Speak with Support
+          </Button>
+        </div>
+
         {/* Issues List */}
         <div className="bg-white rounded-2xl border shadow-sm p-4">
-          <div className="text-left mb-3 font-semibold">Recent Issues</div>
+          <div className="text-left mb-3 font-semibold">Recent Issues (TODO: translate)</div>
           {isListing && (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (

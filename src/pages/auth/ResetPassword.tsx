@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ROUTES } from "@/constants/routes"
 import { useResetPassword } from "@/hooks/auth/useResetPassword"
+import { useTranslation } from "react-i18next"
 
 type FormValues = {
   new_password: string
@@ -16,6 +17,8 @@ export default function ResetPassword() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const resetMutation = useResetPassword()
+  const { t } = useTranslation('auth')
+  const { t: tc } = useTranslation('common')
   const form = useForm<FormValues>({
     defaultValues: {
       new_password: "",
@@ -47,35 +50,35 @@ export default function ResetPassword() {
   }
 
   return (
-    <AuthLayout leftTitleOne="Upload. Ask." leftTitleTwo="Analyze. Achieve." subTitle="Choose a strong password to secure your account.">
-      <AuthHeader title="Reset Password" subtitle="Enter your new password and confirm it" />
+    <AuthLayout leftTitleOne={t('resetPassword.leftTitleOne')} leftTitleTwo={t('resetPassword.leftTitleTwo')} subTitle={t('resetPassword.leftSubtitle')}>
+      <AuthHeader title={t('resetPassword.title')} subtitle={t('resetPassword.subtitle')} />
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <PasswordField
-          placeholder="Enter New Password"
+          placeholder={t('resetPassword.newPassword')}
           {...register("new_password", {
-            required: "New password is required",
-            minLength: { value: 6, message: "Password must be at least 6 characters long" },
+            required: t('resetPassword.newPasswordRequired'),
+            minLength: { value: 6, message: t('resetPassword.minLength') },
           })}
           error={errors?.new_password?.message}
         />
 
         <PasswordField
-          placeholder="Confirm New Password"
+          placeholder={t('resetPassword.confirmPassword')}
           {...register("confirm_password", {
-            required: "Please confirm your new password",
-            validate: (val) => val === newPasswordValue || "Passwords do not match",
+            required: t('resetPassword.confirmRequired'),
+            validate: (val) => val === newPasswordValue || t('signup.passwordsDoNotMatch'),
           })}
           error={errors?.confirm_password?.message}
         />
 
         <Button type="submit" className="w-full mt-2" disabled={resetMutation.isPending}>
-          {resetMutation.isPending ? "Saving..." : "Reset Password"}
+          {resetMutation.isPending ? t('resetPassword.saving') : t('resetPassword.submit')}
         </Button>
       </form>
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        Remembered your password? <Link className="underline" to={ROUTES.LOGIN}>Log In</Link>
+        {t('resetPassword.remembered')} <Link className="underline" to={ROUTES.LOGIN}>{tc('logIn')}</Link>
       </p>
     </AuthLayout>
   )

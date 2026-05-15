@@ -1,4 +1,5 @@
-import { auditApi } from "@/lib/auditAxios"
+import { api } from "@/lib/axios"
+import type { BaseApiResponse } from "@/types/api"
 import type {
   AuditLogPayload,
   AuditLogListParams,
@@ -6,24 +7,25 @@ import type {
   AuditStatsData,
 } from "@/types/audit"
 
-export type AuditLogResponse = { success?: boolean; message?: string }
-export type AuditLogListResponse = { success?: boolean; data?: AuditLogListData }
-export type AuditStatsResponse = { success?: boolean; data?: AuditStatsData }
+export type AuditLogListResponse = BaseApiResponse<AuditLogListData>
+export type AuditStatsResponse = BaseApiResponse<AuditStatsData>
 
 export async function logAuditEvent(payload: AuditLogPayload): Promise<void> {
   try {
-    await auditApi.post<AuditLogResponse>("/api/audit/log", payload)
+    // Fire-and-forget via the shared api instance (CloudFront proxy)
+    // Silently fails if the route isn't configured — no CORS issues
+    api.post("/v1/audit/log", payload).catch(() => {})
   } catch {
-    // fire-and-forget — silent error handling
+    // fire-and-forget
   }
 }
 
-export async function getAuditLogs(params: AuditLogListParams = {}) {
-  const { data } = await auditApi.get<AuditLogListResponse>("/api/audit/logs", { params })
+export async function getAuditLogs(params: AuditLogListParams = {}): Promise<AuditLogListResponse> {
+  const { data } = await api.get<AuditLogListResponse>("/v1/audit/logs", { params })
   return data
 }
 
-export async function getAuditStats() {
-  const { data } = await auditApi.get<AuditStatsResponse>("/api/audit/stats")
+export async function getAuditStats(): Promise<AuditStatsResponse> {
+  const { data } = await api.get<AuditStatsResponse>("/v1/audit/stats")
   return data
 }

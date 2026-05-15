@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import UserLayout from "@/layouts/UserLayout";
 import IconInput from "@/components/ui/icon-input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,53 +14,78 @@ import {
   Upload,
   Loader2,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { format as formatMonth, format, parse, isValid } from "date-fns";
 import { toast } from "sonner";
 import DocumentIframeModal from "@/components/user/chat/DocumentIframeModal";
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
-import type { DocKind, DocItem, UploadedFile } from "@/types/documents";
-import { useListDocuments } from "@/hooks/documents/useListDocuments";
+import type { DocKind, UploadedFile } from "@/types/documents";
+import {
+  useDocuments,
+  useDownloadDocumentV2,
+  useDeleteDocumentV2,
+  useBulkDeleteDocumentsV2,
+  useSearchDocumentsV2,
+} from "@/hooks/documents/useDocuments";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
-import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
-import { useBulkDeleteDocuments } from "@/hooks/documents/useBulkDeleteDocuments";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Pagination from "@/components/shared/Pagination";
 import { DatePicker } from "@/components/ui/date-picker";
 
-const KIND_STYLES: Record<
-  DocKind,
-  { bg: string; text: string; label: string }
-> = {
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+type UIDocItem = {
+  id: string;
+  name: string;
+  kind: DocKind;
+  url: string;
+  createdAt: Date;
+  categoryName?: string;
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+const KIND_STYLES: Record<DocKind, { bg: string; text: string; label: string }> = {
   pdf: { bg: "bg-red-50", text: "text-red-600", label: "PDF" },
   csv: { bg: "bg-green-50", text: "text-green-600", label: "CSV" },
   ppt: { bg: "bg-orange-50", text: "text-orange-600", label: "PPT" },
   doc: { bg: "bg-blue-50", text: "text-blue-600", label: "DOC" },
 };
 
+function kindFromDocKind(docKind: string): DocKind {
+  const k = docKind.toLowerCase();
+  if (k === "pdf") return "pdf";
+  if (k === "csv") return "csv";
+  if (k === "ppt" || k === "pptx") return "ppt";
+  return "doc";
+}
+
+function kindFromFilename(filename: string): DocKind {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  return kindFromDocKind(ext);
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────
+
 export default function Documents() {
-  // Local UI type to carry optional tempUrl provided by API for viewing
-  type UIDocItem = DocItem & { tempUrl?: string; categoryName?: string };
-  type FileServiceResponse = { total_pages?: number; total_count?: number; date_groups?: unknown };
+  const { t } = useTranslation(["common", "dashboard"]);
+
   // UI state
   const [query, setQuery] = useState("");
+  const [semanticSearch, setSemanticSearch] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewer, setViewer] = useState<{ url: string; name: string }>({
-    url: "",
-    name: "",
-  });
+  const [viewer, setViewer] = useState<{ url: string; name: string }>({ url: "", name: "" });
   const [filterDate, setFilterDate] = useState<string>();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [page, setPage] = useState<number>(1);
   const limit = 10;
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
-  // Data
   const yyyyMmDd = useMemo(() => {
     try {
       if (!filterDate) return "";
@@ -70,108 +96,97 @@ export default function Documents() {
       return "";
     }
   }, [filterDate]);
-  const { data: fileServiceList, isLoading: listLoading, isFetching: listFetching } = useListDocuments(page, limit, { date: yyyyMmDd, search: query.trim() });
+
+  // Data hooks
+  const { data: docListData, isLoading, isFetching } = useDocuments(
+    semanticSearch
+      ? {}
+      : {
+          limit,
+          offset: (page - 1) * limit,
+          search: query.trim() || undefined,
+          ...(yyyyMmDd ? { status: yyyyMmDd } : {}),
+        },
+  );
+
   const queryClient = useQueryClient();
-  const downloadMutation = useDownloadDocument();
-  const deleteMutation = useDeleteDocument();
-  const bulkDeleteMutation = useBulkDeleteDocuments();
+  const downloadMutation = useDownloadDocumentV2();
+  const deleteMutation = useDeleteDocumentV2();
+  const bulkDeleteMutation = useBulkDeleteDocumentsV2();
+  const searchMutation = useSearchDocumentsV2();
 
-  // Month filter currently applies only to fallback mode; API grouping uses server date labels
-  const monthFiltered: DocItem[] = useMemo(() => [], []);
-  const filtered: DocItem[] = useMemo(() => monthFiltered, [monthFiltered]);
+  // Trigger semantic search when query changes and toggle is on
+  useEffect(() => {
+    if (semanticSearch && query.trim()) {
+      searchMutation.mutate({ query: query.trim(), use_semantic: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, semanticSearch]);
 
+  // Section grouping
   const sections = useMemo(() => {
-    // Prefer server-provided grouping labels
-    type ApiFile = {
-      id: string;
-      filename: string;
-      file_key: string;
-      file_type: string;
-      created_at: string;
-    };
-    type ApiGroup = { date_label: string; date: string; files: ApiFile[] };
-    const apiGroups = (
-      fileServiceList as { date_groups?: ApiGroup[] } | undefined
-    )?.date_groups;
-    if (Array.isArray(apiGroups) && apiGroups.length) {
-      const base = (api.defaults.baseURL as string) || "";
-      const stripTrailingSlashes = (s: string) => {
-        let end = s.length;
-        while (end > 0 && s.charCodeAt(end - 1) === 47) end -= 1;
-        return end === s.length ? s : s.slice(0, end);
-      };
-      const stripLeadingSlashes = (s: string) => {
-        let start = 0;
-        while (start < s.length && s.charCodeAt(start) === 47) start += 1;
-        return start === 0 ? s : s.slice(start);
-      };
-      const baseClean = stripTrailingSlashes(String(base || ""));
-      const joinUrl = (fileKey: string) => `${baseClean}/${stripLeadingSlashes(String(fileKey || ""))}`;
-      const kindFromApi = (t?: string): DocKind => {
-        const k = String(t || "").toLowerCase();
-        if (k === "pdf") return "pdf";
-        if (k === "csv") return "csv";
-        if (k === "ppt" || k === "pptx") return "ppt";
-        return "doc";
-      };
-      const q = query.trim().toLowerCase();
-      type ApiFile = {
-        id: string;
-        filename: string;
-        file_key: string;
-        file_type: string;
-        created_at: string;
-        temp_url?: string;
-        category_name?: string;
-      };
-      return apiGroups
-        .map((g) => {
-          const items: UIDocItem[] = (g.files || [])
-            .map((f: ApiFile) => ({
-              id: f.id,
-              name: f.filename,
-              kind: kindFromApi(f.file_type),
-              url: joinUrl(f.file_key),
-              createdAt: new Date(f.created_at),
-              tempUrl: f.temp_url,
-              categoryName: f.category_name,
-            }))
-            .filter((d) => (q ? d.name.toLowerCase().includes(q) : true));
-          return { title: g.date_label || g.date, items };
-        })
-        .filter((sec) => sec.items.length > 0);
+    // Semantic search results — flat list under one heading
+    if (semanticSearch && searchMutation.data) {
+      const hits = searchMutation.data.hits;
+      if (!hits.length) return [];
+      return [
+        {
+          title: `Search Results (${hits.length})`,
+          items: hits.map(
+            (h): UIDocItem => ({
+              id: h.document_id,
+              name: h.filename,
+              kind: kindFromFilename(h.filename),
+              url: "",
+              createdAt: new Date(),
+            }),
+          ),
+        },
+      ];
     }
 
-    // Fallback: local grouping when API groups are unavailable
+    // Normal mode: group documents by date
+    const docs = docListData?.documents ?? [];
     const todayStr = new Date().toDateString();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toDateString();
-    const groups: Record<string, DocItem[]> = {};
+
     const getDateGroupKey = (date: Date) => {
       const dateStr = date.toDateString();
       if (dateStr === todayStr) return "Today";
       if (dateStr === yesterdayStr) return "Yesterday";
       return formatDMY(date);
     };
-    for (const d of filtered) {
-      const key = getDateGroupKey(d.createdAt);
+
+    const groups: Record<string, UIDocItem[]> = {};
+    for (const doc of docs) {
+      const d = new Date(doc.created_at);
+      const key = getDateGroupKey(d);
       if (!groups[key]) groups[key] = [];
-      groups[key].push(d);
+      groups[key].push({
+        id: doc.id,
+        name: doc.filename,
+        kind: kindFromDocKind(doc.doc_kind),
+        url: "",
+        createdAt: d,
+      });
     }
+
     for (const k of Object.keys(groups))
       groups[k].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     const otherKeys = Object.keys(groups)
       .filter((k) => k !== "Today" && k !== "Yesterday")
       .sort((a, b) => parseDMY(b).getTime() - parseDMY(a).getTime());
-    const keys = ["Today", "Yesterday", ...otherKeys].filter(
-      (k) => groups[k]?.length
-    );
+
+    const keys = ["Today", "Yesterday", ...otherKeys].filter((k) => groups[k]?.length);
     return keys.map((k) => ({ title: k, items: groups[k]! }));
-  }, [fileServiceList, query, filtered]);
+  }, [semanticSearch, searchMutation.data, docListData]);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const selectedCount = selected.size;
+  const listLoading = isLoading || isFetching;
 
   const toggleSection = (title: string) => {
     setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
@@ -196,13 +211,12 @@ export default function Documents() {
         await bulkDeleteMutation.mutateAsync(Array.from(selected));
       }
       setSelected(new Set());
-      toast.success("Documents deleted", {
+      toast.success(t("common:success"), {
         description: "Selected documents were removed successfully.",
       });
     } catch (e) {
-      toast.error("Delete failed", {
-        description:
-          e instanceof Error ? e.message : "Unable to delete one or more documents",
+      toast.error(t("common:error"), {
+        description: e instanceof Error ? e.message : "Unable to delete one or more documents",
       });
     }
   };
@@ -216,11 +230,10 @@ export default function Documents() {
         next.delete(id);
         return next;
       });
-      toast.success("Document deleted");
+      toast.success(t("common:success"));
     } catch (e) {
-      toast.error("Delete failed", {
-        description:
-          e instanceof Error ? e.message : "Unable to delete document",
+      toast.error(t("common:error"), {
+        description: e instanceof Error ? e.message : "Unable to delete document",
       });
     }
   };
@@ -238,27 +251,38 @@ export default function Documents() {
       a.click();
       a.remove();
     } catch (e) {
-      toast.error("Download failed", {
-        description:
-          e instanceof Error ? e.message : "Unable to get download link",
+      toast.error(t("common:error"), {
+        description: e instanceof Error ? e.message : "Unable to get download link",
       });
     } finally {
       setDownloadingId(null);
     }
   };
 
-  const handleView = (doc: UIDocItem) => {
-    setViewer({ url: doc.tempUrl || doc.url, name: doc.name });
-    setViewerOpen(true);
+  const handleView = async (doc: UIDocItem) => {
+    try {
+      setViewingId(doc.id);
+      const url = await downloadMutation.mutateAsync(doc.id);
+      setViewer({ url, name: doc.name });
+      setViewerOpen(true);
+    } catch (e) {
+      toast.error(t("common:error"), {
+        description: e instanceof Error ? e.message : "Unable to open document",
+      });
+    } finally {
+      setViewingId(null);
+    }
   };
 
   const handleUploaded = (files: UploadedFile[]) => {
-    queryClient.invalidateQueries({ queryKey: ["file_service", "list"] });
+    queryClient.invalidateQueries({ queryKey: ["documents"] });
     setUploadOpen(false);
-    toast.success("Document Uploaded", {
+    toast.success(t("common:success"), {
       description: `${files.length} document(s) uploaded successfully.`,
     });
   };
+
+  const totalPages = Math.ceil((docListData?.total ?? 0) / limit);
 
   return (
     <UserLayout>
@@ -266,34 +290,48 @@ export default function Documents() {
         {/* Header row */}
         <div className="flex items-start justify-between">
           <div className="text-left flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Documents Uploaded
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Upload documents to access them in the chat.
-          </p>
+            <h1 className="text-2xl font-semibold tracking-tight">Documents Uploaded</h1>
+            <p className="text-xs text-muted-foreground">
+              Upload documents to access them in the chat.
+            </p>
           </div>
-          <div
-            className="flex flex-col items-end gap-2"
-            data-tour="docs-toolbar"
-          >
+          <div className="flex flex-col items-end gap-2" data-tour="docs-toolbar">
             <Button
               className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90"
               onClick={() => setUploadOpen(true)}
-              disabled={false}
             >
-              Upload Document
+              {t("common:uploadDocument")}
               <Upload className="size-4 ml-2" />
             </Button>
-            <div className="hidden items-center gap-3 justify-end">
+            <div className="flex items-center gap-3 justify-end">
+              {/* Search bar */}
               <IconInput
-                placeholder="Search.."
-                disabled={false}
+                placeholder={t("dashboard:search")}
                 leftIcon={<Search className="size-4" />}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(1);
+                }}
                 className="rounded-xl bg-gray-100 w-[300px] md:w-[320px]"
               />
+              {/* Semantic search toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={semanticSearch ? "default" : "outline"}
+                    size="icon"
+                    className="size-9 shrink-0"
+                    onClick={() => setSemanticSearch((v) => !v)}
+                    aria-label={semanticSearch ? "Disable semantic search" : "Enable semantic search"}
+                  >
+                    <Sparkles className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  {semanticSearch ? "Semantic search ON" : "Enable semantic search"}
+                </TooltipContent>
+              </Tooltip>
               {selectedCount > 0 ? (
                 <ConfirmDialog
                   trigger={
@@ -340,35 +378,31 @@ export default function Documents() {
             </span>
           ) : null}
 
-            <div className="flex-1 flex items-center gap-3 justify-end">
-
-              {selectedCount > 0 ? (
-                <ConfirmDialog
-                  trigger={
-                    <Button
-                      variant="secondary"
-                      className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
-                      disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
-                    >
-                      Delete
-                      <Trash2 className="size-4 ml-2" />
-                    </Button>
-                  }
-                  title="Confirm delete"
-                  description={`Are you sure you want to delete ${selectedCount} selected document(s)? This action cannot be undone.`}
-                  confirmText="Delete"
-                  onConfirm={handleDeleteSelected}
-                />
-              ) : null}
-            </div>
+          <div className="flex-1 flex items-center gap-3 justify-end">
+            {selectedCount > 0 ? (
+              <ConfirmDialog
+                trigger={
+                  <Button
+                    variant="secondary"
+                    className="h-9 px-4 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
+                    disabled={bulkDeleteMutation.isPending || deleteMutation.isPending}
+                  >
+                    Delete
+                    <Trash2 className="size-4 ml-2" />
+                  </Button>
+                }
+                title="Confirm delete"
+                description={`Are you sure you want to delete ${selectedCount} selected document(s)? This action cannot be undone.`}
+                confirmText="Delete"
+                onConfirm={handleDeleteSelected}
+              />
+            ) : null}
+          </div>
         </div>
 
         {/* Sections */}
-        <div
-          className="bg-white rounded-2xl border shadow-sm p-4"
-          data-tour="docs-sections"
-        >
-          {(listLoading || listFetching) && (
+        <div className="bg-white rounded-2xl border shadow-sm p-4" data-tour="docs-sections">
+          {listLoading && (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => (
                 <div key={i}>
@@ -398,22 +432,24 @@ export default function Documents() {
               ))}
             </div>
           )}
-          {!listLoading && !listFetching && sections.length === 0 && (
+          {!listLoading && sections.length === 0 && (
             <div className="py-16 grid place-items-center text-center">
               <div className="text-lg font-semibold mb-1">No files found</div>
               <div className="text-sm text-muted-foreground mb-4">
-                Click Upload to add files
+                {query ? "No documents match your search." : "Click Upload to add files"}
               </div>
-              <Button
-                className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90"
-                onClick={() => setUploadOpen(true)}
-              >
-                Upload Document
-                <Upload className="size-4 ml-2" />
-              </Button>
+              {!query && (
+                <Button
+                  className="h-9 px-4 bg-blue-primary hover:bg-blue-primary/90"
+                  onClick={() => setUploadOpen(true)}
+                >
+                  {t("common:uploadDocument")}
+                  <Upload className="size-4 ml-2" />
+                </Button>
+              )}
             </div>
           )}
-          {!listLoading && !listFetching && sections.length > 0 &&
+          {!listLoading && sections.length > 0 &&
             sections.map((sec, idx) => (
               <div key={sec.title} className={idx > 0 ? "mt-6" : undefined}>
                 <button
@@ -441,24 +477,18 @@ export default function Documents() {
                             onCheckedChange={(v) => toggleSelect(d.id, v)}
                           />
                           <span
-                            className={`inline-flex items-center justify-center size-6 rounded-md text-[10px] font-semibold ${
-                              KIND_STYLES[d.kind].bg
-                            } ${KIND_STYLES[d.kind].text}`}
+                            className={`inline-flex items-center justify-center size-6 rounded-md text-[10px] font-semibold ${KIND_STYLES[d.kind].bg} ${KIND_STYLES[d.kind].text}`}
                           >
                             {KIND_STYLES[d.kind].label}
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm font-medium">
-                                {d.name.length > 40
-                                  ? `${d.name.slice(0, 40)}…`
-                                  : d.name}
+                                {d.name.length > 40 ? `${d.name.slice(0, 40)}…` : d.name}
                               </span>
                             </TooltipTrigger>
                             {d.name.length > 40 ? (
-                              <TooltipContent sideOffset={6}>
-                                {d.name}
-                              </TooltipContent>
+                              <TooltipContent sideOffset={6}>{d.name}</TooltipContent>
                             ) : null}
                           </Tooltip>
                         </div>
@@ -498,10 +528,14 @@ export default function Documents() {
                           <button
                             title="View"
                             className="cursor-pointer text-muted-foreground hover:text-foreground"
-                            onClick={() => handleView(d)}
-                            disabled={false}
+                            onClick={() => void handleView(d)}
+                            disabled={viewingId === d.id}
                           >
-                            <Eye className="size-4" />
+                            {viewingId === d.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -509,23 +543,17 @@ export default function Documents() {
                   </div>
                 )}
               </div>
-            ))
-          }
+            ))}
         </div>
 
         {/* Pagination */}
-        {(() => {
-          const resp = (fileServiceList ?? {}) as FileServiceResponse;
-          const totalPages = typeof resp.total_pages === "number" ? resp.total_pages : 1;
-          return totalPages > 1 ? (
-            <div className="mt-4 flex justify-end">
-              <Pagination pageCount={totalPages} page={page} onPageChange={setPage} />
-            </div>
-          ) : null;
-        })()}
-
-        {/* Delete confirmation handled via shared ConfirmDialog */}
+        {totalPages > 1 && !semanticSearch ? (
+          <div className="mt-4 flex justify-end">
+            <Pagination pageCount={totalPages} page={page} onPageChange={setPage} />
+          </div>
+        ) : null}
       </div>
+
       {/* Iframe-based viewer */}
       <DocumentIframeModal
         open={viewerOpen}

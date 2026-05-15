@@ -11,7 +11,8 @@ import PasswordField from "@/components/shared/inputs/PasswordField";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parse, isValid, format as formatDate } from "date-fns";
 import { ROLES } from "@/constants/routes";
-import type { EditProfileFormValues } from "@/types/settings";
+import type { EditProfileFormValues, GenderOption } from "@/types/settings";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function formatDobForDisplay(rawDob: unknown): string {
   try {
@@ -86,6 +87,9 @@ export default function AccountSettings({
       email: profileData.email,
       dateOfBirth: profileData.dateOfBirth,
       additionalInfo: profileData.additionalInfo ?? "",
+      gender: profileData.gender ?? "",
+      ethnicity: profileData.ethnicity ?? "",
+      culturalAffinity: profileData.culturalAffinity ?? "",
     });
   };
 
@@ -200,7 +204,7 @@ export default function AccountSettings({
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">Additional info</Label>
                     <Textarea
-                      rows={4}
+                      rows={6}
                       {...editProfileForm.register("additionalInfo", {
                         maxLength: { value: 500, message: "Additional info must be at most 500 characters" },
                       })}
@@ -208,6 +212,52 @@ export default function AccountSettings({
                     />
                     {editProfileForm.formState?.errors?.additionalInfo?.message ? (
                       <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.additionalInfo.message)}</p>
+                    ) : null}
+                  </div>
+
+                  {/* Demographics Section */}
+                  <div className="md:col-span-2 pt-2">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Demographics <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Gender</Label>
+                    <Select
+                      value={editProfileForm.watch("gender") || ""}
+                      onValueChange={(v) => editProfileForm.setValue("gender", v as GenderOption, { shouldDirty: true })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Non-Binary">Non-Binary</SelectItem>
+                        <SelectItem value="N/A">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Ethnicity</Label>
+                    <Input
+                      {...editProfileForm.register("ethnicity", {
+                        maxLength: { value: 100, message: "Ethnicity must be at most 100 characters" },
+                      })}
+                      placeholder="e.g. Hispanic, Asian, etc."
+                    />
+                    {editProfileForm.formState?.errors?.ethnicity?.message ? (
+                      <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.ethnicity.message)}</p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm font-medium">Cultural Affinity</Label>
+                    <Input
+                      {...editProfileForm.register("culturalAffinity", {
+                        maxLength: { value: 200, message: "Cultural affinity must be at most 200 characters" },
+                      })}
+                      placeholder="e.g. cultural background, traditions, etc."
+                    />
+                    {editProfileForm.formState?.errors?.culturalAffinity?.message ? (
+                      <p className="text-xs text-red-500">{String(editProfileForm.formState.errors.culturalAffinity.message)}</p>
                     ) : null}
                   </div>
                 </div>
@@ -320,11 +370,38 @@ export default function AccountSettings({
             <div className="space-y-2 lg:col-span-2">
               <Label className="text-sm font-medium text-gray-700">Additional info</Label>
               {isProfileLoading ? (
-                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-28 w-full" />
               ) : (
-                <Textarea placeholder="Add additional info" value={profileData.additionalInfo ?? ""} readOnly rows={4} />
+                <Textarea placeholder="Add additional info" value={profileData.additionalInfo ?? ""} readOnly rows={6} />
               )}
             </div>
+
+            {/* Demographics */}
+            {(profileData.gender || profileData.ethnicity || profileData.culturalAffinity) && (
+              <>
+                <div className="lg:col-span-2 pt-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Demographics</h3>
+                </div>
+                {profileData.gender ? (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Gender</Label>
+                    <Input value={profileData.gender} readOnly />
+                  </div>
+                ) : null}
+                {profileData.ethnicity ? (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Ethnicity</Label>
+                    <Input value={profileData.ethnicity} readOnly />
+                  </div>
+                ) : null}
+                {profileData.culturalAffinity ? (
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label className="text-sm font-medium text-gray-700">Cultural Affinity</Label>
+                    <Input value={profileData.culturalAffinity} readOnly />
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </CardContent>

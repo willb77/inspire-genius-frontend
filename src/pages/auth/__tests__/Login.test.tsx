@@ -63,6 +63,16 @@ jest.mock("@/hooks/useAuthRedirectForAuthPages", () => ({
 }));
 
 /* -------------------------------------------------------------
+   MOCK Magic Auth hook
+--------------------------------------------------------------*/
+jest.mock("@/hooks/magic-auth/useMagicAuth", () => ({
+  useRequestMagicLink: () => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+}));
+
+/* -------------------------------------------------------------
    MOCK Auth field components
    - Replace EmailField, PasswordField, SocialAuthSection
    - Simple inputs/buttons to simulate behavior
@@ -109,6 +119,9 @@ jest.mock("@/components/auth/AuthFields", () => ({
 --------------------------------------------------------------*/
 jest.mock("@/components/auth/AuthLayout", () => (props: any) => <div>{props.children}</div>);
 jest.mock("@/components/auth/AuthHeader", () => (props: any) => <h1>{props.title}</h1>);
+jest.mock("lucide-react", () => ({
+  Mail: () => <svg data-testid="mail-icon" />,
+}));
 
 /* -------------------------------------------------------------
    Extract the mock reference so we can override return values
@@ -144,6 +157,9 @@ describe("Login Page - Full Coverage", () => {
     mockRedirectHook.mockReturnValue(null); // no redirect
     renderPage();
 
+    // Navigate to password login view
+    fireEvent.click(screen.getByText("Sign in with password"));
+
     fireEvent.change(screen.getByLabelText("email"), {
       target: { value: "test@example.com" },
     });
@@ -170,10 +186,19 @@ describe("Login Page - Full Coverage", () => {
 
     renderPage();
 
+    // Navigate to password login view (where sessionStorage is cleared on submit)
+    fireEvent.click(screen.getByText("Sign in with password"));
+
+    // Fill in email and password so validation passes
+    fireEvent.change(screen.getByLabelText("email"), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText("password"), { target: { value: "Password123!" } });
+
     const form = screen.getByLabelText("email").closest("form")!;
     fireEvent.submit(form);
 
-    expect(sessionStorage.getItem("auth:provider")).toBeNull();
+    await waitFor(() =>
+      expect(sessionStorage.getItem("auth:provider")).toBeNull()
+    );
   });
 
   /* -------------------------------------------------------------
@@ -281,6 +306,9 @@ describe("Login Page - Full Coverage", () => {
   test("navigates to Forgot Password page", () => {
     mockRedirectHook.mockReturnValue(null);
     renderPage();
+
+    // Navigate to password login view (where "Forgot password?" link exists)
+    fireEvent.click(screen.getByText("Sign in with password"));
 
     fireEvent.click(screen.getByText("Forgot password?"));
 

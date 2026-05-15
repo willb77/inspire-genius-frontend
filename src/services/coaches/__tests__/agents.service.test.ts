@@ -7,17 +7,17 @@
  * - Axios errors are propagated
  */
 
-import { api } from "@/lib/axios";
 import { getAgents, type AgentsQuery } from "../agents.service";
 
 /* --------------------------------------------------------------------------
-   MOCK: Axios instance
-   Prevents real API calls and avoids import.meta.env issues
+   MOCK: agentApi's getApi() returns a mock axios instance
 --------------------------------------------------------------------------- */
-jest.mock("@/lib/axios", () => ({
-  api: {
-    get: jest.fn(),
-  },
+const mockAxios = {
+  get: jest.fn(),
+};
+
+jest.mock("@/lib/agentApi", () => ({
+  getApi: () => mockAxios,
 }));
 
 describe("getAgents service", () => {
@@ -37,20 +37,17 @@ describe("getAgents service", () => {
       data: [{ id: "1", name: "Coach Alpha" }],
     };
 
-    // Mock axios GET response
-    (api.get as jest.Mock).mockResolvedValueOnce({
+    mockAxios.get.mockResolvedValueOnce({
       data: mockResponse,
     });
 
     const result = await getAgents(params);
 
-    // Validate axios call
-    expect(api.get).toHaveBeenCalledWith(
+    expect(mockAxios.get).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       { params }
     );
 
-    // Validate returned data
     expect(result).toEqual(mockResponse);
   });
 
@@ -60,7 +57,7 @@ describe("getAgents service", () => {
       page_size: 5,
     };
 
-    (api.get as jest.Mock).mockResolvedValueOnce({
+    mockAxios.get.mockResolvedValueOnce({
       data: undefined,
     });
 
@@ -76,11 +73,11 @@ describe("getAgents service", () => {
     };
 
     const error = new Error("Network error");
-    (api.get as jest.Mock).mockRejectedValueOnce(error);
+    mockAxios.get.mockRejectedValueOnce(error);
 
     await expect(getAgents(params)).rejects.toThrow("Network error");
 
-    expect(api.get).toHaveBeenCalledWith(
+    expect(mockAxios.get).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       { params }
     );

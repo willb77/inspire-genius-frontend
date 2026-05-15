@@ -3,20 +3,22 @@ import {
   createCoach,
   updateCoach,
   deactivateCoach,
+  deleteCoach,
   getCoachCategories,
 } from "../coachManagementService";
-import { api } from "@/lib/axios";
 
 /* -------------------------------------------------
- MOCK AXIOS
+ MOCK: agentApi's getApi() returns a mock axios instance
 ------------------------------------------------- */
-jest.mock("@/lib/axios", () => ({
-  api: {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
-  },
+const mockAxios = {
+  get: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn(),
+};
+
+jest.mock("@/lib/agentApi", () => ({
+  getApi: () => mockAxios,
 }));
 
 describe("agents.service", () => {
@@ -37,16 +39,16 @@ describe("agents.service", () => {
       },
     };
 
-    (api.get as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    mockAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await listAgents();
 
-    expect(api.get).toHaveBeenCalledWith(
+    expect(mockAxios.get).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       {
         params: {
           page: 1,
-          limit: 10,
+          page_size: 10,
           search: undefined,
           status: undefined,
           type: undefined,
@@ -58,7 +60,7 @@ describe("agents.service", () => {
   });
 
   it("fetches agents list with custom params", async () => {
-    (api.get as jest.Mock).mockResolvedValueOnce({ data: { status: true } });
+    mockAxios.get.mockResolvedValueOnce({ data: { status: true } });
 
     await listAgents({
       page: 2,
@@ -68,12 +70,12 @@ describe("agents.service", () => {
       type: "ai",
     });
 
-    expect(api.get).toHaveBeenCalledWith(
+    expect(mockAxios.get).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       {
         params: {
           page: 2,
-          limit: 5,
+          page_size: 5,
           search: "test",
           status: "active",
           type: "ai",
@@ -94,11 +96,11 @@ describe("agents.service", () => {
 
     const mockResponse = { status: true, message: "Created" };
 
-    (api.post as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    mockAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await createCoach(body);
 
-    expect(api.post).toHaveBeenCalledWith(
+    expect(mockAxios.post).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       body
     );
@@ -118,11 +120,11 @@ describe("agents.service", () => {
 
     const mockResponse = { status: true, message: "Updated" };
 
-    (api.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    mockAxios.put.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await updateCoach(body);
 
-    expect(api.put).toHaveBeenCalledWith(
+    expect(mockAxios.put).toHaveBeenCalledWith(
       "/v1/agents-settings/agents",
       {
         prompt: "Updated prompt",
@@ -139,18 +141,32 @@ describe("agents.service", () => {
   /* --------------------------------
      deactivateCoach
   --------------------------------- */
-  it("deactivates a coach", async () => {
+  it("deactivates a coach via PUT with status deactivated", async () => {
     const mockResponse = { status: true, message: "Deactivated" };
 
-    (api.delete as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    mockAxios.put.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await deactivateCoach("agent-1");
 
-    expect(api.delete).toHaveBeenCalledWith(
-      "/v1/agents-settings/deactivate",
-      {
-        params: { agent_id: "agent-1" },
-      }
+    expect(mockAxios.put).toHaveBeenCalledWith(
+      "/v1/agents-settings/agents",
+      { status: "deactivated" },
+      { params: { agent_id: "agent-1" } }
+    );
+
+    expect(result).toEqual(mockResponse);
+  });
+
+  it("hard deletes a coach via DELETE", async () => {
+    const mockResponse = { status: true, message: "Deleted" };
+
+    mockAxios.delete.mockResolvedValueOnce({ data: mockResponse });
+
+    const result = await deleteCoach("agent-1");
+
+    expect(mockAxios.delete).toHaveBeenCalledWith(
+      "/v1/agents-settings/agents",
+      { params: { agent_id: "agent-1" } }
     );
 
     expect(result).toEqual(mockResponse);
@@ -175,11 +191,11 @@ describe("agents.service", () => {
       },
     };
 
-    (api.get as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+    mockAxios.get.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await getCoachCategories();
 
-    expect(api.get).toHaveBeenCalledWith(
+    expect(mockAxios.get).toHaveBeenCalledWith(
       "/v1/agents-settings/category"
     );
 

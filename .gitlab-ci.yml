@@ -1,6 +1,8 @@
 stages:
   - build
+  - test
   - sonar
+  - e2e
   - deploy
 
 # =========================
@@ -21,12 +23,27 @@ devBuild:
 
   script:
     # Generate .env (build-time config)
+    # Non-secret config from CI variables
     - echo "VITE_NODE_ENV=production" > .env
     - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
     - echo "VITE_ALEX_WEBSOCKET_URL=$VITE_ALEX_WEBSOCKET_URL" >> .env
-    - echo "VITE_STORAGE_SECRET=$VITE_STORAGE_SECRET" >> .env
 
-    # Install & build
+    # Fetch secrets from AWS Secrets Manager (falls back to CI variables)
+    - |
+      if command -v aws &>/dev/null; then
+        STORAGE_SECRET=$(aws secretsmanager get-secret-value \
+          --secret-id "inspire-genius/VITE_STORAGE_SECRET" \
+          --query SecretString --output text \
+          --region "${AWS_DEFAULT_REGION:-us-east-1}" 2>/dev/null) || true
+      fi
+    - echo "VITE_STORAGE_SECRET=${STORAGE_SECRET:-$VITE_STORAGE_SECRET}" >> .env
+
+    # Sentry config (for source map uploads and release tracking)
+    - echo "VITE_SENTRY_DSN=$VITE_SENTRY_DSN" >> .env
+    - echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
+    - echo "VITE_APP_VERSION=$CI_COMMIT_SHORT_SHA" >> .env
+
+    # Install & build (with source maps for Sentry)
     - sudo docker system prune -a --volumes -f
     - npm ci --no-audit --no-fund
     - npm run build
@@ -34,11 +51,48 @@ devBuild:
   artifacts:
     paths:
       - dist/
+      - node_modules/
     expire_in: 1 day
 
 
 # =========================
-# SONARQUBE (DEV ONLY)
+# UNIT / INTEGRATION TESTS
+# =========================
+test:unit:
+  stage: test
+  image: node:20.19.0
+  tags:
+    - 3pp-sandbox
+  dependencies:
+    - devBuild
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+    - when: never
+
+  variables:
+    NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+
+  script:
+    - npm run test:ci -- --coverage --forceExit
+
+  artifacts:
+    paths:
+      - coverage/
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    expire_in: 7 days
+    when: always
+
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+
+
+# =========================
+# SONARQUBE WITH QUALITY GATE
 # =========================
 sonarqube:
   stage: sonar
@@ -47,6 +101,7 @@ sonarqube:
     - pacewisdom-docker-shared-runner-1
   dependencies:
     - devBuild
+    - test:unit
 
   rules:
     - if: '$CI_COMMIT_REF_NAME == "development"'
@@ -60,18 +115,87 @@ sonarqube:
     SONAR_PROJECT_KEY: "inspiregenius-frontend"
     SONAR_PROJECT_NAME: "InspireGenius Frontend"
 
-
   script:
-    - echo "Running SonarQube analysis for DEV..."
+    - echo "Running SonarQube analysis with quality gate..."
     - |
       sonar-scanner \
         -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
         -Dsonar.projectName="$SONAR_PROJECT_NAME" \
-        -Dsonar.sources="." \
+        -Dsonar.sources="src" \
+        -Dsonar.tests="src" \
+        -Dsonar.test.inclusions="**/__tests__/**,**/*.test.ts,**/*.test.tsx" \
+        -Dsonar.javascript.lcov.reportPaths="coverage/lcov.info" \
         -Dsonar.host.url="$SONAR_HOST_URL" \
-        -Dsonar.login="$SONAR_TOKEN"
+        -Dsonar.login="$SONAR_TOKEN" \
+        -Dsonar.qualitygate.wait=true \
+        -Dsonar.qualitygate.timeout=300
 
-  allow_failure: true
+  allow_failure: false
+
+
+# =========================
+# E2E SMOKE TESTS (per role)
+# =========================
+.e2e-role-template: &e2e-role-template
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.52.0-noble
+  tags:
+    - 3pp-sandbox
+  dependencies:
+    - devBuild
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "development"'
+      when: on_success
+    - when: never
+
+  variables:
+    PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.playwright"
+    BASE_URL: "http://localhost:4173"
+
+  before_script:
+    - npx playwright install --with-deps chromium
+    - npx vite preview --port 4173 &
+    - sleep 3
+
+  artifacts:
+    paths:
+      - playwright-report/
+      - test-results/
+    reports:
+      junit: playwright-report/results.xml
+    expire_in: 7 days
+    when: always
+
+e2e:user:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@user"
+
+e2e:manager:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@manager"
+
+e2e:company-admin:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@company-admin"
+
+e2e:practitioner:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@practitioner"
+
+e2e:distributor:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@distributor"
+
+e2e:super-admin:
+  <<: *e2e-role-template
+  script:
+    - npx playwright test --project=chromium --grep="@super-admin"
 
 
 # =========================
@@ -101,6 +225,19 @@ deploy:
 
     # Verify AWS identity
     - aws sts get-caller-identity
+
+    # Upload source maps to Sentry (if configured)
+    - |
+      if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
+        npm install -g @sentry/cli
+        sentry-cli releases new "$CI_COMMIT_SHORT_SHA" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        sentry-cli releases files "$CI_COMMIT_SHORT_SHA" upload-sourcemaps dist/assets/ \
+          --url-prefix '~/assets/' --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        sentry-cli releases finalize "$CI_COMMIT_SHORT_SHA" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+        echo "Source maps uploaded to Sentry."
+      else
+        echo "Sentry not configured — skipping source map upload."
+      fi
 
     # Deploy to S3
     - echo "Deploying build to S3..."

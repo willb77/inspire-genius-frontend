@@ -2,7 +2,7 @@ import UserLayout from "@/layouts/UserLayout";
 import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { HistoryGroup, ChatMessage } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -72,6 +72,19 @@ export default function CoachChat() {
   }, [coach]);
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
+
+  // Path 4 demo trigger: ?force_full=<file_id>,<file_id> in the URL
+  // forces those documents' full text into the system prompt. Used for
+  // two-document comparison demos. Empty/missing → normal RAG-only flow.
+  const [searchParams] = useSearchParams();
+  const forceFullTextFileIds = useMemo<string[]>(() => {
+    const raw = searchParams.get("force_full");
+    if (!raw) return [];
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [searchParams]);
 
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
@@ -230,7 +243,7 @@ export default function CoachChat() {
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
-      setStatusBanner({ type: "success", text: "Connected. Select Documents to proceed" });
+      setStatusBanner({ type: "success", text: "Connected" });
       return;
     }
     if (resp.type === "auth_error") {
@@ -390,7 +403,7 @@ export default function CoachChat() {
             setConversationId(id);
             await secureSetItem("conv", { id });
             setAudioPlayerBuffer(null);
-            connect(agentId, accessToken, selectedFileIds, id);
+            connect(agentId, accessToken, selectedFileIds, id, forceFullTextFileIds);
           }
         },
         onError: (e) => {
@@ -398,7 +411,7 @@ export default function CoachChat() {
         },
       }
     );
-  }, [agentId, accessToken, connect, createConvMutation, queryClient, selectedFileIds]);
+  }, [agentId, accessToken, connect, createConvMutation, queryClient, selectedFileIds, forceFullTextFileIds]);
 
   const handleDeleteConversation = useCallback(async (id: string) => {
     if (!agentId) return;
@@ -465,7 +478,7 @@ export default function CoachChat() {
         }
         const finalIds = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         // Initial connect includes current/hydrated selected files
-        connect(agentId, accessToken, finalIds, conversationId);
+        connect(agentId, accessToken, finalIds, conversationId, forceFullTextFileIds);
 
         prevSelectedIdsRef.current = isRefreshed.current || (selectedFileIds.length > 0 && nextIds.length === 0) ? selectedFileIds : nextIds;
         isRefreshed.current = true;
@@ -473,7 +486,7 @@ export default function CoachChat() {
       }
     })();
     return () => { mounted = false; };
-  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles]);
+  }, [agentId, accessToken, conversationId, selectedKey, selectedFileIds, isConnected, isConnecting, connect, updateSelectedFiles, forceFullTextFileIds]);
 
   // (Removed extra CONNECTING updater to avoid double init)
 
@@ -497,14 +510,15 @@ export default function CoachChat() {
   }, [conversationData]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
-    console.log(from, to, "values")
     if (!conversationId) return;
     try {
-      const resp = await exportConversation(conversationId, from, to);
+      const resp = await exportConversation(conversationId, from, to) as { status?: boolean; data?: { file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string }; file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string };
       if (!resp || !resp.status) return;
-      const base64 = resp.base64_pdf || resp.base64_csv;
-      const mime = resp.mime_type || "application/pdf";
-      const fileName = resp.file_name || `conversation_${conversationId}.pdf`;
+      // API may return data nested in envelope or flat — handle both
+      const payload = resp.data ?? resp;
+      const base64 = payload.base64_pdf || payload.base64_csv;
+      const mime = payload.mime_type || "application/pdf";
+      const fileName = payload.file_name || `conversation_${conversationId}.pdf`;
       if (!base64) return;
       const byteChars = atob(base64);
       const byteNumbers = new Array(byteChars.length);
@@ -586,7 +600,7 @@ export default function CoachChat() {
                 setSelectedId(id);
                 setConversationId(id);
                 secureSetItem("conv", { id });
-                connect(agentId, accessToken, selectedFileIds, id);
+                connect(agentId, accessToken, selectedFileIds, id, forceFullTextFileIds);
               }
             },
             onError: (e) => {

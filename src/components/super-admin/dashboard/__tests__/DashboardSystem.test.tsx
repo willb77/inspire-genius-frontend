@@ -41,6 +41,7 @@ describe('DashboardSystem', () => {
     ;(useDashboardSystem as jest.Mock).mockReturnValue({
       data: undefined,
       isPending: true,
+      fetchStatus: 'fetching',
     })
 
     render(

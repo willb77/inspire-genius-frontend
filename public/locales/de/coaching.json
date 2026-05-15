@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "Geben Sie Ihre Nachricht ein...",
+    "send": "Senden",
+    "newSession": "Neue Sitzung"
+  },
+  "sessions": {
+    "title": "Sitzungen",
+    "empty": "Noch keine Sitzungen"
+  },
+  "agents": {
+    "title": "Agenten"
+  },
+  "feedback": {
+    "feedback": "Rückmeldung",
+    "helpful": "Hilfreich",
+    "notHelpful": "Nicht Hilfreich",
+    "comment": "Kommentar hinzufügen",
+    "positive": "Positiv",
+    "negative": "Negativ",
+    "neutral": "Neutral",
+    "allRatings": "Alle Bewertungen",
+    "fiveStars": "5 Sterne",
+    "fourStars": "4 Sterne",
+    "threeStars": "3 Sterne",
+    "twoStars": "2 Sterne",
+    "oneStar": "1 Stern",
+    "history": "Rückmeldungsverlauf",
+    "reviewDescription": "Überprüfen Sie alle Rückmeldungen, die Sie zu KI-Coach-Antworten eingereicht haben.",
+    "totalFeedback": "Gesamtrückmeldung",
+    "avgRating": "Durchschnittliche Bewertung",
+    "fiveStarCount": "5-Sterne",
+    "oneStarCount": "1-Stern",
+    "loadingFeedback": "Rückmeldung wird geladen...",
+    "failedLoadFeedback": "Rückmeldung konnte nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "results": "Ergebnisse",
+    "result": "Ergebnis"
+  },
+  "practitioner": {
+    "dashboard": "Trainer-Armaturenbrett",
+    "welcomeBack": "Willkommen zurück, {name}. Sie haben {sessions} Sitzungen eingeplant und {followups} Nachverfolgungen diese Woche.",
+    "activeClients": "Aktive Kunden",
+    "creditsRemaining": "Verbleibende Credits",
+    "sessionsThisMonth": "Sitzungen Diesen Monat",
+    "avgClientSatisfaction": "Durchschnittliche Kundenzufriedenheit",
+    "todaysSessions": "Heutige Sitzungen",
+    "confirmed": "Bestätigt",
+    "clientPortfolio": "Kundenportfolio",
+    "clientName": "Kundenname",
+    "organization": "Organisation",
+    "prismScore": "PRISM-Punktzahl",
+    "sessions": "Sitzungen",
+    "lastSession": "Letzte Sitzung",
+    "followUpsDueThisWeek": "Nachverfolgungen Diese Woche Fällig",
+    "creditUsage": "Credit-Nutzung",
+    "prismAssessment": "PRISM-Bewertung",
+    "completeDescription": "Vervollständigen Sie Ihre PRISM-Gehirnkartierung, um personalisierte Coaching-Erkenntnisse freizuschalten",
+    "activeAssessment": "Aktive Bewertung",
+    "report": "Bericht",
+    "assessmentHistory": "Bewertungsverlauf"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Mit Meridian Chatten",
+    "uploadDocument": "Dokument Hochladen",
+    "viewPrismReport": "PRISM-Bericht Anzeigen",
+    "setNewGoal": "Neues Ziel Setzen"
+  },
+  "prism": {
+    "assessment": "PRISM-Bewertung",
+    "completeDescription": "Vervollständigen Sie Ihre PRISM-Gehirnkartierung, um personalisierte Coaching-Erkenntnisse freizuschalten",
+    "activeAssessment": "Aktive Bewertung",
+    "report": "Bericht",
+    "assessmentHistory": "Bewertungsverlauf"
+  }
+}

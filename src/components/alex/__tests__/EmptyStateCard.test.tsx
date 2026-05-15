@@ -72,7 +72,7 @@ describe("EmptyStateCard", () => {
     // There are 5 images total: 2 main images + 3 button icons
     expect(images).toHaveLength(5);
 
-    const helpAlexImage = screen.getByAltText("Ask Alex");
+    const helpAlexImage = screen.getByAltText("Ask Meridian");
     expect(helpAlexImage).toBeInTheDocument();
     expect(helpAlexImage).toHaveAttribute("src", "/images/user/home/help-alex.svg");
 
@@ -84,7 +84,7 @@ describe("EmptyStateCard", () => {
   it("should render main images with correct properties", () => {
     render(<EmptyStateCard onStart={mockOnStart} />);
 
-    const helpAlexImage = screen.getByAltText("Ask Alex");
+    const helpAlexImage = screen.getByAltText("Ask Meridian");
     expect(helpAlexImage).toHaveClass("h-64", "object-cover");
 
     const alexStarsImage = screen.getByAltText("Alex");
@@ -100,7 +100,7 @@ describe("EmptyStateCard", () => {
     expect(screen.getByText("How can i help you?")).toBeInTheDocument();
     // Use regex to match the text flexibly
     expect(screen.getByText(/Hey/i)).toBeInTheDocument();
-    expect(screen.getByText(/Alex/i)).toBeInTheDocument();
+    expect(screen.getByText(/Meridian/i)).toBeInTheDocument();
   });
 
 it("should render callout titles correctly", () => {
@@ -111,10 +111,10 @@ it("should render callout titles correctly", () => {
   // Check the text content directly from the callouts
   expect(callouts[0].textContent).toBe("How can i help you?");
   // More flexible approach - check it contains the expected parts
-  expect(callouts[1].textContent).toMatch(/Hey ,I.m Alex/);
+  expect(callouts[1].textContent).toMatch(/Hey, I.m Meridian/);
   // Or check it starts with and ends with expected text
-  expect(callouts[1].textContent).toContain("Hey ,");
-  expect(callouts[1].textContent).toContain("m Alex");
+  expect(callouts[1].textContent).toContain("Hey,");
+  expect(callouts[1].textContent).toContain("Meridian");
 });
 
   it("should render all three buttons", () => {
