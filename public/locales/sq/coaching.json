@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "Shkruaj mesazhin tend...",
+    "send": "Dergo",
+    "newSession": "Sesion i Ri"
+  },
+  "sessions": {
+    "title": "Sesionet",
+    "empty": "Asnje sesion ende"
+  },
+  "agents": {
+    "title": "Agjentet"
+  },
+  "feedback": {
+    "feedback": "Reagimi",
+    "helpful": "E dobishme",
+    "notHelpful": "Jo e dobishme",
+    "comment": "Shto nje koment",
+    "positive": "Pozitiv",
+    "negative": "Negativ",
+    "neutral": "Neutral",
+    "allRatings": "Te gjitha vleresimet",
+    "fiveStars": "5 Yje",
+    "fourStars": "4 Yje",
+    "threeStars": "3 Yje",
+    "twoStars": "2 Yje",
+    "oneStar": "1 Yll",
+    "history": "Historiku i Reagimeve",
+    "reviewDescription": "Rishiko te gjitha reagimet qe keni derguar per pergjigjet e trajnerit AI.",
+    "totalFeedback": "Reagime Totale",
+    "avgRating": "Vleresimi Mesatar",
+    "fiveStarCount": "5-Yje",
+    "oneStarCount": "1-Yll",
+    "loadingFeedback": "Duke ngarkuar reagimet...",
+    "failedLoadFeedback": "Deshtoi ngarkimi i reagimeve. Ju lutem provoni perseri me vone.",
+    "results": "rezultate",
+    "result": "rezultat"
+  },
+  "practitioner": {
+    "dashboard": "Paneli i Praktikuesit",
+    "welcomeBack": "Mire se u ktheve, {name}. Ke {sessions} sesione te planifikuara sot dhe {followups} ndjekje te duhura kete jave.",
+    "activeClients": "Kliente Aktive",
+    "creditsRemaining": "Kredite te Mbetura",
+    "sessionsThisMonth": "Sesione Kete Muaj",
+    "avgClientSatisfaction": "Kenaqesia Mesatare e Klientit",
+    "todaysSessions": "Sesionet e Sotme",
+    "confirmed": "E konfirmuar",
+    "clientPortfolio": "Portofoli i Klienteve",
+    "clientName": "Emri i Klientit",
+    "organization": "Organizata",
+    "prismScore": "Rezultati PRISM",
+    "sessions": "Sesione",
+    "lastSession": "Sesioni i Fundit",
+    "followUpsDueThisWeek": "Ndjekjet e Duhura Kete Jave",
+    "creditUsage": "Perdorimi i Krediteve",
+    "prismAssessment": "Vleresimi PRISM",
+    "completeDescription": "Plotesoni Hartezimin PRISM te Trurit per te zhbllokuar njohuri te personalizuara trajnimi",
+    "activeAssessment": "Vleresimi Aktiv",
+    "report": "Raporti",
+    "assessmentHistory": "Historiku i Vleresimeve"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Bisedo me Meridian",
+    "uploadDocument": "Ngarko Dokumentin",
+    "viewPrismReport": "Shiko Raportin PRISM",
+    "setNewGoal": "Vendos Qellim te Ri"
+  },
+  "prism": {
+    "assessment": "Vleresimi PRISM",
+    "completeDescription": "Plotesoni Hartezimin PRISM te Trurit per te zhbllokuar njohuri te personalizuara trajnimi",
+    "activeAssessment": "Vleresimi Aktiv",
+    "report": "Raporti",
+    "assessmentHistory": "Historiku i Vleresimeve"
+  }
+}

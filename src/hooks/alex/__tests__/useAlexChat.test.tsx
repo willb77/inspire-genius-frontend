@@ -11,6 +11,17 @@ jest.mock("@/lib/axios", () => ({
     put: jest.fn(),
     delete: jest.fn(),
   },
+  attachInterceptors: jest.fn(),
+}));
+
+jest.mock("@/lib/agentApi", () => ({
+  getApi: () => ({
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  }),
+  agentApi: { defaults: { headers: { common: {} } } },
 }));
 
 // Mock the chat service

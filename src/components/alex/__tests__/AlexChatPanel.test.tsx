@@ -28,6 +28,17 @@ jest.mock("@/lib/axios", () => ({
       response: { use: jest.fn(), eject: jest.fn() },
     },
   },
+  attachInterceptors: jest.fn(),
+}));
+
+jest.mock("@/lib/agentApi", () => ({
+  getApi: () => ({
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  }),
+  agentApi: { defaults: { headers: { common: {} } } },
 }));
 
 // Store original createElement
@@ -172,6 +183,13 @@ const mockDemoAudioService = {
   }),
 };
 
+jest.mock("@/components/observability/ObservabilityPanel", () => {
+  return { __esModule: true, default: () => null };
+});
+jest.mock("@/components/observability/SessionObservabilityDrawer", () => {
+  return { __esModule: true, default: () => null };
+});
+
 jest.mock("@/services/demoAudioService", () => {
   return jest.fn().mockImplementation(() => mockDemoAudioService);
 });
@@ -241,7 +259,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       expect(screen.getByTestId("sheet")).toBeInTheDocument();
-      expect(screen.getByText("Chat with Alex")).toBeInTheDocument();
+      expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
     });
 
     it("should not render when closed", () => {
@@ -315,7 +333,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       const input = screen.getByTestId("input");
-      expect(input).toHaveAttribute("placeholder", "Connecting to Alex...");
+      expect(input).toHaveAttribute("placeholder", "Connecting to Meridian...");
     });
 
     it("should show offline state when not connected or connecting", () => {
@@ -334,7 +352,7 @@ describe("AlexChatPanel", () => {
       render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
 
       const input = screen.getByTestId("input");
-      expect(input).toHaveAttribute("placeholder", "Alex is offline");
+      expect(input).toHaveAttribute("placeholder", "Meridian is offline");
     });
 
     it("should show Ask Anything placeholder when connected", () => {
@@ -873,7 +891,7 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Alex device id not available",
+          "Meridian device id not available",
         );
       });
     });
@@ -1037,7 +1055,7 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Alex device id not available",
+          "Meridian device id not available",
         );
       });
     });

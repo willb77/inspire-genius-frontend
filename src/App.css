@@ -5,6 +5,23 @@
   text-align: center;
 }
 
+/* RTL layout support */
+[dir="rtl"] {
+  text-align: right;
+}
+[dir="rtl"] .sidebar {
+  right: 0;
+  left: auto;
+}
+[dir="rtl"] .ms-auto { margin-right: auto; margin-left: 0; }
+[dir="rtl"] .me-auto { margin-left: auto; margin-right: 0; }
+[dir="rtl"] .ps-4 { padding-right: 1rem; padding-left: 0; }
+[dir="rtl"] .pe-4 { padding-left: 1rem; padding-right: 0; }
+/* Flip icons that indicate direction */
+[dir="rtl"] .icon-directional {
+  transform: scaleX(-1);
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

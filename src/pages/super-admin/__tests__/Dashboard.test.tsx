@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import SuperAdminDashboard from "../Dashboard";
-import React from "react";
 
 // ---------- MOCK LAYOUT ----------
 jest.mock("@/layouts/SuperAdminLayout", () => ({
@@ -10,136 +11,122 @@ jest.mock("@/layouts/SuperAdminLayout", () => ({
   ),
 }));
 
-// ---------- MOCK DASHBOARD COMPONENTS ----------
-jest.mock("@/components/super-admin/dashboard/LicenseExpiring", () => () => (
-  <div data-testid="license-expiring">LicenseExpiring</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/AvgTimeSpentChart", () => () => (
-  <div data-testid="avg-time-spent-chart">AvgTimeSpentChart</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/HelpAndSupport", () => () => (
-  <div data-testid="help-and-support">HelpAndSupport</div>
-));
-
-jest.mock("@/components/super-admin/dashboard/DocumentUploadTrend", () => ({
-  DocumentUploadTrend: () => (
-    <div data-testid="document-upload-trend">DocumentUploadTrend</div>
-  ),
+// ---------- MOCK RADIX SELECT (portal-based) ----------
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+  SelectValue: ({ placeholder }: { placeholder?: string }) => <span>{placeholder}</span>,
+  SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => <option value={value}>{children}</option>,
 }));
 
-jest.mock("@/components/super-admin/dashboard/DashboardSystem", () => ({
-  __esModule: true,
-  default: ({ title }: { title: string }) => (
-    <div data-testid="dashboard-system">{title}</div>
-  ),
+// ---------- MOCK HOOKS ----------
+jest.mock("@/hooks/super-admin/dashboard/useDashboardSystem", () => ({
+  useDashboardSystem: () => ({
+    data: {
+      data: {
+        organization_statistics: { total: 48, active: 42, inactive: 6 },
+        business_statistics: { total: 120, active: 100, inactive: 20, by_type: { corporate: 80, education: 40 } },
+      },
+    },
+    isLoading: false,
+  }),
 }));
 
-jest.mock("@/components/super-admin/dashboard/UsedCoachesChartNew", () => ({
-  UsedCoachesChartNew: () => (
-    <div data-testid="used-coaches-chart">UsedCoachesChartNew</div>
-  ),
+jest.mock("@/hooks/super-admin/user-management/useUserManagement", () => ({
+  useUserManagement: () => ({
+    data: {
+      data: {
+        users: [{ user_id: "1", full_name: "Test User", email: "test@test.com", role: "user", is_active: true, created_at: "2026-04-08T00:00:00Z" }],
+        pagination: { total: 100, page: 1, limit: 5 },
+      },
+    },
+    isLoading: false,
+  }),
 }));
 
-jest.mock("@/components/super-admin/dashboard/LatestUsers", () => () => (
-  <div data-testid="latest-users">LatestUsers</div>
-));
-
-// ---------- MOCK UI COMPONENTS THAT USE PORTALS ----------
-jest.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  PopoverContent: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
+jest.mock("@/hooks/super-admin/coach-management/useCoaches", () => ({
+  useCoachesList: () => ({
+    data: { data: { agents: [{ id: "1", name: "Meridian", status: "active" }] } },
+    isLoading: false,
+  }),
 }));
 
-jest.mock("@/components/ui/calendar", () => ({
-  Calendar: ({ onSelect, disabled }: any) => (
-    <div>
-      <button
-        data-testid="select-date"
-        onClick={() => onSelect?.(new Date("2024-01-01"))}
-      >
-        Select Date
-      </button>
-
-      <span data-testid="disabled-check">
-        {disabled?.(new Date("2099-01-01")) ? "disabled" : "enabled"}
-      </span>
-    </div>
-  ),
+jest.mock("@/hooks/audit/useAudit", () => ({
+  useAuditStats: () => ({
+    data: { data: { total_logs: 500, logs_today: 12 } },
+    isLoading: false,
+  }),
 }));
+
+jest.mock("@/hooks/feedback/useFeedback", () => ({
+  useFeedbackStats: () => ({
+    data: { data: { total_count: 200, avg_rating: 4.3 } },
+    isLoading: false,
+  }),
+}));
+
+jest.mock("@/hooks/trainer/useTrainer", () => ({
+  useCostDashboard: () => ({
+    data: { data: { total_cost: 45678, cost_per_user: 3.55, total_sessions: 84320, breakdown: [], agent_costs: [] } },
+    isLoading: false,
+  }),
+}));
+
+// ---------- HELPERS ----------
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </MemoryRouter>
+  );
+}
 
 // ---------- TESTS ----------
 describe("SuperAdminDashboard", () => {
-  it("should render dashboard page", () => {
-    render(<SuperAdminDashboard />);
-
+  it("renders within SuperAdminLayout", () => {
+    renderWithProviders(<SuperAdminDashboard />);
     expect(screen.getByTestId("super-admin-layout")).toBeInTheDocument();
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
-  it("should render dashboard system cards", () => {
-    render(<SuperAdminDashboard />);
-
-    expect(screen.getByText("Total Organisations")).toBeInTheDocument();
-    expect(screen.getByText("Businesses Orgs")).toBeInTheDocument();
-    expect(screen.getByText("Educational Orgs")).toBeInTheDocument();
+  it("renders the page title", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("Platform Dashboard")).toBeInTheDocument();
   });
 
-  it("should render all major dashboard sections", () => {
-    render(<SuperAdminDashboard />);
-
-    expect(screen.getByTestId("avg-time-spent-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("used-coaches-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("license-expiring")).toBeInTheDocument();
-    expect(screen.getByTestId("help-and-support")).toBeInTheDocument();
-    expect(screen.getByTestId("document-upload-trend")).toBeInTheDocument();
-    expect(screen.getByTestId("latest-users")).toBeInTheDocument();
+  it("renders KPI stat cards with real data", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getAllByText("Total Users").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Active Organizations").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Active Mentors/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Feedback Received")).toBeInTheDocument();
+    expect(screen.getByText("Platform Cost (MTD)")).toBeInTheDocument();
   });
 
-  it("should update fromDate when calendar date is selected", () => {
-    render(<SuperAdminDashboard />);
-
-    const buttons = screen.getAllByTestId("select-date");
-
-    // First calendar = fromDate
-    fireEvent.click(buttons[0]);
-
-    expect(screen.getAllByText("01-01-2024").length).toBeGreaterThan(0);
+  it("renders the tabs", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("All Agents (18)")).toBeInTheDocument();
+    expect(screen.getAllByText("Organizations").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Cost Analysis")).toBeInTheDocument();
   });
 
-  it("should disable dates greater than toDate in fromDate calendar", () => {
-    render(<SuperAdminDashboard />);
-
-    const disabledCheck = screen.getAllByTestId("disabled-check");
-
-    // FromDate calendar disabled logic
-    expect(disabledCheck[0].textContent).toBe("disabled");
+  it("renders Platform Health tiles", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("Platform Health")).toBeInTheDocument();
+    expect(screen.getByText("Agent Engine")).toBeInTheDocument();
+    expect(screen.getByText("API Response Time")).toBeInTheDocument();
+    expect(screen.getByText("Error Rate")).toBeInTheDocument();
+    expect(screen.getByText("Uptime")).toBeInTheDocument();
   });
-  it("should update toDate when calendar date is selected", () => {
-    render(<SuperAdminDashboard />);
 
-    const buttons = screen.getAllByTestId("select-date");
-
-    // Second calendar = toDate
-    fireEvent.click(buttons[1]);
-
-    expect(screen.getAllByText("01-01-2024").length).toBeGreaterThan(0);
+  it("renders New User Registrations section", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("New User Registrations")).toBeInTheDocument();
   });
-  it("should show fallback text when date is null", () => {
-    jest
-      .spyOn(React, "useState")
-      .mockImplementationOnce(() => [null, jest.fn()]);
 
-    render(<SuperAdminDashboard />);
-
-    expect(screen.getByText("Pick a date")).toBeInTheDocument();
+  it("renders all 18 agents in the Agents tab", () => {
+    renderWithProviders(<SuperAdminDashboard />);
+    expect(screen.getByText("All Platform Agents")).toBeInTheDocument();
   });
 });

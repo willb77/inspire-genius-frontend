@@ -32,6 +32,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { downloadAlexChat } from "@/services/alex/chat.service";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
+import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
 import { format } from "date-fns";
 
 const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
@@ -116,7 +118,7 @@ export default function AlexChatPanel({
 
   const handleLoadHistory = useCallback(async () => {
     if (!deviceKey) {
-      toast.error("Alex device id not available");
+      toast.error("Meridian device id not available");
       return;
     }
     try {
@@ -144,7 +146,7 @@ export default function AlexChatPanel({
 
   const handleExportChat = useCallback(async (fromDate: Date, toDate: Date) => {
     if (!deviceKey) {
-      toast.error("Alex device id not available");
+      toast.error("Meridian device id not available");
       return;
     }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -253,6 +255,27 @@ export default function AlexChatPanel({
       lastMessageRef.current = { type: "response", text };
       return;
     }
+    if (response.type === "complete") {
+      // Agent Engine WS proxy sends "complete" with content field
+      setMessages((prev) => prev.filter((m) => m.type !== "processing"));
+      const text = response.content ?? response.text ?? "";
+      if (!text) return;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now()}`,
+          text,
+          sender: "assistant",
+          timestamp: new Date(),
+        },
+      ]);
+      lastMessageRef.current = { type: "complete", text };
+      return;
+    }
+    if (response.type === "connected" || response.type === "init_success") {
+      // Connection acknowledgement from Agent Engine WS proxy — no UI action
+      return;
+    }
     if (response.type === "error") {
       const text = response.message ?? "Unknown error";
       setMessages((prev) => [
@@ -319,10 +342,9 @@ export default function AlexChatPanel({
 
   const handleSend = useCallback(() => {
     const text = message.trim();
-    if (!text || !isConnected) return;
+    if (!text) return;
     demoAudioServiceRef.current?.resetAudioState();
     setHasAudio(false);
-    sendTextMessage(text);
     setMessage("");
     setIsAudioPaused(false);
     setMessages((prev) => [
@@ -330,6 +352,35 @@ export default function AlexChatPanel({
       { id: `msg-${Date.now()}-user`, text, sender: "user", timestamp: new Date(), },
       { id: `msg-${Date.now()}-assistant`, text: "", sender: "assistant", timestamp: new Date(), isProcessing: true, type: "processing" },
     ]);
+    // Try WS if connected, always fire REST as primary path
+    if (isConnected) sendTextMessage(text);
+    // REST primary path
+    (async () => {
+      try {
+        const { agentApi } = await import("@/lib/agentApi");
+        const { getToken } = await import("@/lib/storage");
+        const token = await getToken();
+        const resp = await agentApi.post("/v1/agents/chat", {
+          message: text,
+          session_id: "alex-chat",
+        }, {
+          headers: token ? { "access-token": token } : {},
+          timeout: 120000,
+        });
+        const data = resp.data;
+        if (!isConnected) {
+          setMessages((prev) => [
+            ...prev.filter((m) => !m.isProcessing),
+            { id: `msg-${Date.now()}-resp`, text: data?.content || data?.message || "No response.", sender: "assistant" as const, timestamp: new Date() },
+          ]);
+        }
+      } catch (err) {
+        if (!isConnected) {
+          console.error("REST chat failed:", err);
+          setMessages((prev) => prev.filter((m) => !m.isProcessing));
+        }
+      }
+    })();
   }, [message, isConnected, sendTextMessage]);
 
   const toggleAudioPlayback = useCallback(() => {
@@ -398,13 +449,13 @@ export default function AlexChatPanel({
     onOpenChange(next);
   }, [isRecording, onOpenChange, stopRecording]);
 
-  let inputPlaceholder = "Alex is offline";
+  let inputPlaceholder = "Meridian is offline";
   if (isRecording) {
     inputPlaceholder = "";
   } else if (isConnected) {
     inputPlaceholder = "Ask Anything....";
   } else if (isConnecting) {
-    inputPlaceholder = "Connecting to Alex...";
+    inputPlaceholder = "Connecting to Meridian...";
   }
 
   let muteTooltipText = "Mute";
@@ -427,7 +478,7 @@ export default function AlexChatPanel({
         )}
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <div className="text-base font-semibold">Chat with Alex</div>
+          <div className="text-base font-semibold">Chat with Meridian</div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -476,6 +527,9 @@ export default function AlexChatPanel({
                 <TooltipContent side="bottom">Export chat</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {deviceKey && (
+              <SessionObservabilityDrawer sessionId={deviceKey} />
+            )}
             <button
               aria-label="Close"
               onClick={handleClosePanel}
@@ -552,6 +606,9 @@ export default function AlexChatPanel({
                             {formatUSTimestamp(new Date(m.timestamp))}
                           </div>
                         </div>
+                        {m.sender === "assistant" && (
+                          <ObservabilityPanel messageId={m.id} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -641,7 +698,7 @@ export default function AlexChatPanel({
                       if (isConnected) updateContinuousMute(next);
                     }}
                     disabled={hasAudio && !isAudioPaused}
-                    aria-label={isMuted ? "Unmute Alex" : "Mute Alex"}
+                    aria-label={isMuted ? "Unmute Meridian" : "Mute Meridian"}
                   >
                     {isMuted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
                   </Button>

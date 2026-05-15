@@ -10,12 +10,16 @@ import { useForm } from "react-hook-form";
 import type {
   ChangePasswordFormValues,
   EditProfileFormValues,
+  GenderOption,
   ProfileData,
 } from "@/types/settings";
 import { useUpdateProfile } from "@/hooks/onboarding/useUpdateProfile";
 import { useAuth } from "@/context/useAuth";
 import { ROLES } from "@/constants/routes";
 import { Link } from "react-router-dom";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
+import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
+import PrivacySettings from "@/components/settings/PrivacySettings";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -36,6 +40,9 @@ export default function Settings() {
     additional_info?: string;
     is_password_change_allowed?: boolean;
     role?: string;
+    gender?: string;
+    ethnicity?: string;
+    cultural_affinity?: string;
   }>();
 
   const changePasswordForm = useForm<ChangePasswordFormValues>({
@@ -53,6 +60,9 @@ export default function Settings() {
       email: "",
       dateOfBirth: "",
       additionalInfo: "",
+      gender: "",
+      ethnicity: "",
+      culturalAffinity: "",
     },
   });
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -108,7 +118,9 @@ export default function Settings() {
       additionalInfo: data.additional_info ?? "",
       passwordChangeAllowed: data.is_password_change_allowed ?? false,
       role: data.role ?? "",
-      
+      gender: (data.gender ?? "") as GenderOption,
+      ethnicity: data.ethnicity ?? "",
+      culturalAffinity: data.cultural_affinity ?? "",
     };
     setProfileData((prev) => ({
       ...prev,
@@ -131,6 +143,9 @@ export default function Settings() {
       last_name: values.lastName,
       date_of_birth: values.dateOfBirth,
       additional_info: values.additionalInfo || undefined,
+      gender: values.gender || undefined,
+      ethnicity: values.ethnicity || undefined,
+      cultural_affinity: values.culturalAffinity || undefined,
     };
     upsertProfileMutation.mutate(payload, {
       onSuccess: (resp) => {
@@ -141,6 +156,9 @@ export default function Settings() {
           lastName: values.lastName,
           dateOfBirth: values.dateOfBirth,
           additionalInfo: values.additionalInfo,
+          gender: values.gender,
+          ethnicity: values.ethnicity,
+          culturalAffinity: values.culturalAffinity,
           email: prev.email,
         }));
         const fullName = `${values.firstName} ${values.lastName}`.trim();
@@ -211,6 +229,23 @@ export default function Settings() {
             />
           </div>
         )}
+
+        {/* Agent Engine Routing (super-admin only) */}
+        {role === ROLES.SUPER_ADMIN && (
+          <div data-tour="settings-agent-engine">
+            <AgentEngineToggle />
+          </div>
+        )}
+
+        {/* Browser Push Notification Preferences */}
+        <div data-tour="settings-push-notifications">
+          <NotificationPreferences />
+        </div>
+
+        {/* Privacy & Data Settings */}
+        <div data-tour="settings-privacy">
+          <PrivacySettings />
+        </div>
 
         {/* Legal Card */}
         {role === ROLES.USER && (

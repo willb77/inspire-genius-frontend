@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { AlexResponse } from "@/components/alex-voice-assistant/types/types";
 import { WebSocketState } from "@/components/alex-voice-assistant/types/enums";
 import { useWebSocketConnectionHandlers, useWebSocketMessageHandlers } from "@/components/alex-voice-assistant/handlers/webSocketHandlers";
+import { getToken } from "@/lib/storage";
 
 export interface UseAlexWebSocketReturn {
   isConnected: boolean;
@@ -42,7 +43,20 @@ export const useAlexWebSocket = (
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
-  const websocketUrl = (import.meta.env.VITE_ALEX_WEB_SOCKET_URL as string) || "";
+  // Resolve the base WebSocket URL from env vars (without token)
+  const baseWsUrl = (() => {
+    const explicit = (import.meta.env.VITE_ALEX_WEB_SOCKET_URL as string) || "";
+    if (explicit) return explicit;
+    const agentWs = (import.meta.env.VITE_AGENT_WS_URL as string) || "";
+    if (agentWs) return agentWs;
+    // Derive from API base URL by replacing http(s) with ws(s) and appending /ws/chat
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL as string) || "";
+    if (baseUrl) return baseUrl.replace(/^http/, "ws") + "/ws/chat";
+    return "";
+  })();
+
+  // Mutable ref holding the WebSocket URL (updated with auth token before each connect)
+  const websocketUrlRef = useRef<string>(baseWsUrl);
 
   const { sendTextMessage, sendAudioChunk, endAudioInput, startContinuousMode, updateContinuousMute, handleBinaryMessage, handleJsonMessage } =
     useWebSocketMessageHandlers(
@@ -65,7 +79,7 @@ export const useAlexWebSocket = (
         const response: AlexResponse = JSON.parse(event.data);
         handleJsonMessage(response);
       } catch (err) {
-        console.error("Alex WebSocket parse error", err);
+        console.error("Meridian WebSocket parse error", err);
         setError("Failed to parse server response");
       }
     },
@@ -74,7 +88,7 @@ export const useAlexWebSocket = (
 
   const { connect: connectBase, disconnect } = useWebSocketConnectionHandlers(
     socketRef,
-    websocketUrl,
+    websocketUrlRef,
     setIsConnecting,
     setIsConnected,
     setError,
@@ -94,8 +108,21 @@ export const useAlexWebSocket = (
     ) {
       return;
     }
-    connectBase();
-  }, [connectBase]);
+
+    // Resolve auth token and append to WebSocket URL before connecting
+    (async () => {
+      try {
+        const token = await getToken();
+        if (token && baseWsUrl) {
+          const sep = baseWsUrl.includes("?") ? "&" : "?";
+          websocketUrlRef.current = `${baseWsUrl}${sep}access-token=${encodeURIComponent(token)}`;
+        }
+      } catch {
+        // Token unavailable — still connect (ws-proxy accepts pending_auth)
+      }
+      if (baseWsUrl) connectBase();
+    })();
+  }, [connectBase, baseWsUrl]);
 
   const startRecording = useCallback(async () => {
     if (isRecording) return;
@@ -140,6 +167,19 @@ export const useAlexWebSocket = (
       }
     }
   }, []);
+
+  // Keep the WebSocket URL in sync when the auth token refreshes
+  useEffect(() => {
+    const handler = ((e: CustomEvent<{ token: string }>) => {
+      const token = e.detail?.token;
+      if (token && baseWsUrl) {
+        const sep = baseWsUrl.includes("?") ? "&" : "?";
+        websocketUrlRef.current = `${baseWsUrl}${sep}access-token=${encodeURIComponent(token)}`;
+      }
+    }) as EventListener;
+    window.addEventListener("auth:token", handler);
+    return () => window.removeEventListener("auth:token", handler);
+  }, [baseWsUrl]);
 
   useEffect(() => {
     return () => {

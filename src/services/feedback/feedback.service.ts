@@ -22,6 +22,6 @@ export async function getFeedbackList(params: FeedbackListParams = {}) {
 }
 
 export async function getFeedbackStats(params: Pick<FeedbackListParams, "coach_id" | "date_from" | "date_to"> = {}) {
-  const { data } = await api.get<FeedbackStatsResponse>("/v1/feedback/stats", { params })
+  const { data } = await api.get<FeedbackStatsResponse>("/v1/admin/feedback/stats", { params })
   return data
 }

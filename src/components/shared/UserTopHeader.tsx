@@ -12,6 +12,7 @@ import { useAuth } from "@/context/useAuth";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useNavigate } from "react-router-dom";
 import { ROLES, ROUTES } from "@/constants/routes";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function UserTopHeader() {
   const { user, logout } = useAuth();
@@ -23,14 +24,15 @@ export default function UserTopHeader() {
   const initial = (displayName?.[0] ?? "U").toUpperCase();
   return (
     <div className="mt-2 flex items-center justify-between w-full">
-      <div className="ml-1 w-full flex flex-col text-left">
-        <p className="text-base md:text-2xl font-medium text-black-250">Welcome! {displayName}</p>
-        <p className="text-xs text-black-250">
+      <div className="ml-1 flex-1 min-w-0 flex flex-col text-left">
+        <p className="text-sm sm:text-base md:text-2xl font-medium text-black-250 truncate">Welcome! {displayName}</p>
+        <p className="text-xs text-black-250 hidden sm:block">
           Your AI coaches are ready—let’s begin!
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed">
+        <LanguageSwitcher />
+        <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed size-11 md:size-9">
           <Bell className="size-5" />
           <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
         </Button>

@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "Tapez votre message...",
+    "send": "Envoyer",
+    "newSession": "Nouvelle Session"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "empty": "Aucune session pour le moment"
+  },
+  "agents": {
+    "title": "Agents"
+  },
+  "feedback": {
+    "feedback": "Retours",
+    "helpful": "Utile",
+    "notHelpful": "Pas Utile",
+    "comment": "Ajouter un commentaire",
+    "positive": "Positif",
+    "negative": "Négatif",
+    "neutral": "Neutre",
+    "allRatings": "Tous les Avis",
+    "fiveStars": "5 Étoiles",
+    "fourStars": "4 Étoiles",
+    "threeStars": "3 Étoiles",
+    "twoStars": "2 Étoiles",
+    "oneStar": "1 Étoile",
+    "history": "Historique des Retours",
+    "reviewDescription": "Consultez tous les retours que vous avez soumis sur les réponses du coach IA.",
+    "totalFeedback": "Retours Totaux",
+    "avgRating": "Note Moyenne",
+    "fiveStarCount": "5-Étoiles",
+    "oneStarCount": "1-Étoile",
+    "loadingFeedback": "Chargement des retours...",
+    "failedLoadFeedback": "Impossible de charger les retours. Veuillez réessayer plus tard.",
+    "results": "résultats",
+    "result": "résultat"
+  },
+  "practitioner": {
+    "dashboard": "Tableau de Bord du Praticien",
+    "welcomeBack": "Bienvenue à nouveau, {name}. Vous avez {sessions} sessions prévues aujourd'hui et {followups} suivis à faire cette semaine.",
+    "activeClients": "Clients Actifs",
+    "creditsRemaining": "Crédits Restants",
+    "sessionsThisMonth": "Sessions ce Mois",
+    "avgClientSatisfaction": "Satisfaction Client Moyenne",
+    "todaysSessions": "Sessions d'Aujourd'hui",
+    "confirmed": "Confirmé",
+    "clientPortfolio": "Portefeuille de Clients",
+    "clientName": "Nom du Client",
+    "organization": "Organisation",
+    "prismScore": "Score PRISM",
+    "sessions": "Sessions",
+    "lastSession": "Dernière Session",
+    "followUpsDueThisWeek": "Suivis à Faire cette Semaine",
+    "creditUsage": "Utilisation des Crédits",
+    "prismAssessment": "Évaluation PRISM",
+    "completeDescription": "Complétez votre Cartographie Cérébrale PRISM pour débloquer des informations de coaching personnalisées",
+    "activeAssessment": "Évaluation Active",
+    "report": "Rapport",
+    "assessmentHistory": "Historique des Évaluations"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Discuter avec Méridien",
+    "uploadDocument": "Télécharger un Document",
+    "viewPrismReport": "Afficher le Rapport PRISM",
+    "setNewGoal": "Définir un Nouvel Objectif"
+  },
+  "prism": {
+    "assessment": "Évaluation PRISM",
+    "completeDescription": "Complétez votre Cartographie Cérébrale PRISM pour débloquer des informations de coaching personnalisées",
+    "activeAssessment": "Évaluation Active",
+    "report": "Rapport",
+    "assessmentHistory": "Historique des Évaluations"
+  }
+}

@@ -65,6 +65,7 @@ export type InviteUserPayload = {
   first_name: string
   last_name: string
   role_id?: string
+  role?: string
   organization_id?: string
   business_id?: string
 }
@@ -86,11 +87,31 @@ export async function inviteUser(payload: InviteUserPayload) {
   return data
 }
 
+// ------------------ CHANGE USER ROLE ------------------
+
+export type ChangeUserRolePayload = {
+  role_id: string
+}
+
+export type ChangeUserRoleData = {
+  updated_fields: string[]
+}
+
+export type ChangeUserRoleResponse = BaseApiResponse<ChangeUserRoleData>
+
+export async function changeUserRole(user_email: string, payload: ChangeUserRolePayload) {
+  const { data } = await api.put<ChangeUserRoleResponse>(
+    `/v1/user-management/users/${encodeURIComponent(user_email)}/role`,
+    payload
+  )
+  return data
+}
+
 // ------------------ UPDATE USER ------------------
 
 export type UpdateUserPayload = {
-  first_name: string
-  last_name: string
+  first_name?: string
+  last_name?: string
   is_active?: boolean
 }
 
@@ -110,18 +131,21 @@ export async function updateUserByEmail(user_email: string, payload: UpdateUserP
 
 export type DeleteUserData = {
   email: string
-  deletion_type: 'hard_delete' | 'soft_delete' | string
-  user_was_active: boolean
-  had_pending_invitation: boolean
-  cognito_deleted: boolean
+  deletion_type?: 'hard_delete' | 'soft_delete'
+  user_was_active?: boolean
+  had_pending_invitation?: boolean
+  cognito_deleted?: boolean
+  already_soft_deleted?: boolean
+  can_force_purge?: boolean
 }
 
 export type DeleteUserResponse = BaseApiResponse<DeleteUserData>
 
-export async function deleteUserByEmail(user_email: string) {
-  const { data } = await api.delete<DeleteUserResponse>(
-    `/v1/user-management/users/${encodeURIComponent(user_email)}`
-  )
+export async function deleteUserByEmail(user_email: string, force = false) {
+  const url = `/v1/user-management/users/${encodeURIComponent(user_email)}${
+    force ? '?force=true' : ''
+  }`
+  const { data } = await api.delete<DeleteUserResponse>(url)
   return data
 }
 
@@ -140,4 +164,54 @@ export async function resendInvitation(invitation_id: string) {
     `/v1/user-management/invitations/${encodeURIComponent(invitation_id)}/resend`
   )
   return data
+}
+
+// ------------------ PURGE INACTIVE USERS ------------------
+
+export type PurgeFailure = {
+  email: string
+  reason: string
+}
+
+export type PurgeInactiveResult = {
+  total: number
+  succeeded: string[]
+  failed: PurgeFailure[]
+}
+
+export type PurgeInactiveResponse = BaseApiResponse<PurgeInactiveResult>
+
+/**
+ * Hard-deletes every deactivated (is_deleted=True) user via a single
+ * server-side endpoint. Backend processes each user inside its own SAVEPOINT
+ * so partial failures don't abort the batch — the response carries
+ * per-user succeeded/failed lists.
+ *
+ * Replaces the previous client-side fanout that paged through inactive
+ * users and issued N parallel DELETEs (problems: no transaction boundary,
+ * no backpressure, one round-trip per user, partial-failure state).
+ */
+export async function purgeInactiveUsers(): Promise<PurgeInactiveResult> {
+  const { data } = await api.post<PurgeInactiveResponse>(
+    '/v1/user-management/users/purge-inactive'
+  )
+  return (
+    data.data ?? {
+      total: 0,
+      succeeded: [],
+      failed: [],
+    }
+  )
+}
+
+/**
+ * Fetches the count of inactive/deactivated users without deleting them.
+ */
+export async function getInactiveUserCount(): Promise<number> {
+  const response = await getUsers({
+    user_status_filter: 'inactive',
+    limit: 1,
+    page: 1,
+  })
+  return response?.data?.pagination?.total ?? 0
 }

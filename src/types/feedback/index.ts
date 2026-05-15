@@ -1,20 +1,33 @@
 export type FeedbackEntry = {
-  id: string
+  feedback_id: string
+  session_id: string
+  agent_id: string
   message_id: string
-  conversation_id: string
-  coach_id: string
-  user_id: string
-  rating: 1 | 2 | 3 | 4 | 5
-  correction_text?: string | null
+  feedback_type: FeedbackType
+  value: number
+  text?: string | null
+  user_id?: string
   created_at: string
+  spam_score?: number
+  // Legacy aliases used by FeedbackHistory page
+  id?: string
+  coach_id?: string
+  conversation_id?: string
+  rating?: number
+  correction_text?: string | null
 }
 
+export type FeedbackType = "thumbs" | "rating" | "text" | "comparison"
+
 export type SubmitFeedbackPayload = {
+  session_id: string
+  agent_id: string
   message_id: string
-  conversation_id: string
-  coach_id: string
-  rating: number
-  correction_text?: string
+  feedback_type: FeedbackType
+  value: number
+  text?: string
+  comparison_message_id?: string
+  user_id?: string
 }
 
 export type FeedbackListParams = {

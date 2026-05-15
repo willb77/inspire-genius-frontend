@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "Digite sua mensagem...",
+    "send": "Enviar",
+    "newSession": "Nova Sessão"
+  },
+  "sessions": {
+    "title": "Sessões",
+    "empty": "Nenhuma sessão ainda"
+  },
+  "agents": {
+    "title": "Agentes"
+  },
+  "feedback": {
+    "feedback": "Feedback",
+    "helpful": "Útil",
+    "notHelpful": "Não Útil",
+    "comment": "Adicionar um comentário",
+    "positive": "Positivo",
+    "negative": "Negativo",
+    "neutral": "Neutro",
+    "allRatings": "Todas as Avaliações",
+    "fiveStars": "5 Estrelas",
+    "fourStars": "4 Estrelas",
+    "threeStars": "3 Estrelas",
+    "twoStars": "2 Estrelas",
+    "oneStar": "1 Estrela",
+    "history": "Histórico de Feedback",
+    "reviewDescription": "Revise todo o feedback que você enviou sobre respostas do coach de IA.",
+    "totalFeedback": "Feedback Total",
+    "avgRating": "Avaliação Média",
+    "fiveStarCount": "5-Estrelas",
+    "oneStarCount": "1-Estrela",
+    "loadingFeedback": "Carregando feedback...",
+    "failedLoadFeedback": "Falha ao carregar feedback. Por favor, tente novamente mais tarde.",
+    "results": "resultados",
+    "result": "resultado"
+  },
+  "practitioner": {
+    "dashboard": "Painel do Praticante",
+    "welcomeBack": "Bem-vindo de volta, {name}. Você tem {sessions} sessões agendadas hoje e {followups} acompanhamentos vencidos esta semana.",
+    "activeClients": "Clientes Ativos",
+    "creditsRemaining": "Créditos Restantes",
+    "sessionsThisMonth": "Sessões Este Mês",
+    "avgClientSatisfaction": "Satisfação Média do Cliente",
+    "todaysSessions": "Sessões de Hoje",
+    "confirmed": "Confirmado",
+    "clientPortfolio": "Portfólio de Clientes",
+    "clientName": "Nome do Cliente",
+    "organization": "Organização",
+    "prismScore": "Pontuação PRISM",
+    "sessions": "Sessões",
+    "lastSession": "Última Sessão",
+    "followUpsDueThisWeek": "Acompanhamentos Vencidos Esta Semana",
+    "creditUsage": "Uso de Créditos",
+    "prismAssessment": "Avaliação PRISM",
+    "completeDescription": "Complete seu Mapeamento Cerebral PRISM para desbloquear insights de coaching personalizados",
+    "activeAssessment": "Avaliação Ativa",
+    "report": "Relatório",
+    "assessmentHistory": "Histórico de Avaliações"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Conversar com Meridian",
+    "uploadDocument": "Carregar Documento",
+    "viewPrismReport": "Ver Relatório PRISM",
+    "setNewGoal": "Definir Nova Meta"
+  },
+  "prism": {
+    "assessment": "Avaliação PRISM",
+    "completeDescription": "Complete seu Mapeamento Cerebral PRISM para desbloquear insights de coaching personalizados",
+    "activeAssessment": "Avaliação Ativa",
+    "report": "Relatório",
+    "assessmentHistory": "Histórico de Avaliações"
+  }
+}

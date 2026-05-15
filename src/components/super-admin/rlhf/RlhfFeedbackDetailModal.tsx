@@ -36,7 +36,7 @@ export default function RlhfFeedbackDetailModal({
                   key={i}
                   className={cn(
                     "size-5",
-                    i <= entry.rating
+                    i <= (entry.rating ?? 0)
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-gray-300"
                   )}

@@ -3,6 +3,7 @@ export type CoachFormValues = {
   category: string;
   voice_style: string;
   voice_description: string;
+  persona: string;
   status?: string;
 };
 
@@ -11,6 +12,7 @@ export const COACH_FORM_DEFAULTS: CoachFormValues = {
   category: "",
   voice_style: "",
   voice_description: "",
+  persona: "",
   status: "active",
 };
 
@@ -19,5 +21,6 @@ export const COACH_FORM_RULES = {
   category: { required: "Category is required" },
   voice_style: {},
   voice_description: {},
+  persona: {},
   status: {},
 } as const;

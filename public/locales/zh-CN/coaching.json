@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "请输入您的消息...",
+    "send": "发送",
+    "newSession": "新会话"
+  },
+  "sessions": {
+    "title": "会话",
+    "empty": "暂无会话"
+  },
+  "agents": {
+    "title": "智能体"
+  },
+  "feedback": {
+    "feedback": "反馈",
+    "helpful": "有帮助",
+    "notHelpful": "没有帮助",
+    "comment": "添加评论",
+    "positive": "正面",
+    "negative": "负面",
+    "neutral": "中立",
+    "allRatings": "全部评分",
+    "fiveStars": "五星",
+    "fourStars": "四星",
+    "threeStars": "三星",
+    "twoStars": "两星",
+    "oneStar": "一星",
+    "history": "反馈历史",
+    "reviewDescription": "查看您对 AI 教练回复提交的所有反馈。",
+    "totalFeedback": "总反馈数",
+    "avgRating": "平均评分",
+    "fiveStarCount": "五星",
+    "oneStarCount": "一星",
+    "loadingFeedback": "正在加载反馈...",
+    "failedLoadFeedback": "加载反馈失败，请稍后重试。",
+    "results": "条结果",
+    "result": "条结果"
+  },
+  "practitioner": {
+    "dashboard": "执行者仪表板",
+    "welcomeBack": "欢迎回来，{name}。您今天有 {sessions} 个会话已安排，本周有 {followups} 个跟进待处理。",
+    "activeClients": "活跃客户",
+    "creditsRemaining": "剩余积分",
+    "sessionsThisMonth": "本月会话数",
+    "avgClientSatisfaction": "平均客户满意度",
+    "todaysSessions": "今日会话",
+    "confirmed": "已确认",
+    "clientPortfolio": "客户档案",
+    "clientName": "客户姓名",
+    "organization": "所属机构",
+    "prismScore": "PRISM 评分",
+    "sessions": "会话",
+    "lastSession": "最近会话",
+    "followUpsDueThisWeek": "本周跟进截止",
+    "creditUsage": "积分使用情况",
+    "prismAssessment": "PRISM 评估",
+    "completeDescription": "完成 PRISM 大脑图谱，解锁个性化辅导洞察",
+    "activeAssessment": "进行中的评估",
+    "report": "报告",
+    "assessmentHistory": "评估历史"
+  },
+  "quickActions": {
+    "chatWithMeridian": "与 Meridian 对话",
+    "uploadDocument": "上传文档",
+    "viewPrismReport": "查看 PRISM 报告",
+    "setNewGoal": "设定新目标"
+  },
+  "prism": {
+    "assessment": "PRISM 评估",
+    "completeDescription": "完成 PRISM 大脑图谱，解锁个性化辅导洞察",
+    "activeAssessment": "进行中的评估",
+    "report": "报告",
+    "assessmentHistory": "评估历史"
+  }
+}

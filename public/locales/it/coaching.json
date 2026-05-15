@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "newSession": "New Session"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "empty": "No sessions yet"
+  },
+  "agents": {
+    "title": "Agents"
+  },
+  "feedback": {
+    "feedback": "Feedback",
+    "helpful": "Helpful",
+    "notHelpful": "Not Helpful",
+    "comment": "Add a comment",
+    "positive": "Positive",
+    "negative": "Negative",
+    "neutral": "Neutral",
+    "allRatings": "All Ratings",
+    "fiveStars": "5 Stars",
+    "fourStars": "4 Stars",
+    "threeStars": "3 Stars",
+    "twoStars": "2 Stars",
+    "oneStar": "1 Star",
+    "history": "Feedback History",
+    "reviewDescription": "Review all feedback you've submitted on AI coach responses.",
+    "totalFeedback": "Total Feedback",
+    "avgRating": "Avg Rating",
+    "fiveStarCount": "5-Star",
+    "oneStarCount": "1-Star",
+    "loadingFeedback": "Loading feedback...",
+    "failedLoadFeedback": "Failed to load feedback. Please try again later.",
+    "results": "results",
+    "result": "result"
+  },
+  "practitioner": {
+    "dashboard": "Practitioner Dashboard",
+    "welcomeBack": "Welcome back, {name}. You have {sessions} sessions scheduled today and {followups} follow-ups due this week.",
+    "activeClients": "Active Clients",
+    "creditsRemaining": "Credits Remaining",
+    "sessionsThisMonth": "Sessions This Month",
+    "avgClientSatisfaction": "Avg Client Satisfaction",
+    "todaysSessions": "Today's Sessions",
+    "confirmed": "Confirmed",
+    "clientPortfolio": "Client Portfolio",
+    "clientName": "Client Name",
+    "organization": "Organization",
+    "prismScore": "PRISM Score",
+    "sessions": "Sessions",
+    "lastSession": "Last Session",
+    "followUpsDueThisWeek": "Follow-Ups Due This Week",
+    "creditUsage": "Credit Usage",
+    "prismAssessment": "PRISM Assessment",
+    "completeDescription": "Complete your PRISM Brain Mapping to unlock personalized coaching insights",
+    "activeAssessment": "Active Assessment",
+    "report": "Report",
+    "assessmentHistory": "Assessment History"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Chat with Meridian",
+    "uploadDocument": "Upload Document",
+    "viewPrismReport": "View PRISM Report",
+    "setNewGoal": "Set New Goal"
+  },
+  "prism": {
+    "assessment": "PRISM Assessment",
+    "completeDescription": "Complete your PRISM Brain Mapping to unlock personalized coaching insights",
+    "activeAssessment": "Active Assessment",
+    "report": "Report",
+    "assessmentHistory": "Assessment History"
+  }
+}

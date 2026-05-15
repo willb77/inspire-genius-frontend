@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import UserLayout from "@/layouts/UserLayout";
 import CoachCard from "@/components/onboarding/CoachCard";
 import CoachCardSkeleton from "@/components/shared/CoachCardSkeleton";
@@ -7,8 +8,10 @@ import { Search } from "lucide-react";
 import { useCoachData } from "@/hooks/coaches/useCoachData";
 import { useUpdatePreferences } from "@/hooks/coaches/useUpdatePreferences";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAgentEngine } from "@/lib/agentApi";
 
 export default function Coaches() {
+  const { t } = useTranslation(["common", "dashboard"]);
   const [query, setQuery] = useState("");
   const [submittingAgentId, setSubmittingAgentId] = useState<string | null>(null);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
@@ -19,23 +22,33 @@ export default function Coaches() {
 
   const updateMutation = useUpdatePreferences();
 
+  // When Agent Engine is OFF, only show the 3 deployed monolith coaches.
+  // When Agent Engine is ON, show all ecosystem agents.
+  const agentEngineOn = useAgentEngine();
+  const ACTIVE_COACH_NAMES = ["prism coach", "training coach", "career coach"];
+
   const agents = useMemo(() => {
-    const list = rawAgents;
+    let list = Array.isArray(rawAgents) ? rawAgents : [];
+    if (!agentEngineOn) {
+      list = list.filter((a) =>
+        ACTIVE_COACH_NAMES.includes(String(a.name ?? "").toLowerCase()),
+      );
+    }
     const q = query.trim().toLowerCase();
-    return (Array.isArray(list) ? list : []).filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
-  }, [rawAgents, query]);
+    return list.filter((a) => !q || String(a.name ?? "").toLowerCase().includes(q));
+  }, [rawAgents, query, agentEngineOn]);
 
   return (
     <UserLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-col text-left gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Manage Coaches</h1>
-            <p className="text-xs text-muted-foreground max-w-[75%]">Configure each coach's voice tone, gender, and accent. These settings apply wherever you chat with them.</p>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{t("dashboard:manageCoaches")}</h1>
+            <p className="text-xs text-muted-foreground">{t("dashboard:coachesConfigDescription")}</p>
           </div>
-          <div className="w-full max-w-xs">
+          <div className="w-full sm:max-w-xs">
             <IconInput
-              placeholder="Search.."
+              placeholder={t("dashboard:search")}
               leftIcon={<Search className="size-4" />}
               value={query}
               onChange={(e) => setQuery(e.target.value)}

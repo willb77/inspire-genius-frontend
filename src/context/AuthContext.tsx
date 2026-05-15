@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./auth-context";
-import { type AuthContextValue, type AuthUser } from "@/types/auth";
+import { type AuthContextValue, type AuthUser, type PendingRoleSelection } from "@/types/auth";
 import {
   getEmail,
   getPassword,
@@ -23,19 +23,48 @@ import {
   getNextStep,
 } from "@/lib/storage";
 import { syncAuthToken } from "@/lib/axios";
+import { checkForUpdate } from "@/lib/buildVersion";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
-import { NEXT_STEPS, ROUTES, ROLES } from "@/constants/routes";
+import { NEXT_STEPS, ROUTES } from "@/constants/routes";
+import { HOME_ROUTE_BY_ROLE } from "@/constants/navigation";
+import { ROLE_HIERARCHY, isUserRole } from "@/types/roles";
+import type { UserRole } from "@/types/roles";
 import { logAuditEvent } from "@/services/audit/audit.service";
 import { useNavigate } from "react-router-dom";
 import type { ApiEnvelope, LoginDataPayload } from "@/types/auth/api-types";
 import { useAuthLoginMutation, useAuthSignupMutation, useAuthVerifyOtpMutation, useResendOtpMutation } from "@/hooks/auth";
+import { requestMagicLink } from "@/services/magic-auth/magic-auth.service";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [hydrating, setHydrating] = useState(true);
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [pendingRoleSelection, setPendingRoleSelection] = useState<PendingRoleSelection | null>(null);
   const navigate = useNavigate();
+
+  /** Parse roles from the login payload — handles comma-separated string, array, or single string */
+  const parseRoles = useCallback((payload: LoginDataPayload): UserRole[] => {
+    // Check for explicit `roles` array field
+    const rolesField = (payload as Record<string, unknown>).roles;
+    if (Array.isArray(rolesField)) {
+      return rolesField
+        .map((r) => (typeof r === "string" ? r.trim().toLowerCase() : ""))
+        .filter(isUserRole) as UserRole[];
+    }
+    // Check for comma-separated `role` field
+    const roleStr = payload.role ?? "";
+    if (roleStr.includes(",")) {
+      return roleStr
+        .split(",")
+        .map((r) => r.trim().toLowerCase())
+        .filter(isUserRole) as UserRole[];
+    }
+    // Single role
+    const normalized = roleStr.trim().toLowerCase();
+    if (isUserRole(normalized)) return [normalized];
+    return [];
+  }, []);
 
   // hydrate on mount
   useEffect(() => {
@@ -95,25 +124,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (role: string | null | undefined, isOnboardingCompleted: boolean) => {
       if (!isOnboardingCompleted) {
         navigate(ROUTES.ONBOARDING.ONE, { replace: true });
-      } else if ((role ?? "").toLowerCase() === ROLES.SUPER_ADMIN) {
-        navigate(ROUTES.SUPER_ADMIN.DASHBOARD, { replace: true });
+        return;
+      }
+      const normalizedRole = (role ?? "").toLowerCase();
+      if (isUserRole(normalizedRole)) {
+        navigate(HOME_ROUTE_BY_ROLE[normalizedRole], { replace: true });
       } else {
+        // Fallback for legacy roles
         navigate(ROUTES.HOME, { replace: true });
       }
     },
     [navigate]
   );
 
-  const completeAuthFromPayload = useCallback(
+  /** Internal: finalize auth with a specific role (no multi-role check) */
+  const finalizeAuth = useCallback(
     async (
       payload: LoginDataPayload,
+      resolvedRole: string | null,
       fallbackEmail: string,
       options?: { message?: string; clearNextStep?: boolean }
     ) => {
       const accessToken = payload.access_token ?? null;
       const refreshToken = payload.refresh_token ?? null;
       const resolvedEmail = (payload.email ?? fallbackEmail) as string;
-      const role = payload.role ?? null;
       const isOnboardingCompleted = computeIsOnboarded(payload.is_onboarded);
       const userId = payload.user_id ?? null;
       const organizationId = payload.organization_id ?? null;
@@ -127,11 +161,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncAuthToken(accessToken);
       }
       if (refreshToken) await setRefreshToken(refreshToken);
-      if (role) await setRole(role);
+      if (resolvedRole) await setRole(resolvedRole);
       await setOnboardingFlag(isOnboardingCompleted);
       await storeUser({
         email: resolvedEmail,
-        role: role ?? undefined,
+        role: resolvedRole ?? undefined,
         accessToken: accessToken ?? undefined,
         refreshToken: refreshToken ?? undefined,
         isOnboardingCompleted,
@@ -151,48 +185,102 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: resolvedEmail,
         name: null,
         token: accessToken ?? null,
-        role: role ?? null,
+        role: resolvedRole ?? null,
         isOnboardingCompleted,
         fullName,
       });
       setPendingVerification(false);
       if (options?.message) toast.success(options.message);
-      logAuditEvent({ event_type: "user_login", actor: resolvedEmail, actor_id: userId ?? undefined });
-      navigateAfterAuth(role, isOnboardingCompleted);
+      logAuditEvent({ action: "login", actor_email: resolvedEmail, actor_id: userId ?? undefined });
+
+      // If a new bundle has been deployed since this tab was opened, reload
+      // before navigating so the user lands on the fresh code. Tokens were
+      // already persisted above, so hydrate-on-mount picks up the session
+      // post-reload and the navigate becomes redundant.
+      const reloading = await checkForUpdate();
+      if (reloading) return;
+
+      navigateAfterAuth(resolvedRole, isOnboardingCompleted);
     },
     [computeIsOnboarded, navigateAfterAuth]
+  );
+
+  const completeAuthFromPayload = useCallback(
+    async (
+      payload: LoginDataPayload,
+      fallbackEmail: string,
+      options?: { message?: string; clearNextStep?: boolean }
+    ) => {
+      const roles = parseRoles(payload);
+      const resolvedEmail = (payload.email ?? fallbackEmail) as string;
+
+      // If multiple roles, pause and show the role selector
+      if (roles.length > 1) {
+        setPendingRoleSelection({ roles, payload, email: resolvedEmail, options });
+        return;
+      }
+
+      // Single role — proceed immediately
+      const role = roles[0] ?? payload.role ?? null;
+      await finalizeAuth(payload, role, fallbackEmail, options);
+    },
+    [parseRoles, finalizeAuth]
+  );
+
+  /** Handle the user's role choice from the role selector modal */
+  const selectRole = useCallback(
+    async (selectedRole: UserRole) => {
+      if (!pendingRoleSelection) return;
+      const { payload, email, options } = pendingRoleSelection;
+      setPendingRoleSelection(null);
+      await finalizeAuth(payload, selectedRole, email, options);
+    },
+    [pendingRoleSelection, finalizeAuth]
   );
 
   const loginMutation = useAuthLoginMutation({
     onSuccess: async ({ data, email, password }) => {
       // Some APIs return 200 but embed failure in body
       const failed = data?.status === false || data?.success === false;
-      const payload: LoginDataPayload = (data.data ?? {}) as LoginDataPayload;
+      const raw = (data.data ?? {}) as Record<string, unknown>;
+      // Normalize PascalCase Cognito keys to snake_case expected by LoginDataPayload
+      const payload: LoginDataPayload = {
+        ...raw,
+        access_token: (raw.access_token ?? raw.AccessToken ?? null) as string | null,
+        refresh_token: (raw.refresh_token ?? raw.RefreshToken ?? null) as string | null,
+        id_token: (raw.id_token ?? raw.IdToken ?? null) as string | null,
+        token_type: (raw.token_type ?? raw.TokenType ?? null) as string | null,
+      } as LoginDataPayload;
       // If backend tells us to verify MFA, do that FIRST and return early
       const nextStep: string | undefined = payload.next_step ?? undefined;
       if (failed) {
         const msg = data?.message || "Invalid email or password";
         toast.error(msg);
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setEmail(email);
-          await setPassword(password);
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+          } catch {
+            // Fall back to OTP if magic link fails
+            await setEmail(email);
+            await setPassword(password);
+            await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+            navigate(ROUTES.OTP, { replace: true });
+          }
         }
         return;
       }
       // Payload under data.data
 
       if (nextStep === NEXT_STEPS.VERIFY_MFA) {
-        await setEmail(email);
-        await setPassword(password);
-        await setNextStep(NEXT_STEPS.VERIFY_MFA);
-        if (payload.session) await setSession(String(payload.session));
-        await storeUser({ email });
-        setUser({ id: "pending", email, name: null, token: null });
-        setPendingVerification(true);
-        toast.success(data?.message);
-        navigate(ROUTES.OTP, { replace: true });
+        // Send magic link instead of OTP for MFA verification
+        try {
+          await requestMagicLink({ email: email.trim().toLowerCase() });
+          toast.success("Check your email for a sign-in link");
+        } catch {
+          toast.error("Failed to send magic link. Please try again.");
+        }
         return;
       }
       const accessToken = payload.access_token ?? null;
@@ -239,11 +327,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const ax = err as AxiosError<ApiEnvelope<LoginDataPayload>>;
         const nextStep: string | undefined = (ax?.response?.data?.data as Partial<LoginDataPayload> | undefined)?.next_step ?? undefined;
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setEmail(email);
-          await setPassword(password);
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          await resendOtpMutation.mutateAsync();
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+          } catch {
+            toast.error("Failed to send verification link");
+          }
           return { status: false };
         }
 
@@ -264,15 +354,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const msg = data?.message || "Sign up failed";
         toast.error(msg);
         if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-          navigate(ROUTES.OTP, { replace: true });
+          // Send magic link for email verification instead of OTP
+          try {
+            await requestMagicLink({ email: email.trim().toLowerCase() });
+            toast.success("Check your email for a verification link");
+            navigate(ROUTES.LOGIN, { replace: true });
+          } catch {
+            // Fall back to OTP if magic link fails
+            await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+            navigate(ROUTES.OTP, { replace: true });
+          }
         }
         return;
       }
 
       if (nextStep === NEXT_STEPS.VERIFY_EMAIL) {
-        await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
-        navigate(ROUTES.OTP, { replace: true });
+        // Send magic link for email verification instead of OTP
+        try {
+          await requestMagicLink({ email: email.trim().toLowerCase() });
+          toast.success("Account created! Check your email for a verification link");
+          navigate(ROUTES.LOGIN, { replace: true });
+        } catch {
+          // Fall back to OTP if magic link fails
+          await setNextStep(NEXT_STEPS.VERIFY_EMAIL);
+          navigate(ROUTES.OTP, { replace: true });
+        }
       }
     },
     onError: (err: unknown) => {
@@ -361,7 +467,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resendOtpMutation = useResendOtpMutation({
     onSuccess: (data) => {
-      console.log("Resend OTP response", data);
       const failed = data?.status === false || data?.success === false;
       if (failed) {
         const msg = data?.message || "Failed to resend OTP";
@@ -423,7 +528,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     syncAuthToken(null);
     setUser(null);
     setPendingVerification(false);
-    logAuditEvent({ event_type: "user_logout", actor: email ?? "unknown" });
+    logAuditEvent({ action: "logout", actor_email: email ?? "unknown" });
     navigate(ROUTES.LOGIN, { replace: true });
   }, [navigate, user?.email]);
 
@@ -456,9 +561,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const hasRole = useCallback(
+    (role: UserRole): boolean => {
+      const userRole = (user?.role ?? "").toLowerCase();
+      return userRole === role;
+    },
+    [user?.role]
+  );
+
+  const isAtLeast = useCallback(
+    (role: UserRole): boolean => {
+      const userRole = (user?.role ?? "").toLowerCase();
+      if (!isUserRole(userRole)) return false;
+      return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[role];
+    },
+    [user?.role]
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      hasRole,
+      isAtLeast,
       isLoading:
         hydrating ||
         loginMutation.isPending ||
@@ -466,6 +590,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         verifyOtpMutation.isPending ||
         resendOtpMutation.isPending,
       pendingVerification,
+      pendingRoleSelection,
+      selectRole,
       login,
       signup,
       verifyOtp,
@@ -483,6 +609,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       hydrating,
       pendingVerification,
+      pendingRoleSelection,
+      selectRole,
+      hasRole,
+      isAtLeast,
       login,
       signup,
       verifyOtp,

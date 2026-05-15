@@ -12,6 +12,9 @@ import {
   updateUserByEmail,
   deleteUserByEmail,
   resendInvitation,
+  purgeInactiveUsers,
+  getInactiveUserCount,
+  changeUserRole,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
@@ -20,10 +23,14 @@ import {
   type UpdateUserResponse,
   type DeleteUserResponse,
   type ResendInvitationResponse,
+  type PurgeInactiveResult,
+  type ChangeUserRolePayload,
+  type ChangeUserRoleResponse,
 } from "@/services/super-admin/user-management/user-management.service";
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
 import { logAuditEvent } from "@/services/audit/audit.service";
+import { useAuth } from "@/context/useAuth";
 
 type SimpleQueryOptions = Omit<
   UseQueryOptions<GetUsersResponse, AxiosError<BaseApiResponse<null>>>,
@@ -42,17 +49,15 @@ export function useUserManagement(
   return useQuery<GetUsersResponse, AxiosError<BaseApiResponse<null>>>({
     queryKey: QK.list(params),
     queryFn: () => getUsers(params),
-    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
     ...options,
   });
 }
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     InviteUserResponse,
@@ -67,7 +72,7 @@ export function useInviteUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_invited", actor: "admin", resource: "user", details: { email: variables.email } });
+      logAuditEvent({ action: "user_created", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -82,6 +87,8 @@ export function useInviteUser() {
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     UpdateUserResponse,
@@ -96,7 +103,7 @@ export function useUpdateUser() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_updated", actor: "admin", resource: "user", details: { email: variables.email } });
+      logAuditEvent({ action: "user_updated", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email } });
     },
 
     onError: (error) => {
@@ -109,23 +116,63 @@ export function useUpdateUser() {
   });
 }
 
+export function useChangeUserRole() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
+
+  return useMutation<
+    ChangeUserRoleResponse,
+    AxiosError<BaseApiResponse<null>>,
+    { email: string; payload: ChangeUserRolePayload }
+  >({
+    mutationFn: ({ email, payload }) => changeUserRole(email, payload),
+
+    onSuccess: (_resp, variables) => {
+      toast.success("User role updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
+    },
+
+    onError: (error) => {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to change user role";
+      toast.error(msg);
+    },
+  });
+}
+
+export type DeleteUserVariables = { email: string; force?: boolean };
+
 export function useDeleteUser() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
 
   return useMutation<
     DeleteUserResponse,
     AxiosError<BaseApiResponse<null>>,
-    string
+    DeleteUserVariables
   >({
-    mutationFn: (email) => deleteUserByEmail(email),
+    mutationFn: ({ email, force = false }) => deleteUserByEmail(email, force),
 
-    onSuccess: (resp, email) => {
+    onSuccess: (resp, vars) => {
       toast.success(resp?.message);
       queryClient.invalidateQueries({
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ event_type: "user_deleted", actor: "admin", resource: "user", details: { email } });
+      logAuditEvent({
+        action: "user_deleted",
+        actor_email: actorEmail,
+        target_type: "user",
+        extra_data: { email: vars.email, force: vars.force ?? false },
+      });
     },
 
     onError: (error) => {
@@ -161,6 +208,70 @@ export function useResendInvitation() {
         error.response?.data?.message ||
         error.message ||
         "Failed to resend invitation";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useInactiveUserCount(enabled = false) {
+  return useQuery<number, AxiosError<BaseApiResponse<null>>>({
+    queryKey: ["super-admin", "user-management", "inactive-count"],
+    queryFn: () => getInactiveUserCount(),
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function usePurgeInactiveUsers() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
+
+  return useMutation<PurgeInactiveResult, AxiosError<BaseApiResponse<null>>>({
+    mutationFn: () => purgeInactiveUsers(),
+
+    onSuccess: (result) => {
+      if (result.total === 0) {
+        toast.info("No inactive users found to purge");
+      } else if (result.failed.length === 0) {
+        toast.success(
+          `Purged ${result.succeeded.length} inactive user(s)`
+        );
+      } else if (result.succeeded.length > 0) {
+        toast.warning(
+          `Purged ${result.succeeded.length} user(s); ${result.failed.length} failed.`
+        );
+        // Per-user failure reasons are useful for triage but don't belong in a toast.
+        console.warn("Purge failures:", result.failed);
+      } else {
+        toast.error(
+          `Failed to purge inactive users (${result.failed.length} errors)`
+        );
+        console.warn("Purge failures:", result.failed);
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+
+      logAuditEvent({
+        action: "users_bulk_purged",
+        actor_email: actorEmail,
+        target_type: "user",
+        extra_data: {
+          total: result.total,
+          succeeded_count: result.succeeded.length,
+          failed_count: result.failed.length,
+        },
+      });
+    },
+
+    onError: (error) => {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to purge inactive users";
       toast.error(msg);
     },
   });

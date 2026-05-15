@@ -18,17 +18,22 @@ import { STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
 import { getUIFlag, setUIFlag } from "@/lib/storage";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
+import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 
 export type NavItemDef = { to: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
 
+export type NavSectionDef = { label: string; items: NavItemDef[] };
+
 export type SidebarScaffoldProps = {
   navItems: NavItemDef[];
+  /** Optional grouped sections — if provided, navItems is ignored */
+  navSections?: NavSectionDef[];
   children: React.ReactNode;
   className?: string;
   expandOnPath?: string;
@@ -62,6 +67,22 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
   );
 }
 
+function MobileMenuTrigger() {
+  const { toggleSidebar, isMobile } = useSidebar();
+  if (!isMobile) return null;
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleSidebar}
+      aria-label="Open menu"
+      className="md:hidden size-11 shrink-0"
+    >
+      <Menu className="size-5" />
+    </Button>
+  );
+}
+
 function SidebarOpenObserver() {
   const { open } = useSidebar();
   React.useEffect(() => {
@@ -71,12 +92,12 @@ function SidebarOpenObserver() {
   return null;
 }
 
-export default function SidebarScaffold({ navItems, children, className, expandOnPath, renderAfterContent }: SidebarScaffoldProps) {
+export default function SidebarScaffold({ navItems, navSections, children, className, expandOnPath, renderAfterContent }: SidebarScaffoldProps) {
   const [initialSidebarOpen] = React.useState(() => {
     if (typeof window === 'undefined') return true;
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   return (
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
@@ -89,28 +110,35 @@ export default function SidebarScaffold({ navItems, children, className, expandO
           <SidebarTrigger className="shrink-0" />
         </SidebarSectionHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent className="mt-2">
-              <SidebarMenu>
-                {(() => {
-                  const groups: NavItemDef[][] = [];
-                  for (let i = 0; i < navItems.length; i += 2) {
-                    groups.push(navItems.slice(i, i + 2));
-                  }
-                  return groups.map((group, gi) => (
-                    <React.Fragment key={`group-${gi}`}>
-                      {group.map((item) => (
-                        <NavItem key={item.label} {...item} expandOnPath={expandOnPath} />
-                      ))}
-                      {/* {gi !== groups.length - 1 && (
-                        <SidebarSeparator className="!w-[80%] mx-auto my-4" />
-                      )} */}
-                    </React.Fragment>
-                  ));
-                })()}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {navSections ? (
+            navSections.map((section, si) => (
+              <SidebarGroup key={section.label}>
+                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {section.label}
+                </div>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {section.items.map((item) => (
+                      <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+                {si < navSections.length - 1 && (
+                  <SidebarSeparator className="!w-[80%] mx-auto my-2" />
+                )}
+              </SidebarGroup>
+            ))
+          ) : (
+            <SidebarGroup>
+              <SidebarGroupContent className="mt-2">
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
         </SidebarContent>
         <SidebarSeparator className="!w-[80%]" />
         <SidebarFooter>
@@ -136,11 +164,13 @@ export default function SidebarScaffold({ navItems, children, className, expandO
       <SidebarInset className={cn("", className)}>
         <div className="sticky top-0 z-20 bg-background/80 backdrop-blur">
           <div className="h-14 flex items-center gap-2 px-3">
+            <MobileMenuTrigger />
             <UserTopHeader />
           </div>
         </div>
         <div className="flex-1 p-4 md:p-6">{children}</div>
         {renderAfterContent}
+        <VoiceDeskWidget userId={user?.id} role={user?.role as string | undefined} />
       </SidebarInset>
     </SidebarProvider>
   );

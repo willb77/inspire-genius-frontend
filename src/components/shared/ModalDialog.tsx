@@ -1,6 +1,6 @@
 "use client";
 import { X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 export type ModalDialogProps = {
@@ -26,11 +26,20 @@ export default function ModalDialog({
 }: ModalDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={(className ?? "") + " p-0 overflow-hidden"} showCloseButton={false}>
+      <DialogContent
+        className={(className ?? "") + " p-0 overflow-hidden"}
+        showCloseButton={false}
+        aria-describedby={description ? "modal-desc" : undefined}
+      >
         <div className="flex items-start justify-between px-6 pt-6">
           <div>
-            <h2 className="text-lg font-semibold">{title}</h2>
-            {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
+            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+            {description && (
+              <DialogDescription id="modal-desc" className="text-sm text-muted-foreground mt-1">
+                {description}
+              </DialogDescription>
+            )}
+            {!description && <DialogDescription className="sr-only">{title}</DialogDescription>}
           </div>
           {showClose && (
             <Button
@@ -44,7 +53,7 @@ export default function ModalDialog({
             </Button>
           )}
         </div>
-        <div className="p-6 pt-4">{children}</div>
+        <div className="p-6 pt-4 overflow-y-auto max-h-[calc(100vh-12rem)]">{children}</div>
         {footer && <div className="px-6 pb-6 flex justify-end gap-2">{footer}</div>}
       </DialogContent>
     </Dialog>

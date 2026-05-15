@@ -128,7 +128,7 @@ export default function UserFormModal({
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.values(ROLES).map((role) => (
+                      {[ROLES.USER, ROLES.MANAGER, ROLES.COMPANY_ADMIN, ROLES.PRACTITIONER, ROLES.DISTRIBUTOR, ROLES.SUPER_ADMIN].map((role) => (
                         <SelectItem key={role} value={role}>
                           {ROLE_LABELS[role] ?? role}
                         </SelectItem>
@@ -171,30 +171,6 @@ export default function UserFormModal({
             />
           )}
 
-          {mode === "edit" && allowStatusEdit !== false && (
-            <FormField
-              control={control}
-              name="status"
-              rules={User_FORM_RULES.status}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="block text-xs">Status</FormLabel>
-                  <FormControl>
-                    <Select value={String(field.value || "Active")} onValueChange={(v) => field.onChange(v as UserFormValues["status"])}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Deactivated">Deactivated</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
         </>
       )}
     </ModalFormFrame>

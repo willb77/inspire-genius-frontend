@@ -35,7 +35,8 @@ export function useCoachData(params: { page: number; page_size: number }) {
   }, [gendersResp])
 
   const agents = useMemo<Agent[]>(() => {
-    const list = (agentsResp as { data?: { agents?: Agent[] } } | undefined)?.data?.agents ?? []
+    const raw = (agentsResp as { data?: Agent[] | { agents?: Agent[] } } | undefined)?.data
+    const list = Array.isArray(raw) ? raw : (raw as { agents?: Agent[] } | undefined)?.agents ?? []
     return Array.isArray(list) ? list : []
   }, [agentsResp])
 

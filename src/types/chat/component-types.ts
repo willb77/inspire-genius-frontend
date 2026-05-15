@@ -41,6 +41,8 @@ export interface ChatWindowProps {
   onCloseAudioPlayer?: () => void;
   setShowAudioPlayer?: (open: boolean) => void;
   showAudioPlayer?: boolean;
+  // Replay voice for a specific assistant message (TTS at queue tail).
+  onReplayMessage?: (text: string) => void;
 }
 
 // ChatHistory component props
@@ -53,6 +55,10 @@ export interface ChatHistoryProps {
   onCreateNewConversation?: () => void;
   statusText?: string;
   isLoading?: boolean;
+  // When true and groups are empty, surface an error state instead of empty.
+  // Distinguishes "backend failed to load history" from "user has no conversations".
+  isError?: boolean;
+  errorMessage?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
 }

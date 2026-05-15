@@ -7,24 +7,25 @@
 - Tests: `npm run test` (watch mode), `npm run test:ci` (single run)
 
 ## Deployment
-- CI/CD via GitLab CI (`.gitlab-ci.yml`)
+- CI/CD via GitHub Actions (`.github/workflows/ci-deploy.yml`)
 - Deploys only from `development` branch
-- Pipeline: build → SonarQube scan → deploy to AWS S3 + CloudFront invalidation
-- Environment variables injected at build time via CI variables
+- Pipeline: build → unit tests → deploy to AWS S3 + CloudFront invalidation
+- Environment variables injected at build time via GitHub Secrets
 
-## Adding a New Super Admin Page
-1. Create page component in `src/pages/super-admin/`
-2. Wrap with `<SuperAdminLayout>`
-3. Add route constant to `ROUTES.SUPER_ADMIN` in `src/constants/routes.ts`
+## Adding a New Role-Specific Page
+1. Create page component in `src/pages/{role}/` (e.g., `src/pages/manager/`, `src/pages/practitioner/`)
+2. Wrap with the role's layout (e.g., `<ManagerLayout>`, `<PractitionerLayout>`) — thin wrapper around `AppShell`
+3. Add route constant to `ROUTES.{ROLE}` in `src/constants/routes.ts`
 4. Add route entry in `src/routes.tsx`
-5. Add nav item to `NAV_ITEMS` in `src/layouts/SuperAdminLayout.tsx`
+5. Add nav item to `NAV_ITEMS_BY_ROLE[role]` in `src/constants/navigation.ts`
 
-## Adding a New User Page
-1. Create page component in `src/pages/user/`
-2. Wrap with `<UserLayout>`
-3. Add route constant to `ROUTES` in `src/constants/routes.ts`
-4. Add route entry in `src/routes.tsx`
-5. Add nav item in `src/layouts/UserLayout.tsx`
+## The 6 Roles
+- `user` — end user / employee
+- `manager` — team lead with direct-report visibility
+- `company-admin` — organization-level admin
+- `practitioner` — PRISM-accredited coach
+- `distributor` — regional PRISM credit wholesaler
+- `super-admin` — platform owner
 
 ## Documentation Updates
 - Update `change_log.md` when making notable changes

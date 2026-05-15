@@ -8,11 +8,14 @@ import { FiMail } from "react-icons/fi";
 import { useNavigate, Link } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { useRequestPasswordReset } from "@/hooks/auth/useRequestPasswordReset";
+import { useTranslation } from "react-i18next";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
   const resetMutation = useRequestPasswordReset();
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,18 +30,18 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
-      leftTitleOne="Upload. Ask."
-      leftTitleTwo="Analyze. Achieve."
-      subTitle="Reset your password in a few steps."
+      leftTitleOne={t('forgotPassword.leftTitleOne')}
+      leftTitleTwo={t('forgotPassword.leftTitleTwo')}
+      subTitle={t('forgotPassword.leftSubtitle')}
     >
       <AuthHeader
-        title="Forgot Password"
-        subtitle="Enter your email and we'll send you a verification code"
+        title={t('forgotPassword.title')}
+        subtitle={t('forgotPassword.subtitle')}
       />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
+          <Label htmlFor="email">{t('forgotPassword.email')}</Label>
           <IconInput
             id="email"
             type="email"
@@ -55,14 +58,14 @@ export default function ForgotPassword() {
           className="w-full mt-2"
           disabled={resetMutation.isPending || !email}
         >
-          {resetMutation.isPending ? "Sending..." : "Send Link"}
+          {resetMutation.isPending ? t('forgotPassword.sending') : t('forgotPassword.submit')}
         </Button>
       </form>
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        Remembered your password?{" "}
+        {t('forgotPassword.remembered')}{" "}
         <Link className="underline" to={ROUTES.LOGIN}>
-          Log In
+          {tc('logIn')}
         </Link>
       </p>
     </AuthLayout>

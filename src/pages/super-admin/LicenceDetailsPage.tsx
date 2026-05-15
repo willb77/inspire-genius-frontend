@@ -37,12 +37,17 @@ export default function LicenceDetailsPage() {
     return "bg-gray-100 text-gray-700 border-transparent";
   };
 
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string) => {
+    // Append T00:00:00 to date-only strings so they parse as local time, not UTC
+    const d = dateString.includes("T")
+      ? new Date(dateString)
+      : new Date(dateString + "T00:00:00");
+    return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
+  };
 
   return (
     <SuperAdminLayout>

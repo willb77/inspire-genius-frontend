@@ -1,0 +1,75 @@
+{
+  "chat": {
+    "placeholder": "अपना संदेश टाइप करें...",
+    "send": "भेजें",
+    "newSession": "नया सत्र"
+  },
+  "sessions": {
+    "title": "सत्र",
+    "empty": "अभी तक कोई सत्र नहीं"
+  },
+  "agents": {
+    "title": "एजेंट"
+  },
+  "feedback": {
+    "feedback": "प्रतिक्रिया",
+    "helpful": "सहायक",
+    "notHelpful": "असहायक",
+    "comment": "टिप्पणी जोड़ें",
+    "positive": "सकारात्मक",
+    "negative": "नकारात्मक",
+    "neutral": "तटस्थ",
+    "allRatings": "सभी रेटिंग",
+    "fiveStars": "5 सितारे",
+    "fourStars": "4 सितारे",
+    "threeStars": "3 सितारे",
+    "twoStars": "2 सितारे",
+    "oneStar": "1 सितारा",
+    "history": "प्रतिक्रिया इतिहास",
+    "reviewDescription": "AI कोच की प्रतिक्रियाओं पर आपने जो सभी फ़ीडबैक दिया है उसकी समीक्षा करें।",
+    "totalFeedback": "कुल प्रतिक्रिया",
+    "avgRating": "औसत रेटिंग",
+    "fiveStarCount": "5-सितारा",
+    "oneStarCount": "1-सितारा",
+    "loadingFeedback": "प्रतिक्रिया लोड हो रही है...",
+    "failedLoadFeedback": "प्रतिक्रिया लोड करने में विफल। कृपया बाद में पुनः प्रयास करें।",
+    "results": "परिणाम",
+    "result": "परिणाम"
+  },
+  "practitioner": {
+    "dashboard": "प्रैक्टिशनर डैशबोर्ड",
+    "welcomeBack": "फिर से स्वागत है, {name}। आज {sessions} सत्र निर्धारित हैं और इस सप्ताह {followups} फॉलो-अप बाकी हैं।",
+    "activeClients": "सक्रिय ग्राहक",
+    "creditsRemaining": "शेष क्रेडिट",
+    "sessionsThisMonth": "इस माह के सत्र",
+    "avgClientSatisfaction": "औसत ग्राहक संतुष्टि",
+    "todaysSessions": "आज के सत्र",
+    "confirmed": "पुष्टि की गई",
+    "clientPortfolio": "ग्राहक पोर्टफोलियो",
+    "clientName": "ग्राहक का नाम",
+    "organization": "संगठन",
+    "prismScore": "PRISM स्कोर",
+    "sessions": "सत्र",
+    "lastSession": "पिछला सत्र",
+    "followUpsDueThisWeek": "इस सप्ताह की फॉलो-अप समय-सीमा",
+    "creditUsage": "क्रेडिट उपयोग",
+    "prismAssessment": "PRISM मूल्यांकन",
+    "completeDescription": "व्यक्तिगत कोचिंग अंतर्दृष्टि अनलॉक करने के लिए अपना PRISM ब्रेन मैपिंग पूरा करें",
+    "activeAssessment": "सक्रिय मूल्यांकन",
+    "report": "रिपोर्ट",
+    "assessmentHistory": "मूल्यांकन इतिहास"
+  },
+  "quickActions": {
+    "chatWithMeridian": "Meridian से चैट करें",
+    "uploadDocument": "दस्तावेज़ अपलोड करें",
+    "viewPrismReport": "PRISM रिपोर्ट देखें",
+    "setNewGoal": "नया लक्ष्य निर्धारित करें"
+  },
+  "prism": {
+    "assessment": "PRISM मूल्यांकन",
+    "completeDescription": "व्यक्तिगत कोचिंग अंतर्दृष्टि अनलॉक करने के लिए अपना PRISM ब्रेन मैपिंग पूरा करें",
+    "activeAssessment": "सक्रिय मूल्यांकन",
+    "report": "रिपोर्ट",
+    "assessmentHistory": "मूल्यांकन इतिहास"
+  }
+}
