@@ -1,5 +1,8 @@
 import { agentApi } from "@/lib/agentApi"
 import type {
+  AskList,
+  AskRequest,
+  AskResponse,
   ConversationDetail,
   ConversationListFilters,
   ConversationsList,
@@ -27,6 +30,26 @@ export async function getConversation(sessionId: string): Promise<ConversationDe
 export async function getTurn(turnId: string): Promise<TurnDetail> {
   const { data } = await agentApi.get<TurnDetail>(
     `${BASE}/turns/${encodeURIComponent(turnId)}`
+  )
+  return data
+}
+
+// ─── Phase 2 — Ask follow-ups ───────────────────────────────────────
+
+export async function askTurn(
+  turnId: string,
+  body: AskRequest
+): Promise<AskResponse> {
+  const { data } = await agentApi.post<AskResponse>(
+    `${BASE}/turns/${encodeURIComponent(turnId)}/ask`,
+    body
+  )
+  return data
+}
+
+export async function listTurnAsks(turnId: string): Promise<AskList> {
+  const { data } = await agentApi.get<AskList>(
+    `${BASE}/turns/${encodeURIComponent(turnId)}/asks`
   )
   return data
 }
