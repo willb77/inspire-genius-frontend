@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1101</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1102</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,27 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-15] — Wesley follow-up cleanup: agent-engine GRANT verified unnecessary, magic_link alembic shipped (PR #122)</h3>
+        <p>Continuation of the 2026-05-13 wesley/chat-upload deep-debug session, closing out the original 5-item follow-up list.</p>
+        <h4>Verified (no action needed)</h4>
+        <ul>
+          <li><strong>Agent-engine canonical-sub remap GRANT</strong> — investigated whether the same <code>permission denied for table users</code> warning that broke doc-service yesterday also affects agent-engine. Confirmed agent-engine task def connects as <code>ig_admin</code> (Aurora master role) which already has SELECT on all of <code>public.*</code>. CloudWatch <code>/ecs/ig-dev-agent-engine</code> shows <code>INFO:app.auth_deps:Remapping sub for willb77@3pp.com: 346854a8-… -&gt; 3468e498-…</code> firing successfully — zero <code>permission denied</code> hits in the last 24 h. No GRANT applied.</li>
+          <li><strong>Frontend audit/stats 403 fix is live</strong> — PR #63 (merged 2026-05-13 22:38) shipped via the <code>development</code> auto-deploy at 2026-05-14 18:56 UTC. Non-admin logins no longer call <code>/v1/audit/stats</code>.</li>
+        </ul>
+        <h4>Added (PR #122)</h4>
+        <ul>
+          <li><code>services/auth-service/alembic/versions/a4b1c2d3e4f5_add_magic_link_to_auth_provider_enum.py</code> — first alembic migration in that service's <code>versions/</code> directory. Idempotent <code>ALTER TYPE public.auth_provider_enum ADD VALUE IF NOT EXISTS 'magic_link'</code>. Downgrade is a no-op (Postgres can't drop enum values). The schema change had been applied live on dev 2026-05-14 via the migration-runner Lambda — this file is reproducible source of truth for fresh Aurora bootstraps.</li>
+          <li>Detect-secrets pre-commit hook flagged the alembic revision-id hex <code>a4b1c2d3e4f5</code> as a potential credential — added <code># pragma: allowlist secret  # alembic revision id, not a credential</code> to suppress. Standard pattern for hex IDs that look like hashes.</li>
+        </ul>
+        <h4>Status of original follow-up list</h4>
+        <ul>
+          <li>1. Agent-engine GRANT — <strong>not needed</strong> (verified above)</li>
+          <li>2. <code>magic_link</code> enum + wesley row + alembic — <strong>done</strong> (live yesterday, PR #122 merged today at 05:08 UTC, commit <code>8009029f</code>)</li>
+          <li>3. Frontend audit/stats 403 — <strong>live</strong> via 18:56 UTC deploy</li>
+          <li>4. Orphan-docs reupload comms — user-facing, out of code scope</li>
+          <li>5. <code>update_project_log.py</code> hook — user opened it in IDE but never described an action; left alone</li>
+        </ul>
 
         <h3>[2026-05-14] — Explainability Phase 1: super-admin read-only conversation + turn views (PR #110 + frontend PR #67)</h3>
         <p>Phase 1 of <code>IG_Super_Admin_Explainability_Plan.docx</code> §§4-6. Two PRs (backend + frontend) opened — neither merged. Builds on Phase 0 (PR #106) which added the <code>chat_messages.metadata</code> JSONB column.</p>
@@ -2461,6 +2482,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1102 [follow-up cleanup: verify agent-engine GRANT, ship magic_link alembic (PR #122)]</div>
+          <div class="prompt-text">Continuation of the wesley/chat-upload deep-debug session. Three explicit asks: (1) "have any of these been done in other terminals?" — surveyed both repos; found PR #103 (RAG retriever scopes by user_id) shipped today, which would make the doc-service GRANT applied yesterday more load-bearing. (2) "apply the agent-engine GRANT" — investigated and found NOT NEEDED: agent-engine connects as `ig_admin` (Aurora master), which already has SELECT on everything; CloudWatch logs `INFO:app.auth_deps:Remapping sub for willb77@3pp.com: 346854a8-… -> 3468e498-…` confirm the canonical-sub remap fires successfully there. No GRANT applied. (3) "do #2" — added `magic_link` to `auth_provider_enum` live (`ALTER TYPE … ADD VALUE IF NOT EXISTS`) + flipped wesley's `users.auth_provider` from `cognito` to `magic_link`. (4) "add the alembic migration" — wrote services/auth-service/alembic/versions/a4b1c2d3e4f5_add_magic_link_to_auth_provider_enum.py (first alembic file in that service's versions dir). Detect-secrets hook flagged the revision-id hex; added `# pragma: allowlist secret` comment. PR #122 opened + merged (squash, commit 8009029f at 05:08 UTC); 28+ checks green, only cdk diff still running at merge time (no CDK touched so safe). Original 5-item follow-up list now down to 1 cosmetic item.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Prompt #1101 [run P1 + P2 from MERIDIAN_REVIEW_PROMPTS — observability final stretch]</div>
           <div class="prompt-text">run p1, p2. Closes the last two MERIDIAN_REVIEW_PROMPTS.md items gating the per-message Session-Info panel. P1: assistant_message_id pre-minted in handle_chat_message + handle_chat_message_lambda + REST /v1/agents/chat, stashed in context.metadata, threaded into _persist_chat_message_if_enabled (now returns the persisted id + accepts caller-supplied message_id), echoed in WS `complete` frame and ChatResponse.metadata; the three base_agent record_response call sites pass it. Frontend MeridianChat.tsx reads it at three call sites (WS, REST, voice REST) and uses as React message key. P2: handle_disconnect fires observability_collector.finalize_session as fire-and-forget; finalize_session made idempotent via existing-row check. PR #123 (monorepo) + PR #78 (frontend) merged. Auto-triggered agent-engine-image.yml image rebuild + ECS roll + ci-deploy.yml.</div>
