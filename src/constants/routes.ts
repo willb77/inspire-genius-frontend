@@ -14,6 +14,7 @@ export const ROUTES = {
   ANALYTICS: "/analytics",
   MERIDIAN_CHAT: "/meridian/chat",
   PRISM_ASSESSMENT: "/prism-assessment",
+  /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
   SUPER_ADMIN: {
     BASE: "/super-admin",
@@ -44,6 +45,8 @@ export const ROUTES = {
     EXPLAINABILITY: "/super-admin/explainability",
     EXPLAINABILITY_CONVERSATION: "/super-admin/explainability/c/:sessionId",
     EXPLAINABILITY_TURN: "/super-admin/explainability/c/:sessionId/t/:turnId",
+    /** Wave 2 Lane 2.A (P7.1) — formerly top-level `/diagnostic-chat`; renamed and moved under super-admin. */
+    AGENT_TRACE_CONSOLE: "/super-admin/agent-trace-console",
   },
   MANAGER: {
     BASE: "/manager",

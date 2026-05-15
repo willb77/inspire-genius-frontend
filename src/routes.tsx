@@ -160,7 +160,9 @@ export const routes: RouteObject[] = [
       { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
       { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
       { path: "/dev/process-builder", element: withSuspense(<ProcessBuilderPage />) },
-      { path: "/diagnostic-chat", element: withSuspense(<DiagnosticChat />) },
+      // Wave 2 Lane 2.A (P7.1) — `/diagnostic-chat` is now a redirect to the super-admin-gated route.
+      // The old path is kept public so any external link still lands somewhere useful.
+      { path: "/diagnostic-chat", element: <Navigate to="/super-admin/agent-trace-console" replace /> },
     ],
   },
 
@@ -228,6 +230,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/explainability", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId", element: withSuspense(<Explainability />) },
       { path: "/super-admin/explainability/c/:sessionId/t/:turnId", element: withSuspense(<Explainability />) },
+      // Wave 2 Lane 2.A (P7.1) — formerly `/diagnostic-chat`. Renamed to "Agent Trace Console" and gated to super-admin.
+      { path: "/super-admin/agent-trace-console", element: withSuspense(<DiagnosticChat />) },
       { path: "/super-admin/process-builder", element: <Navigate to="/super-admin/agent-trainer/workflows" replace /> },
 
       // Agent Trainer routes

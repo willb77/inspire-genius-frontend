@@ -51,7 +51,8 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     agentEngineEnabled
       ? { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian" }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-    { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
+    // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
+    // admin-only route at /super-admin/agent-trace-console.
     { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
     { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
@@ -81,7 +82,8 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
-  { to: ROUTES.DIAGNOSTIC_CHAT, icon: Network, label: "Diagnostic Chat" },
+  // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
+  { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
