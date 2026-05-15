@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom"
 
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
+import { AskBox } from "@/components/explainability/AskBox"
 import { ConversationList } from "@/components/explainability/ConversationList"
 import { TurnTimeline } from "@/components/explainability/TurnTimeline"
 import { TurnAnalysisCard } from "@/components/explainability/TurnAnalysisCard"
@@ -19,7 +20,10 @@ export default function Explainability() {
           sessionId={params.sessionId}
           selectedTurnId={params.turnId}
         />
-        <TurnAnalysisCard className="col-span-3" turnId={params.turnId} />
+        <div className="col-span-3 flex h-full flex-col overflow-hidden border-l">
+          <TurnAnalysisCard className="flex-1 border-l-0" turnId={params.turnId} />
+          <AskBox turnId={params.turnId} />
+        </div>
       </div>
     </SuperAdminLayout>
   )

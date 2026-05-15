@@ -125,3 +125,35 @@ export type ConversationListFilters = {
   page?: number
   limit?: number
 }
+
+// ─── Phase 2 — Ask follow-ups ───────────────────────────────────────
+
+export type AskRecord = {
+  id: string
+  turn_id: string
+  session_id: string
+  asked_by: string
+  question: string
+  answer: string
+  model_used: string
+  cost_usd: number
+  created_at: string
+}
+
+export type AskResponse = {
+  status: boolean
+  ask: AskRecord
+  remaining_hour: number
+  remaining_day: number
+}
+
+export type AskList = {
+  status: boolean
+  turn_id: string
+  total: number
+  data: AskRecord[]
+}
+
+export type AskRequest = {
+  question: string
+}
