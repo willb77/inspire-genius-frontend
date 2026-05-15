@@ -42,6 +42,7 @@ export const ROUTES = {
     PRISM_MANAGEMENT: "/super-admin/prism-management",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
+    RESEARCH_LIBRARY: "/super-admin/research-library",
     EXPLAINABILITY: "/super-admin/explainability",
     EXPLAINABILITY_CONVERSATION: "/super-admin/explainability/c/:sessionId",
     EXPLAINABILITY_TURN: "/super-admin/explainability/c/:sessionId/t/:turnId",
