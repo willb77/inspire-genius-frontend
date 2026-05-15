@@ -1,3 +1,30 @@
+## [2026-05-15] — P2 batch: pagination + cache invalidation + CW alarm + startup schema check (PRs #130 + frontend #80)
+
+Bundles four MERIDIAN_REVIEW_PROMPTS.md P2 items into one agent-engine image rebuild + one CDK deploy + one frontend deploy.
+
+### Added
+- `services/agent-engine/app/main.py:lifespan` — schema-drift health check after `MemoryManager` init. `chat_messages` missing any Phase C writer column (`message_id` / `session_id` / `role` / `agent_name` / `system` / `writer` / `created_at`) raises CRITICAL + refuses to start. `response_observability` / `session_observability` / `observability_rollups` missing logs WARNING + sets `app.state.observability_enabled = False` so the collector can fast-path skip writes in degraded mode. Both P0s in the 2026-05-13 review would have surfaced at boot instead of at user-impact time with this check in place.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — `logs.MetricFilter` on `/ecs/{stackPrefix}-agent-engine` counting the literal `"chat_message_repository.insert failed"` log line + `cloudwatch.Alarm` firing at >10 occurrences in any 5-minute window, routed to existing `${stackPrefix}-agent-engine-alarms` SNS topic. Catches the next FK violation / asyncpg type mismatch in minutes, not the hours the 2026-05-12 Magic-Auth FK debacle took.
+
+### Changed
+- `services/agent-engine/app/routes/conversations.py:list_conversations` — SQL-side pagination. Outer `GROUP BY` query carries `LIMIT`/`OFFSET` + `HAVING` (exclude sentinel-only sessions at the DB). Separate cheap `COUNT(*)` for `total_count`. `search=…` still falls back to load-then-filter (rare path, bounded by user's message volume; title derivation lives in correlated subqueries that don't trivially fit a WHERE clause).
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx` — `useQueryClient()` hoisted ahead of `onResponse` so the WS complete-frame handler can call `queryClient.invalidateQueries({queryKey: ["agent","conversation"], exact: false})`. Fresh chats now appear in History within ~100-300ms (refetch RTT) instead of waiting for the `staleTime: 30_000` clock.
+
+### Shipped
+- **PR #130** (`willb77/inspire-genius`, branch `feat/p2-batch/pagination-cache-alarm-schema-check`) — squash-merged. 3 files / 168 insertions / 6 deletions.
+- **Frontend PR #80** (`willb77/inspire-genius-frontend`, branch `feat/p2/conversation-list-cache-invalidate-on-complete`) — squash-merged. 1 file / 19 insertions.
+- Auto-triggered:
+  - `agent-engine-image.yml` (image rebuild + ECS roll) — run 25903854094.
+  - `ci-deploy.yml` (frontend → S3 + CloudFront) — run 25903856275.
+- Manual:
+  - `cdk-deploy.yml` workflow_dispatch (`environment=dev stack=ig-dev-agent-engine dry_run=false`) — run 25903872727. Lands the CW MetricFilter + Alarm.
+
+### Cross-ref
+- `MERIDIAN_REVIEW_2026-05-13.md` cross-cutting concerns.
+- `MERIDIAN_REVIEW_PROMPTS.md` — "P2 — Pagination on conversation list", "P2 — Cache invalidation on WS complete", "P2 — CloudWatch alarm on chat_message_repository.insert failed", "P2 — Startup schema check in agent-engine lifespan".
+
+---
+
 ## [2026-05-15] — Wesley follow-up cleanup: agent-engine GRANT verified unnecessary, magic_link alembic shipped (PR #122)
 
 Continuation of the 2026-05-13 wesley/chat-upload deep-debug session, closing out the 5-item follow-up list I'd left at session end.

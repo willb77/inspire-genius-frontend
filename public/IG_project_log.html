@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1102</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1103</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2482,6 +2482,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1103 [run the next P2 batch — pagination + cache + CW alarm + startup schema check]</div>
+          <div class="prompt-text">Bundles 4 MERIDIAN_REVIEW_PROMPTS.md P2 items. SQL-side pagination on /v1/chat/conversations (LIMIT/OFFSET + HAVING in the GROUP BY query + separate COUNT). Frontend WS-complete invalidateQueries({queryKey: ["agent","conversation"]}) so fresh chats appear in History within ~100-300ms (refetch RTT) instead of waiting for 30s staleTime. CloudWatch MetricFilter + Alarm on "chat_message_repository.insert failed" log line (>10 in 5 min → SNS). Startup schema check in lifespan: chat_messages Phase C columns missing → CRITICAL + refuse to start; observability tables missing → WARNING + app.state.observability_enabled=False for degraded mode. PR #130 (monorepo, 168+/6-) + PR #80 (frontend) merged. Auto-triggered agent-engine image rebuild + ECS roll + frontend ci-deploy.yml. Manual cdk-deploy.yml workflow_dispatch for ig-dev-agent-engine (run 25903872727) to land the alarm.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Prompt #1102 [follow-up cleanup: verify agent-engine GRANT, ship magic_link alembic (PR #122)]</div>
           <div class="prompt-text">Continuation of the wesley/chat-upload deep-debug session. Three explicit asks: (1) "have any of these been done in other terminals?" — surveyed both repos; found PR #103 (RAG retriever scopes by user_id) shipped today, which would make the doc-service GRANT applied yesterday more load-bearing. (2) "apply the agent-engine GRANT" — investigated and found NOT NEEDED: agent-engine connects as `ig_admin` (Aurora master), which already has SELECT on everything; CloudWatch logs `INFO:app.auth_deps:Remapping sub for willb77@3pp.com: 346854a8-… -> 3468e498-…` confirm the canonical-sub remap fires successfully there. No GRANT applied. (3) "do #2" — added `magic_link` to `auth_provider_enum` live (`ALTER TYPE … ADD VALUE IF NOT EXISTS`) + flipped wesley's `users.auth_provider` from `cognito` to `magic_link`. (4) "add the alembic migration" — wrote services/auth-service/alembic/versions/a4b1c2d3e4f5_add_magic_link_to_auth_provider_enum.py (first alembic file in that service's versions dir). Detect-secrets hook flagged the revision-id hex; added `# pragma: allowlist secret` comment. PR #122 opened + merged (squash, commit 8009029f at 05:08 UTC); 28+ checks green, only cdk diff still running at merge time (no CDK touched so safe). Original 5-item follow-up list now down to 1 cosmetic item.</div>
