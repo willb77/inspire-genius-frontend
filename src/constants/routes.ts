@@ -89,6 +89,10 @@ export const ROUTES = {
     PRISM_CLIENTS: "/practitioner/prism-clients",
     ANALYTICS: "/practitioner/analytics",
     SETTINGS: "/practitioner/settings",
+    // Wave 4 Lane 4.D (P7.2) — task-agent forms mirrored from manager.
+    JOB_BLUEPRINT: "/practitioner/job-blueprint",
+    INTERVIEW_PREP: "/practitioner/interview-prep",
+    TEAM_COMPOSITION: "/practitioner/team-composition",
   },
   DISTRIBUTOR: {
     BASE: "/distributor",
