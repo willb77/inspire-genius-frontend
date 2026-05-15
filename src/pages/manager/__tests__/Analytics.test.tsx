@@ -27,6 +27,15 @@ jest.mock("@/components/dashboard/PlaceholderBanner", () => ({
   default: () => <div data-testid="placeholder-banner" />,
 }));
 
+// Wave 3 Lane 3.A — mock CostBoard so its internal hooks (which need a
+// QueryClient) don't run inside this test. The mount is asserted separately.
+jest.mock("@/components/super-admin/CostBoard", () => ({
+  __esModule: true,
+  default: ({ scope }: { scope: string }) => (
+    <div data-testid={`cost-board-mock-${scope}`} />
+  ),
+}));
+
 jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
@@ -109,6 +118,11 @@ describe("ManagerAnalytics", () => {
     expect(
       screen.getByTestId("data-card-admin:manager.timeToHire")
     ).toBeInTheDocument();
+  });
+
+  it("mounts the dept-scoped CostBoard (Wave 3 Lane 3.A)", () => {
+    render(<ManagerAnalytics />);
+    expect(screen.getByTestId("cost-board-mock-dept")).toBeInTheDocument();
   });
 
   it("renders chart components", () => {
