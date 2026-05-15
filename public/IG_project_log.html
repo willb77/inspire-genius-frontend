@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1099</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1101</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2461,6 +2461,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1101 [run P1 + P2 from MERIDIAN_REVIEW_PROMPTS — observability final stretch]</div>
+          <div class="prompt-text">run p1, p2. Closes the last two MERIDIAN_REVIEW_PROMPTS.md items gating the per-message Session-Info panel. P1: assistant_message_id pre-minted in handle_chat_message + handle_chat_message_lambda + REST /v1/agents/chat, stashed in context.metadata, threaded into _persist_chat_message_if_enabled (now returns the persisted id + accepts caller-supplied message_id), echoed in WS `complete` frame and ChatResponse.metadata; the three base_agent record_response call sites pass it. Frontend MeridianChat.tsx reads it at three call sites (WS, REST, voice REST) and uses as React message key. P2: handle_disconnect fires observability_collector.finalize_session as fire-and-forget; finalize_session made idempotent via existing-row check. PR #123 (monorepo) + PR #78 (frontend) merged. Auto-triggered agent-engine-image.yml image rebuild + ECS roll + ci-deploy.yml.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-14 — Prompt #1099 [P0 observability tables migration — applied + verified]</div>
           <div class="prompt-text">do P0 obs tables migration. Wrote services/migration-runner/migrations/phase_e_r24_observability_tables.sql mirroring app/observability/models.py — three tables (response_observability, session_observability, observability_rollups) all with IF NOT EXISTS. Invoked migration-runner: 11/11 statements succeeded. information_schema confirms all three tables now in inspire_genius.public. Reader smoke: GET /v1/observability/sessions/test-session-no-rows/responses → HTTP 200 [] (real table query, not the PR #89 graceful-empty catch). PR #119 merged. Tables currently empty; ObservabilityCollector.record_response will populate response_observability on next Meridian chat, Meridian.respond's farewell detector populates session_observability on session end.</div>
@@ -24163,6 +24167,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-14 — Activity #act-wave1-all-lanes [Wave 1 lanes 1.A-1.E opened as 5 PRs]</div>
           <div class="prompt-text">All 5 Wave 1 lanes shipped as parallel feature branches with PRs against inspire-genius-frontend:development. PR #69 (Lane 1.B, P3.3, company-admin Analytics → ChartKit), PR #70 (Lane 1.C, P3.4, super-admin Analytics tab → ChartKit — Audit/ProjectLog/Sitemap tabs unchanged), PR #71 (Lane 1.D, P3.5, practitioner + distributor Analytics → ChartKit, single PR per v1 plan), PR #72 (Lane 1.A, P3.2, manager Analytics → ChartKit, SOFT HOLD on merge per plan §4.2 until R-2.6 RBAC evidence captured; Time to Hire kept as direct recharts since the kit has no horizontal-bar variant), PR #73 (Lane 1.E, P6.2, DashboardFrame adopt across 5 of 6 role dashboards — company-admin/manager/practitioner/distributor/user-Home; super-admin Dashboard intentionally excluded due to custom non-gradient header + tabbed layout incompatibility with DashboardFrame's gradient banner; tracked as Wave 5 follow-up). All branches off origin/development tip with no inter-lane file conflicts. Verification per lane: npx tsc --noEmit clean, npx eslint clean on touched files, targeted Jest suites all green (7/7 + 6/6 + 12/12 + 6/6 + 42/42 = 73 tests total). Lane 1.E also passed npm run build.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Prompt #1100 [merge PR #72 + fire 2.A + 3.A + 3.B]</div>
+          <div class="prompt-text">r-2.6, r-2.10 have been completed. please check. → merge PR #72 and fire 2.A + 3.A + 3.B.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-15 — Activity #act-wave1-finalize-wave2-3-batch [Wave 1 closed + Wave 2/3 batch shipped]</div>
+          <div class="prompt-text">Wave 1 fully closed (R-2.6 RBAC audit confirmed done, so Lane 1.A soft hold per plan §4.2 lifted) and the first Wave 2/3 batch landed in parallel. Merged 4 frontend PRs: PR #72 Lane 1.A P3.2 manager Analytics → ChartKit (merge commit 19e61dfb); PR #74 Lane 2.A P7.1 Diagnostic Chat → super-admin "Agent Trace Console" — public /diagnostic-chat now `<Navigate>` redirect to /super-admin/agent-trace-console gated by ProtectedRoute, removed from user nav, super-admin nav renamed (merge commit c7a6e81c); PR #75 Lane 3.A P7.4 manager Cost Slice — useDeptCost now mirrors useOrgCost wrapping useDashboardMetrics(deptId), `<CostBoard scope="dept"/>` mounted on manager Analytics below Time to Hire, data-pending banner persists until R-2.4 adds dept filtering (merge commit f2f71aac); PR #76 Lane 3.B P7.5 shared `<ObservabilityBoard scope="platform" | "org"/>` panel + per-scope hooks (usePlatformObservability / useOrgObservability) — mirror of the CostBoard pattern, replaces duplicated KPI + Top Agents blocks on super-admin Observability + company-admin Observability; pages now own only header chrome (merge commit 25c66078). All 4 PRs had clean CI (Build / Trivy / Audit / Unit Tests 15-17 min each); zero inter-lane file conflicts. Wave 1: 5/5 done. Wave 2: 1/2 done (Lane 2.B now unblocked by R-2.10 closure). Wave 3: 2/3 done (Lane 3.C is evidence-only retest). Next runnable batch: Wave 2.B + the full Wave 4 fan-out (5 lanes: 4.A/4.B/4.C manager hubs, 4.D TaskAgent forms, 4.E Practitioner Onboarding Wizard) — all unblocked by R-2.10 closure.</div>
         </div>
 </div>
 
