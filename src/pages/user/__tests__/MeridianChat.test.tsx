@@ -65,9 +65,12 @@ const mockWsDisconnect = jest.fn();
 const mockSendMessage = jest.fn();
 const mockStartRecording = jest.fn();
 const mockStopRecording = jest.fn();
+// Mutable connection flag so individual tests can simulate "WS open" vs
+// "WS not yet open" without re-mocking the module.
+let mockIsConnected = true;
 jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
   useMeridianWebSocket: () => ({
-    isConnected: false,
+    isConnected: mockIsConnected,
     isConnecting: false,
     isProcessing: false,
     error: null,
@@ -209,7 +212,7 @@ jest.mock("react-router-dom", () => ({
 
 /* ---- Imports (after mocks) ---- */
 
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
@@ -276,11 +279,12 @@ describe("MeridianChat", () => {
   });
 });
 
-describe("MeridianChat — file_ids passing", () => {
+describe("MeridianChat — text send via WebSocket", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAgentEngine.mockReturnValue(true);
     capturedChatWindowProps = {};
+    mockIsConnected = true;
   });
 
   it("passes onSendText callback to ChatWindow", () => {
@@ -289,38 +293,58 @@ describe("MeridianChat — file_ids passing", () => {
     expect(typeof capturedChatWindowProps.onSendText).toBe("function");
   });
 
-  it("REST chat call excludes file_ids when selectedFileIds is empty", async () => {
-    // Mock agentApi.post to return a valid response
+  it("routes text send through WS sendMessage, not agentApi.post", async () => {
+    // Regression guard for the 2026-05-18 API GW 30s integration-cap
+    // outage: REST POST /v1/agents/chat must never carry text chat.
     const { agentApi } = jest.requireMock("@/lib/agentApi") as {
       agentApi: { post: jest.Mock; get: jest.Mock; defaults: { headers: { common: Record<string, unknown> } } };
     };
-    agentApi.post.mockResolvedValue({
-      data: { content: "Hello!", agent: "meridian" },
-    });
 
     renderPage();
 
-    // Trigger onSendText — selectedFileIds starts as []
     const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
     await act(async () => {
       onSendText("Hello Meridian");
-      // Allow the async IIFE inside onSendText to complete
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 0));
     });
 
-    await waitFor(() => {
-      expect(agentApi.post).toHaveBeenCalledWith(
-        "/v1/agents/chat",
-        expect.objectContaining({
-          message: "Hello Meridian",
-          session_id: expect.any(String),
-        }),
-        expect.any(Object),
-      );
+    expect(mockSendMessage).toHaveBeenCalledTimes(1);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      "Hello Meridian",
+      expect.objectContaining({ session_id: expect.any(String) }),
+      [],
+    );
+    expect(agentApi.post).not.toHaveBeenCalledWith(
+      "/v1/agents/chat",
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("queues the message and (re)connects when the WS is not open", async () => {
+    mockIsConnected = false;
+    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
+      agentApi: { post: jest.Mock };
+    };
+
+    renderPage();
+
+    const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
+    await act(async () => {
+      onSendText("Queued message");
+      await new Promise((r) => setTimeout(r, 0));
     });
 
-    // Verify file_ids is NOT in the payload
-    const callPayload = agentApi.post.mock.calls[0][1];
-    expect(callPayload).not.toHaveProperty("file_ids");
+    // sendMessage must NOT fire while the socket is closed — the message
+    // is queued in pendingSendRef and flushed on the "connected" frame.
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    // We must (re)connect the socket so the queued message can flush.
+    expect(mockWsConnect).toHaveBeenCalled();
+    // Critically: no REST fallback. That path is what the 30s cap kills.
+    expect(agentApi.post).not.toHaveBeenCalledWith(
+      "/v1/agents/chat",
+      expect.anything(),
+      expect.anything(),
+    );
   });
 });
