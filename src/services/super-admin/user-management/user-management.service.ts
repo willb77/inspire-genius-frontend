@@ -89,8 +89,14 @@ export async function inviteUser(payload: InviteUserPayload) {
 
 // ------------------ CHANGE USER ROLE ------------------
 
+// Monolith /v1/user-management/users/{email}/role expects the role NAME
+// (not the role_id UUID). The backend handler looks up the role row by
+// name via `role_request.role.lower()`. Sending `role_id` here makes
+// `body.role` missing → 422. (Diagnosed 2026-05-18; bleeding-fix to a
+// shipped surface — the proper Strangler-Fig extraction of this endpoint
+// is a separate follow-up.)
 export type ChangeUserRolePayload = {
-  role_id: string
+  role: string
 }
 
 export type ChangeUserRoleData = {

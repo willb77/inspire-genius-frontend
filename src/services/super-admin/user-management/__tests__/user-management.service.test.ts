@@ -5,8 +5,10 @@ import {
   deleteUserByEmail,
   resendInvitation,
   purgeInactiveUsers,
+  changeUserRole,
   type InviteUserPayload,
   type UpdateUserPayload,
+  type ChangeUserRolePayload,
 } from "../user-management.service";
 
 import { api } from "@/lib/axios";
@@ -120,6 +122,49 @@ describe("Super Admin User Management Service", () => {
       payload
     );
     expect(result).toEqual(mockResponse);
+  });
+
+  /* -----------------------------------------
+     changeUserRole
+     Monolith expects { role: <NAME> } NOT { role_id: <UUID> }.
+     See ChangeUserRolePayload comment in the service module.
+  ----------------------------------------- */
+  it("should change user role with role NAME (not role_id) per monolith schema", async () => {
+    const payload: ChangeUserRolePayload = { role: "super-admin" };
+
+    const mockResponse = {
+      message: "User role updated",
+      data: { updated_fields: ["role"] },
+    };
+
+    (api.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+
+    const email = "andy@prismbrainmapping.com";
+    const result = await changeUserRole(email, payload);
+
+    expect(api.put).toHaveBeenCalledWith(
+      `/v1/user-management/users/${encodeURIComponent(email)}/role`,
+      payload
+    );
+    // Regression guard: the body must carry `role` (the name) and must NOT
+    // carry `role_id`. Sending role_id is the root cause of the
+    // 2026-05-18 422 incident.
+    const [, sentBody] = (api.put as jest.Mock).mock.calls[0];
+    expect(sentBody).toHaveProperty("role", "super-admin");
+    expect(sentBody).not.toHaveProperty("role_id");
+    expect(result).toEqual(mockResponse);
+  });
+
+  it("encodes the email path segment in the change-role URL", async () => {
+    (api.put as jest.Mock).mockResolvedValueOnce({ data: { message: "ok", data: {} } });
+
+    const trickyEmail = "user+test@example.com";
+    await changeUserRole(trickyEmail, { role: "manager" });
+
+    expect(api.put).toHaveBeenCalledWith(
+      `/v1/user-management/users/${encodeURIComponent(trickyEmail)}/role`,
+      { role: "manager" }
+    );
   });
 
   /* -----------------------------------------

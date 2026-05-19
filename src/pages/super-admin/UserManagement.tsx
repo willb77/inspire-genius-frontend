@@ -210,17 +210,16 @@ export default function UserManagement() {
       }),
     ];
 
-    // If role changed, send a separate role-change request
+    // If role changed, send a separate role-change request.
+    // The monolith /role endpoint expects the role NAME (not role_id);
+    // see ChangeUserRolePayload in user-management.service.ts.
     if (values.role && values.role !== selected.role) {
-      const roleId = getRoleIdByName(values.role);
-      if (roleId) {
-        promises.push(
-          changeRoleMutation.mutateAsync({
-            email: selected.email,
-            payload: { role_id: roleId },
-          })
-        );
-      }
+      promises.push(
+        changeRoleMutation.mutateAsync({
+          email: selected.email,
+          payload: { role: values.role },
+        })
+      );
     }
 
     await Promise.all(promises);
