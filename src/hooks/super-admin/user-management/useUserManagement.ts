@@ -134,7 +134,7 @@ export function useChangeUserRole() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role_id: variables.payload.role_id } });
+      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role: variables.payload.role } });
     },
 
     onError: (error) => {
