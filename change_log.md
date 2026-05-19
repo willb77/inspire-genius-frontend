@@ -1,3 +1,187 @@
+## [2026-05-18] — Meridian text chat routed through WebSocket (PR #89)
+
+Closed the 2026-05-18 API GW 30s integration-cap outage. Bill's "Linda Schulte 5-person PRISM team assignment" query produced 8+ 503s in 15 min — every one at exactly `integrationLatency: 30000 ms`. ECS agent-engine logs showed the same requests completing 200 OK; the browser never received them. Root cause: `POST /v1/agents/chat` goes through API Gateway HTTP API which caps integrations at 30s (hard AWS limit). Multi-agent DAG queries run 45–90s.
+
+### Fixed
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx` — `onSendText` no longer POSTs to the REST endpoint. Routes through `useMeridianWebSocket.sendMessage()` instead. The WS path (`wss://ws-dev.inspiresgenius.com/ws/chat`, set via `VITE_AGENT_WS_DIRECT_URL`) bypasses both ws-proxy and API GW, so it has no integration cap. Token frames stream into the in-flight assistant bubble; the complete frame replaces it with the final text + `metadata.assistant_message_id`; the error frame replaces the placeholder with the same "Sorry, I couldn't reach Meridian" bubble the REST path used.
+- Disconnected-socket path queues the message in `pendingSendRef` and `wsConnect(accessToken)`s; the `connected` frame in `onResponse` flushes the queue. **No REST fallback** — that would reintroduce the cap.
+- Voice path (`onToggleRecording`) untouched — transcripts are short, REST 30s is fine.
+
+### Added
+- `inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianWebSocket.test.ts` — `describe("useMeridianWebSocket.sendMessage", …)` block with `MockWebSocket` proving the chat frame goes through `socket.send`, never `axios`/`agentApi`.
+- `inspire-genius-frontend/src/pages/user/__tests__/MeridianChat.test.tsx` — replaced the obsolete REST-shape assertion with two WS-based assertions: (1) `onSendText` calls `sendMessage` not `agentApi.post`; (2) when the socket isn't open, the message is queued and `wsConnect` is called — no REST fallback fires.
+
+### Files
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
+- `inspire-genius-frontend/src/pages/user/__tests__/MeridianChat.test.tsx`
+- `inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianWebSocket.test.ts`
+
+### Verification
+- `npm run lint` — clean for the 3 changed files (one pre-existing warning at `MeridianChat.tsx:724` exists on `origin/development`).
+- `npm run build` — `tsc -b && vite build` green.
+- `npm run test:ci` — **3017/3017 tests pass across 380 suites.**
+- Hook **signature unchanged** — Term D (`feat/meridian-async-jobs`) rebases cleanly.
+
+Branch: `fix/meridian-ws-text-chat` (frontend repo). Draft → ready for review. PR #89: https://github.com/willb77/inspire-genius-frontend/pull/89
+
+---
+
+## [2026-05-16] — Appendix C: Unified Punch List + Critical Path to Production
+
+Appended Appendix C to `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx` (96 → 103 KB). Single canonical pre-production work list merging the original 30-row Master Punch List (§10) with the 12-item Appendix B unverified-items list. Total: **35 deduped items** (8 P0, 11 P1, 16 P2).
+
+### Structure
+- **§A** — Unified ranked table (35 rows: rank, sev, source M/B/M+B, component, issue, effort, time, owner)
+- **§B** — Aggregate effort by severity; **grand total 251-350h** engineering
+- **§C** — Cross-walk showing 8 items present in both sources (merged) + 5 net-new from Appendix B
+- **§D** — Phased critical path: Phase 1 P0 security (22-34h) → Phase 2 P0 infra+pipeline (52-84h) → Phase 3 P1 must-fix (60-83h) → Phase 4 P2 continuous hardening
+- **§E** — Work outside the punch list (prod AWS account, DNS, ACM, SES domain verification, load test, cutover dress rehearsal): +40-80h ops
+- **§F** — Honest end-to-end verdict: **5-8 weeks** focused 1-dev + 1-ops critical path; **3-5 weeks** with 2 devs; **8-10 weeks** solo
+
+Master Punch List (§10) and Appendix B are superseded by Appendix C for planning purposes (retained for traceability).
+
+### Added
+- Appendix C of `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx`
+
+---
+
+## [2026-05-16] — Post-deploy probe IAM + silent-fail fix (probe 03 + 07)
+
+Probe 03 on CDK Deploy 25972494937 reported `❌ 03-sg-egress-ingress.sh` with no error detail because the GHA OIDC role `gha-cdk-deploy` lacks `ec2:DescribeSecurityGroups`. With `set -euo pipefail` and an unguarded `egress=$(aws ec2 ... 2>&1)`, bash exited mid-loop on the AWS CLI's 254 — silent ❌, zero diagnostic output. Probe 07 had the same shape on `logs:DescribeLogGroups` (would have silently green-passed with zero coverage).
+
+### Fixed
+- `scripts/post-deploy-probes/03-sg-egress-ingress.sh` — wrapped every `aws ec2 describe-security-groups` and python3-parse step in `if ! var=$(...)` patterns with explicit `probe_error` + `continue` (or `exit 1` for the unrecoverable ingress check). Silent IAM-denied → loud, attributed failure.
+- `scripts/post-deploy-probes/07-lambda-log-db-errors.sh` — added upfront IAM sanity check (one `aws logs describe-log-groups` call on the first Lambda) that bails loud with "missing IAM perm" before the silent-skip loop. Missing log groups now emit `probe_warn` instead of silently `continue`.
+- `infrastructure/cdk/scripts/bootstrap-gha-oidc.sh` — added two new policy Sids: `PostDeployProbesEc2Read` (ec2:DescribeSecurityGroups, ec2:DescribeSecurityGroupRules) and `PostDeployProbesLogsRead` (logs:FilterLogEvents, logs:DescribeLogGroups, logs:DescribeLogStreams scoped to `/aws/lambda/ig-*`). Codified source of truth for the next bootstrap re-run.
+
+### Changed
+- Live IAM: attached new inline policy `gha-cdk-deploy-probes-extra` to role `gha-cdk-deploy` via `aws iam put-role-policy` (so next CI run picks up the perms without re-running the bootstrap script).
+
+### Verification
+- Probe 03 locally: emits per-SG `probe_pass` lines for sg-01c2bce7f18b0f33c + sg-05b81192e67ccf843 + TF Proxy SG ingress for both. Exit 0.
+- Probe 07 locally: per-Lambda `probe_pass` for all 9 RAG Lambdas, zero DB-error signatures in last 10 min. Exit 0.
+- Trainer SG ingress (`sg-05b81192e67ccf843`) confirmed in TF Proxy SG allowlist; codified in `infrastructure/cdk/lib/trainer-stack.ts:210-214` since PR #144.
+
+### Files
+- `infrastructure/cdk/scripts/bootstrap-gha-oidc.sh`
+- `scripts/post-deploy-probes/03-sg-egress-ingress.sh`
+- `scripts/post-deploy-probes/07-lambda-log-db-errors.sh`
+
+---
+
+## [2026-05-16] — Unverified-Items Punch List appended to E2E Production Readiness Review
+
+Added Appendix B to `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx` (85 → 96 KB). Twelve prioritized items covering all remaining "not verified" entries from §10.3 plus the newly-surfaced invitation-service gap.
+
+### Structure
+- **Severity legend** + **effort legend** tables at top
+- **Section A** — Fix-order summary (single 12-row table)
+- **Section B** — Per-item entries: each has why-it-matters / verification / fix scope / Claude Code prompt (paste-ready) / effort / time / per-item drift control
+- **Section C** — Drift management: 5 mechanisms (quarterly reconciliation, `scripts/aws_inventory_probe.py` cron, CDK diff in CI, source-of-truth ownership map, PR template enforcement)
+
+### Breakdown
+- 4 P0 blockers (Lambda plaintext-secret scan, frontend git-history scan, auth middleware audit on 15 services, invitation-service deployment)
+- 3 P1 must-fix (CloudFront CSP, ws-proxy DDB TTL, trainer Lambda VPC subnet/SG)
+- 5 P2 hardening (RLHF SageMaker E2E, voice TTS male/female, post-PR-#145 dedup, alembic parity script, WAF rule re-probe)
+- Combined estimate: **38–66 hours** focused single-developer work to clear all P0/P1
+
+### Added
+- Appendix B of `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx`
+
+---
+
+## [2026-05-16] — MCP tool count corrected (5 → 6) in CLAUDE.md + architecture rule
+
+Source-of-truth doc correction. `services/agent-engine/app/tools/registry.py:9-58` registers 6 built-in tools; CLAUDE.md and `.claude/rules/architecture.md` were still saying 5. The 6th tool is `data_connector` (ADMIN tier — queries enterprise data sources for real-time agent response validation).
+
+### Changed
+- `CLAUDE.md:139` — "5 built-in tools (...)" → "6 built-in tools (..., data_connector)"
+- `.claude/rules/architecture.md:57` — same correction
+
+Surfaced by the 2026-05-16 reconciliation pass on `IG_Platform_Documentation_And_Runbooks_2026-05-16.docx` + `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx`.
+
+---
+
+## [2026-05-16] — Canonical Platform Documentation + Runbooks (.docx) produced
+
+Produced `IG_Platform_Documentation_And_Runbooks_2026-05-16.docx` (90 KB) at the project root as the canonical structural reference doc for the platform. Read-only investigation pass.
+
+### Structure (5 parts + appendix)
+- Part A — Component & Function Catalog: frontend (pages by all 6 roles + layouts + contexts + lib + services + hooks + constants), 15 microservices (per-service endpoints + DB tables + env vars + EventBridge events + DLQs + alarm coverage), Agent Engine deep-dive (Meridian + 4 orchestrators + 18 agents + 6 MCP tools + collaboration protocol + analytics + permissions + 4 memory tiers + voice pipeline), data repositories (Aurora ~50 tables grouped by owner + 10 DynamoDB tables + 6 S3 buckets + Redis + pgvector + Cognito + Secrets Manager + EventBridge), CDK stacks (12).
+- Part B — Integration & Collaboration Map (ASCII system diagram + agent collaboration diagram).
+- Part C — 15 runbooks: deploy microservice, CDK deploy (with ts-node trap), rotate secret, 5xx investigation, Agent Engine WS failure (3-container ECS task), Lambda rollback (alias-based), RLHF model rollback, Alembic migration, EventBridge DLQ replay, ECS agent-engine restart (/agent-stop, /agent-start), S3 CORS recovery (orphan docs), add new role page, onboard new microservice, Cognito JWKS rotation, RDS Proxy exhaustion.
+- Part D — Configuration reference: 18 VITE_* vars, per-service env var names (no values), CDK context, feature flags (monolith_enabled / agent_engine_enabled / VoiceMode), auth token table (RS256/HS256).
+- Part E — Glossary (PRISM, RLHF, RAG, MCP, JWKS, Strangler Fig, etc.), 6 role definitions, file index cross-reference.
+- Appendix — items explicitly marked "not verified — needs live probe".
+
+### Added
+- `IG_Platform_Documentation_And_Runbooks_2026-05-16.docx` (project root, ~90 KB, Logo-Dark.png cover, 5 parts, 40+ tables, 15 runbooks)
+
+---
+
+## [2026-05-16] — End-to-End Production Readiness Review (.docx) produced
+
+Produced `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx` (75 KB) at the project root. Comprehensive read-only investigation covering:
+- Frontend (React 19 + Vite + 6 roles + auth flow + ProtectedRoute + axios refresh)
+- 15 microservices (auth, agent-engine, trainer, rlhf, audit, document, coach, user, org, support, dashboard, invitation, observability, migration-runner, ws-proxy) — endpoints, what works, what's broken, security gaps, hardening punch list per service
+- Agent Engine deep-dive (Meridian 4-step routing, 4 orchestrators, 17 specialists, 4-tier memory, conversation persistence on Aurora, pgvector RAG, voice pipeline, magic-auth canonical-sub remap)
+- CDK infrastructure (12 stacks, alarms inventory, concurrency, DynamoDB scaling, API GW throttling, WAF/X-Ray, VPC config, IAM scoping, secrets handling, ts-node trap)
+- Cross-cutting security findings categorized P0/P1/P2 (severity color-coded — red/orange/yellow)
+- CI/CD review (GHA workflows surveyed; missing staged promotion + monolith manual SSH callouts)
+- Operational readiness (logging hooks, docs, Alembic gaps on 6 services, RAG_RELIABILITY_PLAN status)
+- Master production punch list (30 rows: Pri | Component | Issue | Owner | Effort | Status)
+- Appendix with files inspected + commits reviewed + "not verified — would require live probe" disclosures
+
+### Headline findings
+- Overall readiness ~70% (dev-production; pre-cutover)
+- Top 5 blockers: Google OAuth missing (P1-11/12), staging/prod CDK config placeholders, observability-service 500, frontend env hygiene + history, no staged CI/CD promotion path
+- Confirmed RESOLVED since their original P0/P1 designation: conversation persistence on Aurora (was in-memory dict), CDK placeholder values purged, document-service + audit-service auth middleware shipped, pgvector consolidation, agent-engine 24/24 strict matrix, WAFv2 re-enabled at CloudFront edge, monolith deprecation header in agents.md
+
+### Added
+- `IG_End_To_End_Production_Readiness_Review_2026-05-16.docx` (project root, 75,746 bytes, Logo-Dark.png cover)
+
+---
+
+## [2026-05-16] — PR3 of RAG plan §8: post-deploy probes in cdk-deploy.yml
+
+Third of the 10 permanent-fix PRs from `RAG_RELIABILITY_PLAN.md §8`. Adds 6 bash probe scripts + a new `post-deploy-probes` job in `cdk-deploy.yml` that fails the CDK Deploy workflow when any of the 5 RAG-pipeline regression classes from `DEV_REGRESSION_TRIAGE_2026-05-15.md` are detected post-deploy. This is the long-term fix that breaks the cycle of "I hot-patch, you redeploy, it breaks again."
+
+### Added
+- `scripts/post-deploy-probes/lib.sh` — shared catalog of RAG Lambdas, buckets, SGs, endpoints, and bundle sentinels. Single source of truth — adding a new RAG Lambda means one edit here, not 6 probe scripts.
+- `scripts/post-deploy-probes/01-bucket-cors.sh` — verifies `ig-dev-documents` has CORS rules including the dev CloudFront origin (catches the 2026-05-13 + 2026-05-15 CORS-drift incidents)
+- `scripts/post-deploy-probes/02-lambda-vpc.sh` — verifies every RAG Lambda has non-empty `VpcConfig` (catches the PR #82 body-vs-diff trainer-VPC regression)
+- `scripts/post-deploy-probes/03-sg-egress-ingress.sh` — verifies every Lambda SG has egress 5432 to BOTH Aurora SG AND TF Proxy SG, AND the TF Proxy SG has ingress 5432 from every Lambda SG (catches the 2026-05-16 doc-service egress regression)
+- `scripts/post-deploy-probes/04-endpoint-health.sh` — probes 8 endpoints; asserts HTTP < 500 within 10s for each (catches Lambda crashes + 30s DB-connection timeouts)
+- `scripts/post-deploy-probes/05-lambda-bundle-sentinels.sh` — downloads each deployed Lambda zip + greps for known post-fix sentinel strings (catches the 2026-05-15 stale-bundle bug where LastModified looked fresh but bundled code was pre-PR-#98)
+- `scripts/post-deploy-probes/06-api-gw-route-uniqueness.sh` — runtime version of `UniqueRouteKeyAspect` from PR #145; catches dup routes added via console / aws CLI that bypass synth-time checking
+- `scripts/post-deploy-probes/run-all.sh` — top-level runner
+- `.github/workflows/cdk-deploy.yml` — new `post-deploy-probes` job after `verify-no-stubs`. Triggered on `workflow_dispatch` + `dry_run=false`. If any probe fails, workflow fails loudly.
+
+### Skip lists (pre-populated to make PR3 mergeable before unresolved issues land)
+- `RAG_PROBE_SKIP_ENDPOINTS=observability-dashboard` — observability-query returns 500 (3-layer regression per `project_observability_service_rds_proxy_role.md`). Remove from skip list after a separate fix lands.
+- `RAG_PROBE_SKIP_ROUTES=POST /v1/support/{proxy+},GET /v1/support/{proxy+},GET /v1/users/{proxy+},PUT /v1/users/{proxy+}` — 4 known dup routes that PR #145 removes from CDK source. Will be removed from API GW on next CDK deploy after PR #145 merges. Remove from skip list after probe 06 reports `0 pre-known overlap(s) skipped`.
+
+### Verified
+- All 6 probes run locally against current dev infra:
+  - 4 pass: bucket CORS ✅, Lambda VPC ✅ (all 9 RAG Lambdas), SG egress+ingress ✅, bundle sentinels ✅
+  - 2 correctly catch pre-known issues (skipped via env vars): observability-dashboard 500, 4 dup routes
+- Bash 3.2 compatible (refactored from `declare -A` to file-based dedup so probes run on macOS local dev + Ubuntu CI)
+- YAML structure validates: 5 jobs (`validate → diff → deploy → verify-no-stubs → post-deploy-probes`)
+
+### Why this is the long-term fix
+PR1 (#144) + PR2 (#145) codify the specific drift bugs that bit us this week. PR3 catches ANY future regression of the same 5 classes at deploy time BEFORE it reaches users. Without PR3, every CDK deploy is a roll of the dice on whether services-stack drift surfaces a new outage.
+
+### Deploy plan
+PR3 has no CDK source changes — only workflow YAML + bash scripts. Merging is safe; no infrastructure changes. Effects kick in on the NEXT `workflow_dispatch` CDK Deploy with `dry_run=false`.
+
+### Not in this PR (rest of RAG plan §8)
+- PR4 — 5-min synthetic canary Lambda
+- PR5 — daily per-corpus smoke
+- PR6 — DISC + CliftonStrengths + MBTI + Big Five + Enneagram canonical ingest workflows
+- PR7-PR10 — PR-body parity check, CDK pre-commit clean hook, monitoring dashboards, drift audit
+
+---
+
 ## [2026-05-15] — Explainability Phase 2 hotfix: API GW POST route (PR #139)
 
 Phase 2 (PR #134) shipped `POST /v1/explainability/turns/{turn_id}/ask` but PR #115 (Phase 1 API GW) had only registered the **GET** catch-all. Every Ask submission 404'd at the gateway before reaching agent-engine. Smoke verification: agent-engine logs showed `GET /v1/explainability/turns/{id}` and `GET .../asks` both `200 OK`, **zero POST events ever arrived at the ECS task**. User-facing symptom in the AskBox: "Turn not found — it may have been deleted."

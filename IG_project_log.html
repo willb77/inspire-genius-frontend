@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1106</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1108</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,52 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-18] — Meridian text chat routed through WebSocket (PR #89)</h3>
+        <p>Closed the 2026-05-18 API GW 30s integration-cap outage. Bill's "Linda Schulte 5-person PRISM team assignment" query produced 8+ 503s in 15 min — every one at exactly <code>integrationLatency: 30000 ms</code>. ECS agent-engine logs showed the same requests completing <code>200 OK</code>; the browser never received them. Root cause: <code>POST /v1/agents/chat</code> goes through API Gateway HTTP API which caps integrations at 30s (hard AWS limit). Multi-agent DAG queries run 45–90s.</p>
+        <h4>Fixed</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/src/pages/user/MeridianChat.tsx</code> — <code>onSendText</code> no longer POSTs to the REST endpoint. Routes through <code>useMeridianWebSocket.sendMessage()</code> instead. The WS path (<code>wss://ws-dev.inspiresgenius.com/ws/chat</code>, set via <code>VITE_AGENT_WS_DIRECT_URL</code>) bypasses both ws-proxy and API GW, so it has no integration cap. Token frames stream into the in-flight assistant bubble; the complete frame replaces it with the final text + <code>metadata.assistant_message_id</code>; the error frame replaces the placeholder with the same "Sorry, I couldn't reach Meridian" bubble the REST path used.</li>
+          <li>Disconnected-socket path queues the message in <code>pendingSendRef</code> and <code>wsConnect(accessToken)</code>s; the <code>connected</code> frame in <code>onResponse</code> flushes the queue. <strong>No REST fallback</strong> — that would reintroduce the cap.</li>
+          <li>Voice path (<code>onToggleRecording</code>) untouched — transcripts are short, REST 30s is fine.</li>
+        </ul>
+        <h4>Added</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianWebSocket.test.ts</code> — <code>describe("useMeridianWebSocket.sendMessage", …)</code> block with <code>MockWebSocket</code> proving the chat frame goes through <code>socket.send</code>, never <code>axios</code>/<code>agentApi</code>.</li>
+          <li><code>inspire-genius-frontend/src/pages/user/__tests__/MeridianChat.test.tsx</code> — replaced the obsolete REST-shape assertion with two WS-based assertions: (1) <code>onSendText</code> calls <code>sendMessage</code> not <code>agentApi.post</code>; (2) when the socket isn't open, the message is queued and <code>wsConnect</code> is called — no REST fallback fires.</li>
+        </ul>
+        <h4>Verified</h4>
+        <ul>
+          <li><code>npm run lint</code> — clean for the 3 changed files. One pre-existing warning at <code>MeridianChat.tsx:724</code> exists on <code>origin/development</code>, confirmed via <code>git stash</code> + re-lint.</li>
+          <li><code>npm run build</code> — <code>tsc -b &amp;&amp; vite build</code> green.</li>
+          <li><code>npm run test:ci</code> — <strong>3017/3017 tests pass across 380 suites.</strong></li>
+          <li>Hook <strong>signature unchanged</strong> — Term D (<code>feat/meridian-async-jobs</code>) rebases cleanly.</li>
+        </ul>
+        <h4>Coordination</h4>
+        <p>Term C ran this PR; Term D is queued on <code>feat/meridian-async-jobs</code> (both touch <code>MeridianChat.tsx</code>; D rebases after merge). Term A serialized for any CDK / services-stack / trainer-stack / api-gateway-stack work. Frontend-only PR — no CDK deploy needed; CI/CD redeploys the frontend bucket on merge to <code>development</code>. Branch: <code>fix/meridian-ws-text-chat</code>. PR #89: <a href="https://github.com/willb77/inspire-genius-frontend/pull/89">github.com/willb77/inspire-genius-frontend/pull/89</a></p>
+
+        <h3>[2026-05-16] — PR3 of RAG plan §8: post-deploy probes in cdk-deploy.yml</h3>
+        <p>Third of the 10 permanent-fix PRs from <code>RAG_RELIABILITY_PLAN.md §8</code>. Adds 6 bash probe scripts + a new <code>post-deploy-probes</code> job in <code>cdk-deploy.yml</code> that fails the CDK Deploy workflow when any of the 5 RAG-pipeline regression classes are detected post-deploy. Breaks the cycle of "I hot-patch, you redeploy, it breaks again."</p>
+        <h4>Added</h4>
+        <ul>
+          <li><code>scripts/post-deploy-probes/lib.sh</code> — shared catalog (RAG Lambdas, buckets, SGs, endpoints, sentinels)</li>
+          <li><code>01-bucket-cors.sh</code> — bucket CORS drift detection</li>
+          <li><code>02-lambda-vpc.sh</code> — Lambda VPC config strip detection</li>
+          <li><code>03-sg-egress-ingress.sh</code> — bidirectional SG topology check (catches the 2026-05-16 egress regression)</li>
+          <li><code>04-endpoint-health.sh</code> — probes 8 endpoints for HTTP &lt; 500 in &lt; 10s</li>
+          <li><code>05-lambda-bundle-sentinels.sh</code> — verifies deployed Lambda zips contain post-fix sentinel strings</li>
+          <li><code>06-api-gw-route-uniqueness.sh</code> — runtime version of UniqueRouteKeyAspect (catches console-added dups)</li>
+          <li><code>run-all.sh</code> — top-level runner</li>
+          <li><code>.github/workflows/cdk-deploy.yml</code> — new <code>post-deploy-probes</code> job after <code>verify-no-stubs</code></li>
+        </ul>
+        <h4>Verified</h4>
+        <ul>
+          <li>All 6 probes run locally: 4 pass, 2 correctly catch known issues (observability 500 + 4 dup routes — both skip-listed pending fixes)</li>
+          <li>Bash 3.2 compatible (refactored from <code>declare -A</code>)</li>
+          <li>YAML validates: 5 jobs (<code>validate → diff → deploy → verify-no-stubs → post-deploy-probes</code>)</li>
+        </ul>
+        <h4>Why this is the long-term fix</h4>
+        <p>PR1 (#144) + PR2 (#145) codify the 2026-05-15/16 specific drift bugs. PR3 catches ANY future regression of the same 5 classes at deploy time, BEFORE users see it. Without PR3, every CDK deploy is a roll of the dice on whether services-stack drift surfaces a new outage.</p>
 
         <h3>[2026-05-15] — Explainability Phase 2 hotfix: API GW POST route (PR #139)</h3>
         <p>Phase 2 (PR #134) shipped <code>POST /v1/explainability/turns/{turn_id}/ask</code> but PR #115 (Phase 1 API GW) had only registered the <strong>GET</strong> catch-all. Every Ask submission 404'd at the gateway before reaching agent-engine. Smoke verification: agent-engine logs showed <code>GET</code> endpoints both <code>200 OK</code>, <strong>zero POST events ever arrived at the ECS task</strong>. User-facing symptom in the AskBox: "Turn not found — it may have been deleted."</p>
@@ -2523,6 +2569,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-18 — Prompt #1108 [/full-go Term C — route Meridian text chat through WS, escape API GW 30s cap (PR #89)]</div>
+          <div class="prompt-text">Term C closing the 2026-05-18 API GW 30s integration-cap outage from Bill's Linda Schulte 5-person PRISM team query (8+ 503s in 15 min, all at integrationLatency: 30000 ms; ECS completed 200 OK, browser never received). Worktree at .claude/worktrees/meridian-ws-text-chat on fix/meridian-ws-text-chat off origin/development (frontend repo, nested under monorepo). Deleted the agentApi.post("/v1/agents/chat", …) IIFE in MeridianChat.tsx onSendText and replaced with _wsSendMessage(t, { conversation_id, session_id }, selectedFileIds). Hook signature unchanged (Term D safe). Disconnected-socket fallback queues in pendingSendRef + wsConnect(); connected frame in onResponse flushes via wsSendMessageRef. Error frame replaces "Meridian is thinking…" placeholder with the same "Sorry, I couldn't reach Meridian" bubble REST used. Voice path untouched. Added 3 tests: MockWebSocket-based hook sendMessage routes through socket.send (not axios); MeridianChat onSendText calls sendMessage not agentApi.post; queue-and-reconnect path when socket isn't open. npm run lint clean for changed files (1 pre-existing warning on origin/development); npm run build green; npm run test:ci 3017/3017 pass. PR #89 (draft → ready). Coord notified via [coord]-tagged PR comments at status-check + ready-for-review. Term D rebases off this once merged.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Prompt #1106 [Phase 2 Ask 404 — diagnose + fix API GW POST route]</div>
           <div class="prompt-text">Smoke test on /super-admin/explainability Ask panel returned "Turn not found — it may have been deleted." Diagnosed: agent-engine logs (`/ecs/ig-dev-agent-engine`, last 30 min) showed GET /v1/explainability/turns/{id} + GET .../asks both 200 OK, but ZERO POST events. Confirmed via `aws apigatewayv2 get-routes`: PR #115 (Phase 1) had registered only `GET /v1/explainability/{proxy+}`, no POST. Every Ask submission was 404'ing at the gateway before reaching the ECS task. Fixed by PR #139 — one-line CDK addition `{ routeKey: 'POST /v1/explainability/{proxy+}', id: 'W5ExplainabilityPostAny' }` reusing the existing `wavesIntegration`. First deploy attempt against the `fix/*` branch failed at OIDC step (trust policy excludes feature branches per memory `feedback_drift_pin_lessons_2026_05_07.md`); merged PR #139 to development first, then `gh workflow run "CDK Deploy" --ref development -f environment=dev -f stack=ig-dev-api-gateway -f dry_run=false` (run `25944841731`) succeeded after ~17 min. Verified live: API GW now lists both GET + POST. AnthropicDirect is wired via `AGENT_ENGINE_ANTHROPIC_API_KEY` Secrets Manager binding, so the Analyzer returns real Sonnet 4 responses (not the offline stub).</div>
@@ -24268,7 +24318,11 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
         <div class="prompt-entry">
           <div class="timestamp">2026-05-15 — Activity #act-bedtime-w24 [/bedtime — 2 of 5 PRs shipped]</div>
           <div class="prompt-text">Shipped Lane 2.B (PR #81, merge commit 8e837db3) — MentorManagement deep-link batch P2.1+P2.2+P2.3: /super-admin/prompt-builder / interaction-protocol / voice-settings now redirect to the canonical MentorManagement tabs (?tab=prompt / protocol / voice). Three route constants @deprecated. One-shot conflict resolution against the newly-merged /super-admin/research-library route on dev. Shipped Lane 4.D (PR #82, merge commit e731c83b) — TaskAgent forms for practitioner P7.2: three task-agent forms (Job Blueprint / Interview Prep / Team Composition) now available to practitioner. Form bodies extracted into src/components/task-agents/ as layout-agnostic shared components; both manager and practitioner pages now wrap the bodies in their respective layouts. Three new practitioner routes + nav items. DEFERRED Lanes 4.A (Hiring Hub) / 4.B (Team Hub) / 4.C (Development Hub) — each requires consolidating 3-4 existing manager pages into a tabbed hub (~600 lines per hub). Attempted 4.A: started extracting body components (HiringPipelineBody + CandidatesBody drafted on disk) but parallel-agent activity wiped the branch mid-flight. Three hub consolidations remain for a follow-up session. Plan reference §3 Wave 2 / Wave 4 of IG_Dashboard_Rationalization_Plan_2.docx. Both shipped PRs: full CI green (Build/Trivy/Audit/Unit Tests 15-17 min); frontend routes integration test 54/54.</div>
+                <div class="prompt-entry">
+          <div class="timestamp">2026-05-16 — Prompt #1107 [doc gen — Platform Documentation + Runbooks]</div>
+          <div class="prompt-text">Produced IG_Platform_Documentation_And_Runbooks_2026-05-16.docx (~90 KB) at project root. Read-only investigation. 5 parts + appendix: (A) Component &amp; Function Catalog covering frontend pages by all 6 roles + layouts + contexts + lib + services + hooks + constants, 15 microservices with endpoints/DB tables/env vars/EventBridge events/DLQs/alarms, Agent Engine deep-dive (Meridian + 4 orchestrators + 18 agents + 6 MCP tools + collaboration protocol + analytics + permissions + 4 memory tiers + voice pipeline), data repositories (Aurora ~50 tables + 10 DynamoDB + 6 S3 + Redis + pgvector + Cognito + Secrets Manager + EventBridge), 12 CDK stacks. (B) Integration &amp; Collaboration ASCII diagrams. (C) 15 runbooks. (D) Configuration reference (VITE_* + per-service envs + feature flags + auth tokens). (E) Glossary + role definitions + file index. Appendix flags items needing live probe.</div>
         </div>
+</div>
 </div>
 
   <script>
