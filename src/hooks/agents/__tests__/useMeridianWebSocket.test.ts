@@ -26,7 +26,9 @@ jest.mock("@/lib/agentApi", () => ({
   attachInterceptors: jest.fn(),
 }));
 
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { getMeridianWebSocketUrl } from "@/services/meridian/meridianService";
+import { useMeridianWebSocket } from "../useMeridianWebSocket";
 
 /* ---- Tests for getMeridianWebSocketUrl ---- */
 
@@ -155,5 +157,121 @@ describe("MeridianResponse type shape", () => {
     expect(typeof dummy.stopRecording).toBe("function");
     expect(typeof dummy.isConnected).toBe("boolean");
     expect(typeof dummy.isRecording).toBe("boolean");
+  });
+});
+
+/* ---- sendMessage routes through socket.send, not axios ---- */
+
+type WsSent = string | ArrayBuffer | Blob;
+
+class MockWebSocket {
+  public static readonly CONNECTING = 0;
+  public static readonly OPEN = 1;
+  public static readonly CLOSING = 2;
+  public static readonly CLOSED = 3;
+  public static readonly instances: MockWebSocket[] = [];
+
+  public url: string;
+  public readyState: number = MockWebSocket.CONNECTING;
+  public onopen: (() => void) | null = null;
+  public onclose: (() => void) | null = null;
+  public onerror: (() => void) | null = null;
+  public onmessage: ((event: MessageEvent) => void) | null = null;
+  private sentMessages: WsSent[] = [];
+
+  constructor(url: string) {
+    this.url = url;
+    MockWebSocket.instances.push(this);
+    setTimeout(() => {
+      this.readyState = MockWebSocket.OPEN;
+      this.onopen?.();
+    }, 5);
+  }
+
+  send(data: WsSent) {
+    this.sentMessages.push(data);
+  }
+
+  close() {
+    this.readyState = MockWebSocket.CLOSED;
+    this.onclose?.();
+  }
+
+  getSentMessages() {
+    return this.sentMessages;
+  }
+
+  static latest(): MockWebSocket | undefined {
+    return this.instances[this.instances.length - 1];
+  }
+
+  static reset() {
+    this.instances.length = 0;
+  }
+}
+
+describe("useMeridianWebSocket.sendMessage", () => {
+  beforeEach(() => {
+    MockWebSocket.reset();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    global.WebSocket = MockWebSocket as any;
+    jest.clearAllMocks();
+  });
+
+  it("sends a chat frame through socket.send (not axios) when connected", async () => {
+    const { result } = renderHook(() => useMeridianWebSocket({}));
+
+    act(() => {
+      result.current.connect("tok-abc");
+    });
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    act(() => {
+      result.current.sendMessage(
+        "Linda Schulte 5-person PRISM query",
+        { conversation_id: "conv-xyz" },
+        ["doc-1"],
+      );
+    });
+
+    const ws = MockWebSocket.latest();
+    expect(ws).toBeDefined();
+    const sent = ws!.getSentMessages();
+    const chat = sent
+      .filter((m): m is string => typeof m === "string")
+      .map((m) => JSON.parse(m))
+      .find((m) => m.type === "chat");
+
+    expect(chat).toBeDefined();
+    expect(chat.message).toBe("Linda Schulte 5-person PRISM query");
+    expect(chat.context).toEqual({ conversation_id: "conv-xyz" });
+    expect(chat.file_ids).toEqual(["doc-1"]);
+
+    // Regression guard for the 2026-05-18 API GW 30s integration-cap
+    // outage: text chat must never hit the REST endpoint.
+    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
+      agentApi: { post: jest.Mock };
+    };
+    expect(agentApi.post).not.toHaveBeenCalled();
+  });
+
+  it("drops sendMessage silently when the socket is not open (caller queues + reconnects)", () => {
+    const { result } = renderHook(() => useMeridianWebSocket({}));
+
+    // Without calling connect(), the internal socketRef is null →
+    // safeSend short-circuits. The component-level queue + (re)connect
+    // logic (MeridianChat) is what actually retries.
+    act(() => {
+      result.current.sendMessage("Should not be sent", undefined, []);
+    });
+
+    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
+      agentApi: { post: jest.Mock };
+    };
+    expect(agentApi.post).not.toHaveBeenCalled();
+    expect(MockWebSocket.instances).toHaveLength(0);
   });
 });

@@ -113,6 +113,20 @@ export default function MeridianChat() {
   const lastCombinedLengthRef = useRef(0);
   const audioBufferFirstRefreshScheduledRef = useRef(false);
 
+  // Text send queued while the Meridian WS is reconnecting. Flushed in
+  // onResponse on the next "connected" frame. We escape API GW HTTP API's
+  // 30s integration cap by routing text chat through the WS — but if the
+  // socket isn't open yet we hold the message instead of falling back to
+  // the REST endpoint that triggers the cap (multi-agent DAG answers run
+  // 45–90s).
+  const pendingSendRef = useRef<
+    { text: string; fileIds: string[]; convId: string | undefined } | null
+  >(null);
+  const wsSendMessageRef = useRef<
+    | ((text: string, context?: Record<string, unknown>, fileIds?: string[]) => void)
+    | null
+  >(null);
+
   // Agent attribution from WS
   const [agentAttribution, setAgentAttribution] = useState<string | null>(null);
 
@@ -262,12 +276,34 @@ export default function MeridianChat() {
     (resp: MeridianResponse) => {
       if (resp.type === "connected") {
         setStatusBanner({ type: "success", text: "Connected to Meridian" });
+        // Flush any text message queued while the socket was reconnecting.
+        const pending = pendingSendRef.current;
+        if (pending) {
+          pendingSendRef.current = null;
+          wsSendMessageRef.current?.(
+            pending.text,
+            { conversation_id: pending.convId, session_id: pending.convId || "default" },
+            pending.fileIds,
+          );
+        }
         return;
       }
 
       if (resp.type === "error") {
         setStatusBanner({ type: "error", text: resp.message || "Agent error" });
         lastMessageRef.current = { type: "error", text: resp.message ?? "" };
+        // Replace the "Meridian is thinking…" placeholder with the same
+        // error bubble the REST path used to render. Preserves existing UX.
+        setMessages((prev) => [
+          ...prev.filter((m) => m.kind !== "processing"),
+          {
+            id: `msg-${Date.now()}-err`,
+            kind: "text" as const,
+            sender: "assistant" as const,
+            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            time: formatUSTimeSafe(new Date()),
+          },
+        ]);
         return;
       }
 
@@ -496,6 +532,13 @@ export default function MeridianChat() {
     currentAgent,
     currentDomain,
   } = useMeridianWebSocket({ onResponse, onAudioData });
+
+  // Expose wsSendMessage to the connected-frame flush logic in onResponse
+  // (onResponse is defined above the hook call, so it can't close over
+  // _wsSendMessage directly — the ref bridges that).
+  useEffect(() => {
+    wsSendMessageRef.current = _wsSendMessage;
+  }, [_wsSendMessage]);
 
   // Keep attribution in sync with WS-reported agent
   useEffect(() => {
@@ -974,61 +1017,29 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
-              // Text messages always use REST (reliable, works through API Gateway).
-              // WebSocket is reserved for voice streaming (sentence-level TTS) via
-              // the onToggleRecording handler below.
-              (async () => {
-                try {
-                  const { agentApi } = await import("@/lib/agentApi");
-                  let token = accessToken;
-                  if (!token) {
-                    try {
-                      const { getToken } = await import("@/lib/storage");
-                      token = (await getToken()) || "";
-                    } catch { /* ignore */ }
-                  }
-                  const resp = await agentApi.post("/v1/agents/chat", {
-                    message: t,
-                    session_id: conversationId || "default",
-                    ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
-                  }, {
-                    headers: token ? { "access-token": token } : {},
-                    timeout: 120000,
-                  });
-                  const data = resp.data;
-                  const timeNow = formatUSTimeSafe(new Date());
-                  // Prefer the server-side persisted UUID for the React key
-                  // and ObservabilityPanel lookup. Falls back to a local id
-                  // when the response shape doesn't carry it.
-                  const restAssistantId =
-                    (data?.metadata as { assistant_message_id?: string } | undefined)
-                      ?.assistant_message_id ?? `msg-${Date.now()}-resp`;
-                  setMessages((prev) => [
-                    ...prev.filter((m) => m.kind !== "processing"),
-                    {
-                      id: restAssistantId,
-                      kind: "text" as const,
-                      sender: "assistant" as const,
-                      text: data?.content || data?.message || "No response received.",
-                      time: timeNow,
-                      agent: data?.agent,
-                    },
-                  ]);
-                  if (data?.agent) setAgentAttribution(data.agent);
-                } catch (err) {
-                  console.error("[MeridianChat] Chat request failed:", err);
-                  setMessages((prev) => [
-                    ...prev.filter((m) => m.kind !== "processing"),
-                    {
-                      id: `msg-${Date.now()}-err`,
-                      kind: "text" as const,
-                      sender: "assistant" as const,
-                      text: "Sorry, I couldn't reach Meridian. Please try again.",
-                      time: formatUSTimeSafe(new Date()),
-                    },
-                  ]);
-                }
-              })();
+              // Route text chat through the Meridian WebSocket. The REST
+              // endpoint (POST /v1/agents/chat via API GW HTTP API) caps at
+              // 30s — multi-agent DAG responses run 45–90s and the browser
+              // never receives them. The WS path has no such cap. Token
+              // frames stream in via onResponse and replace the "Meridian
+              // is thinking…" placeholder bubble.
+              if (_isConnected) {
+                _wsSendMessage(
+                  t,
+                  { conversation_id: conversationId, session_id: conversationId || "default" },
+                  selectedFileIds,
+                );
+              } else {
+                // Queue the message and (re)connect. The "connected" frame
+                // handler in onResponse flushes pendingSendRef. We never
+                // fall back to REST — that would reintroduce the 30s cap.
+                pendingSendRef.current = {
+                  text: t,
+                  fileIds: selectedFileIds,
+                  convId: conversationId,
+                };
+                if (accessToken) wsConnect(accessToken);
+              }
             }}
             onToggleRecording={() => {
               if (voiceRecording) {
