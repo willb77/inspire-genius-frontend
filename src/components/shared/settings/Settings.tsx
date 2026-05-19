@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
 import PrivacySettings from "@/components/settings/PrivacySettings";
+import RetentionSettings from "@/components/settings/RetentionSettings";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -234,6 +235,15 @@ export default function Settings() {
         {role === ROLES.SUPER_ADMIN && (
           <div data-tour="settings-agent-engine">
             <AgentEngineToggle />
+          </div>
+        )}
+
+        {/* Memory Retention (super-admin, company-admin, manager) — Term E P3 */}
+        {(role === ROLES.SUPER_ADMIN
+          || role === ROLES.COMPANY_ADMIN
+          || role === ROLES.MANAGER) && (
+          <div data-tour="settings-retention">
+            <RetentionSettings />
           </div>
         )}
 
