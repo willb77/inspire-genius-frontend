@@ -32,19 +32,20 @@ jest.mock("@/lib/axios", () => ({
 }));
 
 const mockUseAgentEngine = jest.fn();
+// Stable mocked axios instance shared by `agentApi` and `getApi()` so
+// tests can assert against a single set of mocked calls — the
+// async-jobs path goes through `getApi()`.
+const mockSharedApi = {
+  get: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn(),
+  defaults: { headers: { common: {} } },
+};
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => mockUseAgentEngine(),
-  agentApi: {
-    get: jest.fn(),
-    post: jest.fn(),
-    defaults: { headers: { common: {} } },
-  },
-  getApi: jest.fn(() => ({
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
-  })),
+  agentApi: mockSharedApi,
+  getApi: () => mockSharedApi,
 }));
 
 jest.mock("@/context/useAuth", () => ({
@@ -279,12 +280,21 @@ describe("MeridianChat", () => {
   });
 });
 
-describe("MeridianChat — text send via WebSocket", () => {
+describe("MeridianChat — text send via async-jobs", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAgentEngine.mockReturnValue(true);
     capturedChatWindowProps = {};
     mockIsConnected = true;
+    // Default mock for any async-jobs POST/GET fired by the hook so
+    // tests don't crash when the hook starts polling. Each test can
+    // override with mockResolvedValueOnce if it needs a specific shape.
+    mockSharedApi.post.mockResolvedValue({
+      data: { job_id: "job-test-1", session_id: "sess-1", status: "queued" },
+    });
+    mockSharedApi.get.mockResolvedValue({
+      data: { job_id: "job-test-1", session_id: "sess-1", status: "queued", message: "" },
+    });
   });
 
   it("passes onSendText callback to ChatWindow", () => {
@@ -293,13 +303,10 @@ describe("MeridianChat — text send via WebSocket", () => {
     expect(typeof capturedChatWindowProps.onSendText).toBe("function");
   });
 
-  it("routes text send through WS sendMessage, not agentApi.post", async () => {
+  it("routes text send through POST /v1/agents/chat/async, not the legacy REST /v1/agents/chat", async () => {
     // Regression guard for the 2026-05-18 API GW 30s integration-cap
     // outage: REST POST /v1/agents/chat must never carry text chat.
-    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
-      agentApi: { post: jest.Mock; get: jest.Mock; defaults: { headers: { common: Record<string, unknown> } } };
-    };
-
+    // The async-jobs path uses a different endpoint that is not capped.
     renderPage();
 
     const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
@@ -308,40 +315,45 @@ describe("MeridianChat — text send via WebSocket", () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(mockSendMessage).toHaveBeenCalledTimes(1);
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      "Hello Meridian",
-      expect.objectContaining({ session_id: expect.any(String) }),
-      [],
+    // Text-send now goes via POST /v1/agents/chat/async, not WS sendMessage.
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    expect(mockSharedApi.post).toHaveBeenCalledWith(
+      "/v1/agents/chat/async",
+      expect.objectContaining({
+        message: "Hello Meridian",
+        session_id: expect.any(String),
+      }),
     );
-    expect(agentApi.post).not.toHaveBeenCalledWith(
+    // The legacy REST chat endpoint (the one the 30s cap kills) must
+    // never be invoked from the text-send path.
+    expect(mockSharedApi.post).not.toHaveBeenCalledWith(
       "/v1/agents/chat",
       expect.anything(),
       expect.anything(),
     );
   });
 
-  it("queues the message and (re)connects when the WS is not open", async () => {
+  it("still posts the async-job when the WS is closed (no queue dependency)", async () => {
     mockIsConnected = false;
-    const { agentApi } = jest.requireMock("@/lib/agentApi") as {
-      agentApi: { post: jest.Mock };
-    };
 
     renderPage();
 
     const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
     await act(async () => {
-      onSendText("Queued message");
+      onSendText("No-socket message");
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // sendMessage must NOT fire while the socket is closed — the message
-    // is queued in pendingSendRef and flushed on the "connected" frame.
-    expect(mockSendMessage).not.toHaveBeenCalled();
-    // We must (re)connect the socket so the queued message can flush.
+    // The async-jobs path is REST-only — WS connection state does not
+    // gate it. We DO still kick a WS (re)connect in the background so
+    // push frames land when the job settles, but acceptance is independent.
+    expect(mockSharedApi.post).toHaveBeenCalledWith(
+      "/v1/agents/chat/async",
+      expect.objectContaining({ message: "No-socket message" }),
+    );
     expect(mockWsConnect).toHaveBeenCalled();
-    // Critically: no REST fallback. That path is what the 30s cap kills.
-    expect(agentApi.post).not.toHaveBeenCalledWith(
+    // No REST fallback to the 30s-capped endpoint.
+    expect(mockSharedApi.post).not.toHaveBeenCalledWith(
       "/v1/agents/chat",
       expect.anything(),
       expect.anything(),

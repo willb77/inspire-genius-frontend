@@ -13,6 +13,8 @@ import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
 import { useRenameConversation } from "@/hooks/agents/useRenameConversation";
 import { useMeridianWebSocket } from "@/hooks/agents/useMeridianWebSocket";
 import type { MeridianResponse } from "@/hooks/agents/useMeridianWebSocket";
+import { useMeridianJob } from "@/hooks/agents/useMeridianJob";
+import type { ChatJob } from "@/hooks/agents/useMeridianJob";
 import { useAudioQueue } from "@/hooks/agents/useAudioQueue";
 import DemoAudioService from "@/services/demoAudioService";
 import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStorage";
@@ -272,8 +274,118 @@ export default function MeridianChat() {
   // 30s staleTime — fresh chats now appear in History immediately.
   const queryClientWs = useQueryClient();
 
+  // Single rendering path for a settled assistant turn. Used by both
+  // the WS `complete` frame and the async-jobs `job_complete` / poll
+  // settlement path so the in-flight bubble swap happens identically
+  // regardless of how the response arrived.
+  const renderAssistantComplete = useCallback(
+    (input: {
+      content: string;
+      agent?: string | null;
+      metadata?: MeridianResponse["metadata"];
+    }) => {
+      const { content, agent, metadata } = input;
+      if (agent) setAgentAttribution(agent);
+      const ragSources = metadata?.rag_sources?.filter((s) => s.filename) ?? [];
+      const contributingAgents = metadata?.contributing_agents;
+      const synthesized = metadata?.synthesized;
+      const assistantMessageId =
+        (metadata as { assistant_message_id?: string } | undefined)?.assistant_message_id
+          ?? `msg-${Date.now()}`;
+
+      if (synthesized && contributingAgents && contributingAgents.length > 1) {
+        setLastCollaboration({ contributingAgents, synthesized: true });
+      }
+
+      if (content) {
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.kind !== "processing");
+          const lastMsg = filtered[filtered.length - 1];
+          if (lastMsg && lastMsg.sender === "assistant" && lastMsg.kind === "text") {
+            return [
+              ...filtered.slice(0, -1),
+              {
+                ...lastMsg,
+                id: assistantMessageId,
+                text: content,
+                agent: agent ?? undefined,
+                ragSources: ragSources.length > 0 ? ragSources : undefined,
+                contributingAgents,
+                synthesized,
+              },
+            ];
+          }
+          return [
+            ...filtered,
+            {
+              id: assistantMessageId,
+              kind: "text" as const,
+              sender: "assistant" as const,
+              text: content,
+              time: formatUSTimeSafe(new Date()),
+              agent: agent ?? undefined,
+              ragSources: ragSources.length > 0 ? ragSources : undefined,
+              contributingAgents,
+              synthesized,
+            },
+          ];
+        });
+      }
+      lastMessageRef.current = { type: "complete", text: content };
+
+      // Refresh History without waiting for staleTime.
+      try {
+        queryClientWs.invalidateQueries({
+          queryKey: ["agent", "conversation"],
+          exact: false,
+        });
+      } catch {
+        // never break over a cache miss
+      }
+    },
+    [queryClientWs],
+  );
+
+  // -------------------------------------------------------------------
+  // Async-jobs (POST /v1/agents/chat/async + poll + WS push)
+  // -------------------------------------------------------------------
+
+  const handleJobSettled = useCallback(
+    (job: ChatJob) => {
+      if (job.status === "error") {
+        setStatusBanner({ type: "error", text: job.error || "Agent error" });
+        setMessages((prev) => [
+          ...prev.filter((m) => m.kind !== "processing"),
+          {
+            id: `msg-${Date.now()}-err`,
+            kind: "text" as const,
+            sender: "assistant" as const,
+            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            time: formatUSTimeSafe(new Date()),
+          },
+        ]);
+        return;
+      }
+      renderAssistantComplete({
+        content: job.content ?? "",
+        agent: job.agent,
+        metadata: job.metadata as MeridianResponse["metadata"],
+      });
+    },
+    [renderAssistantComplete],
+  );
+
+  const meridianJob = useMeridianJob({ onJobSettled: handleJobSettled });
+  const meridianJobRef = useRef(meridianJob);
+  meridianJobRef.current = meridianJob;
+
   const onResponse = useCallback(
     (resp: MeridianResponse) => {
+      // Route async-jobs push frames (job_complete / job_progress /
+      // job_error) to the hook so we can short-circuit polling and
+      // render the settled bubble through handleJobSettled.
+      if (meridianJobRef.current.notifyPushFrame(resp)) return;
+
       if (resp.type === "connected") {
         setStatusBanner({ type: "success", text: "Connected to Meridian" });
         // Flush any text message queued while the socket was reconnecting.
@@ -340,79 +452,15 @@ export default function MeridianChat() {
       }
 
       if (resp.type === "complete") {
-        const text = resp.content ?? "";
-        if (resp.agent) setAgentAttribution(resp.agent);
-        const ragSources = resp.metadata?.rag_sources?.filter((s) => s.filename) ?? [];
-        const contributingAgents = resp.metadata?.contributing_agents;
-        const synthesized = resp.metadata?.synthesized;
-        // Server-side persisted assistant_message_id (UUID). Use it as
-        // the React message key + ObservabilityPanel lookup so the
-        // per-message panel can join response_observability cleanly.
-        // Falls back to a JS-local id on the cache-hit + legacy paths.
-        const assistantMessageId =
-          (resp.metadata as { assistant_message_id?: string } | undefined)
-            ?.assistant_message_id ?? `msg-${Date.now()}`;
-
-        // Track session-level collaboration when 2+ agents synthesized a response
-        if (synthesized && contributingAgents && contributingAgents.length > 1) {
-          setLastCollaboration({
-            contributingAgents,
-            synthesized: true,
-          });
-        }
-
-        if (text) {
-          setMessages((prev) => {
-            const filtered = prev.filter((m) => m.kind !== "processing");
-            const lastMsg = filtered[filtered.length - 1];
-            if (lastMsg && lastMsg.sender === "assistant" && lastMsg.kind === "text") {
-              return [
-                ...filtered.slice(0, -1),
-                {
-                  ...lastMsg,
-                  id: assistantMessageId,
-                  text,
-                  agent: resp.agent,
-                  ragSources: ragSources.length > 0 ? ragSources : undefined,
-                  contributingAgents,
-                  synthesized,
-                },
-              ];
-            }
-            return [
-              ...filtered,
-              {
-                id: assistantMessageId,
-                kind: "text" as const,
-                sender: "assistant" as const,
-                text,
-                time: formatUSTimeSafe(new Date()),
-                agent: resp.agent,
-                ragSources: ragSources.length > 0 ? ragSources : undefined,
-                contributingAgents,
-                synthesized,
-              },
-            ];
-          });
-        }
-        lastMessageRef.current = { type: "complete", text };
-
-        // Refresh the History panel without waiting for the
-        // useAgentConversation staleTime (30s default). Without this
-        // the user can finish a chat and not see it appear in History
-        // for up to 30 seconds — a long-standing UX papercut.
-        try {
-          queryClientWs.invalidateQueries({
-            queryKey: ["agent", "conversation"],
-            exact: false,
-          });
-        } catch {
-          // never break the WS handler over a cache miss
-        }
+        renderAssistantComplete({
+          content: resp.content ?? "",
+          agent: resp.agent,
+          metadata: resp.metadata,
+        });
         return;
       }
     },
-    [queryClientWs],
+    [renderAssistantComplete],
   );
 
   // Voice-enabled toggle: when ON, WS messages include voice=true for streaming TTS
@@ -833,6 +881,57 @@ export default function MeridianChat() {
     [conversationId],
   );
 
+  // ── Page-refresh hydration: in-flight async-jobs ────────────────
+  //
+  // When the user reloads the page (or switches tabs and returns) we
+  // want any chat_jobs still in `queued`/`running` for this session to
+  // re-appear as in-flight bubbles. The hook resumes polling on its
+  // own once we hand it the session id; we just need to render the
+  // placeholder bubble + the original user message so the UX is
+  // continuous.
+  const hydratedSessionRef = useRef<string | null>(null);
+  useEffect(() => {
+    const sid = conversationId || "default";
+    if (hydratedSessionRef.current === sid) return;
+    hydratedSessionRef.current = sid;
+
+    void (async () => {
+      try {
+        const active = await meridianJob.listActiveJobs(sid);
+        if (active.length === 0) return;
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.kind !== "processing");
+          const time = formatUSTimeSafe(new Date());
+          const additions: ChatMessage[] = [];
+          for (const job of active) {
+            additions.push({
+              id: `msg-${job.job_id}-user`,
+              kind: "text" as const,
+              sender: "user" as const,
+              text: job.message,
+              time,
+            });
+            additions.push({
+              id: `msg-${job.job_id}-pending`,
+              kind: "processing" as const,
+              sender: "assistant" as const,
+              time,
+              isProcessing: true,
+              type: "processing",
+              text: "Meridian is thinking...",
+            });
+          }
+          return [...filtered, ...additions];
+        });
+      } catch {
+        // Hydration is best-effort — if listActiveJobs fails (network
+        // hiccup, backend not yet deployed) we silently skip. The user
+        // can still send a new message; in-flight ones simply won't
+        // surface until they happen to land.
+      }
+    })();
+  }, [conversationId, meridianJob]);
+
   // Cleanup audio buffer timer
   useEffect(() => {
     return () => {
@@ -1017,29 +1116,43 @@ export default function MeridianChat() {
                   text: "Meridian is thinking...",
                 },
               ]);
-              // Route text chat through the Meridian WebSocket. The REST
-              // endpoint (POST /v1/agents/chat via API GW HTTP API) caps at
-              // 30s — multi-agent DAG responses run 45–90s and the browser
-              // never receives them. The WS path has no such cap. Token
-              // frames stream in via onResponse and replace the "Meridian
-              // is thinking…" placeholder bubble.
-              if (_isConnected) {
-                _wsSendMessage(
-                  t,
-                  { conversation_id: conversationId, session_id: conversationId || "default" },
-                  selectedFileIds,
-                );
-              } else {
-                // Queue the message and (re)connect. The "connected" frame
-                // handler in onResponse flushes pendingSendRef. We never
-                // fall back to REST — that would reintroduce the 30s cap.
-                pendingSendRef.current = {
-                  text: t,
-                  fileIds: selectedFileIds,
-                  convId: conversationId,
-                };
-                if (accessToken) wsConnect(accessToken);
-              }
+              // Route text chat through the async-jobs path. POST
+              // /v1/agents/chat/async returns a job_id immediately and
+              // runs meridian.respond() in the background — sidestepping
+              // API GW HTTP API's 30s integration cap that killed
+              // multi-agent DAG responses. Completion arrives via the
+              // WS `job_complete` push frame (when the socket is open)
+              // or by polling GET /v1/agents/chat/jobs/{job_id}.
+              //
+              // The placeholder bubble is replaced inside
+              // handleJobSettled → renderAssistantComplete via the
+              // shared rendering path.
+              const sessionForJob = conversationId || "default";
+              void meridianJob
+                .startJob({
+                  message: t,
+                  sessionId: sessionForJob,
+                  fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                  context: { conversation_id: conversationId, session_id: sessionForJob },
+                })
+                .catch(() => {
+                  setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
+                  setMessages((prev) => [
+                    ...prev.filter((m) => m.kind !== "processing"),
+                    {
+                      id: `msg-${Date.now()}-err`,
+                      kind: "text" as const,
+                      sender: "assistant" as const,
+                      text: "Sorry, I couldn't reach Meridian. Please try again.",
+                      time: formatUSTimeSafe(new Date()),
+                    },
+                  ]);
+                });
+              // Keep the WS open in the background so push frames land
+              // when the job settles. The socket is not required for
+              // correctness (polling is the fallback), but it removes
+              // the poll-cycle wait when the user is still on the page.
+              if (!_isConnected && accessToken) wsConnect(accessToken);
             }}
             onToggleRecording={() => {
               if (voiceRecording) {

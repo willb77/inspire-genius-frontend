@@ -1,3 +1,28 @@
+## [2026-05-19] — Frontend: Meridian text chat routed through async-jobs path (Term D follow-up to backend PR #174)
+
+Pairs with the backend `feat/meridian-async-jobs` (monorepo PR #174 — merged 2026-05-19) and Term C's `fix/meridian-ws-text-chat` (frontend PR #89 — already on `development`). Rebases the text-send path off WebSocket and onto `POST /v1/agents/chat/async`, which returns immediately with a `job_id` and lets the backend deliver the answer via WS push OR REST poll. Adds page-refresh durability — in-flight jobs are hydrated when the user returns to the chat.
+
+### Added
+- `src/hooks/agents/useMeridianJob.ts` — wraps `POST /v1/agents/chat/async`, `GET /v1/agents/chat/jobs/{job_id}`, and `GET /v1/agents/chat/jobs?session_id=...`. Returns `{ jobs, jobsById, startJob, pollJob, listActiveJobs, notifyPushFrame, removeJob }`. Per-job poll timers, configurable interval + timeout, dispatches `onJobUpdate` and `onJobSettled` callbacks. `notifyPushFrame` accepts a `MeridianResponse` and short-circuits polling when a `job_complete`/`job_progress`/`job_error` frame lands on the WS.
+- `src/hooks/agents/__tests__/useMeridianJob.test.ts` — 6 tests: POST + queued seeding, poll-to-complete with cancel-on-terminal, WS push cancels the poll, ignores non-job frames, hydrates active jobs and resumes polling, returns null on 404.
+
+### Changed
+- `src/hooks/agents/useMeridianWebSocket.ts` — additive: extended `MeridianMessageType` with `"job_complete" | "job_progress" | "job_error"` and added optional `job_id` + `error` fields to `MeridianResponse`. Term C's signature + handlers untouched; the new frame types fall straight through to `onResponse` so consumers can route them.
+- `src/pages/user/MeridianChat.tsx` — text-send path now calls `meridianJob.startJob(...)` instead of `_wsSendMessage(...)`. The single-bubble rendering logic for `complete` was extracted into a shared `renderAssistantComplete()` helper so the WS `complete` frame and the async-jobs `onJobSettled` callback render identically. WS stays open in the background to receive `job_complete` push frames; when the socket is closed, the hook's REST poll is the fallback. Added a page-refresh hydration effect that calls `listActiveJobs(session_id)` on mount and renders an in-flight bubble per queued/running job — settlement flows through the same `renderAssistantComplete` path.
+- `src/pages/user/__tests__/MeridianChat.test.tsx` — updated the two text-send regression guards to assert against `POST /v1/agents/chat/async` (and to confirm the legacy `POST /v1/agents/chat` is never invoked). Stabilised the `agentApi`/`getApi` mock to a single shared instance so the new tests can assert on the calls the hook makes.
+
+### Verified
+- `npx jest` → 3025/3025 green (381 suites, full sweep)
+- `npx tsc --noEmit` → 0 errors
+- `npm run build` → ✓ built in 10.44s (production bundle)
+- New file lint → 0 errors; 2 pre-existing warnings on `useMeridianWebSocket.ts:230` + `MeridianChat.tsx:724` were on `origin/development` before this branch (confirmed via stash + re-run on base)
+
+### Coordination
+- Backend `POST /v1/agents/chat/async`, `GET /v1/agents/chat/jobs/{job_id}`, `GET /v1/agents/chat/jobs?session_id=...` shipped in monorepo PR #174 (merged 2026-05-19).
+- Frontend gated on Term C's `fix/meridian-ws-text-chat` (PR #89) — that landed on `development` so this rebase was unblocked.
+- Voice path untouched — still uses REST `agentApi.post("/v1/agents/chat", ...)` + per-sentence TTS as before. WS streaming stays available for voice audio.
+- Existing `useMeridianWebSocket.ts` signature unchanged (Term C's surface).
+
 ## [2026-05-18] — Meridian text chat routed through WebSocket (PR #89)
 
 Closed the 2026-05-18 API GW 30s integration-cap outage. Bill's "Linda Schulte 5-person PRISM team assignment" query produced 8+ 503s in 15 min — every one at exactly `integrationLatency: 30000 ms`. ECS agent-engine logs showed the same requests completing 200 OK; the browser never received them. Root cause: `POST /v1/agents/chat` goes through API Gateway HTTP API which caps integrations at 30s (hard AWS limit). Multi-agent DAG queries run 45–90s.
