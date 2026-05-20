@@ -4,7 +4,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Types
 // ---------------------------------------------------------------------------
 
-export type MeridianMessageType = "connected" | "token" | "complete" | "error" | "audio" | "ping" | "auth_expired" | "idle_warning" | "idle_timeout" | "rate_limited";
+export type MeridianMessageType =
+  | "connected"
+  | "token"
+  | "complete"
+  | "error"
+  | "audio"
+  | "ping"
+  | "auth_expired"
+  | "idle_warning"
+  | "idle_timeout"
+  | "rate_limited"
+  // Async-jobs push frames (POST /v1/agents/chat/async path).
+  // The WS hook itself is a passthrough — useMeridianJob consumes these
+  // via the shared onResponse callback that MeridianChat already wires.
+  | "job_progress"
+  | "job_complete"
+  | "job_error";
 
 export type MeridianResponse = {
   type: MeridianMessageType;
@@ -13,6 +29,11 @@ export type MeridianResponse = {
   agent?: string;
   session_id?: string;
   user_id?: string;
+  // Async-jobs push frames carry the row's job_id and an error string
+  // when the background task failed. Both are optional so existing
+  // frame consumers ignore them.
+  job_id?: string;
+  error?: string;
   metadata?: {
     domain?: string;
     latency_ms?: number;
