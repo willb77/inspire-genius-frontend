@@ -634,6 +634,15 @@ export default function UserManagement() {
           updateMutation.isPending || changeRoleMutation.isPending ? "Updating User..." : "Save Changes"
         }
         allowStatusEdit={selected?.status !== "Awaiting"}
+        invitationContext={
+          selected?.invitation_id
+            ? {
+                userId: selected.id,
+                invitationId: selected.invitation_id,
+                invitationStatus: selected.invitation_status,
+              }
+            : undefined
+        }
       />
 
       {/* Deactivate Confirmation */}

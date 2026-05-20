@@ -1,7 +1,18 @@
 "use client";
 
+import { useState } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   FormControl,
   FormField,
@@ -23,6 +34,17 @@ import {
 } from "@/components/ui/select";
 import { ROLES } from "@/constants/routes";
 import { ROLE_LABELS } from "@/types/roles";
+import {
+  useUserInvitation,
+  useUpdateInvitationExpiry,
+  useResendInvitation,
+} from "@/hooks/super-admin/user-management/useUserManagement";
+
+export type InvitationContext = {
+  userId: string;
+  invitationId: string;
+  invitationStatus: string;
+};
 
 export type UserFormModalProps = {
   open: boolean;
@@ -33,7 +55,193 @@ export type UserFormModalProps = {
   onSubmit: (values: UserFormValues) => void | Promise<void>;
   submitLabel?: string;
   allowStatusEdit?: boolean;
+  /**
+   * When set in edit mode AND the user has an invitation (pending/expired),
+   * renders the invitation lifecycle controls (status, expiry, resend).
+   */
+  invitationContext?: InvitationContext;
 };
+
+const INVITATION_STATUS_BADGES: Record<string, { label: string; className: string }> = {
+  pending: {
+    label: "Pending",
+    className: "bg-yellow-100 text-yellow-700 border-transparent",
+  },
+  invitation_sent: {
+    label: "Sent",
+    className: "bg-yellow-100 text-yellow-700 border-transparent",
+  },
+  accepted: {
+    label: "Accepted",
+    className: "bg-green-100 text-green-700 border-transparent",
+  },
+  expired: {
+    label: "Expired",
+    className: "bg-red-100 text-red-700 border-transparent",
+  },
+  cancelled: {
+    label: "Cancelled",
+    className: "bg-gray-200 text-gray-700 border-transparent",
+  },
+};
+
+function InvitationSection({
+  context,
+}: {
+  context: InvitationContext;
+}) {
+  // Fetch on mount; the query is gated on enabled=true here because the
+  // parent only renders InvitationSection when the user actually has an
+  // invitation (so the gate at the hook level is just defense-in-depth).
+  const { data, isLoading, isError, error } = useUserInvitation(
+    context.userId,
+    true,
+  );
+  const updateExpiry = useUpdateInvitationExpiry();
+  const resend = useResendInvitation();
+
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    undefined,
+  );
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  // Min selectable date = tomorrow (UTC). Past + today are disabled.
+  const minDate = new Date();
+  minDate.setUTCHours(0, 0, 0, 0);
+  minDate.setUTCDate(minDate.getUTCDate() + 1);
+
+  const handleUpdateExpiry = async () => {
+    if (!selectedDate) return;
+    // Transmit as ISO 8601 UTC — the backend requires future and stores UTC.
+    await updateExpiry.mutateAsync({
+      userId: context.userId,
+      expires_at: selectedDate.toISOString(),
+    });
+    setSelectedDate(undefined);
+  };
+
+  const handleResend = async () => {
+    await resend.mutateAsync(context.invitationId);
+  };
+
+  const statusKey = (data?.status ?? context.invitationStatus ?? "").toLowerCase();
+  const badge = INVITATION_STATUS_BADGES[statusKey];
+
+  return (
+    <div className="md:col-span-2 mt-2 rounded-md border border-border bg-muted/30 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Invitation</h3>
+        {badge ? (
+          <Badge variant="secondary" className={badge.className}>
+            {badge.label}
+          </Badge>
+        ) : null}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          Loading invitation details…
+        </div>
+      ) : isError ? (
+        <p className="text-sm text-destructive">
+          {(error as { response?: { data?: { message?: string } } } | undefined)?.response?.data
+            ?.message ?? "Failed to load invitation details"}
+        </p>
+      ) : data ? (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+          <dt className="text-muted-foreground">Email</dt>
+          <dd className="text-foreground">{data.email}</dd>
+
+          <dt className="text-muted-foreground">Role</dt>
+          <dd className="text-foreground">{data.role ?? "—"}</dd>
+
+          <dt className="text-muted-foreground">Sent</dt>
+          <dd className="text-foreground">
+            {data.sent_at
+              ? format(new Date(data.sent_at), "d LLL yyyy, HH:mm")
+              : "—"}
+          </dd>
+
+          <dt className="text-muted-foreground">Expires</dt>
+          <dd className="text-foreground">
+            {data.expires_at
+              ? format(new Date(data.expires_at), "d LLL yyyy, HH:mm")
+              : "—"}
+          </dd>
+        </dl>
+      ) : null}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label
+            htmlFor="invitation-new-expiry"
+            className="block text-xs mb-1 text-muted-foreground"
+          >
+            Set new expiry
+          </label>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                id="invitation-new-expiry"
+                type="button"
+                variant="outline"
+                className="w-full justify-start font-normal"
+                disabled={updateExpiry.isPending}
+              >
+                <CalendarIcon className="mr-2 size-4" aria-hidden="true" />
+                {selectedDate
+                  ? format(selectedDate, "d LLL yyyy")
+                  : "Pick a future date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => {
+                  setSelectedDate(d ?? undefined);
+                  if (d) setCalendarOpen(false);
+                }}
+                disabled={{ before: minDate }}
+                autoFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <Button
+          type="button"
+          onClick={handleUpdateExpiry}
+          disabled={!selectedDate || updateExpiry.isPending}
+        >
+          {updateExpiry.isPending ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              Updating…
+            </>
+          ) : (
+            "Update Expiry"
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleResend}
+          disabled={resend.isPending}
+        >
+          {resend.isPending ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              Resending…
+            </>
+          ) : (
+            "Resend Invitation"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function UserFormModal({
   open,
@@ -44,11 +252,20 @@ export default function UserFormModal({
   onSubmit,
   submitLabel,
   allowStatusEdit,
+  invitationContext,
 }: UserFormModalProps) {
   const defaultValuesMerged: UserFormValues = {
     ...User_FORM_DEFAULTS,
     ...defaultValues,
   };
+
+  const showInvitationSection =
+    mode === "edit" &&
+    !!invitationContext &&
+    !!invitationContext.invitationId &&
+    ["pending", "expired", "invitation_sent"].includes(
+      (invitationContext.invitationStatus ?? "").toLowerCase(),
+    );
 
   return (
     <ModalFormFrame<UserFormValues>
@@ -171,6 +388,9 @@ export default function UserFormModal({
             />
           )}
 
+          {showInvitationSection && invitationContext ? (
+            <InvitationSection context={invitationContext} />
+          ) : null}
         </>
       )}
     </ModalFormFrame>
