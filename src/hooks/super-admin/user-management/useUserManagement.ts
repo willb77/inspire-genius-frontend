@@ -15,6 +15,8 @@ import {
   purgeInactiveUsers,
   getInactiveUserCount,
   changeUserRole,
+  getUserInvitation,
+  updateInvitationExpiry,
   type GetUsersParams,
   type GetUsersResponse,
   type InviteUserPayload,
@@ -26,6 +28,8 @@ import {
   type PurgeInactiveResult,
   type ChangeUserRolePayload,
   type ChangeUserRoleResponse,
+  type InvitationDetails,
+  type UpdateInvitationExpiryData,
 } from "@/services/super-admin/user-management/user-management.service";
 import type { BaseApiResponse } from "@/types/api";
 import { toast } from "sonner";
@@ -40,6 +44,8 @@ type SimpleQueryOptions = Omit<
 const QK = {
   list: (params: GetUsersParams) =>
     ["super-admin", "user-management", params] as const,
+  invitation: (userId: string) =>
+    ["super-admin", "user-management", "invitation", userId] as const,
 };
 
 export function useUserManagement(
@@ -208,6 +214,75 @@ export function useResendInvitation() {
         error.response?.data?.message ||
         error.message ||
         "Failed to resend invitation";
+      toast.error(msg);
+    },
+  });
+}
+
+/**
+ * Fetch the latest invitation details for a single user. Disabled by default —
+ * pass enabled=true only when the user has an invitation (invitation_id is
+ * non-null and status is in {pending, expired}). 404 from the backend means
+ * the user has no invitation on record and the hook surfaces it as an error.
+ */
+export function useUserInvitation(userId: string | null, enabled: boolean = false) {
+  return useQuery<
+    InvitationDetails,
+    AxiosError<BaseApiResponse<null>>
+  >({
+    queryKey: QK.invitation(userId ?? ""),
+    queryFn: () => getUserInvitation(userId!),
+    enabled: Boolean(userId) && enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export type UpdateInvitationExpiryVariables = {
+  userId: string;
+  expires_at: string;
+};
+
+export function useUpdateInvitationExpiry() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const actorEmail = user?.email ?? "unknown";
+
+  return useMutation<
+    UpdateInvitationExpiryData,
+    AxiosError<BaseApiResponse<null>>,
+    UpdateInvitationExpiryVariables
+  >({
+    mutationFn: ({ userId, expires_at }) =>
+      updateInvitationExpiry(userId, expires_at),
+
+    onSuccess: (data, variables) => {
+      toast.success("Invitation expiry updated");
+      // Refresh both the listing (so the row's invitation_status flips)
+      // and the per-user invitation query (so the edit dialog re-renders).
+      queryClient.invalidateQueries({
+        queryKey: ["super-admin", "user-management"],
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QK.invitation(variables.userId),
+      });
+      logAuditEvent({
+        action: "invitation_expiry_updated",
+        actor_email: actorEmail,
+        target_type: "invitation",
+        extra_data: {
+          invitation_id: data.invitation_id,
+          email: data.email,
+          new_expires_at: data.expires_at,
+        },
+      });
+    },
+
+    onError: (error) => {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update invitation expiry";
       toast.error(msg);
     },
   });

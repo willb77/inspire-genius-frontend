@@ -172,6 +172,60 @@ export async function resendInvitation(invitation_id: string) {
   return data
 }
 
+// ------------------ INVITATION DETAILS (per-user) ------------------
+
+export type InvitationDetails = {
+  invitation_id: string
+  // Effective status — server computes 'expired' on the fly for any
+  // PENDING invitation whose expires_at has already passed, matching the
+  // listing endpoint's behavior.
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled' | string
+  // Raw stored status (useful when admins need to disambiguate
+  // "stored as PENDING but auto-classified expired" cases).
+  stored_status: 'pending' | 'accepted' | 'expired' | 'cancelled' | string | null
+  expires_at: string | null
+  sent_at: string | null
+  role: string | null
+  role_id: string | null
+  email: string
+  organization_id: string | null
+}
+
+export type GetInvitationResponse = BaseApiResponse<InvitationDetails>
+
+export async function getUserInvitation(user_id: string): Promise<InvitationDetails> {
+  const { data } = await api.get<GetInvitationResponse>(
+    `/v1/user-management/users/${encodeURIComponent(user_id)}/invitation`
+  )
+  if (!data.data) {
+    throw new Error(data.message || 'Failed to fetch invitation details')
+  }
+  return data.data
+}
+
+export type UpdateInvitationExpiryData = {
+  invitation_id: string
+  email: string
+  status: string
+  expires_at: string
+}
+
+export type UpdateInvitationExpiryResponse = BaseApiResponse<UpdateInvitationExpiryData>
+
+export async function updateInvitationExpiry(
+  user_id: string,
+  expires_at: string
+): Promise<UpdateInvitationExpiryData> {
+  const { data } = await api.patch<UpdateInvitationExpiryResponse>(
+    `/v1/user-management/users/${encodeURIComponent(user_id)}/invitation`,
+    { expires_at }
+  )
+  if (!data.data) {
+    throw new Error(data.message || 'Failed to update invitation expiry')
+  }
+  return data.data
+}
+
 // ------------------ PURGE INACTIVE USERS ------------------
 
 export type PurgeFailure = {

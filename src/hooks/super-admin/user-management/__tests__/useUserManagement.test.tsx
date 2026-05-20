@@ -56,6 +56,8 @@ import {
   useUpdateUser,
   useDeleteUser,
   useResendInvitation,
+  useUserInvitation,
+  useUpdateInvitationExpiry,
 } from "../useUserManagement";
 
 import * as service from "@/services/super-admin/user-management/user-management.service";
@@ -340,5 +342,119 @@ describe("useUserManagement Hooks", () => {
     });
 
     expect(toast.error).toHaveBeenCalledWith("Failed to resend invitation");
+  });
+
+  /* -----------------------------------------
+     QUERY: useUserInvitation
+  ----------------------------------------- */
+  it("does not fire when disabled", () => {
+    renderHook(() => useUserInvitation("user-1", false), {
+      wrapper: createWrapper(),
+    });
+    expect(service.getUserInvitation).not.toHaveBeenCalled();
+  });
+
+  it("does not fire when userId is null", () => {
+    renderHook(() => useUserInvitation(null, true), {
+      wrapper: createWrapper(),
+    });
+    expect(service.getUserInvitation).not.toHaveBeenCalled();
+  });
+
+  it("fetches invitation when enabled with valid userId", async () => {
+    (service.getUserInvitation as jest.Mock).mockResolvedValueOnce({
+      invitation_id: "inv-1",
+      status: "pending",
+      stored_status: "pending",
+      expires_at: "2026-06-01T00:00:00Z",
+      sent_at: "2026-05-15T00:00:00Z",
+      role: "user",
+      role_id: "r1",
+      email: "u@x.com",
+      organization_id: null,
+    });
+
+    const { result } = renderHook(() => useUserInvitation("user-1", true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(service.getUserInvitation).toHaveBeenCalledWith("user-1");
+    expect(result.current.data?.invitation_id).toBe("inv-1");
+  });
+
+  /* -----------------------------------------
+     MUTATION: useUpdateInvitationExpiry
+  ----------------------------------------- */
+  it("updates invitation expiry successfully and toasts", async () => {
+    (service.updateInvitationExpiry as jest.Mock).mockResolvedValueOnce({
+      invitation_id: "inv-1",
+      email: "u@x.com",
+      status: "pending",
+      expires_at: "2026-07-01T00:00:00.000Z",
+    });
+
+    const { result } = renderHook(() => useUpdateInvitationExpiry(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        userId: "user-1",
+        expires_at: "2026-07-01T00:00:00.000Z",
+      });
+    });
+
+    expect(service.updateInvitationExpiry).toHaveBeenCalledWith(
+      "user-1",
+      "2026-07-01T00:00:00.000Z",
+    );
+    expect(toast.success).toHaveBeenCalledWith("Invitation expiry updated");
+  });
+
+  it("toasts the API message on update-expiry failure", async () => {
+    (service.updateInvitationExpiry as jest.Mock).mockRejectedValueOnce(
+      axiosErrorWithResponse("expires_at must be in the future"),
+    );
+
+    const { result } = renderHook(() => useUpdateInvitationExpiry(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          userId: "user-1",
+          expires_at: "2020-01-01T00:00:00.000Z",
+        });
+      } catch {}
+    });
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "expires_at must be in the future",
+    );
+  });
+
+  it("falls back to default error message on update-expiry generic error", async () => {
+    (service.updateInvitationExpiry as jest.Mock).mockRejectedValueOnce({});
+
+    const { result } = renderHook(() => useUpdateInvitationExpiry(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          userId: "user-1",
+          expires_at: "2026-07-01T00:00:00.000Z",
+        });
+      } catch {}
+    });
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Failed to update invitation expiry",
+    );
   });
 });
