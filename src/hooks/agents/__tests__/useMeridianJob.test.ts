@@ -310,6 +310,144 @@ describe("useMeridianJob — listActiveJobs", () => {
 });
 
 // ───────────────────────────────────────────────────────────────────
+// Dedupe — concurrent WS push + REST poll settlement
+// ───────────────────────────────────────────────────────────────────
+
+describe("useMeridianJob — settlement dedupe", () => {
+  it("fires onJobSettled exactly once when a WS push and an in-flight REST poll both settle the same job_id", async () => {
+    // No fake timers — the race we're modelling is two terminal
+    // settlements landing on the hook back-to-back. The WS push wins
+    // first; the in-flight GET resolves a few ms later with the same
+    // terminal state. Without a dedupe guard, both fire onJobSettled.
+    mockAgentApi.post.mockResolvedValueOnce({
+      data: { job_id: "job-dup", session_id: "sess-dup", status: "queued" },
+    });
+
+    mockAgentApi.get
+      .mockResolvedValueOnce({
+        data: {
+          job_id: "job-dup", session_id: "sess-dup", status: "queued",
+          message: "race me", content: null,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          job_id: "job-dup", session_id: "sess-dup", status: "complete",
+          message: "race me", content: "synthesized answer", agent: "Meridian",
+          metadata: { contributing_agents: ["Meridian"] },
+          completed_at: "2026-05-20T03:00:00Z",
+        },
+      });
+
+    const settled: string[] = [];
+    const { result } = renderHook(() =>
+      useMeridianJob({
+        pollIntervalMs: 2_000,
+        onJobSettled: (j) => settled.push(j.content ?? ""),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.startJob({ message: "race me", sessionId: "sess-dup" });
+    });
+    await waitFor(() => {
+      expect(result.current.jobsById["job-dup"]?.status).toBe("queued");
+    });
+
+    // 1. WS push lands first and settles the job to complete.
+    const pushFrame: MeridianResponse = {
+      type: "job_complete",
+      job_id: "job-dup",
+      session_id: "sess-dup",
+      content: "synthesized answer",
+      agent: "Meridian",
+      metadata: { contributing_agents: ["Meridian"] },
+    };
+    act(() => {
+      result.current.notifyPushFrame(pushFrame);
+    });
+    await waitFor(() => {
+      expect(result.current.jobsById["job-dup"]?.status).toBe("complete");
+    });
+
+    // 2. The in-flight REST GET (already in flight before the push
+    //    frame cancelled the timer) resolves now with the same terminal
+    //    state. Same code path the in-flight tick takes when its
+    //    `await api.get(...)` finally settles.
+    await act(async () => {
+      await result.current.pollJob("job-dup");
+    });
+
+    // The bubble must be rendered exactly once. Two settlements for the
+    // same job_id ⇒ one onJobSettled call.
+    expect(settled).toEqual(["synthesized answer"]);
+  });
+
+  it("does not re-fire onJobSettled when listActiveJobs re-hydrates an already-terminal job after a WS push", async () => {
+    // Page refresh scenario: WS push already settled the job, then the
+    // user reloads and listActiveJobs replays the same terminal row.
+    // The hook must NOT re-fire onJobSettled — otherwise refreshes
+    // would re-render assistant bubbles.
+    mockAgentApi.post.mockResolvedValueOnce({
+      data: { job_id: "job-refresh", session_id: "sess-refresh", status: "queued" },
+    });
+    mockAgentApi.get
+      .mockResolvedValueOnce({
+        data: {
+          job_id: "job-refresh", session_id: "sess-refresh", status: "queued",
+          message: "hi", content: null,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            job_id: "job-refresh", session_id: "sess-refresh", status: "complete",
+            message: "hi", content: "the answer",
+          },
+        ],
+      });
+
+    const settled: string[] = [];
+    const { result } = renderHook(() =>
+      useMeridianJob({
+        pollIntervalMs: 5_000,
+        onJobSettled: (j) => settled.push(j.job_id),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.startJob({ message: "hi", sessionId: "sess-refresh" });
+    });
+    await waitFor(() => {
+      expect(result.current.jobsById["job-refresh"]?.status).toBe("queued");
+    });
+
+    // WS push settles it first.
+    act(() => {
+      result.current.notifyPushFrame({
+        type: "job_complete",
+        job_id: "job-refresh",
+        session_id: "sess-refresh",
+        content: "the answer",
+        agent: "Meridian",
+      });
+    });
+    await waitFor(() => {
+      expect(result.current.jobsById["job-refresh"]?.status).toBe("complete");
+    });
+    expect(settled).toEqual(["job-refresh"]);
+
+    // Simulated page-refresh hydration returns the same terminal row.
+    await act(async () => {
+      await result.current.listActiveJobs("sess-refresh");
+    });
+
+    // Still one settlement — no replay.
+    expect(settled).toEqual(["job-refresh"]);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────
 // Ownership / 404 path
 // ───────────────────────────────────────────────────────────────────
 
