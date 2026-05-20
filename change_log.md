@@ -1,27 +1,158 @@
-## [2026-05-19] — Frontend: Meridian text chat routed through async-jobs path (Term D follow-up to backend PR #174)
+## [2026-05-20] — Term C: invitation expiry controls in User Management edit dialog
 
-Pairs with the backend `feat/meridian-async-jobs` (monorepo PR #174 — merged 2026-05-19) and Term C's `fix/meridian-ws-text-chat` (frontend PR #89 — already on `development`). Rebases the text-send path off WebSocket and onto `POST /v1/agents/chat/async`, which returns immediately with a `job_id` and lets the backend deliver the answer via WS push OR REST poll. Adds page-refresh durability — in-flight jobs are hydrated when the user returns to the chat.
+Two adjacent monolith endpoints + new \`<InvitationSection>\` inside \`UserFormModal\` so super-admins can inspect + set a custom invitation expiry without leaving the edit modal. Existing resend handler (hardcoded +3 days) untouched — admins wanting a different date now go through the new PATCH instead.
+
+### Added — Backend (monolith)
+- \`GET /v1/user-management/users/{user_id}/invitation\` — returns invitation status (effective, computed from \`expires_at\`), expiry, sent_at, role, email; 404 when user has no invitation. Guarded by \`require_admin_role()\`.
+- \`PATCH /v1/user-management/users/{user_id}/invitation\` — body \`{ expires_at: ISO8601 }\`; rejects past dates with 400; transitions EXPIRED → PENDING when un-expiring; never touches ACCEPTED/CANCELLED.
+- \`get_latest_invitation_by_user_id()\` + \`update_invitation_expiry()\` schema helpers in \`users/auth_service/schema.py\`.
+- \`UpdateInvitationExpiryRequest\` pydantic model with \`extra="forbid"\`.
+- \`tests/test_user_management_invitation.py\` — 16 cases covering both schema helpers, both endpoints (success/404/400/un-expire), and auth wiring.
+- \`tests/conftest.py\` — stubs the project's Settings env vars so the suite runs in the local dev venv. Was already broken without it; this unblocks adjacent existing tests too.
+- Files: \`inspire-genius-backend/users/auth_service/{user_management.py,schema.py,req_resp_parser.py}\`, \`inspire-genius-backend/tests/{test_user_management_invitation.py,conftest.py}\`
+
+### Added — Frontend
+- \`<InvitationSection>\` inside \`UserFormModal\` — gated on edit-mode + \`invitation_id\` + status in \`{pending, expired, invitation_sent}\`. Read-only display + shadcn Calendar/Popover date picker (past + today disabled) + Update Expiry button + Resend button (re-uses existing \`useResendInvitation\`).
+- \`getUserInvitation\` / \`updateInvitationExpiry\` service functions; \`useUserInvitation\` query (enabled-gated) + \`useUpdateInvitationExpiry\` mutation (invalidates both list + per-user queries, emits \`invitation_expiry_updated\` audit event).
+- \`UserManagement.tsx\` passes \`invitationContext\` to \`<UserFormModal>\` when the selected row has an \`invitation_id\`.
+- Tests: \`UserFormModal.test.tsx\` (+8 new), \`useUserManagement.test.tsx\` (+6 new), \`user-management.service.test.ts\` (+3 new). Total 168/168 passing; \`npm run build\` green.
+- Files: \`inspire-genius-frontend/src/components/shared/forms/UserFormModal.tsx\`, \`inspire-genius-frontend/src/hooks/super-admin/user-management/useUserManagement.ts\`, \`inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts\`, \`inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx\`, colocated \`__tests__/*\`
+
+### PRs
+- Backend: https://github.com/willb77/inspire-genius-backend/pull/6 (base: main)
+- Frontend: https://github.com/willb77/inspire-genius-frontend/pull/94 (base: development)
+- Both tagged \`[term-c] [coord]\`, awaiting Coord serialization for merge.
+
+### Behavior notes
+- **Computed status, not stored**: a PENDING invitation whose expires_at has passed is reported as \`'expired'\` (matches listing endpoint per memory \`feedback_verify_schema_before_data_code\`).
+- **Timezone-safe**: front-end transmits ISO 8601 UTC; back-end stores UTC; display in user's local timezone via date-fns.
+- **No \`expired_at\` tombstone exists** — confirmed by reading \`users/models/user.py\` (only \`status\` enum + \`expires_at\` timestamp).
+- Invitations key on email, not user_id — schema helper resolves \`user_id → user.email → latest invitation\` ordered by \`invited_at\` desc.
+
+### Out of scope (per task brief)
+- Mirroring controls in BulkImport.tsx
+- Parameterizing the existing resend handler's +3 days
+- Fixing pre-existing bug in \`bulk-import.ts\` resend (missing \`batch_id\` query param)
+
+---
+
+## [2026-05-20] — Coord overnight: Term E split, OIDC trust fix, services + trainer drift deployed
+
+Multi-PR overnight session. Bill on bedtime; Term A on hold; Term D + Term E reported clean at start; Coord drove the rest.
 
 ### Added
-- `src/hooks/agents/useMeridianJob.ts` — wraps `POST /v1/agents/chat/async`, `GET /v1/agents/chat/jobs/{job_id}`, and `GET /v1/agents/chat/jobs?session_id=...`. Returns `{ jobs, jobsById, startJob, pollJob, listActiveJobs, notifyPushFrame, removeJob }`. Per-job poll timers, configurable interval + timeout, dispatches `onJobUpdate` and `onJobSettled` callbacks. `notifyPushFrame` accepts a `MeridianResponse` and short-circuits polling when a `job_complete`/`job_progress`/`job_error` frame lands on the WS.
-- `src/hooks/agents/__tests__/useMeridianJob.test.ts` — 6 tests: POST + queued seeding, poll-to-complete with cancel-on-terminal, WS push cancels the poll, ignores non-job frames, hydrates active jobs and resumes polling, returns null on 404.
+- `feat/conversation-export-pdf` branch + **PR #186** — Phase 2 of original Term E bundle, cherry-picked clean from `feat/chat-history-export-retention` commit `a4fe3b5`. Adds `reportlab ^4.2` runtime dep + 8 new tests + ReportLab-rendered conversation export PDF.
+  - Files: `services/agent-engine/app/routes/conversations.py`, `pyproject.toml`, `poetry.lock`, `tests/test_conversation_export_pdf.py`
+- `feat/memory-retention-policies` branch + **PR #187** — Phase 3 of original Term E bundle, cherry-picked from `f6dbb90`. Adds new `RetentionStack` CDK stack + `services/retention-runner/` Lambda + agent-engine retention routes + DB migration. Ships with `DRY_RUN=true` env default for 7-day observable-only safety margin. **NOT merged tonight** — awaits Bill's morning go on heavy AWS state changes (CDK deploy + migration + ECS).
+  - Files: `infrastructure/cdk/bin/cdk.ts`, `infrastructure/cdk/lib/retention-stack.ts`, `services/agent-engine/app/main.py`, `services/agent-engine/app/routes/retention.py`, `services/agent-engine/tests/test_retention_policies.py`, `services/migration-runner/migrations/term_e_p3_memory_retention_policies.sql`, `services/retention-runner/handler.py`, `services/retention-runner/README.md`, `services/retention-runner/tests/test_handler.py`
+- `ci/pr-validation-poetry-and-timeout` branch + **PR #188** — CI policy carve-out. Fixes long-standing Poetry dev-deps install bug in `pr-validation.yml` (silently dropped aiosqlite/fakeredis/pytest-asyncio for 10/12 services), adds `pytest-timeout=120s`, scopes agent-engine `Test agent-engine` job to Term E's 3 new test files until pre-existing backlog is stabilised. PR body documents the pre-existing-backlog claim with hard evidence: dev HEAD `database.py:51` calls `create_async_engine` at module import (aiosqlite cross-loop deadlock); 7 named broken test files all last-touched 4–44 days before PR #179 opened. **Merged 03:06:48Z (commit `ca5a9cd`).**
+- Hardening commit `078451f` on PR #188 — pr-validation.yml agent-engine test scoping now tolerant of missing files. The original `pytest <3 files>` form exited 4 (`no tests ran`) on PRs that only contain a subset of Term E's test files (which is every PR now that the bundle was split). New logic collects only files that exist on the branch; if none, exits 0 with a notice. Coord-introduced regression from the split, fixed before any other PR re-ran.
 
 ### Changed
-- `src/hooks/agents/useMeridianWebSocket.ts` — additive: extended `MeridianMessageType` with `"job_complete" | "job_progress" | "job_error"` and added optional `job_id` + `error` fields to `MeridianResponse`. Term C's signature + handlers untouched; the new frame types fall straight through to `onResponse` so consumers can route them.
-- `src/pages/user/MeridianChat.tsx` — text-send path now calls `meridianJob.startJob(...)` instead of `_wsSendMessage(...)`. The single-bubble rendering logic for `complete` was extracted into a shared `renderAssistantComplete()` helper so the WS `complete` frame and the async-jobs `onJobSettled` callback render identically. WS stays open in the background to receive `job_complete` push frames; when the socket is closed, the hook's REST poll is the fallback. Added a page-refresh hydration effect that calls `listActiveJobs(session_id)` on mount and renders an in-flight bubble per queued/running job — settlement flows through the same `renderAssistantComplete` path.
-- `src/pages/user/__tests__/MeridianChat.test.tsx` — updated the two text-send regression guards to assert against `POST /v1/agents/chat/async` (and to confirm the legacy `POST /v1/agents/chat` is never invoked). Stabilised the `agentApi`/`getApi` mock to a single shared instance so the new tests can assert on the calls the hook makes.
+- **PR #179 force-pushed to Phase 1 only** (`61511dc` — JIT-provision `public.users` rows on Magic-Auth login). Original PR contained Phase 1 + Phase 2 + Phase 3 + CI policy bundled in one branch despite a Phase-1-only title. Coord split the bundle (Bill chose Path 1 / Option 2 in the split conversation): kept just `services/agent-engine/app/auth_deps.py` + `tests/test_auth_deps_jit.py` on `feat/chat-history-export-retention`; cherry-picked the other commits onto the three new branches above. **PR #179 merged 03:22:06Z (commit `7fac2fa`).**
+- Frontend PR #92 (`feat/meridian-async-jobs`) — **merged 02:33:14Z (commit `1f6930c3`)**. Text-send path moved from WS sendMessage to `POST /v1/agents/chat/async` + WS push frames + REST poll fallback + page-refresh hydration. Architectural decision: async-jobs is the canonical text path going forward (vs Term C's WS-only). Frontend deploy completed 02:33:17Z.
+- Frontend PR #93 (`feat/meridian-job-dedupe`) — **merged 03:23:02Z (commit `7ea96d8d`)**. Edge-triggered dedupe on settlement: `!wasTerminal && TERMINAL_STATUSES.has(merged.status)` fires `onJobSettled` only on transition into terminal, handles WS-push + REST-poll + listActiveJobs replay races identically.
+- **PR #186 (Phase 2 conversation export PDF) merged 03:38:46Z (commit `6d7b9c86`).** Agent-engine ECS roll completed ~03:42Z.
+
+### Fixed
+- **OIDC trust policy on `gha-cdk-deploy` IAM role** — added 3 missing GitHub Environment subjects (`ig-dev-deploy`, `ig-staging-deploy`, `ig-prod-deploy`) that `staged-deploy.yml` had been targeting since PR #172 introduced it on 2026-05-19. Trust policy previously had bare `dev|staging|prod` environment names which were unused in any workflow. Every Staged Deploy push since 2026-05-19 had been failing at `Configure AWS credentials (OIDC)` with `Not authorized to perform sts:AssumeRoleWithWebIdentity` — silently, since the parallel `Agent Engine — Build & Push Image` workflow was still rolling ECS independently. Smoke probes (the gate that auth-verifies endpoints under JWT) had NEVER run on `development` until this fix. **Applied via `aws iam update-assume-role-policy` at 05:43Z.** This is the resolution of issue #176 (P0 from Term A's open list).
+- **Coord-introduced split bug** caught and reverted before any other PR re-ran: pr-validation.yml's agent-engine test scoping originally listed all 3 Term E test files as positional pytest args. After the split, no individual PR carries all 3 files, so `pytest <files>` exited 4 ("no tests ran"). Fix on PR #188 (commit `078451f`) collects only files present on the branch; exits 0 with notice if none.
 
 ### Verified
-- `npx jest` → 3025/3025 green (381 suites, full sweep)
-- `npx tsc --noEmit` → 0 errors
-- `npm run build` → ✓ built in 10.44s (production bundle)
-- New file lint → 0 errors; 2 pre-existing warnings on `useMeridianWebSocket.ts:230` + `MeridianChat.tsx:724` were on `origin/development` before this branch (confirmed via stash + re-run on base)
+- **OIDC fix proven working**: dry-run Staged Deploy `26144034968` (workflow_dispatch, `target_environment=dev`, `dry_run=true`) — first time `Configure AWS credentials (OIDC)` completed `success` on this workflow. cdk diff produced clean output: only 2 of 10 stacks had differences (`ig-dev-services` magic-auth secret bundle + `ig-dev-trainer` Lambda code refresh). Path α (clean drift, scoped deploy) confirmed viable.
+- **`ig-dev-services` stack deploy + smoke probes: FULL SUCCESS** (run `26144628703`, finished ~06:21Z). Deployed Magic-Auth JWT secret access to 5 Lambda IAM roles (Auth, Coach, Org, Dashboard, Support) + RLHF Lambda code refreshes. **Smoke probes passed end-to-end** — this is the first auth-verified confirmation that PR #179 (Phase 1 JIT) + PR #186 (Phase 2 PDF export) are healthy under JWT.
+- ECS service `ig-dev-agent-engine` running task def revision 40, deployment `COMPLETED` 03:43Z, 1/1 healthy throughout (per Term D's CloudWatch monitor up to 03:54Z; no JIT marker failures, no reportlab exceptions, no `chat/async` 5xx, no DB error signatures).
 
-### Coordination
-- Backend `POST /v1/agents/chat/async`, `GET /v1/agents/chat/jobs/{job_id}`, `GET /v1/agents/chat/jobs?session_id=...` shipped in monorepo PR #174 (merged 2026-05-19).
-- Frontend gated on Term C's `fix/meridian-ws-text-chat` (PR #89) — that landed on `development` so this rebase was unblocked.
-- Voice path untouched — still uses REST `agentApi.post("/v1/agents/chat", ...)` + per-sentence TTS as before. WS streaming stays available for voice audio.
-- Existing `useMeridianWebSocket.ts` signature unchanged (Term C's surface).
+### Known issue — surfaced for morning triage
+- **`ig-dev-trainer` cdk deploy SUCCESS but smoke probe regression on one endpoint** (run `26145424249`): `GET /v1/trainer/agents?ecosystem_id=inspire-genius` returns HTTP 500 in ~6s on unauthenticated calls. Other 7 endpoints in the same probe set return 401/422 cleanly. Suspect: trainer-service auth middleware from commit `34b2f2a` (PR #166, 2026-05-17 — "fix(p0-a07): trainer-service auth middleware (close 83 unauth endpoints)") crashes on missing JWT instead of returning 401. The regression **pre-dates this deploy by 3 days** but had been invisible because every prior Staged Deploy failed at OIDC before smoke probes could run. Lambda DB error scan was clean — no asyncpg / Errno / ERROR signatures in the last 10min, so this is an auth-middleware bug, not a connectivity issue. **Not rolled back** — the broken endpoint is admin/practitioner-only, the deploy itself was clean (matches what services-stack did), and rolling back would change a stable state without addressing the underlying bug. P1 morning investigation; consider stacking on existing trainer-service work.
+
+### State of PRs as of bedtime
+| PR | Title | State |
+|---|---|---|
+| Backend #179 | Phase 1 JIT auth_deps | Merged 03:22Z, deployed via Agent Engine workflow 03:25Z, smoke-verified via services-stack run 06:21Z |
+| Backend #186 | Phase 2 ReportLab PDF export | Merged 03:38Z, deployed 03:42Z, smoke-verified via services-stack run 06:21Z |
+| Backend #187 | Phase 3 retention (CDK + migration + ECS) | Open, green, awaits Bill's morning go |
+| Backend #188 | CI policy + Poetry fix + agent-engine test scoping | Merged 03:06Z |
+| Frontend #92 | Async-jobs canonical text path | Merged 02:33Z, deployed 02:33Z, async path live on dev |
+| Frontend #93 | Dedupe WS push + REST poll settlement | Merged 03:23Z, deployed |
+
+### Term status
+- **Term A**: never started (Bill confirmed on hold). PRs #178, #180, #181, #182, #183, #184, #185 still draft. Issue #176 (OIDC trust) now resolved by Coord — Term A can close the issue when they pick up.
+- **Term B**: idle.
+- **Term C**: shipped earlier 2026-05-19, idle.
+- **Term D**: completed 4 of 4 tasks (frontend deploy verify, dedupe test+fix, log sync, regression monitor). Stood down.
+- **Term E**: never relaunched after IDE restart. Coord did the split mechanically. Open question for morning: do we relaunch Term E to handle PR #187 deploy + frontend PR #91 (retention UI) rebase, or do Coord + Bill drive those directly?
+
+### For Bill in the morning
+1. Trainer regression: GET `/v1/trainer/agents?ecosystem_id=...` returns 500 on unauth. File P1 issue; root-cause is auth middleware. Not a rollback candidate (predates deploy, no impact on customer surfaces).
+2. PR #187 (Phase 3 retention) decision: merge + CDK deploy `ig-dev-retention` + migration-runner invoke + ECS roll. Can also be sequenced via `gh workflow run "Staged Deploy" -f stack=ig-dev-retention` once merged.
+3. Term E relaunch: needed for frontend PR #91 rebase after #187 lands. Coord could also drive that mechanically if you prefer.
+4. Issue #176 can be closed — OIDC fix verified working in dev. Staging/prod trust policies may need the same patch when they're created (not yet — they're per-env IAM and don't exist yet).
+
+---
+
+## [2026-05-20] — Term D: dedupe Meridian async-jobs settlement (frontend PR #93)
+
+Follow-up to frontend PR #92 (async-jobs canonical text path). Coord flagged a race: when a WS `job_complete` frame and an in-flight REST poll both settle the same `job_id`, `useMeridianJob` fired `onJobSettled` twice — producing a duplicate assistant bubble. Same double-fire on page-refresh hydration via `listActiveJobs`.
+
+### Fixed
+- `upsertJob` now gates `onJobSettled` on a transition INTO terminal. Captures the prior status from `jobsByIdRef.current` (independent of the `mergeFromCurrent` flag, since `listActiveJobs` calls with `false`) and skips the callback if the job was already terminal.
+  - Files: `inspire-genius-frontend/src/hooks/agents/useMeridianJob.ts`
+
+### Added
+- `useMeridianJob — settlement dedupe` describe block in the hook's test file. Two new cases:
+  1. WS push + in-flight REST poll both settle same `job_id` ⇒ exactly one rendered bubble.
+  2. WS push, then `listActiveJobs` re-hydration of the same already-terminal row ⇒ no replay.
+- Both new tests fail on the pre-fix hook (received `+1` extra bubble each); both pass after the patch. All 6 pre-existing `useMeridianJob` tests still pass. Full Jest CI suite: 381 suites / 3027 tests passing.
+  - Files: `inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianJob.test.ts`
+
+### Verified
+- Dev deploy of PR #92 (frontend run `26137697034`) completed successfully — text-send now routes through `POST /v1/agents/chat/async`, not the legacy `/v1/agents/chat`.
+- 30-min regression monitor on `/ecs/ig-dev-agent-engine` CloudWatch logs filtering for `chat/async` 5xx, `chat_jobs` errors, and `ERROR`/`Traceback` lines.
+
+---
+
+## [2026-05-19] — Term E P1+P2+P3: chat history JIT-user fix, PDF export, retention policies (PR #179 + frontend #91)
+
+Three-phase Term E shipped on `feat/chat-history-export-retention` (monorepo) + `feat/chat-history-export-retention-ui` (frontend).
+
+### Phase 1 — Fixed (P0)
+- **History bug for Magic-Auth users** — confirmed via prod logs + live SQL probes that `_resolve_canonical_sub` left Magic-Auth UUIDs unchanged when the email wasn't in `public.users`, every `chat_messages` write tripped `fk_chat_messages_user_id_users` and got silently swallowed. Concrete evidence: user_id `94782458-7011-7057-b6e9-40e7a51ef013` had 74 rows in `conversation_messages` on 2026-05-19 and zero in `chat_messages`.
+- Fix: JIT-provision a stub `public.users` row keyed by the JWT sub in `_resolve_canonical_sub`. Idempotent (`ON CONFLICT DO NOTHING`), UUID-guarded, auth-provider classified from JWT `iss`. Cached after first provision.
+  - Files: `services/agent-engine/app/auth_deps.py`, `services/agent-engine/tests/test_auth_deps_jit.py`
+
+### Phase 2 — Fixed (P0)
+- **Export PDF empty** — `GET /v1/chat/conversations/{id}/download` returned base64-encoded CSV but the frontend opened it with `application/pdf` MIME → broken file.
+- Fix: real PDF rendering via ReportLab (same library `observability-service` uses). `?format=csv` keeps the legacy path. Empty conversations still get a valid PDF with a clear "intentionally empty" notice. HTML escaping guards user content against ReportLab Paragraph parser injection. Graceful CSV fallback if PDF render fails.
+  - Files: `services/agent-engine/app/routes/conversations.py`, `services/agent-engine/pyproject.toml` + `poetry.lock` (add `reportlab ^4.2`), `services/agent-engine/tests/test_conversation_export_pdf.py`
+
+### Phase 3 — Added (P1)
+- **Configurable memory retention + nightly archive Lambda**
+- Migration: `memory_retention_policies` table (scope × scope_id × tier × days × archive_to_s3) with `retention_scope_enum {system,org,manager,user}` and `retention_tier_enum {working,short_term,long_term,semantic}`. Seeds 4 system defaults (working=0d/delete, short_term=90d/archive, long_term=730d/archive, semantic=never). Backfills `chat_messages.expires_at` + indexes on `chat_messages`/`conversation_messages`/`chat_jobs.expires_at`.
+  - Files: `services/migration-runner/migrations/term_e_p3_memory_retention_policies.sql`
+- Agent-engine API: `GET/POST/DELETE /v1/retention/policies` + `GET /v1/retention/policies/effective`. 4-level scope inheritance (user > manager > org > system) resolved in a single SQL with `CASE` rank. Role guards via `_ROLE_WRITE_SCOPES`.
+  - Files: `services/agent-engine/app/routes/retention.py`, `services/agent-engine/app/main.py`, `services/agent-engine/tests/test_retention_policies.py`
+- Retention runner Lambda (`services/retention-runner/`): pg8000+boto3 only. Walks each policy, pages expired rows to S3 as JSONL, then DELETEs by PK. `DRY_RUN=true` for first 7 days.
+  - Files: `services/retention-runner/handler.py`, `services/retention-runner/README.md`, `services/retention-runner/tests/test_handler.py`
+- CDK: new standalone `RetentionStack` — S3 bucket (SSE-AES256, IA day 30, Glacier day 180), Lambda in VPC with RDS Proxy egress, EventBridge daily 03:00 UTC, 4 CloudWatch alarms, scoped IAM. Reserved concurrency=1. Does NOT touch services-stack / api-gateway-stack / trainer-stack.
+  - Files: `infrastructure/cdk/lib/retention-stack.ts`, `infrastructure/cdk/bin/cdk.ts`
+- Frontend (separate PR willb77/inspire-genius-frontend#91): `RetentionSettings` card in shared Settings, shown to super-admin / company-admin / manager. CRUD via TanStack Query + Axios.
+  - Files: `inspire-genius-frontend/src/services/retention/retentionService.ts`, `inspire-genius-frontend/src/hooks/retention/useRetention.ts`, `inspire-genius-frontend/src/components/settings/RetentionSettings.tsx`, `inspire-genius-frontend/src/components/shared/settings/Settings.tsx`, `inspire-genius-frontend/src/components/settings/__tests__/RetentionSettings.test.tsx`
+
+### Tests
+- 24 new agent-engine tests + 5 retention-runner tests + 3 frontend tests, all passing.
+
+### Deploy plan (Coord to run)
+1. Migration runner with `term_e_p3_memory_retention_policies.sql`
+2. Agent-engine ECS rebuild (covers P1 + P2 + P3 backend)
+3. `cdk deploy ig-dev-retention -c env=dev`
+4. Merge + deploy frontend PR #91
+5. Smoke test History + Export + Retention card; flip DRY_RUN off after 7 days
+
+### Follow-on — CI fix (commits ad7baca + e8a6e7a)
+PR #179 was red on `Test agent-engine` for ~4h before Term E touched it: `pip install -e ".[dev]" 2>/dev/null || pip install -e "."` silently dropped Poetry group deps (pip doesn't read `[tool.poetry.group.dev.dependencies]` as extras), so `aiosqlite` was missing and `app.memory.database`'s `create_async_engine` exploded at conftest import time. Fixed in two passes:
+- `ad7baca` — `.github/workflows/pr-validation.yml` now detects `[tool.poetry` in pyproject.toml and runs `poetry export --with dev` to install both groups; PEP 621 services still install via `pip install -e ".[dev]"`. Same fix mirrored to `backend-ci.yml` later (its silent `|| true` pytest mask had been hiding the same break).
+- `e8a6e7a` — added `moto = "^5.0"` to `services/agent-engine/pyproject.toml` dev group (referenced by `tests/test_data_connector.py` and friends; `backend-ci` had been installing it through a generic catch-all pip line that pr-validation doesn't have). Refreshed poetry.lock. Local verify: `1857 tests collected`, no import errors; `56 passed` across the 4 most-relevant test files (auth_deps_jit, conversation_export_pdf, retention_policies, data_connector).
 
 ## [2026-05-18] — Meridian text chat routed through WebSocket (PR #89)
 
