@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1108</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1111</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,89 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-05-20] — Coord overnight: Term E split, OIDC trust fix, services + trainer drift deployed</h3>
+        <p>Multi-PR overnight session driven by Coord while Bill slept and Term A was on hold. Six PRs touched (#179, #186, #187, #188 backend; #92, #93 frontend), one IAM trust policy patched, two CDK stacks deployed, one critical pre-existing trainer-service regression surfaced.</p>
+
+        <h4>Split — Term E PR #179 bundle</h4>
+        <p>Original PR #179 was titled "Phase 1 only — JIT-provision Magic-Auth users" but its diff contained Phase 1 + Phase 2 + Phase 3 + a CI policy change. Bill chose Option 2 (Coord does the split mechanically). Coord force-pushed <code>feat/chat-history-export-retention</code> back to Phase 1 (commit <code>61511dc</code>), then cherry-picked the other commits onto three new branches:</p>
+        <ul>
+          <li><strong>PR #186</strong> — <code>feat/conversation-export-pdf</code> (Phase 2: ReportLab PDF export, <code>reportlab ^4.2</code> dep, 8 tests). <strong>Merged 03:38:46Z (<code>6d7b9c86</code>).</strong></li>
+          <li><strong>PR #187</strong> — <code>feat/memory-retention-policies</code> (Phase 3: new <code>RetentionStack</code> CDK + retention-runner Lambda + migration + DRY_RUN=true safety margin). <strong>Open, green, awaits Bill's morning go on CDK+migration+ECS deploy.</strong></li>
+          <li><strong>PR #188</strong> — <code>ci/pr-validation-poetry-and-timeout</code> (CI policy: Poetry dev-deps install fix, pytest-timeout=120s, agent-engine test scoping). PR body documents the pre-existing-backlog claim with hard evidence (database.py:51 async-engine pattern, 7 broken test files all 4–44 days pre-PR). <strong>Merged 03:06:48Z (<code>ca5a9cd</code>).</strong></li>
+        </ul>
+        <p>Coord-introduced split bug: pr-validation.yml's <code>pytest tests/test_auth_deps_jit.py tests/test_conversation_export_pdf.py tests/test_retention_policies.py</code> exited 4 ("no tests ran") on any individual PR carrying only a subset of the three files. Hardening commit <code>078451f</code> on PR #188 made the file collection tolerant of missing files — if none of the three exist on the branch, exit 0 with a notice.</p>
+
+        <h4>Merge sequence + frontend</h4>
+        <ul>
+          <li><strong>Frontend #92</strong> (<code>feat/meridian-async-jobs</code>) — text-send moved from WS sendMessage to <code>POST /v1/agents/chat/async</code> + WS push frames + REST poll fallback + page-refresh hydration. Coord's architectural call: async-jobs is canonical text path going forward (vs Term C's WS-only). <strong>Merged 02:33:14Z (<code>1f6930c3</code>), deployed 02:33:17Z.</strong></li>
+          <li><strong>Frontend #93</strong> (<code>feat/meridian-job-dedupe</code>) — Term D's edge-triggered dedupe on settlement (<code>!wasTerminal &amp;&amp; TERMINAL_STATUSES.has(...)</code>). Handles WS push + REST poll + listActiveJobs replay races identically. <strong>Merged 03:23:02Z (<code>7ea96d8d</code>).</strong></li>
+          <li><strong>Backend #179</strong> (Phase 1 JIT auth_deps) — merged after split <strong>03:22:06Z (<code>7fac2fa</code>)</strong>. Agent Engine ECS roll completed 03:25Z via the parallel image-build workflow.</li>
+          <li><strong>Backend #186</strong> — <strong>merged 03:38:46Z</strong>. ECS roll completed ~03:42Z.</li>
+        </ul>
+
+        <h4>OIDC trust policy fix (resolves issue #176)</h4>
+        <p>Term D surfaced that every <code>Staged Deploy</code> run since PR #172 introduced the workflow on 2026-05-19 had been failing at <code>Configure AWS credentials (OIDC)</code> with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>. The trust policy on <code>arn:aws:iam::568505405842:role/gha-cdk-deploy</code> listed bare environment names (<code>dev</code>, <code>staging</code>, <code>prod</code>) but the workflow uses GitHub Environments with the <code>ig-*-deploy</code> prefix (<code>ig-dev-deploy</code>, <code>ig-staging-deploy</code>, <code>ig-prod-deploy</code>). Name mismatch → silent OIDC failure for ~30 hours. Smoke probes (the gate that auth-verifies endpoints under JWT) had NEVER run on <code>development</code>.</p>
+        <p>Bill approved Coord's additive patch (3 new subjects, 6 existing kept as no-op safety net). <strong>Applied via <code>aws iam update-assume-role-policy</code> at 05:43Z.</strong> Verified working immediately: dry-run Staged Deploy <code>26144034968</code> completed <code>Configure AWS credentials (OIDC): success</code> for the first time on this workflow. cdk diff produced clean output — only 2 of 10 stacks had differences.</p>
+
+        <h4>Drift bucket + scoped deploys</h4>
+        <p>cdk diff against dev showed:</p>
+        <ul>
+          <li><strong>8 of 10 stacks clean</strong>: ig-dev-api-gateway, ig-dev-agent-engine, ig-dev-database, ig-dev-invitation, ig-dev-security, ig-dev-monitoring, ig-dev-cognito, ig-dev-domain.</li>
+          <li><strong>ig-dev-services</strong> (188 lines): single intentional cluster — Magic-Auth JWT secret access added to 5 Lambda IAM roles (Auth, Coach, Org, Dashboard, Support) + RLHF Lambda code refreshes. Additive only (existing aurora master-credentials access preserved).</li>
+          <li><strong>ig-dev-trainer</strong> (20 lines): 2 Lambda code-zip S3Key refreshes (TrainerLambda + TrainerWorker).</li>
+        </ul>
+        <p>Bill chose Path A (deploy both stacks scoped). Coord executed via <code>workflow_dispatch</code> with <code>stack=ig-dev-services</code> then <code>stack=ig-dev-trainer</code> sequentially.</p>
+
+        <h4>Verified</h4>
+        <ul>
+          <li><strong>ig-dev-services deploy + smoke probes: FULL SUCCESS</strong> (run <code>26144628703</code>, finished ~06:21Z). All 7 probe scripts (bucket-cors, lambda-vpc, sg-egress-ingress, endpoint-health, lambda-bundle-sentinels, api-gw-route-uniqueness, lambda-log-db-errors) passed. <strong>This is the first auth-verified end-to-end confirmation that PR #179 (Phase 1 JIT) + PR #186 (Phase 2 PDF export) are healthy under JWT in dev.</strong></li>
+          <li>ECS service <code>ig-dev-agent-engine</code> running task def rev 40, deployment <code>COMPLETED</code> 03:43Z, 1/1 healthy throughout. Term D's CloudWatch monitor up to 03:54Z found zero events on JIT marker / reportlab / chat-async 5xx / DB error filters.</li>
+        </ul>
+
+        <h4>Known issue — surfaced for morning triage</h4>
+        <p><strong>ig-dev-trainer deploy SUCCESS, but smoke probe failed on one endpoint</strong> (run <code>26145424249</code>): <code>GET /v1/trainer/agents?ecosystem_id=inspire-genius → HTTP 500</code> on unauthenticated calls. Other 7 endpoints in the same probe set (documents, organizations, users, support, audit, observability, etc.) return 401/422 cleanly. Suspect: trainer-service auth middleware from <strong>commit <code>34b2f2a</code> (PR #166, 2026-05-17, "trainer-service auth middleware close 83 unauth endpoints")</strong> crashes on missing JWT instead of returning 401. <strong>The regression pre-dates this deploy by 3 days but was invisible</strong> because every prior Staged Deploy failed at OIDC before smoke probes could run. Lambda DB-error scan in CloudWatch was clean — this is auth-middleware crash, not connectivity. <strong>Not rolled back</strong> — the broken endpoint is admin/practitioner-only, the deploy itself matched what services-stack did cleanly, and rolling back changes a stable state without addressing the underlying bug. P1 morning ticket.</p>
+
+        <h4>Term status</h4>
+        <ul>
+          <li><strong>Term A</strong>: never started (Bill confirmed on hold). 7 draft PRs still open (#178, #180, #181, #182, #183, #184, #185). Issue #176 (OIDC trust) now resolved by Coord — Term A can close it when they pick up.</li>
+          <li><strong>Term B</strong>: idle.</li>
+          <li><strong>Term C</strong>: shipped earlier 2026-05-19, idle.</li>
+          <li><strong>Term D</strong>: 4 of 4 tasks complete (frontend deploy verify, dedupe test+fix, log sync, regression monitor through 03:54Z). Stood down.</li>
+          <li><strong>Term E</strong>: never relaunched after IDE restart. Coord did the split mechanically. Frontend PR #91 (retention UI) still parked behind backend PR #187.</li>
+        </ul>
+
+        <h4>For Bill in the morning</h4>
+        <ol>
+          <li><strong>Trainer regression</strong>: GET <code>/v1/trainer/agents?ecosystem_id=...</code> returns 500 on unauth. File P1 issue. Root cause is auth middleware from PR #166. Not a rollback candidate.</li>
+          <li><strong>PR #187</strong> (Phase 3 retention) merge decision: needs CDK deploy <code>ig-dev-retention</code> + migration-runner invoke + ECS roll. Can be sequenced via <code>gh workflow run "Staged Deploy" -f stack=ig-dev-retention</code> once merged.</li>
+          <li><strong>Term E relaunch</strong>: required for frontend PR #91 rebase after #187 lands. Coord can also drive that mechanically if preferred.</li>
+          <li><strong>Issue #176</strong> can be closed — OIDC fix verified working in dev.</li>
+        </ol>
+
+        <h3>[2026-05-20] — Dedupe Meridian async-jobs settlement (frontend PR #93)</h3>
+        <p>Follow-up to frontend PR #92 (async-jobs canonical text path). Coord flagged on #92 that when a WS <code>job_complete</code> frame and an in-flight REST poll both settle the same <code>job_id</code>, <code>useMeridianJob</code> fired <code>onJobSettled</code> twice — duplicate assistant bubble. The same double-fire happens on page-refresh hydration via <code>listActiveJobs</code> replaying the already-terminal row.</p>
+        <h4>Fixed</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/src/hooks/agents/useMeridianJob.ts</code> — <code>upsertJob</code> now gates <code>onJobSettled</code> on a transition INTO terminal. Captures <code>wasTerminal</code> from <code>jobsByIdRef.current</code> (independent of the <code>mergeFromCurrent</code> flag, since <code>listActiveJobs</code> calls with <code>false</code>) and skips the callback if the job was already terminal. Bubble-render dedupe is now decoupled from the row-merge semantics.</li>
+        </ul>
+        <h4>Added</h4>
+        <ul>
+          <li><code>inspire-genius-frontend/src/hooks/agents/__tests__/useMeridianJob.test.ts</code> — new <code>describe("useMeridianJob — settlement dedupe", ...)</code> block with two cases: (1) WS push + in-flight REST poll for the same <code>job_id</code> ⇒ exactly one rendered bubble; (2) WS push, then <code>listActiveJobs</code> hydration of the same terminal row ⇒ no replay. Both failed on pre-fix code (received <code>+1</code> extra bubble each); both pass after the patch.</li>
+        </ul>
+        <h4>Verified</h4>
+        <ul>
+          <li><code>npx jest src/hooks/agents/__tests__/useMeridianJob.test.ts</code> — 8/8 pass, including 6 pre-existing tests.</li>
+          <li><code>npm run test:ci</code> — 381 suites / 3027 tests pass.</li>
+          <li><code>npx tsc --noEmit -p tsconfig.app.json</code> — clean.</li>
+          <li><code>eslint</code> on the two touched files — clean.</li>
+          <li>Dev deploy of PR #92 confirmed via <code>gh run list --repo willb77/inspire-genius-frontend --branch development</code> — run <code>26137697034</code> conclusion <code>success</code>. Text-send now routes through <code>POST /v1/agents/chat/async</code>.</li>
+          <li>Regression monitor running on <code>/ecs/ig-dev-agent-engine</code> for <code>chat/async</code> 5xx + <code>ERROR</code>/<code>Traceback</code> + <code>chat_jobs</code> anomalies.</li>
+        </ul>
+        <h4>Coordination</h4>
+        <ul>
+          <li>Term D opened PR #93 on <code>feat/meridian-job-dedupe</code> off <code>development</code> and posted a <code>[term-d]</code> status comment on PR #92. Will not self-merge per multi-terminal protocol — awaiting Coord ack.</li>
+        </ul>
 
         <h3>[2026-05-18] — Meridian text chat routed through WebSocket (PR #89)</h3>
         <p>Closed the 2026-05-18 API GW 30s integration-cap outage. Bill's "Linda Schulte 5-person PRISM team assignment" query produced 8+ 503s in 15 min — every one at exactly <code>integrationLatency: 30000 ms</code>. ECS agent-engine logs showed the same requests completing <code>200 OK</code>; the browser never received them. Root cause: <code>POST /v1/agents/chat</code> goes through API Gateway HTTP API which caps integrations at 30s (hard AWS limit). Multi-agent DAG queries run 45–90s.</p>
@@ -2569,6 +2652,14 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-20 — Prompt #1110 [/full-go Term D — dedupe useMeridianJob settlement on top of PR #92 async-jobs (PR #93)]</div>
+          <div class="prompt-text">Term D follow-up to frontend PR #92 (Meridian async-jobs canonical text path). Coord flagged on #92 that when a WS job_complete frame and an in-flight REST poll both settle the same job_id, useMeridianJob fired onJobSettled twice — duplicate assistant bubble. Same double-fire on page-refresh hydration via listActiveJobs replaying the same already-terminal row. Root cause: upsertJob fired onJobSettled on every terminal-status write with no transition guard. Fix in src/hooks/agents/useMeridianJob.ts: capture wasTerminal from jobsByIdRef.current (independent of mergeFromCurrent flag — listActiveJobs uses false) and skip the callback when the job was already terminal. Added a "useMeridianJob — settlement dedupe" describe block in the hook's test file with two cases: (1) WS push + in-flight REST poll for same job_id ⇒ one rendered bubble, (2) WS push then listActiveJobs replay ⇒ no replay. Both new tests fail on pre-fix (received +1 extra bubble each); both pass after the patch. All 6 pre-existing useMeridianJob tests still pass. Full Jest CI: 381 suites / 3027 tests pass. tsc --noEmit clean. ESLint clean on touched files. Verified PR #92 deploy fired (frontend run 26137697034 conclusion=success). Opened PR #93 with [term-d] status comment on PR #92; will not self-merge per Coord protocol. Regression monitor running on /ecs/ig-dev-agent-engine for chat/async 5xx + ERROR/Traceback + chat_jobs anomalies.</div>
+        </div>
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-19 — Prompt #1109 [/full-go Term E — chat history + export + retention (PR #179 + frontend #91)]</div>
+          <div class="prompt-text">Three-phase Term E ship on `feat/chat-history-export-retention` (monorepo) + `feat/chat-history-export-retention-ui` (frontend). PHASE 1 (P0): JIT-provision public.users row in `_resolve_canonical_sub` for Magic-Auth users not yet in the canonical users table — confirmed via prod logs + live SQL probes that user_id 94782458-7011-7057-b6e9-40e7a51ef013 had 74 conversation_messages rows and 0 chat_messages rows because fk_chat_messages_user_id_users silently rejected writes; History reader queries chat_messages so users saw empty History. Idempotent via ON CONFLICT, UUID-guarded, auth_provider classified from JWT iss. PHASE 2 (P0): real PDF rendering for /v1/chat/conversations/{id}/download via ReportLab (same library observability-service uses); `?format=csv` keeps legacy path; HTML escape guard against ReportLab Paragraph parser injection; graceful CSV fallback if PDF render fails. PHASE 3 (P1): memory_retention_policies table (scope × tier × days × archive_to_s3) with 4-level scope inheritance (user > manager > org > system); seeds 4 system defaults; agent-engine CRUD API at /v1/retention/policies + /effective resolver; retention-runner Lambda (pg8000+boto3, ~15min timeout, reserved concurrency=1, DRY_RUN=true) walks expired rows to S3 as JSONL then DELETEs; new RetentionStack CDK with S3 bucket (SSE-AES256, IA day 30, Glacier day 180), 4 CloudWatch alarms, scoped IAM. Did NOT touch services-stack / api-gateway-stack / trainer-stack / MeridianChat.tsx per Coord rules. Frontend RetentionSettings card in shared Settings (super-admin / company-admin / manager). 32 new tests passing (24 agent-engine + 5 retention-runner + 3 frontend). Coord notified via [coord]-tagged PR comment with deploy plan; awaiting migration runner invocation + ECS rebuild + cdk deploy ig-dev-retention.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-18 — Prompt #1108 [/full-go Term C — route Meridian text chat through WS, escape API GW 30s cap (PR #89)]</div>
           <div class="prompt-text">Term C closing the 2026-05-18 API GW 30s integration-cap outage from Bill's Linda Schulte 5-person PRISM team query (8+ 503s in 15 min, all at integrationLatency: 30000 ms; ECS completed 200 OK, browser never received). Worktree at .claude/worktrees/meridian-ws-text-chat on fix/meridian-ws-text-chat off origin/development (frontend repo, nested under monorepo). Deleted the agentApi.post("/v1/agents/chat", …) IIFE in MeridianChat.tsx onSendText and replaced with _wsSendMessage(t, { conversation_id, session_id }, selectedFileIds). Hook signature unchanged (Term D safe). Disconnected-socket fallback queues in pendingSendRef + wsConnect(); connected frame in onResponse flushes via wsSendMessageRef. Error frame replaces "Meridian is thinking…" placeholder with the same "Sorry, I couldn't reach Meridian" bubble REST used. Voice path untouched. Added 3 tests: MockWebSocket-based hook sendMessage routes through socket.send (not axios); MeridianChat onSendText calls sendMessage not agentApi.post; queue-and-reconnect path when socket isn't open. npm run lint clean for changed files (1 pre-existing warning on origin/development); npm run build green; npm run test:ci 3017/3017 pass. PR #89 (draft → ready). Coord notified via [coord]-tagged PR comments at status-check + ready-for-review. Term D rebases off this once merged.</div>
@@ -24321,6 +24412,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
                 <div class="prompt-entry">
           <div class="timestamp">2026-05-16 — Prompt #1107 [doc gen — Platform Documentation + Runbooks]</div>
           <div class="prompt-text">Produced IG_Platform_Documentation_And_Runbooks_2026-05-16.docx (~90 KB) at project root. Read-only investigation. 5 parts + appendix: (A) Component &amp; Function Catalog covering frontend pages by all 6 roles + layouts + contexts + lib + services + hooks + constants, 15 microservices with endpoints/DB tables/env vars/EventBridge events/DLQs/alarms, Agent Engine deep-dive (Meridian + 4 orchestrators + 18 agents + 6 MCP tools + collaboration protocol + analytics + permissions + 4 memory tiers + voice pipeline), data repositories (Aurora ~50 tables + 10 DynamoDB + 6 S3 + Redis + pgvector + Cognito + Secrets Manager + EventBridge), 12 CDK stacks. (B) Integration &amp; Collaboration ASCII diagrams. (C) 15 runbooks. (D) Configuration reference (VITE_* + per-service envs + feature flags + auth tokens). (E) Glossary + role definitions + file index. Appendix flags items needing live probe.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-20 — Prompt #1111 [Term C /full-go invitation expiry controls]</div>
+          <div class="prompt-text">Term C rotation: invitation lifecycle controls in User Management edit dialog. Super-admins editing a user with a pending/expired invitation should see current status + expiry inline and be able to set a custom future expiry without leaving the dialog. Existing resend handler (hardcoded +3 days) untouched. Backend additions to monolith /v1/user-management/* (extending existing surface — feedback_monolith_sunset_no_new_debt edge case). Frontend additions to UserFormModal in edit mode only. BulkImport mirror out of scope. Open two cross-linked PRs; do not self-merge — Coord serializes.</div>
+        </div>
+
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-20 — Activity #act-term-c-invitation-expiry [Backend PR #6 + Frontend PR #94]</div>
+          <div class="prompt-text">Shipped two cross-linked PRs adding super-admin controls for invitation lifecycle in the User Management edit dialog. **Backend** (PR willb77/inspire-genius-backend#6 against main): added GET /v1/user-management/users/{user_id}/invitation + PATCH /v1/user-management/users/{user_id}/invitation on the existing cbv router next to the resend handler. New schema helpers get_latest_invitation_by_user_id (resolves user_id → user.email → latest UserInvitation since invitations key on email, not user_id) + update_invitation_expiry (validates future date, transitions EXPIRED → PENDING when un-expiring, never touches ACCEPTED/CANCELLED). GET reports an effective status: PENDING + past expires_at → 'expired' (matches listing endpoint behavior). UpdateInvitationExpiryRequest pydantic model with extra="forbid". 16 new pytest cases in tests/test_user_management_invitation.py covering helpers, endpoints (happy + 404 + 400 + un-expire), and auth wiring. Added tests/conftest.py stubbing project Settings env vars so suite runs in local dev venv (was already broken without it — unblocks adjacent tests too). All 16 pass locally. **Frontend** (PR willb77/inspire-genius-frontend#94 against development): new InvitationSection inside UserFormModal, gated on edit-mode + invitation_id + status in {pending, expired, invitation_sent}. Read-only display (status badge, role, sent_at, expires_at via date-fns in user local tz) + shadcn Calendar/Popover date picker (past + today disabled at min-date level) + Update Expiry button → useUpdateInvitationExpiry mutation (transmits ISO 8601 UTC, invalidates both list + per-user queries, emits invitation_expiry_updated audit event) + Resend Invitation button (re-uses existing useResendInvitation hook). UserManagement.tsx passes invitationContext to UserFormModal when selected row has invitation_id. 17 new jest cases across UserFormModal.test.tsx (+8: gating, loading, error, update + resend flows), useUserManagement.test.tsx (+6: hook enable gating, success + error toast paths), user-management.service.test.ts (+3: GET/PATCH URL shape + encoding). 168/168 frontend tests pass; npm run build green. Both PRs tagged [term-c] [coord], cross-linked in bodies; awaiting Coord merge approval per serialization protocol.</div>
         </div>
 </div>
 </div>
