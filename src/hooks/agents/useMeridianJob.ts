@@ -194,7 +194,13 @@ export function useMeridianJob(
   // -------------------------------------------------------------------
 
   const upsertJob = useCallback((job: ChatJob, mergeFromCurrent = true) => {
-    const existing = mergeFromCurrent ? jobsByIdRef.current[job.job_id] : undefined;
+    // Independent of the merge flag, we need to know whether the same
+    // job_id is already tracked in a terminal state — that drives the
+    // dedupe guard below.
+    const priorEntry = jobsByIdRef.current[job.job_id];
+    const wasTerminal = priorEntry ? TERMINAL_STATUSES.has(priorEntry.status) : false;
+
+    const existing = mergeFromCurrent ? priorEntry : undefined;
     const merged: ChatJob = existing
       ? {
           ...existing,
@@ -207,7 +213,10 @@ export function useMeridianJob(
     jobsByIdRef.current = { ...jobsByIdRef.current, [job.job_id]: merged };
     setJobsById(jobsByIdRef.current);
     onJobUpdateRef.current?.(merged);
-    if (TERMINAL_STATUSES.has(merged.status)) {
+    // Only fire onJobSettled on the transition INTO terminal. A second
+    // WS-push / REST-poll / listActiveJobs replay for an already-
+    // terminal job_id must not re-render the assistant bubble.
+    if (!wasTerminal && TERMINAL_STATUSES.has(merged.status)) {
       onJobSettledRef.current?.(merged);
     }
   }, []);
