@@ -21,6 +21,7 @@ jest.mock("@/lib/axios", () => ({
     get: jest.fn(),
     post: jest.fn(),
     put: jest.fn(),
+    patch: jest.fn(),
     delete: jest.fn(),
   },
 }));
@@ -257,5 +258,109 @@ describe("Super Admin User Management Service", () => {
     const result = await purgeInactiveUsers();
 
     expect(result).toEqual({ total: 0, succeeded: [], failed: [] });
+  });
+
+  /* -----------------------------------------
+     getUserInvitation
+  ----------------------------------------- */
+  it("should fetch invitation details for a user", async () => {
+    const userId = "user-abc";
+    const mockResponse = {
+      message: "Invitation fetched",
+      data: {
+        invitation_id: "inv-1",
+        status: "pending",
+        stored_status: "pending",
+        expires_at: "2026-06-01T00:00:00+00:00",
+        sent_at: "2026-05-15T00:00:00+00:00",
+        role: "manager",
+        role_id: "role-1",
+        email: "u@x.com",
+        organization_id: null,
+      },
+    };
+
+    (api.get as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+
+    const { getUserInvitation } = await import("../user-management.service");
+    const result = await getUserInvitation(userId);
+
+    expect(api.get).toHaveBeenCalledWith(
+      `/v1/user-management/users/${encodeURIComponent(userId)}/invitation`,
+    );
+    expect(result.invitation_id).toBe("inv-1");
+    expect(result.status).toBe("pending");
+    expect(result.email).toBe("u@x.com");
+  });
+
+  it("should throw when getUserInvitation response is missing data envelope", async () => {
+    (api.get as jest.Mock).mockResolvedValueOnce({
+      data: { message: "boom" },
+    });
+
+    const { getUserInvitation } = await import("../user-management.service");
+    await expect(getUserInvitation("user-x")).rejects.toThrow(
+      /boom|Failed to fetch invitation/,
+    );
+  });
+
+  /* -----------------------------------------
+     updateInvitationExpiry
+  ----------------------------------------- */
+  it("should PATCH expires_at to the user invitation endpoint", async () => {
+    const userId = "user-abc";
+    const expires = "2026-07-01T00:00:00.000Z";
+    const mockResponse = {
+      message: "Invitation expiry updated",
+      data: {
+        invitation_id: "inv-1",
+        email: "u@x.com",
+        status: "pending",
+        expires_at: expires,
+      },
+    };
+
+    (api.patch as jest.Mock).mockResolvedValueOnce({
+      data: mockResponse,
+    });
+
+    const { updateInvitationExpiry } = await import(
+      "../user-management.service"
+    );
+    const result = await updateInvitationExpiry(userId, expires);
+
+    expect(api.patch).toHaveBeenCalledWith(
+      `/v1/user-management/users/${encodeURIComponent(userId)}/invitation`,
+      { expires_at: expires },
+    );
+    expect(result.expires_at).toBe(expires);
+    expect(result.status).toBe("pending");
+  });
+
+  it("encodes user_id path segment in invitation URLs", async () => {
+    (api.get as jest.Mock).mockResolvedValueOnce({
+      data: {
+        message: "ok",
+        data: {
+          invitation_id: "x",
+          status: "pending",
+          stored_status: "pending",
+          expires_at: null,
+          sent_at: null,
+          role: null,
+          role_id: null,
+          email: "x@x.com",
+          organization_id: null,
+        },
+      },
+    });
+
+    const trickyId = "user/with/slashes";
+    const { getUserInvitation } = await import("../user-management.service");
+    await getUserInvitation(trickyId);
+
+    expect(api.get).toHaveBeenCalledWith(
+      `/v1/user-management/users/${encodeURIComponent(trickyId)}/invitation`,
+    );
   });
 });

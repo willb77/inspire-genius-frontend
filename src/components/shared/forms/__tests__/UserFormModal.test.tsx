@@ -1,5 +1,27 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import UserFormModal from "../UserFormModal";
+
+/* -------------------------------------------------
+   MOCK invitation hooks (used by InvitationSection)
+------------------------------------------------- */
+const mockUpdateExpiryMutateAsync = jest.fn();
+const mockResendMutateAsync = jest.fn();
+const mockUseUserInvitation = jest.fn();
+
+jest.mock(
+  "@/hooks/super-admin/user-management/useUserManagement",
+  () => ({
+    useUserInvitation: (...args: any[]) => mockUseUserInvitation(...args),
+    useUpdateInvitationExpiry: () => ({
+      mutateAsync: mockUpdateExpiryMutateAsync,
+      isPending: false,
+    }),
+    useResendInvitation: () => ({
+      mutateAsync: mockResendMutateAsync,
+      isPending: false,
+    }),
+  }),
+);
 
 /* -------------------------------------------------
    MOCK ModalFormFrame (important)
@@ -31,6 +53,41 @@ jest.mock("@/components/shared/forms/ModalFormFrame", () => ({
       </div>
     );
   },
+}));
+
+/* -------------------------------------------------
+   MOCK shadcn calendar + popover so InvitationSection renders cleanly
+------------------------------------------------- */
+jest.mock("@/components/ui/calendar", () => ({
+  Calendar: ({ onSelect }: any) => (
+    <button
+      type="button"
+      data-testid="calendar-pick"
+      onClick={() => onSelect(new Date("2030-01-15T00:00:00Z"))}
+    >
+      pick 2030-01-15
+    </button>
+  ),
+}));
+
+jest.mock("@/components/ui/popover", () => ({
+  Popover: ({ children }: any) => <div>{children}</div>,
+  PopoverTrigger: ({ children }: any) => <div>{children}</div>,
+  PopoverContent: ({ children }: any) => <div>{children}</div>,
+}));
+
+jest.mock("@/components/ui/badge", () => ({
+  Badge: ({ children, className }: any) => (
+    <span className={className}>{children}</span>
+  ),
+}));
+
+jest.mock("@/components/ui/button", () => ({
+  Button: ({ children, onClick, disabled, ...rest }: any) => (
+    <button onClick={onClick} disabled={disabled} {...rest}>
+      {children}
+    </button>
+  ),
 }));
 
 /* -------------------------------------------------
@@ -66,6 +123,16 @@ describe("UserFormModal", () => {
     onOpenChange: jest.fn(),
     onSubmit: jest.fn(),
   };
+
+  beforeEach(() => {
+    // Default: invitation query returns no data (not loading, not error).
+    // Per-test cases can override.
+    mockUseUserInvitation.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+    });
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -187,5 +254,192 @@ describe("UserFormModal", () => {
     expect(
       screen.getByRole("button", { name: "Create User Now" }),
     ).toBeInTheDocument();
+  });
+
+  /* -------------------------------------------------
+     INVITATION SECTION (new)
+  ------------------------------------------------- */
+  describe("InvitationSection", () => {
+    const invitationContext = {
+      userId: "user-1",
+      invitationId: "inv-1",
+      invitationStatus: "pending",
+    };
+
+    it("does not render invitation section in add mode", () => {
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="add"
+          invitationContext={invitationContext}
+        />,
+      );
+      expect(screen.queryByText("Invitation")).not.toBeInTheDocument();
+    });
+
+    it("does not render invitation section when invitationContext is omitted", () => {
+      render(<UserFormModal {...baseProps} mode="edit" />);
+      expect(screen.queryByText("Invitation")).not.toBeInTheDocument();
+    });
+
+    it("does not render invitation section when status is 'accepted'", () => {
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={{
+            ...invitationContext,
+            invitationStatus: "accepted",
+          }}
+        />,
+      );
+      expect(screen.queryByText("Invitation")).not.toBeInTheDocument();
+    });
+
+    it("renders invitation section in edit mode with pending status", () => {
+      mockUseUserInvitation.mockReturnValue({
+        data: {
+          invitation_id: "inv-1",
+          status: "pending",
+          stored_status: "pending",
+          expires_at: "2026-06-01T00:00:00Z",
+          sent_at: "2026-05-15T00:00:00Z",
+          role: "manager",
+          role_id: "r1",
+          email: "u@x.com",
+          organization_id: null,
+        },
+        isLoading: false,
+        isError: false,
+      });
+
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={invitationContext}
+        />,
+      );
+
+      expect(screen.getByText("Invitation")).toBeInTheDocument();
+      expect(screen.getByText("u@x.com")).toBeInTheDocument();
+      expect(screen.getByText("manager")).toBeInTheDocument();
+      // The status badge label
+      expect(screen.getByText("Pending")).toBeInTheDocument();
+    });
+
+    it("shows loading state while fetching invitation", () => {
+      mockUseUserInvitation.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      });
+
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={invitationContext}
+        />,
+      );
+
+      expect(screen.getByText(/Loading invitation details/i)).toBeInTheDocument();
+    });
+
+    it("renders error message when invitation fetch fails", () => {
+      mockUseUserInvitation.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: { response: { data: { message: "User has no invitation" } } },
+      });
+
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={invitationContext}
+        />,
+      );
+
+      expect(screen.getByText("User has no invitation")).toBeInTheDocument();
+    });
+
+    it("calls update-expiry mutation with ISO UTC date after picking a future date", async () => {
+      mockUseUserInvitation.mockReturnValue({
+        data: {
+          invitation_id: "inv-1",
+          status: "pending",
+          stored_status: "pending",
+          expires_at: "2026-06-01T00:00:00Z",
+          sent_at: "2026-05-15T00:00:00Z",
+          role: "user",
+          role_id: "r1",
+          email: "u@x.com",
+          organization_id: null,
+        },
+        isLoading: false,
+        isError: false,
+      });
+      mockUpdateExpiryMutateAsync.mockResolvedValue({});
+
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={invitationContext}
+        />,
+      );
+
+      // Update button is disabled until a date is chosen
+      const updateBtn = screen.getByRole("button", { name: /Update Expiry/i });
+      expect(updateBtn).toBeDisabled();
+
+      fireEvent.click(screen.getByTestId("calendar-pick"));
+      expect(updateBtn).not.toBeDisabled();
+
+      await act(async () => {
+        fireEvent.click(updateBtn);
+      });
+
+      expect(mockUpdateExpiryMutateAsync).toHaveBeenCalledWith({
+        userId: "user-1",
+        expires_at: new Date("2030-01-15T00:00:00Z").toISOString(),
+      });
+    });
+
+    it("clicking Resend triggers useResendInvitation with the invitationId", async () => {
+      mockUseUserInvitation.mockReturnValue({
+        data: {
+          invitation_id: "inv-1",
+          status: "pending",
+          stored_status: "pending",
+          expires_at: "2026-06-01T00:00:00Z",
+          sent_at: null,
+          role: null,
+          role_id: null,
+          email: "u@x.com",
+          organization_id: null,
+        },
+        isLoading: false,
+        isError: false,
+      });
+      mockResendMutateAsync.mockResolvedValue({});
+
+      render(
+        <UserFormModal
+          {...baseProps}
+          mode="edit"
+          invitationContext={invitationContext}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: /Resend Invitation/i }),
+        );
+      });
+      expect(mockResendMutateAsync).toHaveBeenCalledWith("inv-1");
+    });
   });
 });
