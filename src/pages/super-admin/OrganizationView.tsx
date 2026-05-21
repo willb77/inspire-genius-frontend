@@ -273,11 +273,14 @@ export default function OrganizationView() {
       if (!organization?.id) throw new Error("Missing organization ID");
       if (isOrganizationLevel)
         throw new Error(`Please select a business to add ${roleName}`);
+      // Issue #204: auth-service /v1/admin/invite-user takes role NAME
+      // (resolved to role_id server-side). The `role` variable here is
+      // the role record looked up by name above; pass role.name on the wire.
       const inviteRes = await inviteUser({
         email: values.email,
         first_name: values.first_name,
         last_name: values.last_name,
-        role_id: role.id,
+        role: role.name,
         organization_id: organization.id,
         business_id: selectedBusinessId as string,
       });

@@ -60,30 +60,37 @@ export async function getUsers(params: GetUsersParams = {}) {
   return data
 }
 
+// Issue #204 (2026-05-21): repointed from monolith /v1/user-management/invite
+// to auth-service /v1/admin/invite-user. The monolith handler wrote Aurora
+// rows to a phantom local-postgres container on the EC2 — main Aurora never
+// got the row, so magic-auth + /me returned "user not found" for every new
+// admin-created user. The auth-service endpoint mirrors PR #198's atomic
+// Cognito-rollback pattern and emits auth.user.signup so user-sync mirrors
+// into magic_auth.
 export type InviteUserPayload = {
   email: string
   first_name: string
   last_name: string
-  role_id?: string
+  // Role NAME ('user', 'manager', etc.) — auth-service /v1/admin/invite-user
+  // resolves it to role_id server-side. Callers that previously sent role_id
+  // (UUID) must look up the role NAME and send it here instead.
   role?: string
   organization_id?: string
   business_id?: string
 }
 
 export type InviteUserData = {
-  invitation_id: string
   user_id: string
-  cognito_user_id: string
-  user_created: boolean
-  profile_created: boolean
-  user_status: string
-  email_sent: boolean
+  email: string
+  role: string
+  cognito_user_status: string
+  invited_by: string
 }
 
 export type InviteUserResponse = BaseApiResponse<InviteUserData>
 
 export async function inviteUser(payload: InviteUserPayload) {
-  const { data } = await api.post<InviteUserResponse>('/v1/user-management/invite', payload)
+  const { data } = await api.post<InviteUserResponse>('/v1/admin/invite-user', payload)
   return data
 }
 

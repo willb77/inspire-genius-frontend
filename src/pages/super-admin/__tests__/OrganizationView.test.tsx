@@ -1183,7 +1183,10 @@ describe("OrganizationView", () => {
               email: "test@example.com",
               first_name: "Test",
               last_name: "User",
-              role_id: "role-1",
+              // Issue #204: payload now sends role NAME, not role_id UUID.
+              // mockRolesData maps role-1 → name "admin"; the Add Admin path
+              // looks up that role and passes its .name on the wire.
+              role: "admin",
             }),
           );
         });
