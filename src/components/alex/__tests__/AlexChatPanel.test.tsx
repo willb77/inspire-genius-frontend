@@ -252,6 +252,7 @@ describe("AlexChatPanel", () => {
       isPending: false,
     });
     (toast.error as jest.Mock).mockImplementation(() => {});
+    (toast.success as jest.Mock).mockImplementation(() => {});
   });
 
   describe("Rendering", () => {
@@ -998,10 +999,33 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(downloadAlexChat).toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith(
+          "Export failed: no chat data returned for the selected range",
+        );
       });
     });
 
     it("should handle export failure", async () => {
+      (downloadAlexChat as jest.Mock).mockResolvedValue({
+        status: false,
+        message: "Server rejected the request",
+      });
+
+      render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
+
+      const exportButton = screen.getByLabelText("Export chat");
+      fireEvent.click(exportButton);
+
+      const confirmButton = screen.getByTestId("export-confirm");
+      fireEvent.click(confirmButton);
+
+      await waitFor(() => {
+        expect(downloadAlexChat).toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith("Server rejected the request");
+      });
+    });
+
+    it("should handle export failure without server message", async () => {
       (downloadAlexChat as jest.Mock).mockResolvedValue({
         status: false,
       });
@@ -1015,8 +1039,83 @@ describe("AlexChatPanel", () => {
       fireEvent.click(confirmButton);
 
       await waitFor(() => {
-        expect(downloadAlexChat).toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith("Export failed");
       });
+    });
+
+    it("should toast and not crash when response is empty", async () => {
+      (downloadAlexChat as jest.Mock).mockResolvedValue(undefined);
+
+      render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
+
+      const exportButton = screen.getByLabelText("Export chat");
+      fireEvent.click(exportButton);
+
+      const confirmButton = screen.getByTestId("export-confirm");
+      fireEvent.click(confirmButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Export failed: empty response from server",
+        );
+      });
+    });
+
+    it("should read base64 from nested data payload shape", async () => {
+      (downloadAlexChat as jest.Mock).mockResolvedValue({
+        status: true,
+        data: {
+          base64_pdf: "nested-base64",
+          mime_type: "application/pdf",
+          file_name: "nested.pdf",
+        },
+      });
+
+      render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
+
+      const exportButton = screen.getByLabelText("Export chat");
+      fireEvent.click(exportButton);
+
+      const confirmButton = screen.getByTestId("export-confirm");
+      fireEvent.click(confirmButton);
+
+      await waitFor(() => {
+        expect(global.atob).toHaveBeenCalledWith("nested-base64");
+        expect(toast.success).toHaveBeenCalledWith(
+          "Chat exported successfully",
+        );
+      });
+    });
+
+    it("should toast and not crash when atob throws on malformed base64", async () => {
+      (downloadAlexChat as jest.Mock).mockResolvedValue({
+        status: true,
+        base64_pdf: "!!!not-valid-base64!!!",
+        mime_type: "application/pdf",
+        file_name: "chat.pdf",
+      });
+      const atobOriginal = global.atob;
+      const consoleError = jest.spyOn(console, "error").mockImplementation();
+      (global.atob as jest.Mock).mockImplementationOnce(() => {
+        throw new Error("InvalidCharacterError");
+      });
+
+      render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
+
+      const exportButton = screen.getByLabelText("Export chat");
+      fireEvent.click(exportButton);
+
+      const confirmButton = screen.getByTestId("export-confirm");
+      fireEvent.click(confirmButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Export failed: malformed file data",
+        );
+      });
+
+      consoleError.mockRestore();
+      global.atob = atobOriginal;
     });
 
     it("should handle export error", async () => {
@@ -1035,6 +1134,26 @@ describe("AlexChatPanel", () => {
 
       await waitFor(() => {
         expect(consoleError).toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith("Export failed");
+      });
+
+      consoleError.mockRestore();
+    });
+
+    it("should toast a generic message when downloadAlexChat rejects with non-Error", async () => {
+      (downloadAlexChat as jest.Mock).mockRejectedValue("network blip");
+      const consoleError = jest.spyOn(console, "error").mockImplementation();
+
+      render(<AlexChatPanel open={true} onOpenChange={mockOnOpenChange} />);
+
+      const exportButton = screen.getByLabelText("Export chat");
+      fireEvent.click(exportButton);
+
+      const confirmButton = screen.getByTestId("export-confirm");
+      fireEvent.click(confirmButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Failed to export chat");
       });
 
       consoleError.mockRestore();
