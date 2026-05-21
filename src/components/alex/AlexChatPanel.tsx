@@ -150,27 +150,58 @@ export default function AlexChatPanel({
       return;
     }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    let resp: Awaited<ReturnType<typeof downloadAlexChat>> | undefined;
     try {
-      const resp = await downloadAlexChat({
+      resp = await downloadAlexChat({
         device_key: deviceKey,
         start_date: formatExportDate(fromDate),
         end_date: formatExportDate(toDate),
         timezone,
-        // limit: 100,
-        // offset: 0,
       });
-      if (!resp || !resp.status) {
-        return;
-      }
+    } catch (e) {
+      console.error("Failed to export conversation", e);
+      toast.error(e instanceof Error ? e.message : "Failed to export chat");
+      return;
+    }
 
-      const base64 = resp.base64_pdf || resp.base64_csv;
-      const mime = resp.mime_type || "application/pdf";
-      const fileName = resp.file_name || `alex-chat-${formatExportDate(fromDate)}-to-${formatExportDate(toDate)}.pdf`;
-      if (!base64) return;
+    if (!resp) {
+      toast.error("Export failed: empty response from server");
+      return;
+    }
+    if (resp.status === false) {
+      toast.error(resp.message || "Export failed");
+      return;
+    }
+
+    // Backend may return payload at the top level OR nested under `data`
+    const nested = resp.data ?? {};
+    const base64 = resp.base64_pdf || resp.base64_csv || nested.base64_pdf || nested.base64_csv;
+    const mime = resp.mime_type || nested.mime_type || "application/pdf";
+    const fileName =
+      resp.file_name ||
+      nested.file_name ||
+      `alex-chat-${formatExportDate(fromDate)}-to-${formatExportDate(toDate)}.pdf`;
+
+    if (!base64 || typeof base64 !== "string") {
+      toast.error("Export failed: no chat data returned for the selected range");
+      return;
+    }
+
+    let byteArray: Uint8Array;
+    try {
       const byteChars = atob(base64);
       const byteNumbers = new Array(byteChars.length);
       for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-      const byteArray = new Uint8Array(byteNumbers);
+      byteArray = new Uint8Array(byteNumbers);
+    } catch (e) {
+      // atob throws InvalidCharacterError on malformed base64
+      console.error("Failed to decode export payload", e);
+      toast.error("Export failed: malformed file data");
+      return;
+    }
+
+    try {
       const blob = new Blob([byteArray], { type: mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -180,8 +211,10 @@ export default function AlexChatPanel({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast.success("Chat exported successfully");
     } catch (e) {
-      console.error("Failed to export conversation", e);
+      console.error("Failed to trigger file download", e);
+      toast.error("Export failed during file download");
     }
   }, [deviceKey]);
 
