@@ -49,7 +49,7 @@ export async function getMeWithToken(token: string) {
 // Social provider login URL generator
 export async function getSocialAuthLoginUrl(provider: string) {
   const res = await api.get<ApiEnvelope<{ login_url: string }>>(
-    `/v1/social-auth/login/?provider=${encodeURIComponent(provider)}`
+    `/v1/social-auth/login?provider=${encodeURIComponent(provider)}`
   )
   return res.data
 }
