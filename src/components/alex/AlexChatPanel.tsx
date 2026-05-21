@@ -16,6 +16,7 @@ import {
   VolumeX,
   Copy,
   SquarePause,
+  MessageSquarePlus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
 import { format } from "date-fns";
+import { getCurrentConversationId, newConversation } from "@/lib/conversationSession";
 
 const formatUSTimestamp = (d: Date) => format(d, "do MMM yy, hh:mm a");
 
@@ -393,9 +395,10 @@ export default function AlexChatPanel({
         const { agentApi } = await import("@/lib/agentApi");
         const { getToken } = await import("@/lib/storage");
         const token = await getToken();
+        const sessionId = await getCurrentConversationId();
         const resp = await agentApi.post("/v1/agents/chat", {
           message: text,
-          session_id: "alex-chat",
+          session_id: sessionId,
         }, {
           headers: token ? { "access-token": token } : {},
           timeout: 120000,
@@ -449,6 +452,16 @@ export default function AlexChatPanel({
     } catch {
       // ignore
     }
+  }, []);
+
+  const handleNewConversation = useCallback(async () => {
+    await newConversation();
+    setMessages([]);
+    lastMessageRef.current = { type: "", text: "" };
+    demoAudioServiceRef.current?.resetAudioState();
+    setHasAudio(false);
+    setIsAudioPaused(false);
+    toast.success("Started a new conversation");
   }, []);
   
   const handleClosePanel = useCallback(() => {
@@ -514,6 +527,19 @@ export default function AlexChatPanel({
           <div className="text-base font-semibold">Chat with Meridian</div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="size-8 rounded-lg bg-gray-100 hover:bg-gray-100 text-foreground p-0"
+                    aria-label="Start new conversation"
+                    onClick={handleNewConversation}
+                  >
+                    <MessageSquarePlus className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">New conversation</TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
