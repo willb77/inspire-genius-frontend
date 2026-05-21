@@ -1,3 +1,18 @@
+## [2026-05-20] — Term G: chat memory amnesia + response loops fix (issue #197)
+
+### Fixed
+- **Hardcoded `session_id: "alex-chat"` at `AlexChatPanel.tsx:365`** — every chat from a given user reused the literal string `"alex-chat"` as `session_id` forever, accumulating ALL of that user's messages across days/weeks under one session_id in `conversation_messages`. Combined with the backend's `history[-10:]` truncation, this caused Meridian to forget topics from earlier in the same thread and re-ask its own clarifying questions ("response loops").
+  - Replaced with a per-thread UUID persisted in `secureStorage` via `getCurrentConversationId()` (`src/lib/conversationSession.ts`).
+  - Files: `src/components/alex/AlexChatPanel.tsx`
+
+### Added
+- **`src/lib/conversationSession.ts`** — `getCurrentConversationId()` returns the persisted UUID (creates on first call); `newConversation()` rotates it to start a fresh thread. Uses `crypto.randomUUID()` with an RFC4122-v4 fallback for older browsers.
+- **"New Conversation" header button** — `MessageSquarePlus` icon in the chat panel header, before the existing "Load history" button. Calls `newConversation()`, clears the visible message list, resets audio state. Placed far above the Export button (Term C's region) to avoid merge conflicts.
+- **Tests** — `src/lib/__tests__/conversationSession.test.ts` (4 tests): UUID generated + persisted, stable across calls, rotates on `newConversation()`, never returns the bug value `"alex-chat"`. Full `AlexChatPanel.test.tsx` suite (60 tests) still passes.
+
+### Backend (separate monorepo PR — willb77/inspire-genius#197 family)
+- Token-budget history slice replacing `history[-10:]` in agent-engine's memory integration; recall limit bumped from 50 to 100; `context.conversation_history` now actually populated from recalled memory; defensive trim in `_build_messages` paths. See monorepo PR for details.
+
 ## [2026-05-20] — Term C: invitation expiry controls in User Management edit dialog
 
 Two adjacent monolith endpoints + new \`<InvitationSection>\` inside \`UserFormModal\` so super-admins can inspect + set a custom invitation expiry without leaving the edit modal. Existing resend handler (hardcoded +3 days) untouched — admins wanting a different date now go through the new PATCH instead.
