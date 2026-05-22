@@ -31,7 +31,6 @@ export default defineConfig(({ mode }) => {
   const wsAgents = env.VITE_AGENTS_WEBSOCKET_BASE_URL || ""
   const wsAlex = env.VITE_ALEX_WEB_SOCKET_URL || ""
   const wsAgent = env.VITE_AGENT_WS_URL || ""
-  const magicAuthUrl = env.VITE_MAGIC_AUTH_URL || ""
 
   // ── Content-Security-Policy ──────────────────────────────────
   // Dev needs unsafe-inline / unsafe-eval for Vite HMR
@@ -41,7 +40,7 @@ export default defineConfig(({ mode }) => {
 
   const sentryDsn = env.VITE_SENTRY_DSN || ""
   const sentryIngest = sentryDsn ? new URL(sentryDsn).origin : ""
-  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex, wsAgent, magicAuthUrl, sentryIngest]
+  const connectSrc = ["'self'", apiBase, wsAgents, wsAlex, wsAgent, sentryIngest]
     .filter(Boolean)
     .join(" ")
 
