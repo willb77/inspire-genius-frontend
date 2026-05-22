@@ -1195,8 +1195,13 @@ export default function MeridianChat() {
                   { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
                 ]);
 
-                // Voice always uses REST: get text response, then TTS per sentence
-                // through the audio queue for streaming playback with controls.
+                // Voice uses the async-jobs path (POST /v1/agents/chat/async +
+                // GET /v1/agents/chat/jobs/{job_id} poll) for the same reason
+                // the text path does: API GW HTTP API caps direct REST at 30s,
+                // and multi-agent DAG queries from Aura/Meridian can run longer.
+                // Voice still owns its own polling loop here (rather than
+                // routing through useMeridianJob) so the post-response TTS
+                // dispatch stays colocated with the voice flow.
                 (async () => {
                   try {
                     const { agentApi } = await import("@/lib/agentApi");
@@ -1204,15 +1209,49 @@ export default function MeridianChat() {
                     if (!token) {
                       try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
                     }
-                    const resp = await agentApi.post("/v1/agents/chat", { message: transcript, session_id: conversationId || "default", ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}) }, { headers: token ? { "access-token": token } : {}, timeout: 120000 });
-                    const data = resp.data;
-                    const responseText = data?.content || data?.message || "No response.";
+                    const headers = token ? { "access-token": token } : {};
+                    const startResp = await agentApi.post(
+                      "/v1/agents/chat/async",
+                      {
+                        message: transcript,
+                        session_id: conversationId || "default",
+                        ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
+                      },
+                      { headers, timeout: 15000 },
+                    );
+                    const jobId: string | undefined = (startResp.data as { job_id?: string } | undefined)?.job_id;
+                    if (!jobId) throw new Error("voice chat: chat/async returned no job_id");
+
+                    // Poll the job until terminal. 2s cadence matches
+                    // useMeridianJob; 5min ceiling protects against runaway.
+                    const pollIntervalMs = 2000;
+                    const pollTimeoutMs = 5 * 60_000;
+                    const deadline = Date.now() + pollTimeoutMs;
+                    type JobShape = { status?: string; content?: string | null; agent?: string | null; metadata?: { assistant_message_id?: string; rag_sources?: { filename: string }[] }; error?: string | null };
+                    let data: JobShape | null = null;
+                    while (Date.now() < deadline) {
+                      await new Promise((r) => setTimeout(r, pollIntervalMs));
+                      const pollResp = await agentApi.get(
+                        `/v1/agents/chat/jobs/${jobId}`,
+                        { headers, timeout: 15000 },
+                      );
+                      const job = pollResp.data as JobShape;
+                      if (job?.status === "complete" || job?.status === "error") {
+                        data = job;
+                        break;
+                      }
+                    }
+                    if (!data) throw new Error("voice chat: poll timeout (5 min)");
+                    if (data.status === "error") {
+                      throw new Error(data.error || "voice chat: job error");
+                    }
+
+                    const responseText = data?.content || "No response.";
                     const restAssistantIdVoice =
-                      (data?.metadata as { assistant_message_id?: string } | undefined)
-                        ?.assistant_message_id ?? `msg-${Date.now()}-resp`;
+                      data?.metadata?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent, ragSources: data?.metadata?.rag_sources?.filter((s: { filename: string }) => s.filename) },
+                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent ?? undefined, ragSources: data?.metadata?.rag_sources?.filter((s) => s.filename) },
                     ]);
                     if (data?.agent) setAgentAttribution(data.agent);
 
