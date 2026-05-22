@@ -9,7 +9,7 @@ import { toast } from "sonner"
 
 export function useRequestMagicLink() {
   return useMutation<
-    { success?: boolean; message?: string },
+    Awaited<ReturnType<typeof requestMagicLink>>,
     AxiosError<{ message?: string }>,
     RequestMagicLinkPayload
   >({
