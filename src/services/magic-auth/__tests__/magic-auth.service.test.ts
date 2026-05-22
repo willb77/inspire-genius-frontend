@@ -1,66 +1,56 @@
 /**
  * @jest-environment jsdom
  */
-import {
-  requestMagicLink,
-  verifyMagicLink,
-  requestMagicOtp,
-  verifyMagicOtp,
-  getMagicAuthMe,
-  magicAuthLogout,
-  magicAuthRefreshToken,
-} from "../magic-auth.service"
-import { magicAuthApi } from "@/lib/magicAuthAxios"
+import { requestMagicLink, verifyMagicLink } from "../magic-auth.service"
+import { api } from "@/lib/axios"
 
-jest.mock("@/lib/magicAuthAxios", () => ({
-  magicAuthApi: { post: jest.fn(), get: jest.fn() },
+jest.mock("@/lib/axios", () => ({
+  api: { post: jest.fn() },
 }))
 
-const mockApi = magicAuthApi as jest.Mocked<typeof magicAuthApi>
+const mockApi = api as jest.Mocked<typeof api>
 
 describe("magic-auth.service", () => {
   beforeEach(() => jest.clearAllMocks())
 
-  it("requestMagicLink posts to /api/auth/request-magic-link", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { success: true } })
+  it("requestMagicLink POSTs to auth-service /v1/magic-link/request", async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        message: "If an account with this email exists, a sign-in link has been sent.",
+        status: true,
+        data: { email: "a@b.com" },
+      },
+    })
     const result = await requestMagicLink({ email: "a@b.com" })
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/request-magic-link", { email: "a@b.com" })
-    expect(result.success).toBe(true)
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/magic-link/request", { email: "a@b.com" })
+    expect(result.status).toBe(true)
+    expect(result.data?.email).toBe("a@b.com")
   })
 
-  it("verifyMagicLink posts to /api/auth/verify-magic-link", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { data: { id: "u1" } } })
-    await verifyMagicLink({ token: "tok" } as never)
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/verify-magic-link", { token: "tok" })
-  })
-
-  it("requestMagicOtp posts to /api/auth/request-otp", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { success: true } })
-    await requestMagicOtp({ email: "a@b.com" } as never)
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/request-otp", { email: "a@b.com" })
-  })
-
-  it("verifyMagicOtp posts to /api/auth/verify-otp", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { data: { id: "u1" } } })
-    await verifyMagicOtp({ email: "a@b.com", otp: "123456" } as never)
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/verify-otp", { email: "a@b.com", otp: "123456" })
-  })
-
-  it("getMagicAuthMe sends Bearer token", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: { data: { id: "u1" } } })
-    await getMagicAuthMe("my-token")
-    expect(mockApi.get).toHaveBeenCalledWith("/api/auth/me", { headers: { Authorization: "Bearer my-token" } })
-  })
-
-  it("magicAuthLogout posts with Bearer token", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { success: true } })
-    await magicAuthLogout("my-token")
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/logout", null, { headers: { Authorization: "Bearer my-token" } })
-  })
-
-  it("magicAuthRefreshToken posts refresh_token", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { data: { access_token: "new" } } })
-    await magicAuthRefreshToken("rt")
-    expect(mockApi.post).toHaveBeenCalledWith("/api/auth/refresh-token", { refresh_token: "rt" })
+  it("verifyMagicLink POSTs to auth-service /v1/magic-link/verify and unwraps the LoginDataPayload", async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        message: "Signed in successfully",
+        status: true,
+        data: {
+          access_token: "at",
+          refresh_token: "rt",
+          token_type: "Bearer",
+          user_id: "u1",
+          email: "a@b.com",
+          full_name: "A B",
+          role: "user",
+          is_onboarded: true,
+          organization_id: null,
+          business_id: null,
+          next_step: "dashboard",
+        },
+      },
+    })
+    const result = await verifyMagicLink({ token: "tok" })
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/magic-link/verify", { token: "tok" })
+    expect(result.data?.access_token).toBe("at")
+    expect(result.data?.email).toBe("a@b.com")
+    expect(result.data?.next_step).toBe("dashboard")
   })
 })
