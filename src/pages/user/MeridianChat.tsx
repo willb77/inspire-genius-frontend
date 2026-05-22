@@ -3,7 +3,7 @@ import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { HistoryGroup, ChatMessage } from "@/types/chat";
+import type { HistoryGroup, ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -1227,7 +1227,7 @@ export default function MeridianChat() {
                     const pollIntervalMs = 2000;
                     const pollTimeoutMs = 5 * 60_000;
                     const deadline = Date.now() + pollTimeoutMs;
-                    type JobShape = { status?: string; content?: string | null; agent?: string | null; metadata?: { assistant_message_id?: string; rag_sources?: { filename: string }[] }; error?: string | null };
+                    type JobShape = { status?: string; content?: string | null; agent?: string | null; metadata?: { assistant_message_id?: string; rag_sources?: RAGSource[] }; error?: string | null };
                     let data: JobShape | null = null;
                     while (Date.now() < deadline) {
                       await new Promise((r) => setTimeout(r, pollIntervalMs));
