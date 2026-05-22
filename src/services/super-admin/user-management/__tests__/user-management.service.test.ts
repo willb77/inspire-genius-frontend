@@ -64,24 +64,27 @@ describe("Super Admin User Management Service", () => {
 
   /* -----------------------------------------
      inviteUser
+
+     Issue #204 (2026-05-21): repointed from monolith
+     /v1/user-management/invite (writes to phantom local-postgres on EC2)
+     to auth-service /v1/admin/invite-user (writes to main Aurora atomically).
   ----------------------------------------- */
-  it("should invite a user", async () => {
+  it("should invite a user via auth-service /v1/admin/invite-user (#204)", async () => {
     const payload: InviteUserPayload = {
       email: "test@example.com",
       first_name: "Test",
       last_name: "User",
+      role: "user",
     };
 
     const mockResponse = {
-      message: "Invitation sent",
+      message: "User invited successfully.",
       data: {
-        invitation_id: "inv-1",
-        user_id: "user-1",
-        cognito_user_id: "cognito-1",
-        user_created: true,
-        profile_created: true,
-        user_status: "pending",
-        email_sent: true,
+        user_id: "cognito-sub-uuid",
+        email: "test@example.com",
+        role: "user",
+        cognito_user_status: "FORCE_CHANGE_PASSWORD",
+        invited_by: "admin@example.com",
       },
     };
 
@@ -90,9 +93,13 @@ describe("Super Admin User Management Service", () => {
     const result = await inviteUser(payload);
 
     expect(api.post).toHaveBeenCalledWith(
-      "/v1/user-management/invite",
+      "/v1/admin/invite-user",
       payload
     );
+    // Issue #204 regression guard: callers must NOT send role_id —
+    // auth-service expects role NAME and resolves it server-side.
+    const sentBody = (api.post as jest.Mock).mock.calls[0][1];
+    expect(sentBody).not.toHaveProperty("role_id");
     expect(result).toEqual(mockResponse);
   });
 
