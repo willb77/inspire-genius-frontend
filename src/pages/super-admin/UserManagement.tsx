@@ -182,12 +182,15 @@ export default function UserManagement() {
   };
 
   const handleAdd = async (values: UserFormValues) => {
-    const roleId = getRoleIdByName(values.role);
+    // Issue #204: auth-service /v1/admin/invite-user takes role NAME
+    // (resolved to role_id server-side). getRoleIdByName retained for
+    // form-validation parity only — no longer sent on the wire.
+    void getRoleIdByName;
     const body = {
       first_name: values.first_name,
       last_name: values.last_name,
       email: values.email,
-      role_id: roleId,
+      role: values.role,
     };
 
     await inviteMutation.mutateAsync(body);
