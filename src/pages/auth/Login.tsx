@@ -95,7 +95,7 @@ export default function Login() {
       await magicLinkMutation.mutateAsync({ email: email.trim().toLowerCase() });
       setMagicLinkSent(true);
     } catch {
-      // Error already handled by magicAuthAxios interceptor + React Query onError
+      // Error already surfaced by React Query onError + axios interceptor
     } finally {
       setSubmitting(false);
     }
