@@ -1,3 +1,44 @@
+## [2026-05-27] — Auth Cognito public-client refresh fix + Add-User end-to-end unblocked [2026-05-27 19:40 UTC-4 EST]
+
+Completes the Add-User unblock chain. PR #284 expanded to 4 services / 5 fixes.
+
+### Root cause
+`auth-service/app/auth.py:refresh_cognito_token` always sent HTTP Basic auth with `client_id:client_secret`. But the dev `ig-dev-web-app` Cognito user-pool client is configured as a PUBLIC client (`GenerateSecret=false`) — no secret exists for it. Combined with the empty `COGNITO_CLIENT_SECRET` env var on the Lambda (CDK rollback / context drift), Cognito rejected every refresh attempt with `{"error":"invalid_client"}`.
+
+This bug was dormant until PR #284's admin-invite role-resolution fix earlier today started returning 401 on expired tokens → frontend auto-refresh → Cognito invalid_client → bounce to login (the symptom Bill saw on the 16:01 UTC Add-User click).
+
+### Fixed
+- `services/auth-service/app/auth.py:refresh_cognito_token` — branches on `settings.cognito_client_secret`: non-empty → Basic Auth (RFC 6749 §2.3 confidential-client mode, unchanged); empty → `client_id` in POST body, no Authorization header (public-client mode per Cognito public-client behavior).
+- Live probe verifies the fix: junk refresh token now returns `invalid_grant` (request accepted, token rejected) instead of `invalid_client` (auth-method rejected). Real refresh tokens will mint new access tokens correctly.
+
+### Deployed
+- `ig-dev-auth-service` Lambda SHA `c9diTV+1NO9xSIlF4erBQiA7kglOY7d1DalWHxGDinc=` (19:34 UTC-4) — carries admin_invite role chain (earlier today) + new public-client refresh path.
+
+### user_profiles schema correction
+The earlier same-day diagnosis that `public.user_profiles` was missing `first_name/last_name/business_id/assigned_by/...` columns was **WRONG**. The `information_schema.columns` query result was being truncated by migration-runner's output handler to the first 10 rows. Direct probes via pg_catalog + `SELECT first_name, last_name, ... FROM public.user_profiles` confirm all 21 columns exist. The deployed `create_user` INSERT will work. No schema migration needed.
+
+### Add-User end-to-end status
+With all 5 fixes:
+1. Role check passes (admin_invite multi-claim + DB fallback) ✓
+2. Cognito user created ✓
+3. Aurora INSERT works (schema has all referenced columns) ✓
+4. EventBridge emit ✓
+5. On token expiry, refresh-token works → no bounce ✓
+
+Ready for browser end-to-end verification.
+
+### PR
+- https://github.com/willb77/inspire-genius/pull/284 — `fix/audit-email-fallback-and-trainer-hot-patch` → `development`, OPEN. Title updated to reflect 4-service scope.
+
+### CI status on PR #284
+27/29 checks green. The 2 failures (`Test audit-service` + `Test trainer-service`, no em-dash) are **legacy duplicate workflows** pre-existing on the branch:
+- `Test audit-service` (legacy) — fails because it uses `pip install -e .` against an audit-service pyproject.toml that uses poetry. Modern em-dash workflow `Test — audit-service` passes (uses poetry export correctly).
+- `Test trainer-service` (legacy) — fails on a pre-existing `test_valid_token_passes_auth` assertion (401 vs 401, unrelated to my changes). Modern em-dash workflow `Test — trainer-service` passes.
+
+Both modern workflows + `Backend Gate` are green. The legacy workflows are dead and should be removed in a follow-up.
+
+---
+
 ## [2026-05-27] — Audit email-fallback + trainer ig_auth bundling + admin-invite role resolution (PR #284) [2026-05-27 19:15 UTC-4 EST]
 
 Three independent role-resolution / bundling bugs that silently 403'd or 500'd real super-admins on dev. All three Lambda code changes hot-patched live; PR codifies in source + adds defensive guards. Branch `fix/audit-email-fallback-and-trainer-hot-patch`.
