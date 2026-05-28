@@ -1,3 +1,28 @@
+## [2026-05-28] — CDK source codifies SECRET_KEY on audit + trainer Lambdas (closes the loop on the hot-patch) [2026-05-28 00:18 UTC-4 EST]
+
+Follows up the 2026-05-27 23:45 hot-patch. The live Lambdas have correct env vars; this commit makes sure the next CDK deploy doesn't wipe them.
+
+### Why
+Per memory `feedback_cdk_rollback_resets_env_vars` and `feedback_secret_key_lambda_env_drift`, env vars set via `aws lambda update-function-configuration` are reset back to CFN template defaults on every CDK deploy. Without source codification, the morning shift's first `cdk deploy ig-dev-services-stack` or `cdk deploy ig-dev-trainer-stack` would re-introduce the magic-auth bouncer.
+
+### Source changes
+- **`infrastructure/cdk/lib/services-stack.ts`** — added `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `SECRET_KEY: serviceSecretKey`, `MAGIC_AUTH_SECRET_ARN: magicAuthSecret.secretArn` to the AuditLambda env block (was missing all auth env vars). Plus `magicAuthSecret.grantRead(auditLambdaRole)` so ig_auth can pull the canonical signing key from Secrets Manager at cold-start.
+- **`infrastructure/cdk/lib/trainer-stack.ts`** — added serviceSecretKey/cognitoPoolId/cognitoClientId context lookups + magicAuthSecret resource at the constructor top. Added same 4 env vars to BOTH TrainerLambda and TrainerWorker env blocks. Added `magicAuthSecret.grantRead(trainerLambdaRole)`.
+
+### Verification
+- `npm run clean && npx cdk synth ig-dev-services ig-dev-trainer --context env=dev` → exit 0
+- Parsed `cdk.out/ig-dev-services.template.json` + `ig-dev-trainer.template.json` — all 3 Lambdas (AuditLambda, TrainerLambda, TrainerWorker) carry the 4 codified env vars. The synth-time SECRET_KEY value matches the live hot-patched value (sourced from `cdk.context.json` `serviceSecretKey`).
+- No deploy executed. The live Lambdas already work via the hot-patch; codification is preventative for the morning shift.
+
+### Out of scope
+- Actual `cdk deploy` (morning shift can do this after browser-verifying the bouncer is gone).
+- IAM gap on auth-service for its own Secrets Manager magic-auth secret (cold-start `AccessDeniedException`, falls back to SECRET_KEY env var — works fine today, fix later).
+
+### Commit
+`e41316e` on `development`. Pushed to origin.
+
+---
+
 ## [2026-05-27] — SECRET_KEY env var propagated to 8 broken Lambdas — magic-auth bouncer FIXED for browser sessions [2026-05-27 23:45 UTC-4 EST]
 
 ### Symptom

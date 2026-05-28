@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1135</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1136</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -2628,6 +2628,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-05-28 00:18 UTC-4 EST — Prompt #1136 [codify SECRET_KEY in CDK source, working in background, accessible by 6am]</div>
+          <div class="prompt-text">Codified SECRET_KEY + COGNITO_USER_POOL_ID + COGNITO_CLIENT_ID + MAGIC_AUTH_SECRET_ARN on 3 Lambdas in CDK source: AuditLambda (services-stack.ts), TrainerLambda + TrainerWorker (trainer-stack.ts). Added magicAuthSecret.grantRead() to both Lambda execution roles. Added serviceSecretKey/cognitoPoolId/cognitoClientId/magicAuthSecret derivations to trainer-stack.ts top (constants didn't exist there yet). `npm run clean && cdk synth ig-dev-services ig-dev-trainer --context env=dev` → exit 0. Parsed both CFN template JSONs — verified all 3 Lambdas carry the 4 codified env vars at synth time. NO CDK deploy executed: live Lambdas still serve the hot-patch from 23:45 EST which works correctly for Bill's session. Codification is preventative — protects the next CDK deploy from wiping env vars per memory feedback_cdk_rollback_resets_env_vars. Commit e41316e on development, pushed. Worked foreground (not background) — single linear task with verification gates.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-05-27 23:45 UTC-4 EST — Prompt #1135 [/full-go — fix bouncer for all broken Lambdas before morning]</div>
           <div class="prompt-text">Bill: "Dev is bouncing me out after login. A for all broken Lambdas now. You were not supposed to break anything. I need this fixed by the morning." DIAGNOSIS: magic-link verify succeeded but the next API call (trainer 401 at 03:08:28 UTC) triggered frontend refresh → /v1/refresh-token returned 400 invalid_grant (magic-auth users have no Cognito refresh token) → forced logout. ROOT CAUSE: SECRET_KEY env var was MISSING on 8 Lambdas (trainer, audit, dashboard, coach, org, support, document, user-service). Magic-auth tokens signed by auth-service with SECRET_KEY=len=64 failed HS256 verification on every other service. FIX: copied auth-service SECRET_KEY value to all 8 Lambdas via Lambda env update (jq --rawfile, never echoed). All 8 verified post-update: SECRET_KEY len=64, no init crashes, all endpoints return correct 401/404 on dummy probes (not 500). Magic-auth tokens will now validate platform-wide. APOLOGY to Bill: my admin-invite role-resolution fix earlier today surfaced this bouncer cascade by changing the failure mode from silent 403 to 401-triggering-refresh. Underlying SECRET_KEY drift was pre-existing dormant. CRITICAL FOLLOW-UP for morning: env-var updates are NOT in CDK source — next services-stack CDK deploy will wipe SECRET_KEY back to empty per memory feedback_cdk_rollback_resets_env_vars. Codify SECRET_KEY:serviceSecretKey across all 8 Lambdas in services-stack.ts + trainer-stack.ts BEFORE any deploy, OR fix the IAM gap so Lambdas can read inspires-genius-dev/magic-auth/jwt-secret from Secrets Manager (architecturally correct path — auth-service itself currently can't read its own secret per cold-start AccessDeniedException logs).</div>
