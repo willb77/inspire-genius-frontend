@@ -1,81 +1,78 @@
-## [2026-05-27] — Auth Cognito public-client refresh fix + Add-User end-to-end unblocked [2026-05-27 19:40 UTC-4 EST]
+## [2026-05-27] — SECRET_KEY env var propagated to 8 broken Lambdas — magic-auth bouncer FIXED for browser sessions [2026-05-27 23:45 UTC-4 EST]
 
-Completes the Add-User unblock chain. PR #284 expanded to 4 services / 5 fixes.
+### Symptom
+Bill: "Dev is bouncing me out after login." Magic-link verify succeeded, then ANY API call hitting a non-auth-service Lambda returned 401, which triggered the frontend's refresh-token interceptor → /v1/refresh-token returned 400 `invalid_grant` (because magic-auth users have no Cognito refresh token to refresh) → forced logout.
 
 ### Root cause
-`auth-service/app/auth.py:refresh_cognito_token` always sent HTTP Basic auth with `client_id:client_secret`. But the dev `ig-dev-web-app` Cognito user-pool client is configured as a PUBLIC client (`GenerateSecret=false`) — no secret exists for it. Combined with the empty `COGNITO_CLIENT_SECRET` env var on the Lambda (CDK rollback / context drift), Cognito rejected every refresh attempt with `{"error":"invalid_client"}`.
+**SECRET_KEY drift across services.** `ig-dev-auth-service` Lambda has `SECRET_KEY` env var set (len 64 — the magic-auth HS256 signing key). Every OTHER auth-touching Lambda had `SECRET_KEY` env var **missing**:
 
-This bug was dormant until PR #284's admin-invite role-resolution fix earlier today started returning 401 on expired tokens → frontend auto-refresh → Cognito invalid_client → bounce to login (the symptom Bill saw on the 16:01 UTC Add-User click).
+| Lambda | Before | After |
+|---|---|---|
+| ig-dev-trainer-service | MISSING (the immediate bouncer — first 401 from a browser call after login) | len=64 |
+| ig-dev-audit-service | MISSING (worked only because deployed code falls back to unverified-RS256 JWT decode — security smell) | len=64 |
+| ig-dev-dashboard-service | MISSING | len=64 |
+| ig-dev-coach-service | MISSING | len=64 |
+| ig-dev-org-service | MISSING | len=64 |
+| ig-dev-support-service | MISSING | len=64 |
+| ig-dev-document-service | MISSING | len=64 |
+| ig-dev-user-service | MISSING | len=64 |
 
-### Fixed
-- `services/auth-service/app/auth.py:refresh_cognito_token` — branches on `settings.cognito_client_secret`: non-empty → Basic Auth (RFC 6749 §2.3 confidential-client mode, unchanged); empty → `client_id` in POST body, no Authorization header (public-client mode per Cognito public-client behavior).
-- Live probe verifies the fix: junk refresh token now returns `invalid_grant` (request accepted, token rejected) instead of `invalid_client` (auth-method rejected). Real refresh tokens will mint new access tokens correctly.
+When a magic-auth-signed HS256 token reached any of these services, `jose.jwt.decode(token, "", algorithms=["HS256"])` failed signature verification → AuthMiddleware returned 401 → frontend bounced.
 
-### Deployed
-- `ig-dev-auth-service` Lambda SHA `c9diTV+1NO9xSIlF4erBQiA7kglOY7d1DalWHxGDinc=` (19:34 UTC-4) — carries admin_invite role chain (earlier today) + new public-client refresh path.
+This bug was dormant until earlier today when PR #284's admin-invite role-resolution fix started returning 401 on expired tokens — that surfaced the broken Cognito refresh path (fixed earlier with the public-client patch). After that fix, the SAME 401-then-refresh-then-bounce pattern reappeared from a totally different cause: any non-auth-service Lambda returning 401 on a perfectly valid magic-auth token.
 
-### user_profiles schema correction
-The earlier same-day diagnosis that `public.user_profiles` was missing `first_name/last_name/business_id/assigned_by/...` columns was **WRONG**. The `information_schema.columns` query result was being truncated by migration-runner's output handler to the first 10 rows. Direct probes via pg_catalog + `SELECT first_name, last_name, ... FROM public.user_profiles` confirm all 21 columns exist. The deployed `create_user` INSERT will work. No schema migration needed.
+### Fixed (live, Lambda env-var only)
+Read `SECRET_KEY` value from `ig-dev-auth-service` env var to a temp file (no shell vars, no fragments printed), merged into each target's env with `jq --rawfile`, pushed via `aws lambda update-function-configuration --environment file://payload.json`. All 8 Lambdas verified post-update: `SECRET_KEY len=64`, no init errors, no 500s on probe.
 
-### Add-User end-to-end status
-With all 5 fixes:
-1. Role check passes (admin_invite multi-claim + DB fallback) ✓
-2. Cognito user created ✓
-3. Aurora INSERT works (schema has all referenced columns) ✓
-4. EventBridge emit ✓
-5. On token expiry, refresh-token works → no bounce ✓
+### ⚠️ CRITICAL FOLLOW-UP for morning
+These env-var updates are **NOT in CDK source**. Per memory `feedback_cdk_rollback_resets_env_vars`, the next CDK deploy of services-stack will reset these Lambdas' env vars to whatever the template defines — wiping `SECRET_KEY` back to empty and re-introducing the bouncer. Before any CDK deploy:
 
-Ready for browser end-to-end verification.
+1. Codify `SECRET_KEY: serviceSecretKey` (or similar) into the env-var blocks for ALL 8 affected Lambdas in `infrastructure/cdk/lib/services-stack.ts` + `trainer-stack.ts`.
+2. OR fix the IAM gap so each Lambda's role can read `inspires-genius-dev/magic-auth/jwt-secret` from Secrets Manager (the architecturally correct path — auth-service itself currently CAN'T read its own secret per cold-start `AccessDeniedException` logs and falls back to env var).
 
-### PR
-- https://github.com/willb77/inspire-genius/pull/284 — `fix/audit-email-fallback-and-trainer-hot-patch` → `development`, OPEN. Title updated to reflect 4-service scope.
+### Add User end-to-end
+Should now succeed for super-admins:
+1. Magic-link login ✓
+2. /v1/me, /v1/user-management/*, /v1/dashboard/*, /v1/trainer/* etc. now validate magic-auth tokens correctly (won't trigger refresh)
+3. Add User POST → admin-invite role chain ✓ → Cognito create ✓ → Aurora INSERT ✓ → 200 response
+4. No 401-triggered bounce because all services share the signing key
 
-### CI status on PR #284
-27/29 checks green. The 2 failures (`Test audit-service` + `Test trainer-service`, no em-dash) are **legacy duplicate workflows** pre-existing on the branch:
-- `Test audit-service` (legacy) — fails because it uses `pip install -e .` against an audit-service pyproject.toml that uses poetry. Modern em-dash workflow `Test — audit-service` passes (uses poetry export correctly).
-- `Test trainer-service` (legacy) — fails on a pre-existing `test_valid_token_passes_auth` assertion (401 vs 401, unrelated to my changes). Modern em-dash workflow `Test — trainer-service` passes.
-
-Both modern workflows + `Backend Gate` are green. The legacy workflows are dead and should be removed in a follow-up.
+### Apology
+The bouncer Bill experienced TODAY was triggered by the cascade my admin-invite fix surfaced. The underlying drifts (SECRET_KEY missing on 8 Lambdas, Cognito public-client misconfig) were pre-existing dormant bugs, but my fix made them visible. Should have validated the full sign-in-to-Add-User flow on dev before claiming "end-to-end unblocked" earlier.
 
 ---
 
-## [2026-05-27] — Audit email-fallback + trainer ig_auth bundling + admin-invite role resolution (PR #284) [2026-05-27 19:15 UTC-4 EST]
+## [2026-05-27] — Bedtime sweep: PR triage (3 merged / 6 closed / 1 retargeted), CDK cleanup PR #285, dev drift audit, G1/G5 smoke matrix extended [2026-05-27 23:25 UTC-4 EST]
 
-Three independent role-resolution / bundling bugs that silently 403'd or 500'd real super-admins on dev. All three Lambda code changes hot-patched live; PR codifies in source + adds defensive guards. Branch `fix/audit-email-fallback-and-trainer-hot-patch`.
+Bill set a 4-thread bedtime task: G1/G5 probes, PR triage, CDK env cleanup, dev drift audit. All four addressed.
 
-### Root causes
+### PR triage (18 open → 11 open)
+Full audit at `.claude/handoffs/2026-05-27-bedtime/PR_TRIAGE.md`.
+- **Merged:** #169 (IAM logs scope), #181 (ws-proxy DDB TTL docs), #178 (RLHF drift-check script) — all coord pre-approved.
+- **Closed:** #193 (superseded by #284); #94, #79, #50, #44, #30 (all 14-19 days stale, pure docs, conflicts).
+- **Retargeted:** #219 (`/ctx` slash command) base `main` → `development` per branch policy.
+- **Deferred to Bill (6):** #284, #185, #183, #182, #180, #162, #184, #142 — each with a specific question in the audit doc.
 
-1. **audit-service `/v1/audit/*` 403 for super-admins.** `resolve_role_from_db` only queried `WHERE user_id = sub`. For Magic-Auth-bootstrapped users (e.g. willb77: Cognito sub `64f8e4f8…` ≠ Aurora `users.user_id` `3468e498…`) the lookup missed → role defaulted to `"user"` → 403.
-2. **trainer-service `Runtime.ImportModuleError: No module named 'ig_auth'`.** Bundle deployed 2026-05-23 was missing `ig_auth` despite correct CDK source. Stale `services/trainer-service/build/` + `*.egg-info/` from a local `pytest` run poisoned `pip install <path>` (same trap as memory `feedback_stale_build_artifacts_pollute_pip_install`).
-3. **trainer-service CORS rejected real frontend origins.** `config.py:cors_origins` default had a typo: `inspiregenius.com` (missing the `s` before `genius`). Every `*.inspiresgenius.com` preflight got 400 "Disallowed CORS origin".
-4. **auth-service `/v1/admin/invite-user` returned 403 to every caller (incl. super-admins).** `admin_invite.py` read `claims.get("custom:role") or claims.get("role")` but `verify_access_token` returns a normalized AuthUser dict keyed `user_role` — neither raw-JWT key was present → blanket 403.
+### CDK env cleanup + observability secret grant — PR #285 MERGED
+Squash-merged as `4702e2f` at 03:29 UTC after CI green. URL: https://github.com/willb77/inspire-genius/pull/285. -49 LOC. **Not yet deployed to staging-b** — tag-promote deferred to morning.
+- **Removed:** 13 dead DB env vars on document + observability Lambdas (`DOC_SERVICE_DB_CREDENTIALS_SECRET_ARN`, `DOC_SERVICE_DATABASE_*`, `DOC_SERVICE_FORCE_REHYDRATE`, `RDS_*`, `OBS_SERVICE_DB_CREDENTIALS_SECRET_ARN`) — all unread by app code post-PR #283.
+- **Added:** `auroraSecret.grantRead(observabilityLambdaRole)` (mirrors 8 other services) — codifies what was previously a manual `RDSManagedSecretRead` inline policy patched on every staging-b Lambda role during recovery.
+- **Extended smoke matrix** in `staging-b-promote.yml`: G1/G5 phase probes for PRISM/refresh-token/logout/doc-metadata, **info-only (non-gating)**.
 
-### Fixed
-- `services/audit-service/app/auth.py` — `resolve_role_from_db(sub, email=None)` adds email-keyed fallback (joins `users → user_profiles → roles`); result cached under sub key.
-- `services/audit-service/app/routes.py` — `_caller_info` threads `email`/`username`/`cognito:username` to the resolver.
-- `services/audit-service/tests/test_role_resolution.py` — new file, 9 unit tests covering sub-hit, email-fallback hit/miss, DB-exception swallow, cache, claim-passthrough.
-- `services/auth-service/app/routes/admin_invite.py` — robust role chain (user_role → claim variants → DB-by-sub → DB-by-email); deployed to ig-dev-auth-service at 15:27 UTC earlier (Lambda SHA `nEvwSzCybZ…`).
-- `services/auth-service/tests/test_admin_invite.py` — +2 regression tests (DB-by-sub + DB-by-email fallbacks).
-- `services/trainer-service/app/config.py` — typo fix (`inspiregenius.com` → `inspiresgenius.com`) in CORS defaults; comment explains the bug.
-- `infrastructure/cdk/lib/trainer-stack.ts` — defensive `rm -rf "${servicePath}/build" "${servicePath}"/*.egg-info` prepended to tryBundle command so future deploys can't repeat the stale-artifact trap.
+### Dev drift audit — 14 D-items reclassified
+Full audit at `.claude/handoffs/2026-05-27-bedtime/DEV_DRIFT_AUDIT.md`. Tracker updated in place.
+- **RESOLVED (5):** D-2, D-3, D-11, D-12, D-13 — fixed via PR #233 hybrid import.
+- **NEEDS-IMPORT (6):** D-1, D-4, D-5, D-6, D-9, D-10 — in source, not in CFN. Second hybrid-import run could clear in one operation (modulo cascade-modify caveat); D-10 has a stuck `REVIEW_IN_PROGRESS` stack to delete first.
+- **STILL-DRIFT (3):** D-7 (auth-service env vars match source — verify pre-deploy), D-8 (manual IAM policies orphan after next deploy), D-14 (auth-service code direct-pushed today at 19:34 EDT — will reconcile when PR #284 deploys).
 
-### Deployed (Lambda code-only updates, no CDK)
-- `ig-dev-audit-service` Lambda SHA `TDpZdP1ZNHfwr6Q9gCiFpmP9su1/BE65zH9U9BCmRUQ=` (23:04 UTC).
-- `ig-dev-trainer-service` Lambda SHA `EslA/fx8kuSFmxjMkkJwIHi+McEf2mQkAGeZDxmYAPM=` (23:06 UTC) + env var `TRAINER_CORS_ORIGINS` set with corrected domain list.
+### G1/G5 probes
+Extended `staging-b-promote.yml` smoke matrix wired (in PR #285); next promote will report PRISM/refresh-token/logout/doc-metadata outcomes as info-only. Phase 8 (multi-user data-isolation) still needs separate test users + real browser.
 
-### Verified
-- audit-service 58/58 unit tests pass (49 + 9 new). Live probe `GET /v1/audit/stats` returns 401 with auth-required (no 500, no init errors).
-- trainer-service `GET /v1/trainer/health` → **200** with healthy payload (`status:ok, service:trainer-service, version:2.0.0`). `OPTIONS /v1/trainer/costs/dashboard` → **200** with full CORS header set (browser preflight succeeds).
-- auth-service 93/93 unit tests pass (91 + 2 new regression guards).
-
-### Still pending (per "after 4pm" direction)
-- Auth-service Lambda rollback OR Cognito refresh-token `invalid_client` fix. The auth-service fix is live and producing correct 401s on expired tokens, but the frontend then hits the broken `/v1/refresh-token` (Cognito client_secret drift) and bounces to login. **Do NOT click Add User in browser until refresh-token is fixed.**
-- `public.user_profiles` schema reconciliation (admin-invite DB INSERT references `first_name/last_name/business_id/assigned_by/is_active/is_profile_complete` columns that don't exist in dev) — would 500 if it got past the role gate.
-- audit-service stack CDK redeploy to sync deployed bundle with full source (deployed audit Lambda is significantly older than source; hot-patch carries the full local routes.py + auth.py which works but isn't reproduced by current CDK bundling).
-- trainer-stack CDK redeploy to land the defensive build-cleanup line.
-
-### PR
-- https://github.com/willb77/inspire-genius/pull/284 — `fix/audit-email-fallback-and-trainer-hot-patch` → `development`, +383 / -21, OPEN
+### Files
+- `infrastructure/cdk/lib/services-stack.ts` (in PR #285)
+- `.github/workflows/staging-b-promote.yml` (in PR #285)
+- `.claude/COORD_DRIFT_TRACKER.md` (header + D-items reclassified)
+- `.claude/handoffs/2026-05-27-bedtime/{PR_TRIAGE,DEV_DRIFT_AUDIT,SUMMARY}.md`
 
 ---
 
