@@ -1,3 +1,50 @@
+## [2026-05-28] — Aurora dual-DB consolidation Phase 2 pre-flight: columns + flag deployed (DEV, no behavior change) [2026-05-28 14:25 UTC-4 EST]
+
+PRs #287 + #102 merged. Phase 2 pre-flight = the additive parts of Phase 2 done WITHOUT flipping the cutover flag. The actual cutover (~5 min downtime, 7-step smoke matrix, 30-min observation) is still pending; safe to schedule any time.
+
+### Code-path investigation (key finding)
+Earlier Phase 2 plan assumed auth-service needed flag-gating. Probe confirmed it does NOT — auth-service queries main DB only. Cutover flag belongs in `user-sync` Lambda alone (the only consumer of `magic_auth.users` is its own mirror INSERT).
+
+### DB schema (ALTER TABLE, idempotent)
+- `public.users` + `full_name VARCHAR`, `last_login TIMESTAMPTZ`, `assigned_agent_id UUID` — all nullable, no defaults. 9→12 columns.
+
+### DB data (UPDATE backfill)
+- 12 users gained `full_name` and/or `last_login` from `magic_auth.users` — including all 4 Phase-1 INSERTed users + 8 others where `last_login` was populated.
+- 148 magic-auth users had no migratable values for the new columns (already populated on main, or no source data).
+- 0 errors. Per-row SAVEPOINTs. Source: magic_auth → destination: main; only where target is NULL (no clobbering).
+
+### Lambda changes (`ig-dev-user-sync`)
+- Added env-var `MAGIC_AUTH_USE_MAIN_DB` (default `false` = mirror unchanged).
+- When `true`: EventBridge `auth.user.signup` handler short-circuits to `status: no-op-cutover-flag-on`.
+- 3 new actions: `migrate_main_user_columns`, `backfill_magic_only_fields`, `flag_status`.
+- 9 new unit tests (18/18 total user-sync tests pass).
+- Code SHA after deploy: `egwvuFnXueuQGVIAP3TkMo24qP7fMgItB9qLUrCMDOk=`.
+
+### CDK source (`infrastructure/cdk/lib/user-sync-stack.ts`)
+- Codified `MAGIC_AUTH_USE_MAIN_DB: 'false'` in Lambda environment block so the flag survives future CDK redeploys (per memory `feedback_cdk_rollback_resets_env_vars`).
+
+### Smoke verification (flag=false, no behavior change)
+- `flag_status` → `false` ✓
+- `verify wabrown@3pp.com` → present in both DBs, main UUID matches Phase 1 ✓
+- Synthetic EventBridge `auth.user.signup` → mirror still ran (`status: inserted/present`) ✓
+- Orphan invariants preserved: 19 unknown / 0 dual-id / 0 magic-only ✓
+- `describe_main` shows the 3 new columns ✓
+- `list_magic_only_emails` still = 2 (demo + employee from Phase 1 collisions) ✓
+
+### Files
+- `services/user-sync/app/handler.py`
+- `services/user-sync/tests/test_phase2_actions.py` (new — 9 tests)
+- `infrastructure/cdk/lib/user-sync-stack.ts`
+- `docs/consolidation/2026-05-28-phase2-preflight-deploy-report.md` (new)
+
+### Phase 2 cutover (still pending — operator-triggered)
+1. Flip `MAGIC_AUTH_USE_MAIN_DB=true` (~30-90s window, budget 5 min)
+2. Run 7-step smoke matrix: login (main user), login (magic-only-then-backfilled user), signup, magic-link, password reset, dashboard, chat WS
+3. Observe 30 min before walking away
+4. After 7-day soak: Phase 3 — drop `inspires_genius` DB, retire `ig-dev-user-sync` Lambda
+
+---
+
 ## [2026-05-28] — Aurora dual-DB consolidation Phase 1: additive backfill complete (DEV) [2026-05-28 13:15 UTC-4 EST]
 
 Zero downtime, single transaction, committed. All Phase 1 objectives met.
