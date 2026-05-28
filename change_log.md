@@ -1,3 +1,30 @@
+## [2026-05-28] — Aurora dual-DB consolidation Phase 2 CUTOVER COMPLETE (DEV) [2026-05-28 14:45 UTC-4 EST]
+
+PRs #288 + #103 merged. Pre-cutover snapshot taken (`ig-dev-aurora-precutover-20260528-183934`, available 100%). `MAGIC_AUTH_USE_MAIN_DB` flipped to `true` on `ig-dev-user-sync` at ~18:43 UTC. Effective downtime: ~0s (env-var change, no code redeploy, doesn't interrupt in-flight auth-service requests).
+
+### Verified post-cutover
+- Mirror no-op confirmed in logs: `EventBridge sync no-op for cutover-test-do-not-use@example.com (MAGIC_AUTH_USE_MAIN_DB=true)`
+- Magic-auth login `wabrown@3pp.com` → HTTP 200, user_id=`2bf9b3d4-…` (preserved magic UUID), next_step=dashboard
+- Magic-auth login `aes@3pp.com` → HTTP 200, user_id=`94782458-…` (preserved magic UUID), next_step=dashboard
+- Magic-auth login `willb77@3pp.com` → HTTP 200, user_id=`3468e498-…` (canonical main UUID, NOT magic `346854a8-…`)
+- user-management endpoint reachable (HTTP 422 missing-access-token on unauth call)
+
+### NOT a cutover regression (pre-existing)
+Auth-service logs show `AccessDeniedException` on `secretsmanager:GetSecretValue` for `inspires-genius-dev/magic-auth/jwt-secret`. Code falls back to `SECRET_KEY` env var; magic-auth tokens issuing successfully prove the fallback works. Follow-up: add IAM perm or rip out the SM fetch path.
+
+### Rollback (if needed)
+`aws lambda update-function-configuration --function-name ig-dev-user-sync` flipping the flag back to `false`. < 1 min. Mirror resumes.
+
+### Pending (operator-triggered)
+- Browser smoke: login + dashboard + chat WS handshake
+- 30-min observation of Lambda log groups
+- 7-day soak before Phase 3 (`DROP DATABASE inspires_genius` + retire user-sync Lambda)
+
+### Files
+- `docs/consolidation/2026-05-28-phase2-cutover-completion-report.md` (new — full report)
+
+---
+
 ## [2026-05-28] — Aurora dual-DB consolidation Phase 2 pre-flight: columns + flag deployed (DEV, no behavior change) [2026-05-28 14:25 UTC-4 EST]
 
 PRs #287 + #102 merged. Phase 2 pre-flight = the additive parts of Phase 2 done WITHOUT flipping the cutover flag. The actual cutover (~5 min downtime, 7-step smoke matrix, 30-min observation) is still pending; safe to schedule any time.
