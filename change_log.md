@@ -1,3 +1,119 @@
+## [2026-05-28] — User Management strangler-extraction (5 bundles) + SES sender fix [2026-05-28 19:30 UTC-4 EST]
+
+Completed Bill's 5-bundle "/full-go" pass to remove the User Management page's remaining monolith dependencies and fix the post-cutover UX regressions he hit during browser smoke. Everything now resolves through auth-service except the catchall fallback.
+
+### Added (auth-service)
+- **PUT** `/v1/user-management/users/{user_email}/edit` — drops the monolith's invitation-status gate (active user with stale PENDING invitation can now be edited). Updates users + user_profiles atomically, syncs Cognito attributes + enable/disable best-effort.
+- **PUT** `/v1/user-management/users/{user_id}/role` — accepts role NAME (matches monolith contract), updates user_profiles.role, syncs Cognito custom:role.
+- **GET** `/v1/user-management/users/{user_id}/invitation` — latest invitation w/ effective-status computation (PENDING + past expiry → 'expired').
+- **PATCH** `/v1/user-management/users/{user_id}/invitation` — updates expires_at, transitions EXPIRED/PENDING → PENDING when re-issued.
+- **DELETE** `/v1/user-management/users/{user_email}` (+ `?force=true`) — soft-delete active users, hard-delete already-soft-deleted with force, FK null-out for issues.reported_by + organization_agents.assigned_by.
+- **POST** `/v1/user-management/users/purge-inactive` — server-side bulk hard-delete with per-row pass/fail isolation, replaces client-side fanout.
+- **POST** `/v1/user-management/invitations/{invitation_id}/resend` — regenerates invitation_token + expires_at + status=PENDING.
+- New SQL helpers in `app/user_queries.py`: `edit_user_by_email`, `change_user_role_by_user_id`, `get_latest_invitation_by_user_id`, `update_invitation_expiry`, `delete_user_by_email`, `_hard_delete_user`, `list_inactive_user_emails`, `regenerate_invitation_for_resend`.
+- New Cognito helpers in `app/cognito.py`: `admin_enable_cognito_user`, `admin_disable_cognito_user`.
+- 16 new tests in `tests/test_user_management.py` covering edit/delete/role/invitation/resend/purge paths.
+  - Files: `services/auth-service/app/{routes/user_management.py,user_queries.py,cognito.py}`, `services/auth-service/tests/test_user_management.py`
+
+### Added (frontend)
+- **Bundle 3**: debounced search input above the User Management table (300 ms debounce, wires to the existing `search` param on the list endpoint).
+- **Bundle 2 frontend**: widened `InvitationSection` gate in `UserFormModal` so the expiry-extension input is visible for ANY user with an invitation_id (incl. accepted). Pre-cutover the input was unconditionally visible; this restores parity.
+  - Files: `inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx`, `inspire-genius-frontend/src/components/shared/forms/UserFormModal.tsx`, `inspire-genius-frontend/src/components/shared/forms/__tests__/UserFormModal.test.tsx`
+
+### Fixed (Bundle 5 — missing/reappearing users)
+- Diagnosed: extracted list (PR #286) had NO `is_deleted=false` default filter, so previously-deactivated users kept reappearing on refresh.
+- Default list now adds `COALESCE(u.is_deleted, false) = false` to the WHERE clause; `user_status_filter=deactivated` opts back in.
+- 2 new tests covering default-excludes-soft-deleted and deactivated-filter-includes-soft-deleted.
+  - Files: `services/auth-service/app/routes/user_management.py`, `services/auth-service/tests/test_user_management.py`
+
+### Changed (CDK)
+- `infrastructure/cdk/lib/services-stack.ts`: registered 7 new auth-service API GW routes (edit/role/get-invitation/patch-invitation/delete/purge/resend). Specific paths win over the `ANY /v1/user-management/{proxy+}` monolith catchall.
+- SES sender swap (carried forward from prior session, codified): `SES_FROM_EMAIL` + `SES_SENDER_EMAIL` → `noreply@3pp.com`. `inspiresgenius.com` was DKIM-verified but had no custom MAIL FROM, causing silent DMARC alignment drops; `3pp.com` has `noreply.3pp.com` MAIL FROM = Success.
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+
+### Verified
+- auth-service: `pytest tests/` → 124 passed (16 new + 108 existing).
+- Frontend: `npx jest` → 3049 passed across 382 suites (UserManagement 28/28, UserFormModal 18/18 incl. the rewritten "Bundle 2 widening" test).
+- Frontend + CDK: `npx tsc --noEmit` → clean.
+
+## [2026-05-28] — SES sender swap → noreply@3pp.com; Tracey seeded; Phil+Tracey magic-links fired [2026-05-28 17:55 UTC-4 EST]
+
+Browser smoke after the Phase 2 cutover exposed two real bugs Bill needs solved. Diagnosed both, fixed delivery for everyone, seeded Tracey via Path B, and shipped magic-link emails to both Phil and Tracey from the now-working sender.
+
+### Diagnosed
+- **Magic-link emails silently undelivered for months** — SES sender `noreply@inspiresgenius.com` was DKIM-verified but had **NO custom MAIL FROM domain configured**. SES accepted (0 bounces, 0 rejects) but receiving servers silently dropped on DMARC alignment failure. Bill confirmed `@inspiresgenius.com` was effectively broken as a sender; `@3pp.com` has full `noreply.3pp.com` MAIL FROM (`MailFromDomainStatus: Success`). Phil's 9 failed magic-link attempts = this issue.
+- **Edit User 400 root cause** — monolith `edit_active_user()` (`schema.py:1398`) gates on `validator.validate_invitation_status(email)` and refuses to edit any user with a PENDING/EXPIRED `user_invitations` row, regardless of whether the user is_active=true. Phil hit this because his old invitation row never flipped to ACCEPTED. Same gate explains "missing users in list" + "previously-purged users reappearing."
+
+### Changed
+- **`infrastructure/cdk/lib/services-stack.ts`** — flipped SES_FROM_EMAIL + SES_SENDER_EMAIL from `noreply@inspiresgenius.com` to `noreply@3pp.com`. Replaced the stale 2026-05-25 Term G comment block with the new diagnosis (inspiresgenius.com missing MAIL FROM; 3pp.com now has its own custom MAIL FROM).
+- **Live `ig-dev-auth-service` Lambda env** — hot-patched SES_FROM_EMAIL + SES_SENDER_EMAIL to `noreply@3pp.com`. Code SHA unchanged.
+
+### Added
+- **`ig-dev-user-sync` Lambda actions** (live hot-patch — NOT yet in CDK source / handler.py on `development`):
+  - `find_user` — read-only name/email search across `public.users` + `public.user_profiles` (joins first_name, last_name, full_name, email LIKE pattern). 25-row cap.
+  - `seed_user` — Path B direct INSERT into `public.users` + `public.user_profiles` with `auth_provider='magic_link'`, `is_active=true`, `is_email_verified=true`. Idempotent via email pre-check. Single-transaction; ROLLBACK on error.
+  - Lambda Code SHA `jyjQqvl3dM5+B+oi+lVTcWhnyjw8dnWP3GQnbiBMTvY=`.
+
+### Live data writes
+- **Tracey Poirier seeded** via `seed_user` (committed):
+  - email `traceyp74vt@outlook.com`
+  - user_id `fd02b898-3efe-48c0-896d-7bcc16afee7d`
+  - profile_id `fc5fbfd2-4317-457e-9379-9921115d5e9f`
+  - role `user` (role_id `f56ac5cb-d0bc-46bc-bdf3-219f0a4dce6c`)
+  - full_name "Tracey Poirier", first_name "Tracey", last_name "Poirier"
+  - auth_provider `magic_link`, is_active true, is_email_verified true
+
+### Magic-link emails fired
+- `phil@honor.org` → HTTP 200, no auth-service error logs
+- `traceyp74vt@outlook.com` → HTTP 200, no auth-service error logs
+- Plus 2 confirmation emails to `willb77@3pp.com` (Bill confirmed RECEIVED — proves the new sender delivers)
+- SES bucket 21:40 UTC: **5 attempts, 0 bounces, 0 rejects** ← the @3pp.com sender works
+
+### Outstanding (still hitting the monolith catchall, needs strangler-extraction)
+Bill's rule: "Nothing should be using anything in the monolith." These 8 routes fall through `ANY /v1/user-management/{proxy+}` to monolith and must be extracted to auth-service:
+- `PUT /v1/user-management/users/{email}/edit` (the 400 bug)
+- `PUT /v1/user-management/users/{user_id}/role`
+- `DELETE /v1/user-management/users/{email}` (incl. force=true)
+- `POST /v1/user-management/users/purge-inactive`
+- `GET /v1/user-management/users/{user_id}/invitation`
+- `PATCH /v1/user-management/users/{user_id}/invitation` (expiry-extension)
+- `POST /v1/user-management/invitations/{id}/resend`
+- `POST /v1/user-management/invite/bulk`
+
+### Outstanding (other)
+- **CDK source change for SES sender needs PR + deploy** — live env hot-patched + CDK source updated, but `feedback_cdk_rollback_resets_env_vars` rule means next CDK deploy will revert if PR isn't merged + redeployed
+- **`find_user` + `seed_user` actions are live but NOT in source** — `ig-dev-user-sync` handler.py on `development` doesn't have them. Next CDK deploy of user-sync stack will revert.
+- **Auth-service `secretsmanager:GetSecretValue` IAM gap** on `magic-auth/jwt-secret` (pre-existing, fallback to SECRET_KEY env var works; noisy log)
+- **Frontend User Management features remaining**: restore expiry-extension input in Edit dialog, list search bar, individual + bulk hard-remove with multi-select, investigation of missing/reappearing users
+
+---
+
+## [2026-05-28] — Afternoon batch: PR #184 + #219 + #284 + #290 dispatched; staging-b promoted twice (14/14 smoke both times) [2026-05-28 17:55 UTC-4 EST]
+
+Bill triaged "PR #284 next steps + #184 mark+merge + #219 merge" → done sequentially, then we tag-promoted to staging-b twice (once for #285 cleanup, once for #284 + #290 hotfix).
+
+### PRs resolved this batch
+- **#184** ✅ MERGED (`0c8f399`) — agent-engine p99/error%/cost alarms. Marked ready + squash-merged.
+- **#219** ✅ ADOPTED via cherry-pick (`69006ee`, PR closed) — `/ctx` slash command (more concise version). Original branch was rooted at ancient `f723f72` monorepo init; rebasing produced massive doc conflicts. Cherry-picked just the single intended file.
+- **#284** ✅ MERGED (`efcf9ef`) — 4 hot-patch codifications in one PR: auth Cognito public-client refresh (the Add-User bouncer fix), audit role-resolution email fallback, trainer config typo + bundling defensive cleanup, admin-invite role chain. Required 2 CI fixes mid-flight: audit-service poetry packaging (`packages = [{include = "app"}]` — same gap PR #283 fixed for 3 others), trainer conftest `SECRET_KEY` env (same gap PR #283 fixed for observability). Branch was rebased on development + force-pushed clean (dropped 2 stale doc commits via interactive rebase).
+- **#290** ✅ MERGED (`a19bcc3`) — hotfix one-character CW math syntax `IF(requests = 0, ...)` → `IF(requests == 0, ...)`. Discovered because the first PR #284 promote attempt failed at `cdk deploy` on `AgentEngineErrorRatePercentAlarm` (the alarm introduced by PR #184 earlier today). Rollback was clean.
+
+### Staging-b promotes
+- **First attempt** (tag `release-stable-2026-05-28-pr284` at `bdb7c94` — wrong SHA due to stale local branch state, then re-pushed at `efcf9ef`): FAILED at CDK deploy with the CW alarm syntax error.
+- **Second attempt** (tag re-pushed at `a19bcc3` after PR #290 merge): SUCCESS end-to-end. Run 26603394757: pre-flight ✓ · ECR build ✓ · CDK deploy ✓ · ECS rollout ✓ · authenticated smoke 14/14 ✓ · notify ✓. ~12 min wall.
+
+### Post-promote verification
+- 14/14 critical routes → 200 (same as last promote)
+- Login probe → 400 "Invalid email or password" (auth path runs, no 500)
+- Extended G1/G5 probes: PRISM 404 healthy, doc-metadata 200 healthy, refresh-token 404, logout 404 — last two genuinely absent on staging-b API GW (separate infra work, not blocked by today's PRs)
+
+### Operational lessons earned
+- **Always `git checkout development && git fetch origin && git reset --hard origin/development` before `git tag` on a feature-branch workflow.** Twice today, local `development` lagged origin because I had switched to a feature branch, and tag landed on stale commit. Forced delete + re-push. Will save as memory.
+- Hot-patches need source codification within the same session (#284 confirmed this — the patches Bill applied 23:45 EST yesterday + my 01:25 EDT IAM cleanup last night needed PR #284 + PR #285 to make the next CDK deploy idempotent. Today's promote validates that loop).
+
+### Open PRs after this batch (7)
+- #142, #162, #180, #182, #183, #185, #288 — each still needs Bill's call per yesterday's triage doc.
+
 ## [2026-05-28] — Aurora dual-DB consolidation Phase 2 pre-flight: columns + flag deployed (DEV, no behavior change) [2026-05-28 14:25 UTC-4 EST]
 
 PRs #287 + #102 merged. Phase 2 pre-flight = the additive parts of Phase 2 done WITHOUT flipping the cutover flag. The actual cutover (~5 min downtime, 7-step smoke matrix, 30-min observation) is still pending; safe to schedule any time.

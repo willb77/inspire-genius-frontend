@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import SuperAdminLayout from "@/layouts/SuperAdminLayout";
 import {
@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { IconInput } from "@/components/ui/icon-input";
 import ActionMenu from "@/components/shared/ActionMenu";
 import Pagination from "@/components/shared/Pagination";
 import UserFormModal from "@/components/shared/forms/UserFormModal";
@@ -33,7 +34,7 @@ import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { ROLE_LABELS } from "@/types/roles";
-import { Trash2, UserX, UserCheck } from "lucide-react";
+import { Search, Trash2, UserX, UserCheck, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -46,9 +47,26 @@ export default function UserManagement() {
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
+  // Bundle 3 (2026-05-28): debounced search. The backend list endpoint
+  // already accepts a `search` LIKE filter on email + full_name; the UI
+  // just had no input wired to it. 300 ms debounce — short enough to feel
+  // live, long enough to coalesce typing into a single request.
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  // Reset to page 1 whenever the search term changes — otherwise the page
+  // number can index past the filtered total and produce an empty list.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const { data, isLoading, isRefetching } = useUserManagement({
     page,
     limit: pageSize,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
   });
   const { data: rolesData } = useRoles();
   const roles = useMemo(() => rolesData?.data?.roles ?? [], [rolesData]);
@@ -536,7 +554,27 @@ export default function UserManagement() {
             </>
           }
         />
-        <div className="h-[calc(100vh-13.5rem)] overflow-y-auto">
+        <div className="flex items-center gap-2">
+          <IconInput
+            type="search"
+            placeholder="Search by name or email…"
+            leftIcon={<Search className="size-4" aria-hidden="true" />}
+            rightIcon={
+              searchInput ? <X className="size-4" aria-hidden="true" /> : undefined
+            }
+            onRightIconClick={() => setSearchInput("")}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="max-w-md"
+            aria-label="Search users"
+          />
+          {debouncedSearch && (
+            <span className="text-xs text-muted-foreground">
+              Filtered by "{debouncedSearch}"
+            </span>
+          )}
+        </div>
+        <div className="h-[calc(100vh-16rem)] overflow-y-auto">
           {isLoading || isRefetching ? (
             <LoadingSkeleton columns={6} rows={pageSize} />
           ) : (

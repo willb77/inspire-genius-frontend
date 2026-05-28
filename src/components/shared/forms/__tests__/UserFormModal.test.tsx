@@ -282,7 +282,26 @@ describe("UserFormModal", () => {
       expect(screen.queryByText("Invitation")).not.toBeInTheDocument();
     });
 
-    it("does not render invitation section when status is 'accepted'", () => {
+    it("renders invitation section when status is 'accepted' (Bundle 2 widening)", () => {
+      // Pre-2026-05-28: the gate hid the section on accepted status. After
+      // Bundle 2 (Phil Gant + Tracey re-issue case), the section is shown
+      // for any user with an invitation_id regardless of status so admins
+      // can extend expiry / resend on accepted invitations.
+      mockUseUserInvitation.mockReturnValue({
+        data: {
+          invitation_id: "inv-1",
+          status: "accepted",
+          stored_status: "accepted",
+          expires_at: "2026-06-01T00:00:00Z",
+          sent_at: "2026-05-15T00:00:00Z",
+          role: "manager",
+          role_id: "r1",
+          email: "u@x.com",
+          organization_id: null,
+        },
+        isLoading: false,
+        isError: false,
+      });
       render(
         <UserFormModal
           {...baseProps}
@@ -293,7 +312,7 @@ describe("UserFormModal", () => {
           }}
         />,
       );
-      expect(screen.queryByText("Invitation")).not.toBeInTheDocument();
+      expect(screen.getByText("Invitation")).toBeInTheDocument();
     });
 
     it("renders invitation section in edit mode with pending status", () => {
