@@ -1,3 +1,61 @@
+## [2026-05-28] — Aurora dual-DB consolidation Phase 1: additive backfill complete (DEV) [2026-05-28 13:15 UTC-4 EST]
+
+Zero downtime, single transaction, committed. All Phase 1 objectives met.
+
+### Backup (pre-write)
+- Manual cluster snapshot `ig-dev-aurora-preconsolidation-20260528-165822` — `available` at 100%, captures both `inspire_genius` and `inspires_genius` atomically (one cluster). Indefinite retention; tagged `Purpose=PreConsolidationPhase1`.
+
+### Handler enrichment — `services/user-sync/app/handler.py`
+Five new actions:
+- `count` — exact row count of `magic_auth.users` (live: **160**)
+- `describe_main` — `inspire_genius.public.users` columns + enum values + auth_provider distribution
+- `list_magic_only_emails` — emails in magic-auth but not main (live: **6**)
+- `list_orphan_actors` — orphan `audit_logs.actor_id` resolved against `magic_auth.users` for dual-ID detection
+- `backfill_magic_to_main` — transactional INSERT + UPDATE; per-row SAVEPOINTs isolate failures; `dry_run=true` by default; refuses to COMMIT unless residual orphans match `accepted_residual_orphan_ids` allowlist
+
+Plus 9 unit tests under `services/user-sync/tests/` (new dir).
+
+### Live ground truth (vs pre-flight estimates)
+- magic_auth.users total: **160** (pre-flight estimated 135–150)
+- magic-only emails: **6** (pre-flight identified 1+)
+- willb77 audit_logs rows remapped: **39** (pre-flight estimated 22)
+
+### Writes (single transaction, COMMIT)
+- INSERT 4 rows into `public.users` + `public.user_profiles` preserving magic UUID:
+  - `wabrown@3pp.com` (`2bf9b3d4-…`)
+  - `wb0677@gmail.com` (`2fabe0af-…`)
+  - `uat@inspiregenius.com` (`06955dd9-…`)
+  - `aes@3pp.com` (`94782458-…`)
+- UPDATE `audit_logs.actor_id` for willb77@3pp.com: 39 rows remap `346854a8-…` → `3468e498-…` (canonical main UUID)
+- All with `auth_provider='magic_link'` — enum already includes this value, no Phase 2 migration needed for the enum.
+
+### Skipped (UUID collisions)
+- `demo@inspiresgenius.com` (sentinel UUID `00000000-…0001` already in main)
+- `employee@inspiresgenius.com` (sentinel UUID `00000000-…0002` already in main)
+- Confirmed neither UUID appears in `audit_logs.actor_id` → safe to drop from `magic_auth` in cleanup.
+
+### Verification
+- Dual-ID orphans: **1 → 0** (willb77)
+- Magic-only orphans: **2 → 0** (aes 76 rows + wabrown 1 row auto-resolved by UUID-preserving INSERT)
+- Main user count: **167 → 171**
+- 19 residual orphans remain — pre-existing platform debt, NOT dual-DB pollution. Out of Phase 1 scope; needs separate audit-log cleanup task.
+
+### Files
+- `services/user-sync/app/handler.py` (enrichment)
+- `services/user-sync/tests/__init__.py` (new)
+- `services/user-sync/tests/conftest.py` (new — pg8000/boto3 stub fixtures)
+- `services/user-sync/tests/test_phase1_actions.py` (new — 9 unit tests, all pass)
+- `docs/consolidation/2026-05-28-phase1-backfill-completion-report.md` (new — full report)
+
+### Lambda
+- `ig-dev-user-sync` CodeSha256: `1QSYF/3UONagdQeeWgvDXZzyPMqoCu8AbHqcO7tm/5g=`
+
+### Phase 2 readiness
+- magic-auth-only fields `full_name`, `assigned_agent_id`, `last_login` NOT backfilled this phase (additive scope only) — Phase 2 must add those columns + UPDATE backfill.
+- `MAGIC_AUTH_USE_MAIN_DB` feature flag not yet defined — Phase 2.
+
+---
+
 ## [2026-05-28] — Strangler-Fig: GET /v1/user-management/users extracted from monolith catch-all to auth-service (PR #286) [2026-05-28 11:25 UTC-4 EST]
 
 Root-cause fix for the "Add User says success but new user doesn't appear in list" bug. Previous fixes this session (admin_invite user_invitations INSERT, audit email-fallback, SECRET_KEY propagation, Cognito public-client refresh) were all CORRECT — but the root cause was further upstream: the User Management list endpoint was being SERVED BY THE MONOLITH and the monolith returned stale/filtered data hiding new invitees (sherri.hill@dac.nc.gov, verify@3pp.com).
