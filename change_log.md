@@ -1,3 +1,67 @@
+## [2026-05-28] — Strangler-Fig: GET /v1/user-management/users extracted from monolith catch-all to auth-service (PR #286) [2026-05-28 11:25 UTC-4 EST]
+
+Root-cause fix for the "Add User says success but new user doesn't appear in list" bug. Previous fixes this session (admin_invite user_invitations INSERT, audit email-fallback, SECRET_KEY propagation, Cognito public-client refresh) were all CORRECT — but the root cause was further upstream: the User Management list endpoint was being SERVED BY THE MONOLITH and the monolith returned stale/filtered data hiding new invitees (sherri.hill@dac.nc.gov, verify@3pp.com).
+
+### What changed
+- **New microservice handler** `services/auth-service/app/routes/user_management.py` — implements `GET /v1/user-management/users` with identical join/filter/pagination/super-admin-strip semantics. Frontend `useUserManagement` hook works unchanged.
+- **API GW route** `GET /v1/user-management/users` → auth-service (RouteId `2fhkm06`) — takes precedence over the `ANY /v1/user-management/{proxy+}` catchall. Non-GET traffic still falls through.
+- **CDK codification** in `infrastructure/cdk/lib/services-stack.ts` — synth confirmed `AuthUserMgmtListUsers` resource present in template JSON.
+- **12 new unit tests** in `services/auth-service/tests/test_user_management.py` — 103/103 total auth-service tests pass.
+- **Lambda hot-patched** ig-dev-auth-service SHA `HjKoCEvsqjQSY9xxkkMSzHG06k+adGsTlFzlMTa72xs=` (15:14 UTC).
+
+### Sub-agent work in parallel
+1. **Staging-b investigation** — staging-b has CLEAN single-DB architecture, NO api-catchall, NO monolith routing, NO `inspires_genius` Magic-Auth DB, NO user-sync Lambda. **Staging-b does NOT need this fix.** Hand-off doc in `docs/incidents/`.
+2. **Pre-flight diff for dual-DB consolidation** — 167 main users, ~135-150 magic_auth, 3 confirmed dual-ID accounts (incl. willb77@3pp.com), 22 orphan audit_logs.actor_id rows. Recommended canonical = main DB. Total active engineering ~7-10 hours over 9-day window. Full report at `docs/consolidation/2026-05-28-dev-aurora-dual-db-preflight-diff.md`.
+3. **Documentation** — incident write-up in `.md` and `.docx` (with Logo-Dark.png) at `docs/incidents/2026-05-28-dev-user-management-list-strangler-fix.{md,docx}`.
+
+### Sunset compliance
+Zero code/data touched in `inspire-genius-backend/`. Purely additive: new file + 1-line router registration + new API GW route + CDK codification.
+
+### Verified
+- 103/103 auth-service tests pass
+- Lambda init clean post-patch (no 500s)
+- Live probe via API GW with dummy token → 401 (handler reachable)
+- /v1/refresh-token, /v1/me, /v1/admin/invite-user unchanged
+- CDK synth exit 0; new route in template
+
+### Commits + PR
+- Commit `53d16d9` on `fix/extract-user-management-list-from-monolith` (7 files, +976 LOC)
+- PR https://github.com/willb77/inspire-genius/pull/286 OPEN, base `development`
+
+### Pending Bill verification
+Hard-refresh User Management page (Cmd-Shift-R) and confirm sherri.hill@dac.nc.gov + verify@3pp.com appear at top of list.
+
+---
+
+## [2026-05-28] — Bedtime promote: tag release-stable-2026-05-28-cdk-cleanup → staging-b 14/14 + extended G1/G5 probes [2026-05-28 01:15 UTC-4 EST]
+
+Bill set bedtime task "dry-run first then push the tag". Both ran end-to-end clean.
+
+### Pipeline
+- **Dry-run** (workflow_dispatch with `dry_run=true`, `--ref development`): run `26555095038`. Pre-flight `cdk diff` against all 11 staging-b stacks ✓ in ~6 min.
+- **Real promote** (tag push): run `26555383375`. All 6 jobs ✓ — pre-flight, ECR build (`linux/amd64`), CDK deploy (all 11 stacks), ECS force-new-deployment, authenticated smoke matrix, notify. ~15 min wall.
+
+### What shipped (5 commits since prior promote tag `release-stable-2026-05-27-hydration-uniform`)
+- `4702e2f` — PR #285: removed 13 dead DB env vars on document + observability Lambdas; added `auroraSecret.grantRead(observabilityLambdaRole)` (codifies what was a manual `RDSManagedSecretRead` inline policy); extended smoke matrix with G1/G5 probes (info-only)
+- `e41316e` — codified `SECRET_KEY` + Cognito + magic-auth secret on audit + trainer Lambdas (preserves last night's 23:45 EST hot-patch across deploys)
+- `6da1683` — trainer dual-set `TRAINER_-prefixed` env vars (deployed bundle reads the prefixed form; source had dropped it)
+- 2 doc commits (`53f3396`, `2db236c`)
+
+### Verification post-deploy
+- **SECRET_KEY drift fixed:** staging-b `trainer-service` + `audit-service` now `len=64` (were `len=0` 24 hours ago) — magic-auth bouncer eliminated on staging-b
+- **Smoke matrix:** 14/14 critical routes → 200 ✓
+- **Extended G1/G5 probes** (info-only): `/v1/prism/sessions` 404 (route exists, healthy), `/v1/prism/profile` 404 (healthy), `/v1/documents/?limit=1` 200 (healthy), `/v1/refresh-token` 404 (route absent), `/v1/logout` 404 (route absent)
+
+### Notable finds — not blocking
+- `/v1/refresh-token` and `/v1/logout` return 404 on staging-b. The frontend's 401-refresh-interceptor and explicit-logout calls will silently fail (logout just clears local state). Worth a follow-up: confirm whether these routes are intentionally absent (magic-auth has no Cognito refresh token to exchange — that's the auth-service `invalid_grant` behavior the SECRET_KEY memory documents) or simply unwired.
+
+### Post-bedtime IAM cleanup — DONE 2026-05-28 01:25 EDT
+Bill authorized the deferred IAM cleanup. Pre-flight verified all 5 Lambda roles' CDK DefaultPolicy now includes `secretsmanager:GetSecretValue` on `rds!cluster-bd9aada6-…` (PR #285's `auroraSecret.grantRead` for observability + the pre-existing grants on auth/audit/dashboard/document). Deleted all 6 manual inline policies:
+- `RDSManagedSecretRead` on auth, audit, dashboard, document, observability lambda roles
+- `RDSManagedSecretRead-D6` on observability lambda role
+
+Post-delete smoke: `/v1/login` → 400 (real auth lookup, no init crash); `/v1/observability/dashboard` → 401 (auth path runs, no init crash). Roles now have only their CDK-managed `*DefaultPolicy*` — drift eliminated.
+
 ## [2026-05-28] — CDK source codifies SECRET_KEY on audit + trainer Lambdas (closes the loop on the hot-patch) [2026-05-28 00:18 UTC-4 EST]
 
 Follows up the 2026-05-27 23:45 hot-patch. The live Lambdas have correct env vars; this commit makes sure the next CDK deploy doesn't wipe them.
