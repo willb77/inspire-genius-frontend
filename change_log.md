@@ -1,3 +1,23 @@
+## [2026-05-29] — PR #306 codify Phase 2 cutover flag on dev [2026-05-29 08:35 UTC-4 EST]
+
+One-line drift fix surfaced by the live-vs-source audit. `MAGIC_AUTH_USE_MAIN_DB` was hot-set to `true` on ig-dev-user-sync during the 2026-05-28 14:43 cutover; CDK source still defaulted to `false`. Next CDK deploy of user-sync-stack would have silently rolled back the cutover.
+
+**Change:** per-env default keyed off `envConfig.envName` in `infrastructure/cdk/lib/user-sync-stack.ts:167`. dev=`'true'`, prod=`'false'` (awaits own cutover), staging-b doesn't deploy this stack. PR #306 opened.
+
+## [2026-05-29] — Morning wrap: 3 PRs merged + 75-row audit_logs DELETE executed [2026-05-29 08:18 UTC-4 EST]
+
+Bill: "merge #296, #297, #299 yes delete the 75 orphan audit rows".
+
+### Merged
+- **#296** `feat(user-sync): codify find_user + seed_user actions` — merged 12:17:15 UTC
+- **#297** `feat(auth-service): extract POST /v1/user-management/invite/bulk` — merged 12:17:20 UTC
+- **#299** `docs: agent registry + routing snapshot doc + generator` — merged 12:17:24 UTC
+
+### Audit-logs DELETE (explicit re-auth from Bill)
+Ran `BEGIN; DELETE FROM public.audit_logs WHERE actor_id IN (19 unknown-origin UUIDs); COMMIT;` via `ig-dev-migration-runner`. Removed 75 rows in a single transaction. Post-DELETE COUNT against the same 19 actor_ids: **0**.
+
+`list_orphan_actors` confirms 19 → 0 unknown-origin orphans remaining. The 3 known-email orphans were deliberately preserved (they have linked magic_emails: `signup-probe-…@example-invalid-domain.test`, `test@example.com`, `verify@3pp.com`). Total orphan count: 22 → 3.
+
 ## [2026-05-29] — /bedtime — 4 PRs opened (#296, #297, #299) + audit cleanup blocked + agent registry doc generated [2026-05-29 00:25 UTC-4 EST]
 
 Closing out the 7-item Bill list (#2, #4, #3, #6 Delete, #7, #8 + /bedtime). 4 of the 5 actionable items shipped as PRs; 1 (#6 audit DELETE) blocked at the sandbox.
