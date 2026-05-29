@@ -259,13 +259,16 @@ export default function UserFormModal({
     ...defaultValues,
   };
 
+  // Bundle 2 (2026-05-28): widened the gate so the expiry input is visible
+  // for accepted invitations too — admins re-issuing access to an active
+  // user need to set a future expiry to satisfy the resend-invitation flow.
+  // Pre-cutover the input was unconditionally visible; this restores parity
+  // for any user with an invitation row, regardless of status. Users with
+  // no invitation_id at all (legacy / Path-B-seeded) still don't see it.
   const showInvitationSection =
     mode === "edit" &&
     !!invitationContext &&
-    !!invitationContext.invitationId &&
-    ["pending", "expired", "invitation_sent"].includes(
-      (invitationContext.invitationStatus ?? "").toLowerCase(),
-    );
+    !!invitationContext.invitationId;
 
   return (
     <ModalFormFrame<UserFormValues>
