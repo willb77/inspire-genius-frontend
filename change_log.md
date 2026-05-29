@@ -1,3 +1,123 @@
+## [2026-05-29] — /bedtime — 4 PRs opened (#296, #297, #299) + audit cleanup blocked + agent registry doc generated [2026-05-29 00:25 UTC-4 EST]
+
+Closing out the 7-item Bill list (#2, #4, #3, #6 Delete, #7, #8 + /bedtime). 4 of the 5 actionable items shipped as PRs; 1 (#6 audit DELETE) blocked at the sandbox.
+
+### PRs opened tonight
+- **#296** `feat(user-sync): codify find_user + seed_user actions` — codifies the two hot-patched ops actions (live SHA `jyjQqvl3dM5+B+oi+lVTcWhnyjw8dnWP3GQnbiBMTvY=` since 2026-05-28 Tracey seed). 9 new tests, 27/27 user-sync suite green. Prevents next user-sync CDK deploy from wiping Path-B seeding capability.
+- **#297** `feat(auth-service): extract POST /v1/user-management/invite/bulk` — last monolith user-management route. Per-row pass/fail isolation, Cognito rollback on post-create / pre-commit failure, EB-tolerance, 1-50 user batch limit. 9 new tests, 143/143 auth-service suite green. Lambda hot-patched SHA `UX+w+SPhAv3+ErstWqTTwmStyBkQtKmy693dRXYXelU=`, API GW RouteId `xp5wlkf`. Completes the "nothing in monolith" rule for user-mgmt.
+- **#299** `docs: agent registry + routing snapshot doc + generator` — persists 23-agent platform snapshot (1 Meridian + 4 orchestrators + 17 specialists + DynamicAgent + MultiDomainCoordinator) as Word doc with all 17 system prompts pulled verbatim. Regenerator script `scripts/build_agent_registry_doc.py`.
+
+### Verified
+- **#4** retention UI deployment: API GW route + agent-engine main.py imports + migration SQL + health probe all confirmed; only browser-click verification remains for Bill.
+- **#7** memory file `feedback_tag_before_fetch_stale_branch.md` already at `~/.claude/projects/.../memory/` (2353 bytes, 2026-05-28).
+
+### Blocked
+- **#6** mass DELETE of 75 orphan audit_logs rows (19 unknown-origin actor_ids). Pre-flight COUNT via migration-runner returned 75 rows matching the list — SQL prepped at `/tmp/orphan_audit_delete.sql`. Sandbox refused execution because mass DELETE on shared audit/compliance data wasn't specifically authorized beyond "Delete" in the bedtime list. **Needs explicit re-confirmation from Bill** ("yes delete the 75 rows").
+
+### Files
+- `services/user-sync/app/handler.py` (+178 lines, find_user + seed_user)
+- `services/user-sync/tests/test_find_seed_actions.py` (NEW, 268 lines, 9 tests)
+- `services/auth-service/app/routes/admin_invite.py` (+229 lines, bulk_invite_users + _invite_one helper + BulkInviteRequest schema)
+- `services/auth-service/tests/test_bulk_invite.py` (NEW, 207 lines, 9 tests)
+- `infrastructure/cdk/lib/services-stack.ts` (+7 lines, AuthUserMgmtInviteBulk route)
+- `docs/IG_Agent_Registry_Routing_Snapshot.docx` (NEW, 70 KB)
+- `scripts/build_agent_registry_doc.py` (NEW, 361 lines)
+- `.gitignore` (+2 lines, allowlist for snapshot doc)
+
+### Live state
+- Auth-service Lambda SHA `UX+w+SPhAv3+ErstWqTTwmStyBkQtKmy693dRXYXelU=` (post-#297 hot-patch)
+- API GW route table now has 8 auth-service user-management routes + the catchall has ZERO frontend-called paths remaining
+- User-sync Lambda SHA `jyjQqvl3dM5+B+oi+lVTcWhnyjw8dnWP3GQnbiBMTvY=` (pre-#296 — codification only, no behavior change)
+
+## [2026-05-28] — Evening cleanup: PR #292 merged + promoted; PR #293 method-aware smoke probes merged + promoted [2026-05-28 22:25 UTC-4 EST]
+
+Two PRs shipped + two staging-b promotes ✓ closing out the route-gap + smoke-matrix probe ambiguity.
+
+### PR #292 — squash-merged as `811e1db`
+
+Merged after CI green (29/29 checks). Tagged `release-stable-2026-05-28-route-gap-fix` at `811e1db` with the standard checkout+fetch+reset discipline. Promote run [26611039667](https://github.com/willb77/inspire-genius/actions/runs/26611039667) finished 6/6 jobs ✓ in ~20 min.
+
+**Direct probe verification of the 3 gaps:**
+- `POST /v1/user-management/invitations/accept` → **422** Pydantic validation (route registered, handler ran)
+- `POST /v1/logout` → 404 (correctly absent — frontend logout is client-side only by design)
+- `POST /api/v1/users/bulk-import` → **401** `require_role` gate (route registered; was already in CDK gated on `!isLegacyEnvUserBare`)
+
+### Memory saved — `feedback_smoke_matrix_method_aware_probe.md`
+
+While reading the PR #292 promote's smoke matrix output, noticed `/v1/user-management/invitations/accept → 404 (healthy)` even though direct POST probes returned 422. Root cause: the EXTENDED_ROUTES loop uses `curl` with no `-X` so it defaults to GET. For POST-only routes a GET returns 404 from API GW — indistinguishable from "route absent". Accepting 404 as healthy masks regressions; saved as feedback memory for future Coord runs touching the workflow.
+
+### PR #293 — `chore(smoke): method-aware extended probes`, squash-merged as `5c7048d`
+
+Single file change to `.github/workflows/staging-b-promote.yml`:
+- EXTENDED_ROUTES entry format changed from `"PATH|CODES"` to `"METHOD PATH|CODES"`
+- Parse loop extracts method via bash parameter expansion (`METHOD="${MAP%% *}"`); POST sends `-X POST -H "content-type: application/json" -d '{}'` so FastAPI returns 422 (validation error) if the handler is reachable
+- Tightened POST accepted codes: `refresh-token` = `200,422`, `invitations/accept` = `200,422`, `bulk-import` = `200,401,422` (dropped 404)
+- Added `POST /api/v1/users/bulk-import` probe (the third PR #292 gap)
+- Output lines now include the method: `✓ POST /v1/refresh-token → 422 (healthy)`
+
+CI green in ~30s (3 pass, 2 skipped via changed-paths gate since workflow-only). Tagged `release-stable-2026-05-28-smoke-method-aware` at `5c7048d`. Promote run [26613638159](https://github.com/willb77/inspire-genius/actions/runs/26613638159) finished 6/6 jobs ✓ in ~20 min.
+
+**Verified extended-probe output (method-aware):**
+```
+✓ GET  /v1/prism/sessions                     → 404 (healthy)
+✓ GET  /v1/prism/profile                      → 404 (healthy)
+✓ POST /v1/refresh-token                      → 422 (healthy)
+✓ GET  /v1/documents/?limit=1                 → 200 (healthy)
+✓ POST /v1/user-management/invitations/accept → 422 (healthy)
+✓ POST /api/v1/users/bulk-import              → 422 (healthy)
+```
+
+Interesting finding: `bulk-import` returned **422** (not 401 as I'd predicted from earlier direct probe). The smoke loop attaches `access-token: $ACCESS` to ALL probes — auth gate passes, then Pydantic rejects the empty body. Better than 401: proves both auth pipeline AND validation layer ran. Accepted codes `200,401,422` cover both states defensively.
+
+### Files touched
+- `services/auth-service/app/routes/invitations.py` (NEW)
+- `services/auth-service/app/routes/__init__.py`
+- `services/auth-service/tests/test_invitations.py` (NEW)
+- `infrastructure/cdk/lib/services-stack.ts`
+- `.github/workflows/staging-b-promote.yml` (twice — PR #292 dropped logout probe; PR #293 method-aware rework)
+- `change_log.md` + `IG_project_log.html`
+- Memory: `feedback_smoke_matrix_method_aware_probe.md`
+
+### Open PRs after this session
+- Same 7 from afternoon batch (#142, #162, #180, #182, #183, #185, #288) — each still needs Bill's call per the bedtime triage doc
+
+## [2026-05-28] — Route-gap fix PR #292: invitations/accept + drop phantom logout probe [2026-05-28 18:45 UTC-4 EST]
+
+Bill's evening directive: "What in Login/logout, Usermanagement, touches the monolith? It should touch it at all, should be all microservices. How many DBs are involved in magic link and password authentication/authorization? Should be one. investigate refresh-token and logout."
+
+### Investigation (read-only)
+
+- **Monolith touch in login/logout/user-mgmt today on staging-b: ZERO.** The old `ANY /v1/{proxy+}` monolith catch-all is gone from staging-b's API GW route table. Only specific path-prefixes (documents, memory, orgs, rlhf, support, trainer, audit, agents, dashboard, etc.) still fall through to monolith — none of them are auth/user-mgmt.
+- **Magic-link + password auth both touch exactly 1 database** (`inspire_genius`). Single engine, single session factory at `services/auth-service/app/db.py:56`. `MAGIC_AUTH_USE_MAIN_DB` flag is **not in auth-service code at all** — only in user-sync EventBridge mirror. Phase 3 (drop legacy `magic_auth` DB) still pending ~2026-06-04.
+- **Refresh-token + logout probe results:** `POST /v1/refresh-token` returns 422 on empty body — route exists, working as intended. `POST /v1/logout` returns 404 — but no `/v1/logout` handler exists in auth-service, monolith, or frontend (AuthContext.logout() is client-side only). **Phantom probe.**
+- **Genuine gap surfaced:** `POST /v1/user-management/invitations/accept` returns 404 — frontend calls it (`src/services/auth/invitation.service.ts:12`), but no handler exists anywhere. Invitations were uncompletable on staging-b.
+
+### PR #292 contents
+
+- **NEW** `services/auth-service/app/routes/invitations.py` — `POST /v1/user-management/invitations/accept` handler, public route (token is the credential). Mirrors monolith contract at `users/auth_service/user_management.py:362`: lookup by token, auto-expire stale PENDING rows, refuse non-PENDING with structured error codes, short-circuit already-active users, set permanent Cognito password via `admin_set_user_password(permanent=True)`, activate user + profile, mark ACCEPTED.
+- **NEW** `services/auth-service/tests/test_invitations.py` — 10 tests covering happy path, invalid token, already-accepted, EXPIRED, PENDING-but-past-expiry auto-expire, already-active short-circuit, missing user row, Cognito failure, payload validation. **115/115 auth-service suite green.**
+- `services/auth-service/app/routes/__init__.py` — register `invitations_router`.
+- `infrastructure/cdk/lib/services-stack.ts` — add `POST /v1/user-management/invitations/accept` to auth-service route array (sits alongside `GET /v1/user-management/users` from PR #286).
+- `.github/workflows/staging-b-promote.yml` — drop the phantom `/v1/logout` probe from EXTENDED_ROUTES; add an `invitations/accept` probe (accepts 200,400,404,405,422 — 405 confirms route registered since loop sends GET); extend `/v1/refresh-token` accepted codes to include 422.
+
+### Deferred to next deploy (no code change)
+
+- `POST /api/v1/users/bulk-import` — CDK route exists in `services-stack.ts:1419` gated on `!isLegacyEnvUserBare`. staging-b just needs the next services-stack deploy; route will register automatically.
+
+### Files
+
+- `services/auth-service/app/routes/invitations.py` (NEW, 277 lines)
+- `services/auth-service/app/routes/__init__.py` (+2)
+- `services/auth-service/tests/test_invitations.py` (NEW, 187 lines)
+- `infrastructure/cdk/lib/services-stack.ts` (+7)
+- `.github/workflows/staging-b-promote.yml` (+11, -7)
+
+### Branch + PR
+
+- Branch: `fix/invitations-accept-bulk-import-route-gaps` (off `2ca1e5c` development)
+- Commit: `69afc23`
+- PR: [#292](https://github.com/willb77/inspire-genius/pull/292) — opened 18:30 UTC-4 EST, CI dispatched (16 checks pending)
+
 ## [2026-05-28] — User Management strangler-extraction (5 bundles) + SES sender fix [2026-05-28 19:30 UTC-4 EST]
 
 Completed Bill's 5-bundle "/full-go" pass to remove the User Management page's remaining monolith dependencies and fix the post-cutover UX regressions he hit during browser smoke. Everything now resolves through auth-service except the catchall fallback.
