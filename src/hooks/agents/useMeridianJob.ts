@@ -107,6 +107,37 @@ export type UseMeridianJobReturn = {
 
 const TERMINAL_STATUSES = new Set<JobStatus>(["complete", "error"]);
 
+/**
+ * Retry config for the initial ``POST /v1/agents/chat/async``. The
+ * acceptance endpoint must respond with 202 in <30s (API GW HTTP API
+ * cap); on cold ECS tasks the chain to even accept the job can blow
+ * the cap and produce "Sorry I can't reach Meridian" on the first
+ * question. Retrying on 5xx + network errors with a short backoff
+ * usually catches the cold-start case on attempt #2 once the task
+ * is warm.
+ */
+const START_JOB_MAX_ATTEMPTS = 3;
+const START_JOB_BACKOFF_MS = [0, 3000, 6000]; // attempts 1, 2, 3
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 5xx + network errors are retriable. 4xx (validation, auth, not-found)
+ * are deterministic client-side bugs and should NOT be retried.
+ */
+function isRetriableStartJobError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { response?: { status?: unknown }; code?: unknown; message?: unknown };
+  const status = e.response?.status;
+  if (typeof status === "number") return status >= 500 && status < 600;
+  // No response = network error / timeout / DNS failure / connection reset.
+  // axios sets `code` like ECONNABORTED / ERR_NETWORK in this case.
+  if (e.response === undefined) return true;
+  return false;
+}
+
 function normaliseStatus(raw: unknown): JobStatus {
   return raw === "running" || raw === "complete" || raw === "error"
     ? (raw as JobStatus)
@@ -293,8 +324,32 @@ export function useMeridianJob(
         payload.system_prompt_override = input.systemPromptOverride;
       }
 
-      const resp = await api.post("/v1/agents/chat/async", payload);
-      const data = (resp.data ?? {}) as Partial<StartJobResult>;
+      // Retry-with-backoff on the initial 202 acceptance. The first
+      // question after a quiet period often hits a cold ECS task whose
+      // accept-the-job chain takes >30s — API GW returns 503 and the
+      // user sees "Sorry I can't reach Meridian". Once the task is warm
+      // a second attempt 3s later almost always succeeds.
+      let respData: unknown = null;
+      let gotResponse = false;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < START_JOB_MAX_ATTEMPTS; attempt++) {
+        if (attempt > 0) await delay(START_JOB_BACKOFF_MS[attempt]);
+        try {
+          const resp = await api.post("/v1/agents/chat/async", payload);
+          respData = resp.data;
+          gotResponse = true;
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (!isRetriableStartJobError(err)) throw err;
+          // Retry on 5xx / network errors. If we've exhausted attempts,
+          // fall through to the throw below.
+        }
+      }
+      if (!gotResponse) throw lastErr ?? new Error("chat-async request failed");
+
+      const data = (respData ?? {}) as Partial<StartJobResult>;
       const jobId = typeof data.job_id === "string" ? data.job_id : "";
       const sessionId = typeof data.session_id === "string" ? data.session_id : input.sessionId;
       const status = normaliseStatus(data.status);
