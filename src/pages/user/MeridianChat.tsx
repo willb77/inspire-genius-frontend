@@ -22,6 +22,7 @@ import { useListDocuments } from "@/hooks/documents/useListDocuments";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
+import { getApi as getAgentApi } from "@/lib/agentApi";
 import { exportConversation } from "@/services/agent/agentService";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
@@ -378,6 +379,30 @@ export default function MeridianChat() {
   const meridianJob = useMeridianJob({ onJobSettled: handleJobSettled });
   const meridianJobRef = useRef(meridianJob);
   meridianJobRef.current = meridianJob;
+
+  // Warmup ping on mount — hits the cheap GET /v1/agents/health endpoint
+  // on the agent-engine ECS task so the first real question doesn't pay
+  // cold-start latency. ECS task warming happens during the user's typing
+  // window. Best-effort: failures are swallowed (the retry-with-backoff
+  // in startJob handles actual cold-start cases). Fires once on mount;
+  // intentional empty deps array.
+  useEffect(() => {
+    const ac = new AbortController();
+    try {
+      const promise = getAgentApi().get("/v1/agents/health", { signal: ac.signal });
+      // Defensive — under test mocks `getAgentApi()` may not return a
+      // real axios instance.  Only chain when we actually got a thenable.
+      if (promise && typeof (promise as { catch?: unknown }).catch === "function") {
+        (promise as Promise<unknown>).catch(() => {
+          // Swallow — best-effort warmup. The retry-with-backoff in
+          // startJob handles real cold-start cases.
+        });
+      }
+    } catch {
+      // Same — never let warmup throw out of the effect.
+    }
+    return () => ac.abort();
+  }, []);
 
   const onResponse = useCallback(
     (resp: MeridianResponse) => {
