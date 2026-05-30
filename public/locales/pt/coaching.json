@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Painel do Praticante",
-    "welcomeBack": "Bem-vindo de volta, {name}. Você tem {sessions} sessões agendadas hoje e {followups} acompanhamentos vencidos esta semana.",
+    "welcomeBack": "Bem-vindo de volta, {{name}}. Você tem {{sessions}} sessões agendadas hoje e {{followups}} acompanhamentos vencidos esta semana.",
     "activeClients": "Clientes Ativos",
     "creditsRemaining": "Créditos Restantes",
     "sessionsThisMonth": "Sessões Este Mês",

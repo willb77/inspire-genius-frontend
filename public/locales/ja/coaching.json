@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "プラクティショナーダッシュボード",
-    "welcomeBack": "おかえりなさい、{name}様。本日は{sessions}件のセッションが予定されており、今週は{followups}件のフォローアップが必要です。",
+    "welcomeBack": "おかえりなさい、{{name}}様。本日は{{sessions}}件のセッションが予定されており、今週は{{followups}}件のフォローアップが必要です。",
     "activeClients": "アクティブなクライアント",
     "creditsRemaining": "残りクレジット",
     "sessionsThisMonth": "今月のセッション",

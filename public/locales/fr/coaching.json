@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Tableau de Bord du Praticien",
-    "welcomeBack": "Bienvenue à nouveau, {name}. Vous avez {sessions} sessions prévues aujourd'hui et {followups} suivis à faire cette semaine.",
+    "welcomeBack": "Bienvenue à nouveau, {{name}}. Vous avez {{sessions}} sessions prévues aujourd'hui et {{followups}} suivis à faire cette semaine.",
     "activeClients": "Clients Actifs",
     "creditsRemaining": "Crédits Restants",
     "sessionsThisMonth": "Sessions ce Mois",

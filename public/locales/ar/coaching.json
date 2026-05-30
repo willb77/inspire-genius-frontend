@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "لوحة تحكم الممارس",
-    "welcomeBack": "مرحباً بعودتك، {name}. لديك {sessions} جلسات مجدولة اليوم و{followups} متابعات مستحقة هذا الأسبوع.",
+    "welcomeBack": "مرحباً بعودتك، {{name}}. لديك {{sessions}} جلسات مجدولة اليوم و{{followups}} متابعات مستحقة هذا الأسبوع.",
     "activeClients": "العملاء النشطون",
     "creditsRemaining": "الرصيد المتبقي",
     "sessionsThisMonth": "جلسات هذا الشهر",
