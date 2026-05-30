@@ -465,3 +465,112 @@ describe("useMeridianJob — pollJob 404 handling", () => {
     expect(returned).toBeNull();
   });
 });
+
+// ───────────────────────────────────────────────────────────────────
+// startJob retry-with-backoff (cold-start mitigation)
+// ───────────────────────────────────────────────────────────────────
+
+describe("useMeridianJob — startJob retry-with-backoff", () => {
+  it("retries on 503 and succeeds on second attempt", async () => {
+    jest.useFakeTimers({ doNotFake: ["nextTick"] });
+
+    mockAgentApi.post
+      .mockRejectedValueOnce({ response: { status: 503 } })
+      .mockResolvedValueOnce({
+        data: { job_id: "retry-1", session_id: "sess-r1", status: "queued" },
+      });
+    mockAgentApi.get.mockResolvedValue({
+      data: {
+        job_id: "retry-1", session_id: "sess-r1", status: "queued",
+        message: "hi", content: null,
+      },
+    });
+
+    const { result } = renderHook(() => useMeridianJob({ pollIntervalMs: 50_000 }));
+
+    let started: { job_id: string } | undefined;
+    await act(async () => {
+      const promise = result.current.startJob({ message: "hi", sessionId: "sess-r1" });
+      // Drain the 3s backoff so the retry can fire.
+      await jest.advanceTimersByTimeAsync(3_500);
+      started = await promise;
+    });
+
+    expect(started?.job_id).toBe("retry-1");
+    expect(mockAgentApi.post).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries on network error (no response) and succeeds on second attempt", async () => {
+    jest.useFakeTimers({ doNotFake: ["nextTick"] });
+
+    mockAgentApi.post
+      .mockRejectedValueOnce({ code: "ERR_NETWORK", message: "network error" })
+      .mockResolvedValueOnce({
+        data: { job_id: "retry-2", session_id: "sess-r2", status: "queued" },
+      });
+    mockAgentApi.get.mockResolvedValue({
+      data: {
+        job_id: "retry-2", session_id: "sess-r2", status: "queued",
+        message: "hi", content: null,
+      },
+    });
+
+    const { result } = renderHook(() => useMeridianJob({ pollIntervalMs: 50_000 }));
+
+    let started: { job_id: string } | undefined;
+    await act(async () => {
+      const promise = result.current.startJob({ message: "hi", sessionId: "sess-r2" });
+      await jest.advanceTimersByTimeAsync(3_500);
+      started = await promise;
+    });
+
+    expect(started?.job_id).toBe("retry-2");
+    expect(mockAgentApi.post).toHaveBeenCalledTimes(2);
+  });
+
+  it("does NOT retry on 4xx (deterministic client-side error)", async () => {
+    mockAgentApi.post.mockRejectedValueOnce({
+      response: { status: 422, data: { detail: "validation error" } },
+    });
+
+    const { result } = renderHook(() => useMeridianJob());
+
+    let caught: unknown = null;
+    await act(async () => {
+      try {
+        await result.current.startJob({ message: "hi", sessionId: "sess-bad" });
+      } catch (err) {
+        caught = err;
+      }
+    });
+
+    expect(caught).toBeTruthy();
+    expect(mockAgentApi.post).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws after 3 failed attempts (exhausted backoff)", async () => {
+    jest.useFakeTimers({ doNotFake: ["nextTick"] });
+
+    mockAgentApi.post
+      .mockRejectedValueOnce({ response: { status: 503 } })
+      .mockRejectedValueOnce({ response: { status: 503 } })
+      .mockRejectedValueOnce({ response: { status: 503 } });
+
+    const { result } = renderHook(() => useMeridianJob());
+
+    let caught: unknown = null;
+    await act(async () => {
+      const promise = result.current.startJob({ message: "hi", sessionId: "sess-cold" });
+      // Drain both backoffs (3s + 6s).
+      await jest.advanceTimersByTimeAsync(10_000);
+      try {
+        await promise;
+      } catch (err) {
+        caught = err;
+      }
+    });
+
+    expect(mockAgentApi.post).toHaveBeenCalledTimes(3);
+    expect(caught).toBeTruthy();
+  });
+});
