@@ -126,7 +126,12 @@ export default function MeridianChat() {
     { text: string; fileIds: string[]; convId: string | undefined } | null
   >(null);
   const wsSendMessageRef = useRef<
-    | ((text: string, context?: Record<string, unknown>, fileIds?: string[]) => void)
+    | ((
+        text: string,
+        context?: Record<string, unknown>,
+        fileIds?: string[],
+        options?: { voice?: boolean; gender?: string; accent?: string },
+      ) => void)
     | null
   >(null);
 
