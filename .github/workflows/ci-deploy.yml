@@ -316,7 +316,108 @@ jobs:
         run: echo "Deployed to dev — https://dev.inspiresgenius.com and https://d1nxsns258du4y.cloudfront.net"
 
   # ─────────────────────────────────────────────
-  # 7. DEPLOY TO PRODUCTION
+  # 7. DEPLOY TO STAGING-B (Tier C, account 918349930728)
+  # ─────────────────────────────────────────────
+  # Publishes to `stable.inspiresgenius.com` (bucket `ig-staging-b-frontend-assets`).
+  # The staging-b account is separate from dev, so this job uses OIDC role
+  # assumption (same pattern as the monorepo's `staging-b-promote.yml`) rather
+  # than the long-lived IAM keys deploy-dev uses.
+  #
+  # Required GitHub repo configuration before this job can succeed:
+  #   Variables (Settings → Secrets and variables → Actions → Variables):
+  #     STAGING_B_DEPLOY_ROLE_ARN          — OIDC role in account 918349930728
+  #                                           with s3:* on the frontend bucket
+  #                                           + cloudfront:CreateInvalidation
+  #     STAGING_B_FRONTEND_CLOUDFRONT_ID   — distribution ID serving stable.inspiresgenius.com
+  #                                           (look up via `cdk-outputs` of
+  #                                            ig-staging-b-domain stack:
+  #                                            `DistributionId` output)
+  #   Secrets:
+  #     STAGING_B_VITE_STORAGE_SECRET      — encrypted-storage symmetric key
+  #     STAGING_B_VITE_CRYPTO_KEY          — token-encryption AES key
+  #     STAGING_B_VITE_CRYPTO_SALT         — token-encryption salt
+  #     STAGING_B_VITE_SENTRY_DSN          — staging-b Sentry project DSN
+  #
+  # Until STAGING_B_DEPLOY_ROLE_ARN is set, the job is gated off and skipped
+  # cleanly — no failures, no false negatives.
+  deploy-staging-b:
+    name: Deploy to Staging-B
+    needs: [build, test-unit, dependency-audit, trivy-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push' && vars.STAGING_B_DEPLOY_ROLE_ARN != ''
+    environment:
+      name: staging-b
+      url: https://stable.inspiresgenius.com
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # The dev `build` job bakes in dev API URLs + dev storage secrets, so
+      # we rebuild here against .env.staging-b. The tracked .env.staging-b
+      # holds non-secret URLs; the 4 keys below come from GitHub Secrets.
+      - name: Generate .env (staging-b)
+        run: |
+          cp .env.staging-b .env
+          {
+            echo "VITE_STORAGE_SECRET=${{ secrets.STAGING_B_VITE_STORAGE_SECRET }}"
+            echo "VITE_CRYPTO_KEY=${{ secrets.STAGING_B_VITE_CRYPTO_KEY }}"
+            echo "VITE_CRYPTO_SALT=${{ secrets.STAGING_B_VITE_CRYPTO_SALT }}"
+            echo "VITE_SENTRY_DSN=${{ secrets.STAGING_B_VITE_SENTRY_DSN }}"
+            echo "VITE_APP_VERSION=${{ github.sha }}"
+          } >> .env
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (staging-b)
+        run: npm run build
+
+      - name: Configure AWS via OIDC (staging-b)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.STAGING_B_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Deploy to S3 (staging-b)
+        env:
+          BUCKET: ${{ vars.STAGING_B_FRONTEND_BUCKET || 'ig-staging-b-frontend-assets' }}
+        run: aws s3 sync dist/ "s3://$BUCKET" --delete
+
+      - name: Set no-cache headers on index.html + version.json (staging-b)
+        env:
+          BUCKET: ${{ vars.STAGING_B_FRONTEND_BUCKET || 'ig-staging-b-frontend-assets' }}
+        run: |
+          aws s3 cp "s3://$BUCKET/index.html" "s3://$BUCKET/index.html" \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html; charset=utf-8"
+          aws s3 cp "s3://$BUCKET/version.json" "s3://$BUCKET/version.json" \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "application/json"
+
+      - name: Invalidate CloudFront cache (staging-b)
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.STAGING_B_FRONTEND_CLOUDFRONT_ID }} \
+            --paths "/*"
+
+      - name: Staging-B deployment complete
+        run: echo "Deployed to staging-b — https://stable.inspiresgenius.com"
+
+  # ─────────────────────────────────────────────
+  # 8. DEPLOY TO PRODUCTION
   # ─────────────────────────────────────────────
   # Removed 2026-05-12. The job used the same S3_BUCKET / CLOUDFRONT_DISTRIBUTION_ID
   # as deploy-dev, so approvals wrote to the dev bucket — a placebo gate that
