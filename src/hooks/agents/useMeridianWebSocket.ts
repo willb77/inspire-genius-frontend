@@ -60,7 +60,12 @@ export type UseMeridianWebSocketReturn = {
   currentResponse: string;
   connect: (accessToken: string) => void;
   disconnect: () => void;
-  sendMessage: (text: string, context?: Record<string, unknown>, fileIds?: string[]) => void;
+  sendMessage: (
+    text: string,
+    context?: Record<string, unknown>,
+    fileIds?: string[],
+    options?: { voice?: boolean; gender?: string; accent?: string },
+  ) => void;
   startVoice: (voiceConfig?: { gender?: string; accent?: string; language?: string }) => void;
   stopVoice: () => void;
   sendAudioChunk: (chunk: ArrayBuffer | Blob) => void;
@@ -335,18 +340,37 @@ export function useMeridianWebSocket(
   // -------------------------------------------------------------------
 
   const sendMessage = useCallback(
-    (text: string, context?: Record<string, unknown>, fileIds?: string[]) => {
+    (
+      text: string,
+      context?: Record<string, unknown>,
+      fileIds?: string[],
+      options?: { voice?: boolean; gender?: string; accent?: string },
+    ) => {
       setCurrentResponse("");
       setIsProcessing(true);
+      // When voice is requested, fold gender/accent into the context so
+      // services/agent-engine/app/websocket/handlers.py:264-274 can pick
+      // them up via extra_context.get(...) when constructing the
+      // SentenceAccumulator for sentence-level streaming TTS.
+      const mergedContext =
+        options?.voice && (options.gender || options.accent)
+          ? { ...(context ?? {}), gender: options.gender, accent: options.accent }
+          : context;
       safeSend(JSON.stringify({
         type: "chat",
         action: "chat",
         message: text,
-        context,
+        context: mergedContext,
         // P1 fix (2026-05-09): forward selected document IDs so the
         // agent-engine RAG path can retrieve them. Mirrors the REST
         // /v1/agents/chat payload at MeridianChat.tsx:871,955.
         ...(fileIds && fileIds.length > 0 ? { file_ids: fileIds } : {}),
+        // D1-A (2026-05-30, PR α from #316): when voice is requested,
+        // backend attaches a SentenceAccumulator and emits per-sentence
+        // base64 MP3 chunks as {type: "audio"} frames alongside text
+        // tokens. Eliminates the chat/async poll + per-sentence REST
+        // /v1/agents/voice/synthesize loop the voice path used before.
+        ...(options?.voice ? { voice: true } : {}),
         // Include token for late-auth (ws-proxy pending_auth connections)
         access_token: activeTokenRef.current ?? undefined,
       }));

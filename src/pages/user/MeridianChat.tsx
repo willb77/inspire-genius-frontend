@@ -1220,13 +1220,38 @@ export default function MeridianChat() {
                   { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
                 ]);
 
-                // Voice uses the async-jobs path (POST /v1/agents/chat/async +
-                // GET /v1/agents/chat/jobs/{job_id} poll) for the same reason
-                // the text path does: API GW HTTP API caps direct REST at 30s,
-                // and multi-agent DAG queries from Aura/Meridian can run longer.
-                // Voice still owns its own polling loop here (rather than
-                // routing through useMeridianJob) so the post-response TTS
-                // dispatch stays colocated with the voice flow.
+                // D1-A (2026-05-30, PR α from #316): when voice is enabled
+                // AND the Meridian WS is open, send the transcript through
+                // the socket with {voice: true}. Backend streams text tokens
+                // + per-sentence base64 MP3 audio frames; onResponse renders
+                // the assistant bubble incrementally and onAudioData feeds
+                // useAudioQueue. First-audio latency drops from "after full
+                // response" to ~first-sentence-ready.
+                //
+                // Fallback (WS not open OR voice toggle off): keep the
+                // legacy async-jobs poll + per-sentence REST TTS path. This
+                // preserves UX when the socket is reconnecting or the user
+                // explicitly muted voice responses.
+                const wsReady = _isConnected && voiceEnabled && Boolean(wsSendMessageRef.current);
+                if (wsReady) {
+                  try {
+                    wsSendMessageRef.current?.(
+                      transcript,
+                      { conversation_id: conversationId, session_id: conversationId || "default" },
+                      selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                      { voice: true },
+                    );
+                  } catch (err) {
+                    console.error("[MeridianChat] Voice WS send failed:", err);
+                    setMessages((prev) => [
+                      ...prev.filter((m) => m.kind !== "processing"),
+                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
+                    ]);
+                  }
+                  return;
+                }
+
+                // ── Legacy REST async-jobs path (WS not ready / voice muted) ──
                 (async () => {
                   try {
                     const { agentApi } = await import("@/lib/agentApi");
@@ -1282,14 +1307,19 @@ export default function MeridianChat() {
 
                     // ── Sentence-level TTS via REST ──────────────────
                     // Delegate to speakText so this path shares the same
-                    // queue + abort behavior as per-message Replay.
-                    try {
-                      await speakText(responseText);
-                    } catch (ttsErr) {
-                      console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
-                      if ("speechSynthesis" in window) {
-                        const utter = new SpeechSynthesisUtterance(responseText);
-                        window.speechSynthesis.speak(utter);
+                    // queue + abort behavior as per-message Replay. Guarded
+                    // by voiceEnabled so the mute toggle takes effect here
+                    // too (the WS path above is already gated on the same
+                    // flag via wsReady).
+                    if (voiceEnabled) {
+                      try {
+                        await speakText(responseText);
+                      } catch (ttsErr) {
+                        console.warn("[MeridianChat] TTS failed, falling back to browser:", ttsErr);
+                        if ("speechSynthesis" in window) {
+                          const utter = new SpeechSynthesisUtterance(responseText);
+                          window.speechSynthesis.speak(utter);
+                        }
                       }
                     }
                   } catch (err) {
