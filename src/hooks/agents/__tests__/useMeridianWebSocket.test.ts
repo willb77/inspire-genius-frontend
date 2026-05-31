@@ -258,6 +258,71 @@ describe("useMeridianWebSocket.sendMessage", () => {
     expect(agentApi.post).not.toHaveBeenCalled();
   });
 
+  it("forwards {voice: true} on the chat frame when options.voice is set (D1-A, PR α from #316)", async () => {
+    const { result } = renderHook(() => useMeridianWebSocket({}));
+
+    act(() => {
+      result.current.connect("tok-voice");
+    });
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    act(() => {
+      result.current.sendMessage(
+        "Spoken transcript from SpeechRecognition",
+        { conversation_id: "conv-voice" },
+        undefined,
+        { voice: true, gender: "female", accent: "us" },
+      );
+    });
+
+    const ws = MockWebSocket.latest();
+    const chat = ws!
+      .getSentMessages()
+      .filter((m): m is string => typeof m === "string")
+      .map((m) => JSON.parse(m))
+      .find((m) => m.type === "chat");
+
+    expect(chat).toBeDefined();
+    expect(chat.voice).toBe(true);
+    // gender/accent fold into context so app/websocket/handlers.py:270-271
+    // can pull them via extra_context.get(...) when constructing the
+    // SentenceAccumulator's OpenAI voice id.
+    expect(chat.context).toMatchObject({
+      conversation_id: "conv-voice",
+      gender: "female",
+      accent: "us",
+    });
+  });
+
+  it("omits the voice flag when options.voice is not set (text-only path unchanged)", async () => {
+    const { result } = renderHook(() => useMeridianWebSocket({}));
+
+    act(() => {
+      result.current.connect("tok-text");
+    });
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    act(() => {
+      result.current.sendMessage("Plain text query", { conversation_id: "conv-t" }, undefined);
+    });
+
+    const ws = MockWebSocket.latest();
+    const chat = ws!
+      .getSentMessages()
+      .filter((m): m is string => typeof m === "string")
+      .map((m) => JSON.parse(m))
+      .find((m) => m.type === "chat");
+
+    expect(chat).toBeDefined();
+    expect(chat.voice).toBeUndefined();
+  });
+
   it("drops sendMessage silently when the socket is not open (caller queues + reconnects)", () => {
     const { result } = renderHook(() => useMeridianWebSocket({}));
 
