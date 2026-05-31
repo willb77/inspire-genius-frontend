@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "प्रैक्टिशनर डैशबोर्ड",
-    "welcomeBack": "फिर से स्वागत है, {name}। आज {sessions} सत्र निर्धारित हैं और इस सप्ताह {followups} फॉलो-अप बाकी हैं।",
+    "welcomeBack": "फिर से स्वागत है, {{name}}। आज {{sessions}} सत्र निर्धारित हैं और इस सप्ताह {{followups}} फॉलो-अप बाकी हैं।",
     "activeClients": "सक्रिय ग्राहक",
     "creditsRemaining": "शेष क्रेडिट",
     "sessionsThisMonth": "इस माह के सत्र",

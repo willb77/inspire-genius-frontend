@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "전문가 대시보드",
-    "welcomeBack": "돌아오신 것을 환영합니다, {name}님. 오늘 {sessions}개의 세션이 예정되어 있으며 이번 주 {followups}개의 후속 조치가 있습니다.",
+    "welcomeBack": "돌아오신 것을 환영합니다, {{name}}님. 오늘 {{sessions}}개의 세션이 예정되어 있으며 이번 주 {{followups}}개의 후속 조치가 있습니다.",
     "activeClients": "활성 고객",
     "creditsRemaining": "잔여 크레딧",
     "sessionsThisMonth": "이번 달 세션",

@@ -540,8 +540,8 @@ describe("zh-CN/dashboard.json regression", () => {
 
   it("noCoachesMatch contains the query placeholder", () => {
     const data = readJson("zh-CN", "dashboard") as Record<string, string>;
-    // After fix, should contain {query} placeholder (same format as English)
-    expect(data.noCoachesMatch).toContain("{query}");
+    // Double-brace i18next interpolation: {{query}}
+    expect(data.noCoachesMatch).toContain("{{query}}");
   });
 
   it("all zh-CN dashboard keys match English keys", () => {

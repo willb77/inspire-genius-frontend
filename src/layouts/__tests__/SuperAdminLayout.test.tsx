@@ -41,6 +41,7 @@ jest.mock("@/constants/navigation", () => {
           { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
           { to: "/super-admin/project-log", icon: DummyIcon, label: "Project Log" },
         ],
+        defaultCollapsed: true,
       },
       {
         label: "Role Views",
@@ -51,10 +52,27 @@ jest.mock("@/constants/navigation", () => {
           { to: "/practitioner/dashboard", icon: DummyIcon, label: "Practitioner" },
           { to: "/distributor/dashboard", icon: DummyIcon, label: "Distributor" },
         ],
+        defaultCollapsed: true,
       },
+    ],
+    getUserNavItems: () => [
+      { to: "/home", icon: DummyIcon, label: "Home" },
+      { to: "/meridian/chat", icon: DummyIcon, label: "Chat with Meridian" },
+      { to: "/prism-assessment", icon: DummyIcon, label: "Request Assessment" },
+      { to: "/documents", icon: DummyIcon, label: "My Documents" },
+      { to: "/feedback", icon: DummyIcon, label: "Feedback" },
+      { to: "/analytics", icon: DummyIcon, label: "Analytics" },
+      { to: "/onboarding/wizard", icon: DummyIcon, label: "Onboarding Wizard" },
+      { to: "/settings", icon: DummyIcon, label: "Settings" },
+      { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
   };
 });
+
+// 🔹 Mock the agent-engine toggle hook used by the layout
+jest.mock("@/lib/agentApi", () => ({
+  useAgentEngine: () => true,
+}));
 
 // 🔹 Capture props passed to SidebarScaffold
 const mockSidebarScaffold = jest.fn();
@@ -106,11 +124,16 @@ describe("SuperAdminLayout", () => {
 
     const props = mockSidebarScaffold.mock.calls[0][0];
 
-    expect(props.navSections).toHaveLength(2);
-    expect(props.navSections[0].label).toBe("Administration");
-    expect(props.navSections[0].items).toHaveLength(9);
-    expect(props.navSections[1].label).toBe("Role Views");
-    expect(props.navSections[1].items).toHaveLength(5);
+    expect(props.navSections).toHaveLength(3);
+    expect(props.navSections[0].label).toBe("My Workspace");
+    expect(props.navSections[0].defaultCollapsed).toBe(true);
+    expect(props.navSections[1].label).toBe("Administration");
+    expect(props.navSections[1].items).toHaveLength(9);
+    // Administration is expanded on super-admin pages (the user is mid-task)
+    expect(props.navSections[1].defaultCollapsed).toBe(false);
+    expect(props.navSections[2].label).toBe("Role Views");
+    expect(props.navSections[2].items).toHaveLength(5);
+    expect(props.navSections[2].defaultCollapsed).toBe(true);
   });
 
   test("renders administration and role view labels", () => {
@@ -128,6 +151,9 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByText("Company Admin")).toBeInTheDocument();
     expect(screen.getByText("Practitioner")).toBeInTheDocument();
     expect(screen.getByText("Distributor")).toBeInTheDocument();
+    // "My Workspace" surfaces the user nav so super-admin can hop back
+    expect(screen.getByText("My Workspace")).toBeInTheDocument();
+    expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
   });
 
   test("forwards className to SidebarScaffold", () => {
