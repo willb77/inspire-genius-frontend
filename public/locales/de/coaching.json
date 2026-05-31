@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Trainer-Armaturenbrett",
-    "welcomeBack": "Willkommen zurück, {name}. Sie haben {sessions} Sitzungen eingeplant und {followups} Nachverfolgungen diese Woche.",
+    "welcomeBack": "Willkommen zurück, {{name}}. Sie haben {{sessions}} Sitzungen eingeplant und {{followups}} Nachverfolgungen diese Woche.",
     "activeClients": "Aktive Kunden",
     "creditsRemaining": "Verbleibende Credits",
     "sessionsThisMonth": "Sitzungen Diesen Monat",

@@ -18,7 +18,7 @@ import { STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
 import { getUIFlag, setUIFlag } from "@/lib/storage";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Menu } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
@@ -28,7 +28,12 @@ import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 
 export type NavItemDef = { to: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
 
-export type NavSectionDef = { label: string; items: NavItemDef[] };
+export type NavSectionDef = {
+  label: string;
+  items: NavItemDef[];
+  /** When true, the section renders as a clickable header that expands/collapses its items. */
+  defaultCollapsed?: boolean;
+};
 
 export type SidebarScaffoldProps = {
   navItems: NavItemDef[];
@@ -64,6 +69,42 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
         <span>{label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
+  );
+}
+
+function CollapsibleNavSection({
+  section,
+  showSeparator,
+  expandOnPath,
+}: {
+  section: NavSectionDef;
+  showSeparator: boolean;
+  expandOnPath?: string;
+}) {
+  const [open, setOpen] = React.useState(!section.defaultCollapsed);
+  const Chevron = open ? ChevronDown : ChevronRight;
+  return (
+    <SidebarGroup>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
+      >
+        <span>{section.label}</span>
+        <Chevron className="size-3.5 shrink-0" />
+      </button>
+      {open && (
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {section.items.map((item) => (
+              <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      )}
+      {showSeparator && <SidebarSeparator className="!w-[80%] mx-auto my-2" />}
+    </SidebarGroup>
   );
 }
 
@@ -111,23 +152,36 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         </SidebarSectionHeader>
         <SidebarContent>
           {navSections ? (
-            navSections.map((section, si) => (
-              <SidebarGroup key={section.label}>
-                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {section.label}
-                </div>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {section.items.map((item) => (
-                      <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-                {si < navSections.length - 1 && (
-                  <SidebarSeparator className="!w-[80%] mx-auto my-2" />
-                )}
-              </SidebarGroup>
-            ))
+            navSections.map((section, si) => {
+              const showSeparator = si < navSections.length - 1;
+              if (section.defaultCollapsed) {
+                return (
+                  <CollapsibleNavSection
+                    key={section.label}
+                    section={section}
+                    showSeparator={showSeparator}
+                    expandOnPath={expandOnPath}
+                  />
+                );
+              }
+              return (
+                <SidebarGroup key={section.label}>
+                  <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {section.label}
+                  </div>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {section.items.map((item) => (
+                        <NavItem key={item.to} {...item} expandOnPath={expandOnPath} />
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                  {showSeparator && (
+                    <SidebarSeparator className="!w-[80%] mx-auto my-2" />
+                  )}
+                </SidebarGroup>
+              );
+            })
           ) : (
             <SidebarGroup>
               <SidebarGroupContent className="mt-2">

@@ -20,12 +20,13 @@ export default function UserLayout({ children, className }: UserLayoutProps) {
   const agentEngineOn = useAgentEngine();
   const userNavItems = getUserNavItems(agentEngineOn);
 
-  /** When a super-admin visits user pages via Role Views, show admin sections
-   *  plus user nav items so they can navigate within the user experience. */
+  /** Super-admin viewing user pages: lead with "My Workspace" (user nav) so
+   *  the simpler user experience is primary; Administration + Role Views
+   *  remain available as collapsed sections beneath. */
   const superAdminSections: NavSectionDef[] = useMemo(
     () => [
+      { label: "My Workspace", items: userNavItems },
       ...SUPER_ADMIN_NAV_SECTIONS,
-      { label: "User Pages", items: userNavItems },
     ],
     [userNavItems],
   );

@@ -146,8 +146,8 @@ const ROLE_VIEW_ITEMS: NavItemDef[] = [
 
 /** Sectioned navigation for super-admin (admin tools + role views) */
 export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
-  { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS },
-  { label: "Role Views", items: ROLE_VIEW_ITEMS },
+  { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS, defaultCollapsed: true },
+  { label: "Role Views", items: ROLE_VIEW_ITEMS, defaultCollapsed: true },
 ]
 
 /** Lookup from role to its nav items */
@@ -167,7 +167,9 @@ export const HOME_ROUTE_BY_ROLE: Record<UserRole, string> = {
   "company-admin": ROUTES.COMPANY_ADMIN.DASHBOARD,
   practitioner: ROUTES.PRACTITIONER.DASHBOARD,
   distributor: ROUTES.DISTRIBUTOR.DASHBOARD,
-  "super-admin": ROUTES.SUPER_ADMIN.DASHBOARD,
+  // Super-admins land on the user Home for a simpler default experience;
+  // Administration tools remain available via the collapsed sidebar section.
+  "super-admin": ROUTES.HOME,
 }
 
 /** Full default config per role */
@@ -211,7 +213,7 @@ export const DEFAULT_ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     role: "super-admin",
     label: "Super Admin",
     description: "Platform owner with full access",
-    homeRoute: ROUTES.SUPER_ADMIN.DASHBOARD,
+    homeRoute: ROUTES.HOME,
     navItems: SUPER_ADMIN_NAV_ITEMS,
   },
 }

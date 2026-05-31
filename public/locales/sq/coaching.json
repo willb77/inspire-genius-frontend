@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Paneli i Praktikuesit",
-    "welcomeBack": "Mire se u ktheve, {name}. Ke {sessions} sesione te planifikuara sot dhe {followups} ndjekje te duhura kete jave.",
+    "welcomeBack": "Mire se u ktheve, {{name}}. Ke {{sessions}} sesione te planifikuara sot dhe {{followups}} ndjekje te duhura kete jave.",
     "activeClients": "Kliente Aktive",
     "creditsRemaining": "Kredite te Mbetura",
     "sessionsThisMonth": "Sesione Kete Muaj",

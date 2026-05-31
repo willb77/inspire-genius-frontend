@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Practitioner Dashboard",
-    "welcomeBack": "Welcome back, {name}. You have {sessions} sessions scheduled today and {followups} follow-ups due this week.",
+    "welcomeBack": "Welcome back, {{name}}. You have {{sessions}} sessions scheduled today and {{followups}} follow-ups due this week.",
     "activeClients": "Active Clients",
     "creditsRemaining": "Credits Remaining",
     "sessionsThisMonth": "Sessions This Month",

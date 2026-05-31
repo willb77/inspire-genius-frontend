@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "执行者仪表板",
-    "welcomeBack": "欢迎回来，{name}。您今天有 {sessions} 个会话已安排，本周有 {followups} 个跟进待处理。",
+    "welcomeBack": "欢迎回来，{{name}}。您今天有 {{sessions}} 个会话已安排，本周有 {{followups}} 个跟进待处理。",
     "activeClients": "活跃客户",
     "creditsRemaining": "剩余积分",
     "sessionsThisMonth": "本月会话数",

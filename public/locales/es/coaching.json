@@ -38,7 +38,7 @@
   },
   "practitioner": {
     "dashboard": "Panel de Control del Profesional",
-    "welcomeBack": "Bienvenido de nuevo, {name}. Tienes {sessions} sesiones programadas hoy y {followups} seguimientos vencidos esta semana.",
+    "welcomeBack": "Bienvenido de nuevo, {{name}}. Tienes {{sessions}} sesiones programadas hoy y {{followups}} seguimientos vencidos esta semana.",
     "activeClients": "Clientes Activos",
     "creditsRemaining": "Créditos Restantes",
     "sessionsThisMonth": "Sesiones Este Mes",
