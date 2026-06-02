@@ -232,11 +232,12 @@ export default function UserManagement() {
     ];
 
     // If role changed, send a separate role-change request.
-    // The monolith /role endpoint expects the role NAME (not role_id);
-    // see ChangeUserRolePayload in user-management.service.ts.
+    // PR #291 strangler extraction: path param is user_id UUID (not email);
+    // backend returns 400 if an email is passed. Body still uses role NAME.
     if (values.role && values.role !== selected.role) {
       promises.push(
         changeRoleMutation.mutateAsync({
+          user_id: selected.id,
           email: selected.email,
           payload: { role: values.role },
         })

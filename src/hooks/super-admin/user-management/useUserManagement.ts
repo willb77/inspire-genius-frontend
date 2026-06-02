@@ -130,9 +130,9 @@ export function useChangeUserRole() {
   return useMutation<
     ChangeUserRoleResponse,
     AxiosError<BaseApiResponse<null>>,
-    { email: string; payload: ChangeUserRolePayload }
+    { user_id: string; email?: string; payload: ChangeUserRolePayload }
   >({
-    mutationFn: ({ email, payload }) => changeUserRole(email, payload),
+    mutationFn: ({ user_id, payload }) => changeUserRole(user_id, payload),
 
     onSuccess: (_resp, variables) => {
       toast.success("User role updated successfully");
@@ -140,7 +140,7 @@ export function useChangeUserRole() {
         queryKey: ["super-admin", "user-management"],
         exact: false,
       });
-      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { email: variables.email, role: variables.payload.role } });
+      logAuditEvent({ action: "user_role_changed", actor_email: actorEmail, target_type: "user", extra_data: { user_id: variables.user_id, email: variables.email, role: variables.payload.role } });
     },
 
     onError: (error) => {

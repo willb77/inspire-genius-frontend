@@ -96,12 +96,10 @@ export async function inviteUser(payload: InviteUserPayload) {
 
 // ------------------ CHANGE USER ROLE ------------------
 
-// Monolith /v1/user-management/users/{email}/role expects the role NAME
-// (not the role_id UUID). The backend handler looks up the role row by
-// name via `role_request.role.lower()`. Sending `role_id` here makes
-// `body.role` missing → 422. (Diagnosed 2026-05-18; bleeding-fix to a
-// shipped surface — the proper Strangler-Fig extraction of this endpoint
-// is a separate follow-up.)
+// Strangler-Fig extraction (auth-service, PR #291) flipped the path param
+// from email → user_id UUID. The new handler returns 400 "user_id must be
+// a UUID" if an email is passed. Body still expects the role NAME (not the
+// role_id UUID).
 export type ChangeUserRolePayload = {
   role: string
 }
@@ -112,9 +110,9 @@ export type ChangeUserRoleData = {
 
 export type ChangeUserRoleResponse = BaseApiResponse<ChangeUserRoleData>
 
-export async function changeUserRole(user_email: string, payload: ChangeUserRolePayload) {
+export async function changeUserRole(user_id: string, payload: ChangeUserRolePayload) {
   const { data } = await api.put<ChangeUserRoleResponse>(
-    `/v1/user-management/users/${encodeURIComponent(user_email)}/role`,
+    `/v1/user-management/users/${encodeURIComponent(user_id)}/role`,
     payload
   )
   return data
