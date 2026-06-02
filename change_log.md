@@ -1,3 +1,183 @@
+## [2026-06-01] — /full-go: admin-invite SES email + resend-endpoint SES + changeUserRole UUID path — 5 stuck users unblocked [2026-06-01 20:30 UTC-4 EST]
+
+Bill 19:00 EDT: "I have just sent 3 invitations out to new users. They have not received the emails yet. Please check their status."
+
+### Symptoms
+
+3 users sent at 18:54–18:56 EDT (Liam Boyd, John Boyd Jr, Sean Hammonds) — Cognito users created via `AdminCreateUser` (`messageAction=SUPPRESS`) but **zero SES SendEmail events in CloudTrail**. Investigation surfaced 2 more victims:
+- Andrew Ballenger (Cognito-created 2026-06-01 09:39 EDT)
+- Sherri Hill (Cognito-created 2026-05-28 00:36 EDT)
+
+Plus 2 previously-reported "still broken" issues escalated by Bill:
+- Cannot change a user's role (John Boyd: `user` → `super-admin` silently failed)
+- Edit modal missing invitation-expiry controls
+
+### Root cause — 3 symptoms, 2 bugs
+
+| # | Bug | File | Symptom |
+|---|---|---|---|
+| 1 | `admin_invite_user` + `_invite_one` (bulk): no SES call after `AdminCreateUser(messageAction=SUPPRESS)` | `services/auth-service/app/routes/admin_invite.py` | No email |
+| 2 | `resend_invitation`: explicitly returned `email_sent=False` per stale "magic-link does it" assumption | `services/auth-service/app/routes/user_management.py:885` | Resend button never emailed |
+| 3 | Frontend `changeUserRole(user_email, ...)` passes EMAIL; PR #291 extracted backend expects **user_id UUID** and returns 400 | `inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts:115` | Role change silently failed |
+
+(Issue 3 "Edit modal missing controls" turned out to be a non-bug — `UserFormModal` already wires `InvitationSection` when `selected.invitation_id` is truthy. All 5 stuck users had `invitation_id` populated in the list response, so the section renders correctly.)
+
+### Fixes
+
+**Monorepo PR #317** (`fix/admin-invite-ses-email`, merged `0d1869b`)
+- New `_send_invitation_email()` helper (SES SendEmail with `{FRONTEND_URL}/accept-invitation?token=<token>` link, uses `SES_SENDER_EMAIL=noreply@3pp.com` already on Lambda + `SesSendEmail` IAM policy already attached)
+- New `_fetch_invitation_and_send()` reads the `user_invitations` row that `create_user()` already INSERTs; pulls the token; fires SES. Best-effort try/except — SES failure doesn't roll back the user
+- Both invite handlers + the resend handler call the SES helper; response envelope now carries `invitation_id` + `email_sent`
+- `get_latest_invitation_by_user_id` SELECT extended to include `invitation_token`
+- 6 new tests (single happy/SES-fail/missing-row, bulk SES-per-recipient/SES-fail, resend SES-fail). **149/149 auth-service tests passing** (143 prior + 6 new).
+
+**Frontend PR #112** (`inspire-genius-frontend`, merged)
+- `changeUserRole(user_id, payload)` — path now `${user_id}` (UUID), body unchanged (role NAME)
+- `useChangeUserRole` mutation input: `{ user_id, email?, payload }` (email kept for audit-log enrichment, not transmitted)
+- `UserManagement.tsx` Edit handler passes `selected.id` instead of `selected.email` when role changes
+- 2 service tests updated to UUID-path assertions
+- 30 user-management service+hook tests + 28 page tests all green
+
+### Deploy + verification
+
+- Auth-service Lambda hot-patched (`aws lambda update-function-code`) at 2026-06-02 00:20 UTC. New SHA `R+xUwTcNsEHHGtN97/JY7IvJVGJbjWNG8PTNqi/8lBY=`. Bundle pattern: download current bundle from S3, overlay 3 changed Python files (`admin_invite.py`, `user_management.py`, `user_queries.py`), re-zip + upload.
+- `/health` smoke: 200 OK clean cold-start.
+- **5 stuck users re-fired via the resend endpoint** — Sherri/Andrew/Liam/John/Sean all returned `HTTP 200 email_sent=True message="Invitation refreshed and emailed"`. Each user's `user_invitations` row was already present (the original `create_user()` had INSERTed it during the failed invite); the resend just generated a fresh 72h token and called SES. Invitation IDs preserved in change_log timeline for audit.
+- Frontend PR #112 deploys via CD on `development` (auto S3 + CloudFront invalidate).
+
+### Risk to login: zero
+
+Changes touch `admin_invite.py`, `user_management.py`, `user_queries.py` (read-only addition). None of `auth/login`, `auth/refresh-token`, `auth/signup`, `auth/magic-auth`, `auth/verify-otp`, or social-login code paths exercise these files.
+
+### Files
+
+- `services/auth-service/app/routes/admin_invite.py` — +136 lines (SES helper, invite-and-send helper, wire into both handlers)
+- `services/auth-service/app/routes/user_management.py` — +52/-12 (resend now sends SES; docstring rewrite)
+- `services/auth-service/app/user_queries.py` — +1 (SELECT `invitation_token`)
+- `services/auth-service/tests/test_admin_invite.py` — +121 (3 new tests + SES fixture)
+- `services/auth-service/tests/test_bulk_invite.py` — +70 (2 new tests + SES fixture)
+- `services/auth-service/tests/test_user_management.py` — +54/-12 (resend happy-path enriched + 1 new SES-fail test)
+- `inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts` — `changeUserRole(user_id, …)`
+- `inspire-genius-frontend/src/services/super-admin/user-management/__tests__/user-management.service.test.ts` — UUID-path assertions
+- `inspire-genius-frontend/src/hooks/super-admin/user-management/useUserManagement.ts` — mutation input shape
+- `inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx` — pass `selected.id`
+
+---
+
+## [2026-05-29] — Late-night: staging-b login fully unblocked (3 PRs) + Meridian first-question retry + RLHF promote [2026-05-29 23:00 UTC-4 EST]
+
+Three orthogonal pieces of work this session. Two staging-b promotes ✓.
+
+### Morning: /full-go for the 3 deferred Aura/RLHF/agent-engine PRs
+
+Bill: "do #162 → revive as mega-PR, #142 → close + new small source-capture PR, #180 → now unblocked (PR #300 just landed the rlhf-service packaging fix). /full-go".
+
+| Action | Result |
+|---|---|
+| **PR #303** revives #162 (Aura 4-framework mega-PR) | 4 cherry-picks (BigFive + Clifton + MBTI + Enneagram) onto fresh branch. **472/472 framework tests pass locally.** Merged `2134ad7`. Closed #162. |
+| **PR #304** supersedes #142 (agent-engine slim Lambda source capture only) | 18 files in `services/agent-engine-lambda/`. Drops the full CDK Function definition since dev adopted an ARN-reference pattern. Merged `aebfee9`. Closed #142. |
+| **PR #305** revives #180 (RLHF payloadResponseOnly port) | Cherry-pick auto-merged services-stack.ts despite 21 commits of churn. `tsc` + `cdk synth` confirm new state machine. Merged `9d47290`. Closed #180. |
+
+**Staging-b promote #1 (`release-stable-2026-05-29-rlhf-and-aura-frameworks`)** — `aebfee9`. All 6 jobs ✓ in ~5 min. **RLHF state-machine drift CLOSED on staging-b**: 24 states (was 13) including `Rlhf_HasData` Choice + `Rlhf_SetStep_aggregate_corrections` + `Rlhf_NoTrainingData` + `payloadResponseOnly: true` Pass→Task throughout. 14/14 critical + 6/6 extended smoke probes ✓.
+
+### Mid-session: Meridian first-question latency — frontend PR #108
+
+Investigation corrected the memory `feedback_api_gw_30s_meridian_cap.md`. PR #174 (2026-05-18) moved text chat to async-jobs so the 30s API GW cap is structurally bypassed for the response path. But the **initial 202 acceptance call** still flows through API GW → ALB → ECS Fargate. On a cold ECS task the chain to even accept the job can exceed 30s; API GW returns 503; frontend shows "Sorry I can't reach Meridian". Code probes confirmed: framework interpreters are pure-Python (~5-50ms each, NOT a contributor); TTS waits for FULL response then sequential per-sentence OpenAI calls; end-to-end abort propagation is frontend-only (backend doesn't honor cancel).
+
+**Frontend PR #108** (`inspire-genius-frontend`, merged `410395b`):
+- **Fix B**: 3-attempt retry-with-backoff (0s / 3s / 6s) on `POST /v1/agents/chat/async`. Retry only on 5xx + network errors; 4xx throws immediately. 4 new tests.
+- **Fix C**: Warmup ping `GET /v1/agents/health` on `MeridianChat` mount. Defensive guard so test mocks don't crash.
+- 168/168 tests pass.
+- Memory `feedback_api_gw_30s_meridian_cap.md` rewritten in-place (operative facts at top, historical body preserved).
+
+### Late-night: staging-b login fully broken → 3-PR rollup
+
+Bill: "I am not getting a magic link log in email" → "all 3pp.com email are verified" → "got email, but page is not loading: GET /v1/frontend-text 401".
+
+Three distinct symptoms on staging-b after the morning promote, all surfaced because staging-b is a fresh env without monolith fallbacks:
+
+| PR | Fixes | Hot-patched? |
+|---|---|---|
+| **#308** (merged `e6c5f6b`) — add bare `GET /v1/frontend-text` route to `agent-engine-stack.ts` | API GW had only `{proxy+}` on staging-b; HTTP API doesn't match bare against `{proxy+}`; bare-route 404 had no CORS headers → browser blamed CORS | Yes — `aws apigatewayv2 create-route` at 22:18 UTC-4 EST, RouteId `n3m4hbk` |
+| **#309** (merged `f16db7c`) — per-env `SES_FROM_EMAIL` in `services-stack.ts` (staging-b → `noreply@stable.inspiresgenius.com`, other envs → `noreply@3pp.com`) | Each AWS account has its own SES identity inventory. Dev has `3pp.com` DOMAIN verified (DKIM SUCCESS); staging-b does NOT. PR #291's global default produced `MessageRejected: Email address is not verified` | Yes — `aws lambda update-function-configuration` at 22:36 UTC-4 EST. Magic-link verified delivered to inbox |
+| **#310** (merged `970310c`) — drop `Depends(require_auth)` from both handlers in `services/agent-engine/app/routes/frontend_text.py` + rewrite `test_frontend_text_auth.py` | 2026-05-15 p0-a07 audit added an over-aggressive auth gate. Login + onboarding call this BEFORE a token exists. Dev was masked because API GW points to monolith catchall (no gate) | No — code change requires ECS image rebuild + roll via promote |
+
+**Staging-b promote #2 (`release-stable-2026-05-29-staging-b-login-fix`)** — `970310c`. First attempt failed at CFN with 409 ConflictException on `W2FrontendTextGetBare` (the hot-patched route from PR #308 collided with CDK definition — `feedback_drift_pin_lessons_2026_05_07` repeat). Resolved by deleting the manual route (`apigatewayv2 delete-route n3m4hbk`) and re-triggering promote at 00:43 UTC-4 EST 2026-05-30.
+
+### Side-issues surfaced (not fixed tonight)
+
+1. **Auth-lambda secretsmanager AccessDenied** on staging-b — `ig-staging-b-auth-lambda-role` missing `secretsmanager:GetSecretValue` on `inspires-genius-staging-b/magic-auth/jwt-secret`. Lambda falls back to `SECRET_KEY` env var so magic-link still works.
+2. **CSP report-only warnings** on staging-b login: Google Fonts not whitelisted in `style-src`; `upgrade-insecure-requests` ignored under report-only.
+3. **Pre-existing legacy-endpoint test failures** in `test_legacy_endpoints.py` (`_make_db_mock` fixture has spurious `self` param on `.get` lambda). Unrelated to PR #310; on development HEAD too.
+
+### Tonight's PR rollup
+
+- **Merged this evening (mine)**: #303, #304, #305 (morning), #308, #309, #310 (late-night)
+- **Merged earlier today (mine)**: #298, #300, #302
+- **Frontend repo**: #108 (`410395b`)
+- **Sister terminal merged**: #296, #297, #299, #301, #306, #307
+- **Originals closed as superseded**: #142, #162, #180, #183, #185
+
+### Memories updated
+- `feedback_api_gw_30s_meridian_cap.md` — rewritten in place
+
+## [2026-05-29] — PR #306 codify Phase 2 cutover flag on dev [2026-05-29 08:35 UTC-4 EST]
+
+One-line drift fix surfaced by the live-vs-source audit. `MAGIC_AUTH_USE_MAIN_DB` was hot-set to `true` on ig-dev-user-sync during the 2026-05-28 14:43 cutover; CDK source still defaulted to `false`. Next CDK deploy of user-sync-stack would have silently rolled back the cutover.
+
+**Change:** per-env default keyed off `envConfig.envName` in `infrastructure/cdk/lib/user-sync-stack.ts:167`. dev=`'true'`, prod=`'false'` (awaits own cutover), staging-b doesn't deploy this stack. PR #306 opened.
+
+## [2026-05-29] — Morning wrap: 3 PRs merged + 75-row audit_logs DELETE executed [2026-05-29 08:18 UTC-4 EST]
+
+Bill: "merge #296, #297, #299 yes delete the 75 orphan audit rows".
+
+### Merged
+- **#296** `feat(user-sync): codify find_user + seed_user actions` — merged 12:17:15 UTC
+- **#297** `feat(auth-service): extract POST /v1/user-management/invite/bulk` — merged 12:17:20 UTC
+- **#299** `docs: agent registry + routing snapshot doc + generator` — merged 12:17:24 UTC
+
+### Audit-logs DELETE (explicit re-auth from Bill)
+Ran `BEGIN; DELETE FROM public.audit_logs WHERE actor_id IN (19 unknown-origin UUIDs); COMMIT;` via `ig-dev-migration-runner`. Removed 75 rows in a single transaction. Post-DELETE COUNT against the same 19 actor_ids: **0**.
+
+`list_orphan_actors` confirms 19 → 0 unknown-origin orphans remaining. The 3 known-email orphans were deliberately preserved (they have linked magic_emails: `signup-probe-…@example-invalid-domain.test`, `test@example.com`, `verify@3pp.com`). Total orphan count: 22 → 3.
+
+## [2026-05-29] — /bedtime — PR #185 + #183 revived; triage doc for #162/#142/#180 [2026-05-29 02:30 UTC-4 EST]
+
+Bedtime args: "do #183, #185 revive, provide more detail about and a recommendation for #162, #142, #180". Two PRs revived via cherry-pick (original branches rooted at ancient `f723f72` monorepo-init like PR #219 — rebase would have produced massive doc conflicts). One triage doc with concrete recommendations.
+
+### Revivals
+
+- **PR #298** revives **#185** — `feat(p1-a16): manager team PRISM assessments endpoint`. Cherry-picked single feat commit `dc96435` → `dae2897` onto fresh branch off dev. **27/27 dashboard-service tests pass locally** (16 existing + 11 new). The 2 original CI failures were the `packages = [{include = "app"}]` packaging bug that PR #283 already fixed for dashboard-service on dev — so rebase inherits the fix automatically.
+
+- **PR #300** revives **#183** — `feat(p1-alembic): baseline migrations for 6 services`. Cherry-picked `b4877fa` → `d18612a` + follow-up commit `936f9fe` adding `packages = [{include = "app"}]` to 4 services (coach, org, rlhf, support) that still lacked it on dev. Verified no alembic versions exist on dev for any of the 6 services (coach/dashboard/org/rlhf/support/user) so baselines won't collide.
+
+### Triage doc — `.claude/handoffs/2026-05-29-bedtime/PR_TRIAGE.md`
+
+Three parallel Explore agents pulled concrete recommendations for the remaining deferred PRs:
+
+- **#162 Aura Enneagram** → Recommend **A: Revive as mega-PR**. Predecessor PRs #155/#160/#161 were CLOSED **by design** (consolidation into single mega-PR), not rejection. 472 framework tests green. Zero drift in `prism_agent.py` integration point. Rebase should be mechanical. Estimated cost: 1–2h.
+
+- **#142 agent-engine Lambda onboard** → Recommend **B: Close + new small source-capture PR**. Development already adopted a different "ARN-reference only" pattern (~45 lines vs PR #142's full Lambda definition with 167 lines + 20 source files). The two approaches are mutually exclusive. Keep PR #142's source capture (it's still byte-for-byte current with live Lambda per `LastModified: 2026-05-15`), but drop the CDK function definition. Cost: 1h.
+
+- **#180 RLHF payloadResponseOnly** → Recommend **A: Wait for PR #300, then cherry-pick + ship**. Drift in `ig-dev-rlhf-training-pipeline` state machine is 10 days overdue. rlhf-stack.ts source-of-truth has not moved. CI failure is the same packaging bug — PR #300 fixes rlhf-service so PR #180 self-resolves on rebase. Cost: 1–2h post-#300 merge.
+
+### Files
+
+- `.claude/handoffs/2026-05-29-bedtime/PR_TRIAGE.md` (NEW, 154 lines) — full per-PR investigation with line counts, drift severity, cited commits
+- `change_log.md` + `IG_project_log.html`
+
+### Notable session friction
+
+- **Multi-terminal interference on the main directory.** Another terminal switched my main repo to `docs/agent-registry-snapshot` mid-edit, lost my 4 pyproject.toml edits, then committed to my branch and reset (visible in reflog). Resolved by creating an isolated worktree at `/tmp/p183-wt` and re-applying edits there. Saved memory `feedback_cross_terminal_main_repo_isolation.md` — never edit in the main repo when another terminal is actively working; always use `git worktree add /tmp/...` for any non-trivial multi-step work.
+
+- **Working tree pollution from build artifacts.** `packages/ig-auth/build/lib/ig_auth/*.py` showed up in DU (delete-by-us) conflict state after a prior local `python -m pytest` run. Pattern previously caught in `feedback_stale_build_artifacts_pollute_pip_install.md`; this time it manifested as a branch-switch blocker.
+
+### Open PRs after this session
+- #298 (mine, manager PRISM revival) — CI in flight, expect green
+- #300 (mine, alembic baselines revival) — CI in flight, 4 service-test "fail" early-poll status verified as pre-existing user-service test failures (same 22-fail/15-pass count on dev baseline; not caused by this PR)
+- #296, #297, #299, #301 (other terminal's bedtime work)
+- #162, #142, #180 — triage doc provides recommendations; pending Bill's decision
+
 ## [2026-05-29] — /bedtime — 4 PRs opened (#296, #297, #299) + audit cleanup blocked + agent registry doc generated [2026-05-29 00:25 UTC-4 EST]
 
 Closing out the 7-item Bill list (#2, #4, #3, #6 Delete, #7, #8 + /bedtime). 4 of the 5 actionable items shipped as PRs; 1 (#6 audit DELETE) blocked at the sandbox.
