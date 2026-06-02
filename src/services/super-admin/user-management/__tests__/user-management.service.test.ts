@@ -134,10 +134,10 @@ describe("Super Admin User Management Service", () => {
 
   /* -----------------------------------------
      changeUserRole
-     Monolith expects { role: <NAME> } NOT { role_id: <UUID> }.
-     See ChangeUserRolePayload comment in the service module.
+     PR #291 strangler extraction flipped path param from email → user_id
+     UUID. Backend returns 400 if an email is passed. Body still uses NAME.
   ----------------------------------------- */
-  it("should change user role with role NAME (not role_id) per monolith schema", async () => {
+  it("should change user role with role NAME (not role_id) per backend schema", async () => {
     const payload: ChangeUserRolePayload = { role: "super-admin" };
 
     const mockResponse = {
@@ -147,11 +147,11 @@ describe("Super Admin User Management Service", () => {
 
     (api.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
 
-    const email = "andy@prismbrainmapping.com";
-    const result = await changeUserRole(email, payload);
+    const userId = "00000000-0000-0000-0000-000000000123";
+    const result = await changeUserRole(userId, payload);
 
     expect(api.put).toHaveBeenCalledWith(
-      `/v1/user-management/users/${encodeURIComponent(email)}/role`,
+      `/v1/user-management/users/${encodeURIComponent(userId)}/role`,
       payload
     );
     // Regression guard: the body must carry `role` (the name) and must NOT
@@ -163,14 +163,16 @@ describe("Super Admin User Management Service", () => {
     expect(result).toEqual(mockResponse);
   });
 
-  it("encodes the email path segment in the change-role URL", async () => {
+  it("uses user_id (UUID) as the path segment in the change-role URL", async () => {
+    // Regression guard for the 2026-06-01 incident where the frontend
+    // passed user_email and the extracted backend returned 400.
     (api.put as jest.Mock).mockResolvedValueOnce({ data: { message: "ok", data: {} } });
 
-    const trickyEmail = "user+test@example.com";
-    await changeUserRole(trickyEmail, { role: "manager" });
+    const userId = "84489418-0061-70fa-e5d5-9318e3a3675d";
+    await changeUserRole(userId, { role: "manager" });
 
     expect(api.put).toHaveBeenCalledWith(
-      `/v1/user-management/users/${encodeURIComponent(trickyEmail)}/role`,
+      `/v1/user-management/users/${encodeURIComponent(userId)}/role`,
       { role: "manager" }
     );
   });
