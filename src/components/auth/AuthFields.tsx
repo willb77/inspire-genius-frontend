@@ -66,13 +66,16 @@ export function EmailField({
   required = true,
   value,
   onChange,
-}: EmailFieldProps) {
+  autoComplete = "username",
+}: EmailFieldProps & { autoComplete?: string }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <IconInput
         id={id}
         type="email"
+        name="email"
+        autoComplete={autoComplete}
         placeholder={placeholder}
         required={required}
         value={value}
@@ -90,7 +93,8 @@ export function PasswordField({
   required = true,
   value,
   onChange,
-}: PasswordFieldProps) {
+  autoComplete = "current-password",
+}: PasswordFieldProps & { autoComplete?: string }) {
   const [show, setShow] = useState(false);
   return (
     <div className="space-y-2">
@@ -98,6 +102,8 @@ export function PasswordField({
       <IconInput
         id={id}
         type={show ? "text" : "password"}
+        name="password"
+        autoComplete={autoComplete}
         placeholder={placeholder}
         required={required}
         value={value}

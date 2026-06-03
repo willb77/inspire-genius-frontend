@@ -24,6 +24,13 @@ const DEV_ACCOUNTS: { label: string; role: UserRole; email: string; name: string
   { label: "Tone", role: "user", email: "tone99@3pp.com", name: "Tone" },
 ];
 
+// Login Hardening Plan v2 — Phase 1. Staging-b builds set
+// VITE_LOGIN_HARDENED=true to render enhanced UX (visible 15-min TTL hint,
+// "Email not arriving?" fallback link, "Forgot password? Use magic-link"
+// cross-link). Dev / prod default to undefined → same UI as today. Env-var
+// gate keeps the changes reversible per-env without code changes.
+const LOGIN_HARDENED = import.meta.env.VITE_LOGIN_HARDENED === 'true';
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -182,6 +189,20 @@ export default function Login() {
           <Button type="submit" className="w-full mt-8" disabled={isBusy}>
             {isBusy ? t('login.loggingIn') : t('login.submit')}
           </Button>
+
+          {LOGIN_HARDENED && (
+            <p className="text-xs text-muted-foreground text-center">
+              Forgot your password?{' '}
+              <button
+                type="button"
+                className="underline text-blue-primary hover:text-blue-700"
+                onClick={() => setShowPasswordLogin(false)}
+              >
+                Use a magic-link instead
+              </button>
+              .
+            </p>
+          )}
         </form>
 
         <div className="relative my-4">
@@ -219,6 +240,12 @@ export default function Login() {
         <Button type="submit" className="w-full mt-8" disabled={isBusy}>
           {isBusy ? t('login.sending') : t('login.sendSignInLink')}
         </Button>
+
+        {LOGIN_HARDENED && (
+          <p className="text-xs text-muted-foreground text-center">
+            We'll email you a one-time sign-in link, valid for 15 minutes.
+          </p>
+        )}
       </form>
 
       <SocialAuthSection
@@ -239,6 +266,20 @@ export default function Login() {
       >
         {t('login.signInWithPassword')}
       </Button>
+
+      {LOGIN_HARDENED && (
+        <p className="mt-3 text-xs text-muted-foreground text-center">
+          Email not arriving? Check spam or{' '}
+          <button
+            type="button"
+            className="underline text-blue-primary hover:text-blue-700"
+            onClick={() => setShowPasswordLogin(true)}
+          >
+            sign in with password instead
+          </button>
+          .
+        </p>
+      )}
 
       <p className="mt-6 text-sm text-muted-foreground text-center">
         {tc('noAccount')} <Link className="underline" to="/signup">{tc('signUp')}</Link>
