@@ -372,11 +372,21 @@ export default function MeridianChat() {
         ]);
         return;
       }
+      const content = job.content ?? "";
       renderAssistantComplete({
-        content: job.content ?? "",
+        content,
         agent: job.agent,
         metadata: job.metadata as MeridianResponse["metadata"],
       });
+      // 2026-06-03 fix: text-input chat path was never wired to TTS, so
+      // typed questions returned text-only even with voice toggle on.
+      // The voice-input path already speaks via the WS streaming-TTS or
+      // the speakText fallback; mirror that here so the toggle controls
+      // BOTH input modalities. Guard on voiceEnabled so the mute toggle
+      // wins. Errors are swallowed inside speakText so this is fire-and-forget.
+      if (content && voiceEnabledRef.current) {
+        void speakTextRef.current?.(content);
+      }
     },
     [renderAssistantComplete],
   );
@@ -506,10 +516,40 @@ export default function MeridianChat() {
     resume: resumeAudio,
     skip: skipAudio,
     seekBy: seekAudio,
+    unlock: unlockAudio,
     isPlaying: isAudioPlaying,
     isPaused: isAudioQueuePaused,
+    isAutoplayBlocked: isAudioAutoplayBlocked,
     queueLength: audioQueueLength,
   } = useAudioQueue();
+
+  // 2026-06-03 fix: unlock audio on first user interaction with the
+  // chat surface. Browsers require a user gesture before .play() will
+  // resolve; without this, the very first TTS chunk after a fresh page
+  // load is silently dropped (NotAllowedError in useAudioQueue). One
+  // document-level click handler attached on mount, removed after first
+  // fire. Best-effort: failures are swallowed since unlock() is safe to
+  // call when no audio is queued.
+  useEffect(() => {
+    const onFirstInteraction = () => {
+      try {
+        unlockAudio();
+      } catch {
+        // ignore
+      }
+      document.removeEventListener("click", onFirstInteraction, true);
+      document.removeEventListener("keydown", onFirstInteraction, true);
+      document.removeEventListener("touchstart", onFirstInteraction, true);
+    };
+    document.addEventListener("click", onFirstInteraction, true);
+    document.addEventListener("keydown", onFirstInteraction, true);
+    document.addEventListener("touchstart", onFirstInteraction, true);
+    return () => {
+      document.removeEventListener("click", onFirstInteraction, true);
+      document.removeEventListener("keydown", onFirstInteraction, true);
+      document.removeEventListener("touchstart", onFirstInteraction, true);
+    };
+  }, [unlockAudio]);
 
   // Stream cancellation: tracks in-flight TTS requests so Cancel can abort
   // the per-sentence /v1/agents/voice/synthesize loop, not just stop the queue.
@@ -576,6 +616,14 @@ export default function MeridianChat() {
     ttsAbortRef.current = null;
     stopAudio();
   }, [stopAudio]);
+
+  // Refs so handleJobSettled (created BEFORE speakText/voiceEnabled below)
+  // can read the latest values without re-creating itself on every change.
+  // Re-creating would re-init useMeridianJob and reset its WS push handler.
+  const speakTextRef = useRef(speakText);
+  speakTextRef.current = speakText;
+  const voiceEnabledRef = useRef(voiceEnabled);
+  voiceEnabledRef.current = voiceEnabled;
 
   const onAudioData = useCallback(
     (audioData: ArrayBuffer) => {
@@ -1015,6 +1063,22 @@ export default function MeridianChat() {
         >
           {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </button>
+
+        {/* Autoplay-blocked banner — appears when the browser refused
+            to play the first audio chunk because no user gesture had
+            been recorded yet. One click on the button fires unlock(),
+            which clears the flag and retries the queue. */}
+        {isAudioAutoplayBlocked && voiceEnabled && (
+          <button
+            type="button"
+            title="Browser blocked audio playback — click to enable"
+            className="ml-2 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 shadow-sm hover:bg-amber-100 transition-colors"
+            onClick={() => unlockAudio()}
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+            Enable audio
+          </button>
+        )}
 
         {/* Audio transport controls — visible when audio is playing or queued */}
         {(isAudioPlaying || audioQueueLength > 0) && (
