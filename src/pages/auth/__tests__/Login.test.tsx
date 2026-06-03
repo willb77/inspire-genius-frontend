@@ -78,13 +78,19 @@ jest.mock("@/hooks/magic-auth/useMagicAuth", () => ({
    - Simple inputs/buttons to simulate behavior
 --------------------------------------------------------------*/
 jest.mock("@/components/auth/AuthFields", () => ({
-  EmailField: ({ value, onChange }: any) => (
-    <input aria-label="email" value={value} onChange={(e) => onChange(e.target.value)} />
+  EmailField: ({ value, onChange, autoComplete = "username" }: any) => (
+    <input
+      aria-label="email"
+      autoComplete={autoComplete}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
   ),
-  PasswordField: ({ value, onChange }: any) => (
+  PasswordField: ({ value, onChange, autoComplete = "current-password" }: any) => (
     <input
       aria-label="password"
       type="password"
+      autoComplete={autoComplete}
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
@@ -313,5 +319,42 @@ describe("Login Page - Full Coverage", () => {
     fireEvent.click(screen.getByText("Forgot password?"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/forgot", { replace: false });
+  });
+
+  /* -------------------------------------------------------------
+     Login Hardening Plan v2 — Phase 1 default behavior
+
+     VITE_LOGIN_HARDENED is not set in the test environment, so the
+     hardened UX strings (15-min TTL hint, "Email not arriving?" link,
+     "Forgot your password? Use a magic-link" cross-link) must NOT
+     render. Regression guard for staging-b-only gating.
+  --------------------------------------------------------------*/
+  test("does NOT render hardened-mode helper text when VITE_LOGIN_HARDENED is unset", () => {
+    mockRedirectHook.mockReturnValue(null);
+    renderPage();
+
+    // Magic-link primary screen — TTL hint must be absent
+    expect(screen.queryByText(/valid for 15 minutes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/email not arriving/i)).not.toBeInTheDocument();
+
+    // Switch to password screen — "Use a magic-link instead" cross-link must be absent
+    fireEvent.click(screen.getByText("Sign in with password"));
+    expect(screen.queryByText(/use a magic-link instead/i)).not.toBeInTheDocument();
+  });
+
+  test("email + password inputs carry autocomplete tags for password-manager compatibility", () => {
+    mockRedirectHook.mockReturnValue(null);
+    renderPage();
+
+    // Magic-link screen: only email input — autocomplete=username
+    const emailOnMagic = screen.getByLabelText("email") as HTMLInputElement;
+    expect(emailOnMagic.getAttribute("autocomplete")).toBe("username");
+
+    // Password screen: email + password inputs both annotated
+    fireEvent.click(screen.getByText("Sign in with password"));
+    const emailOnPassword = screen.getByLabelText("email") as HTMLInputElement;
+    const passwordInput = screen.getByLabelText("password") as HTMLInputElement;
+    expect(emailOnPassword.getAttribute("autocomplete")).toBe("username");
+    expect(passwordInput.getAttribute("autocomplete")).toBe("current-password");
   });
 });
