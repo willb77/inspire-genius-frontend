@@ -1,3 +1,36 @@
+## [2026-06-02] — Login Hardening Plan v2 Phase 1 — hardened UX on staging-b only behind VITE_LOGIN_HARDENED flag [2026-06-02 22:50 UTC-4 EST]
+
+Bill /full-go "start phase 1 in staging-b only v2" — shipped Phase 1 of the Login Hardening Plan (`docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx`) gated on a Vite build-time env var so only staging-b sees the new UX; dev UI unchanged.
+
+### Added (gated on VITE_LOGIN_HARDENED=true — staging-b only)
+- 15-minute TTL hint under the magic-link button: *"We'll email you a one-time sign-in link, valid for 15 minutes."*
+- "Email not arriving? Check spam or sign in with password instead." one-click fallback below the magic-link panel
+- "Forgot your password? Use a magic-link instead." cross-link on the password screen — closes the loop in the other direction
+
+### Added (always-on, safe everywhere)
+- `autocomplete="username"` on EmailField input
+- `autocomplete="current-password"` on PasswordField input
+- Password-manager hint tags per HTML spec; keeps browser autofill predictable; no behavior change
+
+### Files
+- `inspire-genius-frontend/.env.staging-b` — `VITE_LOGIN_HARDENED=true`
+- `inspire-genius-frontend/src/pages/auth/Login.tsx` — `LOGIN_HARDENED` constant + 3 conditional UX blocks
+- `inspire-genius-frontend/src/components/auth/AuthFields.tsx` — `autoComplete` pass-through on EmailField + PasswordField
+- `inspire-genius-frontend/src/pages/auth/__tests__/Login.test.tsx` — +2 tests (hardened-mode default-off regression guard + autocomplete attrs); mock updated to forward autoComplete prop. **13/13 pass.**
+
+### Deploy
+- Frontend PR #114 (https://github.com/willb77/inspire-genius-frontend/pull/114). Single `development` branch merge ships to BOTH dev + staging-b via existing `ci-deploy.yml` jobs.
+- Dev (VITE_LOGIN_HARDENED unset) → renders identical UI to today
+- Staging-b (https://stable.inspiresgenius.com) → renders new hardened UX bits
+
+### Coord handoff
+Bill explicitly asked Coord to monitor + take over after Phase 1 lands. Coord-handoff comment posted on PR #319 covering: current state, what's next (Phase 2 backend hardening — email normalize at INSERT + rate-limit reset on success + audit remaining case-sensitive lookups), and updated dev-vs-staging-b drift table.
+
+### Rollback
+Flip `VITE_LOGIN_HARDENED=false` (or unset) in `.env.staging-b` and redeploy → instant revert. No backend change. No data migration. No deploy blocker.
+
+---
+
 ## [2026-06-01] — /full-go: admin-invite SES email + resend-endpoint SES + changeUserRole UUID path — 5 stuck users unblocked [2026-06-01 20:30 UTC-4 EST]
 
 Bill 19:00 EDT: "I have just sent 3 invitations out to new users. They have not received the emails yet. Please check their status."
