@@ -53,6 +53,10 @@ export type GetUsersParams = {
   user_status_filter?: string
   role_filter?: string
   search?: string
+  // When true the listing includes super-admins (off by default — matches the
+  // historical "admins managing users" view that hid super-admins to keep the
+  // table focused). Toggled by the "Show super-admins" checkbox.
+  include_super_admins?: boolean
 }
 
 export async function getUsers(params: GetUsersParams = {}) {
