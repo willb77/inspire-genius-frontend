@@ -63,10 +63,20 @@ export default function UserManagement() {
     setPage(1);
   }, [debouncedSearch]);
 
+  // Super-admin visibility toggle. Default off — matches the historical
+  // listing behavior that strips super-admins to keep the table focused on
+  // the users an admin manages. When on, the API returns super-admins too,
+  // so a super-admin can find themselves and peers in the table.
+  const [showSuperAdmins, setShowSuperAdmins] = useState(false);
+  useEffect(() => {
+    setPage(1);
+  }, [showSuperAdmins]);
+
   const { data, isLoading, isRefetching } = useUserManagement({
     page,
     limit: pageSize,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(showSuperAdmins ? { include_super_admins: true } : {}),
   });
   const { data: rolesData } = useRoles();
   const roles = useMemo(() => rolesData?.data?.roles ?? [], [rolesData]);
@@ -574,6 +584,14 @@ export default function UserManagement() {
               Filtered by "{debouncedSearch}"
             </span>
           )}
+          <label className="ml-auto flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <Checkbox
+              checked={showSuperAdmins}
+              onCheckedChange={(v) => setShowSuperAdmins(v === true)}
+              aria-label="Show super-admins"
+            />
+            Show super-admins
+          </label>
         </div>
         <div className="h-[calc(100vh-16rem)] overflow-y-auto">
           {isLoading || isRefetching ? (
