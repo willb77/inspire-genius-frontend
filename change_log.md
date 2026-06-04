@@ -1,3 +1,184 @@
+## [2026-06-04] — User Management "Show super-admins" toggle + IMPORT 7 chat-conv routes [2026-06-03 23:05 UTC-4 EST]
+
+Bill 2026-06-03 ~10:15 EDT: "John Boyd is not listed on the User Management list. But he can log in. I want to make him a super admin from a user. I tried that yesterday and he dissapeared. fix it please." DB query confirmed John (jcboyd001@gmail.com, user_id 84186438-…) was already promoted to super-admin yesterday and is active — the User Management list intentionally strips super-admin rows from view (services/auth-service/app/routes/user_management.py:360 + EXCLUDED_ROLES post-process), so promoting him made him "disappear." Bill chose Option B: add a "Show super-admins" toggle (default off, opt-in).
+
+### Added
+- **`include_super_admins: bool` query param** to `GET /v1/user-management/users` — default false preserves historical strip, true keeps super-admins in both row slice + pagination total. Backend: services/auth-service/app/routes/user_management.py. Test: tests/test_user_management.py:test_list_users_includes_super_admin_when_flag_true (locks the contract). 33/33 backend tests pass.
+- **"Show super-admins" Checkbox** next to search box on Super Admin → User Management page. State threads `include_super_admins=true` to the list query when checked + resets to page 1 on toggle. 3019/3019 frontend tests pass.
+- **`include_super_admins?: boolean`** to `GetUsersParams` in inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts.
+
+### Fixed (CDK source-of-truth drift)
+- **`infrastructure/cdk/imports/apigw-mapping.json`** — added 7 missing logical-ID → live RouteId entries for chat-conv + retention routes (ChatConvList/Messages/Download/Patch/Delete + ChatSessionsStart + W5RetentionPoliciesAny). The api-gateway-stack.ts source has codified these routes since 2026-05-29 with comment "adopt via CFN ResourceImport" but the mapping file was never updated. Result: every services-stack redeploy hit 409 ConflictException on these 7 routes. PR #324's deploy was the trigger that surfaced this morning's outage.
+- **CFN ResourceImport executed** on ig-dev-api-gateway: adopt-chatconv-routes-1780524171 changeset, 7 IMPORTs / 0 modifications, IMPORT_COMPLETE 2026-06-03 22:02 UTC. Routes still target AgentEngineWavesIntegration (zero behavior change).
+
+### Removed
+- 2 obsolete pre-Phase-2 coord baseline alarms deleted (Bill authorized): `ig-dev-auth-service-errors-coord` + `ig-dev-magic-link-jti-system-errors-coord`. CDK source still defines them with the same logical IDs; next clean deploy recreates.
+
+### Hot-patched (drift workaround — temporary)
+- **ig-dev-auth-service Lambda** updated via `aws lambda update-function-code` after Path B IMPORT for services-stack hit template-byte-mismatch on 3 unrelated audit-rule/permission/SQS-policy resources. Bundle = previous deployed bundle with app/routes/user_management.py overlaid. New CodeSha256 bh55GhKJkvNc6Y5MSySbU+P8s3I6HqmZO5oIrazxGEk= (vs yesterday's BJv5euwV6bQT…). Verified end-to-end: John Boyd appears in User Management with "Show super-admins" toggle on.
+
+### PRs
+- monorepo #324 — fix(auth-service): include_super_admins flag (MERGED, 6bf6528)
+- frontend #117 — fix: "Show super-admins" toggle (MERGED, 8cf3bb2)
+- monorepo #325 — fix(cdk): codify 7-route apigw-mapping adoption (MERGED, 5859820)
+
+### NOT done (deferred — needs dedicated infra session)
+- **3 services-stack drift resources still need IMPORT**: ig-dev-apigw-5xx-rate-coord (alarm), ig-dev-ses-bounces-coord (alarm), ig-dev-auth-magic-link-jti (DynamoDB table, 0 items). Path B IMPORT attempt failed because the hybrid template from `cfn get-template` re-serialized via Python json.dump byte-diverged from CFN's stored representation on 3 unrelated audit resources (logical-ID hash suffix drift). Permanent fix requires a clean CDK synth artifact + the existing `build-hybrid-import.py` unicode-reconciliation pass. Local synth blocked on Docker bundling for pip cffi >= 2.0.0 dependency.
+- Hot-patched auth-service Lambda WILL be wiped by next successful services-stack deploy. Must complete the IMPORT cleanup first OR resubmit PR #324's code as another services-stack deploy.
+
+### Files (today's commits)
+- services/auth-service/app/routes/user_management.py (PR #324, MERGED 6bf6528)
+- services/auth-service/tests/test_user_management.py (PR #324)
+- inspire-genius-frontend/src/pages/super-admin/UserManagement.tsx (PR #117, MERGED 8cf3bb2)
+- inspire-genius-frontend/src/services/super-admin/user-management/user-management.service.ts (PR #117)
+- infrastructure/cdk/imports/apigw-mapping.json (PR #325, MERGED 5859820)
+
+---
+
+## [2026-06-03] — DEV Bedtime Audit + PR #116 (Meridian audio fix) merged [2026-06-03 01:15 UTC-4 EST]
+
+Bill 2026-06-03 00:30 EDT (Term H): */bedtime "investigate fully. find any and all errors or potential issues in Dev. create a word document report for me to view in the morning."* Same-night `/bedtime` invoked separately for Dev (Term H) and Staging-B (another terminal — entry below). Term H ran 5 parallel sub-agents over ~12 min plus inline frontend lint/typecheck/audit, wrote findings into `docs/IG_Dev_Health_Audit_2026-06-03.docx` (62 KB, 6 sections + 2 appendices), and shipped the in-flight Meridian audio fix.
+
+### Added
+- **`docs/IG_Dev_Health_Audit_2026-06-03.docx`** — Logo-Dark header; executive summary with 7 morning-action bullets; 5 audit sections (CloudWatch errors, drift, infra health, frontend, open PRs); consolidated P1/P2/P3/P4 action plan; methodology + memory-reference appendices.
+- **`scripts/build_dev_health_audit_doc.py`** — python-docx generator for the audit report.
+
+### Fixed (PR #116 — willb77/inspire-genius-frontend, squashed to commit 13a58fe at 05:09 UTC)
+- Wired text-input chat to TTS (was text-only, no speech).
+- `useAudioQueue.ts` now exposes `isAutoplayBlocked` state + `unlock()` callback when browser blocks `audio.play()` with NotAllowedError/SecurityError (previously silent — chunk dropped, no recovery surface).
+- `MeridianChat.tsx` adds amber "Enable audio" banner + document-level first-interaction listener that calls `unlock()` once.
+- 3060/3060 unit tests pass locally; CI green; merged + dev deploy in progress.
+
+### Investigated (read-only, no AWS mutations)
+- **Zero P0/P1 outages in audit window.** ECS steady, Aurora silent, 0 DynamoDB throttles, 0 alarms firing.
+- **P1 findings (today):** 4 Lambdas missing SECRET_KEY env var (observability-query/rollup/retention + invitation) — codify into CDK source BEFORE next services-stack deploy or HS256 magic-auth validation 401s. Missing `secretsmanager:GetSecretValue` IAM on ig-dev-auth-lambda-role + ig-dev-org-lambda-role for `magic-auth/jwt-secret` (8 cold-start ERRORs/24h, currently masked by env-var fallback). Missing same IAM on ig-dev-retention-runner-role for `aurora/master-credentials` — daily retention silently failing (no fallback).
+- **P2 findings (this week):** 6+ services have CODE DRIFT (audit, dashboard, observability×3, rlhf×4, trainer, user-sync) — backlog of fixes #284/#298/#305/#306 + observability source not deployed. ECS tool-sandbox sidecar exitCode 1 since 2026-05-30 14:14Z (essential=false so task HEALTHY, but code-interpreter agent features silently broken). Frontend deps carry 1 critical + 14 high + 14 moderate CVEs (axios chain dominates — 20+ CVEs, `npm audit fix` available). 3 Aurora CW alarms stuck INSUFFICIENT_DATA since 2026-04-03 — no working CPU/connections/ACU alarm.
+- **P3 (cleanup):** Frontend PR #24 stale 26 days (Phase D R3 canary log mirror — recommend close). Frontend PR #107 + monorepo PR #316 docs-only, safe-to-merge. ig-dev-schema-dump-temp-918349930728 + feedback.inspiresgenius.com CloudFront — cleanup candidates.
+- **P4 (investigate):** No CloudFront alias for `stable.inspiresgenius.com` on any of 16 distributions in account 568505405842 — either lives in different sub-account, direct ALB URL, or never created. Tests are abnormally slow (local 890s, GHA ~25 min for PR #116) — ts-jest ESM bottleneck suspected; consider swc-jest.
+
+### Files
+- `docs/IG_Dev_Health_Audit_2026-06-03.docx` (62 KB)
+- `scripts/build_dev_health_audit_doc.py`
+
+### NOT done (deferred to morning by design — require Bill's decision)
+- Codifying SECRET_KEY into CDK for the 4 missing Lambdas
+- Adding `secretsmanager:GetSecretValue` IAM grants
+- services-stack redeploy (changes touch shared infra; needs morning eyes)
+- `npm audit fix` (lockfile change; needs morning eyes)
+- Tool-sandbox root-cause
+- Cleanup of stale PRs / S3 / CloudFront
+
+---
+
+## [2026-06-03] — Staging-B Bedtime Audit: 31 findings across 5 parallel investigations [2026-06-03 00:35 UTC-4 EST]
+
+Bill 2026-06-03 00:30 EDT: */bedtime "investigate fully. find any and all errors or potential issues in staging-b. create a word document report for me to view in the morning."* Five parallel general-purpose subagents probed staging-b read-only over a 10-minute window starting 00:30 EDT — infrastructure health, CloudWatch log error patterns, end-to-end endpoint probes, CDK source-of-truth drift, and frontend bundle audit. Synthesized into a single Word document at project root.
+
+### Added
+- **`/Staging-B_Bedtime_Audit_2026-06-03.docx`** (66KB, ~14 pages) — Logo-Dark.png cover; executive summary with severity counts table (5 P0, 8 P1, 12 P2, 6 P3); 31 findings with evidence-bullets + root-cause + fix + source-file pointers; drift cross-reference table (TIME BOMB vs MATCH); recommended 13-step action sequence with time estimates; methodology + blocked-probes + confidence-level sections.
+
+### Investigated (read-only, no live AWS modifications)
+- **P0 Critical (5)**: trainer-service crash loop (ImportModuleError: No module named 'ig_auth' + null DB env vars; 12 hits/24h, every /v1/trainer/* → 500); ws-proxy hard-wired to invoke ig-DEV-ws-forwarder cross-account (4 AccessDenied hits at 03:38Z 2026-06-03 — likely smoking gun for Bill's "couldn't reach Meridian"); auth_provider_enum missing 'magic_link' value on staging-b Aurora (JIT user provision broken, cascades into chat_messages FK violations for probe@example.com); retention-runner Lambda is a CDK bundling stub (alarm firing every scheduled invocation); PR #320 EventBridge IAM source correct but NOT yet deployed (hot-patched inline policy bearing the load).
+- **P1 High (8)**: zero Lambdas have reservedConcurrentExecutions (rule violation across 27 functions); ws-proxy ConcurrentExecutions burst to 6915 at 03:21Z 2026-06-03 (correlates with P0-2); 4 CloudWatch alarms INSUFFICIENT_DATA since 2026-05-25 (Aurora CPU/connections/ACU + agent-engine 5xx — observability blind); agent-engine stale-password regression at 17:12Z 2026-06-02 confirms §2.4-b "open question" (auto-rotation does NOT bounce ECS tasks); trainer-stack DB context not pinned in staging-b-promote.yml (uses ig_admin + stale named secret); API GW CORS hardcoded with 4 staging-b origins (drift from source); Coach/Trainer LambdaRole RDSManagedSecretRead inline policies (kms:Decrypt CMK grant missing from CDK); streaming TTS VITE_AGENTS_WEBSOCKET_BASE_URL relies on fragile Vite mode-precedence quirk.
+- **P2 Medium (12)**: agent-engine task role missing dynamodb:GetItem on rlhf-model-registry; auth-service Lambda missing secretsmanager:GetSecretValue on magic-auth secret; ig-staging-b-agent-config DynamoDB table never created; decision_rules.name column missing; INVITE_BASE_URL=dev.inspiresgenius.com; TRAINER_REDIS_URL/MILVUS_HOST hardcoded dev-internal; audit-service event-loop reuse (3 audit events lost 2026-06-03); EventBridge bus has only 1 rule (audit) — RLHF/doc/eval consumers wired to nothing; CSP report-only with unsafe-eval; S3 documents bucket CORS missing DELETE; Aurora min ACU 0.5 ($43/mo floor — Phase 1 skipped per Bill); ECS DesiredCount drift unverified.
+- **P3 Low/Info (6)**: /v1/health/wave2-6 404 from agent-engine; /v1/devices/register + /v1/magic-link/health + /v1/auth/refresh-token 404 at API GW; CSP missing font-src for fonts.gstatic.com; ECS scale-in AlarmLow noise (cosmetic); RLHF Lambdas + invitation Lambda show 0 events ever (never invoked); monolith EC2 i-029f0b2e216a70acb still running on dev account (~$30/mo, out of staging-b scope).
+
+### Files
+- `Staging-B_Bedtime_Audit_2026-06-03.docx` (project root, 66194 bytes)
+
+### Recommended next session action order
+1. Confirm P0-2 via `aws lambda get-function-configuration --function-name ig-staging-b-ws-proxy` looking for WS_FORWARDER_FUNCTION_NAME=ig-dev-ws-forwarder
+2. Hot-patch P0-2 + codify in lib/ws-proxy-stack.ts (likely resolves Bill's chat issue)
+3. Fix P0-3 magic_link enum (5-min SQL ALTER TYPE via migration-runner)
+4. Codify TIME BOMBS in single PR (P1-6 CORS, P1-7 kms:Decrypt, P1-5 trainer ctx, P2-5 invite URL, P2-6 trainer redis/milvus)
+5. Trigger staging-b-promote workflow_dispatch to land PR #320 + TIME BOMB codification
+6. Rebuild + redeploy trainer-service Lambda bundle (P0-1)
+7. Fix retention-runner CDK bundling stub (P0-4)
+8. Fix 4 INSUFFICIENT_DATA alarm Dimensions (P1-3)
+9. Add reservedConcurrentExecutions to all Lambdas (P1-1)
+10. Wire EventBridge rule for RDS rotation → ECS force-new-deployment (P1-4, closes §2.4-b)
+
+---
+
+## [2026-06-03] — Meridian audio: text-input TTS wiring + autoplay-block recovery (frontend PR #116) [2026-06-03 00:30 UTC-4 EST]
+
+Bill 2026-06-02 23:30 EDT: *"dev is not responding in audio"* → *"fix dev. Make sure it is done correctly. Investigate fully fix it and stabilize it."* Full trace through frontend + ECS backend revealed three real bugs in the Meridian voice path.
+
+### Root-cause investigation
+- Probed dev agent-engine `/v1/agents/health` (200, 113-180ms, version 1.2.0 Lambda mode for health route; ECS Fargate for chat route).
+- Dev ECS task definition: 1 desired / 1 running, `VOICE_ENABLED=true`, `AGENT_ENGINE_TTS_PROVIDER=polly` (env says Polly but actual TTS calls hit OpenAI per logs), `AGENT_ENGINE_OPENAI_API_KEY` present.
+- ECS logs (last 1h): **0 "Voice streaming enabled" entries** (WS streaming TTS path never fired) but **12 successful `POST https://api.openai.com/v1/audio/speech 200 OK`** entries (legacy REST `/v1/agents/voice/synthesize` path active).
+- Traced frontend: voice-INPUT (microphone) path correctly calls `speakText(responseText)` after async-job settles; text-INPUT path uses `handleJobSettled → renderAssistantComplete` which **never speaks**. Bill typed his questions → text-only responses, audio never invoked.
+- Second latent bug: `useAudioQueue.playNext` did `audio.play().catch(() => { cleanup(); resolve(); })` — silently swallowed `NotAllowedError` from browser autoplay block. No log, no state, no UX recovery.
+
+### Fixed (frontend PR #116, `fix/meridian-audio-text-path-and-autoplay-unlock`)
+- `src/pages/user/MeridianChat.tsx` — `handleJobSettled` now calls `speakTextRef.current(content)` when `voiceEnabled`. Refs avoid re-creating the callback on toggle (which would re-init `useMeridianJob` and break its WS push handler).
+- `src/hooks/agents/useAudioQueue.ts` — detect `NotAllowedError`/`SecurityError`, `console.warn`, expose `isAutoplayBlocked` + `unlock()`. Blocked buffer **held in queue** (not dropped) so it replays after unlock.
+- `src/pages/user/MeridianChat.tsx` — inline amber "Enable audio" banner in chat header when `isAudioAutoplayBlocked && voiceEnabled`. Click invokes `unlock()`.
+- `src/pages/user/MeridianChat.tsx` — document-level passive first-interaction listener (click/keydown/touchstart) calls `unlock()` once then removes itself; handles the common "user clicked elsewhere before first chunk arrived" case.
+
+### Tests
+- `useAudioQueue.test.ts`: 6/6 pass (changes backwards-compatible)
+- `src/pages/user/`: 83/83 pass (incl. MeridianChat)
+- Full TypeScript check clean
+
+### Files
+- `inspire-genius-frontend/src/hooks/agents/useAudioQueue.ts` (+45 lines)
+- `inspire-genius-frontend/src/pages/user/MeridianChat.tsx` (+45 lines)
+
+### Deploy
+- PR #116 OPEN at https://github.com/willb77/inspire-genius-frontend/pull/116
+- Single development merge → ci-deploy.yml deploys to dev + staging-b
+- Frontend-only change; no backend or CDK touch
+
+### NOT done (interrupted by /compact-doc)
+- /bedtime full-dev audit (Tasks #54–#60): CloudWatch error audit, live-vs-source drift audit, infrastructure health audit, frontend issue audit, open-PR audit, Word document report — all pending. Tracked in TaskList for the next session.
+
+---
+
+## [2026-06-02] — Staging-b agent-engine recovery cascade + topology audit + frontend deploy handoff [2026-06-02 22:48 UTC-4 EST]
+
+Two parallel coord-session threads through the day: (1) shipped streaming TTS D1-A (frontend PR #111 from prior session) + the morning recovery of staging-b Meridian chat after the rds-managed secret rotation cycled passwords without bouncing the agent-engine task; (2) executed sister-terminal handoff to stand up the staging-b frontend GHA deploy role + secrets and ship the first bundle to `stable.inspiresgenius.com`. Followed up with an architecture/secret-rotation docs audit that recorded the previously-undocumented staging-b account (918349930728), the per-env-cluster reality vs the cross-account-shared intent, and the RDS-managed secret rotation pattern (7-day auto vs the 90-day custom pattern documented elsewhere).
+
+### Added
+- **monorepo PR #322 — `docs/operations/architecture-overview.md` + `docs/operations/secret-rotation-schedule.md`**
+  - Added staging-b row to the Environments table (account 918349930728, cross-account API Gateway in dev account, all other stacks in 918349930728)
+  - Marked the "Staging" env as defined-in-CDK-but-not-deployed (no `ig-staging-*` stacks exist on dev account as of probe)
+  - Added `stable.inspiresgenius.com` to the Domains table
+  - New "Aurora cluster topology" section documenting per-env-cluster reality vs intent + open architectural question
+  - Split the Aurora master-password row into custom-managed (dev/staging/prod, 90-day) and RDS-managed (staging-b, 7-day auto)
+  - New §2.4-b documenting the staging-b RDS-managed rotation + the stale-env-var trap that broke chat 2026-05-31 + the required force-new-deployment follow-up
+- **Live infra (staging-b account 918349930728):**
+  - IAM role `github-actions-staging-b-frontend-deploy` created (trust scoped to `repo:willb77/inspire-genius-frontend:environment:staging-b`, permissions on S3 `ig-staging-b-frontend-assets` + CloudFront `E14RJXS6SLGMCP`)
+  - Inline policy `eventbridge-put-events` attached to `ig-staging-b-agent-engine-task-role` (hot-patch, also codified in CDK via #320)
+- **GitHub Actions config (willb77/inspire-genius-frontend):**
+  - Variables: `STAGING_B_DEPLOY_ROLE_ARN`, `STAGING_B_FRONTEND_CLOUDFRONT_ID`, `STAGING_B_FRONTEND_BUCKET`
+  - Secrets: `STAGING_B_VITE_STORAGE_SECRET`, `STAGING_B_VITE_CRYPTO_KEY`, `STAGING_B_VITE_CRYPTO_SALT`, `STAGING_B_VITE_SENTRY_DSN` (fresh openssl-generated)
+
+### Fixed
+- **monorepo PR #320 — `infrastructure/cdk/lib/agent-engine-stack.ts`** — agent-engine task role `events:PutEvents` resource changed from `event-bus/default` to `event-bus/inspire-genius-events`. The code at `services/agent-engine/app/config.py:event_bus_name` always targeted `inspire-genius-events`, but the IAM policy never matched — every agent telemetry event was silently AccessDenied on both dev and staging-b. Surfaced 2026-06-01 on staging-b. Codifies the inline hot-patch.
+- **Staging-b agent-engine task cycled** — `aws ecs update-service --force-new-deployment` on `ig-staging-b-agent-engine`. The previously-running task had cached the pre-rotation `AGENT_ENGINE_DB_PASSWORD` env var since 2026-05-30 01:27 EST; rds-managed secret rotated 2026-05-31 02:27 EST → task held a 25-hour-stale password → RAG/`chat_job_repository.get` returned 500 with "password authentication failed for user postgres". Verified post-bounce: zero password-auth errors, zero EventBridge AccessDenied.
+- **Frontend deploy trust policy on `github-actions-staging-b-frontend-deploy`** — initial trust matched `:ref:refs/heads/development` but the GHA `Deploy to Staging-B` job uses `environment: name: staging-b`, making the OIDC sub claim `repo:OWNER/REPO:environment:staging-b`. First deploy retry failed with `Not authorized to perform sts:AssumeRoleWithWebIdentity` after ~13 STS retries. Patched trust to match the environment subject (`StringEquals`, not `StringLike`). Saved as memory `feedback_gha_oidc_environment_subject`.
+
+### Changed
+- **Streaming TTS D1-A (PR #111) shipped earlier in the session** — `MeridianChat` voice path now routes through the existing Meridian WS with `{voice: true}` when the WS is open + voiceEnabled; backend already emits per-sentence base64 MP3 audio frames alongside text tokens. Time-to-first-audio drops from ~5-15s (full DAG response) to ~1s (first sentence). Legacy REST async-jobs path retained as fallback when WS isn't ready or voice is muted. D2-B (pipeline depth 2) deferred for telemetry, D3-C (cancel propagation) deferred per design doc.
+
+### Investigated / Diagnosed (no code change)
+- **Aurora cluster topology drift** — dev (account 568505405842) and staging-b (account 918349930728) each have separate Aurora clusters per CDK source at `services-stack.ts:3274`. Stated intent was cross-account sharing of dev's cluster; reality is per-env clusters. Tracked as an open architectural question in the docs PR. Cost drift: ~$43/mo for the staging-b Aurora Serverless v2 (min 0.5 ACU). The "staging" env (single account, no `-b` suffix) is defined in CDK config but never deployed — zero ig-staging-* stacks anywhere — so zero cost.
+- **Monolith EC2 `i-029f0b2e216a70acb`** — still running on dev account since 2026-03-13, no traffic per memory `feedback_monolith_sunset_no_new_debt`. Out of scope this session per Bill's "only in staging-b" directive.
+- **Staging-b agent-engine SECRET_KEY env handling** — verified end-to-end by signing a synthetic HS256 token with `817efb5a...` and POSTing to `/v1/agents/chat`. Returned HTTP 200 with a real Meridian response from Compass. Data plane is healthy; current chat regression Bill reported is likely a stale session token or stale bundle (PR #114 deployed 23:24 EST may need a hard-refresh on his browser).
+
+### Cross-coordination
+- [coord] reply on monorepo PR #316 closing the streaming-TTS handoff loop
+- [coord] reply on monorepo PR #316 documenting the staging-b frontend deploy handoff complete (IAM + GH config + deploy verified live)
+
+### Related memories
+- `feedback_gha_oidc_environment_subject` — new this session
+- `project_2026_06_01_staging_b_agent_engine_drift` — from previous session, agenda items 1 (DB code fix) reverted as redundant, 2 (EventBridge codification) shipped via #320
+- `feedback_secret_key_lambda_env_drift` + `feedback_uniform_db_hydration_pattern` — pattern-matched these to the staging-b ECS env-var-vs-secret discovery
+
+---
+
 ## [2026-06-02] — Login Hardening Plan v2 Phase 1 — hardened UX on staging-b only behind VITE_LOGIN_HARDENED flag [2026-06-02 22:50 UTC-4 EST]
 
 Bill /full-go "start phase 1 in staging-b only v2" — shipped Phase 1 of the Login Hardening Plan (`docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx`) gated on a Vite build-time env var so only staging-b sees the new UX; dev UI unchanged.
@@ -11350,4 +11531,61 @@ Created 12 Claude Code slash commands (/rag-1a through /rag-4c + /rag-deploy-reb
 - `.gitlab-ci.yml`
 - `.pre-commit-config.yaml`
 - `docker-compose.test.yml`
+
+
+## [2026-06-03] — Investigation: Onboarding Wizard Removal + Login Hardening Plan v2 Overlap + Monolith Sunset for Step 9
+
+### Investigated
+- Read `docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx` (Bill, 2026-06-02): Phase 4 covers single-click invitation acceptance + magic-link auto-fire; plan is SILENT on the post-login onboarding wizard (Details One / Two + 5 intro screens). Wizard removal is additive to the plan, not in conflict.
+- Grep'd all 7 wizard pages for terms/privacy/consent/legal/TOS UI: **zero occurrences**. TOS acceptance lives on `/signup` (self-service path) only; `/accept-invitation` already has no TOS checkbox today. Wizard removal creates no NEW compliance gap.
+- Investigated Step 9 (`POST /v1/onboarding/profile` → monolith catch-all) per Bill's standing rule "monolith has been sunset, do not use it":
+  - Monolith handler (`inspire-genius-backend/users/onboarding/schema.py:create_user_profile`) does 3 things: UPSERT user_profiles row (first_name/last_name/DOB/about/is_profile_complete=true), set Cognito `custom:is_onboarded="true"`, return profile.
+  - `auth-service.admin_invite_user` already INSERTs the `user_profiles` row at invite time with first/last/role from the invite payload (`user_queries.py:152`); only missing pieces are DOB, additional_info, is_profile_complete=true, and the Cognito attribute flip.
+  - `services/user-service` has its own `UserProfile` model with a DIFFERENT schema (display_name/bio/avatar_url/role/preferences) — **NOT** a viable home; pre-existing schema mismatch is a separate issue.
+  - **Recommended owner**: `auth-service.accept-invitation` handler — add 2 lines to flip Cognito `custom:is_onboarded=true` + 1 line to set `is_profile_complete=true` in the existing `_activate_user` SQL.
+- **Critical existing inconsistency**: `magic_link.py:96 & 124` hardcode `"is_onboarded": True` in the login response — so magic-link logins ALREADY skip the wizard today. Only password logins read Cognito and respect the wizard gate. This means the wizard is already half-disabled in practice and Bill's Phase 4 (which makes invitation acceptance auto-fire magic-link) effectively eliminates the wizard for new admin-invited users without anyone deleting code.
+
+### Recommendation
+Phased wizard removal aligned with Bill's Login Hardening Plan v2 Phase 4:
+1. Phase 4 of Login Hardening Plan (single-click invite + auto magic-link) ALREADY effectively bypasses the wizard for new invitees (magic-link login hardcodes is_onboarded=true). Verify behavior in staging-b post-Phase-4 deploy — wizard may already be dead UX for invited users.
+2. Add 3 lines to `auth-service.invitations._activate_user`: set `is_profile_complete=true` + call `update_cognito_user_attributes(custom:is_onboarded='true')`. Eliminates monolith dependency on `/v1/onboarding/profile` for the invite path.
+3. Delete `ANY /v1/onboarding/{proxy+}` route from `api-gateway-stack.ts` once frontend wizard pages are removed. Removes the last user-facing monolith dependency in the auth/onboarding chain.
+4. Remove 7 wizard pages + ProtectedRoute gate (5-line frontend change). 4-6 hour total LOE per previous analysis.
+5. No TOS migration needed — wizard has no legal acceptance UI.
+
+### Files Reviewed (no code edits)
+- `docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx`
+- `services/auth-service/app/routes/invitations.py`, `admin_invite.py`, `login.py`, `magic_link.py`, `me.py`, `cognito.py`, `user_queries.py`
+- `services/user-service/app/routes.py`, `models.py`, `schemas.py`
+- `inspire-genius-backend/users/onboarding/schema.py`, `users/onboarding/onboarding.py`
+- `inspire-genius-frontend/src/pages/onboarding/*.tsx` (7 files)
+- `inspire-genius-frontend/src/pages/auth/Signup.tsx`, `Login.tsx`, `AcceptInvitation.tsx`
+- `inspire-genius-frontend/src/context/AuthContext.tsx`, `components/ProtectedRoute.tsx`
+
+
+## [2026-06-03] — Login Hardening Plan v2.1 — Folded in Wizard Removal + Monolith Step 9 Elimination
+
+### Changed
+- `docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx` (regenerated 67 KB) — version bumped from v2.0 → v2.1.
+- `scripts/build_login_revamp_plan_doc.py` — additions to fold the wizard removal investigation findings into the existing phases (no standalone PR needed).
+
+### What the v2.1 doc now covers
+- **New "Scope addition v2.1" callout** at the top of the doc next to the existing v2 callout, summarizing 4 things removed: (1) post-login onboarding wizard, (2) monolith ECS dependency on POST /v1/onboarding/profile, (3) DOB + additional_info promoted to Settings-only optional fields, (4) explicitly NOT addressing the pre-existing TOS gap on admin-invite path.
+- **New "Wizard Removal & Monolith Elimination (v2.1)" dedicated section** (after Bullet-Proofing, before Implementation Plan) with: rationale for safety (zero TOS, magic-link already bypasses, admin-invite already creates the row), a 6-row mapping table of wizard side-effects to their v2.1 replacements, and a flag for the pre-existing services/user-service UserProfile schema mismatch.
+- **Phase 1 extended** — 7 wizard-removal tasks appended to the existing 7 sign-in-page-redesign tasks. Same Day 1 deploy.
+- **Phase 4 extended** — 5 monolith-elimination tasks appended to the existing 5 single-click-acceptance tasks. Same Day 6-7 deploy + 24h soak + route drop.
+- **Testing Strategy table updated** — Phase 1 + Phase 4 rows now reference the v2.1 additions (assert no /onboarding/one redirect; assert is_profile_complete=true + custom:is_onboarded=true post-accept; assert API GW returns 404 on /v1/onboarding/profile post-cleanup).
+- **Deployment Sequence updated** — Day 1 and Day 6-7 cells now mention v2.1 work explicitly.
+- **Risks & Rollback** — 3 new rows: (a) wizard removal breaks an undocumented DOB/additional_info consumer, (b) TourContext bootstrap orphaned, (c) monolith API GW route removal breaks an unknown integration. Rollback steps for each.
+- **Hard-Won Lessons** — 2 new entries: feedback_monolith_sunset_no_new_debt, feedback_verify_data_flow_before_fix.
+
+### Why the fold-in (not a standalone PR)
+- LOE: 4-6 hours total, split naturally across the Phase 1 frontend work and the Phase 4 backend work that's already scheduled.
+- Phase 4 of the existing plan already effectively eliminates the wizard for new invitees (magic_link.py:96 & :124 hardcode is_onboarded=True). The v2.1 additions just make it explicit and remove the dead code.
+- One terminal can execute the unified plan end-to-end without context-switching between two separate workstreams.
+
+### Files
+- `docs/IG_Login_Revamp_Plan_Magic_Link_Only.docx` (regenerated)
+- `scripts/build_login_revamp_plan_doc.py` (~80 lines added)
+- `change_log.md` (+ frontend copy)
 
