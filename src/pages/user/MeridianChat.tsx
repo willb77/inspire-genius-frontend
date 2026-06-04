@@ -150,6 +150,14 @@ export default function MeridianChat() {
   const recognitionRef = useRef<any>(null);
   const voiceTranscriptRef = useRef("");
 
+  // 2026-06-04: Tracks whether the in-flight WS response delivered any
+  // `type: "audio"` frames. The ws-proxy Lambda forwards chat to the
+  // agent-engine's REST endpoint (no streaming TTS), so voice-enabled
+  // sessions through API Gateway WS never receive audio frames. When the
+  // `complete` frame lands with zero audio frames, fall back to the
+  // per-sentence REST synthesize path used by the async-jobs flow.
+  const wsHasAudioRef = useRef(false);
+
   // Documents
   const { data: fileServiceList, isLoading: docsLoading } = useListDocuments(1, 10);
   const downloadMutation = useDownloadDocument();
@@ -441,9 +449,15 @@ export default function MeridianChat() {
         return;
       }
 
+      if (resp.type === "processing") {
+        wsHasAudioRef.current = false;
+        return;
+      }
+
       if (resp.type === "error") {
         setStatusBanner({ type: "error", text: resp.message || "Agent error" });
         lastMessageRef.current = { type: "error", text: resp.message ?? "" };
+        wsHasAudioRef.current = false;
         // Replace the "Meridian is thinking…" placeholder with the same
         // error bubble the REST path used to render. Preserves existing UX.
         setMessages((prev) => [
@@ -492,11 +506,19 @@ export default function MeridianChat() {
       }
 
       if (resp.type === "complete") {
+        const content = resp.content ?? "";
         renderAssistantComplete({
-          content: resp.content ?? "",
+          content,
           agent: resp.agent,
           metadata: resp.metadata,
         });
+        // Fall back to per-sentence REST TTS when the WS path delivered
+        // zero `type: "audio"` frames. Happens on the ws-proxy → REST
+        // forwarding path, which strips voice streaming entirely.
+        if (content && !wsHasAudioRef.current && voiceEnabledRef.current) {
+          void speakTextRef.current?.(content);
+        }
+        wsHasAudioRef.current = false;
         return;
       }
     },
@@ -629,6 +651,7 @@ export default function MeridianChat() {
     (audioData: ArrayBuffer) => {
       // Route to the streaming audio queue for sentence-level playback.
       if (audioData.byteLength > 0) {
+        wsHasAudioRef.current = true;
         enqueueAudio(audioData);
         setHasAudio(true);
         // Also feed DemoAudioService for waveform visualization
