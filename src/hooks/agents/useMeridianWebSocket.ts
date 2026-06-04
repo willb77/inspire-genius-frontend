@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type MeridianMessageType =
   | "connected"
+  | "processing"
   | "token"
   | "complete"
   | "error"
