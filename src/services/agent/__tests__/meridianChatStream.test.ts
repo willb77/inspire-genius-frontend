@@ -1,6 +1,7 @@
 import {
   streamMeridianChat,
   StreamingDisabledError,
+  PreflightAsyncRedirectError,
 } from "../meridianChatStream"
 
 jest.mock("@/lib/agentApi", () => ({
@@ -37,7 +38,24 @@ function makeFetchResponse(status: number, events: string[] = []): unknown {
   return {
     status,
     ok: status >= 200 && status < 300,
+    headers: {
+      get: (name: string) =>
+        name.toLowerCase() === "content-type" ? "text/event-stream" : null,
+    },
     body: { getReader: () => reader },
+  }
+}
+
+function makeJsonResponse(status: number, body: Record<string, unknown>): unknown {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    headers: {
+      get: (name: string) =>
+        name.toLowerCase() === "content-type" ? "application/json" : null,
+    },
+    body: null,
+    json: async () => body,
   }
 }
 
@@ -91,6 +109,35 @@ describe("streamMeridianChat", () => {
     await expect(
       streamMeridianChat({ message: "x", sessionId: "s-1" }),
     ).rejects.toBeInstanceOf(StreamingDisabledError)
+  })
+
+  it("throws PreflightAsyncRedirectError on 200 JSON {mode:'async', ...} (T22 option C)", async () => {
+    fetchMock.mockResolvedValue(
+      makeJsonResponse(200, {
+        mode: "async",
+        job_id: "job-abc-123",
+        status: "queued",
+        session_id: "s-1",
+        reason: "multi_agent_template",
+      }),
+    )
+
+    let caught: unknown = null
+    try {
+      await streamMeridianChat({ message: "5-person team analysis", sessionId: "s-1" })
+    } catch (err) {
+      caught = err
+    }
+
+    expect(caught).toBeInstanceOf(PreflightAsyncRedirectError)
+    const redirect = (caught as PreflightAsyncRedirectError).redirect
+    expect(redirect).toEqual({
+      mode: "async",
+      jobId: "job-abc-123",
+      status: "queued",
+      sessionId: "s-1",
+      reason: "multi_agent_template",
+    })
   })
 
   it("forwards the error frame via onError callback", async () => {

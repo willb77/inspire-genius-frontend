@@ -15,6 +15,8 @@ import { useCallback, useRef, useState } from "react"
 import {
   streamMeridianChat,
   StreamingDisabledError,
+  PreflightAsyncRedirectError,
+  type PreflightAsyncRedirect,
   type StreamChatRequest,
   type StreamCompleteFrame,
   type StreamErrorFrame,
@@ -23,6 +25,12 @@ import {
 export type UseMeridianSSEStreamOptions = {
   /** Called once when the server returns 404 STREAMING_DISABLED. */
   onFallback?: () => void
+  /**
+   * T22 option C — called once when the server's preflight check
+   * redirects to async-jobs. The caller should switch to polling
+   * `GET /v1/agents/chat/jobs/{redirect.jobId}` for the final result.
+   */
+  onAsyncRedirect?: (redirect: PreflightAsyncRedirect) => void
   /** Called for each token after it's appended to streamingText. */
   onToken?: (token: string) => void
   /** Called once when the stream completes. */
@@ -40,6 +48,8 @@ export type UseMeridianSSEStreamResult = {
   lastComplete: StreamCompleteFrame | null
   /** Last error encountered (server-emitted or transport). Null if none. */
   lastError: Error | null
+  /** Last preflight async-redirect, or null if none. T22 option C. */
+  lastAsyncRedirect: PreflightAsyncRedirect | null
   /** Kick off a stream. Cancels any in-flight stream first. */
   send: (request: StreamChatRequest) => Promise<void>
   /** Cancel the in-flight stream. */
@@ -53,6 +63,7 @@ export function useMeridianSSEStream(
   const [isStreaming, setIsStreaming] = useState(false)
   const [lastComplete, setLastComplete] = useState<StreamCompleteFrame | null>(null)
   const [lastError, setLastError] = useState<Error | null>(null)
+  const [lastAsyncRedirect, setLastAsyncRedirect] = useState<PreflightAsyncRedirect | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)
 
@@ -93,6 +104,9 @@ export function useMeridianSSEStream(
         if (err instanceof StreamingDisabledError) {
           options.onFallback?.()
           setLastError(err)
+        } else if (err instanceof PreflightAsyncRedirectError) {
+          setLastAsyncRedirect(err.redirect)
+          options.onAsyncRedirect?.(err.redirect)
         } else if ((err as Error).name === "AbortError") {
           // User-initiated cancel — not an error to surface.
         } else {
@@ -108,5 +122,13 @@ export function useMeridianSSEStream(
     [options],
   )
 
-  return { streamingText, isStreaming, lastComplete, lastError, send, cancel }
+  return {
+    streamingText,
+    isStreaming,
+    lastComplete,
+    lastError,
+    lastAsyncRedirect,
+    send,
+    cancel,
+  }
 }

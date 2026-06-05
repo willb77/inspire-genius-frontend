@@ -1,7 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 
 import { useMeridianSSEStream } from "../useMeridianSSEStream"
-import { StreamingDisabledError } from "@/services/agent/meridianChatStream"
+import {
+  StreamingDisabledError,
+  PreflightAsyncRedirectError,
+  type PreflightAsyncRedirect,
+} from "@/services/agent/meridianChatStream"
 import * as svc from "@/services/agent/meridianChatStream"
 
 jest.mock("@/services/agent/meridianChatStream", () => {
@@ -112,6 +116,33 @@ describe("useMeridianSSEStream", () => {
 
     await waitFor(() => expect(result.current.isStreaming).toBe(false))
     expect(result.current.lastError).toBeNull()
+  })
+
+  it("populates lastAsyncRedirect + invokes onAsyncRedirect on T22 option C preflight", async () => {
+    const redirect: PreflightAsyncRedirect = {
+      mode: "async",
+      jobId: "job-test-1",
+      status: "queued",
+      sessionId: "s-1",
+      reason: "multi_agent_template",
+    }
+    ;(svc.streamMeridianChat as jest.Mock).mockImplementation(async () => {
+      throw new PreflightAsyncRedirectError(redirect)
+    })
+
+    const onAsyncRedirect = jest.fn()
+    const { result } = renderHook(() =>
+      useMeridianSSEStream({ onAsyncRedirect }),
+    )
+
+    await act(async () => {
+      await result.current.send({ message: "x", sessionId: "s-1" })
+    })
+
+    expect(onAsyncRedirect).toHaveBeenCalledWith(redirect)
+    expect(result.current.lastAsyncRedirect).toEqual(redirect)
+    expect(result.current.lastError).toBeNull()
+    expect(result.current.isStreaming).toBe(false)
   })
 
   it("send() resets streamingText for each invocation", async () => {

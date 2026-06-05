@@ -68,6 +68,30 @@ export class StreamingDisabledError extends Error {
 }
 
 /**
+ * T22 option C — the server peeked at the routing decision and decided
+ * the upcoming response is a multi-agent DAG. The job is already
+ * enqueued; the caller should switch to polling
+ * `GET /v1/agents/chat/jobs/{job_id}` for the final result.
+ */
+export type PreflightAsyncRedirect = {
+  mode: "async"
+  jobId: string
+  status: string
+  sessionId: string
+  reason: string
+}
+
+export class PreflightAsyncRedirectError extends Error {
+  redirect: PreflightAsyncRedirect
+
+  constructor(redirect: PreflightAsyncRedirect) {
+    super(`Preflight redirected to async job ${redirect.jobId} (reason: ${redirect.reason})`)
+    this.name = "PreflightAsyncRedirectError"
+    this.redirect = redirect
+  }
+}
+
+/**
  * Stream tokens from POST /v1/agents/chat/stream and invoke the matching
  * callback per frame. Resolves when the stream completes (or errors); the
  * caller can abort mid-stream via `signal`.
@@ -101,8 +125,38 @@ export async function streamMeridianChat(
   if (resp.status === 404) {
     throw new StreamingDisabledError()
   }
-  if (!resp.ok || !resp.body) {
+  if (!resp.ok) {
     throw new Error(`SSE request failed: HTTP ${resp.status}`)
+  }
+
+  // T22 option C — when the server peeks at routing and decides the
+  // upcoming response is a multi-agent DAG, it returns
+  // application/json {mode: "async", job_id, ...} instead of an SSE
+  // stream. Throw a typed redirect so the caller can switch to
+  // polling /v1/agents/chat/jobs/{job_id} without trying to parse SSE.
+  const contentType = resp.headers.get("content-type") ?? ""
+  if (contentType.startsWith("application/json")) {
+    const body = (await resp.json()) as {
+      mode?: string
+      job_id?: string
+      status?: string
+      session_id?: string
+      reason?: string
+    }
+    if (body.mode === "async" && body.job_id) {
+      throw new PreflightAsyncRedirectError({
+        mode: "async",
+        jobId: body.job_id,
+        status: body.status ?? "queued",
+        sessionId: body.session_id ?? "",
+        reason: body.reason ?? "preflight",
+      })
+    }
+    throw new Error(`SSE request returned unexpected JSON: ${JSON.stringify(body)}`)
+  }
+
+  if (!resp.body) {
+    throw new Error("SSE request returned empty body")
   }
 
   const reader = resp.body.getReader()
