@@ -47,6 +47,7 @@ export const ROUTES = {
     RESEARCH: "/super-admin/research",
     RESEARCH_LIBRARY: "/super-admin/research-library",
     EXPLAINABILITY: "/super-admin/explainability",
+    DEV_TRAFFIC_REPORT: "/super-admin/dev-traffic-report",
     EXPLAINABILITY_CONVERSATION: "/super-admin/explainability/c/:sessionId",
     EXPLAINABILITY_TURN: "/super-admin/explainability/c/:sessionId/t/:turnId",
     /** Wave 2 Lane 2.A (P7.1) — formerly top-level `/diagnostic-chat`; renamed and moved under super-admin. */
