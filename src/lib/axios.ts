@@ -6,6 +6,33 @@ let refreshPromise: Promise<string | null> | null = null
 const retriedRequests = new WeakSet<InternalAxiosRequestConfig>()
 
 /**
+ * Side-panel / read-only telemetry surfaces whose 401s must NOT cascade
+ * into the global refresh/logout flow. If the user is browsing the chat
+ * and one of these services hiccups (typical: misconfigured SECRET_KEY
+ * env var, transient cold-start, service outage), the only outcome
+ * should be the panel showing its own empty/error state — never a
+ * forced logout that wipes the in-flight session.
+ *
+ * 2026-06-06: observability-query Lambda was missing SECRET_KEY → 401
+ * on every panel open → interceptor refresh+retry → 2nd 401 → hard
+ * redirect to /login. From the user's POV, clicking "Observability"
+ * crashed the app and ate the chat.
+ *
+ * Match by url substring (regex/prefix overkill here — axios `config.url`
+ * is the path the caller passed, not the resolved absolute URL).
+ */
+const NON_CRITICAL_401_PATHS = [
+  '/v1/observability/',
+  '/v1/analytics/',
+  '/v1/dashboards/',
+] as const
+
+function isNonCriticalPath(url: string | undefined): boolean {
+  if (!url) return false
+  return NON_CRITICAL_401_PATHS.some((p) => url.includes(p))
+}
+
+/**
  * Attach shared interceptors (auth token injection + 401 refresh) to any axios instance.
  * Both `api` and `agentApi` call this so the logic is never duplicated.
  */
@@ -27,6 +54,14 @@ export function attachInterceptors(instance: AxiosInstance) {
       if (!response || !original) return Promise.reject(err)
 
       if (response.status !== 401) return Promise.reject(err)
+
+      // Non-critical telemetry surfaces (observability, analytics, dashboards):
+      // a 401 here MUST NOT trigger refresh/logout. Let the caller's React
+      // Query (or equivalent) flag isError and render its own empty/error
+      // state. Keeps the user logged in when a side panel hiccups.
+      if (isNonCriticalPath(original.url)) {
+        return Promise.reject(err)
+      }
 
       // prevent retry loops per request
       if (!retriedRequests.has(original)) {

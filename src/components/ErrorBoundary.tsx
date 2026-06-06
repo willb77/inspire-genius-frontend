@@ -1,6 +1,15 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 
-type Props = { children: ReactNode };
+type Props = {
+  children: ReactNode;
+  /**
+   * Optional inline fallback. When provided, a render error inside this
+   * boundary renders the fallback in place of the full-screen FallbackUI.
+   * Use this when wrapping a side panel/widget so a buggy subtree doesn't
+   * blank the whole app. Receives the caught error and a reset callback.
+   */
+  fallback?: (args: { error: Error | null; reset: () => void }) => ReactNode;
+};
 type State = { hasError: boolean; error: Error | null };
 
 function FallbackUI({ error, onReset }: { error: Error | null; onReset: () => void }) {
@@ -55,6 +64,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback({ error: this.state.error, reset: this.handleReset });
+      }
       return <FallbackUI error={this.state.error} onReset={this.handleReset} />;
     }
     return this.props.children;

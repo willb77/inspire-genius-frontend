@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronLeft, FileText, Upload } from "lucide-react";
 import SessionObservabilityDrawer from "@/components/observability/SessionObservabilityDrawer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type ChatWindowTab = "chat" | "documents";
 
@@ -88,7 +89,9 @@ export default function ChatWindowHeader({
         </Tooltip>
 
         {conversationId && (
-          <SessionObservabilityDrawer sessionId={conversationId} />
+          <ErrorBoundary fallback={() => null}>
+            <SessionObservabilityDrawer sessionId={conversationId} />
+          </ErrorBoundary>
         )}
 
         <Button
