@@ -340,3 +340,157 @@ describe("useMeridianWebSocket.sendMessage", () => {
     expect(MockWebSocket.instances).toHaveLength(0);
   });
 });
+
+/* ---- T22 reconnectExhausted signal ---- */
+
+/**
+ * A mock that does NOT auto-open. Tests drive onopen via fireOpen()
+ * and onclose via close() so the reconnect state machine is observable
+ * one step at a time.
+ */
+class NoAutoOpenMockWebSocket {
+  public static readonly CONNECTING = 0;
+  public static readonly OPEN = 1;
+  public static readonly CLOSING = 2;
+  public static readonly CLOSED = 3;
+  public static readonly instances: NoAutoOpenMockWebSocket[] = [];
+
+  public url: string;
+  public readyState: number = NoAutoOpenMockWebSocket.CONNECTING;
+  public onopen: (() => void) | null = null;
+  public onclose: (() => void) | null = null;
+  public onerror: (() => void) | null = null;
+  public onmessage: ((event: MessageEvent) => void) | null = null;
+
+  constructor(url: string) {
+    this.url = url;
+    NoAutoOpenMockWebSocket.instances.push(this);
+  }
+  send(_data: unknown) {}
+  close() {
+    this.readyState = NoAutoOpenMockWebSocket.CLOSED;
+    this.onclose?.();
+  }
+  fireOpen() {
+    this.readyState = NoAutoOpenMockWebSocket.OPEN;
+    this.onopen?.();
+  }
+  static latest(): NoAutoOpenMockWebSocket | undefined {
+    return this.instances[this.instances.length - 1];
+  }
+  static reset() {
+    this.instances.length = 0;
+  }
+}
+
+describe("useMeridianWebSocket.reconnectExhausted (T22 WS-failure SSE fallback signal)", () => {
+  beforeEach(() => {
+    NoAutoOpenMockWebSocket.reset();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    global.WebSocket = NoAutoOpenMockWebSocket as any;
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("starts false on a fresh hook", () => {
+    const { result } = renderHook(() =>
+      useMeridianWebSocket({ maxReconnectAttempts: 3 }),
+    );
+    expect(result.current.reconnectExhausted).toBe(false);
+  });
+
+  it("stays false while onclose fires within the reconnect budget", () => {
+    const { result } = renderHook(() =>
+      useMeridianWebSocket({ maxReconnectAttempts: 2 }),
+    );
+
+    act(() => {
+      result.current.connect("tok-budget");
+    });
+
+    // 1st close — attempts=0 < 2 → schedule reconnect; signal stays false.
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close();
+    });
+    expect(result.current.reconnectExhausted).toBe(false);
+
+    // Run the reconnect timer; a new mock socket is created (still
+    // unopened — we never call fireOpen on it).
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    // 2nd close — attempts=1 < 2 → schedule reconnect; signal still false.
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close();
+    });
+    expect(result.current.reconnectExhausted).toBe(false);
+  });
+
+  it("flips to true once onclose exceeds maxReconnectAttempts without a recovery onopen", () => {
+    const { result } = renderHook(() =>
+      useMeridianWebSocket({ maxReconnectAttempts: 2 }),
+    );
+
+    act(() => {
+      result.current.connect("tok-flap");
+    });
+
+    // Drive three closes without ever firing onopen.
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close(); // attempts 0→1, schedule
+    });
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close(); // attempts 1→2, schedule
+    });
+    act(() => {
+      jest.advanceTimersByTime(4000);
+    });
+    // 3rd close — attempts=2 NOT < 2 → no schedule, signal flips.
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close();
+    });
+
+    expect(result.current.reconnectExhausted).toBe(true);
+  });
+
+  it("resets to false on the next successful onopen (recovery)", () => {
+    const { result } = renderHook(() =>
+      useMeridianWebSocket({ maxReconnectAttempts: 1 }),
+    );
+
+    act(() => {
+      result.current.connect("tok-recover");
+    });
+
+    // Two closes without any onopen to exhaust the budget (attempts 0→1
+    // then 1 NOT < 1 → flip).
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close();
+    });
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.close();
+    });
+    expect(result.current.reconnectExhausted).toBe(true);
+
+    // User refreshes / network returns: manual reconnect succeeds.
+    act(() => {
+      result.current.connect("tok-recover-2");
+    });
+    act(() => {
+      NoAutoOpenMockWebSocket.latest()!.fireOpen();
+    });
+
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.reconnectExhausted).toBe(false);
+  });
+});
