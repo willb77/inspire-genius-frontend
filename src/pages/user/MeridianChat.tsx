@@ -605,10 +605,17 @@ export default function MeridianChat() {
           } catch { /* ignore */ }
         }
         setHasAudio(true);
-        for (const sentence of sentences) {
-          if (ttsCancelledRef.current) break;
-          try {
-            const ttsResp = await agentApi.post(
+        // 2026-06-06: fire all sentence TTS requests in parallel, then await
+        // their results in document order. Was sequential `for...await` —
+        // each sentence's POST blocked the next, so TTS production rate was
+        // capped at ~1 sentence per 2s (network round-trip). Audio playback
+        // of one sentence (~4-6s) consistently outpaced production, draining
+        // the queue and creating audible gaps mid-response. Concurrent firing
+        // keeps the queue ahead of playback. All requests share `controller.signal`
+        // so a single abort still cancels every in-flight call.
+        const ttsPromises = sentences.map((sentence) =>
+          agentApi
+            .post(
               "/v1/agents/voice/synthesize",
               { text: sentence.slice(0, 4096), voice: "shimmer" },
               {
@@ -617,15 +624,17 @@ export default function MeridianChat() {
                 timeout: 30000,
                 signal: controller.signal,
               },
-            );
-            if (ttsCancelledRef.current) break;
-            if (ttsResp.data && ttsResp.data.byteLength > 0) {
-              enqueueAudio(ttsResp.data);
-            }
-          } catch {
-            // Skip failed sentences (including aborts); continue unless cancelled.
-            if (ttsCancelledRef.current) break;
-          }
+            )
+            .then((r): ArrayBuffer | null =>
+              r.data && r.data.byteLength > 0 ? r.data : null,
+            )
+            .catch((): ArrayBuffer | null => null),
+        );
+        for (const promise of ttsPromises) {
+          if (ttsCancelledRef.current) break;
+          const audio = await promise;
+          if (ttsCancelledRef.current) break;
+          if (audio) enqueueAudio(audio);
         }
       } finally {
         if (ttsAbortRef.current === controller) ttsAbortRef.current = null;
