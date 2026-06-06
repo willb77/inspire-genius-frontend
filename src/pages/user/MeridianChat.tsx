@@ -15,6 +15,8 @@ import { useMeridianWebSocket } from "@/hooks/agents/useMeridianWebSocket";
 import type { MeridianResponse } from "@/hooks/agents/useMeridianWebSocket";
 import { useMeridianJob } from "@/hooks/agents/useMeridianJob";
 import type { ChatJob } from "@/hooks/agents/useMeridianJob";
+import { useMeridianSSEStream } from "@/hooks/agents/useMeridianSSEStream";
+import { PreflightAsyncRedirectError } from "@/services/agent/meridianChatStream";
 import { useAudioQueue } from "@/hooks/agents/useAudioQueue";
 import DemoAudioService from "@/services/demoAudioService";
 import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStorage";
@@ -680,6 +682,7 @@ export default function MeridianChat() {
     isProcessing,
     currentAgent,
     currentDomain,
+    reconnectExhausted: _wsReconnectExhausted,
   } = useMeridianWebSocket({ onResponse, onAudioData });
 
   // Expose wsSendMessage to the connected-frame flush logic in onResponse
@@ -688,6 +691,55 @@ export default function MeridianChat() {
   useEffect(() => {
     wsSendMessageRef.current = _wsSendMessage;
   }, [_wsSendMessage]);
+
+  // -------------------------------------------------------------------
+  // T22 — SSE WS-failure fallback for text chat
+  // -------------------------------------------------------------------
+  //
+  // When the WS reconnect loop has exhausted its budget, the existing
+  // text-send path (POST /v1/agents/chat/async + WS push) collapses to
+  // 2-second-per-poll progress with no token streaming. The SSE
+  // endpoint /v1/agents/chat/stream gives token-by-token UX in that
+  // failure window. When SSE is unavailable (server flag OFF returns
+  // 404 STREAMING_DISABLED) or the server's preflight redirects
+  // multi-agent DAGs to async-jobs, we fall through to the existing
+  // meridianJob flow. The happy WS path (_wsReconnectExhausted === false)
+  // is untouched — this is purely a degraded-mode improvement.
+  const sseStreamingMessageIdRef = useRef<string | null>(null);
+  const sseStream = useMeridianSSEStream();
+  const _sseStreamingText = sseStream.streamingText;
+  const _sseLastComplete = sseStream.lastComplete;
+  // Mirror streaming tokens into the placeholder bubble while in flight.
+  useEffect(() => {
+    const placeholderId = sseStreamingMessageIdRef.current;
+    if (!placeholderId || !_sseStreamingText) return;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === placeholderId
+          ? { ...m, kind: "text" as const, isProcessing: false, text: _sseStreamingText }
+          : m,
+      ),
+    );
+  }, [_sseStreamingText]);
+  // Finalize the placeholder once the complete frame arrives.
+  useEffect(() => {
+    if (!_sseLastComplete) return;
+    const placeholderId = sseStreamingMessageIdRef.current;
+    if (!placeholderId) return;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === placeholderId
+          ? {
+              ...m,
+              kind: "text" as const,
+              isProcessing: false,
+              text: _sseLastComplete.content,
+            }
+          : m,
+      ),
+    );
+    sseStreamingMessageIdRef.current = null;
+  }, [_sseLastComplete]);
 
   // Keep attribution in sync with WS-reported agent
   useEffect(() => {
@@ -1245,26 +1297,85 @@ export default function MeridianChat() {
               // handleJobSettled → renderAssistantComplete via the
               // shared rendering path.
               const sessionForJob = conversationId || "default";
-              void meridianJob
-                .startJob({
-                  message: t,
-                  sessionId: sessionForJob,
-                  fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                  context: { conversation_id: conversationId, session_id: sessionForJob },
-                })
-                .catch(() => {
-                  setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
-                  setMessages((prev) => [
-                    ...prev.filter((m) => m.kind !== "processing"),
-                    {
-                      id: `msg-${Date.now()}-err`,
-                      kind: "text" as const,
-                      sender: "assistant" as const,
-                      text: "Sorry, I couldn't reach Meridian. Please try again.",
-                      time: formatUSTimeSafe(new Date()),
-                    },
-                  ]);
+
+              // T22 — SSE fallback branch. Fires only when the WS
+              // reconnect budget is fully exhausted; the happy path
+              // (next clause) is unchanged. On the SSE path the
+              // assistant placeholder is the streaming bubble itself.
+              if (_wsReconnectExhausted) {
+                const placeholderId = `msg-${Date.now()}-assistant`;
+                // Re-tag the placeholder (which was inserted above with
+                // the same Date.now() in the same tick) so the SSE
+                // effects above can target it. We patch the LAST
+                // processing bubble belonging to the assistant.
+                setMessages((prev) => {
+                  const idx = [...prev].reverse().findIndex(
+                    (m) => m.sender === "assistant" && m.kind === "processing",
+                  );
+                  if (idx === -1) return prev;
+                  const realIdx = prev.length - 1 - idx;
+                  const copy = prev.slice();
+                  copy[realIdx] = { ...copy[realIdx], id: placeholderId };
+                  return copy;
                 });
+                sseStreamingMessageIdRef.current = placeholderId;
+                void sseStream
+                  .send({
+                    message: t,
+                    sessionId: sessionForJob,
+                    context: { conversation_id: conversationId, session_id: sessionForJob },
+                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                  })
+                  .catch((err: unknown) => {
+                    // Preflight option C — the server redirected us to
+                    // the async-jobs path. Hand off to the existing
+                    // meridianJob flow so polling + final render goes
+                    // through the canonical settlement code.
+                    if (err instanceof PreflightAsyncRedirectError) {
+                      sseStreamingMessageIdRef.current = null;
+                      void meridianJob
+                        .startJob({
+                          message: t,
+                          sessionId: sessionForJob,
+                          fileIds:
+                            selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                          context: {
+                            conversation_id: conversationId,
+                            session_id: sessionForJob,
+                            preflight_redirect_job_id: err.redirect.jobId,
+                          },
+                        })
+                        .catch(() => {
+                          setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
+                        });
+                    }
+                    // All other errors — including STREAMING_DISABLED
+                    // — already surface via sseStream.lastError; let the
+                    // UI render the error frame text on the placeholder
+                    // rather than swallowing it here.
+                  });
+              } else {
+                void meridianJob
+                  .startJob({
+                    message: t,
+                    sessionId: sessionForJob,
+                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                    context: { conversation_id: conversationId, session_id: sessionForJob },
+                  })
+                  .catch(() => {
+                    setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
+                    setMessages((prev) => [
+                      ...prev.filter((m) => m.kind !== "processing"),
+                      {
+                        id: `msg-${Date.now()}-err`,
+                        kind: "text" as const,
+                        sender: "assistant" as const,
+                        text: "Sorry, I couldn't reach Meridian. Please try again.",
+                        time: formatUSTimeSafe(new Date()),
+                      },
+                    ]);
+                  });
+              }
               // Keep the WS open in the background so push frames land
               // when the job settles. The socket is not required for
               // correctness (polling is the fallback), but it removes

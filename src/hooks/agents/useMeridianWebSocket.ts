@@ -55,6 +55,14 @@ export type UseMeridianWebSocketReturn = {
   isConnecting: boolean;
   isProcessing: boolean;
   error: string | null;
+  /**
+   * T22 (2026-06-05) — true once the WebSocket reconnect loop has tried
+   * ``maxReconnectAttempts`` times without a successful onopen. Callers
+   * can use this as the trigger to switch the text-send path to the SSE
+   * streaming endpoint (or whatever fallback transport they own). Reset
+   * to false on the next successful onopen.
+   */
+  reconnectExhausted: boolean;
   serverSessionId: string | null;
   currentAgent: string | null;
   currentDomain: string | null;
@@ -129,6 +137,10 @@ export function useMeridianWebSocket(
   const [isConnecting, setIsConnecting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // T22 WS-failure SSE fallback signal — true after the last onclose
+  // ticked reconnectAttempts past maxReconnectAttempts without a
+  // recovery onopen. Reset to false on every successful onopen.
+  const [reconnectExhausted, setReconnectExhausted] = useState(false);
 
   // Session / agent tracking
   const [serverSessionId, setServerSessionId] = useState<string | null>(null);
@@ -311,6 +323,9 @@ export function useMeridianWebSocket(
         setIsConnected(true);
         setIsConnecting(false);
         reconnectAttempts.current = 0;
+        // T22 — recovered from any prior reconnect storm; clear the
+        // fallback signal so MeridianChat returns to the WS push path.
+        setReconnectExhausted(false);
       };
 
       ws.onmessage = handleIncoming;
@@ -330,6 +345,12 @@ export function useMeridianWebSocket(
             const token = activeTokenRef.current;
             if (token) connect(token);
           }, delay);
+        } else if (activeTokenRef.current) {
+          // T22 — exhausted the reconnect budget with the user still
+          // logged in. Flip the SSE fallback signal so the next text
+          // send goes through /v1/agents/chat/stream instead of sitting
+          // on the 2s async-jobs poll cycle.
+          setReconnectExhausted(true);
         }
       };
     },
@@ -475,6 +496,7 @@ export function useMeridianWebSocket(
       isConnecting,
       isProcessing,
       error,
+      reconnectExhausted,
       serverSessionId,
       currentAgent,
       currentDomain,
@@ -494,6 +516,7 @@ export function useMeridianWebSocket(
       isConnecting,
       isProcessing,
       error,
+      reconnectExhausted,
       serverSessionId,
       currentAgent,
       currentDomain,
