@@ -135,6 +135,7 @@ describe("MeridianResponse type shape", () => {
       isConnecting: false,
       isProcessing: false,
       error: null,
+      reconnectExhausted: false,
       serverSessionId: null,
       currentAgent: null,
       currentDomain: null,
