@@ -8,6 +8,7 @@ import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 
 async function openSourceDocument(documentId: string, filename: string) {
@@ -247,7 +248,15 @@ export default function ChatWindowChatTab({
               />
             )}
             {m.sender === "assistant" && (
-              <ObservabilityPanel messageId={m.id} />
+              <ErrorBoundary
+                fallback={() => (
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    Observability unavailable for this message.
+                  </div>
+                )}
+              >
+                <ObservabilityPanel messageId={m.id} />
+              </ErrorBoundary>
             )}
           </div>
         </div>
