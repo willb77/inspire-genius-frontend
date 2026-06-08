@@ -6,6 +6,23 @@ on:
   pull_request:
     branches: [development]
 
+# Serialize CI runs per branch. Without this, two near-simultaneous
+# merges to `development` race for S3: both runs build, both runs
+# Deploy to Dev, and the LAST to finish wins regardless of which
+# commit is newer. On 2026-06-08 18:26 EDT, run 27157446651 (PR #123)
+# started Deploy to Dev 6 sec AFTER run 27157444440 (PR #124) but
+# finished 4 sec EARLIER — so PR #124's bundle (older commit, missing
+# PR #123's axios changes) clobbered PR #123's bundle on S3. Took an
+# empty-commit rebuild to recover.
+#
+# `cancel-in-progress: false` (vs true) means we serialize instead of
+# cancelling — the second deploy waits for the first to finish, then
+# runs from the latest HEAD. Slightly slower wall-clock when merges
+# pile up, but no skipped commits.
+concurrency:
+  group: ci-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   NODE_VERSION: "20"
   # 2026-05-10 fix: previously deployed to inspires-genius-dev-frontend +
