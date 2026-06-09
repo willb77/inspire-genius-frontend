@@ -1433,37 +1433,36 @@ export default function MeridianChat() {
                 ]);
 
                 // D1-A (2026-05-30, PR α from #316): when voice is enabled
-                // AND the Meridian WS is open, send the transcript through
-                // the socket with {voice: true}. Backend streams text tokens
-                // + per-sentence base64 MP3 audio frames; onResponse renders
-                // the assistant bubble incrementally and onAudioData feeds
-                // useAudioQueue. First-audio latency drops from "after full
-                // response" to ~first-sentence-ready.
+                // AND the Meridian WS is open, this branch USED to send the
+                // transcript through the socket with {voice: true} so the
+                // backend could stream text tokens + per-sentence base64
+                // MP3 audio frames.
                 //
-                // Fallback (WS not open OR voice toggle off): keep the
-                // legacy async-jobs poll + per-sentence REST TTS path. This
-                // preserves UX when the socket is reconnecting or the user
-                // explicitly muted voice responses.
-                const wsReady = _isConnected && voiceEnabled && Boolean(wsSendMessageRef.current);
+                // Disabled 2026-06-09 (#127): the WS-voice fast path depends
+                // on a dedicated `ig-{env}-ws-forwarder` Lambda invoked from
+                // ws-proxy/handler.py:491. That Lambda only exists on dev
+                // (as `ig-dev-ws-forwarder`, manually created, not in CDK).
+                // On staging-b the invoke fails and ws-proxy responds with
+                // `{type: "error", message: "Failed to process message"}`,
+                // surfacing as the same error message in the UI on every
+                // voice send. The benefit of the WS path is also already
+                // largely theoretical in production per
+                // `feedback_ws_proxy_strips_voice_streaming` — ws-proxy
+                // forwards chat to the REST endpoint that does not stream
+                // audio frames over the socket.
+                //
+                // Always route voice through the REST async-jobs path
+                // below until the ws-forwarder is brought under CDK
+                // and deployed per-env. That path now has cold-start
+                // retry (PR #126) and per-sentence speakText TTS.
+                const wsReady = false;
                 if (wsReady) {
-                  try {
-                    wsSendMessageRef.current?.(
-                      transcript,
-                      { conversation_id: conversationId, session_id: conversationId || "default" },
-                      selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                      { voice: true },
-                    );
-                  } catch (err) {
-                    console.error("[MeridianChat] Voice WS send failed:", err);
-                    setMessages((prev) => [
-                      ...prev.filter((m) => m.kind !== "processing"),
-                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
-                    ]);
-                  }
-                  return;
+                  // Kept as dead-code-style for the future re-enable PR
+                  // once the ws-forwarder gap is closed. The body is
+                  // intentionally unreachable.
                 }
 
-                // ── Legacy REST async-jobs path (WS not ready / voice muted) ──
+                // ── REST async-jobs path (canonical) ──
                 (async () => {
                   try {
                     const { agentApi } = await import("@/lib/agentApi");
