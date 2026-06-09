@@ -1472,16 +1472,53 @@ export default function MeridianChat() {
                       try { const { getToken } = await import("@/lib/storage"); token = (await getToken()) || ""; } catch { /* */ }
                     }
                     const headers = token ? { "access-token": token } : {};
-                    const startResp = await agentApi.post(
-                      "/v1/agents/chat/async",
-                      {
-                        message: transcript,
-                        session_id: conversationId || "default",
-                        ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
-                      },
-                      { headers, timeout: 15000 },
-                    );
-                    const jobId: string | undefined = (startResp.data as { job_id?: string } | undefined)?.job_id;
+
+                    // Cold-start retry on /v1/agents/chat/async — same shape
+                    // as useMeridianJob.startJob (see useMeridianJob.ts
+                    // :111-120). API GW HTTP API caps the acceptance call
+                    // at 30s; the first question after a quiet period often
+                    // hits a cold ECS task that can't accept inside that
+                    // window and returns 503. Retrying on 5xx + network
+                    // errors with a short backoff catches the cold-start
+                    // case on attempt #2. Without this, the very first
+                    // voice question after a quiet period shows "Sorry, I
+                    // couldn't reach Meridian" — the text-input path
+                    // already has this retry; voice was a single-shot
+                    // copy that pre-dated the fix on the text path.
+                    const startAttempts = 3;
+                    const startBackoffMs = [0, 3000, 6000];
+                    const isRetriableStart = (err: unknown): boolean => {
+                      if (!err || typeof err !== "object") return false;
+                      const e = err as { response?: { status?: unknown }; code?: unknown };
+                      const status = e.response?.status;
+                      if (typeof status === "number") return status >= 500 && status < 600;
+                      return e.code === "ECONNABORTED" || e.code === "ERR_NETWORK";
+                    };
+                    let startResp: { data?: { job_id?: string } } | null = null;
+                    let lastStartErr: unknown = null;
+                    for (let attempt = 0; attempt < startAttempts; attempt++) {
+                      if (attempt > 0) await new Promise((r) => setTimeout(r, startBackoffMs[attempt]));
+                      try {
+                        startResp = await agentApi.post(
+                          "/v1/agents/chat/async",
+                          {
+                            message: transcript,
+                            session_id: conversationId || "default",
+                            ...(selectedFileIds.length > 0 ? { file_ids: selectedFileIds } : {}),
+                          },
+                          { headers, timeout: 15000 },
+                        );
+                        lastStartErr = null;
+                        break;
+                      } catch (err) {
+                        lastStartErr = err;
+                        if (!isRetriableStart(err)) throw err;
+                        // Retry on 5xx / network. Final attempt falls
+                        // through to the throw below.
+                      }
+                    }
+                    if (!startResp) throw lastStartErr ?? new Error("voice chat: chat/async failed");
+                    const jobId: string | undefined = startResp.data?.job_id;
                     if (!jobId) throw new Error("voice chat: chat/async returned no job_id");
 
                     // Poll the job until terminal. 2s cadence matches
