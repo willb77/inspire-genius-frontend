@@ -3,6 +3,7 @@
  * to plug into the DAG builder.
  */
 
+import type { AxiosInstance } from "axios";
 import type { DagTemplate, DagValidationResult } from "./dag";
 
 /** Definition of a single agent available in an ecosystem. */
@@ -64,4 +65,11 @@ export type EcosystemConfig = {
   apiBaseUrl: string;
   roleMinimum?: string;
   orgId?: string;
+  /**
+   * Optional pre-configured axios client. When provided, all internal
+   * API calls (template CRUD, etc.) use this instance instead of creating
+   * a fresh axios with `apiBaseUrl`. Required when the host app needs to
+   * inject auth headers (e.g. IG's `access-token` and 401 refresh).
+   */
+  httpClient?: AxiosInstance;
 };

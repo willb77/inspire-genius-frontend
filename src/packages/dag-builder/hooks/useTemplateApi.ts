@@ -54,7 +54,7 @@ export class TemplateApiClient {
 // ─── React Query Hooks ──────────────────────────────────────────
 
 function makeClient(config: EcosystemConfig): TemplateApiClient {
-  return new TemplateApiClient(config.apiBaseUrl, config.adapter);
+  return new TemplateApiClient(config.apiBaseUrl, config.adapter, config.httpClient);
 }
 
 export function useTemplates(config: EcosystemConfig, orgId?: string) {
