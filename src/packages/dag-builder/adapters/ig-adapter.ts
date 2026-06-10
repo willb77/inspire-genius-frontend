@@ -202,11 +202,16 @@ export const igAdapter: EcosystemAdapter = {
   },
 };
 
-export function createIGConfig(apiBaseUrl: string, orgId?: string): EcosystemConfig {
+export function createIGConfig(
+  apiBaseUrl: string,
+  orgId?: string,
+  httpClient?: import("axios").AxiosInstance,
+): EcosystemConfig {
   return {
     adapter: igAdapter,
     apiBaseUrl,
     roleMinimum: "company-admin",
     orgId,
+    httpClient,
   };
 }
