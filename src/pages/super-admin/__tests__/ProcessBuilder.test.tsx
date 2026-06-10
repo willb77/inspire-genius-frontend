@@ -6,7 +6,22 @@ jest.mock("@inspiresgenius/dag-builder", () => ({
       <button onClick={() => onSave({ id: "test" })}>Save</button>
     </div>
   ),
-  createIGConfig: () => ({ url: "http://localhost:8001" }),
+  createIGConfig: (apiBaseUrl: string) => ({
+    apiBaseUrl,
+    adapter: { toApiFormat: (t: unknown) => t, fromApiFormat: (d: unknown) => d },
+  }),
+  // The page now instantiates TemplateApiClient at the page level — its
+  // methods are not exercised in these tests, but the constructor must
+  // exist as a callable so `new TemplateApiClient(...)` does not throw.
+  TemplateApiClient: class {
+    constructor(_baseUrl: string, _adapter: unknown, _httpClient?: unknown) {}
+    async list() { return [] }
+    async get() { return null }
+    async create(t: unknown) { return t }
+    async update(_id: string, t: unknown) { return t }
+    async delete() { return undefined }
+  },
+  igAdapter: { toApiFormat: (t: unknown) => t, fromApiFormat: (d: unknown) => d },
 }), { virtual: true })
 
 import ProcessBuilderPage from "../ProcessBuilder"
