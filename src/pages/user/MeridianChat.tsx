@@ -613,7 +613,17 @@ export default function MeridianChat() {
         // the queue and creating audible gaps mid-response. Concurrent firing
         // keeps the queue ahead of playback. All requests share `controller.signal`
         // so a single abort still cancels every in-flight call.
-        const ttsPromises = sentences.map((sentence) =>
+        //
+        // 2026-06-11: retry-with-backoff on 5xx + network errors. The
+        // backend /v1/agents/voice/synthesize endpoint calls OpenAI TTS
+        // upstream; OpenAI returns 503 during load spikes (observed 50%
+        // failure rate on staging-b 17:15-17:16 UTC for IP 104.54.73.13).
+        // The previous code silently caught all errors as `null` and
+        // dropped those sentences — exactly the symptom Bill saw: audio
+        // pauses mid-response and audio starting mid-response with the
+        // first 4 sentences silently dropped. 3 attempts at 0/500/1500ms
+        // backoff masks the upstream flakiness for the user.
+        const synthOnce = (sentence: string): Promise<ArrayBuffer | null> =>
           agentApi
             .post(
               "/v1/agents/voice/synthesize",
@@ -627,9 +637,42 @@ export default function MeridianChat() {
             )
             .then((r): ArrayBuffer | null =>
               r.data && r.data.byteLength > 0 ? r.data : null,
-            )
-            .catch((): ArrayBuffer | null => null),
-        );
+            );
+
+        const synthWithRetry = async (
+          sentence: string,
+        ): Promise<ArrayBuffer | null> => {
+          const backoffMs = [0, 500, 1500]; // 3 attempts total
+          let lastErr: unknown = null;
+          for (let attempt = 0; attempt < backoffMs.length; attempt++) {
+            if (ttsCancelledRef.current || controller.signal.aborted) return null;
+            if (attempt > 0) {
+              await new Promise((r) => setTimeout(r, backoffMs[attempt]));
+            }
+            try {
+              return await synthOnce(sentence);
+            } catch (err) {
+              lastErr = err;
+              const code = (err as { code?: string })?.code;
+              // Abort fired by user / page nav — don't retry.
+              if (code === "ERR_CANCELED" || controller.signal.aborted) return null;
+              // 4xx (auth / validation) won't recover; bail immediately.
+              const status = (err as { response?: { status?: number } })?.response?.status;
+              if (typeof status === "number" && status >= 400 && status < 500) {
+                console.warn("[MeridianChat] TTS 4xx — not retrying:", status, err);
+                return null;
+              }
+              // 5xx + network errors — fall through to next attempt.
+            }
+          }
+          console.warn(
+            "[MeridianChat] TTS dropped after 3 attempts; sentence will be silent:",
+            { sentence: sentence.slice(0, 80), err: lastErr },
+          );
+          return null;
+        };
+
+        const ttsPromises = sentences.map((sentence) => synthWithRetry(sentence));
         for (const promise of ttsPromises) {
           if (ttsCancelledRef.current) break;
           const audio = await promise;
