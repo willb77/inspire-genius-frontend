@@ -1529,9 +1529,25 @@ export default function MeridianChat() {
                     let data: JobShape | null = null;
                     while (Date.now() < deadline) {
                       await new Promise((r) => setTimeout(r, pollIntervalMs));
+                      // NO per-poll axios timeout. The agent-engine's
+                      // /v1/agents/chat/jobs/{job_id} endpoint long-polls
+                      // for up to ~18 sec waiting for the job to reach a
+                      // terminal state. The previous explicit 15s timeout
+                      // here was SHORTER than the server's long-poll
+                      // window, causing axios to abort during the wait
+                      // and surface "Sorry, I couldn't reach Meridian"
+                      // even though the backend had finished the job
+                      // (observed 2026-06-11 on staging-b for two 27-29s
+                      // PRISM responses that completed cleanly on the
+                      // backend but never returned to the client).
+                      //
+                      // Matches the text path's behavior in
+                      // useMeridianJob.pollJob() (no per-request timeout)
+                      // — the 5-minute overall ceiling above bounds the
+                      // total wait.
                       const pollResp = await agentApi.get(
                         `/v1/agents/chat/jobs/${jobId}`,
-                        { headers, timeout: 15000 },
+                        { headers },
                       );
                       const job = pollResp.data as JobShape;
                       if (job?.status === "complete" || job?.status === "error") {
