@@ -96,7 +96,9 @@ export default function DocumentsDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-80 p-0"
+        // Wider panel so most filenames (incl. long PRISM report names) fit
+        // without ellipsis. Clamps to viewport on narrow screens via max-w.
+        className="w-[28rem] max-w-[calc(100vw-2rem)] p-0"
         // Prevent radix from auto-closing on every checkbox click.
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
@@ -154,7 +156,10 @@ export default function DocumentsDropdown({
                                 onCheckedChange={() => toggle(f.id)}
                                 aria-label={`Select ${f.filename}`}
                               />
-                              <span className="flex-1 truncate text-sm">
+                              <span
+                                className="flex-1 truncate text-sm"
+                                title={f.filename}
+                              >
                                 {f.filename}
                               </span>
                               {isAuto && (
