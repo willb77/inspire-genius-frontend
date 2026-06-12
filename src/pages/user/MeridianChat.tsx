@@ -17,6 +17,8 @@ import { useMeridianJob } from "@/hooks/agents/useMeridianJob";
 import type { ChatJob } from "@/hooks/agents/useMeridianJob";
 import { useMeridianSSEStream } from "@/hooks/agents/useMeridianSSEStream";
 import { PreflightAsyncRedirectError } from "@/services/agent/meridianChatStream";
+import { SentenceStreamer } from "@/lib/sentenceStreamer";
+import { isStreamTextResponsesEnabled } from "@/lib/streamingFlag";
 import { useAudioQueue } from "@/hooks/agents/useAudioQueue";
 import DemoAudioService from "@/services/demoAudioService";
 import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStorage";
@@ -580,6 +582,151 @@ export default function MeridianChat() {
   const ttsAbortRef = useRef<AbortController | null>(null);
   const ttsCancelledRef = useRef(false);
 
+  // Streaming-TTS sentence queue (T22 voice streaming, flag-gated).
+  // Each sentence emitted by SentenceStreamer triggers a TTS POST
+  // immediately; results are drained into the audio queue in document
+  // order so a fast 2nd sentence never plays before a slow 1st.
+  // See `docs/architecture/voice_streaming_design_2026-06-11.md` §7 for
+  // the order-preservation rationale.
+  const ttsStreamingQueueRef = useRef<Array<Promise<ArrayBuffer | null>>>([]);
+  const ttsStreamingDrainerRef = useRef<Promise<void> | null>(null);
+
+  /**
+   * T22 streaming voice path — feeds incoming SSE tokens through
+   * `SentenceStreamer` so each completed sentence fires its TTS call
+   * immediately, instead of waiting for the full response. Drops ~20s
+   * off perceived first-audio latency. Returns null when the client
+   * streaming flag is OFF — caller should fall through to `speakText`.
+   *
+   * Voice param defaults to `"shimmer"` (matches `speakText` and the
+   * agent voice-config), preserving the per-agent voice differentiation
+   * required by memory `feedback_voice_settings_fix.md`. Callers that
+   * know the agent voice should pass it through.
+   *
+   * Returned controller:
+   *   `push(token)` — call for each SSE `event: token` frame
+   *   `finish()`    — call after `event: complete` to flush the tail
+   *   `cancel()`    — abort in-flight TTS (Cancel button / unmount)
+   */
+  const createStreamingTtsController = useCallback(
+    (voice: string = "shimmer") => {
+      // Flag default: OFF. Backend independently 404s when its flag is
+      // off → upstream SSE call falls back, we never reach here.
+      // Per memory `project_staging_b_target_env_strategy.md`, Bill flips
+      // the flag — same code in all envs.
+      if (!isStreamTextResponsesEnabled()) return null;
+
+      const controller = new AbortController();
+      ttsAbortRef.current = controller;
+      ttsCancelledRef.current = false;
+      ttsStreamingQueueRef.current = [];
+
+      let tokenP: Promise<string> | null = null;
+      const resolveToken = async (): Promise<string> => {
+        if (tokenP) return tokenP;
+        tokenP = (async () => {
+          let t = accessToken;
+          if (!t) {
+            try {
+              const { getToken } = await import("@/lib/storage");
+              t = (await getToken()) || "";
+            } catch { /* ignore */ }
+          }
+          return t || "";
+        })();
+        return tokenP;
+      };
+
+      const postSentence = async (
+        sentence: string,
+      ): Promise<ArrayBuffer | null> => {
+        try {
+          const { agentApi } = await import("@/lib/agentApi");
+          const t = await resolveToken();
+          const r = await agentApi.post(
+            "/v1/agents/voice/synthesize",
+            { text: sentence.slice(0, 4096), voice },
+            {
+              headers: t ? { "access-token": t } : {},
+              responseType: "arraybuffer",
+              timeout: 30000,
+              signal: controller.signal,
+            },
+          );
+          return r.data && r.data.byteLength > 0 ? r.data : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const startDrainer = () => {
+        if (ttsStreamingDrainerRef.current) return;
+        ttsStreamingDrainerRef.current = (async () => {
+          try {
+            // Drain while there's work and we're not cancelled. The
+            // streamer pushes onto the queue from the SSE consumer
+            // thread; we await each promise in FIFO order to preserve
+            // playback order.
+            while (!ttsCancelledRef.current) {
+              const promise = ttsStreamingQueueRef.current.shift();
+              if (!promise) {
+                if (finished.value) break;
+                // Idle — yield briefly for more pushes.
+                await new Promise((r) => setTimeout(r, 25));
+                continue;
+              }
+              const audio = await promise;
+              if (ttsCancelledRef.current) break;
+              if (audio) enqueueAudio(audio);
+            }
+          } finally {
+            ttsStreamingDrainerRef.current = null;
+          }
+        })();
+      };
+
+      const streamer = new SentenceStreamer({
+        onSentence: (sentence) => {
+          if (ttsCancelledRef.current) return;
+          const clean = sentence.replace(/[*#_`~[\]]/g, "").trim();
+          if (clean.length < 3) return;
+          setHasAudio(true);
+          ttsStreamingQueueRef.current.push(postSentence(clean));
+          startDrainer();
+        },
+      });
+
+      const finished = { value: false };
+
+      return {
+        push: (token: string) => {
+          if (ttsCancelledRef.current || finished.value) return;
+          streamer.push(token);
+        },
+        finish: () => {
+          if (finished.value) return;
+          finished.value = true;
+          streamer.flushFinal();
+          // Drainer auto-stops once queue empties + finished is true.
+          if (ttsAbortRef.current === controller) ttsAbortRef.current = null;
+        },
+        cancel: () => {
+          ttsCancelledRef.current = true;
+          try { controller.abort(); } catch { /* ignore */ }
+          if (ttsAbortRef.current === controller) ttsAbortRef.current = null;
+          ttsStreamingQueueRef.current = [];
+          finished.value = true;
+        },
+      };
+    },
+    [accessToken, enqueueAudio],
+  );
+
+  // Ref so SSE consumer effects can grab the latest controller factory
+  // without re-creating their effect on every render.
+  const createStreamingTtsControllerRef = useRef(createStreamingTtsController);
+  createStreamingTtsControllerRef.current = createStreamingTtsController;
+
   const speakText = useCallback(
     async (text: string) => {
       const responseText = (text || "").trim();
@@ -690,6 +837,11 @@ export default function MeridianChat() {
     ttsCancelledRef.current = true;
     try { ttsAbortRef.current?.abort(); } catch { /* ignore */ }
     ttsAbortRef.current = null;
+    // T22 streaming TTS — cancel the in-flight per-sentence pipeline so
+    // Cancel button stops audio + aborts pending OpenAI TTS POSTs in
+    // one action. Mirrors `speakText`'s abort behavior.
+    try { sseTtsControllerRef.current?.cancel(); } catch { /* ignore */ }
+    sseTtsControllerRef.current = null;
     stopAudio();
   }, [stopAudio]);
 
@@ -758,7 +910,34 @@ export default function MeridianChat() {
   // meridianJob flow. The happy WS path (_wsReconnectExhausted === false)
   // is untouched — this is purely a degraded-mode improvement.
   const sseStreamingMessageIdRef = useRef<string | null>(null);
-  const sseStream = useMeridianSSEStream();
+  // Streaming-TTS controller for the in-flight SSE response, if voice
+  // is enabled + flag is on. Created on the first `onToken` callback,
+  // finished/torn down on `onComplete`/`onError`/cancel.
+  const sseTtsControllerRef = useRef<ReturnType<
+    typeof createStreamingTtsController
+  > | null>(null);
+  const sseStream = useMeridianSSEStream({
+    onToken: (tok: string) => {
+      // T22 streaming voice: drive per-sentence TTS in lockstep with
+      // SSE tokens, gated on the client flag + voice-enabled state. If
+      // either is off, controller is null and we no-op — `speakText` is
+      // still invoked at completion time by the legacy path.
+      if (!voiceEnabledRef.current) return;
+      if (!sseTtsControllerRef.current) {
+        sseTtsControllerRef.current =
+          createStreamingTtsControllerRef.current?.("shimmer") ?? null;
+      }
+      sseTtsControllerRef.current?.push(tok);
+    },
+    onComplete: () => {
+      sseTtsControllerRef.current?.finish();
+      sseTtsControllerRef.current = null;
+    },
+    onError: () => {
+      sseTtsControllerRef.current?.cancel();
+      sseTtsControllerRef.current = null;
+    },
+  });
   const _sseStreamingText = sseStream.streamingText;
   const _sseLastComplete = sseStream.lastComplete;
   // Mirror streaming tokens into the placeholder bubble while in flight.
