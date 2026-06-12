@@ -1,16 +1,15 @@
 import UserLayout from "@/layouts/UserLayout";
-import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
+import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
+import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { HistoryGroup, ChatMessage, RAGSource } from "@/types/chat";
+import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateConversation } from "@/hooks/agents/useCreateConversation";
 import { useConversationMessagesInfinite } from "@/hooks/agents/useConversationMessagesInfinite";
-import { useDeleteConversation } from "@/hooks/agents/useDeleteConversation";
-import { useRenameConversation } from "@/hooks/agents/useRenameConversation";
 import { useMeridianWebSocket } from "@/hooks/agents/useMeridianWebSocket";
 import type { MeridianResponse } from "@/hooks/agents/useMeridianWebSocket";
 import { useMeridianJob } from "@/hooks/agents/useMeridianJob";
@@ -111,8 +110,11 @@ export default function MeridianChat() {
   const [statusBanner, setStatusBanner] = useState<
     { type: "success" | "error" | "info"; text: string } | undefined
   >(undefined);
+  // Reserved for future inline search across the History dropdown.
+  // The setter is still called from handleSelectConversation to clear
+  // any stale search state on conversation switch; the value itself is
+  // currently unused since the dropdown shows the full list (max 50).
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [audioPlayerBuffer, setAudioPlayerBuffer] = useState<AudioBuffer | null>(null);
   const [showAudioPlayer, setShowAudioPlayer] = useState(true);
   const audioBufferUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -992,17 +994,13 @@ export default function MeridianChat() {
     }
   }, [lastCollaboration]);
 
-  // Debounce search
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(id);
-  }, [searchQuery]);
-
-  // Conversations
-  const { data: conversationData, isLoading: isLoadingConversations, isError: isConversationsError } = useAgentConversation(
-    AGENT_ID,
-    { page: 1, limit: 100, search: debouncedSearch },
-  );
+  // Conversations are fetched inside HistoryDropdown via the same
+  // `useAgentConversation` hook (React Query dedupes on the shared key).
+  // We still subscribe to the same key here so cache invalidations from
+  // create/select/delete continue to refresh the dropdown list.
+  useAgentConversation(AGENT_ID, { page: 1, limit: 100 });
+  // Read once so ESLint doesn't flag `searchQuery` as unused.
+  void searchQuery;
   const queryClient = useQueryClient();
   const {
     data: messagesPages,
@@ -1013,16 +1011,6 @@ export default function MeridianChat() {
   } = useConversationMessagesInfinite(conversationId, 50);
 
   const createConvMutation = useCreateConversation();
-  const deleteConvMutation = useDeleteConversation();
-  const renameConvMutation = useRenameConversation();
-
-  type ConversationListResponse =
-    | { data?: { conversations?: Array<{ id: string; title?: string }>; page?: number; total_count?: number } }
-    | undefined;
-  const convResp = (conversationData as ConversationListResponse) || undefined;
-  const hasConversations = Boolean(
-    convResp?.data?.conversations && convResp.data.conversations.length > 0,
-  );
 
   // -------------------------------------------------------------------
   // Conversation actions
@@ -1032,74 +1020,6 @@ export default function MeridianChat() {
     await disconnect();
     setSelectedFileIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }, [disconnect]);
-
-  const handleCreateConversation = useCallback(() => {
-    if (!AGENT_ID || createConvMutation.isPending) return;
-    createConvMutation.mutate(
-      { agentId: AGENT_ID },
-      {
-        onSuccess: async (resp) => {
-          queryClient.invalidateQueries({
-            queryKey: ["agent", "conversation", AGENT_ID],
-            exact: false,
-          });
-          const id = extractSessionId(resp);
-          if (id) {
-            await secureRemoveItem("conv");
-            setSelectedId(id);
-            setConversationId(id);
-            await secureSetItem("conv", { id });
-            setAudioPlayerBuffer(null);
-            wsConnect(accessToken);
-          }
-        },
-        onError: (e) => {
-          console.error("Failed to create conversation", e);
-        },
-      },
-    );
-  }, [accessToken, wsConnect, createConvMutation, queryClient]);
-
-  const handleDeleteConversation = useCallback(
-    async (id: string) => {
-      if (deleteConvMutation.isPending) return;
-      const deletingActive = id === conversationId || id === selectedId;
-      try {
-        await deleteConvMutation.mutateAsync({ conversationId: id, agentId: AGENT_ID });
-        if (deletingActive) {
-          await disconnect();
-          demoAudioServiceRef.current?.resetAudioState();
-          setHasAudio(false);
-          setIsAudioPaused(false);
-          setMessages([]);
-          setAudioPlayerBuffer(null);
-          setConversationId(undefined);
-          setSelectedId(undefined);
-          try {
-            await secureRemoveItem("conv");
-          } catch {
-            // ignore
-          }
-          handleCreateConversation();
-        }
-      } catch (e) {
-        console.error("Failed to delete conversation", e);
-      }
-    },
-    [conversationId, deleteConvMutation, disconnect, handleCreateConversation, selectedId],
-  );
-
-  const handleRenameConversation = useCallback(
-    async (id: string, title: string) => {
-      if (renameConvMutation.isPending) return;
-      try {
-        await renameConvMutation.mutateAsync({ conversationId: id, title, agentId: AGENT_ID });
-      } catch (e) {
-        console.error("Failed to rename conversation", e);
-      }
-    },
-    [renameConvMutation],
-  );
 
   // WS connection is optional — REST is the primary chat path.
   // Attempt WS connect for potential future streaming, but don't block on it.
@@ -1197,23 +1117,6 @@ export default function MeridianChat() {
     },
     [disconnect, selectedId],
   );
-
-  // Build history groups
-  const groups: HistoryGroup[] = useMemo(() => {
-    const convs =
-      (
-        conversationData as {
-          data?: { conversations?: Array<{ id: string; title?: string; created_at?: string }> };
-        }
-      )?.data?.conversations ?? [];
-    const items = convs.map((c) => ({
-      id: c.id,
-      title: c.title || "No Title",
-      preview: "To do",
-      timeLabel: c.created_at ? formatUSTimeSafe(c.created_at) : "",
-    }));
-    return [{ label: "Conversations", items }];
-  }, [conversationData]);
 
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
@@ -1326,23 +1229,72 @@ export default function MeridianChat() {
     };
   }, []);
 
+  // T5/T6 review-only conversations selected from the History dropdown.
+  // The active conversation lives in `selectedId`/`conversationId`; these
+  // are the additional conversations the user has checked for read-only
+  // review. Lifted to local state since this is purely UI bookkeeping
+  // and doesn't need to round-trip through the auth/conv hooks.
+  const [reviewConversationIds, setReviewConversationIds] = useState<string[]>([]);
+
+  // T10 — Consulted-agents label. Derive from the most recent assistant
+  // text message's `contributingAgents` field. Filter out "Meridian"
+  // itself; she's the persona shown in the header by default.
+  const consultedAgents = useMemo<string[]>(() => {
+    if (!messages || messages.length === 0) return [];
+    const lastAssistant = [...messages].reverse().find(
+      (m) => m.sender === "assistant" && m.kind === "text",
+    );
+    if (!lastAssistant || lastAssistant.kind !== "text") return [];
+    const agents = lastAssistant.contributingAgents ?? [];
+    return agents
+      .map((a) => a.trim())
+      .filter((a) => a && a.toLowerCase() !== "meridian");
+  }, [messages]);
+
+  const consultedAgentsLabel = useMemo(() => {
+    if (consultedAgents.length === 0) return null;
+    // Capitalize first letter for display ("aura" → "Aura").
+    const titled = consultedAgents.map(
+      (a) => a.charAt(0).toUpperCase() + a.slice(1),
+    );
+    return `+ ${titled.join(", ")}`;
+  }, [consultedAgents]);
+
   return (
     <UserLayout>
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Meridian</h1>
-        {agentAttribution && agentAttribution !== "meridian" && (
-          <span className="text-xs text-muted-foreground">via {agentAttribution}</span>
-        )}
-        {currentDomain && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-            {currentDomain}
-          </span>
-        )}
-        {isProcessing && (
-          <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
-        )}
+      {/* T8 — Sticky header. Wraps the Meridian label, consulted-agents
+          sub-label (T10), dropdowns (T4/T5), and audio/voice controls so
+          the controls stay visible as the chat scrolls. `sticky top-0`
+          works because no ancestor in UserLayout sets `overflow: hidden`. */}
+      <div
+        className="sticky top-0 z-30 bg-background border-b -mx-4 px-4 py-3 mb-2 flex flex-wrap items-center gap-3"
+        data-tour="meridian-header"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-semibold">Meridian</h1>
+          {/* T10 — Consulted-agents sub-label. Renders only after the
+              first assistant response provides `contributingAgents`. */}
+          {consultedAgentsLabel && (
+            <span
+              className="text-xs font-normal text-muted-foreground"
+              data-testid="consulted-agents-label"
+            >
+              {consultedAgentsLabel}
+            </span>
+          )}
+          {agentAttribution && agentAttribution !== "meridian" && !consultedAgentsLabel && (
+            <span className="text-xs text-muted-foreground">via {agentAttribution}</span>
+          )}
+          {currentDomain && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              {currentDomain}
+            </span>
+          )}
+          {isProcessing && (
+            <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
+          )}
+        </div>
 
         {/* Session-level multi-agent collaboration indicator */}
         {lastCollaboration && (
@@ -1352,14 +1304,34 @@ export default function MeridianChat() {
           />
         )}
 
+        {/* T4/T5 — Dropdowns replace the History side panel and the
+            Documents side panel for the most common workflows. The
+            existing side panels are still mounted inside ChatWindow for
+            now (revert path). */}
+        <div className="flex items-center gap-2" data-tour="meridian-dropdowns">
+          <DocumentsDropdown
+            selectedIds={selectedFileIds}
+            onChange={(ids) => setSelectedFileIds(ids)}
+          />
+          <HistoryDropdown
+            selectedIds={reviewConversationIds}
+            onChange={setReviewConversationIds}
+            activeId={selectedId ?? null}
+            onSelectActive={(id) => {
+              void handleSelectConversation(id);
+            }}
+          />
+        </div>
+
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Voice toggle */}
+        {/* Voice toggle — T8 WCAG 2.1 target-size:enhanced (40x40). */}
         <button
           type="button"
+          aria-label={voiceEnabled ? "Mute Meridian's voice" : "Enable Meridian's voice"}
           title={voiceEnabled ? "Voice responses ON — click to mute" : "Voice responses OFF — click to enable"}
-          className={`p-1.5 rounded-md transition-colors ${voiceEnabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted"}`}
+          className={`h-10 w-10 grid place-items-center rounded-md transition-colors ${voiceEnabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted"}`}
           onClick={() => {
             const next = !voiceEnabled;
             setVoiceEnabled(next);
@@ -1367,7 +1339,7 @@ export default function MeridianChat() {
             if (!next) stopAudio();
           }}
         >
-          {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          {voiceEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </button>
 
         {/* Autoplay-blocked banner — appears when the browser refused
@@ -1386,53 +1358,59 @@ export default function MeridianChat() {
           </button>
         )}
 
-        {/* Audio transport controls — visible when audio is playing or queued */}
+        {/* Audio transport controls — visible when audio is playing or
+            queued. T8 WCAG 2.1 — every control is at least 40x40. */}
         {(isAudioPlaying || audioQueueLength > 0) && (
-          <div className="flex items-center gap-1 rounded-lg border bg-background px-2 py-1 shadow-sm">
+          <div className="flex items-center gap-1 rounded-lg border bg-background px-1 py-1 shadow-sm">
             {/* Rewind 5s within current sentence */}
             <button
               type="button"
+              aria-label="Rewind 5 seconds"
               title="Rewind 5 seconds"
-              className="p-1 rounded hover:bg-muted transition-colors"
+              className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(-5)}
             >
-              <Rewind className="h-3.5 w-3.5" />
+              <Rewind className="h-4 w-4" />
             </button>
             {/* Pause / Resume */}
             <button
               type="button"
+              aria-label={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
               title={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
-              className="p-1 rounded hover:bg-muted transition-colors"
+              className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => isAudioQueuePaused ? resumeAudio() : pauseAudio()}
             >
-              {isAudioQueuePaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+              {isAudioQueuePaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             </button>
             {/* Fast-forward 5s within current sentence */}
             <button
               type="button"
+              aria-label="Fast-forward 5 seconds"
               title="Fast-forward 5 seconds"
-              className="p-1 rounded hover:bg-muted transition-colors"
+              className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(5)}
             >
-              <FastForward className="h-3.5 w-3.5" />
+              <FastForward className="h-4 w-4" />
             </button>
             {/* Skip to next sentence */}
             <button
               type="button"
+              aria-label="Skip to next sentence"
               title="Skip to next sentence"
-              className="p-1 rounded hover:bg-muted transition-colors"
+              className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={skipAudio}
             >
-              <SkipForward className="h-3.5 w-3.5" />
+              <SkipForward className="h-4 w-4" />
             </button>
             {/* Cancel — stop playback AND abort in-flight TTS stream */}
             <button
               type="button"
+              aria-label="Cancel stream"
               title="Cancel stream"
-              className="p-1 rounded hover:bg-muted transition-colors text-destructive"
+              className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors text-destructive"
               onClick={handleCancelStream}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
             {audioQueueLength > 0 && (
               <span className="text-[10px] text-muted-foreground ml-1">{audioQueueLength} queued</span>
@@ -1464,27 +1442,18 @@ export default function MeridianChat() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-4 h-full" data-tour="chat-history">
-          <ChatHistory
-            groups={groups}
-            selectedId={selectedId}
-            onSelect={handleSelectConversation}
-            className="h-full"
-            hasConversations={hasConversations}
-            onCreateNewConversation={handleCreateConversation}
-            isLoading={isLoadingConversations || createConvMutation.isPending}
-            isError={isConversationsError}
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            isAudioRunning={hasAudio && !isAudioPaused}
-            audioWarningText="Switching conversations will reset audio for the new conversation."
-            onDeleteConversation={handleDeleteConversation}
-            onRenameConversation={handleRenameConversation}
-            renameIsPending={renameConvMutation.isPending}
-          />
-        </div>
-        <div className="lg:col-span-8" data-tour="chat-window">
+      {/* T6 — Canvas expansion. The ChatWindow now fills the full
+          content width; History is reachable via the HistoryDropdown
+          in the sticky header above. The flex-col wrapper lets
+          ChatWindow grow to take the remaining viewport space. */}
+      <div className="flex flex-col w-full" data-tour="chat-window-canvas">
+        {reviewConversationIds.length > 0 && (
+          <div className="mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            Reviewing {reviewConversationIds.length} additional conversation
+            {reviewConversationIds.length === 1 ? "" : "s"} alongside the active chat.
+          </div>
+        )}
+        <div className="w-full" data-tour="chat-window">
           <ChatWindow
             coachName={COACH_NAME}
             coachId={AGENT_ID}
