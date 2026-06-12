@@ -221,6 +221,21 @@ type VectorizeResponse = {
 };
 
 /**
+ * Latest PRISM CSV document for the authenticated user.
+ *
+ * Returned by GET /v1/documents/latest-prism on the agent-engine.
+ * Used by Meridian chat to auto-attach the most recent PRISM upload
+ * for context. A 404 with `detail: "no_prism_csv"` means the user has
+ * not uploaded a PRISM CSV yet — callers should treat that as a normal,
+ * non-retryable state rather than an error.
+ */
+type LatestPrismDocument = {
+  document_id: string;
+  file_name: string;
+  uploaded_at: string;
+};
+
+/**
  * Trigger pgvector embedding for a document via the Agent Engine.
  *
  * Call this after the document-service has finished processing (text extraction).
@@ -243,6 +258,25 @@ export async function searchDocuments(req: SearchRequest): Promise<SearchRespons
   return (resp.data as { data: SearchResponse }).data;
 }
 
+/**
+ * Fetch the latest PRISM CSV document for the authenticated user.
+ *
+ * Routes through the agent-engine (agentApi), not API Gateway, because
+ * the endpoint is defined on the agent-engine FastAPI app and reads from
+ * the shared Aurora `documents` table to find the user's most recent
+ * PRISM upload.
+ *
+ * Returns the document metadata on success. A 404 response with
+ * `detail: "no_prism_csv"` indicates the user has not uploaded a PRISM
+ * CSV yet — the calling hook treats this as a non-retryable state.
+ */
+export async function getLatestPrism(): Promise<LatestPrismDocument> {
+  const { data } = await agentApi.get<LatestPrismDocument>(
+    "/v1/documents/latest-prism",
+  );
+  return data;
+}
+
 export type {
   PresignedUrlRequest,
   PresignedUrlResponse,
@@ -253,4 +287,5 @@ export type {
   SearchResponse,
   VectorizeRequest,
   VectorizeResponse,
+  LatestPrismDocument,
 };
