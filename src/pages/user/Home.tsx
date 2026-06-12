@@ -57,7 +57,9 @@ export default function Home() {
   const stats = auditData?.data;
 
   const QUICK_ACTIONS = [
-    { label: t("coaching:quickActions.chatWithMeridian"), icon: Bot, to: ROUTES.MERIDIAN_CHAT, bg: "bg-blue-100", iconColor: "text-blue-600" },
+    // T2 — pass `autoLoadPrism: true` route state so MeridianChat
+    // auto-attaches the user's most recent PRISM CSV on mount.
+    { label: t("coaching:quickActions.chatWithMeridian"), icon: Bot, to: ROUTES.MERIDIAN_CHAT, bg: "bg-blue-100", iconColor: "text-blue-600", state: { autoLoadPrism: true } },
     { label: t("dashboard:uploadDocument"), icon: Upload, to: ROUTES.DOCUMENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
     { label: t("coaching:quickActions.viewPrismReport"), icon: ClipboardList, to: ROUTES.PRISM_ASSESSMENT, bg: "bg-violet-100", iconColor: "text-violet-600" },
     { label: t("coaching:quickActions.setNewGoal"), icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },

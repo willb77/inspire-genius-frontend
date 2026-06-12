@@ -50,7 +50,14 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   return [
     { to: ROUTES.HOME, icon: Home, label: "Home" },
     agentEngineEnabled
-      ? { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian" }
+      ? {
+          to: ROUTES.MERIDIAN_CHAT,
+          icon: Sparkles,
+          label: "Chat with Meridian",
+          // T2 — auto-attach the user's most recent PRISM CSV when they
+          // enter via the sidebar nav.
+          state: { autoLoadPrism: true },
+        }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.

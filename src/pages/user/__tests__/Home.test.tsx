@@ -53,15 +53,19 @@ jest.mock("@/components/dashboard/StatCard", () => ({
   ),
 }));
 
+let capturedQuickActions: Array<Record<string, unknown>> = [];
 jest.mock("@/components/dashboard/QuickActions", () => ({
   __esModule: true,
-  default: ({ actions }: { actions: Array<{ label: string }> }) => (
-    <div data-testid="quick-actions">
-      {actions.map((a) => (
-        <span key={a.label}>{a.label}</span>
-      ))}
-    </div>
-  ),
+  default: ({ actions }: { actions: Array<Record<string, unknown>> }) => {
+    capturedQuickActions = actions;
+    return (
+      <div data-testid="quick-actions">
+        {actions.map((a) => (
+          <span key={a.label as string}>{a.label as string}</span>
+        ))}
+      </div>
+    );
+  },
 }));
 
 jest.mock("@/components/dashboard/DataCard", () => ({
@@ -149,6 +153,25 @@ describe("Home Page", () => {
   it("renders quick actions", () => {
     render(<Home />, { wrapper: createWrapper() });
     expect(screen.getByTestId("quick-actions")).toBeInTheDocument();
+  });
+
+  it("passes autoLoadPrism state on the Chat with Meridian quick action (T2)", () => {
+    render(<Home />, { wrapper: createWrapper() });
+    const meridianAction = capturedQuickActions.find(
+      (a) => (a.label as string).toLowerCase().includes("meridian"),
+    );
+    expect(meridianAction).toBeDefined();
+    expect(meridianAction?.state).toEqual({ autoLoadPrism: true });
+  });
+
+  it("does NOT pass autoLoadPrism state on other quick actions", () => {
+    render(<Home />, { wrapper: createWrapper() });
+    const nonMeridianActions = capturedQuickActions.filter(
+      (a) => !(a.label as string).toLowerCase().includes("meridian"),
+    );
+    nonMeridianActions.forEach((a) => {
+      expect(a.state).toBeUndefined();
+    });
   });
 
   it("renders recent activity data card", () => {

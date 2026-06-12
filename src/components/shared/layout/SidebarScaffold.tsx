@@ -26,7 +26,18 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
 import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 
-export type NavItemDef = { to: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
+export type NavItemDef = {
+  to: string;
+  label: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  /**
+   * Optional route state forwarded to react-router on navigation.
+   * Used e.g. by the "Chat with Meridian" nav entry to pass
+   * `{ autoLoadPrism: true }` so MeridianChat auto-attaches the
+   * user's most recent PRISM CSV on mount.
+   */
+  state?: Record<string, unknown>;
+};
 
 export type NavSectionDef = {
   label: string;
@@ -45,7 +56,7 @@ export type SidebarScaffoldProps = {
   renderAfterContent?: React.ReactNode;
 };
 
-function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label, state, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
@@ -60,7 +71,7 @@ function NavItem({ to, icon: Icon, label, expandOnPath }: NavItemDef & { expandO
           if (expandOnPath && to === expandOnPath && !open) {
             setOpen(true);
           }
-          navigate(to);
+          navigate(to, state ? { state } : undefined);
         }}
         aria-label={label}
         className={cn("py-2.5",isActive ? activeClasses : inactiveClasses)}
