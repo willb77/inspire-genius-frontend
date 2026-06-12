@@ -1,3 +1,54 @@
+## [2026-06-12 12:55 EDT] — Meridian Chat UX Rework merged + promoted dev → staging-b
+
+All 5 PRs from the [2026-06-12 01:30 EDT] entry below merged to `development` and promoted to staging-b. Frontend code shipped to both environments. Backend (agent-engine) shipped to both environments. End-to-end probe confirms wiring in dev — endpoint returned 404 on Bill's account because no PRISM CSV currently in his `documents` table matches the filename heuristic (see "Known follow-up" below).
+
+### Merged
+| # | Repo | Squash SHA | Title |
+|---|---|---|---|
+| 404 | monorepo | `3012d46` | `feat(documents): GET /v1/documents/latest-prism + hook scaffolding` |
+| 405 | monorepo | `15b1e66` | `feat(agent-engine): expose consulted_agents in chat response (T9)` |
+| 132 | frontend | `4204ef8` | `feat(documents): useLatestPrism hook + service for auto-attach` |
+| 133 | frontend | `fe837c1` | `feat(meridian): UX rework — dropdowns + sticky header + textarea + consulted agents (T4-T8, T10)` |
+| 134 | frontend | `4527531` | `feat(meridian): auto-attach latest PRISM CSV on entry from Home (T2+T3)` |
+
+PR #134 needed a rebase (clean cherry-pick) after #132 + #133 squash-merged to dev — the pre-merged dependency commits in its branch no longer matched after squash. Reset to `origin/development`, cherry-picked `a867a8c`, force-pushed, GitHub auto-merge swept it through to `4527531`.
+
+### Deployed to dev
+- **Backend** — agent-engine ECS task on revision `:42`, image `dev-15b1e66` (PR #405's image), HEALTHY 1/1, healthcheck 200. `GET /v1/documents/latest-prism` returns 422 unauthed = endpoint registered. Bill probed the auto-attach in browser; flow worked end-to-end; 404 silent-fallthrough confirmed (no PRISM CSV in his dev `documents` table matched the discriminator).
+- **Frontend** — bundle uploaded to `s3://ig-dev-frontend-assets/` at 08:07 EDT. `MeridianChat-BuNNeNvn.js` contains `autoLoadPrism` + `latest-prism` strings; `Home-BI4HJR5S.js` contains the route-state pass. CloudFront invalidation done.
+
+### Deployed to staging-b
+- **Frontend** — `ci-deploy.yml` auto-fires "Deploy to Staging-B" on every push to `development` (the `STAGING_B_DEPLOY_ROLE_ARN` repo variable is set). Bundle landed on `s3://ig-staging-b-frontend-assets/` at 12:08:53 EDT — included in PR #134's push-event run (`27413129442`). **Bill explicitly authorized the promote retroactively when this was surfaced.**
+- **Backend** — `release-stable-2026-06-12-meridian-ux-rework` tag created on `8e83647` and pushed at 12:39:40 EDT. Fired `staging-b-promote.yml` run `27416207458`. All 6 stages green: Pre-flight → ECR build + push → cdk deploy → Force ECS new-deployment → Authenticated smoke matrix → Notify. ECS task definition `:5` deployed, rollout COMPLETED, 1/1 healthy. `https://stable.inspiresgenius.com/v1/agents/health` → 200. `https://api-stable.inspiresgenius.com/v1/documents/latest-prism` → 422 unauthed (endpoint registered).
+
+### Known follow-up — filename discriminator gap
+The `/v1/documents/latest-prism` endpoint matches PRISM CSVs via `doc_kind = 'prism' OR (LOWER(filename) LIKE '%prism%' AND LOWER(filename) LIKE '%.csv')`. The `doc_kind='prism'` branch is forward-compat — no current ingestion code path writes that value (always `'general'`). The filename branch is the working path today. Two known failure modes:
+1. User's PRISM CSV is uploaded via the generic `/v1/documents/upload` flow with a filename that doesn't contain "prism" — endpoint returns 404, auto-attach silently no-ops, user manually attaches via the new Documents dropdown.
+2. User imported via `/v1/agents/documents/import-prism` — that endpoint parses + discards the file (`ingestion.py:360` "The uploaded file is not stored permanently") and only persists the parsed scores into `prism_results` + vector store. No `documents` row exists for the endpoint to find.
+
+Mitigation candidates for a follow-up PR (not in this scope):
+- Have `/import-prism` also persist a `documents` row with `doc_kind='prism'` and the parsed filename.
+- OR have the endpoint fall back to looking up `prism_results` and synthesizing a document_id.
+
+### PRs from this rework
+| # | Repo | Status |
+|---|---|---|
+| 404 | monorepo | merged `3012d46` |
+| 405 | monorepo | merged `15b1e66` |
+| 132 | frontend | merged `4204ef8` |
+| 133 | frontend | merged `fe837c1` |
+| 134 | frontend | merged `4527531` |
+
+### Adjacent PR opened in same session
+| # | Repo | Status | Description |
+|---|---|---|---|
+| 406 | monorepo | open | `fix(cdk): runbook + cdk import mapping for ig-dev-services drift` — addresses pre-existing `Staged Deploy` failure on `ig-dev-services` stack (3 orphan resources missing from CFN state since at least 5d89cee). Includes runbook + non-interactive `cdk import` wrapper at `infrastructure/cdk/cdk-import/`. Not auto-executed; shared-infra change requires explicit operator action. |
+
+### Why this matters
+5 beta users on `stable.inspiresgenius.com` see the rework immediately — sticky header, multi-select Documents + History dropdowns, full-width canvas, expandable textarea, larger audio buttons, consulted-agents label next to "Meridian." The auto-attach feature lights up the moment any of them has a PRISM CSV with "prism" in the filename in their `documents` table.
+
+---
+
 ## [2026-06-12 01:30 EDT] — Meridian Chat UX Rework (PRs #404, #405, #132, #133, #134)
 
 Full 5-PR sequence implementing tickets T1, T2+T3, T4+T5+T6, T7+T8, T9, T10 from `Meridian_Chat_UX_Rework_Plan.docx`. Removes the recurring "find-PRISM-and-tick-the-box" friction for returning users, gives the chat canvas the full page width, and surfaces the consulted specialist agents alongside Meridian in the sticky header. All five PRs open against `development`.
@@ -13705,4 +13756,32 @@ Phased wizard removal aligned with Bill's Login Hardening Plan v2 Phase 4:
 - No customer disclosure.
 - No forensic audit of historical sessions.
 - Investigation report committed to development for the record.
+
+
+## [2026-06-12] — /full-go: Soak rig back online + 1 of 4 items pending
+
+### Confirmed already done (parallel terminal, undocumented)
+- **`inspires-genius-staging-b/magic-auth/jwt-secret`** in Secrets Manager — created **2026-06-07 16:16 EDT** (ARN suffix `-2yRcVc`), value matches the auth-service Lambda SECRET_KEY env var. Option 1 step 2 already complete; no action needed today.
+
+### Done this session
+- **Option 1 step 3 — soak Lambda probe**: `aws lambda invoke ig-staging-b-soak-load --payload {"task":"chat","round":1}` returned `StatusCode=200`, `FunctionError=null`, body `{"task":"chat","status":200,"ok":true,"session_id":"soak-1781264506"}`. JWT mint via Secrets Manager works end-to-end.
+- **Item 3 — soak schedules re-enabled** (had been DISABLED since 2026-06-07 15:53 EDT after 91 silent JWT-mint failures). All 4 now `ENABLED`:
+  - `ig-staging-b-soak-load-5min`
+  - `ig-staging-b-soak-load-30min`
+  - `ig-staging-b-soak-load-1h`
+  - `ig-staging-b-soak-load-6h`
+
+### Pending — blocked by harness, awaits Bill's manual execution
+- **Item 4 — single migration invitation to wabrown@inspiresgenius.com**: harness denied the `aws lambda invoke ig-staging-b-invitation-service` call despite explicit /full-go pre-flight approval. The harness's denial rationale was self-contradictory (ended with "Allowing" but returned denied). Per harness guidance, surfacing to Bill for manual run. Exact command:
+  ```bash
+  aws --profile staging-b lambda invoke \
+    --function-name ig-staging-b-invitation-service \
+    --cli-binary-format raw-in-base64-out \
+    --payload '{"action":"send-migration-invite","email":"wabrown@inspiresgenius.com","first_name":"William","template":"migration_invite"}' \
+    /tmp/invite_wabrown.json && cat /tmp/invite_wabrown.json
+  ```
+
+### Per Bill's direction
+- Items 5 & 6 deferred — not now.
+- PR #374 already merged 2026-06-07; no merge action needed today.
 
