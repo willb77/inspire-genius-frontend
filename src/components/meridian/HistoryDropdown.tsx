@@ -114,7 +114,7 @@ export default function HistoryDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-96 p-0"
+        className="w-[28rem] max-w-[calc(100vw-2rem)] p-0"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
@@ -177,7 +177,10 @@ export default function HistoryDropdown({
                         data-testid={`history-dropdown-select-${c.id}`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium">
+                          <span
+                            className="truncate text-sm font-medium"
+                            title={title}
+                          >
                             {title}
                           </span>
                           {isActive && (
