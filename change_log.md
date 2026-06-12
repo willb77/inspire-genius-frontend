@@ -1,3 +1,133 @@
+## [2026-06-11 23:35 EDT] — Staging-B agent-engine off-hours drain fix (live AWS + PR #403)
+
+Triage of "is staging-b scaled to 0?" → yes (off-hours autoscaling fired at 01:00 UTC). Manual scale-up restored service immediately; live AWS scheduled-action posture rewritten to a simplified daily schedule; PR #403 opened to codify it.
+
+### Fixed (live AWS state, staging-b account 918349930728)
+- **Scaled `ig-staging-b-agent-engine` from 0 → 1**: `MinCapacity` raised 0 → 1 via `application-autoscaling register-scalable-target`, desired count set 0 → 1. Task RUNNING within ~60 s. `https://stable.inspiresgenius.com/v1/agents/health` → 200.
+- **Replaced 4-action drain posture with 2-action daily schedule** (5 beta users on stable.inspiresgenius.com were losing Meridian chat every night from ~21:00 EDT → ~05:00 EDT, ≈8-hour outage):
+  - Rewrote `offHoursScaleDown` → `cron(0 6 * * ? *)` (daily 06:00 UTC = 2 AM EDT), Min=0/Max=2
+  - Deleted `weekendStart` (Sat 05:00 UTC drain) and `weekendEnd` (Mon 05:00 UTC drain)
+  - `businessHoursScaleUp` unchanged: daily 09:00 UTC (= 5 AM EDT), Min=1/Max=2
+  - Net: 3-hour drain window 2 AM → 5 AM EDT every night, weekdays and weekends alike
+
+### Added (PR #403, codifying the live fix)
+- **`infrastructure/cdk/lib/config.ts`** — new optional `simplifiedDailySchedule?: boolean` on `AgentEngineScalingConfig`; staging-b env block sets it true.
+- **`infrastructure/cdk/lib/agent-engine-stack.ts`** — gate the scheduled-scaling emission on the flag. Simplified path emits one nightly `offHoursScaleDown` at daily 06:00 UTC; legacy path keeps `offHoursScaleDown` (TUE-SAT 01:00 UTC) + `weekendStart` (SAT 05:00 UTC) + `weekendEnd` (MON 05:00 UTC). Dev defaults to legacy posture; staging-b opts in to simplified.
+
+### PRs
+| # | Repo | Title | Status |
+|---|---|---|---|
+| 403 | monorepo | `fix(cdk): simplified daily scale schedule for staging-b agent-engine` | open, targeting `development` |
+
+### Files
+- `infrastructure/cdk/lib/config.ts`
+- `infrastructure/cdk/lib/agent-engine-stack.ts`
+- `.secrets.baseline` (auto-updated by detect-secrets hook)
+- This log + IG_project_log.html + 5-copy sync
+
+### Why this matters
+- Without PR #403, the next routine `ig-staging-b-agent-engine` CDK deploy would overwrite the live fix and re-introduce the nightly chat outage. Closes the drift via the standard "live AWS → CDK source" pattern.
+- New `simplifiedDailySchedule` flag is generic — any future env can opt in if its access pattern doesn't warrant a weekday/weekend split. Dev keeps its 4-action posture for now.
+
+---
+
+## [2026-06-11] — Catch-up log: Dev Traffic Report tool + Super-Admin endpoint + CDK route codification (work spans 2026-06-06 → 2026-06-08) [2026-06-11 EDT]
+
+Late-logging from a parallel Coord session. Bill asked Coord2 to gather fact-based evidence that the latency sprint actually moved the needle, identify the production beta users + summarize their sessions, and then turn the ad-hoc analysis tooling into a standalone reusable application accessible from super-admin. Three days of work compressed into one log entry.
+
+### Added
+- **`tools/dev-traffic-report/`** (pipx package) — `pyproject.toml` declares a `dev-traffic-report` console script entry point so the analyst can run `pipx install ./tools/dev-traffic-report` and have a globally-installed CLI. Implementation lives at `tools/dev-traffic-report/dev_traffic_report/cli.py`.
+- **`scripts/dev_traffic_report.py`** (thin shim) — preserves `python3 scripts/dev_traffic_report.py …` UX for fresh repo checkouts that don't want to pipx-install. Imports + invokes the same `main()`.
+- **`scripts/README_dev_traffic_report.md`** + **`tools/dev-traffic-report/README.md`** — usage docs + dependency notes (Mac path requires `pip install "pydyf<0.11"` because WeasyPrint 61.x is incompatible with pydyf 0.11+).
+- **`reports/.gitignore`** — keeps PII-bearing generated reports out of git.
+- **`services/agent-engine/app/routes/super_admin_traffic.py`** — in-app endpoint mirror of the CLI. Returns the same HTML report inside the FastAPI app so the platform owner can land on a single URL from the super-admin nav. Two surfaces:
+  - `GET /v1/super-admin/dev-traffic-report` → `text/html`
+  - `GET /v1/super-admin/dev-traffic-report/data.json` → JSON
+  - Hard-coded `_AUTHORIZED_EMAILS = {"willb77@3pp.com"}` (case-insensitive, whitespace-tolerant). Granting access to a second person requires a code change + review — deliberate, not role-based.
+  - SQL via existing `async_session_factory` (RDS Proxy + Aurora), CloudWatch via `boto3` — no migration-runner Lambda hop, no AWS CLI shell-out from inside ECS.
+  - Window bounds: 1h min, 14d max, `window_to > window_from`.
+- **`services/agent-engine/tests/test_super_admin_traffic.py`** — 10 unit tests, all pass: unauthenticated 401, non-owner 403, owner HTML 200, owner JSON 200, case-insensitive email match, window-too-large 400, window-inverted 400, gate helper allow-list, t20 metrics empty + percentiles.
+- **`services/agent-engine/app/main.py`** — router registration for the new endpoint.
+- **`inspire-genius-frontend/src/pages/super-admin/DevTrafficReport.tsx`** — page component using `agentApi` to fetch HTML server-side, renders inside sandboxed `<iframe srcDoc>`. Form controls for window size + include-content + Refresh.
+- **`inspire-genius-frontend/src/constants/routes.ts`** — `ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT`.
+- **`inspire-genius-frontend/src/constants/navigation.ts`** — Activity-icon nav item after Explainability.
+- **`inspire-genius-frontend/src/routes.tsx`** — lazy-loaded route entry.
+
+### Changed
+- **`infrastructure/cdk/lib/api-gateway-stack.ts`** — codified two hot-patched API GW routes:
+  - `GET /v1/super-admin/{proxy+}` → `integrations/nj5msbs` (agent-engine VPC Link) — `W5SuperAdminGetAny`, RouteId `1metwac`.
+  - `OPTIONS /v1/super-admin/{proxy+}` → `integrations/335i8yj` (CORS preflight Lambda) — `CorsSuperAdminProxy`, RouteId `8m0unnh`.
+- **`infrastructure/cdk/imports/apigw-mapping.json`** — both `W5SuperAdminGetAny` + `CorsSuperAdminProxy` entries added so CFN ResourceImport adopts the live routes via the next CDK deploy.
+
+### PRs (chronological)
+| # | Repo | Title | Squash | Merged |
+|---|---|---|---|---|
+| 362 | monorepo | feat(scripts): dev_traffic_report — date-range traffic + latency intelligence (tool + endpoint) | `f67c730` | 2026-06-06 12:10 EDT |
+| 122 | frontend | feat(super-admin): Dev Traffic Report page | `687963f` | 2026-06-06 12:13 EDT |
+| 363 | monorepo | fix(cdk): codify /v1/super-admin/{proxy+} route hot-patched 2026-06-06 | `655660c` | 2026-06-06 14:14 EDT |
+| 369 | monorepo | fix(cdk): codify /v1/super-admin/{proxy+} OPTIONS preflight (Option 1) | `9333474` | 2026-06-06 18:02 EDT |
+
+### Deploys
+- **Dev agent-engine ECS**: PR #362 post-merge GHA `Agent Engine — Build & Push Image` SUCCESS at 12:13 EDT 2026-06-06. New task on `:latest`.
+- **Dev API Gateway (hot-patch)**: routes created live via `aws apigatewayv2 create-route` at 12:15 EDT 2026-06-06 (right after the endpoint shipped 404'd against the catch-all). Endpoint reachable immediately.
+- **Dev + Staging-B frontend**: PR #122 post-merge `Deploy to Dev` + `Deploy to Staging-B` both SUCCESS at 12:32 EDT 2026-06-06. The Staging-B page is decorative because Staging-B has no agent-engine; per explicit instruction not to point it at Dev's endpoint.
+- **Dev `ig-dev-api-gateway` CDK deploy**: workflow_dispatch run `27169235687` dispatched 2026-06-08 17:50 EDT, completed 18:11 EDT. synth + diff + deploy all SUCCESS. The `Verify no stub Lambda zips` post-check failed on the pre-existing `ig-dev-cors-options` 605-byte stub from a prior services-stack drift — not introduced by this deploy. Live routes confirmed unchanged: `1metwac` GET + `8m0unnh` OPTIONS preserved through the deploy.
+
+### Fixed
+- **Drift closed**: the API GW routes for `/v1/super-admin/*` are now in CDK source. Next routine CDK deploy of `ig-dev-api-gateway` will adopt rather than wipe them. Avoids the silent-drift trap from `feedback_services_stack_deploy_silent_drift.md`.
+- **Pre-existing T3 test leftover**: `services/agent-engine/tests/test_chat_message_metadata.py` `session_id='s-1'` swept to canonical UUID after T3's UUID guard started rejecting non-UUIDs (caught while running the PR #362 CI).
+
+### Evidence pulled during the analysis (factual basis for the tool's existence)
+- **T20** (memory parallelization): 22 organic `memory_recall_ms` hits across 5 distinct beta users (Foundations Health Wellness support inbox, two Wilkes Community College students CM Howell + AL Cook, Andrew Ballenger, Bill himself). Mean **367.8 ms**, p50 **343.8 ms**, p95 **461.1 ms** — ~59% reduction vs the ~900 ms unit-test sequential baseline. Production win is real.
+- **T1** (placeholder leak): 0 literal `{user_memory}` / `{rag_context}` / etc. matches across 16 sampled assistant messages including Aura's response to Bill's "compare my prism report to Phil dance prison report…" turn and Sage's response on Cassandra-as-Special-Ed-Teacher. T1 fix held.
+- **T21** (micro-intent short-circuit): **0 organic hits** in 30 h. None of the 7 recent session-opening user messages match `GREETING`/`FAREWELL`/`THANKS`/`ACKNOWLEDGMENT`/`CONFIRMATION` patterns — real users dive into substantive queries ("can you read the documents i uploaded?", "compare my prism report…", "is there a file attached?"). The matcher's phrase tables don't intersect real opening behaviour.
+- **T3** (asyncpg session_id UUID guard): 0 `InvalidChatMessageError` / `asyncpg.InvalidTextRepresentation` post-deploy. The 4 historical errors in the window were all from 2026-06-04 15:56 EDT — *before* the T3 deploy at 01:53 EDT 2026-06-05. Bug class closed.
+- **T22** (SSE streaming): server flag still DEFAULT OFF, no production SSE traffic. Cannot measure latency impact until flipped.
+- **T7** (cron shift): `aws application-autoscaling describe-scheduled-actions` shows `businessHoursScaleUp.Schedule = cron(0 11 ? * MON-FRI *)`, minCap 1, maxCap 4 — drift fix from PR #283 (2026-05-27) now live in production AWS state.
+
+### Files
+- `scripts/dev_traffic_report.py`, `scripts/README_dev_traffic_report.md`
+- `tools/dev-traffic-report/{pyproject.toml,README.md,dev_traffic_report/{__init__.py,cli.py}}`
+- `reports/.gitignore`
+- `services/agent-engine/app/main.py`, `services/agent-engine/app/routes/super_admin_traffic.py`, `services/agent-engine/tests/test_super_admin_traffic.py`
+- `infrastructure/cdk/lib/api-gateway-stack.ts`, `infrastructure/cdk/imports/apigw-mapping.json`
+- `inspire-genius-frontend/src/pages/super-admin/DevTrafficReport.tsx`
+- `inspire-genius-frontend/src/{constants/{routes.ts,navigation.ts},routes.tsx}`
+- This log + IG_project_log.html + 5-copy sync
+
+---
+
+## [2026-06-11] — Streaming PRs merged + promoted to staging-b (flag OFF); smoke diagnosed off-hours autoscaling drain [2026-06-11 22:30 EDT]
+
+Follow-on to the 15:46 EDT entry. Bill cleared PRs #402 + #131 to merge (flag default OFF makes them safe to land on `development`) and asked for the streaming work to be promoted to staging-b. Promote ran but smoke matrix tripped on agent-engine-only routes — diagnosed and reported, NOT a code regression.
+
+### Merged to `development`
+- **PR #402** (monorepo, `5d89cee`) — `feat(agent-engine): harden SSE streaming endpoint + sentence streamer (flag-gated)`. Hardened `/v1/agents/chat/stream`: 10 s `: keepalive` heartbeat, `asyncio.CancelledError` partial-persist, `stream_completed` structured log, new `app/voice/sentence_streamer.py`. CDK env var `AGENT_ENGINE_STREAM_TEXT_RESPONSES=false` default. 21/21 tests.
+- **PR #131** (frontend, `e5a17b9`) — `feat(meridian): SSE streaming consumer hook + speakText streaming branch (flag-gated)`. `src/lib/sentenceStreamer.ts` + `createStreamingTtsController` wired into existing `useMeridianSSEStream`. `speakText` legacy path preserved. localStorage `streaming_enabled` gate defaults off. 3091/3091 tests.
+
+### Promoted to staging-b
+| Tag | Promote run | Outcome |
+|---|---|---|
+| `release-stable-2026-06-11-streaming-flag-off` (commit `5d89cee`) | run `27389991968` | Pre-flight ✅ ECR ✅ cdk deploy ✅ ECS roll ✅ **smoke ❌** notify ✅ |
+
+New task def `ig-staging-b-agent-engine:5` deployed with `AGENT_ENGINE_STREAM_TEXT_RESPONSES=false`. Streaming code is live but flag-gated off — zero user-visible change.
+
+### Smoke matrix failure root cause
+6 agent-engine routes returned 503: `/v1/users/me/roles`, `/v1/agents/health`, `/v1/agents-settings/category`, `/v1/chat/conversations`, `/v1/admin/rules`, `/v1/admin/templates`. All non-agent-engine routes (auth-service, document, observability, manager/company/practitioner/distributor) returned 200.
+
+**NOT a PR #402 regression.** Smoke ran at 02:25 UTC against `ig-staging-b-agent-engine` desired=0/running=0. Scheduled scaling action `offHoursScaleDown` (`cron(0 1 ? * TUE-SAT *)`) drains agent-engine to min=0 at 01:00 UTC each weekday. `businessHoursScaleUp` (`cron(0 9 * * ? *)`) brings min back to 1 at 09:00 UTC; new task def will spin up clean then.
+
+### Pre-existing concern flagged (not in scope this session)
+The 5 staging-b beta users lose Meridian chat nightly from ~9 PM EDT → 5 AM EDT due to the drain-to-0 schedule that's been in place since 2026-05-24. Worth a follow-up sprint to either (a) raise off-hours min to 1, (b) add a smoke-prep step that bumps min before probing, or (c) shrink the off-hours window to align with low beta-user activity. Not unilaterally remediated — capacity changes denied appropriately and reported instead.
+
+### Open questions still pending Bill's decision (carried from 15:46 entry)
+1. Streaming-path TTS retry policy — adopt PR #130's 3-attempt 0/500/1500 ms backoff per sentence, or trust per-sentence pacing?
+2. Heartbeat cadence — keep 10 s, or tighten to 5 s for long single-agent generations?
+
+Flag-flip blocked on those two answers; everything else (code, infra, tests, frontend wiring) is staged.
+
+---
+
 ## [2026-06-11] — Voice resilience (TTS retry + Polly fallback) + Aura prompt caching live on staging-b; streaming PRs open behind flag; UX rework plan doc shipped [2026-06-11 15:46 EDT]
 
 `/full-go` session — three primary tracks executed in parallel, all green on staging-b for the 5 beta users.
