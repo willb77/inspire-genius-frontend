@@ -201,6 +201,30 @@ describe("DocumentsDropdown (T4)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders a hover title on the filename span so long names are reachable", () => {
+    const longName =
+      "WAB 2nd PRISM Rpt- William Brown (self assessment 2026-05-30).csv";
+    mockUseListDocuments.mockReturnValue({
+      data: {
+        date_groups: [
+          {
+            date_label: "Today",
+            date: "2026-06-12",
+            files: [{ id: "doc-1", filename: longName, file_type: "csv" }],
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderDropdown();
+    openDropdown();
+    // The filename element exists with the full name in its title attribute,
+    // even when the rendered text is clipped by `truncate`.
+    const span = screen.getByText(longName);
+    expect(span).toHaveAttribute("title", longName);
+  });
+
   it("reflects the selected count in the trigger label", () => {
     mockUseListDocuments.mockReturnValue({
       data: { date_groups: [] },
