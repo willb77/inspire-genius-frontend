@@ -1,6 +1,7 @@
+import { useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +32,9 @@ type ChatWindowInputBarProps = {
   muteTooltipText: string;
 };
 
+// Auto-grow ceiling (px). Past this the textarea scrolls internally.
+const TEXTAREA_MAX_PX = 240;
+
 export default function ChatWindowInputBar({
   inputText,
   onInputTextChange,
@@ -44,19 +48,58 @@ export default function ChatWindowInputBar({
   onToggleMute,
   muteTooltipText,
 }: ChatWindowInputBarProps) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  // IME composition guard. When a user is mid-composition (e.g. Japanese,
+  // Chinese, Korean input) Enter should commit the composition, not the
+  // chat message. We track both the React-supplied `onCompositionStart`
+  // / `onCompositionEnd` events and `event.nativeEvent.isComposing` as a
+  // belt-and-braces signal.
+  const isComposingRef = useRef(false);
+
   const recordingIconClass = cn(
     "size-5",
-    isRecording ? "text-red-600 animate-pulse" : "text-black"
+    isRecording ? "text-red-600 animate-pulse" : "text-black",
   );
 
-  const inputPlaceholder = isRecording ? "" : "Ask Anything....";
+  const inputPlaceholder = isRecording
+    ? ""
+    : "Ask Anything…  (Enter to send · Shift+Enter for newline)";
 
   const muteAriaLabel = isMuted ? "Unmute Coach" : "Mute Coach";
   const isMuteDisabled = !!(hasAudio && !isAudioPaused);
 
+  // Resize the textarea to fit its content, capped at TEXTAREA_MAX_PX.
+  const resizeTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    // Reset before measuring so shrinking works.
+    el.style.height = "auto";
+    const next = Math.min(el.scrollHeight, TEXTAREA_MAX_PX);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_PX ? "auto" : "hidden";
+  }, []);
+
+  // Re-resize whenever the value changes (covers programmatic clears too).
+  useEffect(() => {
+    resizeTextarea();
+  }, [inputText, resizeTextarea]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter") return;
+    if (e.shiftKey) return; // Shift+Enter: insert newline (default).
+    // Block submit while IME composition is in progress. The native
+    // `isComposing` flag is set by the browser; `isComposingRef` covers
+    // older browsers that don't surface the property on the synthetic event.
+    const nativeComposing =
+      (e.nativeEvent as KeyboardEvent | undefined)?.isComposing === true;
+    if (nativeComposing || isComposingRef.current) return;
+    e.preventDefault();
+    onSend();
+  };
+
   return (
     <div className="border-t p-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-end gap-2">
         <div className="relative flex-1">
           <button
             type="button"
@@ -64,7 +107,7 @@ export default function ChatWindowInputBar({
             onClick={() => onToggleRecording?.()}
             aria-label={isRecording ? "Stop recording" : "Start recording"}
             aria-pressed={!!isRecording}
-            className="cursor-pointer absolute left-3 top-1/2 -translate-y-1/2 grid place-items-center"
+            className="cursor-pointer absolute left-3 top-3 grid place-items-center h-10 w-10 -ml-2 -mt-1 rounded-md hover:bg-muted"
           >
             {isRecording ? (
               <SquarePause className={recordingIconClass} />
@@ -72,21 +115,30 @@ export default function ChatWindowInputBar({
               <Mic className={recordingIconClass} />
             )}
           </button>
-          <Input
+          <Textarea
+            ref={textareaRef}
             placeholder={inputPlaceholder}
-            className="cursor-pointer h-11 pl-10 pr-10 rounded-xl bg-gray-100"
+            // Tailwind: roomy single-row default, auto-grow handled in JS.
+            // `field-sizing-content` from the shadcn textarea handles this
+            // in modern browsers — JS resize is a fallback for the rest.
+            className={cn(
+              "min-h-11 max-h-60 pl-12 pr-3 py-3 rounded-xl bg-gray-100 resize-none",
+              "leading-6",
+            )}
+            rows={1}
             value={inputText}
             disabled={false}
             onChange={(e) => onInputTextChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                onSend();
-              }
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
             }}
           />
           {isRecording ? (
-            <div className="pointer-events-none absolute left-10 right-16 top-1/2 -translate-y-1/2 flex items-end gap-1 h-5">
+            <div className="pointer-events-none absolute left-12 right-3 top-3 flex items-end gap-1 h-5">
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <motion.span
                   key={i}
@@ -113,7 +165,8 @@ export default function ChatWindowInputBar({
                 type="button"
                 onClick={onToggleAudioPlayback}
                 variant="secondary"
-                className="h-11 px-3"
+                aria-label={isAudioPaused ? "Play" : "Pause"}
+                className="h-10 w-10 p-0"
               >
                 {isAudioPaused ? (
                   <Play className="size-5" />
@@ -133,7 +186,7 @@ export default function ChatWindowInputBar({
             <Button
               type="button"
               variant="secondary"
-              className="h-11 px-3 hidden"
+              className="h-10 w-10 p-0 hidden"
               onClick={() => {
                 if (hasAudio && !isAudioPaused) return;
                 const next = !isMuted;
@@ -156,7 +209,8 @@ export default function ChatWindowInputBar({
 
         <Button
           disabled={false}
-          className="bg-blue-primary hover:bg-blue-primary/90 h-11 px-3"
+          className="bg-blue-primary hover:bg-blue-primary/90 h-10 w-10 p-0"
+          aria-label="Send message"
           onClick={onSend}
         >
           <Send className="size-5" />
