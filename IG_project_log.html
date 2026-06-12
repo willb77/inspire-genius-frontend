@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1235</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1236</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,44 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-06-12 01:30 EDT] — Meridian Chat UX Rework (PRs #404, #405, #132, #133, #134)</h3>
+        <p>Full 5-PR sequence implementing tickets T1, T2+T3, T4+T5+T6, T7+T8, T9, T10 from <code>Meridian_Chat_UX_Rework_Plan.docx</code>. Removes the recurring "find-PRISM-and-tick-the-box" friction for returning users, gives the chat canvas the full page width, and surfaces the consulted specialist agents alongside Meridian in the sticky header. All five PRs open against <code>development</code>.</p>
+        <h4>Added (backend — agent-engine)</h4>
+        <ul>
+          <li><strong><code>GET /v1/documents/latest-prism</code></strong> (PR #404) — returns the authenticated user's most recent PRISM CSV. 200 <code>{document_id, file_name, uploaded_at}</code> on hit, 404 <code>{detail: "no_prism_csv"}</code> when none. SQL discriminator <code>doc_kind = 'prism' OR (LOWER(filename) LIKE '%prism%' AND LOWER(filename) LIKE '%.csv')</code> — forward-compatible explicit tagging; works today via filename heuristic since ingestion always inserts <code>doc_kind='general'</code>. 4 unit tests.</li>
+          <li><strong><code>consulted_agents: list[str]</code></strong> top-level on <code>ChatResponse</code> (PR #405) — populated from <code>response.metadata["contributing_agents"]</code> with "Meridian" filtered out. No synthesizer / orchestrator changes — provenance was already plumbed. SSE streaming skipped deliberately. 3 unit tests + 51 + 18 adjacent regression-clean.</li>
+        </ul>
+        <h4>Added (frontend)</h4>
+        <ul>
+          <li><strong><code>useLatestPrism</code> hook + <code>getLatestPrism</code> service</strong> (PR #132) — React Query v5 via <code>agentApi</code>. 5-min staleTime, 404 short-circuits retry. 4 unit tests.</li>
+          <li><strong><code>DocumentsDropdown</code> + <code>HistoryDropdown</code></strong> (PR #133) — shadcn <code>DropdownMenu</code> multi-select components. Auto-attached PRISM badge. Empty / loading / error states. 13 unit tests across the two.</li>
+          <li><strong>shadcn <code>textarea</code> primitive</strong> (PR #133) — <code>npx shadcn@latest add textarea</code>.</li>
+          <li>Optional <code>state</code> field on <code>QuickAction</code> + <code>NavItemDef</code> (PR #134) — forwards <code>navigate(path, { state })</code> for Home CTAs and sidebar nav items.</li>
+          <li>Full frontend suite 390 suites / 3113 tests green after the rework.</li>
+        </ul>
+        <h4>Changed (frontend)</h4>
+        <ul>
+          <li><strong>MeridianChat layout</strong> (PR #133) — removed <code>lg:grid-cols-12</code> + 4/8 split. ChatWindow fills full width via flex. Inline ChatHistory + Documents panel render removed.</li>
+          <li><strong>ChatWindow header now sticky</strong> (PR #133) — <code>sticky top-0 z-30 bg-background border-b</code>. Holds Meridian title + consulted-agents sub-label + the two dropdowns + voice toggle + audio transport controls. Audio buttons bumped to 40×40 (WCAG 2.1 target-size:enhanced).</li>
+          <li><strong>Chat input</strong> (PR #133) — shadcn <code>&lt;Input&gt;</code> → <code>&lt;Textarea&gt;</code> auto-grow up to 240px then scroll. Enter submits; Shift+Enter newline; IME <code>isComposing</code> honored.</li>
+          <li><strong>Sticky-header consulted_agents label</strong> (PR #133) — "Meridian" alone, "Meridian + Aura", "Meridian + Aura, Alex" reading from the most recent assistant message's <code>contributingAgents</code>.</li>
+          <li><strong>Home CTA + sidebar nav</strong> (PR #134) — both pass <code>state: { autoLoadPrism: true }</code>. MeridianChat onMount gates <code>useLatestPrism</code> on the flag, adds the document_id to <code>selectedFileIds</code> once via useRef guard, clears the flag via <code>navigate(pathname, { replace: true, state: {} })</code>. 404 → silent fallthrough.</li>
+        </ul>
+        <h4>PRs</h4>
+        <ul>
+          <li>#404 monorepo — <code>feat(documents): GET /v1/documents/latest-prism + tests (T1)</code></li>
+          <li>#405 monorepo — <code>feat(agent-engine): expose consulted_agents in chat response (T9)</code></li>
+          <li>#132 frontend — <code>feat(documents): useLatestPrism hook + service for auto-attach</code></li>
+          <li>#133 frontend — <code>feat(meridian): UX rework — dropdowns + sticky header + textarea + consulted agents (T4-T8, T10)</code></li>
+          <li>#134 frontend — <code>feat(meridian): auto-attach latest PRISM CSV on entry from Home (T2+T3)</code></li>
+        </ul>
+        <h4>Bundling decision</h4>
+        <p>Plan recommended 4 frontend PRs (T1 hook / T4+T5+T6 / T7+T8 / T2+T3). T4-T10 bundled into #133 because they all touch <code>MeridianChat.tsx</code> (1877 lines) and <code>ChatWindow.tsx</code> (389 lines) — splitting creates rebase churn without review-quality gain. T2+T3 (#134) stacked off #133 so it integrates against the new layout.</p>
+        <h4>Why this matters</h4>
+        <p>Friction removal: returning users no longer hunt for PRISM. Canvas reclaim: full-width dialogue + breathing room for the textarea. Provenance: users see which specialists Meridian consulted (was she solo, or did Aura + Alex run behind the scenes?). Audio + agent attribution stay pinned to the viewport.</p>
+        <h4>Rollout</h4>
+        <p>Standard sequence: merge #404 → #405 → #132 → #133 → #134, dev for 24h soak, then <code>release-stable-2026-06-13-meridian-ux-rework</code> tag fires staging-b promote per the staging-b target-env strategy. Notify Bill before promoting (he coordinates the 5 stable.inspiresgenius.com beta users).</p>
 
         <h3>[2026-06-11 23:35 EDT] — Staging-B agent-engine off-hours drain fix (live AWS + PR #403)</h3>
         <p>Triage of "is staging-b scaled to 0?" → yes (off-hours autoscaling fired at 01:00 UTC). Manual scale-up restored service immediately; live AWS scheduled-action posture rewritten to a simplified daily schedule; PR #403 opened to codify it.</p>
@@ -2853,6 +2891,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-06-12 01:30 EDT — Prompt #1236 [/full-go: run Meridian Chat UX Rework Plan PRs in order T1 → T9 → T4+T5+T6 → T7+T8 → T2+T3, parallelize aggressively]</div>
+          <div class="prompt-text">Bill pointed at Meridian_Chat_UX_Rework_Plan.docx and asked for the full 7-change rework as a /full-go task. After a brief pre-flight approval ("yes"), I parallelized via 4 background sub-agents (one per independent PR or PR group) using worktree isolation per the cross-terminal isolation memory. T1 backend (PR #404, monorepo): GET /v1/documents/latest-prism on agent-engine, queries the canonical `documents` table (the same table file_ids references via retrieve_attached_documents) with discriminator `doc_kind = 'prism' OR (LOWER(filename) LIKE '%prism%' AND LOWER(filename) LIKE '%.csv')` since ingestion always writes doc_kind='general' today — forward-compat with explicit tagging. 4 unit tests. T9 backend (PR #405, monorepo): added top-level consulted_agents: list[str] to ChatResponse, populated from response.metadata['contributing_agents'] with "Meridian" filtered out. Synthesizer was already plumbing this everywhere — pure cosmetic surface addition. SSE streaming path skipped deliberately (token-by-token loop never materializes a structured response). 3 unit tests + 51 + 18 adjacent regression-clean. T1 frontend (PR #132, frontend): useLatestPrism hook + getLatestPrism service via agentApi, React Query v5, 5-min staleTime, 404 short-circuits retry. 4 unit tests. T4+T5+T6+T7+T8+T10 bundled (PR #133, frontend, the big one): bundled into ONE PR because all four sub-tickets touch MeridianChat.tsx (1877 lines) + ChatWindow.tsx (389 lines) — splitting created rebase churn without review-quality gain. DocumentsDropdown + HistoryDropdown shadcn components (13 tests), shadcn Textarea primitive, ChatWindowInputBar swap input→textarea with auto-grow up to 240px + IME-safe submit, sticky-top-0 header holding Meridian title + consulted_agents sub-label + the two dropdowns + voice toggle + audio transport controls bumped to 40×40 (WCAG 2.1 enhanced target size), MeridianChat layout reclaim to full-width flex. 20 new tests + 12 updated. Full frontend suite 390 suites / 3113 tests green. T2+T3 (PR #134, frontend): Home Quick Action + sidebar nav pass state: { autoLoadPrism: true }; MeridianChat onMount gates useLatestPrism on the flag, adds returned document_id to selectedFileIds once via useRef idempotency guard, forwards to DocumentsDropdown as autoAttachedId so the badge renders, clears flag via navigate(pathname, { replace: true, state: {} }). 404 → silent fallthrough, no-flag → no fetch. 6 new tests across MeridianChat + Home. Total: 5 PRs open (2 monorepo, 3 frontend), all against development, all built in isolated worktrees, all merged-pending cleanly. PR #134 stacked off PR #133 + PR #132 so it integrated against the new layout + the hook without rebase pain. Standard rollout sequence noted (#404 → #405 → #132 → #133 → #134 → 24h dev soak → release-stable tag for staging-b promote, notify Bill before).</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-06-11 23:35 EDT — Prompt #1235 [/full-go: draft change_log entry, /compact-doc the autoscaling fix session]</div>
           <div class="prompt-text">Final wrap on the staging-b off-hours drain triage. Drafted change_log entry covering: (1) live AWS fix on ig-staging-b-agent-engine — MinCapacity raised 0→1, desired=1, task RUNNING within ~60s, health 200 via stable.inspiresgenius.com; (2) live scheduled-action rewrite — offHoursScaleDown moved to daily cron(0 6 * * ? *) Min=0 (= 2 AM EDT drain), weekendStart + weekendEnd DELETED, businessHoursScaleUp daily 09:00 UTC Min=1 unchanged (= 5 AM EDT restore); net 3-hour drain window every night replacing the prior ≈8-hour weekday outage that was hitting 5 beta users; (3) PR #403 opened against development codifying the live change — new optional simplifiedDailySchedule?: boolean field on AgentEngineScalingConfig, set true only on staging-b env block, dev keeps its 4-action legacy posture by default. Files: infrastructure/cdk/lib/config.ts, infrastructure/cdk/lib/agent-engine-stack.ts, .secrets.baseline (auto). Then ran /compact-doc Phases 1+2 (log + sync 5 mirrors). Phase 3 (/compact) requires Bill to run himself per CLI restriction.</div>

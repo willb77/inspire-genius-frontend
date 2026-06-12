@@ -1,3 +1,64 @@
+## [2026-06-12 01:30 EDT] — Meridian Chat UX Rework (PRs #404, #405, #132, #133, #134)
+
+Full 5-PR sequence implementing tickets T1, T2+T3, T4+T5+T6, T7+T8, T9, T10 from `Meridian_Chat_UX_Rework_Plan.docx`. Removes the recurring "find-PRISM-and-tick-the-box" friction for returning users, gives the chat canvas the full page width, and surfaces the consulted specialist agents alongside Meridian in the sticky header. All five PRs open against `development`.
+
+### Added (backend — agent-engine)
+- **`GET /v1/documents/latest-prism`** (PR #404) — returns the authenticated user's most recent PRISM CSV. 200 `{document_id, file_name, uploaded_at}` on hit, 404 `{detail: "no_prism_csv"}` when the user has none.
+  - SQL discriminator: `doc_kind = 'prism' OR (LOWER(filename) LIKE '%prism%' AND LOWER(filename) LIKE '%.csv')` — forward-compatible with explicit `doc_kind` tagging, works today via filename heuristic since `app/rag/ingestion.py:270` always inserts `doc_kind='general'`.
+  - Queries the canonical `documents` table (the one `file_ids` references via `app/rag/personal_data.py::retrieve_attached_documents`), so the returned ID is immediately usable in the chat payload.
+  - 4 unit tests: 200 hit, 404 miss, 401 unauth, SQL shape assertion.
+- **`consulted_agents: list[str]`** top-level field on `ChatResponse` (PR #405) — populated from `response.metadata["contributing_agents"]` (fallback `[response.agent_name]`), Meridian itself filtered out so the list reads as the specialists consulted.
+  - No synthesizer / orchestrator changes — `contributing_agents` was already populated on every return path (synthesizer.py 108-269, multi_domain_coordinator.py 244).
+  - SSE streaming path deliberately skipped — token-by-token loop never materializes a structured response. Documented in the PR body; separate plumbing change required.
+  - 3 unit tests: single-agent / multi-agent / Meridian-only. Adjacent `test_meridian.py` (51) and `test_chat_jobs.py` (18) regression-clean.
+
+### Added (frontend)
+- **`useLatestPrism` hook + `getLatestPrism` service** (PR #132) — React Query v5 wrapper around the new endpoint via `agentApi`. 5-min staleTime, no refetch-on-window-focus, 404 short-circuits retry. 4 unit tests + `LatestPrismDocument` type. Matches the existing `vectorizeDocument` precedent (agent-engine routes via `agentApi`, document-service routes via `api`).
+- **`src/components/meridian/DocumentsDropdown.tsx`** (PR #133) — shadcn `DropdownMenu` + `Checkbox` multi-select. Trigger: "Documents (n selected)". Body: scrollable user document list. Auto-attached PRISM row shows a badge. Empty/loading/error states wired. 6 unit tests.
+- **`src/components/meridian/HistoryDropdown.tsx`** (PR #133) — multi-select past-conversations dropdown. Single click selects an active editable conversation; checkbox adds review-only conversations. 7 unit tests.
+- **`src/components/ui/textarea.tsx`** (PR #133) — shadcn Textarea primitive (`npx shadcn@latest add textarea`).
+- **Frontend tests** — 20 new across DocumentsDropdown / HistoryDropdown / ChatWindowInputBar; 12 updated for MeridianChat layout; full suite 390 suites / 3113 tests green.
+- **Optional `state` field** on `QuickAction` + `NavItemDef` (PR #134) — forwards `navigate(path, { state })` for Home CTAs and sidebar nav items.
+
+### Changed (frontend)
+- **`MeridianChat.tsx` layout** (PR #133): removed `lg:grid-cols-12` + `lg:col-span-4` (ChatHistory) + `lg:col-span-8` (ChatWindow) split. ChatWindow now fills full width via flex. ChatHistory render removed (file retained for revert path).
+- **`ChatWindow.tsx` header** (PR #133): now `sticky top-0 z-30 bg-background border-b`. Holds Meridian title + consulted-agents sub-label + DocumentsDropdown + HistoryDropdown + voice toggle + audio transport controls. Audio buttons bumped to 40×40 (Tailwind `h-10 w-10`) for WCAG 2.1 target-size:enhanced compliance.
+- **`ChatWindowInputBar.tsx`** (PR #133): shadcn `<Input>` → `<Textarea>` auto-grow up to 240px then scroll. Enter submits; Shift+Enter inserts newline; IME `isComposing` honored.
+- **Sticky-header consulted_agents label** (PR #133): "Meridian" with no specialists; "Meridian + Aura" with one; "Meridian + Aura, Alex" with two-plus. Sourced from the most recent assistant message's `contributingAgents` field, "Meridian" filtered out. Hidden before the first response.
+- **`Home.tsx` + `navigation.ts`** (PR #134): "Chat with Meridian" CTA + sidebar nav entry pass `state: { autoLoadPrism: true }` through `navigate(path, { state })`.
+- **`MeridianChat.tsx` onMount auto-attach** (PR #134): gated `useLatestPrism({ enabled: autoLoadPrism })` reads the flag, adds the returned `document_id` to `selectedFileIds` once (useRef idempotency guard), forwards it to `DocumentsDropdown` as `autoAttachedId` so the "Auto-attached" badge renders. Then clears the route state via `navigate(pathname, { replace: true, state: {} })` so a page refresh doesn't re-trigger. 404 → silent fallthrough.
+
+### Removed (frontend)
+- Inline `ChatHistory` + Documents panel render in `MeridianChat.tsx`. Replaced by the two dropdowns in the sticky header (PR #133).
+- `useDeleteConversation` / `useRenameConversation` imports + handlers in `MeridianChat.tsx` — were only consumed by the now-removed ChatHistory render. Hook modules remain on disk for a one-import revert path.
+
+### PRs
+| # | Repo | Title | Status |
+|---|---|---|---|
+| 404 | monorepo | `feat(documents): GET /v1/documents/latest-prism + tests (T1)` | open, targeting `development` |
+| 405 | monorepo | `feat(agent-engine): expose consulted_agents in chat response (T9)` | open, targeting `development` |
+| 132 | frontend | `feat(documents): useLatestPrism hook + service for auto-attach` | open, targeting `development` |
+| 133 | frontend | `feat(meridian): UX rework — dropdowns + sticky header + textarea + consulted agents (T4-T8, T10)` | open, targeting `development` |
+| 134 | frontend | `feat(meridian): auto-attach latest PRISM CSV on entry from Home (T2+T3)` | open, targeting `development` |
+
+### Bundling decision
+The plan recommended 4 separate frontend PRs (T1 hook / T4+T5+T6 dropdowns / T7+T8 textarea+sticky / T2+T3 entry). T4-T10 were bundled into PR #133 because they all touch `MeridianChat.tsx` (1877 lines) and `ChatWindow.tsx` (389 lines); splitting them creates rebase churn with no review-quality gain. T2+T3 (PR #134) branched off PR #133 so it integrates against the new layout. Documented in PR #133's body.
+
+### Files
+- **Backend (monorepo)**: `services/agent-engine/app/routes/documents.py`, `services/agent-engine/app/main.py`, `services/agent-engine/tests/test_documents_latest_prism.py`, `services/agent-engine/tests/test_meridian_response_shape.py`
+- **Frontend**: `src/services/documents/documentService.ts`, `src/hooks/documents/useLatestPrism.ts`, `src/hooks/documents/__tests__/useLatestPrism.test.tsx`, `src/components/meridian/DocumentsDropdown.tsx`, `src/components/meridian/HistoryDropdown.tsx`, `src/components/meridian/__tests__/DocumentsDropdown.test.tsx`, `src/components/meridian/__tests__/HistoryDropdown.test.tsx`, `src/components/ui/textarea.tsx`, `src/components/user/chat/ChatWindowInputBar.tsx`, `src/components/user/chat/__tests__/ChatWindowInputBar.test.tsx`, `src/pages/user/MeridianChat.tsx`, `src/pages/user/__tests__/MeridianChat.test.tsx`, `src/pages/user/Home.tsx`, `src/pages/user/__tests__/Home.test.tsx`, `src/constants/navigation.ts`, `src/components/dashboard/QuickActions.tsx`, `src/components/shared/layout/SidebarScaffold.tsx`
+- This log + IG_project_log.html + 5-copy sync
+
+### Why this matters
+Friction removal: returning users no longer hunt through Documents to attach their PRISM CSV before every chat — a single click on Home auto-loads it. Canvas reclaim: removing the left-rail panels gives the chat dialogue full width and the textarea room to breathe (up to ~240px before scrolling). Provenance: the sticky header always shows which specialists were consulted, so the user knows when Meridian was solo vs. when Aura, Alex, etc. ran in the background. Audio + agent attribution can no longer scroll off as the thread grows.
+
+### Rollout
+- All 5 PRs open against `development`. CI green on #404 backend at log-time; remaining PRs CI in flight.
+- Standard sequence: merge #404 → #405 → #132 → #133 → #134, dev for 24h soak, then `release-stable-2026-06-13-meridian-ux-rework` tag to fire staging-b promote per `project_staging_b_target_env_strategy` memory.
+- Notify Bill (the 5 stable.inspiresgenius.com beta users) before promoting to staging-b.
+
+---
+
 ## [2026-06-11 23:35 EDT] — Staging-B agent-engine off-hours drain fix (live AWS + PR #403)
 
 Triage of "is staging-b scaled to 0?" → yes (off-hours autoscaling fired at 01:00 UTC). Manual scale-up restored service immediately; live AWS scheduled-action posture rewritten to a simplified daily schedule; PR #403 opened to codify it.
