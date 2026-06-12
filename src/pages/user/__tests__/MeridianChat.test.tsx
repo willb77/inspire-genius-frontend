@@ -187,11 +187,32 @@ jest.mock("@/layouts/UserLayout", () => ({
   ),
 }));
 
+// ChatHistory mock retained as no-op — the page no longer imports it
+// after the T6 rework, but tests for revert paths may reintroduce it.
 jest.mock("@/components/user/chat/ChatHistory", () => ({
   __esModule: true,
-  default: () => (
-    <div data-testid="chat-history">ChatHistory</div>
-  ),
+  default: () => null,
+}));
+
+// T4/T5 — the dropdowns replace the side-panel ChatHistory. Stub them
+// so MeridianChat tests don't pull in Radix portals (jsdom can render
+// the trigger only; the body lives in a portal). Each captures the
+// props the page passed for layout assertions.
+let capturedDocumentsDropdownProps: Record<string, unknown> = {};
+let capturedHistoryDropdownProps: Record<string, unknown> = {};
+jest.mock("@/components/meridian/DocumentsDropdown", () => ({
+  __esModule: true,
+  default: (props: Record<string, unknown>) => {
+    capturedDocumentsDropdownProps = props;
+    return <div data-testid="documents-dropdown" />;
+  },
+}));
+jest.mock("@/components/meridian/HistoryDropdown", () => ({
+  __esModule: true,
+  default: (props: Record<string, unknown>) => {
+    capturedHistoryDropdownProps = props;
+    return <div data-testid="history-dropdown" />;
+  },
 }));
 
 // ChatWindow mock captures onSendText so we can test file_ids passing
@@ -262,14 +283,29 @@ describe("MeridianChat", () => {
     expect(screen.getByTestId("user-layout")).toBeInTheDocument();
   });
 
-  it("renders ChatHistory component", () => {
+  it("renders the DocumentsDropdown and HistoryDropdown (T4/T5)", () => {
     renderPage();
-    expect(screen.getByTestId("chat-history")).toBeInTheDocument();
+    expect(screen.getByTestId("documents-dropdown")).toBeInTheDocument();
+    expect(screen.getByTestId("history-dropdown")).toBeInTheDocument();
   });
 
   it("renders ChatWindow component", () => {
     renderPage();
     expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+  });
+
+  it("wires selectedFileIds + setter into DocumentsDropdown (T4)", () => {
+    renderPage();
+    expect(capturedDocumentsDropdownProps).toHaveProperty("selectedIds");
+    expect(capturedDocumentsDropdownProps).toHaveProperty("onChange");
+    expect(Array.isArray(capturedDocumentsDropdownProps.selectedIds)).toBe(true);
+  });
+
+  it("wires active conversation + select handler into HistoryDropdown (T5)", () => {
+    renderPage();
+    expect(capturedHistoryDropdownProps).toHaveProperty("activeId");
+    expect(capturedHistoryDropdownProps).toHaveProperty("onSelectActive");
+    expect(typeof capturedHistoryDropdownProps.onSelectActive).toBe("function");
   });
 
   it("renders UserLayout even when agent engine is off", () => {
