@@ -3,7 +3,7 @@ import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -24,6 +24,7 @@ import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStor
 import { useListDocuments } from "@/hooks/documents/useListDocuments";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
+import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { api } from "@/lib/axios";
 import { getApi as getAgentApi } from "@/lib/agentApi";
 import { exportConversation } from "@/services/agent/agentService";
@@ -92,9 +93,25 @@ const COACH_NAME = "Meridian";
 
 export default function MeridianChat() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
+
+  // T2/T3 — Auto-attach the user's most recent PRISM CSV when the page
+  // is reached via the "Chat with Meridian" Home CTA or sidebar nav
+  // entry. Both entry points pass `state: { autoLoadPrism: true }`.
+  //
+  // - Hook is gated on the flag so we never burn an API call on a
+  //   plain refresh or direct URL hit.
+  // - After mount we clear the history state so a refresh doesn't
+  //   re-trigger the auto-attach.
+  // - 404 (no PRISM CSV yet) falls through silently — useLatestPrism
+  //   short-circuits the retry policy on 404.
+  const autoLoadPrism = (location.state as { autoLoadPrism?: boolean } | null)?.autoLoadPrism === true;
+  const [autoAttachedPrismId, setAutoAttachedPrismId] = useState<string | null>(null);
+  const autoAttachAppliedRef = useRef(false);
+  const latestPrismQuery = useLatestPrism({ enabled: autoLoadPrism });
 
   // Local UI state
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
@@ -432,6 +449,49 @@ export default function MeridianChat() {
     }
     return () => ac.abort();
   }, []);
+
+  // T2/T3 — Apply the latest-PRISM auto-attach when the query resolves.
+  // Fires at most once per page mount (guarded by autoAttachAppliedRef).
+  // Clears the `autoLoadPrism` flag from history state immediately so a
+  // browser refresh doesn't reapply the auto-attach.
+  useEffect(() => {
+    if (!autoLoadPrism) return;
+    if (autoAttachAppliedRef.current) return;
+
+    const data = latestPrismQuery.data;
+    const errored = latestPrismQuery.isError;
+
+    // Wait until the query settles (either data or error).
+    if (!data && !errored) return;
+
+    autoAttachAppliedRef.current = true;
+
+    // Clear the flag from history state so a refresh doesn't re-trigger.
+    try {
+      navigate(location.pathname, { replace: true, state: {} });
+    } catch {
+      // Defensive — never let history manipulation throw out of the effect.
+    }
+
+    if (errored) {
+      // 404 = user has no PRISM CSV yet. Silent fall-through; no toast.
+      return;
+    }
+
+    if (data?.document_id) {
+      setSelectedFileIds((prev) =>
+        prev.includes(data.document_id) ? prev : [...prev, data.document_id],
+      );
+      setAutoAttachedPrismId(data.document_id);
+      toast.success(`Auto-attached: ${data.file_name}`);
+    }
+  }, [
+    autoLoadPrism,
+    latestPrismQuery.data,
+    latestPrismQuery.isError,
+    navigate,
+    location.pathname,
+  ]);
 
   const onResponse = useCallback(
     (resp: MeridianResponse) => {
@@ -1312,6 +1372,7 @@ export default function MeridianChat() {
           <DocumentsDropdown
             selectedIds={selectedFileIds}
             onChange={(ids) => setSelectedFileIds(ids)}
+            autoAttachedId={autoAttachedPrismId}
           />
           <HistoryDropdown
             selectedIds={reviewConversationIds}
