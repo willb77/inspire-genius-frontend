@@ -183,6 +183,23 @@ export async function deleteDocumentV2(documentId: string): Promise<void> {
   await api.delete(`/v1/documents/${encodeURIComponent(documentId)}`);
 }
 
+/**
+ * Reclassify a document the caller owns. Today only `doc_kind` is patchable
+ * (allowlist: `'prism' | 'general'`). Powers the "Mark as My PRISM Rpt" UX
+ * so a user can tag a CSV they uploaded via the generic upload flow as their
+ * own PRISM when GET /latest-prism's heuristic can't find one.
+ */
+export async function patchDocument(
+  documentId: string,
+  patch: { doc_kind?: "prism" | "general" },
+): Promise<DocumentOut> {
+  const resp = await api.patch(
+    `/v1/documents/${encodeURIComponent(documentId)}`,
+    patch,
+  );
+  return (resp.data as { data: DocumentOut }).data;
+}
+
 // ─── Vectorization (Agent Engine) ───────────────────────────────
 
 type VectorizeRequest = {

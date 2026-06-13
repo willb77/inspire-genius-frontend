@@ -15,6 +15,7 @@ import {
   Loader2,
   Settings,
   Sparkles,
+  Star,
 } from "lucide-react";
 import { format as formatMonth, format, parse, isValid } from "date-fns";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ import {
   useDownloadDocumentV2,
   useDeleteDocumentV2,
   useBulkDeleteDocumentsV2,
+  useMarkDocumentAsPrism,
   useSearchDocumentsV2,
 } from "@/hooks/documents/useDocuments";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +43,7 @@ type UIDocItem = {
   id: string;
   name: string;
   kind: DocKind;
+  rawDocKind: string;
   url: string;
   createdAt: Date;
   categoryName?: string;
@@ -114,6 +117,8 @@ export default function Documents() {
   const deleteMutation = useDeleteDocumentV2();
   const bulkDeleteMutation = useBulkDeleteDocumentsV2();
   const searchMutation = useSearchDocumentsV2();
+  const markPrismMutation = useMarkDocumentAsPrism();
+  const [markingPrismId, setMarkingPrismId] = useState<string | null>(null);
 
   // Trigger semantic search when query changes and toggle is on
   useEffect(() => {
@@ -137,6 +142,7 @@ export default function Documents() {
               id: h.document_id,
               name: h.filename,
               kind: kindFromFilename(h.filename),
+              rawDocKind: "general",
               url: "",
               createdAt: new Date(),
             }),
@@ -168,6 +174,7 @@ export default function Documents() {
         id: doc.id,
         name: doc.filename,
         kind: kindFromDocKind(doc.doc_kind),
+        rawDocKind: doc.doc_kind ?? "general",
         url: "",
         createdAt: d,
       });
@@ -271,6 +278,22 @@ export default function Documents() {
       });
     } finally {
       setViewingId(null);
+    }
+  };
+
+  const handleMarkAsPrism = async (doc: UIDocItem) => {
+    try {
+      setMarkingPrismId(doc.id);
+      await markPrismMutation.mutateAsync(doc.id);
+      toast.success(t("common:success"), {
+        description: `${doc.name} is now your PRISM report. Meridian will auto-attach it.`,
+      });
+    } catch (e) {
+      toast.error(t("common:error"), {
+        description: e instanceof Error ? e.message : "Unable to mark as PRISM",
+      });
+    } finally {
+      setMarkingPrismId(null);
     }
   };
 
@@ -498,6 +521,41 @@ export default function Documents() {
                           </p>
                         ) : null}
                         <div className="flex items-center gap-3">
+                          {d.rawDocKind === "prism" ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  aria-label="Marked as my PRISM report"
+                                  className="cursor-default text-amber-500"
+                                >
+                                  <Star className="size-4 fill-current" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent sideOffset={6}>
+                                Your PRISM report — Meridian auto-attaches this
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  aria-label="Mark as my PRISM report"
+                                  className="cursor-pointer text-muted-foreground hover:text-amber-500"
+                                  onClick={() => void handleMarkAsPrism(d)}
+                                  disabled={markingPrismId === d.id}
+                                >
+                                  {markingPrismId === d.id ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                  ) : (
+                                    <Star className="size-4" />
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent sideOffset={6}>
+                                Mark as my PRISM Rpt
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           <ConfirmDialog
                             trigger={
                               <button
