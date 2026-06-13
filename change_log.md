@@ -1,3 +1,35 @@
+## [2026-06-12 23:55 EDT] — PR #409 merged + Mark-as-My-PRISM follow-up PRs (#411, FE #136)
+
+Closes the PRISM-auto-attach saga that started this morning (see the [22:30 EDT] entry below). Three deliverables ship:
+
+### Merged
+| # | Repo | Squash SHA | Title |
+|---|---|---|---|
+| 409 | monorepo | `c612e02` | `fix(document-service): invert latest-prism resolution + drop coach-false-positive filename heuristic` |
+
+#409 had been carrying stale debug `logger.warning` lines in the working tree from yesterday's hot-patch session — turned out they were never committed to the branch (already debug-free at HEAD). All checks green (`mergeStateStatus=CLEAN`), fast-forward merge to `development`.
+
+### New PRs opened
+| # | Repo | Branch | Title |
+|---|---|---|---|
+| 411 | monorepo | `feat/mark-as-my-prism` | `feat(document-service): PATCH /v1/documents/{id} — Mark as My PRISM Rpt` |
+| 136 | frontend | `feat/mark-as-my-prism` | `feat(home,documents): Mark as My PRISM Rpt — Home tile + Documents button` |
+
+**PR #411 — backend PATCH endpoint.** New `PATCH /v1/documents/{document_id}` accepts a partial `DocumentPatchRequest` (today `doc_kind` only, restricted to `{'prism','general'}`). Caller ownership is enforced — a coach cannot retroactively flip a row they don't own (regression guard for the 2026-06-12 coach-coachee false-positive scenario). Returns `200 ApiResponse[DocumentOut]`, `400` for unsupported/empty body, `403` not-owner, `404` missing. 6 tests cover the cases. Files: `app/schemas.py` (DocumentPatchRequest), `app/service.py` (`update_document_kind()` with allowlist + owner guard), `app/routes.py` (`@router.patch`), `tests/test_patch_doc.py`.
+
+**PR #136 — frontend UX.**
+- **Home page**: Quick action tiles now render ABOVE the metric tiles (per Bill's direction). Done by feeding both groups through `DashboardFrame`'s `kpis` slot stacked vertically — minimal-blast-radius approach that doesn't touch `DashboardFrame`. New "Mark as My PRISM Rpt" tile (rose, Star icon) routes to `/documents`.
+- **Documents page**: ⭐ button per non-PRISM row → calls PATCH endpoint via `useMarkDocumentAsPrism`. Invalidates `["documents"]` (which covers `["documents","latest-prism"]`) so Meridian's auto-attach badge picks up the new tag without a page refresh. Rows already tagged `prism` render a filled, read-only ⭐ so users see at a glance which file Meridian will auto-attach.
+- **Service + hook**: `patchDocument()` in `documentService.ts`, `useMarkDocumentAsPrism()` in `useDocuments.ts` (emits `document_marked_as_prism` audit event).
+- **Tests**: 3 new `Documents.test.tsx` cases. Full suite green: 3127/3127. `npm run build` clean.
+
+### Cross-terminal incident (resolved)
+First attempt to commit PR #411 landed on a sibling terminal's `fix/agent-engine-anthropic-env-name` branch — another terminal had silently switched the main repo's working tree between `git checkout development` and `git commit`. Per `feedback_cross_terminal_main_repo_isolation.md` (2026-05-29), recovery was: cherry-pick my commit (`3b9aac1`) into `/tmp/feat-mark-prism-wt` worktree off `origin/development`, then `git reset --hard origin/fix/agent-engine-anthropic-env-name` on the polluted local branch (no force-push; origin untouched). Frontend used the same worktree pattern (`/tmp/feat-mark-prism-fe-wt`) to avoid a repeat.
+
+### Standing TODOs
+- Tag `release-stable-2026-06-12-mark-as-my-prism` and run staging-b promote once #411 + #136 are both merged + frontend deploy lands.
+- The PR #406 cdk-import runbook for the `ig-dev-services` drift still needs operator execution + extension for `ig-dev-user-sync` (separate from this saga).
+
 ## [2026-06-12 12:55 EDT] — Meridian Chat UX Rework merged + promoted dev → staging-b
 
 All 5 PRs from the [2026-06-12 01:30 EDT] entry below merged to `development` and promoted to staging-b. Frontend code shipped to both environments. Backend (agent-engine) shipped to both environments. End-to-end probe confirms wiring in dev — endpoint returned 404 on Bill's account because no PRISM CSV currently in his `documents` table matches the filename heuristic (see "Known follow-up" below).

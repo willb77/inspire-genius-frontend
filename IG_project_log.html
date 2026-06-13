@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1242</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1243</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,32 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-06-12 23:55 EDT] — PR #409 merged + Mark-as-My-PRISM follow-up PRs (#411, FE #136)</h3>
+        <p>Closes the PRISM-auto-attach saga that started this morning (see the [22:30 EDT] entry below).</p>
+        <h4>Merged</h4>
+        <ul>
+          <li>#409 monorepo <code>c612e02</code> — <code>fix(document-service): invert latest-prism resolution + drop coach-false-positive filename heuristic</code>. Debug <code>logger.warning</code> lines from yesterday's hot-patch session were never committed (already debug-free at HEAD); all checks green, fast-forward merge to <code>development</code>.</li>
+        </ul>
+        <h4>New PRs opened</h4>
+        <ul>
+          <li><strong>#411 monorepo</strong> <code>feat/mark-as-my-prism</code> — <code>PATCH /v1/documents/{id}</code>. Partial-update <code>doc_kind</code> restricted to <code>{'prism','general'}</code>; caller ownership enforced (coach-coachee guard). 6 tests. Files: <code>app/schemas.py</code> (<code>DocumentPatchRequest</code>), <code>app/service.py</code> (<code>update_document_kind()</code>), <code>app/routes.py</code>, <code>tests/test_patch_doc.py</code>.</li>
+          <li><strong>#136 frontend</strong> <code>feat/mark-as-my-prism</code> — Home tile + Documents button.
+            <ul>
+              <li><strong>Home page</strong>: Quick action tiles render ABOVE metric tiles (per Bill's UX direction). Done by feeding both groups through <code>DashboardFrame</code>'s <code>kpis</code> slot stacked vertically — zero changes to <code>DashboardFrame</code> itself. New "Mark as My PRISM Rpt" tile (rose, <code>Star</code> icon) routes to <code>/documents</code>.</li>
+              <li><strong>Documents page</strong>: ⭐ button per non-PRISM row → calls PATCH endpoint via <code>useMarkDocumentAsPrism</code>. Invalidates <code>["documents"]</code> (which covers <code>["documents","latest-prism"]</code>). Rows already tagged <code>prism</code> render filled, read-only ⭐ indicator.</li>
+              <li><strong>Service + hook</strong>: <code>patchDocument()</code>, <code>useMarkDocumentAsPrism()</code> (emits <code>document_marked_as_prism</code> audit event).</li>
+              <li><strong>Tests</strong>: 3 new <code>Documents.test.tsx</code> cases. Full suite 3127/3127 green. <code>npm run build</code> clean.</li>
+            </ul>
+          </li>
+        </ul>
+        <h4>Cross-terminal incident (resolved)</h4>
+        <p>First commit for #411 landed on a sibling terminal's <code>fix/agent-engine-anthropic-env-name</code> branch — another terminal had silently switched the main repo's working tree between <code>git checkout development</code> and <code>git commit</code>. Per <code>feedback_cross_terminal_main_repo_isolation.md</code> (2026-05-29), recovery: cherry-pick to <code>/tmp/feat-mark-prism-wt</code> worktree off <code>origin/development</code>, then <code>git reset --hard origin/...</code> on the polluted local branch (no force-push; origin untouched). Frontend used the same worktree pattern from the start.</p>
+        <h4>Standing TODOs</h4>
+        <ul>
+          <li>Tag <code>release-stable-2026-06-12-mark-as-my-prism</code> + run staging-b promote once #411 + #136 are both merged + frontend deploy lands.</li>
+          <li>PR #406 cdk-import runbook still needs operator execution + extension for <code>ig-dev-user-sync</code> drift (separate from this saga).</li>
+        </ul>
 
         <h3>[2026-06-12 12:55 EDT] — Meridian Chat UX Rework merged + promoted dev → staging-b</h3>
         <p>All 5 PRs from the [2026-06-12 01:30 EDT] entry below merged to <code>development</code> and promoted to staging-b. Frontend code shipped to both environments via <code>ci-deploy.yml</code> auto-deploy on push to development. Backend (agent-engine) shipped to dev via the build+roll workflow on each merge, then to staging-b via the <code>release-stable-2026-06-12-meridian-ux-rework</code> tag firing <code>staging-b-promote.yml</code>.</p>
@@ -2927,6 +2953,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-06-12 23:55 EDT — Prompt #1243 [/full-go auto-mode: strip debug logs from #409 + open Mark-as-my-PRISM follow-up PR + log everything + tag staging-b once merged]</div>
+          <div class="prompt-text">Three deliverables in one /full-go run. (1) PR #409 strip-debug — discovered the debug logger.warning lines were never committed to the branch (HEAD already clean; the diff existed only in working tree from yesterday's hot-patch session). All CI checks SUCCESS, mergeStateStatus=CLEAN, mergeable, squash-merged to development as fast-forward c612e02. (2) Backend PR #411 — added PATCH /v1/documents/{id} to document-service with DocumentPatchRequest schema, update_document_kind() service fn (allowlist {'prism','general'} + caller-ownership guard for coach-coachee regression), @router.patch route returning ApiResponse[DocumentOut], 6 pytest cases (success, 400 unsupported kind, 400 empty body, 403 not owner, 404 missing, 401 no-auth). First commit landed on a sibling terminal's fix/agent-engine-anthropic-env-name branch (another terminal silently switched the working tree between git checkout development and git commit — exactly the failure mode in feedback_cross_terminal_main_repo_isolation.md from 2026-05-29). Recovery: cherry-pick to /tmp/feat-mark-prism-wt off origin/development, push, open PR; reset --hard the polluted local branch (no force-push; origin untouched). (3) Frontend PR #136 — Home tile + Documents button. Home page restructured to render quick action tiles ABOVE metric tiles by stacking both groups inside DashboardFrame's kpis slot (zero touch to DashboardFrame). New rose "Mark as My PRISM Rpt" tile (Star icon) routes to /documents. Documents page gets per-row ⭐ button calling useMarkDocumentAsPrism (PATCH endpoint), filled ⭐ on already-tagged rows so users see which file Meridian auto-attaches. Service patchDocument() + hook useMarkDocumentAsPrism() emitting document_marked_as_prism audit event. 3 new Documents.test.tsx cases; full suite 3127/3127 green; npm run build clean. Pushed via /tmp/feat-mark-prism-fe-wt worktree (same isolation pattern). Frontend PR #136 + backend PR #411 opened, both targeting development. Logged everything to change_log.md + IG_project_log.html (changelog panel block + new prompt entry, badge bumped 1242→1244). Awaiting CI + merge on #411 + #136 before tagging release-stable-2026-06-12-mark-as-my-prism for staging-b promote.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-06-12 12:55 EDT — Prompt #1242 [/full-go auto-mode: tag release-stable-2026-06-12-meridian-ux-rework + promote to staging-b]</div>
           <div class="prompt-text">After the dev probe confirmed the auto-attach flow worked end-to-end (Bill saw the 404 silent-fallthrough — no PRISM CSV in his dev documents table matched the filename heuristic), and after surfacing the workflow-design wrinkle that frontend ci-deploy.yml auto-deploys to staging-b on every dev push (so the rework frontend bundle was ALREADY on staging-b but talking to OLD staging-b agent-engine), Bill: "tag the release and promote to staging-b". Synced development per the stale-branch-tag memory (git fetch origin && git reset --hard origin/development → SHA 8e83647 which includes #404+#405 backend merges + a docs commit Bill authored at 07:43 EDT about the soak rig). Tagged release-stable-2026-06-12-meridian-ux-rework with full release notes listing all 5 PRs. Push fired staging-b-promote.yml run 27416207458. Set up a Monitor tool watching the workflow stages (poll every 30s, emit on every job transition + workflow completion). All 6 stages green: Pre-flight (cdk diff + tag verification) ✅, Build + push agent-engine ECR image ✅, cdk deploy (all staging-b stacks) ✅, Force ECS new-deployment ✅, Authenticated smoke matrix ✅, Notify ✅. Verified live state: stable.inspiresgenius.com/v1/agents/health → 200; api-stable.inspiresgenius.com/v1/documents/latest-prism → 422 (endpoint registered, auth-check working); ECS task def :5 deployed, rollout COMPLETED, 1/1 healthy. Then logged the promote outcome to change_log + IG_project_log including the filename-discriminator follow-up gap (no current ingestion path writes doc_kind='prism', and /import-prism doesn't persist a documents row at all — both worth a follow-up PR but not in this scope).</div>
