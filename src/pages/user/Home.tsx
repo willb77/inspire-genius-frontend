@@ -23,6 +23,7 @@ import {
   Flag,
   FileCheck,
   CalendarDays,
+  Star,
 } from "lucide-react";
 
 const ACTIVE_STATUSES = new Set([
@@ -62,6 +63,11 @@ export default function Home() {
     { label: t("coaching:quickActions.chatWithMeridian"), icon: Bot, to: ROUTES.MERIDIAN_CHAT, bg: "bg-blue-100", iconColor: "text-blue-600", state: { autoLoadPrism: true } },
     { label: t("dashboard:uploadDocument"), icon: Upload, to: ROUTES.DOCUMENTS, bg: "bg-emerald-100", iconColor: "text-emerald-600" },
     { label: t("coaching:quickActions.viewPrismReport"), icon: ClipboardList, to: ROUTES.PRISM_ASSESSMENT, bg: "bg-violet-100", iconColor: "text-violet-600" },
+    // 2026-06-12 follow-up: lands on Documents page where the user can hit
+    // the star icon to PATCH doc_kind='prism' on a CSV they uploaded via
+    // the generic flow. Backstop for when GET /latest-prism can't find
+    // their PRISM (coach-coachee scenario, generic-upload tag).
+    { label: t("coaching:quickActions.markAsMyPrism", { defaultValue: "Mark as My PRISM Rpt" }), icon: Star, to: ROUTES.DOCUMENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
     { label: t("coaching:quickActions.setNewGoal"), icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
   ];
 
@@ -179,9 +185,6 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* Quick Actions — full width */}
-      <QuickActions actions={QUICK_ACTIONS} />
-
       {/* Recent Activity — from audit top actions */}
       <DataCard title={t("dashboard:recentActivity")}>
         <div className="space-y-4">
@@ -208,11 +211,17 @@ export default function Home() {
     </>
   )
 
-  const statsKpi = (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {STATS.map((s) => (
-        <StatCard key={s.label} {...s} />
-      ))}
+  // Quick Actions render ABOVE the KPI strip (2026-06-12 follow-up).
+  // The KPIs slot in DashboardFrame is fed BOTH groups so the visual
+  // order is: WelcomeBanner → QuickActions → metric tiles → primary.
+  const kpisAndActions = (
+    <div className="space-y-5">
+      <QuickActions actions={QUICK_ACTIONS} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {STATS.map((s) => (
+          <StatCard key={s.label} {...s} />
+        ))}
+      </div>
     </div>
   )
 
@@ -221,7 +230,7 @@ export default function Home() {
       <DashboardFrame
         title={t("dashboard:welcome", { name: firstName })}
         subtitle={t("dashboard:homeSubtitle")}
-        kpis={statsKpi}
+        kpis={kpisAndActions}
         primary={primary}
       />
     </UserLayout>
