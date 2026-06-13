@@ -24,6 +24,7 @@ import {
   useDownloadDocumentV2,
   useDeleteDocumentV2,
   useBulkDeleteDocumentsV2,
+  useMarkDocumentAsPrism,
   useSearchDocumentsV2,
 } from "@/hooks/documents/useDocuments";
 
@@ -90,6 +91,7 @@ jest.mock("@/hooks/documents/useDocuments", () => ({
   useDownloadDocumentV2: jest.fn(),
   useDeleteDocumentV2: jest.fn(),
   useBulkDeleteDocumentsV2: jest.fn(),
+  useMarkDocumentAsPrism: jest.fn(),
   useSearchDocumentsV2: jest.fn(),
 }));
 
@@ -97,6 +99,7 @@ const mockUseDocuments = useDocuments as jest.MockedFunction<typeof useDocuments
 const mockUseDownloadDocumentV2 = useDownloadDocumentV2 as jest.MockedFunction<typeof useDownloadDocumentV2>;
 const mockUseDeleteDocumentV2 = useDeleteDocumentV2 as jest.MockedFunction<typeof useDeleteDocumentV2>;
 const mockUseBulkDeleteDocumentsV2 = useBulkDeleteDocumentsV2 as jest.MockedFunction<typeof useBulkDeleteDocumentsV2>;
+const mockUseMarkDocumentAsPrism = useMarkDocumentAsPrism as jest.MockedFunction<typeof useMarkDocumentAsPrism>;
 const mockUseSearchDocumentsV2 = useSearchDocumentsV2 as jest.MockedFunction<typeof useSearchDocumentsV2>;
 
 /* ---- Helpers ---- */
@@ -132,6 +135,7 @@ describe("Documents Page", () => {
     mockUseDownloadDocumentV2.mockReturnValue({ mutateAsync: jest.fn() } as any);
     mockUseDeleteDocumentV2.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as any);
     mockUseBulkDeleteDocumentsV2.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as any);
+    mockUseMarkDocumentAsPrism.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as any);
     mockUseSearchDocumentsV2.mockReturnValue({ data: undefined, mutate: jest.fn() } as any);
   });
 
@@ -205,5 +209,44 @@ describe("Documents Page", () => {
     render(<Documents />, { wrapper: createWrapper() });
     expect(screen.getByText("PDF")).toBeInTheDocument();
     expect(screen.getByText("CSV")).toBeInTheDocument();
+  });
+
+  it("shows a 'Mark as my PRISM report' button on each non-PRISM row", () => {
+    render(<Documents />, { wrapper: createWrapper() });
+    const markButtons = screen.getAllByLabelText("Mark as my PRISM report");
+    expect(markButtons).toHaveLength(2);
+  });
+
+  it("calls useMarkDocumentAsPrism.mutateAsync when the star is clicked", () => {
+    const mutateAsync = jest.fn().mockResolvedValue({ id: "d1", doc_kind: "prism" });
+    mockUseMarkDocumentAsPrism.mockReturnValue({ mutateAsync, isPending: false } as any);
+
+    render(<Documents />, { wrapper: createWrapper() });
+    const markButtons = screen.getAllByLabelText("Mark as my PRISM report");
+    fireEvent.click(markButtons[0]);
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mutateAsync).toHaveBeenCalledWith("d1");
+  });
+
+  it("renders a filled star indicator instead of a button on rows already tagged 'prism'", () => {
+    mockUseDocuments.mockReturnValue({
+      data: {
+        documents: [
+          { id: "p1", filename: "WAB 2nd PRISM Rpt.csv", doc_kind: "prism", created_at: NOW.toISOString() },
+          { id: "d1", filename: "notes.pdf", doc_kind: "pdf", created_at: NOW.toISOString() },
+        ],
+        total: 2,
+      },
+      isLoading: false,
+      isFetching: false,
+    } as any);
+
+    render(<Documents />, { wrapper: createWrapper() });
+    // Only the non-PRISM row gets the actionable button
+    const markButtons = screen.getAllByLabelText("Mark as my PRISM report");
+    expect(markButtons).toHaveLength(1);
+    // The PRISM row has the read-only indicator
+    expect(screen.getByLabelText("Marked as my PRISM report")).toBeInTheDocument();
   });
 });
