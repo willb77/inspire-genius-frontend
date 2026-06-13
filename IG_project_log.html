@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1243</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1244</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,32 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+        <h3>[2026-06-13 16:25 EDT] — Chat window UI reimagine — 4 clickable wireframe concepts</h3>
+        <p>Static no-build HTML wireframes responding to the "reimagine the chat window" prompt (source: <code>Chat window UI reimagine.pdf</code>). The current Meridian chat stacks 5 horizontal chrome bands above the conversation (workspace header → Meridian-pill row → tab strip → metadata strip → composer), with Sources / Rate / Observability as easy-to-miss inline disclosure links. Four distinct directions:</p>
+        <ul>
+          <li><strong>Concept A — Focused Canvas</strong>: collapse all chrome into one command bar + thin icon rail. Sources/Rate/Observability live in a single right-side Trace drawer. Biggest conversation real estate.</li>
+          <li><strong>Concept B — Workbench</strong>: three-column layout. Persistent right-side Context panel with tabs (Doc, Sources, Session, Agents). Nothing modal-switches — power-user feel.</li>
+          <li><strong>Concept C — Threaded</strong>: Linear-style single column. Each Meridian response carries a slim per-message metadata strip (routed agents, sources, latency, confidence) with inline expand. No tabs, no second header.</li>
+          <li><strong>Concept D — Agent Dashboard</strong>: chat as one card among many. Active-agents strip at top, large chat card, suggested-next + documents-in-context + recent-sessions side cards. Best when chat is one of several activities.</li>
+        </ul>
+        <h4>Clickable behaviors wired in each concept</h4>
+        <ul>
+          <li><strong>A</strong>: Docs/History popovers, Trace drawer (Sources/Observability/Rate tabs), composer focus state</li>
+          <li><strong>B</strong>: 4-tab Context panel switcher driven by message metadata clicks</li>
+          <li><strong>C</strong>: per-message inline expand panels for Sources + Confidence</li>
+          <li><strong>D</strong>: Active-agent pill selector, suggested-next prompts</li>
+        </ul>
+        <h4>Files</h4>
+        <ul>
+          <li><code>docs/wireframes/chat-window-reimagine/index.html</code> — concept selector landing page</li>
+          <li><code>docs/wireframes/chat-window-reimagine/concept-a-focused.html</code></li>
+          <li><code>docs/wireframes/chat-window-reimagine/concept-b-workbench.html</code></li>
+          <li><code>docs/wireframes/chat-window-reimagine/concept-c-threaded.html</code></li>
+          <li><code>docs/wireframes/chat-window-reimagine/concept-d-dashboard.html</code></li>
+          <li>Mirrored to <code>inspire-genius-frontend/public/wireframes/chat-window-reimagine/</code> (5 files) so they're reachable at <code>/wireframes/chat-window-reimagine/index.html</code> when the dev server is up.</li>
+        </ul>
+        <p>Each file is self-contained — Tailwind via CDN, no build step, opens directly in any browser. No service connections, review-only.</p>
 
         <h3>[2026-06-12 23:55 EDT] — PR #409 merged + Mark-as-My-PRISM follow-up PRs (#411, FE #136)</h3>
         <p>Closes the PRISM-auto-attach saga that started this morning (see the [22:30 EDT] entry below).</p>
@@ -2953,6 +2979,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-06-13 16:25 EDT — Prompt #1244 [/full-go: create clickable wireframes to reimagine this UI — Chat window UI reimagine.pdf]</div>
+          <div class="prompt-text">Read source PDF (single page screenshot of current Meridian chat showing the 5 stacked horizontal chrome bands above the conversation: workspace header → Meridian+Aura pill row → tab strip → metadata strip → composer, with Sources/Rate/Observability as easy-to-miss inline disclosure links). Built four distinct clickable wireframe concepts as standalone HTML files (Tailwind via CDN, no build step, opens directly in any browser): (A) Focused Canvas — collapses all chrome into one command bar + thin icon rail, Sources/Rate/Observability merge into a single right-side Trace drawer, biggest conversation real estate; (B) Workbench — three-column layout with persistent right-side Context panel and 4 tabs (Doc/Sources/Session/Agents) driven by clicks on per-message metadata; (C) Threaded — Linear-style single column with per-message agent-avatar strip + slim metadata strip + inline expand panels for Sources and Confidence; (D) Agent Dashboard — chat as one card among many, with active-agents strip at top, large chat card, plus Suggested-Next + Documents-in-Context + Recent-Sessions side cards. Wired clickable behaviors: rail-item highlighting, popovers (Docs/History in A), drawer with 3 tabs (A), 4-tab context panel switcher (B), inline expand panels (C), agent-pill selector + suggested-next prompts (D). Index landing page at docs/wireframes/chat-window-reimagine/index.html provides a thumbnail-card concept selector. All five files mirrored to inspire-genius-frontend/public/wireframes/chat-window-reimagine/ so they're reachable at /wireframes/chat-window-reimagine/index.html when Vite is running. Logged to change_log.md + IG_project_log.html, synced to all 5 copy locations. No service connections — review-only surfaces.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-06-12 23:55 EDT — Prompt #1243 [/full-go auto-mode: strip debug logs from #409 + open Mark-as-my-PRISM follow-up PR + log everything + tag staging-b once merged]</div>
           <div class="prompt-text">Three deliverables in one /full-go run. (1) PR #409 strip-debug — discovered the debug logger.warning lines were never committed to the branch (HEAD already clean; the diff existed only in working tree from yesterday's hot-patch session). All CI checks SUCCESS, mergeStateStatus=CLEAN, mergeable, squash-merged to development as fast-forward c612e02. (2) Backend PR #411 — added PATCH /v1/documents/{id} to document-service with DocumentPatchRequest schema, update_document_kind() service fn (allowlist {'prism','general'} + caller-ownership guard for coach-coachee regression), @router.patch route returning ApiResponse[DocumentOut], 6 pytest cases (success, 400 unsupported kind, 400 empty body, 403 not owner, 404 missing, 401 no-auth). First commit landed on a sibling terminal's fix/agent-engine-anthropic-env-name branch (another terminal silently switched the working tree between git checkout development and git commit — exactly the failure mode in feedback_cross_terminal_main_repo_isolation.md from 2026-05-29). Recovery: cherry-pick to /tmp/feat-mark-prism-wt off origin/development, push, open PR; reset --hard the polluted local branch (no force-push; origin untouched). (3) Frontend PR #136 — Home tile + Documents button. Home page restructured to render quick action tiles ABOVE metric tiles by stacking both groups inside DashboardFrame's kpis slot (zero touch to DashboardFrame). New rose "Mark as My PRISM Rpt" tile (Star icon) routes to /documents. Documents page gets per-row ⭐ button calling useMarkDocumentAsPrism (PATCH endpoint), filled ⭐ on already-tagged rows so users see which file Meridian auto-attaches. Service patchDocument() + hook useMarkDocumentAsPrism() emitting document_marked_as_prism audit event. 3 new Documents.test.tsx cases; full suite 3127/3127 green; npm run build clean. Pushed via /tmp/feat-mark-prism-fe-wt worktree (same isolation pattern). Frontend PR #136 + backend PR #411 opened, both targeting development. Logged everything to change_log.md + IG_project_log.html (changelog panel block + new prompt entry, badge bumped 1242→1244). Awaiting CI + merge on #411 + #136 before tagging release-stable-2026-06-12-mark-as-my-prism for staging-b promote.</div>

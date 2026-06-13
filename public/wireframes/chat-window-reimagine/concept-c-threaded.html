@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Concept C — Threaded · Meridian Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif; }
+    .ig-grad { background: linear-gradient(135deg, #6D5DF6 0%, #127A8A 100%); }
+    .rail-item { transition: background .15s ease, color .15s ease; }
+    .rail-item:hover { background: #1f2937; color: #fff; }
+    .rail-item.active { background: #9a3412; color: #fff; }
+    .expand-panel { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+    .expand-panel.open { max-height: 500px; }
+    .arrow { transition: transform .2s ease; }
+    .arrow.open { transform: rotate(90deg); }
+    .pulse-dot { animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .scroll-area::-webkit-scrollbar { width: 6px; }
+    .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-stone-50 text-slate-900 h-screen overflow-hidden">
+  <div class="flex h-full">
+    <aside class="w-14 bg-slate-900 text-slate-400 flex flex-col items-center py-3 shrink-0">
+      <div class="w-9 h-9 rounded-lg ig-grad flex items-center justify-center text-white font-bold mb-4">M</div>
+      <button class="rail-item active w-10 h-10 rounded-lg flex items-center justify-center mb-1" title="Chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+      <button class="rail-item w-10 h-10 rounded-lg flex items-center justify-center mb-1" title="Home" onclick="setActive(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg></button>
+      <button class="rail-item w-10 h-10 rounded-lg flex items-center justify-center mb-1" title="Documents" onclick="setActive(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></button>
+      <button class="rail-item w-10 h-10 rounded-lg flex items-center justify-center mb-1" title="Analytics" onclick="setActive(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></button>
+      <div class="mt-auto">
+        <button class="w-9 h-9 rounded-full bg-amber-600 text-white text-sm font-semibold flex items-center justify-center" title="willb77">W</button>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- minimal top bar -->
+      <header class="px-6 py-3 flex items-center gap-3 shrink-0 bg-stone-50 border-b border-stone-200">
+        <button class="text-slate-400 hover:text-slate-700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="text-sm font-semibold text-slate-900">Rachel Grance partnership analysis</div>
+        <div class="text-[11px] text-slate-500 ml-1">· 8 turns · 14 min</div>
+        <div class="ml-auto flex items-center gap-2 text-[11px]">
+          <span class="flex items-center gap-1 text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>voice ready</span>
+          <button class="text-slate-500 hover:text-slate-900 px-2 py-1 rounded hover:bg-stone-100">History (49)</button>
+          <button class="text-slate-500 hover:text-slate-900 px-2 py-1 rounded hover:bg-stone-100">Export</button>
+          <button class="text-slate-500 hover:text-slate-900 px-2 py-1 rounded hover:bg-stone-100">⋯</button>
+        </div>
+      </header>
+
+      <!-- conversation as a single thread -->
+      <main class="flex-1 overflow-y-auto scroll-area">
+        <div class="max-w-2xl mx-auto px-6 py-8 space-y-8">
+
+          <!-- earlier user prompt (collapsed reminder) -->
+          <button class="w-full text-left text-xs text-slate-400 hover:text-slate-700 flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+            5 earlier turns · expand
+          </button>
+
+          <!-- meridian response -->
+          <article class="msg">
+            <header class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg ig-grad flex items-center justify-center text-white text-[10px] font-bold">M</div>
+              <span class="text-sm font-semibold text-slate-900">Meridian</span>
+              <span class="text-[11px] text-slate-400">· 13 Jun, 03:49 PM</span>
+            </header>
+
+            <div class="mt-2 pl-9 text-sm text-slate-700 leading-relaxed space-y-2">
+              <p>Your innovation strength + her finishing strength = complete product development cycle.</p>
+              <p><span class="font-semibold">Revenue Potential:</span> $200K–$2M+ annually depending on scale and specialization. This combination of your complementary behavioral strengths with highly relevant domain expertise positions you exceptionally well for healthcare technology entrepreneurship.</p>
+            </div>
+
+            <!-- agent strip + metadata -->
+            <div class="mt-3 pl-9 flex items-center gap-3 flex-wrap">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Routed</span>
+                <div class="flex -space-x-1">
+                  <span class="w-5 h-5 rounded-full bg-violet-100 border-2 border-stone-50 text-violet-700 text-[9px] font-bold flex items-center justify-center" title="Aura">A</span>
+                  <span class="w-5 h-5 rounded-full bg-amber-100 border-2 border-stone-50 text-amber-700 text-[9px] font-bold flex items-center justify-center" title="Forge">F</span>
+                  <span class="w-5 h-5 rounded-full bg-teal-100 border-2 border-stone-50 text-teal-700 text-[9px] font-bold flex items-center justify-center" title="Beacon">B</span>
+                </div>
+              </div>
+              <button onclick="togglePanel('p1-sources', this)" class="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                <svg class="arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                1 source
+              </button>
+              <span class="text-[11px] text-slate-400">2.4s</span>
+              <button onclick="togglePanel('p1-confidence', this)" class="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                high confidence
+              </button>
+              <div class="ml-auto flex items-center gap-1 text-[11px] text-slate-400">
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">Copy</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">Speak</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">👍</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">👎</button>
+              </div>
+            </div>
+
+            <!-- inline expand: sources -->
+            <div id="p1-sources" class="expand-panel pl-9 mt-2">
+              <div class="p-3 rounded-lg bg-white border border-stone-200">
+                <div class="flex items-center gap-2 text-[11px]">
+                  <span class="w-5 h-5 rounded bg-violet-100 text-violet-700 text-[9px] font-bold flex items-center justify-center">P3</span>
+                  <span class="font-semibold text-slate-900">Rachel Grance — PRISM.pdf · ch.3</span>
+                  <span class="ml-auto text-emerald-600 font-semibold">0.91</span>
+                </div>
+                <p class="mt-2 italic text-xs text-slate-600 leading-relaxed">"…innovation cluster: ideation, prototyping. Doctoral nursing background brings rigor and finishing strength to product validation cycles…"</p>
+              </div>
+            </div>
+
+            <!-- inline expand: confidence -->
+            <div id="p1-confidence" class="expand-panel pl-9 mt-2">
+              <div class="p-3 rounded-lg bg-white border border-stone-200 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">Source-grounded claims</span>
+                  <span class="font-semibold text-emerald-700">6 / 6</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">Cross-agent agreement</span>
+                  <span class="font-semibold text-emerald-700">Aura ↔ Forge aligned</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">Latency</span>
+                  <span class="font-semibold text-slate-900">2.4s</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- user reply -->
+          <article class="msg">
+            <header class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center">W</div>
+              <span class="text-sm font-semibold text-slate-900">You</span>
+              <span class="text-[11px] text-slate-400">· 03:52 PM</span>
+            </header>
+            <div class="mt-2 pl-9 text-sm text-slate-700">
+              email this last response to rgrancebrown0259@gmail.com
+            </div>
+          </article>
+
+          <!-- meridian reply -->
+          <article class="msg">
+            <header class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg ig-grad flex items-center justify-center text-white text-[10px] font-bold">M</div>
+              <span class="text-sm font-semibold text-slate-900">Meridian</span>
+              <span class="text-[11px] text-slate-400">· 03:52 PM</span>
+            </header>
+            <div class="mt-2 pl-9 text-sm text-slate-700 leading-relaxed space-y-2">
+              <p>I'm unable to send emails directly — I don't have email functionality built into my system. However, you can easily share this analysis with Rachel by:</p>
+              <ol class="list-decimal pl-5 space-y-1">
+                <li>Copy &amp; paste my response into your email client.</li>
+                <li>Use Export to download as PDF, then attach.</li>
+                <li>Screenshot the business analysis blocks.</li>
+              </ol>
+              <p>Would you like me to modify or expand on any part of the analysis before you share it?</p>
+            </div>
+
+            <div class="mt-3 pl-9 flex items-center gap-3 flex-wrap">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Routed</span>
+                <div class="flex -space-x-1">
+                  <span class="w-5 h-5 rounded-full bg-teal-100 border-2 border-stone-50 text-teal-700 text-[9px] font-bold flex items-center justify-center" title="Beacon">B</span>
+                </div>
+              </div>
+              <span class="text-[11px] text-slate-400">1.1s</span>
+              <button onclick="togglePanel('p2-confidence', this)" class="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                capability gap
+              </button>
+              <div class="ml-auto flex items-center gap-1 text-[11px] text-slate-400">
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">Copy</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">Speak</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">👍</button>
+                <button class="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-stone-100">👎</button>
+              </div>
+            </div>
+
+            <div id="p2-confidence" class="expand-panel pl-9 mt-2">
+              <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs">
+                <div class="font-semibold text-amber-900">Meridian declined to email Rachel.</div>
+                <p class="mt-1 text-amber-800">Email send is gated behind a Practitioner permission tier. <a href="#" class="underline">Request access →</a></p>
+              </div>
+            </div>
+          </article>
+
+          <!-- typing/idle indicator -->
+          <div class="flex items-center gap-2 text-[11px] text-slate-400 pl-9">
+            <span class="flex gap-0.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-300 pulse-dot"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-300 pulse-dot" style="animation-delay:.2s"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-300 pulse-dot" style="animation-delay:.4s"></span>
+            </span>
+            Meridian is listening
+          </div>
+        </div>
+      </main>
+
+      <!-- composer -->
+      <div class="bg-stone-50 px-6 py-4 shrink-0 border-t border-stone-200">
+        <div class="max-w-2xl mx-auto">
+          <div class="flex items-end gap-2 bg-white border border-stone-300 rounded-2xl px-3 py-2 focus-within:border-amber-400 transition shadow-sm">
+            <button class="text-slate-400 hover:text-slate-700 p-1" title="Attach"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg></button>
+            <textarea rows="1" placeholder="Reply to Meridian…" class="flex-1 bg-transparent resize-none outline-none text-sm py-1 placeholder:text-slate-400" oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"></textarea>
+            <button class="text-slate-400 hover:text-amber-600 p-1" title="Voice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></button>
+            <button class="bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-3 py-1.5 text-sm font-medium">Send</button>
+          </div>
+          <div class="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+            <span>Suggested:</span>
+            <button class="px-2 py-0.5 rounded-full bg-white border border-stone-300 hover:border-amber-300">Draft an email I can copy</button>
+            <button class="px-2 py-0.5 rounded-full bg-white border border-stone-300 hover:border-amber-300">Export as PDF</button>
+            <button class="px-2 py-0.5 rounded-full bg-white border border-stone-300 hover:border-amber-300">Summarize in 3 bullets</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="index.html" class="fixed bottom-3 left-3 text-[11px] text-slate-400 hover:text-slate-900 bg-white/80 backdrop-blur px-2 py-1 rounded shadow-sm border border-slate-200">← back to concepts</a>
+
+  <script>
+    function setActive(el) {
+      document.querySelectorAll('.rail-item').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function togglePanel(id, trigger) {
+      const p = document.getElementById(id);
+      p.classList.toggle('open');
+      const arrow = trigger.querySelector('.arrow');
+      if (arrow) arrow.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

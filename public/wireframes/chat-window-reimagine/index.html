@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Meridian Chat — UI Reimagine Wireframes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --ig-navy: #0B1F3A;
+      --ig-teal: #127A8A;
+      --ig-gold: #C88B1B;
+      --ig-violet: #6D5DF6;
+    }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif; }
+    .card-thumb { transition: transform .15s ease, box-shadow .15s ease; }
+    .card-thumb:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -8px rgba(11,31,58,0.18); }
+    .ig-grad { background: linear-gradient(135deg, #6D5DF6 0%, #127A8A 100%); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg ig-grad flex items-center justify-center text-white font-bold">M</div>
+        <div>
+          <h1 class="font-semibold text-slate-900 leading-tight">Meridian Chat — UI Reimagine</h1>
+          <p class="text-xs text-slate-500">4 clickable wireframe concepts · 2026-06-13</p>
+        </div>
+      </div>
+      <div class="text-xs text-slate-500">Inspire Genius · Internal review</div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-10">
+    <section class="mb-10">
+      <h2 class="text-lg font-semibold text-slate-900">The problem</h2>
+      <p class="text-slate-600 mt-2 max-w-3xl text-sm leading-relaxed">
+        The current chat surface stacks five horizontal bands above the conversation
+        (workspace header → "Meridian + Aura" pill row → tab strip → response metadata strip → composer),
+        leaving only ~60% of the viewport for the actual conversation. Sources, "Rate this response," and
+        Observability are inline disclosure links that get visually lost. The composer is small relative to
+        the empty space around it. These four concepts each take a different stance on how to fix that.
+      </p>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <a href="concept-a-focused.html" class="card-thumb block bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="aspect-[16/10] bg-slate-100 relative">
+          <div class="absolute inset-0 flex">
+            <div class="w-10 bg-slate-900/90"></div>
+            <div class="flex-1 p-4 flex flex-col justify-end">
+              <div class="space-y-2">
+                <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                <div class="h-3 bg-slate-200 rounded w-4/5"></div>
+                <div class="self-end h-3 bg-violet-200 rounded w-1/2 ml-auto"></div>
+                <div class="h-12 bg-white border border-slate-200 rounded-lg mt-3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded bg-violet-50 text-violet-700 font-medium">Concept A</span>
+            <span class="text-slate-500">Focused Canvas</span>
+          </div>
+          <h3 class="font-semibold text-slate-900 mt-2">Strip the chrome. Just the conversation.</h3>
+          <p class="text-sm text-slate-600 mt-1">Sidebar collapses to a thin icon rail. The Meridian pill row, tab strip, and metadata strip merge into one command bar. Sources / rate / observability live in a single Trace drawer.</p>
+        </div>
+      </a>
+
+      <a href="concept-b-workbench.html" class="card-thumb block bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="aspect-[16/10] bg-slate-100 relative">
+          <div class="absolute inset-0 flex">
+            <div class="w-10 bg-slate-900/90"></div>
+            <div class="flex-1 p-3 flex gap-2">
+              <div class="flex-1 flex flex-col justify-end gap-2">
+                <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                <div class="self-end h-3 bg-violet-200 rounded w-1/2"></div>
+                <div class="h-10 bg-white border border-slate-200 rounded mt-2"></div>
+              </div>
+              <div class="w-24 bg-white border border-slate-200 rounded p-2 space-y-2">
+                <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-2 bg-slate-200 rounded w-2/3"></div>
+                <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-2 bg-slate-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Concept B</span>
+            <span class="text-slate-500">Workbench</span>
+          </div>
+          <h3 class="font-semibold text-slate-900 mt-2">Three columns. Context lives next to the chat.</h3>
+          <p class="text-sm text-slate-600 mt-1">Persistent right-side context panel with tabs for Active Doc, Sources, Session Info, and Agents Consulted. Nothing modal-switches. Power-user workbench feel.</p>
+        </div>
+      </a>
+
+      <a href="concept-c-threaded.html" class="card-thumb block bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="aspect-[16/10] bg-slate-100 relative">
+          <div class="absolute inset-0 flex">
+            <div class="w-10 bg-slate-900/90"></div>
+            <div class="flex-1 p-4 flex flex-col justify-end">
+              <div class="space-y-2 max-w-md mx-auto w-full">
+                <div class="h-3 bg-slate-200 rounded w-full"></div>
+                <div class="h-3 bg-slate-200 rounded w-4/5"></div>
+                <div class="flex gap-1 items-center pt-1">
+                  <div class="h-2 w-12 bg-violet-200 rounded-full"></div>
+                  <div class="h-2 w-10 bg-teal-200 rounded-full"></div>
+                  <div class="h-2 w-8 bg-amber-200 rounded-full"></div>
+                </div>
+                <div class="self-end h-3 bg-violet-200 rounded w-1/2 ml-auto mt-2"></div>
+                <div class="h-12 bg-white border border-slate-200 rounded-lg mt-3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Concept C</span>
+            <span class="text-slate-500">Threaded</span>
+          </div>
+          <h3 class="font-semibold text-slate-900 mt-2">Linear-style. One column, rich per-message metadata.</h3>
+          <p class="text-sm text-slate-600 mt-1">Each Meridian response carries a slim strip: routed agents, sources count, latency, confidence. Click to expand inline. No tabs, no second header.</p>
+        </div>
+      </a>
+
+      <a href="concept-d-dashboard.html" class="card-thumb block bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="aspect-[16/10] bg-slate-100 relative">
+          <div class="absolute inset-0 flex">
+            <div class="w-10 bg-slate-900/90"></div>
+            <div class="flex-1 p-3 grid grid-cols-3 gap-2">
+              <div class="col-span-3 h-8 bg-white border border-slate-200 rounded flex items-center gap-1 px-2">
+                <div class="w-4 h-4 rounded-full bg-violet-300"></div>
+                <div class="w-4 h-4 rounded-full bg-teal-300"></div>
+                <div class="w-4 h-4 rounded-full bg-amber-300"></div>
+              </div>
+              <div class="col-span-2 bg-white border border-slate-200 rounded p-2 space-y-1 flex flex-col justify-end">
+                <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-2 bg-slate-200 rounded w-2/3"></div>
+                <div class="h-6 bg-slate-100 rounded mt-1"></div>
+              </div>
+              <div class="bg-white border border-slate-200 rounded p-2 space-y-1">
+                <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                <div class="h-2 bg-slate-200 rounded w-2/3"></div>
+                <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">Concept D</span>
+            <span class="text-slate-500">Agent Dashboard</span>
+          </div>
+          <h3 class="font-semibold text-slate-900 mt-2">Chat is one card among many.</h3>
+          <p class="text-sm text-slate-600 mt-1">Active agents strip at top, large chat card, plus suggested next questions and recent documents. Best when the chat is one of several active activities.</p>
+        </div>
+      </a>
+    </section>
+
+    <section class="mt-12 text-xs text-slate-500">
+      <p><strong>How to use these:</strong> click any concept above to open the clickable wireframe. Sidebar items, tabs, message metadata, drawers, and composer states are all clickable in each concept. None of these connect to real services — they're static surfaces for review only.</p>
+      <p class="mt-2">Files live at <code>docs/wireframes/chat-window-reimagine/</code> (primary) and <code>inspire-genius-frontend/public/wireframes/chat-window-reimagine/</code> (servable copy via <code>/wireframes/chat-window-reimagine/index.html</code> when the dev server is up).</p>
+    </section>
+  </main>
+</body>
+</html>

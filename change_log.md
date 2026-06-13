@@ -1,3 +1,33 @@
+## [2026-06-13 16:25 EDT] — Chat window UI reimagine — 4 clickable wireframe concepts
+
+Static, no-build HTML wireframes responding to the "reimagine the chat window" prompt (source: `Chat window UI reimagine.pdf`). The current Meridian chat stacks 5 horizontal chrome bands above the conversation (workspace header → Meridian-pill row → tab strip → metadata strip → composer), with Sources / Rate / Observability as easy-to-miss inline disclosure links. Four distinct directions:
+
+| # | Concept | Direction |
+|---|---|---|
+| A | Focused Canvas | Collapse all chrome into one command bar + thin icon rail. Sources/Rate/Observability live in a single right-side Trace drawer. Biggest conversation real estate. |
+| B | Workbench | Three-column layout. Persistent right-side Context panel with tabs (Doc, Sources, Session, Agents). Nothing modal-switches — power-user feel. |
+| C | Threaded | Linear-style single column. Each Meridian response carries a slim per-message metadata strip (routed agents, sources, latency, confidence) with inline expand. No tabs, no second header. |
+| D | Agent Dashboard | Chat as one card among many. Active-agents strip at top, large chat card, suggested-next + documents-in-context + recent-sessions side cards. Best when chat is one of several activities. |
+
+### Clickable behaviors wired in each concept
+- Sidebar items highlight on click
+- Concept A: Docs/History popovers, Trace drawer (Sources/Observability/Rate tabs), composer focus state
+- Concept B: 4-tab Context panel switcher driven by message metadata clicks
+- Concept C: per-message inline expand panels for Sources + Confidence
+- Concept D: Active-agent pill selector, suggested-next prompts
+
+### Files
+- `docs/wireframes/chat-window-reimagine/index.html` — concept selector landing page
+- `docs/wireframes/chat-window-reimagine/concept-a-focused.html`
+- `docs/wireframes/chat-window-reimagine/concept-b-workbench.html`
+- `docs/wireframes/chat-window-reimagine/concept-c-threaded.html`
+- `docs/wireframes/chat-window-reimagine/concept-d-dashboard.html`
+- Mirrored to `inspire-genius-frontend/public/wireframes/chat-window-reimagine/` (5 files) so they're reachable at `/wireframes/chat-window-reimagine/index.html` when the dev server is up
+
+Each file is self-contained — Tailwind via CDN, no build step, opens directly in any browser. No service connections, review-only.
+
+---
+
 ## [2026-06-12 23:55 EDT] — PR #409 merged + Mark-as-My-PRISM follow-up PRs (#411, FE #136)
 
 Closes the PRISM-auto-attach saga that started this morning (see the [22:30 EDT] entry below). Three deliverables ship:
