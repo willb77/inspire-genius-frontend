@@ -13,6 +13,7 @@ import {
   listDocumentsV2,
   getDownloadUrl,
   deleteDocumentV2,
+  patchDocument,
   searchDocuments,
 } from "@/services/documents/documentService";
 import { logAuditEvent } from "@/services/audit/audit.service";
@@ -95,5 +96,33 @@ export function useSearchDocumentsV2() {
   return useMutation({
     mutationKey: ["documents", "search"],
     mutationFn: (req: SearchRequest) => searchDocuments(req),
+  });
+}
+
+/**
+ * Reclassify the caller's document via PATCH /v1/documents/{id}.
+ * Used by "Mark as My PRISM Rpt" so a user can self-tag a CSV they
+ * uploaded as their own PRISM when the auto-attach heuristic
+ * (GET /latest-prism) couldn't find one. Invalidates ["documents"]
+ * so the list re-renders with the new doc_kind and the next
+ * GET /latest-prism call sees the freshly-tagged row.
+ */
+export function useMarkDocumentAsPrism() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["documents", "patch", "mark-as-prism"],
+    mutationFn: (docId: string) => patchDocument(docId, { doc_kind: "prism" }),
+    onSuccess: (_doc, docId) => {
+      // Invalidates both the document list and the latest-prism query
+      // (queryKey: ["documents", "latest-prism"]) so the Meridian chat
+      // badge picks up the new tag.
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      logAuditEvent({
+        action: "document_marked_as_prism",
+        actor_email: "user",
+        target_type: "document",
+        extra_data: { file_id: docId },
+      });
+    },
   });
 }
