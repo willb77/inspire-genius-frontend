@@ -38,7 +38,20 @@ export type PrismSurveyRequestResponse = {
   quest_status_desc: PrismRequestStatusDesc
 }
 
-/** Single row returned by `GET /v1/prism/requests/me` */
+/** Lifecycle states for the G9 ingest pipeline (CSV → assessments). */
+export type PrismIngestStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'done'
+  | 'error'
+  | string
+
+/** Single row returned by `GET /v1/prism/requests/me`.
+ *
+ *  G9 P2 (poll + ingest) extends this row with the new ingest fields
+ *  (`ingest_status`, `completed_at`, `csv_s3_key`, `pdf_s3_key`,
+ *  `requested_at`). All G9 fields are optional + nullable so the type
+ *  stays compatible with pre-G9 backend payloads. */
 export type PrismRequestRow = {
   request_id: string
   action_url_1: string | null
@@ -50,6 +63,19 @@ export type PrismRequestRow = {
   qtype_id: number | null
   created_at: string | null
   updated_at: string | null
+  // ── G9 P2 ingest pipeline fields ────────────────────────
+  /** Lifecycle of the CSV → assessments ingest job. */
+  ingest_status?: PrismIngestStatus | null
+  /** ISO-8601 timestamp when the survey was completed. */
+  completed_at?: string | null
+  /** S3 key of the PRISM CSV (preferred surface for "PRISM ready"). */
+  csv_s3_key?: string | null
+  /** S3 key of the PRISM PDF (optional secondary artifact). */
+  pdf_s3_key?: string | null
+  /** ISO-8601 timestamp when the survey was requested.
+   *  Distinct from `created_at` because P2 stamps this when the
+   *  questionnaire link is opened by the user. */
+  requested_at?: string | null
 }
 
 /** Paginated response from `GET /v1/prism/requests/me` */
