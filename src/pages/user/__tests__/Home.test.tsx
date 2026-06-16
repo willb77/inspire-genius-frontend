@@ -22,6 +22,7 @@ import { MemoryRouter } from "react-router-dom";
 import Home from "../Home";
 import { useAuth } from "@/context/useAuth";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
+import { useLatestPrismStatus } from "@/hooks/prism/usePrismRequest";
 import { useAuditStats } from "@/hooks/audit/useAudit";
 
 /* ---- Mocks ---- */
@@ -86,12 +87,22 @@ jest.mock("@/hooks/prism/usePrismHistory", () => ({
   usePrismHistory: jest.fn(),
 }));
 
+jest.mock("@/hooks/prism/usePrismRequest", () => ({
+  useLatestPrismStatus: jest.fn(),
+}));
+
+jest.mock("@/components/prism/RequestPrismDialog", () => ({
+  __esModule: true,
+  default: () => <div data-testid="request-prism-dialog" />,
+}));
+
 jest.mock("@/hooks/audit/useAudit", () => ({
   useAuditStats: jest.fn(),
 }));
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUsePrismHistory = usePrismHistory as jest.MockedFunction<typeof usePrismHistory>;
+const mockUseLatestPrismStatus = useLatestPrismStatus as jest.MockedFunction<typeof useLatestPrismStatus>;
 const mockUseAuditStats = useAuditStats as jest.MockedFunction<typeof useAuditStats>;
 
 /* ---- Helpers ---- */
@@ -120,6 +131,19 @@ describe("Home Page", () => {
       data: { data: { assessments: [] } },
       isLoading: false,
     } as any);
+
+    // Default: no PRISM request yet (G9 Agent C — Home tile shows "Not started").
+    mockUseLatestPrismStatus.mockReturnValue({
+      latest: null,
+      hasReadyPrism: false,
+      ingest_status: null,
+      completed_at: null,
+      csv_s3_key: null,
+      pdf_s3_key: null,
+      requested_at: null,
+      isLoading: false,
+      isError: false,
+    });
 
     mockUseAuditStats.mockReturnValue({
       data: {
@@ -269,5 +293,24 @@ describe("Home Page", () => {
     render(<Home />, { wrapper: createWrapper() });
     expect(screen.getByText("chat message sent")).toBeInTheDocument();
     expect(screen.getByText("document uploaded")).toBeInTheDocument();
+  });
+
+  // ── G9 Agent C ────────────────────────────────────────────
+  it("T3 (G9): PRISM tile shows 'Last result: ...' when completed_at exists", () => {
+    mockUseLatestPrismStatus.mockReturnValue({
+      latest: null,
+      hasReadyPrism: true,
+      ingest_status: "done",
+      completed_at: "2026-06-12T15:00:00Z",
+      csv_s3_key: "users/x/prism/2026-06-12/PRISM,W,B,2026-06-12.csv",
+      pdf_s3_key: null,
+      requested_at: "2026-06-10T00:00:00Z",
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<Home />, { wrapper: createWrapper() });
+    const statusEl = screen.getByTestId("prism-tile-status");
+    expect(statusEl.textContent ?? "").toMatch(/^Last result: /);
   });
 });

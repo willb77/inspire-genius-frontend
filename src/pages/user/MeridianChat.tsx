@@ -41,6 +41,7 @@ import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
+import PrismBadge from "@/components/chat/PrismBadge";
 import {
   Sparkles,
   Wifi,
@@ -1333,6 +1334,8 @@ export default function MeridianChat() {
               Profile: {loadedFrameworkNames.join(", ")}
             </span>
           )}
+          {/* G9 Agent C — "PRISM ready" chip (hidden until G9 P2 ingest done) */}
+          <PrismBadge />
           {isProcessing && (
             <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
           )}

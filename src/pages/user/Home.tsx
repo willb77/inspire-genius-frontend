@@ -11,6 +11,7 @@ import DataCard from "@/components/dashboard/DataCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
+import { useLatestPrismStatus } from "@/hooks/prism/usePrismRequest";
 import { useAuditStats } from "@/hooks/audit/useAudit";
 import { ASSESSMENT_STATUS } from "@/constants/prism";
 import RequestPrismDialog from "@/components/prism/RequestPrismDialog";
@@ -114,6 +115,21 @@ export default function Home() {
 
   // Real PRISM assessment data
   const { data: prismData, isLoading: prismLoading } = usePrismHistory(user?.id ?? null);
+
+  // G9 Agent C — latest PRISM request status (drives the PRISM tile secondary text).
+  const latestPrism = useLatestPrismStatus();
+  const prismTileSecondary = (() => {
+    if (latestPrism.completed_at) {
+      const d = new Date(latestPrism.completed_at);
+      if (!isNaN(d.getTime())) {
+        return `Last result: ${d.toLocaleDateString()}`;
+      }
+    }
+    if (latestPrism.requested_at && !latestPrism.completed_at) {
+      return "Survey in progress";
+    }
+    return "Not started";
+  })();
   const assessments = (prismData as { data?: { assessments?: Array<{ status: string; initiatedAt?: string | null; completedAt?: string | null }> } } | undefined)?.data?.assessments ?? [];
   const latestAssessment = assessments[0];
   const reportStatus = getReportStatus(latestAssessment?.status, t);
@@ -205,6 +221,13 @@ export default function Home() {
                 <h3 className="text-sm font-semibold">Take PRISM Assessment</h3>
                 <p className="text-xs text-muted-foreground">
                   Start your behavioural survey
+                </p>
+                {/* G9 Agent C — secondary status text */}
+                <p
+                  className="text-xs text-muted-foreground mt-0.5"
+                  data-testid="prism-tile-status"
+                >
+                  {prismTileSecondary}
                 </p>
               </div>
             </div>
