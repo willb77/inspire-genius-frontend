@@ -21,6 +21,8 @@ import { NotificationPreferences } from "@/components/NotificationPreferences";
 import AgentEngineToggle from "@/components/settings/AgentEngineToggle";
 import PrivacySettings from "@/components/settings/PrivacySettings";
 import RetentionSettings from "@/components/settings/RetentionSettings";
+import PersonalDataSettings from "@/components/shared/settings/PersonalDataSettings";
+import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
 
 export default function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -216,6 +218,21 @@ export default function Settings() {
             isUpdatingProfile={!!upsertProfileMutation.isPending}
           />
         </div>
+
+        {/* Personal Data — structured profile facts (G6). User-facing only. */}
+        {role === ROLES.USER && (
+          <div data-tour="settings-personal-data">
+            <PersonalDataSettings />
+          </div>
+        )}
+
+        {/* Other Assessments — prior DISC / Big Five / MBTI entries (G6).
+            Sits between Personal Data and Notifications per Option C plan. */}
+        {role === ROLES.USER && (
+          <div data-tour="settings-other-assessments">
+            <AssessmentsSettings />
+          </div>
+        )}
 
         {/* Notifications Settings Card */}
         {role === ROLES.USER && (

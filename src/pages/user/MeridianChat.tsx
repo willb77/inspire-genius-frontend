@@ -3,7 +3,7 @@ import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -24,7 +24,16 @@ import { secureGetItem, secureSetItem, secureRemoveItem } from "@/lib/secureStor
 import { useListDocuments } from "@/hooks/documents/useListDocuments";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
-import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
+// G6 (PRISM rollout, 2026-06-15): `useLatestPrism` was the pre-platform
+// auto-attach hack — the user's most recent PRISM CSV was attached client-side
+// because the agent-engine had no profile context. With the User Profile
+// Platform (G3 server-side WS preload + G5 profile API), Meridian already
+// has the user's profile by the time the socket opens. We replace the
+// per-document badge with a tiny `ProfileLoadedIndicator` chip driven by
+// `useLoadedFrameworks()` — flag-gated on the backend so on-by-default users
+// just see "Profile: PRISM" when the platform is enabled, and nothing when
+// it isn't.
+import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 import { api } from "@/lib/axios";
 import { getApi as getAgentApi } from "@/lib/agentApi";
 import { exportConversation } from "@/services/agent/agentService";
@@ -93,25 +102,23 @@ const COACH_NAME = "Meridian";
 
 export default function MeridianChat() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
 
-  // T2/T3 — Auto-attach the user's most recent PRISM CSV when the page
-  // is reached via the "Chat with Meridian" Home CTA or sidebar nav
-  // entry. Both entry points pass `state: { autoLoadPrism: true }`.
-  //
-  // - Hook is gated on the flag so we never burn an API call on a
-  //   plain refresh or direct URL hit.
-  // - After mount we clear the history state so a refresh doesn't
-  //   re-trigger the auto-attach.
-  // - 404 (no PRISM CSV yet) falls through silently — useLatestPrism
-  //   short-circuits the retry policy on 404.
-  const autoLoadPrism = (location.state as { autoLoadPrism?: boolean } | null)?.autoLoadPrism === true;
-  const [autoAttachedPrismId, setAutoAttachedPrismId] = useState<string | null>(null);
-  const autoAttachAppliedRef = useRef(false);
-  const latestPrismQuery = useLatestPrism({ enabled: autoLoadPrism });
+  // G6 (PRISM rollout, 2026-06-15): the legacy `autoLoadPrism` history-state
+  // hint used to drive a client-side latest-PRISM auto-attach. That now lives
+  // server-side in the G3 WS preload pipeline (flag:
+  // `AGENT_ENGINE_USER_PROFILE_PLATFORM_ENABLED`, default OFF). The
+  // `useLocation` call + history-state read were removed with the effect.
+  // The chip below reads from `useLoadedFrameworks()` — empty list (and so
+  // a hidden chip) when the flag is OFF or the route 404s.
+  const loadedFrameworksQuery = useLoadedFrameworks();
+  const loadedFrameworkNames = useMemo(() => {
+    const data = loadedFrameworksQuery.data;
+    if (!data || data.length === 0) return [] as string[];
+    return data.map((f) => f.framework);
+  }, [loadedFrameworksQuery.data]);
 
   // Local UI state
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
@@ -450,48 +457,10 @@ export default function MeridianChat() {
     return () => ac.abort();
   }, []);
 
-  // T2/T3 — Apply the latest-PRISM auto-attach when the query resolves.
-  // Fires at most once per page mount (guarded by autoAttachAppliedRef).
-  // Clears the `autoLoadPrism` flag from history state immediately so a
-  // browser refresh doesn't reapply the auto-attach.
-  useEffect(() => {
-    if (!autoLoadPrism) return;
-    if (autoAttachAppliedRef.current) return;
-
-    const data = latestPrismQuery.data;
-    const errored = latestPrismQuery.isError;
-
-    // Wait until the query settles (either data or error).
-    if (!data && !errored) return;
-
-    autoAttachAppliedRef.current = true;
-
-    // Clear the flag from history state so a refresh doesn't re-trigger.
-    try {
-      navigate(location.pathname, { replace: true, state: {} });
-    } catch {
-      // Defensive — never let history manipulation throw out of the effect.
-    }
-
-    if (errored) {
-      // 404 = user has no PRISM CSV yet. Silent fall-through; no toast.
-      return;
-    }
-
-    if (data?.document_id) {
-      setSelectedFileIds((prev) =>
-        prev.includes(data.document_id) ? prev : [...prev, data.document_id],
-      );
-      setAutoAttachedPrismId(data.document_id);
-      toast.success(`Auto-attached: ${data.file_name}`);
-    }
-  }, [
-    autoLoadPrism,
-    latestPrismQuery.data,
-    latestPrismQuery.isError,
-    navigate,
-    location.pathname,
-  ]);
+  // G6: the latest-PRISM client-side auto-attach effect was removed here.
+  // Server-side profile preload (G3) now handles the equivalent ingestion
+  // path. Document attachment is back to being a deliberate user choice
+  // via the Documents dropdown — `autoLoadPrism` history state is ignored.
 
   const onResponse = useCallback(
     (resp: MeridianResponse) => {
@@ -1351,6 +1320,19 @@ export default function MeridianChat() {
               {currentDomain}
             </span>
           )}
+          {/* G6: ProfileLoadedIndicator. Hidden when no frameworks loaded
+              (default state when AGENT_ENGINE_USER_PROFILE_PLATFORM_ENABLED
+              is OFF on the backend). When the flag flips ON in G11/G14
+              users see a tiny "Profile: PRISM, MBTI" chip. */}
+          {loadedFrameworkNames.length > 0 && (
+            <span
+              className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+              data-testid="profile-loaded-indicator"
+              title="Frameworks Meridian can reference in this conversation"
+            >
+              Profile: {loadedFrameworkNames.join(", ")}
+            </span>
+          )}
           {isProcessing && (
             <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
           )}
@@ -1372,7 +1354,6 @@ export default function MeridianChat() {
           <DocumentsDropdown
             selectedIds={selectedFileIds}
             onChange={(ids) => setSelectedFileIds(ids)}
-            autoAttachedId={autoAttachedPrismId}
           />
           <HistoryDropdown
             selectedIds={reviewConversationIds}

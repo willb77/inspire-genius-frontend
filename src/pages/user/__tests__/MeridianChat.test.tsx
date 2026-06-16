@@ -168,9 +168,14 @@ jest.mock("@/hooks/documents/useListDocuments", () => ({
   })),
 }));
 
-jest.mock("@/hooks/documents/useLatestPrism", () => ({
-  useLatestPrism: jest.fn(() => ({
-    data: undefined,
+// G6 (PRISM rollout, 2026-06-15): replaced the legacy `useLatestPrism`
+// client-side auto-attach hook with `useLoadedFrameworks()` driving the
+// ProfileLoadedIndicator chip. The hook returns the list of frameworks
+// the agent-engine has preloaded for this user (server-side, via the
+// G3 WS handshake) — empty by default when the platform flag is OFF.
+jest.mock("@/hooks/profile/useProfile", () => ({
+  useLoadedFrameworks: jest.fn(() => ({
+    data: [],
     isError: false,
     error: null,
     isLoading: false,
@@ -257,10 +262,11 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
-import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
-import { toast } from "sonner";
+import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 
-const mockUseLatestPrism = useLatestPrism as jest.MockedFunction<typeof useLatestPrism>;
+const mockUseLoadedFrameworks = useLoadedFrameworks as jest.MockedFunction<
+  typeof useLoadedFrameworks
+>;
 
 /* ---- Helpers ---- */
 
@@ -283,8 +289,8 @@ describe("MeridianChat", () => {
     mockUseAgentEngine.mockReturnValue(true);
     mockLocationState = null;
     capturedDocumentsDropdownProps = {};
-    mockUseLatestPrism.mockReturnValue({
-      data: undefined,
+    mockUseLoadedFrameworks.mockReturnValue({
+      data: [],
       isError: false,
       error: null,
       isLoading: false,
@@ -429,14 +435,23 @@ describe("MeridianChat — text send via async-jobs", () => {
   });
 });
 
-describe("MeridianChat — autoLoadPrism (T2/T3)", () => {
+describe("MeridianChat — ProfileLoadedIndicator (G6, replaces T2/T3 autoLoadPrism)", () => {
+  // G6 (PRISM rollout, 2026-06-15): the legacy T2/T3 autoLoadPrism test
+  // block — which asserted client-side `useLatestPrism` was called with
+  // enabled=true/false and that the latest PRISM CSV was auto-attached
+  // to `selectedFileIds` — was removed when MeridianChat dropped
+  // `useLatestPrism` + the `autoLoadPrism` history-state hint. The
+  // server-side User Profile Platform (G3 WS preload, flag
+  // `AGENT_ENGINE_USER_PROFILE_PLATFORM_ENABLED`) owns profile delivery
+  // now; the page just renders a tiny chip when the agent-engine has
+  // preloaded frameworks for this user.
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAgentEngine.mockReturnValue(true);
     capturedDocumentsDropdownProps = {};
     mockLocationState = null;
-    mockUseLatestPrism.mockReturnValue({
-      data: undefined,
+    mockUseLoadedFrameworks.mockReturnValue({
+      data: [],
       isError: false,
       error: null,
       isLoading: false,
@@ -444,129 +459,46 @@ describe("MeridianChat — autoLoadPrism (T2/T3)", () => {
     } as any);
   });
 
-  it("does NOT call useLatestPrism with enabled=true when autoLoadPrism flag is absent", () => {
-    mockLocationState = null;
+  it("hides the ProfileLoadedIndicator chip when no frameworks are loaded (flag OFF, default)", async () => {
     renderPage();
-    // The hook is always mocked / called, but it must be called with enabled:false.
-    expect(mockUseLatestPrism).toHaveBeenCalled();
-    const call = mockUseLatestPrism.mock.calls[0][0];
-    expect(call?.enabled).toBe(false);
+    // After initial render the chip must be absent — empty list = no chip.
+    await waitFor(() => {
+      expect(screen.queryByTestId("profile-loaded-indicator")).toBeNull();
+    });
   });
 
-  it("auto-attaches the latest PRISM document_id to selectedFileIds when autoLoadPrism=true + 200", async () => {
-    mockLocationState = { autoLoadPrism: true };
-    mockUseLatestPrism.mockReturnValue({
-      data: {
-        document_id: "prism-doc-123",
-        file_name: "prism_results.csv",
-        uploaded_at: "2026-06-01T12:00:00Z",
-      },
+  it("renders 'Profile: PRISM' chip when one framework is loaded (flag ON, single)", async () => {
+    mockUseLoadedFrameworks.mockReturnValue({
+      data: [{ framework: "PRISM", latest_assessed_at: "2026-06-01T12:00:00Z" }],
       isError: false,
       error: null,
       isLoading: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-
     renderPage();
-
-    // The hook should have been invoked with enabled:true via the flag gate.
-    const call = mockUseLatestPrism.mock.calls[0][0];
-    expect(call?.enabled).toBe(true);
-
-    // After mount the auto-attach effect runs and the document_id lands
-    // in DocumentsDropdown's selectedIds.
     await waitFor(() => {
-      expect(
-        (capturedDocumentsDropdownProps.selectedIds as string[]) ?? [],
-      ).toContain("prism-doc-123");
+      const chip = screen.getByTestId("profile-loaded-indicator");
+      expect(chip.textContent).toContain("Profile:");
+      expect(chip.textContent).toContain("PRISM");
     });
-
-    // The dropdown should also receive the auto-attached id so it can
-    // render the "Auto-attached" badge.
-    expect(capturedDocumentsDropdownProps.autoAttachedId).toBe("prism-doc-123");
-
-    // A success toast announces the auto-attach.
-    expect(toast.success).toHaveBeenCalledWith(
-      expect.stringContaining("prism_results.csv"),
-    );
-
-    // The flag is cleared from history state so a refresh doesn't re-trigger.
-    expect(mockNavigate).toHaveBeenCalledWith(
-      "/meridian/chat",
-      expect.objectContaining({ replace: true, state: {} }),
-    );
   });
 
-  it("silently falls through when latest-prism returns 404 (no PRISM uploaded)", async () => {
-    mockLocationState = { autoLoadPrism: true };
-    mockUseLatestPrism.mockReturnValue({
-      data: undefined,
-      isError: true,
-      error: { response: { status: 404 } },
-      isLoading: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-
-    renderPage();
-
-    // Wait for the effect to run (history.replaceState fires).
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(
-        "/meridian/chat",
-        expect.objectContaining({ replace: true, state: {} }),
-      );
-    });
-
-    // selectedFileIds stays empty — no document was auto-attached.
-    expect(
-      (capturedDocumentsDropdownProps.selectedIds as string[]) ?? [],
-    ).toEqual([]);
-    expect(capturedDocumentsDropdownProps.autoAttachedId).toBeNull();
-
-    // No toast — 404 is a normal first-time-user state, not an error.
-    expect(toast.success).not.toHaveBeenCalled();
-    expect(toast.error).not.toHaveBeenCalled();
-  });
-
-  it("does not double-attach when the effect re-runs", async () => {
-    mockLocationState = { autoLoadPrism: true };
-    mockUseLatestPrism.mockReturnValue({
-      data: {
-        document_id: "prism-doc-456",
-        file_name: "prism.csv",
-        uploaded_at: "2026-06-01T12:00:00Z",
-      },
+  it("renders comma-joined names when multiple frameworks are loaded", async () => {
+    mockUseLoadedFrameworks.mockReturnValue({
+      data: [
+        { framework: "PRISM", latest_assessed_at: "2026-06-01T12:00:00Z" },
+        { framework: "MBTI", latest_assessed_at: "2026-06-02T12:00:00Z" },
+      ],
       isError: false,
       error: null,
       isLoading: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-
-    const { rerender } = renderPage();
-
+    renderPage();
     await waitFor(() => {
-      expect(
-        (capturedDocumentsDropdownProps.selectedIds as string[]) ?? [],
-      ).toContain("prism-doc-456");
+      const chip = screen.getByTestId("profile-loaded-indicator");
+      expect(chip.textContent).toContain("PRISM");
+      expect(chip.textContent).toContain("MBTI");
     });
-
-    const initialCount = (
-      capturedDocumentsDropdownProps.selectedIds as string[]
-    ).filter((id) => id === "prism-doc-456").length;
-    expect(initialCount).toBe(1);
-
-    // Force a rerender — the effect must not append the same id again.
-    rerender(
-      <QueryClientProvider client={new QueryClient()}>
-        <MemoryRouter initialEntries={["/meridian/chat"]}>
-          <MeridianChat />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
-
-    const afterCount = (
-      capturedDocumentsDropdownProps.selectedIds as string[]
-    ).filter((id) => id === "prism-doc-456").length;
-    expect(afterCount).toBe(1);
   });
 });
