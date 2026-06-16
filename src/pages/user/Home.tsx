@@ -1,3 +1,4 @@
+import { useState } from "react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePrismHistory } from "@/hooks/prism/usePrismHistory";
 import { useAuditStats } from "@/hooks/audit/useAudit";
 import { ASSESSMENT_STATUS } from "@/constants/prism";
+import RequestPrismDialog from "@/components/prism/RequestPrismDialog";
 import {
   MessageSquare,
   Target,
@@ -24,6 +26,7 @@ import {
   FileCheck,
   CalendarDays,
   Star,
+  Brain,
 } from "lucide-react";
 
 const ACTIVE_STATUSES = new Set([
@@ -52,6 +55,9 @@ export default function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation(["common", "dashboard", "coaching"]);
   const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
+
+  // G8: PRISM survey-request dialog (opened from the new Home tile).
+  const [prismDialogOpen, setPrismDialogOpen] = useState(false);
 
   // Audit stats — real data from GET /v1/audit/stats
   const { data: auditData, isLoading: auditLoading } = useAuditStats();
@@ -120,8 +126,8 @@ export default function Home() {
 
   const primary = (
     <>
-      {/* Behavioral Report Status + Request Survey */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Behavioral Report Status + Request Survey + Take PRISM Assessment (G8) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border border-[#e5e7eb]">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -183,7 +189,44 @@ export default function Home() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* G8: Take PRISM Assessment tile — opens RequestPrismDialog */}
+        <Card
+          className="border border-[#e5e7eb] cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all"
+          data-testid="take-prism-assessment-tile"
+          onClick={() => setPrismDialogOpen(true)}
+        >
+          <CardContent className="p-4 flex flex-col justify-between h-full">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold">Take PRISM Assessment</h3>
+                <p className="text-xs text-muted-foreground">
+                  Start your behavioural survey
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="w-full mt-2"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPrismDialogOpen(true);
+              }}
+            >
+              Take PRISM Assessment
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
+      <RequestPrismDialog
+        open={prismDialogOpen}
+        onOpenChange={setPrismDialogOpen}
+      />
 
       {/* Recent Activity — from audit top actions */}
       <DataCard title={t("dashboard:recentActivity")}>
