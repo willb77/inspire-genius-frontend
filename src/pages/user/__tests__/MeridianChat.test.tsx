@@ -263,7 +263,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
 import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
-import { toast } from "sonner";
 
 const mockUseLoadedFrameworks = useLoadedFrameworks as jest.MockedFunction<
   typeof useLoadedFrameworks
