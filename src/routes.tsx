@@ -38,6 +38,7 @@ const Dashboard = React.lazy(() => import("@/pages/user/Dashboard"));
 const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
+const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
@@ -196,6 +197,7 @@ export const routes: RouteObject[] = [
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
       { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
       { path: "/documents", element: withSuspense(<Documents />) },
+      { path: "/profile", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
       { path: "/help", element: withSuspense(<HelpPage />) },
