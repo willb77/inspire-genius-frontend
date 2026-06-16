@@ -105,4 +105,45 @@ describe("useLatestPrism", () => {
     expect(getLatestPrism).not.toHaveBeenCalled();
     expect(result.current.fetchStatus).toBe("idle");
   });
+
+  // G10 hardening — debug log is gated on localStorage flag.
+  describe("G10: debug logging", () => {
+    let debugSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      debugSpy = jest.spyOn(console, "debug").mockImplementation(() => {});
+      window.localStorage.clear();
+    });
+
+    afterEach(() => {
+      debugSpy.mockRestore();
+      window.localStorage.clear();
+    });
+
+    it("does NOT emit console.debug when debug_prism flag is unset", async () => {
+      (getLatestPrism as jest.Mock).mockResolvedValueOnce(SAMPLE);
+
+      const { result } = renderHook(() => useLatestPrism(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(debugSpy).not.toHaveBeenCalled();
+    });
+
+    it("emits console.debug with the resolved filename when debug_prism=true", async () => {
+      window.localStorage.setItem("debug_prism", "true");
+      (getLatestPrism as jest.Mock).mockResolvedValueOnce(SAMPLE);
+
+      const { result } = renderHook(() => useLatestPrism(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(debugSpy).toHaveBeenCalledWith(
+        "[useLatestPrism] resolved:",
+        SAMPLE.file_name,
+      );
+    });
+  });
 });
