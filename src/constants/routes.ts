@@ -7,6 +7,10 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   COACHES: "/coaches",
   DOCUMENTS: "/documents",
+  PROFILE: "/profile",
+  USER: {
+    PROFILE: "/profile",
+  },
   SETTINGS: "/settings",
   SETTINGS_PRIVACY: "/settings/privacy",
   HELP: "/help",
