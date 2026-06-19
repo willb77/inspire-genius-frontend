@@ -1,3 +1,34 @@
+## [2026-06-19 PM] — Ben Burnette + Jack Sheffield provisioned on dev + staging-b (magic-link, no onboarding, no password)
+
+### Operational — no PRs
+Provisioned 2 external users on both environments via a one-shot script (since the admin-tools-service stack isn't deployed yet). Same logic the admin-tools-service `/add-user` endpoint runs, just orchestrated locally.
+
+**Users:**
+- Ben Burnette · `benjamin.burnette9@gmail.com`
+- Jack Sheffield · `jack.sheffield@alexbrown.com`
+
+**Per env, for each user:**
+1. Cognito `admin_create_user` (`email_verified=true`, `MessageAction=SUPPRESS`, `custom:role=user`).
+2. Aurora INSERT `public.users` (no password, `auth_provider=cognito`, `is_active=true`, `is_email_verified=true`) + `public.user_profiles` (`is_profile_complete=true` so the post-auth onboarding gate auto-skips). Role resolved via `(SELECT id FROM roles WHERE name='user')`. Executed via `ig-{env}-migration-runner` Lambda.
+3. Minted a 7-day HS256 magic-link JWT signed with `inspires-genius-{env}/magic-auth/jwt-secret`.
+4. SES `send_email` with the magic-link URL.
+
+**SES sender per env:**
+- Dev (`568505405842`): `noreply@3pp.com` (3pp.com is DKIM-verified + prod-access in this account).
+- Staging-b (`918349930728`): **dev's SES** with `noreply@3pp.com` — staging-b SES is still sandboxed and 3pp.com isn't DKIM-verified there yet (that's the pending PR #472 admin-tools-stack DNS work). Sender domain matches dev so the recipient sees the same `noreply@3pp.com` regardless of which env's link they're clicking. The JWT is still signed with **staging-b's** HS256 key, so the link target `stable.inspiresgenius.com/magic-verify?token=…` verifies against staging-b's auth-service.
+
+**Cognito sub UUIDs:**
+- Dev — Ben: `34b8a488-f0d1-70c6-b48f-763461e913db` · Jack: `14c8a478-a061-703f-3bc3-2f6edfd4caa4`
+- Staging-b — Ben: `44384478-a041-7020-0abd-0a6ed990b71a` · Jack: `c4f8a468-2031-70c2-ca27-6c7d507d751d`
+
+**Why no onboarding redirect:** `user_profiles.is_profile_complete=true` is the lever the API uses to populate `user.isOnboardingCompleted` on the frontend, which gates `ProtectedRoute.tsx`'s redirect. Frontend PR #146 (env-gated skip) is an extra safety net but isn't required for these 2 users.
+
+**Why no password:** `auth_provider=cognito` + `password=NULL` + `email_verified=true`. Cognito treats them as confirmed; the magic-link is the only valid entry path (until they want to set a password from Settings).
+
+**Idempotency:** the script re-detects existing users by email (`UsernameExistsException` → `admin_get_user`) and re-uses the existing sub. Aurora INSERTs use `ON CONFLICT (email|user_id) DO UPDATE`. SES `send_email` always sends fresh — a re-run delivers a new magic link (the previous one stays valid until its 7-day TTL).
+
+---
+
 ## [2026-06-19] — admin-tools-service: disconnected stop-gap user provisioning + PRISM CSV/PDF upload
 
 ### Added — monorepo PR #472
