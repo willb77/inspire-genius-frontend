@@ -6,6 +6,7 @@ import { HOME_ROUTE_BY_ROLE } from '@/constants/navigation'
 import { isUserRole } from '@/types/roles'
 import { useEffect, useRef, useState } from 'react'
 import { secureRemoveItem } from '@/lib/secureStorage'
+import { shouldSkipOnboarding } from '@/lib/deployEnv'
 import LoadingPage from '@/components/loading-inspires-genius/LoadingCard'
 
 /** All admin-like route prefixes that require role checks */
@@ -69,8 +70,16 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
     return <Navigate to={ROUTES.LOGIN} state={{ from: path }} replace />
   }
 
-  // Enforce onboarding completion for protected areas (except onboarding routes)
-  if (requireAuth && user?.token && user?.isOnboardingCompleted === false && !isOnboardingRoute) {
+  // Enforce onboarding completion for protected areas (except onboarding routes).
+  // Skipped in dev + staging-b per Bill 2026-06-19: admin-provisioned users
+  // arrive fully ready and shouldn't be bounced through the wizard.
+  if (
+    requireAuth
+    && user?.token
+    && user?.isOnboardingCompleted === false
+    && !isOnboardingRoute
+    && !shouldSkipOnboarding()
+  ) {
     return <Navigate to={ROUTES.ONBOARDING.ONE} replace />
   }
 
