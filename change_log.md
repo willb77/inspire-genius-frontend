@@ -1,3 +1,36 @@
+## [2026-06-19] — admin-tools-service: disconnected stop-gap user provisioning + PRISM CSV/PDF upload
+
+### Added — monorepo PR #472
+- New service `services/admin-tools-service/` (FastAPI + Mangum Lambda):
+  - `POST /v1/admin-tools/add-user` (multipart) — single call provisions a Cognito + Aurora user with PRISM CSV upload to S3, PRISM PDF upload to S3, and an outbound SES magic-link.
+  - Shared-secret bearer-token auth (Secrets Manager) — not Cognito JWT, so the tool works even when Cognito is wedged.
+  - Filename parser tolerates `{email}_{date}_prism.csv` + `{fname}_{lname}_{date}_prism.pdf` (ISO / compact / US date formats).
+  - Static UI in `ui/index.html` (vanilla JS, no React build chain).
+  - 16 pytest cases — all green.
+- New CDK stack `infrastructure/cdk/lib/admin-tools-stack.ts` — Lambda (reserved concurrency 25 + 3 CloudWatch alarms per `cdk.md` rules) + API Gateway HTTP API (separate from main `${stackPrefix}-api-gateway`) + S3 + standalone CloudFront distribution + OAC + 3pp.com SES domain identity in staging-b account (DKIM CNAMEs as CfnOutputs to publish in 3pp.com DNS).
+- Wired into `bin/cdk.ts` for dev + staging-b only — prod uses the in-app UserManagement once PRISM rollout completes.
+
+### Changed — monorepo PR #472
+- `infrastructure/cdk/lib/services-stack.ts` — opt-in flag `stagingBSesUses3pp=true` flips staging-b auth-service sender from `noreply@stable.inspiresgenius.com` to `noreply@3pp.com` once DKIM verifies. Default behaviour unchanged.
+
+### Added — frontend PR #146
+- `src/lib/deployEnv.ts` + `shouldSkipOnboarding()` helper. Explicit `VITE_SKIP_ONBOARDING=true|false` wins; implicit fallback skips when `VITE_SENTRY_ENVIRONMENT in {development, staging-b}`. 7 jest tests.
+- `.env.staging-b` — explicit `VITE_SKIP_ONBOARDING=true`.
+
+### Changed — frontend PR #146
+- `src/components/ProtectedRoute.tsx` — gates the post-auth `/onboarding/*` redirect on `shouldSkipOnboarding()`. Production behaviour unchanged.
+
+### Why
+Per Bill 2026-06-19 (`/full-go`): need a disconnected operational tool for super-admin user provisioning with PRISM CSV + PDF upload that survives main-app breakage; staging-b magic links should send via `noreply@3pp.com`; the `/onboarding` wizard should be skipped on dev + staging-b since admin-provisioned users arrive fully ready.
+
+### How to deploy (Bill)
+1. `cd infrastructure/cdk && DISABLE_LOCAL_BUNDLE_STUB=1 npx cdk deploy ig-dev-admin-tools -c env=dev`
+2. Same for `ig-staging-b-admin-tools`. Read the 6 DKIM CNAME CfnOutputs and publish in 3pp.com DNS (HostMonster).
+3. After ~15 min DKIM verification: `cdk deploy ig-staging-b-services -c env=staging-b -c stagingBSesUses3pp=true`
+4. CloudFront URL from output → use the UI.
+
+---
+
 ## [2026-06-17 12:18 EDT] — `/full-go option one and two` — staging-b env-var verified live; ig-dev-user-sync orphan resolved + deployed
 
 ### Verified (Option 1 — staging-b VITE_API_BASE_URL)
