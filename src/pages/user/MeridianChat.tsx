@@ -37,6 +37,7 @@ import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 import { api } from "@/lib/axios";
 import { getApi as getAgentApi } from "@/lib/agentApi";
 import { exportConversation } from "@/services/agent/agentService";
+import { exportTranscriptPdfs, downloadBlob, type TranscriptMeta } from "@/lib/exportTranscript";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
@@ -1150,7 +1151,44 @@ export default function MeridianChat() {
 
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
-      if (!conversationId) return;
+      // Render two branded PDFs client-side from the messages currently
+      // in state — Conversation Log (chronological, faithful) +
+      // Structured Report (Meridian-unified, noise stripped). Falls
+      // back to the legacy backend single-PDF route if the new pipeline
+      // throws (e.g. zero messages loaded in this session). The brand
+      // CSS + skeleton are locked in `lib/exportTranscript/brandCss.ts`.
+      const subject = "Meridian Chat Session";
+      const fromLabel = format(from, "do MMM yy");
+      const toLabel = format(to, "do MMM yy");
+      const userLabel = user?.fullName || user?.name || user?.email || "You";
+      const slug = `meridian-chat-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
+      const meta: TranscriptMeta = {
+        sessionSubject: subject,
+        fromLabel,
+        toLabel,
+        userLabel,
+        slug,
+        assistantDomain: "Coaching",
+      };
+
+      try {
+        const pdfs = await exportTranscriptPdfs({ messages, meta });
+        for (const { fileName, blob } of pdfs) {
+          downloadBlob(fileName, blob);
+        }
+        toast.success("Exported Conversation Log + Structured Report PDFs.");
+        return;
+      } catch (clientErr) {
+        console.warn("Client-side dual-PDF export failed, falling back to backend export.", clientErr);
+      }
+
+      // Legacy single-PDF backend fallback — preserved so the modal
+      // still completes for date ranges that include messages not
+      // currently loaded in state.
+      if (!conversationId) {
+        toast.error("Couldn't export chat — no active conversation.");
+        return;
+      }
       try {
         const resp = (await exportConversation(conversationId, from, to)) as {
           status?: boolean;
@@ -1182,20 +1220,13 @@ export default function MeridianChat() {
         for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        downloadBlob(fileName, blob);
       } catch (e) {
         console.error("Failed to export conversation", e);
         toast.error("Couldn't export chat — please try again.");
       }
     },
-    [conversationId],
+    [conversationId, messages, user],
   );
 
   // ── Page-refresh hydration: in-flight async-jobs ────────────────
