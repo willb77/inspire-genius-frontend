@@ -115,6 +115,20 @@ export async function renameConversation(conversationId: string, title: string) 
   }
 }
 
+/**
+ * @deprecated Since PR willb77/inspire-genius-frontend#147 (Meridian Chat
+ * dual-PDF export), the chat-screen Export button no longer uses this
+ * endpoint. The new flow is:
+ *   1. Try POST /v1/agents/export/transcript (server-side WeasyPrint).
+ *   2. On failure, fall back to client-side jspdf+html2canvas.
+ *   3. As a last resort, fall back to this single-PDF legacy endpoint.
+ *
+ * Retire after one sprint of zero hits in agent-engine logs. Tracking
+ * via the legacy endpoint name in CloudWatch Logs Insights:
+ *   filter @message like /\/v1\/chat\/conversations\/[a-f0-9-]+\/download/
+ *
+ * Do not add new callers.
+ */
 export async function exportConversation(conversationId: string, from: Date, to: Date) {
   const start = format(from, "yyyy-MM-dd");
   const end = format(to, "yyyy-MM-dd");
@@ -129,5 +143,50 @@ export async function exportConversation(conversationId: string, from: Date, to:
       params: { start_date: start, end_date: end, timezone },
     });
     return resp.data as unknown as { status: boolean; file_name: string; mime_type: string; base64_pdf?: string; base64_csv?: string };
+  }
+}
+
+/** Wire shape for POST /v1/agents/export/transcript. */
+export type TranscriptTurnPayload = {
+  role: "user" | "assistant";
+  speaker_raw: string;
+  body: string;
+  timestamp?: string | null;
+  contributing_agents?: string[] | null;
+};
+export type TranscriptMetaPayload = {
+  session_subject: string;
+  from_label: string;
+  to_label: string;
+  user_label: string;
+  slug: string;
+  assistant_domain?: string;
+};
+export type ExportTranscriptServerResponse = {
+  status: boolean;
+  files: Array<{ file_name: string; mime_type: string; base64: string }>;
+};
+
+/**
+ * Server-side dual-PDF export. Calls the agent-engine WeasyPrint renderer
+ * at POST /v1/agents/export/transcript. Sharper text + native @page rules
+ * than the client-side html2canvas fallback, and avoids shipping ~600KB
+ * of PDF deps in the frontend bundle.
+ *
+ * Caller is expected to fall back to the client-side renderer in
+ * `@/lib/exportTranscript` on any non-2xx (503 = backend not yet
+ * upgraded with WeasyPrint; 500 = transient render failure).
+ */
+export async function exportTranscriptViaServer(
+  turns: TranscriptTurnPayload[],
+  meta: TranscriptMetaPayload,
+): Promise<ExportTranscriptServerResponse> {
+  const body = { turns, meta };
+  try {
+    const resp = await agentApi.post(`/v1/agents/export/transcript`, body);
+    return resp.data as ExportTranscriptServerResponse;
+  } catch {
+    const resp = await api.post(`/v1/agents/export/transcript`, body);
+    return resp.data as ExportTranscriptServerResponse;
   }
 }

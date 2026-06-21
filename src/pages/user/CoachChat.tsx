@@ -19,7 +19,18 @@ import { useListDocuments } from "@/hooks/documents/useListDocuments";
 import { useDownloadDocument } from "@/hooks/documents/useDownloadDocument";
 import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { api } from "@/lib/axios";
-import { exportConversation } from "@/services/agent/agentService";
+import {
+  exportConversation,
+  exportTranscriptViaServer,
+  type TranscriptTurnPayload,
+} from "@/services/agent/agentService";
+import {
+  exportTranscriptPdfs,
+  downloadBlob,
+  type TranscriptMeta,
+} from "@/lib/exportTranscript";
+import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 function titleCaseFromSlug(slug: string): string {
@@ -510,11 +521,78 @@ export default function CoachChat() {
   }, [conversationData]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
-    if (!conversationId) return;
+    // Three-tier dual-PDF export — same shape as MeridianChat
+    // (server-side WeasyPrint → client-side jspdf/html2canvas →
+    // legacy single-PDF backend).
+    const subject = `${coachName} Coaching Session`;
+    const fromLabel = format(from, "do MMM yy");
+    const toLabel = format(to, "do MMM yy");
+    const userLabel = user?.fullName || user?.name || user?.email || "You";
+    const slug = `${coachName.toLowerCase().replace(/\s+/g, "-") || "coach"}-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
+    const meta: TranscriptMeta = {
+      sessionSubject: subject,
+      fromLabel,
+      toLabel,
+      userLabel,
+      slug,
+      assistantDomain: "Coaching",
+    };
+
+    // ── Tier 1: server-side WeasyPrint
+    if (messages.length > 0) {
+      try {
+        const turns = parseChatMessages(messages, userLabel);
+        const turnPayload: TranscriptTurnPayload[] = turns.map((t) => ({
+          role: t.role,
+          speaker_raw: t.speakerRaw,
+          body: t.body,
+          timestamp: t.timestamp ?? null,
+          contributing_agents: t.contributingAgents ?? null,
+        }));
+        const resp = await exportTranscriptViaServer(turnPayload, {
+          session_subject: meta.sessionSubject,
+          from_label: meta.fromLabel,
+          to_label: meta.toLabel,
+          user_label: meta.userLabel,
+          slug: meta.slug,
+          assistant_domain: meta.assistantDomain,
+        });
+        if (resp?.status && resp.files?.length) {
+          for (const f of resp.files) {
+            const raw = atob(f.base64);
+            const bytes = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+            const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
+            downloadBlob(f.file_name, blob);
+          }
+          toast.success("Exported Conversation Log + Structured Report PDFs.");
+          return;
+        }
+      } catch (serverErr) {
+        console.warn("Server-side dual-PDF export failed, falling back to client renderer.", serverErr);
+      }
+    }
+
+    // ── Tier 2: client-side jspdf + html2canvas
+    try {
+      const pdfs = await exportTranscriptPdfs({ messages, meta });
+      for (const { fileName, blob } of pdfs) {
+        downloadBlob(fileName, blob);
+      }
+      toast.success("Exported Conversation Log + Structured Report PDFs.");
+      return;
+    } catch (clientErr) {
+      console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
+    }
+
+    // ── Tier 3: legacy single-PDF backend
+    if (!conversationId) {
+      toast.error("Couldn't export chat — no active conversation.");
+      return;
+    }
     try {
       const resp = await exportConversation(conversationId, from, to) as { status?: boolean; data?: { file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string }; file_name?: string; mime_type?: string; base64_pdf?: string; base64_csv?: string };
       if (!resp || !resp.status) return;
-      // API may return data nested in envelope or flat — handle both
       const payload = resp.data ?? resp;
       const base64 = payload.base64_pdf || payload.base64_csv;
       const mime = payload.mime_type || "application/pdf";
@@ -525,18 +603,11 @@ export default function CoachChat() {
       for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(fileName, blob);
     } catch (e) {
       console.error("Failed to export conversation", e);
     }
-  }, [conversationId]);
+  }, [conversationId, messages, user, coachName]);
 
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
