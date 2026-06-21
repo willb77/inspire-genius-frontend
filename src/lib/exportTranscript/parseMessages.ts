@@ -2,15 +2,20 @@ import type { ChatMessage } from "@/types/chat";
 import type { TranscriptTurn } from "./types";
 
 // Patterns that indicate conversational scaffolding inside an assistant
-// turn — stripped from V2 only. We keep the assistant's substantive
-// content intact (§5 rule 1: "noise removed", §10 guardrail: never
-// fabricate or summarize).
+// turn — stripped from V2 only. Tightened in PR #2 to a curated list of
+// scaffolding clauses so a phrase like "Moving on now: focus on three
+// measurable wins." doesn't eat the substantive ", focus on three
+// measurable wins" trailing content (§5 rule 1: "noise removed",
+// §10 guardrail: never fabricate or summarize). Kept in sync with
+// services/agent-engine/app/export/parse_messages.py.
 const NOISE_PATTERNS: RegExp[] = [
-  /\b(?:scoring|noting|reflecting)\s+silently[^.!?]*[.!?]/gi,
-  /\b(?:moving|transitioning)\s+(?:on|to|now)[^.!?]*[.!?]/gi,
-  /\b(?:the\s+floor\s+is\s+yours|take\s+your\s+time)[^.!?]*[.!?]/gi,
-  /\bjust\s+(?:a|one)\s+(?:moment|second)[^.!?]*[.!?]/gi,
-  /\bhold\s+on\s+(?:a|one)\s+(?:moment|second)[^.!?]*[.!?]/gi,
+  /\b(?:scoring|noting|reflecting)\s+silently[.,;:]?/gi,
+  /\bmoving\s+on(?:\s+to\s+(?:the\s+)?next(?:\s+section)?)?[.,;:]?/gi,
+  /\btransitioning\s+(?:now|to\s+the\s+next(?:\s+section)?)[.,;:]?/gi,
+  /\bthe\s+floor\s+is\s+yours[.,;:]?/gi,
+  /\btake\s+your\s+time[.,;:]?/gi,
+  /\bjust\s+(?:a|one)\s+(?:moment|second)[.,;:]?/gi,
+  /\bhold\s+on\s+(?:a|one)\s+(?:moment|second)[.,;:]?/gi,
 ];
 
 // Light typo cleanup of *user* turns only (§4 rule 5, §5 rule 5). The
