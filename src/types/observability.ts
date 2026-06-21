@@ -71,6 +71,22 @@ export type DashboardMetrics = {
   cost_by_model: { model_tier: string; cost: number; count: number }[]
 }
 
+/**
+ * Company-admin dashboard org-wide rollups — Surface 4 (wiring plan §4).
+ *
+ * - `coverage_percent`: % of org users with completed PRISM in last 12 months.
+ *   Currently 0 until the cross-service join is wired.
+ * - `active_today`: distinct users with a response since 00:00 UTC.
+ * - `avg_sessions_per_user`: distinct sessions / distinct users over 30 days.
+ * - `monthly_llm_cost_usd`: sum of estimated_cost_usd over 30 days.
+ */
+export type OrgRollups = {
+  coverage_percent: number
+  active_today: number
+  avg_sessions_per_user: number
+  monthly_llm_cost_usd: number
+}
+
 export type ObservabilityExportFormat = "json" | "csv" | "pdf"
 
 /** Role-filtered fields — determines what each role can see */

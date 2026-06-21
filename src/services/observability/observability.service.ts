@@ -6,6 +6,7 @@ import type {
   SessionObservability,
   DashboardMetrics,
   ObservabilityExportFormat,
+  OrgRollups,
 } from "@/types/observability"
 
 export type GetResponseObservabilityResponse = BaseApiResponse<ResponseObservability>
@@ -67,6 +68,26 @@ export async function getDashboardMetrics(params: { user_id?: string } = {}) {
     { params }
   )
   return data
+}
+
+/**
+ * Fetch company-admin org-wide rollups — Surface 4.
+ *
+ * Backed by `GET /v1/observability/org-rollups` (5-min server-side cache).
+ * 404 → null so the dashboard tiles render their zero/empty state instead
+ * of an error toast (matches the rest of this module's 404 contract).
+ */
+export async function getOrgRollups(params: { org_id?: string } = {}) {
+  try {
+    const { data } = await api.get<OrgRollups>(
+      "/v1/observability/org-rollups",
+      { params }
+    )
+    return data
+  } catch (err) {
+    if (isNotFound(err)) return null
+    throw err
+  }
 }
 
 export async function exportResponse(
