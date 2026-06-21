@@ -36,8 +36,13 @@ import { useDeleteDocument } from "@/hooks/documents/useDeleteDocument";
 import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 import { api } from "@/lib/axios";
 import { getApi as getAgentApi } from "@/lib/agentApi";
-import { exportConversation } from "@/services/agent/agentService";
+import {
+  exportConversation,
+  exportTranscriptViaServer,
+  type TranscriptTurnPayload,
+} from "@/services/agent/agentService";
 import { exportTranscriptPdfs, downloadBlob, type TranscriptMeta } from "@/lib/exportTranscript";
+import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
@@ -1151,12 +1156,16 @@ export default function MeridianChat() {
 
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
-      // Render two branded PDFs client-side from the messages currently
-      // in state — Conversation Log (chronological, faithful) +
-      // Structured Report (Meridian-unified, noise stripped). Falls
-      // back to the legacy backend single-PDF route if the new pipeline
-      // throws (e.g. zero messages loaded in this session). The brand
-      // CSS + skeleton are locked in `lib/exportTranscript/brandCss.ts`.
+      // Three-tier export pipeline (added end-to-end across PR #147 +
+      // the follow-up backend PR):
+      //   1. Server-side WeasyPrint — sharpest text, native @page
+      //      rules. Same locked §7 brand CSS lives in the agent-engine
+      //      Python module so the two paths render identically.
+      //   2. Client-side jspdf+html2canvas fallback when the server
+      //      returns 5xx / network blip (old image still rolling out
+      //      will return 503 — that's expected; client renders).
+      //   3. Legacy single-PDF backend fallback as last resort when
+      //      neither dual-PDF path can run (zero messages in state).
       const subject = "Meridian Chat Session";
       const fromLabel = format(from, "do MMM yy");
       const toLabel = format(to, "do MMM yy");
@@ -1171,6 +1180,42 @@ export default function MeridianChat() {
         assistantDomain: "Coaching",
       };
 
+      // ── Tier 1: server-side WeasyPrint
+      if (messages.length > 0) {
+        try {
+          const turns = parseChatMessages(messages, userLabel);
+          const turnPayload: TranscriptTurnPayload[] = turns.map((t) => ({
+            role: t.role,
+            speaker_raw: t.speakerRaw,
+            body: t.body,
+            timestamp: t.timestamp ?? null,
+            contributing_agents: t.contributingAgents ?? null,
+          }));
+          const resp = await exportTranscriptViaServer(turnPayload, {
+            session_subject: meta.sessionSubject,
+            from_label: meta.fromLabel,
+            to_label: meta.toLabel,
+            user_label: meta.userLabel,
+            slug: meta.slug,
+            assistant_domain: meta.assistantDomain,
+          });
+          if (resp?.status && resp.files?.length) {
+            for (const f of resp.files) {
+              const raw = atob(f.base64);
+              const bytes = new Uint8Array(raw.length);
+              for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+              const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
+              downloadBlob(f.file_name, blob);
+            }
+            toast.success("Exported Conversation Log + Structured Report PDFs.");
+            return;
+          }
+        } catch (serverErr) {
+          console.warn("Server-side dual-PDF export failed, falling back to client renderer.", serverErr);
+        }
+      }
+
+      // ── Tier 2: client-side jspdf + html2canvas
       try {
         const pdfs = await exportTranscriptPdfs({ messages, meta });
         for (const { fileName, blob } of pdfs) {
@@ -1179,12 +1224,10 @@ export default function MeridianChat() {
         toast.success("Exported Conversation Log + Structured Report PDFs.");
         return;
       } catch (clientErr) {
-        console.warn("Client-side dual-PDF export failed, falling back to backend export.", clientErr);
+        console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
       }
 
-      // Legacy single-PDF backend fallback — preserved so the modal
-      // still completes for date ranges that include messages not
-      // currently loaded in state.
+      // ── Tier 3: legacy single-PDF backend
       if (!conversationId) {
         toast.error("Couldn't export chat — no active conversation.");
         return;
