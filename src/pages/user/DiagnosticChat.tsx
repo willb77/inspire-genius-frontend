@@ -33,6 +33,7 @@ import {
   Network,
   Radio,
   Server,
+  SquarePen,
   Trash2,
   Volume2,
   Wifi,
@@ -601,6 +602,22 @@ export default function DiagnosticChat() {
     addTrace("info", "PAGE", "Trace log and chat cleared");
   }, [addTrace]);
 
+  // ── New Chat — full reset + reconnect (server issues new session_id) ──
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setTraceLog([]);
+    setStreamingText("");
+    setCurrentAgent(null);
+    setCurrentDomain(null);
+    setSessionId(null);
+    addTrace("info", "PAGE", "Starting new chat — reconnecting to issue a fresh session");
+    disconnect();
+    // Slight delay so the disconnect's onclose trace lands before the
+    // connect's "Opening WebSocket" trace. Same pattern as the Reconnect
+    // button (line ~690).
+    setTimeout(() => connect(), 50);
+  }, [addTrace, disconnect, connect]);
+
   // ── Render Helpers ──────────────────────────────────────────
 
   const levelIcon = (level: TraceLevel) => {
@@ -686,6 +703,15 @@ export default function DiagnosticChat() {
                 {getAgentVoice(currentAgent)?.name ?? currentAgent}
               </span>
             )}
+            <button
+              onClick={handleNewChat}
+              data-testid="diagnostic-new-chat-button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              title="Start a new chat session"
+            >
+              <SquarePen className="h-3.5 w-3.5" />
+              New Chat
+            </button>
             <button
               onClick={() => { disconnect(); connect(); }}
               className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"

@@ -98,9 +98,10 @@ jest.mock("@/hooks/agents/useAgentConversation", () => ({
   })),
 }));
 
+const mockCreateConvMutate = jest.fn();
 jest.mock("@/hooks/agents/useCreateConversation", () => ({
   useCreateConversation: jest.fn(() => ({
-    mutate: jest.fn(),
+    mutate: mockCreateConvMutate,
     mutateAsync: jest.fn().mockResolvedValue({ data: { conversation: { id: "conv-1" } } }),
     isPending: false,
   })),
@@ -351,6 +352,31 @@ describe("MeridianChat", () => {
     renderPage();
     // Page renders normally regardless of agent engine toggle
     expect(screen.getByTestId("user-layout")).toBeInTheDocument();
+  });
+
+  it("renders the New Chat button next to the dropdowns", () => {
+    renderPage();
+    const btn = screen.getByTestId("meridian-new-chat-button");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent(/new chat/i);
+    expect(btn).not.toBeDisabled();
+  });
+
+  it("clicking New Chat fires createConversation for AGENT_ID 'meridian'", async () => {
+    mockCreateConvMutate.mockClear();
+    renderPage();
+    const btn = screen.getByTestId("meridian-new-chat-button");
+    await act(async () => {
+      btn.click();
+    });
+    // The handler mounts a fresh secureStorage write + createConv mutation
+    // for AGENT_ID="meridian". We only assert the mutation fired with the
+    // right agent — the rest of the cleanup chain (disconnect, audio reset)
+    // is covered indirectly by the existing handleSelectConversation tests.
+    expect(mockCreateConvMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: "meridian" }),
+      expect.any(Object),
+    );
   });
 });
 
