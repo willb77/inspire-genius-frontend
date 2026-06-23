@@ -2,6 +2,7 @@ import UserLayout from "@/layouts/UserLayout";
 import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
+import SixTileRail from "@/components/meridian/SixTileRail";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { ChatMessage, RAGSource } from "@/types/chat";
@@ -1322,6 +1323,20 @@ export default function MeridianChat() {
 
   return (
     <UserLayout>
+      {/* S1 — Surface 1 (Meridian Chat) layout: nav (UserLayout) │ six-tile
+          rail │ main. The standard collapsible left nav is provided by
+          UserLayout → AppShell; SixTileRail adds the wireframe's second
+          content rail (Active / History / Last 5 / Projects / Instructions /
+          Knowledge). Hidden below `lg` so mobile keeps the single column. */}
+      <div className="flex items-start gap-4">
+        <SixTileRail
+          className="hidden lg:block w-72 shrink-0 sticky top-0 max-h-[calc(100vh-1rem)] overflow-y-auto"
+          activeConversationId={selectedId ?? undefined}
+          onSelectConversation={(id) => {
+            void handleSelectConversation(id);
+          }}
+        />
+        <div className="min-w-0 flex-1">
       {/* T8 — Sticky header. Wraps the Meridian label, consulted-agents
           sub-label (T10), dropdowns (T4/T5), and audio/voice controls so
           the controls stay visible as the chat scrolls. `sticky top-0`
@@ -1900,6 +1915,8 @@ export default function MeridianChat() {
             docOnDownload={docOnDownload}
             onReplayMessage={speakText}
           />
+        </div>
+      </div>
         </div>
       </div>
     </UserLayout>
