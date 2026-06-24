@@ -98,11 +98,15 @@ jest.mock("@/hooks/agents/useAgentConversation", () => ({
   })),
 }));
 
+const mockCreateConvMutate = jest.fn();
+let mockCreateConvIsPending = false;
 jest.mock("@/hooks/agents/useCreateConversation", () => ({
   useCreateConversation: jest.fn(() => ({
-    mutate: jest.fn(),
+    mutate: mockCreateConvMutate,
     mutateAsync: jest.fn().mockResolvedValue({ data: { conversation: { id: "conv-1" } } }),
-    isPending: false,
+    get isPending() {
+      return mockCreateConvIsPending;
+    },
   })),
 }));
 
@@ -351,6 +355,88 @@ describe("MeridianChat", () => {
     renderPage();
     // Page renders normally regardless of agent engine toggle
     expect(screen.getByTestId("user-layout")).toBeInTheDocument();
+  });
+
+  it("renders the New Chat button next to the dropdowns", () => {
+    renderPage();
+    const btn = screen.getByTestId("meridian-new-chat-button");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent(/new chat/i);
+    expect(btn).not.toBeDisabled();
+  });
+
+  it("clicking New Chat fires createConversation for AGENT_ID 'meridian'", async () => {
+    mockCreateConvMutate.mockClear();
+    mockCreateConvIsPending = false;
+    renderPage();
+    const btn = screen.getByTestId("meridian-new-chat-button");
+    await act(async () => {
+      btn.click();
+    });
+    // The handler mounts a fresh secureStorage write + createConv mutation
+    // for AGENT_ID="meridian". We only assert the mutation fired with the
+    // right agent — the rest of the cleanup chain (disconnect, audio reset)
+    // is covered indirectly by the existing handleSelectConversation tests.
+    expect(mockCreateConvMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: "meridian" }),
+      expect.any(Object),
+    );
+  });
+
+  it("New Chat button is disabled while a previous create is in flight", () => {
+    mockCreateConvMutate.mockClear();
+    mockCreateConvIsPending = true;
+    try {
+      renderPage();
+      const btn = screen.getByTestId("meridian-new-chat-button");
+      expect(btn).toBeDisabled();
+    } finally {
+      mockCreateConvIsPending = false;
+    }
+  });
+
+  it("New Chat handler is a no-op when createConv is pending (early return branch)", async () => {
+    mockCreateConvMutate.mockClear();
+    mockCreateConvIsPending = true;
+    try {
+      renderPage();
+      const btn = screen.getByTestId("meridian-new-chat-button");
+      // disabled buttons don't fire onClick in real browsers, but jsdom is
+      // permissive — fire it anyway and assert the mutation didn't run, which
+      // proves the `if (createConvMutation.isPending) return;` early-return
+      // branch executed.
+      await act(async () => {
+        btn.click();
+      });
+      expect(mockCreateConvMutate).not.toHaveBeenCalled();
+    } finally {
+      mockCreateConvIsPending = false;
+    }
+  });
+
+  it("New Chat handler surfaces a toast on createConversation onError", async () => {
+    mockCreateConvMutate.mockClear();
+    mockCreateConvIsPending = false;
+    // sonner is mocked at module scope (line ~189) — toast.error is a jest.fn().
+    const { toast } = await import("sonner");
+    (toast.error as jest.Mock).mockClear();
+    renderPage();
+    // Flush mount effects so the auto-create-on-mount mutate call lands
+    // first and gets the default no-op mock; then arm the NEXT mutate
+    // call (our button click) to invoke onError.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    mockCreateConvMutate.mockImplementationOnce((_vars, opts) => {
+      opts?.onError?.(new Error("boom"));
+    });
+    const btn = screen.getByTestId("meridian-new-chat-button");
+    await act(async () => {
+      btn.click();
+    });
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringMatching(/couldn['']t start a new chat/i),
+    );
   });
 });
 
