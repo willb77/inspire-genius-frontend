@@ -50,6 +50,7 @@ import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import PrismBadge from "@/components/chat/PrismBadge";
 import {
   Sparkles,
+  SquarePen,
   Wifi,
   WifiOff,
   Loader2,
@@ -1154,6 +1155,49 @@ export default function MeridianChat() {
     [disconnect, selectedId],
   );
 
+  // "New Chat" header action. Mirrors handleSelectConversation's cleanup,
+  // then calls the same createConv path used on first mount (lines 1083-
+  // 1104). The new conversation_id from the server replaces selectedId +
+  // conversationId + the persisted `conv` storage key. After success we
+  // invalidate the conversations list so HistoryDropdown picks up the new
+  // entry without waiting for staleTime.
+  const handleNewChat = useCallback(async () => {
+    if (createConvMutation.isPending) return;
+    await disconnect();
+    // istanbul ignore next
+    demoAudioServiceRef.current?.resetAudioState();
+    setIsAudioPaused(true);
+    setSearchQuery("");
+    setMessages([]);
+    setAudioPlayerBuffer(null);
+    setAgentAttribution(null);
+    await secureRemoveItem("conv");
+    setSelectedId(undefined);
+    setConversationId(undefined);
+
+    createConvMutation.mutate(
+      { agentId: AGENT_ID },
+      {
+        onSuccess: async (resp: unknown) => {
+          queryClient.invalidateQueries({
+            queryKey: ["agent", "conversation", AGENT_ID],
+            exact: false,
+          });
+          const id = extractSessionId(resp);
+          // istanbul ignore if -- defensive: server always returns an id on 200
+          if (!id) return;
+          setSelectedId(id);
+          setConversationId(id);
+          secureSetItem("conv", { id });
+        },
+        onError: (e) => {
+          console.error("[MeridianChat] New chat creation failed", e);
+          toast.error("Couldn't start a new chat. Please try again.");
+        },
+      },
+    );
+  }, [createConvMutation, disconnect, queryClient]);
+
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
       // Three-tier export pipeline (added end-to-end across PR #147 +
@@ -1428,6 +1472,18 @@ export default function MeridianChat() {
             existing side panels are still mounted inside ChatWindow for
             now (revert path). */}
         <div className="flex items-center gap-2" data-tour="meridian-dropdowns">
+          <button
+            type="button"
+            onClick={() => void handleNewChat()}
+            disabled={createConvMutation.isPending}
+            aria-label="Start a new chat"
+            title="Start a new chat"
+            data-testid="meridian-new-chat-button"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <SquarePen className="size-4" />
+            <span>New Chat</span>
+          </button>
           <DocumentsDropdown
             selectedIds={selectedFileIds}
             onChange={(ids) => setSelectedFileIds(ids)}
