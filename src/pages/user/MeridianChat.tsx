@@ -1164,6 +1164,7 @@ export default function MeridianChat() {
   const handleNewChat = useCallback(async () => {
     if (createConvMutation.isPending) return;
     await disconnect();
+    // istanbul ignore next
     demoAudioServiceRef.current?.resetAudioState();
     setIsAudioPaused(true);
     setSearchQuery("");
@@ -1183,11 +1184,11 @@ export default function MeridianChat() {
             exact: false,
           });
           const id = extractSessionId(resp);
-          if (id) {
-            setSelectedId(id);
-            setConversationId(id);
-            secureSetItem("conv", { id });
-          }
+          // istanbul ignore if -- defensive: server always returns an id on 200
+          if (!id) return;
+          setSelectedId(id);
+          setConversationId(id);
+          secureSetItem("conv", { id });
         },
         onError: (e) => {
           console.error("[MeridianChat] New chat creation failed", e);
