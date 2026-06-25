@@ -10,7 +10,11 @@ import { Upload, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { usePrismHistory } from '@/hooks/prism/usePrismHistory'
 import { usePrismImport } from '@/hooks/prism/usePrismImport'
+import { usePrismInitiate } from '@/hooks/prism/usePrismInitiate'
 import { ASSESSMENT_STATUS } from '@/constants/prism'
+import type { InitiateAssessmentRequest } from '@/types/prism/assessment-types'
+import type { QuestTypeId } from '@/types/prism/api-types'
+import type { InitiateFormValues } from '@/components/prism/PrismInitiateForm'
 
 const ACTIVE_STATUSES: Set<string> = new Set([
   ASSESSMENT_STATUS.INITIATED,
@@ -25,6 +29,7 @@ export default function PrismAssessment() {
   const { user } = useAuth()
   const { data, isLoading } = usePrismHistory(user?.id ?? null)
   const importMutation = usePrismImport()
+  const initiateMutation = usePrismInitiate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
 
@@ -35,6 +40,27 @@ export default function PrismAssessment() {
     }
     // Reset so the same file can be selected again
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handleInitiate(values: InitiateFormValues) {
+    if (!user?.id) return
+    const payload: InitiateAssessmentRequest = {
+      userId: user.id,
+      forename: values.forename,
+      surname: values.surname,
+      email: values.email,
+      gender: values.gender === 'male',
+      organisation: values.organisation,
+      reference: values.reference || undefined,
+      questionnaireTypeId: values.questionnaireTypeId as QuestTypeId,
+      languageId: values.languageId,
+      isGift: values.isGift,
+    }
+    try {
+      await initiateMutation.mutateAsync(payload)
+    } catch {
+      // Error toast is handled by the hook's onError; swallow to avoid unhandled rejection.
+    }
   }
 
   const assessments = data?.data?.assessments ?? []
@@ -93,7 +119,10 @@ export default function PrismAssessment() {
         )}
 
         {/* Request New */}
-        <PrismInitiateForm disabled={!!activeAssessment} />
+        <PrismInitiateForm
+          disabled={!!activeAssessment || initiateMutation.isPending}
+          onSubmit={handleInitiate}
+        />
 
         {/* Report Viewer */}
         {viewingReportId && (
