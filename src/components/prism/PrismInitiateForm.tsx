@@ -55,7 +55,7 @@ const initiateSchema = z.object({
   isGift: z.boolean().default(false),
 })
 
-type InitiateFormValues = z.infer<typeof initiateSchema>
+export type InitiateFormValues = z.infer<typeof initiateSchema>
 
 type PrismInitiateFormProps = {
   /** Disable the form (e.g. when an active assessment exists) */
