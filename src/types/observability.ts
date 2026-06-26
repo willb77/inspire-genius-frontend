@@ -5,6 +5,7 @@ export type ResponseObservability = {
   session_id: string
   user_id: string | null
   agent_name: string
+  contributing_agents?: string[] | null
   domain: string | null
   orchestrator: string | null
   model_id: string | null
@@ -93,14 +94,14 @@ export type ObservabilityExportFormat = "json" | "csv" | "pdf"
 export const OBSERVABILITY_FIELDS_BY_ROLE = {
   "super-admin": "all",
   "company-admin": [
-    "agent_name", "domain", "model_tier", "input_tokens", "output_tokens",
-    "total_tokens", "estimated_cost_usd", "latency_ms", "confidence",
+    "agent_name", "contributing_agents", "domain", "model_tier", "input_tokens", "output_tokens",
+    "total_tokens", "estimated_cost_usd", "latency_ms", "ttft_ms", "confidence",
     "rag_enabled", "rag_chunks_retrieved", "memory_accessed", "tools_called",
     "tool_count", "error_occurred", "error_message",
   ],
   practitioner: [
-    "agent_name", "domain", "model_tier", "confidence", "latency_ms",
-    "rag_enabled", "tools_called",
+    "agent_name", "contributing_agents", "domain", "model_tier", "confidence", "latency_ms",
+    "ttft_ms", "rag_enabled", "tools_called",
   ],
   user: ["agent_name", "confidence"],
 } as const
