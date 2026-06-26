@@ -271,6 +271,7 @@ export default function CoachChat() {
           kind: "processing",
           sender: "assistant",
           time: formatUSTimeSafe(new Date()),
+          ts: Date.now(),
           isProcessing: true,
           type: "processing",
           text: text || undefined,
@@ -282,7 +283,7 @@ export default function CoachChat() {
       // Show processing placeholder (recording started)
       setMessages((prev) => ([
         ...prev.filter((m) => m.kind !== 'processing'),
-        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: formatUSTimeSafe(new Date()), isProcessing: true, type: 'processing' }
+        { id: `msg-${Date.now()}`, kind: 'processing', sender: 'assistant', time: formatUSTimeSafe(new Date()), ts: Date.now(), isProcessing: true, type: 'processing' }
       ]));
       return;
     }
@@ -303,7 +304,7 @@ export default function CoachChat() {
     if (resp.type === "transcript") {
       const text = resp.text ?? "";
       if (!text) return;
-      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: formatUSTimeSafe(new Date()) }]));
+      setMessages((prev) => ([...prev, { id: `msg-${Date.now()}`, kind: "text", sender: "user", text, time: formatUSTimeSafe(new Date()), ts: Date.now() }]));
       lastMessageRef.current = { type: "transcript", text };
       return;
     }
@@ -313,7 +314,7 @@ export default function CoachChat() {
       if (lastMessageRef.current.type !== "response_chunk" || lastMessageRef.current.text !== text) {
         setMessages((prev) => ([
           ...prev.filter((m) => m.kind !== 'processing'),
-          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: formatUSTimeSafe(new Date()) }
+          { id: `msg-${Date.now()}`, kind: "text", sender: "assistant", text, time: formatUSTimeSafe(new Date()), ts: Date.now() }
         ]));
         lastMessageRef.current = { type: "response_chunk", text };
       }
@@ -624,9 +625,16 @@ export default function CoachChat() {
       const sender: "assistant" | "user" = role.toLowerCase() === "assistant" ? "assistant" : "user";
       const created = (m as Record<string, unknown>).sent_at ?? (m as Record<string, unknown>).created_at ?? (m as Record<string, unknown>).timestamp;
       const time = formatUSTimeSafe(created);
+      const createdTs =
+        typeof created === "number"
+          ? created
+          : typeof created === "string"
+            ? Date.parse(created)
+            : NaN;
+      const ts = Number.isNaN(createdTs) ? undefined : createdTs;
       const text = typeof (m as Record<string, unknown>).content === "string" ? ((m as Record<string, unknown>).content as string) :
         typeof (m as Record<string, unknown>).text === "string" ? ((m as Record<string, unknown>).text as string) : "";
-      return { id, kind: "text", sender, text, time };
+      return { id, kind: "text", sender, text, time, ts };
     });
     setMessages(mapped);
 
@@ -744,10 +752,11 @@ export default function CoachChat() {
               setIsAudioPaused(false);
               // Add user message and a processing placeholder
               const timeStr = formatUSTimeSafe(new Date());
+              const tsNow = Date.now();
               setMessages((prev) => ([
                 ...prev.filter((m) => m.kind !== 'processing'),
-                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr },
-                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, isProcessing: true, type: 'processing' },
+                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr, ts: tsNow },
+                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, ts: tsNow, isProcessing: true, type: 'processing' },
               ]));
               sendTextMessage(t);
             }}

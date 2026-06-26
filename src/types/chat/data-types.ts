@@ -33,6 +33,7 @@ export type ChatMessage =
       sender: "assistant" | "user";
       text: string;
       time: string;
+      ts?: number;
       agent?: string;
       domain?: string;
       ragSources?: RAGSource[];
@@ -46,12 +47,14 @@ export type ChatMessage =
       docName: string;
       docKind: DocKind;
       time: string;
+      ts?: number;
     }
   | {
       id: string;
       kind: "processing";
       sender: "assistant";
       time: string;
+      ts?: number;
       // for compatibility with Alex style flags
       isProcessing?: true;
       type?: "processing";

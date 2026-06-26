@@ -74,11 +74,30 @@ export default function ObservabilityPanel({ messageId, className }: Observabili
                 )}
               </div>
 
+              {canSee("contributing_agents") &&
+                data.contributing_agents &&
+                data.contributing_agents.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-xs text-muted-foreground">Agents:</span>
+                    {data.contributing_agents.map((a) => (
+                      <Badge key={a} variant="outline" className="text-xs">
+                        {a}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {canSee("latency_ms") && (
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-muted-foreground" />
                     <span>{data.latency_ms}ms</span>
+                  </div>
+                )}
+                {canSee("ttft_ms") && data.ttft_ms != null && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span>TTFT {data.ttft_ms}ms</span>
                   </div>
                 )}
                 {canSee("model_tier") && (
