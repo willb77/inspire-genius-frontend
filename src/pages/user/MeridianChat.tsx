@@ -375,6 +375,7 @@ export default function MeridianChat() {
               sender: "assistant" as const,
               text: content,
               time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
               agent: agent ?? undefined,
               ragSources: ragSources.length > 0 ? ragSources : undefined,
               contributingAgents,
@@ -414,6 +415,7 @@ export default function MeridianChat() {
             sender: "assistant" as const,
             text: "Sorry, I couldn't reach Meridian. Please try again.",
             time: formatUSTimeSafe(new Date()),
+            ts: Date.now(),
           },
         ]);
         return;
@@ -511,6 +513,7 @@ export default function MeridianChat() {
             sender: "assistant" as const,
             text: "Sorry, I couldn't reach Meridian. Please try again.",
             time: formatUSTimeSafe(new Date()),
+            ts: Date.now(),
           },
         ]);
         return;
@@ -541,6 +544,7 @@ export default function MeridianChat() {
               sender: "assistant" as const,
               text,
               time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
             },
           ];
         });
@@ -1127,13 +1131,20 @@ export default function MeridianChat() {
       const sender: "assistant" | "user" = role.toLowerCase() === "assistant" ? "assistant" : "user";
       const created = m.sent_at ?? m.created_at ?? m.timestamp;
       const time = formatUSTimeSafe(created);
+      const createdTs =
+        typeof created === "number"
+          ? created
+          : typeof created === "string"
+            ? Date.parse(created)
+            : NaN;
+      const ts = Number.isNaN(createdTs) ? undefined : createdTs;
       const text =
         typeof m.content === "string"
           ? (m.content as string)
           : typeof m.text === "string"
             ? (m.text as string)
             : "";
-      return { id, kind: "text", sender, text, time };
+      return { id, kind: "text", sender, text, time, ts };
     });
     setMessages(mapped);
   }, [messagesPages]);
@@ -1337,6 +1348,7 @@ export default function MeridianChat() {
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.kind !== "processing");
           const time = formatUSTimeSafe(new Date());
+          const ts = Date.now();
           const additions: ChatMessage[] = [];
           for (const job of active) {
             additions.push({
@@ -1345,12 +1357,14 @@ export default function MeridianChat() {
               sender: "user" as const,
               text: job.message,
               time,
+              ts,
             });
             additions.push({
               id: `msg-${job.job_id}-pending`,
               kind: "processing" as const,
               sender: "assistant" as const,
               time,
+              ts,
               isProcessing: true,
               type: "processing",
               text: "Meridian is thinking...",
@@ -1641,6 +1655,7 @@ export default function MeridianChat() {
               setAgentAttribution(null);
               stopAudio(); // Clear any previous audio queue
               const timeStr = formatUSTimeSafe(new Date());
+              const tsNow = Date.now();
               setMessages((prev) => [
                 ...prev.filter((m) => m.kind !== "processing"),
                 {
@@ -1649,12 +1664,14 @@ export default function MeridianChat() {
                   sender: "user",
                   text: t,
                   time: timeStr,
+                  ts: tsNow,
                 },
                 {
                   id: `msg-${Date.now()}-assistant`,
                   kind: "processing",
                   sender: "assistant",
                   time: timeStr,
+                  ts: tsNow,
                   isProcessing: true,
                   type: "processing",
                   text: "Meridian is thinking...",
@@ -1747,6 +1764,7 @@ export default function MeridianChat() {
                         sender: "assistant" as const,
                         text: "Sorry, I couldn't reach Meridian. Please try again.",
                         time: formatUSTimeSafe(new Date()),
+                        ts: Date.now(),
                       },
                     ]);
                   });
@@ -1791,11 +1809,12 @@ export default function MeridianChat() {
                 if (!transcript) return;
 
                 const timeStr = formatUSTimeSafe(new Date());
+                const tsNow = Date.now();
                 stopAudio(); // Clear any previous audio queue
                 setMessages((prev) => [
                   ...prev.filter((m) => m.kind !== "processing"),
-                  { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr },
-                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
+                  { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr, ts: tsNow },
+                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, ts: tsNow, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
                 ]);
 
                 // D1-A (2026-05-30, PR α from #316): when voice is enabled
@@ -1931,7 +1950,7 @@ export default function MeridianChat() {
                       data?.metadata?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), agent: data?.agent ?? undefined, ragSources: data?.metadata?.rag_sources?.filter((s) => s.filename) },
+                      { id: restAssistantIdVoice, kind: "text" as const, sender: "assistant" as const, text: responseText, time: formatUSTimeSafe(new Date()), ts: Date.now(), agent: data?.agent ?? undefined, ragSources: data?.metadata?.rag_sources?.filter((s) => s.filename) },
                     ]);
                     if (data?.agent) setAgentAttribution(data.agent);
 
@@ -1956,7 +1975,7 @@ export default function MeridianChat() {
                     console.error("[MeridianChat] Voice chat failed:", err);
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()) },
+                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()), ts: Date.now() },
                     ]);
                   }
                 })();
