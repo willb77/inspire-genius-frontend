@@ -2,6 +2,7 @@ import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatFullTimestamp } from "@/lib/dateFormatters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { agentApi } from "@/lib/agentApi";
@@ -223,7 +224,12 @@ export default function ChatWindowChatTab({
                     />
                   )}
               </div>
-              <div className="text-[11px] text-muted-foreground">{m.time}</div>
+              <div className="flex flex-col items-end">
+                <div className="text-[11px] text-muted-foreground">{formatFullTimestamp(m.ts)}</div>
+                {m.sender === "assistant" && (
+                  <div className="text-[10px] text-muted-foreground/70 font-mono">ID: {m.id}</div>
+                )}
+              </div>
             </div>
             {m.kind === "text" && m.sender === "assistant" && m.agent && (
               <p className="mt-1 text-xs text-muted-foreground">
