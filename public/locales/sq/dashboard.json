@@ -32,6 +32,12 @@
   "thisMonth": "kete muaj",
   "aiRequests": "Kerkesa AI",
   "cost": "kosto",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "Aktiviteti i Fundit",
   "manageCoaches": "Menaxho Trajneret",
   "coachesConfigDescription": "Konfiguroni tonin e zerit, gjinine dhe theksin e cdo trajneri. Keto cilesime zbatohen kudo qe bisedoni me ta."

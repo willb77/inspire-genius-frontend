@@ -32,6 +32,12 @@
   "thisMonth": "هذا الشهر",
   "aiRequests": "طلبات الذكاء الاصطناعي",
   "cost": "التكلفة",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "النشاط الأخير",
   "manageCoaches": "إدارة المدربين",
   "coachesConfigDescription": "قم بتهيئة نبرة الصوت والجنس واللهجة لكل مدرب. تُطبق هذه الإعدادات على جميع محادثاتك معهم."

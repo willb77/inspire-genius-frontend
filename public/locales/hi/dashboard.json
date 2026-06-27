@@ -32,6 +32,12 @@
   "thisMonth": "इस महीने",
   "aiRequests": "AI अनुरोध",
   "cost": "लागत",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "हालिया गतिविधि",
   "manageCoaches": "कोच प्रबंधित करें",
   "coachesConfigDescription": "प्रत्येक कोच की आवाज़ के स्वर, लिंग और उच्चारण को कॉन्फ़िगर करें। ये सेटिंग्स उनसे आपकी सभी चैट पर लागू होती हैं।"
