@@ -32,6 +32,12 @@
   "thisMonth": "this month",
   "aiRequests": "AI Requests",
   "cost": "cost",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "Recent Activity",
   "manageCoaches": "Manage Coaches",
   "coachesConfigDescription": "Configure each coach's voice tone, gender, and accent. These settings apply wherever you chat with them."
