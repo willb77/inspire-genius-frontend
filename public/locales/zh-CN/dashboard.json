@@ -32,6 +32,12 @@
   "thisMonth": "本月",
   "aiRequests": "AI 请求数",
   "cost": "费用",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "近期活动",
   "manageCoaches": "管理教练",
   "coachesConfigDescription": "配置每位教练的语音语调、性别和口音。这些设置适用于您与他们的所有对话。"

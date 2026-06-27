@@ -32,6 +32,12 @@
   "thisMonth": "今月",
   "aiRequests": "AIリクエスト",
   "cost": "コスト",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "最近のアクティビティ",
   "manageCoaches": "コーチを管理",
   "coachesConfigDescription": "各コーチの声のトーン、性別、アクセントを設定します。これらの設定はチャット全般に適用されます。"

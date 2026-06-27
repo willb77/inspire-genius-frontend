@@ -32,6 +32,12 @@
   "thisMonth": "diesen Monat",
   "aiRequests": "KI-Anfragen",
   "cost": "Kosten",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "Neuliche Aktivität",
   "manageCoaches": "Trainer Verwalten",
   "coachesConfigDescription": "Konfigurieren Sie den Sprachton, das Geschlecht und den Akzent für jeden Coach. Diese Einstellungen gelten überall dort, wo Sie mit ihnen chatten."
