@@ -1,9 +1,19 @@
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ExternalLink, ClipboardCopy, CheckCircle2 } from 'lucide-react'
+import {
+  ExternalLink,
+  ClipboardCopy,
+  CheckCircle2,
+  Search,
+  Loader2,
+  UserCheck,
+  UserPlus,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { useCheckExistingCustomer } from '@/hooks/prism/useCheckExistingCustomer'
 import {
   Card,
   CardContent,
@@ -80,6 +90,13 @@ export default function PrismInitiateForm({
   const [submittedPayload, setSubmittedPayload] = useState<Record<string, unknown> | null>(null)
   const [questionnaireUrl, setQuestionnaireUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [customerCheck, setCustomerCheck] = useState<{
+    exists: boolean
+    message?: string
+    actionUrl?: string
+  } | null>(null)
+
+  const checkCustomer = useCheckExistingCustomer()
 
   const form = useForm<InitiateFormValues>({
     resolver: zodResolver(initiateSchema) as Resolver<InitiateFormValues>,
@@ -98,9 +115,15 @@ export default function PrismInitiateForm({
   })
 
   function onSubmit(values: InitiateFormValues) {
-    // Build the full PRISM CreateCandidate-compatible payload
+    // Build the full PRISM CreateCandidate-compatible payload.
+    // The top-level fields here mirror `InitiateAssessmentRequest` exactly
+    // (the shape sent to POST /v1/prism/initiate): gender is converted to a
+    // boolean (true = male) and isGift is passed through (true auto-unlocks
+    // the report). Note: `createUser` is NOT part of InitiateAssessmentRequest
+    // — it only informs the PRISM CreateCandidate mapping below and is not
+    // transmitted as a top-level field.
     const apiPayload = {
-      // IG backend fields
+      // IG backend fields — these match InitiateAssessmentRequest
       userId: 'auto-generated',
       forename: values.forename,
       surname: values.surname,
@@ -126,6 +149,8 @@ export default function PrismInitiateForm({
         Gender: values.gender === 'male',
         LangID: values.languageId,
         QTypeID: values.questionnaireTypeId,
+        // CreateUser is a PRISM CreateCandidate hint only — it is not part of
+        // InitiateAssessmentRequest and is not sent as a top-level field.
         CreateUser: values.createUser,
         IsGift: values.isGift,
         AccID: 0,
@@ -141,6 +166,25 @@ export default function PrismInitiateForm({
     }
 
     onSubmitProp?.(values, apiPayload)
+  }
+
+  async function handleCheckCustomer() {
+    // Validate just the fields the lookup needs (email + questionnaire type).
+    const ok = await form.trigger(['email', 'questionnaireTypeId'])
+    if (!ok) return
+
+    const values = form.getValues()
+    const res = await checkCustomer.mutateAsync({
+      email: values.email,
+      questionnaireTypeId: values.questionnaireTypeId,
+      forename: values.forename || undefined,
+      surname: values.surname || undefined,
+    })
+    setCustomerCheck({
+      exists: res?.exists ?? false,
+      message: res?.response_message,
+      actionUrl: res?.action_url,
+    })
   }
 
   function handleCopyPayload() {
@@ -230,6 +274,72 @@ export default function PrismInitiateForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* ── Check existing customer ── */}
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Already a PRISM customer?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Check by email and questionnaire type — an existing customer
+                    can still request a new report without recreating the account.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckCustomer}
+                  disabled={disabled || checkCustomer.isPending}
+                >
+                  {checkCustomer.isPending ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="mr-1.5 h-4 w-4" />
+                  )}
+                  Check existing customer
+                </Button>
+              </div>
+
+              {customerCheck && (
+                <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
+                  {customerCheck.exists ? (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
+                    >
+                      <UserCheck className="h-3 w-3" />
+                      Existing PRISM customer found
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      <UserPlus className="h-3 w-3" />
+                      No existing record
+                    </Badge>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {customerCheck.message ??
+                      (customerCheck.exists
+                        ? 'You can still request a new report — submit below to create another questionnaire for them.'
+                        : 'A new customer will be created when you submit.')}
+                  </p>
+                  {customerCheck.exists && customerCheck.actionUrl && (
+                    <Button size="sm" variant="ghost" asChild>
+                      <a
+                        href={customerCheck.actionUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open in PRISM
+                        <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
             {/* ── Section: User Details ── */}
             <div className="space-y-1">
               <h3 className="text-sm font-semibold">Candidate Details</h3>

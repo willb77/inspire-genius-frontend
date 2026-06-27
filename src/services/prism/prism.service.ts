@@ -90,6 +90,28 @@ export async function importPrismFile(userId: string, file: File) {
   return resp.data
 }
 
+/**
+ * Check whether a customer already exists in PRISM by email / external ident.
+ * When `exists === true` a new report can still be requested for them without
+ * recreating the account; the backend returns an optional `action_url`.
+ */
+export async function checkExistingCustomer(params: {
+  email?: string
+  externalIdent?: string
+  questionnaireTypeId: number
+  forename?: string
+  surname?: string
+}) {
+  // Backend returns the raw CheckCustomerResponse (NOT a BaseApiResponse
+  // envelope), consistent with the sibling /v1/prism request endpoints.
+  const { data } = await api.post<{
+    exists: boolean
+    action_url?: string
+    response_message?: string
+  }>(`${BASE}/check-customer`, params)
+  return data
+}
+
 /** Submit callback — called when user returns from PRISM questionnaire */
 export async function submitQuestionnaireCallback(assessmentId: string) {
   const resp = await api.post<BaseApiResponse<AssessmentStatusResponse>>(
