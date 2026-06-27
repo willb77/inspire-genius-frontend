@@ -1,6 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import PrismInitiateForm from "../PrismInitiateForm";
 
+/* Mock the check-existing-customer hook so the form renders without a
+   QueryClientProvider (it wraps useMutation under the hood). */
+jest.mock("@/hooks/prism/useCheckExistingCustomer", () => ({
+  useCheckExistingCustomer: () => ({
+    mutateAsync: jest.fn().mockResolvedValue({ data: { exists: false } }),
+    isPending: false,
+  }),
+  checkCustomerKey: ["prism", "check-customer"],
+}));
+
 /* Mock the Select components from shadcn which use Radix and fail in jsdom */
 jest.mock("@/components/ui/select", () => ({
   Select: ({ children }: {
