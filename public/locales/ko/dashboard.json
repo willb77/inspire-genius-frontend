@@ -32,6 +32,12 @@
   "thisMonth": "이번 달",
   "aiRequests": "AI 요청",
   "cost": "비용",
+  "totalActivity": "Total Activity",
+  "activeSessions": "Active Sessions",
+  "aiRequestsToday": "AI Requests Today",
+  "activityThisMonth": "Activity This Month",
+  "usersToday": "users today",
+  "today": "today",
   "recentActivity": "최근 활동",
   "manageCoaches": "코치 관리",
   "coachesConfigDescription": "각 코치의 음성 톤, 성별, 억양을 설정하세요. 이 설정은 채팅 전반에 적용됩니다."
