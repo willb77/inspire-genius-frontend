@@ -156,7 +156,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         <SidebarOpenObserver />
         <SidebarSectionHeader className="h-14 px-2 mt-2 flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2 min-w-0 mr-auto">
-            <img src="/inspire-genius-mobile-logo.svg" alt="logo" className="size-8" />
+            <img src="/Icon-Dark.svg" alt="Inspire Genius" className="size-8" />
             <span className="font-semibold tracking-tight truncate group-data-[collapsible=icon]:hidden">inspiresgenius</span>
           </div>
           <SidebarTrigger className="shrink-0" />

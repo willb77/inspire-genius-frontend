@@ -4,9 +4,9 @@ export const Logo = ({className}: {className?: string}) => {
     return (
     <div className="w-full flex items-center gap-2">
     <img
-      src="/images/inspire-genius-logo.jpg"
-      alt="inspires-genius-logo"
-      className={cn("h-16", className)}
+      src="/images/logo-dark.png"
+      alt="Inspire Genius"
+      className={cn("h-16 w-auto", className)}
     />
   </div>
     );
