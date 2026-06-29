@@ -7,6 +7,7 @@ import {
   UserCheck,
   Mail,
   Bot,
+  FileUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +46,8 @@ export type ActionMenuProps<Row = unknown> = {
   onDelete?: (row?: Row) => void;
   showCoaches?: boolean;
   onCoaches?: (row?: Row) => void;
+  showImportPrism?: boolean;
+  onImportPrism?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -67,6 +70,8 @@ export default function ActionMenu<Row = unknown>({
   onDelete,
   showCoaches = false,
   onCoaches,
+  showImportPrism = false,
+  onImportPrism,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -147,6 +152,12 @@ export default function ActionMenu<Row = unknown>({
         {showCoaches && (
           <DropdownMenuItem onClick={() => onCoaches?.(row)}>
             <Bot className="w-4 h-4 mr-2" /> Coaches
+          </DropdownMenuItem>
+        )}
+
+        {showImportPrism && (
+          <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
+            <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> Upload PRISM CSV
           </DropdownMenuItem>
         )}
 

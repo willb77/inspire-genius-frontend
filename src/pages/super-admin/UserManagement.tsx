@@ -34,7 +34,7 @@ import { toast } from "sonner";
 import type { UserRow } from "@/types/super-admin/user-management";
 import LoadingSkeleton from "@/components/shared/LoadingSkeleton";
 import { ROLE_LABELS } from "@/types/roles";
-import { Search, Trash2, UserX, UserCheck, X } from "lucide-react";
+import { Search, Trash2, UserX, UserCheck, X, FileUp } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import PrismIngestDialog, {
+  type PrismIngestTarget,
+} from "@/components/super-admin/user-management/PrismIngestDialog";
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -133,6 +136,15 @@ export default function UserManagement() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkActivateOpen, setBulkActivateOpen] = useState(false);
   const [bulkActivating, setBulkActivating] = useState(false);
+
+  // PRISM CSV ingest (per-user via Action menu, or bulk via selection)
+  const [prismIngestOpen, setPrismIngestOpen] = useState(false);
+  const [prismTargets, setPrismTargets] = useState<PrismIngestTarget[]>([]);
+  const openPrismIngest = useCallback((targets: PrismIngestTarget[]) => {
+    if (targets.length === 0) return;
+    setPrismTargets(targets);
+    setPrismIngestOpen(true);
+  }, []);
 
   // Purge inactive users state
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -515,12 +527,16 @@ export default function UserManagement() {
           showDeactivate={row.status === "Active"}
           showActivate={row.status === "Deactivated"}
           showDelete={true}
+          showImportPrism={true}
           onView={() => openView(row)}
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
           onDeactivate={() => openDeactivate(row)}
           onActivate={() => openActivate(row)}
           onDelete={() => openDelete(row)}
+          onImportPrism={() =>
+            openPrismIngest([{ id: row.id, email: row.email, name: row.name }])
+          }
         />
       ),
     },
@@ -545,6 +561,20 @@ export default function UserManagement() {
               </Button>
               {selectedEmails.size > 0 && (
                 <>
+                  <Button
+                    variant="outline"
+                    className="border-indigo-500 text-indigo-700 hover:bg-indigo-50"
+                    onClick={() =>
+                      openPrismIngest(
+                        rows
+                          .filter((r) => selectedEmails.has(r.email))
+                          .map((r) => ({ id: r.id, email: r.email, name: r.name })),
+                      )
+                    }
+                  >
+                    <FileUp className="size-4" />
+                    Ingest PRISM CSV ({rows.filter((r) => selectedEmails.has(r.email)).length})
+                  </Button>
                   <Button
                     variant="outline"
                     className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
@@ -660,6 +690,13 @@ export default function UserManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* PRISM CSV ingest (per-user or bulk) */}
+      <PrismIngestDialog
+        open={prismIngestOpen}
+        onOpenChange={setPrismIngestOpen}
+        targets={prismTargets}
+      />
 
       {/* Add User Modal */}
       <UserFormModal
