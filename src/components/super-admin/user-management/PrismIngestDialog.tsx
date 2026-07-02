@@ -26,7 +26,7 @@ export type PrismIngestTarget = {
 
 type RowStatus = "idle" | "running" | "done" | "error";
 
-const ACCEPT = ".csv,.pdf,.doc,.docx,.xls,.xlsx";
+const ACCEPT = ".csv";
 
 type Props = {
   open: boolean;
@@ -133,8 +133,8 @@ export default function PrismIngestDialog({ open, onOpenChange, targets }: Props
 
     let ok = 0;
     let failed = 0;
-    // Sequential on purpose: /import-prism is LLM-backed and slow; serial keeps
-    // per-row progress legible and avoids overwhelming the endpoint.
+    // Sequential loop keeps per-row progress legible; the new CSV endpoint
+    // is fast (no LLM) but Aurora writes still benefit from serialization.
     for (let i = 0; i < queued.length; i++) {
       const t = queued[i];
       const file = files[t.id];
@@ -201,9 +201,8 @@ export default function PrismIngestDialog({ open, onOpenChange, targets }: Props
             {bulk ? `Bulk ingest PRISM reports (${targets.length})` : "Upload PRISM report"}
           </DialogTitle>
           <DialogDescription>
-            Parses the report (CSV, PDF, DOCX, XLS/XLSX), extracts the quadrant scores, and attaches
-            them to the user — creates the PRISM record and stores the scores. Existing scores are
-            updated in place.
+            Uploads a legacy PRISM CSV export, parses it server-side, and inserts the assessment
+            plus scores for the user. Re-uploading the same file is a no-op (idempotent per SHA-256).
           </DialogDescription>
         </DialogHeader>
 
