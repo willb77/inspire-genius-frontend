@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -34,6 +35,7 @@ const OnboardingDetailsTwo = React.lazy(() => import("@/pages/onboarding/Onboard
 
 // ── User pages ──────────────────────────────────────────────────────────────
 const Home = React.lazy(() => import("@/pages/user/Home"));
+const HomeV2 = React.lazy(() => import("@/pages/user/HomeV2"));
 const Dashboard = React.lazy(() => import("@/pages/user/Dashboard"));
 const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
@@ -149,6 +151,15 @@ function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
 }
 
+// ── /home surface resolver ──────────────────────────────────────────────────
+// Additive, flag-gated swap: renders the new wireframe dashboard (HomeV2) when
+// the `new_user_surfaces` flag is ON, otherwise the original Home. Both are lazy,
+// so only the selected branch is loaded. The original stays reachable at
+// /home/classic regardless of the flag (permanent rollback path).
+function HomeSurface() {
+  return isNewUserSurfacesEnabled() ? <HomeV2 /> : <Home />;
+}
+
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
@@ -190,7 +201,10 @@ export const routes: RouteObject[] = [
       { path: "/onboarding/wizard", element: withSuspense(<OnboardingWizard />) },
 
       // User pages
-      { path: "/home", element: withSuspense(<Home />) },
+      // /home resolves to HomeV2 or Home via the new_user_surfaces flag.
+      { path: "/home", element: withSuspense(<HomeSurface />) },
+      // Permanent escape hatch — original Home, flag-independent.
+      { path: "/home/classic", element: withSuspense(<Home />) },
       { path: "/dashboard", element: withSuspense(<Dashboard />) },
       { path: "/coaches", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
