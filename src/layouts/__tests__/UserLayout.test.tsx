@@ -101,13 +101,9 @@ describe("UserLayout", () => {
     expect(props.navSections.length).toBeGreaterThanOrEqual(2);
   });
 
-  test("renders AlexFloating when tour is not running", () => {
-    render(<UserLayout><div /></UserLayout>);
-    expect(screen.getByTestId("alex-floating")).toBeInTheDocument();
-  });
-
-  test("does not render AlexFloating when tour is running", () => {
-    mockUseTour.mockReturnValue({ isRunning: true });
+  test("does not render the retired AlexFloating assistant (monolith sunset)", () => {
+    // AlexFloating was retired because its device-id call hit a deprecated
+    // monolith route that 404s + fails CORS. UserLayout must no longer render it.
     render(<UserLayout><div /></UserLayout>);
     expect(screen.queryByTestId("alex-floating")).not.toBeInTheDocument();
   });

@@ -1,0 +1,98 @@
+import { useState, type JSX } from "react"
+import { Clock, Play } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+export interface DashboardVideo {
+  id: string
+  title: string
+  duration?: string
+}
+
+interface WatchVideoCardProps {
+  videos: DashboardVideo[]
+  onSelect?: (video: DashboardVideo) => void
+}
+
+export function WatchVideoCard({
+  videos,
+  onSelect,
+}: WatchVideoCardProps): JSX.Element {
+  const [selectedId, setSelectedId] = useState<string>(videos[0]?.id ?? "")
+
+  const selected =
+    videos.find((video) => video.id === selectedId) ?? videos[0] ?? null
+
+  const handleSelect = (video: DashboardVideo): void => {
+    setSelectedId(video.id)
+    onSelect?.(video)
+  }
+
+  return (
+    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-5 shadow-sm">
+      <h3 className="font-serif text-base text-[#0B1B33]">Watch a Video</h3>
+
+      {selected ? (
+        <>
+          <div className="mt-4 flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#13294B] to-[#3E6B55]">
+            <div className="flex flex-col items-center gap-3 px-4 text-center">
+              <span className="flex size-14 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
+                <Play className="size-7 fill-white text-white" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-serif text-sm text-white">
+                  {selected.title}
+                </p>
+                {selected.duration ? (
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
+                    <Clock className="size-3" />
+                    {selected.duration}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {videos.slice(0, 4).map((video) => {
+              const isActive = video.id === selected.id
+              return (
+                <button
+                  key={video.id}
+                  type="button"
+                  onClick={() => handleSelect(video)}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "group flex flex-col overflow-hidden rounded-xl border border-[rgba(11,27,51,0.10)] bg-white text-left transition",
+                    isActive
+                      ? "ring-2 ring-[#5B8A72]"
+                      : "hover:border-[rgba(91,138,114,0.4)]"
+                  )}
+                >
+                  <div className="relative flex aspect-video w-full items-center justify-center bg-gradient-to-br from-[#13294B] to-[#3E6B55]">
+                    <Play className="size-4 fill-white/90 text-white/90" />
+                  </div>
+                  <div className="min-w-0 p-2">
+                    <p className="truncate text-xs font-medium text-[#0B1B33]">
+                      {video.title}
+                    </p>
+                    {video.duration ? (
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#4b5f80]">
+                        <Clock className="size-3 text-[#7C93B5]" />
+                        {video.duration}
+                      </p>
+                    ) : null}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]">
+          <p className="text-sm text-[#7C93B5]">No videos available yet.</p>
+        </div>
+      )}
+    </div>
+  )
+}

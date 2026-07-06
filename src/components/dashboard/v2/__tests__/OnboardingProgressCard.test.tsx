@@ -1,29 +1,46 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { OnboardingProgressCard } from "../OnboardingProgressCard";
 
 describe("OnboardingProgressCard", () => {
-  it("renders the percentage and default caption", () => {
-    render(<OnboardingProgressCard percent={15} />);
-    expect(screen.getByText("15%")).toBeInTheDocument();
-    expect(
-      screen.getByText("You're just getting started"),
-    ).toBeInTheDocument();
+  const baseProps = {
+    profilePercent: 40,
+    missing: ["Resume", "Bio"],
+    prismStatusLabel: "PRISM · Jun 9, 2026",
+    assessments: [
+      { name: "DiSC", done: true },
+      { name: "Hogan", done: false },
+    ],
+  };
+
+  it("renders the complete-profile label with the percentage", () => {
+    render(<OnboardingProgressCard {...baseProps} />);
+    expect(screen.getByText("Complete profile (40%)")).toBeInTheDocument();
   });
 
-  it("renders a custom caption when provided", () => {
+  it("renders the assessment names", () => {
+    render(<OnboardingProgressCard {...baseProps} />);
+    expect(screen.getByText("DiSC")).toBeInTheDocument();
+    expect(screen.getByText("Hogan")).toBeInTheDocument();
+  });
+
+  it("renders the missing chips and prism status", () => {
+    render(<OnboardingProgressCard {...baseProps} />);
+    expect(screen.getByText("Resume")).toBeInTheDocument();
+    expect(screen.getByText("Bio")).toBeInTheDocument();
+    expect(screen.getByText("PRISM · Jun 9, 2026")).toBeInTheDocument();
+  });
+
+  it("calls onAddAssessment with the name of a not-done assessment", () => {
+    const onAddAssessment = jest.fn();
     render(
-      <OnboardingProgressCard percent={40} caption="You're finding your rhythm" />,
+      <OnboardingProgressCard
+        {...baseProps}
+        onAddAssessment={onAddAssessment}
+      />,
     );
-    expect(screen.getByText("You're finding your rhythm")).toBeInTheDocument();
-  });
-
-  it("clamps percent above 100 to 100%", () => {
-    render(<OnboardingProgressCard percent={140} />);
-    expect(screen.getByText("100%")).toBeInTheDocument();
-  });
-
-  it("clamps negative percent to 0%", () => {
-    render(<OnboardingProgressCard percent={-20} />);
-    expect(screen.getByText("0%")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Add Additional Assessment/i }),
+    );
+    expect(onAddAssessment).toHaveBeenCalledWith("Hogan");
   });
 });
