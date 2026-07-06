@@ -3,8 +3,9 @@ import { ROUTES } from "@/constants/routes";
 import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
-import AlexFloating from "@/components/shared/AlexFloating";
-import { useTour } from "@/context/useTour";
+// AlexFloating retired (monolith sunset): its device-id call hit the deprecated
+// monolith route GET /v1/chat/AlexChat/device-id, which 404s + fails CORS on the
+// API Gateway. The floating Alex assistant is no longer rendered.
 import { useAuth } from "@/context/useAuth";
 import { useAgentEngine } from "@/lib/agentApi";
 
@@ -14,7 +15,6 @@ export type UserLayoutProps = {
 };
 
 export default function UserLayout({ children, className }: UserLayoutProps) {
-  const { isRunning } = useTour();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super-admin";
   const agentEngineOn = useAgentEngine();
@@ -37,7 +37,6 @@ export default function UserLayout({ children, className }: UserLayoutProps) {
       navSections={isSuperAdmin ? superAdminSections : undefined}
       className={className}
       expandOnPath={ROUTES.HOME}
-      renderAfterContent={!isRunning ? <AlexFloating /> : null}
     >
       {children}
     </SidebarScaffold>
