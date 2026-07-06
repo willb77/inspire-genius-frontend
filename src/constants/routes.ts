@@ -4,6 +4,8 @@ export const ROUTES = {
   OTP: "/otp",
   RESET: "/reset-password",
   HOME: "/home",
+  /** Permanent escape hatch — always renders the original Home regardless of the new_user_surfaces flag. */
+  HOME_CLASSIC: "/home/classic",
   DASHBOARD: "/dashboard",
   COACHES: "/coaches",
   DOCUMENTS: "/documents",
