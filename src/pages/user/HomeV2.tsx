@@ -11,7 +11,10 @@ import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
 } from "@/components/dashboard/v2/WelcomeBackTile";
-import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
+import {
+  MeridianEngageCard,
+  type MeridianQuickChip,
+} from "@/components/dashboard/v2/MeridianEngageCard";
 import {
   WatchVideoCard,
   type DashboardVideo,
@@ -20,10 +23,6 @@ import {
   RecentActivityCard,
   type ActivityItem,
 } from "@/components/dashboard/v2/RecentActivityCard";
-import {
-  MeridianPanel,
-  type MeridianQuickChip,
-} from "@/components/dashboard/v2/MeridianPanel";
 
 /**
  * HomeV2 — the new wireframe user dashboard (ig-surfaces/user-dashboard).
@@ -33,17 +32,36 @@ import {
  * only. PRISM status is sourced from GET /v1/documents/latest-prism, not the
  * 404-ing /v1/prism/history.
  *
- * Per "User-Home_page 7-6.pdf": the welcome, behavioral-assessment, and
- * onboarding blocks are merged into one white "Welcome back" tile
- * (WelcomeBackTile), and the starter card is the single-hero-prompt
- * MeridianEngageCard.
+ * Layout (single full-width column, reduced vertical density):
+ *   1. WelcomeBackTile  — welcome + behavioral + onboarding merged
+ *   2. MeridianEngageCard — merged engage hero + Meridian greeting + quick chips
+ *      (the old right-side MeridianPanel is folded into this one tile)
+ *   3. Action tile — Upload a File/Document · Goals · Careers
+ *   4. WatchVideoCard — 4 real demo videos with HTML5 playback
+ *   5. RecentActivityCard
  */
 
 const VIDEOS: DashboardVideo[] = [
-  { id: "welcome", title: "Welcome to Inspire Genius", duration: "2:14" },
-  { id: "prism", title: "Understanding your PRISM brain-map", duration: "3:40" },
-  { id: "meridian", title: "Meet Meridian, your mentor", duration: "1:58" },
-  { id: "start", title: "Get started in 5 minutes", duration: "4:05" },
+  {
+    id: "prism-survey",
+    title: "PRISM Survey — Introduction",
+    src: "https://dj7od5nj42063.cloudfront.net/demo/PRISM_Survey_Intro.mp4",
+  },
+  {
+    id: "neuroscience",
+    title: "The Neuroscience of Behavior",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG_Neuroscience_of_Behavior_Narrated.mp4",
+  },
+  {
+    id: "brainmap-quiz",
+    title: "Brain-Map Quiz",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/IG-BrainMap_quiz.mp4",
+  },
+  {
+    id: "journey-map",
+    title: "Journey Map Demo",
+    src: "https://ig-demo-public-videos.s3.amazonaws.com/Journey_Map_Demos.mp4",
+  },
 ];
 
 // Additional-assessment roster (per spec). Bind to a real endpoint later.
@@ -66,6 +84,9 @@ const MERIDIAN_CHIPS: MeridianQuickChip[] = [
     prompt: "Can you review my resume and suggest improvements?",
   },
 ];
+
+const ACTION_BTN_CLASS =
+  "inline-flex flex-1 min-w-[10rem] items-center justify-center gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-2.5 text-sm font-medium text-[#0B1B33] shadow-sm transition-colors hover:bg-[#5B8A72]/[0.08]";
 
 export default function HomeV2() {
   const { user } = useAuth();
@@ -107,36 +128,38 @@ export default function HomeV2() {
   return (
     <UserLayout>
       <div className="rounded-2xl bg-[#FBF7F0] p-4 md:p-6">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Main column */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <WelcomeBackTile
-              displayName={displayName}
-              onResumeConversation={() => goToChat()}
-              hasReport={hasReport}
-              reportFileName={latestPrism?.file_name}
-              prismLoading={prismLoading}
-              onRequestAssessment={goToAssessment}
-              onViewReportPdf={goToAssessment}
-              profilePercent={40}
-              missing={MISSING_PROFILE}
-              assessments={ASSESSMENTS}
-              onAddAssessment={(name) => toast.info(`Add ${name} — coming soon`)}
-            />
+        <div className="mx-auto flex max-w-6xl flex-col gap-4">
+          <WelcomeBackTile
+            displayName={displayName}
+            onResumeConversation={() => goToChat()}
+            hasReport={hasReport}
+            reportFileName={latestPrism?.file_name}
+            prismLoading={prismLoading}
+            onRequestAssessment={goToAssessment}
+            onViewReportPdf={goToAssessment}
+            profilePercent={40}
+            missing={MISSING_PROFILE}
+            assessments={ASSESSMENTS}
+            onAddAssessment={(name) => toast.info(`Add ${name} — coming soon`)}
+          />
 
-            <MeridianEngageCard
-              onAsk={(text) => goToChat(text)}
-              onAssessment={goToAssessment}
-            />
+          {/* Merged Meridian tile — engage hero + greeting + quick chips
+              (the old right-side panel is folded in here). */}
+          <MeridianEngageCard
+            firstName={firstName}
+            onAsk={(text) => goToChat(text)}
+            onAssessment={goToAssessment}
+            quickChips={MERIDIAN_CHIPS}
+            onQuickChip={(chip) => goToChat(chip.prompt)}
+          />
 
-            <WatchVideoCard videos={VIDEOS} />
-
-            {/* Action links (replaces the old Quick Actions grid) */}
+          {/* Action tile — sits directly above Watch a Video. */}
+          <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-4 shadow-sm">
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.DOCUMENTS)}
-                className="inline-flex items-center gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-2.5 text-sm font-medium text-[#0B1B33] shadow-sm transition-colors hover:bg-[#5B8A72]/[0.08]"
+                className={ACTION_BTN_CLASS}
               >
                 <Upload className="size-4 text-[#3E6B55]" />
                 Upload a File/Document
@@ -144,7 +167,7 @@ export default function HomeV2() {
               <button
                 type="button"
                 onClick={comingSoon("Goals")}
-                className="inline-flex items-center gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-2.5 text-sm font-medium text-[#0B1B33] shadow-sm transition-colors hover:bg-[#5B8A72]/[0.08]"
+                className={ACTION_BTN_CLASS}
               >
                 <Target className="size-4 text-[#C9711A]" />
                 Goals
@@ -152,31 +175,21 @@ export default function HomeV2() {
               <button
                 type="button"
                 onClick={comingSoon("Careers")}
-                className="inline-flex items-center gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-2.5 text-sm font-medium text-[#0B1B33] shadow-sm transition-colors hover:bg-[#5B8A72]/[0.08]"
+                className={ACTION_BTN_CLASS}
               >
                 <Compass className="size-4 text-[#3E6B55]" />
                 Careers
               </button>
             </div>
-
-            <RecentActivityCard
-              items={activityItems}
-              loading={auditLoading}
-              emptyLabel="No recent activity yet"
-            />
           </div>
 
-          {/* Right Meridian panel */}
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-6">
-              <MeridianPanel
-                firstName={firstName}
-                onSend={(text) => goToChat(text)}
-                quickChips={MERIDIAN_CHIPS}
-                onQuickChip={(chip) => goToChat(chip.prompt)}
-              />
-            </div>
-          </div>
+          <WatchVideoCard videos={VIDEOS} />
+
+          <RecentActivityCard
+            items={activityItems}
+            loading={auditLoading}
+            emptyLabel="No recent activity yet"
+          />
         </div>
       </div>
     </UserLayout>

@@ -3,10 +3,30 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { WatchVideoCard, type DashboardVideo } from "../WatchVideoCard"
 
 const videos: DashboardVideo[] = [
-  { id: "v1", title: "Getting started with coaching", duration: "3:12" },
-  { id: "v2", title: "Understanding your PRISM report", duration: "5:40" },
-  { id: "v3", title: "Setting effective goals", duration: "4:05" },
-  { id: "v4", title: "Working with Meridian", duration: "2:48" },
+  {
+    id: "v1",
+    title: "Getting started with coaching",
+    src: "https://example.com/a.mp4",
+    duration: "3:12",
+  },
+  {
+    id: "v2",
+    title: "Understanding your PRISM report",
+    src: "https://example.com/b.mp4",
+    duration: "5:40",
+  },
+  {
+    id: "v3",
+    title: "Setting effective goals",
+    src: "https://example.com/c.mp4",
+    duration: "4:05",
+  },
+  {
+    id: "v4",
+    title: "Working with Meridian",
+    src: "https://example.com/d.mp4",
+    duration: "2:48",
+  },
 ]
 
 describe("WatchVideoCard", () => {
@@ -20,9 +40,21 @@ describe("WatchVideoCard", () => {
     })
   })
 
-  it("selects the second thumbnail and calls onSelect with that video", () => {
+  it("renders a video player for the first video's src by default", () => {
+    const { container } = render(
+      <WatchVideoCard videos={videos} onSelect={jest.fn()} />
+    )
+
+    const video = container.querySelector("video")
+    expect(video).not.toBeNull()
+    expect(video?.getAttribute("src")).toBe(videos[0].src)
+  })
+
+  it("selects the second thumbnail, calls onSelect, and swaps the video src", () => {
     const onSelect = jest.fn()
-    render(<WatchVideoCard videos={videos} onSelect={onSelect} />)
+    const { container } = render(
+      <WatchVideoCard videos={videos} onSelect={onSelect} />
+    )
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -32,6 +64,9 @@ describe("WatchVideoCard", () => {
 
     expect(onSelect).toHaveBeenCalledTimes(1)
     expect(onSelect).toHaveBeenCalledWith(videos[1])
+
+    const video = container.querySelector("video")
+    expect(video?.getAttribute("src")).toBe(videos[1].src)
   })
 
   it("renders an empty state when there are no videos", () => {
