@@ -7,17 +7,15 @@ import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useAuditStats } from "@/hooks/audit/useAudit";
-import { WelcomeTile } from "@/components/dashboard/v2/WelcomeTile";
+import {
+  WelcomeBackTile,
+  type WelcomeBackAssessment,
+} from "@/components/dashboard/v2/WelcomeBackTile";
+import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
 import {
   WatchVideoCard,
   type DashboardVideo,
 } from "@/components/dashboard/v2/WatchVideoCard";
-import {
-  OnboardingProgressCard,
-  type AdditionalAssessment,
-} from "@/components/dashboard/v2/OnboardingProgressCard";
-import { StarterQuestionsCard } from "@/components/dashboard/v2/StarterQuestionsCard";
-import { BehavioralAssessmentCard } from "@/components/dashboard/v2/BehavioralAssessmentCard";
 import {
   RecentActivityCard,
   type ActivityItem,
@@ -34,6 +32,11 @@ import {
  * is untouched and reachable at /home/classic. Data comes from existing hooks
  * only. PRISM status is sourced from GET /v1/documents/latest-prism, not the
  * 404-ing /v1/prism/history.
+ *
+ * Per "User-Home_page 7-6.pdf": the welcome, behavioral-assessment, and
+ * onboarding blocks are merged into one white "Welcome back" tile
+ * (WelcomeBackTile), and the starter card is the single-hero-prompt
+ * MeridianEngageCard.
  */
 
 const VIDEOS: DashboardVideo[] = [
@@ -44,7 +47,7 @@ const VIDEOS: DashboardVideo[] = [
 ];
 
 // Additional-assessment roster (per spec). Bind to a real endpoint later.
-const ASSESSMENTS: AdditionalAssessment[] = [
+const ASSESSMENTS: WelcomeBackAssessment[] = [
   { name: "DiSC", done: true },
   { name: "Myers-Briggs (MBTI)", done: false },
   { name: "CliftonStrengths (StrengthsFinder)", done: true },
@@ -54,14 +57,6 @@ const ASSESSMENTS: AdditionalAssessment[] = [
 ];
 
 const MISSING_PROFILE = ["Resume", "Bio", "Additional info"];
-
-const STARTER_QUESTIONS = [
-  "How do I read my PRISM report?",
-  "Help me set a goal for this quarter",
-  "What careers fit my strengths?",
-  "Can you review my resume?",
-  "How should I prepare for an interview?",
-];
 
 const MERIDIAN_CHIPS: MeridianQuickChip[] = [
   { label: "Goals", prompt: "Help me set a goal and a plan to reach it." },
@@ -77,6 +72,8 @@ export default function HomeV2() {
   const navigate = useNavigate();
   const firstName =
     user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
+  const displayName =
+    user?.name?.trim() || user?.email?.split("@")[0] || firstName;
 
   const {
     data: latestPrism,
@@ -100,6 +97,10 @@ export default function HomeV2() {
     });
   };
 
+  const goToAssessment = (): void => {
+    navigate(ROUTES.PRISM_ASSESSMENT);
+  };
+
   // Goals + Careers pages are on hold — surface the buttons but no navigation yet.
   const comingSoon = (name: string) => () => toast.info(`${name} is coming soon`);
 
@@ -109,23 +110,26 @@ export default function HomeV2() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main column */}
           <div className="flex flex-col gap-6 lg:col-span-2">
-            <WelcomeTile firstName={firstName} />
-
-            <WatchVideoCard videos={VIDEOS} />
-
-            <OnboardingProgressCard
+            <WelcomeBackTile
+              displayName={displayName}
+              onResumeConversation={() => goToChat()}
+              hasReport={hasReport}
+              reportFileName={latestPrism?.file_name}
+              prismLoading={prismLoading}
+              onRequestAssessment={goToAssessment}
+              onViewReportPdf={goToAssessment}
               profilePercent={40}
               missing={MISSING_PROFILE}
-              prismStatusLabel="PRISM · Jun 9, 2026"
               assessments={ASSESSMENTS}
               onAddAssessment={(name) => toast.info(`Add ${name} — coming soon`)}
             />
 
-            <StarterQuestionsCard
+            <MeridianEngageCard
               onAsk={(text) => goToChat(text)}
-              questions={STARTER_QUESTIONS}
-              onSelectQuestion={(q) => goToChat(q)}
+              onAssessment={goToAssessment}
             />
+
+            <WatchVideoCard videos={VIDEOS} />
 
             {/* Action links (replaces the old Quick Actions grid) */}
             <div className="flex flex-wrap gap-3">
@@ -154,14 +158,6 @@ export default function HomeV2() {
                 Careers
               </button>
             </div>
-
-            <BehavioralAssessmentCard
-              hasReport={hasReport}
-              reportFileName={latestPrism?.file_name}
-              loading={prismLoading}
-              onRequestAssessment={() => navigate(ROUTES.PRISM_ASSESSMENT)}
-              onViewReportPdf={() => navigate(ROUTES.PRISM_ASSESSMENT)}
-            />
 
             <RecentActivityCard
               items={activityItems}
