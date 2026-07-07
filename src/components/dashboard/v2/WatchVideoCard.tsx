@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 export interface DashboardVideo {
   id: string
   title: string
+  src: string
   duration?: string
 }
 
@@ -29,31 +30,24 @@ export function WatchVideoCard({
   }
 
   return (
-    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-4 shadow-sm">
       <h3 className="font-serif text-base text-[#0B1B33]">Watch a Video</h3>
 
       {selected ? (
         <>
-          <div className="mt-4 flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#13294B] to-[#3E6B55]">
-            <div className="flex flex-col items-center gap-3 px-4 text-center">
-              <span className="flex size-14 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
-                <Play className="size-7 fill-white text-white" />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-serif text-sm text-white">
-                  {selected.title}
-                </p>
-                {selected.duration ? (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
-                    <Clock className="size-3" />
-                    {selected.duration}
-                  </p>
-                ) : null}
-              </div>
-            </div>
+          <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl bg-black">
+            <video
+              key={selected.id}
+              src={selected.src}
+              controls
+              preload="metadata"
+              playsInline
+              className="h-full w-full bg-black object-contain"
+              aria-label={selected.title}
+            />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {videos.slice(0, 4).map((video) => {
               const isActive = video.id === selected.id
               return (
@@ -89,7 +83,7 @@ export function WatchVideoCard({
           </div>
         </>
       ) : (
-        <div className="mt-4 flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]">
+        <div className="mt-3 flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]">
           <p className="text-sm text-[#7C93B5]">No videos available yet.</p>
         </div>
       )}

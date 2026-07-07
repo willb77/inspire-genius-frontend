@@ -4,6 +4,11 @@ import { ArrowRight, Bot, Sparkles } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+export interface MeridianQuickChip {
+  label: string
+  prompt: string
+}
+
 export interface MeridianEngageCardProps {
   onAsk: (text: string) => void
   onAssessment: () => void
@@ -11,6 +16,10 @@ export interface MeridianEngageCardProps {
   engagesLabel?: string
   title?: string
   assessmentLabel?: string
+  firstName?: string
+  quickChips?: MeridianQuickChip[]
+  onQuickChip?: (chip: MeridianQuickChip) => void
+  greeting?: string
 }
 
 const DEFAULT_HERO_PROMPT =
@@ -26,8 +35,16 @@ export function MeridianEngageCard({
   engagesLabel = DEFAULT_ENGAGES_LABEL,
   title = DEFAULT_TITLE,
   assessmentLabel = DEFAULT_ASSESSMENT_LABEL,
+  firstName,
+  quickChips,
+  onQuickChip,
+  greeting,
 }: MeridianEngageCardProps): JSX.Element {
   const [value, setValue] = useState<string>(heroPrompt)
+
+  const resolvedGreeting =
+    greeting ??
+    `Hi ${firstName ?? "there"} — I'm Meridian, and I'll be your guide across everything here.`
 
   const submit = (): void => {
     const trimmed = value.trim()
@@ -45,7 +62,7 @@ export function MeridianEngageCard({
   }
 
   return (
-    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
@@ -61,7 +78,7 @@ export function MeridianEngageCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <Sparkles
             aria-hidden="true"
@@ -90,12 +107,38 @@ export function MeridianEngageCard({
         type="button"
         onClick={onAssessment}
         className={cn(
-          "mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#E8932B] px-4 py-3 text-sm font-semibold text-white transition-colors",
+          "mt-3 inline-flex w-full items-center justify-center rounded-xl bg-[#E8932B] px-4 py-3 text-sm font-semibold text-white transition-colors",
           "hover:bg-[#C9711A] focus:outline-none focus:ring-2 focus:ring-[#5B8A72]"
         )}
       >
         {assessmentLabel}
       </button>
+
+      <div className="mt-3 flex items-start gap-2 text-[13px] leading-relaxed text-[#7C93B5]">
+        <span
+          aria-hidden="true"
+          className="mt-1.5 inline-block size-[7px] flex-shrink-0 rounded-full bg-emerald-500"
+        />
+        <p>{resolvedGreeting}</p>
+      </div>
+
+      {quickChips && quickChips.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-[7px]">
+          {quickChips.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => onQuickChip?.(chip)}
+              className={cn(
+                "rounded-full border border-[rgba(11,27,51,0.10)] bg-white px-2.5 py-1.5 text-[12px] text-[#13294B] transition-colors",
+                "hover:border-[#E8932B] hover:text-[#C9711A]"
+              )}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
