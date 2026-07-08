@@ -47,8 +47,8 @@ export function WatchVideoCard({
             />
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {videos.slice(0, 4).map((video) => {
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {videos.map((video) => {
               const isActive = video.id === selected.id
               return (
                 <button

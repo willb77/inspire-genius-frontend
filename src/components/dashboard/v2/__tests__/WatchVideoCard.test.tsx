@@ -69,6 +69,24 @@ describe("WatchVideoCard", () => {
     expect(video?.getAttribute("src")).toBe(videos[1].src)
   })
 
+  it("renders a thumbnail for every video (no 4-item cap)", () => {
+    const fiveVideos: DashboardVideo[] = [
+      ...videos,
+      {
+        id: "v5",
+        title: "People in Transition",
+        src: "https://example.com/e.mp4",
+      },
+    ]
+
+    render(<WatchVideoCard videos={fiveVideos} onSelect={jest.fn()} />)
+
+    // A thumbnail is rendered per video as a button; the 5th must be present.
+    expect(
+      screen.getByRole("button", { name: /people in transition/i })
+    ).toBeInTheDocument()
+  })
+
   it("renders an empty state when there are no videos", () => {
     render(<WatchVideoCard videos={[]} />)
 
