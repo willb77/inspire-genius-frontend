@@ -37,7 +37,7 @@ import {
  *   2. MeridianEngageCard — merged engage hero + Meridian greeting + quick chips
  *      (the old right-side MeridianPanel is folded into this one tile)
  *   3. Action tile — Upload a File/Document · Goals · Careers
- *   4. WatchVideoCard — 4 real demo videos with HTML5 playback
+ *   4. WatchVideoCard — 5 real demo videos with HTML5 playback
  *   5. RecentActivityCard
  */
 
@@ -61,6 +61,11 @@ const VIDEOS: DashboardVideo[] = [
     id: "journey-map",
     title: "Journey Map Demo",
     src: "https://ig-demo-public-videos.s3.amazonaws.com/Journey_Map_Demos.mp4",
+  },
+  {
+    id: "people-transition",
+    title: "People in Transition",
+    src: "https://dj7od5nj42063.cloudfront.net/demo/People_in_Transition.mp4",
   },
 ];
 
