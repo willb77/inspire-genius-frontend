@@ -7,6 +7,7 @@ import ModalFormFrame from "@/components/shared/forms/ModalFormFrame";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -360,6 +361,39 @@ export default function UserFormModal({
               </FormItem>
             )}
           />
+
+          {mode === "add" && (
+            <FormField
+              control={control}
+              name="skip_onboarding"
+              rules={User_FORM_RULES.skip_onboarding}
+              render={({ field }) => (
+                <FormItem className="md:col-span-2 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="flex items-start gap-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={(v) => field.onChange(v === true)}
+                        className="mt-0.5"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-tight">
+                      <FormLabel className="text-sm font-medium">
+                        Skip onboarding process
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Provisions the user already onboarded and emails a
+                        one-click magic sign-in link instead of a password-setup
+                        invitation. For demo accounts on Dev/Staging — ignored
+                        (rejected) in production.
+                      </p>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {mode === "edit" && allowStatusEdit !== false && (
             <FormField

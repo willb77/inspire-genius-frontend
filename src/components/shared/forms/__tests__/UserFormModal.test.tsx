@@ -202,6 +202,7 @@ describe("UserFormModal", () => {
       email: "",
       role: "",
       status: "Active",
+      skip_onboarding: false,
     });
   });
 
@@ -209,6 +210,22 @@ describe("UserFormModal", () => {
     render(<UserFormModal {...baseProps} open={false} mode="add" />);
 
     expect(screen.queryByText("Add User")).not.toBeInTheDocument();
+  });
+
+  it("renders the Skip onboarding toggle in add mode only", () => {
+    const { unmount } = render(<UserFormModal {...baseProps} mode="add" />);
+    expect(screen.getByText("Skip onboarding process")).toBeInTheDocument();
+    unmount();
+
+    render(
+      <UserFormModal
+        open
+        mode="edit"
+        onOpenChange={jest.fn()}
+        onSubmit={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText("Skip onboarding process")).not.toBeInTheDocument();
   });
 
   it("merges defaultValues and submits them correctly", () => {
@@ -237,6 +254,7 @@ describe("UserFormModal", () => {
       email: "alice@test.com",
       role: "",
       status: "Deactivated",
+      skip_onboarding: false,
     });
   });
 
