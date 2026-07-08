@@ -13,15 +13,18 @@ import {
   Check,
 } from "lucide-react"
 
+import { Checkbox } from "@/components/ui/checkbox"
 import { FileUploader } from "@/components/bulk-import/FileUploader"
 import { DataPreviewTable } from "@/components/bulk-import/DataPreviewTable"
 import { ImportProgress } from "@/components/bulk-import/ImportProgress"
+import { DemoImportResult } from "@/components/bulk-import/DemoImportResult"
 import { InvitationComposer } from "@/components/bulk-import/InvitationComposer"
 import { RecipientSelector } from "@/components/bulk-import/RecipientSelector"
 import { DeliveryTracker } from "@/components/bulk-import/DeliveryTracker"
 
 import {
   useBulkImport,
+  useBulkDemoInvite,
   useSendInvitations,
   useInvitationStatus,
   useResendInvitation,
@@ -52,6 +55,7 @@ type State = {
   selectedUserIds: string[]
   importBatchId: string | null
   invitationBatchId: string | null
+  skipOnboarding: boolean
 }
 
 type Action =
@@ -61,6 +65,7 @@ type Action =
   | { type: "SET_CUSTOM_MESSAGE"; message: string }
   | { type: "SET_SELECTED_IDS"; ids: string[] }
   | { type: "SET_INVITATION_BATCH"; batchId: string }
+  | { type: "SET_SKIP_ONBOARDING"; value: boolean }
   | { type: "GO_TO_STEP"; step: BulkImportStep }
   | { type: "RESET" }
 
@@ -73,10 +78,13 @@ const initialState: State = {
   selectedUserIds: [],
   importBatchId: null,
   invitationBatchId: null,
+  skipOnboarding: false,
 }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case "SET_SKIP_ONBOARDING":
+      return { ...state, skipOnboarding: action.value }
     case "SET_PARSED":
       return { ...state, parsedRecords: action.records, currentStep: "validate" }
     case "SET_VALID":
@@ -112,6 +120,7 @@ export default function SuperAdminBulkImport() {
   const currentIdx = stepIndex(state.currentStep)
 
   const importMutation = useBulkImport()
+  const demoMutation = useBulkDemoInvite()
   const sendMutation = useSendInvitations()
   const resendMutation = useResendInvitation()
   const { data: invitationStatus, isLoading: isTrackingLoading } = useInvitationStatus(
@@ -130,6 +139,13 @@ export default function SuperAdminBulkImport() {
   const handleProceedToImport = useCallback(
     (validRecords: BulkUserRecord[]) => {
       dispatch({ type: "SET_VALID", records: validRecords })
+      // "Skip onboarding" path: provision active + onboarded users with
+      // one-click magic links via the auth-service bulk endpoint. Stays on the
+      // "import" step and renders DemoImportResult; compose/send/track unused.
+      if (state.skipOnboarding) {
+        demoMutation.mutate(validRecords)
+        return
+      }
       importMutation.mutate(validRecords, {
         onSuccess: (data) => {
           const imported: ImportedUser[] = data.results
@@ -149,7 +165,7 @@ export default function SuperAdminBulkImport() {
         },
       })
     },
-    [importMutation],
+    [importMutation, demoMutation, state.skipOnboarding],
   )
 
   const handleContinueToSend = useCallback(() => {
@@ -249,7 +265,29 @@ export default function SuperAdminBulkImport() {
         )}
 
         {state.currentStep === "upload" && (
-          <FileUploader onParsed={handleFilesParsed} />
+          <div className="space-y-4">
+            <FileUploader onParsed={handleFilesParsed} />
+            <label className="flex items-start gap-3 rounded-md border border-border bg-muted/30 p-3">
+              <Checkbox
+                checked={state.skipOnboarding}
+                onCheckedChange={(v) =>
+                  dispatch({ type: "SET_SKIP_ONBOARDING", value: v === true })
+                }
+                className="mt-0.5"
+              />
+              <span className="space-y-1 leading-tight">
+                <span className="block text-sm font-medium">
+                  Skip onboarding for this batch
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Provisions every imported user already onboarded and emails a
+                  one-click magic sign-in link instead of a password-setup
+                  invitation (no compose/send step). For demo cohorts on
+                  Dev/Staging — rejected in production.
+                </span>
+              </span>
+            </label>
+          </div>
         )}
 
         {state.currentStep === "validate" && (
@@ -261,7 +299,15 @@ export default function SuperAdminBulkImport() {
           />
         )}
 
-        {state.currentStep === "import" && (
+        {state.currentStep === "import" && state.skipOnboarding && (
+          <DemoImportResult
+            isLoading={demoMutation.isPending}
+            data={demoMutation.data}
+            onReset={() => dispatch({ type: "RESET" })}
+          />
+        )}
+
+        {state.currentStep === "import" && !state.skipOnboarding && (
           <ImportProgress
             isLoading={importMutation.isPending}
             data={importMutation.data}

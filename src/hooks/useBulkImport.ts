@@ -8,6 +8,11 @@ import {
   getInvitationStatus,
   resendInvitation,
 } from "@/services/bulk-import"
+import {
+  bulkInviteUsers,
+  type BulkInviteData,
+  type InviteUserPayload,
+} from "@/services/super-admin/user-management/user-management.service"
 import type {
   BulkUserRecord,
   BulkImportResponse,
@@ -25,6 +30,50 @@ export function useBulkImport() {
     },
     onError: (error) => {
       toast.error(`Import failed: ${error.message}`)
+    },
+  })
+}
+
+/**
+ * Bulk demo/skip-onboarding provisioning. When the importer's "Skip
+ * onboarding" toggle is on, the validated rows are sent straight to the
+ * auth-service bulk endpoint (/v1/user-management/invite/bulk) with
+ * demo_account=true on every row — the SAME backend as the single Add User
+ * "Skip onboarding" path. Each user is created active + already-onboarded and
+ * emailed a one-click magic sign-in link, so the compose/send/track steps are
+ * not used. Honored on Dev/Staging-B; the backend rejects it (400) in prod.
+ */
+export function useBulkDemoInvite() {
+  return useMutation<BulkInviteData, AxiosError, BulkUserRecord[]>({
+    mutationFn: async (records) => {
+      const users: InviteUserPayload[] = records.map((r) => ({
+        email: r.email1,
+        first_name: r.fname,
+        last_name: r.lname,
+        role: r.user_type,
+        demo_account: true,
+      }))
+      const resp = await bulkInviteUsers(users)
+      return (
+        resp.data ?? {
+          summary: { total: 0, successful: 0, failed: 0 },
+          successful_invitations: [],
+          failed_invitations: [],
+        }
+      )
+    },
+    onSuccess: (data) => {
+      const { successful, failed } = data.summary
+      if (failed === 0) {
+        toast.success(`${successful} demo account(s) provisioned — magic sign-in links sent`)
+      } else if (successful > 0) {
+        toast.warning(`${successful} provisioned, ${failed} failed — see results`)
+      } else {
+        toast.error(`Failed to provision demo accounts (${failed} errors)`)
+      }
+    },
+    onError: (error) => {
+      toast.error(`Demo provisioning failed: ${error.message}`)
     },
   })
 }
