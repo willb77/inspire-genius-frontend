@@ -1,3 +1,16 @@
+## [2026-07-08 EDT] — "Skip onboarding" toggle on Add User + bulk importer (frontend)
+
+Added a checkbox to opt a new user in/out of the onboarding process, wired to the auth-service `demo_account` flag (skip onboarding + one-click magic sign-in link; honored on Dev/Staging-B, rejected in prod). PR frontend#161, pairs with backend PR inspire-genius#531.
+
+### Added
+- **Add User form** — `UserFormValues.skip_onboarding` (default false); "Skip onboarding process" checkbox in `UserFormModal` (add-mode only); `UserManagement.handleAdd` maps it to `demo_account`; `InviteUserPayload.demo_account?`.
+  - Files: `src/components/shared/forms/userForm.constants.ts`, `UserFormModal.tsx`, `src/pages/super-admin/UserManagement.tsx`, `src/services/super-admin/user-management/user-management.service.ts`
+- **Bulk importer (super-admin, manager, company-admin)** — "Skip onboarding for this batch" checkbox on the upload step. When checked, validated rows go to the already-deployed auth-service bulk endpoint (`/v1/user-management/invite/bulk`, `demo_account=true` per row) via new `useBulkDemoInvite` hook + `bulkInviteUsers` service; results shown in new shared `DemoImportResult` (compose/send/track skipped). Unchecked = existing user-service/invitation-service staging flow.
+  - Files: `src/hooks/useBulkImport.ts`, `src/components/bulk-import/DemoImportResult.tsx`, `src/pages/{super-admin,manager,company-admin}/BulkImport.tsx`
+
+### Verified
+- `tsc -b` clean, `eslint` clean, `vite build` succeeds, 163 tests pass (updated form/bulk suites + 2 new tests).
+
 ## [2026-06-17 12:18 EDT] — `/full-go option one and two` — staging-b env-var verified live; ig-dev-user-sync orphan resolved + deployed
 
 ### Verified (Option 1 — staging-b VITE_API_BASE_URL)
