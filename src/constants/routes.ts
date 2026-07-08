@@ -20,6 +20,16 @@ export const ROUTES = {
   ANALYTICS: "/analytics",
   MERIDIAN_CHAT: "/meridian/chat",
   PRISM_ASSESSMENT: "/prism-assessment",
+  SUMMIT: {
+    BASE: "/summit",
+    DASHBOARD: "/summit",
+    DISCOVERY: "/summit/discovery",
+    PRISM: "/summit/prism",
+    GOALS: "/summit/goals",
+    COACHES: "/summit/coaches",
+    DOCUMENTS: "/summit/documents",
+    PROGRESS: "/summit/progress",
+  },
   /** @deprecated Wave 2 Lane 2.A (P7.1) — moved under super-admin as `SUPER_ADMIN.AGENT_TRACE_CONSOLE`. The old path now redirects to the new one. */
   DIAGNOSTIC_CHAT: "/diagnostic-chat",
   SUPER_ADMIN: {
