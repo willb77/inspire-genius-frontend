@@ -82,7 +82,8 @@ export default function Home() {
     // the generic flow. Backstop for when GET /latest-prism can't find
     // their PRISM (coach-coachee scenario, generic-upload tag).
     { label: t("coaching:quickActions.markAsMyPrism", { defaultValue: "Mark as My PRISM Rpt" }), icon: Star, to: ROUTES.DOCUMENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
-    { label: t("coaching:quickActions.setNewGoal"), icon: Flag, to: ROUTES.COACHES, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("coaching:quickActions.setNewGoal", { defaultValue: "Set a Goal" }), icon: Flag, to: ROUTES.SUMMIT.BASE, bg: "bg-amber-100", iconColor: "text-amber-600" },
+    { label: t("coaching:quickActions.goalSetting", { defaultValue: "Goal Setting" }), icon: Target, to: ROUTES.SUMMIT.BASE, bg: "bg-teal-100", iconColor: "text-teal-600" },
   ];
 
   const STATS = [
