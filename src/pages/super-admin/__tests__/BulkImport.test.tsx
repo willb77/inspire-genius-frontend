@@ -30,6 +30,7 @@ jest.mock("@/components/bulk-import/DeliveryTracker", () => ({
 
 jest.mock("@/hooks/useBulkImport", () => ({
   useBulkImport: () => ({ mutate: jest.fn(), isPending: false, data: null }),
+  useBulkDemoInvite: () => ({ mutate: jest.fn(), isPending: false, data: undefined }),
   useSendInvitations: () => ({ mutate: jest.fn(), isPending: false }),
   useInvitationStatus: () => ({ data: null, isLoading: false }),
   useResendInvitation: () => ({ mutate: jest.fn(), isPending: false }),

@@ -4,6 +4,11 @@ export type UserFormValues = {
   email: string;
   role: string;
   status: "Active" | "Deactivated";
+  // Add-mode only. When true, the invited user skips the onboarding process
+  // and is emailed a one-click magic sign-in link instead of a password-setup
+  // invitation (maps to the auth-service `demo_account` flag; honored on
+  // Dev/Staging-B, rejected in production). Default false = normal onboarding.
+  skip_onboarding: boolean;
 };
 
 export const User_FORM_DEFAULTS: UserFormValues = {
@@ -12,6 +17,7 @@ export const User_FORM_DEFAULTS: UserFormValues = {
   email: "",
   role: "",
   status: "Active",
+  skip_onboarding: false,
 };
 
 export const User_FORM_RULES = {
@@ -37,4 +43,5 @@ export const User_FORM_RULES = {
   },
   role: { required: "Role is required" },
   status: {},
+  skip_onboarding: {},
 } as const;
