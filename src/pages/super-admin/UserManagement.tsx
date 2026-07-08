@@ -231,6 +231,9 @@ export default function UserManagement() {
       last_name: values.last_name,
       email: values.email,
       role: values.role,
+      // "Skip onboarding" checkbox → auth-service demo_account. Only sent when
+      // ticked so normal invites keep the default password-setup + onboarding.
+      ...(values.skip_onboarding ? { demo_account: true } : {}),
     };
 
     await inviteMutation.mutateAsync(body);
