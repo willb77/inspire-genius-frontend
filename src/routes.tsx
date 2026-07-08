@@ -48,6 +48,15 @@ const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"))
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
+// Summit — Goal Setting surface
+const SummitLayout = React.lazy(() => import("@/pages/summit/SummitLayout"));
+const SummitDashboard = React.lazy(() => import("@/pages/summit/SummitDashboard"));
+const SummitDiscovery = React.lazy(() => import("@/pages/summit/SummitDiscovery"));
+const SummitPrism = React.lazy(() => import("@/pages/summit/SummitPrism"));
+const SummitGoals = React.lazy(() => import("@/pages/summit/SummitGoals"));
+const SummitCoaches = React.lazy(() => import("@/pages/summit/SummitCoaches"));
+const SummitDocuments = React.lazy(() => import("@/pages/summit/SummitDocuments"));
+const SummitProgress = React.lazy(() => import("@/pages/summit/SummitProgress"));
 const DiagnosticChat = React.lazy(() => import("@/pages/user/DiagnosticChat"));
 
 // ── Super Admin pages ───────────────────────────────────────────────────────
@@ -210,6 +219,20 @@ export const routes: RouteObject[] = [
       { path: "/coaches", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
       { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
+      // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
+      {
+        path: "/summit",
+        element: withSuspense(<SummitLayout />),
+        children: [
+          { index: true, element: withSuspense(<SummitDashboard />) },
+          { path: "discovery", element: withSuspense(<SummitDiscovery />) },
+          { path: "prism", element: withSuspense(<SummitPrism />) },
+          { path: "goals", element: withSuspense(<SummitGoals />) },
+          { path: "coaches", element: withSuspense(<SummitCoaches />) },
+          { path: "documents", element: withSuspense(<SummitDocuments />) },
+          { path: "progress", element: withSuspense(<SummitProgress />) },
+        ],
+      },
       { path: "/documents", element: withSuspense(<Documents />) },
       { path: "/profile", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },

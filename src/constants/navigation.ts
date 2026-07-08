@@ -19,6 +19,7 @@ import {
   Sparkles,
   BarChart3,
   MessageCircle,
+  Target,
   GitBranch,
   UserPlus,
   Eye,
@@ -62,6 +63,7 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.
     { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
+    { to: ROUTES.SUMMIT.BASE, icon: Target, label: "Goal Setting" },
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
     { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
     { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
