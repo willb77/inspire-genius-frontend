@@ -1,16 +1,15 @@
 /**
  * Summit — Meridian chat panel.
  *
- * The real Agent-Engine wiring for the Summit surface. Streams from
- * `POST /v1/agents/chat/stream` via useMeridianSSEStream; goal-setting intent
- * is routed server-side to the Summit specialist, and Meridian synthesizes the
- * reply. Falls back to the non-streaming `POST /v1/agents/chat` when the
- * server's streaming flag is off.
+ * The real Agent-Engine wiring for the Summit surface. Uses the async-jobs
+ * transport (POST /v1/agents/chat/async → poll /jobs/{id}) so a full
+ * goal-setting turn is not killed by the 30s API-Gateway cap on the
+ * synchronous chat endpoint. Goal-setting intent is routed server-side to the
+ * Summit specialist; Meridian synthesizes the reply.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Loader2 } from "lucide-react";
-import { useMeridianSSEStream } from "@/hooks/agents/useMeridianSSEStream";
-import { agentChat } from "@/services/alex/agent.service";
+import { sendSummitMessage } from "@/services/summit/summitChat";
 import { cn } from "@/lib/utils";
 import { SUMMIT_QUICK_PROMPTS } from "@/pages/summit/summitData";
 
@@ -21,66 +20,64 @@ const GREETING: Msg = {
   text: "Hi — I'm Meridian. Behind me, Summit is mapping your goals to how you're wired. Ask me anything about your goals, or tap a suggestion below.",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  queued: "Queued…",
+  running: "Thinking…",
+  thinking: "Thinking…",
+};
+
 export default function MeridianPanel() {
   const [messages, setMessages] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
-  const [restPending, setRestPending] = useState(false);
-  const pendingTextRef = useRef<string>("");
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string>("");
   const bodyRef = useRef<HTMLDivElement>(null);
-
-  const sse = useMeridianSSEStream({
-    onComplete: (frame) => {
-      setSessionId(frame.sessionId || undefined);
-      setMessages((prev) => [...prev, { who: "m", text: frame.content }]);
-    },
-    onFallback: () => {
-      // Streaming disabled server-side — use the REST endpoint instead.
-      void sendRest(pendingTextRef.current);
-    },
-    onError: () => {
-      void sendRest(pendingTextRef.current);
-    },
-  });
-
-  const sendRest = useCallback(
-    async (text: string) => {
-      if (!text) return;
-      setRestPending(true);
-      try {
-        const resp = await agentChat({ message: text, session_id: sessionId ?? null });
-        setSessionId(resp.session_id || undefined);
-        setMessages((prev) => [...prev, { who: "m", text: resp.content }]);
-      } catch {
-        setMessages((prev) => [
-          ...prev,
-          { who: "m", text: "I couldn't reach the goal-setting engine just now. Please try again in a moment." },
-        ]);
-      } finally {
-        setRestPending(false);
-      }
-    },
-    [sessionId],
-  );
+  const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    (raw: string) => {
+    async (raw: string) => {
       const text = raw.trim();
-      if (!text || sse.isStreaming || restPending) return;
-      pendingTextRef.current = text;
+      if (!text || busy) return;
       setMessages((prev) => [...prev, { who: "u", text }]);
       setInput("");
-      void sse.send({ message: text, sessionId, context: { surface: "summit", intent: "goal_setting" } });
+      setBusy(true);
+      setStatus("thinking");
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      try {
+        const reply = await sendSummitMessage(text, {
+          sessionId,
+          signal: ctrl.signal,
+          onStatus: setStatus,
+        });
+        setSessionId(reply.sessionId || undefined);
+        setMessages((prev) => [...prev, { who: "m", text: reply.content || "…" }]);
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+        setMessages((prev) => [
+          ...prev,
+          {
+            who: "m",
+            text: "I couldn't reach the goal-setting engine just now. Please try again in a moment.",
+          },
+        ]);
+      } finally {
+        setBusy(false);
+        setStatus("");
+        abortRef.current = null;
+      }
     },
-    [sse, sessionId, restPending],
+    [busy, sessionId],
   );
 
-  // Keep the thread scrolled to the newest message / streaming tokens.
+  // Cancel any in-flight poll on unmount.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Keep the thread scrolled to the newest message / status.
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [messages, sse.streamingText]);
-
-  const busy = sse.isStreaming || restPending;
+  }, [messages, busy]);
 
   return (
     <aside className="flex w-full flex-col border-l border-slate-200 bg-slate-50/60">
@@ -115,12 +112,15 @@ export default function MeridianPanel() {
             {m.text}
           </div>
         ))}
-        {sse.isStreaming && (
+        {busy && (
           <div className="max-w-[92%] self-start rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-slate-700">
             <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#0E5F6B]">
               Meridian · via Summit
             </div>
-            {sse.streamingText || <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+            <span className="inline-flex items-center gap-2 text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {STATUS_LABEL[status] ?? "Thinking…"}
+            </span>
           </div>
         )}
       </div>
@@ -129,7 +129,7 @@ export default function MeridianPanel() {
         {SUMMIT_QUICK_PROMPTS.map((q) => (
           <button
             key={q}
-            onClick={() => send(q)}
+            onClick={() => void send(q)}
             disabled={busy}
             className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-[#127A8A] hover:text-[#0E5F6B] disabled:opacity-50"
           >
@@ -142,7 +142,7 @@ export default function MeridianPanel() {
         className="flex gap-2 p-4"
         onSubmit={(e) => {
           e.preventDefault();
-          send(input);
+          void send(input);
         }}
       >
         <input
