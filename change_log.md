@@ -1,3 +1,14 @@
+## [2026-07-09 EDT] — "Skip onboarding" toggle — merged + deployed (Dev + Staging-B)
+
+Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environments, and the backend fix that unblocked it.
+
+### Changed
+- **PR #161 merged** to `development` → CI auto-deployed to **Dev** (`ig-dev-frontend-assets`) and **Staging-B** (`ig-staging-b-frontend-assets`). Verified the live lazy chunks (`UserFormModal-*.js`, `BulkImport-*.js`) in both S3 buckets carry the "Skip onboarding" UI.
+- **Bulk importer verified end-to-end** (via the auth-service bulk endpoint the checkbox drives): a real 2-row demo invite returned 200 / 2 successful / magic links sent, and a magic-link sign-in round-trip landed on the dashboard already onboarded.
+
+### Fixed
+- **Add User checkbox 400 crash on Staging-B** — root cause was backend (auth-service PR #536): the `demo_account` path set a Cognito `custom:is_onboarded` attribute the staging-b pool doesn't define. Fixed backend-side (attribute dropped); the checkbox now provisions the user + sends the magic link on Staging-B. No frontend change was needed.
+
 ## [2026-07-08 EDT] — "Skip onboarding" toggle on Add User + bulk importer (frontend)
 
 Added a checkbox to opt a new user in/out of the onboarding process, wired to the auth-service `demo_account` flag (skip onboarding + one-click magic sign-in link; honored on Dev/Staging-B, rejected in prod). PR frontend#161, pairs with backend PR inspire-genius#531.

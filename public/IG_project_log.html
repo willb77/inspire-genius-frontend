@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1255</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1256</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3018,6 +3018,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-07-09 EDT — Prompt #1256 ["Skip onboarding" toggle merged + deployed to Dev + Staging-B; staging-b crash fixed backend-side]</div>
+          <div class="prompt-text">Merged the "Skip onboarding" checkbox (Add User + bulk importer, PR #161) to <code>development</code>; CI auto-deployed to <strong>Dev</strong> and <strong>Staging-B</strong> — verified the live <code>UserFormModal</code>/<code>BulkImport</code> lazy chunks in both S3 buckets carry the new UI. Verified the bulk path end-to-end (real 2-row demo invite → 200, magic links sent; magic-link sign-in round-trip → dashboard, already onboarded). The staging-b checkbox 400 crash was a backend issue (auth-service PR #536 — Cognito <code>custom:is_onboarded</code> attribute not in the staging-b pool schema); fixed backend-side, no frontend change needed.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-06-17 12:18 EDT — Prompt #1255 [/full-go option one and two — staging-b env-var verified live (PR #139 already shipped) + ig-dev-user-sync orphan stack resolved with 8-resource CREATE_COMPLETE deploy]</div>
           <div class="prompt-text">Bill picked options 1 + 2 from the three "what's next" choices presented at end of prior session. (1) OPTION 1 verification: confirmed PR #139 (frontend, merged 2026-06-16) already shipped VITE_API_BASE_URL=https://api-stable.inspiresgenius.com. Probed live bundle at https://stable.inspiresgenius.com/assets/index-HRygDpcy.js — contains api-stable URL, zero references to old d2brmnoihf96ce CloudFront URL. Phase 0 beta-user migration blocker already cleared, no work needed. (2) OPTION 2 ig-dev-user-sync orphan resolution: cleaned up FIVE orphan AWS resources blocking fresh deploy — (a) old REVIEW_IN_PROGRESS stack from 2026-05-23 → DELETE_COMPLETE 04:24 UTC; (b) phantom REVIEW_IN_PROGRESS that aws-cdk-runner GHA recreated 12 min later → DELETE_COMPLETE 04:44 UTC; (c) orphan Lambda; (d) orphan LogGroup; (e) orphan IAM role ig-dev-user-sync-role (caused first deploy attempt to fail AlreadyExists — required detaching 2 managed + 1 inline policy before delete); (f) orphan EventBridge rule ig-dev-user-sync-on-signup. Then cdk deploy from /tmp/user-sync-deploy-wt worktree on origin/development HEAD f4ed6f4b: 8/8 resources CREATE_COMPLETE in 125s, stack ARN 191b0a50-6a4b-11f1-ab81-125b2a6475cd. Caught stub-bundle bug: user-sync-stack.ts tryBundle returns true unconditionally — initial deploy shipped 187-byte stub. Rebuilt 852KB real bundle via Docker (public.ecr.aws/sam/build-python3.12, pg8000 + handler.py from services/user-sync/app), uploaded via aws lambda update-function-code → CodeSize 872206, version 1, Active. Smoke-tested: aws lambda invoke {"action":"flag_status"} → 200 {"MAGIC_AUTH_USE_MAIN_DB": true}. Known follow-up: tryBundle stub will re-deploy on next local cdk deploy of this stack; should be fixed to be conditional or removed entirely.</div>
