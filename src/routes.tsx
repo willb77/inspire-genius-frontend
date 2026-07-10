@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
 import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
@@ -166,8 +167,19 @@ function withSuspense(element: React.ReactNode) {
 // the `new_user_surfaces` flag is ON, otherwise the original Home. Both are lazy,
 // so only the selected branch is loaded. The original stays reachable at
 // /home/classic regardless of the flag (permanent rollback path).
+//
+// A HomeSurfaceToggle sits above the resolved page so users can flip between the
+// new and classic home themselves. The inner Suspense wraps only the lazy page,
+// keeping the toggle visible while the selected variant loads.
 function HomeSurface() {
-  return isNewUserSurfacesEnabled() ? <HomeV2 /> : <Home />;
+  return (
+    <>
+      <HomeSurfaceToggle />
+      <Suspense fallback={<LoadingSpinner />}>
+        {isNewUserSurfacesEnabled() ? <HomeV2 /> : <Home />}
+      </Suspense>
+    </>
+  );
 }
 
 // Central route configuration compatible with useRoutes
