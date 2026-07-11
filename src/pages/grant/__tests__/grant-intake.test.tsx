@@ -88,6 +88,26 @@ describe("GrantIntakeFlow (UI-1)", () => {
     expect(screen.getByRole("button", { name: /17 years/i })).toBeInTheDocument()
   })
 
+  test("clicking an answered transcript chip jumps back to edit that step", async () => {
+    renderFlow()
+    fireEvent.change(screen.getByPlaceholderText("e.g. 17"), { target: { value: "17" } })
+    fireEvent.click(screen.getByRole("button", { name: /Continue/i }))
+    // On step 2 now; click the age chip to edit it.
+    const chip = await screen.findByRole("button", { name: /17 years/i })
+    fireEvent.click(chip)
+    // Back on the age question, value preserved.
+    expect(await screen.findByText("First — how old are you?")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("e.g. 17")).toHaveValue(17)
+  })
+
+  test("Back returns to the previous step", async () => {
+    renderFlow()
+    fireEvent.change(screen.getByPlaceholderText("e.g. 17"), { target: { value: "20" } })
+    fireEvent.click(screen.getByRole("button", { name: /Continue/i }))
+    fireEvent.click(await screen.findByRole("button", { name: /Back/i }))
+    expect(await screen.findByText("First — how old are you?")).toBeInTheDocument()
+  })
+
   test("blocks advancing past a required step with an invalid value", async () => {
     renderFlow()
     const ageInput = screen.getByPlaceholderText("e.g. 17")
