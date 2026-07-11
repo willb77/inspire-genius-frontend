@@ -2,9 +2,10 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/useAuth"
-import { getSectionsForRole, type SidebarNavItem } from "@/constants/sidebar-sections"
+import { getSectionsForRole, GRANT_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
 
 function getInitials(name: string | null | undefined, email: string | undefined): string {
   if (name) {
@@ -26,7 +27,13 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
-  const sections = getSectionsForRole(role)
+  const { hasAccess: hasGrantAccess } = useVerticalAccess("grant")
+  // Entitlement-gated vertical sections are appended after the role-based ones.
+  // They render through the same light chrome — no restyling.
+  const sections = [
+    ...getSectionsForRole(role),
+    ...(hasGrantAccess ? [GRANT_SIDEBAR_SECTION] : []),
+  ]
   const initials = getInitials(user?.fullName ?? user?.name, user?.email)
   const displayName = user?.fullName ?? user?.name ?? user?.email ?? "User"
   const displayRole = (user?.role ?? "user").replace("-", " ")

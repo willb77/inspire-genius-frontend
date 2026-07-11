@@ -20,6 +20,12 @@ import {
   Target,
   Settings,
   MessageSquarePlus,
+  GraduationCap,
+  Wallet,
+  Landmark,
+  ClipboardList,
+  Scale,
+  Banknote,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -119,6 +125,31 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     ],
   },
 ]
+
+/**
+ * GRANT financial-aid vertical section.
+ *
+ * NOT part of SIDEBAR_SECTIONS — it is entitlement-gated (not role-gated):
+ * AppSidebar appends it only when `useVerticalAccess("grant").hasAccess` is
+ * true. Roles are set to all six so the entitlement is the sole gate.
+ * Renders through the standard light AppSidebar chrome — no restyling.
+ */
+export const GRANT_SIDEBAR_SECTION: SidebarSection = {
+  id: "grant",
+  label: "Financial Aid",
+  roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
+  items: [
+    { to: "/vertical/grant/dashboard", icon: GraduationCap, label: "Aid Dashboard" },
+    { to: "/vertical/grant/profile", icon: Wallet, label: "Financial Profile" },
+    { to: "/vertical/grant/federal", icon: Landmark, label: "Federal & State" },
+    { to: "/vertical/grant/scholarships", icon: Award, label: "Scholarships" },
+    { to: "/vertical/grant/institutions", icon: Building2, label: "Institutions" },
+    { to: "/vertical/grant/applications", icon: ClipboardList, label: "Application Concierge" },
+    { to: "/vertical/grant/compare", icon: Scale, label: "Compare Offers" },
+    { to: "/vertical/grant/loans", icon: Banknote, label: "Loans & Debt" },
+    { to: "/vertical/grant/plan", icon: Target, label: "My Aid Plan" },
+  ],
+}
 
 /** Get sidebar sections visible for a given role (or roles) */
 export function getSectionsForRole(role: UserRole | UserRole[]): SidebarSection[] {

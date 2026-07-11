@@ -157,6 +157,18 @@ const DistributorTerritory = React.lazy(() => import("@/pages/distributor/Territ
 const DistributorSettings = React.lazy(() => import("@/pages/distributor/Settings"));
 const DistributorAnalytics = React.lazy(() => import("@/pages/distributor/Analytics"));
 
+// ── GRANT financial-aid vertical (flag-gated by enabled_verticals) ──────────
+const GrantLayout = React.lazy(() => import("@/pages/grant/GrantLayout"));
+const GrantDashboardPage = React.lazy(() => import("@/pages/grant/GrantDashboardPage"));
+const GrantProfilePage = React.lazy(() => import("@/pages/grant/GrantProfilePage"));
+const GrantFederalPage = React.lazy(() => import("@/pages/grant/GrantFederalPage"));
+const GrantScholarshipsPage = React.lazy(() => import("@/pages/grant/GrantScholarshipsPage"));
+const GrantInstitutionsPage = React.lazy(() => import("@/pages/grant/GrantInstitutionsPage"));
+const GrantApplicationsPage = React.lazy(() => import("@/pages/grant/GrantApplicationsPage"));
+const GrantComparePage = React.lazy(() => import("@/pages/grant/GrantComparePage"));
+const GrantLoansPage = React.lazy(() => import("@/pages/grant/GrantLoansPage"));
+const GrantPlanPage = React.lazy(() => import("@/pages/grant/GrantPlanPage"));
+
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
@@ -367,6 +379,26 @@ export const routes: RouteObject[] = [
       { path: "/distributor/territory", element: withSuspense(<DistributorTerritory />) },
       { path: "/distributor/settings", element: withSuspense(<DistributorSettings />) },
       { path: "/distributor/analytics", element: withSuspense(<DistributorAnalytics />) },
+
+      // GRANT financial-aid vertical — entitlement-gated inside GrantLayout,
+      // which wraps every child in the existing AppShell. Unentitled users are
+      // redirected to /home by the layout.
+      {
+        path: "/vertical/grant",
+        element: withSuspense(<GrantLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/grant/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<GrantDashboardPage />) },
+          { path: "profile", element: withSuspense(<GrantProfilePage />) },
+          { path: "federal", element: withSuspense(<GrantFederalPage />) },
+          { path: "scholarships", element: withSuspense(<GrantScholarshipsPage />) },
+          { path: "institutions", element: withSuspense(<GrantInstitutionsPage />) },
+          { path: "applications", element: withSuspense(<GrantApplicationsPage />) },
+          { path: "compare", element: withSuspense(<GrantComparePage />) },
+          { path: "loans", element: withSuspense(<GrantLoansPage />) },
+          { path: "plan", element: withSuspense(<GrantPlanPage />) },
+        ],
+      },
     ],
   },
   { path: "*", element: <Navigate to="/login" replace /> },

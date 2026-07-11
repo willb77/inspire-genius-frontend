@@ -125,6 +125,19 @@ export const ROUTES = {
     ANALYTICS: "/distributor/analytics",
     SETTINGS: "/distributor/settings",
   },
+  // GRANT financial-aid vertical (flag-gated by user_preferences.enabled_verticals)
+  GRANT: {
+    BASE: "/vertical/grant",
+    DASHBOARD: "/vertical/grant/dashboard",
+    PROFILE: "/vertical/grant/profile",
+    FEDERAL: "/vertical/grant/federal",
+    SCHOLARSHIPS: "/vertical/grant/scholarships",
+    INSTITUTIONS: "/vertical/grant/institutions",
+    APPLICATIONS: "/vertical/grant/applications",
+    COMPARE: "/vertical/grant/compare",
+    LOANS: "/vertical/grant/loans",
+    PLAN: "/vertical/grant/plan",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",
