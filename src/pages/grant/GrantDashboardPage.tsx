@@ -1,20 +1,51 @@
-import { GraduationCap, CalendarClock, Award } from "lucide-react"
+import { Link } from "react-router-dom"
+import { GraduationCap, CalendarClock, Award, Sparkles, ArrowRight } from "lucide-react"
 import { useStudentProfile } from "@/hooks/grant/useProfile"
 import { useDeadlines } from "@/hooks/grant/useDeadlines"
 import { useScholarships } from "@/hooks/grant/useScholarships"
+import { useAidIntake } from "@/hooks/grant/useAidIntake"
+import { readyToSearch, triggerProgress, TRIGGER_FIELDS } from "@/types/grant/intake"
+import { ROUTES } from "@/constants/routes"
 
 /**
  * GRANT vertical landing page. Renders inside the shared AppShell (light theme)
  * via GrantLayout. Consumes the mock-backed data hooks so the shell + gated nav
- * are verifiable end-to-end for UI-0.
+ * are verifiable end-to-end for UI-0, plus an aid-intake CTA (UI-1) that leads
+ * users into the interactive questionnaire until their essentials are complete.
  */
 export default function GrantDashboardPage() {
   const { data: profile } = useStudentProfile()
   const { data: deadlines } = useDeadlines()
   const { data: scholarships } = useScholarships()
+  const { data: intake } = useAidIntake()
+
+  const aidReady = readyToSearch(intake ?? {})
+  const answered = triggerProgress(intake ?? {})
 
   return (
     <div className="max-w-5xl">
+      {!aidReady && (
+        <Link
+          to={ROUTES.GRANT.PROFILE}
+          className="mb-5 flex items-center justify-between rounded-xl border border-[#3B5BFF] bg-[rgba(59,91,255,0.06)] p-4 transition hover:bg-[rgba(59,91,255,0.1)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[rgba(59,91,255,0.12)]">
+              <Sparkles className="h-4 w-4 text-[#3B5BFF]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#1f2937]">Complete your aid profile</p>
+              <p className="text-xs text-[#6b7280]">
+                {answered}/{TRIGGER_FIELDS.length} essentials answered — finish to unlock your matches.
+              </p>
+            </div>
+          </div>
+          <span className="flex items-center gap-1 text-sm font-medium text-[#3B5BFF]">
+            Continue <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+      )}
+
       <div className="flex items-center gap-3 mb-1">
         <div className="w-10 h-10 rounded-lg bg-[rgba(59,91,255,0.1)] flex items-center justify-center">
           <GraduationCap className="w-5 h-5 text-[#3B5BFF]" />

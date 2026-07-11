@@ -2,6 +2,9 @@
 // These model the Section-4 endpoint payloads consumed by the GRANT tools.
 // Kept intentionally explicit (no `any`) so UI-1..7 can build against them.
 
+// Aid-intake contract (UI-1) — trigger + enrichment fields, zod schema, helpers.
+export * from "./intake"
+
 /** Vertical identifiers that gate feature access via user_preferences.enabled_verticals. */
 export type KnownVertical = "grant"
 
