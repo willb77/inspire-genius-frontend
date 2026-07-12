@@ -29,10 +29,18 @@ describe("useVerticalAccess", () => {
     expect(result.current.hasAccess).toBe(false)
   })
 
-  test("dev override forces access on regardless of entitlement", () => {
+  test("override 'true' forces access on regardless of entitlement", () => {
     window.localStorage.setItem(DEV_ACCESS_KEY, "true")
     const { result } = renderHook(() => useVerticalAccess("grant"))
     expect(result.current.hasAccess).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  test("override 'false' forces access off even when entitled", () => {
+    mockUseEnabledVerticals.mockReturnValue({ data: ["grant"], isLoading: false })
+    window.localStorage.setItem(DEV_ACCESS_KEY, "false")
+    const { result } = renderHook(() => useVerticalAccess("grant"))
+    expect(result.current.hasAccess).toBe(false)
     expect(result.current.isLoading).toBe(false)
   })
 
