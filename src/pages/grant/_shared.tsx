@@ -63,6 +63,15 @@ const TONE_CLASSES: Record<Tone, string> = {
   gray: "bg-[#f3f4f6] text-[#6b7280]",
 }
 
+const BAR_CLASSES: Record<Tone, string> = {
+  blue: "bg-[#3B5BFF]",
+  teal: "bg-[#2DD4BF]",
+  green: "bg-[#22c55e]",
+  amber: "bg-[#f59e0b]",
+  red: "bg-[#ef4444]",
+  gray: "bg-[#9ca3af]",
+}
+
 /** Small pill label; tone drives the color pair. */
 export function GrantPill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
@@ -74,5 +83,81 @@ export function GrantPill({ tone, children }: { tone: Tone; children: React.Reac
     >
       {children}
     </span>
+  )
+}
+
+/** A labeled progress meter (completeness %, % need met, DTI, pipeline). */
+export function GrantMeter({
+  value,
+  tone = "blue",
+  label,
+  right,
+  className,
+}: {
+  value: number // 0–100
+  tone?: Tone
+  label?: React.ReactNode
+  right?: React.ReactNode
+  className?: string
+}) {
+  const pct = Math.max(0, Math.min(100, value))
+  return (
+    <div className={className}>
+      {(label || right) && (
+        <div className="mb-1.5 flex items-center justify-between text-sm">
+          <span className="font-medium text-[#374151]">{label}</span>
+          <span className="font-semibold text-[#1f2937]">{right}</span>
+        </div>
+      )}
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#eef1f4]">
+        <div className={cn("h-full rounded-full transition-all", BAR_CLASSES[tone])} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+/** A compact metric tile: icon chip + label + big value + optional hint. */
+export function GrantStat({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone = "blue",
+}: {
+  icon: LucideIcon
+  label: string
+  value: React.ReactNode
+  hint?: React.ReactNode
+  tone?: Tone
+}) {
+  return (
+    <section className="rounded-xl border border-[#e5e7eb] bg-white p-5">
+      <div className="mb-2 flex items-center gap-2 text-[#374151]">
+        <span className={cn("flex h-6 w-6 items-center justify-center rounded-md", TONE_CLASSES[tone])}>
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <h2 className="text-sm font-semibold">{label}</h2>
+      </div>
+      <p className="text-3xl font-bold text-[#1f2937]">{value}</p>
+      {hint && <p className="mt-1 text-xs text-[#9ca3af]">{hint}</p>}
+    </section>
+  )
+}
+
+/** Section heading with an optional right-aligned action/slot. */
+export function GrantSectionTitle({
+  children,
+  action,
+  className,
+}: {
+  children: React.ReactNode
+  action?: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn("mb-3 flex items-center justify-between", className)}>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">{children}</h2>
+      {action}
+    </div>
   )
 }
