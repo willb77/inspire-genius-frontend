@@ -26,6 +26,7 @@ import { getAwardLetters } from "../awardLetter.service"
 import { lookupSalary } from "../salary.service"
 import { webSearch } from "../webSearch.service"
 import { getAidIntake, saveAidIntake } from "../intake.service"
+import { getEnabledVerticals } from "../entitlements.service"
 
 const envelope = <T>(data: T) => ({ data: { status: true, data } })
 
@@ -37,65 +38,65 @@ beforeEach(() => {
 })
 
 describe("GRANT service wrappers", () => {
-  test("getStudentProfile GETs /v1/students/{id} and unwraps the envelope", async () => {
+  test("getStudentProfile GETs /v1/agents/grant/students/{id} and unwraps the envelope", async () => {
     get.mockResolvedValueOnce(envelope({ id: "s1" }))
     const res = await getStudentProfile("s1")
-    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/students/s1"))
+    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/agents/grant/students/s1"))
     expect(res.data).toEqual({ id: "s1" })
   })
 
   test("getStudentProfile URL-encodes the id", async () => {
     await getStudentProfile("a b/c")
-    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/students/a%20b%2Fc"))
+    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/agents/grant/students/a%20b%2Fc"))
   })
 
-  test("getDeadlines GETs /v1/deadlines", async () => {
+  test("getDeadlines GETs /v1/agents/grant/deadlines", async () => {
     await getDeadlines("s1")
-    expect(get).toHaveBeenCalledWith("/v1/deadlines", expect.any(Object))
+    expect(get).toHaveBeenCalledWith("/v1/agents/grant/deadlines", expect.any(Object))
   })
 
-  test("searchScholarships GETs /v1/scholarships (default params)", async () => {
+  test("searchScholarships GETs /v1/agents/grant/scholarships (default params)", async () => {
     await searchScholarships()
-    expect(get).toHaveBeenCalledWith("/v1/scholarships", expect.any(Object))
+    expect(get).toHaveBeenCalledWith("/v1/agents/grant/scholarships", expect.any(Object))
   })
 
   test("searchScholarships passes query params", async () => {
     await searchScholarships({ query: "stem", minAmount: 1000 })
-    expect(get).toHaveBeenCalledWith("/v1/scholarships", expect.any(Object))
+    expect(get).toHaveBeenCalledWith("/v1/agents/grant/scholarships", expect.any(Object))
   })
 
-  test("calculateNetPrice POSTs /v1/net-price with the body", async () => {
+  test("calculateNetPrice POSTs /v1/agents/grant/net-price with the body", async () => {
     const body = { institutionId: "i1", householdIncome: 60000, dependencyStatus: "dependent" as const, stateOfResidence: "CA" }
     await calculateNetPrice(body)
-    expect(post).toHaveBeenCalledWith("/v1/net-price", body)
+    expect(post).toHaveBeenCalledWith("/v1/agents/grant/net-price", body)
   })
 
-  test("calculateRepayment POSTs /v1/calculate-repayment with the body", async () => {
+  test("calculateRepayment POSTs /v1/agents/grant/calculate-repayment with the body", async () => {
     const body = { principal: 20000, annualRatePct: 5.5, termMonths: 120, plan: "standard" as const }
     await calculateRepayment(body)
-    expect(post).toHaveBeenCalledWith("/v1/calculate-repayment", body)
+    expect(post).toHaveBeenCalledWith("/v1/agents/grant/calculate-repayment", body)
   })
 
-  test("getAwardLetters GETs /v1/award-letters", async () => {
+  test("getAwardLetters GETs /v1/agents/grant/award-letters", async () => {
     await getAwardLetters("s1")
-    expect(get).toHaveBeenCalledWith("/v1/award-letters", expect.any(Object))
+    expect(get).toHaveBeenCalledWith("/v1/agents/grant/award-letters", expect.any(Object))
   })
 
-  test("lookupSalary GETs /v1/salary-lookup", async () => {
+  test("lookupSalary GETs /v1/agents/grant/salary-lookup", async () => {
     await lookupSalary("Nurse")
-    expect(get).toHaveBeenCalledWith("/v1/salary-lookup", expect.any(Object))
+    expect(get).toHaveBeenCalledWith("/v1/agents/grant/salary-lookup", expect.any(Object))
   })
 
-  test("webSearch POSTs /v1/web-search with the body", async () => {
+  test("webSearch POSTs /v1/agents/grant/web-search with the body", async () => {
     const body = { query: "fafsa deadline", maxResults: 5 }
     await webSearch(body)
-    expect(post).toHaveBeenCalledWith("/v1/web-search", body)
+    expect(post).toHaveBeenCalledWith("/v1/agents/grant/web-search", body)
   })
 
   test("getAidIntake GETs the student aid-intake path", async () => {
     get.mockResolvedValueOnce(envelope({ student_age: 17 }))
     const res = await getAidIntake("me")
-    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/students/me/aid-intake"))
+    expect(get).toHaveBeenCalledWith(expect.stringContaining("/v1/agents/grant/students/me/aid-intake"))
     expect(res.data).toEqual({ student_age: 17 })
   })
 
@@ -109,8 +110,15 @@ describe("GRANT service wrappers", () => {
     }
     await saveAidIntake("me", profile)
     expect(patch).toHaveBeenCalledWith(
-      expect.stringContaining("/v1/students/me/aid-intake"),
+      expect.stringContaining("/v1/agents/grant/students/me/aid-intake"),
       profile
     )
+  })
+
+  test("getEnabledVerticals GETs /v1/agents/me/verticals and unwraps the list", async () => {
+    get.mockResolvedValueOnce(envelope({ enabled_verticals: ["grant"] }))
+    const res = await getEnabledVerticals()
+    expect(get).toHaveBeenCalledWith("/v1/agents/me/verticals")
+    expect(res.data).toEqual({ enabled_verticals: ["grant"] })
   })
 })
