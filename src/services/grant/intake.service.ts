@@ -1,4 +1,4 @@
-import { api } from "@/lib/axios"
+import { agentApi } from "@/lib/agentApi"
 import type { GrantApiResponse } from "@/types/grant"
 import type { AidIntakeProfile, PartialAidIntake } from "@/types/grant/intake"
 
@@ -7,7 +7,7 @@ import type { AidIntakeProfile, PartialAidIntake } from "@/types/grant/intake"
  * Returns a partial profile (the student may have answered only some fields).
  */
 export async function getAidIntake(studentId: string) {
-  const { data } = await api.get<GrantApiResponse<PartialAidIntake>>(
+  const { data } = await agentApi.get<GrantApiResponse<PartialAidIntake>>(
     `/v1/students/${encodeURIComponent(studentId)}/aid-intake`
   )
   return data
@@ -19,7 +19,7 @@ export async function getAidIntake(studentId: string) {
  * (the write-allowlisted field) once the Section-4 endpoint is live.
  */
 export async function saveAidIntake(studentId: string, profile: AidIntakeProfile) {
-  const { data } = await api.patch<GrantApiResponse<AidIntakeProfile>>(
+  const { data } = await agentApi.patch<GrantApiResponse<AidIntakeProfile>>(
     `/v1/students/${encodeURIComponent(studentId)}/aid-intake`,
     profile
   )
