@@ -1,17 +1,19 @@
 /**
  * @jest-environment node
  *
- * Exercises every GRANT service wrapper against a mocked axios. The UI-0/UI-1
- * hooks short-circuit to typed mocks (USE_GRANT_MOCKS=true), so these thin
- * wrappers are otherwise never invoked — this locks in their request shapes
- * (method + URL + payload) and their response-envelope unwrapping.
+ * Exercises every GRANT service wrapper against a mocked agentApi. The GRANT
+ * services call the Agent Engine directly (agentApi), not the monolith proxy —
+ * the Section-4 endpoints only exist on agent-engine. The UI-0/UI-1 hooks
+ * short-circuit to typed mocks (USE_GRANT_MOCKS=true), so these thin wrappers
+ * are otherwise never invoked — this locks in their request shapes (method +
+ * URL + payload) and their response-envelope unwrapping.
  */
 
 const get = jest.fn()
 const post = jest.fn()
 const patch = jest.fn()
-jest.mock("@/lib/axios", () => ({
-  api: { get, post, patch },
+jest.mock("@/lib/agentApi", () => ({
+  agentApi: { get, post, patch },
   syncAuthToken: jest.fn(),
 }))
 
