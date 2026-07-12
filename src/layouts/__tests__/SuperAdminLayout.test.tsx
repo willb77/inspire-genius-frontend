@@ -3,6 +3,7 @@
  */
 
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import SuperAdminLayout from "../SuperAdminLayout";
 
 // 🔹 Mock lucide-react icons
@@ -21,6 +22,31 @@ jest.mock("lucide-react", () => ({
   Building2: () => <span data-testid="icon-building" />,
   UserCheck: () => <span data-testid="icon-usercheck" />,
   Briefcase: () => <span data-testid="icon-briefcase" />,
+  // GRANT section + toggle icons
+  GraduationCap: () => <span data-testid="icon-grad" />,
+  Wallet: () => <span data-testid="icon-wallet" />,
+  Landmark: () => <span data-testid="icon-landmark" />,
+  Award: () => <span data-testid="icon-award" />,
+  ClipboardList: () => <span data-testid="icon-clipboard" />,
+  Scale: () => <span data-testid="icon-scale" />,
+  Banknote: () => <span data-testid="icon-banknote" />,
+  Target: () => <span data-testid="icon-target" />,
+}));
+
+// 🔹 Mock the entitlement hook (avoids React Query / QueryClient in this test)
+const mockUseVerticalAccess = jest.fn(() => ({
+  hasAccess: false,
+  isLoading: false,
+  enabledVerticals: [] as string[],
+}));
+jest.mock("@/hooks/grant/useVerticalAccess", () => ({
+  useVerticalAccess: () => mockUseVerticalAccess(),
+}));
+
+// 🔹 Stub the preview toggle (its own deps are tested separately)
+jest.mock("@/components/grant/GrantPreviewToggle", () => ({
+  __esModule: true,
+  default: () => <div data-testid="grant-preview-toggle" />,
 }));
 
 // 🔹 Mock navigation with sections the layout uses
@@ -75,24 +101,33 @@ jest.mock("@/lib/agentApi", () => ({
 }));
 
 // 🔹 Capture props passed to SidebarScaffold
+type MockNavItem = { to: string; label: string };
+type MockNavSection = { label: string; items: MockNavItem[]; defaultCollapsed?: boolean };
+type MockScaffoldProps = {
+  navSections?: MockNavSection[];
+  className?: string;
+  children?: ReactNode;
+  renderAfterContent?: ReactNode;
+};
 const mockSidebarScaffold = jest.fn();
 
 jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: (props: MockScaffoldProps) => {
     mockSidebarScaffold(props);
     return (
       <div data-testid="sidebar-scaffold" data-class={props.className}>
         {/* Render section labels and nav labels for testing */}
-        {props.navSections?.map((section: any) => (
+        {props.navSections?.map((section) => (
           <div key={section.label}>
             <div data-testid={`section-${section.label}`}>{section.label}</div>
-            {section.items.map((item: any) => (
+            {section.items.map((item) => (
               <div key={item.label}>{item.label}</div>
             ))}
           </div>
         ))}
         {props.children}
+        {props.renderAfterContent}
       </div>
     );
   },
@@ -101,6 +136,11 @@ jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
 describe("SuperAdminLayout", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseVerticalAccess.mockReturnValue({
+      hasAccess: false,
+      isLoading: false,
+      enabledVerticals: [],
+    });
   });
 
   test("renders children correctly", () => {
@@ -154,6 +194,36 @@ describe("SuperAdminLayout", () => {
     // "My Workspace" surfaces the user nav so super-admin can hop back
     expect(screen.getByText("My Workspace")).toBeInTheDocument();
     expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
+  });
+
+  test("appends the GRANT section + renders the preview toggle when entitled", () => {
+    mockUseVerticalAccess.mockReturnValue({
+      hasAccess: true,
+      isLoading: false,
+      enabledVerticals: ["grant"],
+    });
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(4);
+    expect(props.navSections[3].label).toBe("Financial Aid");
+    // the preview toggle is passed through renderAfterContent
+    expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
+  });
+
+  test("omits the GRANT section when not entitled", () => {
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(3);
+    expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
   });
 
   test("forwards className to SidebarScaffold", () => {

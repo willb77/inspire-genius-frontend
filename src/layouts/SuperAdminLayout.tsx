@@ -3,6 +3,9 @@ import { SUPER_ADMIN_NAV_SECTIONS, getUserNavItems } from "@/constants/navigatio
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
+import { GRANT_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
+import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess";
+import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 
 export type SuperAdminLayoutProps = {
   children: React.ReactNode;
@@ -12,21 +15,38 @@ export type SuperAdminLayoutProps = {
 export default function SuperAdminLayout({ children, className }: SuperAdminLayoutProps) {
   const agentEngineOn = useAgentEngine();
   const userNavItems = getUserNavItems(agentEngineOn);
+  const { hasAccess: hasGrantAccess } = useVerticalAccess("grant");
 
   /** On admin pages, keep Administration expanded (the user is mid-task) but
-   *  still surface "My Workspace" so they can hop back to the user experience. */
+   *  still surface "My Workspace" so they can hop back to the user experience.
+   *  Entitlement-gated vertical sections are appended after the admin ones and
+   *  toggle live via the preview switch (GrantPreviewToggle). */
   const sections: NavSectionDef[] = useMemo(
     () => [
       { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
       ...SUPER_ADMIN_NAV_SECTIONS.map((s) =>
         s.label === "Administration" ? { ...s, defaultCollapsed: false } : s,
       ),
+      ...(hasGrantAccess
+        ? [
+            {
+              label: GRANT_SIDEBAR_SECTION.label,
+              items: GRANT_SIDEBAR_SECTION.items,
+              defaultCollapsed: false,
+            },
+          ]
+        : []),
     ],
-    [userNavItems],
+    [userNavItems, hasGrantAccess],
   );
 
   return (
-    <SidebarScaffold navItems={[]} navSections={sections} className={className}>
+    <SidebarScaffold
+      navItems={[]}
+      navSections={sections}
+      className={className}
+      renderAfterContent={<GrantPreviewToggle />}
+    >
       {children}
     </SidebarScaffold>
   );
