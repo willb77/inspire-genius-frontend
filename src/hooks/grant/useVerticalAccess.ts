@@ -1,31 +1,54 @@
-import { useMe } from "@/hooks/user/useMe"
-import type { KnownVertical, MeProfile } from "@/types/grant"
+import type { KnownVertical } from "@/types/grant"
+import { useEnabledVerticals } from "./useEnabledVerticals"
 
 export type VerticalAccess = {
-  /** True once the profile has loaded and the vertical is in enabled_verticals. */
+  /** True once entitlement has resolved and the vertical is enabled (or a dev override is set). */
   hasAccess: boolean
-  /** True while the /v1/me profile is still loading. */
+  /** True while the entitlement read is still loading. */
   isLoading: boolean
-  /** The raw entitlement list from user_preferences.enabled_verticals. */
+  /** The raw enabled-verticals list from the server entitlement read. */
   enabledVerticals: string[]
+}
+
+/** localStorage key for the dev/eyeball access override. */
+export const DEV_ACCESS_KEY = "grant_dev_access"
+
+/**
+ * Dev/eyeball shortcut: set `localStorage.grant_dev_access = "true"` (then
+ * reload) to force vertical access on, independent of the server entitlement.
+ * Intended for previewing a vertical in-browser before real entitlement rows
+ * exist. Opt-in, per-browser, never on by default.
+ */
+function hasDevOverride(): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    return window.localStorage.getItem(DEV_ACCESS_KEY) === "true"
+  } catch {
+    return false
+  }
 }
 
 /**
  * Entitlement gate for a vertical pack.
  *
- * Reads `user_preferences.enabled_verticals` from the `/v1/me` profile and
- * returns whether the current user is entitled to the given vertical.
- * Absent entitlement → `hasAccess: false` (routes redirect, nav hidden).
+ * Reads the current user's enabled verticals from the server
+ * (`GET /v1/agents/me/verticals`, via {@link useEnabledVerticals}) and returns
+ * whether they're entitled to the given vertical. Absent entitlement →
+ * `hasAccess: false` (routes redirect, nav hidden).
  *
- * Follows the simplified vertical model: entitlement is a frontend-only read
- * of a user-preferences list — no Pack SDK / Cognito PTG.
+ * The dev override (`localStorage.grant_dev_access`) forces access on for
+ * in-browser preview before real entitlement rows are seeded.
+ *
+ * Simplified vertical model: entitlement is a plain server-read list — no Pack
+ * SDK / Cognito PTG.
  */
 export function useVerticalAccess(vertical: KnownVertical): VerticalAccess {
-  const { data, isLoading } = useMe<MeProfile>()
-  const enabledVerticals = data?.data?.user_preferences?.enabled_verticals ?? []
+  const { data, isLoading } = useEnabledVerticals()
+  const enabledVerticals = data ?? []
+  const devOverride = hasDevOverride()
   return {
-    hasAccess: enabledVerticals.includes(vertical),
-    isLoading,
+    hasAccess: devOverride || enabledVerticals.includes(vertical),
+    isLoading: devOverride ? false : isLoading,
     enabledVerticals,
   }
 }
