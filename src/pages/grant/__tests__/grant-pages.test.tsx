@@ -118,9 +118,9 @@ describe("GrantComparePage (UI-5)", () => {
     // City College has the lower net cost (9000 < 15500) → flagged best value.
     expect(await screen.findByText("Best value")).toBeInTheDocument()
     expect(screen.getByText(/lowest net cost at/i)).toBeInTheDocument()
-    // Both institutions appear in the table.
+    // Both institutions appear (in the table and the side-by-side detail cards).
     expect(screen.getAllByText(/City College/).length).toBeGreaterThan(0)
-    expect(screen.getByText("State University")).toBeInTheDocument()
+    expect(screen.getAllByText("State University").length).toBeGreaterThan(0)
   })
 })
 
