@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Banknote, LineChart, Briefcase } from "lucide-react"
+import { Banknote, LineChart, Briefcase, Info, Scale, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -12,14 +12,41 @@ import {
 import { useRepayment } from "@/hooks/grant/useRepayment"
 import { useSalary } from "@/hooks/grant/useSalary"
 import type { RepaymentPlanType } from "@/types/grant"
-import { GrantPageHeader, GrantCard, GrantPill } from "./_shared"
+import { GrantPageHeader, GrantCard, GrantPill, GrantMeter, GrantSectionTitle } from "./_shared"
 import { formatCurrency } from "./_format"
 
 const PLAN_OPTIONS: { value: RepaymentPlanType; label: string }[] = [
   { value: "standard", label: "Standard (10-year)" },
   { value: "graduated", label: "Graduated" },
-  { value: "income-driven", label: "Income-driven (SAVE/RAP)" },
+  { value: "income-driven", label: "Income-driven (RAP)" },
 ]
+
+/** Plan comparison metadata — RAP is the current GRANT-recommended default. */
+const COMPARE_PLANS: {
+  value: RepaymentPlanType
+  name: string
+  sub: string
+  suffix: string
+  best?: boolean
+}[] = [
+  {
+    value: "income-driven",
+    name: "RAP",
+    sub: "New federal plan · 1–10% of income, up to 30 yrs",
+    suffix: "/mo early career",
+    best: true,
+  },
+  { value: "standard", name: "Standard (10-yr)", sub: "Fixed payment · lowest total interest", suffix: "/mo" },
+  { value: "graduated", name: "Graduated", sub: "Starts low, rises every 2 years", suffix: "/mo start" },
+]
+
+/** Standard amortized monthly payment. Returns 0 for degenerate inputs. */
+function amortizedMonthly(principal: number, annualRatePct: number, termMonths: number): number {
+  if (principal <= 0 || termMonths <= 0) return 0
+  const r = annualRatePct / 100 / 12
+  if (r === 0) return principal / termMonths
+  return (principal * r) / (1 - Math.pow(1 + r, -termMonths))
+}
 
 /** Payment-to-income affordability band using the entry-level monthly salary. */
 function affordability(monthlyPayment: number, monthlyIncome: number) {
@@ -33,10 +60,12 @@ function affordability(monthlyPayment: number, monthlyIncome: number) {
 /**
  * UI-6 — Loans & Debt.
  *
- * Two linked tools: a repayment projector (principal / rate / term / plan) and
- * an occupation salary lookup. When both are run, an affordability band frames
- * the projected payment against expected entry-level income. Backed by
- * `useRepayment` + `useSalary` (mock for UI-0 → live endpoints when wired).
+ * Three linked tools: a repayment projector (principal / rate / term / plan), an
+ * occupation salary lookup, and a plan comparison (RAP / Standard / Graduated).
+ * When salary is known, a debt-to-income meter checks projected borrowing against
+ * GRANT's 1× expected-salary ceiling and an affordability band frames the monthly
+ * payment against entry-level income. Backed by `useRepayment` + `useSalary`
+ * (mock for UI-0 → live endpoints when wired).
  */
 export default function GrantLoansPage() {
   const { mutate, data: estimate, isPending } = useRepayment()
@@ -65,9 +94,26 @@ export default function GrantLoansPage() {
     setOccupation(occupationInput.trim())
   }
 
+  const p = Number(principal) || 0
+  const standardMonthly = amortizedMonthly(p, Number(rate) || 0, Number(term) || 0)
+  const monthlyIncome = salary ? salary.entryLevelSalary / 12 : null
+  // RAP is income-driven — only computable once expected earnings are known.
+  const rapMonthly =
+    salary != null ? Math.max(10, ((salary.entryLevelSalary - 15000) * 0.01) / 12) : null
+  const planMonthly: Record<RepaymentPlanType, number | null> = {
+    standard: standardMonthly,
+    graduated: standardMonthly * 0.6,
+    "income-driven": rapMonthly,
+  }
+
+  // Debt-to-income: projected borrowing vs. one year of expected entry-level salary.
+  const debtRatio = salary ? p / salary.entryLevelSalary : null
+  const dtiTone =
+    debtRatio == null ? "gray" : debtRatio > 1 ? "red" : debtRatio > 0.7 ? "amber" : "green"
+
   const band =
-    estimate && salary
-      ? affordability(estimate.monthlyPayment, salary.entryLevelSalary / 12)
+    estimate && monthlyIncome != null
+      ? affordability(estimate.monthlyPayment, monthlyIncome)
       : null
 
   return (
@@ -77,6 +123,18 @@ export default function GrantLoansPage() {
         title="Loans & Debt"
         description="Project monthly repayment and sanity-check it against expected earnings."
       />
+
+      {/* Policy callout — repayment rules changed in 2026. */}
+      <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#3B5BFF]" />
+        <p className="text-xs leading-relaxed text-[#6b7280]">
+          <span className="font-semibold text-[#b45309]">Repayment changed in 2026.</span> The{" "}
+          <span className="font-medium text-[#374151]">SAVE plan is closed to new enrollment</span>{" "}
+          and is being phased out — superseded by the new{" "}
+          <span className="font-medium text-[#374151]">Repayment Assistance Plan (RAP)</span> (1–10%
+          of income, up to 30 years). New borrowers now choose between Standard and RAP.
+        </p>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Repayment projector */}
@@ -171,7 +229,7 @@ export default function GrantLoansPage() {
           )}
         </GrantCard>
 
-        {/* Salary lookup + affordability */}
+        {/* Salary lookup + affordability + debt-to-income */}
         <GrantCard>
           <div className="mb-4 flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-[#2DD4BF]" />
@@ -228,7 +286,78 @@ export default function GrantLoansPage() {
               <GrantPill tone={band.tone}>{band.label}</GrantPill>
             </div>
           )}
+
+          {debtRatio != null && (
+            <div className="mt-4 border-t border-[#f0f1f3] pt-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Scale className="h-4 w-4 text-[#3B5BFF]" />
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                  Debt-to-income
+                </h3>
+              </div>
+              <GrantMeter
+                value={Math.min(100, debtRatio * 100)}
+                tone={dtiTone}
+                label={`${debtRatio.toFixed(2)}× expected salary`}
+                right={
+                  <GrantPill tone={dtiTone}>
+                    {debtRatio > 1 ? "Over ceiling" : debtRatio > 0.7 ? "Approaching" : "Healthy"}
+                  </GrantPill>
+                }
+              />
+              <p className="mt-2 text-xs text-[#9ca3af]">
+                {debtRatio > 1
+                  ? "Projected borrowing exceeds GRANT's 1× expected-salary ceiling — consider lower-cost aid before borrowing more."
+                  : "GRANT keeps total borrowing under 1× your expected first-year salary. You're within a low-risk profile."}
+              </p>
+            </div>
+          )}
         </GrantCard>
+      </div>
+
+      {/* Plan comparison */}
+      <div className="mt-6">
+        <GrantSectionTitle>Compare repayment plans</GrantSectionTitle>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {COMPARE_PLANS.map((pl) => {
+            const monthly = planMonthly[pl.value]
+            const selected = plan === pl.value
+            return (
+              <button
+                key={pl.value}
+                type="button"
+                onClick={() => setPlan(pl.value)}
+                aria-pressed={selected}
+                className={
+                  "rounded-xl border p-4 text-left transition " +
+                  (selected
+                    ? "border-[#3B5BFF] ring-1 ring-[#3B5BFF] bg-[rgba(59,91,255,0.04)]"
+                    : "border-[#e5e7eb] bg-white hover:border-[#cbd5e1]")
+                }
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-[#1f2937]">{pl.name}</span>
+                  {pl.best && (
+                    <GrantPill tone="teal">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      GRANT pick
+                    </GrantPill>
+                  )}
+                </div>
+                <p className="text-xs leading-snug text-[#9ca3af]">{pl.sub}</p>
+                <p className="mt-3 text-2xl font-bold text-[#3B5BFF]">
+                  {monthly != null ? formatCurrency(monthly) : "1–10%"}
+                  <span className="ml-1 text-xs font-medium text-[#9ca3af]">
+                    {monthly != null ? pl.suffix : "of income"}
+                  </span>
+                </p>
+                {monthly == null && (
+                  <p className="mt-1 text-xs text-[#9ca3af]">Add an occupation to estimate</p>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

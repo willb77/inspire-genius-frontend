@@ -1,3 +1,20 @@
+## [2026-07-12 EDT] — GRANT pages: wireframe enrichment (P1-C, light IG theme)
+
+Enriched all 9 GRANT tool pages toward the `grant-financial-aid` reference wireframe's component richness — mapping structure/components only, keeping the **light IG theme** (Bill's decision; not the dark Pathfinder aesthetic). Built on `feat/grant-p1c` off frontend `origin/development` via 4 parallel sub-agents over disjoint page files, integrated + verified by the controller. **61 grant tests pass**; tsc + eslint clean.
+
+### Added
+- **Shared primitives** (`_shared.tsx`): `GrantMeter` (labeled progress bar), `GrantStat` (metric tile), `GrantSectionTitle` — reused across the pages.
+- **Scholarships** — pipeline funnel strip (Identified→In Progress→Submitted→Awarded) + richer match cards (difficulty pill, match-strength meter, relative deadline, "Why this fits you").
+- **Federal & State** — FAFSA/SAI hero (status + next-step cue), federal-program tiles (Pell, Sub/Unsub Stafford, Work-Study), state-programs grouping.
+- **Institutions** — fit-band pill (Safety/Match/Reach), "% of need met" meter, need-blind/need-aware + auto-merit + SAP flags.
+- **Compare** — side-by-side award-letter cards with true-net-cost, gapping + "loans labeled as aid" caution flags, collapsible appeal-letter draft.
+- **Loans** — RAP/Standard/Graduated plan-comparison cards, debt-to-income meter (1× ceiling), SAVE-closed→RAP policy callout.
+- **Applications (Concierge)** — per-item auto-fill % meter, status pill (Submitted/Ready/Needs review), PII flag, human-review note, recommended-order hint.
+- **Dashboard / Plan / Profile** — aid-journey step strip (Profile→FAFSA→Search→Apply→Compare→Plan), completeness meter, population chips (first-gen + `activeModuleIds`), next-actions lists; Profile gains a "profile at a glance" summary above the (unchanged) intake flow.
+
+### Changed
+- All enrichment additive; existing search/estimate/toggle/filter behaviors and the `grant-pages.test.tsx` anchors preserved (two anchors adjusted for the richer UI: Compare "State University" → `getAllByText` like City College; Loans plan-card hint reworded so it doesn't shadow the salary "Look up" button).
+
 ## [2026-07-12 EDT] — GRANT intake: branching interview flow (P1-A + P2-A frontend)
 
 Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field flow (5 triggers + 6 enrichment) into the full branching interview from the GRANT Financial-Aid Interview Guide (Sec 1–3), wired to the expanded backend `IntakeProfile` contract (monorepo PR #545, merged + deployed to dev). Light IG theme kept (the wireframe re-skin decision). Built on `feat/grant-intake-branching` off frontend `origin/development`; **61 grant tests pass** (51 existing + 10 new); tsc + eslint clean.
