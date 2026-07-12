@@ -1,3 +1,19 @@
+## [2026-07-12 EDT] — GRANT intake: branching interview flow (P1-A + P2-A frontend)
+
+Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field flow (5 triggers + 6 enrichment) into the full branching interview from the GRANT Financial-Aid Interview Guide (Sec 1–3), wired to the expanded backend `IntakeProfile` contract (monorepo PR #545, merged + deployed to dev). Light IG theme kept (the wireframe re-skin decision). Built on `feat/grant-intake-branching` off frontend `origin/development`; **61 grant tests pass** (51 existing + 10 new); tsc + eslint clean.
+
+### Added
+- **Screener + population modules** — the flow now asks the Sec 1.8 screener (11 yes/no questions) and, for each "Yes", reveals that population module's questions (military GI Bill/VR&E, disability + state VR, adults/WIOA/employer, justice/Second Chance Pell, first-time, foster/Chafee, undocumented/DACA, homeless, caregiver, field-specific, tribal). Module steps are gated — they appear only when their screener flag is Yes (`GrantIntakeFlow` computes `visibleSteps` dynamically).
+- **Externalized question bank (P2-A-fe)** — all questions/options/labels live as typed config in `steps.ts` + enums in `types/grant/intake.ts` (single source of truth; adding a question is a config edit). New multiselect input kind (disability categories).
+- **Flat⇄nested mappers** — `toIntakePayload` reshapes the flat form into the backend's nested `{ screener, modules, tool_inputs }` + top-level search-driving mirrors; `fromIntakePayload` reverses it so an existing profile repopulates on reload. New enums mirror the Python contract (citizenship, dependency, credential, military affiliation, GI Bill, justice status, disability category).
+- Tests: `src/types/grant/__tests__/intake-branching.test.ts` (10) — mapper round-trip, Sec 5 `activeModuleIds` routing, and step-config integrity.
+
+### Changed
+- `useAidIntake`/`intake.service` do the flat⇄nested mapping at the boundary (component + form stay flat). PATCH now sends the nested payload; GET maps back. Mock-guarded (`USE_GRANT_MOCKS`) until the flip. `readyToSearch`/`triggerProgress`/`TRIGGER_FIELDS` unchanged — the 5 triggers still gate the first search.
+
+### Deferred (next)
+- **P1-C** — enrich the 9 GRANT pages toward the `grant-financial-aid` wireframe (**light IG theme**, per the decision). Separable follow-up.
+
 ## [2026-07-09 EDT] — "Skip onboarding" toggle — merged + deployed (Dev + Staging-B)
 
 Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environments, and the backend fix that unblocked it.

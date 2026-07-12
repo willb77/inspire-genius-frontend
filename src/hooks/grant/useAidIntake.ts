@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from "@ta
 import type { AxiosError } from "axios"
 import { getAidIntake, saveAidIntake } from "@/services/grant/intake.service"
 import type { AidIntakeProfile, PartialAidIntake } from "@/types/grant/intake"
+import { fromIntakePayload, toIntakePayload } from "@/types/grant/intake"
 import { USE_GRANT_MOCKS } from "./mocks"
 
 const intakeKey = (studentId: string) => ["grant", "aid-intake", studentId] as const
@@ -19,7 +20,7 @@ export function useAidIntake(
     queryFn: async () => {
       if (USE_GRANT_MOCKS) return {}
       const res = await getAidIntake(studentId)
-      return (res.data ?? {}) as PartialAidIntake
+      return fromIntakePayload(res.data ?? {})
     },
     ...options,
   })
@@ -33,9 +34,10 @@ export function useSaveAidIntake(studentId = "me") {
   const qc = useQueryClient()
   return useMutation<AidIntakeProfile, AxiosError, AidIntakeProfile>({
     mutationFn: async (profile) => {
-      if (USE_GRANT_MOCKS) return profile
-      const res = await saveAidIntake(studentId, profile)
-      return (res.data ?? profile) as AidIntakeProfile
+      // Reshape the flat form values into the nested backend IntakeProfile
+      // (screener/modules/mirrors) before persisting.
+      if (!USE_GRANT_MOCKS) await saveAidIntake(studentId, toIntakePayload(profile))
+      return profile
     },
     onSuccess: (saved) => {
       qc.setQueryData(intakeKey(studentId), saved)
