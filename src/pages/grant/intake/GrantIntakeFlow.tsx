@@ -26,8 +26,6 @@ import {
 } from "@/types/grant/intake"
 import { INTAKE_STEPS, labelForAnswer, type IntakeStep } from "./steps"
 
-const TOTAL = INTAKE_STEPS.length
-
 /** Assistant question bubble — the conversational half of the hybrid flow. */
 function AssistantBubble({ children }: { children: React.ReactNode }) {
   return (
@@ -87,15 +85,21 @@ export default function GrantIntakeFlow() {
   })
 
   const values = form.watch()
-  const done = stepIndex >= TOTAL
+  // Branching: module steps appear only once their screener gate is answered Yes.
+  const visibleSteps = useMemo(
+    () => INTAKE_STEPS.filter((s) => s.phase !== "module" || values[s.gate!] === true),
+    [values]
+  )
+  const total = visibleSteps.length
+  const done = stepIndex >= total
   const progress = triggerProgress(values)
   const isReady = readyToSearch(values)
-  const step = done ? null : INTAKE_STEPS[stepIndex]
+  const step = done ? null : visibleSteps[stepIndex]
 
   // Rows already answered (or explicitly visited) before the current step.
   const transcript = useMemo(
-    () => INTAKE_STEPS.slice(0, stepIndex),
-    [stepIndex]
+    () => visibleSteps.slice(0, stepIndex),
+    [visibleSteps, stepIndex]
   )
 
   async function advance() {
@@ -191,7 +195,7 @@ export default function GrantIntakeFlow() {
                 <Button onClick={advance} className="bg-[#3B5BFF] hover:bg-[#2f49cc]">
                   Continue <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
-                {step.phase === "enrichment" && (
+                {step.phase !== "trigger" && (
                   <Button variant="ghost" onClick={skip} className="text-[#6b7280]">
                     Skip
                   </Button>
@@ -335,6 +339,40 @@ function StepInput({
             ))}
           </div>
         )}
+      />
+    )
+  }
+
+  if (step.kind === "multiselect") {
+    return (
+      <Controller
+        control={form.control}
+        name={step.field}
+        render={({ field }) => {
+          const selected = (field.value as string[] | undefined) ?? []
+          const toggle = (v: string) =>
+            field.onChange(
+              selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]
+            )
+          return (
+            <div className="flex max-w-lg flex-wrap gap-2">
+              {step.options.map((o) => (
+                <Button
+                  key={o.value}
+                  type="button"
+                  variant="outline"
+                  onClick={() => toggle(o.value)}
+                  className={cn(
+                    selected.includes(o.value) &&
+                      "border-[#3B5BFF] bg-[rgba(59,91,255,0.08)] text-[#3B5BFF]"
+                  )}
+                >
+                  {o.label}
+                </Button>
+              ))}
+            </div>
+          )
+        }}
       />
     )
   }
