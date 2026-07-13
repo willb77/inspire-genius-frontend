@@ -1,3 +1,38 @@
+## [2026-07-13] — GRANT Coach roster UI (P3 + P4): student list, CSV import, per-student intake, invite-to-IG
+
+Frontend for the GRANT "Coach — Aid Profiles for Others" surface
+(`GRANT_Coach_Profiles_Build_Plan.docx`). Companion to backend PR
+`inspire-genius#557`; frontend PR `inspire-genius-frontend#176` → `development`.
+A coach imports a roster of managed students, opens each into the EXISTING aid
+questionnaire bound to that student, and can convert a managed student into a
+real IG user.
+
+### Added
+- `types/grant/coach.ts` — CoachStudent, CoachStudentCreate, CoachStudentImportRow,
+  ImportRowResult, CoachImportResult, InviteStudentResult, RemoveStudentResult.
+- `services/grant/coach.service.ts` — list/create/import/remove/invite via
+  `agentApi` + `GrantApiResponse` envelope (paths match backend #557 exactly).
+- `hooks/grant/useCoachRoster.ts` — `useCoachRoster` + create/import/remove/invite
+  mutations; `USE_GRANT_MOCKS`-aware (local mock roster); optimistic invite.
+- `pages/grant/coach/` — `RosterPage` (status badge, completeness meter,
+  ready-to-search, search, Add-student, Import CSV, per-row Open/Invite/Remove),
+  `CsvImportModal` (dependency-free RFC-4180 parser + preview + template +
+  per-row result report), `StudentIntakePage` (reuses `<GrantIntakeFlow studentId>`),
+  `csv.ts` parser + tests.
+
+### Changed
+- `pages/grant/intake/GrantIntakeFlow.tsx` — optional `studentId` prop (default
+  `"me"`); coach-mode copy/navigation. Self-serve behavior unchanged.
+- `constants/routes.ts`, `routes.tsx` — `/vertical/grant/coach/students` +
+  `/coach/students/:studentId` routes.
+- `constants/sidebar-sections.ts`, `components/layout/AppSidebar.tsx` — "My Students"
+  nav item gated to coach roles (practitioner/manager/company-admin/super-admin)
+  that are also GRANT-entitled.
+
+### Verified
+- `tsc --noEmit` clean; `eslint` clean; jest **12 suites / 58 tests pass**
+  (4 new coach tests; no self-serve intake regression). No new dependencies.
+
 ## [2026-07-13] — Broadcast Alert system (frontend): composer, notification center, banner
 
 Frontend for the platform Broadcast Alert system. Super-admins on a DB-backed

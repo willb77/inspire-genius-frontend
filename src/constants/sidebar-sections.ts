@@ -153,6 +153,40 @@ export const GRANT_SIDEBAR_SECTION: SidebarSection = {
 }
 
 /**
+ * Coach roster nav item — "My Students".
+ *
+ * Appended to GRANT_SIDEBAR_SECTION only for coach-capable roles (see
+ * {@link grantSidebarSectionForRole}) that are ALSO grant-entitled. A plain
+ * `user` never sees it even with the GRANT entitlement.
+ */
+export const GRANT_COACH_NAV_ITEM: SidebarNavItem = {
+  to: "/vertical/grant/coach/students",
+  icon: Users,
+  label: "My Students",
+}
+
+/** Roles allowed to coach others through the GRANT aid intake. */
+export const GRANT_COACH_ROLES: UserRole[] = [
+  "practitioner",
+  "manager",
+  "company-admin",
+  "super-admin",
+]
+
+/**
+ * The GRANT sidebar section for a given role: the base 9 items, plus the
+ * "My Students" coach item for coach-capable roles. The GRANT entitlement is
+ * still the gate for showing the section at all (handled in AppSidebar).
+ */
+export function grantSidebarSectionForRole(role: UserRole): SidebarSection {
+  if (!GRANT_COACH_ROLES.includes(role)) return GRANT_SIDEBAR_SECTION
+  return {
+    ...GRANT_SIDEBAR_SECTION,
+    items: [...GRANT_SIDEBAR_SECTION.items, GRANT_COACH_NAV_ITEM],
+  }
+}
+
+/**
  * Broadcast Alerts section.
  *
  * NOT part of SIDEBAR_SECTIONS — it is access-gated (not merely role-gated):

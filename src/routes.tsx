@@ -169,6 +169,8 @@ const GrantApplicationsPage = React.lazy(() => import("@/pages/grant/GrantApplic
 const GrantComparePage = React.lazy(() => import("@/pages/grant/GrantComparePage"));
 const GrantLoansPage = React.lazy(() => import("@/pages/grant/GrantLoansPage"));
 const GrantPlanPage = React.lazy(() => import("@/pages/grant/GrantPlanPage"));
+const GrantRosterPage = React.lazy(() => import("@/pages/grant/coach/RosterPage"));
+const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/StudentIntakePage"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
@@ -399,6 +401,9 @@ export const routes: RouteObject[] = [
           { path: "compare", element: withSuspense(<GrantComparePage />) },
           { path: "loans", element: withSuspense(<GrantLoansPage />) },
           { path: "plan", element: withSuspense(<GrantPlanPage />) },
+          // Coach surface — roster + per-student intake (coach-capable roles).
+          { path: "coach/students", element: withSuspense(<GrantRosterPage />) },
+          { path: "coach/students/:studentId", element: withSuspense(<GrantStudentIntakePage />) },
         ],
       },
     ],

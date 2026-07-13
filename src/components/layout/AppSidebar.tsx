@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/useAuth"
-import { getSectionsForRole, GRANT_SIDEBAR_SECTION, BROADCAST_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
+import { getSectionsForRole, grantSidebarSectionForRole, BROADCAST_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
@@ -34,7 +34,7 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
   // They render through the same light chrome — no restyling.
   const sections = [
     ...getSectionsForRole(role),
-    ...(hasGrantAccess ? [GRANT_SIDEBAR_SECTION] : []),
+    ...(hasGrantAccess ? [grantSidebarSectionForRole(role)] : []),
     ...(broadcastAccess?.authorized ? [BROADCAST_SIDEBAR_SECTION] : []),
   ]
   const initials = getInitials(user?.fullName ?? user?.name, user?.email)
