@@ -86,7 +86,10 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
-  { to: ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT, icon: Activity, label: "Dev Traffic Report" },
+  // NOTE: Dev Traffic Report is intentionally NOT here — it is owner-only.
+  // See OWNER_NAV_SECTION below; SuperAdminLayout appends it solely for the
+  // platform owner. The backend (services/agent-engine/.../super_admin_traffic.py)
+  // additionally hard-403s any non-owner caller.
   // Combined Plan §A.E3.4 — Sage document research
   { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
   { to: ROUTES.SUPER_ADMIN.RESEARCH_LIBRARY, icon: BookHeart, label: "Research Library" },
@@ -99,11 +102,21 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
+/**
+ * Team Development Studio is feature-flagged for a pilot manager cohort.
+ * Enabled at build time via VITE_FEATURE_TEAM_DEVELOPMENT=true.
+ */
+const TEAM_DEVELOPMENT_ENABLED =
+  import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
+
 /** Navigation items for the manager role */
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
+  ...(TEAM_DEVELOPMENT_ENABLED
+    ? [{ to: ROUTES.MANAGER.DEVELOPMENT, icon: Sparkles, label: "Team Development" }]
+    : []),
   // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
   { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
   { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
@@ -160,6 +173,40 @@ export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
   { label: "Administration", items: SUPER_ADMIN_NAV_ITEMS, defaultCollapsed: true },
   { label: "Role Views", items: ROLE_VIEW_ITEMS, defaultCollapsed: true },
 ]
+
+/**
+ * Platform owner email — mirrors the backend allow-list
+ * (`_AUTHORIZED_EMAILS` in
+ * `services/agent-engine/app/routes/super_admin_traffic.py`).
+ *
+ * The Dev Traffic Report is owner-only. The backend hard-403s any other
+ * caller regardless of role, and the frontend only surfaces the nav link to
+ * this email — so no other super-admin even sees it. To grant a second
+ * person, add their email here AND to the backend allow-list.
+ */
+export const PLATFORM_OWNER_EMAIL = "willb77@3pp.com"
+
+/** Case-insensitive owner check for nav gating. */
+export function isPlatformOwner(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL
+}
+
+/** Owner-only nav items (visible solely to {@link PLATFORM_OWNER_EMAIL}). */
+export const OWNER_NAV_ITEMS: NavItemDef[] = [
+  { to: ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT, icon: Activity, label: "Dev Traffic Report" },
+]
+
+/**
+ * Owner-only sidebar section. NOT part of SUPER_ADMIN_NAV_SECTIONS —
+ * SuperAdminLayout appends it only when the signed-in user is the platform
+ * owner ({@link isPlatformOwner}). Everyone else, super-admins included,
+ * never sees the link.
+ */
+export const OWNER_NAV_SECTION: NavSectionDef = {
+  label: "Owner",
+  items: OWNER_NAV_ITEMS,
+  defaultCollapsed: false,
+}
 
 /** Lookup from role to its nav items */
 export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
