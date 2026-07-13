@@ -1,3 +1,26 @@
+## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
+
+Follow-up to the coach roster UI, adding the two enhancements chosen after the
+backend E2E smoke (companion to backend `inspire-genius#559`/`#560`). Merged to
+`development`; deployed to dev + staging-b buckets.
+
+### Added
+- **Co-access toggle** — the Invite-to-IG confirm dialog gains a "Keep co-access
+  after they claim their account" switch (default ON). ON = coach stays on the
+  roster; OFF = full hand-off. Threaded through
+  `inviteCoachStudent(id, keepCoachAccess)` → `POST /coach/students/{id}/invite`.
+- **Bulk invite** — per-row selection checkboxes + header select-all (linked rows
+  non-selectable); "Invite selected to IG (N)" toolbar button (email-gated); a
+  bulk confirm dialog reusing the co-access toggle → `inviteCoachStudentsBulk` →
+  `POST /coach/students/invite-bulk`; a per-row result report (converted/skipped/
+  errors). New `useBulkInviteStudents` hook + `BulkInviteResult`/`BulkInviteRowResult`
+  types.
+  - Files: `src/pages/grant/coach/RosterPage.tsx`, `src/services/grant/coach.service.ts`,
+    `src/hooks/grant/useCoachRoster.ts`, `src/types/grant/coach.ts`
+
+### Verified
+`tsc` clean · `eslint` clean · jest **13 suites / 62 tests** (4 new invite/bulk tests; no regression). Full authed E2E of the underlying backend verified live on dev + staging-b.
+
 ## [2026-07-13] — GRANT Coach roster UI (P3 + P4): student list, CSV import, per-student intake, invite-to-IG
 
 Frontend for the GRANT "Coach — Aid Profiles for Others" surface
