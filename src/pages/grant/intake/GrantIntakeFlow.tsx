@@ -68,10 +68,17 @@ function TranscriptRow({
   )
 }
 
-export default function GrantIntakeFlow() {
+/**
+ * The hybrid aid-intake questionnaire. Defaults to the signed-in user's own
+ * profile (`studentId="me"`); pass a roster student's id to bind the same flow
+ * to that student (coach surface). In coach mode the copy shifts to third-person
+ * and a successful save returns to the coach roster.
+ */
+export default function GrantIntakeFlow({ studentId = "me" }: { studentId?: string }) {
+  const isCoachMode = studentId !== "me"
   const navigate = useNavigate()
-  const { data: saved } = useAidIntake()
-  const saveMutation = useSaveAidIntake()
+  const { data: saved } = useAidIntake(studentId)
+  const saveMutation = useSaveAidIntake(studentId)
   const [stepIndex, setStepIndex] = useState(0)
 
   const form = useForm<AidIntakeProfile>({
@@ -119,14 +126,25 @@ export default function GrantIntakeFlow() {
     form.handleSubmit((data) => {
       saveMutation.mutate(data, {
         onSuccess: () => {
-          toast.success("Aid profile saved", {
+          toast.success(isCoachMode ? "Student profile saved" : "Aid profile saved", {
             description: isReady
-              ? "We'll rank your matches from these answers."
+              ? isCoachMode
+                ? "We'll rank their matches from these answers."
+                : "We'll rank your matches from these answers."
               : "You can finish the essentials anytime to unlock matches.",
           })
+          if (isCoachMode) {
+            navigate(ROUTES.GRANT.COACH_STUDENTS)
+            return
+          }
           navigate(next === "scholarships" ? ROUTES.GRANT.SCHOLARSHIPS : ROUTES.GRANT.DASHBOARD)
         },
-        onError: () => toast.error("Couldn't save your profile. Please try again."),
+        onError: () =>
+          toast.error(
+            isCoachMode
+              ? "Couldn't save this student's profile. Please try again."
+              : "Couldn't save your profile. Please try again."
+          ),
       })
     })()
   }
@@ -139,10 +157,14 @@ export default function GrantIntakeFlow() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(59,91,255,0.1)]">
             <Sparkles className="h-5 w-5 text-[#3B5BFF]" />
           </div>
-          <h1 className="text-2xl font-semibold text-[#1f2937]">Build your aid profile</h1>
+          <h1 className="text-2xl font-semibold text-[#1f2937]">
+            {isCoachMode ? "Build this student's aid profile" : "Build your aid profile"}
+          </h1>
         </div>
         <p className="text-[#6b7280]">
-          A few quick questions so we can find the grants and scholarships you actually qualify for.
+          {isCoachMode
+            ? "A few quick questions so we can find the grants and scholarships they actually qualify for."
+            : "A few quick questions so we can find the grants and scholarships you actually qualify for."}
         </p>
 
         <div className="mt-4 rounded-xl border border-[#e5e7eb] bg-white p-4">
@@ -222,28 +244,47 @@ export default function GrantIntakeFlow() {
               <h2 className="text-lg font-semibold text-[#1f2937]">That's everything</h2>
             </div>
             <p className="mb-4 text-sm text-[#6b7280]">
-              Save your profile to lock in your matches. You can edit any answer above.
+              {isCoachMode
+                ? "Save this student's profile to lock in their matches. You can edit any answer above."
+                : "Save your profile to lock in your matches. You can edit any answer above."}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => persist("scholarships")}
-                disabled={saveMutation.isPending}
-                className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="mr-1 h-4 w-4" />
-                )}
-                Save &amp; find scholarships
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => persist("dashboard")}
-                disabled={saveMutation.isPending}
-              >
-                Save &amp; go to dashboard
-              </Button>
+              {isCoachMode ? (
+                <Button
+                  onClick={() => persist("dashboard")}
+                  disabled={saveMutation.isPending}
+                  className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
+                >
+                  {saveMutation.isPending ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="mr-1 h-4 w-4" />
+                  )}
+                  Save student profile
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => persist("scholarships")}
+                    disabled={saveMutation.isPending}
+                    className="bg-[#3B5BFF] hover:bg-[#2f49cc]"
+                  >
+                    {saveMutation.isPending ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-1 h-4 w-4" />
+                    )}
+                    Save &amp; find scholarships
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => persist("dashboard")}
+                    disabled={saveMutation.isPending}
+                  >
+                    Save &amp; go to dashboard
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -252,13 +293,23 @@ export default function GrantIntakeFlow() {
       {/* Persistent early-exit once the essentials are in */}
       {isReady && !done && (
         <div className="mt-6 flex items-center justify-between rounded-xl border border-[#2DD4BF] bg-[rgba(45,212,191,0.06)] p-4">
-          <span className="text-sm text-[#0f766e]">Skip the extras and search now?</span>
+          <span className="text-sm text-[#0f766e]">
+            {isCoachMode ? "Essentials are in — save now?" : "Skip the extras and search now?"}
+          </span>
           <Button
             onClick={() => persist("scholarships")}
             disabled={saveMutation.isPending}
             className="bg-[#2DD4BF] text-white hover:bg-[#26b8a6]"
           >
-            <Search className="mr-1 h-4 w-4" /> Search scholarships
+            {isCoachMode ? (
+              <>
+                <Check className="mr-1 h-4 w-4" /> Save student profile
+              </>
+            ) : (
+              <>
+                <Search className="mr-1 h-4 w-4" /> Search scholarships
+              </>
+            )}
           </Button>
         </div>
       )}
