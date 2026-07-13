@@ -75,5 +75,22 @@ export type InviteStudentResult = {
   message: string
 }
 
+/** Per-student outcome from POST /coach/students/invite-bulk. */
+export type BulkInviteRowResult = {
+  studentId: string
+  status: "invited" | "linked" | "noop" | "forbidden" | "skipped" | "error"
+  /** Set when the invite created a newly-linked student id. */
+  newStudentId?: string
+  message?: string
+}
+
+/** Aggregate result of POST /coach/students/invite-bulk. */
+export type BulkInviteResult = {
+  converted: number
+  skipped: number
+  errors: number
+  results: BulkInviteRowResult[]
+}
+
 /** Result of DELETE /coach/students/{id}. */
 export type RemoveStudentResult = { removed: true }
