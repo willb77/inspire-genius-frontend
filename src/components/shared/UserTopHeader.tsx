@@ -1,5 +1,5 @@
-import { Bell, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
+import NotificationBell from "@/components/layout/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,10 +32,7 @@ export default function UserTopHeader() {
       </div>
       <div className="flex items-center gap-2">
         <LanguageSwitcher />
-        <Button disabled variant="ghost" size="icon" aria-label="Notifications" className="relative cursor-not-allowed size-11 md:size-9">
-          <Bell className="size-5" />
-          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-        </Button>
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
