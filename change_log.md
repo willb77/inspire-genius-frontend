@@ -1,3 +1,20 @@
+## [2026-07-13] — Owner-only Dev Traffic Report sidebar link
+
+### Changed
+- The Dev Traffic Report page/route already existed and the agent-engine
+  backend (`super_admin_traffic.py`) hard-403s anyone but the platform owner,
+  but the nav link lived in `SUPER_ADMIN_NAV_ITEMS` so every super-admin saw
+  it. Moved it into an owner-only "Owner" sidebar section that
+  `SuperAdminLayout` appends solely when the signed-in user's email matches
+  `PLATFORM_OWNER_EMAIL` (`willb77@3pp.com`). No other super-admin sees the
+  link; the backend allow-list stays the hard gate. Coexists with the GRANT
+  "Financial Aid" entitlement section already on this branch.
+  - Files: `src/constants/navigation.ts`
+    (`PLATFORM_OWNER_EMAIL`, `isPlatformOwner`, `OWNER_NAV_ITEMS`,
+    `OWNER_NAV_SECTION`), `src/layouts/SuperAdminLayout.tsx`
+  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — 9/9 pass
+    (owner-visible / non-owner-hidden / case-insensitive + existing GRANT/base)
+
 ## [2026-07-13 EDT] — Financial Aid nav: move Financial Profile to top
 
 `src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
