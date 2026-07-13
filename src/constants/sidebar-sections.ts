@@ -139,8 +139,8 @@ export const GRANT_SIDEBAR_SECTION: SidebarSection = {
   label: "Financial Aid",
   roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
   items: [
-    { to: "/vertical/grant/dashboard", icon: GraduationCap, label: "Aid Dashboard" },
     { to: "/vertical/grant/profile", icon: Wallet, label: "Financial Profile" },
+    { to: "/vertical/grant/dashboard", icon: GraduationCap, label: "Aid Dashboard" },
     { to: "/vertical/grant/federal", icon: Landmark, label: "Federal & State" },
     { to: "/vertical/grant/scholarships", icon: Award, label: "Scholarships" },
     { to: "/vertical/grant/institutions", icon: Building2, label: "Institutions" },
