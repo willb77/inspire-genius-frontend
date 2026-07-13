@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1257</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1258</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3018,6 +3018,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-07-13 EDT — Prompt #1258 [/full-go — GRANT Coach roster UI: co-access toggle + bulk invite (#179)]</div>
+          <div class="prompt-text">Added the two coach-roster enhancements chosen after the backend E2E smoke (companion to backend <code>inspire-genius#559</code>/<code>#560</code>). <strong>Co-access toggle</strong>: the Invite-to-IG confirm dialog gains a "Keep co-access after they claim their account" switch (default ON; OFF = full hand-off), threaded through <code>inviteCoachStudent(id, keepCoachAccess)</code>. <strong>Bulk invite</strong>: per-row selection + header select-all (linked rows non-selectable), an email-gated "Invite selected to IG (N)" button, a bulk confirm dialog reusing the co-access toggle → <code>inviteCoachStudentsBulk</code> → <code>POST /coach/students/invite-bulk</code>, and a per-row result report (converted/skipped/errors). New <code>useBulkInviteStudents</code> hook + <code>BulkInviteResult</code>/<code>BulkInviteRowResult</code> types. <code>tsc</code>/<code>eslint</code> clean; jest <strong>13 suites / 62 tests</strong>. Merged (#179) to development; deployed to dev + staging-b buckets. Underlying backend verified live via authed E2E on both envs.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-07-13 EDT — Prompt #1257 [/full-go — GRANT Coach roster UI (P3+P4): student list, CSV import, per-student intake, invite-to-IG]</div>
           <div class="prompt-text">Frontend for the GRANT "Coach — Aid Profiles for Others" surface (companion to backend PR <code>inspire-genius#557</code>; frontend PR <code>inspire-genius-frontend#176</code> → development). A coach imports a roster of managed students, opens each into the EXISTING aid questionnaire bound to that student, and can convert a managed student into a real IG user. Added <code>types/grant/coach.ts</code>, <code>services/grant/coach.service.ts</code> (agentApi + <code>GrantApiResponse</code> envelope; paths match #557), <code>hooks/grant/useCoachRoster.ts</code> (<code>USE_GRANT_MOCKS</code>-aware, optimistic invite); <code>pages/grant/coach/</code> RosterPage (status badge, completeness meter, ready indicator, search, Add-student, Import CSV, per-row Open/Invite/Remove) + CsvImportModal (dependency-free RFC-4180 parser + preview + template + per-row report) + StudentIntakePage (reuses <code>&lt;GrantIntakeFlow studentId&gt;</code>). Parameterized <code>GrantIntakeFlow</code> with an optional <code>studentId</code> prop (self-serve default <code>"me"</code> unchanged); "My Students" nav gated to coach roles + GRANT entitlement; routes wired. <code>tsc</code> + <code>eslint</code> clean; jest <strong>12 suites / 58 tests</strong> (4 new coach tests; no self-serve regression). No new dependencies.</div>
