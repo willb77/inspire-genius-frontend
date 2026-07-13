@@ -92,12 +92,28 @@ jest.mock("@/constants/navigation", () => {
       { to: "/settings", icon: DummyIcon, label: "Settings" },
       { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
+    OWNER_NAV_SECTION: {
+      label: "Owner",
+      items: [
+        { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
+      ],
+      defaultCollapsed: false,
+    },
+    isPlatformOwner: (email: string | null | undefined) =>
+      (email ?? "").trim().toLowerCase() === "willb77@3pp.com",
   };
 });
 
 // 🔹 Mock the agent-engine toggle hook used by the layout
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => true,
+}));
+
+// 🔹 Mock auth — default to a NON-owner super-admin so the baseline
+// (3-section) assertions hold; owner-specific tests flip mockEmail.
+let mockEmail: string | null = "admin@example.com";
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: mockEmail ? { email: mockEmail } : null }),
 }));
 
 // 🔹 Capture props passed to SidebarScaffold
@@ -141,6 +157,7 @@ describe("SuperAdminLayout", () => {
       isLoading: false,
       enabledVerticals: [],
     });
+    mockEmail = "admin@example.com"; // non-owner by default
   });
 
   test("renders children correctly", () => {
@@ -224,6 +241,48 @@ describe("SuperAdminLayout", () => {
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections).toHaveLength(3);
     expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
+  });
+
+  test("hides the Owner section (and Dev Traffic Report) from non-owner super-admins", () => {
+    mockEmail = "admin@example.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(3);
+    expect(props.navSections.map((s: MockNavSection) => s.label)).not.toContain("Owner");
+    expect(screen.queryByText("Dev Traffic Report")).not.toBeInTheDocument();
+  });
+
+  test("shows an Owner section with Dev Traffic Report only for the platform owner", () => {
+    mockEmail = "willb77@3pp.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(4);
+    // Owner section is injected right after My Workspace.
+    expect(props.navSections[1].label).toBe("Owner");
+    expect(props.navSections[1].items[0].label).toBe("Dev Traffic Report");
+    expect(screen.getByText("Dev Traffic Report")).toBeInTheDocument();
+  });
+
+  test("owner check is case-insensitive", () => {
+    mockEmail = "WillB77@3PP.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections.map((s: MockNavSection) => s.label)).toContain("Owner");
   });
 
   test("forwards className to SidebarScaffold", () => {
