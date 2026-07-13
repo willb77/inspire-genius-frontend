@@ -59,6 +59,15 @@ jest.mock("@/components/shared/EcosystemStatusBanner", () => ({
   EcosystemStatusBanner: () => null,
 }));
 
+jest.mock("@/components/shared/BroadcastAlertBanner", () => ({
+  __esModule: true,
+  BroadcastAlertBanner: () => null,
+}));
+
+jest.mock("@/hooks/useNotificationInbox", () => ({
+  useNotificationToasts: jest.fn(),
+}));
+
 import AppShell from "../AppShell";
 
 describe("AppShell", () => {

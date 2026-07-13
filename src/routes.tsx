@@ -74,6 +74,7 @@ const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
 const DevTrafficReport = React.lazy(() => import("@/pages/super-admin/DevTrafficReport"));
+const BroadcastAlert = React.lazy(() => import("@/pages/super-admin/BroadcastAlert"));
 // Wave 2 Lane 2.B — PromptBuilder standalone deprecated; tab embedded in MentorManagement.
 // const PromptBuilder = React.lazy(() => import("@/pages/super-admin/PromptBuilder"));
 const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analytics"));
@@ -284,6 +285,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       { path: "/super-admin/dev-traffic-report", element: withSuspense(<DevTrafficReport />) },
+      { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results

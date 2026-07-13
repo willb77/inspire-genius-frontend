@@ -68,6 +68,8 @@ export const ROUTES = {
     EXPLAINABILITY_TURN: "/super-admin/explainability/c/:sessionId/t/:turnId",
     /** Wave 2 Lane 2.A (P7.1) — formerly top-level `/diagnostic-chat`; renamed and moved under super-admin. */
     AGENT_TRACE_CONSOLE: "/super-admin/agent-trace-console",
+    /** Platform alert broadcasting — allowlist-gated (owner: willb77@3pp.com). */
+    BROADCAST_ALERT: "/super-admin/broadcast-alert",
   },
   MANAGER: {
     BASE: "/manager",
