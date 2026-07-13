@@ -102,21 +102,11 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/**
- * Team Development Studio is feature-flagged for a pilot manager cohort.
- * Enabled at build time via VITE_FEATURE_TEAM_DEVELOPMENT=true.
- */
-const TEAM_DEVELOPMENT_ENABLED =
-  import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
-
 /** Navigation items for the manager role */
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
-  ...(TEAM_DEVELOPMENT_ENABLED
-    ? [{ to: ROUTES.MANAGER.DEVELOPMENT, icon: Sparkles, label: "Team Development" }]
-    : []),
   // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
   { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
   { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
