@@ -25,6 +25,8 @@ import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
 import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
+import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner";
+import { useNotificationToasts } from "@/hooks/useNotificationInbox";
 
 export type NavItemDef = {
   to: string;
@@ -150,6 +152,8 @@ export default function SidebarScaffold({ navItems, navSections, children, class
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
   const { logout, user } = useAuth();
+  // Toast on newly-arrived broadcast alerts (mounted once, app-wide).
+  useNotificationToasts();
   return (
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
@@ -232,6 +236,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
             <MobileMenuTrigger />
             <UserTopHeader />
           </div>
+          <BroadcastAlertBanner />
         </div>
         <div className="flex-1 p-4 md:p-6">{children}</div>
         {renderAfterContent}
