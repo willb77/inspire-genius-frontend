@@ -17,8 +17,16 @@ import type {
   WebSearchResult,
 } from "@/types/grant"
 
-/** Master switch for the GRANT mock data layer. */
-export const USE_GRANT_MOCKS = true
+/** Master switch for the GRANT mock data layer.
+ *
+ * Dev go-live (2026-07-12): flipped to `false` — GRANT now reads the live
+ * `/v1/agents/grant/*` endpoints (reachability + entitlements verified on dev).
+ * Live: aid-intake round-trip, student profile, FAFSA/state deadlines (seeded
+ * in-memory repo), loan repayment, salary lookup. Empty until their API-key
+ * secrets are provisioned: scholarship search (`ig/grant/tavily`) and net-price
+ * (`ig/grant/college_scorecard`). The MOCK_* fixtures below are retained for
+ * local dev / tests. Set back to `true` to restore the fixture demo. */
+export const USE_GRANT_MOCKS = false
 
 export const MOCK_STUDENT_PROFILE: StudentProfile = {
   id: "me",

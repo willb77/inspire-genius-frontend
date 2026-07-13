@@ -15,6 +15,12 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
+// Exercise the flow against the fixture layer, independent of the production
+// USE_GRANT_MOCKS flag (now false for the dev go-live).
+jest.mock("@/hooks/grant/mocks", () => ({
+  ...jest.requireActual("@/hooks/grant/mocks"),
+  USE_GRANT_MOCKS: true,
+}))
 const mockNavigate = jest.fn()
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),

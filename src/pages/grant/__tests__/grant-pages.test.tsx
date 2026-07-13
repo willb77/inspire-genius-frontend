@@ -17,6 +17,12 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
+// These smoke tests exercise the pages against the fixture layer, independent of
+// the production USE_GRANT_MOCKS flag (which is now false for the dev go-live).
+jest.mock("@/hooks/grant/mocks", () => ({
+  ...jest.requireActual("@/hooks/grant/mocks"),
+  USE_GRANT_MOCKS: true,
+}))
 
 import GrantScholarshipsPage from "../GrantScholarshipsPage"
 import GrantFederalPage from "../GrantFederalPage"
