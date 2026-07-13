@@ -1,3 +1,7 @@
+## [2026-07-13 EDT] — Financial Aid nav: move Financial Profile to top
+
+`src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
+
 ## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
 
 Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/agents/grant/*` endpoints on dev. Verified first: the routes are reachable (`/v1/agents/grant/students/me/aid-intake` → 401 on both dev hosts = reaches agent-engine), and `user_entitlements` is seeded (willb7 / willb77 / aes = `["grant"]`).
