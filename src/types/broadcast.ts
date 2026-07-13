@@ -47,6 +47,8 @@ export type BroadcastCreatePayload = {
   severity: Severity
   html_body: string
   audience: AudienceSpec
+  /** Opt-in: also email the branded message to each recipient via SES. */
+  send_email: boolean
 }
 
 export type Broadcast = {
@@ -56,6 +58,9 @@ export type Broadcast = {
   html_body: string
   created_by: string
   recipient_count: number
+  email_requested?: boolean
+  email_sent_count?: number
+  email_failed_count?: number
   created_at: string
 }
 
