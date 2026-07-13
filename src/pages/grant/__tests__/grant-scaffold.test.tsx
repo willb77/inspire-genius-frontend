@@ -23,6 +23,13 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 
+// Render the dashboard against the fixture layer, independent of the production
+// USE_GRANT_MOCKS flag (now false for the dev go-live).
+jest.mock("@/hooks/grant/mocks", () => ({
+  ...jest.requireActual("@/hooks/grant/mocks"),
+  USE_GRANT_MOCKS: true,
+}))
+
 // Passthrough AppShell so we can assert "inside AppShell" without its heavy deps.
 jest.mock("@/layouts/AppShell", () => ({
   __esModule: true,
