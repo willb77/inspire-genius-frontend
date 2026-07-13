@@ -139,6 +139,13 @@ export const ROUTES = {
     COMPARE: "/vertical/grant/compare",
     LOANS: "/vertical/grant/loans",
     PLAN: "/vertical/grant/plan",
+    // Coach surface — a practitioner/coach/super-admin managing a student roster.
+    COACH_STUDENTS: "/vertical/grant/coach/students",
+    /** Route pattern for the per-student intake (matched by <Route path>). */
+    COACH_STUDENT_INTAKE: "/vertical/grant/coach/students/:studentId",
+    /** Build the per-student intake path for a concrete student id. */
+    coachStudentIntake: (studentId: string) =>
+      `/vertical/grant/coach/students/${studentId}`,
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
