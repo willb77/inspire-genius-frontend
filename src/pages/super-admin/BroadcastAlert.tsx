@@ -7,7 +7,7 @@
  * The owner (willb77@3pp.com) additionally manages who else has access.
  */
 import { useMemo, useState } from "react"
-import { AlertTriangle, Send, Users, ShieldCheck, Trash2, Loader2 } from "lucide-react"
+import { AlertTriangle, Send, Users, ShieldCheck, Trash2, Loader2, Mail } from "lucide-react"
 import { toast } from "sonner"
 
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
@@ -105,6 +105,7 @@ function Composer({ isOwner }: { isOwner: boolean }) {
   const [audience, setAudience] = useState<AudienceSpec>(EMPTY_AUDIENCE)
   const [includeEmailsRaw, setIncludeEmailsRaw] = useState("")
   const [excludeEmailsRaw, setExcludeEmailsRaw] = useState("")
+  const [sendEmail, setSendEmail] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const previewMut = usePreviewAudience()
@@ -160,13 +161,21 @@ function Composer({ isOwner }: { isOwner: boolean }) {
         severity,
         html_body: brandedHtml,
         audience: resolvedAudience,
+        send_email: sendEmail,
       })
-      toast.success(`Alert sent to ${res.recipient_count} recipient${res.recipient_count === 1 ? "" : "s"}`)
+      const emailNote =
+        res.email_requested && typeof res.email_sent_count === "number"
+          ? ` · ${res.email_sent_count} email${res.email_sent_count === 1 ? "" : "s"} sent`
+          : ""
+      toast.success(
+        `Alert sent to ${res.recipient_count} recipient${res.recipient_count === 1 ? "" : "s"}${emailNote}`,
+      )
       setTitle("")
       setBody("")
       setAudience(EMPTY_AUDIENCE)
       setIncludeEmailsRaw("")
       setExcludeEmailsRaw("")
+      setSendEmail(false)
       previewMut.reset()
     } catch {
       toast.error("Failed to send alert")
@@ -242,6 +251,20 @@ function Composer({ isOwner }: { isOwner: boolean }) {
             previewSample={previewMut.data?.sample}
           />
 
+          <Card className="p-4">
+            <label className="flex items-start gap-2 text-sm text-[#374151]">
+              <Checkbox checked={sendEmail} onCheckedChange={(v) => setSendEmail(Boolean(v))} className="mt-0.5" />
+              <span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Mail className="h-4 w-4 text-[#6b7280]" /> Also send as email
+                </span>
+                <span className="mt-0.5 block text-xs text-[#9ca3af]">
+                  Emails the same branded message to each recipient via SES (in addition to the in-app alert).
+                </span>
+              </span>
+            </label>
+          </Card>
+
           <div className="flex items-center justify-between">
             <p className="text-xs text-[#9ca3af]">
               {previewMut.data ? `${previewMut.data.count} recipient(s) resolved` : "Preview to see recipient count"}
@@ -300,8 +323,8 @@ function Composer({ isOwner }: { isOwner: boolean }) {
             <AlertDialogDescription>
               A <strong>{SEVERITY_META[severity].label}</strong> alert titled &ldquo;{title}&rdquo; will be
               delivered to{" "}
-              <strong>{previewMut.data ? `${previewMut.data.count} recipient(s)` : "the selected audience"}</strong>.
-              This cannot be undone.
+              <strong>{previewMut.data ? `${previewMut.data.count} recipient(s)` : "the selected audience"}</strong>
+              {sendEmail ? " as an in-app alert and an email" : " as an in-app alert"}. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
