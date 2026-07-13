@@ -5,6 +5,14 @@
 import { render, screen } from "@testing-library/react";
 import SuperAdminLayout from "../SuperAdminLayout";
 
+type NavItemLike = { to: string; label: string };
+type NavSectionLike = { label: string; defaultCollapsed?: boolean; items: NavItemLike[] };
+type ScaffoldProps = {
+  navSections?: NavSectionLike[];
+  className?: string;
+  children: React.ReactNode;
+};
+
 // 🔹 Mock lucide-react icons
 jest.mock("lucide-react", () => ({
   LayoutDashboard: () => <span data-testid="icon-dashboard" />,
@@ -66,6 +74,15 @@ jest.mock("@/constants/navigation", () => {
       { to: "/settings", icon: DummyIcon, label: "Settings" },
       { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
+    OWNER_NAV_SECTION: {
+      label: "Owner",
+      items: [
+        { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
+      ],
+      defaultCollapsed: false,
+    },
+    isPlatformOwner: (email: string | null | undefined) =>
+      (email ?? "").trim().toLowerCase() === "willb77@3pp.com",
   };
 });
 
@@ -74,20 +91,27 @@ jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => true,
 }));
 
+// 🔹 Mock auth — default to a NON-owner super-admin so the baseline
+// (3-section) assertions hold; owner-specific tests flip mockEmail.
+let mockEmail: string | null = "admin@example.com";
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: mockEmail ? { email: mockEmail } : null }),
+}));
+
 // 🔹 Capture props passed to SidebarScaffold
 const mockSidebarScaffold = jest.fn();
 
 jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: (props: ScaffoldProps) => {
     mockSidebarScaffold(props);
     return (
       <div data-testid="sidebar-scaffold" data-class={props.className}>
         {/* Render section labels and nav labels for testing */}
-        {props.navSections?.map((section: any) => (
+        {props.navSections?.map((section) => (
           <div key={section.label}>
             <div data-testid={`section-${section.label}`}>{section.label}</div>
-            {section.items.map((item: any) => (
+            {section.items.map((item) => (
               <div key={item.label}>{item.label}</div>
             ))}
           </div>
@@ -101,6 +125,7 @@ jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
 describe("SuperAdminLayout", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEmail = "admin@example.com"; // non-owner by default
   });
 
   test("renders children correctly", () => {
@@ -154,6 +179,48 @@ describe("SuperAdminLayout", () => {
     // "My Workspace" surfaces the user nav so super-admin can hop back
     expect(screen.getByText("My Workspace")).toBeInTheDocument();
     expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
+  });
+
+  test("hides the Owner section (and Dev Traffic Report) from non-owner super-admins", () => {
+    mockEmail = "admin@example.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(3);
+    expect(props.navSections.map((s: NavSectionLike) => s.label)).not.toContain("Owner");
+    expect(screen.queryByText("Dev Traffic Report")).not.toBeInTheDocument();
+  });
+
+  test("shows an Owner section with Dev Traffic Report only for the platform owner", () => {
+    mockEmail = "willb77@3pp.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(4);
+    // Owner section is injected right after My Workspace.
+    expect(props.navSections[1].label).toBe("Owner");
+    expect(props.navSections[1].items[0].label).toBe("Dev Traffic Report");
+    expect(screen.getByText("Dev Traffic Report")).toBeInTheDocument();
+  });
+
+  test("owner check is case-insensitive", () => {
+    mockEmail = "WillB77@3PP.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections.map((s: NavSectionLike) => s.label)).toContain("Owner");
   });
 
   test("forwards className to SidebarScaffold", () => {
