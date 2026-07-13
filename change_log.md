@@ -1,3 +1,22 @@
+## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
+
+Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/agents/grant/*` endpoints on dev. Verified first: the routes are reachable (`/v1/agents/grant/students/me/aid-intake` → 401 on both dev hosts = reaches agent-engine), and `user_entitlements` is seeded (willb7 / willb77 / aes = `["grant"]`).
+
+### Changed
+- `src/hooks/grant/mocks.ts` — `USE_GRANT_MOCKS = false`. MOCK_* fixtures retained for tests/local; set back to `true` to restore the fixture demo (fully reversible).
+- Decoupled the flag-dependent jest suites from the production flag: `grant-pages`, `grant-scaffold`, and `grant-intake` tests now `jest.mock("@/hooks/grant/mocks", … USE_GRANT_MOCKS: true)` so they always exercise the fixture layer. 61 grant tests pass with the flag off; tsc + eslint clean.
+
+### Live after this flip (real dev data)
+- Aid-intake questionnaire round-trip (writes/reads `grant_student_profiles.financial_intake` via the agent-engine), student profile/dashboard, FAFSA/state/institutional **deadlines** (served from the tool's seeded in-memory repo — 5 records, no DynamoDB table needed), loan **repayment** (pure calc), **salary** lookup (reference table).
+
+### Still empty until their API-key secrets are provisioned (external keys, not code)
+- **Scholarship search** — needs Secrets Manager `ig/grant/tavily` (Tavily API key).
+- **Net-price / Institutions** — needs `ig/grant/college_scorecard` (College Scorecard API key).
+  Both degrade to graceful empty states, not errors. Adding the two secrets (or the `IG_GRANT_TAVILY_API_KEY` / `IG_GRANT_COLLEGE_SCORECARD_API_KEY` env vars) + a task restart lights them up — no code change.
+
+### Blast radius
+Tiny + gated: only entitled users (willb7/willb77/aes) + super-admins via the preview toggle see GRANT. On staging-b (same frontend build) the agent-engine GRANT routes aren't deployed, so the entitlement read 404s → GRANT stays hidden there.
+
 ## [2026-07-12 EDT] — GRANT pages: wireframe enrichment (P1-C, light IG theme)
 
 Enriched all 9 GRANT tool pages toward the `grant-financial-aid` reference wireframe's component richness — mapping structure/components only, keeping the **light IG theme** (Bill's decision; not the dark Pathfinder aesthetic). Built on `feat/grant-p1c` off frontend `origin/development` via 4 parallel sub-agents over disjoint page files, integrated + verified by the controller. **61 grant tests pass**; tsc + eslint clean.
