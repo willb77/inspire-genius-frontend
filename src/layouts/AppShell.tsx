@@ -5,8 +5,10 @@ import AppSidebar from "@/components/layout/AppSidebar"
 import RightPanel from "@/components/layout/RightPanel"
 import SkipToContent from "@/components/shared/SkipToContent"
 import { EcosystemStatusBanner } from "@/components/shared/EcosystemStatusBanner"
+import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner"
 import { SystemSwitch } from "@/components/shared/SystemSwitch"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
+import { useNotificationToasts } from "@/hooks/useNotificationInbox"
 import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
 import { isUserRole } from "@/types/roles"
@@ -25,12 +27,15 @@ export default function AppShell({ role, children, className }: AppShellProps) {
   const actualRole = user?.role === "super-admin" ? "super-admin" : role
   const sidebarRole = isUserRole(actualRole) ? actualRole : role
   usePageViewAudit(role)
+  // Toast on newly-arrived broadcast alerts (mounted once, app-wide).
+  useNotificationToasts()
 
   return (
     <div className="min-h-screen bg-[#f9fafb]">
       <SkipToContent />
       <AppHeader onMenuToggle={() => setSidebarOpen((v) => !v)} />
       <EcosystemStatusBanner />
+      <BroadcastAlertBanner />
       {/* Phase C item 4: explicit per-conversation system override (super-admin only). */}
       {user?.role === "super-admin" && (
         <div className="fixed right-4 top-[calc(var(--spacing-header-h)+0.5rem)] z-30 hidden md:block">

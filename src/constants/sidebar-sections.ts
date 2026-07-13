@@ -26,6 +26,7 @@ import {
   ClipboardList,
   Scale,
   Banknote,
+  Megaphone,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -149,6 +150,21 @@ export const GRANT_SIDEBAR_SECTION: SidebarSection = {
     { to: "/vertical/grant/loans", icon: Banknote, label: "Loans & Debt" },
     { to: "/vertical/grant/plan", icon: Target, label: "My Aid Plan" },
   ],
+}
+
+/**
+ * Broadcast Alerts section.
+ *
+ * NOT part of SIDEBAR_SECTIONS — it is access-gated (not merely role-gated):
+ * AppSidebar appends it only when `useBroadcastAccess().data?.authorized` is
+ * true (super-admin on the DB-backed allowlist the owner controls). A
+ * super-admin who is not on the allowlist never sees the link.
+ */
+export const BROADCAST_SIDEBAR_SECTION: SidebarSection = {
+  id: "broadcast",
+  label: "Platform Alerts",
+  roles: ["super-admin"],
+  items: [{ to: "/super-admin/broadcast-alert", icon: Megaphone, label: "Broadcast Alerts" }],
 }
 
 /** Get sidebar sections visible for a given role (or roles) */

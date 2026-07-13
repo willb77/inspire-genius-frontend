@@ -1,3 +1,39 @@
+## [2026-07-13] — Broadcast Alert system (frontend): composer, notification center, banner
+
+Frontend for the platform Broadcast Alert system. Super-admins on a DB-backed
+allowlist (owner `willb77@3pp.com`) compose a branded, severity-tiered HTML alert,
+target recipients by role group and/or named individuals (include + exclude), and
+send it; every targeted user gets an in-app alert. Backend is the separate
+`broadcast-service` microservice (monorepo).
+
+### Added
+- **Composer page** `src/pages/super-admin/BroadcastAlert.tsx` (SuperAdminLayout):
+  title, severity picker (info/success/warning/critical), rich-text editor, audience
+  builder (role include/exclude + individual email include/exclude with a live
+  resolved-count preview), branded live preview in a sandboxed iframe, send confirm
+  dialog, sent-history, and an owner-only Manage Access panel.
+- **`RichHtmlEditor`** (`src/components/super-admin/broadcast/RichHtmlEditor.tsx`) —
+  dependency-free contentEditable toolbar (bold/italic/underline/headings/lists/link/
+  color) + raw-HTML toggle; output DOMPurify-sanitized.
+- **`NotificationBell`** (`src/components/layout/NotificationBell.tsx`) replaces the
+  static header bell: unread badge + dropdown notification center + full-message dialog.
+- **`BroadcastAlertBanner`** (`src/components/shared/BroadcastAlertBanner.tsx`) — mounted
+  in AppShell; shows the top unread warning/critical alert, dismissible. Sonner toast on
+  arrival. Inbox polled every 45s (mirrors `useSystemStatus`).
+- Branded template `src/lib/broadcastTemplate.ts` + `src/lib/sanitizeHtml.ts` (DOMPurify).
+- Services + hooks (Service→Hook→Component): `src/services/{super-admin/broadcast,
+  notifications/inbox}.service.ts`, `src/hooks/{super-admin/useBroadcast,
+  useNotificationInbox}.ts`. Types in `src/types/broadcast.ts`.
+- New dep: `dompurify`. 12 Jest tests (sanitization, branded template, bell badge).
+
+### Changed
+- Nav item is access-gated: `BROADCAST_SIDEBAR_SECTION` appended in `AppSidebar` only
+  when `useBroadcastAccess().authorized` (super-admin on the allowlist) — hidden otherwise.
+- Wired `routes.tsx`, `constants/{routes,sidebar-sections}.ts`,
+  `layout/{AppHeader,AppSidebar}.tsx`, `layouts/AppShell.tsx`.
+
+---
+
 ## [2026-07-13 EDT] — Financial Aid nav: move Financial Profile to top
 
 `src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
