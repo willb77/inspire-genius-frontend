@@ -16,8 +16,10 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
   DialogContent,
@@ -38,12 +40,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ROUTES } from "@/constants/routes"
 import {
+  useBulkInviteStudents,
   useCoachRoster,
   useCreateStudent,
   useInviteStudent,
   useRemoveStudent,
 } from "@/hooks/grant/useCoachRoster"
-import type { CoachStudent, CoachStudentStatus } from "@/types/grant/coach"
+import type {
+  BulkInviteResult,
+  BulkInviteRowResult,
+  CoachStudent,
+  CoachStudentStatus,
+} from "@/types/grant/coach"
 import { formatDate } from "../_format"
 import { GrantCard, GrantEmptyState, GrantMeter, GrantPageHeader, GrantPill } from "../_shared"
 import { CsvImportModal } from "./CsvImportModal"
@@ -55,17 +63,57 @@ function StatusBadge({ status }: { status: CoachStudentStatus }) {
   return <GrantPill tone="gray">Managed</GrantPill>
 }
 
+/** Shared "keep co-access" toggle used by both the single and bulk invite flows. */
+function CoAccessToggle({
+  id,
+  checked,
+  onCheckedChange,
+}: {
+  id: string
+  checked: boolean
+  onCheckedChange: (value: boolean) => void
+}) {
+  return (
+    <div className="rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-3 text-left">
+      <div className="flex items-center justify-between gap-3">
+        <Label htmlFor={id} className="text-sm font-medium text-[#1f2937]">
+          Keep co-access after they claim their account
+        </Label>
+        <Switch
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          className="data-[state=checked]:bg-[#3B5BFF]"
+        />
+      </div>
+      <p className="mt-1.5 text-xs text-[#6b7280]">
+        {checked
+          ? "On — you stay on their roster and can still open their profile."
+          : "Off — full hand-off. You'll no longer see this student after they claim their account."}
+      </p>
+    </div>
+  )
+}
+
 export default function RosterPage() {
   const navigate = useNavigate()
   const { data: students = [], isLoading } = useCoachRoster()
   const inviteMutation = useInviteStudent()
+  const bulkInviteMutation = useBulkInviteStudents()
   const removeMutation = useRemoveStudent()
 
   const [query, setQuery] = useState("")
   const [addOpen, setAddOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [inviteTarget, setInviteTarget] = useState<CoachStudent | null>(null)
+  const [inviteKeepAccess, setInviteKeepAccess] = useState(true)
   const [removeTarget, setRemoveTarget] = useState<CoachStudent | null>(null)
+
+  // Bulk-invite selection + flow.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkKeepAccess, setBulkKeepAccess] = useState(true)
+  const [bulkResult, setBulkResult] = useState<BulkInviteResult | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -73,21 +121,86 @@ export default function RosterPage() {
     return students.filter((s) => s.fullName.toLowerCase().includes(q))
   }, [students, query])
 
+  // Only non-linked rows can be (re)invited; linked students already own their login.
+  const selectableRows = useMemo(() => filtered.filter((s) => s.status !== "linked"), [filtered])
+  const selectedStudents = useMemo(
+    () => students.filter((s) => selectedIds.has(s.id)),
+    [students, selectedIds]
+  )
+  const allSelectableSelected =
+    selectableRows.length > 0 && selectableRows.every((s) => selectedIds.has(s.id))
+  const someSelectableSelected = selectableRows.some((s) => selectedIds.has(s.id))
+  const headerCheckState: boolean | "indeterminate" = allSelectableSelected
+    ? true
+    : someSelectableSelected
+      ? "indeterminate"
+      : false
+  const selectedAllHaveEmail = selectedStudents.every((s) => !!s.email)
+  const canBulkInvite = selectedStudents.length > 0 && selectedAllHaveEmail
+
+  function toggleOne(id: string, next: boolean) {
+    setSelectedIds((prev) => {
+      const set = new Set(prev)
+      if (next) set.add(id)
+      else set.delete(id)
+      return set
+    })
+  }
+
+  function toggleAll(next: boolean) {
+    setSelectedIds((prev) => {
+      const set = new Set(prev)
+      if (next) selectableRows.forEach((s) => set.add(s.id))
+      else selectableRows.forEach((s) => set.delete(s.id))
+      return set
+    })
+  }
+
   function openStudent(student: CoachStudent) {
     navigate(ROUTES.GRANT.coachStudentIntake(student.id))
+  }
+
+  function openInvite(student: CoachStudent) {
+    setInviteKeepAccess(true)
+    setInviteTarget(student)
   }
 
   function confirmInvite() {
     if (!inviteTarget) return
     const target = inviteTarget
-    inviteMutation.mutate(target.id, {
-      onSuccess: (res) =>
-        res.status === "noop"
-          ? toast.error(res.message)
-          : toast.success(`Invitation sent to ${target.fullName}`),
-      onError: () => toast.error("Couldn't send the invitation. Please try again."),
-    })
+    inviteMutation.mutate(
+      { id: target.id, keepCoachAccess: inviteKeepAccess },
+      {
+        onSuccess: (res) =>
+          res.status === "noop"
+            ? toast.error(res.message)
+            : toast.success(`Invitation sent to ${target.fullName}`),
+        onError: () => toast.error("Couldn't send the invitation. Please try again."),
+      }
+    )
     setInviteTarget(null)
+  }
+
+  function openBulkInvite() {
+    setBulkKeepAccess(true)
+    setBulkOpen(true)
+  }
+
+  function confirmBulkInvite() {
+    const ids = selectedStudents.map((s) => s.id)
+    if (ids.length === 0) return
+    bulkInviteMutation.mutate(
+      { studentIds: ids, keepCoachAccess: bulkKeepAccess },
+      {
+        onSuccess: (res) => {
+          setBulkResult(res)
+          setSelectedIds(new Set())
+          toast.success(`Invited ${res.converted} of ${ids.length} student${ids.length === 1 ? "" : "s"}`)
+        },
+        onError: () => toast.error("Couldn't send the invitations. Please try again."),
+      }
+    )
+    setBulkOpen(false)
   }
 
   function confirmRemove() {
@@ -120,6 +233,21 @@ export default function RosterPage() {
             className="pl-9"
           />
         </div>
+        <Button
+          variant="outline"
+          className="gap-2 border-[#3B5BFF] text-[#3B5BFF] hover:bg-[rgba(59,91,255,0.08)] hover:text-[#3B5BFF]"
+          disabled={!canBulkInvite}
+          title={
+            selectedStudents.length === 0
+              ? "Select students to invite"
+              : !selectedAllHaveEmail
+                ? "Every selected student needs an email to invite"
+                : `Invite ${selectedStudents.length} selected to Inspire Genius`
+          }
+          onClick={openBulkInvite}
+        >
+          <MailPlus className="h-4 w-4" /> Invite selected to IG ({selectedStudents.length})
+        </Button>
         <Button className="gap-2 bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={() => setAddOpen(true)}>
           <UserPlus className="h-4 w-4" /> Add student
         </Button>
@@ -151,6 +279,14 @@ export default function RosterPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-[#e5e7eb] text-xs uppercase tracking-wide text-[#6b7280]">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <Checkbox
+                      aria-label="Select all students"
+                      checked={headerCheckState}
+                      disabled={selectableRows.length === 0}
+                      onCheckedChange={(c) => toggleAll(c === true)}
+                    />
+                  </th>
                   <th className="px-4 py-3">Student</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 w-48">Completeness</th>
@@ -162,6 +298,14 @@ export default function RosterPage() {
               <tbody>
                 {filtered.map((s) => (
                   <tr key={s.id} className="border-b border-[#f3f4f6] last:border-0">
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        aria-label={`Select ${s.fullName}`}
+                        checked={selectedIds.has(s.id)}
+                        disabled={s.status === "linked"}
+                        onCheckedChange={(c) => toggleOne(s.id, c === true)}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
@@ -213,7 +357,7 @@ export default function RosterPage() {
                                 ? "Already invited"
                                 : "Invite to Inspire Genius"
                           }
-                          onClick={() => setInviteTarget(s)}
+                          onClick={() => openInvite(s)}
                         >
                           <MailPlus className="h-4 w-4" /> Invite
                         </Button>
@@ -249,10 +393,14 @@ export default function RosterPage() {
             <AlertDialogTitle>Invite {inviteTarget?.fullName} to Inspire Genius?</AlertDialogTitle>
             <AlertDialogDescription>
               We&apos;ll email {inviteTarget?.email} a secure set-password / magic link so they can
-              sign in and take over their own aid profile. You keep co-access and can still open
-              their profile from this roster.
+              sign in and take over their own aid profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <CoAccessToggle
+            id="invite-keep-access"
+            checked={inviteKeepAccess}
+            onCheckedChange={setInviteKeepAccess}
+          />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -264,6 +412,40 @@ export default function RosterPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk invite confirmation */}
+      <AlertDialog open={bulkOpen} onOpenChange={(o) => !o && setBulkOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Invite {selectedStudents.length} student{selectedStudents.length === 1 ? "" : "s"} to
+              Inspire Genius?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Each selected student gets an email with a secure set-password / magic link so they
+              can sign in and take over their own aid profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <CoAccessToggle
+            id="bulk-keep-access"
+            checked={bulkKeepAccess}
+            onCheckedChange={setBulkKeepAccess}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={confirmBulkInvite}>
+              Send {selectedStudents.length} invitation{selectedStudents.length === 1 ? "" : "s"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk invite result report */}
+      <BulkInviteReport
+        result={bulkResult}
+        students={students}
+        onClose={() => setBulkResult(null)}
+      />
 
       {/* Remove confirmation */}
       <AlertDialog
@@ -290,6 +472,75 @@ export default function RosterPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+// ── Bulk invite result report ────────────────────────────────────────────────
+
+/** Per-row status → pill tone. */
+function bulkRowTone(status: BulkInviteRowResult["status"]): "green" | "amber" | "gray" | "red" {
+  if (status === "invited" || status === "linked") return "green"
+  if (status === "skipped" || status === "noop") return "amber"
+  if (status === "error" || status === "forbidden") return "red"
+  return "gray"
+}
+
+function BulkInviteReport({
+  result,
+  students,
+  onClose,
+}: {
+  result: BulkInviteResult | null
+  students: CoachStudent[]
+  onClose: () => void
+}) {
+  const nameFor = (id: string) => students.find((s) => s.id === id)?.fullName ?? id
+  return (
+    <Dialog open={result !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Bulk invite results</DialogTitle>
+          <DialogDescription>Here&apos;s how each selected student was handled.</DialogDescription>
+        </DialogHeader>
+        {result && (
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-md border border-[#e5e7eb] bg-[#f0fdf4] p-3">
+                <div className="text-lg font-semibold text-[#0f766e]">{result.converted}</div>
+                <div className="text-xs text-[#6b7280]">Converted</div>
+              </div>
+              <div className="rounded-md border border-[#e5e7eb] bg-[#fffbeb] p-3">
+                <div className="text-lg font-semibold text-[#b45309]">{result.skipped}</div>
+                <div className="text-xs text-[#6b7280]">Skipped</div>
+              </div>
+              <div className="rounded-md border border-[#e5e7eb] bg-[#fef2f2] p-3">
+                <div className="text-lg font-semibold text-[#b91c1c]">{result.errors}</div>
+                <div className="text-xs text-[#6b7280]">Errors</div>
+              </div>
+            </div>
+            <ul className="mt-2 max-h-56 space-y-1.5 overflow-y-auto text-sm">
+              {result.results.map((r) => (
+                <li
+                  key={r.studentId}
+                  className="flex items-center justify-between gap-3 rounded-md border border-[#f3f4f6] px-3 py-2"
+                >
+                  <span className="truncate font-medium text-[#1f2937]">{nameFor(r.studentId)}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    {r.message && <span className="text-xs text-[#9ca3af]">{r.message}</span>}
+                    <GrantPill tone={bulkRowTone(r.status)}>{r.status}</GrantPill>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <DialogFooter>
+          <Button className="bg-[#3B5BFF] hover:bg-[#2f49cc]" onClick={onClose}>
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

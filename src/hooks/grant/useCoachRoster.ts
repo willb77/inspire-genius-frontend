@@ -12,10 +12,13 @@ import {
   createCoachStudent,
   importCoachStudents,
   inviteCoachStudent,
+  inviteCoachStudentsBulk,
   listCoachStudents,
   removeCoachStudent,
 } from "@/services/grant/coach.service"
 import type {
+  BulkInviteResult,
+  BulkInviteRowResult,
   CoachImportResult,
   CoachStudent,
   CoachStudentCreate,
@@ -133,6 +136,22 @@ function mockInvite(id: string): InviteStudentResult {
   return { status: "invited", studentId: id, message: "Invitation sent" }
 }
 
+function mockBulkInvite(studentIds: string[]): BulkInviteResult {
+  const results: BulkInviteRowResult[] = studentIds.map((id) => {
+    const student = mockRoster.find((s) => s.id === id)
+    if (!student) return { studentId: id, status: "error", message: "Student not found" }
+    if (student.status === "linked")
+      return { studentId: id, status: "noop", message: "Already linked" }
+    if (!student.email) return { studentId: id, status: "skipped", message: "No email on file" }
+    student.status = "invited"
+    return { studentId: id, status: "invited", message: "Invitation sent" }
+  })
+  const converted = results.filter((r) => r.status === "invited" || r.status === "linked").length
+  const skipped = results.filter((r) => r.status === "skipped" || r.status === "noop").length
+  const errors = results.filter((r) => r.status === "error" || r.status === "forbidden").length
+  return { converted, skipped, errors, results }
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 /** The coach's managed roster (GET /coach/students), mock-backed when enabled. */
@@ -184,9 +203,15 @@ export function useRemoveStudent() {
  */
 export function useInviteStudent() {
   const qc = useQueryClient()
-  return useMutation<InviteStudentResult, AxiosError, string, { prev?: CoachStudent[] }>({
-    mutationFn: (id) => (USE_GRANT_MOCKS ? Promise.resolve(mockInvite(id)) : inviteCoachStudent(id)),
-    onMutate: async (id) => {
+  return useMutation<
+    InviteStudentResult,
+    AxiosError,
+    { id: string; keepCoachAccess: boolean },
+    { prev?: CoachStudent[] }
+  >({
+    mutationFn: ({ id, keepCoachAccess }) =>
+      USE_GRANT_MOCKS ? Promise.resolve(mockInvite(id)) : inviteCoachStudent(id, keepCoachAccess),
+    onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: COACH_ROSTER_KEY })
       const prev = qc.getQueryData<CoachStudent[]>(COACH_ROSTER_KEY)
       qc.setQueryData<CoachStudent[]>(COACH_ROSTER_KEY, (old) =>
@@ -194,10 +219,28 @@ export function useInviteStudent() {
       )
       return { prev }
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(COACH_ROSTER_KEY, ctx.prev)
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: COACH_ROSTER_KEY })
+    },
+  })
+}
+
+/** Invite many students to their own IG login in one request. */
+export function useBulkInviteStudents() {
+  const qc = useQueryClient()
+  return useMutation<
+    BulkInviteResult,
+    AxiosError,
+    { studentIds: string[]; keepCoachAccess: boolean }
+  >({
+    mutationFn: ({ studentIds, keepCoachAccess }) =>
+      USE_GRANT_MOCKS
+        ? Promise.resolve(mockBulkInvite(studentIds))
+        : inviteCoachStudentsBulk(studentIds, keepCoachAccess),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: COACH_ROSTER_KEY })
     },
   })

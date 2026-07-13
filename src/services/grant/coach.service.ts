@@ -7,6 +7,7 @@
 import { agentApi } from "@/lib/agentApi"
 import type { GrantApiResponse } from "@/types/grant"
 import type {
+  BulkInviteResult,
   CoachImportResult,
   CoachStudent,
   CoachStudentCreate,
@@ -47,10 +48,30 @@ export async function removeCoachStudent(id: string): Promise<RemoveStudentResul
   return data.data as RemoveStudentResult
 }
 
-/** POST /coach/students/{id}/invite — email the student their own IG login. */
-export async function inviteCoachStudent(id: string): Promise<InviteStudentResult> {
+/**
+ * POST /coach/students/{id}/invite — email the student their own IG login.
+ * `keepCoachAccess=false` is a full hand-off (coach loses roster access once the
+ * student claims their account); `true` (default) keeps coach co-access.
+ */
+export async function inviteCoachStudent(
+  id: string,
+  keepCoachAccess: boolean
+): Promise<InviteStudentResult> {
   const { data } = await agentApi.post<GrantApiResponse<InviteStudentResult>>(
-    `${BASE}/${encodeURIComponent(id)}/invite`
+    `${BASE}/${encodeURIComponent(id)}/invite`,
+    { keepCoachAccess }
   )
   return data.data as InviteStudentResult
+}
+
+/** POST /coach/students/invite-bulk — invite many students at once. */
+export async function inviteCoachStudentsBulk(
+  studentIds: string[],
+  keepCoachAccess: boolean
+): Promise<BulkInviteResult> {
+  const { data } = await agentApi.post<GrantApiResponse<BulkInviteResult>>(`${BASE}/invite-bulk`, {
+    studentIds,
+    keepCoachAccess,
+  })
+  return data.data as BulkInviteResult
 }
