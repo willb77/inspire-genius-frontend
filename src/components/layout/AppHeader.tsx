@@ -1,6 +1,7 @@
-import { Search, Bell, Settings as SettingsIcon, Menu } from "lucide-react"
+import { Search, Settings as SettingsIcon, Menu } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useNavigate } from "react-router-dom"
+import NotificationBell from "@/components/layout/NotificationBell"
 
 type AppHeaderProps = {
   onMenuToggle: () => void
@@ -49,10 +50,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <button className="w-11 h-11 md:w-9 md:h-9 rounded-lg flex items-center justify-center relative hover:bg-[#f3f4f6]" aria-label="Notifications">
-          <Bell className="w-[18px] h-[18px] text-[#4b5563]" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444] border-2 border-white" />
-        </button>
+        <NotificationBell />
         <button className="w-11 h-11 md:w-9 md:h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Settings" onClick={() => navigate("/settings")}>
           <SettingsIcon className="w-[18px] h-[18px] text-[#4b5563]" />
         </button>
