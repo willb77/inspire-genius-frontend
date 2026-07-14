@@ -119,19 +119,10 @@ export default function HomeV2() {
   const hasReport = !prismError && !!latestPrism?.file_name;
 
   const { data: loadedFrameworks = [] } = useLoadedFrameworks();
+  // loaded-frameworks is a bare string[] of framework names
+  // (LoadedFramework = string; see the type). Match by upper-cased name.
   const loadedSet = useMemo(
-    // GET /v1/profile/me/loaded-frameworks returns a bare string[] of
-    // framework names (LoadedFrameworksResponse.frameworks: list[str]).
-    // Tolerate both a string and the typed {framework} object so a user
-    // WITH assessments doesn't white-screen on `f.framework.toUpperCase()`.
-    () =>
-      new Set(
-        loadedFrameworks
-          .map((f) =>
-            (typeof f === "string" ? f : f?.framework ?? "").toUpperCase(),
-          )
-          .filter(Boolean),
-      ),
+    () => new Set(loadedFrameworks.map((f) => f.toUpperCase())),
     [loadedFrameworks],
   );
 
