@@ -21,6 +21,8 @@ jest.mock("@/hooks/audit/useAudit", () => ({
 // HomeV2 must NOT crash on `f.framework.toUpperCase()`.
 jest.mock("@/hooks/profile/useProfile", () => ({
   useLoadedFrameworks: () => ({ data: ["PRISM", "DISC"] }),
+  useMyProfile: () => ({ data: { personal_docs: ["resume"] } }),
+  profileKeys: { me: () => ["profile", "me"] },
   useImportAssessment: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
 }));
 
@@ -48,6 +50,17 @@ describe("HomeV2", () => {
     // Done items expose their Add button as disabled with '<name> added'.
     expect(
       screen.getByRole("button", { name: "DiSC added" }),
+    ).toBeInTheDocument();
+  });
+
+  it("marks Resume done from profile personal_docs (and Bio not done)", () => {
+    // Mock has personal_docs: ["resume"].
+    wrap();
+    expect(
+      screen.getByRole("button", { name: "Resume added" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add Bio" }),
     ).toBeInTheDocument();
   });
 });
