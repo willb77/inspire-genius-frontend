@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
@@ -11,6 +11,10 @@ import {
   type WelcomeBackAssessment,
   type WelcomeBackPersonalInfo,
 } from "@/components/dashboard/v2/WelcomeBackTile";
+import {
+  AddAssessmentModal,
+  type AddAssessmentTarget,
+} from "@/components/dashboard/v2/AddAssessmentModal";
 import {
   MeridianEngageCard,
   type MeridianQuickChip,
@@ -101,6 +105,7 @@ const MERIDIAN_CHIPS: MeridianQuickChip[] = [
 export default function HomeV2() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
   const firstName =
     user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
   const displayName =
@@ -161,8 +166,14 @@ export default function HomeV2() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  // Add (assessment or personal-info) → the document upload surface, where the
-  // report/CV/bio is ingested by the existing pipeline.
+  // Add an assessment → open the inline upload/ingest modal for that framework.
+  const openAddAssessment = (name: string): void => {
+    const entry = ASSESSMENT_CATALOG.find((a) => a.name === name);
+    if (entry) setAddTarget({ name: entry.name, framework: entry.framework });
+  };
+
+  // Resume / Bio / Additional info aren't structured assessments — route those
+  // to the document upload surface (existing ingest pipeline).
   const goToUpload = (): void => {
     navigate(ROUTES.DOCUMENTS);
   };
@@ -182,8 +193,15 @@ export default function HomeV2() {
             profilePercent={profilePercent}
             assessments={assessments}
             personalInfo={personalInfo}
-            onAddAssessment={goToUpload}
+            onAddAssessment={openAddAssessment}
             onAddPersonalInfo={goToUpload}
+          />
+
+          <AddAssessmentModal
+            target={addTarget}
+            onOpenChange={(open) => {
+              if (!open) setAddTarget(null);
+            }}
           />
 
           {/* Merged Meridian tile — engage hero + greeting + quick chips
