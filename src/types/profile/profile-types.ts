@@ -57,6 +57,12 @@ export type ProfileMe = {
   user_id: string;
   facts: ProfileFact[];
   loaded_frameworks: LoadedFramework[];
+  /**
+   * §4.2 — the personal `doc_kind`s the user holds (e.g. `["resume","bio"]`),
+   * sourced from documents tagged resume/cv/bio/personal. The Home
+   * completeness column reads this to mark Resume / Bio / Additional info done.
+   */
+  personal_docs?: string[];
   /** Optional summary surface — backend may add convenience fields. */
   latest_assessment_by_framework?: Record<string, Assessment>;
 };
