@@ -39,7 +39,7 @@ function errorMessage(err: unknown): string {
 
 /**
  * "Add → ingest" modal for the HomeV2 completeness tile. The user uploads a
- * report export (CSV) for a specific assessment framework; the file is sent to
+ * report export (PDF, XLSX, or CSV) for a framework; the file is sent to
  * POST /v1/profile/me/assessments/import where the server-side adapter parses
  * it and stores the scores. On success the loaded-frameworks query is
  * invalidated (by the hook) so the tile's checkmark fills automatically.
@@ -90,8 +90,8 @@ export function AddAssessmentModal({
         <DialogHeader>
           <DialogTitle>Add {target?.name}</DialogTitle>
           <DialogDescription>
-            Upload your {target?.name} report (CSV export). We&apos;ll read the
-            scores and add them to your profile so Meridian can use them.
+            Upload your {target?.name} report (PDF, XLSX, or CSV). We&apos;ll
+            read the scores and add them to your profile so Meridian can use them.
           </DialogDescription>
         </DialogHeader>
 
@@ -99,7 +99,7 @@ export function AddAssessmentModal({
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,.pdf,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="sr-only"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
@@ -116,7 +116,7 @@ export function AddAssessmentModal({
             ) : (
               <>
                 <Upload className="size-4 text-[#C9711A]" />
-                Choose a CSV file
+                Choose a file (PDF, XLSX, or CSV)
               </>
             )}
           </button>
