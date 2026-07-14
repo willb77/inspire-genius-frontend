@@ -78,6 +78,17 @@ describe("AddAssessmentModal", () => {
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 
+  it("accepts PDF and XLSX in addition to CSV", () => {
+    wrap(<AddAssessmentModal target={MBTI} onOpenChange={jest.fn()} />);
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const accept = input.getAttribute("accept") ?? "";
+    expect(accept).toContain(".pdf");
+    expect(accept).toContain(".xlsx");
+    expect(accept).toContain(".csv");
+  });
+
   it("renders nothing interactable when target is null", () => {
     wrap(<AddAssessmentModal target={null} onOpenChange={jest.fn()} />);
     expect(screen.queryByText(/Upload & add/i)).not.toBeInTheDocument();
