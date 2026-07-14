@@ -80,6 +80,10 @@ jobs:
           echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}" >> .env
           echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
           echo "VITE_APP_VERSION=${{ github.sha }}" >> .env
+          # Default the new user surfaces (HomeV2 dashboard) ON in dev. The in-page
+          # HomeSurfaceToggle and /home/classic escape hatch remain; an explicit
+          # localStorage `new_user_surfaces` value still overrides this default.
+          echo "VITE_NEW_USER_SURFACES=true" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
