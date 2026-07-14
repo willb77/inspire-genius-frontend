@@ -78,6 +78,19 @@ export type CreateAssessmentRequest = {
   typing?: AssessmentTyping[];
 };
 
+/** Response from POST /v1/profile/me/assessments (+ /import). */
+export type AssessmentCreated = {
+  id: string;
+  user_id: string;
+  framework: string;
+  framework_version?: string | null;
+  assessed_at: string;
+  source: string;
+  is_authoritative: boolean;
+  score_count: number;
+  typing_count: number;
+};
+
 export type AssessmentHistoryResponse = {
   assessments: Assessment[];
   total: number;
