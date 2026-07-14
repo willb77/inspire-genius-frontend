@@ -172,6 +172,17 @@ const GrantPlanPage = React.lazy(() => import("@/pages/grant/GrantPlanPage"));
 const GrantRosterPage = React.lazy(() => import("@/pages/grant/coach/RosterPage"));
 const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/StudentIntakePage"));
 
+// The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
+const HonorLayout = React.lazy(() => import("@/pages/honor/HonorLayout"));
+const HonorDashboard = React.lazy(() => import("@/pages/honor/HonorDashboard"));
+const HonorCaseload = React.lazy(() => import("@/pages/honor/HonorCaseload"));
+const HonorOnboard = React.lazy(() => import("@/pages/honor/HonorOnboard"));
+const HonorEvaluate = React.lazy(() => import("@/pages/honor/HonorEvaluate"));
+const HonorMemberProfile = React.lazy(() => import("@/pages/honor/HonorMemberProfile"));
+const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
+const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
+const HonorAdministration = React.lazy(() => import("@/pages/honor/HonorAdministration"));
+
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
@@ -404,6 +415,27 @@ export const routes: RouteObject[] = [
           // Coach surface — roster + per-student intake (coach-capable roles).
           { path: "coach/students", element: withSuspense(<GrantRosterPage />) },
           { path: "coach/students/:studentId", element: withSuspense(<GrantStudentIntakePage />) },
+        ],
+      },
+
+      // The Honor Foundation — Coach Workbench vertical. Reskinned (navy/orange
+      // THF chrome) and entitlement-gated inside HonorLayout, which redirects
+      // users lacking the "honor-foundation" entitlement to /home.
+      {
+        path: "/vertical/honor-foundation",
+        element: withSuspense(<HonorLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/honor-foundation/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<HonorDashboard />) },
+          { path: "caseload", element: withSuspense(<HonorCaseload />) },
+          { path: "onboard", element: withSuspense(<HonorOnboard />) },
+          { path: "evaluate", element: withSuspense(<HonorEvaluate />) },
+          { path: "activity", element: withSuspense(<HonorActivity />) },
+          { path: "schedule", element: withSuspense(<HonorSchedule />) },
+          { path: "administration", element: withSuspense(<HonorAdministration />) },
+          // Member workspace — no id lands on the first assigned member.
+          { path: "member", element: withSuspense(<HonorMemberProfile />) },
+          { path: "member/:memberId", element: withSuspense(<HonorMemberProfile />) },
         ],
       },
     ],
