@@ -6,7 +6,7 @@
 export * from "./intake"
 
 /** Vertical identifiers that gate feature access via user_preferences.enabled_verticals. */
-export type KnownVertical = "grant"
+export type KnownVertical = "grant" | "honor-foundation"
 
 /** Envelope every GRANT service returns (mirrors the platform BaseApiResponse shape). */
 export type GrantApiResponse<T = unknown> = {
