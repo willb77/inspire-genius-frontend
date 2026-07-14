@@ -333,7 +333,7 @@ function TrendChart({
   dimensionsByFramework: Record<string, string[]>;
 }) {
   const [framework, setFramework] = useState<string | undefined>(
-    loadedFrameworks[0]?.framework,
+    loadedFrameworks[0],
   );
   const [dimension, setDimension] = useState<string | undefined>();
 
@@ -381,8 +381,8 @@ function TrendChart({
               </SelectTrigger>
               <SelectContent>
                 {loadedFrameworks.map((f) => (
-                  <SelectItem key={f.framework} value={f.framework}>
-                    {f.framework}
+                  <SelectItem key={f} value={f}>
+                    {f}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -458,7 +458,7 @@ function PrivacyPanel({
   // anything to the server.
   const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
     const out: Record<string, boolean> = {};
-    for (const f of loadedFrameworks) out[f.framework] = true;
+    for (const f of loadedFrameworks) out[f] = true;
     return out;
   });
 
@@ -466,7 +466,7 @@ function PrivacyPanel({
     setEnabled((prev) => {
       const next = { ...prev };
       for (const f of loadedFrameworks) {
-        if (!(f.framework in next)) next[f.framework] = true;
+        if (!(f in next)) next[f] = true;
       }
       return next;
     });
@@ -489,23 +489,18 @@ function PrivacyPanel({
         ) : (
           loadedFrameworks.map((f) => (
             <div
-              key={f.framework}
+              key={f}
               className="flex items-center justify-between border-b py-2"
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{f.framework}</span>
-                {f.latest_assessed_at && (
-                  <span className="text-xs text-muted-foreground">
-                    · {fmtDate(f.latest_assessed_at)}
-                  </span>
-                )}
+                <span className="text-sm font-medium">{f}</span>
               </div>
               <Switch
-                aria-label={`Include ${f.framework} in chat`}
-                checked={!!enabled[f.framework]}
+                aria-label={`Include ${f} in chat`}
+                checked={!!enabled[f]}
                 onCheckedChange={(v) =>
-                  setEnabled((prev) => ({ ...prev, [f.framework]: v }))
+                  setEnabled((prev) => ({ ...prev, [f]: v }))
                 }
               />
             </div>

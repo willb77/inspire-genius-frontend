@@ -88,7 +88,7 @@ test("renders timeline cards when assessments are present", async () => {
         value: "I run product.",
       },
     ],
-    loaded_frameworks: [{ framework: "PRISM" }],
+    loaded_frameworks: ["PRISM"],
   } as ProfileMe);
 
   const assessments: Assessment[] = [
