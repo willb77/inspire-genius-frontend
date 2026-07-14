@@ -5,12 +5,16 @@ import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useAuditStats } from "@/hooks/audit/useAudit";
-import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
+import { useLoadedFrameworks, useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
   type WelcomeBackPersonalInfo,
 } from "@/components/dashboard/v2/WelcomeBackTile";
+import {
+  AddPersonalDocModal,
+  type AddPersonalDocTarget,
+} from "@/components/dashboard/v2/AddPersonalDocModal";
 import {
   AddAssessmentModal,
   type AddAssessmentTarget,
@@ -88,10 +92,18 @@ const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
   { name: "Enneagram", framework: "ENNEAGRAM" },
 ];
 
-// Resume / Bio / Additional info. No detection endpoint exists yet (§4.2), so
-// these stay not-done (Add active) — matches the completeness contract: an item
-// flips to done only when a real source reports it.
-const PERSONAL_INFO_ITEMS = ["Resume", "Bio", "Additional info"];
+// Resume / Bio / Additional info → the personal `doc_kind` uploaded, and the
+// doc_kinds that count as "done" for that row. Done-state is REAL — from
+// GET /me `personal_docs` (documents tagged resume/cv/bio/personal).
+const PERSONAL_INFO_CATALOG: {
+  name: string;
+  docKind: string;
+  matches: string[];
+}[] = [
+  { name: "Resume", docKind: "resume", matches: ["resume", "cv"] },
+  { name: "Bio", docKind: "bio", matches: ["bio"] },
+  { name: "Additional info", docKind: "personal", matches: ["personal"] },
+];
 
 const MERIDIAN_CHIPS: MeridianQuickChip[] = [
   { label: "Goals", prompt: "Help me set a goal and a plan to reach it." },
@@ -106,6 +118,8 @@ export default function HomeV2() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
+  const [personalTarget, setPersonalTarget] =
+    useState<AddPersonalDocTarget | null>(null);
   const firstName =
     user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
   const displayName =
@@ -135,9 +149,18 @@ export default function HomeV2() {
     [loadedSet],
   );
 
+  const { data: profileMe } = useMyProfile();
+  const personalSet = useMemo(
+    () => new Set((profileMe?.personal_docs ?? []).map((k) => k.toLowerCase())),
+    [profileMe],
+  );
   const personalInfo: WelcomeBackPersonalInfo[] = useMemo(
-    () => PERSONAL_INFO_ITEMS.map((name) => ({ name, done: false })),
-    [],
+    () =>
+      PERSONAL_INFO_CATALOG.map((p) => ({
+        name: p.name,
+        done: p.matches.some((k) => personalSet.has(k)),
+      })),
+    [personalSet],
   );
 
   const profilePercent = useMemo(() => {
@@ -174,10 +197,11 @@ export default function HomeV2() {
     if (entry) setAddTarget({ name: entry.name, framework: entry.framework });
   };
 
-  // Resume / Bio / Additional info aren't structured assessments — route those
-  // to the document upload surface (existing ingest pipeline).
-  const goToUpload = (): void => {
-    navigate(ROUTES.DOCUMENTS);
+  // Resume / Bio / Additional info → open the tagged-upload modal, which uploads
+  // the file with the right doc_kind so the profile loader can inject it.
+  const openAddPersonalInfo = (name: string): void => {
+    const entry = PERSONAL_INFO_CATALOG.find((p) => p.name === name);
+    if (entry) setPersonalTarget({ name: entry.name, docKind: entry.docKind });
   };
 
   return (
@@ -196,7 +220,14 @@ export default function HomeV2() {
             assessments={assessments}
             personalInfo={personalInfo}
             onAddAssessment={openAddAssessment}
-            onAddPersonalInfo={goToUpload}
+            onAddPersonalInfo={openAddPersonalInfo}
+          />
+
+          <AddPersonalDocModal
+            target={personalTarget}
+            onOpenChange={(open) => {
+              if (!open) setPersonalTarget(null);
+            }}
           />
 
           <AddAssessmentModal
