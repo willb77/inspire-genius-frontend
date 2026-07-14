@@ -33,7 +33,7 @@ const SAMPLE: ProfileMe = {
       source: "user_input",
     },
   ],
-  loaded_frameworks: [{ framework: "PRISM" }],
+  loaded_frameworks: ["PRISM"],
 };
 
 function makeClient() {

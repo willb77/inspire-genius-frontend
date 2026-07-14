@@ -125,7 +125,8 @@ export default function MeridianChat() {
   const loadedFrameworkNames = useMemo(() => {
     const data = loadedFrameworksQuery.data;
     if (!data || data.length === 0) return [] as string[];
-    return data.map((f) => f.framework);
+    // loaded-frameworks is already a string[] of framework names.
+    return [...data];
   }, [loadedFrameworksQuery.data]);
 
   // Local UI state
