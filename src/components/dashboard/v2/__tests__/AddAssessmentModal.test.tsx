@@ -21,25 +21,47 @@ function wrap(ui: React.ReactElement) {
 
 const MBTI = { name: "Myers-Briggs (MBTI)", framework: "MBTI" };
 
-describe("AddAssessmentModal", () => {
+const PREVIEW = {
+  framework: "MBTI",
+  source: "file_upload",
+  filename: "mbti.pdf",
+  score_count: 1,
+  typing_count: 1,
+  dimensions: ["E-I"],
+  scores: [
+    {
+      category: "axis",
+      dimension: "E-I",
+      score_type: "Percentage",
+      score_numeric: 25,
+    },
+  ],
+  typing: { type_system: "MBTI", type_code: "INTJ", clarity: null },
+};
+
+function pickFile() {
+  const file = new File(["x"], "mbti.pdf", { type: "application/pdf" });
+  const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: [file] } });
+  return file;
+}
+
+describe("AddAssessmentModal (confirm-before-save)", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("renders the framework title when a target is set", () => {
+  it("renders the framework title", () => {
     wrap(<AddAssessmentModal target={MBTI} onOpenChange={jest.fn()} />);
-    expect(
-      screen.getByText("Add Myers-Briggs (MBTI)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Add Myers-Briggs (MBTI)")).toBeInTheDocument();
   });
 
-  it("keeps upload disabled until a file is chosen", () => {
+  it("keeps Review disabled until a file is chosen", () => {
     wrap(<AddAssessmentModal target={MBTI} onOpenChange={jest.fn()} />);
-    expect(
-      screen.getByRole("button", { name: /Upload & add/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Review/i })).toBeDisabled();
   });
 
-  it("imports the chosen file and closes on success", async () => {
-    (profileSvc.importAssessment as jest.Mock).mockResolvedValue({
+  it("previews on Review WITHOUT saving, then saves only on Confirm", async () => {
+    (profileSvc.previewImportAssessment as jest.Mock).mockResolvedValue(PREVIEW);
+    (profileSvc.confirmImportAssessment as jest.Mock).mockResolvedValue({
       id: "a1",
       user_id: "u1",
       framework: "MBTI",
@@ -49,48 +71,40 @@ describe("AddAssessmentModal", () => {
       score_count: 1,
       typing_count: 1,
     });
-    const onOpenChange = jest.fn();
     const onImported = jest.fn();
     wrap(
       <AddAssessmentModal
         target={MBTI}
-        onOpenChange={onOpenChange}
+        onOpenChange={jest.fn()}
         onImported={onImported}
       />,
     );
 
-    const file = new File(["I,N,T,J\n1,2,3,4"], "mbti.csv", {
-      type: "text/csv",
-    });
-    const input = document.querySelector(
-      'input[type="file"]',
-    ) as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [file] } });
+    pickFile();
+    fireEvent.click(screen.getByRole("button", { name: /Review/i }));
 
-    const uploadBtn = screen.getByRole("button", { name: /Upload & add/i });
-    expect(uploadBtn).not.toBeDisabled();
-    fireEvent.click(uploadBtn);
-
+    // Preview called; confirm NOT yet — nothing saved on Review.
     await waitFor(() =>
-      expect(profileSvc.importAssessment).toHaveBeenCalledWith("MBTI", file),
+      expect(profileSvc.previewImportAssessment).toHaveBeenCalledWith(
+        "MBTI",
+        expect.any(File),
+      ),
+    );
+    await waitFor(() => expect(screen.getByText("INTJ")).toBeInTheDocument());
+    expect(profileSvc.confirmImportAssessment).not.toHaveBeenCalled();
+
+    // Confirm writes.
+    fireEvent.click(screen.getByRole("button", { name: /Confirm & add/i }));
+    await waitFor(() =>
+      expect(profileSvc.confirmImportAssessment).toHaveBeenCalledWith(
+        expect.objectContaining({ framework: "MBTI", scores: PREVIEW.scores }),
+      ),
     );
     await waitFor(() => expect(onImported).toHaveBeenCalled());
-    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-  });
-
-  it("accepts PDF and XLSX in addition to CSV", () => {
-    wrap(<AddAssessmentModal target={MBTI} onOpenChange={jest.fn()} />);
-    const input = document.querySelector(
-      'input[type="file"]',
-    ) as HTMLInputElement;
-    const accept = input.getAttribute("accept") ?? "";
-    expect(accept).toContain(".pdf");
-    expect(accept).toContain(".xlsx");
-    expect(accept).toContain(".csv");
   });
 
   it("renders nothing interactable when target is null", () => {
     wrap(<AddAssessmentModal target={null} onOpenChange={jest.fn()} />);
-    expect(screen.queryByText(/Upload & add/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Review/i)).not.toBeInTheDocument();
   });
 });

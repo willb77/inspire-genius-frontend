@@ -63,8 +63,51 @@ export type ProfileMe = {
    * completeness column reads this to mark Resume / Bio / Additional info done.
    */
   personal_docs?: string[];
+  /**
+   * Privacy — framework names the user has excluded from chat injection.
+   * The profile page's Privacy panel reads this to set each toggle.
+   */
+  chat_excluded_frameworks?: string[];
   /** Optional summary surface — backend may add convenience fields. */
   latest_assessment_by_framework?: Record<string, Assessment>;
+};
+
+/** One parsed score row (backend ScoreIn shape); round-tripped preview→confirm. */
+export type ImportScoreRow = {
+  category: string;
+  dimension: string;
+  sub_dimension?: string | null;
+  score_type?: string | null;
+  score_numeric?: number | null;
+  score_text?: string | null;
+  rank?: number | null;
+};
+
+export type ImportTypingRow = {
+  type_system: string;
+  type_code: string;
+  clarity?: number | null;
+};
+
+/** Response from POST /me/assessments/import/preview (confirm-before-save). */
+export type AssessmentImportPreview = {
+  framework: string;
+  source: string;
+  filename?: string | null;
+  score_count: number;
+  typing_count: number;
+  dimensions: string[];
+  scores: ImportScoreRow[];
+  typing?: ImportTypingRow | null;
+};
+
+/** Body for POST /me/assessments/import/confirm. */
+export type AssessmentImportConfirm = {
+  framework: string;
+  framework_version?: string | null;
+  source?: string;
+  scores: ImportScoreRow[];
+  typing?: ImportTypingRow | null;
 };
 
 export type TrendPoint = {
