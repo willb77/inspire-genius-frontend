@@ -1,15 +1,15 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Upload, Target, Compass } from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useAuditStats } from "@/hooks/audit/useAudit";
+import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
+  type WelcomeBackPersonalInfo,
 } from "@/components/dashboard/v2/WelcomeBackTile";
 import {
   MeridianEngageCard,
@@ -29,16 +29,19 @@ import {
  *
  * Additive + flag-gated (see routes.tsx `new_user_surfaces`); the original Home
  * is untouched and reachable at /home/classic. Data comes from existing hooks
- * only. PRISM status is sourced from GET /v1/documents/latest-prism, not the
- * 404-ing /v1/prism/history.
+ * only. PRISM status is sourced from GET /v1/documents/latest-prism; the
+ * additional-assessment checkmarks are sourced from
+ * GET /v1/profile/me/loaded-frameworks (useLoadedFrameworks) — an item is
+ * "done" (Add greyed, checkmark filled) when the user holds an authoritative
+ * assessment in that framework.
  *
  * Layout (single full-width column, reduced vertical density):
- *   1. WelcomeBackTile  — welcome + behavioral + onboarding merged
+ *   1. WelcomeBackTile   — welcome + behavioral + completeness (assessments +
+ *      personal info, each with an Add / done indicator)
  *   2. MeridianEngageCard — merged engage hero + Meridian greeting + quick chips
- *      (the old right-side MeridianPanel is folded into this one tile)
- *   3. Action tile — Upload a File/Document · Goals · Careers
- *   4. WatchVideoCard — 5 real demo videos with HTML5 playback
- *   5. RecentActivityCard
+ *   3. WatchVideoCard    — 5 real demo videos with HTML5 playback
+ *   4. RecentActivityCard
+ *   (the old inline Action tile — Upload/Goals/Careers — was removed per HomeV3.)
  */
 
 const VIDEOS: DashboardVideo[] = [
@@ -69,17 +72,22 @@ const VIDEOS: DashboardVideo[] = [
   },
 ];
 
-// Additional-assessment roster (per spec). Bind to a real endpoint later.
-const ASSESSMENTS: WelcomeBackAssessment[] = [
-  { name: "DiSC", done: true },
-  { name: "Myers-Briggs (MBTI)", done: false },
-  { name: "CliftonStrengths (StrengthsFinder)", done: true },
-  { name: "Hogan", done: false },
-  { name: "The Big Five (OCEAN)", done: false },
-  { name: "Enneagram", done: false },
+// Additional-assessment roster → canonical framework name emitted by
+// GET /v1/profile/me/loaded-frameworks. (Enneagram has no backend adapter yet,
+// so it never resolves "done" — it stays addable, which is correct.)
+const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
+  { name: "DiSC", framework: "DISC" },
+  { name: "Myers-Briggs (MBTI)", framework: "MBTI" },
+  { name: "CliftonStrengths (StrengthsFinder)", framework: "CLIFTON" },
+  { name: "Hogan", framework: "HOGAN" },
+  { name: "The Big Five (OCEAN)", framework: "BIG_FIVE" },
+  { name: "Enneagram", framework: "ENNEAGRAM" },
 ];
 
-const MISSING_PROFILE = ["Resume", "Bio", "Additional info"];
+// Resume / Bio / Additional info. No detection endpoint exists yet (§4.2), so
+// these stay not-done (Add active) — matches the completeness contract: an item
+// flips to done only when a real source reports it.
+const PERSONAL_INFO_ITEMS = ["Resume", "Bio", "Additional info"];
 
 const MERIDIAN_CHIPS: MeridianQuickChip[] = [
   { label: "Goals", prompt: "Help me set a goal and a plan to reach it." },
@@ -89,9 +97,6 @@ const MERIDIAN_CHIPS: MeridianQuickChip[] = [
     prompt: "Can you review my resume and suggest improvements?",
   },
 ];
-
-const ACTION_BTN_CLASS =
-  "inline-flex flex-1 min-w-[10rem] items-center justify-center gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-2.5 text-sm font-medium text-[#0B1B33] shadow-sm transition-colors hover:bg-[#5B8A72]/[0.08]";
 
 export default function HomeV2() {
   const { user } = useAuth();
@@ -107,6 +112,35 @@ export default function HomeV2() {
     isError: prismError,
   } = useLatestPrism();
   const hasReport = !prismError && !!latestPrism?.file_name;
+
+  const { data: loadedFrameworks = [] } = useLoadedFrameworks();
+  const loadedSet = useMemo(
+    () => new Set(loadedFrameworks.map((f) => f.framework.toUpperCase())),
+    [loadedFrameworks],
+  );
+
+  const assessments: WelcomeBackAssessment[] = useMemo(
+    () =>
+      ASSESSMENT_CATALOG.map((a) => ({
+        name: a.name,
+        done: loadedSet.has(a.framework),
+      })),
+    [loadedSet],
+  );
+
+  const personalInfo: WelcomeBackPersonalInfo[] = useMemo(
+    () => PERSONAL_INFO_ITEMS.map((name) => ({ name, done: false })),
+    [],
+  );
+
+  const profilePercent = useMemo(() => {
+    const doneCount =
+      (hasReport ? 1 : 0) +
+      assessments.filter((a) => a.done).length +
+      personalInfo.filter((p) => p.done).length;
+    const totalCount = 1 + assessments.length + personalInfo.length;
+    return Math.round((doneCount / totalCount) * 100);
+  }, [hasReport, assessments, personalInfo]);
 
   const { data: auditData, isLoading: auditLoading } = useAuditStats();
   const activityItems: ActivityItem[] = useMemo(() => {
@@ -127,8 +161,11 @@ export default function HomeV2() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  // Goals + Careers pages are on hold — surface the buttons but no navigation yet.
-  const comingSoon = (name: string) => () => toast.info(`${name} is coming soon`);
+  // Add (assessment or personal-info) → the document upload surface, where the
+  // report/CV/bio is ingested by the existing pipeline.
+  const goToUpload = (): void => {
+    navigate(ROUTES.DOCUMENTS);
+  };
 
   return (
     <UserLayout>
@@ -142,10 +179,11 @@ export default function HomeV2() {
             prismLoading={prismLoading}
             onRequestAssessment={goToAssessment}
             onViewReportPdf={goToAssessment}
-            profilePercent={40}
-            missing={MISSING_PROFILE}
-            assessments={ASSESSMENTS}
-            onAddAssessment={(name) => toast.info(`Add ${name} — coming soon`)}
+            profilePercent={profilePercent}
+            assessments={assessments}
+            personalInfo={personalInfo}
+            onAddAssessment={goToUpload}
+            onAddPersonalInfo={goToUpload}
           />
 
           {/* Merged Meridian tile — engage hero + greeting + quick chips
@@ -157,36 +195,6 @@ export default function HomeV2() {
             quickChips={MERIDIAN_CHIPS}
             onQuickChip={(chip) => goToChat(chip.prompt)}
           />
-
-          {/* Action tile — sits directly above Watch a Video. */}
-          <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-4 shadow-sm">
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.DOCUMENTS)}
-                className={ACTION_BTN_CLASS}
-              >
-                <Upload className="size-4 text-[#3E6B55]" />
-                Upload a File/Document
-              </button>
-              <button
-                type="button"
-                onClick={comingSoon("Goals")}
-                className={ACTION_BTN_CLASS}
-              >
-                <Target className="size-4 text-[#C9711A]" />
-                Goals
-              </button>
-              <button
-                type="button"
-                onClick={comingSoon("Careers")}
-                className={ACTION_BTN_CLASS}
-              >
-                <Compass className="size-4 text-[#3E6B55]" />
-                Careers
-              </button>
-            </div>
-          </div>
 
           <WatchVideoCard videos={VIDEOS} />
 
