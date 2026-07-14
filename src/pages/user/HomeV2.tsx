@@ -120,7 +120,18 @@ export default function HomeV2() {
 
   const { data: loadedFrameworks = [] } = useLoadedFrameworks();
   const loadedSet = useMemo(
-    () => new Set(loadedFrameworks.map((f) => f.framework.toUpperCase())),
+    // GET /v1/profile/me/loaded-frameworks returns a bare string[] of
+    // framework names (LoadedFrameworksResponse.frameworks: list[str]).
+    // Tolerate both a string and the typed {framework} object so a user
+    // WITH assessments doesn't white-screen on `f.framework.toUpperCase()`.
+    () =>
+      new Set(
+        loadedFrameworks
+          .map((f) =>
+            (typeof f === "string" ? f : f?.framework ?? "").toUpperCase(),
+          )
+          .filter(Boolean),
+      ),
     [loadedFrameworks],
   );
 
