@@ -33,9 +33,10 @@ import {
  * Honor Coach Workbench — React Query read hooks.
  *
  * Each hook is mock-backed for the Phase-0 scaffold: when `USE_HONOR_MOCKS` is
- * true it resolves fixtures; otherwise it calls the (net-new) `/v1/coach/*`
- * service. Screens that reuse EXISTING real hooks (Meridian chat, PRISM,
- * documents) do not go through here — they wire straight to those hooks.
+ * true it resolves fixtures; otherwise it calls the coach.service wrappers, which
+ * target EXISTING Core endpoints (Simplified Vertical Model — GRANT-style coach
+ * roster, conversation/audit history, team reads). Screens backed by the shared
+ * hooks (Meridian chat, PRISM, documents) wire straight to those hooks.
  */
 
 const HK = "honor"
@@ -107,7 +108,7 @@ export function useCoachSchedule(
     queryKey: [HK, "schedule", view],
     queryFn: async () => {
       if (USE_HONOR_MOCKS) return MOCK_SCHEDULE
-      const res = await getCoachSchedule(view)
+      const res = await getCoachSchedule()
       return res.data ?? []
     },
     ...options,

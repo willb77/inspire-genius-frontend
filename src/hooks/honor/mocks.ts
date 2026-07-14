@@ -1,9 +1,11 @@
 // The Honor Foundation — Coach Workbench: TYPED MOCK fixtures (Phase 0 scaffold).
 //
 // These back the Honor coach hooks so the reskinned surface renders real-looking
-// data before the net-new /v1/coach/* endpoints exist. Each hook references
-// `USE_HONOR_MOCKS`; flip it to `false` (per screen, as endpoints land) to go
-// live. Ported from the delivered THF wireframe's in-JS mock model.
+// data before each screen is flipped live onto the EXISTING Core endpoints it
+// reuses (Simplified Vertical Model — see coach.service.ts: GRANT-style coach
+// roster, Meridian async-jobs, PRISM, documents). Each hook references
+// `USE_HONOR_MOCKS`; flip it to `false` (per screen) to go live. Ported from the
+// delivered THF wireframe's in-JS mock model.
 //
 // NOTE: mock data only — do NOT ship as production truth.
 
