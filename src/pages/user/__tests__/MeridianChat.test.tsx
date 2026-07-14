@@ -555,7 +555,7 @@ describe("MeridianChat — ProfileLoadedIndicator (G6, replaces T2/T3 autoLoadPr
 
   it("renders 'Profile: PRISM' chip when one framework is loaded (flag ON, single)", async () => {
     mockUseLoadedFrameworks.mockReturnValue({
-      data: [{ framework: "PRISM", latest_assessed_at: "2026-06-01T12:00:00Z" }],
+      data: ["PRISM"],
       isError: false,
       error: null,
       isLoading: false,
@@ -571,10 +571,7 @@ describe("MeridianChat — ProfileLoadedIndicator (G6, replaces T2/T3 autoLoadPr
 
   it("renders comma-joined names when multiple frameworks are loaded", async () => {
     mockUseLoadedFrameworks.mockReturnValue({
-      data: [
-        { framework: "PRISM", latest_assessed_at: "2026-06-01T12:00:00Z" },
-        { framework: "MBTI", latest_assessed_at: "2026-06-02T12:00:00Z" },
-      ],
+      data: ["PRISM", "MBTI"],
       isError: false,
       error: null,
       isLoading: false,
