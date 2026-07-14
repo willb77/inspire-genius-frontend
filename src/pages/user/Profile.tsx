@@ -46,9 +46,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { toast } from "sonner";
 import {
   useAssessmentHistory,
   useAssessmentTrend,
+  useCreateFact,
   useMyProfile,
 } from "@/hooks/profile/useProfile";
 import type {
@@ -449,36 +451,43 @@ function TrendChart({
 
 function PrivacyPanel({
   loadedFrameworks,
+  chatExcludedFrameworks,
 }: {
   loadedFrameworks: LoadedFramework[];
+  chatExcludedFrameworks: string[];
 }) {
-  // TODO: wire per-framework "include in chat context" to a backend setting
-  // once the agent-engine exposes a profile-privacy endpoint. v1 stores
-  // the toggle in local state so the user can experiment without sending
-  // anything to the server.
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
-    const out: Record<string, boolean> = {};
-    for (const f of loadedFrameworks) out[f] = true;
-    return out;
-  });
+  // Persisted for real: the excluded set is a `privacy / chat_excluded_frameworks`
+  // profile fact (comma-list). The agent-engine loader reads it and drops those
+  // frameworks from <USER_PROFILE>, so turning one off actually removes it from
+  // every conversation. Saving via useCreateFact invalidates the /me query, so
+  // the switch reflects the persisted state.
+  const createFact = useCreateFact();
+  const excludedSet = useMemo(
+    () => new Set(chatExcludedFrameworks.map((f) => f.toUpperCase())),
+    [chatExcludedFrameworks],
+  );
 
-  useEffect(() => {
-    setEnabled((prev) => {
-      const next = { ...prev };
-      for (const f of loadedFrameworks) {
-        if (!(f in next)) next[f] = true;
-      }
-      return next;
-    });
-  }, [loadedFrameworks]);
+  const setIncluded = (framework: string, include: boolean): void => {
+    const next = new Set(excludedSet);
+    if (include) next.delete(framework.toUpperCase());
+    else next.add(framework.toUpperCase());
+    createFact.mutate(
+      {
+        category: "privacy",
+        key: "chat_excluded_frameworks",
+        value: Array.from(next).sort().join(","),
+      },
+      { onError: () => toast.error("Couldn't save your privacy setting.") },
+    );
+  };
 
   return (
     <Card className="shadow-sm">
       <CardHeader className="text-left">
         <CardTitle className="text-lg font-semibold">Privacy</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Choose which frameworks Meridian can see in chat. v1 is visual-only;
-          we'll wire the server flag in a follow-up.
+          Choose which frameworks Meridian can see in chat. Turning one off
+          removes it from every conversation.
         </p>
       </CardHeader>
       <CardContent className="text-left space-y-3">
@@ -498,10 +507,9 @@ function PrivacyPanel({
               </div>
               <Switch
                 aria-label={`Include ${f} in chat`}
-                checked={!!enabled[f]}
-                onCheckedChange={(v) =>
-                  setEnabled((prev) => ({ ...prev, [f]: v }))
-                }
+                checked={!excludedSet.has(f.toUpperCase())}
+                disabled={createFact.isPending}
+                onCheckedChange={(v) => setIncluded(f, v)}
               />
             </div>
           ))
@@ -564,7 +572,10 @@ export default function Profile() {
           dimensionsByFramework={dimensionsByFramework}
         />
 
-        <PrivacyPanel loadedFrameworks={loadedFrameworks} />
+        <PrivacyPanel
+          loadedFrameworks={loadedFrameworks}
+          chatExcludedFrameworks={me.data?.chat_excluded_frameworks ?? []}
+        />
 
         {me.isError && (
           <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">

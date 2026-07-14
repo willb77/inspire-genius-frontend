@@ -23,7 +23,8 @@ jest.mock("@/hooks/profile/useProfile", () => ({
   useLoadedFrameworks: () => ({ data: ["PRISM", "DISC"] }),
   useMyProfile: () => ({ data: { personal_docs: ["resume"] } }),
   profileKeys: { me: () => ["profile", "me"] },
-  useImportAssessment: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
+  usePreviewImportAssessment: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
+  useConfirmImportAssessment: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
 }));
 
 import HomeV2 from "@/pages/user/HomeV2";
