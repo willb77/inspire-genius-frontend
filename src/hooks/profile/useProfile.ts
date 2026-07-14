@@ -21,10 +21,12 @@ import {
   getLoadedFrameworks,
   getMyProfile,
   getTrend,
+  importAssessment,
   listAssessments,
 } from "@/services/profile/profile";
 import type {
   Assessment,
+  AssessmentCreated,
   AssessmentHistoryResponse,
   CreateAssessmentRequest,
   CreateFactRequest,
@@ -102,6 +104,30 @@ export function useCreateFact(
     mutationFn: createFact,
     ...options,
     onSuccess: (data, vars, ctx) => {
+      qc.invalidateQueries({ queryKey: profileKeys.me() });
+      options?.onSuccess?.(data, vars, ctx);
+    },
+  });
+}
+
+/**
+ * Import an assessment report FILE (multipart) → server adapter parse → store.
+ * On success, refresh the loaded-frameworks list so the HomeV2 completeness
+ * indicator flips the item to "done".
+ */
+export function useImportAssessment(
+  options?: UseMutationOptions<
+    AssessmentCreated,
+    unknown,
+    { framework: string; file: File }
+  >,
+) {
+  const qc = useQueryClient();
+  return useMutation<AssessmentCreated, unknown, { framework: string; file: File }>({
+    mutationFn: ({ framework, file }) => importAssessment(framework, file),
+    ...options,
+    onSuccess: (data, vars, ctx) => {
+      qc.invalidateQueries({ queryKey: profileKeys.loadedFrameworks() });
       qc.invalidateQueries({ queryKey: profileKeys.me() });
       options?.onSuccess?.(data, vars, ctx);
     },
