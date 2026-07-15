@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ArrowRight, ChevronDown } from "lucide-react"
 
@@ -19,9 +20,6 @@ export interface MeridianEngageCardProps {
   defaultStarterOpen?: boolean
 }
 
-const DEFAULT_STARTER_LABEL = "Starter Questions"
-const DEFAULT_PLACEHOLDER = "Ask Meridian anything…"
-
 /**
  * MeridianEngageCard — the "Chat with Meridian" tile on HomeV2.
  *
@@ -37,16 +35,27 @@ export function MeridianEngageCard({
   greeting,
   starterGroups,
   onStarterQuestion,
-  starterLabel = DEFAULT_STARTER_LABEL,
-  placeholder = DEFAULT_PLACEHOLDER,
+  starterLabel,
+  placeholder,
   defaultStarterOpen = true,
 }: MeridianEngageCardProps): JSX.Element {
+  const { t } = useTranslation("dashboard")
   const [value, setValue] = useState<string>("")
   const [starterOpen, setStarterOpen] = useState<boolean>(defaultStarterOpen)
 
+  const resolvedStarterLabel =
+    starterLabel ??
+    t("homeV2.starterQuestions", { defaultValue: "Starter Questions" })
+  const resolvedPlaceholder =
+    placeholder ??
+    t("homeV2.askMeridianPlaceholder", { defaultValue: "Ask Meridian anything…" })
   const resolvedGreeting =
     greeting ??
-    `Hi ${firstName ?? "there"} — I'm Meridian, and I'll be your guide across everything here.`
+    t("homeV2.meridianGreeting", {
+      defaultValue:
+        "Hi {{name}} — I'm Meridian, and I'll be your guide across everything here.",
+      name: firstName ?? "there",
+    })
 
   const submit = (): void => {
     const trimmed = value.trim()
@@ -70,7 +79,7 @@ export function MeridianEngageCard({
       {/* Header: title + live dot + greeting */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 className="font-serif text-lg font-semibold text-[#0B1B33]">
-          Chat with Meridian
+          {t("homeV2.chatWithMeridian", { defaultValue: "Chat with Meridian" })}
         </h3>
         <span
           aria-hidden="true"
@@ -88,14 +97,16 @@ export function MeridianEngageCard({
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          aria-label="Chat with Meridian"
-          placeholder={placeholder}
+          aria-label={t("homeV2.chatWithMeridian", {
+            defaultValue: "Chat with Meridian",
+          })}
+          placeholder={resolvedPlaceholder}
           className="h-14 min-w-0 flex-1 rounded-xl border border-[rgba(11,27,51,0.14)] bg-white px-4 text-base text-[#0B1B33] placeholder:text-[#7C93B5] focus:outline-none focus:ring-2 focus:ring-[#5B8A72]"
         />
         <button
           type="button"
           onClick={submit}
-          aria-label="Send"
+          aria-label={t("homeV2.send", { defaultValue: "Send" })}
           className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-[#0B1B33] text-[#FBF7F0] transition-colors hover:bg-[#3E6B55]"
         >
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
@@ -107,7 +118,7 @@ export function MeridianEngageCard({
             aria-expanded={starterOpen}
             className="inline-flex h-14 flex-shrink-0 items-center justify-between gap-2 rounded-xl border border-[rgba(11,27,51,0.10)] bg-[#FBF7F0] px-4 text-[14px] font-medium text-[#0B1B33] transition-colors hover:bg-[#F3ECDD] sm:w-52"
           >
-            {starterLabel}
+            {resolvedStarterLabel}
             <ChevronDown
               aria-hidden="true"
               className={cn(
@@ -138,7 +149,7 @@ export function MeridianEngageCard({
                     <button
                       type="button"
                       onClick={() => onStarterQuestion?.(question)}
-                      className="flex w-full items-center px-4 py-2.5 text-left text-[13.5px] leading-snug text-[#0B1B33] transition-colors hover:bg-[#F3ECDD]"
+                      className="flex w-full items-center px-4 py-2.5 text-start text-[13.5px] leading-snug text-[#0B1B33] transition-colors hover:bg-[#F3ECDD]"
                     >
                       {question}
                     </button>

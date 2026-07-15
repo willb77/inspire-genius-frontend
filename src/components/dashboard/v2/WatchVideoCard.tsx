@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react"
+import { useTranslation } from "react-i18next"
 import { Clock, Play } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -19,6 +20,7 @@ export function WatchVideoCard({
   videos,
   onSelect,
 }: WatchVideoCardProps): JSX.Element {
+  const { t } = useTranslation("dashboard")
   const [selectedId, setSelectedId] = useState<string>(videos[0]?.id ?? "")
 
   const selected =
@@ -31,7 +33,9 @@ export function WatchVideoCard({
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-4 shadow-sm">
-      <h3 className="font-serif text-base text-[#0B1B33]">Watch a Video</h3>
+      <h3 className="font-serif text-base text-[#0B1B33]">
+        {t("homeV2.watchVideo", { defaultValue: "Watch a Video" })}
+      </h3>
 
       {selected ? (
         <>
@@ -84,7 +88,9 @@ export function WatchVideoCard({
         </>
       ) : (
         <div className="mt-3 flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]">
-          <p className="text-sm text-[#7C93B5]">No videos available yet.</p>
+          <p className="text-sm text-[#7C93B5]">
+            {t("homeV2.noVideos", { defaultValue: "No videos available yet." })}
+          </p>
         </div>
       )}
     </div>
