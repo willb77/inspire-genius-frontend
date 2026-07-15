@@ -50,6 +50,12 @@ const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 const CoachesV2 = React.lazy(() => import("@/pages/user/CoachesV2"));
 const DashboardV2 = React.lazy(() => import("@/pages/user/DashboardV2"));
 const HelpV2 = React.lazy(() => import("@/pages/user/HelpV2"));
+// Wave 1 batch 2
+const DocumentsV2 = React.lazy(() => import("@/pages/user/DocumentsV2"));
+const PrismAssessmentV2 = React.lazy(() => import("@/pages/user/PrismAssessmentV2"));
+const UserAnalyticsV2 = React.lazy(() => import("@/pages/user/AnalyticsV2"));
+const FeedbackHistoryV2 = React.lazy(() => import("@/pages/user/FeedbackHistoryV2"));
+const UserSettingsPrivacyV2 = React.lazy(() => import("@/pages/user/SettingsPrivacyV2"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
@@ -228,6 +234,21 @@ function CoachesSurface() {
 function HelpSurface() {
   return isNewUserSurfacesEnabled() ? <HelpV2 /> : <HelpPage />;
 }
+function DocumentsSurface() {
+  return isNewUserSurfacesEnabled() ? <DocumentsV2 /> : <Documents />;
+}
+function PrismAssessmentSurface() {
+  return isNewUserSurfacesEnabled() ? <PrismAssessmentV2 /> : <PrismAssessment />;
+}
+function UserAnalyticsSurface() {
+  return isNewUserSurfacesEnabled() ? <UserAnalyticsV2 /> : <UserAnalytics />;
+}
+function FeedbackHistorySurface() {
+  return isNewUserSurfacesEnabled() ? <FeedbackHistoryV2 /> : <FeedbackHistory />;
+}
+function UserSettingsPrivacySurface() {
+  return isNewUserSurfacesEnabled() ? <UserSettingsPrivacyV2 /> : <UserSettingsPrivacy />;
+}
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -294,15 +315,20 @@ export const routes: RouteObject[] = [
           { path: "progress", element: withSuspense(<SummitProgress />) },
         ],
       },
-      { path: "/documents", element: withSuspense(<Documents />) },
+      { path: "/documents", element: withSuspense(<DocumentsSurface />) },
+      { path: "/documents/classic", element: withSuspense(<Documents />) },
       { path: "/profile", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
-      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
+      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
+      { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
       { path: "/help", element: withSuspense(<HelpSurface />) },
       { path: "/help/classic", element: withSuspense(<HelpPage />) },
-      { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
-      { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
-      { path: "/analytics", element: withSuspense(<UserAnalytics />) },
+      { path: "/prism-assessment", element: withSuspense(<PrismAssessmentSurface />) },
+      { path: "/prism-assessment/classic", element: withSuspense(<PrismAssessment />) },
+      { path: "/feedback", element: withSuspense(<FeedbackHistorySurface />) },
+      { path: "/feedback/classic", element: withSuspense(<FeedbackHistory />) },
+      { path: "/analytics", element: withSuspense(<UserAnalyticsSurface />) },
+      { path: "/analytics/classic", element: withSuspense(<UserAnalytics />) },
 
       // Super Admin pages
       { path: "/super-admin/dashboard", element: withSuspense(<SuperAdminDashboard />) },
