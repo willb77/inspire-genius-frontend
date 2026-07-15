@@ -45,6 +45,11 @@ const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
+// Wave 1 — new-design (HomeV2 system) variants of high-traffic user pages.
+// Flag-gated additive swaps; classic pages stay reachable at /<path>/classic.
+const CoachesV2 = React.lazy(() => import("@/pages/user/CoachesV2"));
+const DashboardV2 = React.lazy(() => import("@/pages/user/DashboardV2"));
+const HelpV2 = React.lazy(() => import("@/pages/user/HelpV2"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
@@ -208,6 +213,22 @@ function HomeSurface() {
   );
 }
 
+// ── Wave 1 surface resolvers ────────────────────────────────────────────────
+// Flag-gated additive swaps for high-traffic user pages. Unlike /home there is
+// no in-page toggle — the `new_user_surfaces` flag is flipped once (from the
+// /home toggle or localStorage) and persists, so these read it at render and
+// navigation picks up the current value. The classic page always stays at
+// /<path>/classic. Rendered inside withSuspense so the lazy page can load.
+function DashboardSurface() {
+  return isNewUserSurfacesEnabled() ? <DashboardV2 /> : <Dashboard />;
+}
+function CoachesSurface() {
+  return isNewUserSurfacesEnabled() ? <CoachesV2 /> : <Coaches />;
+}
+function HelpSurface() {
+  return isNewUserSurfacesEnabled() ? <HelpV2 /> : <HelpPage />;
+}
+
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
   { path: "/", element: <Navigate to="/login" replace /> },
@@ -253,8 +274,10 @@ export const routes: RouteObject[] = [
       { path: "/home", element: withSuspense(<HomeSurface />) },
       // Permanent escape hatch — original Home, flag-independent.
       { path: "/home/classic", element: withSuspense(<Home />) },
-      { path: "/dashboard", element: withSuspense(<Dashboard />) },
-      { path: "/coaches", element: withSuspense(<Coaches />) },
+      { path: "/dashboard", element: withSuspense(<DashboardSurface />) },
+      { path: "/dashboard/classic", element: withSuspense(<Dashboard />) },
+      { path: "/coaches", element: withSuspense(<CoachesSurface />) },
+      { path: "/coaches/classic", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
       { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
       // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
@@ -275,7 +298,8 @@ export const routes: RouteObject[] = [
       { path: "/profile", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
-      { path: "/help", element: withSuspense(<HelpPage />) },
+      { path: "/help", element: withSuspense(<HelpSurface />) },
+      { path: "/help/classic", element: withSuspense(<HelpPage />) },
       { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
       { path: "/analytics", element: withSuspense(<UserAnalytics />) },
