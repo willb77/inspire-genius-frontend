@@ -75,6 +75,25 @@ semantics changed.
   content, since most GRANT pages are still stubs. Vertical #2's UI phase may surface gaps.
 - `require_vertical()` is written but deliberately unused: GRANT's preview override forces the
   vertical on for users with no entitlement row, so enforcing server-side would 403 the demo path.
+## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
+
+### Changed
+- The "Dev Traffic Report" item already sits on the super-admin **Administration**
+  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
+  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
+  anyone but the platform owner (`willb77@3pp.com`). This adds matching
+  **link-visibility gating**: the item stays in Administration but is filtered
+  out of the sidebar for every super-admin except the owner — so no one else
+  even sees it. Defence-in-depth alongside the backend allow-list.
+  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
+    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
+  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
+    every super-admin nav section unless `isPlatformOwner(user.email)`.
+  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
+    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
+  - No backend change: the report endpoint already uses native DB datetimes and
+    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
+    fix has no equivalent code path server-side.
 
 ## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
 
