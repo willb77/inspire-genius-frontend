@@ -149,7 +149,7 @@ export function WelcomeBackTile({
             className="bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90"
           >
             <CalendarDays className="size-4" />
-            Request an Assessment
+            Request PRISM Inventory
           </Button>
           {hasReport ? (
             <Button
@@ -159,7 +159,7 @@ export function WelcomeBackTile({
               className={cn("border-[rgba(11,27,51,0.10)] text-[#0B1B33]")}
             >
               <FileText className="size-4" />
-              View Report PDF
+              View Inventory PDF
             </Button>
           ) : null}
         </div>

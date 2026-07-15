@@ -44,6 +44,7 @@ export default function ChatWindow({
   className,
   onBack,
   onSendText,
+  autoSendText,
   onToggleRecording,
   isRecording,
   hasAudio,
@@ -141,6 +142,19 @@ export default function ChatWindow({
 
   const [inputText, setInputText] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Auto-send: when navigated in with `autoSendText` (a starter question or the
+  // HomeV2 ask box), prefill the composer and submit it exactly once so the
+  // user lands directly on a live Meridian response.
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    const text = autoSendText?.trim();
+    if (!text || autoSentRef.current) return;
+    autoSentRef.current = true;
+    setInputText(text);
+    onSendText?.(text);
+    setInputText("");
+  }, [autoSendText, onSendText]);
 
     const selectDocsLottieSrc = useMemo(() => {
     const options = [
