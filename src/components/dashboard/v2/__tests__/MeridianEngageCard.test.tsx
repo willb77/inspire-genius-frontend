@@ -2,8 +2,22 @@ import { fireEvent, render, screen } from "@testing-library/react"
 
 import {
   MeridianEngageCard,
-  type MeridianQuickChip,
+  type StarterQuestionGroup,
 } from "../MeridianEngageCard"
+
+const GROUPS: StarterQuestionGroup[] = [
+  {
+    category: "New to Inspires Genius",
+    questions: [
+      "What's the first thing I should do?",
+      "What is a brain map?",
+    ],
+  },
+  {
+    category: "Personal & career goals",
+    questions: ["Map out a 90-day plan toward my goal."],
+  },
+]
 
 describe("MeridianEngageCard", () => {
   it("renders the Chat with Meridian header and personalized greeting", () => {
@@ -45,33 +59,48 @@ describe("MeridianEngageCard", () => {
     expect(onAsk).not.toHaveBeenCalled()
   })
 
-  it("renders the Starter Questions dropdown and calls onQuickChip on select", () => {
-    const onQuickChip = jest.fn()
-    const quickChips: MeridianQuickChip[] = [
-      { label: "Personal", prompt: "Tell me about my profile" },
-      { label: "Career", prompt: "Explore careers that fit me" },
-      { label: "Education", prompt: "What training fits my goals?" },
-    ]
+  it("renders grouped starter questions and calls onStarterQuestion on select", () => {
+    const onStarterQuestion = jest.fn()
 
     render(
       <MeridianEngageCard
         onAsk={jest.fn()}
-        quickChips={quickChips}
-        onQuickChip={onQuickChip}
+        starterGroups={GROUPS}
+        onStarterQuestion={onStarterQuestion}
       />,
     )
 
-    // Dropdown is open by default, so the categories are visible.
+    // Dropdown is open by default: category headers + questions are visible.
     expect(screen.getByText("Starter Questions")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Career" })).toBeInTheDocument()
+    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    expect(screen.getByText("Personal & career goals")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Personal" }))
+    fireEvent.click(
+      screen.getByRole("button", { name: "What is a brain map?" }),
+    )
 
-    expect(onQuickChip).toHaveBeenCalledTimes(1)
-    expect(onQuickChip).toHaveBeenCalledWith(quickChips[0])
+    expect(onStarterQuestion).toHaveBeenCalledTimes(1)
+    expect(onStarterQuestion).toHaveBeenCalledWith("What is a brain map?")
   })
 
-  it("renders no Starter Questions when no chips are provided", () => {
+  it("can collapse the Starter Questions dropdown", () => {
+    render(
+      <MeridianEngageCard
+        onAsk={jest.fn()}
+        starterGroups={GROUPS}
+        onStarterQuestion={jest.fn()}
+      />,
+    )
+
+    // Open by default → the toggle collapses it.
+    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Starter Questions/ }))
+    expect(
+      screen.queryByText("New to Inspires Genius"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("renders no Starter Questions when no groups are provided", () => {
     render(<MeridianEngageCard onAsk={jest.fn()} />)
 
     expect(screen.queryByText("Starter Questions")).not.toBeInTheDocument()

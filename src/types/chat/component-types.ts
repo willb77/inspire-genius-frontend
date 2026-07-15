@@ -10,6 +10,12 @@ export interface ChatWindowProps {
   className?: string;
   onBack?: () => void;
   onSendText?: (text: string) => void;
+  /**
+   * When set, the composer is prefilled with this text and submitted once on
+   * mount (used by starter questions / the HomeV2 ask box to open the chat on a
+   * live response). Fires a single time per mount.
+   */
+  autoSendText?: string;
   onToggleRecording?: () => void;
   isRecording?: boolean;
   onDocumentsSelectionChange?: (ids: string[]) => void;

@@ -19,10 +19,8 @@ import {
   AddAssessmentModal,
   type AddAssessmentTarget,
 } from "@/components/dashboard/v2/AddAssessmentModal";
-import {
-  MeridianEngageCard,
-  type MeridianQuickChip,
-} from "@/components/dashboard/v2/MeridianEngageCard";
+import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
+import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import {
   WatchVideoCard,
   type DashboardVideo,
@@ -105,24 +103,6 @@ const PERSONAL_INFO_CATALOG: {
   { name: "Additional info", docKind: "personal", matches: ["personal"] },
 ];
 
-// Starter-question categories shown in the Meridian tile's "Starter Questions"
-// dropdown. Each routes into the Meridian chat with a prefilled prompt.
-const MERIDIAN_CHIPS: MeridianQuickChip[] = [
-  {
-    label: "Personal",
-    prompt:
-      "Help me understand my behavioral profile and what makes me tick.",
-  },
-  {
-    label: "Career",
-    prompt: "Help me explore careers that fit my strengths.",
-  },
-  {
-    label: "Education",
-    prompt: "What education or training paths fit my goals?",
-  },
-];
-
 export default function HomeV2() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -190,9 +170,12 @@ export default function HomeV2() {
     }));
   }, [auditData]);
 
+  // Route into the Meridian chat. When a prompt is supplied (typed ask or a
+  // starter question) it is prefilled into the composer and auto-submitted so
+  // the user lands on a live response; with no prompt we just open the chat.
   const goToChat = (prompt?: string): void => {
     navigate(ROUTES.MERIDIAN_CHAT, {
-      state: { autoLoadPrism: true, ...(prompt ? { prefillPrompt: prompt } : {}) },
+      state: prompt ? { prefillPrompt: prompt, autoSubmit: true } : {},
     });
   };
 
@@ -250,8 +233,8 @@ export default function HomeV2() {
           <MeridianEngageCard
             firstName={firstName}
             onAsk={(text) => goToChat(text)}
-            quickChips={MERIDIAN_CHIPS}
-            onQuickChip={(chip) => goToChat(chip.prompt)}
+            starterGroups={MERIDIAN_STARTER_GROUPS}
+            onStarterQuestion={(question) => goToChat(question)}
           />
 
           <WatchVideoCard videos={VIDEOS} />

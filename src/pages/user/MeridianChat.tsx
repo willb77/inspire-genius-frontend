@@ -3,7 +3,7 @@ import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -110,6 +110,28 @@ const COACH_NAME = "Meridian";
 
 export default function MeridianChat() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // One-shot prefill+submit passed via navigation state (HomeV2 ask box /
+  // starter questions). Captured once at mount; the history state is then
+  // cleared so a refresh or back-navigation does not resend it. ChatWindow
+  // consumes `autoSendText` and submits it a single time.
+  const [autoSendText] = useState<string | undefined>(() => {
+    const s = location.state as
+      | { prefillPrompt?: string; autoSubmit?: boolean }
+      | null;
+    return s?.autoSubmit && s.prefillPrompt ? s.prefillPrompt : undefined;
+  });
+  useEffect(() => {
+    if (autoSendText) {
+      navigate(location.pathname + location.search, {
+        replace: true,
+        state: null,
+      });
+    }
+    // Run once on mount to consume the navigation state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
@@ -1648,6 +1670,7 @@ export default function MeridianChat() {
             coachName={COACH_NAME}
             coachId={AGENT_ID}
             conversationId={conversationId}
+            autoSendText={autoSendText}
             onBack={() => navigate(-1)}
             onSendText={(t) => {
               demoAudioServiceRef.current?.resetAudioState();
