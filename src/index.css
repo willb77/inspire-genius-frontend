@@ -70,6 +70,33 @@
   /* blue color */
   --color-blue-10: #ecf2ff;
   --color-blue-20: #f6f9ff;
+
+  /* ==========================================================================
+     HomeV2 / new design-system palette (navy + orange editorial).
+     Introduced in Wave 0 of the platform-wide CSS migration. These are the
+     single source of truth for the redesign — consume them via utilities
+     (bg-panel, text-ink, bg-accent-orange, border-hairline, ...) instead of
+     hardcoding hex. Names are namespaced to avoid collision with the shadcn
+     tokens above (accent/muted) and Tailwind's default color scales (slate).
+     ========================================================================== */
+  --color-ink: #0B1B33;               /* primary text / headings / primary button */
+  --color-ink-deep: #13294B;          /* deep navy — gradients, chip text */
+  --color-panel: #FBF7F0;             /* cream working-surface panel + hover tints */
+  --color-accent-orange: #E8932B;     /* orange accent — CTAs, avatar, progress start */
+  --color-accent-orange-dark: #C9711A;/* accent hover / links / name highlight */
+  --color-success-green: #3E6B55;     /* done states / checks */
+  --color-success-green-soft: #5B8A72;/* focus ring / progress-bar end */
+  --color-body-slate: #4B5F80;        /* body copy (namespaced; not the slate scale) */
+  --color-mute: #7C93B5;              /* eyebrow / uppercase section labels */
+  --color-hairline: rgba(11, 27, 51, 0.10); /* all card borders + dividers */
+
+  /* Editorial serif for headings. i18n-safe: Latin renders Georgia (as today),
+     with Noto Serif script-specific fallbacks so ja/ko/zh-CN/ar/hi/th headings
+     don't fall through to a mismatched system face. No webfont is bundled, so
+     these are preference hints used only when present on the OS. */
+  --font-serif: ui-serif, Georgia, Cambria, "Noto Serif", "Noto Serif SC",
+    "Noto Serif JP", "Noto Serif KR", "Noto Naskh Arabic", "Noto Serif Devanagari",
+    "Noto Serif Thai", "Times New Roman", Times, serif;
 }
 
 /* sonar-ignore-next-line */
