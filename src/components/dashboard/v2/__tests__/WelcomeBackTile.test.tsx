@@ -80,14 +80,14 @@ describe("WelcomeBackTile", () => {
   it("calls onRequestAssessment when the request button is clicked", () => {
     const { onRequestAssessment } = renderTile();
     fireEvent.click(
-      screen.getByRole("button", { name: /Request an Assessment/i }),
+      screen.getByRole("button", { name: /Request PRISM Inventory/i }),
     );
     expect(onRequestAssessment).toHaveBeenCalledTimes(1);
   });
 
   it("calls onViewReportPdf when the view report button is clicked", () => {
     const { onViewReportPdf } = renderTile();
-    fireEvent.click(screen.getByRole("button", { name: /View Report PDF/i }));
+    fireEvent.click(screen.getByRole("button", { name: /View Inventory PDF/i }));
     expect(onViewReportPdf).toHaveBeenCalledTimes(1);
   });
 
