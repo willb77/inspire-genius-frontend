@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
-import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
+import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -187,11 +187,22 @@ function withSuspense(element: React.ReactNode) {
 // new and classic home themselves. The inner Suspense wraps only the lazy page,
 // keeping the toggle visible while the selected variant loads.
 function HomeSurface() {
+  // The flag is owned here as state so flipping the toggle swaps the page
+  // in-place (client-side re-render) instead of doing a full page reload.
+  // A hard reload could bounce the user to /login via the fresh-boot auth
+  // path; an in-place swap keeps the live session intact.
+  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
   return (
     <>
-      <HomeSurfaceToggle />
+      <HomeSurfaceToggle
+        enabled={enabled}
+        onChange={(next) => {
+          setNewUserSurfaces(next); // persist so it survives the next full load
+          setEnabled(next); // swap now, no reload
+        }}
+      />
       <Suspense fallback={<LoadingSpinner />}>
-        {isNewUserSurfacesEnabled() ? <HomeV2 /> : <Home />}
+        {enabled ? <HomeV2 /> : <Home />}
       </Suspense>
     </>
   );
