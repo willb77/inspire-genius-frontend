@@ -161,6 +161,29 @@ export const SUPER_ADMIN_NAV_SECTIONS: NavSectionDef[] = [
   { label: "Role Views", items: ROLE_VIEW_ITEMS, defaultCollapsed: true },
 ]
 
+/**
+ * Platform owner email — mirrors the backend allow-list
+ * (`_AUTHORIZED_EMAILS` in
+ * `services/agent-engine/app/routes/super_admin_traffic.py`).
+ */
+export const PLATFORM_OWNER_EMAIL = "willb77@3pp.com"
+
+/** Case-insensitive owner check for nav gating. */
+export function isPlatformOwner(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL
+}
+
+/**
+ * Super-admin nav routes that are visible ONLY to the platform owner.
+ * The item stays in its normal section (e.g. Dev Traffic Report under
+ * Administration); SuperAdminLayout filters it out for every other
+ * super-admin. The Dev Traffic Report backend also hard-403s non-owners,
+ * so this is defence-in-depth, not the sole gate.
+ */
+export const OWNER_ONLY_NAV_ROUTES: ReadonlySet<string> = new Set<string>([
+  ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT,
+])
+
 /** Lookup from role to its nav items */
 export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
   user: USER_NAV_ITEMS,
