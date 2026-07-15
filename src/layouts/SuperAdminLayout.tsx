@@ -4,7 +4,7 @@ import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
 import { GRANT_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
-import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess";
+import { useVerticalAccess } from "@/verticals/core";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 
 export type SuperAdminLayoutProps = {

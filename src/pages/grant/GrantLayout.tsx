@@ -1,30 +1,12 @@
-import { Navigate, Outlet } from "react-router-dom"
-import AppShell from "@/layouts/AppShell"
-import LoadingSpinner from "@/components/LoadingSpinner"
-import { useAuth } from "@/context/useAuth"
-import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
-import { isUserRole, type UserRole } from "@/types/roles"
+import { VerticalShell } from "@/verticals/core"
 
 /**
  * Entitlement gate + shell for the GRANT vertical.
  *
- * Wraps every `/vertical/grant/*` page in the EXISTING AppShell (light theme,
- * shared sidebar) and redirects users who lack the "grant" entitlement back to
- * their home. Auth is already enforced by the parent ProtectedRoute.
+ * The gate, the AppShell wrapping and the role plumbing now live in Core's
+ * `VerticalShell` — GRANT declares which vertical it is and nothing more.
+ * Behavior is unchanged: unentitled users still redirect to `/home`.
  */
 export default function GrantLayout() {
-  const { user } = useAuth()
-  const { hasAccess, isLoading } = useVerticalAccess("grant")
-
-  const rawRole = user?.role
-  const role: UserRole = isUserRole(rawRole) ? rawRole : "user"
-
-  if (isLoading) return <LoadingSpinner />
-  if (!hasAccess) return <Navigate to="/home" replace />
-
-  return (
-    <AppShell role={role}>
-      <Outlet />
-    </AppShell>
-  )
+  return <VerticalShell vertical="grant" />
 }

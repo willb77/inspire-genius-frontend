@@ -26,7 +26,7 @@ import { getAwardLetters } from "../awardLetter.service"
 import { lookupSalary } from "../salary.service"
 import { webSearch } from "../webSearch.service"
 import { getAidIntake, saveAidIntake } from "../intake.service"
-import { getEnabledVerticals } from "../entitlements.service"
+import { getEnabledVerticals } from "@/verticals/core/entitlements.service"
 
 const envelope = <T>(data: T) => ({ data: { status: true, data } })
 

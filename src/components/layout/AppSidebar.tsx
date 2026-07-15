@@ -5,7 +5,7 @@ import { useAuth } from "@/context/useAuth"
 import { getSectionsForRole, grantSidebarSectionForRole, BROADCAST_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
+import { useVerticalAccess } from "@/verticals/core"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 
 function getInitials(name: string | null | undefined, email: string | undefined): string {
