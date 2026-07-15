@@ -50,4 +50,17 @@ describe("GRANT manifest", () => {
     expect(GRANT.key).toBe("grant")
     expect(GRANT.routePrefix).toBe("/vertical/grant")
   })
+
+  test("the src/verticals barrel registers every vertical as a side effect", async () => {
+    // main.tsx imports "./verticals" purely for this side effect. If the barrel
+    // stops re-exporting a manifest, the vertical silently vanishes from every
+    // launcher and admin list — with nothing else failing.
+    __resetRegistry()
+    jest.resetModules()
+    const verticals = await import("../../index")
+    expect(verticals.GRANT.key).toBe("grant")
+
+    const { listVerticals: list } = await import("../registry")
+    expect(list().map((v) => v.key)).toContain("grant")
+  })
 })
