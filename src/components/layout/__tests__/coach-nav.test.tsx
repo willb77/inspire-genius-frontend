@@ -14,7 +14,7 @@ const mockUseAuth = jest.fn()
 jest.mock("@/context/useAuth", () => ({ useAuth: () => mockUseAuth() }))
 
 const mockUseVerticalAccess = jest.fn()
-jest.mock("@/hooks/grant/useVerticalAccess", () => ({
+jest.mock("@/verticals/core", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }))
 

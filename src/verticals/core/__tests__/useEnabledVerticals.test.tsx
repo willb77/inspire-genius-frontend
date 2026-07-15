@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import React from "react"
 
 const mockGetEnabledVerticals = jest.fn()
-jest.mock("@/services/grant/entitlements.service", () => ({
+jest.mock("@/verticals/core/entitlements.service", () => ({
   getEnabledVerticals: () => mockGetEnabledVerticals(),
 }))
 

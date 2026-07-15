@@ -1,8 +1,7 @@
 import { GraduationCap } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
-import { setGrantPreviewOverride } from "@/hooks/grant/grantPreviewStore"
+import { setPreviewOverride, useVerticalAccess } from "@/verticals/core"
 
 /**
  * Super-admin preview toggle for the GRANT (Financial Aid) vertical.
@@ -24,7 +23,7 @@ export default function GrantPreviewToggle() {
       <Switch
         id="grant-preview-toggle"
         checked={hasAccess}
-        onCheckedChange={setGrantPreviewOverride}
+        onCheckedChange={(on) => setPreviewOverride("grant", on)}
         aria-label="Toggle the Financial Aid (GRANT) vertical view"
       />
     </div>

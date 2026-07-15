@@ -39,7 +39,7 @@ const mockUseVerticalAccess = jest.fn(() => ({
   isLoading: false,
   enabledVerticals: [] as string[],
 }));
-jest.mock("@/hooks/grant/useVerticalAccess", () => ({
+jest.mock("@/verticals/core", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }));
 
