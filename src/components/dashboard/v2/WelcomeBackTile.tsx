@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarDays, CheckCircle2, Circle, FileText, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ function CompletionRow({
   done: boolean;
   onAdd?: (name: string) => void;
 }): JSX.Element {
+  const { t } = useTranslation("dashboard");
   return (
     <li className="flex items-center justify-between gap-3">
       <span className="inline-flex min-w-0 items-center gap-2 text-[14px]">
@@ -66,7 +68,11 @@ function CompletionRow({
         type="button"
         onClick={done ? undefined : () => onAdd?.(name)}
         disabled={done}
-        aria-label={done ? `${name} added` : `Add ${name}`}
+        aria-label={
+          done
+            ? t("homeV2.itemAdded", { defaultValue: "{{name}} added", name })
+            : t("homeV2.addItem", { defaultValue: "Add {{name}}", name })
+        }
         aria-disabled={done}
         className={cn(
           "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors",
@@ -76,7 +82,7 @@ function CompletionRow({
         )}
       >
         <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-        Add
+        {t("homeV2.add", { defaultValue: "Add" })}
       </button>
     </li>
   );
@@ -97,20 +103,24 @@ export function WelcomeBackTile({
   onAddAssessment,
   onAddPersonalInfo,
 }: WelcomeBackTileProps): JSX.Element {
+  const { t } = useTranslation("dashboard");
   const pct = Math.max(0, Math.min(100, Math.round(profilePercent)));
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
       {/* 1. Header */}
       <h2 className="font-serif text-[22px] leading-tight text-[#0B1B33]">
-        Welcome back, <span className="text-[#C9711A]">{displayName}</span>.
+        {t("homeV2.welcomeBackPrefix", { defaultValue: "Welcome back," })}{" "}
+        <span className="text-[#C9711A]">{displayName}</span>.
       </h2>
 
       {/* 2. Continuation line */}
       <p className="mt-1.5 text-[13px] text-[#4b5f80]">
         {lastTopic ? (
           <>
-            Last time we discussed{" "}
+            {t("homeV2.lastDiscussedPrefix", {
+              defaultValue: "Last time we discussed",
+            })}{" "}
             <button
               type="button"
               onClick={onResumeConversation}
@@ -118,15 +128,20 @@ export function WelcomeBackTile({
             >
               {lastTopic}
             </button>
-            . Continue, or start a new conversation?
+            {t("homeV2.lastDiscussedSuffix", {
+              defaultValue: ". Continue, or start a new conversation?",
+            })}
           </>
         ) : (
           <button
             type="button"
             onClick={onResumeConversation}
-            className="text-left hover:text-[#0B1B33]"
+            className="text-start hover:text-[#0B1B33]"
           >
-            Continue where you left off, or start a new conversation?
+            {t("homeV2.continuePrompt", {
+              defaultValue:
+                "Continue where you left off, or start a new conversation?",
+            })}
           </button>
         )}
       </p>
@@ -137,9 +152,13 @@ export function WelcomeBackTile({
       {/* 4. Behavioral row */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-serif text-base text-[#0B1B33]">Behavioral assessment</h3>
+          <h3 className="font-serif text-base text-[#0B1B33]">
+            {t("homeV2.behavioralAssessment", {
+              defaultValue: "Behavioral assessment",
+            })}
+          </h3>
           <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-[#7C93B5]">
-            Powered by PRISM
+            {t("homeV2.poweredByPrism", { defaultValue: "Powered by PRISM" })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -149,7 +168,9 @@ export function WelcomeBackTile({
             className="bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90"
           >
             <CalendarDays className="size-4" />
-            Request PRISM Inventory
+            {t("homeV2.requestPrismInventory", {
+              defaultValue: "Request PRISM Inventory",
+            })}
           </Button>
           {hasReport ? (
             <Button
@@ -159,18 +180,25 @@ export function WelcomeBackTile({
               className={cn("border-[rgba(11,27,51,0.10)] text-[#0B1B33]")}
             >
               <FileText className="size-4" />
-              View Inventory PDF
+              {t("homeV2.viewInventoryPdf", { defaultValue: "View Inventory PDF" })}
             </Button>
           ) : null}
         </div>
       </div>
 
       {prismLoading ? (
-        <p className="mt-3 text-[13px] text-[#4b5f80]">Checking your latest report…</p>
+        <p className="mt-3 text-[13px] text-[#4b5f80]">
+          {t("homeV2.checkingReport", {
+            defaultValue: "Checking your latest report…",
+          })}
+        </p>
       ) : hasReport ? (
         <div className="mt-3 flex min-w-0 items-center gap-2 text-[13px] text-[#4b5f80]">
           <FileText className="size-3.5 shrink-0 text-[#7C93B5]" />
-          <span className="min-w-0 truncate">Latest report: {reportFileName}</span>
+          <span className="min-w-0 truncate">
+            {t("homeV2.latestReportPrefix", { defaultValue: "Latest report:" })}{" "}
+            {reportFileName}
+          </span>
         </div>
       ) : null}
 
@@ -178,7 +206,10 @@ export function WelcomeBackTile({
       <div className="mt-5">
         <div className="mb-1.5 flex items-baseline justify-between gap-3">
           <span className="text-[14px] font-medium text-[#0B1B33]">
-            Complete profile ({pct}%)
+            {t("homeV2.completeProfile", {
+              defaultValue: "Complete profile ({{pct}}%)",
+              pct,
+            })}
           </span>
           <span className="font-serif text-[24px] leading-none text-[#0B1B33]">{pct}%</span>
         </div>
@@ -188,7 +219,9 @@ export function WelcomeBackTile({
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Complete profile"
+          aria-label={t("homeV2.completeProfileAria", {
+            defaultValue: "Complete profile",
+          })}
         >
           <div
             className="h-full rounded-full bg-gradient-to-r from-[#E8932B] to-[#5B8A72] transition-[width] duration-300"
@@ -204,7 +237,9 @@ export function WelcomeBackTile({
       <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-3">
         <div className="md:col-span-2">
           <div className="text-[13px] font-semibold text-[#0B1B33]">
-            Additional assessments
+            {t("homeV2.additionalAssessments", {
+              defaultValue: "Additional assessments",
+            })}
           </div>
           <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {assessments.map((a) => (
@@ -220,7 +255,9 @@ export function WelcomeBackTile({
 
         <div className="md:col-span-1">
           <div className="text-[13px] font-semibold text-[#0B1B33]">
-            Additional Personal Info
+            {t("homeV2.additionalPersonalInfo", {
+              defaultValue: "Additional Personal Info",
+            })}
           </div>
           <ul className="mt-3 grid grid-cols-1 gap-3">
             {personalInfo.map((p) => (

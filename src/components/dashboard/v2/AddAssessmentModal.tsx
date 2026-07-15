@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { Upload, Loader2, FileText, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -31,16 +32,6 @@ interface AddAssessmentModalProps {
   onImported?: () => void;
 }
 
-function errorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-    if (err.response?.status === 409) return "That file has already been imported.";
-    if (err.response?.status === 413) return "That file is too large.";
-  }
-  return "Could not read that report. Check the file and try again.";
-}
-
 function fmtScore(n: number | null | undefined): string {
   if (n === null || n === undefined) return "";
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
@@ -59,6 +50,7 @@ export function AddAssessmentModal({
   onOpenChange,
   onImported,
 }: AddAssessmentModalProps): JSX.Element {
+  const { t } = useTranslation("dashboard");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<AssessmentImportPreview | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +58,22 @@ export function AddAssessmentModal({
   const confirmMut = useConfirmImportAssessment();
   const open = target !== null;
   const busy = previewMut.isPending || confirmMut.isPending;
+
+  const errorMessage = (err: unknown): string => {
+    if (axios.isAxiosError(err)) {
+      const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
+      if (detail) return detail;
+      if (err.response?.status === 409)
+        return t("homeV2.errAlreadyImported", {
+          defaultValue: "That file has already been imported.",
+        });
+      if (err.response?.status === 413)
+        return t("homeV2.errTooLarge", { defaultValue: "That file is too large." });
+    }
+    return t("homeV2.errCouldNotRead", {
+      defaultValue: "Could not read that report. Check the file and try again.",
+    });
+  };
 
   // Reset when the modal opens for a new framework.
   useEffect(() => {
@@ -101,9 +109,11 @@ export function AddAssessmentModal({
       {
         onSuccess: (data) => {
           toast.success(
-            `${target.name} added — ${data.score_count} score${
-              data.score_count === 1 ? "" : "s"
-            } saved.`,
+            t("homeV2.assessmentAddedToast", {
+              count: data.score_count,
+              name: target.name,
+              defaultValue: "{{name}} added — {{count}} scores saved.",
+            }),
           );
           onImported?.();
           onOpenChange(false);
@@ -117,11 +127,22 @@ export function AddAssessmentModal({
     <Dialog open={open} onOpenChange={(v) => (v ? undefined : onOpenChange(false))}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add {target?.name}</DialogTitle>
+          <DialogTitle>
+            {t("homeV2.addItem", {
+              defaultValue: "Add {{name}}",
+              name: target?.name ?? "",
+            })}
+          </DialogTitle>
           <DialogDescription>
             {preview
-              ? "Review what we read from your report, then confirm to save it."
-              : "Upload your report (PDF, XLSX, or CSV). We'll read the scores for you to review before saving."}
+              ? t("homeV2.reviewBeforeSave", {
+                  defaultValue:
+                    "Review what we read from your report, then confirm to save it.",
+                })
+              : t("homeV2.uploadReportPrompt", {
+                  defaultValue:
+                    "Upload your report (PDF, XLSX, or CSV). We'll read the scores for you to review before saving.",
+                })}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,15 +152,21 @@ export function AddAssessmentModal({
             <div className="mb-2 flex items-center gap-2 text-[#3E6B55]">
               <CheckCircle2 className="size-4" />
               <span className="font-medium">
-                Parsed {preview.score_count} score
-                {preview.score_count === 1 ? "" : "s"}
-                {preview.typing ? " + 1 type" : ""}
+                {t("homeV2.parsedScores", {
+                  count: preview.score_count,
+                  defaultValue: "Parsed {{count}} scores",
+                })}
+                {preview.typing
+                  ? t("homeV2.plusOneType", { defaultValue: " + 1 type" })
+                  : ""}
               </span>
             </div>
             <ul className="divide-y divide-[rgba(11,27,51,0.08)] rounded-lg border border-[rgba(11,27,51,0.10)]">
               {preview.typing ? (
                 <li className="flex items-center justify-between px-3 py-1.5">
-                  <span className="text-[#4b5f80]">Type</span>
+                  <span className="text-[#4b5f80]">
+                    {t("homeV2.typeLabel", { defaultValue: "Type" })}
+                  </span>
                   <span className="font-medium text-[#0B1B33]">
                     {preview.typing.type_code}
                   </span>
@@ -161,7 +188,9 @@ export function AddAssessmentModal({
               ))}
             </ul>
             <p className="mt-2 text-[12px] text-[#7C93B5]">
-              Nothing is saved until you confirm.
+              {t("homeV2.nothingSavedUntilConfirm", {
+                defaultValue: "Nothing is saved until you confirm.",
+              })}
             </p>
           </div>
         ) : (
@@ -187,7 +216,9 @@ export function AddAssessmentModal({
               ) : (
                 <>
                   <Upload className="size-4 text-[#C9711A]" />
-                  Choose a file (PDF, XLSX, or CSV)
+                  {t("homeV2.chooseFilePdfXlsxCsv", {
+                    defaultValue: "Choose a file (PDF, XLSX, or CSV)",
+                  })}
                 </>
               )}
             </button>
@@ -203,7 +234,7 @@ export function AddAssessmentModal({
                 onClick={() => setPreview(null)}
                 disabled={busy}
               >
-                Back
+                {t("homeV2.back", { defaultValue: "Back" })}
               </Button>
               <Button
                 type="button"
@@ -214,10 +245,10 @@ export function AddAssessmentModal({
                 {confirmMut.isPending ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Saving…
+                    {t("homeV2.saving", { defaultValue: "Saving…" })}
                   </>
                 ) : (
-                  "Confirm & add"
+                  t("homeV2.confirmAndAdd", { defaultValue: "Confirm & add" })
                 )}
               </Button>
             </>
@@ -229,7 +260,7 @@ export function AddAssessmentModal({
                 onClick={() => onOpenChange(false)}
                 disabled={busy}
               >
-                Cancel
+                {t("homeV2.cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button
                 type="button"
@@ -240,10 +271,10 @@ export function AddAssessmentModal({
                 {previewMut.isPending ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Reading…
+                    {t("homeV2.reading", { defaultValue: "Reading…" })}
                   </>
                 ) : (
-                  "Review"
+                  t("homeV2.review", { defaultValue: "Review" })
                 )}
               </Button>
             </>

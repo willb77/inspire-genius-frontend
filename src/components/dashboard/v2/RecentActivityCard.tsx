@@ -1,4 +1,5 @@
 import type { JSX } from "react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 
@@ -13,8 +14,6 @@ interface RecentActivityCardProps {
   emptyLabel?: string
 }
 
-const DEFAULT_EMPTY_LABEL = "No recent activity"
-
 const DOT_COLORS = [
   "bg-emerald-500",
   "bg-blue-500",
@@ -26,26 +25,33 @@ const DOT_COLORS = [
 export function RecentActivityCard({
   items,
   loading,
-  emptyLabel = DEFAULT_EMPTY_LABEL,
+  emptyLabel,
 }: RecentActivityCardProps): JSX.Element {
+  const { t } = useTranslation("dashboard")
+  const resolvedEmptyLabel =
+    emptyLabel ?? t("homeV2.noRecentActivity", { defaultValue: "No recent activity" })
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-5 shadow-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-[#7C93B5]">
-            Activity
+            {t("homeV2.activity", { defaultValue: "Activity" })}
           </div>
           <h3 className="mt-0.5 font-serif text-lg text-[#0B1B33]">
-            Recent activity
+            {t("homeV2.recentActivity", { defaultValue: "Recent activity" })}
           </h3>
         </div>
-        <span className="text-xs text-[#4b5f80]">Last 7 days</span>
+        <span className="text-xs text-[#4b5f80]">
+          {t("homeV2.last7Days", { defaultValue: "Last 7 days" })}
+        </span>
       </div>
 
       {loading ? (
-        <div className="py-2 text-sm text-[#4b5f80]">Loading activity…</div>
+        <div className="py-2 text-sm text-[#4b5f80]">
+          {t("homeV2.loadingActivity", { defaultValue: "Loading activity…" })}
+        </div>
       ) : items.length === 0 ? (
-        <div className="py-2 text-sm text-[#4b5f80]">{emptyLabel}</div>
+        <div className="py-2 text-sm text-[#4b5f80]">{resolvedEmptyLabel}</div>
       ) : (
         <div className="flex flex-col">
           {items.map((item, index) => (
