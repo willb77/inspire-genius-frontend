@@ -46,7 +46,7 @@ import {
  * Layout (single full-width column, reduced vertical density):
  *   1. WelcomeBackTile   — welcome + behavioral + completeness (assessments +
  *      personal info, each with an Add / done indicator)
- *   2. MeridianEngageCard — merged engage hero + Meridian greeting + quick chips
+ *   2. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter Questions
  *   3. WatchVideoCard    — 5 real demo videos with HTML5 playback
  *   4. RecentActivityCard
  *   (the old inline Action tile — Upload/Goals/Careers — was removed per HomeV3.)
@@ -105,12 +105,21 @@ const PERSONAL_INFO_CATALOG: {
   { name: "Additional info", docKind: "personal", matches: ["personal"] },
 ];
 
+// Starter-question categories shown in the Meridian tile's "Starter Questions"
+// dropdown. Each routes into the Meridian chat with a prefilled prompt.
 const MERIDIAN_CHIPS: MeridianQuickChip[] = [
-  { label: "Goals", prompt: "Help me set a goal and a plan to reach it." },
-  { label: "Careers", prompt: "Help me explore careers that fit my strengths." },
   {
-    label: "Review my resume",
-    prompt: "Can you review my resume and suggest improvements?",
+    label: "Personal",
+    prompt:
+      "Help me understand my behavioral profile and what makes me tick.",
+  },
+  {
+    label: "Career",
+    prompt: "Help me explore careers that fit my strengths.",
+  },
+  {
+    label: "Education",
+    prompt: "What education or training paths fit my goals?",
   },
 ];
 
@@ -237,12 +246,10 @@ export default function HomeV2() {
             }}
           />
 
-          {/* Merged Meridian tile — engage hero + greeting + quick chips
-              (the old right-side panel is folded in here). */}
+          {/* Chat with Meridian tile — greeting + ask box + Starter Questions. */}
           <MeridianEngageCard
             firstName={firstName}
             onAsk={(text) => goToChat(text)}
-            onAssessment={goToAssessment}
             quickChips={MERIDIAN_CHIPS}
             onQuickChip={(chip) => goToChat(chip.prompt)}
           />
