@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { Upload, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -29,16 +30,6 @@ interface AddPersonalDocModalProps {
   onUploaded?: () => void;
 }
 
-function errorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-    if (err.response?.status === 413) return "That file is too large.";
-    if (err.response?.status === 415) return "That file type isn't supported.";
-  }
-  return "Could not upload that file. Check it and try again.";
-}
-
 /**
  * "Add → upload" modal for the HomeV2 personal-info column. Uploads a file via
  * the document-service presigned flow, **tagged with the right `doc_kind`**
@@ -51,11 +42,28 @@ export function AddPersonalDocModal({
   onOpenChange,
   onUploaded,
 }: AddPersonalDocModalProps): JSX.Element {
+  const { t } = useTranslation("dashboard");
   const [file, setFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = useDocumentUpload();
   const qc = useQueryClient();
   const open = target !== null;
+
+  const errorMessage = (err: unknown): string => {
+    if (axios.isAxiosError(err)) {
+      const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
+      if (detail) return detail;
+      if (err.response?.status === 413)
+        return t("homeV2.errTooLarge", { defaultValue: "That file is too large." });
+      if (err.response?.status === 415)
+        return t("homeV2.errTypeNotSupported", {
+          defaultValue: "That file type isn't supported.",
+        });
+    }
+    return t("homeV2.errCouldNotUpload", {
+      defaultValue: "Could not upload that file. Check it and try again.",
+    });
+  };
 
   useEffect(() => {
     if (open) {
@@ -71,7 +79,12 @@ export function AddPersonalDocModal({
       { file, docKind: target.docKind },
       {
         onSuccess: () => {
-          toast.success(`${target.name} added.`);
+          toast.success(
+            t("homeV2.personalAddedToast", {
+              defaultValue: "{{name}} added.",
+              name: target.name,
+            }),
+          );
           qc.invalidateQueries({ queryKey: profileKeys.me() });
           onUploaded?.();
           onOpenChange(false);
@@ -87,10 +100,18 @@ export function AddPersonalDocModal({
     <Dialog open={open} onOpenChange={(v) => (v ? undefined : onOpenChange(false))}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add {target?.name}</DialogTitle>
+          <DialogTitle>
+            {t("homeV2.addItem", {
+              defaultValue: "Add {{name}}",
+              name: target?.name ?? "",
+            })}
+          </DialogTitle>
           <DialogDescription>
-            Upload your {target?.name?.toLowerCase()} (PDF, Word, or text).
-            We&apos;ll add it to your profile so Meridian can use it across chats.
+            {t("homeV2.uploadPersonalPrompt", {
+              defaultValue:
+                "Upload your {{name}} (PDF, Word, or text). We'll add it to your profile so Meridian can use it across chats.",
+              name: target?.name?.toLowerCase() ?? "",
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +136,7 @@ export function AddPersonalDocModal({
             ) : (
               <>
                 <Upload className="size-4 text-[#C9711A]" />
-                Choose a file
+                {t("homeV2.chooseFile", { defaultValue: "Choose a file" })}
               </>
             )}
           </button>
@@ -128,7 +149,7 @@ export function AddPersonalDocModal({
             onClick={() => onOpenChange(false)}
             disabled={upload.isPending}
           >
-            Cancel
+            {t("homeV2.cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button
             type="button"
@@ -139,10 +160,10 @@ export function AddPersonalDocModal({
             {upload.isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Uploading…
+                {t("homeV2.uploading", { defaultValue: "Uploading…" })}
               </>
             ) : (
-              "Upload & add"
+              t("homeV2.uploadAndAdd", { defaultValue: "Upload & add" })
             )}
           </Button>
         </DialogFooter>

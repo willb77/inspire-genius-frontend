@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
@@ -104,6 +105,7 @@ const PERSONAL_INFO_CATALOG: {
 ];
 
 export default function HomeV2() {
+  const { t } = useTranslation("dashboard");
   const { user } = useAuth();
   const navigate = useNavigate();
   const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
@@ -242,7 +244,9 @@ export default function HomeV2() {
           <RecentActivityCard
             items={activityItems}
             loading={auditLoading}
-            emptyLabel="No recent activity yet"
+            emptyLabel={t("homeV2.noRecentActivityYet", {
+              defaultValue: "No recent activity yet",
+            })}
           />
         </div>
       </div>

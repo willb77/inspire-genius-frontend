@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Switch } from "@/components/ui/switch";
 import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags";
@@ -12,6 +13,7 @@ import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags
  * variant is active and is reachable from both.
  */
 export default function HomeSurfaceToggle() {
+  const { t } = useTranslation("dashboard");
   const [on] = useState(isNewUserSurfacesEnabled);
 
   const handleChange = (next: boolean) => {
@@ -21,13 +23,19 @@ export default function HomeSurfaceToggle() {
 
   return (
     <div className="flex items-center justify-end gap-2 px-4 py-2 text-xs text-muted-foreground">
-      <span className={on ? "" : "font-medium text-foreground"}>Classic</span>
+      <span className={on ? "" : "font-medium text-foreground"}>
+        {t("homeV2.classic", { defaultValue: "Classic" })}
+      </span>
       <Switch
         checked={on}
         onCheckedChange={handleChange}
-        aria-label="Toggle new home page"
+        aria-label={t("homeV2.toggleNewHome", {
+          defaultValue: "Toggle new home page",
+        })}
       />
-      <span className={on ? "font-medium text-foreground" : ""}>New</span>
+      <span className={on ? "font-medium text-foreground" : ""}>
+        {t("homeV2.new", { defaultValue: "New" })}
+      </span>
     </div>
   );
 }
