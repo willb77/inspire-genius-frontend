@@ -34,14 +34,26 @@ jest.mock("lucide-react", () => ({
 }));
 
 // 🔹 Mock the entitlement hook (avoids React Query / QueryClient in this test)
-const mockUseVerticalAccess = jest.fn(() => ({
-  hasAccess: false,
-  isLoading: false,
-  enabledVerticals: [] as string[],
-}));
+const mockUseVerticalAccess = jest.fn((vertical: string) => {
+  void vertical; // arg-aware signature so mockImplementation((v) => …) typechecks
+  return {
+    hasAccess: false,
+    isLoading: false,
+    enabledVerticals: [] as string[],
+  };
+});
 jest.mock("@/verticals/core", () => ({
-  useVerticalAccess: () => mockUseVerticalAccess(),
+  useVerticalAccess: (vertical: string) => mockUseVerticalAccess(vertical),
 }));
+
+/** Open exactly one vertical's gate; all others stay closed. */
+function entitleOnly(vertical: string) {
+  mockUseVerticalAccess.mockImplementation((v: string) =>
+    v === vertical
+      ? { hasAccess: true, isLoading: false, enabledVerticals: [vertical] }
+      : { hasAccess: false, isLoading: false, enabledVerticals: [] }
+  );
+}
 
 // 🔹 Stub the preview toggle (its own deps are tested separately)
 jest.mock("@/components/grant/GrantPreviewToggle", () => ({
@@ -211,11 +223,7 @@ describe("SuperAdminLayout", () => {
   });
 
   test("appends the GRANT section + renders the preview toggle when entitled", () => {
-    mockUseVerticalAccess.mockReturnValue({
-      hasAccess: true,
-      isLoading: false,
-      enabledVerticals: ["grant"],
-    });
+    entitleOnly("grant");
     render(
       <SuperAdminLayout>
         <div />
@@ -227,6 +235,19 @@ describe("SuperAdminLayout", () => {
     expect(props.navSections[3].label).toBe("Financial Aid");
     // the preview toggle is passed through renderAfterContent
     expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
+  });
+
+  test("appends the Honor section when entitled", () => {
+    entitleOnly("honor");
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toHaveLength(4);
+    expect(props.navSections[3].label).toBe("Honor Foundation");
   });
 
   test("omits the GRANT section when not entitled", () => {
