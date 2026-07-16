@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { initSentry } from './lib/sentry'
 import './lib/i18n'
 import './index.css'
+// Registers every vertical with Vertical Core (side-effect import).
+import './verticals'
 import App from './App'
 
 // Initialize error tracking before rendering
