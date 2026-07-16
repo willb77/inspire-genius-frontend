@@ -4,6 +4,7 @@ import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
@@ -130,6 +131,7 @@ export default function MeridianChat({
   variant?: MeridianChatVariant;
 } = {}) {
   const isV2 = variant === "v2";
+  const { t } = useTranslation("chat");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -454,14 +456,14 @@ export default function MeridianChat({
   const handleJobSettled = useCallback(
     (job: ChatJob) => {
       if (job.status === "error") {
-        setStatusBanner({ type: "error", text: job.error || "Agent error" });
+        setStatusBanner({ type: "error", text: job.error || t("meridian.error.agent", { defaultValue: "Agent error" }) });
         setMessages((prev) => [
           ...prev.filter((m) => m.kind !== "processing"),
           {
             id: `msg-${Date.now()}-err`,
             kind: "text" as const,
             sender: "assistant" as const,
-            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
             time: formatUSTimeSafe(new Date()),
             ts: Date.now(),
           },
@@ -528,7 +530,7 @@ export default function MeridianChat({
       if (meridianJobRef.current.notifyPushFrame(resp)) return;
 
       if (resp.type === "connected") {
-        setStatusBanner({ type: "success", text: "Connected to Meridian" });
+        setStatusBanner({ type: "success", text: t("meridian.status.connected", { defaultValue: "Connected to Meridian" }) });
         // Flush any text message queued while the socket was reconnecting.
         const pending = pendingSendRef.current;
         if (pending) {
@@ -548,7 +550,7 @@ export default function MeridianChat({
       }
 
       if (resp.type === "error") {
-        setStatusBanner({ type: "error", text: resp.message || "Agent error" });
+        setStatusBanner({ type: "error", text: resp.message || t("meridian.error.agent", { defaultValue: "Agent error" }) });
         lastMessageRef.current = { type: "error", text: resp.message ?? "" };
         wsHasAudioRef.current = false;
         // Replace the "Meridian is thinking…" placeholder with the same
@@ -559,7 +561,7 @@ export default function MeridianChat({
             id: `msg-${Date.now()}-err`,
             kind: "text" as const,
             sender: "assistant" as const,
-            text: "Sorry, I couldn't reach Meridian. Please try again.",
+            text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
             time: formatUSTimeSafe(new Date()),
             ts: Date.now(),
           },
@@ -1251,7 +1253,7 @@ export default function MeridianChat({
         },
         onError: (e) => {
           console.error("[MeridianChat] New chat creation failed", e);
-          toast.error("Couldn't start a new chat. Please try again.");
+          toast.error(t("meridian.error.newChatFailed", { defaultValue: "Couldn't start a new chat. Please try again." }));
         },
       },
     );
@@ -1269,10 +1271,10 @@ export default function MeridianChat({
       //      will return 503 — that's expected; client renders).
       //   3. Legacy single-PDF backend fallback as last resort when
       //      neither dual-PDF path can run (zero messages in state).
-      const subject = "Meridian Chat Session";
+      const subject = t("meridian.export.sessionSubject", { defaultValue: "Meridian Chat Session" });
       const fromLabel = format(from, "do MMM yy");
       const toLabel = format(to, "do MMM yy");
-      const userLabel = user?.fullName || user?.name || user?.email || "You";
+      const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
       const slug = `meridian-chat-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
       const meta: TranscriptMeta = {
         sessionSubject: subject,
@@ -1280,7 +1282,7 @@ export default function MeridianChat({
         toLabel,
         userLabel,
         slug,
-        assistantDomain: "Coaching",
+        assistantDomain: t("meridian.export.assistantDomain", { defaultValue: "Coaching" }),
       };
 
       // ── Tier 1: server-side WeasyPrint
@@ -1310,7 +1312,7 @@ export default function MeridianChat({
               const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
               downloadBlob(f.file_name, blob);
             }
-            toast.success("Exported Conversation Log + Structured Report PDFs.");
+            toast.success(t("meridian.export.success", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
             return;
           }
         } catch (serverErr) {
@@ -1324,7 +1326,7 @@ export default function MeridianChat({
         for (const { fileName, blob } of pdfs) {
           downloadBlob(fileName, blob);
         }
-        toast.success("Exported Conversation Log + Structured Report PDFs.");
+        toast.success(t("meridian.export.success", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
         return;
       } catch (clientErr) {
         console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
@@ -1332,7 +1334,7 @@ export default function MeridianChat({
 
       // ── Tier 3: legacy single-PDF backend
       if (!conversationId) {
-        toast.error("Couldn't export chat — no active conversation.");
+        toast.error(t("meridian.export.noConversation", { defaultValue: "Couldn't export chat — no active conversation." }));
         return;
       }
       try {
@@ -1350,7 +1352,7 @@ export default function MeridianChat({
           base64_csv?: string;
         };
         if (!resp || !resp.status) {
-          toast.error("Couldn't export chat — the backend returned no data.");
+          toast.error(t("meridian.export.noData", { defaultValue: "Couldn't export chat — the backend returned no data." }));
           return;
         }
         const payload = resp.data ?? resp;
@@ -1358,7 +1360,7 @@ export default function MeridianChat({
         const mime = payload.mime_type || "application/pdf";
         const fileName = payload.file_name || `conversation_${conversationId}.pdf`;
         if (!base64) {
-          toast.error("Couldn't export chat — no content in the selected range.");
+          toast.error(t("meridian.export.noContent", { defaultValue: "Couldn't export chat — no content in the selected range." }));
           return;
         }
         const byteChars = atob(base64);
@@ -1369,7 +1371,7 @@ export default function MeridianChat({
         downloadBlob(fileName, blob);
       } catch (e) {
         console.error("Failed to export conversation", e);
-        toast.error("Couldn't export chat — please try again.");
+        toast.error(t("meridian.export.retry", { defaultValue: "Couldn't export chat — please try again." }));
       }
     },
     [conversationId, messages, user],
@@ -1415,7 +1417,7 @@ export default function MeridianChat({
               ts,
               isProcessing: true,
               type: "processing",
-              text: "Meridian is thinking...",
+              text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
             });
           }
           return [...filtered, ...additions];
@@ -1467,7 +1469,7 @@ export default function MeridianChat({
     const titled = consultedAgents.map(
       (a) => a.charAt(0).toUpperCase() + a.slice(1),
     );
-    return `+ ${titled.join(", ")}`;
+    return t("meridian.consultedAgents", { defaultValue: "+ {{agents}}", agents: titled.join(", ") });
   }, [consultedAgents]);
 
   return (
@@ -1482,7 +1484,7 @@ export default function MeridianChat({
       >
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Meridian</h1>
+          <h1 className="text-lg font-semibold">{t("meridian.title", { defaultValue: "Meridian" })}</h1>
           {/* T10 — Consulted-agents sub-label. Renders only after the
               first assistant response provides `contributingAgents`. */}
           {consultedAgentsLabel && (
@@ -1494,7 +1496,7 @@ export default function MeridianChat({
             </span>
           )}
           {agentAttribution && agentAttribution !== "meridian" && !consultedAgentsLabel && (
-            <span className="text-xs text-muted-foreground">via {agentAttribution}</span>
+            <span className="text-xs text-muted-foreground">{t("meridian.viaAgent", { defaultValue: "via {{agent}}", agent: agentAttribution })}</span>
           )}
           {currentDomain && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
@@ -1509,15 +1511,15 @@ export default function MeridianChat({
             <span
               className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
               data-testid="profile-loaded-indicator"
-              title="Frameworks Meridian can reference in this conversation"
+              title={t("meridian.profileIndicator.title", { defaultValue: "Frameworks Meridian can reference in this conversation" })}
             >
-              Profile: {loadedFrameworkNames.join(", ")}
+              {t("meridian.profileLabel", { defaultValue: "Profile: {{frameworks}}", frameworks: loadedFrameworkNames.join(", ") })}
             </span>
           )}
           {/* G9 Agent C — "PRISM ready" chip (hidden until G9 P2 ingest done) */}
           <PrismBadge />
           {isProcessing && (
-            <span className="text-xs italic text-muted-foreground">Meridian is thinking...</span>
+            <span className="text-xs italic text-muted-foreground">{t("meridian.thinking", { defaultValue: "Meridian is thinking..." })}</span>
           )}
         </div>
 
@@ -1538,13 +1540,13 @@ export default function MeridianChat({
             type="button"
             onClick={() => void handleNewChat()}
             disabled={createConvMutation.isPending}
-            aria-label="Start a new chat"
-            title="Start a new chat"
+            aria-label={t("meridian.newChat.title", { defaultValue: "Start a new chat" })}
+            title={t("meridian.newChat.title", { defaultValue: "Start a new chat" })}
             data-testid="meridian-new-chat-button"
             className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             <SquarePen className="size-4" />
-            <span>New Chat</span>
+            <span>{t("meridian.newChat.label", { defaultValue: "New Chat" })}</span>
           </button>
           <DocumentsDropdown
             selectedIds={selectedFileIds}
@@ -1563,13 +1565,13 @@ export default function MeridianChat({
             <button
               type="button"
               onClick={() => setExportOpen(true)}
-              aria-label="Export chat"
-              title="Export chat"
+              aria-label={t("meridian.export.aria", { defaultValue: "Export chat" })}
+              title={t("meridian.export.aria", { defaultValue: "Export chat" })}
               data-testid="meridian-export-button"
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-hairline bg-white px-3 text-sm font-normal text-ink hover:bg-panel"
             >
               <Download className="size-4" />
-              <span>Export</span>
+              <span>{t("meridian.export.label", { defaultValue: "Export" })}</span>
             </button>
           )}
         </div>
@@ -1580,8 +1582,8 @@ export default function MeridianChat({
         {/* Voice toggle — T8 WCAG 2.1 target-size:enhanced (40x40). */}
         <button
           type="button"
-          aria-label={voiceEnabled ? "Mute Meridian's voice" : "Enable Meridian's voice"}
-          title={voiceEnabled ? "Voice responses ON — click to mute" : "Voice responses OFF — click to enable"}
+          aria-label={voiceEnabled ? t("meridian.voice.mute", { defaultValue: "Mute Meridian's voice" }) : t("meridian.voice.enable", { defaultValue: "Enable Meridian's voice" })}
+          title={voiceEnabled ? t("meridian.voice.onTitle", { defaultValue: "Voice responses ON — click to mute" }) : t("meridian.voice.offTitle", { defaultValue: "Voice responses OFF — click to enable" })}
           className={`h-10 w-10 grid place-items-center rounded-md transition-colors ${voiceEnabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted"}`}
           onClick={() => {
             const next = !voiceEnabled;
@@ -1600,12 +1602,12 @@ export default function MeridianChat({
         {isAudioAutoplayBlocked && voiceEnabled && (
           <button
             type="button"
-            title="Browser blocked audio playback — click to enable"
+            title={t("meridian.audio.blockedTitle", { defaultValue: "Browser blocked audio playback — click to enable" })}
             className="ml-2 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 shadow-sm hover:bg-amber-100 transition-colors"
             onClick={() => unlockAudio()}
           >
             <Volume2 className="h-3.5 w-3.5" />
-            Enable audio
+            {t("meridian.audio.enable", { defaultValue: "Enable audio" })}
           </button>
         )}
 
@@ -1616,8 +1618,8 @@ export default function MeridianChat({
             {/* Rewind 5s within current sentence */}
             <button
               type="button"
-              aria-label="Rewind 5 seconds"
-              title="Rewind 5 seconds"
+              aria-label={t("meridian.audio.rewind", { defaultValue: "Rewind 5 seconds" })}
+              title={t("meridian.audio.rewind", { defaultValue: "Rewind 5 seconds" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(-5)}
             >
@@ -1626,8 +1628,8 @@ export default function MeridianChat({
             {/* Pause / Resume */}
             <button
               type="button"
-              aria-label={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
-              title={isAudioQueuePaused ? "Resume audio" : "Pause audio"}
+              aria-label={isAudioQueuePaused ? t("meridian.audio.resume", { defaultValue: "Resume audio" }) : t("meridian.audio.pause", { defaultValue: "Pause audio" })}
+              title={isAudioQueuePaused ? t("meridian.audio.resume", { defaultValue: "Resume audio" }) : t("meridian.audio.pause", { defaultValue: "Pause audio" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => isAudioQueuePaused ? resumeAudio() : pauseAudio()}
             >
@@ -1636,8 +1638,8 @@ export default function MeridianChat({
             {/* Fast-forward 5s within current sentence */}
             <button
               type="button"
-              aria-label="Fast-forward 5 seconds"
-              title="Fast-forward 5 seconds"
+              aria-label={t("meridian.audio.fastForward", { defaultValue: "Fast-forward 5 seconds" })}
+              title={t("meridian.audio.fastForward", { defaultValue: "Fast-forward 5 seconds" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={() => seekAudio(5)}
             >
@@ -1646,8 +1648,8 @@ export default function MeridianChat({
             {/* Skip to next sentence */}
             <button
               type="button"
-              aria-label="Skip to next sentence"
-              title="Skip to next sentence"
+              aria-label={t("meridian.audio.skip", { defaultValue: "Skip to next sentence" })}
+              title={t("meridian.audio.skip", { defaultValue: "Skip to next sentence" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors"
               onClick={skipAudio}
             >
@@ -1656,15 +1658,15 @@ export default function MeridianChat({
             {/* Cancel — stop playback AND abort in-flight TTS stream */}
             <button
               type="button"
-              aria-label="Cancel stream"
-              title="Cancel stream"
+              aria-label={t("meridian.audio.cancel", { defaultValue: "Cancel stream" })}
+              title={t("meridian.audio.cancel", { defaultValue: "Cancel stream" })}
               className="h-10 w-10 grid place-items-center rounded hover:bg-muted transition-colors text-destructive"
               onClick={handleCancelStream}
             >
               <X className="h-4 w-4" />
             </button>
             {audioQueueLength > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-1">{audioQueueLength} queued</span>
+              <span className="text-[10px] text-muted-foreground ml-1">{t("meridian.audio.queued", { defaultValue: "{{count}} queued", count: audioQueueLength })}</span>
             )}
           </div>
         )}
@@ -1673,10 +1675,10 @@ export default function MeridianChat({
         <div
           title={
             _isConnected
-              ? "Voice streaming available"
+              ? t("meridian.conn.availableTitle", { defaultValue: "Voice streaming available" })
               : isConnecting
-                ? "Connecting voice stream..."
-                : "Voice streaming unavailable"
+                ? t("meridian.conn.connectingTitle", { defaultValue: "Connecting voice stream..." })
+                : t("meridian.conn.unavailableTitle", { defaultValue: "Voice streaming unavailable" })
           }
           className="flex items-center gap-1"
         >
@@ -1688,7 +1690,7 @@ export default function MeridianChat({
             <WifiOff className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            {_isConnected ? "Voice ready" : isConnecting ? "Connecting" : "Voice off"}
+            {_isConnected ? t("meridian.conn.ready", { defaultValue: "Voice ready" }) : isConnecting ? t("meridian.conn.connecting", { defaultValue: "Connecting" }) : t("meridian.conn.off", { defaultValue: "Voice off" })}
           </span>
         </div>
       </div>
@@ -1727,8 +1729,7 @@ export default function MeridianChat({
                   : "mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
               }
             >
-              Reviewing {reviewConversationIds.length} additional conversation
-              {reviewConversationIds.length === 1 ? "" : "s"} alongside the active chat.
+              {t("meridian.reviewingBanner", { defaultValue: "Reviewing {{count}} additional conversation{{plural}} alongside the active chat.", count: reviewConversationIds.length, plural: reviewConversationIds.length === 1 ? "" : "s" })}
             </div>
           )}
           <ChatWindow
@@ -1738,7 +1739,7 @@ export default function MeridianChat({
             conversationId={conversationId}
             autoSendText={autoSendText}
             onBack={() => navigate(-1)}
-            onSendText={(t) => {
+            onSendText={(text) => {
               demoAudioServiceRef.current?.resetAudioState();
               setHasAudio(false);
               setIsAudioPaused(false);
@@ -1752,7 +1753,7 @@ export default function MeridianChat({
                   id: `msg-${Date.now()}-user`,
                   kind: "text",
                   sender: "user",
-                  text: t,
+                  text: text,
                   time: timeStr,
                   ts: tsNow,
                 },
@@ -1764,7 +1765,7 @@ export default function MeridianChat({
                   ts: tsNow,
                   isProcessing: true,
                   type: "processing",
-                  text: "Meridian is thinking...",
+                  text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
                 },
               ]);
               // Route text chat through the async-jobs path. POST
@@ -1803,7 +1804,7 @@ export default function MeridianChat({
                 sseStreamingMessageIdRef.current = placeholderId;
                 void sseStream
                   .send({
-                    message: t,
+                    message: text,
                     sessionId: sessionForJob,
                     context: { conversation_id: conversationId, session_id: sessionForJob },
                     fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
@@ -1817,7 +1818,7 @@ export default function MeridianChat({
                       sseStreamingMessageIdRef.current = null;
                       void meridianJob
                         .startJob({
-                          message: t,
+                          message: text,
                           sessionId: sessionForJob,
                           fileIds:
                             selectedFileIds.length > 0 ? selectedFileIds : undefined,
@@ -1828,7 +1829,7 @@ export default function MeridianChat({
                           },
                         })
                         .catch(() => {
-                          setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
+                          setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
                         });
                     }
                     // All other errors — including STREAMING_DISABLED
@@ -1839,20 +1840,20 @@ export default function MeridianChat({
               } else {
                 void meridianJob
                   .startJob({
-                    message: t,
+                    message: text,
                     sessionId: sessionForJob,
                     fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
                     context: { conversation_id: conversationId, session_id: sessionForJob },
                   })
                   .catch(() => {
-                    setStatusBanner({ type: "error", text: "Couldn't reach Meridian" });
+                    setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
                       {
                         id: `msg-${Date.now()}-err`,
                         kind: "text" as const,
                         sender: "assistant" as const,
-                        text: "Sorry, I couldn't reach Meridian. Please try again.",
+                        text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
                         time: formatUSTimeSafe(new Date()),
                         ts: Date.now(),
                       },
@@ -1876,7 +1877,7 @@ export default function MeridianChat({
               const SpeechRec = (window as unknown as Record<string, unknown>).SpeechRecognition
                 || (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
               if (!SpeechRec) {
-                setStatusBanner({ type: "error", text: "Voice input not supported in this browser" });
+                setStatusBanner({ type: "error", text: t("meridian.voice.notSupported", { defaultValue: "Voice input not supported in this browser" }) });
                 return;
               }
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1904,7 +1905,7 @@ export default function MeridianChat({
                 setMessages((prev) => [
                   ...prev.filter((m) => m.kind !== "processing"),
                   { id: `msg-${Date.now()}-user`, kind: "text", sender: "user", text: transcript, time: timeStr, ts: tsNow },
-                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, ts: tsNow, isProcessing: true, type: "processing", text: "Meridian is thinking..." },
+                  { id: `msg-${Date.now()}-assistant`, kind: "processing", sender: "assistant", time: timeStr, ts: tsNow, isProcessing: true, type: "processing", text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }) },
                 ]);
 
                 // D1-A (2026-05-30, PR α from #316): when voice is enabled
@@ -2035,7 +2036,7 @@ export default function MeridianChat({
                       throw new Error(data.error || "voice chat: job error");
                     }
 
-                    const responseText = data?.content || "No response.";
+                    const responseText = data?.content || t("meridian.noResponse", { defaultValue: "No response." });
                     const restAssistantIdVoice =
                       data?.metadata?.assistant_message_id ?? `msg-${Date.now()}-resp`;
                     setMessages((prev) => [
@@ -2065,7 +2066,7 @@ export default function MeridianChat({
                     console.error("[MeridianChat] Voice chat failed:", err);
                     setMessages((prev) => [
                       ...prev.filter((m) => m.kind !== "processing"),
-                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: "Sorry, I couldn't reach Meridian. Please try again.", time: formatUSTimeSafe(new Date()), ts: Date.now() },
+                      { id: `msg-${Date.now()}-err`, kind: "text" as const, sender: "assistant" as const, text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }), time: formatUSTimeSafe(new Date()), ts: Date.now() },
                     ]);
                   }
                 })();
@@ -2074,7 +2075,7 @@ export default function MeridianChat({
               rec.onerror = (e: any) => {
                 console.error("[MeridianChat] Speech recognition error:", e.error);
                 setVoiceRecording(false);
-                if (e.error === "not-allowed") setStatusBanner({ type: "error", text: "Microphone access denied" });
+                if (e.error === "not-allowed") setStatusBanner({ type: "error", text: t("meridian.voice.micDenied", { defaultValue: "Microphone access denied" }) });
               };
               recognitionRef.current = rec;
               rec.start();

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { History, ChevronDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function HistoryDropdown({
   onSelectActive,
   className,
 }: HistoryDropdownProps) {
+  const { t } = useTranslation("chat");
   const { data, isLoading, isError } = useAgentConversation(AGENT_ID, {
     page: 1,
     limit: 50,
@@ -92,8 +94,14 @@ export default function HistoryDropdown({
   const reviewCount = selectedIds.length;
   const triggerLabel =
     reviewCount > 0
-      ? `History (${reviewCount} shown)`
-      : `History (${conversations.length})`;
+      ? t("history.triggerShown", {
+          defaultValue: "History ({{count}} shown)",
+          count: reviewCount,
+        })
+      : t("history.triggerCount", {
+          defaultValue: "History ({{count}})",
+          count: conversations.length,
+        });
 
   return (
     <DropdownMenu>
@@ -105,7 +113,7 @@ export default function HistoryDropdown({
             "h-9 px-3 rounded-lg text-sm font-normal flex items-center gap-2",
             className,
           )}
-          aria-label="Browse conversation history"
+          aria-label={t("history.triggerAria", { defaultValue: "Browse conversation history" })}
         >
           <History className="size-4" />
           <span>{triggerLabel}</span>
@@ -118,7 +126,10 @@ export default function HistoryDropdown({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
-          Click a conversation to make it active, or check it to add to review.
+          {t("history.hint", {
+            defaultValue:
+              "Click a conversation to make it active, or check it to add to review.",
+          })}
         </div>
         <div
           className="max-h-80 overflow-y-auto p-2"
@@ -141,11 +152,13 @@ export default function HistoryDropdown({
             </div>
           ) : isError ? (
             <div className="p-3 text-sm text-destructive">
-              Couldn't load conversation history.
+              {t("history.loadError", { defaultValue: "Couldn't load conversation history." })}
             </div>
           ) : conversations.length === 0 ? (
             <div className="p-3 text-sm text-muted-foreground">
-              No conversations yet. Send a message to start one.
+              {t("common.noConversations", {
+                defaultValue: "No conversations yet. Send a message to start one.",
+              })}
             </div>
           ) : (
             <ul className="space-y-0.5">
@@ -153,7 +166,8 @@ export default function HistoryDropdown({
                 const isActive = activeId === c.id;
                 const isChecked = selectedIds.includes(c.id);
                 const title =
-                  (c.title && c.title.trim()) || "Untitled conversation";
+                  (c.title && c.title.trim()) ||
+                  t("common.untitledConversation", { defaultValue: "Untitled conversation" });
                 const when = formatRelative(c.updated_at || c.created_at);
                 return (
                   <li key={c.id}>
@@ -167,7 +181,10 @@ export default function HistoryDropdown({
                       <Checkbox
                         checked={isChecked}
                         onCheckedChange={() => toggle(c.id)}
-                        aria-label={`Include ${title} in review`}
+                        aria-label={t("history.includeAria", {
+                          defaultValue: "Include {{title}} in review",
+                          title,
+                        })}
                         data-testid={`history-dropdown-checkbox-${c.id}`}
                       />
                       <button
@@ -188,7 +205,7 @@ export default function HistoryDropdown({
                               className="inline-flex shrink-0 items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                               data-testid={`history-dropdown-active-${c.id}`}
                             >
-                              Active
+                              {t("history.activeBadge", { defaultValue: "Active" })}
                             </span>
                           )}
                         </div>
@@ -208,14 +225,18 @@ export default function HistoryDropdown({
         {!isLoading && !isError && conversations.length > 0 && reviewCount > 0 && (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
             <span>
-              {reviewCount} additional conversation{reviewCount === 1 ? "" : "s"} in review
+              {t("history.reviewCount", {
+                defaultValue: "{{count}} additional conversation{{plural}} in review",
+                count: reviewCount,
+                plural: reviewCount === 1 ? "" : "s",
+              })}
             </span>
             <button
               type="button"
               onClick={() => onChange([])}
               className="text-primary hover:underline"
             >
-              Clear review
+              {t("history.clearReview", { defaultValue: "Clear review" })}
             </button>
           </div>
         )}

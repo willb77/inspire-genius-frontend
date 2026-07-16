@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import {
   AGENT_VOICE_CONFIG,
   getAgentVoice,
@@ -135,13 +136,13 @@ function buildWsUrl(accessToken: string): string {
 // ─── Data Sources (known from architecture) ─────────────────────────────────
 
 const DATA_SOURCES = [
-  { name: "Aurora PostgreSQL (RDS Proxy)", status: "available" as const },
-  { name: "DynamoDB (Rate Limiting)", status: "available" as const },
-  { name: "DynamoDB (RLHF Feedback)", status: "available" as const },
-  { name: "S3 (Documents & Training Data)", status: "available" as const },
-  { name: "Milvus / Zilliz (Vector Search)", status: "available" as const },
-  { name: "EventBridge (Event Bus)", status: "available" as const },
-  { name: "Cognito (User Pool)", status: "available" as const },
+  { name: "Aurora PostgreSQL (RDS Proxy)", labelKey: "diagnostic.dataSources.auroraPostgres", status: "available" as const },
+  { name: "DynamoDB (Rate Limiting)", labelKey: "diagnostic.dataSources.dynamoRateLimit", status: "available" as const },
+  { name: "DynamoDB (RLHF Feedback)", labelKey: "diagnostic.dataSources.dynamoRlhf", status: "available" as const },
+  { name: "S3 (Documents & Training Data)", labelKey: "diagnostic.dataSources.s3", status: "available" as const },
+  { name: "Milvus / Zilliz (Vector Search)", labelKey: "diagnostic.dataSources.milvus", status: "available" as const },
+  { name: "EventBridge (Event Bus)", labelKey: "diagnostic.dataSources.eventbridge", status: "available" as const },
+  { name: "Cognito (User Pool)", labelKey: "diagnostic.dataSources.cognito", status: "available" as const },
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -164,6 +165,8 @@ export default function DiagnosticChat() {
   if (accessToken) {
     diagnosticApi.defaults.headers.common["access-token"] = accessToken;
   }
+
+  const { t } = useTranslation("chat");
 
   // ── State ───────────────────────────────────────────────────
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -645,31 +648,31 @@ export default function DiagnosticChat() {
       case "connected":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <Wifi className="h-3 w-3" /> Connected
+            <Wifi className="h-3 w-3" /> {t("common.connected", { defaultValue: "Connected" })}
           </span>
         );
       case "connecting":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 animate-pulse">
-            <Radio className="h-3 w-3" /> Connecting...
+            <Radio className="h-3 w-3" /> {t("diagnostic.statusConnecting", { defaultValue: "Connecting..." })}
           </span>
         );
       case "reconnecting":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 animate-pulse">
-            <Radio className="h-3 w-3" /> Reconnecting...
+            <Radio className="h-3 w-3" /> {t("diagnostic.statusReconnecting", { defaultValue: "Reconnecting..." })}
           </span>
         );
       case "error":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-            <WifiOff className="h-3 w-3" /> Error
+            <WifiOff className="h-3 w-3" /> {t("common.error", { defaultValue: "Error" })}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            <WifiOff className="h-3 w-3" /> Disconnected
+            <WifiOff className="h-3 w-3" /> {t("diagnostic.statusDisconnected", { defaultValue: "Disconnected" })}
           </span>
         );
     }
@@ -686,13 +689,13 @@ export default function DiagnosticChat() {
             <div className="flex items-center gap-2">
               <Network className="h-5 w-5 text-indigo-600" />
               <h1 className="text-lg font-semibold text-gray-900">
-                Diagnostic Chat
+                {t("diagnostic.title", { defaultValue: "Diagnostic Chat" })}
               </h1>
             </div>
             {statusBadge()}
             {sessionId && (
               <span className="text-xs text-gray-400 font-mono">
-                Session: {sessionId.slice(0, 8)}...
+                {t("diagnostic.sessionLabel", { sessionId: sessionId.slice(0, 8), defaultValue: "Session: {{sessionId}}..." })}
               </span>
             )}
           </div>
@@ -707,21 +710,21 @@ export default function DiagnosticChat() {
               onClick={handleNewChat}
               data-testid="diagnostic-new-chat-button"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
-              title="Start a new chat session"
+              title={t("diagnostic.newChatTitle", { defaultValue: "Start a new chat session" })}
             >
               <SquarePen className="h-3.5 w-3.5" />
-              New Chat
+              {t("diagnostic.newChat", { defaultValue: "New Chat" })}
             </button>
             <button
               onClick={() => { disconnect(); connect(); }}
               className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
             >
-              Reconnect
+              {t("diagnostic.reconnect", { defaultValue: "Reconnect" })}
             </button>
             <button
               onClick={clearAll}
               className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
-              title="Clear all"
+              title={t("diagnostic.clearAllTitle", { defaultValue: "Clear all" })}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -729,7 +732,7 @@ export default function DiagnosticChat() {
               onClick={() => setTraceOpen((v) => !v)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${traceOpen ? "bg-indigo-50 border-indigo-300 text-indigo-700" : "border-gray-300 hover:bg-gray-50"}`}
             >
-              {traceOpen ? "Hide" : "Show"} Trace Log
+              {traceOpen ? t("common.hide", { defaultValue: "Hide" }) : t("common.show", { defaultValue: "Show" })} {t("diagnostic.traceLog", { defaultValue: "Trace Log" })}
             </button>
           </div>
         </div>
@@ -742,7 +745,7 @@ export default function DiagnosticChat() {
             <div className="px-4 py-2 bg-gray-50 border-b text-xs">
               <div className="flex items-center gap-2 mb-1">
                 <Database className="h-3.5 w-3.5 text-gray-500" />
-                <span className="font-medium text-gray-600">Connected Data Sources</span>
+                <span className="font-medium text-gray-600">{t("diagnostic.dataSourcesLabel", { defaultValue: "Connected Data Sources" })}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {DATA_SOURCES.map((ds) => (
@@ -751,7 +754,7 @@ export default function DiagnosticChat() {
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] font-medium"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    {ds.name}
+                    {t(ds.labelKey, { defaultValue: ds.name })}
                   </span>
                 ))}
               </div>
@@ -762,9 +765,9 @@ export default function DiagnosticChat() {
               {messages.length === 0 && !streamingText && (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <Network className="h-12 w-12 mb-3 opacity-50" />
-                  <p className="text-sm font-medium">Diagnostic Chat Interface</p>
+                  <p className="text-sm font-medium">{t("diagnostic.emptyTitle", { defaultValue: "Diagnostic Chat Interface" })}</p>
                   <p className="text-xs mt-1">
-                    Send a message to trace the full request lifecycle
+                    {t("diagnostic.emptySubtitle", { defaultValue: "Send a message to trace the full request lifecycle" })}
                   </p>
                 </div>
               )}
@@ -800,13 +803,13 @@ export default function DiagnosticChat() {
                         {ts(msg.timestamp)}
                       </span>
                       {msg.latencyMs != null && (
-                        <span>Latency: {msg.latencyMs}ms</span>
+                        <span>{t("diagnostic.latency", { latencyMs: msg.latencyMs, defaultValue: "Latency: {{latencyMs}}ms" })}</span>
                       )}
                       {msg.ttftMs != null && (
-                        <span>TTFT: {msg.ttftMs}ms</span>
+                        <span>{t("diagnostic.ttft", { ttftMs: msg.ttftMs, defaultValue: "TTFT: {{ttftMs}}ms" })}</span>
                       )}
                       {msg.tokenCount != null && (
-                        <span>Tokens: {msg.tokenCount}</span>
+                        <span>{t("diagnostic.tokens", { tokenCount: msg.tokenCount, defaultValue: "Tokens: {{tokenCount}}" })}</span>
                       )}
                     </div>
                   </div>
@@ -823,7 +826,7 @@ export default function DiagnosticChat() {
                           {getAgentVoice(currentAgent)?.name ?? currentAgent}
                         </span>
                         <span className="inline-flex items-center gap-1 text-[10px] text-blue-500">
-                          <Radio className="h-2.5 w-2.5 animate-pulse" /> streaming
+                          <Radio className="h-2.5 w-2.5 animate-pulse" /> {t("diagnostic.streaming", { defaultValue: "streaming" })}
                         </span>
                       </div>
                     )}
@@ -842,7 +845,7 @@ export default function DiagnosticChat() {
                         <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
                         <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
                       </div>
-                      <span>Meridian processing...</span>
+                      <span>{t("diagnostic.processing", { defaultValue: "Meridian processing..." })}</span>
                     </div>
                   </div>
                 </div>
@@ -861,7 +864,7 @@ export default function DiagnosticChat() {
                       ? "bg-red-100 text-red-600 hover:bg-red-200"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
-                  title={isRecording ? "Stop recording" : "Start voice input"}
+                  title={isRecording ? t("diagnostic.stopRecording", { defaultValue: "Stop recording" }) : t("diagnostic.startVoiceInput", { defaultValue: "Start voice input" })}
                   disabled={false}
                 >
                   {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -877,7 +880,7 @@ export default function DiagnosticChat() {
                         handleSend();
                       }
                     }}
-                    placeholder="Type a message to trace the full pipeline..."
+                    placeholder={t("diagnostic.inputPlaceholder", { defaultValue: "Type a message to trace the full pipeline..." })}
                     disabled={isProcessing}
                     rows={1}
                     className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
@@ -894,7 +897,7 @@ export default function DiagnosticChat() {
               {isRecording && (
                 <div className="flex items-center gap-2 mt-2 text-xs text-red-600">
                   <Volume2 className="h-3.5 w-3.5 animate-pulse" />
-                  Recording — speak clearly, then stop to send
+                  {t("diagnostic.recordingHint", { defaultValue: "Recording — speak clearly, then stop to send" })}
                 </div>
               )}
             </div>
@@ -907,16 +910,16 @@ export default function DiagnosticChat() {
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-indigo-600" />
                   <span className="text-sm font-semibold text-gray-700">
-                    Trace Log
+                    {t("diagnostic.traceLog", { defaultValue: "Trace Log" })}
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 font-mono">
-                    {traceLog.length} entries
+                    {t("diagnostic.entriesCount", { count: traceLog.length, defaultValue: "{{count}} entries" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-gray-400">
-                    {traceLog.filter((t) => t.level === "error").length} errors |{" "}
-                    {traceLog.filter((t) => t.level === "warn").length} warnings
+                    {t("diagnostic.errorsCount", { count: traceLog.filter((e) => e.level === "error").length, defaultValue: "{{count}} errors" })} |{" "}
+                    {t("diagnostic.warningsCount", { count: traceLog.filter((e) => e.level === "warn").length, defaultValue: "{{count}} warnings" })}
                   </span>
                 </div>
               </div>

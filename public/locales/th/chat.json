@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "คัดลอกไปยังคลิปบอร์ดแล้ว",
+    "copyMessage": "คัดลอกข้อความ",
+    "play": "เล่น",
+    "pause": "หยุดชั่วคราว",
+    "close": "ปิด",
+    "delete": "ลบ",
+    "download": "ดาวน์โหลด",
+    "cancel": "ยกเลิก",
+    "save": "บันทึก",
+    "clear": "ล้าง",
+    "you": "คุณ",
+    "connected": "เชื่อมต่อแล้ว",
+    "error": "ข้อผิดพลาด",
+    "unknownError": "ข้อผิดพลาดที่ไม่ทราบสาเหตุ",
+    "hide": "ซ่อน",
+    "show": "แสดง",
+    "untitledConversation": "การสนทนาที่ไม่มีชื่อ",
+    "noConversations": "ยังไม่มีการสนทนา ส่งข้อความเพื่อเริ่มต้น",
+    "noDocuments": "ยังไม่มีการอัปโหลดเอกสาร"
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian กำลังคิด...",
+    "noResponse": "ไม่มีการตอบกลับ",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "ผ่าน {{agent}}",
+    "profileLabel": "โปรไฟล์: {{frameworks}}",
+    "reviewingBanner": "กำลังตรวจสอบอีก {{count}} การสนทนาควบคู่กับแชทที่ใช้งานอยู่",
+    "profileIndicator": {
+      "title": "เฟรมเวิร์กที่ Meridian สามารถอ้างอิงได้ในการสนทนานี้"
+    },
+    "newChat": {
+      "title": "เริ่มแชทใหม่",
+      "label": "แชทใหม่"
+    },
+    "status": {
+      "connected": "เชื่อมต่อกับ Meridian แล้ว"
+    },
+    "error": {
+      "agent": "ข้อผิดพลาดของเอเจนต์",
+      "unreachable": "ขออภัย ไม่สามารถเชื่อมต่อกับ Meridian ได้ กรุณาลองอีกครั้ง",
+      "unreachableShort": "ไม่สามารถเชื่อมต่อกับ Meridian ได้",
+      "newChatFailed": "ไม่สามารถเริ่มแชทใหม่ได้ กรุณาลองอีกครั้ง"
+    },
+    "export": {
+      "aria": "ส่งออกแชท",
+      "label": "ส่งออก",
+      "sessionSubject": "เซสชันแชท Meridian",
+      "assistantDomain": "การโค้ช",
+      "success": "ส่งออกบันทึกการสนทนา + รายงานแบบมีโครงสร้าง PDF แล้ว",
+      "noConversation": "ไม่สามารถส่งออกแชทได้ — ไม่มีการสนทนาที่ใช้งานอยู่",
+      "noData": "ไม่สามารถส่งออกแชทได้ — แบ็กเอนด์ไม่ส่งข้อมูลกลับมา",
+      "noContent": "ไม่สามารถส่งออกแชทได้ — ไม่มีเนื้อหาในช่วงที่เลือก",
+      "retry": "ไม่สามารถส่งออกแชทได้ — กรุณาลองอีกครั้ง"
+    },
+    "voice": {
+      "mute": "ปิดเสียงของ Meridian",
+      "enable": "เปิดเสียงของ Meridian",
+      "onTitle": "การตอบกลับด้วยเสียงเปิดอยู่ — คลิกเพื่อปิดเสียง",
+      "offTitle": "การตอบกลับด้วยเสียงปิดอยู่ — คลิกเพื่อเปิด",
+      "notSupported": "เบราว์เซอร์นี้ไม่รองรับการป้อนข้อมูลด้วยเสียง",
+      "micDenied": "การเข้าถึงไมโครโฟนถูกปฏิเสธ"
+    },
+    "audio": {
+      "blockedTitle": "เบราว์เซอร์บล็อกการเล่นเสียง — คลิกเพื่อเปิดใช้งาน",
+      "enable": "เปิดใช้งานเสียง",
+      "rewind": "ย้อนกลับ 5 วินาที",
+      "resume": "เล่นเสียงต่อ",
+      "pause": "หยุดเสียงชั่วคราว",
+      "fastForward": "กรอไปข้างหน้า 5 วินาที",
+      "skip": "ข้ามไปยังประโยคถัดไป",
+      "cancel": "ยกเลิกสตรีม",
+      "queued": "อยู่ในคิว {{count}} รายการ"
+    },
+    "conn": {
+      "availableTitle": "การสตรีมเสียงพร้อมใช้งาน",
+      "connectingTitle": "กำลังเชื่อมต่อสตรีมเสียง...",
+      "unavailableTitle": "การสตรีมเสียงไม่พร้อมใช้งาน",
+      "ready": "เสียงพร้อมใช้งาน",
+      "connecting": "กำลังเชื่อมต่อ",
+      "off": "ปิดเสียง"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "ขับเคลื่อนโดย Agent Eco-System",
+    "back": "ย้อนกลับ",
+    "export": "ส่งออก",
+    "documentsButton": "เอกสาร",
+    "tab": {
+      "chat": "แชท",
+      "documents": "เอกสาร"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "เปิดแผงด้านข้างเอกสาร",
+      "tooltip": "เปิดแผงเอกสารเพื่อเลือกไฟล์ที่จะเพิ่มลงในแชท"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "การสนทนาและโปรเจกต์"
+    },
+    "active": {
+      "title": "เซสชันที่ใช้งานอยู่",
+      "empty": "ยังไม่มีเซสชันที่ใช้งานอยู่",
+      "badge": {
+        "live": "สด",
+        "open": "เปิด"
+      }
+    },
+    "history": {
+      "title": "ประวัติ"
+    },
+    "last5": {
+      "title": "5 แชทล่าสุด",
+      "empty": "ยังไม่มีอะไรที่นี่"
+    },
+    "projects": {
+      "title": "โปรเจกต์",
+      "inputPlaceholder": "ชื่อโปรเจกต์ใหม่…",
+      "inputAria": "ชื่อโปรเจกต์ใหม่",
+      "addAria": "เพิ่มโปรเจกต์",
+      "empty": "ยังไม่มีโปรเจกต์ จัดกลุ่มแชทที่เกี่ยวข้องไว้ในโปรเจกต์",
+      "badge": {
+        "active": "ใช้งานอยู่"
+      }
+    },
+    "knowledge": {
+      "title": "ความรู้",
+      "badge": {
+        "indexed": "จัดทำดัชนีแล้ว"
+      }
+    }
+  },
+  "history": {
+    "title": "ประวัติ",
+    "newChat": "แชทใหม่",
+    "newChatTooltip": "เริ่มการสนทนาใหม่",
+    "newChatTooltipExisting": "คุณมีการสนทนาใหม่อยู่แล้ว",
+    "newConversationLabel": "การสนทนาใหม่",
+    "searchPlaceholder": "ค้นหา..",
+    "loadError": "ไม่สามารถโหลดประวัติการสนทนาได้",
+    "loadErrorDetailed": "ไม่สามารถโหลดประวัติการสนทนาได้ — แบ็กเอนด์อาจไม่พร้อมใช้งาน รีเฟรชเพื่อลองใหม่",
+    "openActions": "เปิดการดำเนินการของการสนทนา",
+    "rename": "เปลี่ยนชื่อ",
+    "deleteTitle": "ลบการสนทนา",
+    "deleteDescription": "คุณแน่ใจหรือไม่ว่าต้องการลบการสนทนานี้ การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "audioWarning": "การสลับการสนทนาจะหยุดเสียงปัจจุบัน",
+    "renameDialogTitle": "เปลี่ยนชื่อการสนทนา",
+    "renamePlaceholder": "ชื่อการสนทนา",
+    "renameAnimationTitle": "แอนิเมชันการเปลี่ยนชื่อ",
+    "renamePending": "กำลังสร้างเอกลักษณ์ให้การสนทนาของคุณ… ✨",
+    "renameHint": "ตั้งชื่อให้การสนทนาของคุณ — ทำให้จำได้ง่าย 🚀",
+    "triggerShown": "ประวัติ (แสดง {{count}})",
+    "triggerCount": "ประวัติ ({{count}})",
+    "triggerAria": "เรียกดูประวัติการสนทนา",
+    "hint": "คลิกที่การสนทนาเพื่อทำให้ใช้งานอยู่ หรือทำเครื่องหมายเพื่อเพิ่มลงในการตรวจสอบ",
+    "includeAria": "รวม {{title}} ไว้ในการตรวจสอบ",
+    "activeBadge": "ใช้งานอยู่",
+    "reviewCount": "อีก {{count}} การสนทนาที่อยู่ในการตรวจสอบ",
+    "clearReview": "ล้างการตรวจสอบ"
+  },
+  "documents": {
+    "triggerLabel": "เอกสาร",
+    "triggerSelected": "เอกสาร (เลือก {{count}})",
+    "triggerAria": "เลือกเอกสาร",
+    "header": "แนบเอกสารกับแชทนี้",
+    "loadError": "ไม่สามารถโหลดเอกสารได้",
+    "uploadLink": "อัปโหลดเอกสาร",
+    "selectFileAria": "เลือก {{filename}}",
+    "autoAttached": "แนบอัตโนมัติ",
+    "selectedCount": "เลือกแล้ว {{selected}} จาก {{total}}",
+    "iframe": {
+      "defaultFileName": "เอกสาร",
+      "loading": "กำลังโหลดเอกสาร…"
+    },
+    "panel": {
+      "selectedCount": "เลือกแล้ว ({{count}})",
+      "confirmDeleteTitle": "ยืนยันการลบ",
+      "confirmDeleteBulkDescription": "คุณแน่ใจหรือไม่ว่าต้องการลบเอกสารที่เลือก {{count}} รายการ การกระทำนี้ไม่สามารถย้อนกลับได้",
+      "confirmDeleteOneDescription": "คุณแน่ใจหรือไม่ว่าต้องการลบเอกสารนี้ การกระทำนี้ไม่สามารถย้อนกลับได้",
+      "upload": "อัปโหลด",
+      "importToChat": "นำเข้าสู่แชท",
+      "loading": "กำลังโหลดเอกสาร...",
+      "empty": "ไม่พบไฟล์",
+      "emptyAnimationTitle": "ไม่พบไฟล์",
+      "selectItem": "เลือก {{name}}",
+      "preview": "ดูตัวอย่าง"
+    },
+    "sidePanel": {
+      "title": "เอกสาร",
+      "close": "ปิดเอกสาร",
+      "closeOverlay": "ปิดแผงเอกสาร"
+    }
+  },
+  "export": {
+    "title": "ส่งออกแชท",
+    "subtitle": "ดาวน์โหลดสำเนาแชทของคุณไว้อ้างอิงในอนาคต",
+    "fromLabel": "แชทจาก",
+    "fromPlaceholder": "จากวันที่",
+    "toLabel": "แชทถึง",
+    "toPlaceholder": "ถึงวันที่",
+    "formatLabel": "ไฟล์ส่งออก",
+    "formatPdf": "PDF",
+    "exporting": "กำลังส่งออก",
+    "exportButton": "ส่งออก",
+    "progressLabel": "กำลังส่งออกแชท... {{progress}}%",
+    "progressSubtitle": "นั่งพักผ่อนตามสบาย เรากำลังจัดการการส่งออกของคุณ",
+    "completeTitle": "ส่งออกเสร็จสมบูรณ์",
+    "completeSubtitle": "ส่งออกแชทสำเร็จแล้ว!",
+    "back": "ย้อนกลับ"
+  },
+  "routing": {
+    "confidence": "ความมั่นใจ: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} โทเคน",
+    "observabilityDetails": "รายละเอียดการสังเกตการณ์"
+  },
+  "feedback": {
+    "thankYou": "ขอบคุณ",
+    "rateThisResponse": "ให้คะแนนการตอบกลับนี้",
+    "correctionPlaceholder": "ไม่บังคับ: แนะนำการตอบกลับที่ดีกว่า (สูงสุด 2000 อักขระ)",
+    "submitting": "กำลังส่ง...",
+    "submit": "ส่ง"
+  },
+  "compose": {
+    "sectionLabel": "เขียนพรอมต์"
+  },
+  "conversation": {
+    "sectionLabel": "การสนทนา",
+    "replayVoice": "เล่นเสียงซ้ำ",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "ผ่าน {{agent}}",
+    "observabilityUnavailable": "ไม่มีข้อมูลการสังเกตการณ์สำหรับข้อความนี้",
+    "tableSrLabel": "ตาราง",
+    "waiting": {
+      "shortly": "{{coachName}} จะมาหาคุณในไม่ช้า",
+      "oneMoment": "รอสักครู่กับ {{coachName}}",
+      "pleaseWait": "กรุณารอสักครู่"
+    },
+    "source": {
+      "label": "แหล่งข้อมูล ({{count}})",
+      "openTitle": "เปิด {{filename}}",
+      "openError": {
+        "noUrl": "ไม่สามารถเปิด \"{{filename}}\" ได้ — แบ็กเอนด์ไม่ส่ง URL กลับมา",
+        "notFound": "ไม่สามารถเปิด \"{{filename}}\" ได้ — ไม่พบเอกสารหรือถูกปฏิเสธการเข้าถึง",
+        "generic": "ไม่สามารถเปิด \"{{filename}}\" ได้ — กรุณาลองอีกครั้ง"
+      }
+    },
+    "collaboration": {
+      "label": "การตอบกลับแบบร่วมมือ ({{count}} เอเจนต์)",
+      "synthesizedFrom": "สังเคราะห์จาก {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "ถามอะไรก็ได้…  (กด Enter เพื่อส่ง · Shift+Enter เพื่อขึ้นบรรทัดใหม่)",
+    "unmuteCoach": "เปิดเสียงโค้ช",
+    "muteCoach": "ปิดเสียงโค้ช",
+    "stopRecording": "หยุดบันทึก",
+    "startRecording": "เริ่มบันทึก",
+    "sendMessage": "ส่งข้อความ",
+    "muteTooltip": {
+      "mute": "ปิดเสียง",
+      "unmute": "เปิดเสียง",
+      "disabledDuringPlayback": "การปิดเสียงถูกปิดใช้งานระหว่างการเล่น"
+    }
+  },
+  "banner": {
+    "selected": "เลือกแล้ว:",
+    "connecting": "กำลังเชื่อมต่อ...",
+    "successAnimationTitle": "แอนิเมชันสำเร็จ"
+  },
+  "audio": {
+    "close": "ปิดเครื่องเล่นเสียง"
+  },
+  "coach": {
+    "defaultName": "โค้ช",
+    "authError": "ข้อผิดพลาดในการยืนยันตัวตน",
+    "untitledConversation": "ไม่มีชื่อ",
+    "previewPlaceholder": "ที่ต้องทำ",
+    "conversationsLabel": "การสนทนา",
+    "sessionSubject": "เซสชันการโค้ชกับ {{coachName}}",
+    "assistantDomain": "การโค้ช",
+    "exportSuccess": "ส่งออกบันทึกการสนทนา + รายงานแบบมีโครงสร้าง PDF แล้ว",
+    "exportNoConversation": "ไม่สามารถส่งออกแชทได้ — ไม่มีการสนทนาที่ใช้งานอยู่",
+    "audioWarning": "การสลับการสนทนาจะรีเซ็ตเสียงสำหรับการสนทนาใหม่"
+  },
+  "diagnostic": {
+    "title": "แชทวินิจฉัย",
+    "sessionLabel": "เซสชัน: {{sessionId}}...",
+    "statusConnecting": "กำลังเชื่อมต่อ...",
+    "statusReconnecting": "กำลังเชื่อมต่อใหม่...",
+    "statusDisconnected": "ตัดการเชื่อมต่อแล้ว",
+    "newChat": "แชทใหม่",
+    "newChatTitle": "เริ่มเซสชันแชทใหม่",
+    "reconnect": "เชื่อมต่อใหม่",
+    "clearAllTitle": "ล้างทั้งหมด",
+    "traceLog": "บันทึกการติดตาม",
+    "dataSourcesLabel": "แหล่งข้อมูลที่เชื่อมต่อ",
+    "emptyTitle": "อินเทอร์เฟซแชทวินิจฉัย",
+    "emptySubtitle": "ส่งข้อความเพื่อติดตามวงจรชีวิตของคำขอทั้งหมด",
+    "streaming": "กำลังสตรีม",
+    "processing": "Meridian กำลังประมวลผล...",
+    "stopRecording": "หยุดบันทึก",
+    "startVoiceInput": "เริ่มการป้อนข้อมูลด้วยเสียง",
+    "inputPlaceholder": "พิมพ์ข้อความเพื่อติดตามไปป์ไลน์ทั้งหมด...",
+    "recordingHint": "กำลังบันทึก — พูดให้ชัดเจน แล้วหยุดเพื่อส่ง",
+    "latency": "เวลาแฝง: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "โทเคน: {{tokenCount}}",
+    "entriesCount": "{{count}} รายการ",
+    "errorsCount": "{{count}} ข้อผิดพลาด",
+    "warningsCount": "{{count}} คำเตือน",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "已复制到剪贴板",
+    "copyMessage": "复制消息",
+    "play": "播放",
+    "pause": "暂停",
+    "close": "关闭",
+    "delete": "删除",
+    "download": "下载",
+    "cancel": "取消",
+    "save": "保存",
+    "clear": "清除",
+    "you": "你",
+    "connected": "已连接",
+    "error": "错误",
+    "unknownError": "未知错误",
+    "hide": "隐藏",
+    "show": "显示",
+    "untitledConversation": "无标题对话",
+    "noConversations": "暂无对话。发送消息即可开始。",
+    "noDocuments": "尚未上传任何文档。"
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian 正在思考……",
+    "noResponse": "无响应。",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "通过 {{agent}}",
+    "profileLabel": "画像：{{frameworks}}",
+    "reviewingBanner": "正在与当前聊天一起查看另外 {{count}} 个对话。",
+    "profileIndicator": {
+      "title": "Meridian 在此对话中可参考的框架"
+    },
+    "newChat": {
+      "title": "开始新聊天",
+      "label": "新聊天"
+    },
+    "status": {
+      "connected": "已连接到 Meridian"
+    },
+    "error": {
+      "agent": "智能体错误",
+      "unreachable": "抱歉，无法连接到 Meridian。请重试。",
+      "unreachableShort": "无法连接到 Meridian",
+      "newChatFailed": "无法开始新聊天。请重试。"
+    },
+    "export": {
+      "aria": "导出聊天",
+      "label": "导出",
+      "sessionSubject": "Meridian 聊天会话",
+      "assistantDomain": "辅导",
+      "success": "已导出对话记录和结构化报告 PDF。",
+      "noConversation": "无法导出聊天 — 没有活动对话。",
+      "noData": "无法导出聊天 — 后端未返回数据。",
+      "noContent": "无法导出聊天 — 所选范围内没有内容。",
+      "retry": "无法导出聊天 — 请重试。"
+    },
+    "voice": {
+      "mute": "静音 Meridian 的语音",
+      "enable": "启用 Meridian 的语音",
+      "onTitle": "语音响应已开启 — 点击静音",
+      "offTitle": "语音响应已关闭 — 点击启用",
+      "notSupported": "此浏览器不支持语音输入",
+      "micDenied": "麦克风访问被拒绝"
+    },
+    "audio": {
+      "blockedTitle": "浏览器已阻止音频播放 — 点击启用",
+      "enable": "启用音频",
+      "rewind": "后退 5 秒",
+      "resume": "恢复音频",
+      "pause": "暂停音频",
+      "fastForward": "快进 5 秒",
+      "skip": "跳到下一句",
+      "cancel": "取消流",
+      "queued": "{{count}} 个排队中"
+    },
+    "conn": {
+      "availableTitle": "语音流可用",
+      "connectingTitle": "正在连接语音流……",
+      "unavailableTitle": "语音流不可用",
+      "ready": "语音就绪",
+      "connecting": "连接中",
+      "off": "语音关闭"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "由 Agent Eco-System 提供支持",
+    "back": "返回",
+    "export": "导出",
+    "documentsButton": "文档",
+    "tab": {
+      "chat": "聊天",
+      "documents": "文档"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "打开文档侧边面板",
+      "tooltip": "打开文档面板以选择要添加到聊天的文件"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "对话和项目"
+    },
+    "active": {
+      "title": "活动会话",
+      "empty": "暂无活动会话。",
+      "badge": {
+        "live": "进行中",
+        "open": "打开"
+      }
+    },
+    "history": {
+      "title": "历史记录"
+    },
+    "last5": {
+      "title": "最近 5 个聊天",
+      "empty": "这里还没有内容。"
+    },
+    "projects": {
+      "title": "项目",
+      "inputPlaceholder": "新项目名称……",
+      "inputAria": "新项目名称",
+      "addAria": "添加项目",
+      "empty": "暂无项目。将相关聊天归入一个项目。",
+      "badge": {
+        "active": "活动"
+      }
+    },
+    "knowledge": {
+      "title": "知识库",
+      "badge": {
+        "indexed": "已索引"
+      }
+    }
+  },
+  "history": {
+    "title": "历史记录",
+    "newChat": "新聊天",
+    "newChatTooltip": "开始新对话",
+    "newChatTooltipExisting": "你已有一个新对话",
+    "newConversationLabel": "新对话",
+    "searchPlaceholder": "搜索..",
+    "loadError": "无法加载对话历史记录。",
+    "loadErrorDetailed": "无法加载对话历史记录 — 后端可能不可用。刷新以重试。",
+    "openActions": "打开对话操作",
+    "rename": "重命名",
+    "deleteTitle": "删除对话",
+    "deleteDescription": "确定要删除此对话吗？此操作无法撤销。",
+    "audioWarning": "切换对话将停止当前音频",
+    "renameDialogTitle": "重命名对话",
+    "renamePlaceholder": "对话标题",
+    "renameAnimationTitle": "重命名动画",
+    "renamePending": "正在塑造你的对话身份…… ✨",
+    "renameHint": "为你的对话起个名字 — 让它易于记忆 🚀",
+    "triggerShown": "历史记录（显示 {{count}} 个）",
+    "triggerCount": "历史记录（{{count}}）",
+    "triggerAria": "浏览对话历史记录",
+    "hint": "点击对话将其设为活动，或勾选以添加到查看。",
+    "includeAria": "将 {{title}} 加入查看",
+    "activeBadge": "活动",
+    "reviewCount": "查看中的另外 {{count}} 个对话",
+    "clearReview": "清除查看"
+  },
+  "documents": {
+    "triggerLabel": "文档",
+    "triggerSelected": "文档（已选 {{count}} 个）",
+    "triggerAria": "选择文档",
+    "header": "为此聊天附加文档",
+    "loadError": "无法加载文档。",
+    "uploadLink": "上传文档",
+    "selectFileAria": "选择 {{filename}}",
+    "autoAttached": "已自动附加",
+    "selectedCount": "已选 {{selected}} / {{total}}",
+    "iframe": {
+      "defaultFileName": "文档",
+      "loading": "正在加载文档……"
+    },
+    "panel": {
+      "selectedCount": "已选（{{count}}）",
+      "confirmDeleteTitle": "确认删除",
+      "confirmDeleteBulkDescription": "确定要删除所选的 {{count}} 个文档吗？此操作无法撤销。",
+      "confirmDeleteOneDescription": "确定要删除此文档吗？此操作无法撤销。",
+      "upload": "上传",
+      "importToChat": "导入到聊天",
+      "loading": "正在加载文档……",
+      "empty": "未找到文件",
+      "emptyAnimationTitle": "未找到文件",
+      "selectItem": "选择 {{name}}",
+      "preview": "预览"
+    },
+    "sidePanel": {
+      "title": "文档",
+      "close": "关闭文档",
+      "closeOverlay": "关闭文档面板"
+    }
+  },
+  "export": {
+    "title": "导出聊天",
+    "subtitle": "下载聊天副本以供日后参考。",
+    "fromLabel": "聊天起始",
+    "fromPlaceholder": "起始日期",
+    "toLabel": "聊天截止",
+    "toPlaceholder": "截止日期",
+    "formatLabel": "导出文件",
+    "formatPdf": "PDF",
+    "exporting": "正在导出",
+    "exportButton": "导出",
+    "progressLabel": "正在导出聊天…… {{progress}}%",
+    "progressSubtitle": "请放松稍候，我们正在处理你的导出。",
+    "completeTitle": "导出完成",
+    "completeSubtitle": "聊天导出成功！",
+    "back": "返回"
+  },
+  "routing": {
+    "confidence": "置信度：{{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} 个令牌",
+    "observabilityDetails": "可观测性详情"
+  },
+  "feedback": {
+    "thankYou": "谢谢",
+    "rateThisResponse": "评价此响应",
+    "correctionPlaceholder": "可选：建议更好的响应（最多 2000 字符）",
+    "submitting": "正在提交……",
+    "submit": "提交"
+  },
+  "compose": {
+    "sectionLabel": "撰写提示"
+  },
+  "conversation": {
+    "sectionLabel": "对话",
+    "replayVoice": "重放语音",
+    "messageId": "ID：{{id}}",
+    "viaAgent": "通过 {{agent}}",
+    "observabilityUnavailable": "此消息无可用的可观测性数据。",
+    "tableSrLabel": "表格",
+    "waiting": {
+      "shortly": "{{coachName}} 稍后就来",
+      "oneMoment": "正在等待 {{coachName}}",
+      "pleaseWait": "请稍候"
+    },
+    "source": {
+      "label": "来源（{{count}}）",
+      "openTitle": "打开 {{filename}}",
+      "openError": {
+        "noUrl": "无法打开 \"{{filename}}\" — 后端未返回 URL。",
+        "notFound": "无法打开 \"{{filename}}\" — 未找到文档或访问被拒绝。",
+        "generic": "无法打开 \"{{filename}}\" — 请重试。"
+      }
+    },
+    "collaboration": {
+      "label": "协作响应（{{count}} 个智能体）",
+      "synthesizedFrom": "综合自 {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "尽管提问……  （Enter 发送 · Shift+Enter 换行）",
+    "unmuteCoach": "取消教练静音",
+    "muteCoach": "教练静音",
+    "stopRecording": "停止录音",
+    "startRecording": "开始录音",
+    "sendMessage": "发送消息",
+    "muteTooltip": {
+      "mute": "静音",
+      "unmute": "取消静音",
+      "disabledDuringPlayback": "播放期间无法静音"
+    }
+  },
+  "banner": {
+    "selected": "已选：",
+    "connecting": "正在连接……",
+    "successAnimationTitle": "成功动画"
+  },
+  "audio": {
+    "close": "关闭音频播放器"
+  },
+  "coach": {
+    "defaultName": "教练",
+    "authError": "身份验证错误",
+    "untitledConversation": "无标题",
+    "previewPlaceholder": "待办",
+    "conversationsLabel": "对话",
+    "sessionSubject": "{{coachName}} 辅导会话",
+    "assistantDomain": "辅导",
+    "exportSuccess": "已导出对话记录和结构化报告 PDF。",
+    "exportNoConversation": "无法导出聊天 — 没有活动对话。",
+    "audioWarning": "切换对话将为新对话重置音频。"
+  },
+  "diagnostic": {
+    "title": "诊断聊天",
+    "sessionLabel": "会话：{{sessionId}}...",
+    "statusConnecting": "正在连接……",
+    "statusReconnecting": "正在重新连接……",
+    "statusDisconnected": "已断开连接",
+    "newChat": "新聊天",
+    "newChatTitle": "开始新的聊天会话",
+    "reconnect": "重新连接",
+    "clearAllTitle": "全部清除",
+    "traceLog": "追踪日志",
+    "dataSourcesLabel": "已连接的数据源",
+    "emptyTitle": "诊断聊天界面",
+    "emptySubtitle": "发送消息以追踪完整的请求生命周期",
+    "streaming": "流式传输中",
+    "processing": "Meridian 处理中……",
+    "stopRecording": "停止录音",
+    "startVoiceInput": "开始语音输入",
+    "inputPlaceholder": "输入消息以追踪完整流程……",
+    "recordingHint": "录音中 — 请清晰讲话，然后停止以发送",
+    "latency": "延迟：{{latencyMs}}ms",
+    "ttft": "TTFT：{{ttftMs}}ms",
+    "tokens": "令牌：{{tokenCount}}",
+    "entriesCount": "{{count}} 个条目",
+    "errorsCount": "{{count}} 个错误",
+    "warningsCount": "{{count}} 个警告",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

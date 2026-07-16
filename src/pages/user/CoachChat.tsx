@@ -32,9 +32,10 @@ import {
 import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 function titleCaseFromSlug(slug: string): string {
-  if (!slug) return "Coach";
+  if (!slug) return "";
   return slug
     .split("-")
     .filter(Boolean)
@@ -64,6 +65,7 @@ function extractSessionId(resp: unknown): string | undefined {
 export default function CoachChat() {
   const { coach = "" } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("chat");
   // Parse '/:coach' param shaped as '<id>--<name-slug>' (preferred). Fallback to '<id>-<name-slug>'.
   const { agentId, coachName } = useMemo(() => {
     const raw = String(coach || "");
@@ -79,8 +81,8 @@ export default function CoachChat() {
       nameSlug = nameParts.join("-");
     }
     const name = titleCaseFromSlug(nameSlug);
-    return { agentId: id, coachName: name || "Coach" };
-  }, [coach]);
+    return { agentId: id, coachName: name || t("coach.defaultName", { defaultValue: "Coach" }) };
+  }, [coach, t]);
   const { user } = useAuth();
   const accessToken = user?.token ?? "";
 
@@ -254,11 +256,11 @@ export default function CoachChat() {
   const onResponse = useCallback((resp: AgentResponse) => {
 
     if (resp.type === "init_success") {
-      setStatusBanner({ type: "success", text: "Connected" });
+      setStatusBanner({ type: "success", text: t("common.connected", { defaultValue: "Connected" }) });
       return;
     }
     if (resp.type === "auth_error") {
-      setStatusBanner({ type: "error", text: resp.message || "Authentication error" });
+      setStatusBanner({ type: "error", text: resp.message || t("coach.authError", { defaultValue: "Authentication error" }) });
       return;
     }
 
@@ -327,12 +329,12 @@ export default function CoachChat() {
       return;
     }
     if (resp.type === "error") {
-      const text = resp.message ?? "Unknown error";
+      const text = resp.message ?? t("common.unknownError", { defaultValue: "Unknown error" });
       setStatusBanner({ type: "error", text });
       lastMessageRef.current = { type: "error", text };
       return;
     }
-  }, [scheduleAudioBufferRefresh]);
+  }, [scheduleAudioBufferRefresh, t]);
 
   const onAudioData = useCallback((audioData: ArrayBuffer) => {
     const svc = demoAudioServiceRef.current;
@@ -509,26 +511,26 @@ export default function CoachChat() {
     const convs = (conversationData as { data?: { conversations?: Array<{ id: string; title?: string; created_at?: string }> } } | undefined)?.data?.conversations ?? [];
     const items = convs.map((c) => ({
       id: c.id,
-      title: c.title || "No Title",
-      preview: "To do",
+      title: c.title || t("coach.untitledConversation", { defaultValue: "No Title" }),
+      preview: t("coach.previewPlaceholder", { defaultValue: "To do" }),
       timeLabel: c.created_at ? formatUSTimeSafe(c.created_at) : "",
     }));
     return [
       {
-        label: "Conversations",
+        label: t("coach.conversationsLabel", { defaultValue: "Conversations" }),
         items,
       },
     ];
-  }, [conversationData]);
+  }, [conversationData, t]);
 
   const handleExportChat = useCallback(async (from: Date, to: Date) => {
     // Three-tier dual-PDF export — same shape as MeridianChat
     // (server-side WeasyPrint → client-side jspdf/html2canvas →
     // legacy single-PDF backend).
-    const subject = `${coachName} Coaching Session`;
+    const subject = t("coach.sessionSubject", { coachName, defaultValue: "{{coachName}} Coaching Session" });
     const fromLabel = format(from, "do MMM yy");
     const toLabel = format(to, "do MMM yy");
-    const userLabel = user?.fullName || user?.name || user?.email || "You";
+    const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
     const slug = `${coachName.toLowerCase().replace(/\s+/g, "-") || "coach"}-${format(from, "yyyy-MM-dd")}-to-${format(to, "yyyy-MM-dd")}`;
     const meta: TranscriptMeta = {
       sessionSubject: subject,
@@ -536,7 +538,7 @@ export default function CoachChat() {
       toLabel,
       userLabel,
       slug,
-      assistantDomain: "Coaching",
+      assistantDomain: t("coach.assistantDomain", { defaultValue: "Coaching" }),
     };
 
     // ── Tier 1: server-side WeasyPrint
@@ -566,7 +568,7 @@ export default function CoachChat() {
             const blob = new Blob([bytes], { type: f.mime_type || "application/pdf" });
             downloadBlob(f.file_name, blob);
           }
-          toast.success("Exported Conversation Log + Structured Report PDFs.");
+          toast.success(t("coach.exportSuccess", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
           return;
         }
       } catch (serverErr) {
@@ -580,7 +582,7 @@ export default function CoachChat() {
       for (const { fileName, blob } of pdfs) {
         downloadBlob(fileName, blob);
       }
-      toast.success("Exported Conversation Log + Structured Report PDFs.");
+      toast.success(t("coach.exportSuccess", { defaultValue: "Exported Conversation Log + Structured Report PDFs." }));
       return;
     } catch (clientErr) {
       console.warn("Client-side dual-PDF export failed, falling back to legacy backend export.", clientErr);
@@ -588,7 +590,7 @@ export default function CoachChat() {
 
     // ── Tier 3: legacy single-PDF backend
     if (!conversationId) {
-      toast.error("Couldn't export chat — no active conversation.");
+      toast.error(t("coach.exportNoConversation", { defaultValue: "Couldn't export chat — no active conversation." }));
       return;
     }
     try {
@@ -608,7 +610,7 @@ export default function CoachChat() {
     } catch (e) {
       console.error("Failed to export conversation", e);
     }
-  }, [conversationId, messages, user, coachName]);
+  }, [conversationId, messages, user, coachName, t]);
 
   // Map paginated conversation messages into ChatMessage[] and sync to state
   useEffect(() => {
@@ -734,7 +736,7 @@ export default function CoachChat() {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             isAudioRunning={hasAudio && !isAudioPaused}
-            audioWarningText="Switching conversations will reset audio for the new conversation."
+            audioWarningText={t("coach.audioWarning", { defaultValue: "Switching conversations will reset audio for the new conversation." })}
             onDeleteConversation={handleDeleteConversation}
             onRenameConversation={handleRenameConversation}
             renameIsPending={renameConvMutation.isPending}

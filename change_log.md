@@ -1,3 +1,35 @@
+## [2026-07-16] — Chat tree internationalized (i18n retrofit, 21 locales)
+
+The Meridian / Coach / Diagnostic chat surface and its shared component tree shipped with
+zero `useTranslation` usage — every string was a hardcoded English literal, so switching
+language left the whole chat experience in English. Retrofitted the entire chat tree with
+react-i18next under a new `chat` namespace.
+
+### Added
+- **`public/locales/<lng>/chat.json`** — new `chat` namespace, 236 keys, across all 21 locales
+  (ar de en es fr hi id it ja ko nb nl pl pt ru sq sv th tr vi zh-CN). Registered `chat` in
+  `src/lib/i18n.ts` `ns` list.
+
+### Changed
+- Wired `useTranslation("chat")` + `t(key, { defaultValue })` across the chat tree (23 files):
+  - Pages: `MeridianChat.tsx`, `CoachChat.tsx`, `DiagnosticChat.tsx`
+  - Shared chat components: `ChatWindow` (+ `stacked` branch), `ChatWindowChatTab`,
+    `ChatWindowInputBar`, `ChatWindowTopBanner`, `ChatWindowHeader`,
+    `ChatWindowFloatingAudioPlayer`, `AssistantMarkdown`, `ChatHistory`, `DocumentsPanel`,
+    `DocumentsSidePanel`, `DocumentIframeModal`, `ExportChatModal`, `AgentRoutingPanel`,
+    `MessageFeedback`, `MeridianChatHeader`
+  - Meridian components: `MeridianTileRail`, `HistoryDropdown`, `DocumentsDropdown`
+- Interpolations preserved as `{{var}}`; pluralized banners pass `{{count}}` (English `{{plural}}`
+  hack dropped in non-English locales, natural phrasing instead).
+- Extended the i18n regression test to cover the `chat` namespace (6 namespaces).
+
+### Notes
+- Conversation-logic sentinels (e.g. the `"New Conversation"` preview comparison) and product/
+  infra proper nouns (Meridian, PDF, and the data-source labels) intentionally left as literals.
+- `DiagnosticChat`'s developer trace-log debug strings (~50) intentionally left in English —
+  internal traceability output, not user-facing chrome.
+- All strings carry `defaultValue`, so English renders even if a locale file fails to load.
+
 ## [2026-07-15] — IG Vertical Core: a standardized interface verticals plug into
 
 Codified the Simplified Vertical Model from a one-time decision memo into a real, typed

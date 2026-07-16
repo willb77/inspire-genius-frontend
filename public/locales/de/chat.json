@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "In die Zwischenablage kopiert",
+    "copyMessage": "Nachricht kopieren",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "close": "Schließen",
+    "delete": "Löschen",
+    "download": "Herunterladen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "clear": "Leeren",
+    "you": "Du",
+    "connected": "Verbunden",
+    "error": "Fehler",
+    "unknownError": "Unbekannter Fehler",
+    "hide": "Ausblenden",
+    "show": "Anzeigen",
+    "untitledConversation": "Unbenannte Unterhaltung",
+    "noConversations": "Noch keine Unterhaltungen. Sende eine Nachricht, um zu beginnen.",
+    "noDocuments": "Noch keine Dokumente hochgeladen."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian denkt nach...",
+    "noResponse": "Keine Antwort.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "über {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Überprüft {{count}} weitere Unterhaltungen neben dem aktiven Chat.",
+    "profileIndicator": {
+      "title": "Frameworks, auf die sich Meridian in dieser Unterhaltung beziehen kann"
+    },
+    "newChat": {
+      "title": "Neuen Chat starten",
+      "label": "Neuer Chat"
+    },
+    "status": {
+      "connected": "Mit Meridian verbunden"
+    },
+    "error": {
+      "agent": "Agentenfehler",
+      "unreachable": "Entschuldigung, ich konnte Meridian nicht erreichen. Bitte versuche es erneut.",
+      "unreachableShort": "Meridian nicht erreichbar",
+      "newChatFailed": "Neuer Chat konnte nicht gestartet werden. Bitte versuche es erneut."
+    },
+    "export": {
+      "aria": "Chat exportieren",
+      "label": "Exportieren",
+      "sessionSubject": "Meridian Chat-Sitzung",
+      "assistantDomain": "Coaching",
+      "success": "Unterhaltungsprotokoll + strukturierte Bericht-PDFs exportiert.",
+      "noConversation": "Chat konnte nicht exportiert werden – keine aktive Unterhaltung.",
+      "noData": "Chat konnte nicht exportiert werden – das Backend hat keine Daten zurückgegeben.",
+      "noContent": "Chat konnte nicht exportiert werden – kein Inhalt im ausgewählten Bereich.",
+      "retry": "Chat konnte nicht exportiert werden – bitte versuche es erneut."
+    },
+    "voice": {
+      "mute": "Meridians Stimme stummschalten",
+      "enable": "Meridians Stimme aktivieren",
+      "onTitle": "Sprachantworten AN – zum Stummschalten klicken",
+      "offTitle": "Sprachantworten AUS – zum Aktivieren klicken",
+      "notSupported": "Spracheingabe wird in diesem Browser nicht unterstützt",
+      "micDenied": "Mikrofonzugriff verweigert"
+    },
+    "audio": {
+      "blockedTitle": "Browser hat Audiowiedergabe blockiert – zum Aktivieren klicken",
+      "enable": "Audio aktivieren",
+      "rewind": "5 Sekunden zurückspulen",
+      "resume": "Audio fortsetzen",
+      "pause": "Audio pausieren",
+      "fastForward": "5 Sekunden vorspulen",
+      "skip": "Zum nächsten Satz springen",
+      "cancel": "Stream abbrechen",
+      "queued": "{{count}} in Warteschlange"
+    },
+    "conn": {
+      "availableTitle": "Sprach-Streaming verfügbar",
+      "connectingTitle": "Sprach-Stream wird verbunden...",
+      "unavailableTitle": "Sprach-Streaming nicht verfügbar",
+      "ready": "Sprache bereit",
+      "connecting": "Verbinden",
+      "off": "Sprache aus"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Unterstützt von Agent Eco-System",
+    "back": "Zurück",
+    "export": "Exportieren",
+    "documentsButton": "Dokumente",
+    "tab": {
+      "chat": "Chat",
+      "documents": "Dokumente"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Dokumenten-Seitenleiste öffnen",
+      "tooltip": "Dokumentenbereich öffnen, um Dateien zum Chat hinzuzufügen"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Unterhaltungen und Projekte"
+    },
+    "active": {
+      "title": "Aktive Sitzungen",
+      "empty": "Noch keine aktiven Sitzungen.",
+      "badge": {
+        "live": "live",
+        "open": "offen"
+      }
+    },
+    "history": {
+      "title": "Verlauf"
+    },
+    "last5": {
+      "title": "Letzte 5 Chats",
+      "empty": "Noch nichts hier."
+    },
+    "projects": {
+      "title": "Projekte",
+      "inputPlaceholder": "Neuer Projektname…",
+      "inputAria": "Neuer Projektname",
+      "addAria": "Projekt hinzufügen",
+      "empty": "Noch keine Projekte. Gruppiere zusammengehörige Chats unter einem Projekt.",
+      "badge": {
+        "active": "aktiv"
+      }
+    },
+    "knowledge": {
+      "title": "Wissen",
+      "badge": {
+        "indexed": "indiziert"
+      }
+    }
+  },
+  "history": {
+    "title": "Verlauf",
+    "newChat": "Neuer Chat",
+    "newChatTooltip": "Eine neue Unterhaltung starten",
+    "newChatTooltipExisting": "Du hast bereits eine neue Unterhaltung",
+    "newConversationLabel": "Neue Unterhaltung",
+    "searchPlaceholder": "Suchen..",
+    "loadError": "Unterhaltungsverlauf konnte nicht geladen werden.",
+    "loadErrorDetailed": "Unterhaltungsverlauf konnte nicht geladen werden – das Backend ist möglicherweise nicht verfügbar. Zum erneuten Versuch aktualisieren.",
+    "openActions": "Unterhaltungsaktionen öffnen",
+    "rename": "Umbenennen",
+    "deleteTitle": "Unterhaltung löschen",
+    "deleteDescription": "Möchtest du diese Unterhaltung wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "audioWarning": "Der Wechsel der Unterhaltung stoppt die aktuelle Audiowiedergabe",
+    "renameDialogTitle": "Unterhaltung umbenennen",
+    "renamePlaceholder": "Unterhaltungstitel",
+    "renameAnimationTitle": "Umbenennungs-Animation",
+    "renamePending": "Gestalte die Identität deiner Unterhaltung… ✨",
+    "renameHint": "Gib deiner Unterhaltung einen Namen – leicht zu merken 🚀",
+    "triggerShown": "Verlauf ({{count}} angezeigt)",
+    "triggerCount": "Verlauf ({{count}})",
+    "triggerAria": "Unterhaltungsverlauf durchsuchen",
+    "hint": "Klicke auf eine Unterhaltung, um sie zu aktivieren, oder markiere sie, um sie zur Überprüfung hinzuzufügen.",
+    "includeAria": "{{title}} in Überprüfung einbeziehen",
+    "activeBadge": "Aktiv",
+    "reviewCount": "{{count}} weitere Unterhaltungen in Überprüfung",
+    "clearReview": "Überprüfung leeren"
+  },
+  "documents": {
+    "triggerLabel": "Dokumente",
+    "triggerSelected": "Dokumente ({{count}} ausgewählt)",
+    "triggerAria": "Dokumente auswählen",
+    "header": "Dokumente an diesen Chat anhängen",
+    "loadError": "Dokumente konnten nicht geladen werden.",
+    "uploadLink": "Dokumente hochladen",
+    "selectFileAria": "{{filename}} auswählen",
+    "autoAttached": "Automatisch angehängt",
+    "selectedCount": "{{selected}} von {{total}} ausgewählt",
+    "iframe": {
+      "defaultFileName": "Dokument",
+      "loading": "Dokument wird geladen…"
+    },
+    "panel": {
+      "selectedCount": "Ausgewählt ({{count}})",
+      "confirmDeleteTitle": "Löschen bestätigen",
+      "confirmDeleteBulkDescription": "Möchtest du {{count}} ausgewählte(s) Dokument(e) wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirmDeleteOneDescription": "Möchtest du dieses Dokument wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "upload": "Hochladen",
+      "importToChat": "In Chat importieren",
+      "loading": "Dokumente werden geladen...",
+      "empty": "Keine Dateien gefunden",
+      "emptyAnimationTitle": "Datei nicht gefunden",
+      "selectItem": "{{name}} auswählen",
+      "preview": "Vorschau"
+    },
+    "sidePanel": {
+      "title": "Dokumente",
+      "close": "Dokumente schließen",
+      "closeOverlay": "Dokumentenbereich schließen"
+    }
+  },
+  "export": {
+    "title": "Chat exportieren",
+    "subtitle": "Lade eine Kopie deines Chats für spätere Referenz herunter.",
+    "fromLabel": "Chat von",
+    "fromPlaceholder": "Von Datum",
+    "toLabel": "Chat bis",
+    "toPlaceholder": "Bis Datum",
+    "formatLabel": "Exportdatei",
+    "formatPdf": "PDF",
+    "exporting": "Exportieren",
+    "exportButton": "Exportieren",
+    "progressLabel": "Chat wird exportiert... {{progress}}%",
+    "progressSubtitle": "Lehne dich zurück und entspanne dich, wir arbeiten an deinem Export.",
+    "completeTitle": "Export abgeschlossen",
+    "completeSubtitle": "Chat erfolgreich exportiert!",
+    "back": "Zurück"
+  },
+  "routing": {
+    "confidence": "Konfidenz: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} Tokens",
+    "observabilityDetails": "Observability-Details"
+  },
+  "feedback": {
+    "thankYou": "Danke",
+    "rateThisResponse": "Diese Antwort bewerten",
+    "correctionPlaceholder": "Optional: Schlage eine bessere Antwort vor (max. 2000 Zeichen)",
+    "submitting": "Wird gesendet...",
+    "submit": "Senden"
+  },
+  "compose": {
+    "sectionLabel": "Prompt verfassen"
+  },
+  "conversation": {
+    "sectionLabel": "Unterhaltung",
+    "replayVoice": "Stimme erneut abspielen",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "über {{agent}}",
+    "observabilityUnavailable": "Observability für diese Nachricht nicht verfügbar.",
+    "tableSrLabel": "Tabelle",
+    "waiting": {
+      "shortly": "{{coachName}} ist gleich für dich da",
+      "oneMoment": "Einen Moment mit {{coachName}}",
+      "pleaseWait": "Bitte warten"
+    },
+    "source": {
+      "label": "Quellen ({{count}})",
+      "openTitle": "{{filename}} öffnen",
+      "openError": {
+        "noUrl": "\"{{filename}}\" konnte nicht geöffnet werden – Backend hat keine URL zurückgegeben.",
+        "notFound": "\"{{filename}}\" konnte nicht geöffnet werden – Dokument nicht gefunden oder Zugriff verweigert.",
+        "generic": "\"{{filename}}\" konnte nicht geöffnet werden – bitte versuche es erneut."
+      }
+    },
+    "collaboration": {
+      "label": "Kollaborative Antwort ({{count}} Agenten)",
+      "synthesizedFrom": "Zusammengefasst aus {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Frag alles…  (Enter zum Senden · Shift+Enter für neue Zeile)",
+    "unmuteCoach": "Coach-Stummschaltung aufheben",
+    "muteCoach": "Coach stummschalten",
+    "stopRecording": "Aufnahme stoppen",
+    "startRecording": "Aufnahme starten",
+    "sendMessage": "Nachricht senden",
+    "muteTooltip": {
+      "mute": "Stumm",
+      "unmute": "Ton an",
+      "disabledDuringPlayback": "Stummschalten ist während der Wiedergabe deaktiviert"
+    }
+  },
+  "banner": {
+    "selected": "Ausgewählt:",
+    "connecting": "Verbinden...",
+    "successAnimationTitle": "Erfolgs-Animation"
+  },
+  "audio": {
+    "close": "Audioplayer schließen"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Authentifizierungsfehler",
+    "untitledConversation": "Kein Titel",
+    "previewPlaceholder": "Zu erledigen",
+    "conversationsLabel": "Unterhaltungen",
+    "sessionSubject": "{{coachName}} Coaching-Sitzung",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Unterhaltungsprotokoll + strukturierte Bericht-PDFs exportiert.",
+    "exportNoConversation": "Chat konnte nicht exportiert werden – keine aktive Unterhaltung.",
+    "audioWarning": "Der Wechsel der Unterhaltung setzt die Audiowiedergabe für die neue Unterhaltung zurück."
+  },
+  "diagnostic": {
+    "title": "Diagnose-Chat",
+    "sessionLabel": "Sitzung: {{sessionId}}...",
+    "statusConnecting": "Verbinden...",
+    "statusReconnecting": "Erneut verbinden...",
+    "statusDisconnected": "Getrennt",
+    "newChat": "Neuer Chat",
+    "newChatTitle": "Eine neue Chat-Sitzung starten",
+    "reconnect": "Erneut verbinden",
+    "clearAllTitle": "Alles löschen",
+    "traceLog": "Trace-Protokoll",
+    "dataSourcesLabel": "Verbundene Datenquellen",
+    "emptyTitle": "Diagnose-Chat-Oberfläche",
+    "emptySubtitle": "Sende eine Nachricht, um den vollständigen Anfragezyklus zu verfolgen",
+    "streaming": "streaming",
+    "processing": "Meridian verarbeitet...",
+    "stopRecording": "Aufnahme stoppen",
+    "startVoiceInput": "Spracheingabe starten",
+    "inputPlaceholder": "Gib eine Nachricht ein, um die gesamte Pipeline zu verfolgen...",
+    "recordingHint": "Aufnahme – sprich deutlich, dann stoppen zum Senden",
+    "latency": "Latenz: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Tokens: {{tokenCount}}",
+    "entriesCount": "{{count}} Einträge",
+    "errorsCount": "{{count}} Fehler",
+    "warningsCount": "{{count}} Warnungen",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "Skopiowano do schowka",
+    "copyMessage": "Kopiuj wiadomość",
+    "play": "Odtwórz",
+    "pause": "Wstrzymaj",
+    "close": "Zamknij",
+    "delete": "Usuń",
+    "download": "Pobierz",
+    "cancel": "Anuluj",
+    "save": "Zapisz",
+    "clear": "Wyczyść",
+    "you": "Ty",
+    "connected": "Połączono",
+    "error": "Błąd",
+    "unknownError": "Nieznany błąd",
+    "hide": "Ukryj",
+    "show": "Pokaż",
+    "untitledConversation": "Rozmowa bez tytułu",
+    "noConversations": "Brak rozmów. Wyślij wiadomość, aby rozpocząć.",
+    "noDocuments": "Nie przesłano jeszcze żadnych dokumentów."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian myśli...",
+    "noResponse": "Brak odpowiedzi.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "przez {{agent}}",
+    "profileLabel": "Profil: {{frameworks}}",
+    "reviewingBanner": "Przeglądam dodatkowe rozmowy ({{count}}) obok aktywnego czatu.",
+    "profileIndicator": {
+      "title": "Frameworki, do których Meridian może się odwołać w tej rozmowie"
+    },
+    "newChat": {
+      "title": "Rozpocznij nowy czat",
+      "label": "Nowy czat"
+    },
+    "status": {
+      "connected": "Połączono z Meridian"
+    },
+    "error": {
+      "agent": "Błąd agenta",
+      "unreachable": "Przepraszamy, nie udało się połączyć z Meridian. Spróbuj ponownie.",
+      "unreachableShort": "Nie udało się połączyć z Meridian",
+      "newChatFailed": "Nie udało się rozpocząć nowego czatu. Spróbuj ponownie."
+    },
+    "export": {
+      "aria": "Eksportuj czat",
+      "label": "Eksportuj",
+      "sessionSubject": "Sesja czatu Meridian",
+      "assistantDomain": "Coaching",
+      "success": "Wyeksportowano dziennik rozmowy i ustrukturyzowane raporty PDF.",
+      "noConversation": "Nie udało się wyeksportować czatu — brak aktywnej rozmowy.",
+      "noData": "Nie udało się wyeksportować czatu — serwer nie zwrócił żadnych danych.",
+      "noContent": "Nie udało się wyeksportować czatu — brak treści w wybranym zakresie.",
+      "retry": "Nie udało się wyeksportować czatu — spróbuj ponownie."
+    },
+    "voice": {
+      "mute": "Wycisz głos Meridian",
+      "enable": "Włącz głos Meridian",
+      "onTitle": "Odpowiedzi głosowe WŁ. — kliknij, aby wyciszyć",
+      "offTitle": "Odpowiedzi głosowe WYŁ. — kliknij, aby włączyć",
+      "notSupported": "Wprowadzanie głosowe nie jest obsługiwane w tej przeglądarce",
+      "micDenied": "Odmówiono dostępu do mikrofonu"
+    },
+    "audio": {
+      "blockedTitle": "Przeglądarka zablokowała odtwarzanie dźwięku — kliknij, aby włączyć",
+      "enable": "Włącz dźwięk",
+      "rewind": "Cofnij o 5 sekund",
+      "resume": "Wznów dźwięk",
+      "pause": "Wstrzymaj dźwięk",
+      "fastForward": "Przewiń o 5 sekund do przodu",
+      "skip": "Przejdź do następnego zdania",
+      "cancel": "Anuluj strumień",
+      "queued": "{{count}} w kolejce"
+    },
+    "conn": {
+      "availableTitle": "Strumieniowanie głosu dostępne",
+      "connectingTitle": "Łączenie strumienia głosowego...",
+      "unavailableTitle": "Strumieniowanie głosu niedostępne",
+      "ready": "Głos gotowy",
+      "connecting": "Łączenie",
+      "off": "Głos wyłączony"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Napędzane przez Agent Eco-System",
+    "back": "Wstecz",
+    "export": "Eksportuj",
+    "documentsButton": "Dokumenty",
+    "tab": {
+      "chat": "Czat",
+      "documents": "Dokumenty"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Otwórz boczny panel dokumentów",
+      "tooltip": "Otwórz panel dokumentów, aby wybrać pliki do dodania do czatu"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Rozmowy i projekty"
+    },
+    "active": {
+      "title": "Aktywne sesje",
+      "empty": "Brak aktywnych sesji.",
+      "badge": {
+        "live": "na żywo",
+        "open": "otwarte"
+      }
+    },
+    "history": {
+      "title": "Historia"
+    },
+    "last5": {
+      "title": "Ostatnie 5 czatów",
+      "empty": "Jeszcze nic tu nie ma."
+    },
+    "projects": {
+      "title": "Projekty",
+      "inputPlaceholder": "Nazwa nowego projektu…",
+      "inputAria": "Nazwa nowego projektu",
+      "addAria": "Dodaj projekt",
+      "empty": "Brak projektów. Zgrupuj powiązane czaty w projekt.",
+      "badge": {
+        "active": "aktywny"
+      }
+    },
+    "knowledge": {
+      "title": "Wiedza",
+      "badge": {
+        "indexed": "zindeksowane"
+      }
+    }
+  },
+  "history": {
+    "title": "Historia",
+    "newChat": "Nowy czat",
+    "newChatTooltip": "Rozpocznij nową rozmowę",
+    "newChatTooltipExisting": "Masz już nową rozmowę",
+    "newConversationLabel": "Nowa rozmowa",
+    "searchPlaceholder": "Szukaj..",
+    "loadError": "Nie udało się załadować historii rozmów.",
+    "loadErrorDetailed": "Nie udało się załadować historii rozmów — serwer może być niedostępny. Odśwież, aby spróbować ponownie.",
+    "openActions": "Otwórz akcje rozmowy",
+    "rename": "Zmień nazwę",
+    "deleteTitle": "Usuń rozmowę",
+    "deleteDescription": "Czy na pewno chcesz usunąć tę rozmowę? Tej akcji nie można cofnąć.",
+    "audioWarning": "Przełączenie rozmów zatrzyma bieżący dźwięk",
+    "renameDialogTitle": "Zmień nazwę rozmowy",
+    "renamePlaceholder": "Tytuł rozmowy",
+    "renameAnimationTitle": "Animacja zmiany nazwy",
+    "renamePending": "Kształtujemy tożsamość Twojej rozmowy… ✨",
+    "renameHint": "Nadaj rozmowie nazwę — tak łatwiej ją zapamiętać 🚀",
+    "triggerShown": "Historia (pokazano {{count}})",
+    "triggerCount": "Historia ({{count}})",
+    "triggerAria": "Przeglądaj historię rozmów",
+    "hint": "Kliknij rozmowę, aby ją aktywować, lub zaznacz ją, aby dodać do przeglądu.",
+    "includeAria": "Uwzględnij {{title}} w przeglądzie",
+    "activeBadge": "Aktywna",
+    "reviewCount": "Dodatkowe rozmowy w przeglądzie: {{count}}",
+    "clearReview": "Wyczyść przegląd"
+  },
+  "documents": {
+    "triggerLabel": "Dokumenty",
+    "triggerSelected": "Dokumenty (wybrano {{count}})",
+    "triggerAria": "Wybierz dokumenty",
+    "header": "Dołącz dokumenty do tego czatu",
+    "loadError": "Nie udało się załadować dokumentów.",
+    "uploadLink": "Prześlij dokumenty",
+    "selectFileAria": "Wybierz {{filename}}",
+    "autoAttached": "Dołączono automatycznie",
+    "selectedCount": "Wybrano {{selected}} z {{total}}",
+    "iframe": {
+      "defaultFileName": "Dokument",
+      "loading": "Ładowanie dokumentu…"
+    },
+    "panel": {
+      "selectedCount": "Wybrano ({{count}})",
+      "confirmDeleteTitle": "Potwierdź usunięcie",
+      "confirmDeleteBulkDescription": "Czy na pewno chcesz usunąć wybrane dokumenty ({{count}})? Tej akcji nie można cofnąć.",
+      "confirmDeleteOneDescription": "Czy na pewno chcesz usunąć ten dokument? Tej akcji nie można cofnąć.",
+      "upload": "Prześlij",
+      "importToChat": "Importuj do czatu",
+      "loading": "Ładowanie dokumentów...",
+      "empty": "Nie znaleziono plików",
+      "emptyAnimationTitle": "nie znaleziono pliku",
+      "selectItem": "Wybierz {{name}}",
+      "preview": "Podgląd"
+    },
+    "sidePanel": {
+      "title": "Dokumenty",
+      "close": "Zamknij dokumenty",
+      "closeOverlay": "Zamknij panel dokumentów"
+    }
+  },
+  "export": {
+    "title": "Eksportuj czat",
+    "subtitle": "Pobierz kopię swojego czatu na przyszłość.",
+    "fromLabel": "Czat od",
+    "fromPlaceholder": "Data początkowa",
+    "toLabel": "Czat do",
+    "toPlaceholder": "Data końcowa",
+    "formatLabel": "Plik eksportu",
+    "formatPdf": "PDF",
+    "exporting": "Eksportowanie",
+    "exportButton": "Eksportuj",
+    "progressLabel": "Eksportowanie czatu... {{progress}}%",
+    "progressSubtitle": "Odpręż się, pracujemy nad Twoim eksportem.",
+    "completeTitle": "Eksport zakończony",
+    "completeSubtitle": "Czat wyeksportowano pomyślnie!",
+    "back": "Wstecz"
+  },
+  "routing": {
+    "confidence": "Pewność: {{confidencePct}}%",
+    "latency": "{{latencyMs}} ms",
+    "tokens": "{{tokenCount}} tokenów",
+    "observabilityDetails": "Szczegóły obserwowalności"
+  },
+  "feedback": {
+    "thankYou": "Dziękujemy",
+    "rateThisResponse": "Oceń tę odpowiedź",
+    "correctionPlaceholder": "Opcjonalnie: zaproponuj lepszą odpowiedź (maks. 2000 znaków)",
+    "submitting": "Wysyłanie...",
+    "submit": "Wyślij"
+  },
+  "compose": {
+    "sectionLabel": "Utwórz zapytanie"
+  },
+  "conversation": {
+    "sectionLabel": "Rozmowa",
+    "replayVoice": "Odtwórz głos ponownie",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "przez {{agent}}",
+    "observabilityUnavailable": "Dane obserwowalności niedostępne dla tej wiadomości.",
+    "tableSrLabel": "Tabela",
+    "waiting": {
+      "shortly": "{{coachName}} wkrótce się z Tobą skontaktuje",
+      "oneMoment": "Chwila cierpliwości — {{coachName}}",
+      "pleaseWait": "Proszę czekać"
+    },
+    "source": {
+      "label": "Źródła ({{count}})",
+      "openTitle": "Otwórz {{filename}}",
+      "openError": {
+        "noUrl": "Nie udało się otworzyć \"{{filename}}\" — serwer nie zwrócił adresu URL.",
+        "notFound": "Nie udało się otworzyć \"{{filename}}\" — nie znaleziono dokumentu lub odmówiono dostępu.",
+        "generic": "Nie udało się otworzyć \"{{filename}}\" — spróbuj ponownie."
+      }
+    },
+    "collaboration": {
+      "label": "Wspólna odpowiedź (agentów: {{count}})",
+      "synthesizedFrom": "Zsyntetyzowano z {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Zapytaj o cokolwiek…  (Enter — wyślij · Shift+Enter — nowy wiersz)",
+    "unmuteCoach": "Wyłącz wyciszenie coacha",
+    "muteCoach": "Wycisz coacha",
+    "stopRecording": "Zatrzymaj nagrywanie",
+    "startRecording": "Rozpocznij nagrywanie",
+    "sendMessage": "Wyślij wiadomość",
+    "muteTooltip": {
+      "mute": "Wycisz",
+      "unmute": "Wyłącz wyciszenie",
+      "disabledDuringPlayback": "Wyciszenie jest niedostępne podczas odtwarzania"
+    }
+  },
+  "banner": {
+    "selected": "Wybrano:",
+    "connecting": "Łączenie...",
+    "successAnimationTitle": "Animacja sukcesu"
+  },
+  "audio": {
+    "close": "Zamknij odtwarzacz audio"
+  },
+  "coach": {
+    "defaultName": "Coach",
+    "authError": "Błąd uwierzytelniania",
+    "untitledConversation": "Bez tytułu",
+    "previewPlaceholder": "Do zrobienia",
+    "conversationsLabel": "Rozmowy",
+    "sessionSubject": "Sesja coachingowa z {{coachName}}",
+    "assistantDomain": "Coaching",
+    "exportSuccess": "Wyeksportowano dziennik rozmowy i ustrukturyzowane raporty PDF.",
+    "exportNoConversation": "Nie udało się wyeksportować czatu — brak aktywnej rozmowy.",
+    "audioWarning": "Przełączenie rozmów zresetuje dźwięk dla nowej rozmowy."
+  },
+  "diagnostic": {
+    "title": "Czat diagnostyczny",
+    "sessionLabel": "Sesja: {{sessionId}}...",
+    "statusConnecting": "Łączenie...",
+    "statusReconnecting": "Ponowne łączenie...",
+    "statusDisconnected": "Rozłączono",
+    "newChat": "Nowy czat",
+    "newChatTitle": "Rozpocznij nową sesję czatu",
+    "reconnect": "Połącz ponownie",
+    "clearAllTitle": "Wyczyść wszystko",
+    "traceLog": "Dziennik śledzenia",
+    "dataSourcesLabel": "Połączone źródła danych",
+    "emptyTitle": "Interfejs czatu diagnostycznego",
+    "emptySubtitle": "Wyślij wiadomość, aby prześledzić pełny cykl życia żądania",
+    "streaming": "strumieniowanie",
+    "processing": "Meridian przetwarza...",
+    "stopRecording": "Zatrzymaj nagrywanie",
+    "startVoiceInput": "Rozpocznij wprowadzanie głosowe",
+    "inputPlaceholder": "Wpisz wiadomość, aby prześledzić cały potok...",
+    "recordingHint": "Nagrywanie — mów wyraźnie, następnie zatrzymaj, aby wysłać",
+    "latency": "Opóźnienie: {{latencyMs}} ms",
+    "ttft": "TTFT: {{ttftMs}} ms",
+    "tokens": "Tokeny: {{tokenCount}}",
+    "entriesCount": "Wpisy: {{count}}",
+    "errorsCount": "Błędy: {{count}}",
+    "warningsCount": "Ostrzeżenia: {{count}}",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

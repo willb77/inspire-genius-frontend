@@ -2,7 +2,7 @@
  * i18n regression test suite.
  *
  * Covers:
- * - All 50 locale JSON files are valid JSON (10 langs × 5 namespaces)
+ * - All 60 locale JSON files are valid JSON (10 langs × 6 namespaces)
  * - Every key present in English exists in all other languages
  * - zh-CN/dashboard.json JSON syntax (regression for unescaped-quote bug)
  * - RTL switching: Arabic sets dir=rtl, all others set dir=ltr
@@ -24,7 +24,7 @@ import * as path from "path";
 const SUPPORTED_LNGS = ["en", "es", "fr", "de", "pt", "ja", "ko", "zh-CN", "ar", "hi"] as const;
 type SupportedLng = (typeof SUPPORTED_LNGS)[number];
 
-const NAMESPACES = ["common", "auth", "coaching", "dashboard", "admin"] as const;
+const NAMESPACES = ["common", "auth", "coaching", "dashboard", "admin", "chat"] as const;
 type Namespace = (typeof NAMESPACES)[number];
 
 const FALLBACK_LNG = "en";
@@ -392,12 +392,12 @@ describe("i18n configuration contract", () => {
     expect(SUPPORTED_LNGS).toContain("zh-CN");
   });
 
-  it("5 namespaces are defined", () => {
-    expect(NAMESPACES.length).toBe(5);
+  it("6 namespaces are defined", () => {
+    expect(NAMESPACES.length).toBe(6);
   });
 
-  it("namespaces include 'common', 'auth', 'coaching', 'dashboard', 'admin'", () => {
-    for (const ns of ["common", "auth", "coaching", "dashboard", "admin"]) {
+  it("namespaces include 'common', 'auth', 'coaching', 'dashboard', 'admin', 'chat'", () => {
+    for (const ns of ["common", "auth", "coaching", "dashboard", "admin", "chat"]) {
       expect(NAMESPACES).toContain(ns as Namespace);
     }
   });
