@@ -1703,7 +1703,7 @@ export default function MeridianChat({
       <div
         className={
           isV2
-            ? "grid h-[calc(100vh-8rem)] grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]"
+            ? "grid h-[calc(100vh-8rem)] grid-cols-1 gap-5 rounded-2xl bg-panel p-4 md:p-6 lg:grid-cols-[320px_minmax(0,1fr)]"
             : "flex flex-col w-full"
         }
         data-tour="chat-window-canvas"

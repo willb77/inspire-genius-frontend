@@ -1,3 +1,25 @@
+## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
+
+The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white
+background (`#FBF7F0` / `bg-panel`): its custom full-height chat grid bypassed the
+`<V2Panel>` cream frame that every other reskinned page uses, so it read as a plain
+white/neutral page next to HomeV2's warm panel.
+
+### Changed
+- `MeridianChat.tsx` — added `rounded-2xl bg-panel p-4 md:p-6` to the V2 canvas grid so the
+  tile rail + Compose/Conversation white cards sit on the cream panel, matching HomeV2.
+  Applied to the grid element itself (border-box preserves `h-[calc(100vh-8rem)]`, no height
+  math, no page overflow). Classic layout and the white sticky header are untouched
+  ("keep the top like it is").
+
+### Notes
+- Audited all `*V2` pages: every other reskinned page already carries the cream frame via
+  `<V2Panel>` (`bg-panel`); HomeV2 uses inline `bg-[#FBF7F0]` (same color). Meridian was the
+  only gap.
+- Going-forward convention recorded: every reskinned page must sit on the cream `bg-panel`
+  frame — standard pages via `<V2Panel>`, custom full-height layouts via
+  `rounded-2xl bg-panel p-4 md:p-6` on the layout container.
+
 ## [2026-07-16] — Chat tree internationalized (i18n retrofit, 21 locales)
 
 The Meridian / Coach / Diagnostic chat surface and its shared component tree shipped with
