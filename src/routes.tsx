@@ -56,6 +56,8 @@ const PrismAssessmentV2 = React.lazy(() => import("@/pages/user/PrismAssessmentV
 const UserAnalyticsV2 = React.lazy(() => import("@/pages/user/AnalyticsV2"));
 const FeedbackHistoryV2 = React.lazy(() => import("@/pages/user/FeedbackHistoryV2"));
 const UserSettingsPrivacyV2 = React.lazy(() => import("@/pages/user/SettingsPrivacyV2"));
+// Wave 1 batch 3
+const ProfileV2 = React.lazy(() => import("@/pages/user/ProfileV2"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
@@ -249,6 +251,9 @@ function FeedbackHistorySurface() {
 function UserSettingsPrivacySurface() {
   return isNewUserSurfacesEnabled() ? <UserSettingsPrivacyV2 /> : <UserSettingsPrivacy />;
 }
+function ProfileSurface() {
+  return isNewUserSurfacesEnabled() ? <ProfileV2 /> : <Profile />;
+}
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -317,7 +322,8 @@ export const routes: RouteObject[] = [
       },
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
-      { path: "/profile", element: withSuspense(<Profile />) },
+      { path: "/profile", element: withSuspense(<ProfileSurface />) },
+      { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
