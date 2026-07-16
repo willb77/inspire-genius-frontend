@@ -25,7 +25,7 @@ export default function UserTopHeader() {
   return (
     <div className="mt-2 flex items-center justify-between w-full">
       <div className="ml-1 flex-1 min-w-0 flex flex-col text-left">
-        <p className="text-sm sm:text-base md:text-2xl font-medium text-black-250 truncate">Welcome! {displayName}</p>
+        <p className="font-serif text-sm sm:text-base md:text-2xl font-medium text-ink truncate">Welcome! {displayName}</p>
         <p className="text-xs text-black-250 hidden sm:block">
           Your AI coaches are ready—let’s begin!
         </p>

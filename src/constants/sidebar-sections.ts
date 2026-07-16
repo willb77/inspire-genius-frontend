@@ -191,15 +191,15 @@ export function grantSidebarSectionForRole(role: UserRole): SidebarSection {
  * The Honor Foundation — Coach Workbench vertical section.
  *
  * NOT part of SIDEBAR_SECTIONS — it is entitlement-gated (not role-gated):
- * AppSidebar appends it only when `useHonorAccess().hasAccess` is true (the
- * user's enabled_verticals include "honor-foundation"). A single discoverability
+ * AppSidebar appends it only when `useVerticalAccess("honor").hasAccess` is true (the
+ * user's enabled_verticals include "honor"). A single discoverability
  * link into the reskinned vertical; the full coach nav lives in HonorShell.
  */
 export const HONOR_SIDEBAR_SECTION: SidebarSection = {
-  id: "honor-foundation",
+  id: "honor",
   label: "Honor Foundation",
   roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
-  items: [{ to: "/vertical/honor-foundation/dashboard", icon: Shield, label: "Coach Workbench" }],
+  items: [{ to: "/vertical/honor/dashboard", icon: Shield, label: "Coach Workbench" }],
 }
 
 /**

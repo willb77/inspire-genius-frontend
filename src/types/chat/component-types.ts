@@ -10,6 +10,12 @@ export interface ChatWindowProps {
   className?: string;
   onBack?: () => void;
   onSendText?: (text: string) => void;
+  /**
+   * When set, the composer is prefilled with this text and submitted once on
+   * mount (used by starter questions / the HomeV2 ask box to open the chat on a
+   * live response). Fires a single time per mount.
+   */
+  autoSendText?: string;
   onToggleRecording?: () => void;
   isRecording?: boolean;
   onDocumentsSelectionChange?: (ids: string[]) => void;
@@ -43,6 +49,14 @@ export interface ChatWindowProps {
   showAudioPlayer?: boolean;
   // Replay voice for a specific assistant message (TTS at queue tail).
   onReplayMessage?: (text: string) => void;
+  /**
+   * When true, render the new (HomeV2) two-tile layout: a "Compose Prompt"
+   * card on top and a full-height, scrollable "Conversation" card below it —
+   * instead of the classic single card with the composer pinned to the bottom.
+   * Additive and default-off: every existing consumer keeps the classic layout
+   * byte-for-byte. Used by MeridianChatV2 (flag-gated new user surface).
+   */
+  stacked?: boolean;
 }
 
 // ChatHistory component props

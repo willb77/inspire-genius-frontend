@@ -1,21 +1,21 @@
-import { Navigate } from "react-router-dom"
-import LoadingSpinner from "@/components/LoadingSpinner"
-import { useHonorAccess } from "@/hooks/honor/useHonorAccess"
+import { RequireVertical } from "@/verticals/core"
 import HonorShell from "./HonorShell"
 
 /**
- * Entitlement gate for the Honor Foundation Coach Workbench vertical.
+ * Entitlement gate + shell for the Honor Foundation Coach Workbench.
  *
- * Wraps every `/vertical/honor-foundation/*` page in the reskinned {@link HonorShell}
- * (navy/orange THF chrome) and redirects users who lack the "honor-foundation"
- * entitlement back to their home. Auth is already enforced by the parent
- * ProtectedRoute; this adds the vertical entitlement check on top.
+ * The gate is Core's `RequireVertical` (not a hand-rolled copy) — unentitled
+ * users redirect to `/home`. The chrome is Honor's own `HonorShell` (navy/orange
+ * THF identity) rather than Core's `VerticalShell`, which hardcodes the shared
+ * `AppShell`. This is the documented Core theming gap: verticals can't yet supply
+ * custom chrome through `VerticalShell`, so Honor wraps the gate + supplies its
+ * shell. If/when Core's theme contract grows to accept a shell, collapse this to
+ * `<VerticalShell vertical="honor" shell={<HonorShell/>} />`. See #185.
  */
 export default function HonorLayout() {
-  const { hasAccess, isLoading } = useHonorAccess()
-
-  if (isLoading) return <LoadingSpinner />
-  if (!hasAccess) return <Navigate to="/home" replace />
-
-  return <HonorShell />
+  return (
+    <RequireVertical vertical="honor" redirectTo="/home">
+      <HonorShell />
+    </RequireVertical>
+  )
 }

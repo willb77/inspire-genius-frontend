@@ -41,18 +41,73 @@ export type Assessment = {
   created_at?: string;
 };
 
-export type LoadedFramework = {
-  framework: string;
-  /** ISO timestamp of the most recent assessment in this framework. */
-  latest_assessed_at?: string | null;
-};
+/**
+ * A framework name the user holds an authoritative assessment in.
+ *
+ * The backend returns a bare `string[]` on BOTH surfaces:
+ *   - `GET /v1/profile/me/loaded-frameworks` → `{ frameworks: string[] }`
+ *   - `GET /v1/profile/me` → `loaded_frameworks: string[]`
+ * (see `UserProfile.loaded_frameworks: list[str]` in the agent-engine loader).
+ * Typing this as an object was the root cause of the HomeV2 white-screen
+ * (#186) — keep it a string so the compiler rejects `.framework` access.
+ */
+export type LoadedFramework = string;
 
 export type ProfileMe = {
   user_id: string;
   facts: ProfileFact[];
   loaded_frameworks: LoadedFramework[];
+  /**
+   * §4.2 — the personal `doc_kind`s the user holds (e.g. `["resume","bio"]`),
+   * sourced from documents tagged resume/cv/bio/personal. The Home
+   * completeness column reads this to mark Resume / Bio / Additional info done.
+   */
+  personal_docs?: string[];
+  /**
+   * Privacy — framework names the user has excluded from chat injection.
+   * The profile page's Privacy panel reads this to set each toggle.
+   */
+  chat_excluded_frameworks?: string[];
   /** Optional summary surface — backend may add convenience fields. */
   latest_assessment_by_framework?: Record<string, Assessment>;
+};
+
+/** One parsed score row (backend ScoreIn shape); round-tripped preview→confirm. */
+export type ImportScoreRow = {
+  category: string;
+  dimension: string;
+  sub_dimension?: string | null;
+  score_type?: string | null;
+  score_numeric?: number | null;
+  score_text?: string | null;
+  rank?: number | null;
+};
+
+export type ImportTypingRow = {
+  type_system: string;
+  type_code: string;
+  clarity?: number | null;
+};
+
+/** Response from POST /me/assessments/import/preview (confirm-before-save). */
+export type AssessmentImportPreview = {
+  framework: string;
+  source: string;
+  filename?: string | null;
+  score_count: number;
+  typing_count: number;
+  dimensions: string[];
+  scores: ImportScoreRow[];
+  typing?: ImportTypingRow | null;
+};
+
+/** Body for POST /me/assessments/import/confirm. */
+export type AssessmentImportConfirm = {
+  framework: string;
+  framework_version?: string | null;
+  source?: string;
+  scores: ImportScoreRow[];
+  typing?: ImportTypingRow | null;
 };
 
 export type TrendPoint = {

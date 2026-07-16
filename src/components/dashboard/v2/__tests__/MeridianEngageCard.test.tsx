@@ -2,84 +2,107 @@ import { fireEvent, render, screen } from "@testing-library/react"
 
 import {
   MeridianEngageCard,
-  type MeridianQuickChip,
+  type StarterQuestionGroup,
 } from "../MeridianEngageCard"
 
-const DEFAULT_HERO_PROMPT =
-  "I don't know what I want to do — how do I even start?"
-const DEFAULT_ENGAGES_LABEL = "MERIDIAN ENGAGES: ALEX · AURA · BRIDGE · ECHO"
+const GROUPS: StarterQuestionGroup[] = [
+  {
+    category: "New to Inspires Genius",
+    questions: [
+      "What's the first thing I should do?",
+      "What is a brain map?",
+    ],
+  },
+  {
+    category: "Personal & career goals",
+    questions: ["Map out a 90-day plan toward my goal."],
+  },
+]
 
 describe("MeridianEngageCard", () => {
-  it("renders the default engages label and hero prompt in the input", () => {
-    const onAsk = jest.fn()
-    const onAssessment = jest.fn()
+  it("renders the Chat with Meridian header and personalized greeting", () => {
+    render(<MeridianEngageCard onAsk={jest.fn()} firstName="Will" />)
 
-    render(<MeridianEngageCard onAsk={onAsk} onAssessment={onAssessment} />)
-
-    expect(screen.getByText(DEFAULT_ENGAGES_LABEL)).toBeInTheDocument()
-    expect(screen.getByDisplayValue(DEFAULT_HERO_PROMPT)).toBeInTheDocument()
+    expect(screen.getByText("Chat with Meridian")).toBeInTheDocument()
+    expect(
+      screen.getByText(/I'm Meridian, and I'll be your guide/),
+    ).toBeInTheDocument()
   })
 
-  it("calls onAsk with the hero prompt text when send is clicked", () => {
+  it("starts with an empty ask box", () => {
+    render(<MeridianEngageCard onAsk={jest.fn()} />)
+
+    expect(screen.getByLabelText("Chat with Meridian")).toHaveValue("")
+  })
+
+  it("calls onAsk with the typed text when send is clicked", () => {
     const onAsk = jest.fn()
-    const onAssessment = jest.fn()
 
-    render(<MeridianEngageCard onAsk={onAsk} onAssessment={onAssessment} />)
+    render(<MeridianEngageCard onAsk={onAsk} />)
 
+    fireEvent.change(screen.getByLabelText("Chat with Meridian"), {
+      target: { value: "How do I even start?" },
+    })
     fireEvent.click(screen.getByRole("button", { name: "Send" }))
 
     expect(onAsk).toHaveBeenCalledTimes(1)
-    expect(onAsk).toHaveBeenCalledWith(DEFAULT_HERO_PROMPT)
+    expect(onAsk).toHaveBeenCalledWith("How do I even start?")
   })
 
-  it("calls onAssessment when the assessment CTA is clicked", () => {
+  it("does not call onAsk when the ask box is empty", () => {
     const onAsk = jest.fn()
-    const onAssessment = jest.fn()
 
-    render(<MeridianEngageCard onAsk={onAsk} onAssessment={onAssessment} />)
+    render(<MeridianEngageCard onAsk={onAsk} />)
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Take your PRISM assessment" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
 
-    expect(onAssessment).toHaveBeenCalledTimes(1)
+    expect(onAsk).not.toHaveBeenCalled()
   })
 
-  it("renders without quick chips and shows no chip buttons", () => {
-    const onAsk = jest.fn()
-    const onAssessment = jest.fn()
-
-    render(<MeridianEngageCard onAsk={onAsk} onAssessment={onAssessment} />)
-
-    expect(
-      screen.queryByRole("button", { name: "Goals" })
-    ).not.toBeInTheDocument()
-  })
-
-  it("renders quick chips and calls onQuickChip with the clicked chip", () => {
-    const onAsk = jest.fn()
-    const onAssessment = jest.fn()
-    const onQuickChip = jest.fn()
-    const quickChips: MeridianQuickChip[] = [
-      { label: "Goals", prompt: "Help me set a goal" },
-      { label: "Careers", prompt: "Explore career paths" },
-    ]
+  it("renders grouped starter questions and calls onStarterQuestion on select", () => {
+    const onStarterQuestion = jest.fn()
 
     render(
       <MeridianEngageCard
-        onAsk={onAsk}
-        onAssessment={onAssessment}
-        quickChips={quickChips}
-        onQuickChip={onQuickChip}
-      />
+        onAsk={jest.fn()}
+        starterGroups={GROUPS}
+        onStarterQuestion={onStarterQuestion}
+      />,
     )
 
-    expect(screen.getByRole("button", { name: "Goals" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Careers" })).toBeInTheDocument()
+    // Dropdown is open by default: category headers + questions are visible.
+    expect(screen.getByText("Starter Questions")).toBeInTheDocument()
+    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    expect(screen.getByText("Personal & career goals")).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Goals" }))
+    fireEvent.click(
+      screen.getByRole("button", { name: "What is a brain map?" }),
+    )
 
-    expect(onQuickChip).toHaveBeenCalledTimes(1)
-    expect(onQuickChip).toHaveBeenCalledWith(quickChips[0])
+    expect(onStarterQuestion).toHaveBeenCalledTimes(1)
+    expect(onStarterQuestion).toHaveBeenCalledWith("What is a brain map?")
+  })
+
+  it("can collapse the Starter Questions dropdown", () => {
+    render(
+      <MeridianEngageCard
+        onAsk={jest.fn()}
+        starterGroups={GROUPS}
+        onStarterQuestion={jest.fn()}
+      />,
+    )
+
+    // Open by default → the toggle collapses it.
+    expect(screen.getByText("New to Inspires Genius")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Starter Questions/ }))
+    expect(
+      screen.queryByText("New to Inspires Genius"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("renders no Starter Questions when no groups are provided", () => {
+    render(<MeridianEngageCard onAsk={jest.fn()} />)
+
+    expect(screen.queryByText("Starter Questions")).not.toBeInTheDocument()
   })
 })

@@ -4,7 +4,7 @@
 // Workbench). Kept intentionally explicit (no `any`) so the scaffold pages type
 // against them and the eventual /v1/coach/* endpoints can return these shapes.
 //
-// Entitlement identifier: "honor-foundation" (see KnownVertical in
+// Entitlement identifier: "honor" (see KnownVertical in
 // @/types/grant). Presence of that value in the user's enabled_verticals unlocks
 // the vertical.
 

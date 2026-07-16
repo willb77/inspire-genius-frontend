@@ -18,8 +18,8 @@ const DEFAULT_PRISM: PRISMDimension[] = [
 ]
 
 const DEFAULT_UPCOMING: UpcomingEvent[] = [
-  { id: "1", title: "Coaching Session", time: "Today, 2:00 PM", color: "#3B5BFF" },
-  { id: "2", title: "Team Workshop", time: "Tomorrow, 10:00 AM", color: "#2DD4BF" },
+  { id: "1", title: "Coaching Session", time: "Today, 2:00 PM", color: "#0B1B33" },
+  { id: "2", title: "Team Workshop", time: "Tomorrow, 10:00 AM", color: "#E8932B" },
   { id: "3", title: "PRISM Review", time: "Friday, 3:00 PM", color: "#8B5CF6" },
 ]
 
@@ -39,7 +39,7 @@ export default function RightPanel({ prism = DEFAULT_PRISM, upcoming = DEFAULT_U
     <aside role="complementary" aria-label="User profile and upcoming events" className="hidden lg:flex fixed top-[var(--spacing-header-h)] right-0 bottom-0 w-[var(--spacing-right-panel-w)] bg-white border-l border-[#e5e7eb] overflow-y-auto flex-col gap-5 p-4">
       {/* Profile */}
       <div className="text-center">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ink to-accent-orange flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
           {initials}
         </div>
         <div className="text-sm font-bold text-[#111827]">{displayName}</div>

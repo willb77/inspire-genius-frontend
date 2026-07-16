@@ -39,7 +39,7 @@ const mockUseVerticalAccess = jest.fn(() => ({
   isLoading: false,
   enabledVerticals: [] as string[],
 }));
-jest.mock("@/hooks/grant/useVerticalAccess", () => ({
+jest.mock("@/verticals/core", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }));
 
@@ -66,6 +66,8 @@ jest.mock("@/constants/navigation", () => {
           { to: "/super-admin/analytics", icon: DummyIcon, label: "Analytics" },
           { to: "/super-admin/settings", icon: DummyIcon, label: "Settings" },
           { to: "/super-admin/project-log", icon: DummyIcon, label: "Project Log" },
+          // Owner-only item — filtered out for non-owner super-admins.
+          { to: "/super-admin/dev-traffic-report", icon: DummyIcon, label: "Dev Traffic Report" },
         ],
         defaultCollapsed: true,
       },
@@ -92,12 +94,22 @@ jest.mock("@/constants/navigation", () => {
       { to: "/settings", icon: DummyIcon, label: "Settings" },
       { to: "/help", icon: DummyIcon, label: "Help & Support" },
     ],
+    OWNER_ONLY_NAV_ROUTES: new Set<string>(["/super-admin/dev-traffic-report"]),
+    isPlatformOwner: (email: string | null | undefined) =>
+      (email ?? "").trim().toLowerCase() === "willb77@3pp.com",
   };
 });
 
 // 🔹 Mock the agent-engine toggle hook used by the layout
 jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => true,
+}));
+
+// 🔹 Mock auth — default to a NON-owner super-admin so the baseline
+// (dev-traffic-report filtered out) assertions hold; owner tests flip mockEmail.
+let mockEmail: string | null = "admin@example.com";
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: mockEmail ? { email: mockEmail } : null }),
 }));
 
 // 🔹 Capture props passed to SidebarScaffold
@@ -141,6 +153,7 @@ describe("SuperAdminLayout", () => {
       isLoading: false,
       enabledVerticals: [],
     });
+    mockEmail = "admin@example.com"; // non-owner by default
   });
 
   test("renders children correctly", () => {
@@ -168,6 +181,7 @@ describe("SuperAdminLayout", () => {
     expect(props.navSections[0].label).toBe("My Workspace");
     expect(props.navSections[0].defaultCollapsed).toBe(true);
     expect(props.navSections[1].label).toBe("Administration");
+    // 10 mock items minus the owner-only Dev Traffic Report (non-owner default) = 9.
     expect(props.navSections[1].items).toHaveLength(9);
     // Administration is expanded on super-admin pages (the user is mid-task)
     expect(props.navSections[1].defaultCollapsed).toBe(false);
@@ -224,6 +238,49 @@ describe("SuperAdminLayout", () => {
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections).toHaveLength(3);
     expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
+  });
+
+  test("hides the owner-only Dev Traffic Report item from non-owner super-admins", () => {
+    mockEmail = "admin@example.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
+    expect(admin.items).toHaveLength(9);
+    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(false);
+    expect(screen.queryByText("Dev Traffic Report")).not.toBeInTheDocument();
+  });
+
+  test("keeps the Dev Traffic Report item on Administration for the platform owner", () => {
+    mockEmail = "willb77@3pp.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
+    expect(admin.items).toHaveLength(10);
+    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(true);
+    expect(screen.getByText("Dev Traffic Report")).toBeInTheDocument();
+  });
+
+  test("owner check is case-insensitive", () => {
+    mockEmail = "WillB77@3PP.com";
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const admin = props.navSections.find((s: MockNavSection) => s.label === "Administration");
+    expect(admin.items.some((i: MockNavItem) => i.label === "Dev Traffic Report")).toBe(true);
   });
 
   test("forwards className to SidebarScaffold", () => {

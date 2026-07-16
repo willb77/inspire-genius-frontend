@@ -12,8 +12,10 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+// Mock the hook module, not the `@/verticals/core` barrel — GrantLayout pulls
+// VerticalShell from the barrel too, and a barrel mock would blank it out.
 const mockUseVerticalAccess = jest.fn()
-jest.mock("@/hooks/grant/useVerticalAccess", () => ({
+jest.mock("@/verticals/core/useVerticalAccess", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }))
 

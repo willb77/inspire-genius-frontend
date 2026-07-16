@@ -1,24 +1,27 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useAuditStats } from "@/hooks/audit/useAudit";
-import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
+import { useLoadedFrameworks, useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
   type WelcomeBackPersonalInfo,
 } from "@/components/dashboard/v2/WelcomeBackTile";
 import {
+  AddPersonalDocModal,
+  type AddPersonalDocTarget,
+} from "@/components/dashboard/v2/AddPersonalDocModal";
+import {
   AddAssessmentModal,
   type AddAssessmentTarget,
 } from "@/components/dashboard/v2/AddAssessmentModal";
-import {
-  MeridianEngageCard,
-  type MeridianQuickChip,
-} from "@/components/dashboard/v2/MeridianEngageCard";
+import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
+import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import {
   WatchVideoCard,
   type DashboardVideo,
@@ -42,7 +45,7 @@ import {
  * Layout (single full-width column, reduced vertical density):
  *   1. WelcomeBackTile   — welcome + behavioral + completeness (assessments +
  *      personal info, each with an Add / done indicator)
- *   2. MeridianEngageCard — merged engage hero + Meridian greeting + quick chips
+ *   2. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter Questions
  *   3. WatchVideoCard    — 5 real demo videos with HTML5 playback
  *   4. RecentActivityCard
  *   (the old inline Action tile — Upload/Goals/Careers — was removed per HomeV3.)
@@ -88,24 +91,26 @@ const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
   { name: "Enneagram", framework: "ENNEAGRAM" },
 ];
 
-// Resume / Bio / Additional info. No detection endpoint exists yet (§4.2), so
-// these stay not-done (Add active) — matches the completeness contract: an item
-// flips to done only when a real source reports it.
-const PERSONAL_INFO_ITEMS = ["Resume", "Bio", "Additional info"];
-
-const MERIDIAN_CHIPS: MeridianQuickChip[] = [
-  { label: "Goals", prompt: "Help me set a goal and a plan to reach it." },
-  { label: "Careers", prompt: "Help me explore careers that fit my strengths." },
-  {
-    label: "Review my resume",
-    prompt: "Can you review my resume and suggest improvements?",
-  },
+// Resume / Bio / Additional info → the personal `doc_kind` uploaded, and the
+// doc_kinds that count as "done" for that row. Done-state is REAL — from
+// GET /me `personal_docs` (documents tagged resume/cv/bio/personal).
+const PERSONAL_INFO_CATALOG: {
+  name: string;
+  docKind: string;
+  matches: string[];
+}[] = [
+  { name: "Resume", docKind: "resume", matches: ["resume", "cv"] },
+  { name: "Bio", docKind: "bio", matches: ["bio"] },
+  { name: "Additional info", docKind: "personal", matches: ["personal"] },
 ];
 
 export default function HomeV2() {
+  const { t } = useTranslation("dashboard");
   const { user } = useAuth();
   const navigate = useNavigate();
   const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
+  const [personalTarget, setPersonalTarget] =
+    useState<AddPersonalDocTarget | null>(null);
   const firstName =
     user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
   const displayName =
@@ -119,8 +124,10 @@ export default function HomeV2() {
   const hasReport = !prismError && !!latestPrism?.file_name;
 
   const { data: loadedFrameworks = [] } = useLoadedFrameworks();
+  // loaded-frameworks is a bare string[] of framework names
+  // (LoadedFramework = string; see the type). Match by upper-cased name.
   const loadedSet = useMemo(
-    () => new Set(loadedFrameworks.map((f) => f.framework.toUpperCase())),
+    () => new Set(loadedFrameworks.map((f) => f.toUpperCase())),
     [loadedFrameworks],
   );
 
@@ -133,9 +140,18 @@ export default function HomeV2() {
     [loadedSet],
   );
 
+  const { data: profileMe } = useMyProfile();
+  const personalSet = useMemo(
+    () => new Set((profileMe?.personal_docs ?? []).map((k) => k.toLowerCase())),
+    [profileMe],
+  );
   const personalInfo: WelcomeBackPersonalInfo[] = useMemo(
-    () => PERSONAL_INFO_ITEMS.map((name) => ({ name, done: false })),
-    [],
+    () =>
+      PERSONAL_INFO_CATALOG.map((p) => ({
+        name: p.name,
+        done: p.matches.some((k) => personalSet.has(k)),
+      })),
+    [personalSet],
   );
 
   const profilePercent = useMemo(() => {
@@ -156,9 +172,12 @@ export default function HomeV2() {
     }));
   }, [auditData]);
 
+  // Route into the Meridian chat. When a prompt is supplied (typed ask or a
+  // starter question) it is prefilled into the composer and auto-submitted so
+  // the user lands on a live response; with no prompt we just open the chat.
   const goToChat = (prompt?: string): void => {
     navigate(ROUTES.MERIDIAN_CHAT, {
-      state: { autoLoadPrism: true, ...(prompt ? { prefillPrompt: prompt } : {}) },
+      state: prompt ? { prefillPrompt: prompt, autoSubmit: true } : {},
     });
   };
 
@@ -172,10 +191,11 @@ export default function HomeV2() {
     if (entry) setAddTarget({ name: entry.name, framework: entry.framework });
   };
 
-  // Resume / Bio / Additional info aren't structured assessments — route those
-  // to the document upload surface (existing ingest pipeline).
-  const goToUpload = (): void => {
-    navigate(ROUTES.DOCUMENTS);
+  // Resume / Bio / Additional info → open the tagged-upload modal, which uploads
+  // the file with the right doc_kind so the profile loader can inject it.
+  const openAddPersonalInfo = (name: string): void => {
+    const entry = PERSONAL_INFO_CATALOG.find((p) => p.name === name);
+    if (entry) setPersonalTarget({ name: entry.name, docKind: entry.docKind });
   };
 
   return (
@@ -194,7 +214,14 @@ export default function HomeV2() {
             assessments={assessments}
             personalInfo={personalInfo}
             onAddAssessment={openAddAssessment}
-            onAddPersonalInfo={goToUpload}
+            onAddPersonalInfo={openAddPersonalInfo}
+          />
+
+          <AddPersonalDocModal
+            target={personalTarget}
+            onOpenChange={(open) => {
+              if (!open) setPersonalTarget(null);
+            }}
           />
 
           <AddAssessmentModal
@@ -204,14 +231,12 @@ export default function HomeV2() {
             }}
           />
 
-          {/* Merged Meridian tile — engage hero + greeting + quick chips
-              (the old right-side panel is folded in here). */}
+          {/* Chat with Meridian tile — greeting + ask box + Starter Questions. */}
           <MeridianEngageCard
             firstName={firstName}
             onAsk={(text) => goToChat(text)}
-            onAssessment={goToAssessment}
-            quickChips={MERIDIAN_CHIPS}
-            onQuickChip={(chip) => goToChat(chip.prompt)}
+            starterGroups={MERIDIAN_STARTER_GROUPS}
+            onStarterQuestion={(question) => goToChat(question)}
           />
 
           <WatchVideoCard videos={VIDEOS} />
@@ -219,7 +244,9 @@ export default function HomeV2() {
           <RecentActivityCard
             items={activityItems}
             loading={auditLoading}
-            emptyLabel="No recent activity yet"
+            emptyLabel={t("homeV2.noRecentActivityYet", {
+              defaultValue: "No recent activity yet",
+            })}
           />
         </div>
       </div>
