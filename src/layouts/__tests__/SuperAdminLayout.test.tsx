@@ -34,11 +34,14 @@ jest.mock("lucide-react", () => ({
 }));
 
 // 🔹 Mock the entitlement hook (avoids React Query / QueryClient in this test)
-const mockUseVerticalAccess = jest.fn(() => ({
-  hasAccess: false,
-  isLoading: false,
-  enabledVerticals: [] as string[],
-}));
+const mockUseVerticalAccess = jest.fn((vertical: string) => {
+  void vertical; // arg-aware signature so mockImplementation((v) => …) typechecks
+  return {
+    hasAccess: false,
+    isLoading: false,
+    enabledVerticals: [] as string[],
+  };
+});
 jest.mock("@/verticals/core", () => ({
   useVerticalAccess: (vertical: string) => mockUseVerticalAccess(vertical),
 }));
