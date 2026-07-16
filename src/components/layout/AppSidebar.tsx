@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/useAuth"
-import { getSectionsForRole, grantSidebarSectionForRole, BROADCAST_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
+import { getSectionsForRole, grantSidebarSectionForRole, BROADCAST_SIDEBAR_SECTION, HONOR_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useVerticalAccess } from "@/verticals/core"
@@ -29,12 +29,14 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
   const location = useLocation()
   const { user, logout } = useAuth()
   const { hasAccess: hasGrantAccess } = useVerticalAccess("grant")
+  const { hasAccess: hasHonorAccess } = useVerticalAccess("honor")
   const { data: broadcastAccess } = useBroadcastAccess()
   // Entitlement/access-gated sections are appended after the role-based ones.
   // They render through the same light chrome — no restyling.
   const sections = [
     ...getSectionsForRole(role),
     ...(hasGrantAccess ? [grantSidebarSectionForRole(role)] : []),
+    ...(hasHonorAccess ? [HONOR_SIDEBAR_SECTION] : []),
     ...(broadcastAccess?.authorized ? [BROADCAST_SIDEBAR_SECTION] : []),
   ]
   const initials = getInitials(user?.fullName ?? user?.name, user?.email)

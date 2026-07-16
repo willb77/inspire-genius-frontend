@@ -14,6 +14,38 @@
   outline-offset: 2px;
 }
 
+/*
+ * The Honor Foundation — Coach Workbench vertical reskin tokens.
+ *
+ * Scoped to the `.vertical-honor` wrapper applied by HonorShell so the THF navy/
+ * orange identity + Inter typeface never leak into the rest of the app. The
+ * shared Honor primitives (_shared.tsx) read these vars; the shell itself uses
+ * the same hexes directly. Enables the reskin while the functional components
+ * underneath stay unchanged.
+ */
+.vertical-honor {
+  --honor-navy: #1B2A4A;
+  --honor-navy-700: #22345c;
+  --honor-navy-600: #2c4272;
+  --honor-orange: #E8792B;
+  --honor-orange-dk: #c9631a;
+  --honor-ink: #18202f;
+  --honor-slate: #5b6678;
+  --honor-line: #dfe4ec;
+  --honor-line-strong: #c6cdd9;
+  --honor-paper: #f6f7f9;
+  --honor-card: #ffffff;
+  /* PRISM quadrant accents (Gold / Green / Blue / Orange). */
+  --honor-prism-gold: #d8a13a;
+  --honor-prism-green: #3f9d6b;
+  --honor-prism-blue: #3a6ea5;
+  --honor-prism-orange: #E8792B;
+  --honor-ok: #2f8f5b;
+  --honor-warn: #c0472b;
+  --honor-radius: 10px;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
 /* sonar-ignore-next-line */
 @custom-variant dark (&:is(.dark *)); /*NOSONAR*/
 

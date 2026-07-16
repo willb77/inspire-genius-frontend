@@ -8,6 +8,7 @@
  * Imported once from `main.tsx` for its side effect.
  */
 export { GRANT } from "./grant/manifest"
+export { HONOR } from "./honor/manifest"
 
 // ── New verticals go here ────────────────────────────────────────
 // export { ACME } from "./acme/manifest"
