@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -48,6 +49,7 @@ export default function ChatWindowInputBar({
   onToggleMute,
   muteTooltipText,
 }: ChatWindowInputBarProps) {
+  const { t } = useTranslation("chat");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   // IME composition guard. When a user is mid-composition (e.g. Japanese,
   // Chinese, Korean input) Enter should commit the composition, not the
@@ -63,9 +65,11 @@ export default function ChatWindowInputBar({
 
   const inputPlaceholder = isRecording
     ? ""
-    : "Ask Anything…  (Enter to send · Shift+Enter for newline)";
+    : t("input.placeholder", { defaultValue: "Ask Anything…  (Enter to send · Shift+Enter for newline)" });
 
-  const muteAriaLabel = isMuted ? "Unmute Coach" : "Mute Coach";
+  const muteAriaLabel = isMuted
+    ? t("input.unmuteCoach", { defaultValue: "Unmute Coach" })
+    : t("input.muteCoach", { defaultValue: "Mute Coach" });
   const isMuteDisabled = !!(hasAudio && !isAudioPaused);
 
   // Resize the textarea to fit its content, capped at TEXTAREA_MAX_PX.
@@ -105,7 +109,7 @@ export default function ChatWindowInputBar({
             type="button"
             disabled={false}
             onClick={() => onToggleRecording?.()}
-            aria-label={isRecording ? "Stop recording" : "Start recording"}
+            aria-label={isRecording ? t("input.stopRecording", { defaultValue: "Stop recording" }) : t("input.startRecording", { defaultValue: "Start recording" })}
             aria-pressed={!!isRecording}
             className="cursor-pointer absolute left-3 top-3 grid place-items-center h-10 w-10 -ml-2 -mt-1 rounded-md hover:bg-muted"
           >
@@ -165,7 +169,7 @@ export default function ChatWindowInputBar({
                 type="button"
                 onClick={onToggleAudioPlayback}
                 variant="secondary"
-                aria-label={isAudioPaused ? "Play" : "Pause"}
+                aria-label={isAudioPaused ? t("common.play", { defaultValue: "Play" }) : t("common.pause", { defaultValue: "Pause" })}
                 className="h-10 w-10 p-0"
               >
                 {isAudioPaused ? (
@@ -176,7 +180,7 @@ export default function ChatWindowInputBar({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <span className="text-xs">{isAudioPaused ? "Play" : "Pause"}</span>
+              <span className="text-xs">{isAudioPaused ? t("common.play", { defaultValue: "Play" }) : t("common.pause", { defaultValue: "Pause" })}</span>
             </TooltipContent>
           </Tooltip>
         ) : null}
@@ -210,7 +214,7 @@ export default function ChatWindowInputBar({
         <Button
           disabled={false}
           className="bg-blue-primary hover:bg-blue-primary/90 h-10 w-10 p-0"
-          aria-label="Send message"
+          aria-label={t("input.sendMessage", { defaultValue: "Send message" })}
           onClick={onSend}
         >
           <Send className="size-5" />

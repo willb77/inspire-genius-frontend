@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import DocumentsPanel from "@/components/user/chat/DocumentsPanel";
@@ -77,6 +78,7 @@ export default function ChatWindow({
   onReplayMessage,
   stacked,
 }: ChatWindowProps) {
+  const { t } = useTranslation("chat");
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
   const [uploadOpen, setUploadOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
@@ -253,17 +255,17 @@ export default function ChatWindow({
   };
 
   const coachMessages = [
-  `${coachName} will be with you shortly`,
-  `One moment with ${coachName}`,
-  `Please wait`
+  t("conversation.waiting.shortly", { defaultValue: "{{coachName}} will be with you shortly", coachName }),
+  t("conversation.waiting.oneMoment", { defaultValue: "One moment with {{coachName}}", coachName }),
+  t("conversation.waiting.pleaseWait", { defaultValue: "Please wait" })
 ];
 
 const genericMessages =
   coachMessages[getSecureRandomInt(coachMessages.length)];
 
-  let muteTooltipText = "Mute";
-  if (hasAudio && !isAudioPaused) muteTooltipText = "Mute is disabled during playback";
-  else if (isMuted) muteTooltipText = "Unmute";
+  let muteTooltipText = t("input.muteTooltip.mute", { defaultValue: "Mute" });
+  if (hasAudio && !isAudioPaused) muteTooltipText = t("input.muteTooltip.disabledDuringPlayback", { defaultValue: "Mute is disabled during playback" });
+  else if (isMuted) muteTooltipText = t("input.muteTooltip.unmute", { defaultValue: "Unmute" });
 
   const selectedDocsTooltip = selectedDocNames ? selectedDocNames.map(stripPdfExt).join(", ") : "";
 
@@ -279,7 +281,7 @@ const genericMessages =
       <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
         {/* Compose Prompt card */}
         <V2Card className="flex flex-col gap-3 p-4 md:p-5" data-testid="v2-compose-card">
-          <SectionLabel>Compose Prompt</SectionLabel>
+          <SectionLabel>{t("compose.sectionLabel", { defaultValue: "Compose Prompt" })}</SectionLabel>
           <ChatWindowTopBanner
             selectedDocNames={selectedDocNames}
             selectedSummary={selectedSummary}
@@ -310,7 +312,7 @@ const genericMessages =
           data-testid="v2-conversation-card"
         >
           <div className="flex items-center justify-between border-b border-hairline px-4 py-3 md:px-5">
-            <SectionLabel>Conversation</SectionLabel>
+            <SectionLabel>{t("conversation.sectionLabel", { defaultValue: "Conversation" })}</SectionLabel>
             <span className="font-serif text-sm font-semibold text-ink">{coachName}</span>
           </div>
           <div
@@ -348,7 +350,7 @@ const genericMessages =
         {copied ? (
           <div className="fixed right-6 bottom-10 z-50">
             <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
-              Copied to clipboard
+              {t("common.copiedToClipboard", { defaultValue: "Copied to clipboard" })}
             </div>
           </div>
         ) : null}

@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "Скопировано в буфер обмена",
+    "copyMessage": "Копировать сообщение",
+    "play": "Воспроизвести",
+    "pause": "Пауза",
+    "close": "Закрыть",
+    "delete": "Удалить",
+    "download": "Скачать",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "clear": "Очистить",
+    "you": "Вы",
+    "connected": "Подключено",
+    "error": "Ошибка",
+    "unknownError": "Неизвестная ошибка",
+    "hide": "Скрыть",
+    "show": "Показать",
+    "untitledConversation": "Разговор без названия",
+    "noConversations": "Пока нет разговоров. Отправьте сообщение, чтобы начать.",
+    "noDocuments": "Документы ещё не загружены."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian думает...",
+    "noResponse": "Нет ответа.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "через {{agent}}",
+    "profileLabel": "Профиль: {{frameworks}}",
+    "reviewingBanner": "Просматриваю дополнительные разговоры ({{count}}) вместе с активным чатом.",
+    "profileIndicator": {
+      "title": "Фреймворки, на которые Meridian может ссылаться в этом разговоре"
+    },
+    "newChat": {
+      "title": "Начать новый чат",
+      "label": "Новый чат"
+    },
+    "status": {
+      "connected": "Подключено к Meridian"
+    },
+    "error": {
+      "agent": "Ошибка агента",
+      "unreachable": "Извините, не удалось связаться с Meridian. Пожалуйста, попробуйте снова.",
+      "unreachableShort": "Не удалось связаться с Meridian",
+      "newChatFailed": "Не удалось начать новый чат. Пожалуйста, попробуйте снова."
+    },
+    "export": {
+      "aria": "Экспорт чата",
+      "label": "Экспорт",
+      "sessionSubject": "Сессия чата Meridian",
+      "assistantDomain": "Коучинг",
+      "success": "Экспортированы журнал разговора и структурированные отчёты в PDF.",
+      "noConversation": "Не удалось экспортировать чат — нет активного разговора.",
+      "noData": "Не удалось экспортировать чат — сервер не вернул данных.",
+      "noContent": "Не удалось экспортировать чат — нет содержимого в выбранном диапазоне.",
+      "retry": "Не удалось экспортировать чат — пожалуйста, попробуйте снова."
+    },
+    "voice": {
+      "mute": "Отключить голос Meridian",
+      "enable": "Включить голос Meridian",
+      "onTitle": "Голосовые ответы ВКЛ — нажмите, чтобы отключить",
+      "offTitle": "Голосовые ответы ВЫКЛ — нажмите, чтобы включить",
+      "notSupported": "Голосовой ввод не поддерживается в этом браузере",
+      "micDenied": "Доступ к микрофону запрещён"
+    },
+    "audio": {
+      "blockedTitle": "Браузер заблокировал воспроизведение аудио — нажмите, чтобы включить",
+      "enable": "Включить аудио",
+      "rewind": "Перемотать на 5 секунд назад",
+      "resume": "Возобновить аудио",
+      "pause": "Приостановить аудио",
+      "fastForward": "Перемотать на 5 секунд вперёд",
+      "skip": "Перейти к следующему предложению",
+      "cancel": "Отменить поток",
+      "queued": "{{count}} в очереди"
+    },
+    "conn": {
+      "availableTitle": "Голосовая трансляция доступна",
+      "connectingTitle": "Подключение голосового потока...",
+      "unavailableTitle": "Голосовая трансляция недоступна",
+      "ready": "Голос готов",
+      "connecting": "Подключение",
+      "off": "Голос выключен"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "На базе Agent Eco-System",
+    "back": "Назад",
+    "export": "Экспорт",
+    "documentsButton": "Документы",
+    "tab": {
+      "chat": "Чат",
+      "documents": "Документы"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Открыть боковую панель документов",
+      "tooltip": "Откройте панель документов, чтобы выбрать файлы для добавления в чат"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Разговоры и проекты"
+    },
+    "active": {
+      "title": "Активные сессии",
+      "empty": "Пока нет активных сессий.",
+      "badge": {
+        "live": "в эфире",
+        "open": "открыто"
+      }
+    },
+    "history": {
+      "title": "История"
+    },
+    "last5": {
+      "title": "Последние 5 чатов",
+      "empty": "Здесь пока ничего нет."
+    },
+    "projects": {
+      "title": "Проекты",
+      "inputPlaceholder": "Название нового проекта…",
+      "inputAria": "Название нового проекта",
+      "addAria": "Добавить проект",
+      "empty": "Пока нет проектов. Сгруппируйте связанные чаты в проект.",
+      "badge": {
+        "active": "активен"
+      }
+    },
+    "knowledge": {
+      "title": "Знания",
+      "badge": {
+        "indexed": "проиндексировано"
+      }
+    }
+  },
+  "history": {
+    "title": "История",
+    "newChat": "Новый чат",
+    "newChatTooltip": "Начать новый разговор",
+    "newChatTooltipExisting": "У вас уже есть новый разговор",
+    "newConversationLabel": "Новый разговор",
+    "searchPlaceholder": "Поиск..",
+    "loadError": "Не удалось загрузить историю разговоров.",
+    "loadErrorDetailed": "Не удалось загрузить историю разговоров — сервер может быть недоступен. Обновите, чтобы повторить.",
+    "openActions": "Открыть действия разговора",
+    "rename": "Переименовать",
+    "deleteTitle": "Удалить разговор",
+    "deleteDescription": "Вы уверены, что хотите удалить этот разговор? Это действие нельзя отменить.",
+    "audioWarning": "Переключение разговоров остановит текущее аудио",
+    "renameDialogTitle": "Переименовать разговор",
+    "renamePlaceholder": "Название разговора",
+    "renameAnimationTitle": "Анимация переименования",
+    "renamePending": "Формируем индивидуальность вашего разговора… ✨",
+    "renameHint": "Дайте разговору название — так его легче запомнить 🚀",
+    "triggerShown": "История (показано {{count}})",
+    "triggerCount": "История ({{count}})",
+    "triggerAria": "Просмотреть историю разговоров",
+    "hint": "Нажмите на разговор, чтобы сделать его активным, или отметьте его, чтобы добавить в обзор.",
+    "includeAria": "Включить {{title}} в обзор",
+    "activeBadge": "Активен",
+    "reviewCount": "Дополнительные разговоры в обзоре: {{count}}",
+    "clearReview": "Очистить обзор"
+  },
+  "documents": {
+    "triggerLabel": "Документы",
+    "triggerSelected": "Документы (выбрано {{count}})",
+    "triggerAria": "Выбрать документы",
+    "header": "Прикрепить документы к этому чату",
+    "loadError": "Не удалось загрузить документы.",
+    "uploadLink": "Загрузить документы",
+    "selectFileAria": "Выбрать {{filename}}",
+    "autoAttached": "Прикреплено автоматически",
+    "selectedCount": "Выбрано {{selected}} из {{total}}",
+    "iframe": {
+      "defaultFileName": "Документ",
+      "loading": "Загрузка документа…"
+    },
+    "panel": {
+      "selectedCount": "Выбрано ({{count}})",
+      "confirmDeleteTitle": "Подтвердите удаление",
+      "confirmDeleteBulkDescription": "Вы уверены, что хотите удалить выбранные документы ({{count}})? Это действие нельзя отменить.",
+      "confirmDeleteOneDescription": "Вы уверены, что хотите удалить этот документ? Это действие нельзя отменить.",
+      "upload": "Загрузить",
+      "importToChat": "Импортировать в чат",
+      "loading": "Загрузка документов...",
+      "empty": "Файлы не найдены",
+      "emptyAnimationTitle": "файл не найден",
+      "selectItem": "Выбрать {{name}}",
+      "preview": "Предпросмотр"
+    },
+    "sidePanel": {
+      "title": "Документы",
+      "close": "Закрыть документы",
+      "closeOverlay": "Закрыть панель документов"
+    }
+  },
+  "export": {
+    "title": "Экспорт чата",
+    "subtitle": "Скачайте копию вашего чата для дальнейшего использования.",
+    "fromLabel": "Чат с",
+    "fromPlaceholder": "Дата начала",
+    "toLabel": "Чат до",
+    "toPlaceholder": "Дата окончания",
+    "formatLabel": "Файл экспорта",
+    "formatPdf": "PDF",
+    "exporting": "Экспорт",
+    "exportButton": "Экспорт",
+    "progressLabel": "Экспорт чата... {{progress}}%",
+    "progressSubtitle": "Расслабьтесь, мы работаем над вашим экспортом.",
+    "completeTitle": "Экспорт завершён",
+    "completeSubtitle": "Чат успешно экспортирован!",
+    "back": "Назад"
+  },
+  "routing": {
+    "confidence": "Уверенность: {{confidencePct}}%",
+    "latency": "{{latencyMs}} мс",
+    "tokens": "{{tokenCount}} токенов",
+    "observabilityDetails": "Данные наблюдаемости"
+  },
+  "feedback": {
+    "thankYou": "Спасибо",
+    "rateThisResponse": "Оцените этот ответ",
+    "correctionPlaceholder": "Необязательно: предложите лучший ответ (макс. 2000 символов)",
+    "submitting": "Отправка...",
+    "submit": "Отправить"
+  },
+  "compose": {
+    "sectionLabel": "Составить запрос"
+  },
+  "conversation": {
+    "sectionLabel": "Разговор",
+    "replayVoice": "Воспроизвести голос снова",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "через {{agent}}",
+    "observabilityUnavailable": "Данные наблюдаемости недоступны для этого сообщения.",
+    "tableSrLabel": "Таблица",
+    "waiting": {
+      "shortly": "{{coachName}} скоро с вами свяжется",
+      "oneMoment": "Минутку с {{coachName}}",
+      "pleaseWait": "Пожалуйста, подождите"
+    },
+    "source": {
+      "label": "Источники ({{count}})",
+      "openTitle": "Открыть {{filename}}",
+      "openError": {
+        "noUrl": "Не удалось открыть \"{{filename}}\" — сервер не вернул URL.",
+        "notFound": "Не удалось открыть \"{{filename}}\" — документ не найден или доступ запрещён.",
+        "generic": "Не удалось открыть \"{{filename}}\" — пожалуйста, попробуйте снова."
+      }
+    },
+    "collaboration": {
+      "label": "Совместный ответ (агентов: {{count}})",
+      "synthesizedFrom": "Синтезировано из {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Спросите что угодно…  (Enter — отправить · Shift+Enter — новая строка)",
+    "unmuteCoach": "Включить звук коуча",
+    "muteCoach": "Отключить звук коуча",
+    "stopRecording": "Остановить запись",
+    "startRecording": "Начать запись",
+    "sendMessage": "Отправить сообщение",
+    "muteTooltip": {
+      "mute": "Отключить звук",
+      "unmute": "Включить звук",
+      "disabledDuringPlayback": "Отключение звука недоступно во время воспроизведения"
+    }
+  },
+  "banner": {
+    "selected": "Выбрано:",
+    "connecting": "Подключение...",
+    "successAnimationTitle": "Анимация успеха"
+  },
+  "audio": {
+    "close": "Закрыть аудиоплеер"
+  },
+  "coach": {
+    "defaultName": "Коуч",
+    "authError": "Ошибка аутентификации",
+    "untitledConversation": "Без названия",
+    "previewPlaceholder": "Сделать",
+    "conversationsLabel": "Разговоры",
+    "sessionSubject": "Коуч-сессия с {{coachName}}",
+    "assistantDomain": "Коучинг",
+    "exportSuccess": "Экспортированы журнал разговора и структурированные отчёты в PDF.",
+    "exportNoConversation": "Не удалось экспортировать чат — нет активного разговора.",
+    "audioWarning": "Переключение разговоров сбросит аудио для нового разговора."
+  },
+  "diagnostic": {
+    "title": "Диагностический чат",
+    "sessionLabel": "Сессия: {{sessionId}}...",
+    "statusConnecting": "Подключение...",
+    "statusReconnecting": "Переподключение...",
+    "statusDisconnected": "Отключено",
+    "newChat": "Новый чат",
+    "newChatTitle": "Начать новую сессию чата",
+    "reconnect": "Переподключить",
+    "clearAllTitle": "Очистить всё",
+    "traceLog": "Журнал трассировки",
+    "dataSourcesLabel": "Подключённые источники данных",
+    "emptyTitle": "Интерфейс диагностического чата",
+    "emptySubtitle": "Отправьте сообщение, чтобы отследить полный жизненный цикл запроса",
+    "streaming": "потоковая передача",
+    "processing": "Meridian обрабатывает...",
+    "stopRecording": "Остановить запись",
+    "startVoiceInput": "Начать голосовой ввод",
+    "inputPlaceholder": "Введите сообщение, чтобы отследить весь конвейер...",
+    "recordingHint": "Запись — говорите чётко, затем остановите, чтобы отправить",
+    "latency": "Задержка: {{latencyMs}} мс",
+    "ttft": "TTFT: {{ttftMs}} мс",
+    "tokens": "Токены: {{tokenCount}}",
+    "entriesCount": "Записей: {{count}}",
+    "errorsCount": "Ошибок: {{count}}",
+    "warningsCount": "Предупреждений: {{count}}",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

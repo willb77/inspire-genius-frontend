@@ -1,4 +1,5 @@
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 type MeridianChatHeaderProps = {
@@ -14,6 +15,7 @@ export default function MeridianChatHeader({
   currentDomain,
   onBack,
 }: MeridianChatHeaderProps) {
+  const { t } = useTranslation("chat");
   return (
     <div className="flex items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-3">
@@ -33,9 +35,9 @@ export default function MeridianChatHeader({
             />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">Meridian</h2>
+            <h2 className="text-sm font-semibold">{t("header.title", { defaultValue: "Meridian" })}</h2>
             <p className="text-xs text-muted-foreground">
-              Powered by Agent Eco-System
+              {t("header.subtitle", { defaultValue: "Powered by Agent Eco-System" })}
             </p>
           </div>
         </div>

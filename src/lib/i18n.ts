@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin'],
+    ns: ['common', 'auth', 'coaching', 'dashboard', 'admin', 'chat'],
     supportedLngs: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'zh-CN', 'ar', 'hi', 'it', 'nl', 'ru', 'pl', 'tr', 'th', 'vi', 'id', 'sv', 'nb', 'sq'],
     load: 'currentOnly',
 

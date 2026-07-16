@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronRight, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -170,6 +171,7 @@ export default function MeridianTileRail({
   onSelectConversation,
   className,
 }: MeridianTileRailProps) {
+  const { t } = useTranslation("chat");
   const [openState, setOpenState] = useState<Record<TileId, boolean>>(loadTileState);
 
   const toggleTile = useCallback((id: TileId) => {
@@ -240,7 +242,9 @@ export default function MeridianTileRail({
   }, [docData]);
 
   const renderConvRow = (c: ConversationRow, badge?: React.ReactNode) => {
-    const title = (c.title && c.title.trim()) || "Untitled conversation";
+    const title =
+      (c.title && c.title.trim()) ||
+      t("common.untitledConversation", { defaultValue: "Untitled conversation" });
     const when = formatRelative(c.updated_at || c.created_at);
     const isActive = activeConversationId === c.id;
     return (
@@ -269,13 +273,13 @@ export default function MeridianTileRail({
   return (
     <aside
       className={cn("flex flex-col gap-4", className)}
-      aria-label="Conversations and projects"
+      aria-label={t("tiles.rail.aria", { defaultValue: "Conversations and projects" })}
       data-testid="meridian-tile-rail"
     >
       {/* Active Sessions */}
       <Tile
         id="active"
-        title="Active Sessions"
+        title={t("tiles.active.title", { defaultValue: "Active Sessions" })}
         open={openState.active}
         onToggle={toggleTile}
         badge={
@@ -287,13 +291,17 @@ export default function MeridianTileRail({
         {convLoading ? (
           <RowSkeleton rows={3} />
         ) : activeSessions.length === 0 ? (
-          <EmptyRow>No active sessions yet.</EmptyRow>
+          <EmptyRow>{t("tiles.active.empty", { defaultValue: "No active sessions yet." })}</EmptyRow>
         ) : (
           <ul className="divide-y divide-hairline">
             {activeSessions.map((c, i) =>
               renderConvRow(
                 c,
-                <Pill tone={i === 0 ? "orange" : "ink"}>{i === 0 ? "live" : "open"}</Pill>,
+                <Pill tone={i === 0 ? "orange" : "ink"}>
+                  {i === 0
+                    ? t("tiles.active.badge.live", { defaultValue: "live" })
+                    : t("tiles.active.badge.open", { defaultValue: "open" })}
+                </Pill>,
               ),
             )}
           </ul>
@@ -303,7 +311,7 @@ export default function MeridianTileRail({
       {/* History */}
       <Tile
         id="history"
-        title="History"
+        title={t("tiles.history.title", { defaultValue: "History" })}
         open={openState.history}
         onToggle={toggleTile}
         badge={<Pill tone="gray">{conversations.length}</Pill>}
@@ -311,7 +319,7 @@ export default function MeridianTileRail({
         {convLoading ? (
           <RowSkeleton rows={4} />
         ) : conversations.length === 0 ? (
-          <EmptyRow>No conversations yet. Send a message to start one.</EmptyRow>
+          <EmptyRow>{t("common.noConversations", { defaultValue: "No conversations yet. Send a message to start one." })}</EmptyRow>
         ) : (
           <ul className="max-h-56 divide-y divide-hairline overflow-y-auto">
             {conversations.map((c) => renderConvRow(c))}
@@ -322,7 +330,7 @@ export default function MeridianTileRail({
       {/* Last 5 Chats */}
       <Tile
         id="last5"
-        title="Last 5 Chats"
+        title={t("tiles.last5.title", { defaultValue: "Last 5 Chats" })}
         open={openState.last5}
         onToggle={toggleTile}
         badge={<Pill tone="gray">{lastFive.length}</Pill>}
@@ -330,7 +338,7 @@ export default function MeridianTileRail({
         {convLoading ? (
           <RowSkeleton rows={5} />
         ) : lastFive.length === 0 ? (
-          <EmptyRow>Nothing here yet.</EmptyRow>
+          <EmptyRow>{t("tiles.last5.empty", { defaultValue: "Nothing here yet." })}</EmptyRow>
         ) : (
           <ul className="divide-y divide-hairline">
             {lastFive.map((c) => renderConvRow(c))}
@@ -341,7 +349,7 @@ export default function MeridianTileRail({
       {/* Projects — client-side list (no backend yet) */}
       <Tile
         id="projects"
-        title="Projects"
+        title={t("tiles.projects.title", { defaultValue: "Projects" })}
         open={openState.projects}
         onToggle={toggleTile}
         badge={<Pill tone="gray">{projects.length}</Pill>}
@@ -357,8 +365,8 @@ export default function MeridianTileRail({
                 addProject();
               }
             }}
-            placeholder="New project name…"
-            aria-label="New project name"
+            placeholder={t("tiles.projects.inputPlaceholder", { defaultValue: "New project name…" })}
+            aria-label={t("tiles.projects.inputAria", { defaultValue: "New project name" })}
             className="min-w-0 flex-1 rounded-lg border border-hairline bg-white px-2.5 py-1.5 text-sm text-ink placeholder:text-mute focus:border-accent-orange focus:outline-none"
             data-testid="rail-project-input"
           />
@@ -366,7 +374,7 @@ export default function MeridianTileRail({
             type="button"
             onClick={addProject}
             disabled={!projectDraft.trim()}
-            aria-label="Add project"
+            aria-label={t("tiles.projects.addAria", { defaultValue: "Add project" })}
             className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-ink text-white transition-colors hover:bg-accent-orange disabled:cursor-not-allowed disabled:opacity-40"
             data-testid="rail-project-add"
           >
@@ -374,7 +382,7 @@ export default function MeridianTileRail({
           </button>
         </div>
         {projects.length === 0 ? (
-          <EmptyRow>No projects yet. Group related chats under a project.</EmptyRow>
+          <EmptyRow>{t("tiles.projects.empty", { defaultValue: "No projects yet. Group related chats under a project." })}</EmptyRow>
         ) : (
           <ul className="max-h-56 divide-y divide-hairline overflow-y-auto">
             {projects.map((p) => {
@@ -393,7 +401,7 @@ export default function MeridianTileRail({
                     <span className="block truncate text-sm font-semibold text-ink">
                       {p.name}
                     </span>
-                    {isSel && <Pill tone="orange">active</Pill>}
+                    {isSel && <Pill tone="orange">{t("tiles.projects.badge.active", { defaultValue: "active" })}</Pill>}
                   </button>
                 </li>
               );
@@ -405,7 +413,7 @@ export default function MeridianTileRail({
       {/* Knowledge — real documents */}
       <Tile
         id="knowledge"
-        title="Knowledge"
+        title={t("tiles.knowledge.title", { defaultValue: "Knowledge" })}
         open={openState.knowledge}
         onToggle={toggleTile}
         badge={<Pill tone="gray">{documents.length}</Pill>}
@@ -413,7 +421,7 @@ export default function MeridianTileRail({
         {docsLoading ? (
           <RowSkeleton rows={3} />
         ) : documents.length === 0 ? (
-          <EmptyRow>No documents uploaded yet.</EmptyRow>
+          <EmptyRow>{t("common.noDocuments", { defaultValue: "No documents uploaded yet." })}</EmptyRow>
         ) : (
           <ul className="max-h-56 divide-y divide-hairline overflow-y-auto">
             {documents.map((d) => (
@@ -431,7 +439,7 @@ export default function MeridianTileRail({
                     </span>
                   )}
                 </span>
-                <Pill tone="green">indexed</Pill>
+                <Pill tone="green">{t("tiles.knowledge.badge.indexed", { defaultValue: "indexed" })}</Pill>
               </li>
             ))}
           </ul>

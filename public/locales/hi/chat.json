@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "क्लिपबोर्ड पर कॉपी किया गया",
+    "copyMessage": "संदेश कॉपी करें",
+    "play": "चलाएँ",
+    "pause": "रोकें",
+    "close": "बंद करें",
+    "delete": "हटाएँ",
+    "download": "डाउनलोड करें",
+    "cancel": "रद्द करें",
+    "save": "सहेजें",
+    "clear": "साफ़ करें",
+    "you": "आप",
+    "connected": "कनेक्ट किया गया",
+    "error": "त्रुटि",
+    "unknownError": "अज्ञात त्रुटि",
+    "hide": "छिपाएँ",
+    "show": "दिखाएँ",
+    "untitledConversation": "बिना शीर्षक की बातचीत",
+    "noConversations": "अभी तक कोई बातचीत नहीं। एक शुरू करने के लिए संदेश भेजें।",
+    "noDocuments": "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया।"
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian सोच रहा है...",
+    "noResponse": "कोई प्रतिक्रिया नहीं।",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "{{agent}} के माध्यम से",
+    "profileLabel": "प्रोफ़ाइल: {{frameworks}}",
+    "reviewingBanner": "सक्रिय चैट के साथ-साथ {{count}} अतिरिक्त बातचीत की समीक्षा की जा रही है।",
+    "profileIndicator": {
+      "title": "इस बातचीत में Meridian जिन फ्रेमवर्क का संदर्भ ले सकता है"
+    },
+    "newChat": {
+      "title": "नई चैट शुरू करें",
+      "label": "नई चैट"
+    },
+    "status": {
+      "connected": "Meridian से कनेक्ट किया गया"
+    },
+    "error": {
+      "agent": "एजेंट त्रुटि",
+      "unreachable": "क्षमा करें, मैं Meridian तक नहीं पहुँच सका। कृपया फिर से प्रयास करें।",
+      "unreachableShort": "Meridian तक नहीं पहुँच सका",
+      "newChatFailed": "नई चैट शुरू नहीं हो सकी। कृपया फिर से प्रयास करें।"
+    },
+    "export": {
+      "aria": "चैट निर्यात करें",
+      "label": "निर्यात करें",
+      "sessionSubject": "Meridian चैट सत्र",
+      "assistantDomain": "कोचिंग",
+      "success": "बातचीत लॉग + संरचित रिपोर्ट PDF निर्यात किए गए।",
+      "noConversation": "चैट निर्यात नहीं हो सकी — कोई सक्रिय बातचीत नहीं।",
+      "noData": "चैट निर्यात नहीं हो सकी — बैकएंड ने कोई डेटा नहीं लौटाया।",
+      "noContent": "चैट निर्यात नहीं हो सकी — चयनित सीमा में कोई सामग्री नहीं।",
+      "retry": "चैट निर्यात नहीं हो सकी — कृपया फिर से प्रयास करें।"
+    },
+    "voice": {
+      "mute": "Meridian की आवाज़ म्यूट करें",
+      "enable": "Meridian की आवाज़ सक्षम करें",
+      "onTitle": "आवाज़ प्रतिक्रियाएँ चालू — म्यूट करने के लिए क्लिक करें",
+      "offTitle": "आवाज़ प्रतिक्रियाएँ बंद — सक्षम करने के लिए क्लिक करें",
+      "notSupported": "इस ब्राउज़र में आवाज़ इनपुट समर्थित नहीं है",
+      "micDenied": "माइक्रोफ़ोन एक्सेस अस्वीकृत"
+    },
+    "audio": {
+      "blockedTitle": "ब्राउज़र ने ऑडियो प्लेबैक अवरुद्ध किया — सक्षम करने के लिए क्लिक करें",
+      "enable": "ऑडियो सक्षम करें",
+      "rewind": "5 सेकंड पीछे जाएँ",
+      "resume": "ऑडियो फिर से शुरू करें",
+      "pause": "ऑडियो रोकें",
+      "fastForward": "5 सेकंड आगे बढ़ाएँ",
+      "skip": "अगले वाक्य पर जाएँ",
+      "cancel": "स्ट्रीम रद्द करें",
+      "queued": "{{count}} कतार में"
+    },
+    "conn": {
+      "availableTitle": "आवाज़ स्ट्रीमिंग उपलब्ध",
+      "connectingTitle": "आवाज़ स्ट्रीम कनेक्ट हो रही है...",
+      "unavailableTitle": "आवाज़ स्ट्रीमिंग अनुपलब्ध",
+      "ready": "आवाज़ तैयार",
+      "connecting": "कनेक्ट हो रहा है",
+      "off": "आवाज़ बंद"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Agent Eco-System द्वारा संचालित",
+    "back": "वापस",
+    "export": "निर्यात करें",
+    "documentsButton": "दस्तावेज़",
+    "tab": {
+      "chat": "चैट",
+      "documents": "दस्तावेज़"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "दस्तावेज़ साइड पैनल खोलें",
+      "tooltip": "चैट में जोड़ने के लिए फ़ाइलें चुनने हेतु दस्तावेज़ पैनल खोलें"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "बातचीत और प्रोजेक्ट"
+    },
+    "active": {
+      "title": "सक्रिय सत्र",
+      "empty": "अभी तक कोई सक्रिय सत्र नहीं।",
+      "badge": {
+        "live": "लाइव",
+        "open": "खुला"
+      }
+    },
+    "history": {
+      "title": "इतिहास"
+    },
+    "last5": {
+      "title": "अंतिम 5 चैट",
+      "empty": "यहाँ अभी तक कुछ नहीं।"
+    },
+    "projects": {
+      "title": "प्रोजेक्ट",
+      "inputPlaceholder": "नए प्रोजेक्ट का नाम…",
+      "inputAria": "नए प्रोजेक्ट का नाम",
+      "addAria": "प्रोजेक्ट जोड़ें",
+      "empty": "अभी तक कोई प्रोजेक्ट नहीं। संबंधित चैट को एक प्रोजेक्ट के अंतर्गत समूहित करें।",
+      "badge": {
+        "active": "सक्रिय"
+      }
+    },
+    "knowledge": {
+      "title": "ज्ञान",
+      "badge": {
+        "indexed": "अनुक्रमित"
+      }
+    }
+  },
+  "history": {
+    "title": "इतिहास",
+    "newChat": "नई चैट",
+    "newChatTooltip": "नई बातचीत शुरू करें",
+    "newChatTooltipExisting": "आपके पास पहले से ही एक नई बातचीत है",
+    "newConversationLabel": "नई बातचीत",
+    "searchPlaceholder": "खोजें..",
+    "loadError": "बातचीत का इतिहास लोड नहीं हो सका।",
+    "loadErrorDetailed": "बातचीत का इतिहास लोड नहीं हो सका — बैकएंड अनुपलब्ध हो सकता है। फिर से प्रयास करने के लिए रीफ़्रेश करें।",
+    "openActions": "बातचीत क्रियाएँ खोलें",
+    "rename": "नाम बदलें",
+    "deleteTitle": "बातचीत हटाएँ",
+    "deleteDescription": "क्या आप वाकई इस बातचीत को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+    "audioWarning": "बातचीत बदलने से मौजूदा ऑडियो रुक जाएगा",
+    "renameDialogTitle": "बातचीत का नाम बदलें",
+    "renamePlaceholder": "बातचीत का शीर्षक",
+    "renameAnimationTitle": "नाम बदलने का एनिमेशन",
+    "renamePending": "आपकी बातचीत की पहचान गढ़ी जा रही है… ✨",
+    "renameHint": "अपनी बातचीत को एक नाम दें — इसे याद रखने में आसान बनाएँ 🚀",
+    "triggerShown": "इतिहास ({{count}} दिखाए गए)",
+    "triggerCount": "इतिहास ({{count}})",
+    "triggerAria": "बातचीत का इतिहास ब्राउज़ करें",
+    "hint": "किसी बातचीत को सक्रिय करने के लिए उस पर क्लिक करें, या समीक्षा में जोड़ने के लिए उसे चेक करें।",
+    "includeAria": "समीक्षा में {{title}} शामिल करें",
+    "activeBadge": "सक्रिय",
+    "reviewCount": "समीक्षा में {{count}} अतिरिक्त बातचीत",
+    "clearReview": "समीक्षा साफ़ करें"
+  },
+  "documents": {
+    "triggerLabel": "दस्तावेज़",
+    "triggerSelected": "दस्तावेज़ ({{count}} चयनित)",
+    "triggerAria": "दस्तावेज़ चुनें",
+    "header": "इस चैट में दस्तावेज़ संलग्न करें",
+    "loadError": "दस्तावेज़ लोड नहीं हो सके।",
+    "uploadLink": "दस्तावेज़ अपलोड करें",
+    "selectFileAria": "{{filename}} चुनें",
+    "autoAttached": "स्वतः संलग्न",
+    "selectedCount": "{{total}} में से {{selected}} चयनित",
+    "iframe": {
+      "defaultFileName": "दस्तावेज़",
+      "loading": "दस्तावेज़ लोड हो रहा है…"
+    },
+    "panel": {
+      "selectedCount": "चयनित ({{count}})",
+      "confirmDeleteTitle": "हटाने की पुष्टि करें",
+      "confirmDeleteBulkDescription": "क्या आप वाकई {{count}} चयनित दस्तावेज़ हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      "confirmDeleteOneDescription": "क्या आप वाकई इस दस्तावेज़ को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      "upload": "अपलोड करें",
+      "importToChat": "चैट में आयात करें",
+      "loading": "दस्तावेज़ लोड हो रहे हैं...",
+      "empty": "कोई फ़ाइल नहीं मिली",
+      "emptyAnimationTitle": "फ़ाइल नहीं मिली",
+      "selectItem": "{{name}} चुनें",
+      "preview": "पूर्वावलोकन"
+    },
+    "sidePanel": {
+      "title": "दस्तावेज़",
+      "close": "दस्तावेज़ बंद करें",
+      "closeOverlay": "दस्तावेज़ पैनल बंद करें"
+    }
+  },
+  "export": {
+    "title": "चैट निर्यात करें",
+    "subtitle": "भविष्य के संदर्भ के लिए अपनी चैट की एक प्रति डाउनलोड करें।",
+    "fromLabel": "चैट कब से",
+    "fromPlaceholder": "किस तिथि से",
+    "toLabel": "चैट कब तक",
+    "toPlaceholder": "किस तिथि तक",
+    "formatLabel": "निर्यात फ़ाइल",
+    "formatPdf": "PDF",
+    "exporting": "निर्यात हो रहा है",
+    "exportButton": "निर्यात करें",
+    "progressLabel": "चैट निर्यात हो रही है... {{progress}}%",
+    "progressSubtitle": "आराम से बैठें, हम आपके निर्यात पर काम कर रहे हैं।",
+    "completeTitle": "निर्यात पूर्ण",
+    "completeSubtitle": "चैट सफलतापूर्वक निर्यात की गई!",
+    "back": "वापस"
+  },
+  "routing": {
+    "confidence": "विश्वास: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} टोकन",
+    "observabilityDetails": "अवलोकनीयता विवरण"
+  },
+  "feedback": {
+    "thankYou": "धन्यवाद",
+    "rateThisResponse": "इस प्रतिक्रिया को रेट करें",
+    "correctionPlaceholder": "वैकल्पिक: एक बेहतर प्रतिक्रिया सुझाएँ (अधिकतम 2000 अक्षर)",
+    "submitting": "सबमिट हो रहा है...",
+    "submit": "सबमिट करें"
+  },
+  "compose": {
+    "sectionLabel": "प्रॉम्प्ट लिखें"
+  },
+  "conversation": {
+    "sectionLabel": "बातचीत",
+    "replayVoice": "आवाज़ फिर से चलाएँ",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "{{agent}} के माध्यम से",
+    "observabilityUnavailable": "इस संदेश के लिए अवलोकनीयता अनुपलब्ध है।",
+    "tableSrLabel": "तालिका",
+    "waiting": {
+      "shortly": "{{coachName}} शीघ्र ही आपके साथ होंगे",
+      "oneMoment": "{{coachName}} के साथ एक क्षण",
+      "pleaseWait": "कृपया प्रतीक्षा करें"
+    },
+    "source": {
+      "label": "स्रोत ({{count}})",
+      "openTitle": "{{filename}} खोलें",
+      "openError": {
+        "noUrl": "\"{{filename}}\" नहीं खुल सका — बैकएंड ने कोई URL नहीं लौटाया।",
+        "notFound": "\"{{filename}}\" नहीं खुल सका — दस्तावेज़ नहीं मिला या एक्सेस अस्वीकृत।",
+        "generic": "\"{{filename}}\" नहीं खुल सका — कृपया फिर से प्रयास करें।"
+      }
+    },
+    "collaboration": {
+      "label": "सहयोगात्मक प्रतिक्रिया ({{count}} एजेंट)",
+      "synthesizedFrom": "{{summary}} से संश्लेषित"
+    }
+  },
+  "input": {
+    "placeholder": "कुछ भी पूछें…  (भेजने के लिए Enter · नई पंक्ति के लिए Shift+Enter)",
+    "unmuteCoach": "कोच अनम्यूट करें",
+    "muteCoach": "कोच म्यूट करें",
+    "stopRecording": "रिकॉर्डिंग रोकें",
+    "startRecording": "रिकॉर्डिंग शुरू करें",
+    "sendMessage": "संदेश भेजें",
+    "muteTooltip": {
+      "mute": "म्यूट करें",
+      "unmute": "अनम्यूट करें",
+      "disabledDuringPlayback": "प्लेबैक के दौरान म्यूट अक्षम है"
+    }
+  },
+  "banner": {
+    "selected": "चयनित:",
+    "connecting": "कनेक्ट हो रहा है...",
+    "successAnimationTitle": "सफलता एनिमेशन"
+  },
+  "audio": {
+    "close": "ऑडियो प्लेयर बंद करें"
+  },
+  "coach": {
+    "defaultName": "कोच",
+    "authError": "प्रमाणीकरण त्रुटि",
+    "untitledConversation": "कोई शीर्षक नहीं",
+    "previewPlaceholder": "करना है",
+    "conversationsLabel": "बातचीत",
+    "sessionSubject": "{{coachName}} कोचिंग सत्र",
+    "assistantDomain": "कोचिंग",
+    "exportSuccess": "बातचीत लॉग + संरचित रिपोर्ट PDF निर्यात किए गए।",
+    "exportNoConversation": "चैट निर्यात नहीं हो सकी — कोई सक्रिय बातचीत नहीं।",
+    "audioWarning": "बातचीत बदलने से नई बातचीत के लिए ऑडियो रीसेट हो जाएगा।"
+  },
+  "diagnostic": {
+    "title": "डायग्नोस्टिक चैट",
+    "sessionLabel": "सत्र: {{sessionId}}...",
+    "statusConnecting": "कनेक्ट हो रहा है...",
+    "statusReconnecting": "फिर से कनेक्ट हो रहा है...",
+    "statusDisconnected": "डिस्कनेक्ट किया गया",
+    "newChat": "नई चैट",
+    "newChatTitle": "एक नया चैट सत्र शुरू करें",
+    "reconnect": "फिर से कनेक्ट करें",
+    "clearAllTitle": "सभी साफ़ करें",
+    "traceLog": "ट्रेस लॉग",
+    "dataSourcesLabel": "कनेक्टेड डेटा स्रोत",
+    "emptyTitle": "डायग्नोस्टिक चैट इंटरफ़ेस",
+    "emptySubtitle": "पूर्ण अनुरोध जीवनचक्र को ट्रेस करने के लिए एक संदेश भेजें",
+    "streaming": "स्ट्रीमिंग",
+    "processing": "Meridian प्रसंस्करण कर रहा है...",
+    "stopRecording": "रिकॉर्डिंग रोकें",
+    "startVoiceInput": "आवाज़ इनपुट शुरू करें",
+    "inputPlaceholder": "पूर्ण पाइपलाइन को ट्रेस करने के लिए एक संदेश टाइप करें...",
+    "recordingHint": "रिकॉर्डिंग — स्पष्ट रूप से बोलें, फिर भेजने के लिए रोकें",
+    "latency": "विलंबता: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "टोकन: {{tokenCount}}",
+    "entriesCount": "{{count}} प्रविष्टियाँ",
+    "errorsCount": "{{count}} त्रुटियाँ",
+    "warningsCount": "{{count}} चेतावनियाँ",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "Đã sao chép vào bảng nhớ tạm",
+    "copyMessage": "Sao chép tin nhắn",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "close": "Đóng",
+    "delete": "Xóa",
+    "download": "Tải xuống",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "clear": "Xóa hết",
+    "you": "Bạn",
+    "connected": "Đã kết nối",
+    "error": "Lỗi",
+    "unknownError": "Lỗi không xác định",
+    "hide": "Ẩn",
+    "show": "Hiện",
+    "untitledConversation": "Cuộc trò chuyện chưa đặt tên",
+    "noConversations": "Chưa có cuộc trò chuyện nào. Gửi tin nhắn để bắt đầu.",
+    "noDocuments": "Chưa tải lên tài liệu nào."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian đang suy nghĩ...",
+    "noResponse": "Không có phản hồi.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "qua {{agent}}",
+    "profileLabel": "Hồ sơ: {{frameworks}}",
+    "reviewingBanner": "Đang xem lại {{count}} cuộc trò chuyện bổ sung cùng với cuộc trò chuyện đang hoạt động.",
+    "profileIndicator": {
+      "title": "Các khung mà Meridian có thể tham chiếu trong cuộc trò chuyện này"
+    },
+    "newChat": {
+      "title": "Bắt đầu cuộc trò chuyện mới",
+      "label": "Trò chuyện mới"
+    },
+    "status": {
+      "connected": "Đã kết nối với Meridian"
+    },
+    "error": {
+      "agent": "Lỗi tác nhân",
+      "unreachable": "Xin lỗi, tôi không thể kết nối tới Meridian. Vui lòng thử lại.",
+      "unreachableShort": "Không thể kết nối tới Meridian",
+      "newChatFailed": "Không thể bắt đầu cuộc trò chuyện mới. Vui lòng thử lại."
+    },
+    "export": {
+      "aria": "Xuất cuộc trò chuyện",
+      "label": "Xuất",
+      "sessionSubject": "Phiên trò chuyện Meridian",
+      "assistantDomain": "Huấn luyện",
+      "success": "Đã xuất Nhật ký cuộc trò chuyện + Báo cáo có cấu trúc dạng PDF.",
+      "noConversation": "Không thể xuất cuộc trò chuyện — không có cuộc trò chuyện đang hoạt động.",
+      "noData": "Không thể xuất cuộc trò chuyện — máy chủ không trả về dữ liệu.",
+      "noContent": "Không thể xuất cuộc trò chuyện — không có nội dung trong phạm vi đã chọn.",
+      "retry": "Không thể xuất cuộc trò chuyện — vui lòng thử lại."
+    },
+    "voice": {
+      "mute": "Tắt tiếng của Meridian",
+      "enable": "Bật giọng nói của Meridian",
+      "onTitle": "Phản hồi bằng giọng nói ĐANG BẬT — nhấp để tắt tiếng",
+      "offTitle": "Phản hồi bằng giọng nói ĐANG TẮT — nhấp để bật",
+      "notSupported": "Trình duyệt này không hỗ trợ nhập bằng giọng nói",
+      "micDenied": "Quyền truy cập micrô bị từ chối"
+    },
+    "audio": {
+      "blockedTitle": "Trình duyệt đã chặn phát âm thanh — nhấp để bật",
+      "enable": "Bật âm thanh",
+      "rewind": "Tua lại 5 giây",
+      "resume": "Tiếp tục âm thanh",
+      "pause": "Tạm dừng âm thanh",
+      "fastForward": "Tua nhanh 5 giây",
+      "skip": "Chuyển sang câu tiếp theo",
+      "cancel": "Hủy luồng",
+      "queued": "{{count}} đang chờ"
+    },
+    "conn": {
+      "availableTitle": "Có thể truyền giọng nói",
+      "connectingTitle": "Đang kết nối luồng giọng nói...",
+      "unavailableTitle": "Không thể truyền giọng nói",
+      "ready": "Giọng nói sẵn sàng",
+      "connecting": "Đang kết nối",
+      "off": "Tắt giọng nói"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Được hỗ trợ bởi Agent Eco-System",
+    "back": "Quay lại",
+    "export": "Xuất",
+    "documentsButton": "Tài liệu",
+    "tab": {
+      "chat": "Trò chuyện",
+      "documents": "Tài liệu"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Mở bảng bên tài liệu",
+      "tooltip": "Mở bảng tài liệu để chọn tệp thêm vào cuộc trò chuyện"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Cuộc trò chuyện và dự án"
+    },
+    "active": {
+      "title": "Phiên đang hoạt động",
+      "empty": "Chưa có phiên hoạt động nào.",
+      "badge": {
+        "live": "trực tiếp",
+        "open": "đang mở"
+      }
+    },
+    "history": {
+      "title": "Lịch sử"
+    },
+    "last5": {
+      "title": "5 cuộc trò chuyện gần nhất",
+      "empty": "Chưa có gì ở đây."
+    },
+    "projects": {
+      "title": "Dự án",
+      "inputPlaceholder": "Tên dự án mới…",
+      "inputAria": "Tên dự án mới",
+      "addAria": "Thêm dự án",
+      "empty": "Chưa có dự án nào. Nhóm các cuộc trò chuyện liên quan vào một dự án.",
+      "badge": {
+        "active": "đang hoạt động"
+      }
+    },
+    "knowledge": {
+      "title": "Kiến thức",
+      "badge": {
+        "indexed": "đã lập chỉ mục"
+      }
+    }
+  },
+  "history": {
+    "title": "Lịch sử",
+    "newChat": "Trò chuyện mới",
+    "newChatTooltip": "Bắt đầu cuộc trò chuyện mới",
+    "newChatTooltipExisting": "Bạn đã có một cuộc trò chuyện mới",
+    "newConversationLabel": "Cuộc trò chuyện mới",
+    "searchPlaceholder": "Tìm kiếm..",
+    "loadError": "Không thể tải lịch sử cuộc trò chuyện.",
+    "loadErrorDetailed": "Không thể tải lịch sử cuộc trò chuyện — máy chủ có thể không khả dụng. Làm mới để thử lại.",
+    "openActions": "Mở các thao tác cuộc trò chuyện",
+    "rename": "Đổi tên",
+    "deleteTitle": "Xóa cuộc trò chuyện",
+    "deleteDescription": "Bạn có chắc muốn xóa cuộc trò chuyện này không? Thao tác này không thể hoàn tác.",
+    "audioWarning": "Chuyển cuộc trò chuyện sẽ dừng âm thanh hiện tại",
+    "renameDialogTitle": "Đổi tên cuộc trò chuyện",
+    "renamePlaceholder": "Tiêu đề cuộc trò chuyện",
+    "renameAnimationTitle": "Hoạt ảnh đổi tên",
+    "renamePending": "Đang định hình bản sắc cuộc trò chuyện của bạn… ✨",
+    "renameHint": "Đặt tên cho cuộc trò chuyện của bạn — sao cho dễ nhớ 🚀",
+    "triggerShown": "Lịch sử ({{count}} hiển thị)",
+    "triggerCount": "Lịch sử ({{count}})",
+    "triggerAria": "Duyệt lịch sử cuộc trò chuyện",
+    "hint": "Nhấp vào một cuộc trò chuyện để kích hoạt, hoặc tích chọn để thêm vào phần xem lại.",
+    "includeAria": "Đưa {{title}} vào phần xem lại",
+    "activeBadge": "Đang hoạt động",
+    "reviewCount": "{{count}} cuộc trò chuyện bổ sung đang được xem lại",
+    "clearReview": "Xóa phần xem lại"
+  },
+  "documents": {
+    "triggerLabel": "Tài liệu",
+    "triggerSelected": "Tài liệu (đã chọn {{count}})",
+    "triggerAria": "Chọn tài liệu",
+    "header": "Đính kèm tài liệu vào cuộc trò chuyện này",
+    "loadError": "Không thể tải tài liệu.",
+    "uploadLink": "Tải tài liệu lên",
+    "selectFileAria": "Chọn {{filename}}",
+    "autoAttached": "Tự động đính kèm",
+    "selectedCount": "Đã chọn {{selected}} trên {{total}}",
+    "iframe": {
+      "defaultFileName": "Tài liệu",
+      "loading": "Đang tải tài liệu…"
+    },
+    "panel": {
+      "selectedCount": "Đã chọn ({{count}})",
+      "confirmDeleteTitle": "Xác nhận xóa",
+      "confirmDeleteBulkDescription": "Bạn có chắc muốn xóa {{count}} tài liệu đã chọn không? Thao tác này không thể hoàn tác.",
+      "confirmDeleteOneDescription": "Bạn có chắc muốn xóa tài liệu này không? Thao tác này không thể hoàn tác.",
+      "upload": "Tải lên",
+      "importToChat": "Nhập vào cuộc trò chuyện",
+      "loading": "Đang tải tài liệu...",
+      "empty": "Không tìm thấy tệp nào",
+      "emptyAnimationTitle": "không tìm thấy tệp",
+      "selectItem": "Chọn {{name}}",
+      "preview": "Xem trước"
+    },
+    "sidePanel": {
+      "title": "Tài liệu",
+      "close": "Đóng tài liệu",
+      "closeOverlay": "Đóng bảng tài liệu"
+    }
+  },
+  "export": {
+    "title": "Xuất cuộc trò chuyện",
+    "subtitle": "Tải xuống một bản sao cuộc trò chuyện của bạn để tham khảo sau này.",
+    "fromLabel": "Trò chuyện từ",
+    "fromPlaceholder": "Từ ngày",
+    "toLabel": "Trò chuyện đến",
+    "toPlaceholder": "Đến ngày",
+    "formatLabel": "Tệp xuất",
+    "formatPdf": "PDF",
+    "exporting": "Đang xuất",
+    "exportButton": "Xuất",
+    "progressLabel": "Đang xuất cuộc trò chuyện... {{progress}}%",
+    "progressSubtitle": "Cứ thư giãn, chúng tôi đang xử lý bản xuất của bạn.",
+    "completeTitle": "Xuất hoàn tất",
+    "completeSubtitle": "Đã xuất cuộc trò chuyện thành công!",
+    "back": "Quay lại"
+  },
+  "routing": {
+    "confidence": "Độ tin cậy: {{confidencePct}}%",
+    "latency": "{{latencyMs}}ms",
+    "tokens": "{{tokenCount}} token",
+    "observabilityDetails": "Chi tiết khả năng quan sát"
+  },
+  "feedback": {
+    "thankYou": "Cảm ơn bạn",
+    "rateThisResponse": "Đánh giá phản hồi này",
+    "correctionPlaceholder": "Tùy chọn: đề xuất phản hồi tốt hơn (tối đa 2000 ký tự)",
+    "submitting": "Đang gửi...",
+    "submit": "Gửi"
+  },
+  "compose": {
+    "sectionLabel": "Soạn lời nhắc"
+  },
+  "conversation": {
+    "sectionLabel": "Cuộc trò chuyện",
+    "replayVoice": "Phát lại giọng nói",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "qua {{agent}}",
+    "observabilityUnavailable": "Không có khả năng quan sát cho tin nhắn này.",
+    "tableSrLabel": "Bảng",
+    "waiting": {
+      "shortly": "{{coachName}} sẽ đến với bạn ngay",
+      "oneMoment": "Chờ một chút với {{coachName}}",
+      "pleaseWait": "Vui lòng chờ"
+    },
+    "source": {
+      "label": "Nguồn ({{count}})",
+      "openTitle": "Mở {{filename}}",
+      "openError": {
+        "noUrl": "Không thể mở \"{{filename}}\" — máy chủ không trả về URL.",
+        "notFound": "Không thể mở \"{{filename}}\" — không tìm thấy tài liệu hoặc bị từ chối truy cập.",
+        "generic": "Không thể mở \"{{filename}}\" — vui lòng thử lại."
+      }
+    },
+    "collaboration": {
+      "label": "Phản hồi cộng tác ({{count}} tác nhân)",
+      "synthesizedFrom": "Tổng hợp từ {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Hỏi bất cứ điều gì…  (Enter để gửi · Shift+Enter để xuống dòng)",
+    "unmuteCoach": "Bật tiếng huấn luyện viên",
+    "muteCoach": "Tắt tiếng huấn luyện viên",
+    "stopRecording": "Dừng ghi âm",
+    "startRecording": "Bắt đầu ghi âm",
+    "sendMessage": "Gửi tin nhắn",
+    "muteTooltip": {
+      "mute": "Tắt tiếng",
+      "unmute": "Bật tiếng",
+      "disabledDuringPlayback": "Không thể tắt tiếng trong khi đang phát"
+    }
+  },
+  "banner": {
+    "selected": "Đã chọn:",
+    "connecting": "Đang kết nối...",
+    "successAnimationTitle": "Hoạt ảnh thành công"
+  },
+  "audio": {
+    "close": "Đóng trình phát âm thanh"
+  },
+  "coach": {
+    "defaultName": "Huấn luyện viên",
+    "authError": "Lỗi xác thực",
+    "untitledConversation": "Không có tiêu đề",
+    "previewPlaceholder": "Cần làm",
+    "conversationsLabel": "Cuộc trò chuyện",
+    "sessionSubject": "Phiên huấn luyện với {{coachName}}",
+    "assistantDomain": "Huấn luyện",
+    "exportSuccess": "Đã xuất Nhật ký cuộc trò chuyện + Báo cáo có cấu trúc dạng PDF.",
+    "exportNoConversation": "Không thể xuất cuộc trò chuyện — không có cuộc trò chuyện đang hoạt động.",
+    "audioWarning": "Chuyển cuộc trò chuyện sẽ đặt lại âm thanh cho cuộc trò chuyện mới."
+  },
+  "diagnostic": {
+    "title": "Trò chuyện chẩn đoán",
+    "sessionLabel": "Phiên: {{sessionId}}...",
+    "statusConnecting": "Đang kết nối...",
+    "statusReconnecting": "Đang kết nối lại...",
+    "statusDisconnected": "Đã ngắt kết nối",
+    "newChat": "Trò chuyện mới",
+    "newChatTitle": "Bắt đầu một phiên trò chuyện mới",
+    "reconnect": "Kết nối lại",
+    "clearAllTitle": "Xóa tất cả",
+    "traceLog": "Nhật ký theo dõi",
+    "dataSourcesLabel": "Nguồn dữ liệu đã kết nối",
+    "emptyTitle": "Giao diện trò chuyện chẩn đoán",
+    "emptySubtitle": "Gửi tin nhắn để theo dõi toàn bộ vòng đời yêu cầu",
+    "streaming": "đang truyền",
+    "processing": "Meridian đang xử lý...",
+    "stopRecording": "Dừng ghi âm",
+    "startVoiceInput": "Bắt đầu nhập bằng giọng nói",
+    "inputPlaceholder": "Nhập tin nhắn để theo dõi toàn bộ quy trình...",
+    "recordingHint": "Đang ghi âm — nói rõ ràng, sau đó dừng để gửi",
+    "latency": "Độ trễ: {{latencyMs}}ms",
+    "ttft": "TTFT: {{ttftMs}}ms",
+    "tokens": "Token: {{tokenCount}}",
+    "entriesCount": "{{count}} mục",
+    "errorsCount": "{{count}} lỗi",
+    "warningsCount": "{{count}} cảnh báo",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

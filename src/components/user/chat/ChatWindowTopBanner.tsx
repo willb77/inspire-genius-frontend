@@ -4,6 +4,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 type ChatWindowTab = "chat" | "documents";
 
@@ -31,12 +32,13 @@ export default function ChatWindowTopBanner({
   activeTab,
   selectDocsLottieSrc,
 }: ChatWindowTopBannerProps) {
+  const { t } = useTranslation("chat");
   if (selectedDocNames && selectedDocNames.length) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="min-h-10 w-full mb-3 inline-flex items-start gap-1 text-xs bg-blue-50 text-blue-900 border border-blue-200 rounded-md px-2 py-1">
-            <span>Selected:</span>
+            <span>{t("banner.selected", { defaultValue: "Selected:" })}</span>
             <span className="font-semibold">{selectedSummary}</span>
           </div>
         </TooltipTrigger>
@@ -46,7 +48,7 @@ export default function ChatWindowTopBanner({
   }
 
   if (isConnecting) {
-    return <div className="text-xs text-blue-600">Connecting...</div>;
+    return <div className="text-xs text-blue-600">{t("banner.connecting", { defaultValue: "Connecting..." })}</div>;
   }
 
   if (statusBanner && activeTab === "chat") {
@@ -66,7 +68,7 @@ export default function ChatWindowTopBanner({
           <div className="w-fit">
             <iframe
               src={selectDocsLottieSrc}
-              title="Success animation"
+              title={t("banner.successAnimationTitle", { defaultValue: "Success animation" })}
               className="h-24 w-24"
               allow="autoplay"
             />
