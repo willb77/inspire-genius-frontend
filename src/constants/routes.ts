@@ -147,6 +147,25 @@ export const ROUTES = {
     coachStudentIntake: (studentId: string) =>
       `/vertical/grant/coach/students/${studentId}`,
   },
+  // The Honor Foundation — Coach Workbench vertical
+  // (entitlement-gated by enabled_verticals: "honor").
+  HONOR: {
+    BASE: "/vertical/honor",
+    DASHBOARD: "/vertical/honor/dashboard",
+    CASELOAD: "/vertical/honor/caseload",
+    ONBOARD: "/vertical/honor/onboard",
+    EVALUATE: "/vertical/honor/evaluate",
+    ACTIVITY: "/vertical/honor/activity",
+    SCHEDULE: "/vertical/honor/schedule",
+    ADMINISTRATION: "/vertical/honor/administration",
+    /** Member workspace base — redirects to the first assigned member. */
+    MEMBER: "/vertical/honor/member",
+    /** Route pattern for a member workspace (matched by <Route path>). */
+    MEMBER_DETAIL: "/vertical/honor/member/:memberId",
+    /** Build the member-workspace path for a concrete member id. */
+    memberWorkspace: (memberId: string) =>
+      `/vertical/honor/member/${memberId}`,
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",
