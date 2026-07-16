@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ type MessageFeedbackProps = {
 }
 
 export default function MessageFeedback({ messageId, conversationId, coachId, sessionId }: MessageFeedbackProps) {
+  const { t } = useTranslation("chat")
   const [expanded, setExpanded] = useState(false)
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
@@ -47,7 +49,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
             )}
           />
         ))}
-        <span className="text-[11px] text-muted-foreground ml-1">Thank you</span>
+        <span className="text-[11px] text-muted-foreground ml-1">{t("feedback.thankYou", { defaultValue: "Thank you" })}</span>
       </div>
     )
   }
@@ -59,7 +61,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
         onClick={() => setExpanded(true)}
         className="text-sm font-bold text-blue-600 hover:text-blue-800 mt-1.5 px-1 cursor-pointer underline underline-offset-2"
       >
-        Rate this response
+        {t("feedback.rateThisResponse", { defaultValue: "Rate this response" })}
       </button>
     )
   }
@@ -88,7 +90,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
         ))}
       </div>
       <Textarea
-        placeholder="Optional: suggest a better response (max 2000 chars)"
+        placeholder={t("feedback.correctionPlaceholder", { defaultValue: "Optional: suggest a better response (max 2000 chars)" })}
         value={correction}
         onChange={(e) => setCorrection(e.target.value.slice(0, 2000))}
         rows={3}
@@ -100,7 +102,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
           onClick={handleSubmit}
           disabled={rating === 0 || mutation.isPending}
         >
-          {mutation.isPending ? "Submitting..." : "Submit"}
+          {mutation.isPending ? t("feedback.submitting", { defaultValue: "Submitting..." }) : t("feedback.submit", { defaultValue: "Submit" })}
         </Button>
         <Button
           size="sm"
@@ -111,7 +113,7 @@ export default function MessageFeedback({ messageId, conversationId, coachId, se
             setCorrection("")
           }}
         >
-          Cancel
+          {t("common.cancel", { defaultValue: "Cancel" })}
         </Button>
       </div>
     </div>

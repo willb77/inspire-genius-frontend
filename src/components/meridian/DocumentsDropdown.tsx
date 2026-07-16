@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { FileText, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ export default function DocumentsDropdown({
   autoAttachedId,
   className,
 }: DocumentsDropdownProps) {
+  const { t } = useTranslation("chat");
   const { data, isLoading, isError } = useListDocuments(1, 100);
 
   const groups = useMemo<ApiGroup[]>(() => {
@@ -75,7 +77,12 @@ export default function DocumentsDropdown({
 
   const selectedCount = selectedIds.length;
   const triggerLabel =
-    selectedCount > 0 ? `Documents (${selectedCount} selected)` : "Documents";
+    selectedCount > 0
+      ? t("documents.triggerSelected", {
+          defaultValue: "Documents ({{count}} selected)",
+          count: selectedCount,
+        })
+      : t("documents.triggerLabel", { defaultValue: "Documents" });
 
   return (
     <DropdownMenu>
@@ -87,7 +94,7 @@ export default function DocumentsDropdown({
             "h-9 px-3 rounded-lg text-sm font-normal flex items-center gap-2",
             className,
           )}
-          aria-label="Select documents"
+          aria-label={t("documents.triggerAria", { defaultValue: "Select documents" })}
         >
           <FileText className="size-4" />
           <span>{triggerLabel}</span>
@@ -103,7 +110,7 @@ export default function DocumentsDropdown({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
-          Attach documents to this chat
+          {t("documents.header", { defaultValue: "Attach documents to this chat" })}
         </div>
         <div className="max-h-72 overflow-y-auto p-2" data-testid="documents-dropdown-list">
           {isLoading ? (
@@ -117,16 +124,16 @@ export default function DocumentsDropdown({
             </div>
           ) : isError ? (
             <div className="p-3 text-sm text-destructive">
-              Couldn't load documents.
+              {t("documents.loadError", { defaultValue: "Couldn't load documents." })}
             </div>
           ) : flatCount === 0 ? (
             <div className="p-3 text-sm text-muted-foreground space-y-2">
-              <div>No documents uploaded yet.</div>
+              <div>{t("common.noDocuments", { defaultValue: "No documents uploaded yet." })}</div>
               <Link
                 to={ROUTES.DOCUMENTS}
                 className="text-primary underline hover:no-underline"
               >
-                Upload documents
+                {t("documents.uploadLink", { defaultValue: "Upload documents" })}
               </Link>
             </div>
           ) : (
@@ -154,7 +161,10 @@ export default function DocumentsDropdown({
                               <Checkbox
                                 checked={checked}
                                 onCheckedChange={() => toggle(f.id)}
-                                aria-label={`Select ${f.filename}`}
+                                aria-label={t("documents.selectFileAria", {
+                                  defaultValue: "Select {{filename}}",
+                                  filename: f.filename,
+                                })}
                               />
                               <span
                                 className="flex-1 truncate text-sm"
@@ -168,7 +178,7 @@ export default function DocumentsDropdown({
                                   data-testid={`documents-dropdown-badge-${f.id}`}
                                 >
                                   <Sparkles className="size-3" />
-                                  Auto-attached
+                                  {t("documents.autoAttached", { defaultValue: "Auto-attached" })}
                                 </span>
                               )}
                             </label>
@@ -184,14 +194,20 @@ export default function DocumentsDropdown({
         </div>
         {!isLoading && !isError && flatCount > 0 && (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
-            <span>{selectedCount} of {flatCount} selected</span>
+            <span>
+              {t("documents.selectedCount", {
+                defaultValue: "{{selected}} of {{total}} selected",
+                selected: selectedCount,
+                total: flatCount,
+              })}
+            </span>
             {selectedCount > 0 && (
               <button
                 type="button"
                 onClick={() => onChange([])}
                 className="text-primary hover:underline"
               >
-                Clear
+                {t("common.clear", { defaultValue: "Clear" })}
               </button>
             )}
           </div>

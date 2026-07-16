@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Trash2, Download, Eye, ChevronDown, Sparkles, Loader2, Upload } from "lucide-react";
@@ -8,6 +9,7 @@ import type { DocKind, SimpleDoc, DocumentsPanelProps } from "@/types/chat";
 type UIDocItem = { id: string; name: string; kind: DocKind; url: string; createdAt: Date; tempUrl?: string; categoryName?: string };
 
 export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionChange, sections: sectionsProp, selectedIds, onToggleSelect, isLoading: isLoadingProp, onDelete, onDownload, setupUploadOpen }: DocumentsPanelProps) {
+  const { t } = useTranslation("chat");
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds ?? []));
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const useControlled = Array.isArray(sectionsProp);
@@ -79,7 +81,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
     <div className="space-y-2">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-1">
-        <span className="text-xs font-medium text-blue-primary">Selected ({selectedCountPadded})</span>
+        <span className="text-xs font-medium text-blue-primary">{t("documents.panel.selectedCount", { defaultValue: "Selected ({{count}})", count: selectedCountPadded })}</span>
         {selectedCount > 0 ? (
           <ConfirmDialog
             trigger={
@@ -88,13 +90,13 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                 className="invisible h-8 px-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-100"
                 variant="secondary"
               >
-                Delete
+                {t("common.delete", { defaultValue: "Delete" })}
                 <Trash2 className="size-4 ml-2" />
               </Button>
             }
-            title="Confirm delete"
-            description={`Are you sure you want to delete ${String(selectedCount)} selected document(s)? This action cannot be undone.`}
-            confirmText="Delete"
+            title={t("documents.panel.confirmDeleteTitle", { defaultValue: "Confirm delete" })}
+            description={t("documents.panel.confirmDeleteBulkDescription", { defaultValue: "Are you sure you want to delete {{count}} selected document(s)? This action cannot be undone.", count: selectedCount })}
+            confirmText={t("common.delete", { defaultValue: "Delete" })}
             onConfirm={async () => {
               const ids = Array.from(currentSelected);
               for (const id of ids) await deleteOne(id);
@@ -109,7 +111,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                 onClick={() => setupUploadOpen?.(true)}
               >
                 <Upload className="size-4 mr-2" />
-                Upload
+                {t("documents.panel.upload", { defaultValue: "Upload" })}
               </Button>
             </div>
         <Button
@@ -118,7 +120,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
           className="hidden h-8 px-3 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-100"
           variant="secondary"
         >
-          Import to Chat
+          {t("documents.panel.importToChat", { defaultValue: "Import to Chat" })}
           <Sparkles className="size-4 ml-2" />
         </Button>
       </div>
@@ -127,11 +129,11 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
       <div className="space-y-3">
         {isLoadingProp && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-            <Loader2 className="size-4 animate-spin" /> Loading documents...
+            <Loader2 className="size-4 animate-spin" /> {t("documents.panel.loading", { defaultValue: "Loading documents..." })}
           </div>
         )}
         {!isLoadingProp && sections.length === 0 && (
-          <div className="min-h-72 flex flex-col justify-center items-center gap-2 text-sm text-muted-foreground px-1">No files found <iframe src="https://lottie.host/embed/7a313347-1c37-4ba2-a0e9-1586496a05cc/a8xuE1n57r.lottie"   title="file not found"
+          <div className="min-h-72 flex flex-col justify-center items-center gap-2 text-sm text-muted-foreground px-1">{t("documents.panel.empty", { defaultValue: "No files found" })} <iframe src="https://lottie.host/embed/7a313347-1c37-4ba2-a0e9-1586496a05cc/a8xuE1n57r.lottie"   title={t("documents.panel.emptyAnimationTitle", { defaultValue: "file not found" })}
                   className="h-28 w-28"
                   allow="autoplay" /> 
                   </div>
@@ -166,7 +168,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                             className="size-4"
                             checked={currentSelected.has(doc.id)}
                             onChange={() => toggleSelect(doc.id)}
-                            aria-label={`Select ${doc.name}`}
+                            aria-label={t("documents.panel.selectItem", { defaultValue: "Select {{name}}", name: doc.name })}
                           />
                           {kindBadge(doc.kind)}
                           <span className="flex-1 truncate">{doc.name}</span>
@@ -176,18 +178,18 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                                 <button
                                   type="button"
                                   className="cursor-pointer text-red-600 hover:text-red-700"
-                                  aria-label="Delete"
+                                  aria-label={t("common.delete", { defaultValue: "Delete" })}
                                 >
                                   <Trash2 className="size-4" />
                                 </button>
                               }
-                              title="Confirm delete"
-                              description="Are you sure you want to delete this document? This action cannot be undone."
-                              confirmText="Delete"
+                              title={t("documents.panel.confirmDeleteTitle", { defaultValue: "Confirm delete" })}
+                              description={t("documents.panel.confirmDeleteOneDescription", { defaultValue: "Are you sure you want to delete this document? This action cannot be undone." })}
+                              confirmText={t("common.delete", { defaultValue: "Delete" })}
                               onConfirm={() => deleteOne(doc.id)}
                             />
                             <button
-                              title="Download"
+                              title={t("common.download", { defaultValue: "Download" })}
                               className="cursor-pointer text-muted-foreground hover:text-foreground"
                               onClick={() => handleDownload(doc)}
                             >
@@ -196,7 +198,7 @@ export default function DocumentsPanel({ onImportToChat, onPreview, onSelectionC
                             <button
                               type="button"
                               className={cn("cursor-pointer text-foreground/70 hover:text-foreground", doc.kind !== "pdf" && "opacity-50 cursor-not-allowed hover:text-foreground/70")}
-                              aria-label="Preview"
+                              aria-label={t("documents.panel.preview", { defaultValue: "Preview" })}
                               onClick={() => doc.kind === "pdf" && onPreview?.({ name: doc.name, kind: doc.kind, url: doc.tempUrl || doc.url })}
                               disabled={doc.kind !== "pdf"}
                             >

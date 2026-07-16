@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SquarePen, ChevronDown, MoreHorizontal, Trash2, Pencil } from "lucide-react";
@@ -33,6 +34,7 @@ export type ChatHistoryWithAudioProps = ChatHistoryProps & {
 
 export default function ChatHistory({ groups, selectedId, onSelect, className, onCreateNewConversation, isLoading, isError, errorMessage, isAudioRunning, audioWarningText, searchValue, onSearchChange, onDeleteConversation, onRenameConversation, renameIsPending }: ChatHistoryWithAudioProps) {
 
+  const { t } = useTranslation("chat");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameId, setRenameId] = useState<string | null>(null);
@@ -71,15 +73,17 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
   return (
     <div className={cn("bg-white rounded-2xl border shadow-sm p-4 w-full", className)}>
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-lg font-semibold">History</h3>
+        <h3 className="text-lg font-semibold">{t("history.title", { defaultValue: "History" })}</h3>
         {(() => {
           const hasEmptySelected = Boolean(
             selectedId && groups.some(g => g.items.some(it => it.id === selectedId && (it.preview ?? "").trim() !== "New Conversation"))
           );
-          const newChatTooltip = hasEmptySelected ? "You already have a new conversation" : "Start a new conversation";
+          const newChatTooltip = hasEmptySelected
+            ? t("history.newChatTooltipExisting", { defaultValue: "You already have a new conversation" })
+            : t("history.newChatTooltip", { defaultValue: "Start a new conversation" });
           const buttonEl = (
             <button
-              aria-label="New Conversation"
+              aria-label={t("history.newConversationLabel", { defaultValue: "New Conversation" })}
               disabled={false}
               className="cursor-pointer text-sm flex items-center gap-2 text-gray-600 hover:text-foreground"
               onClick={() => {
@@ -106,7 +110,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
       
       <div className="mb-3">
         <Input
-          placeholder="Search.."
+          placeholder={t("history.searchPlaceholder", { defaultValue: "Search.." })}
           value={searchValue}
           disabled={false}
           onChange={(e) => {
@@ -145,7 +149,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
         ) : null}
         {!isLoading && isError && groups.every((g) => g.items.length === 0) ? (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-            {errorMessage ?? "Couldn't load conversation history — the backend may be unavailable. Refresh to retry."}
+            {errorMessage ?? t("history.loadErrorDetailed", { defaultValue: "Couldn't load conversation history — the backend may be unavailable. Refresh to retry." })}
           </div>
         ) : null}
         {groups.map((group) => {
@@ -177,7 +181,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              aria-label="Open conversation actions"
+                              aria-label={t("history.openActions", { defaultValue: "Open conversation actions" })}
                               className={cn(
                                 "cursor-pointer rounded-md p-1",
                                 selectedId === it.id
@@ -202,20 +206,20 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                                 }}
                               >
                                 <Pencil className="mr-2 h-4 w-4" />
-                                <span>Rename</span>
+                                <span>{t("history.rename", { defaultValue: "Rename" })}</span>
                               </DropdownMenuItem>
                             ) : null}
 
                             <ConfirmDialog
-                              title="Delete conversation"
-                              description="Are you sure you want to delete this conversation? This action cannot be undone."
-                              confirmText="Delete"
+                              title={t("history.deleteTitle", { defaultValue: "Delete conversation" })}
+                              description={t("history.deleteDescription", { defaultValue: "Are you sure you want to delete this conversation? This action cannot be undone." })}
+                              confirmText={t("common.delete", { defaultValue: "Delete" })}
                               confirmVariant="destructive"
                               onConfirm={() => onDeleteConversation(it.id)}
                               trigger={
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                   <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                                  <span className="text-red-600">Delete</span>
+                                  <span className="text-red-600">{t("common.delete", { defaultValue: "Delete" })}</span>
                                 </DropdownMenuItem>
                               }
                             />
@@ -254,7 +258,7 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
                                 {btn}
                               </TooltipTrigger>
                               <TooltipContent className="bg-red-500 text-white border-red-500">
-                                <span className="text-xs">{audioWarningText || "Switching conversations will stop current audio"}</span>
+                                <span className="text-xs">{audioWarningText || t("history.audioWarning", { defaultValue: "Switching conversations will stop current audio" })}</span>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -275,12 +279,12 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename conversation</DialogTitle>
+            <DialogTitle>{t("history.renameDialogTitle", { defaultValue: "Rename conversation" })}</DialogTitle>
           </DialogHeader>
           <Input
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
-            placeholder="Conversation title"
+            placeholder={t("history.renamePlaceholder", { defaultValue: "Conversation title" })}
             autoFocus
             disabled={!!renameIsPending}
           />
@@ -288,26 +292,26 @@ export default function ChatHistory({ groups, selectedId, onSelect, className, o
             <div className="flex flex-col items-center justify-center gap-2 py-2">
               <iframe
                 src="https://lottie.host/embed/593a4db4-30f8-4c24-8860-6a34b8fd84f4/5CkhhSNGH0.lottie"
-                title="Renaming animation"
+                title={t("history.renameAnimationTitle", { defaultValue: "Renaming animation" })}
                 className="h-32 w-32"
                 allow="autoplay"
               />
               <p className="text-xs text-muted-foreground">
                 {renameIsPending
-                  ? "Shaping your conversation’s identity… ✨"
-                  : "Give your conversation a name — make it easy to remember 🚀"}
+                  ? t("history.renamePending", { defaultValue: "Shaping your conversation’s identity… ✨" })
+                  : t("history.renameHint", { defaultValue: "Give your conversation a name — make it easy to remember 🚀" })}
               </p>
             </div>
       
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameOpen(false)} disabled={!!renameIsPending}>
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               onClick={handleConfirmRename}
               disabled={!renameValue.trim() || !!renameIsPending}
             >
-              Save
+              {t("common.save", { defaultValue: "Save" })}
             </Button>
           </DialogFooter>
         </DialogContent>

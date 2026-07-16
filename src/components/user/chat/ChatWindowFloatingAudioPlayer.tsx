@@ -1,5 +1,6 @@
 import { AudioPlayer } from "@/components/shared/audio-player/audio-player";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type ChatWindowFloatingAudioPlayerProps = {
   audioPlayerBuffer?: AudioBuffer | null;
@@ -12,6 +13,7 @@ export default function ChatWindowFloatingAudioPlayer({
   showAudioPlayer,
   onCloseAudioPlayer,
 }: ChatWindowFloatingAudioPlayerProps) {
+  const { t } = useTranslation("chat");
   if (!audioPlayerBuffer || !showAudioPlayer) return null;
 
   return (
@@ -19,7 +21,7 @@ export default function ChatWindowFloatingAudioPlayer({
       <div className="relative">
         <button
           type="button"
-          aria-label="Close audio player"
+          aria-label={t("audio.close", { defaultValue: "Close audio player" })}
           className="cursor-pointer p-0.5 absolute z-10 -right-0.5 bg-blue-900 rounded-full -top-1.5 text-muted-foreground hover:text-foreground"
           onClick={() => onCloseAudioPlayer?.()}
         >

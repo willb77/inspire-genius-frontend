@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Children, isValidElement } from "react";
 import type { ComponentPropsWithoutRef } from "react";
+import { useTranslation } from "react-i18next";
 
 const containsTableHeader = (node: unknown): boolean => {
   if (!node) return false;
@@ -13,13 +14,14 @@ const containsTableHeader = (node: unknown): boolean => {
 };
 
 const MarkdownTable = (props: ComponentPropsWithoutRef<"table">) => {
+  const { t } = useTranslation("chat");
   const hasHeader = containsTableHeader(props.children);
   return (
     <table className="w-full border-collapse my-2" {...props}>
       {hasHeader ? null : (
         <thead>
           <tr>
-            <th className="sr-only">Table</th>
+            <th className="sr-only">{t("conversation.tableSrLabel", { defaultValue: "Table" })}</th>
           </tr>
         </thead>
       )}

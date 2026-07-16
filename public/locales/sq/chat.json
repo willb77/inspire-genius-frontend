@@ -1,0 +1,326 @@
+{
+  "common": {
+    "copiedToClipboard": "U kopjua në kujtesën e fragmenteve",
+    "copyMessage": "Kopjo mesazhin",
+    "play": "Luaj",
+    "pause": "Ndalo",
+    "close": "Mbyll",
+    "delete": "Fshij",
+    "download": "Shkarko",
+    "cancel": "Anulo",
+    "save": "Ruaj",
+    "clear": "Pastro",
+    "you": "Ju",
+    "connected": "I lidhur",
+    "error": "Gabim",
+    "unknownError": "Gabim i panjohur",
+    "hide": "Fsheh",
+    "show": "Shfaq",
+    "untitledConversation": "Bisedë pa titull",
+    "noConversations": "Ende nuk ka biseda. Dërgoni një mesazh për të filluar.",
+    "noDocuments": "Ende nuk janë ngarkuar dokumente."
+  },
+  "meridian": {
+    "title": "Meridian",
+    "thinking": "Meridian po mendon...",
+    "noResponse": "Nuk ka përgjigje.",
+    "consultedAgents": "+ {{agents}}",
+    "viaAgent": "përmes {{agent}}",
+    "profileLabel": "Profili: {{frameworks}}",
+    "reviewingBanner": "Po shqyrtohen biseda shtesë ({{count}}) krahas bisedës aktive.",
+    "profileIndicator": {
+      "title": "Kornizat që Meridian mund t'u referohet në këtë bisedë"
+    },
+    "newChat": {
+      "title": "Fillo një bisedë të re",
+      "label": "Bisedë e Re"
+    },
+    "status": {
+      "connected": "I lidhur me Meridian"
+    },
+    "error": {
+      "agent": "Gabim i agjentit",
+      "unreachable": "Na vjen keq, nuk arritëm të lidhemi me Meridian. Ju lutemi provoni përsëri.",
+      "unreachableShort": "Nuk u arrit Meridian",
+      "newChatFailed": "Nuk u arrit të fillohej një bisedë e re. Ju lutemi provoni përsëri."
+    },
+    "export": {
+      "aria": "Eksporto bisedën",
+      "label": "Eksporto",
+      "sessionSubject": "Sesion Bisede me Meridian",
+      "assistantDomain": "Trajnim",
+      "success": "U eksportuan Regjistri i Bisedës + PDF-të e Raportit të Strukturuar.",
+      "noConversation": "Biseda nuk u eksportua — nuk ka bisedë aktive.",
+      "noData": "Biseda nuk u eksportua — serveri nuk ktheu të dhëna.",
+      "noContent": "Biseda nuk u eksportua — nuk ka përmbajtje në intervalin e zgjedhur.",
+      "retry": "Biseda nuk u eksportua — ju lutemi provoni përsëri."
+    },
+    "voice": {
+      "mute": "Çaktivizo zërin e Meridian",
+      "enable": "Aktivizo zërin e Meridian",
+      "onTitle": "Përgjigjet me zë NDEZUR — klikoni për të çaktivizuar",
+      "offTitle": "Përgjigjet me zë FIKUR — klikoni për të aktivizuar",
+      "notSupported": "Hyrja me zë nuk mbështetet në këtë shfletues",
+      "micDenied": "Qasja në mikrofon u refuzua"
+    },
+    "audio": {
+      "blockedTitle": "Shfletuesi bllokoi luajtjen e audios — klikoni për të aktivizuar",
+      "enable": "Aktivizo audion",
+      "rewind": "Kthe 5 sekonda pas",
+      "resume": "Rifillo audion",
+      "pause": "Ndalo audion",
+      "fastForward": "Përparo 5 sekonda",
+      "skip": "Kalo te fjalia tjetër",
+      "cancel": "Anulo transmetimin",
+      "queued": "{{count}} në radhë"
+    },
+    "conn": {
+      "availableTitle": "Transmetimi me zë i disponueshëm",
+      "connectingTitle": "Po lidhet transmetimi me zë...",
+      "unavailableTitle": "Transmetimi me zë i padisponueshëm",
+      "ready": "Zëri gati",
+      "connecting": "Po lidhet",
+      "off": "Zëri fikur"
+    }
+  },
+  "header": {
+    "title": "Meridian",
+    "subtitle": "Mundësuar nga Agent Eco-System",
+    "back": "Prapa",
+    "export": "Eksporto",
+    "documentsButton": "Dokumente",
+    "tab": {
+      "chat": "Bisedë",
+      "documents": "Dokumente"
+    },
+    "openDocsPanel": {
+      "ariaLabel": "Hap panelin anësor të dokumenteve",
+      "tooltip": "Hapni panelin e dokumenteve për të zgjedhur skedarë që t'i shtoni në bisedë"
+    }
+  },
+  "tiles": {
+    "rail": {
+      "aria": "Biseda dhe projekte"
+    },
+    "active": {
+      "title": "Sesionet Aktive",
+      "empty": "Ende nuk ka sesione aktive.",
+      "badge": {
+        "live": "drejtpërdrejt",
+        "open": "hapur"
+      }
+    },
+    "history": {
+      "title": "Historiku"
+    },
+    "last5": {
+      "title": "5 Bisedat e Fundit",
+      "empty": "Ende s'ka asgjë këtu."
+    },
+    "projects": {
+      "title": "Projekte",
+      "inputPlaceholder": "Emri i projektit të ri…",
+      "inputAria": "Emri i projektit të ri",
+      "addAria": "Shto projekt",
+      "empty": "Ende nuk ka projekte. Grupojini bisedat e ngjashme nën një projekt.",
+      "badge": {
+        "active": "aktiv"
+      }
+    },
+    "knowledge": {
+      "title": "Njohuri",
+      "badge": {
+        "indexed": "i indeksuar"
+      }
+    }
+  },
+  "history": {
+    "title": "Historiku",
+    "newChat": "Bisedë e Re",
+    "newChatTooltip": "Fillo një bisedë të re",
+    "newChatTooltipExisting": "Ju tashmë keni një bisedë të re",
+    "newConversationLabel": "Bisedë e Re",
+    "searchPlaceholder": "Kërko..",
+    "loadError": "Nuk u ngarkua historiku i bisedave.",
+    "loadErrorDetailed": "Nuk u ngarkua historiku i bisedave — serveri mund të jetë i padisponueshëm. Rifreskoni për të provuar përsëri.",
+    "openActions": "Hap veprimet e bisedës",
+    "rename": "Riemërto",
+    "deleteTitle": "Fshij bisedën",
+    "deleteDescription": "A jeni i sigurt që dëshironi ta fshini këtë bisedë? Ky veprim nuk mund të zhbëhet.",
+    "audioWarning": "Ndërrimi i bisedave do ta ndalojë audion aktuale",
+    "renameDialogTitle": "Riemërto bisedën",
+    "renamePlaceholder": "Titulli i bisedës",
+    "renameAnimationTitle": "Animacion riemërtimi",
+    "renamePending": "Po formësojmë identitetin e bisedës suaj… ✨",
+    "renameHint": "Jepini bisedës një emër — bëjeni të lehtë për t'u mbajtur mend 🚀",
+    "triggerShown": "Historiku ({{count}} të shfaqura)",
+    "triggerCount": "Historiku ({{count}})",
+    "triggerAria": "Shfleto historikun e bisedave",
+    "hint": "Klikoni një bisedë për ta bërë aktive, ose shënojeni për ta shtuar në shqyrtim.",
+    "includeAria": "Përfshi {{title}} në shqyrtim",
+    "activeBadge": "Aktive",
+    "reviewCount": "Biseda shtesë në shqyrtim: {{count}}",
+    "clearReview": "Pastro shqyrtimin"
+  },
+  "documents": {
+    "triggerLabel": "Dokumente",
+    "triggerSelected": "Dokumente ({{count}} të zgjedhura)",
+    "triggerAria": "Zgjidh dokumente",
+    "header": "Bashkëngjit dokumente në këtë bisedë",
+    "loadError": "Nuk u ngarkuan dokumentet.",
+    "uploadLink": "Ngarko dokumente",
+    "selectFileAria": "Zgjidh {{filename}}",
+    "autoAttached": "Bashkëngjitur automatikisht",
+    "selectedCount": "{{selected}} nga {{total}} të zgjedhura",
+    "iframe": {
+      "defaultFileName": "Dokument",
+      "loading": "Po ngarkohet dokumenti…"
+    },
+    "panel": {
+      "selectedCount": "Të zgjedhura ({{count}})",
+      "confirmDeleteTitle": "Konfirmo fshirjen",
+      "confirmDeleteBulkDescription": "A jeni i sigurt që dëshironi të fshini dokumentet e zgjedhura ({{count}})? Ky veprim nuk mund të zhbëhet.",
+      "confirmDeleteOneDescription": "A jeni i sigurt që dëshironi ta fshini këtë dokument? Ky veprim nuk mund të zhbëhet.",
+      "upload": "Ngarko",
+      "importToChat": "Importo në Bisedë",
+      "loading": "Po ngarkohen dokumentet...",
+      "empty": "Nuk u gjetën skedarë",
+      "emptyAnimationTitle": "skedari nuk u gjet",
+      "selectItem": "Zgjidh {{name}}",
+      "preview": "Parapamje"
+    },
+    "sidePanel": {
+      "title": "Dokumente",
+      "close": "Mbyll dokumentet",
+      "closeOverlay": "Mbyll panelin e dokumenteve"
+    }
+  },
+  "export": {
+    "title": "Eksporto Bisedën",
+    "subtitle": "Shkarkoni një kopje të bisedës suaj për referencë në të ardhmen.",
+    "fromLabel": "Biseda Nga",
+    "fromPlaceholder": "Data e fillimit",
+    "toLabel": "Biseda Deri",
+    "toPlaceholder": "Data e mbarimit",
+    "formatLabel": "Skedari i Eksportit",
+    "formatPdf": "PDF",
+    "exporting": "Po eksportohet",
+    "exportButton": "Eksporto",
+    "progressLabel": "Po eksportohet biseda... {{progress}}%",
+    "progressSubtitle": "Rehatohuni, po punojmë për eksportin tuaj.",
+    "completeTitle": "Eksporti Përfundoi",
+    "completeSubtitle": "Biseda u eksportua me sukses!",
+    "back": "Prapa"
+  },
+  "routing": {
+    "confidence": "Besueshmëria: {{confidencePct}}%",
+    "latency": "{{latencyMs}} ms",
+    "tokens": "{{tokenCount}} tokena",
+    "observabilityDetails": "Detaje vëzhgueshmërie"
+  },
+  "feedback": {
+    "thankYou": "Faleminderit",
+    "rateThisResponse": "Vlerësoni këtë përgjigje",
+    "correctionPlaceholder": "Opsionale: sugjeroni një përgjigje më të mirë (maks. 2000 shenja)",
+    "submitting": "Po dërgohet...",
+    "submit": "Dërgo"
+  },
+  "compose": {
+    "sectionLabel": "Harto Kërkesën"
+  },
+  "conversation": {
+    "sectionLabel": "Bisedë",
+    "replayVoice": "Riluaj zërin",
+    "messageId": "ID: {{id}}",
+    "viaAgent": "përmes {{agent}}",
+    "observabilityUnavailable": "Të dhënat e vëzhgueshmërisë nuk janë të disponueshme për këtë mesazh.",
+    "tableSrLabel": "Tabelë",
+    "waiting": {
+      "shortly": "{{coachName}} do të jetë me ju së shpejti",
+      "oneMoment": "Një moment me {{coachName}}",
+      "pleaseWait": "Ju lutemi prisni"
+    },
+    "source": {
+      "label": "Burimet ({{count}})",
+      "openTitle": "Hap {{filename}}",
+      "openError": {
+        "noUrl": "\"{{filename}}\" nuk u hap — serveri nuk ktheu URL.",
+        "notFound": "\"{{filename}}\" nuk u hap — dokumenti nuk u gjet ose qasja u refuzua.",
+        "generic": "\"{{filename}}\" nuk u hap — ju lutemi provoni përsëri."
+      }
+    },
+    "collaboration": {
+      "label": "Përgjigje bashkëpunuese ({{count}} agjentë)",
+      "synthesizedFrom": "Sintetizuar nga {{summary}}"
+    }
+  },
+  "input": {
+    "placeholder": "Pyesni çdo gjë…  (Enter për të dërguar · Shift+Enter për rresht të ri)",
+    "unmuteCoach": "Aktivizo zërin e trajnerit",
+    "muteCoach": "Çaktivizo zërin e trajnerit",
+    "stopRecording": "Ndalo regjistrimin",
+    "startRecording": "Fillo regjistrimin",
+    "sendMessage": "Dërgo mesazhin",
+    "muteTooltip": {
+      "mute": "Çaktivizo zërin",
+      "unmute": "Aktivizo zërin",
+      "disabledDuringPlayback": "Çaktivizimi i zërit është i pamundur gjatë luajtjes"
+    }
+  },
+  "banner": {
+    "selected": "Të zgjedhura:",
+    "connecting": "Po lidhet...",
+    "successAnimationTitle": "Animacion suksesi"
+  },
+  "audio": {
+    "close": "Mbyll luajtësin e audios"
+  },
+  "coach": {
+    "defaultName": "Trajner",
+    "authError": "Gabim vërtetimi",
+    "untitledConversation": "Pa Titull",
+    "previewPlaceholder": "Për t'u bërë",
+    "conversationsLabel": "Biseda",
+    "sessionSubject": "Sesion Trajnimi me {{coachName}}",
+    "assistantDomain": "Trajnim",
+    "exportSuccess": "U eksportuan Regjistri i Bisedës + PDF-të e Raportit të Strukturuar.",
+    "exportNoConversation": "Biseda nuk u eksportua — nuk ka bisedë aktive.",
+    "audioWarning": "Ndërrimi i bisedave do ta rivendosë audion për bisedën e re."
+  },
+  "diagnostic": {
+    "title": "Bisedë Diagnostike",
+    "sessionLabel": "Sesioni: {{sessionId}}...",
+    "statusConnecting": "Po lidhet...",
+    "statusReconnecting": "Po rilidhet...",
+    "statusDisconnected": "I shkëputur",
+    "newChat": "Bisedë e Re",
+    "newChatTitle": "Fillo një sesion të ri bisede",
+    "reconnect": "Rilidhu",
+    "clearAllTitle": "Pastro të gjitha",
+    "traceLog": "Regjistri i Gjurmimit",
+    "dataSourcesLabel": "Burimet e Lidhura të të Dhënave",
+    "emptyTitle": "Ndërfaqja e Bisedës Diagnostike",
+    "emptySubtitle": "Dërgoni një mesazh për të gjurmuar të gjithë ciklin jetësor të kërkesës",
+    "streaming": "transmetim",
+    "processing": "Meridian po përpunon...",
+    "stopRecording": "Ndalo regjistrimin",
+    "startVoiceInput": "Fillo hyrjen me zë",
+    "inputPlaceholder": "Shkruani një mesazh për të gjurmuar të gjithë procesin...",
+    "recordingHint": "Regjistrim — flisni qartë, pastaj ndaloni për të dërguar",
+    "latency": "Vonesa: {{latencyMs}} ms",
+    "ttft": "TTFT: {{ttftMs}} ms",
+    "tokens": "Tokena: {{tokenCount}}",
+    "entriesCount": "{{count}} hyrje",
+    "errorsCount": "{{count}} gabime",
+    "warningsCount": "{{count}} paralajmërime",
+    "dataSources": {
+      "auroraPostgres": "Aurora PostgreSQL (RDS Proxy)",
+      "dynamoRateLimit": "DynamoDB (Rate Limiting)",
+      "dynamoRlhf": "DynamoDB (RLHF Feedback)",
+      "s3": "S3 (Documents & Training Data)",
+      "milvus": "Milvus / Zilliz (Vector Search)",
+      "eventbridge": "EventBridge (Event Bus)",
+      "cognito": "Cognito (User Pool)"
+    }
+  }
+}

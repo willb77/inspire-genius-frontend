@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Zap, Clock, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/useAuth";
@@ -20,6 +21,7 @@ export default function AgentRoutingPanel({
   tokenCount,
   observability,
 }: AgentRoutingPanelProps) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === "company-admin" || user?.role === "super-admin";
@@ -58,22 +60,22 @@ export default function AgentRoutingPanel({
         <div className="mt-1.5 flex flex-wrap gap-3 pb-1 text-[11px] text-muted-foreground">
           {isAdmin && confidence != null && (
             <span className="flex items-center gap-1">
-              <Zap className="h-3 w-3" /> Confidence: {(confidence * 100).toFixed(0)}%
+              <Zap className="h-3 w-3" /> {t("routing.confidence", { defaultValue: "Confidence: {{confidencePct}}%", confidencePct: (confidence * 100).toFixed(0) })}
             </span>
           )}
           {isAdmin && latencyMs != null && (
             <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {latencyMs}ms
+              <Clock className="h-3 w-3" /> {t("routing.latency", { defaultValue: "{{latencyMs}}ms", latencyMs })}
             </span>
           )}
           {isAdmin && tokenCount != null && (
             <span className="flex items-center gap-1">
-              <Hash className="h-3 w-3" /> {tokenCount} tokens
+              <Hash className="h-3 w-3" /> {t("routing.tokens", { defaultValue: "{{tokenCount}} tokens", tokenCount })}
             </span>
           )}
           {isSuperAdmin && observability && Object.keys(observability).length > 0 && (
             <details className="w-full">
-              <summary className="cursor-pointer text-[10px]">Observability details</summary>
+              <summary className="cursor-pointer text-[10px]">{t("routing.observabilityDetails", { defaultValue: "Observability details" })}</summary>
               <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted p-2 text-[10px]">
                 {JSON.stringify(observability, null, 2)}
               </pre>

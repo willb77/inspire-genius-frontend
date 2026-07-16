@@ -10,9 +10,11 @@ import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 
-async function openSourceDocument(documentId: string, filename: string) {
+async function openSourceDocument(documentId: string, filename: string, t: TFunction) {
   // P3 — open source document via the existing per-user download
   // endpoint. We fetch the presigned URL with our auth headers (the
   // axios interceptor injects access-token) and then window.open() it.
@@ -26,19 +28,20 @@ async function openSourceDocument(documentId: string, filename: string) {
     if (resp.data?.url) {
       window.open(resp.data.url, "_blank", "noopener,noreferrer");
     } else {
-      toast.error(`Couldn't open "${filename}" — backend returned no URL.`);
+      toast.error(t("conversation.source.openError.noUrl", { defaultValue: "Couldn't open \"{{filename}}\" — backend returned no URL.", filename }));
     }
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status;
     if (status === 404) {
-      toast.error(`Couldn't open "${filename}" — document not found or access denied.`);
+      toast.error(t("conversation.source.openError.notFound", { defaultValue: "Couldn't open \"{{filename}}\" — document not found or access denied.", filename }));
     } else {
-      toast.error(`Couldn't open "${filename}" — please try again.`);
+      toast.error(t("conversation.source.openError.generic", { defaultValue: "Couldn't open \"{{filename}}\" — please try again.", filename }));
     }
   }
 }
 
 function SourceAttribution({ sources }: { sources: RAGSource[] }) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   // Dedup on (document_id, filename) so two tenants who happen to have
   // files with the same name don't collapse into one row. document_id
@@ -62,7 +65,7 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <FileText className="h-3 w-3" />
-        <span>Sources ({unique.length})</span>
+        <span>{t("conversation.source.label", { defaultValue: "Sources ({{count}})", count: unique.length })}</span>
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
       {expanded && (
@@ -88,9 +91,9 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
                 <button
                   key={sharedKey}
                   type="button"
-                  onClick={() => openSourceDocument(s.document_id as string, s.filename)}
+                  onClick={() => openSourceDocument(s.document_id as string, s.filename, t)}
                   className={`${sharedClass} hover:bg-accent hover:text-foreground cursor-pointer`}
-                  title={`Open ${s.filename}`}
+                  title={t("conversation.source.openTitle", { defaultValue: "Open {{filename}}", filename: s.filename })}
                 >
                   {contents}
                 </button>
@@ -109,6 +112,7 @@ function SourceAttribution({ sources }: { sources: RAGSource[] }) {
 }
 
 function CollaborationBadge({ agents }: { agents: string[] }) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   if (agents.length < 2) return null;
 
@@ -120,12 +124,12 @@ function CollaborationBadge({ agents }: { agents: string[] }) {
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Users className="h-3 w-3" />
-        <span>Collaborative response ({agents.length} agents)</span>
+        <span>{t("conversation.collaboration.label", { defaultValue: "Collaborative response ({{count}} agents)", count: agents.length })}</span>
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
       {expanded && (
         <div className="mt-1 text-xs text-muted-foreground">
-          <span className="opacity-80">Synthesized from {summary}</span>
+          <span className="opacity-80">{t("conversation.collaboration.synthesizedFrom", { defaultValue: "Synthesized from {{summary}}", summary })}</span>
         </div>
       )}
     </div>
@@ -168,6 +172,7 @@ export default function ChatWindowChatTab({
   conversationId,
   onReplayMessage,
 }: ChatWindowChatTabProps) {
+  const { t } = useTranslation("chat");
   const renderMessage = (m: ChatMessage) => {
     if (m.kind === "text") {
       const right = m.sender === "user";
@@ -197,7 +202,7 @@ export default function ChatWindowChatTab({
             >
               <div className="flex items-center gap-4">
                 <button
-                  aria-label="Copy message"
+                  aria-label={t("common.copyMessage", { defaultValue: "Copy message" })}
                   type="button"
                   className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                   onClick={() => onCopy(m.text)}
@@ -206,8 +211,8 @@ export default function ChatWindowChatTab({
                 </button>
                 {m.sender === "assistant" && onReplayMessage && m.text && (
                   <button
-                    aria-label="Replay voice"
-                    title="Replay voice"
+                    aria-label={t("conversation.replayVoice", { defaultValue: "Replay voice" })}
+                    title={t("conversation.replayVoice", { defaultValue: "Replay voice" })}
                     type="button"
                     className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
                     onClick={() => onReplayMessage(m.text)}
@@ -227,13 +232,13 @@ export default function ChatWindowChatTab({
               <div className="flex flex-col items-end">
                 <div className="text-[11px] text-muted-foreground">{formatFullTimestamp(m.ts)}</div>
                 {m.sender === "assistant" && (
-                  <div className="text-[10px] text-muted-foreground/70 font-mono">ID: {m.id}</div>
+                  <div className="text-[10px] text-muted-foreground/70 font-mono">{t("conversation.messageId", { defaultValue: "ID: {{id}}", id: m.id })}</div>
                 )}
               </div>
             </div>
             {m.kind === "text" && m.sender === "assistant" && m.agent && (
               <p className="mt-1 text-xs text-muted-foreground">
-                via {m.agent}
+                {t("conversation.viaAgent", { defaultValue: "via {{agent}}", agent: m.agent })}
               </p>
             )}
             {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
@@ -257,7 +262,7 @@ export default function ChatWindowChatTab({
               <ErrorBoundary
                 fallback={() => (
                   <div className="mt-1 text-[10px] text-muted-foreground">
-                    Observability unavailable for this message.
+                    {t("conversation.observabilityUnavailable", { defaultValue: "Observability unavailable for this message." })}
                   </div>
                 )}
               >
@@ -345,7 +350,7 @@ export default function ChatWindowChatTab({
           )}
         >
           <button
-            aria-label="Copy message"
+            aria-label={t("common.copyMessage", { defaultValue: "Copy message" })}
             type="button"
             className="cursor-pointer text-muted-foreground/60 hover:text-foreground"
             onClick={() => onCopy(`${m.docName}`)}
