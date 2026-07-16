@@ -56,6 +56,8 @@ const PrismAssessmentV2 = React.lazy(() => import("@/pages/user/PrismAssessmentV
 const UserAnalyticsV2 = React.lazy(() => import("@/pages/user/AnalyticsV2"));
 const FeedbackHistoryV2 = React.lazy(() => import("@/pages/user/FeedbackHistoryV2"));
 const UserSettingsPrivacyV2 = React.lazy(() => import("@/pages/user/SettingsPrivacyV2"));
+// Wave 1 batch 3
+const ProfileV2 = React.lazy(() => import("@/pages/user/ProfileV2"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
@@ -249,6 +251,31 @@ function FeedbackHistorySurface() {
 function UserSettingsPrivacySurface() {
   return isNewUserSurfacesEnabled() ? <UserSettingsPrivacyV2 /> : <UserSettingsPrivacy />;
 }
+function ProfileSurface() {
+  return isNewUserSurfacesEnabled() ? <ProfileV2 /> : <Profile />;
+}
+// Meridian Chat carries an in-page toggle (like /home) rather than the silent
+// Wave-1 resolver, because the user asked for a visible classic/new switch on
+// this surface. The flag is owned as state so flipping swaps the page in-place
+// (no full reload → no fresh-boot auth bounce to /login). Classic stays at
+// /meridian/chat/classic.
+function MeridianChatSurface() {
+  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
+  return (
+    <>
+      <HomeSurfaceToggle
+        enabled={enabled}
+        onChange={(next) => {
+          setNewUserSurfaces(next); // persist so it survives the next full load
+          setEnabled(next); // swap now, no reload
+        }}
+      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <MeridianChat variant={enabled ? "v2" : "classic"} />
+      </Suspense>
+    </>
+  );
+}
 
 // Central route configuration compatible with useRoutes
 export const routes: RouteObject[] = [
@@ -300,7 +327,8 @@ export const routes: RouteObject[] = [
       { path: "/coaches", element: withSuspense(<CoachesSurface />) },
       { path: "/coaches/classic", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
-      { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
+      { path: "/meridian/chat", element: withSuspense(<MeridianChatSurface />) },
+      { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
       // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
       {
         path: "/summit",
@@ -317,7 +345,8 @@ export const routes: RouteObject[] = [
       },
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
-      { path: "/profile", element: withSuspense(<Profile />) },
+      { path: "/profile", element: withSuspense(<ProfileSurface />) },
+      { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },

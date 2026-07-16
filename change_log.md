@@ -75,6 +75,36 @@ semantics changed.
   content, since most GRANT pages are still stubs. Vertical #2's UI phase may surface gaps.
 - `require_vertical()` is written but deliberately unused: GRANT's preview override forces the
   vertical on for users with no entitlement row, so enforcing server-side would 403 the demo path.
+## [2026-07-15] — Meridian Chat V2 (tile rail + stacked Compose/Conversation)
+
+### Added
+- **Meridian Chat V2** — flag-gated new user-surface look for `/meridian/chat`
+  (classic stays at `/meridian/chat/classic`; in-page classic/new toggle like
+  `/home`). Reskins the page to the HomeV2 design system.
+  - `src/components/meridian/MeridianTileRail.tsx` — five collapsible tiles to
+    the right of the nav: Active Sessions / History / Last 5 Chats (real
+    conversations), Projects (client-side localStorage list; no backend yet),
+    Knowledge (real documents). Open/closed state persisted; HomeV2 tokens.
+  - `src/routes.tsx` — `MeridianChatSurface` resolver (in-page toggle) +
+    `/meridian/chat/classic`.
+
+### Changed
+- `src/pages/user/MeridianChat.tsx` — added a `variant?: "classic" | "v2"` prop
+  (default `"classic"`). One component, one source of truth for the streaming
+  logic (WS + SSE + async-jobs + audio, all shared/untouched); only the render
+  branches. `variant="v2"` renders the tile rail + stacked two-card layout and
+  moves Export next to History. This replaced an initial forked `MeridianChatV2`
+  page, which duplicated ~100 handler functions and dropped global function
+  coverage below the 60% CI gate — the single-component approach keeps coverage
+  and avoids a divergent copy.
+- `src/components/user/chat/ChatWindow.tsx` — additive `stacked` prop (default
+  off → classic layout byte-for-byte unchanged for all other consumers, incl.
+  CoachChat/DiagnosticChat) that renders the two-card layout: a Compose Prompt
+  card on top and a full-height, scrollable Conversation card below, reusing
+  ChatWindow's existing state/handlers.
+  - `src/types/chat/component-types.ts` — `stacked?: boolean` on `ChatWindowProps`.
+  - Tests: `MeridianTileRail.test.tsx` + V2-variant cases in `MeridianChat.test.tsx`.
+
 ## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
 
 ### Changed
