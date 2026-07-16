@@ -13,11 +13,13 @@ import {
 import { cn } from "@/lib/utils"
 import { sanitizeBodyHtml } from "@/lib/sanitizeHtml"
 import { useCaseload } from "@/hooks/honor/useCoachData"
+import { useHonorEvaluate } from "@/hooks/honor/useHonorEvaluate"
 import {
   MOCK_COMPARE_METRICS,
   MOCK_EVAL_ANSWERS,
   MOCK_EVAL_PROMPTS,
   MOCK_SUGGESTED_GOALS,
+  USE_HONOR_EVAL_LIVE,
 } from "@/hooks/honor/mocks"
 import type { EvaluateAnswer } from "@/types/honor"
 import {
@@ -41,14 +43,17 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
  * are all agent-backed in the target. Phase-0 scaffold: canned Meridian answers
  * with agent traces + mock compare scores. Chat HTML is sanitized on render.
  *
- * TODO(Phase 3): replace the canned classifier with useMeridianWebSocket /
- * useMeridianSSEStream, passing a member-scoped context envelope.
+ * PR B: the chat is wired to the live Meridian async-jobs transport
+ * (useHonorEvaluate → POST /v1/agents/chat/async, context.surface="honor") when
+ * USE_HONOR_EVAL_LIVE is on, with a graceful fallback to the seeded classifier
+ * on error/timeout so the surface never breaks. Compare/goals/education/funding/
+ * ROI panels remain seeded (Phase-2 wiring).
  */
 
 type Scope = "individual" | "team"
-type ChatTurn = { role: "coach" | "meridian"; text?: string; answer?: EvaluateAnswer }
+type ChatTurn = { role: "coach" | "meridian"; text?: string; answer?: EvaluateAnswer; pending?: boolean }
 
-/** Naive keyword classifier over the seeded answers (stand-in for the real DAG). */
+/** Naive keyword classifier over the seeded answers (fallback when live is off/errors). */
 function classify(prompt: string): EvaluateAnswer {
   const p = prompt.toLowerCase()
   if (p.includes("struggle") || p.includes("weak") || p.includes("risk"))
@@ -60,8 +65,19 @@ function classify(prompt: string): EvaluateAnswer {
   return MOCK_EVAL_ANSWERS.find((a) => a.key === "fit")!
 }
 
+/** Wrap Meridian's synthesized reply (plain text/markdown) into an EvaluateAnswer. */
+function liveAnswer(question: string, content: string, trace: string[]): EvaluateAnswer {
+  const esc = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const html = esc
+    .split(/\n\n+/)
+    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .join("")
+  return { key: "live", question, trace: trace.length ? trace : ["Meridian"], html }
+}
+
 export default function HonorEvaluate() {
   const { data: fellows = [] } = useCaseload()
+  const evaluate = useHonorEvaluate()
   const [scope, setScope] = useState<Scope>("individual")
   const [selected, setSelected] = useState<Set<string>>(new Set(["2201", "2205"]))
   const [input, setInput] = useState("")
@@ -81,12 +97,45 @@ export default function HonorEvaluate() {
     })
   }
 
-  function ask(prompt: string) {
+  async function ask(prompt: string) {
     const q = prompt.trim()
     if (!q) return
-    const answer = classify(q)
-    setThread((prev) => [...prev, { role: "coach", text: q }, { role: "meridian", answer }])
     setInput("")
+
+    // Mock mode (or no member selected for context): use the seeded classifier.
+    if (!USE_HONOR_EVAL_LIVE) {
+      setThread((prev) => [
+        ...prev,
+        { role: "coach", text: q },
+        { role: "meridian", answer: classify(q) },
+      ])
+      return
+    }
+
+    // Live: append the coach turn + a pending placeholder, then call Meridian
+    // (async-jobs). On success swap in the real reply; on error fall back to the
+    // canned answer so the surface never breaks.
+    const memberId = selectedFellows[0]?.id
+    setThread((prev) => [...prev, { role: "coach", text: q }, { role: "meridian", pending: true }])
+    try {
+      const reply = await evaluate.mutateAsync({ prompt: q, memberId })
+      const answer = reply.content.trim()
+        ? liveAnswer(q, reply.content, reply.trace)
+        : classify(q)
+      setThread((prev) => {
+        const next = [...prev]
+        const i = next.map((t) => t.pending).lastIndexOf(true)
+        if (i >= 0) next[i] = { role: "meridian", answer }
+        return next
+      })
+    } catch {
+      setThread((prev) => {
+        const next = [...prev]
+        const i = next.map((t) => t.pending).lastIndexOf(true)
+        if (i >= 0) next[i] = { role: "meridian", answer: classify(q) }
+        return next
+      })
+    }
   }
 
   // Compare matrix — only metrics with scores for the selected members.
@@ -168,7 +217,7 @@ export default function HonorEvaluate() {
             <button
               key={p}
               type="button"
-              onClick={() => ask(p)}
+              onClick={() => void ask(p)}
               className="rounded-full border border-[#dfe4ec] bg-white px-3 py-1 text-xs font-medium text-[#5b6678] transition-colors hover:border-[#E8792B] hover:text-[#c9631a]"
             >
               {p}
@@ -185,12 +234,19 @@ export default function HonorEvaluate() {
                     {turn.text}
                   </div>
                 </div>
+              ) : turn.pending ? (
+                <div key={i} className="max-w-[92%] rounded-lg border border-[#dfe4ec] bg-[#f6f7f9] p-3">
+                  <span className="inline-flex items-center gap-2 text-sm text-[#5b6678]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#E8792B]" />
+                    Meridian is evaluating…
+                  </span>
+                </div>
               ) : (
                 <div key={i} className="max-w-[92%] rounded-lg border border-[#dfe4ec] bg-[#f6f7f9] p-3">
                   {turn.answer && <AgentTraceRow trace={turn.answer.trace} />}
                   <div
                     className="prose prose-sm mt-2 max-w-none text-sm text-[#18202f] [&_p]:mb-2 [&_strong]:font-semibold"
-                    // Canned, author-controlled content; sanitized defense-in-depth.
+                    // Meridian-synthesized (or seeded) content; sanitized defense-in-depth.
                     dangerouslySetInnerHTML={{
                       __html: sanitizeBodyHtml(turn.answer?.html ?? ""),
                     }}
@@ -204,7 +260,7 @@ export default function HonorEvaluate() {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            ask(input)
+            void ask(input)
           }}
           className="flex items-center gap-2"
         >

@@ -24,6 +24,20 @@ import type {
 /** Master switch for the Honor mock-data layer (Phase 0 = fixtures). */
 export const USE_HONOR_MOCKS = true
 
+/**
+ * PR B live-wiring flags — flip individual surfaces onto the now-real Core.
+ *
+ * ROSTER_LIVE: caseload / member / dashboard read the live coach roster
+ *   (GET /v1/agents/honor/coach/students — the PR A agent-engine delta).
+ * EVAL_LIVE: the Evaluate chat uses the live Meridian async-jobs transport
+ *   (POST /v1/agents/chat/async, context.surface="honor"), with a graceful
+ *   fallback to the seeded canned answers on error so the surface never breaks.
+ * Activity / Schedule / Administration stay on fixtures until their shared-Core
+ * endpoints are adapted (Phase 2).
+ */
+export const USE_HONOR_ROSTER_LIVE = true
+export const USE_HONOR_EVAL_LIVE = true
+
 /** The signed-in coach persona shown in the wireframe. */
 export const MOCK_COACH = {
   name: "S. Carter",

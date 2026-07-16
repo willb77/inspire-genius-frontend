@@ -27,7 +27,11 @@ import {
   MOCK_SCHEDULE,
   MOCK_TEAMS,
   USE_HONOR_MOCKS,
+  USE_HONOR_ROSTER_LIVE,
 } from "./mocks"
+
+/** Roster surfaces (caseload/member/dashboard) go live when ROSTER_LIVE is on. */
+const ROSTER_MOCK = USE_HONOR_MOCKS && !USE_HONOR_ROSTER_LIVE
 
 /**
  * Honor Coach Workbench — React Query read hooks.
@@ -46,7 +50,7 @@ export function useCoachHome(options?: Partial<UseQueryOptions<CoachHome, AxiosE
   return useQuery<CoachHome, AxiosError>({
     queryKey: [HK, "home"],
     queryFn: async () => {
-      if (USE_HONOR_MOCKS) {
+      if (ROSTER_MOCK) {
         return {
           ...MOCK_COACH_HOME,
           counts: MOCK_CASELOAD_COUNTS,
@@ -74,7 +78,7 @@ export function useCaseload(options?: Partial<UseQueryOptions<HonorFellow[], Axi
   return useQuery<HonorFellow[], AxiosError>({
     queryKey: [HK, "caseload"],
     queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_FELLOWS
+      if (ROSTER_MOCK) return MOCK_FELLOWS
       const res = await getCaseload()
       return res.data ?? []
     },
@@ -91,7 +95,7 @@ export function useFellow(
     queryKey: [HK, "member", id ?? "none"],
     enabled: !!id,
     queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_FELLOWS.find((f) => f.id === id) ?? null
+      if (ROSTER_MOCK) return MOCK_FELLOWS.find((f) => f.id === id) ?? null
       const res = await getFellow(id as string)
       return res.data ?? null
     },

@@ -32,6 +32,14 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 
+// Force the fixture layer for the scaffold render tests, independent of the PR-B
+// live-wiring flags (which point the roster at the live agent-engine endpoint).
+jest.mock("@/hooks/honor/mocks", () => ({
+  ...jest.requireActual("@/hooks/honor/mocks"),
+  USE_HONOR_ROSTER_LIVE: false,
+  USE_HONOR_EVAL_LIVE: false,
+}))
+
 import AppSidebar from "@/components/layout/AppSidebar"
 import HonorLayout from "../HonorLayout"
 import HonorDashboard from "../HonorDashboard"
