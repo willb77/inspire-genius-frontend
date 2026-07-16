@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Outlet } from "react-router-dom"
 import AppShell from "@/layouts/AppShell"
 import { useAuth } from "@/context/useAuth"
@@ -9,24 +10,40 @@ type VerticalShellProps = {
   vertical: VerticalKey
   /** Where to send an unentitled user. Defaults to their home. */
   redirectTo?: string
+  /**
+   * Custom chrome for a themed vertical. When provided it REPLACES the default
+   * `AppShell` entirely, and the vertical's shell is responsible for rendering
+   * its own `<Outlet/>` (e.g. Honor's `HonorShell`). When omitted, the shared
+   * `AppShell` wraps `<Outlet/>` — the default, used by GRANT and any vertical
+   * that reuses Core's chrome.
+   *
+   * The gate (`RequireVertical`) and the redirect are Core's either way; only
+   * the chrome is pluggable. A themed vertical passes its shell here instead of
+   * forking `VerticalShell`.
+   */
+  shell?: ReactNode
 }
 
 /**
  * Entitlement gate + layout for a vertical's route tree.
  *
- * Generalized from `GrantLayout`. Wraps every `/vertical/{key}/*` page in the
- * EXISTING AppShell (shared sidebar, light theme) — per the simplified vertical
- * model, verticals reuse Core's shell rather than bringing their own. A vertical
- * that needs different chrome should wrap this rather than fork it.
+ * Generalized from `GrantLayout`. By default wraps every `/vertical/{key}/*`
+ * page in the shared `AppShell` (sidebar, light theme). A vertical with its own
+ * chrome passes it via `shell` — the gate stays Core's, the chrome becomes the
+ * vertical's:
  *
- * Use as a route element with child routes rendered through `<Outlet />`:
+ *     // shared chrome (GRANT):
+ *     { path: "/vertical/grant", element: <VerticalShell vertical="grant" />, children: [...] }
  *
- *     { path: "/vertical/acme", element: <VerticalShell vertical="acme" />,
- *       children: [ ... ] }
+ *     // custom chrome (Honor):
+ *     { path: "/vertical/honor",
+ *       element: <VerticalShell vertical="honor" shell={<HonorShell/>} />,
+ *       children: [...] }
  */
 export default function VerticalShell({
   vertical,
   redirectTo = "/home",
+  shell,
 }: VerticalShellProps) {
   const { user } = useAuth()
   const rawRole = user?.role
@@ -34,9 +51,11 @@ export default function VerticalShell({
 
   return (
     <RequireVertical vertical={vertical} redirectTo={redirectTo}>
-      <AppShell role={role}>
-        <Outlet />
-      </AppShell>
+      {shell ?? (
+        <AppShell role={role}>
+          <Outlet />
+        </AppShell>
+      )}
     </RequireVertical>
   )
 }
