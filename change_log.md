@@ -1,3 +1,130 @@
+## [2026-07-15] — IG Vertical Core: a standardized interface verticals plug into
+
+Codified the Simplified Vertical Model from a one-time decision memo into a real, typed
+interface, extracted from GRANT (the only vertical) and refactored GRANT onto it as the
+reference implementation. Behavior-preserving: no endpoint, route, envelope or entitlement
+semantics changed.
+
+### Added — backend (`services/agent-engine/`)
+- **`app/verticals/core/`** — the backend contract. `routing.py` (`vertical_router(key)` builds the
+  mandatory `/v1/agents/{key}` prefix), `envelope.py` (`ok()`), `identity.py`
+  (`resolve_subject_id()` — `me`→sub), `tools.py` (`VerticalToolRegistry` + `@vertical_tool`,
+  namespaced per vertical), `entitlements.py` (shared `GET /v1/agents/me/verticals` +
+  opt-in `require_vertical()` gate), `manifest.py` (`VerticalManifest` — **rejects a router mounted
+  off `/v1/agents/{key}` at construction**, converting an invisible production-only 404 into a loud
+  startup error), `registry.py` (`register_vertical` / `mount_verticals`).
+- **`app/verticals/bootstrap.py`** — the single file a new vertical edits to register itself.
+- **`app/verticals/grant.py`** — GRANT's `VerticalManifest`.
+- **`tests/verticals/test_core_contract.py`** — 16 tests defending the contract, above all the
+  mount-prefix trap.
+
+### Added — frontend (`inspire-genius-frontend/`)
+- **`src/verticals/core/`** — the frontend contract: `types.ts` (`VerticalKey`,
+  `VerticalApiResponse<T>`), `RequireVertical.tsx` + `VerticalShell.tsx` (new — the gate and shell),
+  `registry.ts` (`registerVertical`, `listEntitledVerticals`), plus `useVerticalAccess`,
+  `useEnabledVerticals`, `previewStore`, `entitlements.service` generalized out of GRANT.
+- **`src/verticals/grant/manifest.ts`** + `src/verticals/index.ts`, registered from `main.tsx`.
+
+### Changed — GRANT refactored onto the contract (behavior unchanged)
+- `app/routes/grant.py` — `vertical_router("grant")`, `ok()`, `resolve_subject_id()` replace the
+  hand-rolled router/envelope/id helpers (22 call sites).
+- `app/tools/_shared/tool_registry.py` — now GRANT's thin *binding* to Core's registry;
+  `@grant_tool` = `@vertical_tool(vertical="grant")`. Its 9 tool modules are untouched.
+- `build_grant_registry()` — scoped via `for_vertical("grant")` now that the registry is shared.
+- `app/main.py` — two hand-rolled mounts replaced by `register_all()` + `mount_verticals(app)`.
+- `src/pages/grant/GrantLayout.tsx` — 30 lines → 1 (`<VerticalShell vertical="grant" />`).
+- `src/types/grant/index.ts` — `GrantApiResponse`/`KnownVertical` are now aliases of Core's types,
+  so GRANT's 12 service files needed no churn.
+- `preview override` generalized to `${vertical}_dev_access`, preserving GRANT's existing
+  `grant_dev_access` key exactly.
+
+### Fixed
+- **`src/components/grant/GrantPreviewToggle.tsx`** — the generalized `setPreviewOverride` takes
+  `(vertical, on)`, but the Switch passed only `checked`; it would have written a `true_dev_access`
+  key and silently broken the super-admin toggle. Caught by the existing tests, not by `tsc`.
+
+### Removed
+- `app/routes/entitlements.py` — moved into `app/verticals/core/entitlements.py` (shared by all
+  verticals); its test moved to `tests/verticals/`.
+
+### Docs
+- **`Verticals/IG_Vertical_Core_Framework.docx`** — the contract, the three traps, the New Vertical
+  Checklist, what Core deliberately omits (Pack SDK) and why, and an honest LOE section.
+  **Supersedes `IG_Vertical_Simplified_Model.docx`** (left intact for provenance; its `.md` twin
+  now carries a supersession banner).
+- **`Verticals/IG_Vertical_Core_Prompts.docx`** — copy-paste Claude Code prompts. P0 is the master
+  prompt behind the trigger phrase **"interface with IG's Vertical Core."**
+- **`.claude/rules/verticals.md`** — the same rules, auto-loaded every session.
+- `CLAUDE.md` — new Verticals section + rules/doc pointers.
+- `scripts/build_vertical_core_framework.py`, `scripts/build_vertical_core_prompts.py`.
+
+### Verification
+- Backend: 296 grant+verticals tests pass. Full suite 2,981 passed / 65 failed — **identical to
+  the pre-existing baseline on `development`** (diffed; zero new failures). The 65 failures and the
+  `respx` collection errors are pre-existing and not from this work.
+- Frontend: **427 suites / 3,297 tests, all passing.** `tsc -b` clean. ESLint 820 problems —
+  byte-identical to baseline, zero in the new files.
+- Note: `npx tsc --noEmit` is a **no-op** in this repo (root `tsconfig.json` is `files: []` with
+  project references — it checks 0 source files). Use `npm run build` / `tsc -b`.
+- Not deployed. Framework + refactor left on `feat/vertical-core-framework` for review.
+
+### Honest limits
+- Per-vertical saving is ~2–4 days (15–18 → 13–15), **not** the 50–60% the superseded memo implied.
+  GRANT is ~88% domain logic; a framework cannot shrink domain work.
+- The contract is proven for routing, gating, entitlement and fetching — **not** for rich page
+  content, since most GRANT pages are still stubs. Vertical #2's UI phase may surface gaps.
+- `require_vertical()` is written but deliberately unused: GRANT's preview override forces the
+  vertical on for users with no entitlement row, so enforcing server-side would 403 the demo path.
+## [2026-07-15] — Meridian Chat V2 (tile rail + stacked Compose/Conversation)
+
+### Added
+- **Meridian Chat V2** — flag-gated new user-surface look for `/meridian/chat`
+  (classic stays at `/meridian/chat/classic`; in-page classic/new toggle like
+  `/home`). Reskins the page to the HomeV2 design system.
+  - `src/components/meridian/MeridianTileRail.tsx` — five collapsible tiles to
+    the right of the nav: Active Sessions / History / Last 5 Chats (real
+    conversations), Projects (client-side localStorage list; no backend yet),
+    Knowledge (real documents). Open/closed state persisted; HomeV2 tokens.
+  - `src/routes.tsx` — `MeridianChatSurface` resolver (in-page toggle) +
+    `/meridian/chat/classic`.
+
+### Changed
+- `src/pages/user/MeridianChat.tsx` — added a `variant?: "classic" | "v2"` prop
+  (default `"classic"`). One component, one source of truth for the streaming
+  logic (WS + SSE + async-jobs + audio, all shared/untouched); only the render
+  branches. `variant="v2"` renders the tile rail + stacked two-card layout and
+  moves Export next to History. This replaced an initial forked `MeridianChatV2`
+  page, which duplicated ~100 handler functions and dropped global function
+  coverage below the 60% CI gate — the single-component approach keeps coverage
+  and avoids a divergent copy.
+- `src/components/user/chat/ChatWindow.tsx` — additive `stacked` prop (default
+  off → classic layout byte-for-byte unchanged for all other consumers, incl.
+  CoachChat/DiagnosticChat) that renders the two-card layout: a Compose Prompt
+  card on top and a full-height, scrollable Conversation card below, reusing
+  ChatWindow's existing state/handlers.
+  - `src/types/chat/component-types.ts` — `stacked?: boolean` on `ChatWindowProps`.
+  - Tests: `MeridianTileRail.test.tsx` + V2-variant cases in `MeridianChat.test.tsx`.
+
+## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
+
+### Changed
+- The "Dev Traffic Report" item already sits on the super-admin **Administration**
+  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
+  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
+  anyone but the platform owner (`willb77@3pp.com`). This adds matching
+  **link-visibility gating**: the item stays in Administration but is filtered
+  out of the sidebar for every super-admin except the owner — so no one else
+  even sees it. Defence-in-depth alongside the backend allow-list.
+  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
+    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
+  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
+    every super-admin nav section unless `isPlatformOwner(user.email)`.
+  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
+    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
+  - No backend change: the report endpoint already uses native DB datetimes and
+    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
+    fix has no equivalent code path server-side.
+
 ## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
 
 Follow-up to the coach roster UI, adding the two enhancements chosen after the

@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
-import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
+import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -45,6 +45,19 @@ const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
+// Wave 1 — new-design (HomeV2 system) variants of high-traffic user pages.
+// Flag-gated additive swaps; classic pages stay reachable at /<path>/classic.
+const CoachesV2 = React.lazy(() => import("@/pages/user/CoachesV2"));
+const DashboardV2 = React.lazy(() => import("@/pages/user/DashboardV2"));
+const HelpV2 = React.lazy(() => import("@/pages/user/HelpV2"));
+// Wave 1 batch 2
+const DocumentsV2 = React.lazy(() => import("@/pages/user/DocumentsV2"));
+const PrismAssessmentV2 = React.lazy(() => import("@/pages/user/PrismAssessmentV2"));
+const UserAnalyticsV2 = React.lazy(() => import("@/pages/user/AnalyticsV2"));
+const FeedbackHistoryV2 = React.lazy(() => import("@/pages/user/FeedbackHistoryV2"));
+const UserSettingsPrivacyV2 = React.lazy(() => import("@/pages/user/SettingsPrivacyV2"));
+// Wave 1 batch 3
+const ProfileV2 = React.lazy(() => import("@/pages/user/ProfileV2"));
 const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"));
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
@@ -198,11 +211,78 @@ function withSuspense(element: React.ReactNode) {
 // new and classic home themselves. The inner Suspense wraps only the lazy page,
 // keeping the toggle visible while the selected variant loads.
 function HomeSurface() {
+  // The flag is owned here as state so flipping the toggle swaps the page
+  // in-place (client-side re-render) instead of doing a full page reload.
+  // A hard reload could bounce the user to /login via the fresh-boot auth
+  // path; an in-place swap keeps the live session intact.
+  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
   return (
     <>
-      <HomeSurfaceToggle />
+      <HomeSurfaceToggle
+        enabled={enabled}
+        onChange={(next) => {
+          setNewUserSurfaces(next); // persist so it survives the next full load
+          setEnabled(next); // swap now, no reload
+        }}
+      />
       <Suspense fallback={<LoadingSpinner />}>
-        {isNewUserSurfacesEnabled() ? <HomeV2 /> : <Home />}
+        {enabled ? <HomeV2 /> : <Home />}
+      </Suspense>
+    </>
+  );
+}
+
+// ── Wave 1 surface resolvers ────────────────────────────────────────────────
+// Flag-gated additive swaps for high-traffic user pages. Unlike /home there is
+// no in-page toggle — the `new_user_surfaces` flag is flipped once (from the
+// /home toggle or localStorage) and persists, so these read it at render and
+// navigation picks up the current value. The classic page always stays at
+// /<path>/classic. Rendered inside withSuspense so the lazy page can load.
+function DashboardSurface() {
+  return isNewUserSurfacesEnabled() ? <DashboardV2 /> : <Dashboard />;
+}
+function CoachesSurface() {
+  return isNewUserSurfacesEnabled() ? <CoachesV2 /> : <Coaches />;
+}
+function HelpSurface() {
+  return isNewUserSurfacesEnabled() ? <HelpV2 /> : <HelpPage />;
+}
+function DocumentsSurface() {
+  return isNewUserSurfacesEnabled() ? <DocumentsV2 /> : <Documents />;
+}
+function PrismAssessmentSurface() {
+  return isNewUserSurfacesEnabled() ? <PrismAssessmentV2 /> : <PrismAssessment />;
+}
+function UserAnalyticsSurface() {
+  return isNewUserSurfacesEnabled() ? <UserAnalyticsV2 /> : <UserAnalytics />;
+}
+function FeedbackHistorySurface() {
+  return isNewUserSurfacesEnabled() ? <FeedbackHistoryV2 /> : <FeedbackHistory />;
+}
+function UserSettingsPrivacySurface() {
+  return isNewUserSurfacesEnabled() ? <UserSettingsPrivacyV2 /> : <UserSettingsPrivacy />;
+}
+function ProfileSurface() {
+  return isNewUserSurfacesEnabled() ? <ProfileV2 /> : <Profile />;
+}
+// Meridian Chat carries an in-page toggle (like /home) rather than the silent
+// Wave-1 resolver, because the user asked for a visible classic/new switch on
+// this surface. The flag is owned as state so flipping swaps the page in-place
+// (no full reload → no fresh-boot auth bounce to /login). Classic stays at
+// /meridian/chat/classic.
+function MeridianChatSurface() {
+  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
+  return (
+    <>
+      <HomeSurfaceToggle
+        enabled={enabled}
+        onChange={(next) => {
+          setNewUserSurfaces(next); // persist so it survives the next full load
+          setEnabled(next); // swap now, no reload
+        }}
+      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <MeridianChat variant={enabled ? "v2" : "classic"} />
       </Suspense>
     </>
   );
@@ -253,10 +333,13 @@ export const routes: RouteObject[] = [
       { path: "/home", element: withSuspense(<HomeSurface />) },
       // Permanent escape hatch — original Home, flag-independent.
       { path: "/home/classic", element: withSuspense(<Home />) },
-      { path: "/dashboard", element: withSuspense(<Dashboard />) },
-      { path: "/coaches", element: withSuspense(<Coaches />) },
+      { path: "/dashboard", element: withSuspense(<DashboardSurface />) },
+      { path: "/dashboard/classic", element: withSuspense(<Dashboard />) },
+      { path: "/coaches", element: withSuspense(<CoachesSurface />) },
+      { path: "/coaches/classic", element: withSuspense(<Coaches />) },
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
-      { path: "/meridian/chat", element: withSuspense(<MeridianChat />) },
+      { path: "/meridian/chat", element: withSuspense(<MeridianChatSurface />) },
+      { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
       // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
       {
         path: "/summit",
@@ -271,14 +354,21 @@ export const routes: RouteObject[] = [
           { path: "progress", element: withSuspense(<SummitProgress />) },
         ],
       },
-      { path: "/documents", element: withSuspense(<Documents />) },
-      { path: "/profile", element: withSuspense(<Profile />) },
+      { path: "/documents", element: withSuspense(<DocumentsSurface />) },
+      { path: "/documents/classic", element: withSuspense(<Documents />) },
+      { path: "/profile", element: withSuspense(<ProfileSurface />) },
+      { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
-      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacy />) },
-      { path: "/help", element: withSuspense(<HelpPage />) },
-      { path: "/prism-assessment", element: withSuspense(<PrismAssessment />) },
-      { path: "/feedback", element: withSuspense(<FeedbackHistory />) },
-      { path: "/analytics", element: withSuspense(<UserAnalytics />) },
+      { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
+      { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
+      { path: "/help", element: withSuspense(<HelpSurface />) },
+      { path: "/help/classic", element: withSuspense(<HelpPage />) },
+      { path: "/prism-assessment", element: withSuspense(<PrismAssessmentSurface />) },
+      { path: "/prism-assessment/classic", element: withSuspense(<PrismAssessment />) },
+      { path: "/feedback", element: withSuspense(<FeedbackHistorySurface />) },
+      { path: "/feedback/classic", element: withSuspense(<FeedbackHistory />) },
+      { path: "/analytics", element: withSuspense(<UserAnalyticsSurface />) },
+      { path: "/analytics/classic", element: withSuspense(<UserAnalytics />) },
 
       // Super Admin pages
       { path: "/super-admin/dashboard", element: withSuspense(<SuperAdminDashboard />) },
@@ -420,12 +510,12 @@ export const routes: RouteObject[] = [
 
       // The Honor Foundation — Coach Workbench vertical. Reskinned (navy/orange
       // THF chrome) and entitlement-gated inside HonorLayout, which redirects
-      // users lacking the "honor-foundation" entitlement to /home.
+      // users lacking the "honor" entitlement to /home.
       {
-        path: "/vertical/honor-foundation",
+        path: "/vertical/honor",
         element: withSuspense(<HonorLayout />),
         children: [
-          { index: true, element: <Navigate to="/vertical/honor-foundation/dashboard" replace /> },
+          { index: true, element: <Navigate to="/vertical/honor/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<HonorDashboard />) },
           { path: "caseload", element: withSuspense(<HonorCaseload />) },
           { path: "onboard", element: withSuspense(<HonorOnboard />) },

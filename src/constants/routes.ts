@@ -148,23 +148,23 @@ export const ROUTES = {
       `/vertical/grant/coach/students/${studentId}`,
   },
   // The Honor Foundation — Coach Workbench vertical
-  // (entitlement-gated by enabled_verticals: "honor-foundation").
+  // (entitlement-gated by enabled_verticals: "honor").
   HONOR: {
-    BASE: "/vertical/honor-foundation",
-    DASHBOARD: "/vertical/honor-foundation/dashboard",
-    CASELOAD: "/vertical/honor-foundation/caseload",
-    ONBOARD: "/vertical/honor-foundation/onboard",
-    EVALUATE: "/vertical/honor-foundation/evaluate",
-    ACTIVITY: "/vertical/honor-foundation/activity",
-    SCHEDULE: "/vertical/honor-foundation/schedule",
-    ADMINISTRATION: "/vertical/honor-foundation/administration",
+    BASE: "/vertical/honor",
+    DASHBOARD: "/vertical/honor/dashboard",
+    CASELOAD: "/vertical/honor/caseload",
+    ONBOARD: "/vertical/honor/onboard",
+    EVALUATE: "/vertical/honor/evaluate",
+    ACTIVITY: "/vertical/honor/activity",
+    SCHEDULE: "/vertical/honor/schedule",
+    ADMINISTRATION: "/vertical/honor/administration",
     /** Member workspace base — redirects to the first assigned member. */
-    MEMBER: "/vertical/honor-foundation/member",
+    MEMBER: "/vertical/honor/member",
     /** Route pattern for a member workspace (matched by <Route path>). */
-    MEMBER_DETAIL: "/vertical/honor-foundation/member/:memberId",
+    MEMBER_DETAIL: "/vertical/honor/member/:memberId",
     /** Build the member-workspace path for a concrete member id. */
     memberWorkspace: (memberId: string) =>
-      `/vertical/honor-foundation/member/${memberId}`,
+      `/vertical/honor/member/${memberId}`,
   },
   ONBOARDING: {
     ONE: "/onboarding/one",

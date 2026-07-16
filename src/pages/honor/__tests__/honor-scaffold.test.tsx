@@ -5,6 +5,7 @@
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import type { VerticalKey } from "@/verticals/core"
 
 /* ── Mocks ── */
 const mockUseAuth = jest.fn()
@@ -12,16 +13,24 @@ jest.mock("@/context/useAuth", () => ({
   useAuth: () => mockUseAuth(),
 }))
 
-const mockUseHonorAccess = jest.fn()
-jest.mock("@/hooks/honor/useHonorAccess", () => ({
-  useHonorAccess: () => mockUseHonorAccess(),
-  HONOR_VERTICAL: "honor-foundation",
+// Honor now uses Core's entitlement gate. Mock the leaf useVerticalAccess module
+// (which both RequireVertical's relative import and AppSidebar's barrel import
+// resolve to) so we control access per vertical. GRANT stays closed.
+const mockUseVerticalAccess = jest.fn()
+jest.mock("@/verticals/core/useVerticalAccess", () => ({
+  useVerticalAccess: (vertical: string) => mockUseVerticalAccess(vertical),
+  DEV_ACCESS_KEY: "grant_dev_access",
 }))
 
-// AppSidebar also reads GRANT + broadcast access — keep them closed/quiet.
-jest.mock("@/hooks/grant/useVerticalAccess", () => ({
-  useVerticalAccess: () => ({ hasAccess: false, isLoading: false, enabledVerticals: [] }),
-}))
+/** Open the Honor gate (or not); everything else stays closed. */
+function setHonorAccess(hasAccess: boolean) {
+  mockUseVerticalAccess.mockImplementation((vertical: VerticalKey) =>
+    vertical === "honor"
+      ? { hasAccess, isLoading: false, enabledVerticals: hasAccess ? ["honor"] : [] }
+      : { hasAccess: false, isLoading: false, enabledVerticals: [] }
+  )
+}
+
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: false } }),
 }))
@@ -32,7 +41,7 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 
-// Force the fixture layer for the scaffold render tests, independent of the PR-B
+// Force the fixture layer for the scaffold render tests, independent of the
 // live-wiring flags (which point the roster at the live agent-engine endpoint).
 jest.mock("@/hooks/honor/mocks", () => ({
   ...jest.requireActual("@/hooks/honor/mocks"),
@@ -75,11 +84,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
     }
 
     test("shows the Honor nav section when entitled", () => {
-      mockUseHonorAccess.mockReturnValue({
-        hasAccess: true,
-        isLoading: false,
-        enabledVerticals: ["honor-foundation"],
-      })
+      setHonorAccess(true)
       renderWithProviders(<AppSidebar {...sidebarProps} />)
 
       expect(screen.getByText("Honor Foundation")).toBeInTheDocument()
@@ -87,11 +92,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
     })
 
     test("hides the Honor nav section when NOT entitled", () => {
-      mockUseHonorAccess.mockReturnValue({
-        hasAccess: false,
-        isLoading: false,
-        enabledVerticals: [],
-      })
+      setHonorAccess(false)
       renderWithProviders(<AppSidebar {...sidebarProps} />)
 
       expect(screen.queryByText("Coach Workbench")).not.toBeInTheDocument()
@@ -102,32 +103,24 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
     function renderHonorRoute() {
       return renderWithProviders(
         <Routes>
-          <Route path="/vertical/honor-foundation" element={<HonorLayout />}>
+          <Route path="/vertical/honor" element={<HonorLayout />}>
             <Route path="dashboard" element={<HonorDashboard />} />
           </Route>
           <Route path="/home" element={<div data-testid="home-page">Home</div>} />
         </Routes>,
-        "/vertical/honor-foundation/dashboard"
+        "/vertical/honor/dashboard"
       )
     }
 
-    test("redirects an unentitled user away from /vertical/honor-foundation/*", () => {
-      mockUseHonorAccess.mockReturnValue({
-        hasAccess: false,
-        isLoading: false,
-        enabledVerticals: [],
-      })
+    test("redirects an unentitled user away from /vertical/honor/*", () => {
+      setHonorAccess(false)
       renderHonorRoute()
 
       expect(screen.getByTestId("home-page")).toBeInTheDocument()
     })
 
     test("renders the reskinned Honor shell for an entitled user", () => {
-      mockUseHonorAccess.mockReturnValue({
-        hasAccess: true,
-        isLoading: false,
-        enabledVerticals: ["honor-foundation"],
-      })
+      setHonorAccess(true)
       const { container } = renderHonorRoute()
 
       // THF co-brand wordmark in the shell topbar.
@@ -142,11 +135,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
 
   describe("caseload renders mock fellows", () => {
     test("lists Honor fellows from the mock fixtures", async () => {
-      mockUseHonorAccess.mockReturnValue({
-        hasAccess: true,
-        isLoading: false,
-        enabledVerticals: ["honor-foundation"],
-      })
+      setHonorAccess(true)
       renderWithProviders(<HonorCaseload />)
 
       expect(screen.getByRole("heading", { name: "My Members" })).toBeInTheDocument()

@@ -5,28 +5,23 @@
 // Aid-intake contract (UI-1) — trigger + enrichment fields, zod schema, helpers.
 export * from "./intake"
 
-/** Vertical identifiers that gate feature access via user_preferences.enabled_verticals. */
-export type KnownVertical = "grant" | "honor-foundation"
+// ── Vertical Core types, re-exported under GRANT's names ─────────────────────
+// These are not GRANT's to define — they are the vertical contract, owned by
+// `@/verticals/core`. Aliased here so GRANT's services keep reading naturally
+// (`GrantApiResponse<Deadline[]>`). New code may import either name.
 
-/** Envelope every GRANT service returns (mirrors the platform BaseApiResponse shape). */
-export type GrantApiResponse<T = unknown> = {
-  status?: boolean
-  success?: boolean
-  message?: string
-  data?: T
-}
+export type {
+  MeProfile,
+  UserPreferences,
+  VerticalApiResponse,
+} from "@/verticals/core"
+import type { VerticalApiResponse, VerticalKey } from "@/verticals/core"
 
-/** Slice of the /v1/me profile the GRANT vertical cares about. */
-export type UserPreferences = {
-  /** Entitlement list — presence of "grant" unlocks the GRANT vertical. */
-  enabled_verticals?: string[]
-}
+/** Vertical identifiers that gate feature access. @see VerticalKey */
+export type KnownVertical = VerticalKey
 
-export type MeProfile = {
-  id?: string
-  email?: string
-  user_preferences?: UserPreferences
-}
+/** Envelope every GRANT service returns. @see VerticalApiResponse */
+export type GrantApiResponse<T = unknown> = VerticalApiResponse<T>
 
 // ── Financial Profile (Section 4: GET /v1/students/{id}) ─────────────────────
 

@@ -5,8 +5,7 @@ import { useAuth } from "@/context/useAuth"
 import { getSectionsForRole, grantSidebarSectionForRole, BROADCAST_SIDEBAR_SECTION, HONOR_SIDEBAR_SECTION, type SidebarNavItem } from "@/constants/sidebar-sections"
 import type { UserRole } from "@/types/roles"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useVerticalAccess } from "@/hooks/grant/useVerticalAccess"
-import { useHonorAccess } from "@/hooks/honor/useHonorAccess"
+import { useVerticalAccess } from "@/verticals/core"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 
 function getInitials(name: string | null | undefined, email: string | undefined): string {
@@ -30,7 +29,7 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
   const location = useLocation()
   const { user, logout } = useAuth()
   const { hasAccess: hasGrantAccess } = useVerticalAccess("grant")
-  const { hasAccess: hasHonorAccess } = useHonorAccess()
+  const { hasAccess: hasHonorAccess } = useVerticalAccess("honor")
   const { data: broadcastAccess } = useBroadcastAccess()
   // Entitlement/access-gated sections are appended after the role-based ones.
   // They render through the same light chrome — no restyling.
@@ -114,8 +113,8 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
                           className={cn(
                             "w-full flex items-center justify-center py-2 min-h-[36px] mx-auto transition-all",
                             isActive
-                              ? "text-[#3B5BFF]"
-                              : "text-[#374151] hover:bg-[rgba(59,91,255,0.1)]"
+                              ? "text-accent-orange-dark"
+                              : "text-[#374151] hover:bg-accent-orange/[0.07]"
                           )}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
@@ -140,8 +139,8 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-[5px] md:py-[5px] min-h-[44px] md:min-h-0 mx-2 rounded-md text-[13px] border-l-2 border-transparent transition-all text-left",
                       isActive
-                        ? "bg-[rgba(59,91,255,0.15)] border-l-[#3B5BFF] text-[#3B5BFF] font-semibold"
-                        : "text-[#374151] hover:bg-[rgba(59,91,255,0.1)]"
+                        ? "bg-accent-orange/10 border-l-accent-orange text-ink font-semibold"
+                        : "text-[#374151] hover:bg-accent-orange/[0.07]"
                     )}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -160,7 +159,7 @@ export default function AppSidebar({ role, open, onClose, collapsed, onToggleCol
 
         {/* Footer */}
         <div className="mt-auto border-t border-[#e5e7eb] p-3 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ink to-accent-orange flex items-center justify-center text-white font-bold text-[10px] shrink-0">
             {initials}
           </div>
           {!collapsed && (
