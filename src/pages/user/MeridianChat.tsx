@@ -48,6 +48,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import PrismBadge from "@/components/chat/PrismBadge";
+import MeridianTileRail from "@/components/meridian/MeridianTileRail";
+import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import {
   Sparkles,
   SquarePen,
@@ -62,6 +64,7 @@ import {
   Rewind,
   FastForward,
   X,
+  Download,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -108,7 +111,25 @@ function formatUSTimeSafe(input: unknown): string {
 const AGENT_ID = "meridian";
 const COACH_NAME = "Meridian";
 
-export default function MeridianChat() {
+export type MeridianChatVariant = "classic" | "v2";
+
+/**
+ * Meridian Chat page.
+ *
+ * `variant="v2"` (the flag-gated new user surface) reskins the page to the
+ * HomeV2 design system: a left tile rail plus a stacked Compose Prompt /
+ * Conversation two-card layout, with Export moved next to History. Every piece
+ * of streaming machinery (WS, SSE, async-jobs, audio) is shared — only the
+ * arrangement + skin differ, so there is a single source of truth for the
+ * fragile logic. `variant="classic"` (the default, and /meridian/chat/classic)
+ * renders the original layout unchanged.
+ */
+export default function MeridianChat({
+  variant = "classic",
+}: {
+  variant?: MeridianChatVariant;
+} = {}) {
+  const isV2 = variant === "v2";
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -153,6 +174,10 @@ export default function MeridianChat() {
 
   // Local UI state
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  // V2 only — the Export control lives in the sticky header (next to History);
+  // the page owns the modal state since the stacked ChatWindow no longer
+  // renders its own header/export trigger.
+  const [exportOpen, setExportOpen] = useState(false);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current) demoAudioServiceRef.current = new DemoAudioService();
   const [isAudioPaused, setIsAudioPaused] = useState(false);
@@ -1533,6 +1558,20 @@ export default function MeridianChat() {
               void handleSelectConversation(id);
             }}
           />
+          {/* V2 — Export moved next to History. */}
+          {isV2 && (
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              aria-label="Export chat"
+              title="Export chat"
+              data-testid="meridian-export-button"
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-hairline bg-white px-3 text-sm font-normal text-ink hover:bg-panel"
+            >
+              <Download className="size-4" />
+              <span>Export</span>
+            </button>
+          )}
         </div>
 
         {/* Spacer */}
@@ -1654,19 +1693,46 @@ export default function MeridianChat() {
         </div>
       </div>
 
-      {/* T6 — Canvas expansion. The ChatWindow now fills the full
-          content width; History is reachable via the HistoryDropdown
-          in the sticky header above. The flex-col wrapper lets
-          ChatWindow grow to take the remaining viewport space. */}
-      <div className="flex flex-col w-full" data-tour="chat-window-canvas">
-        {reviewConversationIds.length > 0 && (
-          <div className="mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            Reviewing {reviewConversationIds.length} additional conversation
-            {reviewConversationIds.length === 1 ? "" : "s"} alongside the active chat.
-          </div>
+      {/* Canvas. V2 reads: nav (UserLayout) │ tile rail │ [Compose /
+          Conversation], and gives the grid a viewport-derived height so the
+          stacked Conversation card can flex-grow and scroll internally. Below
+          1024px the rail stacks above the chat column. Classic keeps the
+          full-width single ChatWindow (History via the header dropdown). */}
+      <div
+        className={
+          isV2
+            ? "grid h-[calc(100vh-8rem)] grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]"
+            : "flex flex-col w-full"
+        }
+        data-tour="chat-window-canvas"
+      >
+        {isV2 && (
+          <MeridianTileRail
+            className="overflow-y-auto pe-1"
+            activeConversationId={selectedId}
+            onSelectConversation={(id) => {
+              void handleSelectConversation(id);
+            }}
+          />
         )}
-        <div className="w-full" data-tour="chat-window">
+        <div
+          className={isV2 ? "flex min-h-0 min-w-0 flex-col" : "w-full"}
+          data-tour="chat-window"
+        >
+          {reviewConversationIds.length > 0 && (
+            <div
+              className={
+                isV2
+                  ? "mb-2 rounded-lg border border-hairline bg-panel px-3 py-2 text-xs text-mute"
+                  : "mb-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+              }
+            >
+              Reviewing {reviewConversationIds.length} additional conversation
+              {reviewConversationIds.length === 1 ? "" : "s"} alongside the active chat.
+            </div>
+          )}
           <ChatWindow
+            stacked={isV2}
             coachName={COACH_NAME}
             coachId={AGENT_ID}
             conversationId={conversationId}
@@ -2059,6 +2125,17 @@ export default function MeridianChat() {
           />
         </div>
       </div>
+
+      {/* V2 export modal — opened from the header Export button (next to
+          History). The stacked ChatWindow no longer renders its own trigger. */}
+      {isV2 && (
+        <ExportChatModal
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          onExport={handleExportChat}
+          disableExport={false}
+        />
+      )}
     </UserLayout>
   );
 }

@@ -62,7 +62,6 @@ const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"))
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
-const MeridianChatV2 = React.lazy(() => import("@/pages/user/MeridianChatV2"));
 // Summit — Goal Setting surface
 const SummitLayout = React.lazy(() => import("@/pages/summit/SummitLayout"));
 const SummitDashboard = React.lazy(() => import("@/pages/summit/SummitDashboard"));
@@ -272,7 +271,7 @@ function MeridianChatSurface() {
         }}
       />
       <Suspense fallback={<LoadingSpinner />}>
-        {enabled ? <MeridianChatV2 /> : <MeridianChat />}
+        <MeridianChat variant={enabled ? "v2" : "classic"} />
       </Suspense>
     </>
   );
