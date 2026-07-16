@@ -585,3 +585,56 @@ describe("MeridianChat — ProfileLoadedIndicator (G6, replaces T2/T3 autoLoadPr
     });
   });
 });
+
+describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
+  function renderV2(variant: "classic" | "v2" = "v2") {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/meridian/chat"]}>
+          <MeridianChat variant={variant} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAgentEngine.mockReturnValue(true);
+    capturedChatWindowProps = {};
+    mockUseLoadedFrameworks.mockReturnValue({
+      data: [],
+      isError: false,
+      error: null,
+      isLoading: false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  });
+
+  it("renders ChatWindow in the stacked (two-card) layout", () => {
+    renderV2("v2");
+    expect(capturedChatWindowProps.stacked).toBe(true);
+  });
+
+  it("renders the five-tile Meridian rail", () => {
+    renderV2("v2");
+    expect(screen.getByTestId("meridian-tile-rail")).toBeInTheDocument();
+    for (const id of ["active", "history", "last5", "projects", "knowledge"]) {
+      expect(screen.getByTestId(`rail-toggle-${id}`)).toBeInTheDocument();
+    }
+  });
+
+  it("renders the Export button next to History", () => {
+    renderV2("v2");
+    const btn = screen.getByTestId("meridian-export-button");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent(/export/i);
+  });
+
+  it("classic variant renders neither the rail, the header Export button, nor a stacked ChatWindow", () => {
+    renderV2("classic");
+    expect(screen.queryByTestId("meridian-tile-rail")).toBeNull();
+    expect(screen.queryByTestId("meridian-export-button")).toBeNull();
+    expect(capturedChatWindowProps.stacked).toBeFalsy();
+  });
+});

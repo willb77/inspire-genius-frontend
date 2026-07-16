@@ -11,6 +11,7 @@ import ChatWindowTopBanner from "@/components/user/chat/ChatWindowTopBanner";
 import ChatWindowChatTab from "@/components/user/chat/ChatWindowChatTab";
 import ChatWindowFloatingAudioPlayer from "@/components/user/chat/ChatWindowFloatingAudioPlayer";
 import ChatWindowInputBar from "@/components/user/chat/ChatWindowInputBar";
+import { V2Card, SectionLabel } from "@/components/v2";
 import type {
   ChatWindowProps,
   SimpleDoc,
@@ -74,6 +75,7 @@ export default function ChatWindow({
   setShowAudioPlayer,
   showAudioPlayer,
   onReplayMessage,
+  stacked,
 }: ChatWindowProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "documents">("chat");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -264,7 +266,122 @@ const genericMessages =
   else if (isMuted) muteTooltipText = "Unmute";
 
   const selectedDocsTooltip = selectedDocNames ? selectedDocNames.map(stripPdfExt).join(", ") : "";
-  
+
+  // ── HomeV2 stacked layout ────────────────────────────────────────────
+  // Two separate cards — "Compose Prompt" on top, a full-height scrollable
+  // "Conversation" below — matching the Meridian Chat V2 wireframe. Reuses
+  // every piece of ChatWindow state/handlers (inputText, handleSend, scroll
+  // refs, auto-send/auto-scroll effects, modals); only the arrangement +
+  // skin differ. The classic single-card layout below is unchanged. Export
+  // is triggered from the page header in V2, so no export trigger here.
+  if (stacked) {
+    return (
+      <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
+        {/* Compose Prompt card */}
+        <V2Card className="flex flex-col gap-3 p-4 md:p-5" data-testid="v2-compose-card">
+          <SectionLabel>Compose Prompt</SectionLabel>
+          <ChatWindowTopBanner
+            selectedDocNames={selectedDocNames}
+            selectedSummary={selectedSummary}
+            selectedTooltip={selectedDocsTooltip}
+            isConnecting={isConnecting}
+            statusBanner={statusBanner}
+            activeTab="chat"
+            selectDocsLottieSrc={selectDocsLottieSrc}
+          />
+          <ChatWindowInputBar
+            inputText={inputText}
+            onInputTextChange={setInputText}
+            onSend={handleSend}
+            onToggleRecording={onToggleRecording}
+            isRecording={isRecording}
+            hasAudio={hasAudio}
+            isAudioPaused={isAudioPaused}
+            onToggleAudioPlayback={onToggleAudioPlayback}
+            isMuted={isMuted}
+            onToggleMute={onToggleMute}
+            muteTooltipText={muteTooltipText}
+          />
+        </V2Card>
+
+        {/* Conversation card — vertically visible top→bottom, scrollable */}
+        <V2Card
+          className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-0"
+          data-testid="v2-conversation-card"
+        >
+          <div className="flex items-center justify-between border-b border-hairline px-4 py-3 md:px-5">
+            <SectionLabel>Conversation</SectionLabel>
+            <span className="font-serif text-sm font-semibold text-ink">{coachName}</span>
+          </div>
+          <div
+            ref={scrollRef}
+            className={cn(
+              "flex-1 overflow-auto p-4 md:p-5",
+              audioPlayerBuffer && showAudioPlayer ? "pb-40" : "pb-6"
+            )}
+          >
+            <ChatWindowChatTab
+              convIsLoading={convIsLoading}
+              convIsFetchingNext={convIsFetchingNext}
+              renderMessages={renderMessages}
+              bottomRef={bottomRef}
+              onCopy={handleCopy}
+              audioPlayerBuffer={audioPlayerBuffer}
+              lastMessageId={lastMessageId}
+              onShowAudioPlayer={() => handleShowAudioPlayer(true)}
+              genericMessages={genericMessages}
+              coachId={coachId}
+              conversationId={conversationId}
+              onReplayMessage={onReplayMessage}
+            />
+          </div>
+          {/* Floating audio player pinned to the bottom of the conversation card */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 [&>*]:pointer-events-auto">
+            <ChatWindowFloatingAudioPlayer
+              audioPlayerBuffer={audioPlayerBuffer}
+              showAudioPlayer={showAudioPlayer}
+              onCloseAudioPlayer={onCloseAudioPlayer}
+            />
+          </div>
+        </V2Card>
+
+        {copied ? (
+          <div className="fixed right-6 bottom-10 z-50">
+            <div className="rounded-xl bg-black/80 text-white text-sm px-3 py-2 shadow">
+              Copied to clipboard
+            </div>
+          </div>
+        ) : null}
+
+        {/* Preview + documents modals — identical wiring to the classic layout */}
+        <DocumentIframeModal
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          fileUrl={viewer.url}
+          fileName={viewer.name}
+        />
+        <DocumentsSidePanel
+          open={docsOpen}
+          onOpenChange={setDocsOpen}
+          sections={docSections}
+          selectedIds={selectedFileIds}
+          onToggleSelect={onToggleDocSelect}
+          isLoading={docIsLoading}
+          onDelete={docOnDelete}
+          onDownload={docOnDownload}
+          onImportToChat={onImportDocs}
+          onPreview={onPreview}
+          onUploadClick={() => setUploadOpen(true)}
+        />
+        <UploadDocumentsModal
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          onUploaded={handleUploaded}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
