@@ -5,6 +5,7 @@
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Compass } from "lucide-react"
 import type { VerticalKey } from "@/verticals/core"
 
 /* ── Mocks ── */
@@ -29,6 +30,20 @@ function setHonorAccess(hasAccess: boolean) {
       ? { hasAccess, isLoading: false, enabledVerticals: hasAccess ? ["honor"] : [] }
       : { hasAccess: false, isLoading: false, enabledVerticals: [] }
   )
+}
+
+// AppSidebar now surfaces Honor via the registry-driven launcher (not a hardcoded
+// section). Mock the launcher hook so the sidebar tests control what it shows.
+const mockLauncherSection = jest.fn()
+jest.mock("@/components/layout/useVerticalLauncher", () => ({
+  useVerticalLauncherSection: () => mockLauncherSection(),
+}))
+
+const HONOR_LAUNCHER = {
+  id: "verticals-launcher",
+  label: "Verticals",
+  roles: ["practitioner"] as const,
+  items: [{ to: "/vertical/honor/dashboard", icon: Compass, label: "Honor Foundation" }],
 }
 
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
@@ -74,7 +89,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
     })
   })
 
-  describe("entitlement gates the sidebar section", () => {
+  describe("registry launcher surfaces Honor in the sidebar", () => {
     const sidebarProps = {
       role: "practitioner" as const,
       open: true,
@@ -83,19 +98,21 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
       onToggleCollapse: jest.fn(),
     }
 
-    test("shows the Honor nav section when entitled", () => {
+    test("shows the Honor launcher entry when entitled", () => {
       setHonorAccess(true)
+      mockLauncherSection.mockReturnValue(HONOR_LAUNCHER)
       renderWithProviders(<AppSidebar {...sidebarProps} />)
 
+      expect(screen.getByText("Verticals")).toBeInTheDocument()
       expect(screen.getByText("Honor Foundation")).toBeInTheDocument()
-      expect(screen.getByText("Coach Workbench")).toBeInTheDocument()
     })
 
-    test("hides the Honor nav section when NOT entitled", () => {
+    test("hides Honor when not entitled (launcher empty)", () => {
       setHonorAccess(false)
+      mockLauncherSection.mockReturnValue(null)
       renderWithProviders(<AppSidebar {...sidebarProps} />)
 
-      expect(screen.queryByText("Coach Workbench")).not.toBeInTheDocument()
+      expect(screen.queryByText("Honor Foundation")).not.toBeInTheDocument()
     })
   })
 
