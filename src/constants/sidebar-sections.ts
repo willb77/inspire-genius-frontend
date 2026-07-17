@@ -27,7 +27,6 @@ import {
   Scale,
   Banknote,
   Megaphone,
-  Shield,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -187,20 +186,9 @@ export function grantSidebarSectionForRole(role: UserRole): SidebarSection {
   }
 }
 
-/**
- * The Honor Foundation — Coach Workbench vertical section.
- *
- * NOT part of SIDEBAR_SECTIONS — it is entitlement-gated (not role-gated):
- * AppSidebar appends it only when `useVerticalAccess("honor").hasAccess` is true (the
- * user's enabled_verticals include "honor"). A single discoverability
- * link into the reskinned vertical; the full coach nav lives in HonorShell.
- */
-export const HONOR_SIDEBAR_SECTION: SidebarSection = {
-  id: "honor",
-  label: "Honor Foundation",
-  roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
-  items: [{ to: "/vertical/honor/dashboard", icon: Shield, label: "Coach Workbench" }],
-}
+// Honor (and any themed vertical whose sub-nav lives in its own shell) is now
+// surfaced by the registry-driven launcher — see
+// `src/components/layout/useVerticalLauncher.ts`. No per-vertical section here.
 
 /**
  * Broadcast Alerts section.

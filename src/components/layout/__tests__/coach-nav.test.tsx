@@ -14,6 +14,11 @@ const mockUseAuth = jest.fn()
 jest.mock("@/context/useAuth", () => ({ useAuth: () => mockUseAuth() }))
 
 const mockUseVerticalAccess = jest.fn()
+// The registry launcher is exercised in its own test; keep it inert here so this
+// test stays focused on GRANT's detailed coach nav.
+jest.mock("@/components/layout/useVerticalLauncher", () => ({
+  useVerticalLauncherSection: () => null,
+}))
 jest.mock("@/verticals/core", () => ({
   useVerticalAccess: () => mockUseVerticalAccess(),
 }))

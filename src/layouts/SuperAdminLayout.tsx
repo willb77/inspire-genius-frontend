@@ -8,8 +8,9 @@ import {
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
-import { GRANT_SIDEBAR_SECTION, HONOR_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
+import { GRANT_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
 import { useVerticalAccess } from "@/verticals/core";
+import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 
@@ -22,7 +23,7 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   const agentEngineOn = useAgentEngine();
   const userNavItems = getUserNavItems(agentEngineOn);
   const { hasAccess: hasGrantAccess } = useVerticalAccess("grant");
-  const { hasAccess: hasHonorAccess } = useVerticalAccess("honor");
+  const launcherSection = useVerticalLauncherSection();
   const { user } = useAuth();
   // Owner-only nav routes (e.g. Dev Traffic Report) stay in their normal
   // section but are hidden from every super-admin except the platform owner.
@@ -52,17 +53,17 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
             },
           ]
         : []),
-      ...(hasHonorAccess
+      ...(launcherSection
         ? [
             {
-              label: HONOR_SIDEBAR_SECTION.label,
-              items: HONOR_SIDEBAR_SECTION.items,
+              label: launcherSection.label,
+              items: launcherSection.items,
               defaultCollapsed: false,
             },
           ]
         : []),
     ];
-  }, [userNavItems, hasGrantAccess, hasHonorAccess, isOwner]);
+  }, [userNavItems, hasGrantAccess, launcherSection, isOwner]);
 
   return (
     <SidebarScaffold

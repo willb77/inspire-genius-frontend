@@ -46,6 +46,17 @@ jest.mock("@/verticals/core", () => ({
   useVerticalAccess: (vertical: string) => mockUseVerticalAccess(vertical),
 }));
 
+// 🔹 Mock the registry-driven vertical launcher (Honor + future verticals surface
+// through it now, not a hardcoded section). Structural type — SuperAdminLayout
+// only reads .label/.items and hands items to the (mocked) SidebarScaffold.
+type MockLauncher =
+  | { id: string; label: string; roles: string[]; items: { to: string; icon: () => null; label: string }[] }
+  | null;
+const mockLauncher = jest.fn((): MockLauncher => null);
+jest.mock("@/components/layout/useVerticalLauncher", () => ({
+  useVerticalLauncherSection: () => mockLauncher(),
+}));
+
 /** Open exactly one vertical's gate; all others stay closed. */
 function entitleOnly(vertical: string) {
   mockUseVerticalAccess.mockImplementation((v: string) =>
@@ -165,6 +176,7 @@ describe("SuperAdminLayout", () => {
       isLoading: false,
       enabledVerticals: [],
     });
+    mockLauncher.mockReturnValue(null); // no launcher vertical unless a test sets one
     mockEmail = "admin@example.com"; // non-owner by default
   });
 
@@ -237,8 +249,13 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
   });
 
-  test("appends the Honor section when entitled", () => {
-    entitleOnly("honor");
+  test("appends the registry launcher section when a launcher vertical is entitled", () => {
+    mockLauncher.mockReturnValue({
+      id: "verticals-launcher",
+      label: "Verticals",
+      roles: [],
+      items: [{ to: "/vertical/honor/dashboard", icon: () => null, label: "Honor Foundation" }],
+    });
     render(
       <SuperAdminLayout>
         <div />
@@ -247,7 +264,8 @@ describe("SuperAdminLayout", () => {
 
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections).toHaveLength(4);
-    expect(props.navSections[3].label).toBe("Honor Foundation");
+    expect(props.navSections[3].label).toBe("Verticals");
+    expect(props.navSections[3].items[0].label).toBe("Honor Foundation");
   });
 
   test("omits the GRANT section when not entitled", () => {
