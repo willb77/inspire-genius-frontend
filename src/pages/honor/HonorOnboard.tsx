@@ -1,111 +1,207 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
-import { UserPlus, Upload, FileText } from "lucide-react"
+import { UserPlus, Upload, FileText, CheckCircle2, Loader2 } from "lucide-react"
 import { HonorCard, HonorPageHeader, HonorSectionTitle } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY } from "./_format"
+import { useHonorOnboard, type OptionalFrameworkKey } from "@/hooks/honor/useHonorOnboard"
+import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
 
 /**
- * Honor Coach Workbench — Onboard a Team.
+ * Honor Coach Workbench — Onboard a Member (wired to the IG Core process).
  *
- * Wiring target (net-new `roster_import.py` + user/invitation services):
- *   - form fields → `users` / `user_profiles`
- *   - résumé + bio → `documents` (S3 + pgvector RAG for Aura & Nova)
- *   - PRISM / DISC / CliftonStrengths → `prism_results` / `external_assessments`
- *   - creates a `coach_member_assignments` row; invite via invitation-service (SES magic-link)
- * Bulk CSV import reuses the coach roster CSV mapping flow. Phase-0 scaffold: the
- * submit handlers are stubs that toast the intended backend effect.
+ * The submit handler runs {@link useHonorOnboard}: create → invite → import the
+ * mandatory PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
+ * Big Five / MBTI / Hogan) into the shipped `assessments`/`assessment_scores`
+ * platform (subject = the member), then push résumé/bio into the document RAG.
+ * No new backend tables — every write reuses an existing Core endpoint.
  */
 
-type Framework = "PRISM" | "DISC" | "CliftonStrengths" | "None yet"
+const OPTIONAL_FRAMEWORKS: OptionalFrameworkKey[] = [
+  "DISC",
+  "CLIFTON",
+  "BIG_FIVE",
+  "MBTI",
+  "HOGAN",
+]
+
+const IG_ROLES = ["Fellow", "Coach", "Manager", "Company Admin"] as const
 
 export default function HonorOnboard() {
-  const [framework, setFramework] = useState<Framework>("PRISM")
-  const [resumeName, setResumeName] = useState<string | null>(null)
+  const onboard = useHonorOnboard()
 
-  function onAdd(e: React.FormEvent) {
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [role, setRole] = useState<string>("Fellow")
+  const [background, setBackground] = useState("")
+  const [target, setTarget] = useState("")
+  const [cohort, setCohort] = useState("")
+  const [bio, setBio] = useState("")
+  const [additionalInfo, setAdditionalInfo] = useState("")
+
+  const [prismFile, setPrismFile] = useState<File | null>(null)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [frameworkFiles, setFrameworkFiles] = useState<
+    Partial<Record<OptionalFrameworkKey, File>>
+  >({})
+
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function reset() {
+    setFirstName("")
+    setLastName("")
+    setEmail("")
+    setRole("Fellow")
+    setBackground("")
+    setTarget("")
+    setCohort("")
+    setBio("")
+    setAdditionalInfo("")
+    setPrismFile(null)
+    setResumeFile(null)
+    setFrameworkFiles({})
+    formRef.current?.reset()
+  }
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    toast.success("Fellow added to roster — coach_member_assignments row created (scaffold stub)")
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      toast.error("First name, last name, and email are required.")
+      return
+    }
+    if (!prismFile) {
+      toast.error("A PRISM assessment file (CSV) is required to onboard a member.")
+      return
+    }
+    await onboard.mutateAsync({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim().toLowerCase(),
+      role,
+      background: background.trim() || undefined,
+      target: target.trim() || undefined,
+      cohort: cohort.trim() || undefined,
+      prismFile,
+      frameworkFiles,
+      resumeFile,
+      bio: bio.trim() || undefined,
+      additionalInfo: additionalInfo.trim() || undefined,
+    })
   }
 
-  const resultPlaceholder: Record<Framework, string> = {
-    PRISM: "e.g. Gold-Green dominant",
-    DISC: "e.g. DC",
-    CliftonStrengths: "e.g. Achiever, Discipline, Focus",
-    "None yet": "Queued for intake",
-  }
+  const busy = onboard.isPending
+  const result = onboard.data
 
   return (
     <div>
       <HonorPageHeader
         icon={UserPlus}
-        title="Onboard a Team"
-        description="Add a single Honor fellow or import a whole cohort. New members are invited via a secure magic link."
+        title="Onboard a Member"
+        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New members are invited via a secure magic link."
       />
 
-      {/* Add a fellow */}
+      {/* Add a member */}
       <HonorCard className="mb-6">
-        <HonorSectionTitle>Add a fellow</HonorSectionTitle>
-        <form onSubmit={onAdd} className="grid gap-4 sm:grid-cols-2">
+        <HonorSectionTitle>Member details</HonorSectionTitle>
+        <form ref={formRef} onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <Field label="First name" required>
-            <input required className={inputCls} placeholder="Marcus" />
+            <input required className={inputCls} placeholder="Marcus" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
           <Field label="Last name" required>
-            <input required className={inputCls} placeholder="Reyes" />
+            <input required className={inputCls} placeholder="Reyes" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
           <Field label="Email" required hint="A magic-link intake invite is sent here.">
-            <input required type="email" className={inputCls} placeholder="marcus.reyes@honor.org" />
+            <input required type="email" className={inputCls} placeholder="marcus.reyes@honor.org" value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
-          <Field label="Prior service background">
-            <input className={inputCls} placeholder="e.g. Naval Special Warfare" />
-          </Field>
-          <Field label="Target career">
-            <input className={inputCls} placeholder="e.g. Program Management" />
-          </Field>
-          <Field label="Behavioral assessment framework">
-            <select
-              className={inputCls}
-              value={framework}
-              onChange={(e) => setFramework(e.target.value as Framework)}
-            >
-              <option value="PRISM">PRISM (source of truth)</option>
-              <option value="DISC">DISC</option>
-              <option value="CliftonStrengths">CliftonStrengths</option>
-              <option value="None yet">None yet — queue for intake</option>
+          <Field label="Role" required hint="Provisioned on invite.">
+            <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value)}>
+              {IG_ROLES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
             </select>
           </Field>
-
-          <Field label="Résumé (PDF / DOCX)">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#c6cdd9] bg-[#f6f7f9] px-3 py-2.5 text-sm text-[#5b6678] hover:border-[#E8792B]">
-              <Upload className="h-4 w-4" />
-              {resumeName ?? "Drag & drop or browse"}
-              <input
-                type="file"
-                className="hidden"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => setResumeName(e.target.files?.[0]?.name ?? null)}
-              />
-            </label>
+          <Field label="Prior service background">
+            <input className={inputCls} placeholder="e.g. Naval Special Warfare" value={background} onChange={(e) => setBackground(e.target.value)} />
           </Field>
-          <Field label={framework === "None yet" ? "Assessment status" : "Result value"}>
-            <input className={inputCls} placeholder={resultPlaceholder[framework]} disabled={framework === "None yet"} />
+          <Field label="Target career">
+            <input className={inputCls} placeholder="e.g. Program Management" value={target} onChange={(e) => setTarget(e.target.value)} />
+          </Field>
+          <Field label="Cohort">
+            <input className={inputCls} placeholder="e.g. Cohort 2026-A" value={cohort} onChange={(e) => setCohort(e.target.value)} />
           </Field>
 
-          <Field label="Bio / narrative" full>
-            <textarea
-              className={`${inputCls} min-h-[90px] resize-y`}
-              placeholder="Short mission narrative — feeds the RAG context for Aura & Nova."
+          {/* Mandatory PRISM */}
+          <Field label="PRISM assessment (CSV)" required full hint="Source of truth — parsed into the member's structured scores.">
+            <FileDrop
+              accept=".csv,.xlsx,.pdf"
+              file={prismFile}
+              onFile={setPrismFile}
+              placeholder="Drop the PRISM export (CSV / XLSX / PDF) or click to browse"
             />
           </Field>
 
+          {/* Optional behavioral frameworks */}
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-sm font-semibold text-[#18202f]">
+              Additional behavioral assessments <span className="font-normal text-[#9299a6]">(optional)</span>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {OPTIONAL_FRAMEWORKS.map((fw) => (
+                <Field key={fw} label={HONOR_FRAMEWORK_LABELS[fw]}>
+                  <FileDrop
+                    accept=".csv,.xlsx,.pdf,.doc,.docx"
+                    file={frameworkFiles[fw] ?? null}
+                    onFile={(f) => setFrameworkFiles((prev) => ({ ...prev, [fw]: f ?? undefined }))}
+                    placeholder="Drop report or browse"
+                    compact
+                  />
+                </Field>
+              ))}
+            </div>
+          </div>
+
+          {/* Résumé + bio */}
+          <Field label="Résumé (PDF / DOCX)">
+            <FileDrop
+              accept=".pdf,.doc,.docx"
+              file={resumeFile}
+              onFile={setResumeFile}
+              placeholder="Drop résumé or browse"
+            />
+          </Field>
+          <Field label="Bio / narrative">
+            <textarea className={`${inputCls} min-h-[80px] resize-y`} placeholder="Short mission narrative — feeds Aura & Nova via RAG." value={bio} onChange={(e) => setBio(e.target.value)} />
+          </Field>
+          <Field label="Additional information" full>
+            <textarea className={`${inputCls} min-h-[70px] resize-y`} placeholder="Anything else the coaching agents should know (stored with the bio in RAG)." value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} />
+          </Field>
+
           <div className="flex items-center gap-2 sm:col-span-2">
-            <button type="submit" className={HONOR_BTN_PRIMARY}>
-              <UserPlus className="h-4 w-4" /> Add to my roster
+            <button type="submit" className={HONOR_BTN_PRIMARY} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+              {busy ? "Onboarding…" : "Add to my roster"}
             </button>
-            <button type="button" className={HONOR_BTN_OUTLINE}>
-              Save &amp; add another
+            <button type="button" className={HONOR_BTN_OUTLINE} disabled={busy} onClick={reset}>
+              Clear form
             </button>
           </div>
         </form>
+
+        {result && (
+          <div className="mt-4 rounded-lg border border-[#e3e7ee] bg-[#f8fafc] p-3">
+            <p className="mb-2 text-sm font-semibold text-[#18202f]">Onboarding summary</p>
+            <ul className="space-y-1">
+              {result.steps.map((s) => (
+                <li key={s.step} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className={`h-4 w-4 ${s.ok ? "text-[#1a9e5f]" : "text-[#c0472b]"}`} />
+                  <span className="font-medium capitalize">{s.step}</span>
+                  {s.detail && <span className="text-[#5b6678]">— {s.detail}</span>}
+                  {!s.ok && <span className="text-[#c0472b]">(needs attention)</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </HonorCard>
 
       {/* Bulk import */}
@@ -119,15 +215,15 @@ export default function HonorOnboard() {
             <div>
               <p className="text-sm font-semibold text-[#18202f]">Bulk cohort import (CSV)</p>
               <p className="text-sm text-[#5b6678]">
-                Upload a roster; columns are auto-mapped and deduplicated, then each fellow is queued
-                for PRISM intake.
+                Upload a roster; columns are auto-mapped and deduplicated. Each fellow is created and
+                queued for PRISM intake — invite + per-member assessment import happen from the roster.
               </p>
             </div>
           </div>
           <button
             type="button"
             className={HONOR_BTN_OUTLINE}
-            onClick={() => toast.info("CSV import — column mapping + dedupe (scaffold stub)")}
+            onClick={() => toast.info("Bulk CSV import is available from the Caseload → Import CSV action.")}
           >
             <Upload className="h-4 w-4" /> Import CSV roster
           </button>
@@ -139,6 +235,33 @@ export default function HonorOnboard() {
 
 const inputCls =
   "w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+
+function FileDrop({
+  file,
+  onFile,
+  accept,
+  placeholder,
+  compact,
+}: {
+  file: File | null
+  onFile: (f: File | null) => void
+  accept: string
+  placeholder: string
+  compact?: boolean
+}) {
+  return (
+    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#c6cdd9] bg-[#f6f7f9] px-3 ${compact ? "py-2" : "py-2.5"} text-sm hover:border-[#E8792B] ${file ? "text-[#18202f]" : "text-[#5b6678]"}`}>
+      <Upload className="h-4 w-4 shrink-0" />
+      <span className="truncate">{file?.name ?? placeholder}</span>
+      <input
+        type="file"
+        className="hidden"
+        accept={accept}
+        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+      />
+    </label>
+  )
+}
 
 function Field({
   label,

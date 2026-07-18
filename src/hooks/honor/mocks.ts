@@ -32,11 +32,15 @@ export const USE_HONOR_MOCKS = true
  * EVAL_LIVE: the Evaluate chat uses the live Meridian async-jobs transport
  *   (POST /v1/agents/chat/async, context.surface="honor"), with a graceful
  *   fallback to the seeded canned answers on error so the surface never breaks.
- * Activity / Schedule / Administration stay on fixtures until their shared-Core
- * endpoints are adapted (Phase 2).
+ * ACTIVITY_LIVE: the Activity feed reads the live conversation/audit history
+ *   (GET /v1/chat/history), scoped to the signed-in coach's JWT.
+ * Schedule / Administration stay on fixtures — Schedule's calendar sync is an
+ * explicit Phase-2 stub in the wireframe, and Administration's coach-of-coaches
+ * management has no dedicated Core endpoint yet.
  */
 export const USE_HONOR_ROSTER_LIVE = true
 export const USE_HONOR_EVAL_LIVE = true
+export const USE_HONOR_ACTIVITY_LIVE = true
 
 /** The signed-in coach persona shown in the wireframe. */
 export const MOCK_COACH = {
