@@ -22,6 +22,12 @@ type PresignedUrlRequest = {
   doc_kind?: string;
   company_id?: string;
   tags?: string[];
+  /**
+   * Subject the document is *about*, when it differs from the uploader (e.g. a
+   * coach attaching a member's résumé). Requires a coach-capable role server-side;
+   * omit for self-uploads (server defaults the subject to the uploader).
+   */
+  subject_user_id?: string;
 };
 
 type PresignedUrlResponse = {

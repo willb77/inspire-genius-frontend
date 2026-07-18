@@ -64,18 +64,29 @@ export type HonorOnboardResult = {
 }
 
 /** Turn a plain-text field into an uploadable document (bio / notes → RAG). */
-async function uploadTextDocument(name: string, text: string, docKind: string) {
+async function uploadTextDocument(
+  name: string,
+  text: string,
+  docKind: string,
+  subjectUserId?: string,
+) {
   const file = new File([text], name, { type: "text/plain" })
-  await uploadFileDocument(file, docKind)
+  await uploadFileDocument(file, docKind, subjectUserId)
 }
 
-/** Reusable 3-step presigned upload → process (document-service). */
-async function uploadFileDocument(file: File, docKind: string) {
+/**
+ * Reusable 3-step presigned upload → process (document-service).
+ * When `subjectUserId` is supplied (a coach uploading a member's doc), the row
+ * is attributed to the MEMBER so it injects into their RAG — not the coach's.
+ * Requires a coach-capable role server-side; omitted → server defaults to self.
+ */
+async function uploadFileDocument(file: File, docKind: string, subjectUserId?: string) {
   const presigned = await initiateUpload({
     filename: file.name,
     content_type: file.type || "application/octet-stream",
     file_size: file.size,
     doc_kind: docKind,
+    ...(subjectUserId ? { subject_user_id: subjectUserId } : {}),
   })
   await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
   await triggerProcessing(presigned.document_id)
@@ -136,10 +147,13 @@ export async function runHonorOnboard(
     }
   }
 
-  // 5. Résumé / bio / additional info → document RAG.
+  // 5. Résumé / bio / additional info → document RAG, attributed to the MEMBER
+  // (subject = their sub) so the docs inject into the member's context, not the
+  // coach's. Falls back to self-attribution if the invite didn't return a sub.
+  const subject = result.memberUserId
   if (input.resumeFile) {
     try {
-      await uploadFileDocument(input.resumeFile, "resume")
+      await uploadFileDocument(input.resumeFile, "resume", subject)
       steps.push({ step: "resume", ok: true })
     } catch (e) {
       steps.push({ step: "resume", ok: false, detail: errMsg(e) })
@@ -150,7 +164,7 @@ export async function runHonorOnboard(
     .join("\n\n")
   if (bioText) {
     try {
-      await uploadTextDocument(`${input.firstName}_${input.lastName}_bio.txt`, bioText, "bio")
+      await uploadTextDocument(`${input.firstName}_${input.lastName}_bio.txt`, bioText, "bio", subject)
       steps.push({ step: "bio", ok: true })
     } catch (e) {
       steps.push({ step: "bio", ok: false, detail: errMsg(e) })
