@@ -33,7 +33,7 @@ import {
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 
 /**
- * Honor Coach Workbench — Evaluate Member (core AI surface).
+ * Honor Coach Workbench — Evaluate Fellow (core AI surface).
  *
  * The biggest wiring lift. Wiring target: the coach's free-text prompt drives a
  * multi-agent DAG (Aura → James → Nova → Meridian) that analyses a SELECTED
@@ -138,7 +138,7 @@ export default function HonorEvaluate() {
     }
   }
 
-  // Compare matrix — only metrics with scores for the selected members.
+  // Compare matrix — only metrics with scores for the selected fellows.
   const compareRows = useMemo(() => {
     const ids = selectedFellows.map((f) => f.id)
     return MOCK_COMPARE_METRICS.map((m) => ({
@@ -151,8 +151,8 @@ export default function HonorEvaluate() {
     <div>
       <HonorPageHeader
         icon={Sparkles}
-        title="Evaluate Member"
-        description="Ask Meridian about a member or compare a pod. Every answer shows the agent trace behind it."
+        title="Evaluate Fellow"
+        description="Ask Meridian about a fellow or compare a pod. Every answer shows the agent trace behind it."
       />
 
       {/* Scope + member picker */}
@@ -179,7 +179,7 @@ export default function HonorEvaluate() {
           </span>
         </div>
 
-        <HonorSectionTitle>Members</HonorSectionTitle>
+        <HonorSectionTitle>Fellows</HonorSectionTitle>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {fellows.map((f) => {
             const on = selected.has(f.id)
@@ -267,7 +267,7 @@ export default function HonorEvaluate() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about a member — e.g. What careers is this member a fit for?"
+            placeholder="Ask about a fellow — e.g. What careers is this fellow a fit for?"
             className="flex-1 rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
           />
           <button type="submit" className={HONOR_BTN_PRIMARY}>
@@ -400,7 +400,7 @@ export default function HonorEvaluate() {
             <span className="mb-1 block font-medium text-[#374151]">Comment</span>
             <textarea
               className="min-h-[70px] w-full resize-y rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              placeholder="Written to the Activity feed for the selected member or whole team."
+              placeholder="Written to the Activity feed for the selected fellow or whole team."
             />
           </label>
           <button
