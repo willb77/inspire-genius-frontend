@@ -9,11 +9,11 @@ import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } fro
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 
 /**
- * Honor Coach Workbench — My Members (Caseload).
+ * Honor Coach Workbench — My Fellows (Caseload).
  *
  * Wiring target: `GET /v1/coach/members` (net-new) resolves the coach's
  * `coach_member_assignments`, JWT-scoped by `sub` and enforced server-side by
- * `require_member_ownership`. Mock-backed via {@link useCaseload}.
+ * `require_fellow_access`. Mock-backed via {@link useCaseload}.
  */
 
 function StatusBadge({ status }: { status: FellowStatus }) {
@@ -46,15 +46,15 @@ export default function HonorCaseload() {
     <div>
       <HonorPageHeader
         icon={Users}
-        title="My Members"
-        description="The Honor fellows on your caseload. Open a member to run their intake, evaluation, and plan."
+        title="My Fellows"
+        description="The Honor fellows on your caseload. Open a fellow to run their intake, evaluation, and plan."
         action={
           <div className="flex items-center gap-2">
             <Link to={ROUTES.HONOR.ONBOARD} className={HONOR_BTN_OUTLINE}>
               <Upload className="h-4 w-4" /> Import CSV
             </Link>
             <Link to={ROUTES.HONOR.ONBOARD} className={HONOR_BTN_PRIMARY}>
-              <UserPlus className="h-4 w-4" /> Add member
+              <UserPlus className="h-4 w-4" /> Add fellow
             </Link>
           </div>
         }
@@ -71,7 +71,7 @@ export default function HonorCaseload() {
       <div className="relative mb-4 max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9299a6]" />
         <input
-          aria-label="Search members"
+          aria-label="Search fellows"
           placeholder="Search by name, background, or target"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -82,14 +82,14 @@ export default function HonorCaseload() {
       {isLoading ? (
         <HonorEmptyState>Loading your caseload…</HonorEmptyState>
       ) : filtered.length === 0 ? (
-        <HonorEmptyState>No members match “{query}”.</HonorEmptyState>
+        <HonorEmptyState>No fellows match “{query}”.</HonorEmptyState>
       ) : (
         <HonorCard className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-[#dfe4ec] text-xs uppercase tracking-wide text-[#5b6678]">
                 <tr>
-                  <th className="px-4 py-3">Member</th>
+                  <th className="px-4 py-3">Fellow</th>
                   <th className="px-4 py-3">Background → Target</th>
                   <th className="px-4 py-3">Behavioral frameworks</th>
                   <th className="px-4 py-3">Status</th>
@@ -117,11 +117,11 @@ export default function HonorCaseload() {
                       <span className="font-medium">{f.target}</span>
                     </td>
                     <td className="px-4 py-3">
-                      {f.prism ? (
+                      {f.prism?.quads?.length ? (
                         <div className="flex flex-col gap-0.5">
                           <PrismDots quads={f.prism.quads} label={`PRISM ${f.prism.label}`} />
                           <span className="text-xs text-[#9299a6]">
-                            {[f.disc ? `DISC ${f.disc}` : null, f.cliftonStrengths.slice(0, 2).join("/")]
+                            {[f.disc ? `DISC ${f.disc}` : null, (f.cliftonStrengths ?? []).slice(0, 2).join("/")]
                               .filter(Boolean)
                               .join(" · ")}
                           </span>

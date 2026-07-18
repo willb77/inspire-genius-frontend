@@ -125,7 +125,7 @@ export default function HonorLanding() {
         </div>
 
         <p className="mt-6 text-center text-xs text-[#7d879c]">
-          Members receive their own magic-link intake when a coach onboards them.
+          Fellows receive their own magic-link intake when a coach onboards them.
         </p>
       </div>
     </div>

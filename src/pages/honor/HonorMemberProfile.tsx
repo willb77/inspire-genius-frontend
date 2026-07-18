@@ -26,10 +26,10 @@ import {
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_format"
 
 /**
- * Honor Coach Workbench — Member Profile / Workspace (`/coach/member/{id}`).
+ * Honor Coach Workbench — Fellow Profile / Workspace (`/coach/member/{id}`).
  *
  * Wiring target: `GET /v1/coach/member/{id}` (net-new), guarded by
- * `require_member_ownership` — opening a member not assigned to the coach returns
+ * `require_fellow_access` — opening a member not assigned to the coach returns
  * a 403 (demoed below) and is logged to `audit_logs`. Intake reuses the existing
  * `PrismAssessment.tsx` bound via `?member={id}`; Documents reuse the real
  * document hooks; Goals persist to `user_milestones` (Ascend). Mock-backed via
@@ -63,8 +63,8 @@ export default function HonorMemberProfile() {
     [effectiveId]
   )
 
-  if (isLoading) return <HonorEmptyState>Loading member…</HonorEmptyState>
-  if (!fellow) return <HonorEmptyState>Member not found on your caseload.</HonorEmptyState>
+  if (isLoading) return <HonorEmptyState>Loading fellow…</HonorEmptyState>
+  if (!fellow) return <HonorEmptyState>Fellow not found on your caseload.</HonorEmptyState>
 
   const name = fellowName(fellow.firstName, fellow.lastName)
 
@@ -88,7 +88,7 @@ export default function HonorMemberProfile() {
             onClick={() => setDenied(true)}
             title="Demo the ownership guard"
           >
-            <ShieldAlert className="h-4 w-4" /> Simulate opening someone else&apos;s member
+            <ShieldAlert className="h-4 w-4" /> Simulate opening someone else&apos;s fellow
           </button>
         </div>
       </div>
@@ -98,11 +98,11 @@ export default function HonorMemberProfile() {
         <div className="mb-5 flex items-start gap-3 rounded-[10px] border border-[#e6c3bb] bg-[rgba(192,71,43,0.06)] p-4">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-[#c0472b]" />
           <div className="text-sm">
-            <p className="font-semibold text-[#c0472b]">403 — Not your member</p>
+            <p className="font-semibold text-[#c0472b]">403 — Not your fellow</p>
             <p className="text-[#5b6678]">
-              Coach {name.split(" ")[0] === "Coach" ? name : "S. Carter"} has no assignment for member
+              Coach {name.split(" ")[0] === "Coach" ? name : "S. Carter"} has no assignment for fellow
               #4471. The attempt is logged to <code className="font-mono text-xs">audit_logs</code> and
-              enforced by the <code className="font-mono text-xs">require_member_ownership</code>{" "}
+              enforced by the <code className="font-mono text-xs">require_fellow_access</code>{" "}
               dependency.
             </p>
             <button
@@ -143,11 +143,15 @@ export default function HonorMemberProfile() {
             <AgentTraceRow trace={["Aura", "Meridian"]} />
             <dl className="mt-3 space-y-2 text-sm">
               <Row label="PRISM (source of truth)">
-                {fellow.prism ? <PrismDots quads={fellow.prism.quads} label={fellow.prism.label} /> : "—"}
+                {fellow.prism?.quads?.length ? (
+                  <PrismDots quads={fellow.prism.quads} label={fellow.prism.label} />
+                ) : (
+                  "—"
+                )}
               </Row>
               <Row label="DISC">{fellow.disc ?? "—"}</Row>
               <Row label="CliftonStrengths">
-                {fellow.cliftonStrengths.length ? fellow.cliftonStrengths.join(" · ") : "—"}
+                {fellow.cliftonStrengths?.length ? fellow.cliftonStrengths.join(" · ") : "—"}
               </Row>
               <Row label="Service → target">
                 {fellow.background} → {fellow.target}
@@ -169,11 +173,11 @@ export default function HonorMemberProfile() {
             >
               Documents on file
             </HonorSectionTitle>
-            {fellow.docs.length === 0 ? (
+            {(fellow.docs ?? []).length === 0 ? (
               <p className="text-sm text-[#9299a6]">No documents yet.</p>
             ) : (
               <ul className="space-y-2 text-sm">
-                {fellow.docs.map((d) => (
+                {(fellow.docs ?? []).map((d) => (
                   <li key={d.id} className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
                     <FileText className="h-4 w-4 text-[#1B2A4A]" />
                     <span className="text-[#18202f]">{d.name}</span>
@@ -186,7 +190,7 @@ export default function HonorMemberProfile() {
               <HonorSectionTitle>Quick actions</HonorSectionTitle>
               <div className="flex flex-wrap gap-2">
                 <QuickAction icon={ClipboardList} label="Open questionnaire" onClick={() => setTab("intake")} />
-                <QuickAction icon={Sparkles} label="Evaluate member" onClick={() => setTab("evaluate")} />
+                <QuickAction icon={Sparkles} label="Evaluate fellow" onClick={() => setTab("evaluate")} />
                 <QuickAction icon={Target} label="Set goals" onClick={() => setTab("goals")} />
                 <QuickAction icon={GraduationCap} label="Find training" onClick={() => setTab("education")} />
               </div>
@@ -245,7 +249,7 @@ export default function HonorMemberProfile() {
         <HonorCard>
           <HonorSectionTitle>Evaluate {name}</HonorSectionTitle>
           <p className="mb-3 text-sm text-[#5b6678]">
-            Run the multi-agent evaluation for this member on the full Evaluate surface.
+            Run the multi-agent evaluation for this fellow on the full Evaluate surface.
           </p>
           <button
             type="button"

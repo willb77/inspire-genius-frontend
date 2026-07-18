@@ -7,6 +7,9 @@ const config: JestConfigWithTsJest = {
   extensionsToTreatAsEsm: [".ts", ".tsx"],
 
   moduleNameMapper: {
+    // Image/asset imports → string stub (must precede the @/ alias so aliased
+    // image paths like "@/assets/…/logo.jpeg" don't resolve to the real binary).
+    "\\.(jpg|jpeg|png|gif|webp|avif|svg)$": "<rootDir>/src/test/fileMock.ts",
     "^@/(.*)$": "<rootDir>/src/$1", // Vite alias
     "^@inspiresgenius/dag-builder$": "<rootDir>/src/packages/dag-builder/index.ts",
     "\\.(css|scss|sass)$": "identity-obj-proxy",
