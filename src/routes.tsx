@@ -197,6 +197,13 @@ const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
 const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
 const HonorAdministration = React.lazy(() => import("@/pages/honor/HonorAdministration"));
 
+// ── Job-Fit vertical — person-side profile↔role matching (entitlement-gated) ──
+const JobFitLayout = React.lazy(() => import("@/pages/job-fit/JobFitLayout"));
+const JobFitMatchesPage = React.lazy(() => import("@/pages/job-fit/MatchesPage"));
+const JobFitDetailPage = React.lazy(() => import("@/pages/job-fit/FitDetailPage"));
+const JobFitGapsPage = React.lazy(() => import("@/pages/job-fit/GapsPage"));
+const JobFitPathwayPage = React.lazy(() => import("@/pages/job-fit/PathwayPage"));
+
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<LoadingSpinner />}>{element}</Suspense>;
@@ -530,6 +537,22 @@ export const routes: RouteObject[] = [
           // Member workspace — no id lands on the first assigned member.
           { path: "member", element: withSuspense(<HonorMemberProfile />) },
           { path: "member/:memberId", element: withSuspense(<HonorMemberProfile />) },
+        ],
+      },
+
+      // Job-Fit vertical — a logged-in user matches their OWN PRISM profile
+      // against published Job DNAs. Entitlement-gated inside JobFitLayout,
+      // which wraps every child in the shared AppShell and redirects users
+      // lacking the "job-fit" entitlement to /home.
+      {
+        path: "/vertical/job-fit",
+        element: withSuspense(<JobFitLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/job-fit/matches" replace /> },
+          { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
+          { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
+          { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
+          { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
         ],
       },
     ],
