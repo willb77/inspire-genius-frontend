@@ -7,7 +7,7 @@ import { useHonorOnboard, type OptionalFrameworkKey } from "@/hooks/honor/useHon
 import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
 
 /**
- * Honor Coach Workbench — Onboard a Member (wired to the IG Core process).
+ * Honor Coach Workbench — Onboard a Fellow (wired to the IG Core process).
  *
  * The submit handler runs {@link useHonorOnboard}: create → invite → import the
  * mandatory PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
@@ -96,13 +96,13 @@ export default function HonorOnboard() {
     <div>
       <HonorPageHeader
         icon={UserPlus}
-        title="Onboard a Member"
-        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New members are invited via a secure magic link."
+        title="Onboard a Fellow"
+        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New fellows are invited via a secure magic link."
       />
 
       {/* Add a member */}
       <HonorCard className="mb-6">
-        <HonorSectionTitle>Member details</HonorSectionTitle>
+        <HonorSectionTitle>Fellow details</HonorSectionTitle>
         <form ref={formRef} onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <Field label="First name" required>
             <input required className={inputCls} placeholder="Marcus" value={firstName} onChange={(e) => setFirstName(e.target.value)} />

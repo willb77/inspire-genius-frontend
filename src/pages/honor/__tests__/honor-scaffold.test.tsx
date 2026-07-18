@@ -155,7 +155,7 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
       setHonorAccess(true)
       renderWithProviders(<HonorCaseload />)
 
-      expect(screen.getByRole("heading", { name: "My Members" })).toBeInTheDocument()
+      expect(screen.getByRole("heading", { name: "My Fellows" })).toBeInTheDocument()
       expect(await screen.findByText("Marcus Reyes")).toBeInTheDocument()
       expect(await screen.findByText("Rosa Delgado")).toBeInTheDocument()
     })

@@ -3,7 +3,7 @@
  *
  * A self-contained, co-branded navy surface mirroring the delivered THF
  * wireframe: navy topbar (THF wordmark + "Powered by Inspires Genius" + coach
- * chip) and a grouped navy sidebar (Overview · Work with members · Member
+ * chip) and a grouped navy sidebar (Overview · Work with Fellows · Member
  * workspace · Account), wrapping the routed page in `<Outlet/>`. Modeled on the
  * Summit vertical's self-contained layout, but reskinned to the THF identity.
  *
@@ -14,7 +14,6 @@
  */
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import {
-  Shield,
   LayoutDashboard,
   Users,
   UserPlus,
@@ -31,6 +30,8 @@ import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
 import { MOCK_COACH } from "@/hooks/honor/mocks"
 import { initials } from "./_format"
+import thfShield from "@/assets/honor/thf-shield.jpeg"
+import thfFlag from "@/assets/honor/thf-flag.jpeg"
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
@@ -40,21 +41,21 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Overview",
     items: [
       { to: ROUTES.HONOR.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
-      { to: ROUTES.HONOR.CASELOAD, label: "My Members", icon: Users },
+      { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", icon: Users },
       { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", icon: UserPlus },
     ],
   },
   {
-    label: "Work with members",
+    label: "Work with Fellows",
     items: [
-      { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Member", icon: Sparkles },
+      { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
       { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
       { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
     ],
   },
   {
-    label: "Member workspace",
-    items: [{ to: ROUTES.HONOR.MEMBER, label: "Member Profile", icon: IdCard }],
+    label: "Fellow workspace",
+    items: [{ to: ROUTES.HONOR.MEMBER, label: "Fellow Profile", icon: IdCard }],
   },
   {
     label: "Account",
@@ -75,9 +76,11 @@ export default function HonorShell() {
       {/* Topbar */}
       <header className="flex h-16 flex-shrink-0 items-center gap-4 bg-[#1B2A4A] px-5 text-white">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#E8792B] text-white">
-            <Shield className="h-5 w-5" />
-          </div>
+          <img
+            src={thfShield}
+            alt="The Honor Foundation"
+            className="h-10 w-10 shrink-0 rounded-md object-contain"
+          />
           <div className="leading-tight">
             <div className="text-[15px] font-semibold">The Honor Foundation</div>
             <div className="text-[10px] uppercase tracking-wide text-white/60">Coach Workbench</div>
@@ -135,7 +138,7 @@ export default function HonorShell() {
 
           <div className="mt-3 border-t border-white/10 pt-3.5">
             <p className="mb-3 px-1 text-[11px] leading-relaxed text-white/45">
-              Meridian orchestrates all AI output. Members see one voice; you see the agent trace.
+              Meridian orchestrates all AI output. Fellows see one voice; you see the agent trace.
             </p>
             <button
               onClick={() => navigate(ROUTES.HOME)}
@@ -147,8 +150,14 @@ export default function HonorShell() {
         </aside>
 
         {/* Main */}
-        <main className="min-w-0 flex-1 overflow-y-auto px-6 py-7 lg:px-8">
-          <div className="mx-auto max-w-5xl">
+        <main className="relative min-w-0 flex-1 overflow-y-auto px-6 py-7 lg:px-8">
+          {/* The Honor Foundation flag — subtle fixed watermark in the page white space */}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.06]"
+            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "460px" }}
+          />
+          <div className="relative z-10 mx-auto max-w-5xl">
             <Outlet />
           </div>
         </main>
