@@ -1,3 +1,35 @@
+## [2026-07-17] — CoachChat + Agent Trace Console V2 surfaces (Wave-1 chat surfaces complete)
+
+Completes the remaining Wave-1 chat surfaces of the HomeV2 CSS migration. Meridian Chat V2
+had already shipped; CoachChat and DiagnosticChat (the super-admin Agent Trace Console) were
+still classic-only. Both now get a flag-gated `variant` swap following the MeridianChat
+variant-prop pattern — all chat/trace machinery is shared, only the skin + arrangement differ.
+
+### Added
+- `CoachChat` — `variant` prop (`"classic" | "v2"`). V2 renders a cream `bg-panel` page frame,
+  an eyebrow (`SectionLabel`) + serif coach-name header, a left History rail and the stacked
+  Compose-Prompt / Conversation `ChatWindow` layout (reuses the existing `stacked` prop).
+  - Files: `src/pages/user/CoachChat.tsx`
+- `DiagnosticChat` (Agent Trace Console) — `variant` prop. V2 applies a token-based chrome
+  skin (cream panel, hairline borders, serif title, orange brand accent over indigo on the
+  primary controls + user bubbles). Trace/WebSocket/voice machinery and the semantic
+  trace-level colours (green/red/amber/blue) are unchanged.
+  - Files: `src/pages/user/DiagnosticChat.tsx`
+- i18n: `coach.sectionLabel` ("Coaching Session") added to the `chat` en bundle.
+  - Files: `public/locales/en/chat.json`
+- V2-variant render tests for both pages.
+  - Files: `src/pages/user/__tests__/CoachChat.test.tsx`, `src/pages/user/__tests__/DiagnosticChat.test.tsx`
+
+### Changed
+- Routing — `new_user_surfaces` resolver + permanent `/classic` escape-hatch routes for
+  `/dashboard/:coach/chat` and `/super-admin/agent-trace-console`.
+  - Files: `src/routes.tsx`
+
+### Notes
+- Flag off by default; `/classic` routes always render the original regardless of the flag.
+- Verified: `npm run build` (tsc + vite) pass; CoachChat + DiagnosticChat suites (11 tests) and
+  `routes.integration` (54 tests) pass. All three chat surfaces now carry the HomeV2 skin.
+
 ## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
 
 The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white
