@@ -147,6 +147,21 @@ export const ROUTES = {
     coachStudentIntake: (studentId: string) =>
       `/vertical/grant/coach/students/${studentId}`,
   },
+  // Job DNA / Job Blueprint authoring vertical
+  // (flag-gated by user_preferences.enabled_verticals: "job-blueprint").
+  JOB_DNA: {
+    BASE: "/vertical/job-blueprint",
+    DASHBOARD: "/vertical/job-blueprint/dashboard",
+    AUTHORING: "/vertical/job-blueprint/authoring",
+    /** Route pattern for a single Job DNA detail (matched by <Route path>). */
+    DNA_DETAIL: "/vertical/job-blueprint/dna/:id",
+    /** Build the detail path for a concrete Job DNA id. */
+    dnaDetail: (id: string) => `/vertical/job-blueprint/dna/${id}`,
+    CANDIDATES: "/vertical/job-blueprint/candidates",
+    PIPELINE: "/vertical/job-blueprint/pipeline",
+    SCORECARDS: "/vertical/job-blueprint/scorecards",
+    ANALYTICS: "/vertical/job-blueprint/analytics",
+  },
   // The Honor Foundation — Coach Workbench vertical
   // (entitlement-gated by enabled_verticals: "honor").
   HONOR: {

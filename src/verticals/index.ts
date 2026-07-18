@@ -9,6 +9,7 @@
  */
 export { GRANT } from "./grant/manifest"
 export { HONOR } from "./honor/manifest"
+export { JOB_BLUEPRINT } from "./job-blueprint/manifest"
 
 // ── New verticals go here ────────────────────────────────────────
 // export { ACME } from "./acme/manifest"
