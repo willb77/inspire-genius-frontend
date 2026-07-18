@@ -38,6 +38,7 @@ export default function HonorOnboard() {
   const [cohort, setCohort] = useState("")
   const [bio, setBio] = useState("")
   const [additionalInfo, setAdditionalInfo] = useState("")
+  const [sendInvitation, setSendInvitation] = useState(true)
 
   const [prismFile, setPrismFile] = useState<File | null>(null)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
@@ -86,6 +87,7 @@ export default function HonorOnboard() {
       resumeFile,
       bio: bio.trim() || undefined,
       additionalInfo: additionalInfo.trim() || undefined,
+      sendInvitation,
     })
   }
 
@@ -175,6 +177,19 @@ export default function HonorOnboard() {
           <Field label="Additional information" full>
             <textarea className={`${inputCls} min-h-[70px] resize-y`} placeholder="Anything else the coaching agents should know (stored with the bio in RAG)." value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} />
           </Field>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151] sm:col-span-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+              checked={sendInvitation}
+              onChange={(e) => setSendInvitation(e.target.checked)}
+            />
+            <span>
+              Send the magic-link invitation email now
+              <span className="text-[#9299a6]"> — uncheck to create the account without notifying; you can send it later from My Fellows.</span>
+            </span>
+          </label>
 
           <div className="flex items-center gap-2 sm:col-span-2">
             <button type="submit" className={HONOR_BTN_PRIMARY} disabled={busy}>
