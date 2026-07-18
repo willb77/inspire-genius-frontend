@@ -69,7 +69,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
 
     // Order: create before invite before any import.
     expect(createFellow).toHaveBeenCalledTimes(1)
-    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false)
+    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false, true)
 
     // PRISM (mandatory) + the two optional frameworks all import against the fellow.
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))

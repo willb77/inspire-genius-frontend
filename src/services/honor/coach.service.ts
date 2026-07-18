@@ -54,10 +54,42 @@ export async function createFellow(input: Partial<HonorFellow>) {
  * fellow re-keyed to their canonical sub (so subsequent subject-scoped writes —
  * assessments, documents — attach to the member, not the coach).
  */
-export async function inviteFellow(id: string, keepCoachAccess = false) {
-  const { data } = await agentApi.post<HonorApiResponse<HonorFellow & { userId?: string }>>(
+export type InviteResult = HonorFellow & {
+  userId?: string
+  email?: string | null
+  invitationSent?: boolean
+  status?: string
+}
+
+/**
+ * Convert/link a managed fellow to an IG user. `sendInvitation` controls whether
+ * the coach wants the fellow notified now — the account is created either way;
+ * the caller fires the magic-link intake email when `invitationSent` is true.
+ */
+export async function inviteFellow(id: string, keepCoachAccess = false, sendInvitation = true) {
+  const { data } = await agentApi.post<HonorApiResponse<InviteResult>>(
     `${COACH_BASE}/${encodeURIComponent(id)}/invite`,
-    { keepCoachAccess },
+    { keepCoachAccess, sendInvitation },
+  )
+  return data
+}
+
+export type BulkInviteResult = {
+  converted: number
+  skipped: number
+  errors: number
+  results: Array<{ fellowId: string; status: string; email?: string | null; invitationSent?: boolean; message?: string }>
+}
+
+/** Bulk-convert/invite several selected fellows in one request. */
+export async function inviteFellowsBulk(
+  fellowIds: string[],
+  keepCoachAccess = false,
+  sendInvitation = true,
+) {
+  const { data } = await agentApi.post<HonorApiResponse<BulkInviteResult>>(
+    `${COACH_BASE}/invite-bulk`,
+    { fellowIds, keepCoachAccess, sendInvitation },
   )
   return data
 }
