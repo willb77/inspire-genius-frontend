@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createFellow, inviteFellow } from "@/services/honor/coach.service"
+import { requestMagicLink } from "@/services/magic-auth/magic-auth.service"
 import {
   importFellowAssessment,
   type HonorFramework,
@@ -46,6 +47,9 @@ export type HonorOnboardInput = {
   prismFile: File
   /** Optional behavioural reports, one file per provided framework. */
   frameworkFiles?: Partial<Record<OptionalFrameworkKey, File>>
+  /** Send the magic-link intake email now (default true). Off = create the
+   *  account silently; the coach sends the invite later from My Fellows. */
+  sendInvitation?: boolean
   resumeFile?: File | null
   bio?: string
   additionalInfo?: string
@@ -117,9 +121,25 @@ export async function runHonorOnboard(
 
   // 2. Invite → mint the IG user so assessments/docs have a SUBJECT to attach to.
   try {
-    const inviteResp = await inviteFellow(fellowId, input.role.toLowerCase() !== "fellow")
+    const sendInvite = input.sendInvitation !== false
+    const inviteResp = await inviteFellow(
+      fellowId,
+      input.role.toLowerCase() !== "fellow",
+      sendInvite,
+    )
     result.memberUserId = inviteResp.data?.userId
-    steps.push({ step: "invite", ok: true, detail: "magic-link intake sent" })
+    // The account is created either way; fire the magic-link intake email only
+    // when the coach chose to notify now.
+    if (sendInvite && inviteResp.data?.invitationSent && inviteResp.data?.email) {
+      try {
+        await requestMagicLink({ email: inviteResp.data.email })
+        steps.push({ step: "invite", ok: true, detail: "account created — magic-link intake sent" })
+      } catch {
+        steps.push({ step: "invite", ok: true, detail: "account created — invite email deferred (send failed)" })
+      }
+    } else {
+      steps.push({ step: "invite", ok: true, detail: "account created — invitation not sent (send later)" })
+    }
   } catch (e) {
     steps.push({ step: "invite", ok: false, detail: errMsg(e) })
     // Without an invited member the subject-scoped writes below will 409;

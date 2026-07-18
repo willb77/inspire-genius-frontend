@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Users, UserPlus, Upload, Search, ArrowRight } from "lucide-react"
+import { Users, UserPlus, Upload, Search, ArrowRight, Mail, Loader2 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload } from "@/hooks/honor/useCoachData"
+import { useHonorInvitations } from "@/hooks/honor/useHonorInvitations"
 import { MOCK_CASELOAD_COUNTS } from "@/hooks/honor/mocks"
 import type { FellowStatus, HonorFellow } from "@/types/honor"
 import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } from "./_shared"
@@ -42,6 +43,37 @@ export default function HonorCaseload() {
     navigate(ROUTES.HONOR.memberWorkspace(f.id))
   }
 
+  // ── Bulk "send invitations to selected" ──────────────────────────────
+  const invitations = useHonorInvitations()
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [sendEmail, setSendEmail] = useState(true)
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const allVisibleSelected = filtered.length > 0 && filtered.every((f) => selected.has(f.id))
+  function toggleAll() {
+    setSelected((prev) => {
+      if (allVisibleSelected) {
+        const next = new Set(prev)
+        filtered.forEach((f) => next.delete(f.id))
+        return next
+      }
+      return new Set([...prev, ...filtered.map((f) => f.id)])
+    })
+  }
+  async function sendSelected() {
+    const ids = [...selected]
+    if (!ids.length) return
+    await invitations.mutateAsync({ fellowIds: ids, sendEmail })
+    setSelected(new Set())
+  }
+
   return (
     <div>
       <HonorPageHeader
@@ -79,6 +111,38 @@ export default function HonorCaseload() {
         />
       </div>
 
+      {/* Bulk invitation bar — shows when fellows are selected */}
+      {selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#dfe4ec] bg-[#f8fafc] px-4 py-2.5">
+          <span className="text-sm font-medium text-[#18202f]">{selected.size} selected</span>
+          <label className="flex cursor-pointer items-center gap-1.5 text-sm text-[#374151]">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+            />
+            Send invitation email
+          </label>
+          <button
+            type="button"
+            onClick={sendSelected}
+            disabled={invitations.isPending}
+            className={HONOR_BTN_PRIMARY}
+          >
+            {invitations.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+            {invitations.isPending ? "Sending…" : `Send invitations to ${selected.size} selected`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-sm text-[#5b6678] hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <HonorEmptyState>Loading your caseload…</HonorEmptyState>
       ) : filtered.length === 0 ? (
@@ -89,6 +153,15 @@ export default function HonorCaseload() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-[#dfe4ec] text-xs uppercase tracking-wide text-[#5b6678]">
                 <tr>
+                  <th className="w-10 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+                      checked={allVisibleSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all fellows"
+                    />
+                  </th>
                   <th className="px-4 py-3">Fellow</th>
                   <th className="px-4 py-3">Background → Target</th>
                   <th className="px-4 py-3">Behavioral frameworks</th>
@@ -99,6 +172,15 @@ export default function HonorCaseload() {
               <tbody>
                 {filtered.map((f) => (
                   <tr key={f.id} className="border-b border-[#f1f3f7] last:border-0">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+                        checked={selected.has(f.id)}
+                        onChange={() => toggleOne(f.id)}
+                        aria-label={`Select ${fellowName(f.firstName, f.lastName)}`}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
