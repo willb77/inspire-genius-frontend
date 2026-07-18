@@ -151,3 +151,128 @@ export type WebSearchResult = {
   url: string
   snippet: string
 }
+
+// ── FAFSA Application Concierge (/v1/agents/grant/fafsa/*) ────────────────────
+// The collect → validate → prep-packet → guided-handoff flow. The backend never
+// stores tax figures (auto-filled from the IRS on FA-DDX consent) or the SSN
+// (entered on StudentAid.gov) — those fields are surfaced read-only, never as
+// inputs.
+
+export type FafsaFieldType =
+  | "text"
+  | "date"
+  | "select"
+  | "number"
+  | "boolean"
+  | "school_list"
+
+export type FafsaField = {
+  key: string
+  label: string
+  type: FafsaFieldType
+  required: boolean
+  /** Filled by the IRS↔ED exchange on consent; never collected. */
+  ddx: boolean
+  /** Entered by the student directly on StudentAid.gov (SSN); never stored. */
+  sensitive: boolean
+  /** True when GRANT may collect + store this field (not ddx, not sensitive). */
+  collectable: boolean
+  prefillSource: string | null
+  help: string
+  options: string[]
+}
+
+export type FafsaSection = {
+  key: string
+  title: string
+  description: string
+  /** Handoff sections are the federally-irreducible StudentAid.gov steps. */
+  handoff: boolean
+  fields: FafsaField[]
+}
+
+export type FafsaFieldCatalog = {
+  sections: FafsaSection[]
+}
+
+export type FafsaStatus = "draft" | "in_progress" | "packet_ready" | "submitted"
+
+export type FafsaApplication = {
+  application_id: string
+  student_id: string
+  award_year: string
+  status: FafsaStatus
+  sections: Record<string, unknown>
+  contributors: Record<string, unknown>
+  handoff: Record<string, unknown>
+  packet: Record<string, unknown>
+  submitted: boolean
+  confirmation_number: string | null
+}
+
+export type FafsaSectionCompleteness = {
+  key: string
+  title: string
+  requiredTotal: number
+  requiredComplete: number
+  complete: boolean
+}
+
+export type FafsaCompleteness = {
+  awardYear: string
+  percentComplete: number
+  requiredTotal: number
+  requiredComplete: number
+  missingRequired: string[]
+  ready: boolean
+  sections: FafsaSectionCompleteness[]
+}
+
+export type FafsaPacketField = {
+  key: string
+  label: string
+  value: unknown
+  source:
+    | "collected"
+    | "prefilled"
+    | "missing"
+    | "auto_fill_on_consent"
+    | "entered_on_studentaid"
+  required?: boolean
+  prefillSource?: string
+}
+
+export type FafsaPacketSection = {
+  key: string
+  title: string
+  handoff: boolean
+  fields: FafsaPacketField[]
+}
+
+export type FafsaPacket = {
+  awardYear: string
+  ready: boolean
+  counts: { collected: number; prefilled: number; missing: number; missingRequired: number }
+  sections: FafsaPacketSection[]
+  summary: string[]
+  disclaimer: string
+}
+
+export type FafsaContributor = { role: string; label: string }
+
+export type FafsaHandoffStep = {
+  id: string
+  title: string
+  description: string
+  deepLink: string
+  status: "pending" | "complete"
+  contributor?: string
+}
+
+export type FafsaHandoff = {
+  awardYear: string | null
+  contributors: FafsaContributor[]
+  steps: FafsaHandoffStep[]
+  counts: { total: number; complete: number; remaining: number }
+  complete: boolean
+}
