@@ -1,3 +1,33 @@
+## [2026-07-17] — Settings V2 surface (shared, flag-gated across all 6 roles)
+
+Reskins the shared Settings surface to the HomeV2 design system — the last remaining
+Wave-1 page. Because `@/components/shared/settings/Settings` is consumed by all six role
+Settings pages (user / manager / company-admin / practitioner / distributor / super-admin),
+the reskin is applied once at the shared component and picked up everywhere.
+
+### Added
+- `Settings` (shared) — `variant` prop (`"classic" | "v2"`). When no variant is passed the
+  component resolves from the `new_user_surfaces` flag, so all six role Settings pages adopt
+  V2 together (flag OFF → classic, unchanged). V2 wraps the content in the cream `<V2Panel>`
+  page frame, shows a visible eyebrow (`SectionLabel`) + serif "Settings" heading (the classic
+  header is intentionally `invisible`), and switches the Legal links from blue to the orange
+  brand accent. Every child settings card, hook, form, role-gate and `data-tour` is unchanged.
+  - Files: `src/components/shared/settings/Settings.tsx`
+- `UserSettingsClassicPage` — permanent `/settings/classic` escape hatch (forces
+  `variant="classic"`), mirroring `/settings/privacy/classic`.
+  - Files: `src/pages/user/SettingsClassic.tsx`, `src/routes.tsx`
+- V2-variant + classic-variant render tests.
+  - Files: `src/components/shared/settings/__tests__/Settings.test.tsx`
+
+### Notes
+- Flag-gated (not a hard global swap): default OFF → classic everywhere; dev/staging-b default
+  the flag ON via `VITE_NEW_USER_SURFACES`, so Settings V2 lights up there alongside the other
+  reskinned surfaces. `/settings/classic` and clearing the flag both revert.
+- With this, **Wave 1 of the HomeV2 CSS migration is complete** — all user surfaces, all three
+  chat surfaces (Meridian/Coach/Diagnostic), and Settings now carry the HomeV2 skin.
+- Verified: `npm run build` (tsc + vite) pass; Settings shared + routes.integration (66 tests)
+  and all 6 role Settings suites + shared (27 tests) pass.
+
 ## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
 
 The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white

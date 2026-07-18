@@ -43,6 +43,7 @@ const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
 const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
+const UserSettingsClassicPage = React.lazy(() => import("@/pages/user/SettingsClassic"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
 // Wave 1 — new-design (HomeV2 system) variants of high-traffic user pages.
@@ -363,6 +364,10 @@ export const routes: RouteObject[] = [
       { path: "/profile", element: withSuspense(<ProfileSurface />) },
       { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
+      // Permanent escape hatch — original Settings, flag-independent. The main
+      // /settings resolves classic/V2 inside the shared Settings component via
+      // the new_user_surfaces flag (shared across all six role Settings pages).
+      { path: "/settings/classic", element: withSuspense(<UserSettingsClassicPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
       { path: "/help", element: withSuspense(<HelpSurface />) },

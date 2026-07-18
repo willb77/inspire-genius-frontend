@@ -23,8 +23,30 @@ import PrivacySettings from "@/components/settings/PrivacySettings";
 import RetentionSettings from "@/components/settings/RetentionSettings";
 import PersonalDataSettings from "@/components/shared/settings/PersonalDataSettings";
 import AssessmentsSettings from "@/components/shared/settings/AssessmentsSettings";
+import { V2Panel, SectionLabel } from "@/components/v2";
+import { isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 
-export default function Settings() {
+export type SettingsVariant = "classic" | "v2";
+
+/**
+ * Shared Settings surface (used by all 6 role pages).
+ *
+ * `variant="v2"` re-skins the page to the HomeV2 design system: the cream
+ * `<V2Panel>` page frame, a visible eyebrow + serif "Settings" heading (the
+ * classic header is intentionally `invisible`), and orange-accent legal links.
+ * Every child settings card, hook, form and role-gate is shared and unchanged
+ * — only the page frame + header + link accent differ. When no `variant` is
+ * passed the surface resolves from the `new_user_surfaces` flag, so all six
+ * role Settings pages pick up V2 together (flag OFF → classic). The
+ * `/settings/classic` route forces `variant="classic"` as a permanent escape
+ * hatch.
+ */
+export default function Settings({
+  variant,
+}: {
+  variant?: SettingsVariant;
+} = {}) {
+  const isV2 = variant ? variant === "v2" : isNewUserSurfacesEnabled();
   const [pushNotifications, setPushNotifications] = useState(true);
   const { user, markFullName } = useAuth();
   const role = user?.role;
@@ -192,12 +214,26 @@ export default function Settings() {
     }
   };
 
-  return (
-      <div className="space-y-4">
-        <div className="invisible mb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <SearchBar />
-        </div>
+  // Legal links: orange brand accent in V2, the original blue in classic.
+  const legalLinkClass = isV2
+    ? "text-accent-orange-dark hover:text-accent-orange text-sm underline"
+    : "text-blue-600 hover:text-blue-800 text-sm underline";
+
+  const content = (
+    <>
+        {isV2 ? (
+          <div data-testid="settings-v2-header">
+            <SectionLabel>Account &amp; Preferences</SectionLabel>
+            <h1 className="font-serif text-[22px] leading-tight tracking-tight text-ink">
+              Settings
+            </h1>
+          </div>
+        ) : (
+          <div className="invisible mb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+            <SearchBar />
+          </div>
+        )}
 
         {/* Account Settings Card */}
         <div data-tour="settings-account">
@@ -282,17 +318,23 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="text-left">
               <div>
-                <Link to="/terms" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                <Link to="/terms" className={legalLinkClass}>
                   Terms of Use
                 </Link>
                 <br />
-                <Link to="/privacy" className="text-blue-600 hover:text-blue-800 text-sm underline">
+                <Link to="/privacy" className={legalLinkClass}>
                   Privacy Policy
                 </Link>
               </div>
             </CardContent>
           </Card>
         )}
-      </div>
+    </>
+  );
+
+  return isV2 ? (
+    <V2Panel>{content}</V2Panel>
+  ) : (
+    <div className="space-y-4">{content}</div>
   );
 }
