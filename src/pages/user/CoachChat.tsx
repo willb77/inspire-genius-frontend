@@ -1,6 +1,7 @@
 import UserLayout from "@/layouts/UserLayout";
 import ChatHistory from "@/components/user/chat/ChatHistory";
 import ChatWindow from "@/components/user/chat/ChatWindow";
+import { SectionLabel } from "@/components/v2";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { HistoryGroup, ChatMessage } from "@/types/chat";
@@ -62,7 +63,27 @@ function extractSessionId(resp: unknown): string | undefined {
   }
 }
 
-export default function CoachChat() {
+export type CoachChatVariant = "classic" | "v2";
+
+/**
+ * Coach Chat page.
+ *
+ * `variant="v2"` (the flag-gated new user surface) reskins the page to the
+ * HomeV2 design system: a cream page panel, an eyebrow + serif coach-name
+ * header, a left History rail and a stacked Compose-Prompt / Conversation
+ * two-card chat column (the shared `ChatWindow stacked` layout). Every piece
+ * of chat machinery (WS, conversations, documents, export, audio) is shared —
+ * only the arrangement + skin differ, so there is a single source of truth for
+ * the fragile logic. `variant="classic"` (the default, and
+ * /dashboard/:coach/chat/classic) renders the original two-column layout
+ * unchanged.
+ */
+export default function CoachChat({
+  variant = "classic",
+}: {
+  variant?: CoachChatVariant;
+} = {}) {
+  const isV2 = variant === "v2";
   const { coach = "" } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation("chat");
@@ -721,90 +742,131 @@ export default function CoachChat() {
     })();
   }, [selectedKey, selectedFileIds]);
 
+  // Shared chat elements — identical props in both layouts, so the fragile
+  // WS/conversation/document/export wiring has a single source of truth. Only
+  // the surrounding frame differs between classic and V2. `stacked={isV2}`
+  // flips ChatWindow into the HomeV2 Compose-Prompt / Conversation two-card
+  // layout.
+  const chatHistoryEl = (
+    <ChatHistory
+      groups={groups}
+      selectedId={selectedId}
+      onSelect={handleSelectConversation}
+      className="h-full"
+      hasConversations={hasConversations}
+      onCreateNewConversation={handleCreateConversation}
+      isLoading={isLoadingConversations || createConvMutation.isPending}
+      searchValue={searchQuery}
+      onSearchChange={setSearchQuery}
+      isAudioRunning={hasAudio && !isAudioPaused}
+      audioWarningText={t("coach.audioWarning", { defaultValue: "Switching conversations will reset audio for the new conversation." })}
+      onDeleteConversation={handleDeleteConversation}
+      onRenameConversation={handleRenameConversation}
+      renameIsPending={renameConvMutation.isPending}
+    />
+  );
+
+  const chatWindowEl = (
+    <ChatWindow
+      stacked={isV2}
+      coachName={coachName}
+      coachId={agentId}
+      conversationId={conversationId}
+      onBack={() => navigate(-1)}
+      onSendText={(t) => {
+        demoAudioServiceRef.current?.resetAudioState();
+        setHasAudio(false);
+        setIsAudioPaused(false);
+        // Add user message and a processing placeholder
+        const timeStr = formatUSTimeSafe(new Date());
+        const tsNow = Date.now();
+        setMessages((prev) => ([
+          ...prev.filter((m) => m.kind !== 'processing'),
+          { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr, ts: tsNow },
+          { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, ts: tsNow, isProcessing: true, type: 'processing' },
+        ]));
+        sendTextMessage(t);
+      }}
+      onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}
+      isRecording={isRecording}
+      hasAudio={hasAudio}
+      isAudioPaused={isAudioPaused}
+      isMuted={isMuted}
+      onToggleMute={(next) => {
+        setIsMuted(next);
+        if (isConnected) updateContinuousMute(next);
+      }}
+      setMessages={setMessages}
+      onExportChat={handleExportChat}
+      onToggleAudioPlayback={() => {
+        const svc = demoAudioServiceRef.current;
+        const ctx = svc?.getAudioContext();
+        if (!svc || !ctx) return;
+        if (ctx.state === "running") {
+          svc.pauseAudio();
+          setIsAudioPaused(true);
+        } else if (ctx.state === "suspended") {
+          svc.resumeAudio();
+          setIsAudioPaused(false);
+        }
+      }}
+      messages={messages}
+      audioPlayerBuffer={audioPlayerBuffer}
+      onCloseAudioPlayer={() => setShowAudioPlayer(false)}
+      setShowAudioPlayer={setShowAudioPlayer}
+      showAudioPlayer={showAudioPlayer}
+      isConnecting={isConnecting}
+      statusBanner={statusBanner}
+      convIsLoading={isLoadingConversation}
+      hasMore={!!hasMoreMessages}
+      onLoadMore={() => { if (hasMoreMessages && !isFetchingMore) { fetchNextPage(); } }}
+      convIsFetchingNext={isFetchingMore}
+      // Controlled documents
+      selectedFileIds={selectedFileIds}
+      selectedDocNames={selectedDocNames}
+      docSections={docSections}
+      docIsLoading={docsLoading}
+      onToggleDocSelect={handleToggleDocSelect}
+      docOnDelete={docOnDelete}
+      docOnDownload={docOnDownload}
+    />
+  );
+
+  if (isV2) {
+    return (
+      <UserLayout>
+        <div className="rounded-2xl bg-panel p-4 md:p-6">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4">
+            <div>
+              <SectionLabel>
+                {t("coach.sectionLabel", { defaultValue: "Coaching Session" })}
+              </SectionLabel>
+              <h1 className="font-serif text-[22px] leading-tight tracking-tight text-ink">
+                {coachName}
+              </h1>
+            </div>
+            <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+              <div className="min-h-0 overflow-y-auto pe-1" data-tour="chat-history">
+                {chatHistoryEl}
+              </div>
+              <div className="flex min-h-0 min-w-0 flex-col" data-tour="chat-window">
+                {chatWindowEl}
+              </div>
+            </div>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
   return (
     <UserLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-4 h-full" data-tour="chat-history">
-          <ChatHistory
-            groups={groups}
-            selectedId={selectedId}
-            onSelect={handleSelectConversation}
-            className="h-full"
-            hasConversations={hasConversations}
-            onCreateNewConversation={handleCreateConversation}
-            isLoading={isLoadingConversations || createConvMutation.isPending}
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            isAudioRunning={hasAudio && !isAudioPaused}
-            audioWarningText={t("coach.audioWarning", { defaultValue: "Switching conversations will reset audio for the new conversation." })}
-            onDeleteConversation={handleDeleteConversation}
-            onRenameConversation={handleRenameConversation}
-            renameIsPending={renameConvMutation.isPending}
-          />
+          {chatHistoryEl}
         </div>
         <div className="lg:col-span-8" data-tour="chat-window">
-          <ChatWindow
-            coachName={coachName}
-            coachId={agentId}
-            conversationId={conversationId}
-            onBack={() => navigate(-1)}
-            onSendText={(t) => {
-              demoAudioServiceRef.current?.resetAudioState();
-              setHasAudio(false);
-              setIsAudioPaused(false);
-              // Add user message and a processing placeholder
-              const timeStr = formatUSTimeSafe(new Date());
-              const tsNow = Date.now();
-              setMessages((prev) => ([
-                ...prev.filter((m) => m.kind !== 'processing'),
-                { id: `msg-${Date.now()}-user`, kind: 'text', sender: 'user', text: t, time: timeStr, ts: tsNow },
-                { id: `msg-${Date.now()}-assistant`, kind: 'processing', sender: 'assistant', time: timeStr, ts: tsNow, isProcessing: true, type: 'processing' },
-              ]));
-              sendTextMessage(t);
-            }}
-            onToggleRecording={() => (isRecording ? stopRecording() : startRecording())}
-            isRecording={isRecording}
-            hasAudio={hasAudio}
-            isAudioPaused={isAudioPaused}
-            isMuted={isMuted}
-            onToggleMute={(next) => {
-              setIsMuted(next);
-              if (isConnected) updateContinuousMute(next);
-            }}
-            setMessages={setMessages}
-            onExportChat={handleExportChat}
-            onToggleAudioPlayback={() => {
-              const svc = demoAudioServiceRef.current;
-              const ctx = svc?.getAudioContext();
-              if (!svc || !ctx) return;
-              if (ctx.state === "running") {
-                svc.pauseAudio();
-                setIsAudioPaused(true);
-              } else if (ctx.state === "suspended") {
-                svc.resumeAudio();
-                setIsAudioPaused(false);
-              }
-            }}
-            messages={messages}
-            audioPlayerBuffer={audioPlayerBuffer}
-            onCloseAudioPlayer={() => setShowAudioPlayer(false)}
-            setShowAudioPlayer={setShowAudioPlayer}
-            showAudioPlayer={showAudioPlayer}
-            isConnecting={isConnecting}
-            statusBanner={statusBanner}
-            convIsLoading={isLoadingConversation}
-            hasMore={!!hasMoreMessages}
-            onLoadMore={() => { if (hasMoreMessages && !isFetchingMore) { fetchNextPage(); } }}
-            convIsFetchingNext={isFetchingMore}
-            // Controlled documents
-            selectedFileIds={selectedFileIds}
-            selectedDocNames={selectedDocNames}
-            docSections={docSections}
-            docIsLoading={docsLoading}
-            onToggleDocSelect={handleToggleDocSelect}
-            docOnDelete={docOnDelete}
-            docOnDownload={docOnDownload}
-          />
+          {chatWindowEl}
         </div>
       </div>
     </UserLayout>

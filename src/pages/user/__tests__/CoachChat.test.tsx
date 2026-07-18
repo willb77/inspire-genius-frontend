@@ -165,13 +165,19 @@ jest.mock("@/lib/secureStorage", () => ({
 
 /* ---- Helpers ---- */
 
-const renderWithRoute = (coachParam = "abc123--meridian") => {
+const renderWithRoute = (
+  coachParam = "abc123--meridian",
+  variant: "classic" | "v2" = "classic",
+) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[`/dashboard/${coachParam}/chat`]}>
         <Routes>
-          <Route path="/dashboard/:coach/chat" element={<CoachChat />} />
+          <Route
+            path="/dashboard/:coach/chat"
+            element={<CoachChat variant={variant} />}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -205,5 +211,31 @@ describe("CoachChat Page", () => {
   it("shows conversations from API", () => {
     renderWithRoute();
     expect(screen.getByTestId("has-conversations")).toHaveTextContent("true");
+  });
+});
+
+describe("CoachChat Page — V2 surface", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("renders the V2 eyebrow + serif coach-name header", () => {
+    renderWithRoute("abc123--meridian", "v2");
+    expect(screen.getByText("Coaching Session")).toBeInTheDocument();
+    // The coach name renders as the serif page heading in V2.
+    const headings = screen.getAllByText("Meridian");
+    expect(headings.length).toBeGreaterThan(0);
+  });
+
+  it("still mounts the shared chat window + history in V2", () => {
+    renderWithRoute("abc123--meridian", "v2");
+    expect(screen.getByTestId("chat-window")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-history")).toBeInTheDocument();
+    expect(screen.getByTestId("user-layout")).toBeInTheDocument();
+  });
+
+  it("does not render the V2 eyebrow in the classic variant", () => {
+    renderWithRoute("abc123--meridian", "classic");
+    expect(screen.queryByText("Coaching Session")).not.toBeInTheDocument();
   });
 });

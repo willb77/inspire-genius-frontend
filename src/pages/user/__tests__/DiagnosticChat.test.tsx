@@ -76,10 +76,10 @@ import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import DiagnosticChat from "../DiagnosticChat";
 
-function renderPage() {
+function renderPage(variant: "classic" | "v2" = "classic") {
   return render(
     <MemoryRouter>
-      <DiagnosticChat />
+      <DiagnosticChat variant={variant} />
     </MemoryRouter>,
   );
 }
@@ -104,5 +104,24 @@ describe("DiagnosticChat — New Chat button", () => {
     // (separately-tested) PAGE trace log on the live UI.
     expect(btn).toBeInTheDocument();
     expect(btn).not.toBeDisabled();
+  });
+});
+
+describe("DiagnosticChat — V2 surface skin", () => {
+  it("renders the console (New Chat + title) in the V2 variant without throwing", () => {
+    renderPage("v2");
+    const btn = screen.getByTestId("diagnostic-new-chat-button");
+    expect(btn).toBeInTheDocument();
+    // The header title is shared between variants; V2 only re-skins chrome.
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+  });
+
+  it("applies the cream page panel token in V2 (not in classic)", () => {
+    const { container, unmount } = renderPage("v2");
+    // Outer wrapper carries the HomeV2 cream panel token in V2.
+    expect(container.querySelector(".bg-panel")).toBeInTheDocument();
+    unmount();
+    const { container: classicContainer } = renderPage("classic");
+    expect(classicContainer.querySelector(".bg-panel")).toBeNull();
   });
 });
