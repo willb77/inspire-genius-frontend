@@ -13,7 +13,7 @@
  * Kept as a union rather than `string` so a typo in a route guard or an
  * entitlement check is a compile error, not a silently closed gate.
  */
-export type VerticalKey = "grant" | "honor"
+export type VerticalKey = "grant" | "honor" | "job-fit"
 
 /**
  * The envelope every vertical endpoint returns.
