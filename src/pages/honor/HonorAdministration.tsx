@@ -123,7 +123,7 @@ export default function HonorAdministration() {
                     <td className="px-4 py-3 text-[#5b6678]">{c.email}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {c.teams.map((t) => (
+                        {(c.teams ?? []).map((t) => (
                           <HonorPill key={t} tone="navy">
                             {t}
                           </HonorPill>
