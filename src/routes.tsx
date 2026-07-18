@@ -186,6 +186,7 @@ const GrantRosterPage = React.lazy(() => import("@/pages/grant/coach/RosterPage"
 const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/StudentIntakePage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
+const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
 const HonorLayout = React.lazy(() => import("@/pages/honor/HonorLayout"));
 const HonorDashboard = React.lazy(() => import("@/pages/honor/HonorDashboard"));
 const HonorCaseload = React.lazy(() => import("@/pages/honor/HonorCaseload"));
@@ -302,6 +303,9 @@ export const routes: RouteObject[] = [
       { path: "/social-login", element: withSuspense(<SocialLogin />) },
       { path: "/magic-login", element: withSuspense(<MagicLinkLogin />) },
       { path: "/magic-verify", element: withSuspense(<MagicLinkVerify />) },
+      // The Honor Foundation — standalone Coach Workbench front door. Reuses the
+      // platform magic-link auth; authed visitors are forwarded into the vertical.
+      { path: "/honor", element: withSuspense(<HonorLanding />) },
       { path: "/terms", element: withSuspense(<Terms />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },

@@ -47,6 +47,21 @@ export async function createFellow(input: Partial<HonorFellow>) {
   return data
 }
 
+/**
+ * Invite a managed fellow — POST /v1/agents/honor/coach/students/{id}/invite.
+ * Converts the managed roster row into a real IG user: mints `public.users`,
+ * sends the magic-link intake, and grants the "honor" entitlement. Returns the
+ * fellow re-keyed to their canonical sub (so subsequent subject-scoped writes —
+ * assessments, documents — attach to the member, not the coach).
+ */
+export async function inviteFellow(id: string, keepCoachAccess = false) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorFellow & { userId?: string }>>(
+    `${COACH_BASE}/${encodeURIComponent(id)}/invite`,
+    { keepCoachAccess },
+  )
+  return data
+}
+
 /** Bulk CSV import — POST /v1/agents/honor/coach/students/import (mirrors GRANT importCoachStudents). */
 export async function importFellows(rows: Array<Record<string, string>>) {
   const { data } = await agentApi.post<HonorApiResponse<{ added: number; updated: number }>>(

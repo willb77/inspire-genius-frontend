@@ -26,12 +26,15 @@ import {
   MOCK_FELLOWS,
   MOCK_SCHEDULE,
   MOCK_TEAMS,
+  USE_HONOR_ACTIVITY_LIVE,
   USE_HONOR_MOCKS,
   USE_HONOR_ROSTER_LIVE,
 } from "./mocks"
 
 /** Roster surfaces (caseload/member/dashboard) go live when ROSTER_LIVE is on. */
 const ROSTER_MOCK = USE_HONOR_MOCKS && !USE_HONOR_ROSTER_LIVE
+/** Activity feed goes live when ACTIVITY_LIVE is on (reads /v1/chat/history). */
+const ACTIVITY_MOCK = USE_HONOR_MOCKS && !USE_HONOR_ACTIVITY_LIVE
 
 /**
  * Honor Coach Workbench — React Query read hooks.
@@ -124,7 +127,7 @@ export function useCoachActivity(options?: Partial<UseQueryOptions<CoachActivity
   return useQuery<CoachActivityRow[], AxiosError>({
     queryKey: [HK, "activity"],
     queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_ACTIVITY
+      if (ACTIVITY_MOCK) return MOCK_ACTIVITY
       const res = await getCoachActivity()
       return res.data ?? []
     },
