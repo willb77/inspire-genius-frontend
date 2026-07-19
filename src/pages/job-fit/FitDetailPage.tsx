@@ -20,8 +20,8 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
-  FitMethodologyNote,
 } from "./_shared"
+import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
 import { tierLabel, gapTone, formatGap, variationDescriptor } from "./_fit"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"
@@ -100,6 +100,12 @@ export default function FitDetailPage() {
             icon={Target}
             title={data.roleTitle}
             description={variationDescriptor(data.totalVariation)}
+          />
+
+          <MatchingValidationBanner
+            note={data.methodologyNote}
+            gated={data.gated}
+            className="mb-6"
           />
 
           {/* Closeness summary */}
@@ -218,8 +224,6 @@ export default function FitDetailPage() {
               </ul>
             </FitCard>
           )}
-
-          <FitMethodologyNote note={data.methodologyNote} />
         </>
       )}
 

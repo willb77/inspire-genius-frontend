@@ -66,6 +66,11 @@ export type FitDetail = {
   overdoneFlags: OverdoneFlag[]
   interviewSelfAdvocacy: string[]
   methodologyNote: string
+  /**
+   * True while behavioral matching for this role is in limited/validation
+   * release. Optional: older backends omit it and the UI treats absent as false.
+   */
+  gated?: boolean
 }
 
 /** One adjacent role the user could grow toward. */

@@ -13,8 +13,8 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
-  FitMethodologyNote,
 } from "./_shared"
+import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
 import type { Tone } from "./_fit"
 
 type DomainAggregate = {
@@ -76,6 +76,10 @@ export default function GapsPage() {
         description="Where your profile tends to diverge from role benchmarks, summarised across every match."
       />
 
+      <div className="mb-5">
+        <MatchingValidationBanner />
+      </div>
+
       {isLoading && <FitLoading label="Aggregating gaps across your matches…" />}
 
       {isError && <FitError>We couldn&apos;t load your gap summary right now.</FitError>}
@@ -133,8 +137,6 @@ export default function GapsPage() {
               ))}
             </div>
           </FitCard>
-
-          <FitMethodologyNote />
         </>
       )}
     </div>
