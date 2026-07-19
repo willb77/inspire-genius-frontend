@@ -21,7 +21,7 @@ import type { SidebarSection } from "@/constants/sidebar-sections"
  * their richer section. Themed verticals (Honor, Summit-style) whose sub-nav
  * lives in their own shell appear as a single launcher link.
  */
-const DETAILED_VERTICALS = new Set<VerticalKey>(["grant"])
+const DETAILED_VERTICALS = new Set<VerticalKey>(["grant", "knowledge-continuity"])
 
 /** The launcher sidebar section, or null when the user has no launcher-eligible vertical. */
 export function useVerticalLauncherSection(): SidebarSection | null {

@@ -167,6 +167,11 @@ export const ROUTES = {
     memberWorkspace: (memberId: string) =>
       `/vertical/honor/member/${memberId}`,
   },
+  // Knowledge Continuity vertical (flag-gated by user_preferences.enabled_verticals)
+  KNOWLEDGE_CONTINUITY: {
+    BASE: "/vertical/knowledge-continuity",
+    DASHBOARD: "/vertical/knowledge-continuity/dashboard",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",

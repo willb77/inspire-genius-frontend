@@ -185,6 +185,10 @@ const GrantPlanPage = React.lazy(() => import("@/pages/grant/GrantPlanPage"));
 const GrantRosterPage = React.lazy(() => import("@/pages/grant/coach/RosterPage"));
 const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/StudentIntakePage"));
 
+// Knowledge Continuity vertical — Program-Health dashboard (entitlement-gated)
+const KceLayout = React.lazy(() => import("@/pages/knowledge-continuity/KceLayout"));
+const KceDashboardPage = React.lazy(() => import("@/pages/knowledge-continuity/KceDashboardPage"));
+
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
 const HonorLayout = React.lazy(() => import("@/pages/honor/HonorLayout"));
@@ -510,6 +514,18 @@ export const routes: RouteObject[] = [
           // Coach surface — roster + per-student intake (coach-capable roles).
           { path: "coach/students", element: withSuspense(<GrantRosterPage />) },
           { path: "coach/students/:studentId", element: withSuspense(<GrantStudentIntakePage />) },
+        ],
+      },
+
+      // Knowledge Continuity vertical — entitlement-gated inside KceLayout,
+      // which wraps every child in the existing AppShell. Unentitled users are
+      // redirected to /home by the layout.
+      {
+        path: "/vertical/knowledge-continuity",
+        element: withSuspense(<KceLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/knowledge-continuity/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<KceDashboardPage />) },
         ],
       },
 
