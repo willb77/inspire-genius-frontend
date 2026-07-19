@@ -10,8 +10,8 @@ import {
   FitEmptyState,
   FitLoading,
   FitError,
-  FitMethodologyNote,
 } from "./_shared"
+import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
 import { bandTone, bandLabel, tierLabel, variationDescriptor } from "./_fit"
 
 /** One ranked role match, linking through to its fit detail. */
@@ -61,7 +61,7 @@ export default function MatchesPage() {
       />
 
       <div className="mb-5">
-        <FitMethodologyNote />
+        <MatchingValidationBanner />
       </div>
 
       {isLoading && <FitLoading label="Matching your profile to open roles…" />}

@@ -147,7 +147,8 @@ describe("MatchesPage", () => {
     expect(screen.getByText("Customer Success Lead")).toBeInTheDocument()
     expect(screen.getByText("Operations Manager")).toBeInTheDocument()
     expect(screen.getByText("Revenue")).toBeInTheDocument()
-    expect(screen.getByText(/self-guided development aid/i)).toBeInTheDocument()
+    // Standardized matching-validation banner sits prominently at the top.
+    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
   })
 })
 
@@ -184,7 +185,19 @@ describe("FitDetailPage", () => {
     expect(screen.getByText(/watch for over-use/i)).toBeInTheDocument()
     expect(screen.getByText(/track record of new ideas/i)).toBeInTheDocument()
     expect(screen.getByText(/base tier/i)).toBeInTheDocument()
+    // The validation banner carries the backend methodology note as its body.
+    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
     expect(screen.getByText(DETAIL.methodologyNote)).toBeInTheDocument()
+  })
+
+  test("surfaces the limited-release line when the role is gated", () => {
+    mockUseFitDetail.mockReturnValue({
+      data: { ...DETAIL, gated: true },
+      isLoading: false,
+      isError: false,
+    })
+    renderDetail()
+    expect(screen.getByText(/limited validation release/i)).toBeInTheDocument()
   })
 })
 
