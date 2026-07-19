@@ -18,6 +18,7 @@ import {
   HonorSectionTitle,
 } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
+import { HONOR_CAREER_AREAS, HONOR_CAREER_AREA_OTHER } from "./_careerAreas"
 
 /**
  * Honor Coach Workbench — Résumé Writer (Phase 5).
@@ -30,15 +31,6 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
  * DARK behind the server `honor_resume` flag — while off, the surface renders a
  * clearly-labeled sample so the layout + branded PDF stay demoable.
  */
-
-const HONOR_CAREER_AREAS: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "operations_program_management", label: "Operations & Program Management" },
-  { key: "security_risk_management", label: "Security & Risk Management" },
-  { key: "consulting_advisory", label: "Consulting & Advisory" },
-  { key: "sales_business_development", label: "Sales & Business Development" },
-  { key: "people_leadership", label: "People Leadership" },
-  { key: "analysis_intelligence", label: "Analysis & Intelligence" },
-]
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -88,7 +80,12 @@ export default function HonorResume() {
   const [fellowId, setFellowId] = useState("")
   const [role, setRole] = useState("")
   const [careerArea, setCareerArea] = useState("")
+  const [careerAreaOther, setCareerAreaOther] = useState("")
   const [positionText, setPositionText] = useState("")
+
+  // The effective career-area hint: the free-typed value when "Other" is picked.
+  const effectiveCareerArea =
+    careerArea === HONOR_CAREER_AREA_OTHER ? careerAreaOther.trim() : careerArea
   const [resume, setResume] = useState<HonorResumeData | null>(null)
   const [isSample, setIsSample] = useState(false)
   const [exporting, setExporting] = useState<null | "download" | "print">(null)
@@ -107,7 +104,7 @@ export default function HonorResume() {
         fellowId: primary.id,
         body: {
           role: role.trim() || undefined,
-          careerArea: careerArea || undefined,
+          careerArea: effectiveCareerArea || undefined,
           positionText: positionText.trim() || undefined,
         },
       })
@@ -272,11 +269,20 @@ export default function HonorResume() {
             >
               <option value="">Any / infer from profile</option>
               {HONOR_CAREER_AREAS.map((a) => (
-                <option key={a.key} value={a.key}>
-                  {a.label}
+                <option key={a} value={a}>
+                  {a}
                 </option>
               ))}
+              <option value={HONOR_CAREER_AREA_OTHER}>Other (specify)…</option>
             </select>
+            {careerArea === HONOR_CAREER_AREA_OTHER && (
+              <input
+                value={careerAreaOther}
+                onChange={(e) => setCareerAreaOther(e.target.value)}
+                placeholder="Type a career area…"
+                className="mt-2 w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+              />
+            )}
           </label>
 
           <label className="text-sm">

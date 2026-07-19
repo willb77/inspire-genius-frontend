@@ -158,15 +158,19 @@ export default function HonorAdministration() {
 
       {/* Teams */}
       <HonorSectionTitle>Teams &amp; cohorts</HonorSectionTitle>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {teams.map((t) => (
-          <HonorCard key={t.id}>
-            <div className="text-sm font-semibold text-[#18202f]">{t.name}</div>
-            <div className="mt-1 text-2xl font-bold text-[#1B2A4A]">{t.memberCount}</div>
-            <div className="text-xs text-[#9299a6]">assigned fellows</div>
-          </HonorCard>
-        ))}
-      </div>
+      {teams.length === 0 ? (
+        <HonorEmptyState>No teams or cohorts yet.</HonorEmptyState>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {teams.map((t) => (
+            <HonorCard key={t.id}>
+              <div className="text-sm font-semibold text-[#18202f]">{t.name}</div>
+              <div className="mt-1 text-2xl font-bold text-[#1B2A4A]">{t.memberCount}</div>
+              <div className="text-xs text-[#9299a6]">assigned fellows</div>
+            </HonorCard>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
