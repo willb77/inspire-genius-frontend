@@ -9,12 +9,24 @@ import {
   Wand2,
   CheckSquare,
   Square,
+  Download,
+  Printer,
+  Mail,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { sanitizeBodyHtml } from "@/lib/sanitizeHtml"
-import { useCaseload } from "@/hooks/honor/useCoachData"
+import { useAuth } from "@/context/useAuth"
+import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useHonorEvaluate, useHonorEvaluateReport } from "@/hooks/honor/useHonorEvaluate"
-import { USE_HONOR_EVAL_LIVE } from "@/hooks/honor/mocks"
+import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
+import { USE_HONOR_EVAL_LIVE, USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
+import { downloadBlob } from "@/lib/exportTranscript"
+import {
+  formatReportDate,
+  renderHonorReportPdf,
+  type HonorReportMeta,
+} from "@/lib/honor/exportHonorReport"
 import { initiateUpload, uploadToS3, triggerProcessing } from "@/services/documents/documentService"
 import type {
   HonorCareerFit,
@@ -97,10 +109,54 @@ function summarizeForNarration(report: HonorEvaluation, subjectName: string): st
     .join("\n")
 }
 
+/** Blob → base64 (no data: prefix) for the email payload. */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onloadend = () => {
+      const s = String(r.result)
+      resolve(s.slice(s.indexOf(",") + 1))
+    }
+    r.onerror = () => reject(new Error("Could not read the PDF."))
+    r.readAsDataURL(blob)
+  })
+}
+
+/** Print a rendered PDF blob via a hidden iframe (keeps the per-page footer). */
+function printBlob(blob: Blob) {
+  const url = URL.createObjectURL(blob)
+  const iframe = document.createElement("iframe")
+  iframe.style.position = "fixed"
+  iframe.style.right = "0"
+  iframe.style.bottom = "0"
+  iframe.style.width = "0"
+  iframe.style.height = "0"
+  iframe.style.border = "0"
+  iframe.src = url
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+    } catch {
+      window.open(url, "_blank")
+    }
+    // Revoke after the print dialog has had time to grab the document.
+    window.setTimeout(() => {
+      iframe.remove()
+      URL.revokeObjectURL(url)
+    }, 60_000)
+  }
+  document.body.appendChild(iframe)
+}
+
 export default function HonorEvaluate() {
   const { data: fellows = [] } = useCaseload()
+  const { user } = useAuth()
+  const { data: coachHome } = useCoachHome()
   const report = useHonorEvaluateReport()
   const narrate = useHonorEvaluate()
+  const recordExport = useRecordReportExport()
+  const emailMutation = useEmailHonorReport()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -111,6 +167,9 @@ export default function HonorEvaluate() {
   const [narrationTrace, setNarrationTrace] = useState<string[]>([])
   const [positionAttached, setPositionAttached] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [exporting, setExporting] = useState<null | "download" | "print">(null)
+  const [showEmail, setShowEmail] = useState(false)
+  const [emailTo, setEmailTo] = useState("")
 
   const selectedFellows = useMemo(
     () => fellows.filter((f) => selected.has(f.id)),
@@ -224,6 +283,102 @@ export default function HonorEvaluate() {
       toast.error("Meridian narration is unavailable right now.")
     }
   }
+
+  // ── Report export (Phase 4) ──────────────────────────────────────────────
+  function buildReportMeta(): HonorReportMeta | null {
+    if (!primary) return null
+    const coachName = user?.fullName || user?.name || coachHome?.coachName || "Coach"
+    return {
+      fellowName: fellowName(primary.firstName, primary.lastName),
+      fellowTitle: primary.target || primary.background || "",
+      fellowEmail: primary.email || "",
+      coachName,
+      coachTitle: coachHome?.coachTitle || "",
+      coachEmail: user?.email || "",
+      dateLabel: formatReportDate(new Date()),
+      narrativeHtml: narrationHtml || undefined,
+    }
+  }
+
+  async function renderReport(): Promise<{ fileName: string; blob: Blob } | null> {
+    const meta = buildReportMeta()
+    if (!result || !meta) return null
+    return renderHonorReportPdf(result, meta, nameById)
+  }
+
+  async function handleDownload() {
+    if (!result || !primary) return
+    setExporting("download")
+    try {
+      const out = await renderReport()
+      if (!out) return
+      downloadBlob(out.fileName, out.blob)
+      // Fire-and-forget audit — never block the download on it.
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "download" })
+      toast.success("Evaluation PDF downloaded.")
+    } catch {
+      toast.error("Could not generate the PDF.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  async function handlePrint() {
+    if (!result || !primary) return
+    setExporting("print")
+    try {
+      const out = await renderReport()
+      if (!out) return
+      printBlob(out.blob)
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "print" })
+    } catch {
+      toast.error("Could not prepare the report for printing.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  function openEmail() {
+    if (!primary) return
+    setEmailTo(primary.email || "")
+    setShowEmail(true)
+  }
+
+  async function confirmEmail() {
+    if (!result || !primary) return
+    const to = emailTo.trim()
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+      toast.warning("Enter a valid recipient email.")
+      return
+    }
+    try {
+      const out = await renderReport()
+      if (!out) return
+      const pdfBase64 = await blobToBase64(out.blob)
+      const res = await emailMutation.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          to,
+          kind: "evaluation",
+          filename: out.fileName,
+          pdfBase64,
+          subject: `Honor evaluation — ${fellowName(primary.firstName, primary.lastName)}`,
+        },
+      })
+      if (res?.disabled) {
+        toast.info("Email delivery isn't enabled yet. Download or print the report in the meantime.")
+      } else if (res?.sent) {
+        toast.success(`Evaluation emailed to ${to}.`)
+        setShowEmail(false)
+      } else {
+        toast.error("The report could not be emailed.")
+      }
+    } catch {
+      toast.error("The report could not be emailed.")
+    }
+  }
+
+  const canExport = !!result && !!primary
 
   return (
     <div>
@@ -373,13 +528,112 @@ export default function HonorEvaluate() {
       </HonorCard>
 
       {result && (
-        <ReportView
-          report={result}
-          primaryName={primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"}
-          nameById={nameById}
-          narrationHtml={narrationHtml}
-          narrationTrace={narrationTrace}
-        />
+        <>
+          {/* Export toolbar — branded PDF / print / (email, flag-gated) */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!canExport || exporting !== null}
+              className={HONOR_BTN_PRIMARY}
+            >
+              {exporting === "download" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={!canExport || exporting !== null}
+              className={HONOR_BTN_OUTLINE}
+            >
+              {exporting === "print" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              Print
+            </button>
+            {USE_HONOR_REPORT_EMAIL && (
+              <button
+                type="button"
+                onClick={openEmail}
+                disabled={!canExport}
+                className={HONOR_BTN_OUTLINE}
+              >
+                <Mail className="h-4 w-4" />
+                Email to fellow
+              </button>
+            )}
+            <span className="ml-auto text-xs text-[#9299a6]">
+              Confidential — distribute only by permission of the fellow.
+            </span>
+          </div>
+
+          <ReportView
+            report={result}
+            primaryName={primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"}
+            nameById={nameById}
+            narrationHtml={narrationHtml}
+            narrationTrace={narrationTrace}
+          />
+        </>
+      )}
+
+      {showEmail && primary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-[#18202f]">Email evaluation</h3>
+              <button
+                type="button"
+                onClick={() => setShowEmail(false)}
+                className="text-[#9299a6] hover:text-[#18202f]"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-sm text-[#5b6678]">
+              Sends the branded, confidential PDF for{" "}
+              <span className="font-medium text-[#18202f]">
+                {fellowName(primary.firstName, primary.lastName)}
+              </span>
+              . Only send with the fellow&rsquo;s permission.
+            </p>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-[#374151]">Recipient</span>
+              <input
+                type="email"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                placeholder="fellow@email.com"
+                className="w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+              />
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowEmail(false)} className={HONOR_BTN_OUTLINE}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmEmail}
+                disabled={emailMutation.isPending}
+                className={HONOR_BTN_PRIMARY}
+              >
+                {emailMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4" />
+                )}
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
