@@ -1,6 +1,15 @@
 import { api } from "@/lib/axios"
 import type { VerticalApiResponse } from "@/verticals/core"
-import type { ContinuityAnalytics, RiskEntry } from "@/types/knowledge-continuity"
+import type {
+  ContinuityAnalytics,
+  RegisterRiskRequest,
+  ReviewQueue,
+  RiskEntry,
+  StartSessionRequest,
+  StartSessionResponse,
+  ValidationRequest,
+  ValidationResponse,
+} from "@/types/knowledge-continuity"
 
 const PREFIX = "/v1/trainer/continuity"
 
@@ -18,6 +27,49 @@ export async function getRiskRegister(orgId?: string) {
   const { data } = await api.get<VerticalApiResponse<RiskEntry[]>>(
     `${PREFIX}/risk-register`,
     { params: orgId ? { org_id: orgId } : {} }
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/review-queue — units awaiting SME/practitioner
+ * review, plus any unresolved contradictions between captured units.
+ */
+export async function getReviewQueue(orgId?: string) {
+  const { data } = await api.get<VerticalApiResponse<ReviewQueue>>(
+    `${PREFIX}/review-queue`,
+    { params: orgId ? { org_id: orgId } : {} }
+  )
+  return data
+}
+
+/** POST /v1/trainer/continuity/units/{unitId}/validations — record a review verdict. */
+export async function submitValidation(unitId: string, body: ValidationRequest) {
+  const { data } = await api.post<VerticalApiResponse<ValidationResponse>>(
+    `${PREFIX}/units/${unitId}/validations`,
+    body
+  )
+  return data
+}
+
+/** POST /v1/trainer/continuity/risk-register — register an at-risk role/expert. */
+export async function registerAtRiskRole(body: RegisterRiskRequest) {
+  const { data } = await api.post<VerticalApiResponse<RiskEntry>>(
+    `${PREFIX}/risk-register`,
+    body
+  )
+  return data
+}
+
+/**
+ * POST /v1/trainer/continuity/sessions — start a capture session. A real
+ * (non-synthetic) expert session without a `consent_event_id` is rejected by
+ * the backend with a 403 — callers should surface that clearly.
+ */
+export async function startCaptureSession(body: StartSessionRequest) {
+  const { data } = await api.post<VerticalApiResponse<StartSessionResponse>>(
+    `${PREFIX}/sessions`,
+    body
   )
   return data
 }

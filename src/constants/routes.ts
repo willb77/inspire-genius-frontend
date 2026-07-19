@@ -171,6 +171,7 @@ export const ROUTES = {
   KNOWLEDGE_CONTINUITY: {
     BASE: "/vertical/knowledge-continuity",
     DASHBOARD: "/vertical/knowledge-continuity/dashboard",
+    REVIEW: "/vertical/knowledge-continuity/review",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",

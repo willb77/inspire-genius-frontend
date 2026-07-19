@@ -107,3 +107,96 @@ export type RiskEntry = {
   capture_priority: CapturePriority
   computed_at: string
 }
+
+// ── Reviewer console ─────────────────────────────────────────────────────────
+
+export type KnowledgeUnitCriticality = "normal" | "high"
+
+/** A single captured knowledge unit awaiting SME/practitioner review. */
+export type KnowledgeUnit = {
+  id: string
+  session_id: string
+  taxonomy_node_id: string | null
+  category: string
+  title: string
+  body: string
+  structured: Record<string, unknown> | null
+  document_id: string | null
+  criticality: KnowledgeUnitCriticality
+  kvi: number
+  validity_band: string
+  kvi_features: Record<string, unknown> | null
+  captured_at: string | null
+}
+
+/** An unresolved contradiction between two captured knowledge units. */
+export type ContradictionRelation = {
+  id: string
+  from_unit_id: string
+  to_unit_id: string
+  relation_type: string
+  resolved: boolean
+  created_at?: string
+}
+
+/** GET /v1/trainer/continuity/review-queue response payload. */
+export type ReviewQueue = {
+  needs_review_units: KnowledgeUnit[]
+  unresolved_contradictions: ContradictionRelation[]
+}
+
+export type ValidationVerdict = "confirm" | "amend" | "reject"
+
+/** POST /v1/trainer/continuity/units/{unitId}/validations request body. */
+export type ValidationRequest = {
+  validator_user_id: string
+  method: "sme_review"
+  verdict: ValidationVerdict
+  notes?: string
+}
+
+/**
+ * POST /v1/trainer/continuity/units/{unitId}/validations response payload.
+ * The updated unit, plus an optional `note` when a `confirm` is held at
+ * `provisional` pending a practitioner + a second confirmation.
+ */
+export type ValidationResponse = KnowledgeUnit & {
+  note?: string
+}
+
+/** POST /v1/trainer/continuity/risk-register request body. */
+export type RegisterRiskRequest = {
+  org_id: string
+  expert_user_id: string
+  role_title: string
+  exit_risk: number
+  role_criticality: number
+  doc_gap: number
+  bus_factor: number
+  retirement_horizon_months?: number
+}
+
+/** POST /v1/trainer/continuity/sessions request body. */
+export type StartSessionRequest = {
+  org_id: string
+  expert_user_id: string
+  role_title: string
+  successor_user_id?: string
+  taxonomy_id?: string
+  is_synthetic: boolean
+  consent_event_id?: string
+}
+
+/** POST /v1/trainer/continuity/sessions response payload. */
+export type StartSessionResponse = {
+  id: string
+  status: string
+  is_synthetic: boolean
+  org_id?: string
+  expert_user_id?: string
+  role_title?: string
+  successor_user_id?: string | null
+  taxonomy_id?: string | null
+  consent_event_id?: string | null
+  created_at?: string
+}
