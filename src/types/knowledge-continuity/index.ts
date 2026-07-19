@@ -200,3 +200,70 @@ export type StartSessionResponse = {
   consent_event_id?: string | null
   created_at?: string
 }
+
+// ── Successor Curriculum surface ─────────────────────────────────────────────
+
+/**
+ * A captured knowledge unit as embedded in a curriculum's `units_by_id` map.
+ * Structurally the same as {@link KnowledgeUnit}, but `session_id` may be null —
+ * a unit can outlive the session that produced it.
+ */
+export type CurriculumUnit = Omit<KnowledgeUnit, "session_id"> & {
+  session_id: string | null
+}
+
+/** A row from GET /v1/trainer/continuity/curricula — one published curriculum. */
+export type CurriculumSummary = {
+  template_id: string
+  name: string
+  wiring_style: string | null
+  taxonomy_id: string | null
+  session_id: string | null
+  module_count: number
+  cited_unit_count: number
+  published_by: string | null
+  created_at: string | null
+}
+
+/** A single taught item within a curriculum module. */
+export type CurriculumItem = {
+  text: string
+  cited_unit_ids: string[]
+  kind?: string
+}
+
+/** A curriculum module — an ordered group of taught items. */
+export type CurriculumModule = {
+  title: string
+  ordered_unit_ids?: string[]
+  items: CurriculumItem[]
+}
+
+/**
+ * GET /v1/trainer/continuity/curricula/{template_id} response payload.
+ * A cited unit id in an item's `cited_unit_ids` may be ABSENT from
+ * `units_by_id` when the source unit was purged — render those as an
+ * "unresolved citation", never assume the lookup succeeds.
+ */
+export type CurriculumDetail = {
+  template_id: string
+  name: string
+  wiring_style: string | null
+  taxonomy_id: string | null
+  session_id: string | null
+  published_by: string | null
+  created_at: string | null
+  modules: CurriculumModule[]
+  units_by_id: Record<string, CurriculumUnit>
+}
+
+/**
+ * POST /v1/trainer/continuity/units/{unit_id}/usage request body — a
+ * successor's feedback signal on a taught unit.
+ */
+export type UsageRequest = {
+  signal_type: string
+  value: number
+  successor_user_id?: string
+  notes?: string
+}

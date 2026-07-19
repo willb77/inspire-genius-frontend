@@ -203,6 +203,7 @@ export const KCE_SIDEBAR_SECTION: SidebarSection = {
   items: [
     { to: "/vertical/knowledge-continuity/dashboard", icon: BookOpenCheck, label: "Program Health" },
     { to: "/vertical/knowledge-continuity/review", icon: ClipboardCheck, label: "Reviewer console" },
+    { to: "/vertical/knowledge-continuity/curriculum", icon: GraduationCap, label: "Successor curriculum" },
   ],
 }
 

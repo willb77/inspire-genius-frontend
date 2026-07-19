@@ -189,6 +189,7 @@ const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/Stud
 const KceLayout = React.lazy(() => import("@/pages/knowledge-continuity/KceLayout"));
 const KceDashboardPage = React.lazy(() => import("@/pages/knowledge-continuity/KceDashboardPage"));
 const KceReviewConsolePage = React.lazy(() => import("@/pages/knowledge-continuity/KceReviewConsolePage"));
+const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/KceCurriculumPage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -528,6 +529,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <Navigate to="/vertical/knowledge-continuity/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<KceDashboardPage />) },
           { path: "review", element: withSuspense(<KceReviewConsolePage />) },
+          { path: "curriculum", element: withSuspense(<KceCurriculumPage />) },
         ],
       },
 

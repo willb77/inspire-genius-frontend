@@ -15,8 +15,11 @@ jest.mock("@/lib/axios", () => ({
 
 import {
   getAnalytics,
+  getCurricula,
+  getCurriculum,
   getReviewQueue,
   getRiskRegister,
+  recordUsage,
   registerAtRiskRole,
   startCaptureSession,
   submitValidation,
@@ -112,5 +115,40 @@ describe("Knowledge Continuity service wrappers", () => {
     const res = await startCaptureSession(body)
     expect(post).toHaveBeenCalledWith("/v1/trainer/continuity/sessions", body)
     expect(res.data).toEqual({ id: "session-1", status: "scheduled", is_synthetic: true })
+  })
+
+  test("getCurricula GETs /v1/trainer/continuity/curricula with no params by default", async () => {
+    get.mockResolvedValueOnce(envelope([{ template_id: "tmpl-1", name: "Line Lead" }]))
+    const res = await getCurricula()
+    expect(get).toHaveBeenCalledWith("/v1/trainer/continuity/curricula", { params: {} })
+    expect(res.data).toEqual([{ template_id: "tmpl-1", name: "Line Lead" }])
+  })
+
+  test("getCurricula passes taxonomy_id when provided", async () => {
+    await getCurricula("tax-1")
+    expect(get).toHaveBeenCalledWith("/v1/trainer/continuity/curricula", {
+      params: { taxonomy_id: "tax-1" },
+    })
+  })
+
+  test("getCurriculum GETs /v1/trainer/continuity/curricula/{templateId}", async () => {
+    get.mockResolvedValueOnce(
+      envelope({ template_id: "tmpl-1", name: "Line Lead", modules: [], units_by_id: {} })
+    )
+    const res = await getCurriculum("tmpl-1")
+    expect(get).toHaveBeenCalledWith("/v1/trainer/continuity/curricula/tmpl-1")
+    expect(res.data).toEqual({ template_id: "tmpl-1", name: "Line Lead", modules: [], units_by_id: {} })
+  })
+
+  test("recordUsage POSTs to /v1/trainer/continuity/units/{unitId}/usage with the body", async () => {
+    const body = {
+      signal_type: "still_true",
+      value: 1.0,
+      successor_user_id: "successor-1",
+    }
+    post.mockResolvedValueOnce(envelope({ id: "usage-1" }))
+    const res = await recordUsage("unit-1", body)
+    expect(post).toHaveBeenCalledWith("/v1/trainer/continuity/units/unit-1/usage", body)
+    expect(res.data).toEqual({ id: "usage-1" })
   })
 })

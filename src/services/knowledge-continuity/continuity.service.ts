@@ -2,11 +2,14 @@ import { api } from "@/lib/axios"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
   ContinuityAnalytics,
+  CurriculumDetail,
+  CurriculumSummary,
   RegisterRiskRequest,
   ReviewQueue,
   RiskEntry,
   StartSessionRequest,
   StartSessionResponse,
+  UsageRequest,
   ValidationRequest,
   ValidationResponse,
 } from "@/types/knowledge-continuity"
@@ -69,6 +72,43 @@ export async function registerAtRiskRole(body: RegisterRiskRequest) {
 export async function startCaptureSession(body: StartSessionRequest) {
   const { data } = await api.post<VerticalApiResponse<StartSessionResponse>>(
     `${PREFIX}/sessions`,
+    body
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/curricula — published successor curricula, optionally
+ * filtered to a single taxonomy.
+ */
+export async function getCurricula(taxonomyId?: string) {
+  const { data } = await api.get<VerticalApiResponse<CurriculumSummary[]>>(
+    `${PREFIX}/curricula`,
+    { params: taxonomyId ? { taxonomy_id: taxonomyId } : {} }
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/curricula/{templateId} — a single curriculum with
+ * its ordered modules and the `units_by_id` map used to resolve each item's
+ * provenance citations. The backend 404s when the template is unknown.
+ */
+export async function getCurriculum(templateId: string) {
+  const { data } = await api.get<VerticalApiResponse<CurriculumDetail>>(
+    `${PREFIX}/curricula/${templateId}`
+  )
+  return data
+}
+
+/**
+ * POST /v1/trainer/continuity/units/{unitId}/usage — record a successor's
+ * feedback signal on a taught unit (e.g. still_true / no_longer_true /
+ * clarity_flag).
+ */
+export async function recordUsage(unitId: string, body: UsageRequest) {
+  const { data } = await api.post<VerticalApiResponse<unknown>>(
+    `${PREFIX}/units/${unitId}/usage`,
     body
   )
   return data
