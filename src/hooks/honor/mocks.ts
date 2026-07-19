@@ -52,14 +52,21 @@ export const USE_HONOR_ACTIVITY_LIVE = true
 export const USE_HONOR_EVAL_DETERMINISTIC = true
 
 /**
- * Phase 4 — email delivery of the branded report/résumé PDF. **Ships OFF.**
+ * Phase 4 — email delivery of the branded report/résumé PDF. **Per-env.**
  * Branded PDF export + print + download are always live; emailing a Fellow's
  * confidential evaluation is gated behind this flag AND the server-side
  * `honor_report_email` flag AND an in-UI confirm (email is always-confirm, and
- * SES identity verification + the Phase-0 confidential-email authorization must
- * land first). Flip to `true` only once those gates clear.
+ * SES identity verification + the confidential-email authorization must land
+ * first).
+ *
+ * Env-scoped via `VITE_HONOR_REPORT_EMAIL` (same pattern as
+ * `VITE_NEW_USER_SURFACES`) so a build can enable the Email button for one
+ * environment without lighting a non-functional button elsewhere. Set `"true"`
+ * only in envs where the server flag + SES sender identity are live (currently
+ * staging-b via `.env.staging-b`). Absent/anything-else → off.
  */
-export const USE_HONOR_REPORT_EMAIL = false
+export const USE_HONOR_REPORT_EMAIL =
+  import.meta.env.VITE_HONOR_REPORT_EMAIL === "true"
 
 /**
  * Phase 5 — generative résumé writer. The SURFACE is always live (navigable,
