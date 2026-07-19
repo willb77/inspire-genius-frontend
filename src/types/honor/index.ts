@@ -87,6 +87,97 @@ export type EvaluateAnswer = {
   html: string
 }
 
+// ── Deterministic evaluation (Phase 2 backend: POST …/{fellow_id}/evaluate) ───
+// These mirror the agent-engine `HonorEvaluation.to_dict()` shape verbatim
+// (snake_case as returned by the API). The score math is deterministic
+// server-side; the UI only renders + cites it.
+
+/** One behavioural feature's role in an alignment score (drives the citations). */
+export type HonorFitFactor = {
+  feature: string
+  /** Human label, e.g. "PRISM: Coordinating". */
+  label: string
+  closeness: number
+  contribution: number
+  /** Source tag, e.g. "PRISM: Coordinating 90". */
+  source: string
+}
+
+/** A career area (or an uploaded position) ranked by deterministic fit. */
+export type HonorCareerFit = {
+  area: string
+  label: string
+  /** 0–100 alignment score. */
+  score: number
+  top_factors: HonorFitFactor[]
+  top_gaps: HonorFitFactor[]
+}
+
+/** One source-tagged claim in the objective / development sections. */
+export type HonorCitedClaim = {
+  statement: string
+  source: string
+}
+
+export type HonorGoalVerdict = "supported" | "at-tension" | "mixed" | "unmapped"
+
+/** A stated goal scored against the profile. */
+export type HonorGoalFit = {
+  goal: string
+  area: string | null
+  label: string | null
+  score: number | null
+  verdict: HonorGoalVerdict
+  factors: HonorFitFactor[]
+}
+
+/** Team-composition read against a target area. */
+export type HonorTeamRead = {
+  target_area: string
+  label: string
+  covered: string[]
+  gaps: string[]
+  redundant: string[]
+  complementary: string[]
+  best_by_feature: Record<string, string>
+}
+
+/** Comparative section (1:1 / 1:many / many:many / team). */
+export type HonorComparative = {
+  subjects: string[]
+  areas: string[]
+  /** subjectId → area → 0–100 fit. */
+  per_subject_area_fit: Record<string, Record<string, number>>
+  /** subjectId → subjectId → 0–100 similarity. */
+  pairwise_similarity: Record<string, Record<string, number>>
+  team_read?: HonorTeamRead
+}
+
+/** The full deterministic evaluation returned by the evaluate route. */
+export type HonorEvaluation = {
+  subject_id: string
+  objective_evaluation: HonorCitedClaim[]
+  development_areas: HonorCitedClaim[]
+  career_fit_ranked: HonorCareerFit[]
+  goals_fit: HonorGoalFit[]
+  comparative: HonorComparative | null
+  frameworks: string[]
+  imputed_features: string[]
+  notes: string
+}
+
+/** Request body for the evaluate route. */
+export type HonorEvaluateBody = {
+  /** Free-text goals or explicit { goal, area } objects. */
+  goals?: Array<string | { goal: string; area?: string }>
+  /** Comparative subjects (owned fellow ids); ownership-gated server-side. */
+  memberIds?: string[]
+  /** Career area to compute the team read against. */
+  targetArea?: string
+  /** Optional precomputed position-description vector. */
+  positionVector?: Record<string, number>
+}
+
 /** One row of the compare matrix — a metric scored per fellow (0–100). */
 export type CompareMetric = {
   label: string

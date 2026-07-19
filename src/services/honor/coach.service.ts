@@ -5,6 +5,8 @@ import type {
   CoachHome,
   CoachRecord,
   HonorApiResponse,
+  HonorEvaluateBody,
+  HonorEvaluation,
   HonorFellow,
   ScheduleEvent,
   TeamRecord,
@@ -164,5 +166,21 @@ export async function submitMemberEvaluation(prompt: string, memberId: string) {
     message: prompt,
     context: { surface: "honor", intent: "member_evaluation", member_id: memberId },
   })
+  return data
+}
+
+/**
+ * Deterministic Fellow evaluation — POST /v1/agents/honor/coach/students/{id}/evaluate
+ * (Phase 2). Returns the fully-scored, source-tagged backbone (objective +
+ * goals-fit + ranked career/position fit, plus comparative/team when memberIds
+ * are supplied). The FELLOW is the subject (ownership-gated server-side); the
+ * scores are computed by the config-weighted scorer with NO model call, so the
+ * UI renders them verbatim. Meridian narration is a separate step (honorChat).
+ */
+export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody = {}) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorEvaluation>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluate`,
+    body,
+  )
   return data
 }
