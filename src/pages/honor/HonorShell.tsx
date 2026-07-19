@@ -18,6 +18,7 @@ import {
   Users,
   UserPlus,
   Sparkles,
+  FileText,
   Activity,
   CalendarDays,
   IdCard,
@@ -49,6 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Work with Fellows",
     items: [
       { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
+      { to: ROUTES.HONOR.RESUME, label: "Résumé Writer", icon: FileText },
       { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
       { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
     ],

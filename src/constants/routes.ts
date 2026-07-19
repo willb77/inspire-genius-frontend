@@ -155,6 +155,7 @@ export const ROUTES = {
     CASELOAD: "/vertical/honor/caseload",
     ONBOARD: "/vertical/honor/onboard",
     EVALUATE: "/vertical/honor/evaluate",
+    RESUME: "/vertical/honor/resume",
     ACTIVITY: "/vertical/honor/activity",
     SCHEDULE: "/vertical/honor/schedule",
     ADMINISTRATION: "/vertical/honor/administration",
