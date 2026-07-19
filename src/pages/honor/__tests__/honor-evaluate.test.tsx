@@ -8,8 +8,12 @@ import type { HonorEvaluation, HonorFellow } from "@/types/honor"
 
 /* ── mocks ── */
 const evaluateFellow = jest.fn()
+const recordReportExport = jest.fn()
+const emailReport = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   evaluateFellow: (...a: unknown[]) => evaluateFellow(...a),
+  recordReportExport: (...a: unknown[]) => recordReportExport(...a),
+  emailReport: (...a: unknown[]) => emailReport(...a),
 }))
 
 const sendHonorEvaluation = jest.fn()
@@ -27,8 +31,26 @@ jest.mock("@/services/documents/documentService", () => ({
 }))
 
 const useCaseload = jest.fn()
+const useCoachHome = jest.fn()
 jest.mock("@/hooks/honor/useCoachData", () => ({
   useCaseload: () => useCaseload(),
+  useCoachHome: () => useCoachHome(),
+}))
+
+jest.mock("@/context/useAuth", () => ({
+  useAuth: () => ({ user: { fullName: "S. Carter", email: "coach@honor.org", name: "S. Carter" } }),
+}))
+
+// html2canvas/jsPDF can't run under jsdom — mock the PDF renderer.
+const renderHonorReportPdf = jest.fn()
+jest.mock("@/lib/honor/exportHonorReport", () => ({
+  renderHonorReportPdf: (...a: unknown[]) => renderHonorReportPdf(...a),
+  formatReportDate: () => "July 19, 2026",
+}))
+
+const downloadBlob = jest.fn()
+jest.mock("@/lib/exportTranscript", () => ({
+  downloadBlob: (...a: unknown[]) => downloadBlob(...a),
 }))
 
 jest.mock("sonner", () => ({
@@ -97,11 +119,15 @@ function renderPage() {
 beforeEach(() => {
   jest.clearAllMocks()
   useCaseload.mockReturnValue({ data: FELLOWS })
+  useCoachHome.mockReturnValue({ data: { coachName: "S. Carter", coachTitle: "Transition Mentor" } })
   evaluateFellow.mockResolvedValue({ status: true, data: opsEval() })
   sendHonorEvaluation.mockResolvedValue({ content: "Marcus is a strong operator.", trace: ["Aura", "Meridian"], sessionId: "s1" })
   initiateUpload.mockResolvedValue({ document_id: "d1", upload_url: "u", upload_fields: {} })
   uploadToS3.mockResolvedValue(undefined)
   triggerProcessing.mockResolvedValue({ id: "d1" })
+  renderHonorReportPdf.mockResolvedValue({ fileName: "honor-evaluation-marcus-reyes.pdf", blob: new Blob(["pdf"]) })
+  recordReportExport.mockResolvedValue({ status: true, data: { recorded: true } })
+  emailReport.mockResolvedValue({ status: true, data: { sent: true, messageId: "m1" } })
 })
 
 test("selecting a fellow + Run evaluation renders the cited, ranked deterministic report", async () => {
@@ -203,4 +229,42 @@ test("select all selects every fellow; no-scores fellow shows the imputed banner
   // both other fellows passed as comparison memberIds
   expect(evaluateFellow).toHaveBeenCalledWith("f1", expect.objectContaining({ memberIds: ["f2"] }))
   expect(await screen.findByText(/imputed-neutral/i)).toBeInTheDocument()
+})
+
+test("Download PDF renders the branded report (fellow + coach identity) and logs the export", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+
+  fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
+
+  await waitFor(() => expect(renderHonorReportPdf).toHaveBeenCalledTimes(1))
+  // the report backbone + a meta carrying both identities is handed to the renderer
+  expect(renderHonorReportPdf).toHaveBeenCalledWith(
+    expect.objectContaining({ subject_id: "f1" }),
+    expect.objectContaining({ fellowName: "Marcus Reyes", coachName: "S. Carter", coachEmail: "coach@honor.org" }),
+    expect.any(Object),
+  )
+  await waitFor(() =>
+    expect(downloadBlob).toHaveBeenCalledWith("honor-evaluation-marcus-reyes.pdf", expect.any(Blob)),
+  )
+  // export is audited (fire-and-forget) as a download
+  await waitFor(() =>
+    expect(recordReportExport).toHaveBeenCalledWith("f1", { kind: "evaluation", action: "download" }),
+  )
+})
+
+test("email delivery ships dark — the Email button is hidden while the flag is off", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+
+  // Download + Print are always live…
+  expect(screen.getByRole("button", { name: /download pdf/i })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: /print/i })).toBeInTheDocument()
+  // …Email is gated behind USE_HONOR_REPORT_EMAIL (off) and must not render.
+  expect(screen.queryByRole("button", { name: /email to fellow/i })).not.toBeInTheDocument()
+  expect(emailReport).not.toHaveBeenCalled()
 })

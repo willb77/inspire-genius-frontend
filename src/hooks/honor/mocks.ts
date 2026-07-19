@@ -50,6 +50,16 @@ export const USE_HONOR_ACTIVITY_LIVE = true
  */
 export const USE_HONOR_EVAL_DETERMINISTIC = true
 
+/**
+ * Phase 4 — email delivery of the branded report/résumé PDF. **Ships OFF.**
+ * Branded PDF export + print + download are always live; emailing a Fellow's
+ * confidential evaluation is gated behind this flag AND the server-side
+ * `honor_report_email` flag AND an in-UI confirm (email is always-confirm, and
+ * SES identity verification + the Phase-0 confidential-email authorization must
+ * land first). Flip to `true` only once those gates clear.
+ */
+export const USE_HONOR_REPORT_EMAIL = false
+
 /** The signed-in coach persona shown in the wireframe. */
 export const MOCK_COACH = {
   name: "S. Carter",

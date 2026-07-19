@@ -184,3 +184,60 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
   )
   return data
 }
+
+// ── Phase 4: report export audit + email delivery ────────────────────────────
+
+export type HonorReportKind = "evaluation" | "resume"
+export type HonorExportAction = "download" | "print" | "email"
+
+/**
+ * Record a client-side export (download / print) for the audit trail — POST
+ * …/{id}/report/exported. Fire-and-forget: emits `honor.report.exported` to
+ * EventBridge (audit-service) server-side. NOT third-party messaging — no PDF
+ * bytes leave the browser, this only logs that an export happened.
+ */
+export async function recordReportExport(
+  fellowId: string,
+  body: { kind: HonorReportKind; action: HonorExportAction },
+) {
+  const { data } = await agentApi.post<HonorApiResponse<{ recorded: boolean }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/exported`,
+    { ...body, format: "pdf" },
+  )
+  return data
+}
+
+export type EmailReportBody = {
+  /** Recipient address (defaults to the fellow's email in the UI). */
+  to: string
+  cc?: string[]
+  kind?: HonorReportKind
+  subject?: string
+  message?: string
+  /** Suggested attachment filename, e.g. "honor-evaluation-marcus-reyes.pdf". */
+  filename: string
+  /** The rendered PDF, base64-encoded (no data: prefix). */
+  pdfBase64: string
+}
+
+export type EmailReportResult = {
+  sent: boolean
+  messageId?: string
+  /** True when the server-side `honor_report_email` flag is off (feature dark). */
+  disabled?: boolean
+}
+
+/**
+ * Email the branded report/résumé PDF to the fellow (or another authorized
+ * recipient) — POST …/{id}/report/email. The PDF is rendered client-side and
+ * sent as base64; the server delivers via SES and emits `honor.report.emailed`.
+ * Gated by the server `honor_report_email` flag (returns `{disabled:true}` while
+ * off) AND confirmed in the UI before any send — email is always-confirm.
+ */
+export async function emailReport(fellowId: string, body: EmailReportBody) {
+  const { data } = await agentApi.post<HonorApiResponse<EmailReportResult>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/email`,
+    body,
+  )
+  return data
+}
