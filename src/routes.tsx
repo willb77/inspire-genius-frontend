@@ -192,6 +192,7 @@ const HonorDashboard = React.lazy(() => import("@/pages/honor/HonorDashboard"));
 const HonorCaseload = React.lazy(() => import("@/pages/honor/HonorCaseload"));
 const HonorOnboard = React.lazy(() => import("@/pages/honor/HonorOnboard"));
 const HonorEvaluate = React.lazy(() => import("@/pages/honor/HonorEvaluate"));
+const HonorResume = React.lazy(() => import("@/pages/honor/HonorResume"));
 const HonorMemberProfile = React.lazy(() => import("@/pages/honor/HonorMemberProfile"));
 const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
 const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
@@ -524,6 +525,7 @@ export const routes: RouteObject[] = [
           { path: "caseload", element: withSuspense(<HonorCaseload />) },
           { path: "onboard", element: withSuspense(<HonorOnboard />) },
           { path: "evaluate", element: withSuspense(<HonorEvaluate />) },
+          { path: "resume", element: withSuspense(<HonorResume />) },
           { path: "activity", element: withSuspense(<HonorActivity />) },
           { path: "schedule", element: withSuspense(<HonorSchedule />) },
           { path: "administration", element: withSuspense(<HonorAdministration />) },

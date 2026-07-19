@@ -8,6 +8,9 @@ import type {
   HonorEvaluateBody,
   HonorEvaluation,
   HonorFellow,
+  HonorResume,
+  HonorResumeBody,
+  HonorResumeDisabled,
   ScheduleEvent,
   TeamRecord,
 } from "@/types/honor"
@@ -180,6 +183,23 @@ export async function submitMemberEvaluation(prompt: string, memberId: string) {
 export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody = {}) {
   const { data } = await agentApi.post<HonorApiResponse<HonorEvaluation>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluate`,
+    body,
+  )
+  return data
+}
+
+/**
+ * Generate a private-sector résumé draft for a Fellow (Phase 5) —
+ * POST /v1/agents/honor/coach/students/{id}/resume. The FELLOW is the subject
+ * (ownership-gated server-side); the résumé is written from their PRISM +their
+ * own uploaded résumé/bio, framed by the THF safe-translation rules. GATED by
+ * the server `honor_resume` flag — returns `{ disabled: true }` while off, so the
+ * UI falls back to a labeled sample layout until the safe-translation SME
+ * sign-off activates it. Export/print/email reuse the Phase-4 routes (kind="resume").
+ */
+export async function generateResume(fellowId: string, body: HonorResumeBody = {}) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorResume | HonorResumeDisabled>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/resume`,
     body,
   )
   return data
