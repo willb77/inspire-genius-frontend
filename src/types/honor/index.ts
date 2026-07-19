@@ -166,6 +166,47 @@ export type HonorEvaluation = {
   notes: string
 }
 
+// ── Résumé writer (Phase 5 backend: POST …/{fellow_id}/resume) ────────────────
+// Mirrors the agent-engine résumé payload verbatim (snake_case). The model writes
+// the CONTENT of each field (grounded on the Fellow's own profile + résumé/bio,
+// framed by THF safe-translation); the UI renders + brands it deterministically.
+
+export type HonorResumeExperience = {
+  title: string
+  organization: string
+  dates: string
+  bullets: string[]
+}
+
+/** A generated private-sector résumé draft for a Fellow. */
+export type HonorResume = {
+  fellow_id: string
+  /** The target role/area the résumé was written for. */
+  target: string
+  headline: string
+  summary: string
+  competencies: string[]
+  experience: HonorResumeExperience[]
+  education: string[]
+  certifications: string[]
+  /** Frameworks that grounded the draft (e.g. ["PRISM"]). */
+  frameworks: string[]
+  /** Human-readable provenance, e.g. ["Fellow's résumé", "PRISM"]. */
+  sources: string[]
+  grounded: boolean
+  disclaimer: string
+}
+
+/** The route returns this shape while the server `honor_resume` flag is off. */
+export type HonorResumeDisabled = { disabled: boolean }
+
+/** Request body for the résumé route (any/all optional). */
+export type HonorResumeBody = {
+  role?: string
+  careerArea?: string
+  positionText?: string
+}
+
 /** Request body for the evaluate route. */
 export type HonorEvaluateBody = {
   /** Free-text goals or explicit { goal, area } objects. */
