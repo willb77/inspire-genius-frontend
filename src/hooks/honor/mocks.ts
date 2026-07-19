@@ -42,6 +42,14 @@ export const USE_HONOR_ROSTER_LIVE = true
 export const USE_HONOR_EVAL_LIVE = true
 export const USE_HONOR_ACTIVITY_LIVE = true
 
+/**
+ * Phase 3 — the deterministic evaluate route (POST …/{fellow_id}/evaluate).
+ * When on, the Evaluate surface runs the config-weighted fit scorer server-side
+ * and renders the cited, ranked sections; Meridian narration (EVAL_LIVE) becomes
+ * an optional prose layer on top. Off → the surface stays chat-only.
+ */
+export const USE_HONOR_EVAL_DETERMINISTIC = true
+
 /** The signed-in coach persona shown in the wireframe. */
 export const MOCK_COACH = {
   name: "S. Carter",
