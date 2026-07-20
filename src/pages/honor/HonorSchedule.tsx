@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   CalendarDays,
   CalendarPlus,
@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Unplug,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -17,7 +18,9 @@ import { useCaseload } from "@/hooks/honor/useCoachData"
 import {
   useCreateHonorSession,
   useDeleteHonorSession,
+  useDisconnectGoogle,
   useHonorGoogleConnect,
+  useHonorGoogleStatus,
   useHonorSchedule,
   useHonorScheduleFeed,
   useUpdateHonorSession,
@@ -40,8 +43,10 @@ import {
  * /v1/agents/honor/coach/schedule) through useHonorSchedule + its mutations.
  * Read-safe: an undeployed backend degrades to the empty state (no crash). A
  * "New session" form POSTs; each row can be edited or deleted. "Subscribe
- * (iCal)" reveals the .ics feed URL (copy + webcal:// hint); "Connect Google
- * Calendar" is shown disabled while OAuth is not configured.
+ * (iCal)" reveals the .ics feed URL (copy + webcal:// hint). "Connect Google
+ * Calendar" (live OAuth) has three states: connected (Disconnect + email),
+ * available (opens the consent URL in a new tab, then light-polls status), or
+ * unavailable (disabled + coming-soon note).
  */
 
 const KINDS = ["session", "debrief", "milestone", "interview", "other"] as const
@@ -126,6 +131,48 @@ export default function HonorSchedule() {
 
   const feedQuery = useHonorScheduleFeed({ enabled: showFeed })
   const google = useHonorGoogleConnect()
+  const { data: googleStatus, refetch: refetchGoogleStatus } = useHonorGoogleStatus()
+  const disconnectMut = useDisconnectGoogle()
+
+  const connected = googleStatus?.connected === true
+  const googleEmail = googleStatus?.googleEmail
+  const [polling, setPolling] = useState(false)
+
+  /**
+   * After the coach is sent to Google consent (opened in a new tab, callback
+   * self-closes), light-poll the status so the UI flips to "Connected" once
+   * they finish — refetch every few seconds for ~30s and whenever the window
+   * regains focus. Read-safe: refetch swallows errors to the not-connected state.
+   */
+  useEffect(() => {
+    if (!polling) return
+    if (connected) {
+      setPolling(false)
+      return
+    }
+    const startedAt = Date.now()
+    const interval = window.setInterval(() => {
+      if (Date.now() - startedAt > 30_000) {
+        window.clearInterval(interval)
+        setPolling(false)
+        return
+      }
+      void refetchGoogleStatus()
+    }, 3000)
+    const onFocus = () => void refetchGoogleStatus()
+    window.addEventListener("focus", onFocus)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [polling, connected, refetchGoogleStatus])
+
+  function handleConnectGoogle() {
+    const url = google.data?.authUrl
+    if (!url) return
+    window.open(url, "_blank", "noopener")
+    setPolling(true)
+  }
 
   const fellowNameById = useMemo(() => {
     const m = new Map<string, string>()
@@ -227,18 +274,42 @@ export default function HonorSchedule() {
             >
               <Link2 className="h-4 w-4" /> Subscribe (iCal)
             </button>
-            <button
-              type="button"
-              className={HONOR_BTN_OUTLINE}
-              disabled={!google.data?.available}
-              title={
-                google.data?.available
-                  ? "Connect your Google Calendar"
-                  : "Coming soon — not yet configured"
-              }
-            >
-              <CalendarPlus className="h-4 w-4" /> Connect Google Calendar
-            </button>
+            {connected ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#cfe8d4] bg-[#eef8f0] px-3 py-2 text-sm font-semibold text-[#1f7a3d]">
+                  <Check className="h-4 w-4" />
+                  {googleEmail ? `Connected as ${googleEmail}` : "Google Calendar connected"}
+                </span>
+                <button
+                  type="button"
+                  className={HONOR_BTN_OUTLINE}
+                  onClick={() => disconnectMut.mutate()}
+                  disabled={disconnectMut.isPending}
+                  title="Disconnect Google Calendar"
+                >
+                  <Unplug className="h-4 w-4" /> Disconnect
+                </button>
+              </>
+            ) : google.data?.available ? (
+              <button
+                type="button"
+                className={HONOR_BTN_OUTLINE}
+                onClick={handleConnectGoogle}
+                title="Connect your Google Calendar"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                {polling ? "Waiting for Google…" : "Connect Google Calendar"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={HONOR_BTN_OUTLINE}
+                disabled
+                title="Coming soon — not yet configured"
+              >
+                <CalendarPlus className="h-4 w-4" /> Connect Google Calendar
+              </button>
+            )}
             <button
               type="button"
               className={HONOR_BTN_PRIMARY}
@@ -258,14 +329,22 @@ export default function HonorSchedule() {
         }
       />
 
-      {/* Google Calendar "coming soon" note */}
-      {google.data && !google.data.available && (
-        <p className="mb-4 text-xs text-[#9299a6]">
-          Google Calendar sync is coming soon — not yet configured
-          {google.data.reason ? ` (${google.data.reason})` : ""}. Use{" "}
-          <span className="font-medium text-[#5b6678]">Subscribe (iCal)</span> to add this schedule to
-          Google, Apple, or Outlook today.
+      {/* Google Calendar status hint */}
+      {connected ? (
+        <p className="mb-4 text-xs text-[#5b6678]">
+          New sessions now sync to your Google Calendar
+          {googleEmail ? ` (${googleEmail})` : ""}.
         </p>
+      ) : (
+        google.data &&
+        !google.data.available && (
+          <p className="mb-4 text-xs text-[#9299a6]">
+            Google Calendar sync is coming soon — not yet configured
+            {google.data.reason ? ` (${google.data.reason})` : ""}. Use{" "}
+            <span className="font-medium text-[#5b6678]">Subscribe (iCal)</span> to add this schedule to
+            Google, Apple, or Outlook today.
+          </p>
+        )
       )}
 
       {/* iCal subscribe panel */}
