@@ -121,6 +121,22 @@ async function unwrap<T>(p: Promise<{ data: HonorApiResponse<unknown> }>, map: (
 
 // ── Cohorts ──────────────────────────────────────────────────────────────────
 
+/**
+ * Whoami — the caller's DB-resolved role + Honor-admin capability. Any
+ * authenticated user may call it. Used to gate the Administration nav + route
+ * on the authoritative backend role, since magic-link login tokens carry no
+ * role and would otherwise hide the console from a genuine super-admin.
+ */
+export async function getAdminWhoami(): Promise<{ role: string; isHonorAdmin: boolean }> {
+  return unwrap(
+    agentApi.get<HonorApiResponse<unknown>>(`${BASE}/whoami`),
+    (d) => {
+      const o = (d ?? {}) as Raw
+      return { role: str(o.role), isHonorAdmin: o.isHonorAdmin === true }
+    },
+  )
+}
+
 export async function listCohorts(): Promise<CohortSummary[]> {
   return unwrap(agentApi.get<HonorApiResponse<unknown>>(`${BASE}/cohorts`), (d) => arr(d).map(normCohort))
 }

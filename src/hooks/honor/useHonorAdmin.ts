@@ -23,6 +23,7 @@ import {
   deleteCoach,
   deleteCohort,
   deleteFellow,
+  getAdminWhoami,
   getCohort,
   importCoaches,
   importFellows,
@@ -55,11 +56,32 @@ import type {
 const HK = "honor-admin"
 
 export const HONOR_ADMIN_KEYS = {
+  whoami: [HK, "whoami"] as const,
   cohorts: [HK, "cohorts"] as const,
   cohort: (id: string) => [HK, "cohort", id] as const,
   careerAreas: [HK, "career-areas"] as const,
   coaches: [HK, "coaches"] as const,
   fellows: [HK, "fellows"] as const,
+}
+
+/**
+ * Whoami — is the signed-in user a Honor super-admin (per the DB-resolved role)?
+ * The Administration nav + route guard use this so a genuine super-admin on a
+ * magic-link token (whose login payload carries no role) still gets the console.
+ * Resolves to `false` while loading or on any error, so access fails closed.
+ */
+export function useHonorAdminAccess() {
+  const q = useQuery<{ role: string; isHonorAdmin: boolean }, AxiosError>({
+    queryKey: HONOR_ADMIN_KEYS.whoami,
+    queryFn: getAdminWhoami,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  })
+  return {
+    isHonorAdmin: q.data?.isHonorAdmin === true,
+    role: q.data?.role ?? null,
+    isLoading: q.isLoading,
+  }
 }
 
 // ── Cohorts ──────────────────────────────────────────────────────────────────
