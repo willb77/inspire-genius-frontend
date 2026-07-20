@@ -19,6 +19,8 @@ jest.mock("@/services/honor/schedule.service", () => ({
   getCoachSchedule: jest.fn(),
   getScheduleFeedUrl: jest.fn(),
   getGoogleConnect: jest.fn(),
+  getGoogleStatus: jest.fn(),
+  disconnectGoogle: jest.fn(),
   createCoachSession: jest.fn(),
   updateCoachSession: jest.fn(),
   deleteCoachSession: jest.fn(),
@@ -56,6 +58,8 @@ beforeEach(() => {
   svc.getCoachActivityFeed.mockResolvedValue([])
   svc.getCoachSchedule.mockResolvedValue([])
   svc.getGoogleConnect.mockResolvedValue({ available: false, reason: "Not configured" })
+  svc.getGoogleStatus.mockResolvedValue({ connected: false })
+  svc.disconnectGoogle.mockResolvedValue({ connected: false })
   svc.getScheduleFeedUrl.mockResolvedValue(null)
 })
 
@@ -163,11 +167,46 @@ describe("HonorSchedule — live sessions", () => {
     expect(input.value).toContain("abc123.ics")
   })
 
-  test("Connect Google Calendar is disabled while OAuth is unconfigured", async () => {
+  test("Google Calendar: unavailable renders the disabled button + coming-soon note", async () => {
+    svc.getGoogleConnect.mockResolvedValue({ available: false, reason: "Not configured" })
+    svc.getGoogleStatus.mockResolvedValue({ connected: false })
+
     renderPage(<HonorSchedule />)
 
     const btn = await screen.findByRole("button", { name: /Connect Google Calendar/i })
     expect(btn).toBeDisabled()
-    expect(await screen.findByText(/Coming soon — not yet configured|coming soon/i)).toBeInTheDocument()
+    expect(await screen.findByText(/coming soon/i)).toBeInTheDocument()
+  })
+
+  test("Google Calendar: available + not connected renders an enabled Connect button that opens authUrl", async () => {
+    const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=abc&scope=calendar"
+    svc.getGoogleConnect.mockResolvedValue({ available: true, authUrl })
+    svc.getGoogleStatus.mockResolvedValue({ connected: false })
+
+    const openSpy = jest.spyOn(window, "open").mockReturnValue(null)
+
+    renderPage(<HonorSchedule />)
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Connect Google Calendar/i })).not.toBeDisabled(),
+    )
+    fireEvent.click(screen.getByRole("button", { name: /Connect Google Calendar/i }))
+
+    expect(openSpy).toHaveBeenCalledWith(authUrl, "_blank", "noopener")
+    openSpy.mockRestore()
+  })
+
+  test("Google Calendar: connected renders Connected + a Disconnect button that calls the service", async () => {
+    svc.getGoogleConnect.mockResolvedValue({ available: true })
+    svc.getGoogleStatus.mockResolvedValue({ connected: true, googleEmail: "coach@example.com" })
+
+    renderPage(<HonorSchedule />)
+
+    expect(await screen.findByText(/Connected as coach@example\.com/i)).toBeInTheDocument()
+    expect(await screen.findByText(/New sessions now sync to your Google Calendar/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /Disconnect/i }))
+
+    await waitFor(() => expect(svc.disconnectGoogle).toHaveBeenCalledTimes(1))
   })
 })

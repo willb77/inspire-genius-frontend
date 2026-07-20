@@ -3,6 +3,7 @@ import type {
   HonorActivityItem,
   HonorApiResponse,
   HonorGoogleConnect,
+  HonorGoogleStatus,
   HonorScheduleFeed,
   HonorSession,
   HonorSessionInput,
@@ -25,7 +26,9 @@ import type {
  *   PATCH  /v1/agents/honor/coach/schedule/{id}            (HonorSessionPatch) → HonorSession
  *   DELETE /v1/agents/honor/coach/schedule/{id}
  *   GET    /v1/agents/honor/coach/schedule/feed-url        → { url }
- *   GET    /v1/agents/honor/coach/schedule/google/connect  → { available, reason }
+ *   GET    /v1/agents/honor/coach/schedule/google/connect  → { available, authUrl?, reason? }
+ *   GET    /v1/agents/honor/coach/schedule/google/status   → { connected, googleEmail? }
+ *   DELETE /v1/agents/honor/coach/schedule/google          → { connected: false }
  */
 
 const COACH = "/v1/agents/honor/coach"
@@ -67,12 +70,28 @@ export async function getScheduleFeedUrl(): Promise<HonorScheduleFeed | null> {
   return unwrap(data) ?? null
 }
 
-/** Google Calendar connect capability probe (OAuth is not configured yet). */
+/** Google Calendar connect capability probe → `{ available, authUrl?, reason? }`. */
 export async function getGoogleConnect(): Promise<HonorGoogleConnect> {
   const { data } = await agentApi.get<HonorApiResponse<HonorGoogleConnect>>(
     `${COACH}/schedule/google/connect`,
   )
   return unwrap(data) ?? { available: false, reason: "Not configured" }
+}
+
+/** Google Calendar connection status → `{ connected, googleEmail? }`. */
+export async function getGoogleStatus(): Promise<HonorGoogleStatus> {
+  const { data } = await agentApi.get<HonorApiResponse<HonorGoogleStatus>>(
+    `${COACH}/schedule/google/status`,
+  )
+  return unwrap(data) ?? { connected: false }
+}
+
+/** Disconnect the coach's Google Calendar → `{ connected: false }`. */
+export async function disconnectGoogle(): Promise<HonorGoogleStatus> {
+  const { data } = await agentApi.delete<HonorApiResponse<HonorGoogleStatus>>(
+    `${COACH}/schedule/google`,
+  )
+  return unwrap(data) ?? { connected: false }
 }
 
 // ── Schedule (mutations) ─────────────────────────────────────────────────────
