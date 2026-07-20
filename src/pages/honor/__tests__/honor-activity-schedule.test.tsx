@@ -154,9 +154,12 @@ describe("HonorSchedule — live sessions", () => {
     )
   })
 
-  test("Subscribe (iCal) reveals the feed URL", async () => {
+  test("Subscribe (iCal) reveals the feed URL (reads feedUrl, forces https)", async () => {
+    // Backend returns `feedUrl` (not `url`), and behind the API Gateway the
+    // scheme can be internal http — the surface must read feedUrl + coerce https.
     svc.getScheduleFeedUrl.mockResolvedValue({
-      url: "https://calendar.inspiresgenius.com/honor/coach/feed/abc123.ics",
+      token: "abc123",
+      feedUrl: "http://anj1cbzsf8.execute-api.us-east-1.amazonaws.com/v1/agents/honor/coach/schedule/feed.ics?token=abc123",
     })
 
     renderPage(<HonorSchedule />)
@@ -164,7 +167,8 @@ describe("HonorSchedule — live sessions", () => {
     fireEvent.click(screen.getByRole("button", { name: /Subscribe \(iCal\)/i }))
 
     const input = (await screen.findByLabelText("iCal subscribe URL")) as HTMLInputElement
-    expect(input.value).toContain("abc123.ics")
+    expect(input.value).toContain("feed.ics?token=abc123")
+    expect(input.value.startsWith("https://")).toBe(true)
   })
 
   test("Google Calendar: unavailable renders the disabled button + coming-soon note", async () => {
