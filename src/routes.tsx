@@ -119,6 +119,9 @@ const ManagerTraining = React.lazy(() => import("@/pages/manager/Training"));
 const ManagerCareerManagement = React.lazy(() => import("@/pages/manager/CareerManagement"));
 const ManagerTeamBuilding = React.lazy(() => import("@/pages/manager/TeamBuilding"));
 const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"));
+// Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
+const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/DevelopmentStudio"));
+const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
@@ -456,6 +459,9 @@ export const routes: RouteObject[] = [
       { path: "/manager/job-blueprint", element: withSuspense(<ManagerJobBlueprint />) },
       { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
+      // Team Development Studio (roster + per-member workspace)
+      { path: "/manager/development", element: withSuspense(<DevelopmentStudio />) },
+      { path: "/manager/development/:memberId", element: withSuspense(<MemberDevelopmentWorkspace />) },
       { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
       { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
       { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
