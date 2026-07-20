@@ -15,6 +15,7 @@ import type {
   AdminCoach,
   AdminCoachCreate,
   AdminFellow,
+  AdminFellowCoach,
   AdminFellowUpdate,
   AdminImportResult,
   CareerArea,
@@ -57,6 +58,19 @@ function normCoach(o: Raw): AdminCoach {
   }
 }
 
+/** A coach embedded in a fellow row — `{ sub, name, email }` (additive field). */
+function normFellowCoach(o: Raw): AdminFellowCoach {
+  const name = str(
+    pick(o, "name", "fullName", "full_name") ??
+      `${str(pick(o, "firstName", "first_name"))} ${str(pick(o, "lastName", "last_name"))}`.trim(),
+  )
+  return {
+    sub: str(pick(o, "sub", "coach_sub", "coachSub", "id")),
+    name: name || undefined,
+    email: str(pick(o, "email")) || undefined,
+  }
+}
+
 function normFellow(o: Raw): AdminFellow {
   return {
     id: str(pick(o, "id", "fellow_id", "fellowId")),
@@ -65,6 +79,7 @@ function normFellow(o: Raw): AdminFellow {
     email: str(pick(o, "email")),
     cohort: str(pick(o, "cohort", "cohort_name", "cohortName")),
     status: str(pick(o, "status"), "intake-pending"),
+    coaches: arr(pick(o, "coaches")).map(normFellowCoach),
   }
 }
 
@@ -237,6 +252,36 @@ export async function assignCoach(cohortId: string, coachSub: string): Promise<v
 export async function unassignCoach(cohortId: string, coachSub: string): Promise<void> {
   await agentApi.delete<HonorApiResponse<unknown>>(
     `${BASE}/cohorts/${encodeURIComponent(cohortId)}/coaches/${encodeURIComponent(coachSub)}`,
+  )
+}
+
+// ── Fellow ↔ coach ownership (admin-controlled, co-access allowed) ────────────
+
+/** Normalize an assign/unassign response into the fellow's updated coach list. */
+function normFellowCoachList(d: unknown): AdminFellowCoach[] {
+  // The route may return the raw coach array, or the updated fellow object.
+  const raw = Array.isArray(d) ? d : arr(pick((d ?? {}) as Raw, "coaches"))
+  return raw.map(normFellowCoach)
+}
+
+/** Assign a coach to a fellow; returns the fellow's updated coach list. */
+export async function assignFellowCoach(fellowId: string, coachSub: string): Promise<AdminFellowCoach[]> {
+  return unwrap(
+    agentApi.post<HonorApiResponse<unknown>>(
+      `${BASE}/fellows/${encodeURIComponent(fellowId)}/coaches`,
+      { coachSub },
+    ),
+    normFellowCoachList,
+  )
+}
+
+/** Unassign a coach from a fellow; returns the fellow's updated coach list. */
+export async function unassignFellowCoach(fellowId: string, coachSub: string): Promise<AdminFellowCoach[]> {
+  return unwrap(
+    agentApi.delete<HonorApiResponse<unknown>>(
+      `${BASE}/fellows/${encodeURIComponent(fellowId)}/coaches/${encodeURIComponent(coachSub)}`,
+    ),
+    normFellowCoachList,
   )
 }
 

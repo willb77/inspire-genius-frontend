@@ -45,6 +45,18 @@ export type AdminCoachImportRow = {
 
 // ── Fellows (ALL fellows, admin-wide) ────────────────────────────────────────
 
+/**
+ * A coach assigned to a fellow (co-access is allowed — a fellow may have several).
+ * Embedded in each admin fellow row by GET /admin/fellows and returned by the
+ * assign/unassign coach routes. The API sends a single display `name` here (not
+ * first/last), so both `name` and `email` are optional and read defensively.
+ */
+export type AdminFellowCoach = {
+  sub: string
+  name?: string
+  email?: string
+}
+
 export type AdminFellow = {
   id: string
   firstName: string
@@ -52,6 +64,8 @@ export type AdminFellow = {
   email: string
   cohort: string
   status: string
+  /** Coaches who own this fellow. Optional/additive — absent on older responses. */
+  coaches?: AdminFellowCoach[]
 }
 
 export type AdminFellowUpdate = {
