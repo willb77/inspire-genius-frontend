@@ -60,6 +60,12 @@ export async function createFellow(input: Partial<HonorFellow>) {
  * assessments, documents — attach to the member, not the coach).
  */
 export type InviteResult = HonorFellow & {
+  /**
+   * The POST-INVITE fellow id (the re-keyed canonical sub). The invite endpoint
+   * returns the new id under `fellowId`, NOT `id` — subject-scoped writes must
+   * target this or they 404 "fellow not found".
+   */
+  fellowId?: string
   userId?: string
   email?: string | null
   invitationSent?: boolean

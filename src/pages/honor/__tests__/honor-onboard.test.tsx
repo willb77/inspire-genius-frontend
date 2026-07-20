@@ -88,8 +88,9 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
 
   test("imports against the POST-INVITE id when the invite re-keys the fellow", async () => {
     // The invite re-keys the managed row to the invited user's canonical sub, so
-    // the create-time id goes stale. Every import must use the returned id.
-    inviteFellow.mockResolvedValue({ data: { id: "canonical-sub-42", userId: "user-9" } })
+    // the create-time id goes stale. Every import must use the returned id — which
+    // the backend returns under `fellowId` (NOT `id`; that field is absent).
+    inviteFellow.mockResolvedValue({ data: { fellowId: "canonical-sub-42" } })
 
     await runHonorOnboard({
       firstName: "Marcus",
