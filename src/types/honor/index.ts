@@ -316,9 +316,15 @@ export type HonorSessionInput = {
 /** Partial body for editing a session (PATCH …/coach/schedule/{id}). */
 export type HonorSessionPatch = Partial<HonorSessionInput>
 
-/** GET …/coach/schedule/feed-url → { url } — an https .ics subscribe URL. */
+/**
+ * GET …/coach/schedule/feed-url → `{ token, feedUrl }` — an .ics subscribe URL.
+ * `feedUrl` is the backend field name; `url` is tolerated as a legacy alias.
+ */
 export type HonorScheduleFeed = {
-  url: string
+  feedUrl?: string
+  token?: string
+  /** Legacy/alias field name — read as a fallback for `feedUrl`. */
+  url?: string
 }
 
 /** GET …/coach/schedule/google/connect → { available, authUrl?, reason? } (OAuth gate). */
