@@ -263,6 +263,72 @@ export type ScheduleEvent = {
   fellow?: string
 }
 
+// ── Live Coach Workbench contract (agent-engine Honor router) ─────────────────
+//
+// The backend surfaces these under the `agentApi` instance, Honor envelope
+// `{ status: true, data: … }`. Distinct from the Phase-0 scaffold shapes above
+// (`CoachActivityRow` / `ScheduleEvent`), which back the mock fixtures — these
+// model the real endpoints wired by schedule.service.ts + useHonorSchedule.ts.
+// Every read degrades to an empty list when the endpoint is not yet deployed.
+
+/** GET /v1/agents/honor/coach/activity → { items: HonorActivityItem[] } (newest first). */
+export type HonorActivityItem = {
+  id: string
+  /** Machine action code, e.g. "evaluation.ran" / "member.invited". */
+  action: string
+  /** Who performed it (display name). */
+  actor: string
+  /** What it acted on (fellow / cohort / document), if any. */
+  target?: string | null
+  /** ISO-8601 timestamp. */
+  when: string
+  /** Human-readable one-line description. */
+  summary: string
+}
+
+/** A calendar session on the coach's schedule (GET/POST/PATCH …/coach/schedule). */
+export type HonorSession = {
+  id: string
+  title: string
+  description?: string | null
+  /** Session kind, e.g. "session" | "debrief" | "milestone" | "interview". */
+  kind?: string | null
+  /** ISO-8601 start timestamp. */
+  startsAt: string
+  /** ISO-8601 end timestamp (optional). */
+  endsAt?: string | null
+  location?: string | null
+  /** The fellow this session is with, if any (id from the caseload). */
+  fellowId?: string | null
+}
+
+/** Body for creating a session (POST …/coach/schedule). */
+export type HonorSessionInput = {
+  title: string
+  startsAt: string
+  endsAt?: string | null
+  description?: string | null
+  kind?: string | null
+  location?: string | null
+  fellowId?: string | null
+}
+
+/** Partial body for editing a session (PATCH …/coach/schedule/{id}). */
+export type HonorSessionPatch = Partial<HonorSessionInput>
+
+/** GET …/coach/schedule/feed-url → { url } — an https .ics subscribe URL. */
+export type HonorScheduleFeed = {
+  url: string
+}
+
+/** GET …/coach/schedule/google/connect → { available, reason } (OAuth gate). */
+export type HonorGoogleConnect = {
+  available: boolean
+  reason?: string | null
+  /** OAuth redirect target when `available` is true (unused while dark). */
+  authUrl?: string | null
+}
+
 // ── Administration (coach + team management) ─────────────────────────────────
 
 export type CoachRecord = {
