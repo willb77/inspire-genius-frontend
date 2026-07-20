@@ -125,9 +125,9 @@ export async function runHonorOnboard(
 
   // The invite RE-KEYS the fellow row to the invited user's canonical sub, so the
   // create-time `fellowId` goes STALE the moment the invite succeeds. Every
-  // subject-scoped import below must target the POST-INVITE id (returned as
-  // `inviteResp.data.id`) or it 404s "fellow not found". Default to the create id
-  // only if the invite response omits the new id.
+  // subject-scoped import below must target the POST-INVITE id — which the invite
+  // endpoint returns under `data.fellowId` (NOT `data.id`; that field is absent).
+  // Default to the create id only if the invite response omits the new id.
   let effectiveFellowId = fellowId
 
   // 2. Invite → mint the IG user so assessments/docs have a SUBJECT to attach to.
@@ -138,8 +138,10 @@ export async function runHonorOnboard(
       input.role.toLowerCase() !== "fellow",
       sendInvite,
     )
-    effectiveFellowId = inviteResp.data?.id ?? fellowId
-    result.memberUserId = inviteResp.data?.userId
+    effectiveFellowId = inviteResp.data?.fellowId ?? inviteResp.data?.id ?? fellowId
+    // The re-keyed fellow id IS the fellow's canonical sub, so it doubles as the
+    // subject for doc attribution when the invite omits an explicit `userId`.
+    result.memberUserId = inviteResp.data?.userId ?? inviteResp.data?.fellowId
     // The account is created either way; fire the magic-link intake email only
     // when the coach chose to notify now.
     if (sendInvite && inviteResp.data?.invitationSent && inviteResp.data?.email) {
