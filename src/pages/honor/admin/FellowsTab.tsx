@@ -7,19 +7,37 @@ import { ADMIN_INPUT, ICON_BTN, ICON_BTN_DANGER } from "./_adminStyles"
 import { AdminLoading, AdminUnavailable } from "./_adminUi"
 import { ImportModal } from "./ImportModal"
 import type { ImportRecord } from "./importFile"
-import type { AdminFellow } from "@/types/honor/admin"
+import type { AdminCoach, AdminFellow, AdminFellowCoach } from "@/types/honor/admin"
 import {
+  useAdminCoaches,
   useAdminFellows,
+  useAssignFellowCoach,
   useDeleteFellow,
   useImportFellows,
+  useUnassignFellowCoach,
   useUpdateFellow,
 } from "@/hooks/honor/useHonorAdmin"
 
+/** Display label for a coach embedded in a fellow row. */
+function coachLabel(c: AdminFellowCoach): string {
+  return c.name || c.email || c.sub
+}
+
+/** Display label for a pickable coach from the coaches roster. */
+function pickCoachLabel(c: AdminCoach): string {
+  return fellowName(c.firstName, c.lastName) || c.email
+}
+
 export function FellowsTab() {
   const { data: fellows = [], isLoading, isError } = useAdminFellows()
+  // Read-safe: if the coaches roster errors, the picker degrades to empty; the
+  // fellows table (and each fellow's embedded coaches) still render.
+  const { data: allCoaches = [] } = useAdminCoaches()
   const update = useUpdateFellow()
   const del = useDeleteFellow()
   const importFellows = useImportFellows()
+  const assignCoach = useAssignFellowCoach()
+  const unassignCoach = useUnassignFellowCoach()
 
   const [importOpen, setImportOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -64,6 +82,27 @@ export function FellowsTab() {
     })
   }
 
+  function addCoach(fellowId: string, coachSub: string) {
+    if (!coachSub) return
+    assignCoach.mutate(
+      { fellowId, coachSub },
+      {
+        onSuccess: () => toast.success("Coach assigned."),
+        onError: () => toast.error("Couldn't assign the coach — the admin backend may not be deployed yet."),
+      },
+    )
+  }
+
+  function removeCoach(fellowId: string, coach: AdminFellowCoach) {
+    unassignCoach.mutate(
+      { fellowId, coachSub: coach.sub },
+      {
+        onSuccess: () => toast.success("Coach unassigned."),
+        onError: () => toast.error("Couldn't unassign the coach."),
+      },
+    )
+  }
+
   return (
     <div className="space-y-4">
       <HonorSectionTitle
@@ -91,6 +130,7 @@ export function FellowsTab() {
                   <th className="px-4 py-3">Fellow</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Cohort</th>
+                  <th className="px-4 py-3">Coach(es)</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -99,6 +139,9 @@ export function FellowsTab() {
                 {fellows.map((f) => {
                   const name = fellowName(f.firstName, f.lastName) || f.email
                   const editing = editingId === f.id
+                  const coaches = f.coaches ?? []
+                  const assignedSubs = new Set(coaches.map((c) => c.sub))
+                  const availableCoaches = allCoaches.filter((c) => !assignedSubs.has(c.sub))
                   return (
                     <tr key={f.id} className="border-b border-[#f1f3f7] last:border-0 align-top">
                       <td className="px-4 py-3">
@@ -149,6 +192,51 @@ export function FellowsTab() {
                         ) : (
                           f.cohort || "—"
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex max-w-[16rem] flex-col gap-2">
+                          {coaches.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {coaches.map((c) => (
+                                <span
+                                  key={c.sub}
+                                  className="inline-flex items-center gap-1 rounded-full border border-[#dfe4ec] bg-[#f6f7f9] py-0.5 pl-2 pr-1 text-xs text-[#18202f]"
+                                  title={c.email || undefined}
+                                >
+                                  {coachLabel(c)}
+                                  <button
+                                    type="button"
+                                    className="grid h-4 w-4 place-items-center rounded-full text-[#8a94a6] hover:bg-[rgba(192,71,43,0.12)] hover:text-[#c0472b] disabled:opacity-50"
+                                    aria-label={`Unassign ${coachLabel(c)}`}
+                                    onClick={() => removeCoach(f.id, c)}
+                                    disabled={unassignCoach.isPending}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <select
+                            className={ADMIN_INPUT}
+                            value=""
+                            aria-label={`Assign coach to ${name}`}
+                            disabled={assignCoach.isPending || availableCoaches.length === 0}
+                            onChange={(e) => {
+                              addCoach(f.id, e.target.value)
+                              e.target.value = ""
+                            }}
+                          >
+                            <option value="">
+                              {availableCoaches.length === 0 ? "All coaches assigned" : "Assign coach…"}
+                            </option>
+                            {availableCoaches.map((c) => (
+                              <option key={c.sub} value={c.sub}>
+                                {pickCoachLabel(c)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-[#5b6678]">{fellowStatusLabel(f.status)}</td>
                       <td className="px-4 py-3">
