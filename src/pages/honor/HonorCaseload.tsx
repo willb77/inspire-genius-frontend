@@ -4,7 +4,6 @@ import { Users, UserPlus, Upload, Search, ArrowRight, Mail, Loader2 } from "luci
 import { ROUTES } from "@/constants/routes"
 import { useCaseload } from "@/hooks/honor/useCoachData"
 import { useHonorInvitations } from "@/hooks/honor/useHonorInvitations"
-import { MOCK_CASELOAD_COUNTS } from "@/hooks/honor/mocks"
 import type { FellowStatus, HonorFellow } from "@/types/honor"
 import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
@@ -27,6 +26,16 @@ export default function HonorCaseload() {
   const navigate = useNavigate()
   const { data: fellows = [], isLoading } = useCaseload()
   const [query, setQuery] = useState("")
+
+  // Caseload counts derived from the live roster (no fixed sample totals).
+  const counts = useMemo(
+    () => ({
+      assigned: fellows.length,
+      assessed: fellows.filter((f) => f.status === "assessed").length,
+      intakePending: fellows.filter((f) => f.status === "intake-pending").length,
+    }),
+    [fellows]
+  )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -94,9 +103,9 @@ export default function HonorCaseload() {
 
       {/* Stat pills */}
       <div className="mb-4 flex flex-wrap gap-2">
-        <HonorPill tone="navy">{MOCK_CASELOAD_COUNTS.assigned} assigned</HonorPill>
-        <HonorPill tone="ok">{MOCK_CASELOAD_COUNTS.assessed} assessed</HonorPill>
-        <HonorPill tone="orange">{MOCK_CASELOAD_COUNTS.intakePending} intake pending</HonorPill>
+        <HonorPill tone="navy">{counts.assigned} assigned</HonorPill>
+        <HonorPill tone="ok">{counts.assessed} assessed</HonorPill>
+        <HonorPill tone="orange">{counts.intakePending} intake pending</HonorPill>
       </div>
 
       {/* Search */}
