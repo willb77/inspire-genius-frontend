@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import {
@@ -13,13 +13,10 @@ import {
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload, useFellow } from "@/hooks/honor/useCoachData"
-import { MOCK_GOALS, MOCK_SUGGESTED_GOALS } from "@/hooks/honor/mocks"
 import {
   AgentTraceRow,
   HonorCard,
   HonorEmptyState,
-  HonorMeter,
-  HonorPill,
   HonorSectionTitle,
   PrismDots,
 } from "./_shared"
@@ -56,12 +53,6 @@ export default function HonorMemberProfile() {
 
   const [tab, setTab] = useState<Tab>(memberId ? "overview" : "overview")
   const [denied, setDenied] = useState(false)
-
-  const goals = useMemo(() => MOCK_GOALS.filter((g) => g.fellowId === effectiveId), [effectiveId])
-  const suggested = useMemo(
-    () => MOCK_SUGGESTED_GOALS.filter((g) => g.fellowId === effectiveId),
-    [effectiveId]
-  )
 
   if (isLoading) return <HonorEmptyState>Loading fellow…</HonorEmptyState>
   if (!fellow) return <HonorEmptyState>Fellow not found on your caseload.</HonorEmptyState>
@@ -265,39 +256,19 @@ export default function HonorMemberProfile() {
       {tab === "goals" && (
         <HonorCard>
           <HonorSectionTitle>Transition goals</HonorSectionTitle>
-          {goals.length === 0 ? (
-            <p className="text-sm text-[#9299a6]">No goals set yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {goals.map((g) => (
-                <li key={g.id}>
-                  <HonorMeter value={g.progress} tone="orange" label={g.title} right={`${g.progress}%`} />
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-5">
-            <HonorSectionTitle>Suggested by Ascend</HonorSectionTitle>
-            <AgentTraceRow trace={["Aura", "Ascend", "Meridian"]} />
-            <ul className="mt-3 space-y-2">
-              {suggested.map((g) => (
-                <li
-                  key={g.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-[#f1f3f7] px-3 py-2 text-sm"
-                >
-                  <span className="flex items-center gap-2 text-[#18202f]">
-                    <Target className="h-4 w-4 text-[#E8792B]" /> {g.title}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toast.success("Goal added to user_milestones (stub)")}
-                    className="text-xs font-medium text-[#E8792B] hover:underline"
-                  >
-                    Add as goal
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <p className="text-sm text-[#9299a6]">No goals set yet.</p>
+          <p className="mt-2 text-xs text-[#9299a6]">
+            Set goals with {name.split(" ")[0]} on the Evaluate surface, where Meridian can
+            score them against the behavioral profile.
+          </p>
+          <div className="mt-4">
+            <button
+              type="button"
+              className={HONOR_BTN_OUTLINE}
+              onClick={() => navigate(ROUTES.HONOR.EVALUATE)}
+            >
+              <Sparkles className="h-4 w-4" /> Open Evaluate
+            </button>
           </div>
         </HonorCard>
       )}
@@ -306,19 +277,9 @@ export default function HonorMemberProfile() {
       {tab === "education" && (
         <HonorCard>
           <HonorSectionTitle>Pathfinder — Education &amp; Training</HonorSectionTitle>
-          <AgentTraceRow trace={["Echo", "Bridge", "Grant", "Meridian"]} />
-          <ul className="mt-3 space-y-2 text-sm">
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <GraduationCap className="h-4 w-4 text-[#1B2A4A]" /> PMP Cert Prep · PMI
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <GraduationCap className="h-4 w-4 text-[#1B2A4A]" /> Google PM Certificate · Coursera
-            </li>
-            <li className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-              <HonorPill tone="orange">Placement</HonorPill> Local employer apprenticeship — Ops Analyst
-              via Bridge pipeline · Raleigh, NC
-            </li>
-          </ul>
+          <p className="text-sm text-[#9299a6]">
+            No education or training recommendations yet.
+          </p>
         </HonorCard>
       )}
     </div>
