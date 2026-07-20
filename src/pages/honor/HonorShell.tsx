@@ -84,7 +84,7 @@ export default function HonorShell() {
             className="h-10 w-10 shrink-0 rounded-md object-contain"
           />
           <div className="leading-tight">
-            <div className="text-[15px] font-semibold">The Honor Foundation</div>
+            <div className="text-[19px] font-semibold">The Honor Foundation</div>
             <div className="text-[10px] uppercase tracking-wide text-white/60">Coach Workbench</div>
           </div>
         </div>
@@ -156,8 +156,8 @@ export default function HonorShell() {
           {/* The Honor Foundation flag — subtle fixed watermark in the page white space */}
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.06]"
-            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "460px" }}
+            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.11]"
+            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "760px" }}
           />
           <div className="relative z-10 mx-auto max-w-5xl">
             <Outlet />
