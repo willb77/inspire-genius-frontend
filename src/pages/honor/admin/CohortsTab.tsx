@@ -96,18 +96,22 @@ export function CohortsTab() {
           </div>
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-[#374151]">Career area</label>
-            <input
+            <select
               className={ADMIN_INPUT}
-              list="honor-cohort-areas"
-              placeholder="Choose or type…"
               value={form.careerArea}
               onChange={(e) => setForm((f) => ({ ...f, careerArea: e.target.value }))}
-            />
-            <datalist id="honor-cohort-areas">
+            >
+              <option value="">— Select a career area —</option>
               {areaOptions.map((a) => (
-                <option key={a} value={a} />
+                <option key={a} value={a}>
+                  {a}
+                </option>
               ))}
-            </datalist>
+              {/* keep a previously-saved value that is no longer in the list */}
+              {form.careerArea && !areaOptions.includes(form.careerArea) && (
+                <option value={form.careerArea}>{form.careerArea}</option>
+              )}
+            </select>
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <label className="block text-sm font-medium text-[#374151]">Description</label>
