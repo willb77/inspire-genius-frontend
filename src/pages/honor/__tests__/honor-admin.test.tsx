@@ -20,6 +20,8 @@ const listCohorts = jest.fn()
 const listCareerAreas = jest.fn()
 const listCoaches = jest.fn()
 const listFellows = jest.fn()
+const assignFellowCoach = jest.fn()
+const unassignFellowCoach = jest.fn()
 
 jest.mock("@/services/honor/admin.service", () => ({
   __esModule: true,
@@ -44,6 +46,8 @@ jest.mock("@/services/honor/admin.service", () => ({
   unassignFellow: jest.fn(),
   assignCoach: jest.fn(),
   unassignCoach: jest.fn(),
+  assignFellowCoach: (...a: unknown[]) => assignFellowCoach(...a),
+  unassignFellowCoach: (...a: unknown[]) => unassignFellowCoach(...a),
 }))
 
 import HonorAdministration from "../HonorAdministration"
@@ -109,6 +113,41 @@ describe("HonorAdministration console", () => {
     await waitFor(() =>
       expect(screen.getByText(/Administration backend not available/i)).toBeInTheDocument(),
     )
+  })
+
+  test("Fellows tab renders assigned coach chips and assigning a coach calls the service", async () => {
+    listFellows.mockResolvedValue([
+      {
+        id: "f1",
+        firstName: "Dana",
+        lastName: "Reyes",
+        email: "dana@honor.org",
+        cohort: "Cohort 2026-A",
+        status: "assessed",
+        coaches: [{ sub: "coach-1", name: "Alex Coach", email: "alex@honor.org" }],
+      },
+    ])
+    listCoaches.mockResolvedValue([
+      { sub: "coach-1", firstName: "Alex", lastName: "Coach", email: "alex@honor.org", role: "coach" },
+      { sub: "coach-2", firstName: "Sam", lastName: "Mentor", email: "sam@honor.org", role: "coach" },
+    ])
+    assignFellowCoach.mockResolvedValue([
+      { sub: "coach-1", name: "Alex Coach", email: "alex@honor.org" },
+      { sub: "coach-2", name: "Sam Mentor", email: "sam@honor.org" },
+    ])
+
+    const user = userEvent.setup()
+    renderConsole()
+    await user.click(screen.getByRole("tab", { name: /fellows/i }))
+
+    // Already-assigned coach shows as a chip.
+    await waitFor(() => expect(screen.getByText("Alex Coach")).toBeInTheDocument())
+
+    // The assign dropdown offers only the not-yet-assigned coach; picking it assigns.
+    const select = screen.getByRole("combobox", { name: /assign coach to dana reyes/i })
+    await user.selectOptions(select, "coach-2")
+
+    await waitFor(() => expect(assignFellowCoach).toHaveBeenCalledWith("f1", "coach-2"))
   })
 })
 

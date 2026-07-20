@@ -15,6 +15,7 @@ import type { AxiosError } from "axios"
 import {
   assignCoach,
   assignFellow,
+  assignFellowCoach,
   createCareerArea,
   createCoach,
   createCohort,
@@ -31,6 +32,7 @@ import {
   listFellows,
   unassignCoach,
   unassignFellow,
+  unassignFellowCoach,
   updateCareerArea,
   updateCohort,
   updateFellow,
@@ -39,6 +41,7 @@ import type {
   AdminCoach,
   AdminCoachCreate,
   AdminFellow,
+  AdminFellowCoach,
   AdminFellowUpdate,
   CareerArea,
   CareerAreaCreate,
@@ -216,6 +219,30 @@ export function useImportFellows() {
       qc.invalidateQueries({ queryKey: ["honor", "caseload"] })
     },
   })
+}
+
+// ── Fellow ↔ coach ownership ─────────────────────────────────────────────────
+
+export function useAssignFellowCoach() {
+  const qc = useQueryClient()
+  return useMutation<AdminFellowCoach[], AxiosError, { fellowId: string; coachSub: string }>({
+    mutationFn: ({ fellowId, coachSub }) => assignFellowCoach(fellowId, coachSub),
+    onSuccess: () => invalidateFellowOwnership(qc),
+  })
+}
+
+export function useUnassignFellowCoach() {
+  const qc = useQueryClient()
+  return useMutation<AdminFellowCoach[], AxiosError, { fellowId: string; coachSub: string }>({
+    mutationFn: ({ fellowId, coachSub }) => unassignFellowCoach(fellowId, coachSub),
+    onSuccess: () => invalidateFellowOwnership(qc),
+  })
+}
+
+/** Fellow↔coach changes affect the fellows table and each coach's caseload counts. */
+function invalidateFellowOwnership(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: HONOR_ADMIN_KEYS.fellows })
+  qc.invalidateQueries({ queryKey: HONOR_ADMIN_KEYS.coaches })
 }
 
 // ── Assignments ──────────────────────────────────────────────────────────────
