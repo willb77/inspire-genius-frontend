@@ -90,6 +90,9 @@ export const ROUTES = {
     JOB_BLUEPRINT: "/manager/job-blueprint",
     INTERVIEW_PREP: "/manager/interview-prep",
     TEAM_COMPOSITION: "/manager/team-composition",
+    // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
+    DEVELOPMENT: "/manager/development",
+    DEVELOPMENT_MEMBER: "/manager/development/:memberId",
   },
   COMPANY_ADMIN: {
     BASE: "/company-admin",
