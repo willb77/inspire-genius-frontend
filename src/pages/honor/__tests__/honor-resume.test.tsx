@@ -102,16 +102,16 @@ test("selecting a fellow + Generate renders the structured résumé", async () =
   expect(screen.getByText(/Target — Program Manager/i)).toBeInTheDocument()
 })
 
-test("when the server flag is off, shows a labeled sample layout", async () => {
+test("when the server flag is off, shows an honest not-enabled message (no fabricated sample)", async () => {
   generateResume.mockResolvedValue({ status: true, data: { disabled: true } })
   renderPage()
   fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
   fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
 
   await waitFor(() => expect(generateResume).toHaveBeenCalled())
-  expect(await screen.findByText(/pending activation \(safe-translation review\)/i)).toBeInTheDocument()
-  // the sample MOCK_RESUME renders
-  expect(screen.getByText("Operations & Program Management Leader")).toBeInTheDocument()
+  // Honest empty state — NOT a fake sample résumé.
+  expect(await screen.findByText(/isn’t enabled in this environment yet/i)).toBeInTheDocument()
+  expect(screen.queryByText("Operations & Program Management Leader")).not.toBeInTheDocument()
 })
 
 test("Download renders the branded résumé PDF and audits a real draft as kind=resume", async () => {
@@ -134,16 +134,17 @@ test("Download renders the branded résumé PDF and audits a real draft as kind=
   )
 })
 
-test("a sample draft is NOT audited on download", async () => {
+test("when generation is disabled, no résumé (and no Download) is shown", async () => {
   generateResume.mockResolvedValue({ status: true, data: { disabled: true } })
   renderPage()
   fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
   fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
-  await screen.findByText(/pending activation \(safe-translation review\)/i)
+  await screen.findByText(/isn’t enabled in this environment yet/i)
 
-  fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
-  await waitFor(() => expect(renderHonorResumePdf).toHaveBeenCalled())
-  expect(recordReportExport).not.toHaveBeenCalled() // sample export is not logged
+  // No fabricated résumé → nothing to download → nothing to audit.
+  expect(screen.queryByRole("button", { name: /download pdf/i })).not.toBeInTheDocument()
+  expect(renderHonorResumePdf).not.toHaveBeenCalled()
+  expect(recordReportExport).not.toHaveBeenCalled()
 })
 
 test("email button is hidden while USE_HONOR_REPORT_EMAIL is off", async () => {

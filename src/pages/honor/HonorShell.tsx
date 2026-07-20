@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
+import { useHonorAdminAccess } from "@/hooks/honor/useHonorAdmin"
 import { MOCK_COACH } from "@/hooks/honor/mocks"
 import { initials } from "./_format"
 import thfShield from "@/assets/honor/thf-shield.jpeg"
@@ -80,7 +81,12 @@ export default function HonorShell() {
   const { user, isAtLeast } = useAuth()
   // Defensive: tolerate a partial auth context (e.g. in tests) — default to
   // hiding the super-admin-only Administration group when the helper is absent.
-  const canAdminister = typeof isAtLeast === "function" ? isAtLeast("super-admin") : false
+  // Client token role first (fast path), then the authoritative backend whoami —
+  // magic-link logins carry no role, so isAtLeast() alone would hide the console
+  // from a genuine super-admin. See useHonorAdminAccess.
+  const { isHonorAdmin } = useHonorAdminAccess()
+  const canAdminister =
+    (typeof isAtLeast === "function" && isAtLeast("super-admin")) || isHonorAdmin
   const NAV_GROUPS = buildNavGroups(canAdminister)
 
   const coachName = user?.fullName || user?.name || MOCK_COACH.name
@@ -95,10 +101,10 @@ export default function HonorShell() {
           <img
             src={thfShield}
             alt="The Honor Foundation"
-            className="h-10 w-10 shrink-0 rounded-md object-contain"
+            className="h-12 w-12 shrink-0 rounded-md object-contain"
           />
           <div className="leading-tight">
-            <div className="text-[19px] font-semibold">The Honor Foundation</div>
+            <div className="text-[26px] font-bold tracking-tight">The Honor Foundation</div>
             <div className="text-[10px] uppercase tracking-wide text-white/60">Coach Workbench</div>
           </div>
         </div>
@@ -167,11 +173,12 @@ export default function HonorShell() {
 
         {/* Main */}
         <main className="relative min-w-0 flex-1 overflow-y-auto px-6 py-7 lg:px-8">
-          {/* The Honor Foundation flag — subtle fixed watermark in the page white space */}
+          {/* The Honor Foundation flag — fixed watermark in the page white space
+              (larger + less transparent per the THF brand request). */}
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.11]"
-            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "760px" }}
+            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.20]"
+            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "1040px" }}
           />
           <div className="relative z-10 mx-auto max-w-5xl">
             <Outlet />
