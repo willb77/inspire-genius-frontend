@@ -25,7 +25,7 @@ import type {
  *   POST   /v1/agents/honor/coach/schedule                 (HonorSessionInput) → HonorSession
  *   PATCH  /v1/agents/honor/coach/schedule/{id}            (HonorSessionPatch) → HonorSession
  *   DELETE /v1/agents/honor/coach/schedule/{id}
- *   GET    /v1/agents/honor/coach/schedule/feed-url        → { url }
+ *   GET    /v1/agents/honor/coach/schedule/feed-url        → { token, feedUrl }
  *   GET    /v1/agents/honor/coach/schedule/google/connect  → { available, authUrl?, reason? }
  *   GET    /v1/agents/honor/coach/schedule/google/status   → { connected, googleEmail? }
  *   DELETE /v1/agents/honor/coach/schedule/google          → { connected: false }
