@@ -6,6 +6,8 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY } from "./_format"
 import { FileDrop } from "./_FileDrop"
 import { useHonorOnboard, type OptionalFrameworkKey } from "@/hooks/honor/useHonorOnboard"
 import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
+import { useCohorts } from "@/hooks/honor/useHonorAdmin"
+import { HONOR_CAREER_AREAS } from "./_careerAreas"
 
 /** File types accepted for the résumé / Bio / Additional-Information uploads. */
 const DOC_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx"
@@ -46,6 +48,10 @@ const IG_ROLES = ["Fellow", "Coach", "Manager", "Company Admin"] as const
 
 export default function HonorOnboard() {
   const onboard = useHonorOnboard()
+  // Live cohorts + career areas power the pickers; both fall back to free text
+  // (a <datalist>) so a coach can still type anything, and nothing breaks if the
+  // super-admin-gated cohorts query is unavailable for this user.
+  const { data: cohorts = [] } = useCohorts()
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -165,11 +171,33 @@ export default function HonorOnboard() {
           <Field label="Prior service background">
             <input className={inputCls} placeholder="e.g. Naval Special Warfare" value={background} onChange={(e) => setBackground(e.target.value)} />
           </Field>
-          <Field label="Target career">
-            <input className={inputCls} placeholder="e.g. Program Management" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <Field label="Target career" hint="Pick a career area or type your own.">
+            <input
+              className={inputCls}
+              list="honor-onboard-career-areas"
+              placeholder="e.g. Program & Operations Management"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+            />
+            <datalist id="honor-onboard-career-areas">
+              {HONOR_CAREER_AREAS.map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
           </Field>
-          <Field label="Cohort">
-            <input className={inputCls} placeholder="e.g. Cohort 2026-A" value={cohort} onChange={(e) => setCohort(e.target.value)} />
+          <Field label="Cohort" hint="Choose an existing cohort or type a new one.">
+            <input
+              className={inputCls}
+              list="honor-onboard-cohorts"
+              placeholder="e.g. Cohort 2026-A"
+              value={cohort}
+              onChange={(e) => setCohort(e.target.value)}
+            />
+            <datalist id="honor-onboard-cohorts">
+              {cohorts.map((c) => (
+                <option key={c.id} value={c.name} />
+              ))}
+            </datalist>
           </Field>
 
           {/* Mandatory PRISM */}
