@@ -321,12 +321,19 @@ export type HonorScheduleFeed = {
   url: string
 }
 
-/** GET …/coach/schedule/google/connect → { available, reason } (OAuth gate). */
+/** GET …/coach/schedule/google/connect → { available, authUrl?, reason? } (OAuth gate). */
 export type HonorGoogleConnect = {
   available: boolean
   reason?: string | null
-  /** OAuth redirect target when `available` is true (unused while dark). */
-  authUrl?: string | null
+  /** Google consent URL to send the coach to when `available` is true. */
+  authUrl?: string
+}
+
+/** GET …/coach/schedule/google/status → { connected, googleEmail? }. */
+export type HonorGoogleStatus = {
+  connected: boolean
+  /** The Google account email the coach connected, when known. */
+  googleEmail?: string | null
 }
 
 // ── Administration (coach + team management) ─────────────────────────────────

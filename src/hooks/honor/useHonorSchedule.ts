@@ -3,15 +3,18 @@ import { toast } from "sonner"
 import {
   createCoachSession,
   deleteCoachSession,
+  disconnectGoogle,
   getCoachActivityFeed,
   getCoachSchedule,
   getGoogleConnect,
+  getGoogleStatus,
   getScheduleFeedUrl,
   updateCoachSession,
 } from "@/services/honor/schedule.service"
 import type {
   HonorActivityItem,
   HonorGoogleConnect,
+  HonorGoogleStatus,
   HonorScheduleFeed,
   HonorSession,
   HonorSessionInput,
@@ -77,7 +80,7 @@ export function useHonorScheduleFeed(options?: Partial<UseQueryOptions<HonorSche
   })
 }
 
-/** GET …/coach/schedule/google/connect — OAuth capability probe (dark for now). */
+/** GET …/coach/schedule/google/connect — OAuth capability probe + consent URL. */
 export function useHonorGoogleConnect(options?: Partial<UseQueryOptions<HonorGoogleConnect, Error>>) {
   return useQuery<HonorGoogleConnect, Error>({
     queryKey: [HK, "google-connect"],
@@ -89,6 +92,35 @@ export function useHonorGoogleConnect(options?: Partial<UseQueryOptions<HonorGoo
       }
     },
     ...options,
+  })
+}
+
+/** GET …/coach/schedule/google/status — connection status. Not-connected on any error. */
+export function useHonorGoogleStatus(options?: Partial<UseQueryOptions<HonorGoogleStatus, Error>>) {
+  return useQuery<HonorGoogleStatus, Error>({
+    queryKey: [HK, "google-status"],
+    queryFn: async () => {
+      try {
+        return await getGoogleStatus()
+      } catch {
+        return { connected: false } as HonorGoogleStatus
+      }
+    },
+    ...options,
+  })
+}
+
+/** DELETE …/coach/schedule/google — disconnect; invalidates status + connect on success. */
+export function useDisconnectGoogle() {
+  const qc = useQueryClient()
+  return useMutation<HonorGoogleStatus, Error, void>({
+    mutationFn: () => disconnectGoogle(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [HK, "google-status"] })
+      qc.invalidateQueries({ queryKey: [HK, "google-connect"] })
+      toast.success("Google Calendar disconnected.")
+    },
+    onError: (e) => toast.error(e.message || "Could not disconnect Google Calendar."),
   })
 }
 
