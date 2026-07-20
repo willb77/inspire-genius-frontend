@@ -203,6 +203,7 @@ const HonorMemberProfile = React.lazy(() => import("@/pages/honor/HonorMemberPro
 const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
 const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
 const HonorAdministration = React.lazy(() => import("@/pages/honor/HonorAdministration"));
+const HonorAdminGuard = React.lazy(() => import("@/pages/honor/admin/HonorAdminGuard"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
@@ -548,7 +549,14 @@ export const routes: RouteObject[] = [
           { path: "resume", element: withSuspense(<HonorResume />) },
           { path: "activity", element: withSuspense(<HonorActivity />) },
           { path: "schedule", element: withSuspense(<HonorSchedule />) },
-          { path: "administration", element: withSuspense(<HonorAdministration />) },
+          {
+            path: "administration",
+            element: withSuspense(
+              <HonorAdminGuard>
+                <HonorAdministration />
+              </HonorAdminGuard>,
+            ),
+          },
           // Member workspace — no id lands on the first assigned member.
           { path: "member", element: withSuspense(<HonorMemberProfile />) },
           { path: "member/:memberId", element: withSuspense(<HonorMemberProfile />) },
