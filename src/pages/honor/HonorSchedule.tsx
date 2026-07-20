@@ -242,7 +242,13 @@ export default function HonorSchedule() {
     })
   }
 
-  const feedUrl = feedQuery.data?.url ?? ""
+  // Backend returns `feedUrl` (tolerate the legacy `url` alias). Behind the API
+  // Gateway the minted URL can carry an internal `http://` scheme; force https —
+  // calendar apps reject http subscription feeds.
+  const feedUrl = (feedQuery.data?.feedUrl ?? feedQuery.data?.url ?? "").replace(
+    /^http:\/\//,
+    "https://",
+  )
   const webcalUrl = feedUrl.replace(/^https?:\/\//, "webcal://")
 
   async function copyFeed() {
