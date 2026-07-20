@@ -5,7 +5,7 @@ import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
 import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
-import { USE_HONOR_REPORT_EMAIL, MOCK_RESUME } from "@/hooks/honor/mocks"
+import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { downloadBlob } from "@/lib/exportTranscript"
 import { formatReportDate, type HonorReportMeta } from "@/lib/honor/exportHonorReport"
 import { renderHonorResumePdf } from "@/lib/honor/exportHonorResume"
@@ -88,6 +88,9 @@ export default function HonorResume() {
     careerArea === HONOR_CAREER_AREA_OTHER ? careerAreaOther.trim() : careerArea
   const [resume, setResume] = useState<HonorResumeData | null>(null)
   const [isSample, setIsSample] = useState(false)
+  // Résumé generation ships dark behind the server `honor_resume` flag. While
+  // off we show an honest "not enabled" state — never a fabricated sample résumé.
+  const [genPending, setGenPending] = useState(false)
   const [exporting, setExporting] = useState<null | "download" | "print">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
@@ -109,12 +112,14 @@ export default function HonorResume() {
         },
       })
       if (isResumeDisabled(data)) {
-        setResume({ ...MOCK_RESUME, fellow_id: primary.id })
-        setIsSample(true)
-        toast.info("Résumé generation is pending activation — showing a sample layout.")
+        setResume(null)
+        setIsSample(false)
+        setGenPending(true)
+        toast.info("Résumé generation isn't enabled in this environment yet.")
       } else if (data) {
         setResume(data)
         setIsSample(false)
+        setGenPending(false)
       } else {
         toast.error("No résumé was returned.")
       }
@@ -313,6 +318,15 @@ export default function HonorResume() {
           <HonorEmptyState>No fellows on your caseload yet.</HonorEmptyState>
         )}
       </HonorCard>
+
+      {genPending && !resume && (
+        <HonorCard className="mb-6">
+          <HonorEmptyState>
+            Résumé generation isn’t enabled in this environment yet. Once it’s
+            activated, the generated résumé will appear here — no sample is shown.
+          </HonorEmptyState>
+        </HonorCard>
+      )}
 
       {resume && (
         <>
