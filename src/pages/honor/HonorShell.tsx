@@ -37,37 +37,51 @@ import thfFlag from "@/assets/honor/thf-flag.jpeg"
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Overview",
-    items: [
-      { to: ROUTES.HONOR.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
-      { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", icon: Users },
-      { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", icon: UserPlus },
-    ],
-  },
-  {
-    label: "Work with Fellows",
-    items: [
-      { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
-      { to: ROUTES.HONOR.RESUME, label: "Résumé Writer", icon: FileText },
-      { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
-      { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Fellow workspace",
-    items: [{ to: ROUTES.HONOR.MEMBER, label: "Fellow Profile", icon: IdCard }],
-  },
-  {
-    label: "Account",
-    items: [{ to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", icon: Settings2 }],
-  },
-]
+/**
+ * Build the sidebar groups. The Administration group is only included for
+ * super-admins — the console manages platform-wide cohorts/coaches/fellows and
+ * is gated both here (nav visibility) and at the route (redirect).
+ */
+function buildNavGroups(isSuperAdmin: boolean): NavGroup[] {
+  const groups: NavGroup[] = [
+    {
+      label: "Overview",
+      items: [
+        { to: ROUTES.HONOR.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
+        { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", icon: Users },
+        { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", icon: UserPlus },
+      ],
+    },
+    {
+      label: "Work with Fellows",
+      items: [
+        { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
+        { to: ROUTES.HONOR.RESUME, label: "Résumé Writer", icon: FileText },
+        { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
+        { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
+      ],
+    },
+    {
+      label: "Fellow workspace",
+      items: [{ to: ROUTES.HONOR.MEMBER, label: "Fellow Profile", icon: IdCard }],
+    },
+  ]
+  if (isSuperAdmin) {
+    groups.push({
+      label: "Account",
+      items: [{ to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", icon: Settings2 }],
+    })
+  }
+  return groups
+}
 
 export default function HonorShell() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isAtLeast } = useAuth()
+  // Defensive: tolerate a partial auth context (e.g. in tests) — default to
+  // hiding the super-admin-only Administration group when the helper is absent.
+  const canAdminister = typeof isAtLeast === "function" ? isAtLeast("super-admin") : false
+  const NAV_GROUPS = buildNavGroups(canAdminister)
 
   const coachName = user?.fullName || user?.name || MOCK_COACH.name
   const coachTitle = MOCK_COACH.title
