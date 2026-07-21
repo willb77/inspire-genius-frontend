@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
+import MessageAttachments from "@/components/user/chat/MessageAttachments";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -241,6 +242,12 @@ export default function ChatWindowChatTab({
                 {t("conversation.viaAgent", { defaultValue: "via {{agent}}", agent: m.agent })}
               </p>
             )}
+            {m.kind === "text" &&
+              m.sender === "assistant" &&
+              m.attachments &&
+              m.attachments.length > 0 && (
+                <MessageAttachments attachments={m.attachments} />
+              )}
             {m.kind === "text" && m.sender === "assistant" && m.ragSources && m.ragSources.length > 0 && (
               <SourceAttribution sources={m.ragSources} />
             )}
