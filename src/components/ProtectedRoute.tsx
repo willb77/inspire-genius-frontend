@@ -23,8 +23,6 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
   const path = location.pathname
   const isCoachChat = /^\/dashboard\/[^/]+\/chat$/.test(path)
 
-  const isOnboardingRoute = path.startsWith('/onboarding')
-
   // Brief loading screen on initial mount to avoid white-screen flash while auth hydrates
   const [booting, setBooting] = useState(true)
   const bootTimerRef = useRef<number | null>(null)
@@ -69,10 +67,13 @@ export default function ProtectedRoute({ requireAuth = true }: { requireAuth?: b
     return <Navigate to={ROUTES.LOGIN} state={{ from: path }} replace />
   }
 
-  // Enforce onboarding completion for protected areas (except onboarding routes)
-  if (requireAuth && user?.token && user?.isOnboardingCompleted === false && !isOnboardingRoute) {
-    return <Navigate to={ROUTES.ONBOARDING.ONE} replace />
-  }
+  // Forced onboarding is intentionally DISABLED (2026-07-21). Every authenticated
+  // user goes straight to their destination — the onboarding wizard remains
+  // reachable at /onboarding/* for anyone who wants it, but no one is bounced
+  // there. This unblocks migrated users (magic-link should land every
+  // authenticated user on /home) and removes the redirect loop for accounts
+  // whose auth response lacks a truthy `is_onboarded` (e.g. Cognito login).
+  // (Previously: redirect to ROUTES.ONBOARDING.ONE when isOnboardingCompleted === false.)
 
   // Enforce role-based access for any role-prefixed route
   const isRolePrefixedRoute = ROLE_PREFIXES.some((prefix) => path.startsWith(prefix))

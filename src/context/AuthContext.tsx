@@ -121,11 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const computeIsOnboarded = useCallback((v: unknown): boolean => v === true || v === "true", []);
 
   const navigateAfterAuth = useCallback(
-    (role: string | null | undefined, isOnboardingCompleted: boolean) => {
-      if (!isOnboardingCompleted) {
-        navigate(ROUTES.ONBOARDING.ONE, { replace: true });
-        return;
-      }
+    (role: string | null | undefined) => {
+      // Forced onboarding is intentionally DISABLED (2026-07-21): every
+      // authenticated user is routed straight to their role home, never bounced
+      // to the onboarding wizard (unblocks migrated users landing on /home).
       const normalizedRole = (role ?? "").toLowerCase();
       if (isUserRole(normalizedRole)) {
         navigate(HOME_ROUTE_BY_ROLE[normalizedRole], { replace: true });
@@ -200,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const reloading = await checkForUpdate();
       if (reloading) return;
 
-      navigateAfterAuth(resolvedRole, isOnboardingCompleted);
+      navigateAfterAuth(resolvedRole);
     },
     [computeIsOnboarded, navigateAfterAuth]
   );
