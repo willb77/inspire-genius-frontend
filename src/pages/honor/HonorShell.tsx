@@ -18,6 +18,7 @@ import {
   Users,
   UserPlus,
   Sparkles,
+  FileText,
   Activity,
   CalendarDays,
   IdCard,
@@ -28,6 +29,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
+import { useHonorAdminAccess } from "@/hooks/honor/useHonorAdmin"
 import { MOCK_COACH } from "@/hooks/honor/mocks"
 import { initials } from "./_format"
 import thfShield from "@/assets/honor/thf-shield.jpeg"
@@ -36,36 +38,56 @@ import thfFlag from "@/assets/honor/thf-flag.jpeg"
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Overview",
-    items: [
-      { to: ROUTES.HONOR.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
-      { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", icon: Users },
-      { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", icon: UserPlus },
-    ],
-  },
-  {
-    label: "Work with Fellows",
-    items: [
-      { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
-      { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
-      { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Fellow workspace",
-    items: [{ to: ROUTES.HONOR.MEMBER, label: "Fellow Profile", icon: IdCard }],
-  },
-  {
-    label: "Account",
-    items: [{ to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", icon: Settings2 }],
-  },
-]
+/**
+ * Build the sidebar groups. The Administration group is only included for
+ * super-admins — the console manages platform-wide cohorts/coaches/fellows and
+ * is gated both here (nav visibility) and at the route (redirect).
+ */
+function buildNavGroups(isSuperAdmin: boolean): NavGroup[] {
+  const groups: NavGroup[] = [
+    {
+      label: "Overview",
+      items: [
+        { to: ROUTES.HONOR.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
+        { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", icon: Users },
+        { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", icon: UserPlus },
+      ],
+    },
+    {
+      label: "Work with Fellows",
+      items: [
+        { to: ROUTES.HONOR.EVALUATE, label: "Evaluate Fellow", icon: Sparkles },
+        { to: ROUTES.HONOR.RESUME, label: "Résumé Writer", icon: FileText },
+        { to: ROUTES.HONOR.ACTIVITY, label: "Activity", icon: Activity },
+        { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", icon: CalendarDays },
+      ],
+    },
+    {
+      label: "Fellow workspace",
+      items: [{ to: ROUTES.HONOR.MEMBER, label: "Fellow Profile", icon: IdCard }],
+    },
+  ]
+  if (isSuperAdmin) {
+    groups.push({
+      label: "Account",
+      items: [{ to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", icon: Settings2 }],
+    })
+  }
+  return groups
+}
 
 export default function HonorShell() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isAtLeast } = useAuth()
+  // Defensive: tolerate a partial auth context (e.g. in tests) — default to
+  // hiding the super-admin-only Administration group when the helper is absent.
+  // Client token role first (fast path), then the authoritative backend whoami —
+  // magic-link logins carry no role, so isAtLeast() alone would hide the console
+  // from a genuine super-admin. See useHonorAdminAccess.
+  const { isHonorAdmin } = useHonorAdminAccess()
+  const canAdminister =
+    (typeof isAtLeast === "function" && isAtLeast("super-admin")) || isHonorAdmin
+  const NAV_GROUPS = buildNavGroups(canAdminister)
 
   const coachName = user?.fullName || user?.name || MOCK_COACH.name
   const coachTitle = MOCK_COACH.title
@@ -79,10 +101,10 @@ export default function HonorShell() {
           <img
             src={thfShield}
             alt="The Honor Foundation"
-            className="h-10 w-10 shrink-0 rounded-md object-contain"
+            className="h-12 w-12 shrink-0 rounded-md object-contain"
           />
           <div className="leading-tight">
-            <div className="text-[15px] font-semibold">The Honor Foundation</div>
+            <div className="text-[26px] font-bold tracking-tight">The Honor Foundation</div>
             <div className="text-[10px] uppercase tracking-wide text-white/60">Coach Workbench</div>
           </div>
         </div>
@@ -151,11 +173,12 @@ export default function HonorShell() {
 
         {/* Main */}
         <main className="relative min-w-0 flex-1 overflow-y-auto px-6 py-7 lg:px-8">
-          {/* The Honor Foundation flag — subtle fixed watermark in the page white space */}
+          {/* The Honor Foundation flag — fixed watermark in the page white space
+              (larger + less transparent per the THF brand request). */}
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.06]"
-            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "460px" }}
+            className="pointer-events-none fixed inset-0 left-60 top-16 z-0 bg-center bg-no-repeat opacity-[0.20]"
+            style={{ backgroundImage: `url(${thfFlag})`, backgroundSize: "1040px" }}
           />
           <div className="relative z-10 mx-auto max-w-5xl">
             <Outlet />

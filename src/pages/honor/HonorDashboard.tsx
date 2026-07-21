@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
+import { useAuth } from "@/context/useAuth"
 import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
 
@@ -36,14 +37,16 @@ const TILES: Tile[] = [
 
 export default function HonorDashboard() {
   const { data: home } = useCoachHome()
+  const { user } = useAuth()
   const counts = home?.counts ?? { assigned: 0, assessed: 0, intakePending: 0 }
+  const coachName = home?.coachName || user?.fullName || user?.name || "Coach"
 
   return (
     <div>
       {/* Hero greeting */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#18202f]">
-          Hello, {home?.coachName ?? "Coach"}
+          Hello, {coachName}
         </h1>
         <p className="mt-1 text-[#5b6678]">
           Your transition-mentoring cockpit. Jump into your caseload, onboard a new cohort, work
