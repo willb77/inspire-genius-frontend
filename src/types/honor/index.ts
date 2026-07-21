@@ -208,6 +208,32 @@ export type HonorFellowSources = {
   bio: boolean
 }
 
+/** One PRISM score row from the imported CSV. */
+export type HonorPrismScore = {
+  category: string
+  dimension: string
+  subDimension?: string | null
+  scoreType?: string | null
+  /** Numeric value when present. */
+  score?: number | null
+  scoreText?: string | null
+  rank?: number | null
+}
+
+/**
+ * A fellow's PRISM report (from GET …/{id}/prism). When `hasReport` is false
+ * the Fellow Profile shows a "Request a PRISM Report" action instead of scores.
+ */
+export type HonorPrismReport = {
+  fellowId: string
+  managed: boolean
+  hasReport: boolean
+  assessedAt?: string | null
+  frameworkVersion?: string | null
+  scoreCount?: number
+  scores: HonorPrismScore[]
+}
+
 /** Which of a fellow's sources to ground an evaluation on. */
 export type HonorSourceSelection = {
   /** null/undefined → all assessments; explicit list → only those frameworks. */

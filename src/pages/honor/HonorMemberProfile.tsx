@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload, useFellow } from "@/hooks/honor/useCoachData"
+import { useFellowPrism, useRequestFellowPrism } from "@/hooks/honor/useHonorEvaluate"
 import {
   AgentTraceRow,
   HonorCard,
@@ -21,6 +22,7 @@ import {
   PrismDots,
 } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_format"
+import type { HonorPrismScore } from "@/types/honor"
 
 /**
  * Honor Coach Workbench — Fellow Profile / Workspace (`/coach/member/{id}`).
@@ -33,10 +35,10 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_f
  * {@link useFellow}.
  */
 
-type Tab = "overview" | "intake" | "evaluate" | "goals" | "education"
+type Tab = "overview" | "prism" | "evaluate" | "goals" | "education"
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "intake", label: "Intake" },
+  { id: "prism", label: "PRISM Report" },
   { id: "evaluate", label: "Evaluate" },
   { id: "goals", label: "Goal Setting" },
   { id: "education", label: "Education & Training" },
@@ -53,6 +55,8 @@ export default function HonorMemberProfile() {
 
   const [tab, setTab] = useState<Tab>(memberId ? "overview" : "overview")
   const [denied, setDenied] = useState(false)
+  const prismQuery = useFellowPrism(effectiveId)
+  const requestPrism = useRequestFellowPrism()
 
   if (isLoading) return <HonorEmptyState>Loading fellow…</HonorEmptyState>
   if (!fellow) return <HonorEmptyState>Fellow not found on your caseload.</HonorEmptyState>
@@ -180,7 +184,7 @@ export default function HonorMemberProfile() {
             <div className="mt-4">
               <HonorSectionTitle>Quick actions</HonorSectionTitle>
               <div className="flex flex-wrap gap-2">
-                <QuickAction icon={ClipboardList} label="Open questionnaire" onClick={() => setTab("intake")} />
+                <QuickAction icon={ClipboardList} label="PRISM report" onClick={() => setTab("prism")} />
                 <QuickAction icon={Sparkles} label="Evaluate fellow" onClick={() => setTab("evaluate")} />
                 <QuickAction icon={Target} label="Set goals" onClick={() => setTab("goals")} />
                 <QuickAction icon={GraduationCap} label="Find training" onClick={() => setTab("education")} />
@@ -190,48 +194,76 @@ export default function HonorMemberProfile() {
         </div>
       )}
 
-      {/* Intake — PRISM questionnaire embed */}
-      {tab === "intake" && (
+      {/* PRISM Report — the fellow's scores from the imported CSV, or request one */}
+      {tab === "prism" && (
         <HonorCard>
-          <HonorSectionTitle>PRISM Behavioral Questionnaire — Part 1A</HonorSectionTitle>
-          <p className="mb-4 text-sm text-[#9299a6]">Question 3 of 40</p>
-          <p className="mb-3 text-sm font-medium text-[#18202f]">
-            Rank these words by how well they describe your working preference (1 = most like you).
-          </p>
-          <div className="space-y-2">
-            {["Decisive", "Supportive", "Analytical", "Expressive"].map((w, i) => (
-              <div
-                key={w}
-                className="flex items-center justify-between rounded-lg border border-[#dfe4ec] px-3 py-2.5 text-sm"
+          <HonorSectionTitle>PRISM Report — {name}</HonorSectionTitle>
+          {prismQuery.isLoading ? (
+            <p className="text-sm text-[#9299a6]">Loading PRISM report…</p>
+          ) : prismQuery.data?.managed ? (
+            <p className="text-sm text-[#9299a6]">
+              Invite {name.split(" ")[0]} first — a managed fellow has no profile yet to attach a
+              PRISM report to.
+            </p>
+          ) : prismQuery.data?.hasReport ? (
+            <div>
+              <p className="mb-3 text-xs text-[#9299a6]">
+                {prismQuery.data.scoreCount ?? prismQuery.data.scores.length} scores
+                {prismQuery.data.assessedAt
+                  ? ` · imported ${new Date(prismQuery.data.assessedAt).toLocaleDateString()}`
+                  : ""}
+              </p>
+              {(() => {
+                const groups: Record<string, HonorPrismScore[]> = {}
+                for (const s of prismQuery.data.scores ?? []) {
+                  const cat = s.category || "Scores"
+                  ;(groups[cat] ||= []).push(s)
+                }
+                return Object.entries(groups).map(([cat, rows]) => (
+                  <div key={cat} className="mb-4">
+                    <h3 className="mb-1.5 text-sm font-semibold text-[#1B2A4A]">{cat}</h3>
+                    <div className="overflow-hidden rounded-lg border border-[#e6e9ef]">
+                      {rows.map((s, i) => (
+                        <div
+                          key={`${cat}-${s.dimension}-${i}`}
+                          className={`flex items-center justify-between px-3 py-2 text-sm ${
+                            i % 2 ? "bg-[#f7f9fc]" : "bg-white"
+                          }`}
+                        >
+                          <span className="text-[#18202f]">
+                            {s.dimension}
+                            {s.subDimension ? (
+                              <span className="text-[#9299a6]"> · {s.subDimension}</span>
+                            ) : null}
+                          </span>
+                          <span className="font-semibold text-[#1B2A4A]">
+                            {s.score != null
+                              ? s.score
+                              : s.scoreText ?? (s.rank != null ? `#${s.rank}` : "—")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()}
+            </div>
+          ) : (
+            <div>
+              <p className="mb-3 text-sm text-[#5b6678]">
+                No PRISM report on file for {name.split(" ")[0]} yet. Request one below — once it’s
+                added (during onboarding or via an assessment import), the scores appear here.
+              </p>
+              <button
+                type="button"
+                className={HONOR_BTN_PRIMARY}
+                disabled={requestPrism.isPending || !fellow}
+                onClick={() => fellow && requestPrism.mutate(fellow.id)}
               >
-                <span className="text-[#18202f]">{w}</span>
-                <select
-                  className="rounded-md border border-[#dfe4ec] px-2 py-1 text-sm outline-none focus:border-[#1B2A4A]"
-                  defaultValue={String(i + 1)}
-                >
-                  {[1, 2, 3, 4].map((n) => (
-                    <option key={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <button type="button" className={HONOR_BTN_OUTLINE}>
-              Back
-            </button>
-            <button
-              type="button"
-              className={HONOR_BTN_PRIMARY}
-              onClick={() => toast.success("Answer saved to prism_results — advancing to Q4 (stub)")}
-            >
-              Save &amp; continue
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-[#9299a6]">
-            Reuses the platform&apos;s <code className="font-mono">PrismAssessment.tsx</code> bound via{" "}
-            <code className="font-mono">?member={fellow.id}</code> (PRISM UK Service Library flow).
-          </p>
+                <ClipboardList className="h-4 w-4" /> Request a PRISM Report
+              </button>
+            </div>
+          )}
         </HonorCard>
       )}
 
