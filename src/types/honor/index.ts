@@ -154,6 +154,30 @@ export type HonorComparative = {
 }
 
 /** The full deterministic evaluation returned by the evaluate route. */
+/** Per-source contribution to the evidence-confidence measurement. */
+export type HonorConfidenceRow = {
+  source: string
+  label: string
+  weight: number
+  present: boolean
+  contribution: number
+}
+
+/**
+ * How much evidence backed the evaluation (0–100) + a per-source breakdown, so
+ * the coach can SEE the fit-score degrade as PRISM / another assessment /
+ * résumé / bio are missing or excluded.
+ */
+export type HonorConfidence = {
+  score: number
+  band: "high" | "moderate" | "low"
+  behavioralBasis: boolean
+  present: string[]
+  missing: string[]
+  breakdown: HonorConfidenceRow[]
+  note: string
+}
+
 export type HonorEvaluation = {
   subject_id: string
   objective_evaluation: HonorCitedClaim[]
@@ -163,7 +187,33 @@ export type HonorEvaluation = {
   comparative: HonorComparative | null
   frameworks: string[]
   imputed_features: string[]
+  confidence?: HonorConfidence
   notes: string
+}
+
+/** An assessment a fellow has submitted (from GET …/{id}/sources). */
+export type HonorFellowAssessmentSource = {
+  framework: string
+  frameworkVersion?: string | null
+  assessedAt?: string | null
+  scoreCount: number
+}
+
+/** The sources a fellow has on file — powers the Evaluate selection UI. */
+export type HonorFellowSources = {
+  fellowId: string
+  managed: boolean
+  assessments: HonorFellowAssessmentSource[]
+  resume: boolean
+  bio: boolean
+}
+
+/** Which of a fellow's sources to ground an evaluation on. */
+export type HonorSourceSelection = {
+  /** null/undefined → all assessments; explicit list → only those frameworks. */
+  assessmentFrameworks?: string[] | null
+  includeResume: boolean
+  includeBio: boolean
 }
 
 // ── Résumé writer (Phase 5 backend: POST …/{fellow_id}/resume) ────────────────
@@ -217,6 +267,8 @@ export type HonorEvaluateBody = {
   targetArea?: string
   /** Optional precomputed position-description vector. */
   positionVector?: Record<string, number>
+  /** Source subset to evaluate on (omit → the fellow's full profile). */
+  sources?: HonorSourceSelection
 }
 
 /** One row of the compare matrix — a metric scored per fellow (0–100). */

@@ -7,6 +7,7 @@ import type {
   HonorApiResponse,
   HonorEvaluateBody,
   HonorEvaluation,
+  HonorFellowSources,
   HonorFellow,
   HonorResume,
   HonorResumeBody,
@@ -190,6 +191,18 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
   const { data } = await agentApi.post<HonorApiResponse<HonorEvaluation>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluate`,
     body,
+  )
+  return data
+}
+
+/**
+ * The sources a fellow has submitted — assessments (by framework + score count)
+ * and whether a résumé / bio is on file. Powers the Evaluate surface's per-fellow
+ * document list + source selection.
+ */
+export async function getFellowSources(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorFellowSources>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/sources`,
   )
   return data
 }
