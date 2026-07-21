@@ -8,6 +8,7 @@ import type {
   HonorEvaluateBody,
   HonorEvaluation,
   HonorFellowSources,
+  HonorPrismReport,
   HonorFellow,
   HonorResume,
   HonorResumeBody,
@@ -203,6 +204,23 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
 export async function getFellowSources(fellowId: string) {
   const { data } = await agentApi.get<HonorApiResponse<HonorFellowSources>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/sources`,
+  )
+  return data
+}
+
+/** The fellow's PRISM report scores from the imported CSV (or hasReport:false). */
+export async function getFellowPrism(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorPrismReport>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/prism`,
+  )
+  return data
+}
+
+/** Record a request for the fellow's PRISM report. */
+export async function requestFellowPrism(fellowId: string) {
+  const { data } = await agentApi.post<HonorApiResponse<{ fellowId: string; requested: boolean }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/prism/request`,
+    {},
   )
   return data
 }
