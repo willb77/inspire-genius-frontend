@@ -391,6 +391,9 @@ export default function MeridianChat({
       const ragSources = metadata?.rag_sources?.filter((s) => s.filename) ?? [];
       const contributingAgents = metadata?.contributing_agents;
       const synthesized = metadata?.synthesized;
+      // IG Core document-generation skill — files produced this turn, each with
+      // a presigned download URL. Rendered as a download button in the bubble.
+      const attachments = metadata?.attachments?.filter((a) => a?.url) ?? [];
       const assistantMessageId =
         (metadata as { assistant_message_id?: string } | undefined)?.assistant_message_id
           ?? `msg-${Date.now()}`;
@@ -414,6 +417,7 @@ export default function MeridianChat({
                 ragSources: ragSources.length > 0 ? ragSources : undefined,
                 contributingAgents,
                 synthesized,
+                attachments: attachments.length > 0 ? attachments : undefined,
               },
             ];
           }
@@ -430,6 +434,7 @@ export default function MeridianChat({
               ragSources: ragSources.length > 0 ? ragSources : undefined,
               contributingAgents,
               synthesized,
+              attachments: attachments.length > 0 ? attachments : undefined,
             },
           ];
         });

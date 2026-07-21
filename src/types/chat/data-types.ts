@@ -14,6 +14,20 @@ export interface DocumentRef {
   url?: string;
 }
 
+// A file the assistant generated this turn (e.g. a branded Word/PDF/PowerPoint
+// document from the IG Core document-generation skill). Carries a presigned,
+// time-limited download URL. Shaped to match the backend `attachments` entry
+// on the chat response (also present under `metadata.attachments`).
+export interface ChatAttachment {
+  kind: string; // e.g. "document"
+  filename: string;
+  url: string; // presigned download URL (expires — see expires_in)
+  format?: string; // docx | pdf | pptx | xlsx | csv | md | html | txt
+  content_type?: string;
+  size_bytes?: number;
+  expires_in?: number; // seconds the URL stays valid
+}
+
 // RAG source attribution
 export interface RAGSource {
   filename: string;
@@ -39,6 +53,7 @@ export type ChatMessage =
       ragSources?: RAGSource[];
       contributingAgents?: string[];
       synthesized?: boolean;
+      attachments?: ChatAttachment[];
     }
   | {
       id: string;

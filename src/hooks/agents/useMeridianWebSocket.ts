@@ -46,6 +46,17 @@ export type MeridianResponse = {
     rag_avg_similarity?: number;
     contributing_agents?: string[];
     synthesized?: boolean;
+    // IG Core document-generation skill — files produced this turn, each with
+    // a presigned download URL. Rendered as a download button in the bubble.
+    attachments?: {
+      kind: string;
+      filename: string;
+      url: string;
+      format?: string;
+      content_type?: string;
+      size_bytes?: number;
+      expires_in?: number;
+    }[];
   };
   observability?: Record<string, unknown>;
 };
