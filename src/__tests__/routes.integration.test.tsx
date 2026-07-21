@@ -500,7 +500,7 @@ describe("Route Integration Tests", () => {
   // ── 5. Onboarding redirect when incomplete ──────────────────────────
 
   describe("Onboarding redirect", () => {
-    it("redirects to /onboarding/one when onboarding is incomplete", async () => {
+    it("does NOT force onboarding when incomplete — lands on /home (forced onboarding disabled 2026-07-21)", async () => {
       const user = makeAuthUser({
         role: "user",
         isOnboardingCompleted: false,
@@ -508,7 +508,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("OnboardingOnePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+      expect(screen.queryByTestId("OnboardingOnePage")).not.toBeInTheDocument();
     });
 
     it("allows access to onboarding routes when onboarding incomplete", async () => {
