@@ -64,18 +64,50 @@ function waitForRender(iframe: HTMLIFrameElement): Promise<void> {
   });
 }
 
-function stampFooter(pdf: JsPdfType, pageCount: number) {
-  const footerText = "Inspires Genius  ·  Executive Assessment  ·  ";
-  pdf.setFontSize(7);
+/** Per-page footer stamping. Defaults reproduce the original transcript footer
+ * (a right-aligned "Inspires Genius · Executive Assessment · {page}" from page 2,
+ * cover excluded). Honor reports pass `footerLeft` for the §4 confidentiality
+ * notice, which is stamped bottom-left on EVERY page including the cover. */
+export type PdfFooterOptions = {
+  /** Left-aligned text stamped on every page (from `footerLeftFromPage`). */
+  footerLeft?: string;
+  /** Right-aligned text; `{page}` is replaced with the page number. */
+  footerRight?: string;
+  /** First page the right footer appears on (default 2 — the cover has none). */
+  footerRightFromPage?: number;
+  /** First page the left footer appears on (default 1 — confidentiality shows everywhere). */
+  footerLeftFromPage?: number;
+};
+
+const DEFAULT_FOOTER: Required<Pick<PdfFooterOptions, "footerRight" | "footerRightFromPage">> = {
+  footerRight: "Inspires Genius  ·  Executive Assessment  ·  {page}",
+  footerRightFromPage: 2,
+};
+
+function stampFooter(pdf: JsPdfType, pageCount: number, opts?: PdfFooterOptions) {
+  const footerRight = opts?.footerRight ?? (opts ? undefined : DEFAULT_FOOTER.footerRight);
+  const rightFrom = opts?.footerRightFromPage ?? DEFAULT_FOOTER.footerRightFromPage;
+  const footerLeft = opts?.footerLeft;
+  const leftFrom = opts?.footerLeftFromPage ?? 1;
+
   pdf.setTextColor(154, 163, 178);
-  for (let p = 2; p <= pageCount; p++) {
+  for (let p = 1; p <= pageCount; p++) {
     pdf.setPage(p);
-    pdf.text(`${footerText}${p}`, A4_WIDTH_MM - 13, A4_HEIGHT_MM - 6, { align: "right" });
+    if (footerLeft && p >= leftFrom) {
+      pdf.setFontSize(6.5);
+      pdf.text(footerLeft, 13, A4_HEIGHT_MM - 6, { align: "left", maxWidth: A4_WIDTH_MM - 40 });
+    }
+    if (footerRight && p >= rightFrom) {
+      pdf.setFontSize(7);
+      pdf.text(footerRight.replace("{page}", String(p)), A4_WIDTH_MM - 13, A4_HEIGHT_MM - 6, {
+        align: "right",
+      });
+    }
   }
   pdf.setTextColor(0, 0, 0);
 }
 
-export async function renderHtmlToPdf(html: string): Promise<Blob> {
+export async function renderHtmlToPdf(html: string, footer?: PdfFooterOptions): Promise<Blob> {
   const { jsPDF, html2canvas } = await loadDeps();
   const iframe = mountIframe(html);
   try {
@@ -119,7 +151,7 @@ export async function renderHtmlToPdf(html: string): Promise<Blob> {
       pageIndex++;
     }
 
-    stampFooter(pdf, pdf.getNumberOfPages());
+    stampFooter(pdf, pdf.getNumberOfPages(), footer);
 
     return pdf.output("blob");
   } finally {

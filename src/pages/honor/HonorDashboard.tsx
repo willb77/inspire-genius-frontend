@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
+import { useAuth } from "@/context/useAuth"
 import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
 
@@ -26,9 +27,9 @@ import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
 type Tile = { to: string; label: string; description: string; icon: LucideIcon }
 
 const TILES: Tile[] = [
-  { to: ROUTES.HONOR.CASELOAD, label: "My Members", description: "Your assigned caseload of Honor fellows.", icon: Users },
+  { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", description: "Your assigned caseload of Honor fellows.", icon: Users },
   { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", description: "Add a fellow or import a cohort roster.", icon: UserPlus },
-  { to: ROUTES.HONOR.EVALUATE, label: "Work with Members", description: "AI evaluation, goals, education & funding.", icon: Sparkles },
+  { to: ROUTES.HONOR.EVALUATE, label: "Work with Fellows", description: "AI evaluation, goals, education & funding.", icon: Sparkles },
   { to: ROUTES.HONOR.ACTIVITY, label: "Activity", description: "Audit trail of every coach & member action.", icon: Activity },
   { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", description: "Sessions, debriefs, and cohort milestones.", icon: CalendarDays },
   { to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", description: "Manage coaches, teams, and cohort rosters.", icon: Settings2 },
@@ -36,14 +37,16 @@ const TILES: Tile[] = [
 
 export default function HonorDashboard() {
   const { data: home } = useCoachHome()
+  const { user } = useAuth()
   const counts = home?.counts ?? { assigned: 0, assessed: 0, intakePending: 0 }
+  const coachName = home?.coachName || user?.fullName || user?.name || "Coach"
 
   return (
     <div>
       {/* Hero greeting */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#18202f]">
-          Hello, {home?.coachName ?? "Coach"}
+          Hello, {coachName}
         </h1>
         <p className="mt-1 text-[#5b6678]">
           Your transition-mentoring cockpit. Jump into your caseload, onboard a new cohort, work

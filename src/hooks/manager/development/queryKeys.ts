@@ -1,0 +1,17 @@
+/**
+ * Centralized React Query keys for the Team Development Studio.
+ * Keeps invalidation consistent across hooks (any plan mutation invalidates
+ * the member's dossier + downstream reads).
+ */
+export const developmentKeys = {
+  all: ["development"] as const,
+  roster: () => [...developmentKeys.all, "roster"] as const,
+  dossier: (memberId: string) => [...developmentKeys.all, "dossier", memberId] as const,
+  goals: (memberId: string) => [...developmentKeys.all, "goals", memberId] as const,
+  gaps: (memberId: string, targetBlueprintId?: string) =>
+    [...developmentKeys.all, "gaps", memberId, targetBlueprintId ?? "default"] as const,
+  milestones: (memberId: string) =>
+    [...developmentKeys.all, "milestones", memberId] as const,
+  matches: (memberId: string, kind: "internal" | "external") =>
+    [...developmentKeys.all, "matches", memberId, kind] as const,
+}

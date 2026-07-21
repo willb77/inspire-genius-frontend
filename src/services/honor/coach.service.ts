@@ -5,7 +5,13 @@ import type {
   CoachHome,
   CoachRecord,
   HonorApiResponse,
+  HonorEvaluateBody,
+  HonorEvaluation,
+  HonorFellowSources,
   HonorFellow,
+  HonorResume,
+  HonorResumeBody,
+  HonorResumeDisabled,
   ScheduleEvent,
   TeamRecord,
 } from "@/types/honor"
@@ -54,10 +60,48 @@ export async function createFellow(input: Partial<HonorFellow>) {
  * fellow re-keyed to their canonical sub (so subsequent subject-scoped writes —
  * assessments, documents — attach to the member, not the coach).
  */
-export async function inviteFellow(id: string, keepCoachAccess = false) {
-  const { data } = await agentApi.post<HonorApiResponse<HonorFellow & { userId?: string }>>(
+export type InviteResult = HonorFellow & {
+  /**
+   * The POST-INVITE fellow id (the re-keyed canonical sub). The invite endpoint
+   * returns the new id under `fellowId`, NOT `id` — subject-scoped writes must
+   * target this or they 404 "fellow not found".
+   */
+  fellowId?: string
+  userId?: string
+  email?: string | null
+  invitationSent?: boolean
+  status?: string
+}
+
+/**
+ * Convert/link a managed fellow to an IG user. `sendInvitation` controls whether
+ * the coach wants the fellow notified now — the account is created either way;
+ * the caller fires the magic-link intake email when `invitationSent` is true.
+ */
+export async function inviteFellow(id: string, keepCoachAccess = false, sendInvitation = true) {
+  const { data } = await agentApi.post<HonorApiResponse<InviteResult>>(
     `${COACH_BASE}/${encodeURIComponent(id)}/invite`,
-    { keepCoachAccess },
+    { keepCoachAccess, sendInvitation },
+  )
+  return data
+}
+
+export type BulkInviteResult = {
+  converted: number
+  skipped: number
+  errors: number
+  results: Array<{ fellowId: string; status: string; email?: string | null; invitationSent?: boolean; message?: string }>
+}
+
+/** Bulk-convert/invite several selected fellows in one request. */
+export async function inviteFellowsBulk(
+  fellowIds: string[],
+  keepCoachAccess = false,
+  sendInvitation = true,
+) {
+  const { data } = await agentApi.post<HonorApiResponse<BulkInviteResult>>(
+    `${COACH_BASE}/invite-bulk`,
+    { fellowIds, keepCoachAccess, sendInvitation },
   )
   return data
 }
@@ -132,5 +176,107 @@ export async function submitMemberEvaluation(prompt: string, memberId: string) {
     message: prompt,
     context: { surface: "honor", intent: "member_evaluation", member_id: memberId },
   })
+  return data
+}
+
+/**
+ * Deterministic Fellow evaluation — POST /v1/agents/honor/coach/students/{id}/evaluate
+ * (Phase 2). Returns the fully-scored, source-tagged backbone (objective +
+ * goals-fit + ranked career/position fit, plus comparative/team when memberIds
+ * are supplied). The FELLOW is the subject (ownership-gated server-side); the
+ * scores are computed by the config-weighted scorer with NO model call, so the
+ * UI renders them verbatim. Meridian narration is a separate step (honorChat).
+ */
+export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody = {}) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorEvaluation>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluate`,
+    body,
+  )
+  return data
+}
+
+/**
+ * The sources a fellow has submitted — assessments (by framework + score count)
+ * and whether a résumé / bio is on file. Powers the Evaluate surface's per-fellow
+ * document list + source selection.
+ */
+export async function getFellowSources(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorFellowSources>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/sources`,
+  )
+  return data
+}
+
+/**
+ * Generate a private-sector résumé draft for a Fellow (Phase 5) —
+ * POST /v1/agents/honor/coach/students/{id}/resume. The FELLOW is the subject
+ * (ownership-gated server-side); the résumé is written from their PRISM +their
+ * own uploaded résumé/bio, framed by the THF safe-translation rules. GATED by
+ * the server `honor_resume` flag — returns `{ disabled: true }` while off, so the
+ * UI falls back to a labeled sample layout until the safe-translation SME
+ * sign-off activates it. Export/print/email reuse the Phase-4 routes (kind="resume").
+ */
+export async function generateResume(fellowId: string, body: HonorResumeBody = {}) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorResume | HonorResumeDisabled>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/resume`,
+    body,
+  )
+  return data
+}
+
+// ── Phase 4: report export audit + email delivery ────────────────────────────
+
+export type HonorReportKind = "evaluation" | "resume"
+export type HonorExportAction = "download" | "print" | "email"
+
+/**
+ * Record a client-side export (download / print) for the audit trail — POST
+ * …/{id}/report/exported. Fire-and-forget: emits `honor.report.exported` to
+ * EventBridge (audit-service) server-side. NOT third-party messaging — no PDF
+ * bytes leave the browser, this only logs that an export happened.
+ */
+export async function recordReportExport(
+  fellowId: string,
+  body: { kind: HonorReportKind; action: HonorExportAction },
+) {
+  const { data } = await agentApi.post<HonorApiResponse<{ recorded: boolean }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/exported`,
+    { ...body, format: "pdf" },
+  )
+  return data
+}
+
+export type EmailReportBody = {
+  /** Recipient address (defaults to the fellow's email in the UI). */
+  to: string
+  cc?: string[]
+  kind?: HonorReportKind
+  subject?: string
+  message?: string
+  /** Suggested attachment filename, e.g. "honor-evaluation-marcus-reyes.pdf". */
+  filename: string
+  /** The rendered PDF, base64-encoded (no data: prefix). */
+  pdfBase64: string
+}
+
+export type EmailReportResult = {
+  sent: boolean
+  messageId?: string
+  /** True when the server-side `honor_report_email` flag is off (feature dark). */
+  disabled?: boolean
+}
+
+/**
+ * Email the branded report/résumé PDF to the fellow (or another authorized
+ * recipient) — POST …/{id}/report/email. The PDF is rendered client-side and
+ * sent as base64; the server delivers via SES and emits `honor.report.emailed`.
+ * Gated by the server `honor_report_email` flag (returns `{disabled:true}` while
+ * off) AND confirmed in the UI before any send — email is always-confirm.
+ */
+export async function emailReport(fellowId: string, body: EmailReportBody) {
+  const { data } = await agentApi.post<HonorApiResponse<EmailReportResult>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/email`,
+    body,
+  )
   return data
 }

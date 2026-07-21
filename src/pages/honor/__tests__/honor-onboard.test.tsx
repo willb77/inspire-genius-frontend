@@ -69,7 +69,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
 
     // Order: create before invite before any import.
     expect(createFellow).toHaveBeenCalledTimes(1)
-    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false)
+    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false, true)
 
     // PRISM (mandatory) + the two optional frameworks all import against the fellow.
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))
@@ -84,6 +84,44 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     expect(res.fellowId).toBe("fellow-1")
     expect(res.memberUserId).toBe("user-9")
     expect(res.steps.every((s) => s.ok)).toBe(true)
+  })
+
+  test("imports against the POST-INVITE id when the invite re-keys the fellow", async () => {
+    // The invite re-keys the managed row to the invited user's canonical sub, so
+    // the create-time id goes stale. Every import must use the returned id — which
+    // the backend returns under `fellowId` (NOT `id`; that field is absent).
+    inviteFellow.mockResolvedValue({ data: { fellowId: "canonical-sub-42" } })
+
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      frameworkFiles: { DISC: file("disc.csv") },
+    })
+
+    // Both the mandatory PRISM and optional framework imports use the new id,
+    // never the stale create-time "fellow-1".
+    expect(importFellowAssessment).toHaveBeenCalledWith("canonical-sub-42", "PRISM", expect.any(File))
+    expect(importFellowAssessment).toHaveBeenCalledWith("canonical-sub-42", "DISC", expect.any(File))
+    expect(importFellowAssessment).not.toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))
+  })
+
+  test("uploads provided Bio and Additional-Information files through the document pipeline", async () => {
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      bioFile: file("bio.pdf"),
+      additionalInfoFile: file("extra.docx"),
+    })
+
+    // PRISM import + résumé/bio pipeline: two document uploads (bio file + addl file).
+    expect(initiateUpload).toHaveBeenCalledTimes(2)
+    expect(triggerProcessing).toHaveBeenCalledTimes(2)
   })
 
   test("aborts assessment writes if the invite fails (no subject to attach to)", async () => {

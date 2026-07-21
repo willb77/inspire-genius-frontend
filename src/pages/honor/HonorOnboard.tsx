@@ -1,13 +1,33 @@
 import { useRef, useState } from "react"
 import { toast } from "sonner"
-import { UserPlus, Upload, FileText, CheckCircle2, Loader2 } from "lucide-react"
+import { UserPlus, Upload, FileText, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react"
 import { HonorCard, HonorPageHeader, HonorSectionTitle } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY } from "./_format"
+import { FileDrop } from "./_FileDrop"
 import { useHonorOnboard, type OptionalFrameworkKey } from "@/hooks/honor/useHonorOnboard"
 import { HONOR_FRAMEWORK_LABELS } from "@/services/honor/assessment.service"
+import { useCohorts } from "@/hooks/honor/useHonorAdmin"
+import { HONOR_CAREER_AREAS } from "./_careerAreas"
+
+/** File types accepted for the résumé / Bio / Additional-Information uploads. */
+const DOC_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx"
+
+/** Map a failed step's error detail to a short, actionable fix hint. */
+function fixHint(detail?: string): string | null {
+  if (!detail) return null
+  if (/\b404\b|not found/i.test(detail))
+    return "The fellow id changed after invite — retry the import."
+  if (/\b409\b|already/i.test(detail))
+    return "This file was already imported for this fellow."
+  if (/\b422\b|unprocessable|format/i.test(detail))
+    return "File format not recognized — export a supported PRISM/framework file."
+  if (/\b403\b|forbidden|access/i.test(detail))
+    return "You don't have access to this fellow."
+  return null
+}
 
 /**
- * Honor Coach Workbench — Onboard a Member (wired to the IG Core process).
+ * Honor Coach Workbench — Onboard a Fellow (wired to the IG Core process).
  *
  * The submit handler runs {@link useHonorOnboard}: create → invite → import the
  * mandatory PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
@@ -28,6 +48,10 @@ const IG_ROLES = ["Fellow", "Coach", "Manager", "Company Admin"] as const
 
 export default function HonorOnboard() {
   const onboard = useHonorOnboard()
+  // Live cohorts + career areas power the pickers; both fall back to free text
+  // (a <datalist>) so a coach can still type anything, and nothing breaks if the
+  // super-admin-gated cohorts query is unavailable for this user.
+  const { data: cohorts = [] } = useCohorts()
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -38,12 +62,18 @@ export default function HonorOnboard() {
   const [cohort, setCohort] = useState("")
   const [bio, setBio] = useState("")
   const [additionalInfo, setAdditionalInfo] = useState("")
+  const [sendInvitation, setSendInvitation] = useState(true)
 
   const [prismFile, setPrismFile] = useState<File | null>(null)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [bioFile, setBioFile] = useState<File | null>(null)
+  const [additionalInfoFile, setAdditionalInfoFile] = useState<File | null>(null)
   const [frameworkFiles, setFrameworkFiles] = useState<
     Partial<Record<OptionalFrameworkKey, File>>
   >({})
+
+  /** Missing required fields surfaced inline on a blocked submit. */
+  const [missing, setMissing] = useState<string[]>([])
 
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -59,20 +89,35 @@ export default function HonorOnboard() {
     setAdditionalInfo("")
     setPrismFile(null)
     setResumeFile(null)
+    setBioFile(null)
+    setAdditionalInfoFile(null)
     setFrameworkFiles({})
+    setMissing([])
     formRef.current?.reset()
+  }
+
+  /** Full pre-submit check — returns the human labels of every missing requirement. */
+  function requiredMissing(): string[] {
+    const out: string[] = []
+    if (!firstName.trim()) out.push("First name")
+    if (!lastName.trim()) out.push("Last name")
+    if (!email.trim()) out.push("Email")
+    if (!role.trim()) out.push("Role")
+    if (!prismFile) out.push("PRISM assessment file")
+    return out
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      toast.error("First name, last name, and email are required.")
+    // Block the mutation until every required field is present; list exactly
+    // what's missing inline rather than firing partial requests.
+    const gaps = requiredMissing()
+    if (gaps.length > 0) {
+      setMissing(gaps)
+      toast.error("Some required details are missing — see the list below.")
       return
     }
-    if (!prismFile) {
-      toast.error("A PRISM assessment file (CSV) is required to onboard a member.")
-      return
-    }
+    setMissing([])
     await onboard.mutateAsync({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -81,11 +126,14 @@ export default function HonorOnboard() {
       background: background.trim() || undefined,
       target: target.trim() || undefined,
       cohort: cohort.trim() || undefined,
-      prismFile,
+      prismFile: prismFile as File,
       frameworkFiles,
       resumeFile,
       bio: bio.trim() || undefined,
       additionalInfo: additionalInfo.trim() || undefined,
+      bioFile,
+      additionalInfoFile,
+      sendInvitation,
     })
   }
 
@@ -96,13 +144,13 @@ export default function HonorOnboard() {
     <div>
       <HonorPageHeader
         icon={UserPlus}
-        title="Onboard a Member"
-        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New members are invited via a secure magic link."
+        title="Onboard a Fellow"
+        description="Add a single Honor fellow. Their PRISM export and any behavioral reports feed the same personalization platform the whole app reads; résumé & bio ride the document RAG. New fellows are invited via a secure magic link."
       />
 
       {/* Add a member */}
       <HonorCard className="mb-6">
-        <HonorSectionTitle>Member details</HonorSectionTitle>
+        <HonorSectionTitle>Fellow details</HonorSectionTitle>
         <form ref={formRef} onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <Field label="First name" required>
             <input required className={inputCls} placeholder="Marcus" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -123,11 +171,33 @@ export default function HonorOnboard() {
           <Field label="Prior service background">
             <input className={inputCls} placeholder="e.g. Naval Special Warfare" value={background} onChange={(e) => setBackground(e.target.value)} />
           </Field>
-          <Field label="Target career">
-            <input className={inputCls} placeholder="e.g. Program Management" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <Field label="Target career" hint="Pick a career area or type your own.">
+            <input
+              className={inputCls}
+              list="honor-onboard-career-areas"
+              placeholder="e.g. Program & Operations Management"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+            />
+            <datalist id="honor-onboard-career-areas">
+              {HONOR_CAREER_AREAS.map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
           </Field>
-          <Field label="Cohort">
-            <input className={inputCls} placeholder="e.g. Cohort 2026-A" value={cohort} onChange={(e) => setCohort(e.target.value)} />
+          <Field label="Cohort" hint="Choose an existing cohort or type a new one.">
+            <input
+              className={inputCls}
+              list="honor-onboard-cohorts"
+              placeholder="e.g. Cohort 2026-A"
+              value={cohort}
+              onChange={(e) => setCohort(e.target.value)}
+            />
+            <datalist id="honor-onboard-cohorts">
+              {cohorts.map((c) => (
+                <option key={c.id} value={c.name} />
+              ))}
+            </datalist>
           </Field>
 
           {/* Mandatory PRISM */}
@@ -160,21 +230,69 @@ export default function HonorOnboard() {
             </div>
           </div>
 
-          {/* Résumé + bio */}
-          <Field label="Résumé (PDF / DOCX)">
+          {/* Résumé — drag-and-drop or browse */}
+          <Field label="Résumé (PDF / DOC / XLS)" hint="Drag-and-drop or click to browse.">
             <FileDrop
-              accept=".pdf,.doc,.docx"
+              accept={DOC_ACCEPT}
               file={resumeFile}
               onFile={setResumeFile}
               placeholder="Drop résumé or browse"
             />
           </Field>
-          <Field label="Bio / narrative">
+
+          {/* Bio — text OR file upload */}
+          <Field label="Bio / narrative" hint="Type a narrative, upload a file, or both — feeds Aura & Nova via RAG.">
             <textarea className={`${inputCls} min-h-[80px] resize-y`} placeholder="Short mission narrative — feeds Aura & Nova via RAG." value={bio} onChange={(e) => setBio(e.target.value)} />
+            <FileDrop
+              accept={DOC_ACCEPT}
+              file={bioFile}
+              onFile={setBioFile}
+              placeholder="…or drop a Bio file (PDF / DOC / XLS) or browse"
+              compact
+            />
           </Field>
-          <Field label="Additional information" full>
+
+          {/* Additional information — text OR file upload */}
+          <Field label="Additional information" full hint="Anything else the coaching agents should know — type it or upload a file (stored with the bio in RAG).">
             <textarea className={`${inputCls} min-h-[70px] resize-y`} placeholder="Anything else the coaching agents should know (stored with the bio in RAG)." value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} />
+            <FileDrop
+              accept={DOC_ACCEPT}
+              file={additionalInfoFile}
+              onFile={setAdditionalInfoFile}
+              placeholder="…or drop an Additional-Information file (PDF / DOC / XLS) or browse"
+              compact
+            />
           </Field>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151] sm:col-span-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+              checked={sendInvitation}
+              onChange={(e) => setSendInvitation(e.target.checked)}
+            />
+            <span>
+              Send the magic-link invitation email now
+              <span className="text-[#9299a6]"> — uncheck to create the account without notifying; you can send it later from My Fellows.</span>
+            </span>
+          </label>
+
+          {missing.length > 0 && (
+            <div
+              role="alert"
+              className="rounded-lg border border-[#f0c39a] bg-[#fdf4ec] p-3 sm:col-span-2"
+            >
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#a2531a]">
+                <AlertTriangle className="h-4 w-4" />
+                Please complete these required fields before onboarding:
+              </p>
+              <ul className="mt-1.5 list-disc space-y-0.5 pl-8 text-sm text-[#8a4a1a]">
+                {missing.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 sm:col-span-2">
             <button type="submit" className={HONOR_BTN_PRIMARY} disabled={busy}>
@@ -189,16 +307,33 @@ export default function HonorOnboard() {
 
         {result && (
           <div className="mt-4 rounded-lg border border-[#e3e7ee] bg-[#f8fafc] p-3">
-            <p className="mb-2 text-sm font-semibold text-[#18202f]">Onboarding summary</p>
-            <ul className="space-y-1">
-              {result.steps.map((s) => (
-                <li key={s.step} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className={`h-4 w-4 ${s.ok ? "text-[#1a9e5f]" : "text-[#c0472b]"}`} />
-                  <span className="font-medium capitalize">{s.step}</span>
-                  {s.detail && <span className="text-[#5b6678]">— {s.detail}</span>}
-                  {!s.ok && <span className="text-[#c0472b]">(needs attention)</span>}
-                </li>
-              ))}
+            <p className="mb-2 text-sm font-semibold text-[#18202f]">Onboarding results</p>
+            <ul className="space-y-2">
+              {result.steps.map((s) => {
+                const hint = s.ok ? null : fixHint(s.detail)
+                return (
+                  <li key={s.step} className="text-sm">
+                    <div className="flex items-start gap-2">
+                      {s.ok ? (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#1a9e5f]" />
+                      ) : (
+                        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#c0472b]" />
+                      )}
+                      <div>
+                        <span className="font-medium capitalize">{s.step.replace(/-/g, " ")}</span>
+                        <span className={s.ok ? "text-[#1a9e5f]" : "text-[#c0472b]"}>
+                          {" "}
+                          {s.ok ? "succeeded" : "failed"}
+                        </span>
+                        {s.detail && <span className="text-[#5b6678]"> — {s.detail}</span>}
+                        {!s.ok && hint && (
+                          <p className="mt-0.5 text-xs text-[#a2531a]">How to fix: {hint}</p>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
@@ -235,33 +370,6 @@ export default function HonorOnboard() {
 
 const inputCls =
   "w-full rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-
-function FileDrop({
-  file,
-  onFile,
-  accept,
-  placeholder,
-  compact,
-}: {
-  file: File | null
-  onFile: (f: File | null) => void
-  accept: string
-  placeholder: string
-  compact?: boolean
-}) {
-  return (
-    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#c6cdd9] bg-[#f6f7f9] px-3 ${compact ? "py-2" : "py-2.5"} text-sm hover:border-[#E8792B] ${file ? "text-[#18202f]" : "text-[#5b6678]"}`}>
-      <Upload className="h-4 w-4 shrink-0" />
-      <span className="truncate">{file?.name ?? placeholder}</span>
-      <input
-        type="file"
-        className="hidden"
-        accept={accept}
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-      />
-    </label>
-  )
-}
 
 function Field({
   label,

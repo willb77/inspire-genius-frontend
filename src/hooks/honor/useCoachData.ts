@@ -2,12 +2,8 @@ import { useQuery, type UseQueryOptions } from "@tanstack/react-query"
 import type { AxiosError } from "axios"
 import {
   getCaseload,
-  getCoachActivity,
   getCoachHome,
-  getCoaches,
-  getCoachSchedule,
   getFellow,
-  getTeams,
 } from "@/services/honor/coach.service"
 import type {
   CoachActivityRow,
@@ -21,20 +17,15 @@ import type {
 import {
   MOCK_ACTIVITY,
   MOCK_CASELOAD_COUNTS,
-  MOCK_COACHES,
   MOCK_COACH_HOME,
   MOCK_FELLOWS,
   MOCK_SCHEDULE,
-  MOCK_TEAMS,
-  USE_HONOR_ACTIVITY_LIVE,
   USE_HONOR_MOCKS,
   USE_HONOR_ROSTER_LIVE,
 } from "./mocks"
 
 /** Roster surfaces (caseload/member/dashboard) go live when ROSTER_LIVE is on. */
 const ROSTER_MOCK = USE_HONOR_MOCKS && !USE_HONOR_ROSTER_LIVE
-/** Activity feed goes live when ACTIVITY_LIVE is on (reads /v1/chat/history). */
-const ACTIVITY_MOCK = USE_HONOR_MOCKS && !USE_HONOR_ACTIVITY_LIVE
 
 /**
  * Honor Coach Workbench — React Query read hooks.
@@ -106,57 +97,53 @@ export function useFellow(
   })
 }
 
-/** GET /v1/coach/schedule?view=… — coach calendar. */
+/**
+ * Coach calendar. No coach-scoped schedule endpoint exists on Core yet, so this
+ * resolves to an honest empty state (the Schedule surface shows "No events
+ * scheduled"). Wire to a real endpoint here once one ships.
+ */
 export function useCoachSchedule(
   view: ScheduleView,
   options?: Partial<UseQueryOptions<ScheduleEvent[], AxiosError>>
 ) {
   return useQuery<ScheduleEvent[], AxiosError>({
     queryKey: [HK, "schedule", view],
-    queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_SCHEDULE
-      const res = await getCoachSchedule()
-      return res.data ?? []
-    },
+    queryFn: async () => [] as ScheduleEvent[],
     ...options,
   })
 }
 
-/** GET /v1/audit/logs — JWT-scoped coach activity feed. */
+/**
+ * Coach activity feed. There is no coach-scoped activity/audit endpoint on Core
+ * yet (the platform's chat history is per-agent, not a coach caseload feed), so
+ * this resolves to an honest empty state. Wire it here once a real endpoint ships.
+ */
 export function useCoachActivity(options?: Partial<UseQueryOptions<CoachActivityRow[], AxiosError>>) {
   return useQuery<CoachActivityRow[], AxiosError>({
     queryKey: [HK, "activity"],
-    queryFn: async () => {
-      if (ACTIVITY_MOCK) return MOCK_ACTIVITY
-      const res = await getCoachActivity()
-      return res.data ?? []
-    },
+    queryFn: async () => [] as CoachActivityRow[],
     ...options,
   })
 }
 
-/** GET /v1/coach/team/coaches — administration coach roster. */
+/**
+ * Administration coach roster. There is no coach-of-coaches management endpoint
+ * on Core yet, so this resolves to an honest empty state rather than surfacing an
+ * unrelated roster. Wire it here once a real endpoint ships.
+ */
 export function useCoaches(options?: Partial<UseQueryOptions<CoachRecord[], AxiosError>>) {
   return useQuery<CoachRecord[], AxiosError>({
     queryKey: [HK, "coaches"],
-    queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_COACHES
-      const res = await getCoaches()
-      return res.data ?? []
-    },
+    queryFn: async () => [] as CoachRecord[],
     ...options,
   })
 }
 
-/** GET /v1/coach/team/teams — administration team list. */
+/** Administration team list — no dedicated Core endpoint yet; honest empty state. */
 export function useTeams(options?: Partial<UseQueryOptions<TeamRecord[], AxiosError>>) {
   return useQuery<TeamRecord[], AxiosError>({
     queryKey: [HK, "teams"],
-    queryFn: async () => {
-      if (USE_HONOR_MOCKS) return MOCK_TEAMS
-      const res = await getTeams()
-      return res.data ?? []
-    },
+    queryFn: async () => [] as TeamRecord[],
     ...options,
   })
 }
