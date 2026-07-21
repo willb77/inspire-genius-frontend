@@ -8,10 +8,12 @@ import type { HonorEvaluation, HonorFellow } from "@/types/honor"
 
 /* ── mocks ── */
 const evaluateFellow = jest.fn()
+const getFellowSources = jest.fn()
 const recordReportExport = jest.fn()
 const emailReport = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   evaluateFellow: (...a: unknown[]) => evaluateFellow(...a),
+  getFellowSources: (...a: unknown[]) => getFellowSources(...a),
   recordReportExport: (...a: unknown[]) => recordReportExport(...a),
   emailReport: (...a: unknown[]) => emailReport(...a),
 }))
@@ -101,6 +103,20 @@ function opsEval(subjectId = "f1"): HonorEvaluation {
     comparative: null,
     frameworks: ["PRISM"],
     imputed_features: [],
+    confidence: {
+      score: 60,
+      band: "moderate",
+      behavioralBasis: true,
+      present: ["prism", "resume"],
+      missing: ["other_assessment", "bio"],
+      breakdown: [
+        { source: "prism", label: "PRISM behavioral profile", weight: 40, present: true, contribution: 40 },
+        { source: "other_assessment", label: "Another behavioral assessment", weight: 25, present: false, contribution: 0 },
+        { source: "resume", label: "Résumé / CV", weight: 20, present: true, contribution: 20 },
+        { source: "bio", label: "Bio / personal narrative", weight: 15, present: false, contribution: 0 },
+      ],
+      note: "Confidence reflects which sources backed this evaluation.",
+    },
     notes: "Deterministic; no model call.",
   }
 }
@@ -121,6 +137,10 @@ beforeEach(() => {
   useCaseload.mockReturnValue({ data: FELLOWS })
   useCoachHome.mockReturnValue({ data: { coachName: "S. Carter", coachTitle: "Transition Mentor" } })
   evaluateFellow.mockResolvedValue({ status: true, data: opsEval() })
+  getFellowSources.mockResolvedValue({
+    status: true,
+    data: { fellowId: "f1", managed: false, assessments: [{ framework: "PRISM", scoreCount: 102 }], resume: true, bio: false },
+  })
   sendHonorEvaluation.mockResolvedValue({ content: "Marcus is a strong operator.", trace: ["Aura", "Meridian"], sessionId: "s1" })
   initiateUpload.mockResolvedValue({ document_id: "d1", upload_url: "u", upload_fields: {} })
   uploadToS3.mockResolvedValue(undefined)
@@ -267,4 +287,37 @@ test("email delivery ships dark — the Email button is hidden while the flag is
   // …Email is gated behind USE_HONOR_REPORT_EMAIL (off) and must not render.
   expect(screen.queryByRole("button", { name: /email to fellow/i })).not.toBeInTheDocument()
   expect(emailReport).not.toHaveBeenCalled()
+})
+
+test("Evaluate: source selection panel + confidence meter render the degradation", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+
+  // Per-fellow submitted sources become selectable evidence.
+  expect(await screen.findByText(/Evidence for Marcus Reyes/i)).toBeInTheDocument()
+  await screen.findByText("PRISM")
+
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+
+  // Confidence meter shows the score + band and the per-source degradation.
+  expect(screen.getByText(/Evaluation confidence/i)).toBeInTheDocument()
+  expect(screen.getByText(/60% · moderate/i)).toBeInTheDocument()
+  expect(screen.getByText(/Another behavioral assessment/i)).toBeInTheDocument() // a missing source is listed
+})
+
+test("Evaluate: unchecking PRISM sends the narrowed source selection", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  await screen.findByText("PRISM")
+
+  // Uncheck the PRISM evidence chip, then run.
+  fireEvent.click(screen.getByRole("checkbox", { name: /PRISM/i }))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+
+  await waitFor(() => expect(evaluateFellow).toHaveBeenCalled())
+  const body = evaluateFellow.mock.calls[0][1]
+  expect(body.sources).toBeDefined()
+  expect(body.sources.assessmentFrameworks).not.toContain("PRISM")
+  expect(body.sources.includeResume).toBe(true)
 })

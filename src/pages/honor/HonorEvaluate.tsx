@@ -18,7 +18,11 @@ import { cn } from "@/lib/utils"
 import { sanitizeBodyHtml } from "@/lib/sanitizeHtml"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
-import { useHonorEvaluate, useHonorEvaluateReport } from "@/hooks/honor/useHonorEvaluate"
+import {
+  useFellowSources,
+  useHonorEvaluate,
+  useHonorEvaluateReport,
+} from "@/hooks/honor/useHonorEvaluate"
 import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
 import { USE_HONOR_EVAL_LIVE, USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { downloadBlob } from "@/lib/exportTranscript"
@@ -170,12 +174,20 @@ export default function HonorEvaluate() {
   const [exporting, setExporting] = useState<null | "download" | "print">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
+  // Source selection — which of the primary fellow's sources to evaluate on.
+  // Excluded assessment frameworks + résumé/bio toggles; empty/all = full profile.
+  const [excludedFrameworks, setExcludedFrameworks] = useState<Set<string>>(new Set())
+  const [includeResume, setIncludeResume] = useState(true)
+  const [includeBio, setIncludeBio] = useState(true)
 
   const selectedFellows = useMemo(
     () => fellows.filter((f) => selected.has(f.id)),
     [fellows, selected],
   )
   const primary: HonorFellow | undefined = selectedFellows[0]
+  const primaryName = primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"
+  const sourcesQuery = useFellowSources(primary?.id)
+  const sources = sourcesQuery.data
   const comparisonIds = selectedFellows.slice(1).map((f) => f.id)
   const mode =
     selectedFellows.length <= 1
@@ -220,12 +232,26 @@ export default function HonorEvaluate() {
     setNarrationHtml("")
     setNarrationTrace([])
     try {
+      // Source selection — only send when we know the fellow's sources. Narrow
+      // assessmentFrameworks only if the coach excluded some (else null = all).
+      const sourcesBody = sources
+        ? {
+            assessmentFrameworks: excludedFrameworks.size
+              ? sources.assessments
+                  .map((a) => a.framework)
+                  .filter((f) => !excludedFrameworks.has(f))
+              : null,
+            includeResume,
+            includeBio,
+          }
+        : undefined
       const data = await report.mutateAsync({
         fellowId: primary.id,
         body: {
           goals: goals.length ? goals : undefined,
           memberIds: comparisonIds.length ? comparisonIds : undefined,
           targetArea: comparisonIds.length ? targetArea : undefined,
+          sources: sourcesBody,
         },
       })
       setResult(data ?? null)
@@ -503,6 +529,94 @@ export default function HonorEvaluate() {
           </div>
         </div>
 
+        {primary && (
+          <div className="mt-5 rounded-lg border border-[#e6e9ef] bg-[#fafbfc] p-4">
+            <div className="mb-1 text-sm font-semibold text-[#18202f]">
+              Evidence for {primaryName}
+            </div>
+            <p className="mb-3 text-xs text-[#5b6678]">
+              Choose which submitted sources to evaluate on. You can evaluate with a PRISM
+              report and without, or on just a résumé, bio, or another assessment — the
+              confidence meter shows how the fit score degrades as sources are excluded.
+            </p>
+            {sourcesQuery.isLoading ? (
+              <p className="text-xs text-[#9299a6]">Loading submitted documents…</p>
+            ) : sources?.managed ? (
+              <p className="text-xs text-[#9299a6]">
+                This fellow hasn’t been invited yet — invite them to attach and evaluate sources.
+              </p>
+            ) : sources &&
+              sources.assessments.length === 0 &&
+              !sources.resume &&
+              !sources.bio ? (
+              <p className="text-xs text-[#9299a6]">No documents on file for this fellow yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(sources?.assessments ?? []).map((a) => {
+                  const on = !excludedFrameworks.has(a.framework)
+                  return (
+                    <label
+                      key={a.framework + (a.assessedAt ?? "")}
+                      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                        on
+                          ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                          : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() =>
+                          setExcludedFrameworks((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(a.framework)) next.delete(a.framework)
+                            else next.add(a.framework)
+                            return next
+                          })
+                        }
+                      />
+                      <span className="font-medium">{a.framework}</span>
+                      <span className="opacity-70">{a.scoreCount} scores</span>
+                    </label>
+                  )
+                })}
+                {sources?.resume && (
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                      includeResume
+                        ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                        : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeResume}
+                      onChange={() => setIncludeResume((v) => !v)}
+                    />
+                    <span className="font-medium">Résumé</span>
+                  </label>
+                )}
+                {sources?.bio && (
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                      includeBio
+                        ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                        : "border-[#e6e9ef] bg-white text-[#9299a6]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeBio}
+                      onChange={() => setIncludeBio((v) => !v)}
+                    />
+                    <span className="font-medium">Bio</span>
+                  </label>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-4 flex items-center gap-3">
           <button
             type="button"
@@ -529,6 +643,61 @@ export default function HonorEvaluate() {
 
       {result && (
         <>
+          {/* Evidence confidence — shows how the fit score degrades with missing sources */}
+          {result.confidence && (
+            <HonorCard className="mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <HonorSectionTitle>Evaluation confidence</HonorSectionTitle>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    result.confidence.band === "high"
+                      ? "bg-[#eef8f0] text-[#1f7a3d]"
+                      : result.confidence.band === "moderate"
+                        ? "bg-[#fdf6ec] text-[#8a5a12]"
+                        : "bg-[#fdecec] text-[#c0472b]"
+                  }`}
+                >
+                  {result.confidence.score}% · {result.confidence.band}
+                </span>
+              </div>
+              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[#eef1f6]">
+                <div
+                  className={`h-full rounded-full ${
+                    result.confidence.band === "high"
+                      ? "bg-[#1f7a3d]"
+                      : result.confidence.band === "moderate"
+                        ? "bg-[#c88b1b]"
+                        : "bg-[#c0472b]"
+                  }`}
+                  style={{ width: `${Math.max(4, result.confidence.score)}%` }}
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.confidence.breakdown.map((b) => (
+                  <span
+                    key={b.source}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
+                      b.present
+                        ? "border-[#cfe8d4] bg-[#f2faf4] text-[#1f7a3d]"
+                        : "border-[#f0d9d9] bg-[#fdf4f4] text-[#a2543f] line-through"
+                    }`}
+                    title={`${b.label} — ${b.present ? `+${b.weight}%` : `missing (−${b.weight}%)`}`}
+                  >
+                    {b.present ? "✓" : "—"} {b.label}
+                    <span className="opacity-70">{b.present ? `+${b.weight}` : `−${b.weight}`}</span>
+                  </span>
+                ))}
+              </div>
+              {!result.confidence.behavioralBasis && (
+                <p className="mt-3 text-xs text-[#a2543f]">
+                  No behavioral assessment in this selection — the fit score is imputed-neutral
+                  (not measured). Include PRISM or another assessment for a scored fit.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-[#9299a6]">{result.confidence.note}</p>
+            </HonorCard>
+          )}
+
           {/* Export toolbar — branded PDF / print / (email, flag-gated) */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button

@@ -1,7 +1,7 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery, type UseQueryOptions } from "@tanstack/react-query"
 import { sendHonorEvaluation, type HonorEvalReply } from "@/services/honor/honorChat"
-import { evaluateFellow } from "@/services/honor/coach.service"
-import type { HonorEvaluateBody, HonorEvaluation } from "@/types/honor"
+import { evaluateFellow, getFellowSources } from "@/services/honor/coach.service"
+import type { HonorEvaluateBody, HonorEvaluation, HonorFellowSources } from "@/types/honor"
 
 /**
  * Live member-evaluation mutation — reuses the Meridian async-jobs transport
@@ -31,5 +31,27 @@ export function useHonorEvaluateReport() {
       const res = await evaluateFellow(fellowId, body)
       return res.data
     },
+  })
+}
+
+/**
+ * The sources a fellow has submitted — GET …/{fellowId}/sources. Drives the
+ * per-fellow "documents on file" badges + the source-selection checkboxes.
+ * Read-safe: fetched only when a fellow is selected.
+ */
+export function useFellowSources(
+  fellowId: string | undefined,
+  options?: Partial<UseQueryOptions<HonorFellowSources | undefined, Error>>,
+) {
+  return useQuery<HonorFellowSources | undefined, Error>({
+    queryKey: ["honor", "fellow-sources", fellowId ?? "none"],
+    queryFn: async () => {
+      if (!fellowId) return undefined
+      const res = await getFellowSources(fellowId)
+      return res.data
+    },
+    enabled: !!fellowId,
+    retry: false,
+    ...options,
   })
 }
