@@ -84,6 +84,13 @@ jobs:
           # HomeSurfaceToggle and /home/classic escape hatch remain; an explicit
           # localStorage `new_user_surfaces` value still overrides this default.
           echo "VITE_NEW_USER_SURFACES=true" >> .env
+          # Team Development Studio (manager) — pilot rollout: ON in dev only.
+          # The feature is otherwise dark by default (VITE_FEATURE_TEAM_DEVELOPMENT
+          # unset → nav item + /manager/development routes hidden). Backend
+          # (growth-service + agent-engine dossier + migration 014) is live on dev;
+          # NOT on staging-b, so this stays dev-only until the backend is promoted.
+          # Remove this line to hide the feature again.
+          echo "VITE_FEATURE_TEAM_DEVELOPMENT=true" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
