@@ -267,3 +267,92 @@ export type UsageRequest = {
   successor_user_id?: string
   notes?: string
 }
+
+// ── Guided Capture front-door ────────────────────────────────────────────────
+// The "Start a capture" surface drives two Agent-Engine LLM endpoints
+// (next-question / extract) plus the existing trainer-service persistence
+// endpoints (taxonomy / sessions / turns / synthesize).
+
+/** The task/responsibility node being mined in a capture. */
+export type CaptureNode = {
+  name: string
+  node_type: string
+}
+
+/** One question→answer exchange in the running interview transcript. */
+export type TranscriptExchange = {
+  question: string
+  answer: string
+}
+
+/**
+ * POST /v1/agents/kce/capture/next-question request body (Agent Engine).
+ * `is_first` asks Maven to open the interview with an empty transcript.
+ */
+export type NextQuestionRequest = {
+  role_title: string
+  node: CaptureNode
+  transcript: TranscriptExchange[]
+  is_first: boolean
+}
+
+/** POST /v1/agents/kce/capture/next-question response payload. */
+export type NextQuestionResponse = {
+  question: string
+  coverage_note: string | null
+}
+
+/** POST /v1/agents/kce/capture/extract request body (Agent Engine). */
+export type ExtractRequest = {
+  role_title: string
+  node: CaptureNode
+  taxonomy_node_id: string
+  transcript: TranscriptExchange[]
+}
+
+/**
+ * A knowledge unit distilled from the interview transcript by Maven. This is
+ * the raw extract shape — it becomes a {@link KnowledgeUnit} once persisted and
+ * scored by the trainer-service on synthesize.
+ */
+export type ExtractedUnit = {
+  category: string
+  title: string
+  body: string
+  structured: unknown
+  specificity: number
+  consistency: number
+  actionability: number
+  tacit_richness: number
+  taxonomy_node_id: string
+}
+
+/** POST /v1/agents/kce/capture/extract response payload. */
+export type ExtractResponse = {
+  units: ExtractedUnit[]
+}
+
+/** POST /v1/trainer/continuity/taxonomy request body. */
+export type CreateTaxonomyRequest = {
+  org_id: string
+  role_title: string
+  name: string
+  node_type: string
+}
+
+/** POST /v1/trainer/continuity/taxonomy response payload (the taxonomy node). */
+export type TaxonomyNode = {
+  id: string
+  org_id?: string | null
+  role_title?: string | null
+  name?: string | null
+  node_type?: string | null
+}
+
+/** POST /v1/trainer/continuity/sessions/{id}/turns request body. */
+export type RecordTurnRequest = {
+  taxonomy_node_id: string
+  question: string
+  response: string
+  coverage_delta?: number
+}
