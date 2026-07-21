@@ -102,13 +102,16 @@ describe("ProtectedRoute", () => {
     }, { timeout: 2000 });
   });
 
-  test("redirects to onboarding when onboarding is not completed", async () => {
+  test("does NOT force onboarding when onboarding is not completed (forced onboarding disabled 2026-07-21)", async () => {
+    // Every authenticated user reaches their destination; the onboarding wizard
+    // is no longer forced (unblocks migrated users landing on /home).
     renderWithRoute("/home", {
       user: { token: "tok", email: "a@b.com", role: "user", isOnboardingCompleted: false },
     });
     await waitFor(() => {
-      expect(screen.getByTestId("onboarding-page")).toBeInTheDocument();
+      expect(screen.getByTestId("home-page")).toBeInTheDocument();
     }, { timeout: 2000 });
+    expect(screen.queryByTestId("onboarding-page")).not.toBeInTheDocument();
   });
 
   test("allows access to onboarding routes even if onboarding not completed", async () => {
