@@ -87,3 +87,64 @@ test("shows Request a PRISM Report when none is on file, and requests it", () =>
   fireEvent.click(btn)
   expect(requestMutate).toHaveBeenCalledWith(FELLOW.id)
 })
+
+test("labels Underlying / Adaptive / Consistent for a multi-map dimension", () => {
+  prismResult = {
+    isLoading: false,
+    data: {
+      fellowId: FELLOW.id, managed: false, hasReport: true, scoreCount: 3,
+      scores: [
+        { category: "BehaviorPreferences", dimension: "Coordinating", scoreType: "Underlying", score: 80 },
+        { category: "BehaviorPreferences", dimension: "Coordinating", scoreType: "Adapted", score: 61 },
+        { category: "BehaviorPreferences", dimension: "Coordinating", scoreType: "Consistent", score: 69 },
+      ],
+    },
+  }
+  renderProfile()
+  fireEvent.click(screen.getByRole("button", { name: "PRISM Report" }))
+  // Coordinating collapses to one row with three labelled map values.
+  expect(screen.getAllByText("Underlying").length).toBeGreaterThan(0)
+  expect(screen.getAllByText("Adaptive").length).toBeGreaterThan(0) // "Adapted" surfaced as "Adaptive"
+  expect(screen.getAllByText("Consistent").length).toBeGreaterThan(0)
+  expect(screen.getByText("80")).toBeInTheDocument()
+  expect(screen.getByText("61")).toBeInTheDocument()
+  expect(screen.getByText("69")).toBeInTheDocument()
+  expect(screen.queryByText("Adapted")).not.toBeInTheDocument()
+})
+
+test("orders Work Preference Profile ahead of Behaviour Preferences, with definitions", () => {
+  prismResult = {
+    isLoading: false,
+    data: {
+      fellowId: FELLOW.id, managed: false, hasReport: true, scoreCount: 2,
+      scores: [
+        { category: "BehaviorPreferences", dimension: "Coordinating", scoreType: "Underlying", score: 80 },
+        { category: "WorkPreferenceProfile", dimension: "Drive", scoreType: "Underlying", score: 55 },
+      ],
+    },
+  }
+  renderProfile()
+  fireEvent.click(screen.getByRole("button", { name: "PRISM Report" }))
+  const wpp = screen.getByText("Work Preference Profile")
+  const bp = screen.getByText("Behaviour Preferences")
+  expect(wpp).toBeInTheDocument()
+  expect(bp).toBeInTheDocument()
+  // Work Preference Profile heading precedes Behaviour Preferences in the DOM.
+  expect(wpp.compareDocumentPosition(bp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  // A brief category definition is shown.
+  expect(screen.getByText(/twelve behavioural dimensions/i)).toBeInTheDocument()
+})
+
+test("PRISM Overview link opens the video modal", () => {
+  prismResult = {
+    isLoading: false,
+    data: { fellowId: FELLOW.id, managed: false, hasReport: false, scores: [] },
+  }
+  renderProfile()
+  fireEvent.click(screen.getByRole("button", { name: "PRISM Report" }))
+  expect(screen.queryByRole("dialog", { name: /PRISM Overview/i })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: /PRISM Overview/i }))
+  const dialog = screen.getByRole("dialog", { name: /PRISM Overview/i })
+  expect(dialog).toBeInTheDocument()
+  expect(screen.getByText("What is PRISM?")).toBeInTheDocument()
+})
