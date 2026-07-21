@@ -9,6 +9,7 @@ import {
   Sparkles,
   Target,
   GraduationCap,
+  PlayCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
@@ -22,6 +23,17 @@ import {
   PrismDots,
 } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_format"
+import PrismOverviewModal from "./PrismOverviewModal"
+import {
+  CATEGORY_DEF,
+  CATEGORY_LABEL,
+  SCORE_TYPE_ACCENT,
+  SCORE_TYPE_DEF,
+  SCORE_TYPE_ORDER,
+  type ScoreType,
+  normalizeScoreType,
+  orderedCategories,
+} from "./prismGlossary"
 import type { HonorPrismScore } from "@/types/honor"
 
 /**
@@ -55,6 +67,7 @@ export default function HonorMemberProfile() {
 
   const [tab, setTab] = useState<Tab>(memberId ? "overview" : "overview")
   const [denied, setDenied] = useState(false)
+  const [overviewOpen, setOverviewOpen] = useState(false)
   const prismQuery = useFellowPrism(effectiveId)
   const requestPrism = useRequestFellowPrism()
 
@@ -197,7 +210,19 @@ export default function HonorMemberProfile() {
       {/* PRISM Report — the fellow's scores from the imported CSV, or request one */}
       {tab === "prism" && (
         <HonorCard>
-          <HonorSectionTitle>PRISM Report — {name}</HonorSectionTitle>
+          <HonorSectionTitle
+            action={
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#E8792B] hover:underline"
+                onClick={() => setOverviewOpen(true)}
+              >
+                <PlayCircle className="h-3.5 w-3.5" /> PRISM Overview
+              </button>
+            }
+          >
+            PRISM Report — {name}
+          </HonorSectionTitle>
           {prismQuery.isLoading ? (
             <p className="text-sm text-[#9299a6]">Loading PRISM report…</p>
           ) : prismQuery.data?.managed ? (
@@ -213,38 +238,18 @@ export default function HonorMemberProfile() {
                   ? ` · imported ${new Date(prismQuery.data.assessedAt).toLocaleDateString()}`
                   : ""}
               </p>
+
+              {/* The three PRISM maps — what each score type means */}
+              <PrismMapLegend />
+
               {(() => {
                 const groups: Record<string, HonorPrismScore[]> = {}
                 for (const s of prismQuery.data.scores ?? []) {
                   const cat = s.category || "Scores"
                   ;(groups[cat] ||= []).push(s)
                 }
-                return Object.entries(groups).map(([cat, rows]) => (
-                  <div key={cat} className="mb-4">
-                    <h3 className="mb-1.5 text-sm font-semibold text-[#1B2A4A]">{cat}</h3>
-                    <div className="overflow-hidden rounded-lg border border-[#e6e9ef]">
-                      {rows.map((s, i) => (
-                        <div
-                          key={`${cat}-${s.dimension}-${i}`}
-                          className={`flex items-center justify-between px-3 py-2 text-sm ${
-                            i % 2 ? "bg-[#f7f9fc]" : "bg-white"
-                          }`}
-                        >
-                          <span className="text-[#18202f]">
-                            {s.dimension}
-                            {s.subDimension ? (
-                              <span className="text-[#9299a6]"> · {s.subDimension}</span>
-                            ) : null}
-                          </span>
-                          <span className="font-semibold text-[#1B2A4A]">
-                            {s.score != null
-                              ? s.score
-                              : s.scoreText ?? (s.rank != null ? `#${s.rank}` : "—")}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                return orderedCategories(Object.keys(groups)).map((cat) => (
+                  <PrismCategoryGroup key={cat} category={cat} rows={groups[cat]} />
                 ))
               })()}
             </div>
@@ -264,6 +269,7 @@ export default function HonorMemberProfile() {
               </button>
             </div>
           )}
+          <PrismOverviewModal open={overviewOpen} onClose={() => setOverviewOpen(false)} />
         </HonorCard>
       )}
 
@@ -344,5 +350,136 @@ function QuickAction({
     >
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
+  )
+}
+
+/** Legend defining the three PRISM maps (Underlying / Adaptive / Consistent). */
+function PrismMapLegend() {
+  return (
+    <div className="mb-4 grid gap-2 rounded-lg border border-[#e6e9ef] bg-[#fbfcfe] p-3 sm:grid-cols-3">
+      {SCORE_TYPE_ORDER.map((t) => {
+        const a = SCORE_TYPE_ACCENT[t]
+        return (
+          <div key={t} className="text-xs">
+            <span
+              className="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+              style={{ color: a.text, backgroundColor: a.bg, borderColor: a.border }}
+            >
+              {t}
+            </span>
+            <p className="mt-1 leading-snug text-[#5b6678]">{SCORE_TYPE_DEF[t]}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+type DimAgg = {
+  dimension: string
+  subDimension?: string | null
+  byType: Partial<Record<ScoreType, number | string>>
+  plain?: number | string
+}
+
+function scoreValue(s: HonorPrismScore): number | string {
+  return s.score != null ? s.score : s.scoreText ?? (s.rank != null ? `#${s.rank}` : "—")
+}
+
+/**
+ * One category block: a heading, a one-line definition of what the category measures,
+ * and one row per dimension. Where a dimension carries more than one PRISM map
+ * (Behaviour Preferences has all three), each value is labelled Underlying / Adaptive /
+ * Consistent; single-map categories show the value with the map named once at the top.
+ */
+function PrismCategoryGroup({ category, rows }: { category: string; rows: HonorPrismScore[] }) {
+  const label = CATEGORY_LABEL[category] ?? category
+  const def = CATEGORY_DEF[category]
+
+  const order: string[] = []
+  const dims: Record<string, DimAgg> = {}
+  const typesPresent = new Set<ScoreType>()
+  for (const s of rows) {
+    const key = s.dimension || "—"
+    if (!dims[key]) {
+      dims[key] = { dimension: key, subDimension: s.subDimension, byType: {} }
+      order.push(key)
+    }
+    if (s.subDimension && !dims[key].subDimension) dims[key].subDimension = s.subDimension
+    const t = normalizeScoreType(s.scoreType)
+    if (t) {
+      dims[key].byType[t] = scoreValue(s)
+      typesPresent.add(t)
+    } else {
+      dims[key].plain = scoreValue(s)
+    }
+  }
+  const multiType = typesPresent.size >= 2
+  const singleType = typesPresent.size === 1 ? [...typesPresent][0] : null
+
+  return (
+    <div className="mb-5">
+      <h3 className="text-sm font-semibold text-[#1B2A4A]">{label}</h3>
+      {def ? (
+        <p className="mb-2 mt-0.5 max-w-2xl text-xs text-[#5b6678]">{def}</p>
+      ) : (
+        <div className="mb-1.5" />
+      )}
+      {singleType ? (
+        <p className="mb-1.5 text-[11px] text-[#9299a6]">
+          Shown as the{" "}
+          <span className="font-medium" style={{ color: SCORE_TYPE_ACCENT[singleType].text }}>
+            {singleType}
+          </span>{" "}
+          (natural) map.
+        </p>
+      ) : null}
+      <div className="overflow-hidden rounded-lg border border-[#e6e9ef]">
+        {order.map((k, i) => {
+          const d = dims[k]
+          return (
+            <div
+              key={`${category}-${k}-${i}`}
+              className={`flex items-start justify-between gap-3 px-3 py-2 text-sm ${
+                i % 2 ? "bg-[#f7f9fc]" : "bg-white"
+              }`}
+            >
+              <div className="min-w-0">
+                <span className="text-[#18202f]">{d.dimension}</span>
+                {d.subDimension ? (
+                  <p className="mt-0.5 max-w-md text-xs leading-snug text-[#9299a6]">
+                    {d.subDimension}
+                  </p>
+                ) : null}
+              </div>
+              <div className="shrink-0 text-right">
+                {multiType ? (
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {SCORE_TYPE_ORDER.filter((t) => d.byType[t] != null).map((t) => {
+                      const a = SCORE_TYPE_ACCENT[t]
+                      return (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                          style={{ color: a.text, backgroundColor: a.bg, borderColor: a.border }}
+                          title={SCORE_TYPE_DEF[t]}
+                        >
+                          <span className="font-medium">{t}</span>
+                          <span className="font-semibold">{d.byType[t]}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <span className="font-semibold text-[#1B2A4A]">
+                    {d.plain ?? d.byType[singleType ?? "Underlying"] ?? "—"}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
