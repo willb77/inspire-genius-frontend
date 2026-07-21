@@ -27,6 +27,8 @@ import {
   Scale,
   Banknote,
   Megaphone,
+  BookOpenCheck,
+  ClipboardCheck,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -184,6 +186,25 @@ export function grantSidebarSectionForRole(role: UserRole): SidebarSection {
     ...GRANT_SIDEBAR_SECTION,
     items: [...GRANT_SIDEBAR_SECTION.items, GRANT_COACH_NAV_ITEM],
   }
+}
+
+/**
+ * Knowledge Continuity vertical section.
+ *
+ * NOT part of SIDEBAR_SECTIONS — it is entitlement-gated (not role-gated):
+ * AppSidebar appends it only when
+ * `useVerticalAccess("knowledge-continuity").hasAccess` is true. Roles are
+ * set to all six so the entitlement is the sole gate.
+ */
+export const KCE_SIDEBAR_SECTION: SidebarSection = {
+  id: "knowledge-continuity",
+  label: "Knowledge Continuity",
+  roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
+  items: [
+    { to: "/vertical/knowledge-continuity/dashboard", icon: BookOpenCheck, label: "Program Health" },
+    { to: "/vertical/knowledge-continuity/review", icon: ClipboardCheck, label: "Reviewer console" },
+    { to: "/vertical/knowledge-continuity/curriculum", icon: GraduationCap, label: "Successor curriculum" },
+  ],
 }
 
 // Honor (and any themed vertical whose sub-nav lives in its own shell) is now

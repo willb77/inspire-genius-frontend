@@ -119,6 +119,9 @@ const ManagerTraining = React.lazy(() => import("@/pages/manager/Training"));
 const ManagerCareerManagement = React.lazy(() => import("@/pages/manager/CareerManagement"));
 const ManagerTeamBuilding = React.lazy(() => import("@/pages/manager/TeamBuilding"));
 const ManagerLeadership = React.lazy(() => import("@/pages/manager/Leadership"));
+// Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
+const DevelopmentStudio = React.lazy(() => import("@/pages/manager/development/DevelopmentStudio"));
+const MemberDevelopmentWorkspace = React.lazy(() => import("@/pages/manager/development/MemberDevelopmentWorkspace"));
 const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
@@ -185,6 +188,12 @@ const GrantPlanPage = React.lazy(() => import("@/pages/grant/GrantPlanPage"));
 const GrantRosterPage = React.lazy(() => import("@/pages/grant/coach/RosterPage"));
 const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/StudentIntakePage"));
 
+// Knowledge Continuity vertical — Program-Health dashboard (entitlement-gated)
+const KceLayout = React.lazy(() => import("@/pages/knowledge-continuity/KceLayout"));
+const KceDashboardPage = React.lazy(() => import("@/pages/knowledge-continuity/KceDashboardPage"));
+const KceReviewConsolePage = React.lazy(() => import("@/pages/knowledge-continuity/KceReviewConsolePage"));
+const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/KceCurriculumPage"));
+
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
 const HonorLayout = React.lazy(() => import("@/pages/honor/HonorLayout"));
@@ -192,10 +201,12 @@ const HonorDashboard = React.lazy(() => import("@/pages/honor/HonorDashboard"));
 const HonorCaseload = React.lazy(() => import("@/pages/honor/HonorCaseload"));
 const HonorOnboard = React.lazy(() => import("@/pages/honor/HonorOnboard"));
 const HonorEvaluate = React.lazy(() => import("@/pages/honor/HonorEvaluate"));
+const HonorResume = React.lazy(() => import("@/pages/honor/HonorResume"));
 const HonorMemberProfile = React.lazy(() => import("@/pages/honor/HonorMemberProfile"));
 const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
 const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
 const HonorAdministration = React.lazy(() => import("@/pages/honor/HonorAdministration"));
+const HonorAdminGuard = React.lazy(() => import("@/pages/honor/admin/HonorAdminGuard"));
 
 // ── Job-Fit vertical — person-side profile↔role matching (entitlement-gated) ──
 const JobFitLayout = React.lazy(() => import("@/pages/job-fit/JobFitLayout"));
@@ -455,6 +466,9 @@ export const routes: RouteObject[] = [
       { path: "/manager/job-blueprint", element: withSuspense(<ManagerJobBlueprint />) },
       { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
+      // Team Development Studio (roster + per-member workspace)
+      { path: "/manager/development", element: withSuspense(<DevelopmentStudio />) },
+      { path: "/manager/development/:memberId", element: withSuspense(<MemberDevelopmentWorkspace />) },
       { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
       { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
       { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },
@@ -519,6 +533,20 @@ export const routes: RouteObject[] = [
         ],
       },
 
+      // Knowledge Continuity vertical — entitlement-gated inside KceLayout,
+      // which wraps every child in the existing AppShell. Unentitled users are
+      // redirected to /home by the layout.
+      {
+        path: "/vertical/knowledge-continuity",
+        element: withSuspense(<KceLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/knowledge-continuity/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<KceDashboardPage />) },
+          { path: "review", element: withSuspense(<KceReviewConsolePage />) },
+          { path: "curriculum", element: withSuspense(<KceCurriculumPage />) },
+        ],
+      },
+
       // The Honor Foundation — Coach Workbench vertical. Reskinned (navy/orange
       // THF chrome) and entitlement-gated inside HonorLayout, which redirects
       // users lacking the "honor" entitlement to /home.
@@ -531,9 +559,17 @@ export const routes: RouteObject[] = [
           { path: "caseload", element: withSuspense(<HonorCaseload />) },
           { path: "onboard", element: withSuspense(<HonorOnboard />) },
           { path: "evaluate", element: withSuspense(<HonorEvaluate />) },
+          { path: "resume", element: withSuspense(<HonorResume />) },
           { path: "activity", element: withSuspense(<HonorActivity />) },
           { path: "schedule", element: withSuspense(<HonorSchedule />) },
-          { path: "administration", element: withSuspense(<HonorAdministration />) },
+          {
+            path: "administration",
+            element: withSuspense(
+              <HonorAdminGuard>
+                <HonorAdministration />
+              </HonorAdminGuard>,
+            ),
+          },
           // Member workspace — no id lands on the first assigned member.
           { path: "member", element: withSuspense(<HonorMemberProfile />) },
           { path: "member/:memberId", element: withSuspense(<HonorMemberProfile />) },

@@ -53,6 +53,10 @@ export type HonorOnboardInput = {
   resumeFile?: File | null
   bio?: string
   additionalInfo?: string
+  /** Optional Bio file (pdf/doc/docx/xls/xlsx) — supplements/replaces the bio text. */
+  bioFile?: File | null
+  /** Optional Additional-Information file — stored with the bio in RAG (doc_kind "bio"). */
+  additionalInfoFile?: File | null
 }
 
 export type OnboardStepResult = {
@@ -119,6 +123,13 @@ export async function runHonorOnboard(
 
   const result: HonorOnboardResult = { fellowId, steps }
 
+  // The invite RE-KEYS the fellow row to the invited user's canonical sub, so the
+  // create-time `fellowId` goes STALE the moment the invite succeeds. Every
+  // subject-scoped import below must target the POST-INVITE id — which the invite
+  // endpoint returns under `data.fellowId` (NOT `data.id`; that field is absent).
+  // Default to the create id only if the invite response omits the new id.
+  let effectiveFellowId = fellowId
+
   // 2. Invite → mint the IG user so assessments/docs have a SUBJECT to attach to.
   try {
     const sendInvite = input.sendInvitation !== false
@@ -127,7 +138,10 @@ export async function runHonorOnboard(
       input.role.toLowerCase() !== "fellow",
       sendInvite,
     )
-    result.memberUserId = inviteResp.data?.userId
+    effectiveFellowId = inviteResp.data?.fellowId ?? inviteResp.data?.id ?? fellowId
+    // The re-keyed fellow id IS the fellow's canonical sub, so it doubles as the
+    // subject for doc attribution when the invite omits an explicit `userId`.
+    result.memberUserId = inviteResp.data?.userId ?? inviteResp.data?.fellowId
     // The account is created either way; fire the magic-link intake email only
     // when the coach chose to notify now.
     if (sendInvite && inviteResp.data?.invitationSent && inviteResp.data?.email) {
@@ -148,19 +162,19 @@ export async function runHonorOnboard(
       `PRISM/framework scores need an invited member to attach to.`)
   }
 
-  // 3. PRISM CSV — mandatory.
+  // 3. PRISM CSV — mandatory. Use the POST-INVITE id (see re-key note above).
   try {
-    const imp = await importFellowAssessment(fellowId, "PRISM", input.prismFile)
+    const imp = await importFellowAssessment(effectiveFellowId, "PRISM", input.prismFile)
     steps.push({ step: "prism", ok: true, detail: `${imp.scoreCount} scores` })
   } catch (e) {
     steps.push({ step: "prism", ok: false, detail: errMsg(e) })
   }
 
-  // 4. Optional frameworks — one import per provided file.
+  // 4. Optional frameworks — one import per provided file (post-invite id).
   for (const [fw, file] of Object.entries(input.frameworkFiles ?? {})) {
     if (!file) continue
     try {
-      const imp = await importFellowAssessment(fellowId, fw as HonorFramework, file)
+      const imp = await importFellowAssessment(effectiveFellowId, fw as HonorFramework, file)
       steps.push({ step: fw, ok: true, detail: `${imp.scoreCount} scores` })
     } catch (e) {
       steps.push({ step: fw, ok: false, detail: errMsg(e) })
@@ -188,6 +202,24 @@ export async function runHonorOnboard(
       steps.push({ step: "bio", ok: true })
     } catch (e) {
       steps.push({ step: "bio", ok: false, detail: errMsg(e) })
+    }
+  }
+  // Uploaded Bio / Additional-Information files supplement (or replace) the text —
+  // both ride the same doc_kind "bio" so they inject into the member's RAG.
+  if (input.bioFile) {
+    try {
+      await uploadFileDocument(input.bioFile, "bio", subject)
+      steps.push({ step: "bio-file", ok: true, detail: input.bioFile.name })
+    } catch (e) {
+      steps.push({ step: "bio-file", ok: false, detail: errMsg(e) })
+    }
+  }
+  if (input.additionalInfoFile) {
+    try {
+      await uploadFileDocument(input.additionalInfoFile, "bio", subject)
+      steps.push({ step: "additional-info-file", ok: true, detail: input.additionalInfoFile.name })
+    } catch (e) {
+      steps.push({ step: "additional-info-file", ok: false, detail: errMsg(e) })
     }
   }
 

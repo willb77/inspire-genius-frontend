@@ -90,6 +90,9 @@ export const ROUTES = {
     JOB_BLUEPRINT: "/manager/job-blueprint",
     INTERVIEW_PREP: "/manager/interview-prep",
     TEAM_COMPOSITION: "/manager/team-composition",
+    // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
+    DEVELOPMENT: "/manager/development",
+    DEVELOPMENT_MEMBER: "/manager/development/:memberId",
   },
   COMPANY_ADMIN: {
     BASE: "/company-admin",
@@ -155,6 +158,7 @@ export const ROUTES = {
     CASELOAD: "/vertical/honor/caseload",
     ONBOARD: "/vertical/honor/onboard",
     EVALUATE: "/vertical/honor/evaluate",
+    RESUME: "/vertical/honor/resume",
     ACTIVITY: "/vertical/honor/activity",
     SCHEDULE: "/vertical/honor/schedule",
     ADMINISTRATION: "/vertical/honor/administration",
@@ -177,6 +181,13 @@ export const ROUTES = {
     DETAIL: "/vertical/job-fit/fit/:jobId",
     /** Build the fit-detail path for a concrete role id. */
     detail: (jobId: string) => `/vertical/job-fit/fit/${jobId}`,
+  },
+  // Knowledge Continuity vertical (flag-gated by user_preferences.enabled_verticals)
+  KNOWLEDGE_CONTINUITY: {
+    BASE: "/vertical/knowledge-continuity",
+    DASHBOARD: "/vertical/knowledge-continuity/dashboard",
+    REVIEW: "/vertical/knowledge-continuity/review",
+    CURRICULUM: "/vertical/knowledge-continuity/curriculum",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
