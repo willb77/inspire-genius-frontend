@@ -21,6 +21,12 @@ export const HONOR_VIDEOS: HonorVideo[] = [
     url: PRISM_OVERVIEW_VIDEO_URL,
   },
   {
+    id: "coach-workbench-user-guide",
+    title: "Coach Workbench — User Guide",
+    blurb: "A walkthrough of the Coach Workbench and how to use each area.",
+    url: "https://ig-demo-public-videos.s3.amazonaws.com/thf_workbench_user-guide.mp4",
+  },
+  {
     id: "prism-survey-intro",
     title: "PRISM Survey — Introduction",
     blurb: "What the PRISM survey is and how a Fellow completes it.",
@@ -49,5 +55,11 @@ export const HONOR_VIDEOS: HonorVideo[] = [
     title: "People in Transition",
     blurb: "Supporting service members through career transition.",
     url: "https://dj7od5nj42063.cloudfront.net/demo/People_in_Transition.mp4",
+  },
+  {
+    id: "military-transitions",
+    title: "Military Transitions",
+    blurb: "Translating military service to the private sector.",
+    url: "https://dj7od5nj42063.cloudfront.net/honor-foundation/Military_Transitions.mp4",
   },
 ]
