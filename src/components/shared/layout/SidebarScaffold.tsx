@@ -180,10 +180,12 @@ export default function SidebarScaffold({ navItems, navSections, children, class
                 );
               }
               return (
-                <SidebarGroup key={section.label}>
-                  <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {section.label}
-                  </div>
+                <SidebarGroup key={section.label || `group-${si}`}>
+                  {section.label && (
+                    <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {section.label}
+                    </div>
+                  )}
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {section.items.map((item) => (
