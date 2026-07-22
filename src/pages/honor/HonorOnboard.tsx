@@ -30,7 +30,7 @@ function fixHint(detail?: string): string | null {
  * Honor Coach Workbench — Onboard a Fellow (wired to the IG Core process).
  *
  * The submit handler runs {@link useHonorOnboard}: create → invite → import the
- * mandatory PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
+ * optional PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
  * Big Five / MBTI / Hogan) into the shipped `assessments`/`assessment_scores`
  * platform (subject = the member), then push résumé/bio into the document RAG.
  * No new backend tables — every write reuses an existing Core endpoint.
@@ -104,7 +104,7 @@ export default function HonorOnboard() {
     if (!lastName.trim()) out.push("Last name")
     if (!email.trim()) out.push("Email")
     if (!role.trim()) out.push("Role")
-    if (!prismFile) out.push("PRISM assessment file")
+    // PRISM is OPTIONAL — a fellow can be onboarded without a report on file.
     return out
   }
 
@@ -127,7 +127,7 @@ export default function HonorOnboard() {
       background: background.trim() || undefined,
       target: target.trim() || undefined,
       cohort: cohort.trim() || undefined,
-      prismFile: prismFile as File,
+      prismFile: prismFile ?? undefined,
       frameworkFiles,
       resumeFile,
       bio: bio.trim() || undefined,
@@ -203,13 +203,13 @@ export default function HonorOnboard() {
             </datalist>
           </Field>
 
-          {/* Mandatory PRISM */}
-          <Field label="PRISM assessment (CSV)" required full hint="Source of truth — parsed into the member's structured scores.">
+          {/* Optional PRISM */}
+          <Field label="PRISM assessment (CSV) — optional" full hint="If provided, it's parsed into the member's structured scores. A fellow can be onboarded without one.">
             <FileDrop
               accept=".csv,.xlsx,.pdf"
               file={prismFile}
               onFile={setPrismFile}
-              placeholder="Drop the PRISM export (CSV / XLSX / PDF) or click to browse"
+              placeholder="Drop the PRISM export (CSV / XLSX / PDF) or click to browse — optional"
             />
           </Field>
 
