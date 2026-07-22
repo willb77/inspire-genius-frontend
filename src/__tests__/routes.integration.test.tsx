@@ -141,6 +141,9 @@ const pageModules: Record<string, string> = {
   "@/pages/company-admin/Settings": "CompanyAdminSettingsPage",
   "@/pages/company-admin/Analytics": "CompanyAdminAnalyticsPage",
   "@/pages/company-admin/BulkImport": "CompanyAdminBulkImportPage",
+  "@/pages/practitioner/Home": "PractitionerHomePage",
+  "@/pages/practitioner/MeridianChat": "PractitionerMeridianChatPage",
+  "@/pages/practitioner/ComingSoon": "PractitionerComingSoonPage",
   "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
   "@/pages/practitioner/Credits": "PractitionerCreditsPage",
@@ -428,7 +431,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/super-admin/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      // Redirected to the practitioner home route (now /practitioner/home).
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
   });
 
