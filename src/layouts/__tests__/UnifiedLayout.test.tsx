@@ -22,16 +22,19 @@ jest.mock("@/hooks/audit/usePageViewAudit", () => ({
   usePageViewAudit: jest.fn(),
 }));
 
-const DummyIcon = () => null;
-jest.mock("@/constants/navigation", () => ({
-  NAV_ITEMS_BY_ROLE: {
-    user: [
-      { to: "/home", icon: DummyIcon, label: "Home" },
-      { to: "/dashboard", icon: DummyIcon, label: "Dashboard" },
-    ],
-    manager: [
-      { to: "/manager/dashboard", icon: DummyIcon, label: "Manager Dashboard" },
-    ],
+// UnifiedLayout now sources nav from useGatedNavItems (Phase 1). Mock it so this
+// suite tests UnifiedLayout's wiring in isolation from the entitlement hooks
+// (grant/broadcast/launcher), which have their own coverage.
+jest.mock("@/hooks/nav/useGatedNavItems", () => ({
+  useGatedNavItems: (role: string) => {
+    const map: Record<string, Array<{ to: string; icon: () => null; label: string }>> = {
+      user: [
+        { to: "/home", icon: () => null, label: "Home" },
+        { to: "/dashboard", icon: () => null, label: "Dashboard" },
+      ],
+      manager: [{ to: "/manager/dashboard", icon: () => null, label: "Manager Dashboard" }],
+    };
+    return map[role] ?? map.user;
   },
 }));
 

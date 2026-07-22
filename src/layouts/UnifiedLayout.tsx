@@ -1,6 +1,6 @@
 import React from "react"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
-import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
+import { useGatedNavItems } from "@/hooks/nav/useGatedNavItems"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import type { UserRole } from "@/types/roles"
 
@@ -24,7 +24,7 @@ export default function UnifiedLayout({
   const auditLabel = role === "user" ? "user" : role
   usePageViewAudit(auditLabel)
 
-  const navItems = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  const navItems = useGatedNavItems(role)
 
   return (
     <SidebarScaffold
