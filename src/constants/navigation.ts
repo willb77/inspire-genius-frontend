@@ -8,8 +8,6 @@ import {
   HelpCircle,
   Bot,
   CalendarDays,
-  Video,
-  Wallet,
   LayoutDashboard,
   UsersRound,
   MessageSquarePlus,
@@ -149,19 +147,11 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
  * by ROLE_PERMISSIONS (see src/types/roles.ts).
  */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
-  { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Home" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
   { to: ROUTES.PRACTITIONER.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
-  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
-  { to: ROUTES.PRACTITIONER.MEETING, icon: Video, label: "Meeting" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  { to: ROUTES.PRACTITIONER.CREDITS, icon: Wallet, label: "Credits" },
-  // Wave 4 Lane 4.D (P7.2) — task-agent forms (Maven/James/Atlas) for practitioner
-  { to: ROUTES.PRACTITIONER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
-  { to: ROUTES.PRACTITIONER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
-  { to: ROUTES.PRACTITIONER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
-  { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
 /** Navigation items for the distributor role */
