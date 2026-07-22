@@ -1,16 +1,12 @@
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { createFellow, inviteFellow } from "@/services/honor/coach.service"
+import { createFellow, inviteFellow, setFellowGoals } from "@/services/honor/coach.service"
 import { requestMagicLink } from "@/services/magic-auth/magic-auth.service"
 import {
   importFellowAssessment,
   type HonorFramework,
 } from "@/services/honor/assessment.service"
-import {
-  initiateUpload,
-  uploadToS3,
-  triggerProcessing,
-} from "@/services/documents/documentService"
+import { uploadFellowDocument } from "@/services/honor/artifact.service"
 
 /**
  * Honor onboarding — one member, wired end-to-end to the IG Core process.
@@ -57,6 +53,10 @@ export type HonorOnboardInput = {
   bioFile?: File | null
   /** Optional Additional-Information file — stored with the bio in RAG (doc_kind "bio"). */
   additionalInfoFile?: File | null
+  /** Optional goals & objectives text — stored via the coach goals endpoint. */
+  goals?: string
+  /** Optional goals file — stored in the member's RAG (doc_kind "personal"). */
+  goalsFile?: File | null
 }
 
 export type OnboardStepResult = {
@@ -75,29 +75,11 @@ export type HonorOnboardResult = {
 async function uploadTextDocument(
   name: string,
   text: string,
-  docKind: string,
+  docKind: "resume" | "bio" | "personal",
   subjectUserId?: string,
 ) {
   const file = new File([text], name, { type: "text/plain" })
-  await uploadFileDocument(file, docKind, subjectUserId)
-}
-
-/**
- * Reusable 3-step presigned upload → process (document-service).
- * When `subjectUserId` is supplied (a coach uploading a member's doc), the row
- * is attributed to the MEMBER so it injects into their RAG — not the coach's.
- * Requires a coach-capable role server-side; omitted → server defaults to self.
- */
-async function uploadFileDocument(file: File, docKind: string, subjectUserId?: string) {
-  const presigned = await initiateUpload({
-    filename: file.name,
-    content_type: file.type || "application/octet-stream",
-    file_size: file.size,
-    doc_kind: docKind,
-    ...(subjectUserId ? { subject_user_id: subjectUserId } : {}),
-  })
-  await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
-  await triggerProcessing(presigned.document_id)
+  await uploadFellowDocument(file, docKind, subjectUserId)
 }
 
 export async function runHonorOnboard(
@@ -187,7 +169,7 @@ export async function runHonorOnboard(
   const subject = result.memberUserId
   if (input.resumeFile) {
     try {
-      await uploadFileDocument(input.resumeFile, "resume", subject)
+      await uploadFellowDocument(input.resumeFile, "resume", subject)
       steps.push({ step: "resume", ok: true })
     } catch (e) {
       steps.push({ step: "resume", ok: false, detail: errMsg(e) })
@@ -208,7 +190,7 @@ export async function runHonorOnboard(
   // both ride the same doc_kind "bio" so they inject into the member's RAG.
   if (input.bioFile) {
     try {
-      await uploadFileDocument(input.bioFile, "bio", subject)
+      await uploadFellowDocument(input.bioFile, "bio", subject)
       steps.push({ step: "bio-file", ok: true, detail: input.bioFile.name })
     } catch (e) {
       steps.push({ step: "bio-file", ok: false, detail: errMsg(e) })
@@ -216,10 +198,31 @@ export async function runHonorOnboard(
   }
   if (input.additionalInfoFile) {
     try {
-      await uploadFileDocument(input.additionalInfoFile, "bio", subject)
+      await uploadFellowDocument(input.additionalInfoFile, "bio", subject)
       steps.push({ step: "additional-info-file", ok: true, detail: input.additionalInfoFile.name })
     } catch (e) {
       steps.push({ step: "additional-info-file", ok: false, detail: errMsg(e) })
+    }
+  }
+
+  // 6. Goals & objectives — the free text persists via the coach goals endpoint
+  // (subject = the invited member); an uploaded goals file rides the member's
+  // RAG as a "personal" doc so the coaching agents retrieve it.
+  const goalsText = input.goals?.trim()
+  if (goalsText) {
+    try {
+      await setFellowGoals(effectiveFellowId, goalsText)
+      steps.push({ step: "goals", ok: true })
+    } catch (e) {
+      steps.push({ step: "goals", ok: false, detail: errMsg(e) })
+    }
+  }
+  if (input.goalsFile) {
+    try {
+      await uploadFellowDocument(input.goalsFile, "personal", subject)
+      steps.push({ step: "goals-file", ok: true, detail: input.goalsFile.name })
+    } catch (e) {
+      steps.push({ step: "goals-file", ok: false, detail: errMsg(e) })
     }
   }
 

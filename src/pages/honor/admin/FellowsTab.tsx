@@ -1,13 +1,15 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { Upload, Pencil, Trash2, Check, X } from "lucide-react"
+import { Upload, Pencil, Trash2, Check, X, Database } from "lucide-react"
 import { HonorCard, HonorEmptyState, HonorSectionTitle } from "../_shared"
 import { HONOR_BTN_OUTLINE, fellowName, fellowStatusLabel, initials } from "../_format"
+import { ArtifactStatusMatrix } from "../_ArtifactUploader"
 import { ADMIN_INPUT, ICON_BTN, ICON_BTN_DANGER } from "./_adminStyles"
 import { AdminLoading, AdminUnavailable } from "./_adminUi"
 import { ImportModal } from "./ImportModal"
 import type { ImportRecord } from "./importFile"
 import type { AdminCoach, AdminFellow, AdminFellowCoach } from "@/types/honor/admin"
+import { useFellowSources } from "@/hooks/honor/useHonorEvaluate"
 import {
   useAdminCoaches,
   useAdminFellows,
@@ -40,6 +42,7 @@ export function FellowsTab() {
   const unassignCoach = useUnassignFellowCoach()
 
   const [importOpen, setImportOpen] = useState(false)
+  const [artifactFellow, setArtifactFellow] = useState<AdminFellow | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<{ firstName: string; lastName: string; email: string; cohort: string }>({
     firstName: "",
@@ -252,6 +255,9 @@ export function FellowsTab() {
                             </>
                           ) : (
                             <>
+                              <button type="button" className={ICON_BTN} onClick={() => setArtifactFellow(f)}>
+                                <Database className="h-3.5 w-3.5" /> Data
+                              </button>
                               <button type="button" className={ICON_BTN} onClick={() => startEdit(f)}>
                                 <Pencil className="h-3.5 w-3.5" /> Edit
                               </button>
@@ -278,6 +284,48 @@ export function FellowsTab() {
         isPending={importFellows.isPending}
         onImport={(rows: ImportRecord[]) => importFellows.mutateAsync(rows)}
       />
+
+      {artifactFellow && (
+        <FellowArtifactModal fellow={artifactFellow} onClose={() => setArtifactFellow(null)} />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Per-fellow artifact modal — lets an admin attach PRISM / DISC / … / Goals for
+ * any imported fellow. Mounts only when opened, so the sources read fires on demand.
+ */
+function FellowArtifactModal({ fellow, onClose }: { fellow: AdminFellow; onClose: () => void }) {
+  const name = fellowName(fellow.firstName, fellow.lastName) || fellow.email
+  const sourcesQuery = useFellowSources(fellow.id)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-[#18202f]">Fellow data — {name}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[#9299a6] hover:text-[#18202f]"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="mb-3 text-sm text-[#5b6678]">
+          Attach any of the 10 artifacts — behavioral assessments, documents, and goals.
+        </p>
+        {sourcesQuery.isLoading ? (
+          <p className="text-sm text-[#9299a6]">Loading fellow data…</p>
+        ) : (
+          <ArtifactStatusMatrix
+            fellowId={fellow.id}
+            sources={sourcesQuery.data}
+            onChanged={() => sourcesQuery.refetch()}
+          />
+        )}
+      </div>
     </div>
   )
 }
