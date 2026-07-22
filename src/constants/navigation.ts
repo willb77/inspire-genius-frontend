@@ -148,7 +148,9 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
  */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
-  { to: ROUTES.PRACTITIONER.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
+  // Uses the standard My Workspace Meridian chat surface (/meridian/chat — the
+  // v2 six-tile-rail experience), not a practitioner-specific copy.
+  { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
   { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
   { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
