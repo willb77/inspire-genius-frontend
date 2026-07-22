@@ -23,6 +23,7 @@ import {
   useHonorEvaluate,
   useHonorEvaluateReport,
 } from "@/hooks/honor/useHonorEvaluate"
+import { useFellowSourcesBulk } from "@/hooks/honor/useHonorArtifacts"
 import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
 import { USE_HONOR_EVAL_LIVE, USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { downloadBlob } from "@/lib/exportTranscript"
@@ -51,6 +52,7 @@ import {
   HonorPill,
   HonorSectionTitle,
 } from "./_shared"
+import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
 
 /**
@@ -76,6 +78,15 @@ const HONOR_CAREER_AREAS: ReadonlyArray<{ key: string; label: string }> = [
   { key: "sales_business_development", label: "Sales & Business Development" },
   { key: "people_leadership", label: "People Leadership" },
   { key: "analysis_intelligence", label: "Analysis & Intelligence" },
+]
+
+// The four evaluation dimensions the coach can toggle (default all on). The
+// selected keys are sent as `dimensions` on the evaluate body.
+const EVAL_DIMENSIONS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "career", label: "Career" },
+  { key: "goals", label: "Goals" },
+  { key: "education", label: "Education" },
+  { key: "position", label: "Position" },
 ]
 
 const VERDICT_TONE: Record<HonorGoalVerdict, "ok" | "navy" | "orange" | "gray"> = {
@@ -164,7 +175,10 @@ export default function HonorEvaluate() {
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [goalsText, setGoalsText] = useState("")
+  const [criteria, setCriteria] = useState("")
+  const [dimensions, setDimensions] = useState<Set<string>>(
+    () => new Set(EVAL_DIMENSIONS.map((d) => d.key)),
+  )
   const [targetArea, setTargetArea] = useState<string>("operations_program_management")
   const [result, setResult] = useState<HonorEvaluation | null>(null)
   const [narrationHtml, setNarrationHtml] = useState<string>("")
@@ -188,6 +202,11 @@ export default function HonorEvaluate() {
   const primaryName = primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"
   const sourcesQuery = useFellowSources(primary?.id)
   const sources = sourcesQuery.data
+  // Per-fellow source status for the whole grid (compact 10-artifact row below
+  // each fellow). Read-safe: degrades to an empty map when unavailable.
+  const allFellowIds = useMemo(() => fellows.map((f) => f.id), [fellows])
+  const bulkSourcesQuery = useFellowSourcesBulk(allFellowIds)
+  const bulkSources = bulkSourcesQuery.data ?? {}
   const comparisonIds = selectedFellows.slice(1).map((f) => f.id)
   const mode =
     selectedFellows.length <= 1
@@ -215,14 +234,15 @@ export default function HonorEvaluate() {
     setSelected(() => (allSelected ? new Set<string>() : new Set(fellows.map((f) => f.id))))
   }
 
-  const goals = useMemo(
-    () =>
-      goalsText
-        .split("\n")
-        .map((g) => g.trim())
-        .filter(Boolean),
-    [goalsText],
-  )
+  function toggleDimension(key: string) {
+    setDimensions((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+  const positionOn = dimensions.has("position")
 
   async function runEvaluation() {
     if (!primary) {
@@ -245,10 +265,12 @@ export default function HonorEvaluate() {
             includeBio,
           }
         : undefined
+      const selectedDimensions = EVAL_DIMENSIONS.map((d) => d.key).filter((k) => dimensions.has(k))
       const data = await report.mutateAsync({
         fellowId: primary.id,
         body: {
-          goals: goals.length ? goals : undefined,
+          criteria: criteria.trim() || undefined,
+          dimensions: selectedDimensions,
           memberIds: comparisonIds.length ? comparisonIds : undefined,
           targetArea: comparisonIds.length ? targetArea : undefined,
           sources: sourcesBody,
@@ -443,29 +465,41 @@ export default function HonorEvaluate() {
             const on = selected.has(f.id)
             const isPrimary = primary?.id === f.id
             return (
-              <button
+              <div
                 key={f.id}
-                type="button"
-                onClick={() => toggle(f.id)}
                 className={cn(
-                  "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                  "overflow-hidden rounded-lg border transition-colors",
                   on
                     ? "border-[#E8792B] bg-[rgba(232,121,43,0.06)]"
-                    : "border-[#dfe4ec] bg-white hover:border-[#c6cdd9]",
+                    : "border-[#dfe4ec] bg-white",
                 )}
               >
-                <span>
-                  <span className="font-medium text-[#18202f]">
-                    {fellowName(f.firstName, f.lastName)}
+                <button
+                  type="button"
+                  onClick={() => toggle(f.id)}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                >
+                  <span>
+                    <span className="font-medium text-[#18202f]">
+                      {fellowName(f.firstName, f.lastName)}
+                    </span>
+                    <span className="block text-xs text-[#9299a6]">{f.target}</span>
                   </span>
-                  <span className="block text-xs text-[#9299a6]">{f.target}</span>
-                </span>
-                {isPrimary ? (
-                  <HonorPill tone="orange">Subject</HonorPill>
-                ) : (
-                  f.prism && <HonorPill tone="navy">{f.prism.label}</HonorPill>
-                )}
-              </button>
+                  {isPrimary ? (
+                    <HonorPill tone="orange">Subject</HonorPill>
+                  ) : (
+                    f.prism && <HonorPill tone="navy">{f.prism.label}</HonorPill>
+                  )}
+                </button>
+                <div className="border-t border-[#eef1f6] px-3 py-2">
+                  <ArtifactStatusMatrix
+                    compact
+                    fellowId={f.id}
+                    sources={bulkSources[f.id]}
+                    onChanged={() => bulkSourcesQuery.refetch()}
+                  />
+                </div>
+              </div>
             )
           })}
         </div>
@@ -473,21 +507,48 @@ export default function HonorEvaluate() {
           <HonorEmptyState>No fellows on your caseload yet.</HonorEmptyState>
         )}
 
-        {/* Goals + target area + position + run */}
+        {/* Criteria + dimensions + team target + position + run */}
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <label className="text-sm">
             <span className="mb-1 block font-medium text-[#374151]">
-              Goals &amp; objectives <span className="text-[#9299a6]">(one per line, optional)</span>
+              Describe the Evaluation <span className="text-[#9299a6]">(evaluation criteria)</span>
             </span>
             <textarea
-              value={goalsText}
-              onChange={(e) => setGoalsText(e.target.value)}
-              placeholder={"Operations program management role\nLead a security team"}
+              value={criteria}
+              onChange={(e) => setCriteria(e.target.value)}
+              placeholder="Describe what to evaluate — e.g. fit for an operations program-management role, readiness to lead a security team, and any specific concerns to weigh."
               className="min-h-[70px] w-full resize-y rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
             />
           </label>
 
           <div className="flex flex-col gap-3">
+            <div className="text-sm">
+              <span className="mb-1.5 block font-medium text-[#374151]">Dimensions to evaluate</span>
+              <div className="flex flex-wrap gap-2">
+                {EVAL_DIMENSIONS.map((d) => {
+                  const on = dimensions.has(d.key)
+                  return (
+                    <label
+                      key={d.key}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+                        on
+                          ? "border-[#c7d6ff] bg-[#eef3ff] text-[#1B2A4A]"
+                          : "border-[#e6e9ef] bg-white text-[#9299a6]",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleDimension(d.key)}
+                      />
+                      <span className="font-medium">{d.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
             {comparisonIds.length > 0 && (
               <label className="text-sm">
                 <span className="mb-1 block font-medium text-[#374151]">Team read — target area</span>
@@ -505,27 +566,29 @@ export default function HonorEvaluate() {
               </label>
             )}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                className="hidden"
-                onChange={onPositionFile}
-              />
-              <button
-                type="button"
-                disabled={!primary || uploading}
-                onClick={() => fileRef.current?.click()}
-                className={HONOR_BTN_OUTLINE}
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {positionAttached ? "Replace position" : "Attach position description"}
-              </button>
-              {positionAttached && (
-                <span className="text-xs text-[#5b6678]">Attached: {positionAttached}</span>
-              )}
-            </div>
+            {positionOn && (
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  className="hidden"
+                  onChange={onPositionFile}
+                />
+                <button
+                  type="button"
+                  disabled={!primary || uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className={HONOR_BTN_OUTLINE}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {positionAttached ? "Replace position" : "Attach position description"}
+                </button>
+                {positionAttached && (
+                  <span className="text-xs text-[#5b6678]">Attached: {positionAttached}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

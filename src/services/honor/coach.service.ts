@@ -7,12 +7,14 @@ import type {
   HonorApiResponse,
   HonorEvaluateBody,
   HonorEvaluation,
+  HonorFellowGoals,
   HonorFellowSources,
   HonorPrismReport,
   HonorFellow,
   HonorResume,
   HonorResumeBody,
   HonorResumeDisabled,
+  HonorSourcesBulk,
   ScheduleEvent,
   TeamRecord,
 } from "@/types/honor"
@@ -204,6 +206,36 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
 export async function getFellowSources(fellowId: string) {
   const { data } = await agentApi.get<HonorApiResponse<HonorFellowSources>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/sources`,
+  )
+  return data
+}
+
+/**
+ * Per-fellow sources for several fellows in one request —
+ * POST /v1/agents/honor/coach/students/sources-bulk. Powers the Evaluate
+ * fellow grid's compact 10-artifact status row without an N+1 fan-out.
+ */
+export async function getFellowSourcesBulk(fellowIds: string[]) {
+  const { data } = await agentApi.post<HonorApiResponse<{ sources: HonorSourcesBulk }>>(
+    `${COACH_BASE}/sources-bulk`,
+    { fellowIds },
+  )
+  return data
+}
+
+/** The fellow's stored goals & objectives — GET …/{id}/goals. */
+export async function getFellowGoals(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorFellowGoals>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/goals`,
+  )
+  return data
+}
+
+/** Set the fellow's goals & objectives text — PUT …/{id}/goals. */
+export async function setFellowGoals(fellowId: string, text: string) {
+  const { data } = await agentApi.put<HonorApiResponse<HonorFellowGoals>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/goals`,
+    { text },
   )
   return data
 }

@@ -62,12 +62,14 @@ export default function HonorOnboard() {
   const [cohort, setCohort] = useState("")
   const [bio, setBio] = useState("")
   const [additionalInfo, setAdditionalInfo] = useState("")
+  const [goals, setGoals] = useState("")
   const [sendInvitation, setSendInvitation] = useState(true)
 
   const [prismFile, setPrismFile] = useState<File | null>(null)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [bioFile, setBioFile] = useState<File | null>(null)
   const [additionalInfoFile, setAdditionalInfoFile] = useState<File | null>(null)
+  const [goalsFile, setGoalsFile] = useState<File | null>(null)
   const [frameworkFiles, setFrameworkFiles] = useState<
     Partial<Record<OptionalFrameworkKey, File>>
   >({})
@@ -87,10 +89,12 @@ export default function HonorOnboard() {
     setCohort("")
     setBio("")
     setAdditionalInfo("")
+    setGoals("")
     setPrismFile(null)
     setResumeFile(null)
     setBioFile(null)
     setAdditionalInfoFile(null)
+    setGoalsFile(null)
     setFrameworkFiles({})
     setMissing([])
     formRef.current?.reset()
@@ -131,8 +135,10 @@ export default function HonorOnboard() {
       resumeFile,
       bio: bio.trim() || undefined,
       additionalInfo: additionalInfo.trim() || undefined,
+      goals: goals.trim() || undefined,
       bioFile,
       additionalInfoFile,
+      goalsFile,
       sendInvitation,
     })
   }
@@ -260,6 +266,18 @@ export default function HonorOnboard() {
               file={additionalInfoFile}
               onFile={setAdditionalInfoFile}
               placeholder="…or drop an Additional-Information file (PDF / DOC / XLS) or browse"
+              compact
+            />
+          </Field>
+
+          {/* Goals & objectives — text OR file upload */}
+          <Field label="Goals & objectives" full hint="What is this fellow working toward? Type it, upload a file, or both — the coaching agents score goals against the behavioral profile.">
+            <textarea className={`${inputCls} min-h-[70px] resize-y`} placeholder="e.g. Move into an operations program-management role within 12 months." value={goals} onChange={(e) => setGoals(e.target.value)} />
+            <FileDrop
+              accept={DOC_ACCEPT}
+              file={goalsFile}
+              onFile={setGoalsFile}
+              placeholder="…or drop a Goals file (PDF / DOC / XLS) or browse"
               compact
             />
           </Field>

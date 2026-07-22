@@ -8,9 +8,11 @@ import { MemoryRouter, Routes, Route } from "react-router-dom"
 /* ── Service mocks ── */
 const createFellow = jest.fn()
 const inviteFellow = jest.fn()
+const setFellowGoals = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   createFellow: (...a: unknown[]) => createFellow(...a),
   inviteFellow: (...a: unknown[]) => inviteFellow(...a),
+  setFellowGoals: (...a: unknown[]) => setFellowGoals(...a),
 }))
 
 const importFellowAssessment = jest.fn()
@@ -48,6 +50,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     jest.clearAllMocks()
     createFellow.mockResolvedValue({ data: { id: "fellow-1" } })
     inviteFellow.mockResolvedValue({ data: { userId: "user-9" } })
+    setFellowGoals.mockResolvedValue({ data: { fellowId: "fellow-1", goals: "x", hasGoals: true } })
     importFellowAssessment.mockResolvedValue({ id: "a1", scoreCount: 4, subjectUserId: "user-9" })
     initiateUpload.mockResolvedValue({ document_id: "d1", upload_url: "u", upload_fields: {} })
     uploadToS3.mockResolvedValue(undefined)
@@ -122,6 +125,28 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     // PRISM import + résumé/bio pipeline: two document uploads (bio file + addl file).
     expect(initiateUpload).toHaveBeenCalledTimes(2)
     expect(triggerProcessing).toHaveBeenCalledTimes(2)
+  })
+
+  test("persists goals text via the goals endpoint and uploads a goals file to RAG", async () => {
+    await runHonorOnboard({
+      firstName: "Marcus",
+      lastName: "Reyes",
+      email: "marcus@honor.org",
+      role: "Fellow",
+      prismFile: file("prism.csv"),
+      goals: "Move into an operations program-management role",
+      goalsFile: file("goals.pdf"),
+    })
+
+    // Goals text is stored against the invited member (effective id fellow-1 here).
+    expect(setFellowGoals).toHaveBeenCalledWith(
+      "fellow-1",
+      "Move into an operations program-management role",
+    )
+    // The goals file rides the member's RAG as a "personal" document.
+    expect(initiateUpload).toHaveBeenCalledWith(
+      expect.objectContaining({ doc_kind: "personal", subject_user_id: "user-9" }),
+    )
   })
 
   test("aborts assessment writes if the invite fails (no subject to attach to)", async () => {

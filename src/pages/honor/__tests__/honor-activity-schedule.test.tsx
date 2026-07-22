@@ -22,6 +22,7 @@ jest.mock("@/services/honor/schedule.service", () => ({
   getGoogleStatus: jest.fn(),
   disconnectGoogle: jest.fn(),
   createCoachSession: jest.fn(),
+  createCoachSessionsBulk: jest.fn(),
   updateCoachSession: jest.fn(),
   deleteCoachSession: jest.fn(),
 }))
@@ -151,6 +152,39 @@ describe("HonorSchedule — live sessions", () => {
     await waitFor(() => expect(svc.createCoachSession).toHaveBeenCalledTimes(1))
     expect(svc.createCoachSession).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Goal review", startsAt: expect.any(String) }),
+    )
+  })
+
+  test("Schedule sessions (bulk) form builds the correct payload", async () => {
+    svc.getCoachSchedule.mockResolvedValue([])
+    svc.createCoachSessionsBulk.mockResolvedValue({ created: [{ id: "b1", title: "Check-in", startsAt: "x" }], emailed: 2, skipped: [] })
+
+    renderPage(<HonorSchedule />)
+    await screen.findByText(/No sessions scheduled/i)
+
+    fireEvent.click(screen.getByRole("button", { name: /Schedule sessions/i }))
+
+    // Select both fellows.
+    fireEvent.click(screen.getByLabelText("Marcus Reyes"))
+    fireEvent.click(screen.getByLabelText("Dana Whitfield"))
+    fireEvent.change(screen.getByLabelText("Start"), { target: { value: "2026-07-22T09:00" } })
+    fireEvent.change(screen.getByLabelText("Duration"), { target: { value: "45" } })
+    fireEvent.change(screen.getByLabelText("Space between"), { target: { value: "10" } })
+    fireEvent.change(screen.getByLabelText("Topic"), { target: { value: "Mid-cohort check-in" } })
+
+    // Submit (the form's own button shows the count, not the header toggle).
+    fireEvent.click(screen.getByRole("button", { name: /Schedule 2 sessions/i }))
+
+    await waitFor(() => expect(svc.createCoachSessionsBulk).toHaveBeenCalledTimes(1))
+    expect(svc.createCoachSessionsBulk).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fellowIds: ["2201", "2202"],
+        durationMin: 45,
+        spacingMin: 10,
+        topic: "Mid-cohort check-in",
+        sendInvites: true,
+        startsAt: expect.any(String),
+      }),
     )
   })
 
