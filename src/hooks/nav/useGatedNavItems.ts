@@ -1,42 +1,23 @@
-import { useMemo } from "react"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
 import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
-import {
-  grantSidebarSectionForRole,
-  KCE_SIDEBAR_SECTION,
-  BROADCAST_SIDEBAR_SECTION,
-} from "@/constants/sidebar-sections"
-import { useVerticalAccess } from "@/verticals/core"
-import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
-import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 
 /**
- * Resolves the sidebar nav items for a role, appending entitlement/access-gated
- * items after the role's base items — mirroring the gating that used to live in
- * the legacy `AppSidebar` (grant vertical, Knowledge-Continuity, the generalized
- * vertical launcher, and super-admin broadcast).
+ * Resolves the sidebar nav items for a role rendered through the standard
+ * `SidebarScaffold` chrome (via `UnifiedLayout`).
  *
- * Consumed by `UnifiedLayout` so every role rendered through the standard
- * `SidebarScaffold` chrome keeps the same entitlement behavior the old shell
- * had. `SidebarNavItem` extends `NavItemDef`, so the appended items drop in
- * without conversion.
+ * Each role's menu is EXACTLY its `NAV_ITEMS_BY_ROLE` list — entitlement-gated
+ * verticals (GRANT / Knowledge-Continuity / the vertical launcher / broadcast)
+ * are intentionally NOT appended here. The practitioner menu, for example,
+ * shows only its five items regardless of which verticals the signed-in user
+ * (e.g. the platform owner) happens to have enabled. Verticals remain reachable
+ * by their own routes / launchers, just not injected into a role's menu.
+ *
+ * This stays a hook so it remains the single extension point if a future role
+ * needs conditional items composed in.
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
-  const base = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
-  const { hasAccess: hasGrantAccess } = useVerticalAccess("grant")
-  const { hasAccess: hasKceAccess } = useVerticalAccess("knowledge-continuity")
-  const launcherSection = useVerticalLauncherSection()
-  const { data: broadcastAccess } = useBroadcastAccess()
-
-  return useMemo(() => {
-    const extra: NavItemDef[] = []
-    if (hasGrantAccess) extra.push(...grantSidebarSectionForRole(role).items)
-    if (hasKceAccess) extra.push(...KCE_SIDEBAR_SECTION.items)
-    if (launcherSection) extra.push(...launcherSection.items)
-    if (broadcastAccess?.authorized) extra.push(...BROADCAST_SIDEBAR_SECTION.items)
-    return [...base, ...extra]
-  }, [base, role, hasGrantAccess, hasKceAccess, launcherSection, broadcastAccess])
+  return NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
 }
 
 export default useGatedNavItems
