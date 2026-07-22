@@ -25,7 +25,10 @@ export function useHonorInvitations() {
   const qc = useQueryClient()
   return useMutation<{ converted: number }, Error, HonorBulkInviteInput>({
     mutationFn: async ({ fellowIds, sendEmail, messageHtml }) => {
-      const resp = await inviteFellowsBulk(fellowIds, false, sendEmail, messageHtml)
+      // keepCoachAccess=true — inviting a fellow must NOT remove them from the
+      // coach's roster (the coach mentors them throughout). false soft-deletes
+      // the coach↔fellow link and the fellow vanishes from My Fellows.
+      const resp = await inviteFellowsBulk(fellowIds, true, sendEmail, messageHtml)
       return { converted: resp.data?.converted ?? 0 }
     },
     onSuccess: (res, vars) => {

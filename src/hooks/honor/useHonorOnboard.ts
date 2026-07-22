@@ -115,11 +115,9 @@ export async function runHonorOnboard(
   // 2. Invite → mint the IG user so assessments/docs have a SUBJECT to attach to.
   try {
     const sendInvite = input.sendInvitation !== false
-    const inviteResp = await inviteFellow(
-      fellowId,
-      input.role.toLowerCase() !== "fellow",
-      sendInvite,
-    )
+    // keepCoachAccess=true — the coach keeps the fellow they just onboarded on
+    // their roster (false soft-deletes the coach link → fellow disappears).
+    const inviteResp = await inviteFellow(fellowId, true, sendInvite)
     effectiveFellowId = inviteResp.data?.fellowId ?? inviteResp.data?.id ?? fellowId
     // The re-keyed fellow id IS the fellow's canonical sub, so it doubles as the
     // subject for doc attribution when the invite omits an explicit `userId`.
