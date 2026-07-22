@@ -15,6 +15,7 @@ import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
 import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
+import { PRISM_OVERVIEW_VIDEO_URL } from "./_media"
 
 /**
  * Honor Coach Workbench — Dashboard ("transition-mentoring cockpit").
@@ -60,6 +61,31 @@ export default function HonorDashboard() {
         <HonorStat icon={CheckCircle2} label="Assessed" value={counts.assessed} hint="behavioral profile complete" tone="green" />
         <HonorStat icon={Clock} label="Intake pending" value={counts.intakePending} hint="awaiting PRISM intake" tone="orange" />
       </div>
+
+      {/* Overview Movie */}
+      <HonorSectionTitle>Overview Movie</HonorSectionTitle>
+      <HonorCard className="mb-6">
+        <p className="mb-3 text-sm text-[#5b6678]">
+          A short overview of PRISM Brain Mapping — the behavioral science behind the Coach
+          Workbench. Watch this to understand what the reports tell you.
+        </p>
+        <div className="overflow-hidden rounded-xl border border-[#e6e9ef] bg-black">
+          <video
+            className="aspect-video w-full"
+            src={PRISM_OVERVIEW_VIDEO_URL}
+            controls
+            preload="metadata"
+            playsInline
+          >
+            <track kind="captions" />
+            Your browser does not support the video tag.{" "}
+            <a className="underline" href={PRISM_OVERVIEW_VIDEO_URL}>
+              Download the PRISM overview
+            </a>
+            .
+          </video>
+        </div>
+      </HonorCard>
 
       {/* Nav tiles */}
       <HonorSectionTitle>Jump in</HonorSectionTitle>
