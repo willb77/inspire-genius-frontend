@@ -1,27 +1,24 @@
 import { useState } from "react"
 import { toast } from "sonner"
 import { Plus, Pencil, Trash2, Users } from "lucide-react"
-import { HonorCard, HonorEmptyState, HonorPill } from "../_shared"
+import { HonorCard, HonorEmptyState } from "../_shared"
 import { HONOR_BTN_PRIMARY } from "../_format"
-import { HONOR_CAREER_AREAS } from "../_careerAreas"
 import { ADMIN_INPUT, ICON_BTN, ICON_BTN_DANGER } from "./_adminStyles"
 import { AdminLoading, AdminUnavailable } from "./_adminUi"
 import { CohortDetailSheet } from "./CohortDetailSheet"
 import type { CohortSummary } from "@/types/honor/admin"
 import {
-  useCareerAreas,
   useCohorts,
   useCreateCohort,
   useDeleteCohort,
   useUpdateCohort,
 } from "@/hooks/honor/useHonorAdmin"
 
-type FormState = { id: string | null; name: string; description: string; careerArea: string }
-const EMPTY_FORM: FormState = { id: null, name: "", description: "", careerArea: "" }
+type FormState = { id: string | null; name: string }
+const EMPTY_FORM: FormState = { id: null, name: "" }
 
 export function CohortsTab() {
   const { data: cohorts = [], isLoading, isError } = useCohorts()
-  const { data: careerAreas = [] } = useCareerAreas()
   const create = useCreateCohort()
   const update = useUpdateCohort()
   const del = useDeleteCohort()
@@ -29,19 +26,11 @@ export function CohortsTab() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [openCohortId, setOpenCohortId] = useState<string | null>(null)
 
-  // Prefer the live career-area list; fall back to the curated static list so the
-  // picker still works before the admin API is deployed.
-  const areaOptions = careerAreas.length > 0 ? careerAreas.map((a) => a.name) : [...HONOR_CAREER_AREAS]
-
   function submit(e: React.FormEvent) {
     e.preventDefault()
     const name = form.name.trim()
     if (!name) return
-    const input = {
-      name,
-      description: form.description.trim() || undefined,
-      career_area: form.careerArea.trim() || undefined,
-    }
+    const input = { name }
     if (form.id) {
       update.mutate(
         { id: form.id, input },
@@ -65,7 +54,7 @@ export function CohortsTab() {
   }
 
   function edit(c: CohortSummary) {
-    setForm({ id: c.id, name: c.name, description: c.description ?? "", careerArea: c.careerArea ?? "" })
+    setForm({ id: c.id, name: c.name })
   }
 
   function remove(c: CohortSummary) {
@@ -81,8 +70,8 @@ export function CohortsTab() {
   return (
     <div className="space-y-6">
       <HonorCard>
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1 space-y-1.5">
             <label className="block text-sm font-medium text-[#374151]">
               Cohort name<span className="ml-0.5 text-[#c0472b]">*</span>
             </label>
@@ -94,35 +83,7 @@ export function CohortsTab() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#374151]">Career area</label>
-            <select
-              className={ADMIN_INPUT}
-              value={form.careerArea}
-              onChange={(e) => setForm((f) => ({ ...f, careerArea: e.target.value }))}
-            >
-              <option value="">— Select a career area —</option>
-              {areaOptions.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-              {/* keep a previously-saved value that is no longer in the list */}
-              {form.careerArea && !areaOptions.includes(form.careerArea) && (
-                <option value={form.careerArea}>{form.careerArea}</option>
-              )}
-            </select>
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="block text-sm font-medium text-[#374151]">Description</label>
-            <input
-              className={ADMIN_INPUT}
-              placeholder="(optional)"
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            />
-          </div>
-          <div className="flex items-center gap-2 sm:col-span-2">
+          <div className="flex items-center gap-2">
             <button type="submit" className={HONOR_BTN_PRIMARY} disabled={busy}>
               <Plus className="h-4 w-4" /> {form.id ? "Save cohort" : "Create cohort"}
             </button>
@@ -148,7 +109,6 @@ export function CohortsTab() {
               <thead className="border-b border-[#dfe4ec] text-xs uppercase tracking-wide text-[#5b6678]">
                 <tr>
                   <th className="px-4 py-3">Cohort</th>
-                  <th className="px-4 py-3">Career area</th>
                   <th className="px-4 py-3">Members</th>
                   <th className="px-4 py-3">Coaches</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -165,10 +125,6 @@ export function CohortsTab() {
                       >
                         {c.name}
                       </button>
-                      {c.description && <div className="text-xs text-[#9299a6]">{c.description}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.careerArea ? <HonorPill tone="navy">{c.careerArea}</HonorPill> : <span className="text-[#c6cdd9]">—</span>}
                     </td>
                     <td className="px-4 py-3 text-[#5b6678]">{c.memberCount}</td>
                     <td className="px-4 py-3 text-[#5b6678]">{c.coachCount}</td>
