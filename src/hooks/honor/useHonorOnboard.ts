@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createFellow, inviteFellow, setFellowGoals } from "@/services/honor/coach.service"
-import { requestMagicLink } from "@/services/magic-auth/magic-auth.service"
 import {
   importFellowAssessment,
   type HonorFramework,
@@ -16,7 +15,7 @@ import { uploadFellowDocument } from "@/services/honor/artifact.service"
  *   2. inviteFellow           → POST .../{id}/invite (mints the IG user + magic-link
  *                               intake + "honor" entitlement — gives us a SUBJECT
  *                               user to attach scores/docs to)
- *   3. PRISM CSV (mandatory)  → coach-scoped assessments/import (adapters →
+ *   3. PRISM CSV (optional)   → coach-scoped assessments/import (adapters →
  *                               assessments/assessment_scores, subject = member)
  *   4. optional frameworks    → same import path (DISC / CLIFTON / BIG_FIVE /
  *                               MBTI / HOGAN — the shipped adapters parse them)
@@ -39,8 +38,9 @@ export type HonorOnboardInput = {
   background?: string
   target?: string
   cohort?: string
-  /** Mandatory PRISM export (CSV / PDF / XLSX) — the source-of-truth assessment. */
-  prismFile: File
+  /** Optional PRISM export (CSV / PDF / XLSX). When present it's imported as the
+   *  source-of-truth assessment; a fellow can be onboarded without one. */
+  prismFile?: File | null
   /** Optional behavioural reports, one file per provided framework. */
   frameworkFiles?: Partial<Record<OptionalFrameworkKey, File>>
   /** Send the magic-link intake email now (default true). Off = create the
@@ -124,17 +124,12 @@ export async function runHonorOnboard(
     // The re-keyed fellow id IS the fellow's canonical sub, so it doubles as the
     // subject for doc attribution when the invite omits an explicit `userId`.
     result.memberUserId = inviteResp.data?.userId ?? inviteResp.data?.fellowId
-    // The account is created either way; fire the magic-link intake email only
-    // when the coach chose to notify now.
-    if (sendInvite && inviteResp.data?.invitationSent && inviteResp.data?.email) {
-      try {
-        await requestMagicLink({ email: inviteResp.data.email })
-        steps.push({ step: "invite", ok: true, detail: "account created — magic-link intake sent" })
-      } catch {
-        steps.push({ step: "invite", ok: true, detail: "account created — invite email deferred (send failed)" })
-      }
+    // THF invite: the backend sends the "Acknowledge invitation" confirmation
+    // email itself (no magic-link, Fellows are not IG users). Nothing to fire here.
+    if (sendInvite && inviteResp.data?.invitationSent) {
+      steps.push({ step: "invite", ok: true, detail: "fellow invited — acknowledge email sent" })
     } else {
-      steps.push({ step: "invite", ok: true, detail: "account created — invitation not sent (send later)" })
+      steps.push({ step: "invite", ok: true, detail: "fellow created — invitation not sent (send later)" })
     }
   } catch (e) {
     steps.push({ step: "invite", ok: false, detail: errMsg(e) })
@@ -144,12 +139,15 @@ export async function runHonorOnboard(
       `PRISM/framework scores need an invited member to attach to.`)
   }
 
-  // 3. PRISM CSV — mandatory. Use the POST-INVITE id (see re-key note above).
-  try {
-    const imp = await importFellowAssessment(effectiveFellowId, "PRISM", input.prismFile)
-    steps.push({ step: "prism", ok: true, detail: `${imp.scoreCount} scores` })
-  } catch (e) {
-    steps.push({ step: "prism", ok: false, detail: errMsg(e) })
+  // 3. PRISM CSV — OPTIONAL. Import only when a file was provided; the fellow can
+  // be onboarded without one. Use the POST-INVITE id (see re-key note above).
+  if (input.prismFile) {
+    try {
+      const imp = await importFellowAssessment(effectiveFellowId, "PRISM", input.prismFile)
+      steps.push({ step: "prism", ok: true, detail: `${imp.scoreCount} scores` })
+    } catch (e) {
+      steps.push({ step: "prism", ok: false, detail: errMsg(e) })
+    }
   }
 
   // 4. Optional frameworks — one import per provided file (post-invite id).
