@@ -7,6 +7,9 @@ import {
   Settings,
   HelpCircle,
   Bot,
+  CalendarDays,
+  Video,
+  Wallet,
   LayoutDashboard,
   UsersRound,
   MessageSquarePlus,
@@ -135,16 +138,29 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/** Navigation items for the practitioner role */
+/**
+ * Navigation items for the practitioner role.
+ *
+ * Phase 1/2 (2026-07-22): the practitioner now renders through the standard
+ * SidebarScaffold chrome (via UnifiedLayout) instead of the legacy AppShell,
+ * and this array is the single source of truth for the menu. Home + Chat with
+ * Meridian + Schedule + Meeting are the new Phase-2 surfaces; every
+ * `/practitioner/*` route is entitlement-gated to practitioner + super-admin
+ * by ROLE_PERMISSIONS (see src/types/roles.ts).
+ */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Home" },
+  { to: ROUTES.PRACTITIONER.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
+  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
   { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
+  { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
+  { to: ROUTES.PRACTITIONER.MEETING, icon: Video, label: "Meeting" },
+  { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.PRACTITIONER.CREDITS, icon: Wallet, label: "Credits" },
   // Wave 4 Lane 4.D (P7.2) — task-agent forms (Maven/James/Atlas) for practitioner
   { to: ROUTES.PRACTITIONER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
   { to: ROUTES.PRACTITIONER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
   { to: ROUTES.PRACTITIONER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
-  { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -209,7 +225,7 @@ export const HOME_ROUTE_BY_ROLE: Record<UserRole, string> = {
   user: ROUTES.HOME,
   manager: ROUTES.MANAGER.DASHBOARD,
   "company-admin": ROUTES.COMPANY_ADMIN.DASHBOARD,
-  practitioner: ROUTES.PRACTITIONER.DASHBOARD,
+  practitioner: ROUTES.PRACTITIONER.HOME,
   distributor: ROUTES.DISTRIBUTOR.DASHBOARD,
   // Super-admins land on the user Home for a simpler default experience;
   // Administration tools remain available via the collapsed sidebar section.

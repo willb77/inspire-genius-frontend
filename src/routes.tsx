@@ -164,6 +164,11 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 const PractitionerJobBlueprint = React.lazy(() => import("@/pages/practitioner/JobBlueprintPage"));
 const PractitionerInterviewPrep = React.lazy(() => import("@/pages/practitioner/InterviewPrepPage"));
 const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
+// Phase 2 (Practitioner page wireframes) — Home, Meridian chat, and clickable
+// placeholders for the Schedule/Meeting surfaces (built out in later phases).
+const PractitionerHome = React.lazy(() => import("@/pages/practitioner/Home"));
+const PractitionerMeridianChat = React.lazy(() => import("@/pages/practitioner/MeridianChat"));
+const PractitionerComingSoon = React.lazy(() => import("@/pages/practitioner/ComingSoon"));
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
@@ -484,6 +489,10 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/culture", element: withSuspense(<CompanyAdminCultureDocs />) },
 
       // Practitioner pages
+      { path: "/practitioner/home", element: withSuspense(<PractitionerHome />) },
+      { path: "/practitioner/meridian-chat", element: withSuspense(<PractitionerMeridianChat />) },
+      { path: "/practitioner/schedule", element: withSuspense(<PractitionerComingSoon variant="schedule" />) },
+      { path: "/practitioner/meeting", element: withSuspense(<PractitionerComingSoon variant="meeting" />) },
       { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
       { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },

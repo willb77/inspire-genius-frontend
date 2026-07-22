@@ -109,6 +109,14 @@ export const ROUTES = {
   },
   PRACTITIONER: {
     BASE: "/practitioner",
+    // Phase 2 (Practitioner page wireframes) — Home is the new landing surface
+    // (My Workspace tile theme) and the practitioner Meridian chat is a
+    // duplicate of the user "Chat with Meridian". Schedule + Meeting are
+    // clickable placeholders for later phases.
+    HOME: "/practitioner/home",
+    MERIDIAN_CHAT: "/practitioner/meridian-chat",
+    SCHEDULE: "/practitioner/schedule",
+    MEETING: "/practitioner/meeting",
     DASHBOARD: "/practitioner/dashboard",
     CLIENTS: "/practitioner/clients",
     CREDITS: "/practitioner/credits",
