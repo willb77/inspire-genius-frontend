@@ -31,6 +31,7 @@ const requestMutate = jest.fn()
 jest.mock("@/hooks/honor/useHonorEvaluate", () => ({
   useFellowPrism: () => prismResult,
   useRequestFellowPrism: () => ({ mutate: requestMutate, isPending: false }),
+  useFellowSources: () => ({ data: undefined, isLoading: false, refetch: jest.fn() }),
 }))
 
 import HonorMemberProfile from "../HonorMemberProfile"

@@ -2,21 +2,25 @@ import { useEffect, useMemo, useState } from "react"
 import {
   CalendarDays,
   CalendarPlus,
+  CalendarRange,
   Check,
   Clock,
   Copy,
   Link2,
+  Loader2,
   MapPin,
   Pencil,
   Plus,
   Trash2,
   Unplug,
+  Users,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useCaseload } from "@/hooks/honor/useCoachData"
 import {
   useCreateHonorSession,
+  useCreateHonorSessionsBulk,
   useDeleteHonorSession,
   useDisconnectGoogle,
   useHonorGoogleConnect,
@@ -84,6 +88,29 @@ const EMPTY_FORM: FormState = {
   description: "",
 }
 
+const DURATION_OPTIONS = [15, 30, 45, 60, 90] as const
+const SPACING_OPTIONS = [0, 5, 10, 15, 30] as const
+
+type BulkFormState = {
+  fellowIds: Set<string>
+  startsAt: string
+  durationMin: number
+  spacingMin: number
+  topic: string
+  message: string
+  sendInvites: boolean
+}
+
+const EMPTY_BULK_FORM: BulkFormState = {
+  fellowIds: new Set<string>(),
+  startsAt: "",
+  durationMin: 30,
+  spacingMin: 0,
+  topic: "",
+  message: "",
+  sendInvites: true,
+}
+
 /** Build an ISO timestamp from a date + time pair (local). Empty when incomplete. */
 function toIso(date: string, time: string): string {
   if (!date || !time) return ""
@@ -125,7 +152,11 @@ export default function HonorSchedule() {
   const [showFeed, setShowFeed] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulk, setBulk] = useState<BulkFormState>(EMPTY_BULK_FORM)
+
   const createMut = useCreateHonorSession()
+  const createBulkMut = useCreateHonorSessionsBulk()
   const updateMut = useUpdateHonorSession()
   const deleteMut = useDeleteHonorSession()
 
@@ -233,6 +264,55 @@ export default function HonorSchedule() {
     }
   }
 
+  function resetBulk() {
+    setBulk(EMPTY_BULK_FORM)
+    setBulkOpen(false)
+  }
+
+  function toggleBulkFellow(id: string) {
+    setBulk((b) => {
+      const next = new Set(b.fellowIds)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return { ...b, fellowIds: next }
+    })
+  }
+
+  function handleBulkSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const fellowIds = Array.from(bulk.fellowIds)
+    if (fellowIds.length === 0) {
+      toast.error("Select at least one fellow.")
+      return
+    }
+    if (!bulk.topic.trim() || !bulk.startsAt) {
+      toast.error("A topic and a start date/time are required.")
+      return
+    }
+    const startTs = Date.parse(bulk.startsAt)
+    if (Number.isNaN(startTs)) {
+      toast.error("Enter a valid start date/time.")
+      return
+    }
+    createBulkMut.mutate(
+      {
+        fellowIds,
+        startsAt: new Date(startTs).toISOString(),
+        durationMin: bulk.durationMin,
+        spacingMin: bulk.spacingMin,
+        topic: bulk.topic.trim(),
+        message: bulk.message.trim() || undefined,
+        sendInvites: bulk.sendInvites,
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(`${res.created.length} sessions scheduled, ${res.emailed} invited.`)
+          resetBulk()
+        },
+      },
+    )
+  }
+
   function handleDelete(s: HonorSession) {
     if (!window.confirm(`Remove "${s.title}"?`)) return
     deleteMut.mutate(s.id, {
@@ -318,6 +398,20 @@ export default function HonorSchedule() {
             )}
             <button
               type="button"
+              className={HONOR_BTN_OUTLINE}
+              onClick={() => {
+                if (bulkOpen) {
+                  resetBulk()
+                } else {
+                  setBulk(EMPTY_BULK_FORM)
+                  setBulkOpen(true)
+                }
+              }}
+            >
+              <CalendarRange className="h-4 w-4" /> Schedule sessions
+            </button>
+            <button
+              type="button"
               className={HONOR_BTN_PRIMARY}
               onClick={() => {
                 if (formOpen && !editingId) {
@@ -400,6 +494,156 @@ export default function HonorSchedule() {
               Calendar subscription isn't available yet. Check back once schedule sync is enabled.
             </p>
           )}
+        </HonorCard>
+      )}
+
+      {/* Bulk "Schedule sessions" form — one session per selected fellow */}
+      {bulkOpen && (
+        <HonorCard className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-[#18202f]">
+              <CalendarRange className="h-4 w-4 text-[#1B2A4A]" /> Schedule sessions
+            </h2>
+            <button
+              type="button"
+              className="text-[#9299a6] hover:text-[#5b6678]"
+              onClick={resetBulk}
+              aria-label="Close schedule-sessions form"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <form onSubmit={handleBulkSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <span className={LABEL_CLASS}>
+                <Users className="mr-1 inline h-3.5 w-3.5" /> Fellows ({bulk.fellowIds.size} selected)
+              </span>
+              {fellows.length === 0 ? (
+                <p className="text-sm text-[#9299a6]">No fellows on your caseload yet.</p>
+              ) : (
+                <div className="grid max-h-40 gap-1 overflow-y-auto rounded-lg border border-[#dfe4ec] p-2 sm:grid-cols-2">
+                  {fellows.map((f) => (
+                    <label
+                      key={f.id}
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-[#18202f] hover:bg-[#f6f7f9]"
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+                        checked={bulk.fellowIds.has(f.id)}
+                        onChange={() => toggleBulkFellow(f.id)}
+                      />
+                      {fellowName(f.firstName, f.lastName)}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS} htmlFor="hb-start">
+                Start
+              </label>
+              <input
+                id="hb-start"
+                type="datetime-local"
+                className={INPUT_CLASS}
+                value={bulk.startsAt}
+                onChange={(e) => setBulk((b) => ({ ...b, startsAt: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={LABEL_CLASS} htmlFor="hb-duration">
+                  Duration
+                </label>
+                <select
+                  id="hb-duration"
+                  className={INPUT_CLASS}
+                  value={bulk.durationMin}
+                  onChange={(e) => setBulk((b) => ({ ...b, durationMin: Number(e.target.value) }))}
+                >
+                  {DURATION_OPTIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d} min
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={LABEL_CLASS} htmlFor="hb-spacing">
+                  Space between
+                </label>
+                <select
+                  id="hb-spacing"
+                  className={INPUT_CLASS}
+                  value={bulk.spacingMin}
+                  onChange={(e) => setBulk((b) => ({ ...b, spacingMin: Number(e.target.value) }))}
+                >
+                  {SPACING_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s} min
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={LABEL_CLASS} htmlFor="hb-topic">
+                Topic
+              </label>
+              <input
+                id="hb-topic"
+                className={INPUT_CLASS}
+                value={bulk.topic}
+                onChange={(e) => setBulk((b) => ({ ...b, topic: e.target.value }))}
+                placeholder="Mid-cohort check-in"
+                required
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={LABEL_CLASS} htmlFor="hb-message">
+                Message (optional)
+              </label>
+              <textarea
+                id="hb-message"
+                className={INPUT_CLASS + " min-h-[72px] resize-y"}
+                value={bulk.message}
+                onChange={(e) => setBulk((b) => ({ ...b, message: e.target.value }))}
+                placeholder="Included in the invitation to each fellow."
+              />
+            </div>
+
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151] sm:col-span-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-[#c6cdd9] accent-[#E8792B]"
+                checked={bulk.sendInvites}
+                onChange={(e) => setBulk((b) => ({ ...b, sendInvites: e.target.checked }))}
+              />
+              Email .ics invite to fellows (coach cc&rsquo;d)
+            </label>
+
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <button type="submit" className={HONOR_BTN_PRIMARY} disabled={createBulkMut.isPending}>
+                {createBulkMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CalendarRange className="h-4 w-4" />
+                )}
+                {createBulkMut.isPending
+                  ? "Scheduling…"
+                  : `Schedule ${bulk.fellowIds.size} session${bulk.fellowIds.size === 1 ? "" : "s"}`}
+              </button>
+              <button type="button" className={HONOR_BTN_OUTLINE} onClick={resetBulk}>
+                Cancel
+              </button>
+            </div>
+          </form>
         </HonorCard>
       )}
 

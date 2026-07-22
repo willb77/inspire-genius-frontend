@@ -157,7 +157,14 @@ test("selecting a fellow + Run evaluation renders the cited, ranked deterministi
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
 
   await waitFor(() => expect(evaluateFellow).toHaveBeenCalledTimes(1))
-  expect(evaluateFellow).toHaveBeenCalledWith("f1", expect.objectContaining({ goals: undefined, memberIds: undefined }))
+  expect(evaluateFellow).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({
+      criteria: undefined,
+      dimensions: ["career", "goals", "education", "position"],
+      memberIds: undefined,
+    }),
+  )
 
   // ranked career fit + cited source render
   expect(await screen.findByText("Operations Program Management")).toBeInTheDocument()
@@ -165,20 +172,46 @@ test("selecting a fellow + Run evaluation renders the cited, ranked deterministi
   expect(screen.getAllByText("PRISM: Coordinating 90").length).toBeGreaterThan(0)
 })
 
-test("goals text flows into the request and renders a verdict", async () => {
+test("criteria text flows into the request and a verdict renders", async () => {
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
-  fireEvent.change(screen.getByPlaceholderText(/Operations program management role/i), {
-    target: { value: "Operations program management role" },
+  fireEvent.change(screen.getByPlaceholderText(/Describe what to evaluate/i), {
+    target: { value: "Fit for an operations program-management role" },
   })
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
 
   await waitFor(() => expect(evaluateFellow).toHaveBeenCalled())
   expect(evaluateFellow).toHaveBeenCalledWith(
     "f1",
-    expect.objectContaining({ goals: ["Operations program management role"] }),
+    expect.objectContaining({ criteria: "Fit for an operations program-management role" }),
   )
   expect(await screen.findByText("supported")).toBeInTheDocument()
+})
+
+test("dimension checkboxes compose the evaluate body (default all; unchecking drops a key)", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+
+  // Default: all four dimensions checked.
+  fireEvent.click(screen.getByRole("checkbox", { name: /Education/i }))
+  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+
+  await waitFor(() => expect(evaluateFellow).toHaveBeenCalled())
+  const body = evaluateFellow.mock.calls[0][1]
+  expect(body.dimensions).toEqual(["career", "goals"])
+})
+
+test("Position dimension gates the position-description upload control", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  // On by default → the attach control is visible.
+  expect(screen.getByRole("button", { name: /attach position description/i })).toBeInTheDocument()
+  // Turning Position off hides it.
+  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
+  expect(
+    screen.queryByRole("button", { name: /attach position description/i }),
+  ).not.toBeInTheDocument()
 })
 
 test("two fellows → comparative mode passes memberIds + targetArea", async () => {

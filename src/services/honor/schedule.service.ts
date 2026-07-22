@@ -2,6 +2,8 @@ import { agentApi } from "@/lib/agentApi"
 import type {
   HonorActivityItem,
   HonorApiResponse,
+  HonorBulkSessionInput,
+  HonorBulkSessionResult,
   HonorGoogleConnect,
   HonorGoogleStatus,
   HonorScheduleFeed,
@@ -100,6 +102,21 @@ export async function disconnectGoogle(): Promise<HonorGoogleStatus> {
 export async function createCoachSession(input: HonorSessionInput): Promise<HonorSession | undefined> {
   const { data } = await agentApi.post<HonorApiResponse<HonorSession>>(`${COACH}/schedule`, input)
   return unwrap(data)
+}
+
+/**
+ * Schedule one session per fellow in a single request — POST
+ * …/coach/schedule/sessions. The server spaces the sessions by `spacingMin`
+ * from `startsAt` and (optionally) emails an .ics invite to each fellow.
+ */
+export async function createCoachSessionsBulk(
+  input: HonorBulkSessionInput,
+): Promise<HonorBulkSessionResult> {
+  const { data } = await agentApi.post<HonorApiResponse<HonorBulkSessionResult>>(
+    `${COACH}/schedule/sessions`,
+    input,
+  )
+  return unwrap(data) ?? { created: [], emailed: 0, skipped: [] }
 }
 
 /** Edit a session. */
