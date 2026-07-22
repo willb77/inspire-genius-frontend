@@ -112,6 +112,7 @@ export default function HonorShell() {
         <div className="ml-3 hidden items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 sm:flex">
           <span className="text-[10px] uppercase tracking-wide text-white/50">Powered by</span>
           <span className="text-xs font-semibold text-[#7Fb0d6]">Inspires Genius</span>
+          <span className="text-[10px] text-white/40">· a Secure Agentic AI Platform</span>
         </div>
 
         <div className="ml-auto flex items-center gap-3">

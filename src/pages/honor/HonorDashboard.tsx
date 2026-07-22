@@ -30,7 +30,7 @@ type Tile = { to: string; label: string; description: string; icon: LucideIcon }
 const TILES: Tile[] = [
   { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", description: "Your assigned caseload of Honor fellows.", icon: Users },
   { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", description: "Add a fellow or import a cohort roster.", icon: UserPlus },
-  { to: ROUTES.HONOR.EVALUATE, label: "Work with Fellows", description: "AI evaluation, goals, education & funding.", icon: Sparkles },
+  { to: ROUTES.HONOR.EVALUATE, label: "Work with Fellows", description: "Resume Review, AI Evaluation, goals & funding.", icon: Sparkles },
   { to: ROUTES.HONOR.ACTIVITY, label: "Activity", description: "Audit trail of every coach & member action.", icon: Activity },
   { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", description: "Sessions, debriefs, and cohort milestones.", icon: CalendarDays },
   { to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", description: "Manage coaches, teams, and cohort rosters.", icon: Settings2 },
