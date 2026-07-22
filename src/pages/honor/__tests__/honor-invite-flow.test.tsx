@@ -150,7 +150,7 @@ describe("HonorCaseload — invite via composer", () => {
     await waitFor(() => expect(inviteFellowsBulk).toHaveBeenCalledTimes(1))
     const [ids, keepAccess, sendInvitation, messageHtml] = inviteFellowsBulk.mock.calls[0]
     expect(ids).toEqual(["2201"])
-    expect(keepAccess).toBe(false)
+    expect(keepAccess).toBe(true) // inviting must keep the coach's roster link
     expect(sendInvitation).toBe(true)
     expect(messageHtml).toContain("Congratulations")
 
@@ -203,7 +203,7 @@ describe("runHonorOnboard — PRISM optional", () => {
     })
 
     expect(createFellow).toHaveBeenCalledTimes(1)
-    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", false, true)
+    expect(inviteFellow).toHaveBeenCalledWith("fellow-1", true, true)
     // PRISM import is skipped entirely when no file is provided.
     expect(importFellowAssessment).not.toHaveBeenCalled()
     // The onboard still succeeds (no failed steps for a missing optional PRISM).
