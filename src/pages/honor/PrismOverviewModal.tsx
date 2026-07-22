@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { X, PlayCircle } from "lucide-react"
+import { PRISM_OVERVIEW_VIDEO_URL } from "./_media"
 
 /**
  * PRISM Overview — a lightweight modal that will host short explainer videos
@@ -11,9 +12,9 @@ import { X, PlayCircle } from "lucide-react"
 
 type PrismVideo = { id: string; title: string; blurb: string; src?: string }
 
-/** Placeholder line-up. Wire `src` (mp4 / HLS / embed URL) when the videos are ready. */
+/** Remaining slots have no `src` yet — wire them as the videos are produced. */
 const PRISM_OVERVIEW_VIDEOS: PrismVideo[] = [
-  { id: "what-is-prism", title: "What is PRISM?", blurb: "A 2-minute primer on PRISM Brain Mapping and what the report tells you." },
+  { id: "what-is-prism", title: "PRISM Overview", blurb: "An overview of PRISM Brain Mapping and what the report tells you.", src: PRISM_OVERVIEW_VIDEO_URL },
   { id: "three-maps", title: "Reading the three maps", blurb: "Underlying, Adaptive and Consistent — what each map means and when to use it." },
   { id: "behaviour-prefs", title: "Behaviour preferences", blurb: "The eight core behaviours and the colour energies behind them." },
   { id: "coach-with-prism", title: "Coaching with PRISM", blurb: "How to walk a Fellow through their profile in a session." },

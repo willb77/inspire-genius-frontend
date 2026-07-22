@@ -147,5 +147,6 @@ test("PRISM Overview link opens the video modal", () => {
   fireEvent.click(screen.getByRole("button", { name: /PRISM Overview/i }))
   const dialog = screen.getByRole("dialog", { name: /PRISM Overview/i })
   expect(dialog).toBeInTheDocument()
-  expect(screen.getByText("What is PRISM?")).toBeInTheDocument()
+  // The video line-up renders inside the modal.
+  expect(screen.getByText("Reading the three maps")).toBeInTheDocument()
 })
