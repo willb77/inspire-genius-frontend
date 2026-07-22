@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { renderHook } from "@testing-library/react"
-import { useGatedNavItems } from "../useGatedNavItems"
+import { useGatedNavItems, useEntitledVerticalItems } from "../useGatedNavItems"
 
 jest.mock("@/constants/navigation", () => ({
   NAV_ITEMS_BY_ROLE: {
@@ -15,6 +15,27 @@ jest.mock("@/constants/navigation", () => ({
       { to: "/practitioner/analytics", icon: () => null, label: "Analytics" },
     ],
   },
+}))
+
+const mockUseVerticalAccess = jest.fn()
+jest.mock("@/verticals/core", () => ({
+  useVerticalAccess: (v: string) => mockUseVerticalAccess(v),
+}))
+
+const mockLauncher = jest.fn()
+jest.mock("@/components/layout/useVerticalLauncher", () => ({
+  useVerticalLauncherSection: () => mockLauncher(),
+}))
+
+const mockBroadcast = jest.fn()
+jest.mock("@/hooks/super-admin/useBroadcast", () => ({
+  useBroadcastAccess: () => mockBroadcast(),
+}))
+
+jest.mock("@/constants/sidebar-sections", () => ({
+  grantSidebarSectionForRole: () => ({ items: [{ to: "/vertical/grant/dashboard", icon: () => null, label: "Grant sub" }] }),
+  KCE_SIDEBAR_SECTION: { items: [{ to: "/vertical/knowledge-continuity/capture", icon: () => null, label: "KCE sub" }] },
+  BROADCAST_SIDEBAR_SECTION: { items: [{ to: "/super-admin/broadcast-alert", icon: () => null, label: "Broadcast Alerts" }] },
 }))
 
 describe("useGatedNavItems", () => {
@@ -32,5 +53,32 @@ describe("useGatedNavItems", () => {
   it("falls back to user items for an unknown role", () => {
     const { result } = renderHook(() => useGatedNavItems("nope" as never))
     expect(result.current.map((i) => i.label)).toEqual(["Home"])
+  })
+})
+
+describe("useEntitledVerticalItems", () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockUseVerticalAccess.mockReturnValue({ hasAccess: false })
+    mockLauncher.mockReturnValue(null)
+    mockBroadcast.mockReturnValue({ data: { authorized: false } })
+  })
+
+  it("returns [] when the user has no entitled verticals", () => {
+    const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
+    expect(result.current).toEqual([])
+  })
+
+  it("returns one clean entry per entitled vertical (not GRANT's sub-pages)", () => {
+    mockUseVerticalAccess.mockReturnValue({ hasAccess: true })
+    mockLauncher.mockReturnValue({ items: [{ to: "/vertical/honor", icon: () => null, label: "Honor Foundation" }] })
+    mockBroadcast.mockReturnValue({ data: { authorized: true } })
+    const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
+    expect(result.current.map((i) => i.label)).toEqual([
+      "Financial Aid",
+      "Knowledge Continuity",
+      "Honor Foundation",
+      "Broadcast Alerts",
+    ])
   })
 })

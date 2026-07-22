@@ -15,6 +15,26 @@ jest.mock("@/layouts/PractitionerLayout", () => ({
 const mockUseAuth = jest.fn()
 jest.mock("@/context/useAuth", () => ({ useAuth: () => mockUseAuth() }))
 
+const mockClients = jest.fn()
+const mockCredits = jest.fn()
+jest.mock("@/hooks/practitioner/useCoachClient", () => ({
+  useCoachClients: () => mockClients(),
+  useCoachCredits: () => mockCredits(),
+}))
+
+const q = (data: unknown, over: Record<string, unknown> = {}) => ({
+  data,
+  isLoading: false,
+  error: null,
+  refetch: jest.fn(),
+  ...over,
+})
+
+const ROSTER = [
+  { id: "cl-1", name: "Marcus Chen", email: "m@x.com", org: "TechCorp", sessions: 12, prismScore: 82, prismStatus: "ready", topGoals: ["Delegation"], resourcesPresent: 7, status: "active" },
+  { id: "cl-2", name: "Ryan Park", email: "r@x.com", org: "BuildRight", sessions: 4, prismScore: null, prismStatus: "none", topGoals: [], resourcesPresent: 1, status: "new" },
+]
+
 function renderHome() {
   return render(
     <MemoryRouter>
@@ -27,6 +47,8 @@ describe("PractitionerHome", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseAuth.mockReturnValue({ user: { fullName: "Dana Coach", name: "Dana Coach" } })
+    mockClients.mockReturnValue(q(ROSTER))
+    mockCredits.mockReturnValue(q({ balance: 340, allocated: 500, used: 160, currency: "PUK" }))
   })
 
   it("renders inside the practitioner layout", () => {
@@ -39,13 +61,19 @@ describe("PractitionerHome", () => {
     expect(screen.getByText(/Welcome back, Dana/)).toBeInTheDocument()
   })
 
-  it("renders the Chat with Meridian tile and the quick actions", () => {
+  it("renders the quick actions and status tiles", () => {
     renderHome()
-    expect(screen.getByText("Open Meridian chat")).toBeInTheDocument()
     expect(screen.getByText("Schedule")).toBeInTheDocument()
     expect(screen.getByText("Meeting")).toBeInTheDocument()
     expect(screen.getByText("Add a Client")).toBeInTheDocument()
-    expect(screen.getByText("Credits")).toBeInTheDocument()
+    expect(screen.getByText("Active Clients")).toBeInTheDocument()
+    expect(screen.getByText("Credit Balance")).toBeInTheDocument()
+  })
+
+  it("renders the 2-column client list", () => {
+    renderHome()
+    expect(screen.getByText("Marcus Chen")).toBeInTheDocument()
+    expect(screen.getByText("Ryan Park")).toBeInTheDocument()
   })
 
   it("falls back to a friendly greeting when no name is present", () => {
