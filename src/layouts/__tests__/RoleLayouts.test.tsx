@@ -2,12 +2,12 @@
  * @jest-environment jsdom
  *
  * Tests for role-specific layout wrappers:
- * - ManagerLayout
- * - CompanyAdminLayout
- * - PractitionerLayout
- * - DistributorLayout
+ * - ManagerLayout        → AppShell (legacy chrome)
+ * - CompanyAdminLayout   → AppShell (legacy chrome)
+ * - PractitionerLayout   → UnifiedLayout (standard SidebarScaffold chrome, Phase 1)
+ * - DistributorLayout    → AppShell (legacy chrome)
  *
- * Each is a thin wrapper around AppShell with a hardcoded role prop.
+ * Each is a thin wrapper around its shell with a hardcoded role prop.
  */
 
 import { render, screen } from "@testing-library/react";
@@ -20,6 +20,20 @@ jest.mock("../AppShell", () => ({
     mockAppShell(props);
     return (
       <div data-testid="app-shell" data-role={props.role} data-class={props.className}>
+        {props.children}
+      </div>
+    );
+  },
+}));
+
+/* ── Mock UnifiedLayout (PractitionerLayout migrated onto it in Phase 1) ── */
+const mockUnifiedLayout = jest.fn();
+jest.mock("../UnifiedLayout", () => ({
+  __esModule: true,
+  default: (props: any) => {
+    mockUnifiedLayout(props);
+    return (
+      <div data-testid="unified-layout" data-role={props.role} data-class={props.className}>
         {props.children}
       </div>
     );
@@ -77,14 +91,14 @@ describe("PractitionerLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes role='practitioner' to AppShell", () => {
+  test("passes role='practitioner' to UnifiedLayout", () => {
     render(<PractitionerLayout><div /></PractitionerLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ role: "practitioner" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ role: "practitioner" }));
   });
 
   test("forwards className", () => {
     render(<PractitionerLayout className="p-class"><div /></PractitionerLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ className: "p-class" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ className: "p-class" }));
   });
 });
 

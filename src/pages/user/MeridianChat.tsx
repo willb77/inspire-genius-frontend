@@ -3,6 +3,7 @@ import ChatWindow from "@/components/user/chat/ChatWindow";
 import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
@@ -127,8 +128,15 @@ export type MeridianChatVariant = "classic" | "v2";
  */
 export default function MeridianChat({
   variant = "classic",
+  LayoutComponent = UserLayout,
 }: {
   variant?: MeridianChatVariant;
+  /**
+   * Layout wrapper. Defaults to UserLayout (the My Workspace chrome) so every
+   * existing usage is unchanged; the practitioner route passes PractitionerLayout
+   * so the same chat renders inside the practitioner sidebar.
+   */
+  LayoutComponent?: ComponentType<{ children: ReactNode }>;
 } = {}) {
   const isV2 = variant === "v2";
   const { t } = useTranslation("chat");
@@ -1478,7 +1486,7 @@ export default function MeridianChat({
   }, [consultedAgents]);
 
   return (
-    <UserLayout>
+    <LayoutComponent>
       {/* T8 — Sticky header. Wraps the Meridian label, consulted-agents
           sub-label (T10), dropdowns (T4/T5), and audio/voice controls so
           the controls stay visible as the chat scrolls. `sticky top-0`
@@ -2142,6 +2150,6 @@ export default function MeridianChat({
           disableExport={false}
         />
       )}
-    </UserLayout>
+    </LayoutComponent>
   );
 }
