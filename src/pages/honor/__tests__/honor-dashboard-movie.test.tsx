@@ -1,10 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * Honor Dashboard → "Overview Movie" view: renders a titled section with an
- * HTML5 video player pointing at the hosted PRISM overview.
+ * Honor Dashboard → "Videos" view: a dropdown of movies; picking one opens a
+ * pop-up modal that plays it.
  */
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 
 jest.mock("@/hooks/honor/useCoachData", () => ({
@@ -18,21 +18,43 @@ jest.mock("@/context/useAuth", () => ({
 }))
 
 import HonorDashboard from "../HonorDashboard"
-import { PRISM_OVERVIEW_VIDEO_URL } from "../_media"
+import { HONOR_VIDEOS } from "../_videos"
 
-test("renders an Overview Movie section with the hosted PRISM video", () => {
-  const { container } = render(
+function renderDash() {
+  return render(
     <MemoryRouter>
       <HonorDashboard />
     </MemoryRouter>,
   )
+}
 
-  expect(screen.getByText("Overview Movie")).toBeInTheDocument()
+test("renders a Videos section with a dropdown (no inline player, no modal yet)", () => {
+  renderDash()
+  expect(screen.getByText("Videos")).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: /Choose a video/i })).toBeInTheDocument()
+  expect(document.querySelector("video")).toBeNull()
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+})
 
-  const video = container.querySelector("video")
+test("opening the dropdown lists every movie in the catalog", () => {
+  renderDash()
+  fireEvent.click(screen.getByRole("button", { name: /Choose a video/i }))
+  const list = screen.getByRole("listbox")
+  for (const v of HONOR_VIDEOS) {
+    expect(within(list).getByText(v.title)).toBeInTheDocument()
+  }
+})
+
+test("picking a movie opens a pop-up modal playing that video", () => {
+  const first = HONOR_VIDEOS[0]
+  renderDash()
+  fireEvent.click(screen.getByRole("button", { name: /Choose a video/i }))
+  fireEvent.click(within(screen.getByRole("listbox")).getByText(first.title))
+
+  const dialog = screen.getByRole("dialog", { name: first.title })
+  expect(dialog).toBeInTheDocument()
+  const video = dialog.querySelector("video")
   expect(video).not.toBeNull()
-  expect(video).toHaveAttribute("src", PRISM_OVERVIEW_VIDEO_URL)
+  expect(video).toHaveAttribute("src", first.url)
   expect(video).toHaveAttribute("controls")
-  // The hosted URL is an absolute mp4 on the shared public-videos bucket.
-  expect(PRISM_OVERVIEW_VIDEO_URL).toMatch(/^https:\/\/.*PRISM_Overview\.mp4$/)
 })
