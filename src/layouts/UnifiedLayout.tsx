@@ -1,6 +1,7 @@
 import React from "react"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
-import { useGatedNavItems } from "@/hooks/nav/useGatedNavItems"
+import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
+import { useGatedNavItems, useEntitledVerticalItems } from "@/hooks/nav/useGatedNavItems"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import type { UserRole } from "@/types/roles"
 
@@ -25,10 +26,22 @@ export default function UnifiedLayout({
   usePageViewAudit(auditLabel)
 
   const navItems = useGatedNavItems(role)
+  const verticalItems = useEntitledVerticalItems(role)
+
+  // When the user is entitled to verticals, render the role menu as a
+  // header-less group at the top with a COLLAPSED "Verticals" section beneath;
+  // otherwise just the flat role menu.
+  const navSections: NavSectionDef[] | undefined = verticalItems.length
+    ? [
+        { label: "", items: navItems },
+        { label: "Verticals", items: verticalItems, defaultCollapsed: true },
+      ]
+    : undefined
 
   return (
     <SidebarScaffold
       navItems={navItems}
+      navSections={navSections}
       className={className}
       expandOnPath={expandOnPath}
       renderAfterContent={renderAfterContent}
