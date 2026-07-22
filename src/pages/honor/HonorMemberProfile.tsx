@@ -153,7 +153,7 @@ export default function HonorMemberProfile() {
             <HonorSectionTitle>Behavioral snapshot</HonorSectionTitle>
             <AgentTraceRow trace={["Aura", "Meridian"]} />
             <dl className="mt-3 space-y-2 text-sm">
-              <Row label="PRISM (source of truth)">
+              <Row label="PRISM">
                 {fellow.prism?.quads?.length ? (
                   <PrismDots quads={fellow.prism.quads} label={fellow.prism.label} />
                 ) : (
