@@ -168,7 +168,9 @@ const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitione
 // placeholders for the Schedule/Meeting surfaces (built out in later phases).
 const PractitionerHome = React.lazy(() => import("@/pages/practitioner/Home"));
 const PractitionerMeridianChat = React.lazy(() => import("@/pages/practitioner/MeridianChat"));
-const PractitionerComingSoon = React.lazy(() => import("@/pages/practitioner/ComingSoon"));
+const PractitionerClientProfile = React.lazy(() => import("@/pages/practitioner/ClientProfile"));
+const PractitionerSchedule = React.lazy(() => import("@/pages/practitioner/Schedule"));
+const PractitionerMeeting = React.lazy(() => import("@/pages/practitioner/Meeting"));
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
@@ -491,10 +493,11 @@ export const routes: RouteObject[] = [
       // Practitioner pages
       { path: "/practitioner/home", element: withSuspense(<PractitionerHome />) },
       { path: "/practitioner/meridian-chat", element: withSuspense(<PractitionerMeridianChat />) },
-      { path: "/practitioner/schedule", element: withSuspense(<PractitionerComingSoon variant="schedule" />) },
-      { path: "/practitioner/meeting", element: withSuspense(<PractitionerComingSoon variant="meeting" />) },
+      { path: "/practitioner/schedule", element: withSuspense(<PractitionerSchedule />) },
+      { path: "/practitioner/meeting", element: withSuspense(<PractitionerMeeting />) },
       { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
+      { path: "/practitioner/clients/:clientId", element: withSuspense(<PractitionerClientProfile />) },
       { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
       { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
