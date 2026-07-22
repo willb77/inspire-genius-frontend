@@ -1,10 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { toast } from "sonner"
 import {
   ShieldAlert,
-  FileText,
-  Upload,
   ClipboardList,
   Sparkles,
   Target,
@@ -14,7 +11,11 @@ import {
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload, useFellow } from "@/hooks/honor/useCoachData"
-import { useFellowPrism, useRequestFellowPrism } from "@/hooks/honor/useHonorEvaluate"
+import {
+  useFellowPrism,
+  useFellowSources,
+  useRequestFellowPrism,
+} from "@/hooks/honor/useHonorEvaluate"
 import {
   AgentTraceRow,
   HonorCard,
@@ -22,6 +23,7 @@ import {
   HonorSectionTitle,
   PrismDots,
 } from "./_shared"
+import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_format"
 import PrismOverviewModal from "./PrismOverviewModal"
 import {
@@ -70,6 +72,7 @@ export default function HonorMemberProfile() {
   const [overviewOpen, setOverviewOpen] = useState(false)
   const prismQuery = useFellowPrism(effectiveId)
   const requestPrism = useRequestFellowPrism()
+  const sourcesQuery = useFellowSources(effectiveId)
 
   if (isLoading) return <HonorEmptyState>Loading fellow…</HonorEmptyState>
   if (!fellow) return <HonorEmptyState>Fellow not found on your caseload.</HonorEmptyState>
@@ -168,31 +171,19 @@ export default function HonorMemberProfile() {
           </HonorCard>
 
           <HonorCard>
-            <HonorSectionTitle
-              action={
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#E8792B] hover:underline"
-                  onClick={() => toast.info("Presigned upload via document-service (stub)")}
-                >
-                  <Upload className="h-3.5 w-3.5" /> Upload
-                </button>
-              }
-            >
-              Documents on file
-            </HonorSectionTitle>
-            {(fellow.docs ?? []).length === 0 ? (
-              <p className="text-sm text-[#9299a6]">No documents yet.</p>
+            <HonorSectionTitle>Fellow data</HonorSectionTitle>
+            <p className="mb-2 text-xs text-[#5b6678]">
+              The 10 artifacts that ground {name.split(" ")[0]}&apos;s coaching — behavioral
+              assessments, documents, and goals. Add any that are missing inline.
+            </p>
+            {sourcesQuery.isLoading ? (
+              <p className="text-sm text-[#9299a6]">Loading fellow data…</p>
             ) : (
-              <ul className="space-y-2 text-sm">
-                {(fellow.docs ?? []).map((d) => (
-                  <li key={d.id} className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-                    <FileText className="h-4 w-4 text-[#1B2A4A]" />
-                    <span className="text-[#18202f]">{d.name}</span>
-                    <span className="ml-auto text-xs text-[#9299a6]">{d.uploadedAt}</span>
-                  </li>
-                ))}
-              </ul>
+              <ArtifactStatusMatrix
+                fellowId={effectiveId ?? fellow.id}
+                sources={sourcesQuery.data}
+                onChanged={() => sourcesQuery.refetch()}
+              />
             )}
             <div className="mt-4">
               <HonorSectionTitle>Quick actions</HonorSectionTitle>

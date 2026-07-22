@@ -206,7 +206,21 @@ export type HonorFellowSources = {
   assessments: HonorFellowAssessmentSource[]
   resume: boolean
   bio: boolean
+  /** An "additional information" document (doc_kind "personal") is on file. */
+  additionalInfo: boolean
+  /** The fellow has stored goals & objectives text. */
+  goals: boolean
 }
+
+/** GET/PUT …/{id}/goals — the fellow's stored goals & objectives text. */
+export type HonorFellowGoals = {
+  fellowId: string
+  goals: string | null
+  hasGoals: boolean
+}
+
+/** POST …/students/sources-bulk → per-fellow sources keyed by fellow id. */
+export type HonorSourcesBulk = Record<string, HonorFellowSources>
 
 /** One PRISM score row from the imported CSV. */
 export type HonorPrismScore = {
@@ -287,6 +301,10 @@ export type HonorResumeBody = {
 export type HonorEvaluateBody = {
   /** Free-text goals or explicit { goal, area } objects. */
   goals?: Array<string | { goal: string; area?: string }>
+  /** Free-text description of what to evaluate (the evaluation criteria). */
+  criteria?: string
+  /** Which evaluation dimensions to compute (subset; default all). */
+  dimensions?: string[]
   /** Comparative subjects (owned fellow ids); ownership-gated server-side. */
   memberIds?: string[]
   /** Career area to compute the team read against. */
@@ -393,6 +411,30 @@ export type HonorSessionInput = {
 
 /** Partial body for editing a session (PATCH …/coach/schedule/{id}). */
 export type HonorSessionPatch = Partial<HonorSessionInput>
+
+/**
+ * Body for scheduling one session per fellow in a single request
+ * (POST …/coach/schedule/sessions). The backend spaces the sessions by
+ * `spacingMin` starting at `startsAt` and (optionally) emails an .ics invite.
+ */
+export type HonorBulkSessionInput = {
+  fellowIds: string[]
+  /** ISO-8601 start of the first session. */
+  startsAt: string
+  durationMin: number
+  spacingMin: number
+  topic: string
+  message?: string
+  /** Email the .ics invite to each fellow (coach cc'd). */
+  sendInvites?: boolean
+}
+
+/** Result of a bulk schedule request. */
+export type HonorBulkSessionResult = {
+  created: HonorSession[]
+  emailed: number
+  skipped: { fellowId: string; reason: string }[]
+}
 
 /**
  * GET …/coach/schedule/feed-url → `{ token, feedUrl }` — an .ics subscribe URL.
