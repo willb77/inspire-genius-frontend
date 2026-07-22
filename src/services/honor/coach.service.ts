@@ -4,6 +4,7 @@ import type {
   CoachActivityRow,
   CoachHome,
   CoachRecord,
+  FellowStatus,
   HonorApiResponse,
   HonorEvaluateBody,
   HonorEvaluation,
@@ -96,15 +97,42 @@ export type BulkInviteResult = {
   results: Array<{ fellowId: string; status: string; email?: string | null; invitationSent?: boolean; message?: string }>
 }
 
-/** Bulk-convert/invite several selected fellows in one request. */
+/**
+ * Bulk-convert/invite several selected fellows in one request.
+ *
+ * Fellows are NOT IG login users — the invite sends a confirmation /
+ * acknowledgement email (the backend composes + sends it now; the FE no longer
+ * fires a magic link). `messageHtml` is the coach's formatted message body,
+ * folded into the confirmation email server-side. Only sent when
+ * `sendInvitation` is true; ignored otherwise.
+ */
 export async function inviteFellowsBulk(
   fellowIds: string[],
   keepCoachAccess = false,
   sendInvitation = true,
+  messageHtml?: string,
 ) {
   const { data } = await agentApi.post<HonorApiResponse<BulkInviteResult>>(
     `${COACH_BASE}/invite-bulk`,
-    { fellowIds, keepCoachAccess, sendInvitation },
+    {
+      fellowIds,
+      keepCoachAccess,
+      sendInvitation,
+      ...(messageHtml ? { messageHtml } : {}),
+    },
+  )
+  return data
+}
+
+/**
+ * Set a fellow's coaching status — PATCH …/{id}/status (ownership-gated coach
+ * route). Lets the coach move a fellow between "intake-pending", "assessed", and
+ * "invited" without re-running intake. Returns the fellow id + new status.
+ */
+export async function setFellowStatus(fellowId: string, status: FellowStatus) {
+  const { data } = await agentApi.patch<HonorApiResponse<{ fellowId: string; status: FellowStatus }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/status`,
+    { status },
   )
   return data
 }

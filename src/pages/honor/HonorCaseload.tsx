@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom"
 import { Users, UserPlus, Upload, Search, ArrowRight, Mail, Loader2 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload } from "@/hooks/honor/useCoachData"
-import { useHonorInvitations } from "@/hooks/honor/useHonorInvitations"
+import { useHonorInvitations, useSetFellowStatus } from "@/hooks/honor/useHonorInvitations"
 import type { FellowStatus, HonorFellow } from "@/types/honor"
 import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } from "./_shared"
-import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
+import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, fellowStatusLabel } from "./_format"
+import InviteComposer from "./InviteComposer"
 
 /**
  * Honor Coach Workbench — My Fellows (Caseload).
@@ -16,10 +17,42 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
  * `require_fellow_access`. Mock-backed via {@link useCaseload}.
  */
 
-function StatusBadge({ status }: { status: FellowStatus }) {
-  if (status === "assessed") return <HonorPill tone="ok">Assessed</HonorPill>
-  if (status === "intake-pending") return <HonorPill tone="orange">Intake pending</HonorPill>
-  return <HonorPill tone="gray">Invited</HonorPill>
+const FELLOW_STATUSES: FellowStatus[] = ["intake-pending", "assessed", "invited"]
+
+/**
+ * Per-fellow status control — a small labelled dropdown the coach uses to move a
+ * fellow between Intake pending / Assessed / Invited. The selected value is
+ * tinted to match the status pill so the roster still reads at a glance.
+ */
+function FellowStatusControl({ fellow }: { fellow: HonorFellow }) {
+  const setStatus = useSetFellowStatus()
+  const tone =
+    fellow.status === "assessed"
+      ? "text-[#1a7f4b] ring-[#bfe6cf]"
+      : fellow.status === "intake-pending"
+        ? "text-[#a2531a] ring-[#f0c39a]"
+        : "text-[#5b6678] ring-[#dfe4ec]"
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <select
+        aria-label={`Status for ${fellowName(fellow.firstName, fellow.lastName)}`}
+        value={fellow.status}
+        disabled={setStatus.isPending}
+        onChange={(e) => {
+          const next = e.target.value as FellowStatus
+          if (next !== fellow.status) setStatus.mutate({ fellowId: fellow.id, status: next })
+        }}
+        className={`rounded-full bg-white px-2.5 py-1 text-xs font-medium outline-none ring-1 focus:ring-2 disabled:opacity-50 ${tone}`}
+      >
+        {FELLOW_STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {fellowStatusLabel(s)}
+          </option>
+        ))}
+      </select>
+      {setStatus.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#9299a6]" />}
+    </div>
+  )
 }
 
 export default function HonorCaseload() {
@@ -56,6 +89,7 @@ export default function HonorCaseload() {
   const invitations = useHonorInvitations()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sendEmail, setSendEmail] = useState(true)
+  const [composerOpen, setComposerOpen] = useState(false)
 
   function toggleOne(id: string) {
     setSelected((prev) => {
@@ -76,10 +110,25 @@ export default function HonorCaseload() {
       return new Set([...prev, ...filtered.map((f) => f.id)])
     })
   }
+  /** Open the composer (when emailing) or link silently (when the email is off). */
   async function sendSelected() {
     const ids = [...selected]
     if (!ids.length) return
-    await invitations.mutateAsync({ fellowIds: ids, sendEmail })
+    if (sendEmail) {
+      setComposerOpen(true)
+      return
+    }
+    // No email → no message to compose; link the fellows straight away.
+    await invitations.mutateAsync({ fellowIds: ids, sendEmail: false })
+    setSelected(new Set())
+  }
+
+  /** Composer "Send" — fire the bulk invite with the composed message body. */
+  async function handleComposerSend(messageHtml: string) {
+    const ids = [...selected]
+    if (!ids.length) return
+    await invitations.mutateAsync({ fellowIds: ids, sendEmail: true, messageHtml })
+    setComposerOpen(false)
     setSelected(new Set())
   }
 
@@ -222,7 +271,7 @@ export default function HonorCaseload() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={f.status} />
+                      <FellowStatusControl fellow={f} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end">
@@ -243,6 +292,14 @@ export default function HonorCaseload() {
           </div>
         </HonorCard>
       )}
+
+      <InviteComposer
+        open={composerOpen}
+        recipientCount={selected.size}
+        onCancel={() => setComposerOpen(false)}
+        onSend={handleComposerSend}
+        pending={invitations.isPending}
+      />
     </div>
   )
 }
