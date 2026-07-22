@@ -35,10 +35,13 @@ const SOURCES: HonorFellowSources = {
   goals: false,
 }
 
-test("ARTIFACTS lists all 10 canonical artifacts", () => {
-  expect(ARTIFACTS).toHaveLength(10)
+test("ARTIFACTS lists the 7 canonical artifacts (MBTI / Big Five / Hogan removed)", () => {
+  expect(ARTIFACTS).toHaveLength(7)
   expect(ARTIFACTS.map((a) => a.key)).toContain("prism")
   expect(ARTIFACTS.map((a) => a.key)).toContain("goals")
+  for (const gone of ["mbti", "big_five", "hogan"]) {
+    expect(ARTIFACTS.map((a) => a.key)).not.toContain(gone)
+  }
 })
 
 test("artifactPresent maps each source flag correctly", () => {

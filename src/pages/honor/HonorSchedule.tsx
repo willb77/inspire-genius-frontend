@@ -4,14 +4,10 @@ import {
   CalendarPlus,
   CalendarRange,
   Check,
-  Clock,
   Copy,
   Link2,
   Loader2,
-  MapPin,
-  Pencil,
   Plus,
-  Trash2,
   Unplug,
   Users,
   X,
@@ -30,15 +26,9 @@ import {
   useUpdateHonorSession,
 } from "@/hooks/honor/useHonorSchedule"
 import type { HonorSession, HonorSessionInput } from "@/types/honor"
-import { HonorCard, HonorEmptyState, HonorPageHeader } from "./_shared"
-import {
-  HONOR_BTN_OUTLINE,
-  HONOR_BTN_PRIMARY,
-  fellowName,
-  formatClock,
-  formatDayHeading,
-  sessionDayKey,
-} from "./_format"
+import { HonorCard, HonorPageHeader } from "./_shared"
+import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName } from "./_format"
+import ScheduleCalendar from "./ScheduleCalendar"
 
 /**
  * Honor Coach Workbench — Schedule.
@@ -210,23 +200,6 @@ export default function HonorSchedule() {
     for (const f of fellows) m.set(f.id, fellowName(f.firstName, f.lastName))
     return m
   }, [fellows])
-
-  /** Sessions grouped by local day, each day sorted by start time. */
-  const grouped = useMemo(() => {
-    const byDay = new Map<string, HonorSession[]>()
-    for (const s of sessions) {
-      const key = sessionDayKey(s.startsAt)
-      const list = byDay.get(key) ?? []
-      list.push(s)
-      byDay.set(key, list)
-    }
-    return Array.from(byDay.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([day, items]) => ({
-        day,
-        items: items.slice().sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
-      }))
-  }, [sessions])
 
   function resetForm() {
     setForm(EMPTY_FORM)
@@ -795,83 +768,16 @@ export default function HonorSchedule() {
         </HonorCard>
       )}
 
-      {/* Session list, grouped by day */}
-      {isLoading ? (
-        <HonorEmptyState>Loading schedule…</HonorEmptyState>
-      ) : grouped.length === 0 ? (
-        <HonorEmptyState>No sessions scheduled.</HonorEmptyState>
-      ) : (
-        <div className="space-y-4">
-          {grouped.map(({ day, items }) => (
-            <HonorCard key={day}>
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#18202f]">
-                <CalendarDays className="h-4 w-4 text-[#1B2A4A]" />
-                {formatDayHeading(day)}
-              </div>
-              <ul className="space-y-2">
-                {items.map((s) => {
-                  const who = s.fellowId ? fellowNameById.get(s.fellowId) : undefined
-                  return (
-                    <li
-                      key={s.id}
-                      className="flex items-start gap-3 rounded-lg border border-[#f1f3f7] px-3 py-2.5"
-                    >
-                      <span className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[rgba(27,42,74,0.08)] px-2 py-1 text-xs font-semibold text-[#1B2A4A]">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatClock(s.startsAt)}
-                        {s.endsAt ? `–${formatClock(s.endsAt)}` : ""}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <span className="text-sm font-medium text-[#18202f]">{s.title}</span>
-                          {s.kind && (
-                            <span className="rounded-full bg-[#f1f3f7] px-2 py-0.5 text-[11px] font-medium text-[#5b6678]">
-                              {KIND_LABEL[s.kind] ?? s.kind}
-                            </span>
-                          )}
-                          {who && <span className="text-sm text-[#9299a6]">· {who}</span>}
-                        </div>
-                        {(s.location || s.description) && (
-                          <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9299a6]">
-                            {s.location && (
-                              <>
-                                <MapPin className="h-3 w-3" /> {s.location}
-                              </>
-                            )}
-                            {s.location && s.description ? " · " : ""}
-                            {s.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-[#5b6678] hover:bg-[#f6f7f9] hover:text-[#1B2A4A]"
-                          onClick={() => startEdit(s)}
-                          aria-label={`Edit ${s.title}`}
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-[#5b6678] hover:bg-[#fdecec] hover:text-[#c0472b] disabled:opacity-50"
-                          onClick={() => handleDelete(s)}
-                          disabled={deleteMut.isPending}
-                          aria-label={`Delete ${s.title}`}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            </HonorCard>
-          ))}
-        </div>
-      )}
+      {/* Calendar — Month / Day view (defaults to Month) */}
+      <ScheduleCalendar
+        sessions={sessions}
+        fellowNameById={fellowNameById}
+        kindLabel={KIND_LABEL}
+        onEdit={startEdit}
+        onDelete={handleDelete}
+        deleting={deleteMut.isPending}
+        isLoading={isLoading}
+      />
     </div>
   )
 }

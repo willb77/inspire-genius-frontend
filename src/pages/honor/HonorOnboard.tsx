@@ -39,9 +39,6 @@ function fixHint(detail?: string): string | null {
 const OPTIONAL_FRAMEWORKS: OptionalFrameworkKey[] = [
   "DISC",
   "CLIFTON",
-  "BIG_FIVE",
-  "MBTI",
-  "HOGAN",
 ]
 
 const IG_ROLES = ["Fellow", "Coach", "Manager", "Company Admin"] as const

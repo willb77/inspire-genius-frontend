@@ -64,7 +64,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
       email: "marcus@honor.org",
       role: "Fellow",
       prismFile: file("prism.csv"),
-      frameworkFiles: { DISC: file("disc.csv"), HOGAN: file("hogan.pdf") },
+      frameworkFiles: { DISC: file("disc.csv"), CLIFTON: file("clifton.pdf") },
       resumeFile: file("resume.pdf"),
       bio: "Naval Special Warfare veteran.",
       additionalInfo: "Prefers async coaching.",
@@ -77,7 +77,7 @@ describe("runHonorOnboard — IG Core reuse pipeline", () => {
     // PRISM (mandatory) + the two optional frameworks all import against the fellow.
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "PRISM", expect.any(File))
     expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "DISC", expect.any(File))
-    expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "HOGAN", expect.any(File))
+    expect(importFellowAssessment).toHaveBeenCalledWith("fellow-1", "CLIFTON", expect.any(File))
     expect(importFellowAssessment).toHaveBeenCalledTimes(3)
 
     // Résumé + a combined bio doc go through the document pipeline.
