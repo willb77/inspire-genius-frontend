@@ -1,9 +1,12 @@
 import { useMutation } from "@tanstack/react-query"
 import {
   emailReport,
+  generateReportDocument,
   recordReportExport,
   type EmailReportBody,
   type EmailReportResult,
+  type GenerateReportBody,
+  type GenerateReportResult,
   type HonorExportAction,
   type HonorReportKind,
 } from "@/services/honor/coach.service"
@@ -35,6 +38,20 @@ export function useEmailHonorReport() {
   return useMutation<EmailReportResult | undefined, Error, { fellowId: string; body: EmailReportBody }>({
     mutationFn: async ({ fellowId, body }) => {
       const res = await emailReport(fellowId, body)
+      return res.data
+    },
+  })
+}
+
+/**
+ * Render + download a Fellow's report in any supported format (Word · PDF ·
+ * PowerPoint · Excel · CSV · Markdown · HTML) via the Core docgen engine. Returns
+ * a short-lived presigned URL the caller opens to download.
+ */
+export function useGenerateReportDocument() {
+  return useMutation<GenerateReportResult | undefined, Error, { fellowId: string; body: GenerateReportBody }>({
+    mutationFn: async ({ fellowId, body }) => {
+      const res = await generateReportDocument(fellowId, body)
       return res.data
     },
   })
