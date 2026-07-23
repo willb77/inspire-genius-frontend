@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import { toast } from "sonner"
-import { FileText, Loader2, Download, Mail, X, Sparkles, PenLine } from "lucide-react"
+import { FileText, Loader2, Download, Mail, X, Sparkles, PenLine, Link2, ChevronDown } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
@@ -13,6 +13,7 @@ import {
 import type { HonorReportFormat } from "@/services/honor/coach.service"
 import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { formatReportDate, type HonorReportMeta } from "@/lib/honor/exportHonorReport"
+import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
 import type { HonorResume as HonorResumeData } from "@/types/honor"
 import {
   HonorCard,
@@ -35,6 +36,14 @@ import { HONOR_CAREER_AREAS, HONOR_CAREER_AREA_OTHER } from "./_careerAreas"
  * DARK behind the server `honor_resume` flag — while off, the surface renders a
  * clearly-labeled sample so the layout + branded PDF stay demoable.
  */
+
+// Feature 3 — extra résumé formats beyond the primary Word/PDF buttons. All
+// render clean + unbranded via the same backend path (kind="resume").
+const RESUME_EXTRA_FORMATS: ReadonlyArray<{ fmt: HonorReportFormat; label: string }> = [
+  { fmt: "txt", label: "Plain text (.txt)" },
+  { fmt: "md", label: "Markdown (.md)" },
+  { fmt: "html", label: "Web page (.html)" },
+]
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -105,6 +114,9 @@ export default function HonorResume() {
   const [exporting, setExporting] = useState<null | HonorReportFormat | "email">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
+  // Feature 3 — export polish: the extra-formats menu + share-a-link state.
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [sharing, setSharing] = useState<null | "copy" | "email">(null)
 
   const primary = fellows.find((f) => f.id === fellowId)
 
@@ -210,6 +222,44 @@ export default function HonorResume() {
       toast.error(`Could not generate the résumé ${fmt === "docx" ? "Word document" : "PDF"}.`)
     } finally {
       setExporting(null)
+    }
+  }
+
+  /**
+   * Feature 3 — "email a link" / "copy link" for the résumé. Generates the clean
+   * PDF to S3 and either copies the presigned link or opens the coach's OWN mail
+   * client (mailto:) so they can send it to a hiring manager. No SES / flag / confirm.
+   */
+  async function handleShareLink(mode: "copy" | "email") {
+    if (!resume || !primary) return
+    if (isSample) {
+      toast.info("This is a sample layout — enable résumé generation to share.")
+      return
+    }
+    setSharing(mode)
+    try {
+      const data = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody("pdf") })
+      if (!data?.downloadUrl) {
+        toast.error("Could not prepare a shareable link.")
+        return
+      }
+      recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
+      if (mode === "copy") {
+        const ok = await copyReportLink(data.downloadUrl)
+        toast[ok ? "success" : "error"](
+          ok ? "Résumé download link copied." : "Could not copy the link.",
+        )
+      } else {
+        emailReportLink({
+          subject: `Résumé — ${fellowName(primary.firstName, primary.lastName)}`,
+          intro: `Please find the résumé for ${fellowName(primary.firstName, primary.lastName)} at the link below.`,
+          url: data.downloadUrl,
+        })
+      }
+    } catch {
+      toast.error("Could not prepare a shareable link.")
+    } finally {
+      setSharing(null)
     }
   }
 
@@ -424,6 +474,82 @@ export default function HonorResume() {
               {exporting === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Download PDF
             </button>
+
+            {/* Feature 3 — extra formats (txt / md / html), clean + unbranded. */}
+            {!isSample && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportMenuOpen((v) => !v)}
+                  disabled={!canExport || exporting !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  aria-haspopup="menu"
+                  aria-expanded={exportMenuOpen}
+                >
+                  <FileText className="h-4 w-4" />
+                  More formats
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                {exportMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40 cursor-default"
+                      aria-hidden
+                      tabIndex={-1}
+                      onClick={() => setExportMenuOpen(false)}
+                    />
+                    <div
+                      role="menu"
+                      className="absolute left-0 z-50 mt-1 w-56 overflow-hidden rounded-lg border border-[#dfe4ec] bg-white py-1 shadow-lg"
+                    >
+                      {RESUME_EXTRA_FORMATS.map(({ fmt, label }) => (
+                        <button
+                          key={fmt}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setExportMenuOpen(false)
+                            void handleExport(fmt)
+                          }}
+                          disabled={exporting !== null}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#18202f] hover:bg-[#f4f6fa] disabled:opacity-50"
+                        >
+                          <FileText className="h-4 w-4 text-[#5b6678]" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Feature 3 — email a link / copy link (coach's own mail client). */}
+            {!isSample && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleShareLink("email")}
+                  disabled={!canExport || sharing !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  title="Open your email with a secure download link to send"
+                >
+                  {sharing === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  Email a link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShareLink("copy")}
+                  disabled={!canExport || sharing !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  title="Copy a secure download link to the clipboard"
+                >
+                  {sharing === "copy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                  Copy link
+                </button>
+              </>
+            )}
             {USE_HONOR_REPORT_EMAIL && !isSample && (
               <button type="button" onClick={openEmail} disabled={!canExport || exporting !== null} className={HONOR_BTN_OUTLINE}>
                 {exporting === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
