@@ -10,10 +10,12 @@ import type { HonorFellow, HonorResume as HonorResumeData } from "@/types/honor"
 const generateResume = jest.fn()
 const recordReportExport = jest.fn()
 const emailReport = jest.fn()
+const generateReportDocument = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   generateResume: (...a: unknown[]) => generateResume(...a),
   recordReportExport: (...a: unknown[]) => recordReportExport(...a),
   emailReport: (...a: unknown[]) => emailReport(...a),
+  generateReportDocument: (...a: unknown[]) => generateReportDocument(...a),
 }))
 
 const useCaseload = jest.fn()
@@ -26,14 +28,6 @@ jest.mock("@/hooks/honor/useCoachData", () => ({
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { fullName: "S. Carter", email: "coach@honor.org" } }),
 }))
-
-const renderHonorResumePdf = jest.fn()
-jest.mock("@/lib/honor/exportHonorResume", () => ({
-  renderHonorResumePdf: (...a: unknown[]) => renderHonorResumePdf(...a),
-}))
-
-const downloadBlob = jest.fn()
-jest.mock("@/lib/exportTranscript", () => ({ downloadBlob: (...a: unknown[]) => downloadBlob(...a) }))
 
 jest.mock("sonner", () => ({
   toast: { success: jest.fn(), warning: jest.fn(), error: jest.fn(), info: jest.fn() },
@@ -86,7 +80,10 @@ beforeEach(() => {
   useCoachHome.mockReturnValue({ data: { coachName: "S. Carter", coachTitle: "Transition Mentor" } })
   generateResume.mockResolvedValue({ status: true, data: resumeFixture() })
   recordReportExport.mockResolvedValue({ status: true, data: { recorded: true } })
-  renderHonorResumePdf.mockResolvedValue({ fileName: "honor-resume-marcus-reyes.pdf", blob: new Blob(["pdf"]) })
+  generateReportDocument.mockResolvedValue({
+    status: true,
+    data: { downloadUrl: "https://s3/resume-marcus.docx", filename: "resume-marcus-reyes.docx", format: "docx" },
+  })
 })
 
 test("selecting a fellow + Generate renders the structured résumé", async () => {
@@ -114,24 +111,37 @@ test("when the server flag is off, shows an honest not-enabled message (no fabri
   expect(screen.queryByText("Operations & Program Management Leader")).not.toBeInTheDocument()
 })
 
-test("Download renders the branded résumé PDF and audits a real draft as kind=resume", async () => {
+test("Download Word + PDF generate the clean (unbranded) résumé via the backend and audit kind=resume", async () => {
+  const openSpy = jest.spyOn(window, "open").mockImplementation(() => null)
   renderPage()
   fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
   fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
   await screen.findByText("Operations & Program Management Leader")
 
-  fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
-  await waitFor(() => expect(renderHonorResumePdf).toHaveBeenCalledTimes(1))
-  expect(renderHonorResumePdf).toHaveBeenCalledWith(
-    expect.objectContaining({ headline: "Operations & Program Management Leader" }),
-    expect.objectContaining({ fellowName: "Marcus Reyes", coachName: "S. Carter" }),
+  // Word (.docx) — clean, unbranded, hiring-manager-ready document.
+  fireEvent.click(screen.getByRole("button", { name: /download word/i }))
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalledTimes(1))
+  expect(generateReportDocument).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({
+      kind: "resume",
+      format: "docx",
+      resume: expect.objectContaining({ headline: "Operations & Program Management Leader" }),
+      fellowName: "Marcus Reyes",
+    }),
   )
   await waitFor(() =>
-    expect(downloadBlob).toHaveBeenCalledWith("honor-resume-marcus-reyes.pdf", expect.any(Blob)),
+    expect(openSpy).toHaveBeenCalledWith("https://s3/resume-marcus.docx", "_blank", "noopener"),
   )
   await waitFor(() =>
     expect(recordReportExport).toHaveBeenCalledWith("f1", { kind: "resume", action: "download" }),
   )
+
+  // PDF also routes through the same clean backend path.
+  fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalledTimes(2))
+  expect(generateReportDocument.mock.calls[1][1]).toEqual(expect.objectContaining({ kind: "resume", format: "pdf" }))
+  openSpy.mockRestore()
 })
 
 test("when generation is disabled, no résumé (and no Download) is shown", async () => {
@@ -143,7 +153,8 @@ test("when generation is disabled, no résumé (and no Download) is shown", asyn
 
   // No fabricated résumé → nothing to download → nothing to audit.
   expect(screen.queryByRole("button", { name: /download pdf/i })).not.toBeInTheDocument()
-  expect(renderHonorResumePdf).not.toHaveBeenCalled()
+  expect(screen.queryByRole("button", { name: /download word/i })).not.toBeInTheDocument()
+  expect(generateReportDocument).not.toHaveBeenCalled()
   expect(recordReportExport).not.toHaveBeenCalled()
 })
 

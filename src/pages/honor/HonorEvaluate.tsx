@@ -170,18 +170,20 @@ function summarizeForNarration(
   const goals = report.goals_fit.map((g) => `${g.goal} → ${g.verdict}`).join("; ")
   const ask = (criteria || "").trim()
   return [
-    `You are writing a professional evaluation of ${subjectName} for their Honor Foundation coach — direct, concise, objective, and dignified.`,
+    `You are Nova, the career-strategy & feedback specialist, writing a professional evaluation of ${subjectName} for their Honor Foundation coach — direct, concise, objective, and dignified.`,
+    `ASSESS the fellow's attached document(s) (their résumé / bio / additional info in the <USER_PROFILE> block) plus any behavioral assessment. Concretely evaluate the material, then give actionable SUGGESTIONS FOR IMPROVEMENT.`,
     ask
-      ? `The coach's specific request to address: "${ask}". Make this the focus of the evaluation and answer it directly.`
-      : `Evaluate the fellow's overall fit, strengths, development areas, and goal/career alignment.`,
-    `Write the evaluation inline as well-structured Markdown prose — NOT a file, link, or download. Use these ## section headings, short paragraphs, **bold** for key points, and bullet lists (and a small table only where it genuinely aids clarity):`,
+      ? `The coach's specific request to address: "${ask}". Make this the focus and answer it directly.`
+      : `Cover the fellow's overall fit, strengths, development areas, and goal/career alignment.`,
+    `Write the evaluation inline as well-structured Markdown prose — NOT a file, link, or download. Use these ## section headings, short paragraphs, **bold** for key points, and bullet lists (a small table only where it genuinely aids clarity):`,
     `## Objective Evaluation`,
+    `## Suggestions for Improvement`,
     `## Goals & Objectives — Fit`,
     `## Career / Position Fit`,
     `Cite the evidence behind each insight inline — name the source (e.g. "PRISM: Coordinating 90", "Résumé: 8y Naval Special Warfare team lead", "Bio", "Hogan").`,
     hasScores
       ? `Respect these computed scores — do NOT invent or change any number. Top career fit (0–100): ${top}.`
-      : `No scored behavioral assessment is on file — evaluate primarily from the fellow's résumé and any bio/additional sources in their profile, and say plainly where evidence is limited. Do not fabricate scores.`,
+      : `No behavioral (PRISM) assessment is on file — base your assessment ENTIRELY on the attached document(s) (résumé / bio / additional info). Assess those directly; say plainly where evidence is limited; do not fabricate scores.`,
     strengths ? `Cited strengths: ${strengths}.` : "",
     goals ? `Stated goals: ${goals}.` : "",
     `Never surface classified or sensitive operational detail; translate SOF experience safely to private-sector terms.`,
