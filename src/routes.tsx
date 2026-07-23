@@ -154,7 +154,9 @@ const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCo
 const Explainability = React.lazy(() => import("@/pages/super-admin/Explainability"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
-const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
+// The old mock PractitionerDashboard is retired — /practitioner/dashboard now
+// redirects to /practitioner/home (the new landing). Its unbuilt
+// /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
 const PractitionerCredits = React.lazy(() => import("@/pages/practitioner/Credits"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
@@ -495,7 +497,7 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/meridian-chat", element: withSuspense(<PractitionerMeridianChat />) },
       { path: "/practitioner/schedule", element: withSuspense(<PractitionerSchedule />) },
       { path: "/practitioner/meeting", element: withSuspense(<PractitionerMeeting />) },
-      { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
+      { path: "/practitioner/dashboard", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
       { path: "/practitioner/clients/:clientId", element: withSuspense(<PractitionerClientProfile />) },
       { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },

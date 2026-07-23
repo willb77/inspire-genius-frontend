@@ -421,12 +421,12 @@ describe("Route Integration Tests", () => {
   });
 
   describe("Role-based access: practitioner role", () => {
-    it("practitioner can access /practitioner/dashboard", async () => {
+    it("practitioner /practitioner/dashboard redirects to Home (old mock retired)", async () => {
       const user = makeAuthUser({ role: "practitioner" });
       const ctx = makeAuthContext({ user });
       renderWithRouter("/practitioner/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
 
     it("practitioner CANNOT access /super-admin/dashboard", async () => {
