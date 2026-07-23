@@ -191,6 +191,49 @@ export type HonorEvaluation = {
   notes: string
 }
 
+/**
+ * A saved evaluation summary (from GET …/{id}/evaluations) — the history-list
+ * shape, without the heavy backbone/narrative blobs.
+ */
+export type HonorSavedEvaluationSummary = {
+  id: string
+  fellowId: string
+  /** Coach-supplied (or generated) label. */
+  title: string
+  /** The evaluation criteria the coach entered. */
+  criteria: string
+  /** Which dimensions were computed. */
+  dimensions: string[]
+  /** True when Nova's narrative was saved alongside the backbone. */
+  hasNarrative: boolean
+  /** ISO timestamp. */
+  createdAt: string | null
+}
+
+/**
+ * A saved evaluation, full view (from GET …/{id}/evaluations/{eid}) — includes
+ * the deterministic backbone + Nova's narrative so the surface can reload a past
+ * run verbatim and the résumé rewrite can key off its suggestions.
+ */
+export type HonorSavedEvaluation = HonorSavedEvaluationSummary & {
+  /** How the run was grounded (frameworks, includeResume/Bio, comparison ids). */
+  sourcesUsed: Record<string, unknown>
+  /** The deterministic evaluation backbone. */
+  evaluation: HonorEvaluation | Record<string, never>
+  /** Nova's narrative markdown (may be empty). */
+  narrativeMarkdown: string
+}
+
+/** Request body for saving an evaluation (POST …/{id}/evaluations). */
+export type SaveEvaluationBody = {
+  evaluation?: HonorEvaluation | null
+  narrativeMarkdown?: string
+  criteria?: string
+  dimensions?: string[]
+  sourcesUsed?: Record<string, unknown>
+  title?: string
+}
+
 /** An assessment a fellow has submitted (from GET …/{id}/sources). */
 export type HonorFellowAssessmentSource = {
   framework: string

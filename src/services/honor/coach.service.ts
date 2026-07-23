@@ -15,7 +15,10 @@ import type {
   HonorResume,
   HonorResumeBody,
   HonorResumeDisabled,
+  HonorSavedEvaluation,
+  HonorSavedEvaluationSummary,
   HonorSourcesBulk,
+  SaveEvaluationBody,
   ScheduleEvent,
   TeamRecord,
 } from "@/types/honor"
@@ -222,6 +225,46 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
   const { data } = await agentApi.post<HonorApiResponse<HonorEvaluation>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluate`,
     body,
+  )
+  return data
+}
+
+// ── Persisted evaluations (Save + history) ───────────────────────────────────
+
+/**
+ * Persist a run of the evaluate route + Nova's narrative — POST …/{id}/evaluations.
+ * The saved record is scoped to the calling coach server-side. Returns the saved
+ * summary (id + metadata). Used by the "Save evaluation" action so a coach can
+ * reload / re-export it later, and the résumé rewrite can key off its suggestions.
+ */
+export async function saveEvaluation(fellowId: string, body: SaveEvaluationBody) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorSavedEvaluationSummary>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations`,
+    body,
+  )
+  return data
+}
+
+/** The coach's saved evaluations for a fellow, newest first — GET …/{id}/evaluations. */
+export async function listEvaluations(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<{ evaluations: HonorSavedEvaluationSummary[] }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations`,
+  )
+  return data
+}
+
+/** One saved evaluation, full view — GET …/{id}/evaluations/{evaluationId}. */
+export async function getEvaluation(fellowId: string, evaluationId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorSavedEvaluation>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations/${encodeURIComponent(evaluationId)}`,
+  )
+  return data
+}
+
+/** Soft-delete a saved evaluation — DELETE …/{id}/evaluations/{evaluationId}. */
+export async function deleteEvaluation(fellowId: string, evaluationId: string) {
+  const { data } = await agentApi.delete<HonorApiResponse<{ deleted: boolean; id: string }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations/${encodeURIComponent(evaluationId)}`,
   )
   return data
 }
