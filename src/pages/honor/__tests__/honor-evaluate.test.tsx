@@ -7,6 +7,12 @@ import { MemoryRouter } from "react-router-dom"
 import type { HonorEvaluation, HonorFellow } from "@/types/honor"
 
 /* ── mocks ── */
+const mockNavigate = jest.fn()
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}))
+
 const evaluateFellow = jest.fn()
 const getFellowSources = jest.fn()
 const recordReportExport = jest.fn()
@@ -467,6 +473,40 @@ test("Saved evaluations history lists past runs and loads one back into the view
   await waitFor(() => expect(getEvaluation).toHaveBeenCalledWith("f1", "ev1"))
   expect(await screen.findByText("Operations Program Management")).toBeInTheDocument()
   expect(screen.getByText("Sharpen the summary.", { exact: false })).toBeInTheDocument()
+})
+
+test("Rewrite résumé from this navigates to the Résumé Writer with the eval context", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  // wait for the narrative so the rewrite button enables
+  await screen.findByText("Marcus is a strong operator.")
+
+  // Save first so a real evaluationId rides along.
+  fireEvent.click(screen.getByRole("button", { name: /save evaluation/i }))
+  await waitFor(() => expect(saveEvaluation).toHaveBeenCalled())
+
+  fireEvent.click(screen.getByRole("button", { name: /rewrite résumé from this/i }))
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
+  const [path, opts] = mockNavigate.mock.calls[0]
+  expect(path).toBe("/vertical/honor/resume")
+  expect(opts.state).toEqual(
+    expect.objectContaining({ fellowId: "f1", evaluationId: "ev1" }),
+  )
+})
+
+test("Rewrite résumé without saving passes the narrative as improvements", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Marcus is a strong operator.")
+
+  // No save → the narrative prose is handed off directly.
+  fireEvent.click(screen.getByRole("button", { name: /rewrite résumé from this/i }))
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
+  const opts = mockNavigate.mock.calls[0][1]
+  expect(opts.state.evaluationId).toBeUndefined()
+  expect(opts.state.improvements).toContain("Marcus is a strong operator.")
 })
 
 test("Deleting a saved evaluation calls the delete endpoint", async () => {
