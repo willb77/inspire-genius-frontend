@@ -1,13 +1,16 @@
 /**
  * @jest-environment jsdom
  *
- * Tests for role-specific layout wrappers:
- * - ManagerLayout        → AppShell (legacy chrome)
- * - CompanyAdminLayout   → AppShell (legacy chrome)
- * - PractitionerLayout   → UnifiedLayout (standard SidebarScaffold chrome, Phase 1)
- * - DistributorLayout    → AppShell (legacy chrome)
+ * Tests for role-specific layout wrappers. As of Phase 1 (2026-07-22) all four
+ * non-standard roles share the standard SidebarScaffold chrome via UnifiedLayout:
+ * - ManagerLayout        → UnifiedLayout
+ * - CompanyAdminLayout   → UnifiedLayout
+ * - PractitionerLayout   → UnifiedLayout
+ * - DistributorLayout    → UnifiedLayout
  *
- * Each is a thin wrapper around its shell with a hardcoded role prop.
+ * Each is a thin wrapper around UnifiedLayout with a hardcoded role prop.
+ * (AppShell is still mocked below only so any lingering import resolves; it is
+ * no longer the target of these wrappers and is retired pending Phase 6 deletion.)
  */
 
 import { render, screen } from "@testing-library/react";
@@ -53,14 +56,14 @@ describe("ManagerLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes role='manager' to AppShell", () => {
+  test("passes role='manager' to UnifiedLayout", () => {
     render(<ManagerLayout><div /></ManagerLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ role: "manager" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ role: "manager" }));
   });
 
   test("forwards className", () => {
     render(<ManagerLayout className="test-class"><div /></ManagerLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ className: "test-class" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ className: "test-class" }));
   });
 });
 
@@ -72,14 +75,14 @@ describe("CompanyAdminLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes role='company-admin' to AppShell", () => {
+  test("passes role='company-admin' to UnifiedLayout", () => {
     render(<CompanyAdminLayout><div /></CompanyAdminLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ role: "company-admin" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ role: "company-admin" }));
   });
 
   test("forwards className", () => {
     render(<CompanyAdminLayout className="ca-class"><div /></CompanyAdminLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ className: "ca-class" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ className: "ca-class" }));
   });
 });
 
@@ -110,13 +113,13 @@ describe("DistributorLayout", () => {
     expect(screen.getByTestId("child")).toBeInTheDocument();
   });
 
-  test("passes role='distributor' to AppShell", () => {
+  test("passes role='distributor' to UnifiedLayout", () => {
     render(<DistributorLayout><div /></DistributorLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ role: "distributor" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ role: "distributor" }));
   });
 
   test("forwards className", () => {
     render(<DistributorLayout className="d-class"><div /></DistributorLayout>);
-    expect(mockAppShell).toHaveBeenCalledWith(expect.objectContaining({ className: "d-class" }));
+    expect(mockUnifiedLayout).toHaveBeenCalledWith(expect.objectContaining({ className: "d-class" }));
   });
 });
