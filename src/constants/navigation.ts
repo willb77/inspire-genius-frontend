@@ -88,9 +88,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
   { to: ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT, icon: Activity, label: "Dev Traffic Report" },
-  // Combined Plan §A.E3.4 — Sage document research
-  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
-  { to: ROUTES.SUPER_ADMIN.RESEARCH_LIBRARY, icon: BookHeart, label: "Research Library" },
+  // Research — consolidated: ask Sage, browse the saved library, and upload
+  // documents to the corpus via the standard document pipeline (one nav item).
+  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Research" },
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
