@@ -13,8 +13,9 @@ export type PractitionerLayoutProps = {
  * AppShell/AppSidebar onto the standard SidebarScaffold chrome (via
  * UnifiedLayout) — the same "My Workspace / Administration" look, driven by
  * PRACTITIONER_NAV_ITEMS and entitlement-gated to practitioner + super-admin.
- * Manager/Company-admin/Distributor still use AppShell until their own
- * migration (intentionally left untouched by this scoped change).
+ * Manager/Company-admin/Distributor were migrated onto UnifiedLayout in the
+ * same Phase 1 (2026-07-22) — all four non-standard roles now share the
+ * standard chrome; AppShell/AppSidebar are retired pending Phase 6 deletion.
  */
 export default function PractitionerLayout({ children, className }: PractitionerLayoutProps) {
   return (
