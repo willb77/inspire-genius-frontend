@@ -12,12 +12,20 @@ const getFellowSources = jest.fn()
 const recordReportExport = jest.fn()
 const emailReport = jest.fn()
 const generateReportDocument = jest.fn()
+const saveEvaluation = jest.fn()
+const listEvaluations = jest.fn()
+const getEvaluation = jest.fn()
+const deleteEvaluation = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   evaluateFellow: (...a: unknown[]) => evaluateFellow(...a),
   getFellowSources: (...a: unknown[]) => getFellowSources(...a),
   recordReportExport: (...a: unknown[]) => recordReportExport(...a),
   emailReport: (...a: unknown[]) => emailReport(...a),
   generateReportDocument: (...a: unknown[]) => generateReportDocument(...a),
+  saveEvaluation: (...a: unknown[]) => saveEvaluation(...a),
+  listEvaluations: (...a: unknown[]) => listEvaluations(...a),
+  getEvaluation: (...a: unknown[]) => getEvaluation(...a),
+  deleteEvaluation: (...a: unknown[]) => deleteEvaluation(...a),
 }))
 
 const sendHonorEvaluation = jest.fn()
@@ -162,6 +170,21 @@ beforeEach(() => {
     status: true,
     data: { downloadUrl: "https://s3/honor.docx", filename: "honor-evaluation-marcus-reyes.docx", format: "docx" },
   })
+  saveEvaluation.mockResolvedValue({
+    status: true,
+    data: { id: "ev1", fellowId: "f1", title: "Ops fit", criteria: "", dimensions: ["career"], hasNarrative: true, createdAt: "2026-07-23T00:00:00Z" },
+  })
+  listEvaluations.mockResolvedValue({ status: true, data: { evaluations: [] } })
+  getEvaluation.mockResolvedValue({
+    status: true,
+    data: {
+      id: "ev1", fellowId: "f1", title: "Ops fit", criteria: "ops leadership",
+      dimensions: ["career"], hasNarrative: true, createdAt: "2026-07-23T00:00:00Z",
+      sourcesUsed: { includeResume: true }, evaluation: opsEval(),
+      narrativeMarkdown: "## Suggestions for Improvement\n- Sharpen the summary.",
+    },
+  })
+  deleteEvaluation.mockResolvedValue({ status: true, data: { deleted: true, id: "ev1" } })
 })
 
 test("selecting a fellow + Run evaluation renders the cited, ranked deterministic report", async () => {
@@ -395,4 +418,71 @@ test("Evaluate: unchecking PRISM sends the narrowed source selection", async () 
   expect(body.sources).toBeDefined()
   expect(body.sources.assessmentFrameworks).not.toContain("PRISM")
   expect(body.sources.includeResume).toBe(true)
+})
+
+// ── Feature 1: persist + Save + history ──────────────────────────────────────
+
+test("Save evaluation persists the backbone + narrative and flips to Saved", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+  // narrative must have landed so it's saved too
+  await screen.findByText("Marcus is a strong operator.")
+
+  fireEvent.click(screen.getByRole("button", { name: /save evaluation/i }))
+
+  await waitFor(() => expect(saveEvaluation).toHaveBeenCalledTimes(1))
+  expect(saveEvaluation).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({
+      evaluation: expect.objectContaining({ subject_id: "f1" }),
+      narrativeMarkdown: "Marcus is a strong operator.",
+      dimensions: ["career", "goals", "education", "position"],
+      sourcesUsed: expect.objectContaining({ includeResume: true }),
+    }),
+  )
+  // button relabels to "Saved" and disables (no duplicate save)
+  expect(await screen.findByRole("button", { name: /^saved$/i })).toBeDisabled()
+})
+
+test("Saved evaluations history lists past runs and loads one back into the view", async () => {
+  listEvaluations.mockResolvedValue({
+    status: true,
+    data: {
+      evaluations: [
+        { id: "ev1", fellowId: "f1", title: "Ops fit — July 19, 2026", criteria: "ops", dimensions: ["career"], hasNarrative: true, createdAt: "2026-07-19T00:00:00Z" },
+      ],
+    },
+  })
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+
+  // Open the history panel (count reflects the fetched list).
+  fireEvent.click(await screen.findByRole("button", { name: /saved evaluations \(1\)/i }))
+  expect(await screen.findByText("Ops fit — July 19, 2026")).toBeInTheDocument()
+
+  // Load the saved run — the backbone + narrative reload into the report.
+  fireEvent.click(screen.getByRole("button", { name: /load/i }))
+  await waitFor(() => expect(getEvaluation).toHaveBeenCalledWith("f1", "ev1"))
+  expect(await screen.findByText("Operations Program Management")).toBeInTheDocument()
+  expect(screen.getByText("Sharpen the summary.", { exact: false })).toBeInTheDocument()
+})
+
+test("Deleting a saved evaluation calls the delete endpoint", async () => {
+  listEvaluations.mockResolvedValue({
+    status: true,
+    data: {
+      evaluations: [
+        { id: "ev1", fellowId: "f1", title: "Ops fit", criteria: "", dimensions: [], hasNarrative: false, createdAt: "2026-07-19T00:00:00Z" },
+      ],
+    },
+  })
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(await screen.findByRole("button", { name: /saved evaluations \(1\)/i }))
+  await screen.findByText("Ops fit")
+
+  fireEvent.click(screen.getByRole("button", { name: /delete saved evaluation/i }))
+  await waitFor(() => expect(deleteEvaluation).toHaveBeenCalledWith("f1", "ev1"))
 })
