@@ -22,6 +22,9 @@ type PresignedUrlRequest = {
   doc_kind?: string;
   company_id?: string;
   tags?: string[];
+  // Admin-gated: store as a SHARED corpus doc (Knowledge Base) visible to every
+  // user's RAG. The backend 403s non-admins. Default (undefined/false) = personal.
+  shared?: boolean;
   /**
    * Subject the document is *about*, when it differs from the uploader (e.g. a
    * coach attaching a member's résumé). Requires a coach-capable role server-side;
