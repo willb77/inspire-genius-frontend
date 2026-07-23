@@ -328,6 +328,8 @@ export type HonorResume = {
   sources: string[]
   grounded: boolean
   disclaimer: string
+  /** True when the draft was rewritten from a prior evaluation's suggestions. */
+  fromEvaluation?: boolean
 }
 
 /** The route returns this shape while the server `honor_resume` flag is off. */
@@ -338,6 +340,14 @@ export type HonorResumeBody = {
   role?: string
   careerArea?: string
   positionText?: string
+  /**
+   * Feature 2 — rewrite keyed off a prior evaluation. Supply a saved
+   * evaluation's id (the server loads it and pulls its "Suggestions for
+   * Improvement") or pass improvement text directly. Neither set → plain
+   * generation, unchanged.
+   */
+  evaluationId?: string
+  improvements?: string
 }
 
 /** Request body for the evaluate route. */
