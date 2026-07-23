@@ -169,7 +169,7 @@ const ROLE_VIEW_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "User Home" },
   { to: ROUTES.MANAGER.DASHBOARD, icon: Users, label: "Manager" },
   { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: Building2, label: "Company Admin" },
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: UserCheck, label: "Practitioner" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: UserCheck, label: "Practitioner" },
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Briefcase, label: "Distributor" },
 ]
 
