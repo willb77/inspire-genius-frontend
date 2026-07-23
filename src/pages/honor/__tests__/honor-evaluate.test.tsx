@@ -11,17 +11,27 @@ const evaluateFellow = jest.fn()
 const getFellowSources = jest.fn()
 const recordReportExport = jest.fn()
 const emailReport = jest.fn()
+const generateReportDocument = jest.fn()
 jest.mock("@/services/honor/coach.service", () => ({
   evaluateFellow: (...a: unknown[]) => evaluateFellow(...a),
   getFellowSources: (...a: unknown[]) => getFellowSources(...a),
   recordReportExport: (...a: unknown[]) => recordReportExport(...a),
   emailReport: (...a: unknown[]) => emailReport(...a),
+  generateReportDocument: (...a: unknown[]) => generateReportDocument(...a),
 }))
 
 const sendHonorEvaluation = jest.fn()
 jest.mock("@/services/honor/honorChat", () => ({
   sendHonorEvaluation: (...a: unknown[]) => sendHonorEvaluation(...a),
 }))
+
+// react-markdown is ESM; jest can't transform it. Mock the renderer (same
+// pattern as AlexChatPanel.test) — it just needs to surface the text.
+jest.mock("@/components/user/chat/AssistantMarkdown", () => {
+  return function AssistantMarkdown({ text }: { text: string }) {
+    return <div data-testid="assistant-markdown">{text}</div>
+  }
+})
 
 const initiateUpload = jest.fn()
 const uploadToS3 = jest.fn()
@@ -148,6 +158,10 @@ beforeEach(() => {
   renderHonorReportPdf.mockResolvedValue({ fileName: "honor-evaluation-marcus-reyes.pdf", blob: new Blob(["pdf"]) })
   recordReportExport.mockResolvedValue({ status: true, data: { recorded: true } })
   emailReport.mockResolvedValue({ status: true, data: { sent: true, messageId: "m1" } })
+  generateReportDocument.mockResolvedValue({
+    status: true,
+    data: { downloadUrl: "https://s3/honor.docx", filename: "honor-evaluation-marcus-reyes.docx", format: "docx" },
+  })
 })
 
 test("selecting a fellow + Run evaluation renders the cited, ranked deterministic report", async () => {
@@ -252,21 +266,43 @@ test("attaching a position description uploads with doc_kind=position for the su
   expect(triggerProcessing).toHaveBeenCalledWith("d1")
 })
 
-test("Narrate with Meridian renders the synthesized prose + trace", async () => {
+test("Run evaluation auto-composes Meridian's formatted narrative + trace", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+
+  // Narration fires automatically once the deterministic report returns.
+  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(1))
+  expect(sendHonorEvaluation).toHaveBeenCalledWith(
+    expect.stringContaining("## Objective Evaluation"),
+    expect.objectContaining({ memberId: "f1" }),
+  )
+  // The formatted narrative renders as the primary evaluation card.
+  expect(await screen.findByText("Marcus is a strong operator.")).toBeInTheDocument()
+  // A manual "Regenerate with Meridian" re-runs it.
+  fireEvent.click(screen.getByRole("button", { name: /regenerate with meridian/i }))
+  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(2))
+})
+
+test("Export as… → Word calls the multi-format generator and opens the download", async () => {
+  const openSpy = jest.spyOn(window, "open").mockImplementation(() => null)
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
   await screen.findByText("Operations Program Management")
 
-  fireEvent.click(screen.getByRole("button", { name: /narrate with meridian/i }))
-  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(1))
-  // narration goes to Meridian for the subject fellow, model-free summary in the prompt
-  expect(sendHonorEvaluation).toHaveBeenCalledWith(
-    expect.stringContaining("Do not invent or change any score"),
-    expect.objectContaining({ memberId: "f1" }),
+  fireEvent.click(screen.getByRole("button", { name: /export as/i }))
+  fireEvent.click(screen.getByRole("menuitem", { name: /word/i }))
+
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalledTimes(1))
+  expect(generateReportDocument).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ format: "docx", kind: "evaluation" }),
   )
-  expect(await screen.findByText("Meridian narrative")).toBeInTheDocument()
-  expect(screen.getByText("Marcus is a strong operator.")).toBeInTheDocument()
+  await waitFor(() =>
+    expect(openSpy).toHaveBeenCalledWith("https://s3/honor.docx", "_blank", "noopener"),
+  )
+  openSpy.mockRestore()
 })
 
 test("select all selects every fellow; no-scores fellow shows the imputed banner", async () => {
@@ -281,7 +317,7 @@ test("select all selects every fellow; no-scores fellow shows the imputed banner
   await waitFor(() => expect(evaluateFellow).toHaveBeenCalled())
   // both other fellows passed as comparison memberIds
   expect(evaluateFellow).toHaveBeenCalledWith("f1", expect.objectContaining({ memberIds: ["f2"] }))
-  expect(await screen.findByText(/imputed-neutral/i)).toBeInTheDocument()
+  expect(await screen.findByText(/composed from the fellow/i)).toBeInTheDocument()
 })
 
 test("Download PDF renders the branded report (fellow + coach identity) and logs the export", async () => {
