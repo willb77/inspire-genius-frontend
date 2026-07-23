@@ -13,6 +13,9 @@ import {
   Mail,
   ChevronDown,
   FileText,
+  Save,
+  History,
+  Trash2,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -20,9 +23,13 @@ import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import {
+  useDeleteEvaluation,
+  useEvaluationHistory,
   useFellowSources,
   useHonorEvaluate,
   useHonorEvaluateReport,
+  useLoadSavedEvaluation,
+  useSaveEvaluation,
 } from "@/hooks/honor/useHonorEvaluate"
 import { useFellowSourcesBulk } from "@/hooks/honor/useHonorArtifacts"
 import {
@@ -241,6 +248,9 @@ export default function HonorEvaluate() {
   const recordExport = useRecordReportExport()
   const emailMutation = useEmailHonorReport()
   const generateDoc = useGenerateReportDocument()
+  const saveEval = useSaveEvaluation()
+  const loadSaved = useLoadSavedEvaluation()
+  const deleteEval = useDeleteEvaluation()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -264,6 +274,11 @@ export default function HonorEvaluate() {
   const [excludedFrameworks, setExcludedFrameworks] = useState<Set<string>>(new Set())
   const [includeResume, setIncludeResume] = useState(true)
   const [includeBio, setIncludeBio] = useState(true)
+  // Saved-evaluation history (Feature 1). `savedId` is set once the current
+  // result is persisted (or loaded from history) so the Save button flips to
+  // "Saved" and the coach can delete the loaded record.
+  const [showHistory, setShowHistory] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
 
   const selectedFellows = useMemo(
     () => fellows.filter((f) => selected.has(f.id)),
@@ -273,6 +288,8 @@ export default function HonorEvaluate() {
   const primaryName = primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"
   const sourcesQuery = useFellowSources(primary?.id)
   const sources = sourcesQuery.data
+  const historyQuery = useEvaluationHistory(primary?.id)
+  const history = historyQuery.data ?? []
   // Per-fellow source status for the whole grid (compact 10-artifact row below
   // each fellow). Read-safe: degrades to an empty map when unavailable.
   const allFellowIds = useMemo(() => fellows.map((f) => f.id), [fellows])
@@ -322,6 +339,7 @@ export default function HonorEvaluate() {
     }
     setNarrationMarkdown("")
     setNarrationTrace([])
+    setSavedId(null)
     try {
       // Source selection — only send when we know the fellow's sources. Narrow
       // assessmentFrameworks only if the coach excluded some (else null = all).
@@ -508,6 +526,77 @@ export default function HonorEvaluate() {
       toast.error(`Could not generate the ${FORMAT_LABEL[fmt]}.`)
     } finally {
       setExportFormat(null)
+    }
+  }
+
+  // ── Persisted evaluations (Feature 1: Save + history) ─────────────────────
+  /** Provenance of the current run — stored with the saved evaluation. */
+  function currentSourcesUsed(): Record<string, unknown> {
+    return {
+      includeResume,
+      includeBio,
+      excludedFrameworks: [...excludedFrameworks],
+      comparisonIds,
+      targetArea: comparisonIds.length ? targetArea : null,
+    }
+  }
+
+  /** A default label when the coach doesn't name the saved evaluation. */
+  function defaultSaveTitle(): string {
+    const crit = criteria.trim()
+    const base = crit ? crit.slice(0, 60) : `${primaryName} evaluation`
+    return `${base} — ${formatReportDate(new Date())}`
+  }
+
+  async function handleSaveEvaluation() {
+    if (!result || !primary || savedId) return
+    try {
+      const saved = await saveEval.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          criteria: criteria.trim() || undefined,
+          dimensions: EVAL_DIMENSIONS.map((d) => d.key).filter((k) => dimensions.has(k)),
+          sourcesUsed: currentSourcesUsed(),
+          title: defaultSaveTitle(),
+        },
+      })
+      if (saved?.id) setSavedId(saved.id)
+    } catch {
+      /* toast handled in the hook */
+    }
+  }
+
+  async function handleLoadSaved(evaluationId: string) {
+    if (!primary) return
+    try {
+      const saved = await loadSaved.mutateAsync({ fellowId: primary.id, evaluationId })
+      if (!saved) return
+      const backbone = saved.evaluation as HonorEvaluation | Record<string, never>
+      // Reload the deterministic backbone when present; always restore the
+      // narrative + criteria so the reader sees the saved prose verbatim.
+      setResult(
+        backbone && "objective_evaluation" in backbone ? (backbone as HonorEvaluation) : null,
+      )
+      setNarrationMarkdown(saved.narrativeMarkdown || "")
+      setNarrationTrace(saved.narrativeMarkdown ? ["Nova (saved)"] : [])
+      setCriteria(saved.criteria || "")
+      setSavedId(saved.id)
+      setShowHistory(false)
+      toast.success("Saved evaluation loaded.")
+    } catch {
+      /* toast handled in the hook */
+    }
+  }
+
+  async function handleDeleteSaved(evaluationId: string) {
+    if (!primary) return
+    try {
+      await deleteEval.mutateAsync({ fellowId: primary.id, evaluationId })
+      if (savedId === evaluationId) setSavedId(null)
+    } catch {
+      /* toast handled in the hook */
     }
   }
 
@@ -825,12 +914,81 @@ export default function HonorEvaluate() {
                   ? "Re-run evaluation"
                   : "Run evaluation"}
           </button>
+          {primary && (
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              className={HONOR_BTN_OUTLINE}
+              aria-expanded={showHistory}
+            >
+              <History className="h-4 w-4" />
+              Saved evaluations{history.length ? ` (${history.length})` : ""}
+            </button>
+          )}
           <span className="text-xs text-[#9299a6]">
             Scores the fellow&rsquo;s profile and writes the evaluation. Edit the
             criteria above and run again to refocus it.
           </span>
         </div>
       </HonorCard>
+
+      {/* Saved-evaluation history (Feature 1) — load a past run back into the
+          view, or delete it. Shown on demand; independent of the current run. */}
+      {primary && showHistory && (
+        <HonorCard className="mb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <HonorSectionTitle>Saved evaluations — {primaryName}</HonorSectionTitle>
+            {historyQuery.isFetching && <Loader2 className="h-4 w-4 animate-spin text-[#9299a6]" />}
+          </div>
+          {history.length === 0 ? (
+            <p className="text-sm text-[#9299a6]">
+              No saved evaluations yet. Run an evaluation and choose{" "}
+              <span className="font-medium text-[#5b6678]">Save evaluation</span> to keep it here.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[#eef1f6]">
+              {history.map((h) => (
+                <li key={h.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#18202f]">
+                      {h.title || "Untitled evaluation"}
+                    </p>
+                    <p className="truncate text-xs text-[#9299a6]">
+                      {h.createdAt ? formatReportDate(new Date(h.createdAt)) : ""}
+                      {h.hasNarrative ? " · Nova narrative" : " · scores only"}
+                      {h.dimensions.length ? ` · ${h.dimensions.join(", ")}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleLoadSaved(h.id)}
+                      disabled={loadSaved.isPending}
+                      className={HONOR_BTN_OUTLINE}
+                    >
+                      {loadSaved.isPending && loadSaved.variables?.evaluationId === h.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 rotate-180" />
+                      )}
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSaved(h.id)}
+                      disabled={deleteEval.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0d9d9] px-2.5 py-1.5 text-sm text-[#a2543f] hover:bg-[#fdf4f4] disabled:opacity-50"
+                      aria-label="Delete saved evaluation"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </HonorCard>
+      )}
 
       {result && (
         <>
@@ -968,6 +1126,23 @@ export default function HonorEvaluate() {
                 <Printer className="h-4 w-4" />
               )}
               Print
+            </button>
+
+            {/* Save the evaluation (deterministic backbone + Nova narrative) for
+                later reference / re-export / résumé rewrite (Feature 1). */}
+            <button
+              type="button"
+              onClick={handleSaveEvaluation}
+              disabled={!canExport || saveEval.isPending || !!savedId}
+              className={HONOR_BTN_OUTLINE}
+              title={savedId ? "This evaluation is saved to the fellow's history." : "Save this evaluation"}
+            >
+              {saveEval.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {savedId ? "Saved" : "Save evaluation"}
             </button>
             {USE_HONOR_REPORT_EMAIL && (
               <button
