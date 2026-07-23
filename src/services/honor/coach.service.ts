@@ -358,3 +358,53 @@ export async function emailReport(fellowId: string, body: EmailReportBody) {
   )
   return data
 }
+
+/** Formats the multi-format export route can produce (via the Core docgen engine). */
+export type HonorReportFormat =
+  | "docx"
+  | "pdf"
+  | "pptx"
+  | "xlsx"
+  | "csv"
+  | "md"
+  | "html"
+  | "txt"
+
+export type GenerateReportBody = {
+  kind?: HonorReportKind
+  format: HonorReportFormat
+  /** The deterministic evaluation backbone (HonorEvaluation) — optional. */
+  evaluation?: HonorEvaluation | null
+  /** Meridian's narrative in markdown — optional. */
+  narrativeMarkdown?: string
+  fellowName?: string
+  fellowTitle?: string
+  fellowEmail?: string
+  coachName?: string
+  coachTitle?: string
+  coachEmail?: string
+  dateLabel?: string
+}
+
+export type GenerateReportResult = {
+  downloadUrl: string
+  filename: string
+  format: HonorReportFormat
+  contentType?: string
+  expiresIn?: number
+}
+
+/**
+ * Render a Fellow's evaluation/résumé to ANY supported format (Word · PDF ·
+ * PowerPoint · Excel · CSV · Markdown · HTML) — POST …/{id}/report/generate.
+ * The server reuses the Core document-generation engine (deterministic, no model
+ * call), brands it with the THF cover + confidential footer, uploads to S3, and
+ * returns a short-lived presigned download URL. Ownership-gated server-side.
+ */
+export async function generateReportDocument(fellowId: string, body: GenerateReportBody) {
+  const { data } = await agentApi.post<HonorApiResponse<GenerateReportResult>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/generate`,
+    body,
+  )
+  return data
+}
