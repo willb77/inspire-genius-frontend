@@ -509,6 +509,37 @@ test("Rewrite résumé without saving passes the narrative as improvements", asy
   expect(opts.state.improvements).toContain("Marcus is a strong operator.")
 })
 
+// ── Feature 3: export polish (txt + share a link) ────────────────────────────
+
+test("export menu includes Plain text (.txt)", async () => {
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+
+  fireEvent.click(screen.getByRole("button", { name: /export as/i }))
+  expect(screen.getByRole("menuitem", { name: /plain text|\.txt|text \(\.txt\)/i })).toBeInTheDocument()
+})
+
+test("Copy link generates a PDF and copies the presigned URL", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true })
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+  await screen.findByText("Operations Program Management")
+
+  fireEvent.click(screen.getByRole("button", { name: /copy link/i }))
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalled())
+  expect(generateReportDocument).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ kind: "evaluation", format: "pdf" }),
+  )
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://s3/honor.docx"))
+  // @ts-expect-error cleanup
+  delete navigator.clipboard
+})
+
 test("Deleting a saved evaluation calls the delete endpoint", async () => {
   listEvaluations.mockResolvedValue({
     status: true,
