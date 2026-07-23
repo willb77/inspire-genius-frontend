@@ -1,7 +1,7 @@
 /**
  * /super-admin/research — Sage (DocumentAgent) document research (Combined Plan §A.E3.4).
  */
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -28,7 +28,10 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export default function DocumentResearchPage() {
+export default function DocumentResearchPage({ embedded = false }: { embedded?: boolean } = {}) {
+  // When `embedded` (rendered inside the consolidated Research page's tabs), skip
+  // SuperAdminLayout so we don't double-wrap the chrome.
+  const Wrapper = embedded ? Fragment : SuperAdminLayout
   const [result, setResult] = useState<TaskAgentResponse | null>(null)
   const [lastRequest, setLastRequest] = useState<Record<string, unknown>>({})
 
@@ -68,7 +71,7 @@ export default function DocumentResearchPage() {
 
   if (result) {
     return (
-      <SuperAdminLayout>
+      <Wrapper>
         <div className="mx-auto max-w-3xl py-8 space-y-4">
           <h1 className="text-2xl font-semibold">Document Research</h1>
           <TaskAgentResultCard
@@ -80,12 +83,12 @@ export default function DocumentResearchPage() {
             title="Document research"
           />
         </div>
-      </SuperAdminLayout>
+      </Wrapper>
     )
   }
 
   return (
-    <SuperAdminLayout>
+    <Wrapper>
       <div className="mx-auto max-w-3xl py-8 space-y-4">
         <header>
           <h1 className="text-2xl font-semibold">Document Research</h1>
@@ -145,6 +148,6 @@ export default function DocumentResearchPage() {
           </CardContent>
         </Card>
       </div>
-    </SuperAdminLayout>
+    </Wrapper>
   )
 }
