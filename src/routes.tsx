@@ -131,7 +131,7 @@ const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprin
 const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
-const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/DocumentResearchPage"));
+const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
 const SuperAdminResearchLibrary = React.lazy(() => import("@/pages/super-admin/ResearchLibraryPage"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
