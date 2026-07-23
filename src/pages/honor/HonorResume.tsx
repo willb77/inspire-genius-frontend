@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { toast } from "sonner"
-import { FileText, Loader2, Download, Mail, X, Sparkles } from "lucide-react"
+import { FileText, Loader2, Download, Mail, X, Sparkles, PenLine } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
@@ -47,7 +48,22 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
+/**
+ * The handoff payload from the Evaluate surface (Feature 2 — rewrite-from-eval).
+ * Passed via router state so no ids ride in the URL. Either an `evaluationId`
+ * (the server pulls the saved eval's "Suggestions for Improvement") or raw
+ * `improvements` prose (when the eval wasn't saved) — the résumé rewrite keys
+ * off whichever is present.
+ */
+type RewriteHandoff = {
+  fellowId?: string
+  fellowName?: string
+  evaluationId?: string
+  improvements?: string
+}
+
 export default function HonorResume() {
+  const location = useLocation()
   const { data: fellows = [] } = useCaseload()
   const { user } = useAuth()
   const { data: coachHome } = useCoachHome()
@@ -61,6 +77,22 @@ export default function HonorResume() {
   const [careerArea, setCareerArea] = useState("")
   const [careerAreaOther, setCareerAreaOther] = useState("")
   const [positionText, setPositionText] = useState("")
+  // Feature 2 — the rewrite-from-evaluation context handed off from Evaluate.
+  // When set, generation keys off the evaluation's suggestions; "Clear" drops
+  // back to plain generation. Retained across re-generates until cleared.
+  const [rewriteFrom, setRewriteFrom] = useState<RewriteHandoff | null>(null)
+
+  // Consume the Evaluate handoff once on arrival: pre-select the fellow and arm
+  // the rewrite context. Runs when navigation state carries a fellow.
+  useEffect(() => {
+    const state = location.state as RewriteHandoff | null
+    if (state?.fellowId && (state.evaluationId || state.improvements)) {
+      setFellowId(state.fellowId)
+      setRewriteFrom(state)
+    }
+    // location.state is a one-shot handoff; only react to identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key])
 
   // The effective career-area hint: the free-typed value when "Other" is picked.
   const effectiveCareerArea =
@@ -88,6 +120,14 @@ export default function HonorResume() {
           role: role.trim() || undefined,
           careerArea: effectiveCareerArea || undefined,
           positionText: positionText.trim() || undefined,
+          // Feature 2 — rewrite keyed off the evaluation, only for the fellow the
+          // handoff targeted (guard against a fellow switch clearing intent).
+          ...(rewriteFrom && rewriteFrom.fellowId === primary.id
+            ? {
+                evaluationId: rewriteFrom.evaluationId,
+                improvements: rewriteFrom.improvements,
+              }
+            : {}),
         },
       })
       if (isResumeDisabled(data)) {
@@ -99,6 +139,9 @@ export default function HonorResume() {
         setResume(data)
         setIsSample(false)
         setGenPending(false)
+        if (data.fromEvaluation) {
+          toast.success("Résumé rewritten from the evaluation's suggestions.")
+        }
       } else {
         toast.error("No résumé was returned.")
       }
@@ -234,6 +277,26 @@ export default function HonorResume() {
         description="Generate a private-sector résumé from the Fellow's profile and documents, safely translated from their service. Review before use."
       />
 
+      {/* Feature 2 — rewrite-from-evaluation banner. Shown when arriving from
+          Evaluate with an evaluation's suggestions; "Clear" reverts to plain. */}
+      {rewriteFrom && rewriteFrom.fellowId === fellowId && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#cdd8ef] bg-[#eef2fb] px-4 py-3">
+          <span className="inline-flex items-center gap-2 text-sm text-[#1B2A4A]">
+            <PenLine className="h-4 w-4" />
+            Rewriting from the evaluation&rsquo;s suggestions
+            {rewriteFrom.fellowName ? ` for ${rewriteFrom.fellowName}` : ""}. Generate to apply them.
+          </span>
+          <button
+            type="button"
+            onClick={() => setRewriteFrom(null)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#cdd8ef] bg-white px-2.5 py-1.5 text-xs text-[#1B2A4A] hover:bg-[#f4f6fa]"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear — write plainly
+          </button>
+        </div>
+      )}
+
       <HonorCard className="mb-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="text-sm">
@@ -312,7 +375,11 @@ export default function HonorResume() {
             className={HONOR_BTN_PRIMARY}
           >
             {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generate.isPending ? "Writing résumé…" : "Generate résumé"}
+            {generate.isPending
+              ? "Writing résumé…"
+              : rewriteFrom && rewriteFrom.fellowId === fellowId
+                ? "Rewrite résumé from evaluation"
+                : "Generate résumé"}
           </button>
         </div>
         {fellows.length === 0 && (

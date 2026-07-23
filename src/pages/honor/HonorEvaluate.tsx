@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   Sparkles,
@@ -16,9 +17,11 @@ import {
   Save,
   History,
   Trash2,
+  PenLine,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ROUTES } from "@/constants/routes"
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
@@ -240,6 +243,7 @@ function printBlob(blob: Blob) {
 }
 
 export default function HonorEvaluate() {
+  const navigate = useNavigate()
   const { data: fellows = [] } = useCaseload()
   const { user } = useAuth()
   const { data: coachHome } = useCoachHome()
@@ -598,6 +602,24 @@ export default function HonorEvaluate() {
     } catch {
       /* toast handled in the hook */
     }
+  }
+
+  /**
+   * Feature 2 — hand off to the Résumé Writer to rewrite keyed off this
+   * evaluation's suggestions. If the evaluation is saved, pass its id (the server
+   * pulls the "Suggestions for Improvement" section); otherwise pass the narrative
+   * prose directly. Either way the Résumé Writer opens pre-targeted at this fellow.
+   */
+  function handleRewriteResume() {
+    if (!primary) return
+    navigate(ROUTES.HONOR.RESUME, {
+      state: {
+        fellowId: primary.id,
+        fellowName: primaryName,
+        evaluationId: savedId || undefined,
+        improvements: savedId ? undefined : narrationMarkdown || undefined,
+      },
+    })
   }
 
   function openEmail() {
@@ -1143,6 +1165,19 @@ export default function HonorEvaluate() {
                 <Save className="h-4 w-4" />
               )}
               {savedId ? "Saved" : "Save evaluation"}
+            </button>
+
+            {/* Feature 2 — hand off to the Résumé Writer to rewrite keyed off
+                this evaluation's suggestions. Enabled once a narrative exists. */}
+            <button
+              type="button"
+              onClick={handleRewriteResume}
+              disabled={!canExport || !narrationMarkdown}
+              className={HONOR_BTN_OUTLINE}
+              title="Rewrite the fellow's résumé using this evaluation's suggestions"
+            >
+              <PenLine className="h-4 w-4" />
+              Rewrite résumé from this
             </button>
             {USE_HONOR_REPORT_EMAIL && (
               <button

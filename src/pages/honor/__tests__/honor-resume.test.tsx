@@ -166,3 +166,60 @@ test("email button is hidden while USE_HONOR_REPORT_EMAIL is off", async () => {
   expect(screen.getByRole("button", { name: /download pdf/i })).toBeInTheDocument()
   expect(screen.queryByRole("button", { name: /email to fellow/i })).not.toBeInTheDocument()
 })
+
+// ── Feature 2: rewrite-from-evaluation handoff ───────────────────────────────
+
+function renderWithHandoff(state: Record<string, unknown>) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[{ pathname: "/vertical/honor/resume", state }]}>
+        <HonorResume />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+test("arriving from Evaluate pre-selects the fellow, shows the rewrite banner, and threads evaluationId", async () => {
+  generateResume.mockResolvedValue({ status: true, data: { ...resumeFixture(), fromEvaluation: true } })
+  renderWithHandoff({ fellowId: "f1", fellowName: "Marcus Reyes", evaluationId: "ev1" })
+
+  // Banner appears; the fellow is pre-selected; the button relabels.
+  expect(await screen.findByText(/Rewriting from the evaluation.s suggestions/i)).toBeInTheDocument()
+  expect((screen.getAllByRole("combobox")[0] as HTMLSelectElement).value).toBe("f1")
+
+  fireEvent.click(screen.getByRole("button", { name: /rewrite résumé from evaluation/i }))
+  await waitFor(() => expect(generateResume).toHaveBeenCalledTimes(1))
+  expect(generateResume).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ evaluationId: "ev1" }),
+  )
+})
+
+test("Clear reverts to plain generation (no evaluationId sent)", async () => {
+  renderWithHandoff({ fellowId: "f1", fellowName: "Marcus Reyes", evaluationId: "ev1" })
+  await screen.findByText(/Rewriting from the evaluation.s suggestions/i)
+
+  fireEvent.click(screen.getByRole("button", { name: /clear — write plainly/i }))
+  // banner gone, button back to plain label
+  expect(screen.queryByText(/Rewriting from the evaluation.s suggestions/i)).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
+  await waitFor(() => expect(generateResume).toHaveBeenCalled())
+  const body = generateResume.mock.calls[0][1]
+  expect(body.evaluationId).toBeUndefined()
+  expect(body.improvements).toBeUndefined()
+})
+
+test("handoff without a saved id passes the narrative as improvements text", async () => {
+  generateResume.mockResolvedValue({ status: true, data: { ...resumeFixture(), fromEvaluation: true } })
+  renderWithHandoff({ fellowId: "f1", fellowName: "Marcus Reyes", improvements: "## Suggestions for Improvement\n- Quantify scope." })
+  await screen.findByText(/Rewriting from the evaluation.s suggestions/i)
+
+  fireEvent.click(screen.getByRole("button", { name: /rewrite résumé from evaluation/i }))
+  await waitFor(() => expect(generateResume).toHaveBeenCalled())
+  expect(generateResume).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ improvements: expect.stringContaining("Quantify scope") }),
+  )
+})
