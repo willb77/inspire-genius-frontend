@@ -266,22 +266,28 @@ test("attaching a position description uploads with doc_kind=position for the su
   expect(triggerProcessing).toHaveBeenCalledWith("d1")
 })
 
-test("Run evaluation auto-composes Meridian's formatted narrative + trace", async () => {
+test("Run evaluation auto-composes Meridian's formatted narrative, driven by the coach's criteria", async () => {
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
+  // The coach's typed criteria must flow into the evaluation prompt.
+  fireEvent.change(screen.getByPlaceholderText(/Describe what to evaluate/i), {
+    target: { value: "Assess readiness to lead a security operations team" },
+  })
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
 
   // Narration fires automatically once the deterministic report returns.
   await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(1))
-  expect(sendHonorEvaluation).toHaveBeenCalledWith(
-    expect.stringContaining("## Objective Evaluation"),
-    expect.objectContaining({ memberId: "f1" }),
-  )
+  const prompt = sendHonorEvaluation.mock.calls[0][0] as string
+  expect(prompt).toContain("## Objective Evaluation")
+  expect(prompt).toContain("Assess readiness to lead a security operations team") // criteria threaded in
+  expect(prompt).toMatch(/NOT a file|inline/i) // instructs inline prose, not a download
+  expect(sendHonorEvaluation).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ memberId: "f1" }))
+
   // The formatted narrative renders as the primary evaluation card.
   expect(await screen.findByText("Marcus is a strong operator.")).toBeInTheDocument()
-  // A manual "Regenerate with Meridian" re-runs it.
-  fireEvent.click(screen.getByRole("button", { name: /regenerate with meridian/i }))
-  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(2))
+  // The single action relabels to "Re-run evaluation" (no separate Regenerate button).
+  expect(screen.getByRole("button", { name: /re-run evaluation/i })).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: /regenerate/i })).not.toBeInTheDocument()
 })
 
 test("Export as… → Word calls the multi-format generator and opens the download", async () => {

@@ -6,7 +6,6 @@ import {
   User,
   Upload,
   Loader2,
-  Wand2,
   CheckSquare,
   Square,
   Download,
@@ -32,7 +31,7 @@ import {
   useRecordReportExport,
 } from "@/hooks/honor/useHonorReport"
 import type { HonorReportFormat } from "@/services/honor/coach.service"
-import { USE_HONOR_EVAL_LIVE, USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
+import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { downloadBlob } from "@/lib/exportTranscript"
 import {
   formatReportDate,
@@ -157,7 +156,11 @@ function narrativeToPdfHtml(md: string): string {
  * when they don't (résumé-only), it evaluates primarily from the résumé + other
  * sources. Output is markdown so the surface + exports render it formatted.
  */
-function summarizeForNarration(report: HonorEvaluation, subjectName: string): string {
+function summarizeForNarration(
+  report: HonorEvaluation,
+  subjectName: string,
+  criteria?: string,
+): string {
   const hasScores = (report.confidence?.behavioralBasis ?? report.frameworks.length > 0)
   const top = report.career_fit_ranked
     .slice(0, 3)
@@ -165,9 +168,13 @@ function summarizeForNarration(report: HonorEvaluation, subjectName: string): st
     .join(", ")
   const strengths = report.objective_evaluation.map((c) => c.source).join("; ")
   const goals = report.goals_fit.map((g) => `${g.goal} → ${g.verdict}`).join("; ")
+  const ask = (criteria || "").trim()
   return [
-    `Write a direct, concise, dignified evaluation of ${subjectName} for their Honor Foundation coach.`,
-    `Format it in Markdown with clear section headings, short paragraphs, bullet lists, and a table where it aids clarity. Use these sections:`,
+    `You are writing a professional evaluation of ${subjectName} for their Honor Foundation coach — direct, concise, objective, and dignified.`,
+    ask
+      ? `The coach's specific request to address: "${ask}". Make this the focus of the evaluation and answer it directly.`
+      : `Evaluate the fellow's overall fit, strengths, development areas, and goal/career alignment.`,
+    `Write the evaluation inline as well-structured Markdown prose — NOT a file, link, or download. Use these ## section headings, short paragraphs, **bold** for key points, and bullet lists (and a small table only where it genuinely aids clarity):`,
     `## Objective Evaluation`,
     `## Goals & Objectives — Fit`,
     `## Career / Position Fit`,
@@ -392,7 +399,7 @@ export default function HonorEvaluate() {
     const subjectName = fellowName(primary.firstName, primary.lastName)
     try {
       const reply = await narrate.mutateAsync({
-        prompt: summarizeForNarration(evalResult, subjectName),
+        prompt: summarizeForNarration(evalResult, subjectName, criteria),
         memberId: primary.id,
       })
       if (reply.content.trim()) {
@@ -404,10 +411,6 @@ export default function HonorEvaluate() {
     } catch {
       toast.error("Meridian could not compose the evaluation right now.")
     }
-  }
-
-  function runNarration() {
-    if (result) void narrateResult(result)
   }
 
   // ── Report export (Phase 4) ──────────────────────────────────────────────
@@ -800,28 +803,30 @@ export default function HonorEvaluate() {
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={runEvaluation}
-            disabled={!primary || report.isPending}
+            disabled={!primary || report.isPending || narrate.isPending}
             className={HONOR_BTN_PRIMARY}
           >
-            {report.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {report.isPending ? "Evaluating…" : "Run evaluation"}
+            {report.isPending || narrate.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {report.isPending
+              ? "Scoring…"
+              : narrate.isPending
+                ? "Writing evaluation…"
+                : result
+                  ? "Re-run evaluation"
+                  : "Run evaluation"}
           </button>
-          {result && USE_HONOR_EVAL_LIVE && (
-            <button
-              type="button"
-              onClick={runNarration}
-              disabled={narrate.isPending}
-              className={HONOR_BTN_OUTLINE}
-              title="Re-compose the written evaluation with Meridian"
-            >
-              {narrate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              {narrate.isPending ? "Composing…" : "Regenerate with Meridian"}
-            </button>
-          )}
+          <span className="text-xs text-[#9299a6]">
+            Scores the fellow&rsquo;s profile and writes the evaluation. Edit the
+            criteria above and run again to refocus it.
+          </span>
         </div>
       </HonorCard>
 
