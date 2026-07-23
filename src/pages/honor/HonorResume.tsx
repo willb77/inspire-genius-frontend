@@ -1,14 +1,17 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { FileText, Loader2, Download, Printer, Mail, X, Sparkles } from "lucide-react"
+import { FileText, Loader2, Download, Mail, X, Sparkles } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
-import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
+import {
+  useEmailHonorReport,
+  useGenerateReportDocument,
+  useRecordReportExport,
+} from "@/hooks/honor/useHonorReport"
+import type { HonorReportFormat } from "@/services/honor/coach.service"
 import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
-import { downloadBlob } from "@/lib/exportTranscript"
 import { formatReportDate, type HonorReportMeta } from "@/lib/honor/exportHonorReport"
-import { renderHonorResumePdf } from "@/lib/honor/exportHonorResume"
 import type { HonorResume as HonorResumeData } from "@/types/honor"
 import {
   HonorCard,
@@ -44,36 +47,12 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-function printBlob(blob: Blob) {
-  const url = URL.createObjectURL(blob)
-  const iframe = document.createElement("iframe")
-  iframe.style.position = "fixed"
-  iframe.style.right = "0"
-  iframe.style.bottom = "0"
-  iframe.style.width = "0"
-  iframe.style.height = "0"
-  iframe.style.border = "0"
-  iframe.src = url
-  iframe.onload = () => {
-    try {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-    } catch {
-      window.open(url, "_blank")
-    }
-    window.setTimeout(() => {
-      iframe.remove()
-      URL.revokeObjectURL(url)
-    }, 60_000)
-  }
-  document.body.appendChild(iframe)
-}
-
 export default function HonorResume() {
   const { data: fellows = [] } = useCaseload()
   const { user } = useAuth()
   const { data: coachHome } = useCoachHome()
   const generate = useGenerateResume()
+  const generateDoc = useGenerateReportDocument()
   const recordExport = useRecordReportExport()
   const emailMutation = useEmailHonorReport()
 
@@ -91,7 +70,7 @@ export default function HonorResume() {
   // Résumé generation ships dark behind the server `honor_resume` flag. While
   // off we show an honest "not enabled" state — never a fabricated sample résumé.
   const [genPending, setGenPending] = useState(false)
-  const [exporting, setExporting] = useState<null | "download" | "print">(null)
+  const [exporting, setExporting] = useState<null | HonorReportFormat | "email">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
 
@@ -146,38 +125,46 @@ export default function HonorResume() {
     }
   }
 
-  async function renderPdf() {
+  /** Build the report/generate body for the CLEAN (unbranded) résumé document. */
+  function resumeDocBody(fmt: HonorReportFormat) {
     const meta = buildResumeMeta()
-    if (!resume || !meta) return null
-    return renderHonorResumePdf(resume, meta)
-  }
-
-  async function handleDownload() {
-    if (!resume || !primary) return
-    setExporting("download")
-    try {
-      const out = await renderPdf()
-      if (!out) return
-      downloadBlob(out.fileName, out.blob)
-      if (!isSample) recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
-      toast.success("Résumé PDF downloaded.")
-    } catch {
-      toast.error("Could not generate the PDF.")
-    } finally {
-      setExporting(null)
+    return {
+      kind: "resume" as const,
+      format: fmt,
+      resume,
+      fellowName: meta?.fellowName,
+      fellowTitle: meta?.fellowTitle,
+      fellowEmail: meta?.fellowEmail,
+      coachName: meta?.coachName,
+      coachTitle: meta?.coachTitle,
+      coachEmail: meta?.coachEmail,
+      dateLabel: meta?.dateLabel,
     }
   }
 
-  async function handlePrint() {
+  /**
+   * Render + download the résumé as Word or PDF via the backend, which produces
+   * a clean, hiring-manager-ready document — no IG/THF cover page, branding, or
+   * confidential footer, and proper page margins (no header/footer overlap).
+   */
+  async function handleExport(fmt: HonorReportFormat) {
     if (!resume || !primary) return
-    setExporting("print")
+    if (isSample) {
+      toast.info("This is a sample layout — enable résumé generation to export.")
+      return
+    }
+    setExporting(fmt)
     try {
-      const out = await renderPdf()
-      if (!out) return
-      printBlob(out.blob)
-      if (!isSample) recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "print" })
+      const data = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody(fmt) })
+      if (data?.downloadUrl) {
+        window.open(data.downloadUrl, "_blank", "noopener")
+        recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
+        toast.success(`Résumé ${fmt === "docx" ? "Word document" : "PDF"} generated.`)
+      } else {
+        toast.error("Could not generate the résumé.")
+      }
     } catch {
-      toast.error("Could not prepare the résumé for printing.")
+      toast.error(`Could not generate the résumé ${fmt === "docx" ? "Word document" : "PDF"}.`)
     } finally {
       setExporting(null)
     }
@@ -196,22 +183,34 @@ export default function HonorResume() {
       toast.warning("Enter a valid recipient email.")
       return
     }
+    setExporting("email")
     try {
-      const out = await renderPdf()
-      if (!out) return
-      const pdfBase64 = await blobToBase64(out.blob)
+      // Generate the clean (unbranded) PDF on the backend, then attach it.
+      const gen = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody("pdf") })
+      if (!gen?.downloadUrl) {
+        toast.error("Could not generate the résumé to email.")
+        return
+      }
+      let pdfBase64: string
+      try {
+        const blob = await (await fetch(gen.downloadUrl)).blob()
+        pdfBase64 = await blobToBase64(blob)
+      } catch {
+        toast.error("Résumé generated, but it couldn't be attached — download the PDF and send it manually.")
+        return
+      }
       const res = await emailMutation.mutateAsync({
         fellowId: primary.id,
         body: {
           to,
           kind: "resume",
-          filename: out.fileName,
+          filename: gen.filename,
           pdfBase64,
           subject: `Résumé — ${fellowName(primary.firstName, primary.lastName)}`,
         },
       })
       if (res?.disabled) {
-        toast.info("Email delivery isn't enabled yet. Download or print the résumé in the meantime.")
+        toast.info("Email delivery isn't enabled yet. Download the résumé in the meantime.")
       } else if (res?.sent) {
         toast.success(`Résumé emailed to ${to}.`)
         setShowEmail(false)
@@ -220,6 +219,8 @@ export default function HonorResume() {
       }
     } catch {
       toast.error("The résumé could not be emailed.")
+    } finally {
+      setExporting(null)
     }
   }
 
@@ -338,17 +339,27 @@ export default function HonorResume() {
           )}
 
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handleDownload} disabled={!canExport || exporting !== null} className={HONOR_BTN_PRIMARY}>
-              {exporting === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <button
+              type="button"
+              onClick={() => handleExport("docx")}
+              disabled={!canExport || exporting !== null || isSample}
+              className={HONOR_BTN_PRIMARY}
+            >
+              {exporting === "docx" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              Download Word (.docx)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("pdf")}
+              disabled={!canExport || exporting !== null || isSample}
+              className={HONOR_BTN_OUTLINE}
+            >
+              {exporting === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Download PDF
             </button>
-            <button type="button" onClick={handlePrint} disabled={!canExport || exporting !== null} className={HONOR_BTN_OUTLINE}>
-              {exporting === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-              Print
-            </button>
             {USE_HONOR_REPORT_EMAIL && !isSample && (
-              <button type="button" onClick={openEmail} disabled={!canExport} className={HONOR_BTN_OUTLINE}>
-                <Mail className="h-4 w-4" />
+              <button type="button" onClick={openEmail} disabled={!canExport || exporting !== null} className={HONOR_BTN_OUTLINE}>
+                {exporting === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                 Email to fellow
               </button>
             )}
