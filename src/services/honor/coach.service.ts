@@ -377,6 +377,8 @@ export type GenerateReportBody = {
   evaluation?: HonorEvaluation | null
   /** Meridian's narrative in markdown — optional. */
   narrativeMarkdown?: string
+  /** For kind="resume": the generated HonorResume — rendered clean + unbranded. */
+  resume?: HonorResume | null
   fellowName?: string
   fellowTitle?: string
   fellowEmail?: string
