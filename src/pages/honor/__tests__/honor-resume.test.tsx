@@ -211,6 +211,44 @@ test("Clear reverts to plain generation (no evaluationId sent)", async () => {
   expect(body.improvements).toBeUndefined()
 })
 
+// ── Feature 3: résumé export polish (more formats + share a link) ────────────
+
+test("More formats → Plain text generates the clean txt résumé via the backend", async () => {
+  const openSpy = jest.spyOn(window, "open").mockImplementation(() => null)
+  renderPage()
+  fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
+  fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
+  await screen.findByText("Operations & Program Management Leader")
+
+  fireEvent.click(screen.getByRole("button", { name: /more formats/i }))
+  fireEvent.click(screen.getByRole("menuitem", { name: /plain text/i }))
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalledTimes(1))
+  expect(generateReportDocument).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ kind: "resume", format: "txt" }),
+  )
+  openSpy.mockRestore()
+})
+
+test("Copy link generates the clean PDF and copies the presigned URL", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true })
+  renderPage()
+  fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "f1" } })
+  fireEvent.click(screen.getByRole("button", { name: /generate résumé/i }))
+  await screen.findByText("Operations & Program Management Leader")
+
+  fireEvent.click(screen.getByRole("button", { name: /copy link/i }))
+  await waitFor(() => expect(generateReportDocument).toHaveBeenCalled())
+  expect(generateReportDocument).toHaveBeenCalledWith(
+    "f1",
+    expect.objectContaining({ kind: "resume", format: "pdf" }),
+  )
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://s3/resume-marcus.docx"))
+  // @ts-expect-error cleanup
+  delete navigator.clipboard
+})
+
 test("handoff without a saved id passes the narrative as improvements text", async () => {
   generateResume.mockResolvedValue({ status: true, data: { ...resumeFixture(), fromEvaluation: true } })
   renderWithHandoff({ fellowId: "f1", fellowName: "Marcus Reyes", improvements: "## Suggestions for Improvement\n- Quantify scope." })

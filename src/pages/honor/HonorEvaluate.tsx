@@ -18,6 +18,7 @@ import {
   History,
   Trash2,
   PenLine,
+  Link2,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -48,6 +49,7 @@ import {
   renderHonorReportPdf,
   type HonorReportMeta,
 } from "@/lib/honor/exportHonorReport"
+import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
 import { initiateUpload, uploadToS3, triggerProcessing } from "@/services/documents/documentService"
 import type {
   HonorCareerFit,
@@ -119,7 +121,7 @@ const FORMAT_LABEL: Record<HonorReportFormat, string> = {
 }
 
 // Formats offered in the export menu, in order (PDF is a separate primary button).
-const EXPORT_MENU_FORMATS: HonorReportFormat[] = ["docx", "pptx", "xlsx", "csv", "md", "html"]
+const EXPORT_MENU_FORMATS: HonorReportFormat[] = ["docx", "pptx", "xlsx", "csv", "md", "html", "txt"]
 
 const VERDICT_TONE: Record<HonorGoalVerdict, "ok" | "navy" | "orange" | "gray"> = {
   supported: "ok",
@@ -271,6 +273,7 @@ export default function HonorEvaluate() {
   const [exporting, setExporting] = useState<null | "download" | "print">(null)
   const [exportFormat, setExportFormat] = useState<HonorReportFormat | null>(null)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [sharing, setSharing] = useState<null | "copy" | "email">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
   // Source selection — which of the primary fellow's sources to evaluate on.
@@ -620,6 +623,58 @@ export default function HonorEvaluate() {
         improvements: savedId ? undefined : narrationMarkdown || undefined,
       },
     })
+  }
+
+  /**
+   * Feature 3 — "email a link" / "copy link". Generates the report as a PDF to
+   * S3 (presigned URL), then either copies the link or opens the coach's OWN mail
+   * client (mailto:) pre-filled with it. No SES, no flag, no confirm — the coach
+   * sends it themselves; we never route the document through our mail path.
+   */
+  async function handleShareLink(mode: "copy" | "email") {
+    if (!result || !primary) return
+    setSharing(mode)
+    try {
+      const meta = buildReportMeta()
+      const data = await generateDoc.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          kind: "evaluation",
+          format: "pdf",
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          fellowName: meta?.fellowName,
+          fellowTitle: meta?.fellowTitle,
+          fellowEmail: meta?.fellowEmail,
+          coachName: meta?.coachName,
+          coachTitle: meta?.coachTitle,
+          coachEmail: meta?.coachEmail,
+          dateLabel: meta?.dateLabel,
+        },
+      })
+      if (!data?.downloadUrl) {
+        toast.error("Could not prepare a shareable link.")
+        return
+      }
+      recordExport.mutate({ fellowId: primary.id, kind: "evaluation", action: "download" })
+      if (mode === "copy") {
+        const ok = await copyReportLink(data.downloadUrl)
+        toast[ok ? "success" : "error"](
+          ok ? "Download link copied to clipboard." : "Could not copy the link.",
+        )
+      } else {
+        emailReportLink({
+          to: primary.email || "",
+          subject: `Honor evaluation — ${fellowName(primary.firstName, primary.lastName)}`,
+          intro: `Attached is the Honor Foundation evaluation for ${fellowName(primary.firstName, primary.lastName)}.`,
+          url: data.downloadUrl,
+        })
+      }
+    } catch {
+      toast.error("Could not prepare a shareable link.")
+    } finally {
+      setSharing(null)
+    }
   }
 
   function openEmail() {
@@ -1165,6 +1220,37 @@ export default function HonorEvaluate() {
                 <Save className="h-4 w-4" />
               )}
               {savedId ? "Saved" : "Save evaluation"}
+            </button>
+
+            {/* Feature 3 — share a time-limited download link (coach's own mail
+                client / clipboard; no SES, no confirm). */}
+            <button
+              type="button"
+              onClick={() => handleShareLink("email")}
+              disabled={!canExport || sharing !== null}
+              className={HONOR_BTN_OUTLINE}
+              title="Open your email with a secure download link to send"
+            >
+              {sharing === "email" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              Email a link
+            </button>
+            <button
+              type="button"
+              onClick={() => handleShareLink("copy")}
+              disabled={!canExport || sharing !== null}
+              className={HONOR_BTN_OUTLINE}
+              title="Copy a secure download link to the clipboard"
+            >
+              {sharing === "copy" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Copy link
             </button>
 
             {/* Feature 2 — hand off to the Résumé Writer to rewrite keyed off
