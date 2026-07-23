@@ -18,7 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useUploadKnowledge } from "@/hooks/super-admin/knowledge/useKnowledge"
+import { useDocumentUpload } from "@/hooks/documents/useDocumentUpload"
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+
+const FILE_ACCEPT = ".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.pptx,.html"
 
 const DOMAINS = [
   { value: "coaching", label: "Coaching" },
@@ -71,14 +75,46 @@ export default function UploadKnowledgeModal({
   const [domain, setDomain] = useState("")
   const [agentId, setAgentId] = useState("")
   const [content, setContent] = useState("")
+  const [file, setFile] = useState<File | null>(null)
 
   const upload = useUploadKnowledge()
+  const fileUpload = useDocumentUpload()
 
   const agentOptions = domain ? AGENTS_BY_DOMAIN[domain] ?? [] : []
+  const busy = upload.isPending || fileUpload.isPending
 
-  function handleSubmit() {
+  function reset() {
+    setTitle("")
+    setDomain("")
+    setAgentId("")
+    setContent("")
+    setFile(null)
+  }
+
+  async function handleSubmit() {
+    // Prefer a file: route it through the canonical document pipeline
+    // (presigned S3 -> scan -> extract -> chunk -> RAG) as a SHARED corpus doc
+    // so it's part of the Knowledge Base every agent can read.
+    if (file) {
+      const tags = ["knowledge-base", domain, agentId].filter(Boolean) as string[]
+      try {
+        await fileUpload.mutateAsync({
+          file,
+          docKind: "knowledge_base",
+          tags,
+          shared: true,
+        })
+        toast.success(`Uploaded ${file.name} to the shared Knowledge Base.`)
+        reset()
+        onOpenChange(false)
+      } catch (err) {
+        toast.error(`Upload failed: ${err instanceof Error ? err.message : "unknown error"}`)
+      }
+      return
+    }
+
+    // Fall back to the quick text-paste ingest.
     if (!title.trim() || !content.trim()) return
-
     upload.mutate(
       {
         documents: [
@@ -93,10 +129,7 @@ export default function UploadKnowledgeModal({
       },
       {
         onSuccess: () => {
-          setTitle("")
-          setDomain("")
-          setAgentId("")
-          setContent("")
+          reset()
           onOpenChange(false)
         },
       },
@@ -156,9 +189,28 @@ export default function UploadKnowledgeModal({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="kb-content">Content</Label>
+            <Label htmlFor="kb-file">Upload a file (recommended)</Label>
+            <input
+              id="kb-file"
+              type="file"
+              accept={FILE_ACCEPT}
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="block text-sm"
+              aria-label="Choose a knowledge document to upload"
+            />
+            <p className="text-xs text-muted-foreground">
+              Files go through the standard pipeline (virus scan → text extraction
+              → embed) into the shared Knowledge Base.
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="kb-content">
+              {file ? "Content (ignored — a file is selected)" : "Or paste content (text)"}
+            </Label>
             <Textarea
               id="kb-content"
+              disabled={!!file}
               placeholder="Paste knowledge content here (Markdown supported)..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -179,10 +231,10 @@ export default function UploadKnowledgeModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!title.trim() || !content.trim() || upload.isPending}
+            disabled={busy || (!file && (!title.trim() || !content.trim()))}
           >
-            {upload.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Upload & Vectorize
+            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {file ? "Upload to Knowledge Base" : "Upload & Vectorize"}
           </Button>
         </DialogFooter>
       </DialogContent>
