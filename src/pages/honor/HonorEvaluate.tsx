@@ -12,10 +12,12 @@ import {
   Download,
   Printer,
   Mail,
+  ChevronDown,
+  FileText,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { sanitizeBodyHtml } from "@/lib/sanitizeHtml"
+import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import {
@@ -24,7 +26,12 @@ import {
   useHonorEvaluateReport,
 } from "@/hooks/honor/useHonorEvaluate"
 import { useFellowSourcesBulk } from "@/hooks/honor/useHonorArtifacts"
-import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
+import {
+  useEmailHonorReport,
+  useGenerateReportDocument,
+  useRecordReportExport,
+} from "@/hooks/honor/useHonorReport"
+import type { HonorReportFormat } from "@/services/honor/coach.service"
 import { USE_HONOR_EVAL_LIVE, USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
 import { downloadBlob } from "@/lib/exportTranscript"
 import {
@@ -89,6 +96,22 @@ const EVAL_DIMENSIONS: ReadonlyArray<{ key: string; label: string }> = [
   { key: "position", label: "Position" },
 ]
 
+// Downloadable document formats (the branded PDF is handled client-side; the
+// rest render server-side via the Core docgen engine).
+const FORMAT_LABEL: Record<HonorReportFormat, string> = {
+  docx: "Word (.docx)",
+  pdf: "PDF",
+  pptx: "PowerPoint (.pptx)",
+  xlsx: "Excel (.xlsx)",
+  csv: "CSV",
+  md: "Markdown (.md)",
+  html: "Web page (.html)",
+  txt: "Text (.txt)",
+}
+
+// Formats offered in the export menu, in order (PDF is a separate primary button).
+const EXPORT_MENU_FORMATS: HonorReportFormat[] = ["docx", "pptx", "xlsx", "csv", "md", "html"]
+
 const VERDICT_TONE: Record<HonorGoalVerdict, "ok" | "navy" | "orange" | "gray"> = {
   supported: "ok",
   mixed: "navy",
@@ -96,17 +119,46 @@ const VERDICT_TONE: Record<HonorGoalVerdict, "ok" | "navy" | "orange" | "gray"> 
   unmapped: "gray",
 }
 
-/** Wrap Meridian's synthesized prose into sanitized paragraph HTML. */
-function proseHtml(content: string): string {
-  const esc = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-  return esc
+/**
+ * Convert Meridian's markdown narrative to lightweight sanitized HTML for the
+ * client-side PDF (which takes an HTML string). Structure markers are flattened
+ * to plain lines — the docx/pdf docgen exports render the markdown properly; this
+ * is just so the branded client PDF doesn't show literal `#`/`**`/`|`.
+ */
+function narrativeToPdfHtml(md: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const clean = (s: string) =>
+    esc(s)
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/__(.+?)__/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+  return md
+    .replace(/\r\n/g, "\n")
     .split(/\n\n+/)
-    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map((block) => {
+      const lines = block.split("\n").filter((l) => !/^\s*\|?[\s:|-]+\|?\s*$/.test(l))
+      if (lines.every((l) => /^\s*[-*+]\s+/.test(l))) {
+        const items = lines.map((l) => `<li>${clean(l.replace(/^\s*[-*+]\s+/, ""))}</li>`).join("")
+        return `<ul>${items}</ul>`
+      }
+      const h = lines[0]?.match(/^\s*(#{1,6})\s+(.*)$/)
+      if (h) return `<p><strong>${clean(h[2])}</strong></p>`
+      return `<p>${lines.map(clean).join("<br>")}</p>`
+    })
     .join("")
 }
 
-/** Compact, model-free summary of the deterministic report to hand Meridian. */
+/**
+ * Prompt Meridian to compose the full, formatted evaluation. Meridian already
+ * receives the FELLOW's <USER_PROFILE> (résumé, bio, PRISM, docs) injected
+ * subject-scoped on the honor surface, so it can ground the prose directly. When
+ * scored assessments exist we hand it the deterministic backbone to respect;
+ * when they don't (résumé-only), it evaluates primarily from the résumé + other
+ * sources. Output is markdown so the surface + exports render it formatted.
+ */
 function summarizeForNarration(report: HonorEvaluation, subjectName: string): string {
+  const hasScores = (report.confidence?.behavioralBasis ?? report.frameworks.length > 0)
   const top = report.career_fit_ranked
     .slice(0, 3)
     .map((c) => `${c.label} ${c.score}`)
@@ -114,11 +166,18 @@ function summarizeForNarration(report: HonorEvaluation, subjectName: string): st
   const strengths = report.objective_evaluation.map((c) => c.source).join("; ")
   const goals = report.goals_fit.map((g) => `${g.goal} → ${g.verdict}`).join("; ")
   return [
-    `Narrate this Honor Fellow evaluation for ${subjectName} in a direct, concise, dignified tone.`,
-    `Do not invent or change any score. Cite the sources as given. Never surface classified detail.`,
-    `Top career fit (0-100): ${top}.`,
-    strengths ? `Strengths (cited): ${strengths}.` : "",
+    `Write a direct, concise, dignified evaluation of ${subjectName} for their Honor Foundation coach.`,
+    `Format it in Markdown with clear section headings, short paragraphs, bullet lists, and a table where it aids clarity. Use these sections:`,
+    `## Objective Evaluation`,
+    `## Goals & Objectives — Fit`,
+    `## Career / Position Fit`,
+    `Cite the evidence behind each insight inline — name the source (e.g. "PRISM: Coordinating 90", "Résumé: 8y Naval Special Warfare team lead", "Bio", "Hogan").`,
+    hasScores
+      ? `Respect these computed scores — do NOT invent or change any number. Top career fit (0–100): ${top}.`
+      : `No scored behavioral assessment is on file — evaluate primarily from the fellow's résumé and any bio/additional sources in their profile, and say plainly where evidence is limited. Do not fabricate scores.`,
+    strengths ? `Cited strengths: ${strengths}.` : "",
     goals ? `Stated goals: ${goals}.` : "",
+    `Never surface classified or sensitive operational detail; translate SOF experience safely to private-sector terms.`,
   ]
     .filter(Boolean)
     .join("\n")
@@ -172,6 +231,7 @@ export default function HonorEvaluate() {
   const narrate = useHonorEvaluate()
   const recordExport = useRecordReportExport()
   const emailMutation = useEmailHonorReport()
+  const generateDoc = useGenerateReportDocument()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -181,11 +241,13 @@ export default function HonorEvaluate() {
   )
   const [targetArea, setTargetArea] = useState<string>("operations_program_management")
   const [result, setResult] = useState<HonorEvaluation | null>(null)
-  const [narrationHtml, setNarrationHtml] = useState<string>("")
+  const [narrationMarkdown, setNarrationMarkdown] = useState<string>("")
   const [narrationTrace, setNarrationTrace] = useState<string[]>([])
   const [positionAttached, setPositionAttached] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [exporting, setExporting] = useState<null | "download" | "print">(null)
+  const [exportFormat, setExportFormat] = useState<HonorReportFormat | null>(null)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
   // Source selection — which of the primary fellow's sources to evaluate on.
@@ -249,7 +311,7 @@ export default function HonorEvaluate() {
       toast.warning("Select a fellow to evaluate.")
       return
     }
-    setNarrationHtml("")
+    setNarrationMarkdown("")
     setNarrationTrace([])
     try {
       // Source selection — only send when we know the fellow's sources. Narrow
@@ -277,13 +339,25 @@ export default function HonorEvaluate() {
         },
       })
       setResult(data ?? null)
-      if (!data) toast.error("Evaluation returned no data.")
+      if (!data) {
+        toast.error("Evaluation returned no data.")
+        return
+      }
+      // Auto-compose the formatted Meridian narrative — this is the primary,
+      // readable evaluation (essential when the fellow has only a résumé, where
+      // the deterministic scores are imputed-neutral). Runs in the background;
+      // the structured backbone renders immediately below it.
+      void narrateResult(data)
     } catch (err) {
       const status = (err as { response?: { status?: number } })?.response?.status
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast.error(
-        status === 409
-          ? "This fellow has no IG profile yet — invite them before evaluating."
-          : "Evaluation failed. Please try again.",
+        status === 422
+          ? detail ||
+              "Upload a résumé for this fellow before evaluating."
+          : status === 409
+            ? "This fellow has no IG profile yet — invite them before evaluating."
+            : "Evaluation failed. Please try again.",
       )
     }
   }
@@ -313,23 +387,27 @@ export default function HonorEvaluate() {
     }
   }
 
-  async function runNarration() {
-    if (!result || !primary) return
+  async function narrateResult(evalResult: HonorEvaluation) {
+    if (!primary) return
     const subjectName = fellowName(primary.firstName, primary.lastName)
     try {
       const reply = await narrate.mutateAsync({
-        prompt: summarizeForNarration(result, subjectName),
+        prompt: summarizeForNarration(evalResult, subjectName),
         memberId: primary.id,
       })
       if (reply.content.trim()) {
-        setNarrationHtml(proseHtml(reply.content))
+        setNarrationMarkdown(reply.content)
         setNarrationTrace(reply.trace?.length ? reply.trace : ["Meridian"])
       } else {
         toast.info("Meridian returned no narration.")
       }
     } catch {
-      toast.error("Meridian narration is unavailable right now.")
+      toast.error("Meridian could not compose the evaluation right now.")
     }
+  }
+
+  function runNarration() {
+    if (result) void narrateResult(result)
   }
 
   // ── Report export (Phase 4) ──────────────────────────────────────────────
@@ -344,7 +422,7 @@ export default function HonorEvaluate() {
       coachTitle: coachHome?.coachTitle || "",
       coachEmail: user?.email || "",
       dateLabel: formatReportDate(new Date()),
-      narrativeHtml: narrationHtml || undefined,
+      narrativeHtml: narrationMarkdown ? narrativeToPdfHtml(narrationMarkdown) : undefined,
     }
   }
 
@@ -383,6 +461,48 @@ export default function HonorEvaluate() {
       toast.error("Could not prepare the report for printing.")
     } finally {
       setExporting(null)
+    }
+  }
+
+  /**
+   * Render + download the report in a docgen format (Word / PowerPoint / Excel /
+   * CSV / Markdown / HTML) via the backend. The branded PDF stays client-side
+   * (handleDownload) so its exact title-page layout is preserved.
+   */
+  async function handleGenerateFormat(fmt: HonorReportFormat) {
+    if (!result || !primary) return
+    setExportMenuOpen(false)
+    setExportFormat(fmt)
+    const meta = buildReportMeta()
+    try {
+      const data = await generateDoc.mutateAsync({
+        fellowId: primary.id,
+        body: {
+          kind: "evaluation",
+          format: fmt,
+          evaluation: result,
+          narrativeMarkdown: narrationMarkdown || undefined,
+          fellowName: meta?.fellowName,
+          fellowTitle: meta?.fellowTitle,
+          fellowEmail: meta?.fellowEmail,
+          coachName: meta?.coachName,
+          coachTitle: meta?.coachTitle,
+          coachEmail: meta?.coachEmail,
+          dateLabel: meta?.dateLabel,
+        },
+      })
+      if (data?.downloadUrl) {
+        // The presigned URL carries Content-Disposition: attachment, so opening
+        // it downloads the file rather than navigating away.
+        window.open(data.downloadUrl, "_blank", "noopener")
+        toast.success(`${FORMAT_LABEL[fmt]} generated.`)
+      } else {
+        toast.error("The document could not be generated.")
+      }
+    } catch {
+      toast.error(`Could not generate the ${FORMAT_LABEL[fmt]}.`)
+    } finally {
+      setExportFormat(null)
     }
   }
 
@@ -696,9 +816,10 @@ export default function HonorEvaluate() {
               onClick={runNarration}
               disabled={narrate.isPending}
               className={HONOR_BTN_OUTLINE}
+              title="Re-compose the written evaluation with Meridian"
             >
               {narrate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              {narrate.isPending ? "Narrating…" : "Narrate with Meridian"}
+              {narrate.isPending ? "Composing…" : "Regenerate with Meridian"}
             </button>
           )}
         </div>
@@ -761,7 +882,7 @@ export default function HonorEvaluate() {
             </HonorCard>
           )}
 
-          {/* Export toolbar — branded PDF / print / (email, flag-gated) */}
+          {/* Export toolbar — branded PDF / other formats / print / (email, flag-gated) */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -776,6 +897,58 @@ export default function HonorEvaluate() {
               )}
               Download PDF
             </button>
+
+            {/* Other formats — Word / PowerPoint / Excel / CSV / Markdown / HTML */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setExportMenuOpen((v) => !v)}
+                disabled={!canExport || generateDoc.isPending}
+                className={HONOR_BTN_OUTLINE}
+                aria-haspopup="menu"
+                aria-expanded={exportMenuOpen}
+              >
+                {generateDoc.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                {generateDoc.isPending && exportFormat
+                  ? `Generating ${FORMAT_LABEL[exportFormat]}…`
+                  : "Export as…"}
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              {exportMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40 cursor-default"
+                    aria-hidden
+                    tabIndex={-1}
+                    onClick={() => setExportMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute left-0 z-50 mt-1 w-56 overflow-hidden rounded-lg border border-[#dfe4ec] bg-white py-1 shadow-lg"
+                  >
+                    {EXPORT_MENU_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => handleGenerateFormat(fmt)}
+                        disabled={generateDoc.isPending}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#18202f] hover:bg-[#f4f6fa] disabled:opacity-50"
+                      >
+                        <FileText className="h-4 w-4 text-[#5b6678]" />
+                        {FORMAT_LABEL[fmt]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -809,8 +982,9 @@ export default function HonorEvaluate() {
             report={result}
             primaryName={primary ? fellowName(primary.firstName, primary.lastName) : "Fellow"}
             nameById={nameById}
-            narrationHtml={narrationHtml}
+            narrationMarkdown={narrationMarkdown}
             narrationTrace={narrationTrace}
+            narrationPending={narrate.isPending}
           />
         </>
       )}
@@ -877,36 +1051,50 @@ function ReportView({
   report,
   primaryName,
   nameById,
-  narrationHtml,
+  narrationMarkdown,
   narrationTrace,
+  narrationPending,
 }: {
   report: HonorEvaluation
   primaryName: string
   nameById: Record<string, string>
-  narrationHtml: string
+  narrationMarkdown: string
   narrationTrace: string[]
+  narrationPending: boolean
 }) {
   const noScores = report.frameworks.length === 0
   return (
     <div className="space-y-6">
       {noScores && (
         <div className="rounded-lg border border-[#f0d9b8] bg-[#fdf6ec] px-4 py-3 text-sm text-[#8a5a12]">
-          No scored assessments on file for this fellow yet — fit scores below are
-          imputed-neutral. Import a PRISM report to get a real evaluation.
+          No scored assessment on file — this evaluation is composed from the
+          fellow&rsquo;s résumé and other sources. Import a PRISM report to add a
+          scored behavioral fit.
         </div>
       )}
 
-      {narrationHtml && (
+      {/* Primary output: Meridian's formatted evaluation. */}
+      {(narrationMarkdown || narrationPending) && (
         <HonorCard>
-          <HonorSectionTitle>Meridian narrative</HonorSectionTitle>
-          <AgentTraceRow trace={narrationTrace} />
-          <div
-            className="prose prose-sm mt-2 max-w-none text-sm text-[#18202f] [&_p]:mb-2 [&_strong]:font-semibold"
-            dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(narrationHtml) }}
-          />
+          <HonorSectionTitle>Evaluation — {primaryName}</HonorSectionTitle>
+          {narrationMarkdown ? (
+            <>
+              <AgentTraceRow trace={narrationTrace} />
+              <AssistantMarkdown
+                text={narrationMarkdown}
+                className="prose prose-sm mt-2 max-w-none text-sm leading-relaxed text-[#18202f] [&_h2]:mt-4 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_p]:mb-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold [&_table]:my-2"
+              />
+            </>
+          ) : (
+            <p className="mt-2 flex items-center gap-2 text-sm text-[#5b6678]">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Meridian is composing the evaluation…
+            </p>
+          )}
         </HonorCard>
       )}
 
+      {/* Supporting detail: the deterministic, cited backbone. */}
       {/* 1. Objective evaluation */}
       <HonorCard>
         <HonorSectionTitle>Objective Evaluation — {primaryName}</HonorSectionTitle>
