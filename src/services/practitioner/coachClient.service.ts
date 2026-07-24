@@ -1,17 +1,18 @@
-// STUB service for the practitioner client-management surfaces.
+// Practitioner client-management service.
 //
-// Returns typed fixtures so the My Clients / Schedule / Analytics wireframes are
-// fully clickable ahead of the real backend. When the coach backend lands
-// (generalize the Honor /v1/agents/honor/coach/* routes to /v1/agents/coach/*,
-// per the build plan), replace the bodies here with real axios calls through
-// getApi()/agentApi — the pages and hooks do not change.
-//
-// Every export is a Promise so the swap to real HTTP is a drop-in.
+// Flag-gated: when `VITE_COACH_BACKEND === "true"` (set for the dev build only)
+// the exports call the real coach API at `/v1/agents/coach/*` via `agentApi`
+// (direct-to-ECS). Otherwise they return the typed fixtures below — the
+// wireframe stubs — so environments without the backend (e.g. staging-b, until
+// the coach service is promoted there) keep a fully clickable surface. The
+// pages and hooks consume the same typed Promises either way.
 
+import { agentApi } from "@/lib/agentApi"
 import {
   CLIENT_RESOURCES,
   type ClientSummary,
   type ClientDetail,
+  type PrismStatus,
   type ResourceKey,
   type ScheduleEntry,
   type BulkScheduleInput,
@@ -20,6 +21,92 @@ import {
   type ClientUsageRow,
 } from "@/types/practitioner/coachClient"
 
+/** True only where the real coach backend is deployed (dev build). */
+const USE_COACH_BACKEND = import.meta.env.VITE_COACH_BACKEND === "true"
+
+// ── backend response shapes + mappers ────────────────────────────────
+type Envelope<T> = { status?: boolean; data?: T }
+
+type BeClient = {
+  client_id: string
+  first_name?: string | null
+  last_name?: string | null
+  email?: string | null
+  org?: string | null
+  assessment_status?: string | null
+  background?: string | null
+  target?: string | null
+  cohort?: string | null
+  linked_user_sub?: string | null
+}
+type BeSession = {
+  session_id: string
+  client_id: string
+  starts_at: string
+  duration_min: number
+  topic?: string | null
+}
+type BeUsage = { clientId: string; name?: string; sessions?: number; creditsUsed?: number }
+type BeCredits = { balance?: number; allocated?: number; used?: number }
+
+function fullName(first?: string | null, last?: string | null, email?: string | null): string {
+  const n = [first, last].filter(Boolean).join(" ").trim()
+  return n || email || "Client"
+}
+
+function prismStatusFrom(status?: string | null): PrismStatus {
+  if (status === "ready") return "ready"
+  if (status === "in_progress" || status === "processing") return "in_progress"
+  return "none"
+}
+
+function toSummary(c: BeClient): ClientSummary {
+  return {
+    id: c.client_id,
+    name: fullName(c.first_name, c.last_name, c.email),
+    email: c.email ?? "",
+    org: c.org ?? "",
+    sessions: 0,
+    prismScore: null,
+    prismStatus: prismStatusFrom(c.assessment_status),
+    topGoals: [],
+    resourcesPresent: 0,
+    status: "new",
+  }
+}
+
+function emptyResources(): Record<ResourceKey, boolean> {
+  const out = {} as Record<ResourceKey, boolean>
+  CLIENT_RESOURCES.forEach((r) => {
+    out[r.key] = false
+  })
+  return out
+}
+
+function toDetail(c: BeClient): ClientDetail {
+  return {
+    ...toSummary(c),
+    sessionsList: [],
+    goals: [],
+    prismScores: [],
+    conversations: [],
+    resources: emptyResources(),
+    followUps: [],
+    topics: [],
+  }
+}
+
+function toScheduleEntry(s: BeSession): ScheduleEntry {
+  return {
+    id: s.session_id,
+    clientName: s.client_id,
+    startsAt: s.starts_at,
+    durationMin: s.duration_min,
+    topic: s.topic ?? "",
+  }
+}
+
+// ── fixtures (flag-off fallback — keep in sync with the real shapes) ──
 const ROSTER: ClientSummary[] = [
   { id: "cl-1", name: "Marcus Chen", email: "marcus@techcorp.com", org: "TechCorp Inc", sessions: 12, prismScore: 82, prismStatus: "ready", topGoals: ["Delegation", "Executive presence"], resourcesPresent: 7, status: "active" },
   { id: "cl-2", name: "Aisha Patel", email: "aisha@globalhealth.com", org: "GlobalHealth", sessions: 8, prismScore: 78, prismStatus: "ready", topGoals: ["Career transition"], resourcesPresent: 5, status: "active" },
@@ -39,11 +126,28 @@ function resourcesFor(present: number): Record<ResourceKey, boolean> {
   return out
 }
 
+const SCHEDULE: ScheduleEntry[] = [
+  { id: "sch-1", clientName: "Marcus Chen", startsAt: "2026-07-23T15:00:00", durationMin: 60, topic: "Delegation deep-dive" },
+  { id: "sch-2", clientName: "Sophie Laurent", startsAt: "2026-07-24T17:00:00", durationMin: 45, topic: "Executive presence" },
+]
+
+// ── public API (branches on the flag) ────────────────────────────────
 export function listClients(): Promise<ClientSummary[]> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .get<Envelope<BeClient[]>>("/v1/agents/coach/clients")
+      .then((r) => (r.data?.data ?? []).map(toSummary))
+  }
   return Promise.resolve(ROSTER)
 }
 
 export function getClient(id: string): Promise<ClientDetail | null> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .get<Envelope<BeClient>>(`/v1/agents/coach/clients/${id}`)
+      .then((r) => (r.data?.data ? toDetail(r.data.data) : null))
+      .catch(() => null) // 403/404 → null, matching the stub contract
+  }
   const base = ROSTER.find((c) => c.id === id)
   if (!base) return Promise.resolve(null)
   const detail: ClientDetail = {
@@ -78,6 +182,15 @@ export function getClient(id: string): Promise<ClientDetail | null> {
 }
 
 export function addClient(input: { name: string; email: string; org?: string }): Promise<ClientSummary> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .post<Envelope<BeClient>>("/v1/agents/coach/clients", {
+        name: input.name,
+        email: input.email,
+        org: input.org,
+      })
+      .then((r) => toSummary(r.data?.data ?? { client_id: `pending-${input.email}` }))
+  }
   const client: ClientSummary = {
     id: `cl-new-${input.email}`,
     name: input.name,
@@ -94,24 +207,50 @@ export function addClient(input: { name: string; email: string; org?: string }):
 }
 
 export function bulkImportClients(rows: Array<{ name: string; email: string; org?: string }>): Promise<{ imported: number }> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .post<Envelope<{ imported?: number }>>("/v1/agents/coach/clients/import", { rows })
+      .then((r) => ({ imported: Number(r.data?.data?.imported ?? 0) }))
+  }
   return Promise.resolve({ imported: rows.length })
 }
 
-/** Stub resource upload — the real impl attributes docs to the client's RAG. */
+/**
+ * Resource upload. The real per-resource ingest (assessment import + presigned
+ * document upload) is a follow-on; kept as an accepted no-op in both modes so
+ * the ArtifactStatusMatrix upload affordance stays functional without fabricating
+ * a persisted result.
+ */
 export function uploadClientResource(_clientId: string, _resource: ResourceKey, _file?: File): Promise<{ ok: true }> {
   return Promise.resolve({ ok: true })
 }
 
-const SCHEDULE: ScheduleEntry[] = [
-  { id: "sch-1", clientName: "Marcus Chen", startsAt: "2026-07-23T15:00:00", durationMin: 60, topic: "Delegation deep-dive" },
-  { id: "sch-2", clientName: "Sophie Laurent", startsAt: "2026-07-24T17:00:00", durationMin: 45, topic: "Executive presence" },
-]
-
 export function listSchedule(): Promise<ScheduleEntry[]> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .get<Envelope<BeSession[]>>("/v1/agents/coach/schedule")
+      .then((r) => (r.data?.data ?? []).map(toScheduleEntry))
+  }
   return Promise.resolve(SCHEDULE)
 }
 
 export function createSessionsBulk(input: BulkScheduleInput): Promise<BulkScheduleResult> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .post<Envelope<{ created?: number; sessions?: BeSession[] }>>("/v1/agents/coach/schedule/sessions", {
+        clientIds: input.clientIds,
+        startsAt: input.startsAt,
+        durationMin: input.durationMin,
+        spacingMin: input.spacingMin,
+        topic: input.topic,
+        message: input.message,
+        sendInvites: input.sendInvites,
+      })
+      .then((r) => {
+        const entries = (r.data?.data?.sessions ?? []).map(toScheduleEntry)
+        return { created: Number(r.data?.data?.created ?? entries.length), emailed: 0, entries }
+      })
+  }
   const start = new Date(input.startsAt).getTime()
   const step = (input.durationMin + input.spacingMin) * 60_000
   const byId = new Map(ROSTER.map((c) => [c.id, c.name]))
@@ -130,10 +269,32 @@ export function createSessionsBulk(input: BulkScheduleInput): Promise<BulkSchedu
 }
 
 export function getCreditsSummary(): Promise<CreditsSummary> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .get<Envelope<BeCredits>>("/v1/agents/coach/credits")
+      .then((r) => ({
+        balance: Number(r.data?.data?.balance ?? 0),
+        allocated: Number(r.data?.data?.allocated ?? 0),
+        used: Number(r.data?.data?.used ?? 0),
+        currency: "PUK",
+      }))
+  }
   return Promise.resolve({ balance: 340, allocated: 500, used: 160, currency: "PUK" })
 }
 
 export function getClientUsage(): Promise<ClientUsageRow[]> {
+  if (USE_COACH_BACKEND) {
+    return agentApi
+      .get<Envelope<BeUsage[]>>("/v1/agents/coach/clients/usage")
+      .then((r) =>
+        (r.data?.data ?? []).map((u) => ({
+          clientName: u.name ?? u.clientId,
+          sessions: Number(u.sessions ?? 0),
+          creditsUsed: Number(u.creditsUsed ?? 0),
+          lastActive: "",
+        })),
+      )
+  }
   return Promise.resolve(
     ROSTER.map((c) => ({
       clientName: c.name,
