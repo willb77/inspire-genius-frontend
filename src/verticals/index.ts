@@ -10,6 +10,7 @@
 export { GRANT } from "./grant/manifest"
 export { HONOR } from "./honor/manifest"
 export { KNOWLEDGE_CONTINUITY } from "./knowledge-continuity/manifest"
+export { LUMEN } from "./lumen/manifest"
 
 // ── New verticals go here ────────────────────────────────────────
 // export { ACME } from "./acme/manifest"
