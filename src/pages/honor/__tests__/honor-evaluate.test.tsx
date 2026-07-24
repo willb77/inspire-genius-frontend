@@ -204,7 +204,7 @@ test("selecting a fellow + Run evaluation renders the cited, ranked deterministi
     "f1",
     expect.objectContaining({
       criteria: undefined,
-      dimensions: ["career", "goals", "education", "position"],
+      dimensions: ["career", "goals", "education"], // `position` is off by default — JD scoring is not built
       memberIds: undefined,
     }),
   )
@@ -231,13 +231,12 @@ test("criteria text flows into the request and a verdict renders", async () => {
   expect(await screen.findByText("supported")).toBeInTheDocument()
 })
 
-test("dimension checkboxes compose the evaluate body (default all; unchecking drops a key)", async () => {
+test("dimension checkboxes compose the evaluate body (unchecking drops a key)", async () => {
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
 
-  // Default: all four dimensions checked.
+  // Default: career + goals + education (Position is opt-in — JD scoring isn't built).
   fireEvent.click(screen.getByRole("checkbox", { name: /Education/i }))
-  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
   fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
 
   await waitFor(() => expect(evaluateFellow).toHaveBeenCalled())
@@ -248,13 +247,15 @@ test("dimension checkboxes compose the evaluate body (default all; unchecking dr
 test("Position dimension gates the position-description upload control", async () => {
   renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
-  // On by default → the attach control is visible.
-  expect(screen.getByRole("button", { name: /attach position description/i })).toBeInTheDocument()
-  // Turning Position off hides it.
-  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
+  // OFF by default — JD -> competency-vector scoring is not built, so the
+  // control must not be presented as if the JD affects the ranked fit.
   expect(
     screen.queryByRole("button", { name: /attach position description/i }),
   ).not.toBeInTheDocument()
+  // Opting in reveals it, together with an explicit not-yet-scored notice.
+  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i }))
+  expect(screen.getByRole("button", { name: /attach position description/i })).toBeInTheDocument()
+  expect(screen.getByText(/automatic JD scoring is not built/i)).toBeInTheDocument()
 })
 
 test("two fellows → comparative mode passes memberIds + targetArea", async () => {
@@ -281,9 +282,40 @@ test("two fellows → comparative mode passes memberIds + targetArea", async () 
   expect(screen.getByText("Covered:")).toBeInTheDocument() // team read block rendered
 })
 
+test("comparative narration carries the comparison set — not a solo essay", async () => {
+  // Regression for the comparative-narration gap: selecting N fellows ran the
+  // scorer over all of them but narrated only the primary — Nova received one
+  // <USER_PROFILE> and a prompt that never mentioned the others or the team read,
+  // yet that solo essay is what gets saved, exported and seeds the résumé rewrite.
+  const withComparative = { ...opsEval(), comparative: {
+    subjects: ["f2"], areas: ["operations_program_management", "security_risk_management"],
+    per_subject_area_fit: { f2: { operations_program_management: 55, security_risk_management: 80 } },
+    pairwise_similarity: { f2: { f2: 100 } },
+    team_read: { target_area: "operations_program_management", label: "Operations Program Management", covered: ["prism:behaviorpreferences:coordinating"], gaps: ["prism:workaptitudes:analysing"], redundant: [], complementary: [], best_by_feature: {} },
+  } }
+  evaluateFellow.mockResolvedValue({ status: true, data: withComparative })
+
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByText("Dana Cole"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+
+  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(1))
+  const [prompt, opts] = sendHonorEvaluation.mock.calls[0] as [string, Record<string, unknown>]
+
+  // The comparison subject must reach the narrator by name...
+  expect(prompt).toMatch(/Dana Cole/)
+  // ...along with the deterministic comparative figures and the team read.
+  expect(prompt).toMatch(/comparison|comparative/i)
+  expect(prompt).toMatch(/team read|covered|gaps/i)
+  // ...and every compared subject's profile must be injected server-side.
+  expect(opts).toMatchObject({ memberIds: ["f1", "f2"] })
+})
+
 test("attaching a position description uploads with doc_kind=position for the subject", async () => {
   const { container } = renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByRole("checkbox", { name: /Position/i })) // opt in — off by default
   const input = container.querySelector('input[type="file"]') as HTMLInputElement
   const file = new File(["jd"], "pm-role.pdf", { type: "application/pdf" })
   fireEvent.change(input, { target: { files: [file] } })
@@ -444,7 +476,7 @@ test("Save evaluation persists the backbone + narrative and flips to Saved", asy
     expect.objectContaining({
       evaluation: expect.objectContaining({ subject_id: "f1" }),
       narrativeMarkdown: "Marcus is a strong operator.",
-      dimensions: ["career", "goals", "education", "position"],
+      dimensions: ["career", "goals", "education"], // `position` is off by default — JD scoring is not built
       sourcesUsed: expect.objectContaining({ includeResume: true }),
     }),
   )
