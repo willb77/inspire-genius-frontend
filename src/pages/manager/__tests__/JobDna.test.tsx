@@ -3,6 +3,7 @@
  */
 
 import { render, screen, fireEvent } from "@testing-library/react";
+import type { DimensionBenchmark, JobDNA } from "@/types/job-blueprint";
 import ManagerJobDna from "../JobDna";
 
 jest.mock("@/layouts/ManagerLayout", () => ({
@@ -14,6 +15,7 @@ jest.mock("@/layouts/ManagerLayout", () => ({
 
 jest.mock("@/components/dashboard/DataCard", () => ({
   __esModule: true,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default: ({ title, badge, children }: any) => (
     <div data-testid={`data-card-${title}`}>
       {badge != null && <span data-testid="badge">{badge}</span>}
@@ -22,38 +24,63 @@ jest.mock("@/components/dashboard/DataCard", () => ({
   ),
 }));
 
-jest.mock("@/components/dashboard/ProgressBar", () => ({
-  __esModule: true,
-  default: ({ label }: any) => <div data-testid="progress-bar">{label}</div>,
-}));
-
-jest.mock("@/components/dashboard/PlaceholderBanner", () => ({
-  __esModule: true,
-  default: () => <div data-testid="placeholder-banner" />,
-}));
-
 jest.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
 
+// The page reads live data through this hook.
+jest.mock("@/hooks/job-blueprint/useJobDna", () => ({
+  useJobDnaList: jest.fn(),
+}));
+
+import { useJobDnaList } from "@/hooks/job-blueprint/useJobDna";
+
+const bench = (id: number, name: string): DimensionBenchmark => ({
+  dimensionId: id,
+  dimensionName: name,
+  category: "behavior",
+  rankPosition: id,
+  rankPercent: 100 - id * 5,
+  rateValue: 8 - id,
+  finalBenchmarkPercent: 100 - id * 5,
+  interpretation: "natural",
+});
+
+const JOB: JobDNA = {
+  id: "j1",
+  orgId: "o1",
+  roleTitle: "Senior Engineer",
+  department: "Engineering",
+  tier: "professional",
+  status: "active",
+  behaviors: [bench(1, "Innovating"), bench(2, "Initiating"), bench(3, "Focusing")],
+  aptitudes: [],
+  coreTraits: [],
+  counterProductiveBehaviors: [],
+  roleContext: { workPressures: [], requiredWorkStyles: [], environmentalFactors: [], culturalFactors: [] },
+  deliverables: { jobDescription: "", kpis: [], criticalActivities: [], keyInteractions: [] },
+  createdBy: "u1",
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-01T00:00:00Z",
+  version: 1,
+};
+
 const mockRefetch = jest.fn();
 
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({
+function mockQuery(over: Record<string, unknown>) {
+  (useJobDnaList as jest.Mock).mockReturnValue({
     data: undefined,
     isLoading: false,
     error: null,
     refetch: mockRefetch,
-  })),
-}));
-
-jest.mock("@/services/job-blueprint/job-dna.service", () => ({
-  jobDnaService: { list: jest.fn() },
-}));
+    ...over,
+  });
+}
 
 describe("ManagerJobDna", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockQuery({ data: [JOB] });
   });
 
   it("renders within ManagerLayout", () => {
@@ -69,57 +96,44 @@ describe("ManagerJobDna", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders fallback job profiles", () => {
+  it("renders live job profiles from the hook", () => {
     render(<ManagerJobDna />);
-    expect(screen.getAllByText("Frontend Developer").length).toBeGreaterThan(0);
-    expect(screen.getByText("Product Manager")).toBeInTheDocument();
-    expect(screen.getByText("Data Analyst")).toBeInTheDocument();
-    expect(screen.getByText("UX Designer")).toBeInTheDocument();
-    expect(screen.getByText("DevOps Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Senior Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Engineering")).toBeInTheDocument();
   });
 
   it("renders grid headers", () => {
     render(<ManagerJobDna />);
-    expect(screen.getByText("Position")).toBeInTheDocument();
-    expect(screen.getByText("PRISM Profile")).toBeInTheDocument();
-    expect(screen.getByText("Key Traits")).toBeInTheDocument();
-    expect(screen.getByText("Score")).toBeInTheDocument();
-    expect(screen.getByText("Open")).toBeInTheDocument();
+    expect(screen.getByText("Role")).toBeInTheDocument();
+    expect(screen.getByText("Department")).toBeInTheDocument();
+    expect(screen.getByText("Top Behaviours")).toBeInTheDocument();
+    expect(screen.getByText("Tier")).toBeInTheDocument();
+    expect(screen.getByText("Status")).toBeInTheDocument();
   });
 
-  it("expands job row on click to show PRISM breakdown", () => {
+  it("expands a job row on click to show the behaviour benchmark", () => {
     render(<ManagerJobDna />);
-    const frontendRow = screen.getAllByText("Frontend Developer")[0];
-    fireEvent.click(frontendRow.closest("button")!);
-    expect(screen.getByText("PRISM Dimension Breakdown")).toBeInTheDocument();
+    const row = screen.getByText("Senior Engineer");
+    fireEvent.click(row.closest("button")!);
+    expect(screen.getByText("Behaviour Benchmark")).toBeInTheDocument();
+  });
+
+  it("shows an empty state when there are no profiles", () => {
+    mockQuery({ data: [] });
+    render(<ManagerJobDna />);
+    expect(screen.getByText("No Job DNA profiles yet.")).toBeInTheDocument();
   });
 
   it("shows skeletons when loading", () => {
-    const { useQuery } = require("@tanstack/react-query");
-    (useQuery as jest.Mock).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: mockRefetch,
-    });
-
+    mockQuery({ data: undefined, isLoading: true });
     render(<ManagerJobDna />);
     expect(screen.getAllByTestId("skeleton").length).toBeGreaterThan(0);
   });
 
-  it("shows error message with retry on error", () => {
-    const { useQuery } = require("@tanstack/react-query");
-    (useQuery as jest.Mock).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error("fail"),
-      refetch: mockRefetch,
-    });
-
+  it("shows an error message with retry on error", () => {
+    mockQuery({ data: undefined, error: new Error("fail") });
     render(<ManagerJobDna />);
-    expect(
-      screen.getByText("Failed to load Job DNA profiles.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Failed to load Job DNA profiles.")).toBeInTheDocument();
     expect(screen.getByText("Retry")).toBeInTheDocument();
   });
 });
