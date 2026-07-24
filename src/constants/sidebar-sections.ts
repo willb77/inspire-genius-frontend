@@ -30,6 +30,7 @@ import {
   BookOpenCheck,
   ClipboardCheck,
   MessagesSquare,
+  Wand2,
 } from "lucide-react"
 import type { UserRole } from "@/types/roles"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
@@ -202,6 +203,7 @@ export const KCE_SIDEBAR_SECTION: SidebarSection = {
   label: "Knowledge Continuity",
   roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
   items: [
+    { to: "/vertical/knowledge-continuity/blueprint", icon: Wand2, label: "Blueprint a role" },
     { to: "/vertical/knowledge-continuity/capture", icon: MessagesSquare, label: "Start a capture" },
     { to: "/vertical/knowledge-continuity/dashboard", icon: BookOpenCheck, label: "Program Health" },
     { to: "/vertical/knowledge-continuity/review", icon: ClipboardCheck, label: "Reviewer console" },
