@@ -208,6 +208,7 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 // Lumen — B2C personal diagnostics + just-in-time coaching (entitlement-gated)
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
+const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -571,6 +572,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<LumenDashboard />) },
+          { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
         ],
       },
 
