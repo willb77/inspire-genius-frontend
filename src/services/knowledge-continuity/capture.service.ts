@@ -1,6 +1,8 @@
 import { getApi } from "@/lib/agentApi"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
+  BlueprintGenerateRequest,
+  BlueprintGenerateResponse,
   ExtractRequest,
   ExtractResponse,
   NextQuestionRequest,
@@ -34,6 +36,20 @@ export async function nextQuestion(body: NextQuestionRequest) {
 export async function extractUnits(body: ExtractRequest) {
   const { data } = await getApi().post<VerticalApiResponse<ExtractResponse>>(
     `${PREFIX}/extract`,
+    body
+  )
+  return data
+}
+
+/**
+ * POST /v1/agents/kce/blueprint/generate — draft a role-knowledge taxonomy for
+ * review (Build B). Also an Agent-Engine (Maven-tier) endpoint, so it routes
+ * through `getApi()`; the LLM proposes structure only — nothing persists here.
+ * The approved tree is written via the trainer-service taxonomy endpoint.
+ */
+export async function generateBlueprint(body: BlueprintGenerateRequest) {
+  const { data } = await getApi().post<VerticalApiResponse<BlueprintGenerateResponse>>(
+    `/v1/agents/kce/blueprint/generate`,
     body
   )
   return data
