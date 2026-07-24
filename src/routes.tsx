@@ -200,6 +200,7 @@ const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/Stud
 // Knowledge Continuity vertical — Program-Health dashboard (entitlement-gated)
 const KceLayout = React.lazy(() => import("@/pages/knowledge-continuity/KceLayout"));
 const KceDashboardPage = React.lazy(() => import("@/pages/knowledge-continuity/KceDashboardPage"));
+const KceBlueprintPage = React.lazy(() => import("@/pages/knowledge-continuity/KceBlueprintPage"));
 const KceCapturePage = React.lazy(() => import("@/pages/knowledge-continuity/KceCapturePage"));
 const KceReviewConsolePage = React.lazy(() => import("@/pages/knowledge-continuity/KceReviewConsolePage"));
 const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/KceCurriculumPage"));
@@ -550,6 +551,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <Navigate to="/vertical/knowledge-continuity/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<KceDashboardPage />) },
+          { path: "blueprint", element: withSuspense(<KceBlueprintPage />) },
           { path: "capture", element: withSuspense(<KceCapturePage />) },
           { path: "review", element: withSuspense(<KceReviewConsolePage />) },
           { path: "curriculum", element: withSuspense(<KceCurriculumPage />) },

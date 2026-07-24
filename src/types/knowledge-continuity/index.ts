@@ -338,6 +338,8 @@ export type CreateTaxonomyRequest = {
   role_title: string
   name: string
   node_type: string
+  /** Optional parent node id — set when persisting a blueprint tree level-by-level. */
+  parent_id?: string
 }
 
 /** POST /v1/trainer/continuity/taxonomy response payload (the taxonomy node). */
@@ -355,4 +357,63 @@ export type RecordTurnRequest = {
   question: string
   response: string
   coverage_delta?: number
+}
+
+// ── Automated blueprinting (Build B) ─────────────────────────────────────────
+// The "Blueprint a role" surface drafts a role-knowledge taxonomy for review via
+// one Agent-Engine LLM endpoint (Maven-tier), then persists the approved tree
+// through the existing trainer-service taxonomy endpoint — one node per POST,
+// parents before children so `parent_id` resolves.
+
+export type BlueprintArchetype = "operational" | "managerial" | "executive"
+
+/** A node the caller seeds the generator with (e.g. a future Job DNA export). */
+export type BlueprintSeedNode = {
+  ref: string
+  name: string
+  node_type: string
+  section?: string | null
+  parent_ref?: string | null
+}
+
+/** POST /v1/agents/kce/blueprint/generate request body (Agent Engine). */
+export type BlueprintGenerateRequest = {
+  role_title: string
+  context?: string
+  /** Omit to let the server classify the archetype from the title + context. */
+  archetype?: BlueprintArchetype
+  seed_nodes?: BlueprintSeedNode[]
+}
+
+/** A single drafted node in the generated blueprint tree (server-assigned refs). */
+export type BlueprintNode = {
+  ref: string
+  parent_ref: string | null
+  name: string
+  node_type: string
+  section: string | null
+  depth: number
+  rationale: string | null
+}
+
+/** POST /v1/agents/kce/blueprint/generate response payload. */
+export type BlueprintGenerateResponse = {
+  role_title: string
+  archetype: BlueprintArchetype
+  archetype_rationale: string
+  sections: string[]
+  nodes: BlueprintNode[]
+}
+
+/** Input to persist an approved blueprint tree as taxonomy nodes. */
+export type PersistBlueprintRequest = {
+  org_id: string
+  role_title: string
+  nodes: BlueprintNode[]
+}
+
+/** Result of persisting a blueprint: created-node count + the first root's id. */
+export type PersistBlueprintResult = {
+  created: number
+  rootId: string | null
 }
