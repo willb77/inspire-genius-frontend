@@ -194,6 +194,18 @@ export const ROUTES = {
     memberWorkspace: (memberId: string) =>
       `/vertical/honor/member/${memberId}`,
   },
+  // Job-Fit vertical — person-side profile↔role matching
+  // (entitlement-gated by enabled_verticals: "job-fit").
+  JOB_FIT: {
+    BASE: "/vertical/job-fit",
+    MATCHES: "/vertical/job-fit/matches",
+    GAPS: "/vertical/job-fit/gaps",
+    PATHWAY: "/vertical/job-fit/pathway",
+    /** Route pattern for a single role's fit detail (matched by <Route path>). */
+    DETAIL: "/vertical/job-fit/fit/:jobId",
+    /** Build the fit-detail path for a concrete role id. */
+    detail: (jobId: string) => `/vertical/job-fit/fit/${jobId}`,
+  },
   // Knowledge Continuity vertical (flag-gated by user_preferences.enabled_verticals)
   KNOWLEDGE_CONTINUITY: {
     BASE: "/vertical/knowledge-continuity",
