@@ -98,14 +98,26 @@ const HONOR_CAREER_AREAS: ReadonlyArray<{ key: string; label: string }> = [
   { key: "analysis_intelligence", label: "Analysis & Intelligence" },
 ]
 
-// The four evaluation dimensions the coach can toggle (default all on). The
-// selected keys are sent as `dimensions` on the evaluate body.
+// The evaluation dimensions the coach can toggle. The selected keys are sent as
+// `dimensions` on the evaluate body.
+//
+// `position` is OFF by default and labelled as not-yet-scored: an uploaded job
+// description is stored as evidence on the fellow (doc_kind="position") and is
+// retrievable in chat, but JD -> competency-vector extraction is not built, so
+// the JD does NOT influence the ranked fit. The backend accepts only a
+// precomputed `positionVector`, which nothing produces. Leaving this on by
+// default implied a capability the system does not have.
 const EVAL_DIMENSIONS: ReadonlyArray<{ key: string; label: string }> = [
   { key: "career", label: "Career" },
   { key: "goals", label: "Goals" },
   { key: "education", label: "Education" },
-  { key: "position", label: "Position" },
+  { key: "position", label: "Position (not scored yet)" },
 ]
+
+/** Dimensions enabled when the page loads — everything except `position`. */
+const DEFAULT_DIMENSIONS: ReadonlyArray<string> = EVAL_DIMENSIONS.filter(
+  (d) => d.key !== "position",
+).map((d) => d.key)
 
 // Downloadable document formats (the branded PDF is handled client-side; the
 // rest render server-side via the Core docgen engine).
@@ -160,6 +172,55 @@ function narrativeToPdfHtml(md: string): string {
     .join("")
 }
 
+/** `prism:behaviorpreferences:coordinating` → `Coordinating` (prompt-readable). */
+function featureLabel(key: string): string {
+  const last = key.split(":").pop() ?? key
+  return last.charAt(0).toUpperCase() + last.slice(1)
+}
+
+/**
+ * The deterministic comparison backbone, rendered for the narrator. Returns ""
+ * for a solo run so the solo prompt is byte-identical to before.
+ */
+function comparativeBackbone(
+  report: HonorEvaluation,
+  nameById: Record<string, string>,
+): string {
+  const cmp = report.comparative
+  if (!cmp || !cmp.subjects?.length) return ""
+  const named = (id: string) => nameById[id] ?? id
+  const others = cmp.subjects.map(named).join(", ")
+  const rows = cmp.subjects
+    .map((sid) => {
+      const fits = cmp.per_subject_area_fit?.[sid] ?? {}
+      const scores = Object.entries(fits)
+        .map(([area, score]) => `${area} ${score}`)
+        .join(", ")
+      return `- ${named(sid)}: ${scores}`
+    })
+    .join("\n")
+  const tr = cmp.team_read
+  const teamBits = tr
+    ? [
+        tr.covered?.length ? `covered: ${tr.covered.map(featureLabel).join(", ")}` : "",
+        tr.gaps?.length ? `gaps: ${tr.gaps.map(featureLabel).join(", ")}` : "",
+        tr.complementary?.length
+          ? `complementary: ${tr.complementary.map(featureLabel).join(", ")}`
+          : "",
+        tr.redundant?.length ? `redundant: ${tr.redundant.map(featureLabel).join(", ")}` : "",
+      ].filter(Boolean).join("; ")
+    : ""
+  return [
+    `This is a COMPARISON. Comparison set: ${others}.`,
+    `Add a "## Comparison" section that reads across the whole set — do NOT invent or alter any score.`,
+    `Deterministic per-subject fit by area (0–100):`,
+    rows,
+    tr ? `Team read against ${tr.label ?? tr.target_area} — ${teamBits}.` : "",
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
 /**
  * Prompt Meridian to compose the full, formatted evaluation. Meridian already
  * receives the FELLOW's <USER_PROFILE> (résumé, bio, PRISM, docs) injected
@@ -172,6 +233,7 @@ function summarizeForNarration(
   report: HonorEvaluation,
   subjectName: string,
   criteria?: string,
+  nameById: Record<string, string> = {},
 ): string {
   const hasScores = (report.confidence?.behavioralBasis ?? report.frameworks.length > 0)
   const top = report.career_fit_ranked
@@ -198,6 +260,7 @@ function summarizeForNarration(
       : `No behavioral (PRISM) assessment is on file — base your assessment ENTIRELY on the attached document(s) (résumé / bio / additional info). Assess those directly; say plainly where evidence is limited; do not fabricate scores.`,
     strengths ? `Cited strengths: ${strengths}.` : "",
     goals ? `Stated goals: ${goals}.` : "",
+    comparativeBackbone(report, nameById),
     `Never surface classified or sensitive operational detail; translate SOF experience safely to private-sector terms.`,
   ]
     .filter(Boolean)
@@ -262,7 +325,7 @@ export default function HonorEvaluate() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [criteria, setCriteria] = useState("")
   const [dimensions, setDimensions] = useState<Set<string>>(
-    () => new Set(EVAL_DIMENSIONS.map((d) => d.key)),
+    () => new Set(DEFAULT_DIMENSIONS),
   )
   const [targetArea, setTargetArea] = useState<string>("operations_program_management")
   const [result, setResult] = useState<HonorEvaluation | null>(null)
@@ -413,7 +476,7 @@ export default function HonorEvaluate() {
       await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
       await triggerProcessing(presigned.document_id)
       setPositionAttached(file.name)
-      toast.success(`Position description attached to ${fellowName(primary.firstName, primary.lastName)}.`)
+      toast.success(`Position description saved to ${fellowName(primary.firstName, primary.lastName)}.`)
     } catch {
       toast.error("Could not attach the position description.")
     } finally {
@@ -424,10 +487,19 @@ export default function HonorEvaluate() {
   async function narrateResult(evalResult: HonorEvaluation) {
     if (!primary) return
     const subjectName = fellowName(primary.firstName, primary.lastName)
+    // Names for every selected fellow so the narrator can refer to the
+    // comparison set by name rather than by opaque id.
+    const nameById = Object.fromEntries(
+      selectedFellows.map((f) => [f.id, fellowName(f.firstName, f.lastName)]),
+    )
+    // Primary first — the engine wraps each owned subject in its own <SUBJECT>
+    // block. Solo runs send no memberIds and behave exactly as before.
+    const memberIds = selectedFellows.length > 1 ? selectedFellows.map((f) => f.id) : undefined
     try {
       const reply = await narrate.mutateAsync({
-        prompt: summarizeForNarration(evalResult, subjectName, criteria),
+        prompt: summarizeForNarration(evalResult, subjectName, criteria, nameById),
         memberId: primary.id,
+        memberIds,
       })
       if (reply.content.trim()) {
         setNarrationMarkdown(reply.content)
@@ -878,6 +950,11 @@ export default function HonorEvaluate() {
                 {positionAttached && (
                   <span className="text-xs text-[#5b6678]">Attached: {positionAttached}</span>
                 )}
+                <span className="w-full text-xs text-[#8a6d1b]">
+                  The position description is stored as evidence on this fellow and is available
+                  to Meridian in chat. It does <strong>not</strong> yet influence the ranked
+                  career/position fit — automatic JD scoring is not built.
+                </span>
               </div>
             )}
           </div>

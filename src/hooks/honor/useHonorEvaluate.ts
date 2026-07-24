@@ -33,8 +33,13 @@ import type {
  * seeded canned answers so the surface never breaks (see HonorEvaluate).
  */
 export function useHonorEvaluate() {
-  return useMutation<HonorEvalReply, Error, { prompt: string; memberId?: string }>({
-    mutationFn: ({ prompt, memberId }) => sendHonorEvaluation(prompt, { memberId }),
+  return useMutation<
+    HonorEvalReply,
+    Error,
+    { prompt: string; memberId?: string; memberIds?: string[] }
+  >({
+    mutationFn: ({ prompt, memberId, memberIds }) =>
+      sendHonorEvaluation(prompt, { memberId, memberIds }),
   })
 }
 
