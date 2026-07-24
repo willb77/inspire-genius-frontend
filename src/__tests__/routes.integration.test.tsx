@@ -141,6 +141,12 @@ const pageModules: Record<string, string> = {
   "@/pages/company-admin/Settings": "CompanyAdminSettingsPage",
   "@/pages/company-admin/Analytics": "CompanyAdminAnalyticsPage",
   "@/pages/company-admin/BulkImport": "CompanyAdminBulkImportPage",
+  "@/pages/practitioner/Home": "PractitionerHomePage",
+  "@/pages/practitioner/MeridianChat": "PractitionerMeridianChatPage",
+  "@/pages/practitioner/ComingSoon": "PractitionerComingSoonPage",
+  "@/pages/practitioner/ClientProfile": "PractitionerClientProfilePage",
+  "@/pages/practitioner/Schedule": "PractitionerSchedulePage",
+  "@/pages/practitioner/Meeting": "PractitionerMeetingPage",
   "@/pages/practitioner/Dashboard": "PractitionerDashboardPage",
   "@/pages/practitioner/Clients": "PractitionerClientsPage",
   "@/pages/practitioner/Credits": "PractitionerCreditsPage",
@@ -415,12 +421,12 @@ describe("Route Integration Tests", () => {
   });
 
   describe("Role-based access: practitioner role", () => {
-    it("practitioner can access /practitioner/dashboard", async () => {
+    it("practitioner /practitioner/dashboard redirects to Home (old mock retired)", async () => {
       const user = makeAuthUser({ role: "practitioner" });
       const ctx = makeAuthContext({ user });
       renderWithRouter("/practitioner/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
 
     it("practitioner CANNOT access /super-admin/dashboard", async () => {
@@ -428,7 +434,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/super-admin/dashboard", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("PractitionerDashboardPage")).toBeInTheDocument();
+      // Redirected to the practitioner home route (now /practitioner/home).
+      expect(await screen.findByTestId("PractitionerHomePage")).toBeInTheDocument();
     });
   });
 
@@ -500,7 +507,7 @@ describe("Route Integration Tests", () => {
   // ── 5. Onboarding redirect when incomplete ──────────────────────────
 
   describe("Onboarding redirect", () => {
-    it("redirects to /onboarding/one when onboarding is incomplete", async () => {
+    it("does NOT force onboarding when incomplete — lands on /home (forced onboarding disabled 2026-07-21)", async () => {
       const user = makeAuthUser({
         role: "user",
         isOnboardingCompleted: false,
@@ -508,7 +515,8 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("OnboardingOnePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+      expect(screen.queryByTestId("OnboardingOnePage")).not.toBeInTheDocument();
     });
 
     it("allows access to onboarding routes when onboarding incomplete", async () => {

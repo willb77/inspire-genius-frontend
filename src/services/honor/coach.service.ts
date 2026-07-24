@@ -4,14 +4,21 @@ import type {
   CoachActivityRow,
   CoachHome,
   CoachRecord,
+  FellowStatus,
   HonorApiResponse,
   HonorEvaluateBody,
   HonorEvaluation,
+  HonorFellowGoals,
   HonorFellowSources,
+  HonorPrismReport,
   HonorFellow,
   HonorResume,
   HonorResumeBody,
   HonorResumeDisabled,
+  HonorSavedEvaluation,
+  HonorSavedEvaluationSummary,
+  HonorSourcesBulk,
+  SaveEvaluationBody,
   ScheduleEvent,
   TeamRecord,
 } from "@/types/honor"
@@ -93,15 +100,42 @@ export type BulkInviteResult = {
   results: Array<{ fellowId: string; status: string; email?: string | null; invitationSent?: boolean; message?: string }>
 }
 
-/** Bulk-convert/invite several selected fellows in one request. */
+/**
+ * Bulk-convert/invite several selected fellows in one request.
+ *
+ * Fellows are NOT IG login users — the invite sends a confirmation /
+ * acknowledgement email (the backend composes + sends it now; the FE no longer
+ * fires a magic link). `messageHtml` is the coach's formatted message body,
+ * folded into the confirmation email server-side. Only sent when
+ * `sendInvitation` is true; ignored otherwise.
+ */
 export async function inviteFellowsBulk(
   fellowIds: string[],
   keepCoachAccess = false,
   sendInvitation = true,
+  messageHtml?: string,
 ) {
   const { data } = await agentApi.post<HonorApiResponse<BulkInviteResult>>(
     `${COACH_BASE}/invite-bulk`,
-    { fellowIds, keepCoachAccess, sendInvitation },
+    {
+      fellowIds,
+      keepCoachAccess,
+      sendInvitation,
+      ...(messageHtml ? { messageHtml } : {}),
+    },
+  )
+  return data
+}
+
+/**
+ * Set a fellow's coaching status — PATCH …/{id}/status (ownership-gated coach
+ * route). Lets the coach move a fellow between "intake-pending", "assessed", and
+ * "invited" without re-running intake. Returns the fellow id + new status.
+ */
+export async function setFellowStatus(fellowId: string, status: FellowStatus) {
+  const { data } = await agentApi.patch<HonorApiResponse<{ fellowId: string; status: FellowStatus }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/status`,
+    { status },
   )
   return data
 }
@@ -195,6 +229,46 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
   return data
 }
 
+// ── Persisted evaluations (Save + history) ───────────────────────────────────
+
+/**
+ * Persist a run of the evaluate route + Nova's narrative — POST …/{id}/evaluations.
+ * The saved record is scoped to the calling coach server-side. Returns the saved
+ * summary (id + metadata). Used by the "Save evaluation" action so a coach can
+ * reload / re-export it later, and the résumé rewrite can key off its suggestions.
+ */
+export async function saveEvaluation(fellowId: string, body: SaveEvaluationBody) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorSavedEvaluationSummary>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations`,
+    body,
+  )
+  return data
+}
+
+/** The coach's saved evaluations for a fellow, newest first — GET …/{id}/evaluations. */
+export async function listEvaluations(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<{ evaluations: HonorSavedEvaluationSummary[] }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations`,
+  )
+  return data
+}
+
+/** One saved evaluation, full view — GET …/{id}/evaluations/{evaluationId}. */
+export async function getEvaluation(fellowId: string, evaluationId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorSavedEvaluation>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations/${encodeURIComponent(evaluationId)}`,
+  )
+  return data
+}
+
+/** Soft-delete a saved evaluation — DELETE …/{id}/evaluations/{evaluationId}. */
+export async function deleteEvaluation(fellowId: string, evaluationId: string) {
+  const { data } = await agentApi.delete<HonorApiResponse<{ deleted: boolean; id: string }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/evaluations/${encodeURIComponent(evaluationId)}`,
+  )
+  return data
+}
+
 /**
  * The sources a fellow has submitted — assessments (by framework + score count)
  * and whether a résumé / bio is on file. Powers the Evaluate surface's per-fellow
@@ -203,6 +277,53 @@ export async function evaluateFellow(fellowId: string, body: HonorEvaluateBody =
 export async function getFellowSources(fellowId: string) {
   const { data } = await agentApi.get<HonorApiResponse<HonorFellowSources>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/sources`,
+  )
+  return data
+}
+
+/**
+ * Per-fellow sources for several fellows in one request —
+ * POST /v1/agents/honor/coach/students/sources-bulk. Powers the Evaluate
+ * fellow grid's compact 10-artifact status row without an N+1 fan-out.
+ */
+export async function getFellowSourcesBulk(fellowIds: string[]) {
+  const { data } = await agentApi.post<HonorApiResponse<{ sources: HonorSourcesBulk }>>(
+    `${COACH_BASE}/sources-bulk`,
+    { fellowIds },
+  )
+  return data
+}
+
+/** The fellow's stored goals & objectives — GET …/{id}/goals. */
+export async function getFellowGoals(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorFellowGoals>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/goals`,
+  )
+  return data
+}
+
+/** Set the fellow's goals & objectives text — PUT …/{id}/goals. */
+export async function setFellowGoals(fellowId: string, text: string) {
+  const { data } = await agentApi.put<HonorApiResponse<HonorFellowGoals>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/goals`,
+    { text },
+  )
+  return data
+}
+
+/** The fellow's PRISM report scores from the imported CSV (or hasReport:false). */
+export async function getFellowPrism(fellowId: string) {
+  const { data } = await agentApi.get<HonorApiResponse<HonorPrismReport>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/prism`,
+  )
+  return data
+}
+
+/** Record a request for the fellow's PRISM report. */
+export async function requestFellowPrism(fellowId: string) {
+  const { data } = await agentApi.post<HonorApiResponse<{ fellowId: string; requested: boolean }>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/prism/request`,
+    {},
   )
   return data
 }
@@ -276,6 +397,58 @@ export type EmailReportResult = {
 export async function emailReport(fellowId: string, body: EmailReportBody) {
   const { data } = await agentApi.post<HonorApiResponse<EmailReportResult>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/email`,
+    body,
+  )
+  return data
+}
+
+/** Formats the multi-format export route can produce (via the Core docgen engine). */
+export type HonorReportFormat =
+  | "docx"
+  | "pdf"
+  | "pptx"
+  | "xlsx"
+  | "csv"
+  | "md"
+  | "html"
+  | "txt"
+
+export type GenerateReportBody = {
+  kind?: HonorReportKind
+  format: HonorReportFormat
+  /** The deterministic evaluation backbone (HonorEvaluation) — optional. */
+  evaluation?: HonorEvaluation | null
+  /** Meridian's narrative in markdown — optional. */
+  narrativeMarkdown?: string
+  /** For kind="resume": the generated HonorResume — rendered clean + unbranded. */
+  resume?: HonorResume | null
+  fellowName?: string
+  fellowTitle?: string
+  fellowEmail?: string
+  coachName?: string
+  coachTitle?: string
+  coachEmail?: string
+  dateLabel?: string
+}
+
+export type GenerateReportResult = {
+  downloadUrl: string
+  filename: string
+  format: HonorReportFormat
+  contentType?: string
+  expiresIn?: number
+}
+
+/**
+ * Render a Fellow's evaluation/résumé to ANY supported format (Word · PDF ·
+ * PowerPoint · Excel · CSV · Markdown · HTML) — POST …/{id}/report/generate.
+ * The server reuses the Core document-generation engine (deterministic, no model
+ * call), brands it with the THF cover + confidential footer, uploads to S3, and
+ * returns a short-lived presigned download URL. Ownership-gated server-side.
+ */
+export async function generateReportDocument(fellowId: string, body: GenerateReportBody) {
+  const { data } = await agentApi.post<HonorApiResponse<GenerateReportResult>>(
+    `${COACH_BASE}/${encodeURIComponent(fellowId)}/report/generate`,
     body,
   )
   return data

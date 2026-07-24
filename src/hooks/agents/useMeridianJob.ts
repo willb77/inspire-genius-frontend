@@ -16,6 +16,18 @@ export type JobMetadata = {
   domain?: string;
   latency_ms?: number;
   assistant_message_id?: string;
+  // IG Core document-generation skill — files produced this turn (each with a
+  // presigned download URL). Flows through the async-job path automatically via
+  // the catch-all below; typed here for the consumers that read it.
+  attachments?: {
+    kind: string;
+    filename: string;
+    url: string;
+    format?: string;
+    content_type?: string;
+    size_bytes?: number;
+    expires_in?: number;
+  }[];
   // The server is allowed to round-trip arbitrary additional keys.
   [key: string]: unknown;
 };

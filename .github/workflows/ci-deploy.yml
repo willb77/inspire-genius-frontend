@@ -84,6 +84,19 @@ jobs:
           # HomeSurfaceToggle and /home/classic escape hatch remain; an explicit
           # localStorage `new_user_surfaces` value still overrides this default.
           echo "VITE_NEW_USER_SURFACES=true" >> .env
+          # Team Development Studio (manager) — pilot rollout: ON in dev only.
+          # The feature is otherwise dark by default (VITE_FEATURE_TEAM_DEVELOPMENT
+          # unset → nav item + /manager/development routes hidden). Backend
+          # (growth-service + agent-engine dossier + migration 014) is live on dev;
+          # NOT on staging-b, so this stays dev-only until the backend is promoted.
+          # Remove this line to hide the feature again.
+          echo "VITE_FEATURE_TEAM_DEVELOPMENT=true" >> .env
+          # Practitioner coach client backend (/v1/agents/coach/*) — ON in dev
+          # only. Flag-off (staging-b, which does NOT set this) keeps the
+          # coachClient service on its wireframe fixtures, so staging-b's
+          # "My Clients" stays functional until the coach backend is promoted
+          # there. Remove this line to fall back to stubs in dev too.
+          echo "VITE_COACH_BACKEND=true" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund

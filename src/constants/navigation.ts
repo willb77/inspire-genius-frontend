@@ -7,6 +7,7 @@ import {
   Settings,
   HelpCircle,
   Bot,
+  CalendarDays,
   LayoutDashboard,
   UsersRound,
   MessageSquarePlus,
@@ -87,9 +88,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },
   { to: ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT, icon: Activity, label: "Dev Traffic Report" },
-  // Combined Plan §A.E3.4 — Sage document research
-  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Document Research" },
-  { to: ROUTES.SUPER_ADMIN.RESEARCH_LIBRARY, icon: BookHeart, label: "Research Library" },
+  // Research — consolidated: ask Sage, browse the saved library, and upload
+  // documents to the corpus via the standard document pipeline (one nav item).
+  { to: ROUTES.SUPER_ADMIN.RESEARCH, icon: BookHeart, label: "Research" },
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
@@ -135,17 +136,24 @@ export const COMPANY_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.COMPANY_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/** Navigation items for the practitioner role */
+/**
+ * Navigation items for the practitioner role.
+ *
+ * Phase 1/2 (2026-07-22): the practitioner now renders through the standard
+ * SidebarScaffold chrome (via UnifiedLayout) instead of the legacy AppShell,
+ * and this array is the single source of truth for the menu. Home + Chat with
+ * Meridian + Schedule + Meeting are the new Phase-2 surfaces; every
+ * `/practitioner/*` route is entitlement-gated to practitioner + super-admin
+ * by ROLE_PERMISSIONS (see src/types/roles.ts).
+ */
 export const PRACTITIONER_NAV_ITEMS: NavItemDef[] = [
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "Clients" },
-  { to: ROUTES.PRACTITIONER.PRISM_CLIENTS, icon: Brain, label: "PRISM Clients" },
-  // Wave 4 Lane 4.D (P7.2) — task-agent forms (Maven/James/Atlas) for practitioner
-  { to: ROUTES.PRACTITIONER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
-  { to: ROUTES.PRACTITIONER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
-  { to: ROUTES.PRACTITIONER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: Home, label: "Practitioner Home" },
+  // Uses the standard My Workspace Meridian chat surface (/meridian/chat — the
+  // v2 six-tile-rail experience), not a practitioner-specific copy.
+  { to: ROUTES.MERIDIAN_CHAT, icon: Sparkles, label: "Chat with Meridian", state: { autoLoadPrism: true } },
+  { to: ROUTES.PRACTITIONER.CLIENTS, icon: UserCheck, label: "My Clients" },
+  { to: ROUTES.PRACTITIONER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   { to: ROUTES.PRACTITIONER.ANALYTICS, icon: BarChart3, label: "Analytics" },
-  { to: ROUTES.PRACTITIONER.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
 /** Navigation items for the distributor role */
@@ -161,7 +169,7 @@ const ROLE_VIEW_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "User Home" },
   { to: ROUTES.MANAGER.DASHBOARD, icon: Users, label: "Manager" },
   { to: ROUTES.COMPANY_ADMIN.DASHBOARD, icon: Building2, label: "Company Admin" },
-  { to: ROUTES.PRACTITIONER.DASHBOARD, icon: UserCheck, label: "Practitioner" },
+  { to: ROUTES.PRACTITIONER.HOME, icon: UserCheck, label: "Practitioner" },
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: Briefcase, label: "Distributor" },
 ]
 
@@ -209,7 +217,7 @@ export const HOME_ROUTE_BY_ROLE: Record<UserRole, string> = {
   user: ROUTES.HOME,
   manager: ROUTES.MANAGER.DASHBOARD,
   "company-admin": ROUTES.COMPANY_ADMIN.DASHBOARD,
-  practitioner: ROUTES.PRACTITIONER.DASHBOARD,
+  practitioner: ROUTES.PRACTITIONER.HOME,
   distributor: ROUTES.DISTRIBUTOR.DASHBOARD,
   // Super-admins land on the user Home for a simpler default experience;
   // Administration tools remain available via the collapsed sidebar section.
