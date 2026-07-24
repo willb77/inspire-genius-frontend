@@ -312,6 +312,39 @@ test("comparative narration carries the comparison set — not a solo essay", as
   expect(opts).toMatchObject({ memberIds: ["f1", "f2"] })
 })
 
+test("comparative prompt carries score provenance — imputed-neutral is not passed off as measured", async () => {
+  // Live regression from staging-b 2026-07-24: with no behavioral assessment on
+  // file, every subject's per-area values are the scorer's neutral placeholders
+  // and are IDENTICAL by construction. Handed bare numbers, the narrator called
+  // them "scored"/"instrument-derived", described identical values as "higher",
+  // and invented an "Est. 74-78" range for the primary. The prompt must state
+  // provenance so none of that is available to it.
+  const withComparative = { ...opsEval(), comparative: {
+    subjects: ["f2"], areas: ["operations_program_management", "people_leadership"],
+    per_subject_area_fit: { f2: { operations_program_management: 69, people_leadership: 75 } },
+    pairwise_similarity: { f2: { f2: 100 } },
+    team_read: { target_area: "operations_program_management", label: "Operations Program Management", covered: [], gaps: ["prism:behaviorpreferences:coordinating"], redundant: [], complementary: [], best_by_feature: {} },
+  } }
+  evaluateFellow.mockResolvedValue({ status: true, data: withComparative })
+
+  renderPage()
+  fireEvent.click(screen.getByText("Marcus Reyes"))
+  fireEvent.click(screen.getByText("Dana Cole"))
+  fireEvent.click(screen.getByRole("button", { name: /run evaluation/i }))
+
+  await waitFor(() => expect(sendHonorEvaluation).toHaveBeenCalledTimes(1))
+  const prompt = sendHonorEvaluation.mock.calls[0][0] as string
+
+  // Each subject's basis is stated inline...
+  expect(prompt).toMatch(/IMPUTED-NEUTRAL — no behavioral assessment on file/)
+  // ...the narrator is told what it may not call those values...
+  expect(prompt).toMatch(/Never call such a value scored, measured, instrument-derived, higher/)
+  // ...that identical values are an artifact, not a finding...
+  expect(prompt).toMatch(/IDENTICAL by construction and carry no comparative signal/i)
+  // ...and that it may not invent a score for anyone, primary included.
+  expect(prompt).toMatch(/Do not estimate, widen, average or invent any score/)
+})
+
 test("attaching a position description uploads with doc_kind=position for the subject", async () => {
   const { container } = renderPage()
   fireEvent.click(screen.getByText("Marcus Reyes"))

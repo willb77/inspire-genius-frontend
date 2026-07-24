@@ -185,20 +185,32 @@ function featureLabel(key: string): string {
 function comparativeBackbone(
   report: HonorEvaluation,
   nameById: Record<string, string>,
+  behavioralById: Record<string, boolean> = {},
 ): string {
   const cmp = report.comparative
   if (!cmp || !cmp.subjects?.length) return ""
   const named = (id: string) => nameById[id] ?? id
   const others = cmp.subjects.map(named).join(", ")
+  // Provenance per subject. A subject with no behavioral assessment on file has
+  // an EMPTY feature vector, so every per-area value is the neutral placeholder
+  // the scorer imputes — identical for every such subject, and carrying no
+  // comparative signal at all. Without this the narrator reads those numbers as
+  // measured and invents distinctions (and score ranges) that do not exist.
+  const measured = (sid: string) => behavioralById[sid] === true
   const rows = cmp.subjects
     .map((sid) => {
       const fits = cmp.per_subject_area_fit?.[sid] ?? {}
       const scores = Object.entries(fits)
         .map(([area, score]) => `${area} ${score}`)
         .join(", ")
-      return `- ${named(sid)}: ${scores}`
+      const basis = measured(sid)
+        ? "measured from a behavioral assessment"
+        : "IMPUTED-NEUTRAL — no behavioral assessment on file"
+      return `- ${named(sid)} [${basis}]: ${scores}`
     })
     .join("\n")
+  const imputedNames = cmp.subjects.filter((sid) => !measured(sid)).map(named)
+  const allImputed = imputedNames.length === cmp.subjects.length
   const tr = cmp.team_read
   const teamBits = tr
     ? [
@@ -216,6 +228,16 @@ function comparativeBackbone(
     `Deterministic per-subject fit by area (0–100):`,
     rows,
     tr ? `Team read against ${tr.label ?? tr.target_area} — ${teamBits}.` : "",
+    // Provenance rules. These exist because a narrator handed bare numbers will
+    // otherwise describe imputed placeholders as measured, call identical values
+    // "higher", and invent a score range for the subject.
+    imputedNames.length
+      ? `PROVENANCE — READ BEFORE COMPARING. These subjects have NO behavioral assessment on file: ${imputedNames.join(", ")}. Their per-area values are neutral placeholders the scorer imputes, NOT measured results. Never call such a value scored, measured, instrument-derived, higher, lower, stronger or weaker, and never rank subjects by them.`
+      : "",
+    allImputed
+      ? `Every subject in this comparison is imputed-neutral, so their per-area values are IDENTICAL by construction and carry no comparative signal. Do not present them as a difference. Compare only on documented evidence (résumé, bio, additional info), and say plainly that no behavioral instrument is on file for anyone in this set.`
+      : "",
+    `Use ONLY the figures supplied above. Do not estimate, widen, average or invent any score — no ranges, no "est." values — for any subject, including the primary.`,
   ]
     .filter(Boolean)
     .join("\n")
@@ -234,6 +256,7 @@ function summarizeForNarration(
   subjectName: string,
   criteria?: string,
   nameById: Record<string, string> = {},
+  behavioralById: Record<string, boolean> = {},
 ): string {
   const hasScores = (report.confidence?.behavioralBasis ?? report.frameworks.length > 0)
   const top = report.career_fit_ranked
@@ -260,7 +283,7 @@ function summarizeForNarration(
       : `No behavioral (PRISM) assessment is on file — base your assessment ENTIRELY on the attached document(s) (résumé / bio / additional info). Assess those directly; say plainly where evidence is limited; do not fabricate scores.`,
     strengths ? `Cited strengths: ${strengths}.` : "",
     goals ? `Stated goals: ${goals}.` : "",
-    comparativeBackbone(report, nameById),
+    comparativeBackbone(report, nameById, behavioralById),
     `Never surface classified or sensitive operational detail; translate SOF experience safely to private-sector terms.`,
   ]
     .filter(Boolean)
@@ -492,12 +515,23 @@ export default function HonorEvaluate() {
     const nameById = Object.fromEntries(
       selectedFellows.map((f) => [f.id, fellowName(f.firstName, f.lastName)]),
     )
+    // Which subjects actually have a behavioral assessment behind their numbers.
+    // The primary's basis comes from the report itself; the comparison subjects'
+    // from the roster-wide sources map.
+    const behavioralById: Record<string, boolean> = Object.fromEntries(
+      selectedFellows.map((f) => [
+        f.id,
+        f.id === primary.id
+          ? (evalResult.confidence?.behavioralBasis ?? false)
+          : (bulkSources[f.id]?.assessments?.length ?? 0) > 0,
+      ]),
+    )
     // Primary first — the engine wraps each owned subject in its own <SUBJECT>
     // block. Solo runs send no memberIds and behave exactly as before.
     const memberIds = selectedFellows.length > 1 ? selectedFellows.map((f) => f.id) : undefined
     try {
       const reply = await narrate.mutateAsync({
-        prompt: summarizeForNarration(evalResult, subjectName, criteria, nameById),
+        prompt: summarizeForNarration(evalResult, subjectName, criteria, nameById, behavioralById),
         memberId: primary.id,
         memberIds,
       })
