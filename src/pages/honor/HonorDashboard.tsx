@@ -15,6 +15,7 @@ import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/context/useAuth"
 import { useCoachHome } from "@/hooks/honor/useCoachData"
 import { HonorCard, HonorStat, HonorSectionTitle } from "./_shared"
+import VideoLibrary from "./VideoLibrary"
 
 /**
  * Honor Coach Workbench — Dashboard ("transition-mentoring cockpit").
@@ -29,7 +30,7 @@ type Tile = { to: string; label: string; description: string; icon: LucideIcon }
 const TILES: Tile[] = [
   { to: ROUTES.HONOR.CASELOAD, label: "My Fellows", description: "Your assigned caseload of Honor fellows.", icon: Users },
   { to: ROUTES.HONOR.ONBOARD, label: "Onboarding", description: "Add a fellow or import a cohort roster.", icon: UserPlus },
-  { to: ROUTES.HONOR.EVALUATE, label: "Work with Fellows", description: "AI evaluation, goals, education & funding.", icon: Sparkles },
+  { to: ROUTES.HONOR.EVALUATE, label: "Work with Fellows", description: "Resume Review, AI Evaluation, goals & funding.", icon: Sparkles },
   { to: ROUTES.HONOR.ACTIVITY, label: "Activity", description: "Audit trail of every coach & member action.", icon: Activity },
   { to: ROUTES.HONOR.SCHEDULE, label: "Schedule", description: "Sessions, debriefs, and cohort milestones.", icon: CalendarDays },
   { to: ROUTES.HONOR.ADMINISTRATION, label: "Administration", description: "Manage coaches, teams, and cohort rosters.", icon: Settings2 },
@@ -60,6 +61,15 @@ export default function HonorDashboard() {
         <HonorStat icon={CheckCircle2} label="Assessed" value={counts.assessed} hint="behavioral profile complete" tone="green" />
         <HonorStat icon={Clock} label="Intake pending" value={counts.intakePending} hint="awaiting PRISM intake" tone="orange" />
       </div>
+
+      {/* Videos */}
+      <HonorSectionTitle>Videos</HonorSectionTitle>
+      <HonorCard className="mb-6">
+        <p className="mb-3 text-sm text-[#5b6678]">
+          Short overviews of PRISM Brain Mapping and the program. Pick a title to play it.
+        </p>
+        <VideoLibrary />
+      </HonorCard>
 
       {/* Nav tiles */}
       <HonorSectionTitle>Jump in</HonorSectionTitle>

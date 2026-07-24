@@ -30,7 +30,7 @@ function fixHint(detail?: string): string | null {
  * Honor Coach Workbench — Onboard a Fellow (wired to the IG Core process).
  *
  * The submit handler runs {@link useHonorOnboard}: create → invite → import the
- * mandatory PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
+ * optional PRISM CSV + any optional framework reports (DiSC / CliftonStrengths /
  * Big Five / MBTI / Hogan) into the shipped `assessments`/`assessment_scores`
  * platform (subject = the member), then push résumé/bio into the document RAG.
  * No new backend tables — every write reuses an existing Core endpoint.
@@ -39,9 +39,6 @@ function fixHint(detail?: string): string | null {
 const OPTIONAL_FRAMEWORKS: OptionalFrameworkKey[] = [
   "DISC",
   "CLIFTON",
-  "BIG_FIVE",
-  "MBTI",
-  "HOGAN",
 ]
 
 const IG_ROLES = ["Fellow", "Coach", "Manager", "Company Admin"] as const
@@ -62,12 +59,14 @@ export default function HonorOnboard() {
   const [cohort, setCohort] = useState("")
   const [bio, setBio] = useState("")
   const [additionalInfo, setAdditionalInfo] = useState("")
+  const [goals, setGoals] = useState("")
   const [sendInvitation, setSendInvitation] = useState(true)
 
   const [prismFile, setPrismFile] = useState<File | null>(null)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [bioFile, setBioFile] = useState<File | null>(null)
   const [additionalInfoFile, setAdditionalInfoFile] = useState<File | null>(null)
+  const [goalsFile, setGoalsFile] = useState<File | null>(null)
   const [frameworkFiles, setFrameworkFiles] = useState<
     Partial<Record<OptionalFrameworkKey, File>>
   >({})
@@ -87,10 +86,12 @@ export default function HonorOnboard() {
     setCohort("")
     setBio("")
     setAdditionalInfo("")
+    setGoals("")
     setPrismFile(null)
     setResumeFile(null)
     setBioFile(null)
     setAdditionalInfoFile(null)
+    setGoalsFile(null)
     setFrameworkFiles({})
     setMissing([])
     formRef.current?.reset()
@@ -103,7 +104,7 @@ export default function HonorOnboard() {
     if (!lastName.trim()) out.push("Last name")
     if (!email.trim()) out.push("Email")
     if (!role.trim()) out.push("Role")
-    if (!prismFile) out.push("PRISM assessment file")
+    // PRISM is OPTIONAL — a fellow can be onboarded without a report on file.
     return out
   }
 
@@ -126,13 +127,15 @@ export default function HonorOnboard() {
       background: background.trim() || undefined,
       target: target.trim() || undefined,
       cohort: cohort.trim() || undefined,
-      prismFile: prismFile as File,
+      prismFile: prismFile ?? undefined,
       frameworkFiles,
       resumeFile,
       bio: bio.trim() || undefined,
       additionalInfo: additionalInfo.trim() || undefined,
+      goals: goals.trim() || undefined,
       bioFile,
       additionalInfoFile,
+      goalsFile,
       sendInvitation,
     })
   }
@@ -200,13 +203,13 @@ export default function HonorOnboard() {
             </datalist>
           </Field>
 
-          {/* Mandatory PRISM */}
-          <Field label="PRISM assessment (CSV)" required full hint="Source of truth — parsed into the member's structured scores.">
+          {/* Optional PRISM */}
+          <Field label="PRISM assessment (CSV) — optional" full hint="If provided, it's parsed into the member's structured scores. A fellow can be onboarded without one.">
             <FileDrop
               accept=".csv,.xlsx,.pdf"
               file={prismFile}
               onFile={setPrismFile}
-              placeholder="Drop the PRISM export (CSV / XLSX / PDF) or click to browse"
+              placeholder="Drop the PRISM export (CSV / XLSX / PDF) or click to browse — optional"
             />
           </Field>
 
@@ -260,6 +263,18 @@ export default function HonorOnboard() {
               file={additionalInfoFile}
               onFile={setAdditionalInfoFile}
               placeholder="…or drop an Additional-Information file (PDF / DOC / XLS) or browse"
+              compact
+            />
+          </Field>
+
+          {/* Goals & objectives — text OR file upload */}
+          <Field label="Goals & objectives" full hint="What is this fellow working toward? Type it, upload a file, or both — the coaching agents score goals against the behavioral profile.">
+            <textarea className={`${inputCls} min-h-[70px] resize-y`} placeholder="e.g. Move into an operations program-management role within 12 months." value={goals} onChange={(e) => setGoals(e.target.value)} />
+            <FileDrop
+              accept={DOC_ACCEPT}
+              file={goalsFile}
+              onFile={setGoalsFile}
+              placeholder="…or drop a Goals file (PDF / DOC / XLS) or browse"
               compact
             />
           </Field>

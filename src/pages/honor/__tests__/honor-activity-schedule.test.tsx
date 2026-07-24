@@ -22,6 +22,7 @@ jest.mock("@/services/honor/schedule.service", () => ({
   getGoogleStatus: jest.fn(),
   disconnectGoogle: jest.fn(),
   createCoachSession: jest.fn(),
+  createCoachSessionsBulk: jest.fn(),
   updateCoachSession: jest.fn(),
   deleteCoachSession: jest.fn(),
 }))
@@ -102,13 +103,17 @@ describe("HonorActivity — live feed", () => {
 
 describe("HonorSchedule — live sessions", () => {
   test("renders scheduled sessions", async () => {
+    // Date the session on "today" so it lands in the calendar's default month/day.
+    const now = new Date()
+    const at = (h: number) =>
+      new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0).toISOString()
     svc.getCoachSchedule.mockResolvedValue([
       {
         id: "s1",
         title: "PRISM debrief",
         kind: "debrief",
-        startsAt: "2026-07-21T13:00:00.000Z",
-        endsAt: "2026-07-21T14:00:00.000Z",
+        startsAt: at(13),
+        endsAt: at(14),
         location: "Room 2B",
         fellowId: "2201",
       },
@@ -116,7 +121,10 @@ describe("HonorSchedule — live sessions", () => {
 
     renderPage(<HonorSchedule />)
 
-    expect(await screen.findByText("PRISM debrief")).toBeInTheDocument()
+    // Month view (default) shows the session as a chip on its day.
+    expect(await screen.findByText(/PRISM debrief/)).toBeInTheDocument()
+    // Day view (today) surfaces the full card incl. the kind label.
+    fireEvent.click(screen.getByRole("button", { name: "Day" }))
     expect(screen.getByText("Debrief")).toBeInTheDocument()
   })
 
@@ -125,7 +133,8 @@ describe("HonorSchedule — live sessions", () => {
 
     renderPage(<HonorSchedule />)
 
-    expect(await screen.findByText(/No sessions scheduled/i)).toBeInTheDocument()
+    // The calendar still renders (empty grid) — no crash. Toolbar is present.
+    expect(await screen.findByRole("button", { name: "Today" })).toBeInTheDocument()
   })
 
   test("New session form POSTs through the service", async () => {
@@ -139,7 +148,7 @@ describe("HonorSchedule — live sessions", () => {
     renderPage(<HonorSchedule />)
 
     // Wait for initial load then open the form.
-    await screen.findByText(/No sessions scheduled/i)
+    await screen.findByRole("button", { name: "Today" })
     fireEvent.click(screen.getByRole("button", { name: /New session/i }))
 
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Goal review" } })
@@ -151,6 +160,39 @@ describe("HonorSchedule — live sessions", () => {
     await waitFor(() => expect(svc.createCoachSession).toHaveBeenCalledTimes(1))
     expect(svc.createCoachSession).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Goal review", startsAt: expect.any(String) }),
+    )
+  })
+
+  test("Schedule sessions (bulk) form builds the correct payload", async () => {
+    svc.getCoachSchedule.mockResolvedValue([])
+    svc.createCoachSessionsBulk.mockResolvedValue({ created: [{ id: "b1", title: "Check-in", startsAt: "x" }], emailed: 2, skipped: [] })
+
+    renderPage(<HonorSchedule />)
+    await screen.findByRole("button", { name: "Today" })
+
+    fireEvent.click(screen.getByRole("button", { name: /Schedule sessions/i }))
+
+    // Select both fellows.
+    fireEvent.click(screen.getByLabelText("Marcus Reyes"))
+    fireEvent.click(screen.getByLabelText("Dana Whitfield"))
+    fireEvent.change(screen.getByLabelText("Start"), { target: { value: "2026-07-22T09:00" } })
+    fireEvent.change(screen.getByLabelText("Duration"), { target: { value: "45" } })
+    fireEvent.change(screen.getByLabelText("Space between"), { target: { value: "10" } })
+    fireEvent.change(screen.getByLabelText("Topic"), { target: { value: "Mid-cohort check-in" } })
+
+    // Submit (the form's own button shows the count, not the header toggle).
+    fireEvent.click(screen.getByRole("button", { name: /Schedule 2 sessions/i }))
+
+    await waitFor(() => expect(svc.createCoachSessionsBulk).toHaveBeenCalledTimes(1))
+    expect(svc.createCoachSessionsBulk).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fellowIds: ["2201", "2202"],
+        durationMin: 45,
+        spacingMin: 10,
+        topic: "Mid-cohort check-in",
+        sendInvites: true,
+        startsAt: expect.any(String),
+      }),
     )
   })
 

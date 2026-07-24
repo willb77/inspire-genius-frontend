@@ -1,14 +1,19 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { toast } from "sonner"
-import { FileText, Loader2, Download, Printer, Mail, X, Sparkles } from "lucide-react"
+import { FileText, Loader2, Download, Mail, X, Sparkles, PenLine, Link2, ChevronDown } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
 import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
-import { useEmailHonorReport, useRecordReportExport } from "@/hooks/honor/useHonorReport"
+import {
+  useEmailHonorReport,
+  useGenerateReportDocument,
+  useRecordReportExport,
+} from "@/hooks/honor/useHonorReport"
+import type { HonorReportFormat } from "@/services/honor/coach.service"
 import { USE_HONOR_REPORT_EMAIL } from "@/hooks/honor/mocks"
-import { downloadBlob } from "@/lib/exportTranscript"
 import { formatReportDate, type HonorReportMeta } from "@/lib/honor/exportHonorReport"
-import { renderHonorResumePdf } from "@/lib/honor/exportHonorResume"
+import { copyReportLink, emailReportLink } from "@/lib/honor/shareReportLink"
 import type { HonorResume as HonorResumeData } from "@/types/honor"
 import {
   HonorCard,
@@ -32,6 +37,14 @@ import { HONOR_CAREER_AREAS, HONOR_CAREER_AREA_OTHER } from "./_careerAreas"
  * clearly-labeled sample so the layout + branded PDF stay demoable.
  */
 
+// Feature 3 — extra résumé formats beyond the primary Word/PDF buttons. All
+// render clean + unbranded via the same backend path (kind="resume").
+const RESUME_EXTRA_FORMATS: ReadonlyArray<{ fmt: HonorReportFormat; label: string }> = [
+  { fmt: "txt", label: "Plain text (.txt)" },
+  { fmt: "md", label: "Markdown (.md)" },
+  { fmt: "html", label: "Web page (.html)" },
+]
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader()
@@ -44,36 +57,27 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-function printBlob(blob: Blob) {
-  const url = URL.createObjectURL(blob)
-  const iframe = document.createElement("iframe")
-  iframe.style.position = "fixed"
-  iframe.style.right = "0"
-  iframe.style.bottom = "0"
-  iframe.style.width = "0"
-  iframe.style.height = "0"
-  iframe.style.border = "0"
-  iframe.src = url
-  iframe.onload = () => {
-    try {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-    } catch {
-      window.open(url, "_blank")
-    }
-    window.setTimeout(() => {
-      iframe.remove()
-      URL.revokeObjectURL(url)
-    }, 60_000)
-  }
-  document.body.appendChild(iframe)
+/**
+ * The handoff payload from the Evaluate surface (Feature 2 — rewrite-from-eval).
+ * Passed via router state so no ids ride in the URL. Either an `evaluationId`
+ * (the server pulls the saved eval's "Suggestions for Improvement") or raw
+ * `improvements` prose (when the eval wasn't saved) — the résumé rewrite keys
+ * off whichever is present.
+ */
+type RewriteHandoff = {
+  fellowId?: string
+  fellowName?: string
+  evaluationId?: string
+  improvements?: string
 }
 
 export default function HonorResume() {
+  const location = useLocation()
   const { data: fellows = [] } = useCaseload()
   const { user } = useAuth()
   const { data: coachHome } = useCoachHome()
   const generate = useGenerateResume()
+  const generateDoc = useGenerateReportDocument()
   const recordExport = useRecordReportExport()
   const emailMutation = useEmailHonorReport()
 
@@ -82,6 +86,22 @@ export default function HonorResume() {
   const [careerArea, setCareerArea] = useState("")
   const [careerAreaOther, setCareerAreaOther] = useState("")
   const [positionText, setPositionText] = useState("")
+  // Feature 2 — the rewrite-from-evaluation context handed off from Evaluate.
+  // When set, generation keys off the evaluation's suggestions; "Clear" drops
+  // back to plain generation. Retained across re-generates until cleared.
+  const [rewriteFrom, setRewriteFrom] = useState<RewriteHandoff | null>(null)
+
+  // Consume the Evaluate handoff once on arrival: pre-select the fellow and arm
+  // the rewrite context. Runs when navigation state carries a fellow.
+  useEffect(() => {
+    const state = location.state as RewriteHandoff | null
+    if (state?.fellowId && (state.evaluationId || state.improvements)) {
+      setFellowId(state.fellowId)
+      setRewriteFrom(state)
+    }
+    // location.state is a one-shot handoff; only react to identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key])
 
   // The effective career-area hint: the free-typed value when "Other" is picked.
   const effectiveCareerArea =
@@ -91,9 +111,12 @@ export default function HonorResume() {
   // Résumé generation ships dark behind the server `honor_resume` flag. While
   // off we show an honest "not enabled" state — never a fabricated sample résumé.
   const [genPending, setGenPending] = useState(false)
-  const [exporting, setExporting] = useState<null | "download" | "print">(null)
+  const [exporting, setExporting] = useState<null | HonorReportFormat | "email">(null)
   const [showEmail, setShowEmail] = useState(false)
   const [emailTo, setEmailTo] = useState("")
+  // Feature 3 — export polish: the extra-formats menu + share-a-link state.
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [sharing, setSharing] = useState<null | "copy" | "email">(null)
 
   const primary = fellows.find((f) => f.id === fellowId)
 
@@ -109,6 +132,14 @@ export default function HonorResume() {
           role: role.trim() || undefined,
           careerArea: effectiveCareerArea || undefined,
           positionText: positionText.trim() || undefined,
+          // Feature 2 — rewrite keyed off the evaluation, only for the fellow the
+          // handoff targeted (guard against a fellow switch clearing intent).
+          ...(rewriteFrom && rewriteFrom.fellowId === primary.id
+            ? {
+                evaluationId: rewriteFrom.evaluationId,
+                improvements: rewriteFrom.improvements,
+              }
+            : {}),
         },
       })
       if (isResumeDisabled(data)) {
@@ -120,6 +151,9 @@ export default function HonorResume() {
         setResume(data)
         setIsSample(false)
         setGenPending(false)
+        if (data.fromEvaluation) {
+          toast.success("Résumé rewritten from the evaluation's suggestions.")
+        }
       } else {
         toast.error("No résumé was returned.")
       }
@@ -146,40 +180,86 @@ export default function HonorResume() {
     }
   }
 
-  async function renderPdf() {
+  /** Build the report/generate body for the CLEAN (unbranded) résumé document. */
+  function resumeDocBody(fmt: HonorReportFormat) {
     const meta = buildResumeMeta()
-    if (!resume || !meta) return null
-    return renderHonorResumePdf(resume, meta)
+    return {
+      kind: "resume" as const,
+      format: fmt,
+      resume,
+      fellowName: meta?.fellowName,
+      fellowTitle: meta?.fellowTitle,
+      fellowEmail: meta?.fellowEmail,
+      coachName: meta?.coachName,
+      coachTitle: meta?.coachTitle,
+      coachEmail: meta?.coachEmail,
+      dateLabel: meta?.dateLabel,
+    }
   }
 
-  async function handleDownload() {
+  /**
+   * Render + download the résumé as Word or PDF via the backend, which produces
+   * a clean, hiring-manager-ready document — no IG/THF cover page, branding, or
+   * confidential footer, and proper page margins (no header/footer overlap).
+   */
+  async function handleExport(fmt: HonorReportFormat) {
     if (!resume || !primary) return
-    setExporting("download")
+    if (isSample) {
+      toast.info("This is a sample layout — enable résumé generation to export.")
+      return
+    }
+    setExporting(fmt)
     try {
-      const out = await renderPdf()
-      if (!out) return
-      downloadBlob(out.fileName, out.blob)
-      if (!isSample) recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
-      toast.success("Résumé PDF downloaded.")
+      const data = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody(fmt) })
+      if (data?.downloadUrl) {
+        window.open(data.downloadUrl, "_blank", "noopener")
+        recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
+        toast.success(`Résumé ${fmt === "docx" ? "Word document" : "PDF"} generated.`)
+      } else {
+        toast.error("Could not generate the résumé.")
+      }
     } catch {
-      toast.error("Could not generate the PDF.")
+      toast.error(`Could not generate the résumé ${fmt === "docx" ? "Word document" : "PDF"}.`)
     } finally {
       setExporting(null)
     }
   }
 
-  async function handlePrint() {
+  /**
+   * Feature 3 — "email a link" / "copy link" for the résumé. Generates the clean
+   * PDF to S3 and either copies the presigned link or opens the coach's OWN mail
+   * client (mailto:) so they can send it to a hiring manager. No SES / flag / confirm.
+   */
+  async function handleShareLink(mode: "copy" | "email") {
     if (!resume || !primary) return
-    setExporting("print")
+    if (isSample) {
+      toast.info("This is a sample layout — enable résumé generation to share.")
+      return
+    }
+    setSharing(mode)
     try {
-      const out = await renderPdf()
-      if (!out) return
-      printBlob(out.blob)
-      if (!isSample) recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "print" })
+      const data = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody("pdf") })
+      if (!data?.downloadUrl) {
+        toast.error("Could not prepare a shareable link.")
+        return
+      }
+      recordExport.mutate({ fellowId: primary.id, kind: "resume", action: "download" })
+      if (mode === "copy") {
+        const ok = await copyReportLink(data.downloadUrl)
+        toast[ok ? "success" : "error"](
+          ok ? "Résumé download link copied." : "Could not copy the link.",
+        )
+      } else {
+        emailReportLink({
+          subject: `Résumé — ${fellowName(primary.firstName, primary.lastName)}`,
+          intro: `Please find the résumé for ${fellowName(primary.firstName, primary.lastName)} at the link below.`,
+          url: data.downloadUrl,
+        })
+      }
     } catch {
-      toast.error("Could not prepare the résumé for printing.")
+      toast.error("Could not prepare a shareable link.")
     } finally {
-      setExporting(null)
+      setSharing(null)
     }
   }
 
@@ -196,22 +276,34 @@ export default function HonorResume() {
       toast.warning("Enter a valid recipient email.")
       return
     }
+    setExporting("email")
     try {
-      const out = await renderPdf()
-      if (!out) return
-      const pdfBase64 = await blobToBase64(out.blob)
+      // Generate the clean (unbranded) PDF on the backend, then attach it.
+      const gen = await generateDoc.mutateAsync({ fellowId: primary.id, body: resumeDocBody("pdf") })
+      if (!gen?.downloadUrl) {
+        toast.error("Could not generate the résumé to email.")
+        return
+      }
+      let pdfBase64: string
+      try {
+        const blob = await (await fetch(gen.downloadUrl)).blob()
+        pdfBase64 = await blobToBase64(blob)
+      } catch {
+        toast.error("Résumé generated, but it couldn't be attached — download the PDF and send it manually.")
+        return
+      }
       const res = await emailMutation.mutateAsync({
         fellowId: primary.id,
         body: {
           to,
           kind: "resume",
-          filename: out.fileName,
+          filename: gen.filename,
           pdfBase64,
           subject: `Résumé — ${fellowName(primary.firstName, primary.lastName)}`,
         },
       })
       if (res?.disabled) {
-        toast.info("Email delivery isn't enabled yet. Download or print the résumé in the meantime.")
+        toast.info("Email delivery isn't enabled yet. Download the résumé in the meantime.")
       } else if (res?.sent) {
         toast.success(`Résumé emailed to ${to}.`)
         setShowEmail(false)
@@ -220,6 +312,8 @@ export default function HonorResume() {
       }
     } catch {
       toast.error("The résumé could not be emailed.")
+    } finally {
+      setExporting(null)
     }
   }
 
@@ -232,6 +326,26 @@ export default function HonorResume() {
         title="Résumé Writer"
         description="Generate a private-sector résumé from the Fellow's profile and documents, safely translated from their service. Review before use."
       />
+
+      {/* Feature 2 — rewrite-from-evaluation banner. Shown when arriving from
+          Evaluate with an evaluation's suggestions; "Clear" reverts to plain. */}
+      {rewriteFrom && rewriteFrom.fellowId === fellowId && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#cdd8ef] bg-[#eef2fb] px-4 py-3">
+          <span className="inline-flex items-center gap-2 text-sm text-[#1B2A4A]">
+            <PenLine className="h-4 w-4" />
+            Rewriting from the evaluation&rsquo;s suggestions
+            {rewriteFrom.fellowName ? ` for ${rewriteFrom.fellowName}` : ""}. Generate to apply them.
+          </span>
+          <button
+            type="button"
+            onClick={() => setRewriteFrom(null)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#cdd8ef] bg-white px-2.5 py-1.5 text-xs text-[#1B2A4A] hover:bg-[#f4f6fa]"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear — write plainly
+          </button>
+        </div>
+      )}
 
       <HonorCard className="mb-6">
         <div className="grid gap-4 lg:grid-cols-2">
@@ -311,7 +425,11 @@ export default function HonorResume() {
             className={HONOR_BTN_PRIMARY}
           >
             {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generate.isPending ? "Writing résumé…" : "Generate résumé"}
+            {generate.isPending
+              ? "Writing résumé…"
+              : rewriteFrom && rewriteFrom.fellowId === fellowId
+                ? "Rewrite résumé from evaluation"
+                : "Generate résumé"}
           </button>
         </div>
         {fellows.length === 0 && (
@@ -338,17 +456,103 @@ export default function HonorResume() {
           )}
 
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handleDownload} disabled={!canExport || exporting !== null} className={HONOR_BTN_PRIMARY}>
-              {exporting === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <button
+              type="button"
+              onClick={() => handleExport("docx")}
+              disabled={!canExport || exporting !== null || isSample}
+              className={HONOR_BTN_PRIMARY}
+            >
+              {exporting === "docx" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              Download Word (.docx)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("pdf")}
+              disabled={!canExport || exporting !== null || isSample}
+              className={HONOR_BTN_OUTLINE}
+            >
+              {exporting === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Download PDF
             </button>
-            <button type="button" onClick={handlePrint} disabled={!canExport || exporting !== null} className={HONOR_BTN_OUTLINE}>
-              {exporting === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-              Print
-            </button>
+
+            {/* Feature 3 — extra formats (txt / md / html), clean + unbranded. */}
+            {!isSample && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportMenuOpen((v) => !v)}
+                  disabled={!canExport || exporting !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  aria-haspopup="menu"
+                  aria-expanded={exportMenuOpen}
+                >
+                  <FileText className="h-4 w-4" />
+                  More formats
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                {exportMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40 cursor-default"
+                      aria-hidden
+                      tabIndex={-1}
+                      onClick={() => setExportMenuOpen(false)}
+                    />
+                    <div
+                      role="menu"
+                      className="absolute left-0 z-50 mt-1 w-56 overflow-hidden rounded-lg border border-[#dfe4ec] bg-white py-1 shadow-lg"
+                    >
+                      {RESUME_EXTRA_FORMATS.map(({ fmt, label }) => (
+                        <button
+                          key={fmt}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setExportMenuOpen(false)
+                            void handleExport(fmt)
+                          }}
+                          disabled={exporting !== null}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#18202f] hover:bg-[#f4f6fa] disabled:opacity-50"
+                        >
+                          <FileText className="h-4 w-4 text-[#5b6678]" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Feature 3 — email a link / copy link (coach's own mail client). */}
+            {!isSample && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleShareLink("email")}
+                  disabled={!canExport || sharing !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  title="Open your email with a secure download link to send"
+                >
+                  {sharing === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  Email a link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShareLink("copy")}
+                  disabled={!canExport || sharing !== null}
+                  className={HONOR_BTN_OUTLINE}
+                  title="Copy a secure download link to the clipboard"
+                >
+                  {sharing === "copy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                  Copy link
+                </button>
+              </>
+            )}
             {USE_HONOR_REPORT_EMAIL && !isSample && (
-              <button type="button" onClick={openEmail} disabled={!canExport} className={HONOR_BTN_OUTLINE}>
-                <Mail className="h-4 w-4" />
+              <button type="button" onClick={openEmail} disabled={!canExport || exporting !== null} className={HONOR_BTN_OUTLINE}>
+                {exporting === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                 Email to fellow
               </button>
             )}

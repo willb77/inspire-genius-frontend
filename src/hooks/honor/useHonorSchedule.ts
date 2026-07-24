@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from "@ta
 import { toast } from "sonner"
 import {
   createCoachSession,
+  createCoachSessionsBulk,
   deleteCoachSession,
   disconnectGoogle,
   getCoachActivityFeed,
@@ -13,6 +14,8 @@ import {
 } from "@/services/honor/schedule.service"
 import type {
   HonorActivityItem,
+  HonorBulkSessionInput,
+  HonorBulkSessionResult,
   HonorGoogleConnect,
   HonorGoogleStatus,
   HonorScheduleFeed,
@@ -134,6 +137,22 @@ export function useCreateHonorSession() {
       toast.success("Session added.")
     },
     onError: (e) => toast.error(e.message || "Could not add session."),
+  })
+}
+
+/**
+ * POST …/coach/schedule/sessions — schedule one session per fellow in a single
+ * request; invalidates the schedule on success. Toast + close are owned by the
+ * caller (it needs the created/emailed counts).
+ */
+export function useCreateHonorSessionsBulk() {
+  const qc = useQueryClient()
+  return useMutation<HonorBulkSessionResult, Error, HonorBulkSessionInput>({
+    mutationFn: (input) => createCoachSessionsBulk(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [HK, "sessions"] })
+    },
+    onError: (e) => toast.error(e.message || "Could not schedule the sessions."),
   })
 }
 

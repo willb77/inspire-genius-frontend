@@ -131,7 +131,7 @@ const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprin
 const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
-const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/DocumentResearchPage"));
+const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
 const SuperAdminResearchLibrary = React.lazy(() => import("@/pages/super-admin/ResearchLibraryPage"));
 
 // ── Company Admin pages ─────────────────────────────────────────────────────
@@ -154,7 +154,9 @@ const PrivacyCompliance = React.lazy(() => import("@/pages/super-admin/PrivacyCo
 const Explainability = React.lazy(() => import("@/pages/super-admin/Explainability"));
 
 // ── Practitioner pages ──────────────────────────────────────────────────────
-const PractitionerDashboard = React.lazy(() => import("@/pages/practitioner/Dashboard"));
+// The old mock PractitionerDashboard is retired — /practitioner/dashboard now
+// redirects to /practitioner/home (the new landing). Its unbuilt
+// /api/practitioner/sessions call was 500-ing; Home uses the coachClient seam.
 const PractitionerClients = React.lazy(() => import("@/pages/practitioner/Clients"));
 const PractitionerCredits = React.lazy(() => import("@/pages/practitioner/Credits"));
 const PrismClients = React.lazy(() => import("@/pages/practitioner/PrismClients"));
@@ -164,6 +166,13 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 const PractitionerJobBlueprint = React.lazy(() => import("@/pages/practitioner/JobBlueprintPage"));
 const PractitionerInterviewPrep = React.lazy(() => import("@/pages/practitioner/InterviewPrepPage"));
 const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
+// Phase 2 (Practitioner page wireframes) — Home, Meridian chat, and clickable
+// placeholders for the Schedule/Meeting surfaces (built out in later phases).
+const PractitionerHome = React.lazy(() => import("@/pages/practitioner/Home"));
+const PractitionerMeridianChat = React.lazy(() => import("@/pages/practitioner/MeridianChat"));
+const PractitionerClientProfile = React.lazy(() => import("@/pages/practitioner/ClientProfile"));
+const PractitionerSchedule = React.lazy(() => import("@/pages/practitioner/Schedule"));
+const PractitionerMeeting = React.lazy(() => import("@/pages/practitioner/Meeting"));
 
 // ── Distributor pages ───────────────────────────────────────────────────────
 const DistributorDashboard = React.lazy(() => import("@/pages/distributor/Dashboard"));
@@ -191,6 +200,8 @@ const GrantStudentIntakePage = React.lazy(() => import("@/pages/grant/coach/Stud
 // Knowledge Continuity vertical — Program-Health dashboard (entitlement-gated)
 const KceLayout = React.lazy(() => import("@/pages/knowledge-continuity/KceLayout"));
 const KceDashboardPage = React.lazy(() => import("@/pages/knowledge-continuity/KceDashboardPage"));
+const KceBlueprintPage = React.lazy(() => import("@/pages/knowledge-continuity/KceBlueprintPage"));
+const KceCapturePage = React.lazy(() => import("@/pages/knowledge-continuity/KceCapturePage"));
 const KceReviewConsolePage = React.lazy(() => import("@/pages/knowledge-continuity/KceReviewConsolePage"));
 const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/KceCurriculumPage"));
 
@@ -207,6 +218,16 @@ const HonorActivity = React.lazy(() => import("@/pages/honor/HonorActivity"));
 const HonorSchedule = React.lazy(() => import("@/pages/honor/HonorSchedule"));
 const HonorAdministration = React.lazy(() => import("@/pages/honor/HonorAdministration"));
 const HonorAdminGuard = React.lazy(() => import("@/pages/honor/admin/HonorAdminGuard"));
+
+// ── Job DNA / Job Blueprint authoring vertical (flag-gated by enabled_verticals) ──
+const JobBlueprintLayout = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintLayout"));
+const JobBlueprintDashboardPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintDashboardPage"));
+const JobBlueprintAuthoringPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintAuthoringPage"));
+const JobBlueprintDnaDetailPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintDnaDetailPage"));
+const JobBlueprintCandidatesPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintCandidatesPage"));
+const JobBlueprintPipelinePage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintPipelinePage"));
+const JobBlueprintScorecardsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintScorecardsPage"));
+const JobBlueprintAnalyticsPage = React.lazy(() => import("@/pages/job-blueprint/JobBlueprintAnalyticsPage"));
 
 // ── Job-Fit vertical — person-side profile↔role matching (entitlement-gated) ──
 const JobFitLayout = React.lazy(() => import("@/pages/job-fit/JobFitLayout"));
@@ -490,8 +511,13 @@ export const routes: RouteObject[] = [
       { path: "/company-admin/culture", element: withSuspense(<CompanyAdminCultureDocs />) },
 
       // Practitioner pages
-      { path: "/practitioner/dashboard", element: withSuspense(<PractitionerDashboard />) },
+      { path: "/practitioner/home", element: withSuspense(<PractitionerHome />) },
+      { path: "/practitioner/meridian-chat", element: withSuspense(<PractitionerMeridianChat />) },
+      { path: "/practitioner/schedule", element: withSuspense(<PractitionerSchedule />) },
+      { path: "/practitioner/meeting", element: withSuspense(<PractitionerMeeting />) },
+      { path: "/practitioner/dashboard", element: <Navigate to="/practitioner/home" replace /> },
       { path: "/practitioner/clients", element: withSuspense(<PractitionerClients />) },
+      { path: "/practitioner/clients/:clientId", element: withSuspense(<PractitionerClientProfile />) },
       { path: "/practitioner/credits", element: withSuspense(<PractitionerCredits />) },
       { path: "/practitioner/prism-clients", element: withSuspense(<PrismClients />) },
       { path: "/practitioner/settings", element: withSuspense(<PractitionerSettings />) },
@@ -542,6 +568,8 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <Navigate to="/vertical/knowledge-continuity/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<KceDashboardPage />) },
+          { path: "blueprint", element: withSuspense(<KceBlueprintPage />) },
+          { path: "capture", element: withSuspense(<KceCapturePage />) },
           { path: "review", element: withSuspense(<KceReviewConsolePage />) },
           { path: "curriculum", element: withSuspense(<KceCurriculumPage />) },
         ],
@@ -589,6 +617,26 @@ export const routes: RouteObject[] = [
           { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
           { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
           { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+        ],
+      },
+
+      // Job DNA / Job Blueprint authoring vertical — entitlement-gated inside
+      // JobBlueprintLayout, which wraps every child in the existing AppShell.
+      // Unentitled users are redirected to /home by the layout. The authoring
+      // create → benchmark → save → reload flow hits the live /v1/blueprint/*
+      // backend; the matching / fit surfaces read the same endpoints (gated).
+      {
+        path: "/vertical/job-blueprint",
+        element: withSuspense(<JobBlueprintLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/job-blueprint/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<JobBlueprintDashboardPage />) },
+          { path: "authoring", element: withSuspense(<JobBlueprintAuthoringPage />) },
+          { path: "dna/:id", element: withSuspense(<JobBlueprintDnaDetailPage />) },
+          { path: "candidates", element: withSuspense(<JobBlueprintCandidatesPage />) },
+          { path: "pipeline", element: withSuspense(<JobBlueprintPipelinePage />) },
+          { path: "scorecards", element: withSuspense(<JobBlueprintScorecardsPage />) },
+          { path: "analytics", element: withSuspense(<JobBlueprintAnalyticsPage />) },
         ],
       },
     ],

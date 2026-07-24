@@ -59,7 +59,9 @@ describe("Honor coach surfaces — live-shaped data (no crash)", () => {
   test("Fellow Profile renders with a live fellow that has no `docs` (was the crash)", () => {
     expect(() => renderPage(<HonorMemberProfile />, "/vertical/honor/member/11111111-1111-1111-1111-111111111111")).not.toThrow()
     expect(screen.getByText("Marcus Reyes")).toBeInTheDocument()
-    expect(screen.getByText("No documents yet.")).toBeInTheDocument()
+    // The Overview now renders the 10-artifact "Fellow data" card (replaced the
+    // old docs list). It must render without throwing on the live-shaped fellow.
+    expect(screen.getByText("Fellow data")).toBeInTheDocument()
   })
 
   test("Caseload renders a live fellow (no prism/docs) without throwing", () => {

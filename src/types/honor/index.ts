@@ -191,6 +191,49 @@ export type HonorEvaluation = {
   notes: string
 }
 
+/**
+ * A saved evaluation summary (from GET …/{id}/evaluations) — the history-list
+ * shape, without the heavy backbone/narrative blobs.
+ */
+export type HonorSavedEvaluationSummary = {
+  id: string
+  fellowId: string
+  /** Coach-supplied (or generated) label. */
+  title: string
+  /** The evaluation criteria the coach entered. */
+  criteria: string
+  /** Which dimensions were computed. */
+  dimensions: string[]
+  /** True when Nova's narrative was saved alongside the backbone. */
+  hasNarrative: boolean
+  /** ISO timestamp. */
+  createdAt: string | null
+}
+
+/**
+ * A saved evaluation, full view (from GET …/{id}/evaluations/{eid}) — includes
+ * the deterministic backbone + Nova's narrative so the surface can reload a past
+ * run verbatim and the résumé rewrite can key off its suggestions.
+ */
+export type HonorSavedEvaluation = HonorSavedEvaluationSummary & {
+  /** How the run was grounded (frameworks, includeResume/Bio, comparison ids). */
+  sourcesUsed: Record<string, unknown>
+  /** The deterministic evaluation backbone. */
+  evaluation: HonorEvaluation | Record<string, never>
+  /** Nova's narrative markdown (may be empty). */
+  narrativeMarkdown: string
+}
+
+/** Request body for saving an evaluation (POST …/{id}/evaluations). */
+export type SaveEvaluationBody = {
+  evaluation?: HonorEvaluation | null
+  narrativeMarkdown?: string
+  criteria?: string
+  dimensions?: string[]
+  sourcesUsed?: Record<string, unknown>
+  title?: string
+}
+
 /** An assessment a fellow has submitted (from GET …/{id}/sources). */
 export type HonorFellowAssessmentSource = {
   framework: string
@@ -206,6 +249,46 @@ export type HonorFellowSources = {
   assessments: HonorFellowAssessmentSource[]
   resume: boolean
   bio: boolean
+  /** An "additional information" document (doc_kind "personal") is on file. */
+  additionalInfo: boolean
+  /** The fellow has stored goals & objectives text. */
+  goals: boolean
+}
+
+/** GET/PUT …/{id}/goals — the fellow's stored goals & objectives text. */
+export type HonorFellowGoals = {
+  fellowId: string
+  goals: string | null
+  hasGoals: boolean
+}
+
+/** POST …/students/sources-bulk → per-fellow sources keyed by fellow id. */
+export type HonorSourcesBulk = Record<string, HonorFellowSources>
+
+/** One PRISM score row from the imported CSV. */
+export type HonorPrismScore = {
+  category: string
+  dimension: string
+  subDimension?: string | null
+  scoreType?: string | null
+  /** Numeric value when present. */
+  score?: number | null
+  scoreText?: string | null
+  rank?: number | null
+}
+
+/**
+ * A fellow's PRISM report (from GET …/{id}/prism). When `hasReport` is false
+ * the Fellow Profile shows a "Request a PRISM Report" action instead of scores.
+ */
+export type HonorPrismReport = {
+  fellowId: string
+  managed: boolean
+  hasReport: boolean
+  assessedAt?: string | null
+  frameworkVersion?: string | null
+  scoreCount?: number
+  scores: HonorPrismScore[]
 }
 
 /** Which of a fellow's sources to ground an evaluation on. */
@@ -245,6 +328,8 @@ export type HonorResume = {
   sources: string[]
   grounded: boolean
   disclaimer: string
+  /** True when the draft was rewritten from a prior evaluation's suggestions. */
+  fromEvaluation?: boolean
 }
 
 /** The route returns this shape while the server `honor_resume` flag is off. */
@@ -255,12 +340,24 @@ export type HonorResumeBody = {
   role?: string
   careerArea?: string
   positionText?: string
+  /**
+   * Feature 2 — rewrite keyed off a prior evaluation. Supply a saved
+   * evaluation's id (the server loads it and pulls its "Suggestions for
+   * Improvement") or pass improvement text directly. Neither set → plain
+   * generation, unchanged.
+   */
+  evaluationId?: string
+  improvements?: string
 }
 
 /** Request body for the evaluate route. */
 export type HonorEvaluateBody = {
   /** Free-text goals or explicit { goal, area } objects. */
   goals?: Array<string | { goal: string; area?: string }>
+  /** Free-text description of what to evaluate (the evaluation criteria). */
+  criteria?: string
+  /** Which evaluation dimensions to compute (subset; default all). */
+  dimensions?: string[]
   /** Comparative subjects (owned fellow ids); ownership-gated server-side. */
   memberIds?: string[]
   /** Career area to compute the team read against. */
@@ -367,6 +464,30 @@ export type HonorSessionInput = {
 
 /** Partial body for editing a session (PATCH …/coach/schedule/{id}). */
 export type HonorSessionPatch = Partial<HonorSessionInput>
+
+/**
+ * Body for scheduling one session per fellow in a single request
+ * (POST …/coach/schedule/sessions). The backend spaces the sessions by
+ * `spacingMin` starting at `startsAt` and (optionally) emails an .ics invite.
+ */
+export type HonorBulkSessionInput = {
+  fellowIds: string[]
+  /** ISO-8601 start of the first session. */
+  startsAt: string
+  durationMin: number
+  spacingMin: number
+  topic: string
+  message?: string
+  /** Email the .ics invite to each fellow (coach cc'd). */
+  sendInvites?: boolean
+}
+
+/** Result of a bulk schedule request. */
+export type HonorBulkSessionResult = {
+  created: HonorSession[]
+  emailed: number
+  skipped: { fellowId: string; reason: string }[]
+}
 
 /**
  * GET …/coach/schedule/feed-url → `{ token, feedUrl }` — an .ics subscribe URL.

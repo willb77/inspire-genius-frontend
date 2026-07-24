@@ -1,18 +1,21 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { toast } from "sonner"
 import {
   ShieldAlert,
-  FileText,
-  Upload,
   ClipboardList,
   Sparkles,
   Target,
   GraduationCap,
+  PlayCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload, useFellow } from "@/hooks/honor/useCoachData"
+import {
+  useFellowPrism,
+  useFellowSources,
+  useRequestFellowPrism,
+} from "@/hooks/honor/useHonorEvaluate"
 import {
   AgentTraceRow,
   HonorCard,
@@ -20,7 +23,20 @@ import {
   HonorSectionTitle,
   PrismDots,
 } from "./_shared"
+import { ArtifactStatusMatrix } from "./_ArtifactUploader"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_format"
+import PrismOverviewModal from "./PrismOverviewModal"
+import {
+  CATEGORY_DEF,
+  CATEGORY_LABEL,
+  SCORE_TYPE_ACCENT,
+  SCORE_TYPE_DEF,
+  SCORE_TYPE_ORDER,
+  type ScoreType,
+  normalizeScoreType,
+  orderedCategories,
+} from "./prismGlossary"
+import type { HonorPrismScore } from "@/types/honor"
 
 /**
  * Honor Coach Workbench — Fellow Profile / Workspace (`/coach/member/{id}`).
@@ -33,10 +49,10 @@ import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, initials } from "./_f
  * {@link useFellow}.
  */
 
-type Tab = "overview" | "intake" | "evaluate" | "goals" | "education"
+type Tab = "overview" | "prism" | "evaluate" | "goals" | "education"
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "intake", label: "Intake" },
+  { id: "prism", label: "PRISM Report" },
   { id: "evaluate", label: "Evaluate" },
   { id: "goals", label: "Goal Setting" },
   { id: "education", label: "Education & Training" },
@@ -53,6 +69,10 @@ export default function HonorMemberProfile() {
 
   const [tab, setTab] = useState<Tab>(memberId ? "overview" : "overview")
   const [denied, setDenied] = useState(false)
+  const [overviewOpen, setOverviewOpen] = useState(false)
+  const prismQuery = useFellowPrism(effectiveId)
+  const requestPrism = useRequestFellowPrism()
+  const sourcesQuery = useFellowSources(effectiveId)
 
   if (isLoading) return <HonorEmptyState>Loading fellow…</HonorEmptyState>
   if (!fellow) return <HonorEmptyState>Fellow not found on your caseload.</HonorEmptyState>
@@ -133,7 +153,7 @@ export default function HonorMemberProfile() {
             <HonorSectionTitle>Behavioral snapshot</HonorSectionTitle>
             <AgentTraceRow trace={["Aura", "Meridian"]} />
             <dl className="mt-3 space-y-2 text-sm">
-              <Row label="PRISM (source of truth)">
+              <Row label="PRISM">
                 {fellow.prism?.quads?.length ? (
                   <PrismDots quads={fellow.prism.quads} label={fellow.prism.label} />
                 ) : (
@@ -151,36 +171,24 @@ export default function HonorMemberProfile() {
           </HonorCard>
 
           <HonorCard>
-            <HonorSectionTitle
-              action={
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#E8792B] hover:underline"
-                  onClick={() => toast.info("Presigned upload via document-service (stub)")}
-                >
-                  <Upload className="h-3.5 w-3.5" /> Upload
-                </button>
-              }
-            >
-              Documents on file
-            </HonorSectionTitle>
-            {(fellow.docs ?? []).length === 0 ? (
-              <p className="text-sm text-[#9299a6]">No documents yet.</p>
+            <HonorSectionTitle>Fellow data</HonorSectionTitle>
+            <p className="mb-2 text-xs text-[#5b6678]">
+              The 10 artifacts that ground {name.split(" ")[0]}&apos;s coaching — behavioral
+              assessments, documents, and goals. Add any that are missing inline.
+            </p>
+            {sourcesQuery.isLoading ? (
+              <p className="text-sm text-[#9299a6]">Loading fellow data…</p>
             ) : (
-              <ul className="space-y-2 text-sm">
-                {(fellow.docs ?? []).map((d) => (
-                  <li key={d.id} className="flex items-center gap-2 rounded-lg border border-[#f1f3f7] px-3 py-2">
-                    <FileText className="h-4 w-4 text-[#1B2A4A]" />
-                    <span className="text-[#18202f]">{d.name}</span>
-                    <span className="ml-auto text-xs text-[#9299a6]">{d.uploadedAt}</span>
-                  </li>
-                ))}
-              </ul>
+              <ArtifactStatusMatrix
+                fellowId={effectiveId ?? fellow.id}
+                sources={sourcesQuery.data}
+                onChanged={() => sourcesQuery.refetch()}
+              />
             )}
             <div className="mt-4">
               <HonorSectionTitle>Quick actions</HonorSectionTitle>
               <div className="flex flex-wrap gap-2">
-                <QuickAction icon={ClipboardList} label="Open questionnaire" onClick={() => setTab("intake")} />
+                <QuickAction icon={ClipboardList} label="PRISM report" onClick={() => setTab("prism")} />
                 <QuickAction icon={Sparkles} label="Evaluate fellow" onClick={() => setTab("evaluate")} />
                 <QuickAction icon={Target} label="Set goals" onClick={() => setTab("goals")} />
                 <QuickAction icon={GraduationCap} label="Find training" onClick={() => setTab("education")} />
@@ -190,48 +198,69 @@ export default function HonorMemberProfile() {
         </div>
       )}
 
-      {/* Intake — PRISM questionnaire embed */}
-      {tab === "intake" && (
+      {/* PRISM Report — the fellow's scores from the imported CSV, or request one */}
+      {tab === "prism" && (
         <HonorCard>
-          <HonorSectionTitle>PRISM Behavioral Questionnaire — Part 1A</HonorSectionTitle>
-          <p className="mb-4 text-sm text-[#9299a6]">Question 3 of 40</p>
-          <p className="mb-3 text-sm font-medium text-[#18202f]">
-            Rank these words by how well they describe your working preference (1 = most like you).
-          </p>
-          <div className="space-y-2">
-            {["Decisive", "Supportive", "Analytical", "Expressive"].map((w, i) => (
-              <div
-                key={w}
-                className="flex items-center justify-between rounded-lg border border-[#dfe4ec] px-3 py-2.5 text-sm"
+          <HonorSectionTitle
+            action={
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#E8792B] hover:underline"
+                onClick={() => setOverviewOpen(true)}
               >
-                <span className="text-[#18202f]">{w}</span>
-                <select
-                  className="rounded-md border border-[#dfe4ec] px-2 py-1 text-sm outline-none focus:border-[#1B2A4A]"
-                  defaultValue={String(i + 1)}
-                >
-                  {[1, 2, 3, 4].map((n) => (
-                    <option key={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <button type="button" className={HONOR_BTN_OUTLINE}>
-              Back
-            </button>
-            <button
-              type="button"
-              className={HONOR_BTN_PRIMARY}
-              onClick={() => toast.success("Answer saved to prism_results — advancing to Q4 (stub)")}
-            >
-              Save &amp; continue
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-[#9299a6]">
-            Reuses the platform&apos;s <code className="font-mono">PrismAssessment.tsx</code> bound via{" "}
-            <code className="font-mono">?member={fellow.id}</code> (PRISM UK Service Library flow).
-          </p>
+                <PlayCircle className="h-3.5 w-3.5" /> PRISM Overview
+              </button>
+            }
+          >
+            PRISM Report — {name}
+          </HonorSectionTitle>
+          {prismQuery.isLoading ? (
+            <p className="text-sm text-[#9299a6]">Loading PRISM report…</p>
+          ) : prismQuery.data?.managed ? (
+            <p className="text-sm text-[#9299a6]">
+              Invite {name.split(" ")[0]} first — a managed fellow has no profile yet to attach a
+              PRISM report to.
+            </p>
+          ) : prismQuery.data?.hasReport ? (
+            <div>
+              <p className="mb-3 text-xs text-[#9299a6]">
+                {prismQuery.data.scoreCount ?? prismQuery.data.scores.length} scores
+                {prismQuery.data.assessedAt
+                  ? ` · imported ${new Date(prismQuery.data.assessedAt).toLocaleDateString()}`
+                  : ""}
+              </p>
+
+              {/* The three PRISM maps — what each score type means */}
+              <PrismMapLegend />
+
+              {(() => {
+                const groups: Record<string, HonorPrismScore[]> = {}
+                for (const s of prismQuery.data.scores ?? []) {
+                  const cat = s.category || "Scores"
+                  ;(groups[cat] ||= []).push(s)
+                }
+                return orderedCategories(Object.keys(groups)).map((cat) => (
+                  <PrismCategoryGroup key={cat} category={cat} rows={groups[cat]} />
+                ))
+              })()}
+            </div>
+          ) : (
+            <div>
+              <p className="mb-3 text-sm text-[#5b6678]">
+                No PRISM report on file for {name.split(" ")[0]} yet. Request one below — once it’s
+                added (during onboarding or via an assessment import), the scores appear here.
+              </p>
+              <button
+                type="button"
+                className={HONOR_BTN_PRIMARY}
+                disabled={requestPrism.isPending || !fellow}
+                onClick={() => fellow && requestPrism.mutate(fellow.id)}
+              >
+                <ClipboardList className="h-4 w-4" /> Request a PRISM Report
+              </button>
+            </div>
+          )}
+          <PrismOverviewModal open={overviewOpen} onClose={() => setOverviewOpen(false)} />
         </HonorCard>
       )}
 
@@ -312,5 +341,136 @@ function QuickAction({
     >
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
+  )
+}
+
+/** Legend defining the three PRISM maps (Underlying / Adaptive / Consistent). */
+function PrismMapLegend() {
+  return (
+    <div className="mb-4 grid gap-2 rounded-lg border border-[#e6e9ef] bg-[#fbfcfe] p-3 sm:grid-cols-3">
+      {SCORE_TYPE_ORDER.map((t) => {
+        const a = SCORE_TYPE_ACCENT[t]
+        return (
+          <div key={t} className="text-xs">
+            <span
+              className="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+              style={{ color: a.text, backgroundColor: a.bg, borderColor: a.border }}
+            >
+              {t}
+            </span>
+            <p className="mt-1 leading-snug text-[#5b6678]">{SCORE_TYPE_DEF[t]}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+type DimAgg = {
+  dimension: string
+  subDimension?: string | null
+  byType: Partial<Record<ScoreType, number | string>>
+  plain?: number | string
+}
+
+function scoreValue(s: HonorPrismScore): number | string {
+  return s.score != null ? s.score : s.scoreText ?? (s.rank != null ? `#${s.rank}` : "—")
+}
+
+/**
+ * One category block: a heading, a one-line definition of what the category measures,
+ * and one row per dimension. Where a dimension carries more than one PRISM map
+ * (Behaviour Preferences has all three), each value is labelled Underlying / Adaptive /
+ * Consistent; single-map categories show the value with the map named once at the top.
+ */
+function PrismCategoryGroup({ category, rows }: { category: string; rows: HonorPrismScore[] }) {
+  const label = CATEGORY_LABEL[category] ?? category
+  const def = CATEGORY_DEF[category]
+
+  const order: string[] = []
+  const dims: Record<string, DimAgg> = {}
+  const typesPresent = new Set<ScoreType>()
+  for (const s of rows) {
+    const key = s.dimension || "—"
+    if (!dims[key]) {
+      dims[key] = { dimension: key, subDimension: s.subDimension, byType: {} }
+      order.push(key)
+    }
+    if (s.subDimension && !dims[key].subDimension) dims[key].subDimension = s.subDimension
+    const t = normalizeScoreType(s.scoreType)
+    if (t) {
+      dims[key].byType[t] = scoreValue(s)
+      typesPresent.add(t)
+    } else {
+      dims[key].plain = scoreValue(s)
+    }
+  }
+  const multiType = typesPresent.size >= 2
+  const singleType = typesPresent.size === 1 ? [...typesPresent][0] : null
+
+  return (
+    <div className="mb-5">
+      <h3 className="text-sm font-semibold text-[#1B2A4A]">{label}</h3>
+      {def ? (
+        <p className="mb-2 mt-0.5 max-w-2xl text-xs text-[#5b6678]">{def}</p>
+      ) : (
+        <div className="mb-1.5" />
+      )}
+      {singleType ? (
+        <p className="mb-1.5 text-[11px] text-[#9299a6]">
+          Shown as the{" "}
+          <span className="font-medium" style={{ color: SCORE_TYPE_ACCENT[singleType].text }}>
+            {singleType}
+          </span>{" "}
+          (natural) map.
+        </p>
+      ) : null}
+      <div className="overflow-hidden rounded-lg border border-[#e6e9ef]">
+        {order.map((k, i) => {
+          const d = dims[k]
+          return (
+            <div
+              key={`${category}-${k}-${i}`}
+              className={`flex items-start justify-between gap-3 px-3 py-2 text-sm ${
+                i % 2 ? "bg-[#f7f9fc]" : "bg-white"
+              }`}
+            >
+              <div className="min-w-0">
+                <span className="text-[#18202f]">{d.dimension}</span>
+                {d.subDimension ? (
+                  <p className="mt-0.5 max-w-md text-xs leading-snug text-[#9299a6]">
+                    {d.subDimension}
+                  </p>
+                ) : null}
+              </div>
+              <div className="shrink-0 text-right">
+                {multiType ? (
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {SCORE_TYPE_ORDER.filter((t) => d.byType[t] != null).map((t) => {
+                      const a = SCORE_TYPE_ACCENT[t]
+                      return (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                          style={{ color: a.text, backgroundColor: a.bg, borderColor: a.border }}
+                          title={SCORE_TYPE_DEF[t]}
+                        >
+                          <span className="font-medium">{t}</span>
+                          <span className="font-semibold">{d.byType[t]}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <span className="font-semibold text-[#1B2A4A]">
+                    {d.plain ?? d.byType[singleType ?? "Underlying"] ?? "—"}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
