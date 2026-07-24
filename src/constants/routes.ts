@@ -194,6 +194,7 @@ export const ROUTES = {
   LUMEN: {
     BASE: "/vertical/lumen",
     DASHBOARD: "/vertical/lumen/dashboard",
+    SELF_PORTRAIT: "/vertical/lumen/self-portrait",
   },
   ONBOARDING: {
     ONE: "/onboarding/one",
