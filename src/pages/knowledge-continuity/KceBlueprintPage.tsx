@@ -23,11 +23,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useGenerateBlueprint } from "@/hooks/knowledge-continuity/useGenerateBlueprint"
+import { useJobDnaSeed } from "@/hooks/knowledge-continuity/useJobDnaSeed"
 import { usePersistBlueprint } from "@/hooks/knowledge-continuity/usePersistBlueprint"
+import { useJobDnaList } from "@/hooks/job-blueprint"
 import type {
   BlueprintArchetype,
   BlueprintGenerateResponse,
   BlueprintNode,
+  BlueprintSeedNode,
 } from "@/types/knowledge-continuity"
 
 // Blueprints created from this surface are grouped under the same stable org key
@@ -55,15 +58,45 @@ type FormValues = z.infer<typeof formSchema>
 
 function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) => void }) {
   const generate = useGenerateBlueprint()
+  const jobDnaList = useJobDnaList()
+  const jobDnaSeed = useJobDnaSeed()
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { role_title: "", context: "", archetype: "" },
   })
+
+  // When a Job Blueprint is picked, we seed the generator with its knowledge
+  // taxonomy so Maven enriches an existing role map instead of a bare title.
+  const [selectedJobDnaId, setSelectedJobDnaId] = useState("")
+  const [seedNodes, setSeedNodes] = useState<BlueprintSeedNode[] | undefined>(undefined)
+
+  const onPickJobDna = (id: string) => {
+    setSelectedJobDnaId(id)
+    if (!id) {
+      setSeedNodes(undefined)
+      return
+    }
+    jobDnaSeed.mutate(id, {
+      onSuccess: (seed) => {
+        setValue("role_title", seed.roleTitle, { shouldValidate: true })
+        setSeedNodes(
+          seed.nodes.map((n) => ({
+            ref: n.ref,
+            name: n.name,
+            node_type: n.node_type,
+            section: n.section,
+            parent_ref: n.parent_ref,
+          }))
+        )
+      },
+    })
+  }
 
   const onSubmit = (values: FormValues) => {
     generate.mutate(
@@ -71,6 +104,7 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
         role_title: values.role_title.trim(),
         context: values.context?.trim() || undefined,
         archetype: values.archetype || undefined,
+        seed_nodes: seedNodes && seedNodes.length > 0 ? seedNodes : undefined,
       },
       { onSuccess: onDrafted }
     )
@@ -90,6 +124,37 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="job_dna_seed">
+              Seed from a Job Blueprint{" "}
+              <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <select
+              id="job_dna_seed"
+              value={selectedJobDnaId}
+              onChange={(e) => onPickJobDna(e.target.value)}
+              disabled={jobDnaList.isLoading || jobDnaSeed.isPending}
+              className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                "ring-offset-background focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+                "disabled:opacity-50"
+              )}
+            >
+              <option value="">Start from a role title instead</option>
+              {(jobDnaList.data ?? []).map((jd) => (
+                <option key={jd.id} value={jd.id}>
+                  {jd.roleTitle}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              {jobDnaSeed.isPending
+                ? "Loading the blueprint's knowledge seed…"
+                : "Pick a Job Blueprint to seed the map from its role knowledge — Maven then enriches it. Leave unset to draft from just the title."}
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="role_title">Role</Label>
             <Input

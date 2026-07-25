@@ -22,6 +22,9 @@ const listCoaches = jest.fn()
 const listFellows = jest.fn()
 const assignFellowCoach = jest.fn()
 const unassignFellowCoach = jest.fn()
+const listSuperAdmins = jest.fn()
+const createSuperAdmin = jest.fn()
+const deleteSuperAdmin = jest.fn()
 
 jest.mock("@/services/honor/admin.service", () => ({
   __esModule: true,
@@ -38,6 +41,9 @@ jest.mock("@/services/honor/admin.service", () => ({
   createCoach: jest.fn(),
   importCoaches: jest.fn(),
   deleteCoach: jest.fn(),
+  listSuperAdmins: (...a: unknown[]) => listSuperAdmins(...a),
+  createSuperAdmin: (...a: unknown[]) => createSuperAdmin(...a),
+  deleteSuperAdmin: (...a: unknown[]) => deleteSuperAdmin(...a),
   listFellows: (...a: unknown[]) => listFellows(...a),
   updateFellow: jest.fn(),
   deleteFellow: jest.fn(),
@@ -71,6 +77,8 @@ describe("HonorAdministration console", () => {
     listCareerAreas.mockResolvedValue([])
     listCoaches.mockResolvedValue([])
     listFellows.mockResolvedValue([])
+    listSuperAdmins.mockResolvedValue([])
+    createSuperAdmin.mockResolvedValue({ sub: "s1", firstName: "Gary", lastName: "Burnette", email: "gary@x.org", role: "super-admin" })
     createCohort.mockResolvedValue({ id: "c1", name: "Cohort 2026-A" })
   })
 
@@ -78,6 +86,7 @@ describe("HonorAdministration console", () => {
     renderConsole()
     expect(screen.getByRole("tab", { name: /cohorts/i })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: /coaches/i })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: /super-admins/i })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: /fellows/i })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: /career areas/i })).toBeInTheDocument()
     // Header
@@ -96,6 +105,22 @@ describe("HonorAdministration console", () => {
         expect.objectContaining({ name: "Cohort 2026-B" }),
       ),
     )
+  })
+
+  test("adding a super-admin calls the service with fname/lname/email", async () => {
+    const user = userEvent.setup()
+    renderConsole()
+    await user.click(screen.getByRole("tab", { name: /super-admins/i }))
+    await user.type(screen.getByPlaceholderText("Gary"), "Gary")
+    await user.type(screen.getByPlaceholderText("Burnette"), "Burnette")
+    await user.type(screen.getByPlaceholderText(/name@example.com/i), "GaryBurnetteNC@gmail.com")
+    await user.click(screen.getByRole("button", { name: /add super-admin/i }))
+    await waitFor(() => expect(createSuperAdmin).toHaveBeenCalledTimes(1))
+    expect(createSuperAdmin).toHaveBeenCalledWith({
+      firstName: "Gary",
+      lastName: "Burnette",
+      email: "garyburnettenc@gmail.com",
+    })
   })
 
   test("switching to the Career Areas tab shows its empty state", async () => {
