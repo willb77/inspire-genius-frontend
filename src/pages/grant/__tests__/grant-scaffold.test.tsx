@@ -32,15 +32,31 @@ jest.mock("@/hooks/grant/mocks", () => ({
   USE_GRANT_MOCKS: true,
 }))
 
-// Passthrough AppShell so we can assert "inside AppShell" without its heavy deps.
-jest.mock("@/layouts/AppShell", () => ({
+// Passthrough the shared SidebarScaffold (VerticalShell's chrome as of Phase 6.4,
+// which replaced the legacy AppShell). It renders the routed children plus the
+// section labels + item labels it receives, so we can assert both "inside the
+// scaffold" and that GRANT keeps its Financial Aid sub-nav.
+jest.mock("@/hooks/audit/usePageViewAudit", () => ({ usePageViewAudit: jest.fn() }))
+jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="app-shell">{children}</div>
+  default: ({
+    children,
+    navSections,
+  }: {
+    children: React.ReactNode
+    navSections?: Array<{ label: string; items: Array<{ label: string }> }>
+  }) => (
+    <div data-testid="sidebar-scaffold">
+      <nav>
+        {(navSections ?? []).flatMap((s) => s.items).map((it) => (
+          <span key={it.label}>{it.label}</span>
+        ))}
+      </nav>
+      {children}
+    </div>
   ),
 }))
 
-import AppSidebar from "@/components/layout/AppSidebar"
 import GrantLayout from "../GrantLayout"
 import GrantDashboardPage from "../GrantDashboardPage"
 
@@ -61,42 +77,6 @@ describe("GRANT vertical scaffold (UI-0)", () => {
     mockUseAuth.mockReturnValue({
       user: { role: "user", email: "a@b.com", fullName: "Test User" },
       logout: jest.fn(),
-    })
-  })
-
-  describe("entitlement gates the sidebar section", () => {
-    const sidebarProps = {
-      role: "user" as const,
-      open: true,
-      onClose: jest.fn(),
-      collapsed: false,
-      onToggleCollapse: jest.fn(),
-    }
-
-    test("shows the GRANT nav section when entitled", () => {
-      mockUseVerticalAccess.mockReturnValue({
-        hasAccess: true,
-        isLoading: false,
-        enabledVerticals: ["grant"],
-      })
-      renderWithProviders(<AppSidebar {...sidebarProps} />)
-
-      expect(screen.getByText("Financial Aid")).toBeInTheDocument()
-      expect(screen.getByText("Aid Dashboard")).toBeInTheDocument()
-      expect(screen.getByText("Scholarships")).toBeInTheDocument()
-      expect(screen.getByText("My Aid Plan")).toBeInTheDocument()
-    })
-
-    test("hides the GRANT nav section when NOT entitled", () => {
-      mockUseVerticalAccess.mockReturnValue({
-        hasAccess: false,
-        isLoading: false,
-        enabledVerticals: [],
-      })
-      renderWithProviders(<AppSidebar {...sidebarProps} />)
-
-      expect(screen.queryByText("Aid Dashboard")).not.toBeInTheDocument()
-      expect(screen.queryByText("Financial Aid")).not.toBeInTheDocument()
     })
   })
 
@@ -125,7 +105,7 @@ describe("GRANT vertical scaffold (UI-0)", () => {
       expect(screen.queryByRole("heading", { name: "Aid Dashboard" })).not.toBeInTheDocument()
     })
 
-    test("renders the dashboard inside AppShell for an entitled user", () => {
+    test("renders the dashboard inside the shared scaffold for an entitled user", () => {
       mockUseVerticalAccess.mockReturnValue({
         hasAccess: true,
         isLoading: false,
@@ -133,12 +113,27 @@ describe("GRANT vertical scaffold (UI-0)", () => {
       })
       renderGrantRoute()
 
-      const shell = screen.getByTestId("app-shell")
+      const shell = screen.getByTestId("sidebar-scaffold")
       expect(shell).toBeInTheDocument()
       const heading = screen.getByRole("heading", { name: "Aid Dashboard" })
       expect(heading).toBeInTheDocument()
-      // The dashboard heading must be nested within the AppShell.
+      // The dashboard heading must be nested within the shared scaffold.
       expect(shell).toContainElement(heading)
+    })
+
+    test("GRANT keeps its Financial Aid sub-nav in the scaffold", () => {
+      mockUseVerticalAccess.mockReturnValue({
+        hasAccess: true,
+        isLoading: false,
+        enabledVerticals: ["grant"],
+      })
+      renderGrantRoute()
+
+      // The scaffold receives the GRANT section's page items (nav-rendered above).
+      const nav = screen.getByTestId("sidebar-scaffold").querySelector("nav")
+      expect(nav?.textContent).toContain("Aid Dashboard")
+      expect(nav?.textContent).toContain("Scholarships")
+      expect(nav?.textContent).toContain("My Aid Plan")
     })
   })
 })
