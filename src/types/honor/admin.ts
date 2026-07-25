@@ -35,6 +35,24 @@ export type AdminCoachCreate = {
   role?: string
 }
 
+/** A platform super-admin (from GET /admin/super-admins). */
+export type AdminSuperAdmin = {
+  /** Canonical subject id (used as the demote key: DELETE /super-admins/{sub}). */
+  sub: string
+  firstName: string
+  lastName: string
+  email: string
+  /** Always "super-admin". */
+  role: string
+}
+
+/** Add-super-admin request (POST /admin/super-admins). role is fixed server-side. */
+export type AdminSuperAdminCreate = {
+  firstName: string
+  lastName: string
+  email: string
+}
+
 /** One row of a coach bulk import. */
 export type AdminCoachImportRow = {
   first_name: string
