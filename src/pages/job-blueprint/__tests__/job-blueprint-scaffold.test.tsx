@@ -30,11 +30,14 @@ jest.mock("@/lib/axios", () => ({
   syncAuthToken: jest.fn(),
 }))
 
-// Passthrough AppShell so we can assert "inside AppShell" without its heavy deps.
-jest.mock("@/layouts/AppShell", () => ({
+// Passthrough the shared SidebarScaffold (VerticalShell's chrome as of Phase
+// 6.4, which replaced the legacy AppShell) so we can assert "inside the scaffold"
+// without its heavy deps.
+jest.mock("@/hooks/audit/usePageViewAudit", () => ({ usePageViewAudit: jest.fn() }))
+jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="app-shell">{children}</div>
+    <div data-testid="sidebar-scaffold">{children}</div>
   ),
 }))
 
@@ -109,7 +112,7 @@ describe("Job DNA vertical scaffold", () => {
       })
       renderRoute()
 
-      const shell = screen.getByTestId("app-shell")
+      const shell = screen.getByTestId("sidebar-scaffold")
       expect(shell).toBeInTheDocument()
       const heading = await screen.findByRole("heading", { name: "Job DNA" })
       expect(shell).toContainElement(heading)
