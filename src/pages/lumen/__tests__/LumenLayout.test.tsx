@@ -5,11 +5,16 @@ import { useVerticalAccess } from "@/verticals/core"
 
 jest.mock("@/verticals/core", () => ({
   useVerticalAccess: jest.fn(),
+  // The entitled path delegates to Core's shell; stubbing it keeps this test
+  // about Lumen's gate rather than Core's chrome.
+  VerticalShell: ({ vertical }: { vertical: string }) => (
+    <div data-testid="vertical-shell">{vertical}</div>
+  ),
 }))
 jest.mock("@/context/useAuth", () => ({
   useAuth: () => ({ user: { role: "user" } }),
 }))
-jest.mock("@/layouts/AppShell", () => ({
+jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="app-shell">{children}</div>
@@ -55,15 +60,25 @@ describe("LumenLayout", () => {
     }
   })
 
-  test("renders the vertical for an entitled user", () => {
+  test("delegates to Core's shell for an entitled user", () => {
+    // Lumen forks the gate, not the chrome — Core owns the shell, the role nav,
+    // and the page-view audit.
     mockAccess.mockReturnValue({ hasAccess: true, isLoading: false } as ReturnType<
       typeof useVerticalAccess
     >)
     renderLayout()
-    expect(screen.getByTestId("app-shell")).toBeInTheDocument()
+    expect(screen.getByTestId("vertical-shell")).toHaveTextContent("lumen")
     expect(
       screen.queryByText("Lumen isn't switched on for your account yet")
     ).not.toBeInTheDocument()
+  })
+
+  test("the unentitled state keeps the role nav so the user can leave", () => {
+    mockAccess.mockReturnValue({ hasAccess: false, isLoading: false } as ReturnType<
+      typeof useVerticalAccess
+    >)
+    renderLayout()
+    expect(screen.getByTestId("app-shell")).toBeInTheDocument()
   })
 
   test("waits rather than flashing the request-access state", () => {
