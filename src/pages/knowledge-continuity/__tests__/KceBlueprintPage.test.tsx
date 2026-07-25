@@ -3,7 +3,10 @@
  */
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type { BlueprintGenerateResponse } from "@/types/knowledge-continuity"
+import type {
+  BlueprintGenerateResponse,
+  JobDnaTaxonomySeed,
+} from "@/types/knowledge-continuity"
 
 // ── Router + toast ────────────────────────────────────────────────────────────
 const navigateMock = jest.fn()
@@ -23,7 +26,37 @@ jest.mock("@/hooks/knowledge-continuity/usePersistBlueprint", () => ({
   usePersistBlueprint: () => ({ mutate: persistMutate, isPending: false }),
 }))
 
+// Job Blueprint picker + its knowledge-taxonomy seed (Build C).
+const jobDnaListData = [{ id: "jd-1", roleTitle: "Field Service Technician" }]
+jest.mock("@/hooks/job-blueprint", () => ({
+  useJobDnaList: () => ({ data: jobDnaListData, isLoading: false }),
+}))
+
+const seedMutate = jest.fn()
+jest.mock("@/hooks/knowledge-continuity/useJobDnaSeed", () => ({
+  useJobDnaSeed: () => ({ mutate: seedMutate, isPending: false }),
+}))
+
 import KceBlueprintPage from "../KceBlueprintPage"
+
+const FAKE_SEED: JobDnaTaxonomySeed = {
+  blueprintId: "jd-1",
+  roleTitle: "Field Service Technician",
+  archetype: "operational",
+  archetypeRationale: "hands-on field role",
+  sections: ["Procedures"],
+  nodes: [
+    {
+      ref: "s1",
+      parent_ref: null,
+      name: "Pump maintenance",
+      node_type: "responsibility_area",
+      section: "Procedures",
+      depth: 0,
+      rationale: "seed node",
+    },
+  ],
+}
 
 const FAKE_BLUEPRINT: BlueprintGenerateResponse = {
   role_title: "Chief Information Officer",
@@ -60,6 +93,8 @@ beforeEach(() => {
   persistMutate.mockImplementation((_vars, opts) =>
     opts?.onSuccess?.({ created: 2, rootId: "tax-root" })
   )
+  // seed resolves straight through onSuccess with a fixed Job DNA taxonomy.
+  seedMutate.mockImplementation((_id, opts) => opts?.onSuccess?.(FAKE_SEED))
 })
 
 async function draft(user: ReturnType<typeof userEvent.setup>) {
@@ -120,5 +155,46 @@ describe("KceBlueprintPage", () => {
     expect(screen.queryByDisplayValue("Cyber-risk posture")).not.toBeInTheDocument()
     // child pruned with the parent
     expect(screen.queryByDisplayValue("When a breach goes to the board")).not.toBeInTheDocument()
+  })
+
+  test("seeding from a Job Blueprint prefills the role and passes seed_nodes", async () => {
+    const user = userEvent.setup()
+    render(<KceBlueprintPage />)
+
+    await user.selectOptions(screen.getByLabelText(/seed from a job blueprint/i), "jd-1")
+
+    // seed is fetched for the chosen blueprint and prefills the role field
+    expect(seedMutate).toHaveBeenCalledWith("jd-1", expect.any(Object))
+    expect(screen.getByLabelText(/^Role$/i)).toHaveValue("Field Service Technician")
+
+    await user.click(screen.getByRole("button", { name: /draft the blueprint/i }))
+
+    expect(generateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role_title: "Field Service Technician",
+        seed_nodes: expect.arrayContaining([
+          expect.objectContaining({
+            ref: "s1",
+            name: "Pump maintenance",
+            node_type: "responsibility_area",
+            section: "Procedures",
+            parent_ref: null,
+          }),
+        ]),
+      }),
+      expect.any(Object)
+    )
+  })
+
+  test("drafting without a Job Blueprint sends no seed_nodes", async () => {
+    const user = userEvent.setup()
+    render(<KceBlueprintPage />)
+    await draft(user)
+
+    expect(seedMutate).not.toHaveBeenCalled()
+    expect(generateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ role_title: "Chief Information Officer", seed_nodes: undefined }),
+      expect.any(Object)
+    )
   })
 })

@@ -405,6 +405,27 @@ export type BlueprintGenerateResponse = {
   nodes: BlueprintNode[]
 }
 
+// ── Seed from a Job Blueprint (Build C) ──────────────────────────────────────
+// The blueprint-service exposes a role's knowledge-taxonomy seed derived from a
+// Job DNA / Job Blueprint. Picking one here seeds the generate call so Maven
+// enriches an existing role map instead of starting from a bare title.
+
+/**
+ * GET /v1/blueprint/job-dna/{blueprintId}/knowledge-taxonomy response payload
+ * (blueprint-service — routes through the `api` instance, NOT the Agent Engine).
+ * The envelope is camelCase, but its `nodes` are the snake_case
+ * {@link BlueprintNode} shape (passed through as-is by the backend) and map
+ * straight onto {@link BlueprintSeedNode} for the generate call.
+ */
+export type JobDnaTaxonomySeed = {
+  blueprintId: string
+  roleTitle: string
+  archetype: string
+  archetypeRationale: string
+  sections: string[]
+  nodes: BlueprintNode[]
+}
+
 /** Input to persist an approved blueprint tree as taxonomy nodes. */
 export type PersistBlueprintRequest = {
   org_id: string
