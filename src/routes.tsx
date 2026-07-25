@@ -205,6 +205,10 @@ const KceCapturePage = React.lazy(() => import("@/pages/knowledge-continuity/Kce
 const KceReviewConsolePage = React.lazy(() => import("@/pages/knowledge-continuity/KceReviewConsolePage"));
 const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/KceCurriculumPage"));
 
+// Lumen — B2C personal diagnostics + just-in-time coaching (entitlement-gated)
+const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
+const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
+
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
 const HonorLayout = React.lazy(() => import("@/pages/honor/HonorLayout"));
@@ -572,6 +576,18 @@ export const routes: RouteObject[] = [
           { path: "capture", element: withSuspense(<KceCapturePage />) },
           { path: "review", element: withSuspense(<KceReviewConsolePage />) },
           { path: "curriculum", element: withSuspense(<KceCurriculumPage />) },
+        ],
+      },
+
+      // Lumen — B2C personal diagnostics + JIT coaching. Entitlement-gated
+      // inside LumenLayout, which wraps every child in the existing AppShell.
+      // Unentitled users are redirected to /home by the layout.
+      {
+        path: "/vertical/lumen",
+        element: withSuspense(<LumenLayout />),
+        children: [
+          { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
+          { path: "dashboard", element: withSuspense(<LumenDashboard />) },
         ],
       },
 

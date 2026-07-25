@@ -215,6 +215,13 @@ export const ROUTES = {
     REVIEW: "/vertical/knowledge-continuity/review",
     CURRICULUM: "/vertical/knowledge-continuity/curriculum",
   },
+  // Lumen — B2C personal diagnostics + just-in-time coaching
+  // (entitlement-gated by enabled_verticals: "lumen"). Self-Portrait and
+  // Moments routes land with their surfaces.
+  LUMEN: {
+    BASE: "/vertical/lumen",
+    DASHBOARD: "/vertical/lumen/dashboard",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",
