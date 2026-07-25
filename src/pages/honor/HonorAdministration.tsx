@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { Settings2, Layers, Users, IdCard, Briefcase, type LucideIcon } from "lucide-react"
+import { Settings2, Layers, Users, IdCard, Briefcase, ShieldCheck, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { HonorPageHeader } from "./_shared"
 import { CohortsTab } from "./admin/CohortsTab"
 import { CoachesTab } from "./admin/CoachesTab"
 import { FellowsTab } from "./admin/FellowsTab"
 import { CareerAreasTab } from "./admin/CareerAreasTab"
+import { SuperAdminsTab } from "./admin/SuperAdminsTab"
 
 /**
  * Honor Coach Workbench — Administration (super-admin only).
@@ -20,11 +21,12 @@ import { CareerAreasTab } from "./admin/CareerAreasTab"
  * so this component assumes the caller already passed that check.
  */
 
-type TabKey = "cohorts" | "coaches" | "fellows" | "career-areas"
+type TabKey = "cohorts" | "coaches" | "super-admins" | "fellows" | "career-areas"
 
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "cohorts", label: "Cohorts", icon: Layers },
   { key: "coaches", label: "Coaches", icon: Users },
+  { key: "super-admins", label: "Super-Admins", icon: ShieldCheck },
   { key: "fellows", label: "Fellows", icon: IdCard },
   { key: "career-areas", label: "Career Areas", icon: Briefcase },
 ]
@@ -66,6 +68,7 @@ export default function HonorAdministration() {
 
       {tab === "cohorts" && <CohortsTab />}
       {tab === "coaches" && <CoachesTab />}
+      {tab === "super-admins" && <SuperAdminsTab />}
       {tab === "fellows" && <FellowsTab />}
       {tab === "career-areas" && <CareerAreasTab />}
     </div>

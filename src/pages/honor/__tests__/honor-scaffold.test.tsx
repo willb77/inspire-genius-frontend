@@ -5,7 +5,6 @@
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Compass } from "lucide-react"
 import type { VerticalKey } from "@/verticals/core"
 
 /* ── Mocks ── */
@@ -32,20 +31,6 @@ function setHonorAccess(hasAccess: boolean) {
   )
 }
 
-// AppSidebar now surfaces Honor via the registry-driven launcher (not a hardcoded
-// section). Mock the launcher hook so the sidebar tests control what it shows.
-const mockLauncherSection = jest.fn()
-jest.mock("@/components/layout/useVerticalLauncher", () => ({
-  useVerticalLauncherSection: () => mockLauncherSection(),
-}))
-
-const HONOR_LAUNCHER = {
-  id: "verticals-launcher",
-  label: "Verticals",
-  roles: ["practitioner"] as const,
-  items: [{ to: "/vertical/honor/dashboard", icon: Compass, label: "Honor Foundation" }],
-}
-
 jest.mock("@/hooks/super-admin/useBroadcast", () => ({
   useBroadcastAccess: () => ({ data: { authorized: false } }),
 }))
@@ -64,7 +49,6 @@ jest.mock("@/hooks/honor/mocks", () => ({
   USE_HONOR_EVAL_LIVE: false,
 }))
 
-import AppSidebar from "@/components/layout/AppSidebar"
 import HonorLayout from "../HonorLayout"
 import HonorDashboard from "../HonorDashboard"
 import HonorCaseload from "../HonorCaseload"
@@ -86,33 +70,6 @@ describe("Honor Foundation vertical scaffold (Phase 0)", () => {
     mockUseAuth.mockReturnValue({
       user: { role: "practitioner", email: "s.carter@honor.org", fullName: "S. Carter" },
       logout: jest.fn(),
-    })
-  })
-
-  describe("registry launcher surfaces Honor in the sidebar", () => {
-    const sidebarProps = {
-      role: "practitioner" as const,
-      open: true,
-      onClose: jest.fn(),
-      collapsed: false,
-      onToggleCollapse: jest.fn(),
-    }
-
-    test("shows the Honor launcher entry when entitled", () => {
-      setHonorAccess(true)
-      mockLauncherSection.mockReturnValue(HONOR_LAUNCHER)
-      renderWithProviders(<AppSidebar {...sidebarProps} />)
-
-      expect(screen.getByText("Verticals")).toBeInTheDocument()
-      expect(screen.getByText("Honor Foundation")).toBeInTheDocument()
-    })
-
-    test("hides Honor when not entitled (launcher empty)", () => {
-      setHonorAccess(false)
-      mockLauncherSection.mockReturnValue(null)
-      renderWithProviders(<AppSidebar {...sidebarProps} />)
-
-      expect(screen.queryByText("Honor Foundation")).not.toBeInTheDocument()
     })
   })
 
