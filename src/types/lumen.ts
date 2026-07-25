@@ -69,6 +69,26 @@ export type AskMomentRequest = {
   when?: string
 }
 
+/**
+ * Consent for proactive guidance. Three independent grants, because they carry
+ * very different weight — see the backend's `app/tools/lumen/consent.py`.
+ */
+export type LumenConsent = {
+  /** Unprompted Moments in the in-app feed. Defaults to true. */
+  proactive: boolean
+  /** Read bookings to time Moments. Defaults to false. */
+  calendar: boolean
+  /** Deliver Moments outside the app. Defaults to false. */
+  email: boolean
+  /**
+   * True when the user has never saved a choice, so these are the defaults.
+   * Lets the UI distinguish "never asked" from "asked and agreed".
+   */
+  is_default: boolean
+}
+
+export type ConsentUpdate = Partial<Omit<LumenConsent, "is_default">>
+
 export type SelfPortrait = {
   /** Null when the user has no PRISM assessment on file yet. */
   prism: PrismAnchor | null
