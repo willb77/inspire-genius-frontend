@@ -9,27 +9,13 @@
  * - DistributorLayout    → UnifiedLayout
  *
  * Each is a thin wrapper around UnifiedLayout with a hardcoded role prop.
- * (AppShell is still mocked below only so any lingering import resolves; it is
- * no longer the target of these wrappers and is retired pending Phase 6 deletion.)
+ * (The legacy AppShell was deleted in Phase 6.4; these wrappers target
+ * UnifiedLayout only.)
  */
 
 import { render, screen } from "@testing-library/react";
 
-/* ── Mock AppShell ── */
-const mockAppShell = jest.fn();
-jest.mock("../AppShell", () => ({
-  __esModule: true,
-  default: (props: any) => {
-    mockAppShell(props);
-    return (
-      <div data-testid="app-shell" data-role={props.role} data-class={props.className}>
-        {props.children}
-      </div>
-    );
-  },
-}));
-
-/* ── Mock UnifiedLayout (PractitionerLayout migrated onto it in Phase 1) ── */
+/* ── Mock UnifiedLayout (all four role wrappers render through it) ── */
 const mockUnifiedLayout = jest.fn();
 jest.mock("../UnifiedLayout", () => ({
   __esModule: true,
