@@ -18,6 +18,8 @@ import type {
   AdminFellowCoach,
   AdminFellowUpdate,
   AdminImportResult,
+  AdminSuperAdmin,
+  AdminSuperAdminCreate,
   CareerArea,
   CareerAreaCreate,
   CareerAreaUpdate,
@@ -212,6 +214,36 @@ export async function importCoaches(rows: Array<Record<string, string>>): Promis
 
 export async function deleteCoach(coachSub: string): Promise<void> {
   await agentApi.delete<HonorApiResponse<unknown>>(`${BASE}/coaches/${encodeURIComponent(coachSub)}`)
+}
+
+// ── Super-admins (platform-wide) ─────────────────────────────────────────────
+
+function normSuperAdmin(o: Raw): AdminSuperAdmin {
+  return {
+    sub: str(pick(o, "sub", "user_id", "id")),
+    firstName: str(pick(o, "firstName", "first_name")),
+    lastName: str(pick(o, "lastName", "last_name")),
+    email: str(pick(o, "email")),
+    role: str(pick(o, "role"), "super-admin"),
+  }
+}
+
+export async function listSuperAdmins(): Promise<AdminSuperAdmin[]> {
+  return unwrap(
+    agentApi.get<HonorApiResponse<unknown>>(`${BASE}/super-admins`),
+    (d) => arr(d).map(normSuperAdmin),
+  )
+}
+
+export async function createSuperAdmin(input: AdminSuperAdminCreate): Promise<AdminSuperAdmin> {
+  return unwrap(
+    agentApi.post<HonorApiResponse<unknown>>(`${BASE}/super-admins`, { ...input, role: "super admin" }),
+    (d) => normSuperAdmin((d ?? {}) as Raw),
+  )
+}
+
+export async function deleteSuperAdmin(sub: string): Promise<void> {
+  await agentApi.delete<HonorApiResponse<unknown>>(`${BASE}/super-admins/${encodeURIComponent(sub)}`)
 }
 
 // ── Fellows (ALL fellows) ────────────────────────────────────────────────────

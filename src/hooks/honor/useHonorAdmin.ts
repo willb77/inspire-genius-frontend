@@ -19,10 +19,12 @@ import {
   createCareerArea,
   createCoach,
   createCohort,
+  createSuperAdmin,
   deleteCareerArea,
   deleteCoach,
   deleteCohort,
   deleteFellow,
+  deleteSuperAdmin,
   getAdminWhoami,
   getCohort,
   importCoaches,
@@ -31,6 +33,7 @@ import {
   listCoaches,
   listCohorts,
   listFellows,
+  listSuperAdmins,
   unassignCoach,
   unassignFellow,
   unassignFellowCoach,
@@ -44,6 +47,7 @@ import type {
   AdminFellow,
   AdminFellowCoach,
   AdminFellowUpdate,
+  AdminSuperAdmin,
   CareerArea,
   CareerAreaCreate,
   CareerAreaUpdate,
@@ -61,6 +65,7 @@ export const HONOR_ADMIN_KEYS = {
   cohort: (id: string) => [HK, "cohort", id] as const,
   careerAreas: [HK, "career-areas"] as const,
   coaches: [HK, "coaches"] as const,
+  superAdmins: [HK, "super-admins"] as const,
   fellows: [HK, "fellows"] as const,
 }
 
@@ -202,6 +207,35 @@ export function useDeleteCoach() {
   return useMutation<void, AxiosError, string>({
     mutationFn: deleteCoach,
     onSuccess: () => qc.invalidateQueries({ queryKey: HONOR_ADMIN_KEYS.coaches }),
+  })
+}
+
+// ── Super-admins ─────────────────────────────────────────────────────────────
+
+export function useAdminSuperAdmins(
+  options?: Partial<UseQueryOptions<AdminSuperAdmin[], AxiosError>>,
+) {
+  return useQuery<AdminSuperAdmin[], AxiosError>({
+    queryKey: HONOR_ADMIN_KEYS.superAdmins,
+    queryFn: listSuperAdmins,
+    retry: false,
+    ...options,
+  })
+}
+
+export function useCreateSuperAdmin() {
+  const qc = useQueryClient()
+  return useMutation<AdminSuperAdmin, AxiosError, { firstName: string; lastName: string; email: string }>({
+    mutationFn: createSuperAdmin,
+    onSuccess: () => qc.invalidateQueries({ queryKey: HONOR_ADMIN_KEYS.superAdmins }),
+  })
+}
+
+export function useDeleteSuperAdmin() {
+  const qc = useQueryClient()
+  return useMutation<void, AxiosError, string>({
+    mutationFn: deleteSuperAdmin,
+    onSuccess: () => qc.invalidateQueries({ queryKey: HONOR_ADMIN_KEYS.superAdmins }),
   })
 }
 
