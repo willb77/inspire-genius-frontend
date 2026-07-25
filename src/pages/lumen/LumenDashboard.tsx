@@ -32,6 +32,7 @@ const SURFACES: Surface[] = [
     icon: Sparkles,
     title: "Moments",
     body: "Short, context-aware guidance when it's actually useful — before the difficult 1:1, ahead of the negotiation, at the start of the week.",
+    to: ROUTES.LUMEN.MOMENTS,
   },
   {
     icon: Compass,
