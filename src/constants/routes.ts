@@ -159,6 +159,21 @@ export const ROUTES = {
     coachStudentIntake: (studentId: string) =>
       `/vertical/grant/coach/students/${studentId}`,
   },
+  // Job DNA / Job Blueprint authoring vertical
+  // (flag-gated by user_preferences.enabled_verticals: "job-blueprint").
+  JOB_DNA: {
+    BASE: "/vertical/job-blueprint",
+    DASHBOARD: "/vertical/job-blueprint/dashboard",
+    AUTHORING: "/vertical/job-blueprint/authoring",
+    /** Route pattern for a single Job DNA detail (matched by <Route path>). */
+    DNA_DETAIL: "/vertical/job-blueprint/dna/:id",
+    /** Build the detail path for a concrete Job DNA id. */
+    dnaDetail: (id: string) => `/vertical/job-blueprint/dna/${id}`,
+    CANDIDATES: "/vertical/job-blueprint/candidates",
+    PIPELINE: "/vertical/job-blueprint/pipeline",
+    SCORECARDS: "/vertical/job-blueprint/scorecards",
+    ANALYTICS: "/vertical/job-blueprint/analytics",
+  },
   // The Honor Foundation — Coach Workbench vertical
   // (entitlement-gated by enabled_verticals: "honor").
   HONOR: {
@@ -178,6 +193,18 @@ export const ROUTES = {
     /** Build the member-workspace path for a concrete member id. */
     memberWorkspace: (memberId: string) =>
       `/vertical/honor/member/${memberId}`,
+  },
+  // Job-Fit vertical — person-side profile↔role matching
+  // (entitlement-gated by enabled_verticals: "job-fit").
+  JOB_FIT: {
+    BASE: "/vertical/job-fit",
+    MATCHES: "/vertical/job-fit/matches",
+    GAPS: "/vertical/job-fit/gaps",
+    PATHWAY: "/vertical/job-fit/pathway",
+    /** Route pattern for a single role's fit detail (matched by <Route path>). */
+    DETAIL: "/vertical/job-fit/fit/:jobId",
+    /** Build the fit-detail path for a concrete role id. */
+    detail: (jobId: string) => `/vertical/job-fit/fit/${jobId}`,
   },
   // Knowledge Continuity vertical (flag-gated by user_preferences.enabled_verticals)
   KNOWLEDGE_CONTINUITY: {

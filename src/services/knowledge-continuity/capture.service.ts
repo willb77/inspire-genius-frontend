@@ -1,10 +1,12 @@
 import { getApi } from "@/lib/agentApi"
+import { api } from "@/lib/axios"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
   BlueprintGenerateRequest,
   BlueprintGenerateResponse,
   ExtractRequest,
   ExtractResponse,
+  JobDnaTaxonomySeed,
   NextQuestionRequest,
   NextQuestionResponse,
 } from "@/types/knowledge-continuity"
@@ -51,6 +53,20 @@ export async function generateBlueprint(body: BlueprintGenerateRequest) {
   const { data } = await getApi().post<VerticalApiResponse<BlueprintGenerateResponse>>(
     `/v1/agents/kce/blueprint/generate`,
     body
+  )
+  return data
+}
+
+/**
+ * GET /v1/blueprint/job-dna/{blueprintId}/knowledge-taxonomy — fetch a Job
+ * Blueprint's knowledge-taxonomy seed (Build C). This is a blueprint-service
+ * endpoint, so it routes through the `api` instance (API Gateway), NOT the Agent
+ * Engine. The returned `nodes` are snake_case and map straight onto
+ * `BlueprintSeedNode` to seed the generate call.
+ */
+export async function getJobDnaKnowledgeTaxonomy(blueprintId: string) {
+  const { data } = await api.get<VerticalApiResponse<JobDnaTaxonomySeed>>(
+    `/v1/blueprint/job-dna/${blueprintId}/knowledge-taxonomy`
   )
   return data
 }

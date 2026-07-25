@@ -423,6 +423,12 @@ jobs:
             echo "VITE_CRYPTO_SALT=${{ secrets.STAGING_B_VITE_CRYPTO_SALT }}"
             echo "VITE_SENTRY_DSN=${{ secrets.STAGING_B_VITE_SENTRY_DSN }}"
             echo "VITE_APP_VERSION=${{ github.sha }}"
+            # Practitioner coach client backend (/v1/agents/coach/*) — now ON for
+            # staging-b: the agent-engine coach routes are promoted and migration
+            # 018 (coach_client_* tables) is applied to staging-b Aurora, so the
+            # coachClient service reads real data here instead of the stub
+            # fixtures. Remove this line to fall back to stubs on staging-b.
+            echo "VITE_COACH_BACKEND=true"
           } >> .env
 
       - name: Install dependencies
