@@ -209,6 +209,7 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
 const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
+const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -573,6 +574,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
           { path: "dashboard", element: withSuspense(<LumenDashboard />) },
           { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
+          { path: "moments", element: withSuspense(<LumenMoments />) },
         ],
       },
 
