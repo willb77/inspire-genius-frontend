@@ -69,6 +69,46 @@ export type AskMomentRequest = {
   when?: string
 }
 
+/** The single next action in Lumen's onboarding funnel. */
+export type OnboardingNextStep =
+  | "request_prism"
+  | "complete_survey"
+  | "awaiting_report"
+  | "ready"
+
+export type PrismRequestSummary = {
+  request_id: string
+  /** The questionnaire link, when PRISM has issued one. */
+  survey_url: string | null
+  requested_at: string | null
+  completed_at: string | null
+  ingest_status: string | null
+}
+
+/**
+ * Onboarding progress. Derived server-side from PRISM requests + the composed
+ * portrait — deliberately carries no entitlement or billing state.
+ */
+export type OnboardingStatus = {
+  next_step: OnboardingNextStep
+  has_portrait: boolean
+  instruments: string[]
+  prism_request: PrismRequestSummary | null
+}
+
+export type PrismRequestBody = {
+  forename: string
+  surname: string
+  /** Optional — the backend falls back to the email on the caller's token. */
+  email?: string
+}
+
+export type PrismRequestResult = {
+  request_id: string
+  survey_url: string | null
+  status: string
+}
+
 /**
  * Consent for proactive guidance. Three independent grants, because they carry
  * very different weight — see the backend's `app/tools/lumen/consent.py`.
