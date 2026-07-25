@@ -34,6 +34,41 @@ export type CorroboratingInstrument = {
 /** Aggregate confidence band. Never "certainty". */
 export type PortraitConfidence = "low" | "moderate" | "high"
 
+/** Why a Moment exists. `pull` = the user asked; the others are proactive. */
+export type MomentTrigger = "pull" | "calendar" | "cadence"
+
+/** The user's disposition on a Moment. */
+export type MomentState = "new" | "acted" | "dismissed" | "saved"
+
+export type Moment = {
+  id: string
+  trigger: MomentTrigger
+  /** The situation the user described. Null for cadence-driven Moments. */
+  context: string | null
+  /** The guidance itself, in Meridian's voice. */
+  body: string
+  state: MomentState
+  created_at: string | null
+  delivered_at: string | null
+  /**
+   * Only present on the synchronous ask response: true when generation fell
+   * back to deterministic guidance because the model call failed.
+   */
+  degraded?: boolean
+}
+
+export type MomentsFeed = {
+  moments: Moment[]
+  limit: number
+  offset: number
+  has_more: boolean
+}
+
+export type AskMomentRequest = {
+  context: string
+  when?: string
+}
+
 export type SelfPortrait = {
   /** Null when the user has no PRISM assessment on file yet. */
   prism: PrismAnchor | null
