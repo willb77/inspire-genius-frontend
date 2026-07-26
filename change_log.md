@@ -1,3 +1,40 @@
+## [2026-07-26] — Lumen activated on dev: migrations applied, cohort entitled, scheduler wired
+
+Lumen went from "merged but inert" to running end to end on dev. Three asks plus the two open design questions from #664/#665.
+
+### Applied — migrations 019 + 020 (dev Aurora)
+Both applied via `ig-dev-migration-runner` (inline SQL — the deployed bundle predates the files). `lumen_moments` then `lumen_consent`.
+
+**Finding: the tables already existed, created by the ORM.** `app/memory/database.py:69` runs `Base.metadata.create_all` on startup, so the dev deploy created them from the models before the migration ran and `CREATE TABLE IF NOT EXISTS` no-op'd. Verified columns report as `character varying(64)/(16)/(128)` — the ORM's `String(n)` — not the migration's `TEXT`. Harmless (subs are 36-char UUIDs; the code reads through the same ORM), but worth knowing: **for ORM-modelled tables in the agent-engine, migrations are belt-and-braces, not the source of truth.** All four indexes verified present, including `ux_lumen_moments_source_ref` (the idempotency guarantee) and `ix_lumen_moments_user_created` (the feed query).
+
+### Entitled — the staging-B super-admin roster, on dev
+Seven SYSTEM-role accounts read from staging-B (`user_profiles.role → roles.role_level='SYSTEM'`): andy@prismbrainmapping.com, garyburnettenc@gmail.com, jcboyd001@gmail.com, johnboyd@inspiresgenius.com, marktully@prism4usa.com, phil@honor.org, willb77@3pp.com.
+
+Written on **dev**, where Lumen actually runs — staging-B has no Lumen code (promotion needs a release tag) and neither migration. Keyed on **email**, not user_id: the two planes are separate databases and magic-auth remaps `sub`, so email is the identifier that survives; `load_verticals` treats an email match as first-class. Additive and idempotent — existing verticals preserved (`honor`, `grant`, `knowledge-continuity` all intact).
+
+### Wired — the proactive scheduler (PR #679)
+`app/cli/lumen_sweep.py` + an EventBridge rule → **one-off ECS RunTask** (`python -m app.cli lumen-sweep`, daily 11:00 UTC ≈ 07:00 EDT). Live on dev as `ig-dev-lumen-proactive-sweep`.
+
+Chosen because it needs **no credential**: the task inherits the same task role and DB access the service has. A scheduled Lambda calling the super-admin-gated route would need a standing privileged credential plus reserved concurrency and three alarms; a synthetic super-admin JWT is a permanent liability for one daily job; an in-process scheduler needs a distributed lock. Reuses the existing task definition so the sweep can't drift from the service's env wiring — `agent-engine` is the only essential container, so the task stops when the CLI exits.
+
+### Resolved — Moments now inherit the live Interaction Protocol (PR #679)
+Moments come from a direct Meridian-persona provider call (one LLM call, fixed JSON shape), which bypasses `BaseAgent` — and `BaseAgent` is what injects the **runtime-configurable** protocol. Without this, editing the protocol in MentorManagement would have applied to every agent *except the one surface delivering unprompted guidance*. `_system_prompt()` now prepends it, gated by `should_apply_to_agent("Meridian")`, non-fatal on config-store failure.
+
+### Fixed — two bugs found by running it, not by testing it
+- **Sweep cohort was wrong (PR #681).** The dry-run enumerated **9 subs for 7 people**: entitlement rows are keyed by sub *or* email, and dev carries both shapes for the same person. Two super-admins would have received a weekly Moment against a sub nobody logs in as. `list_entitled_users` now joins `public.users` and returns DISTINCT real subs. Fixed in the query rather than by deleting rows — the sweep should be correct regardless of table hygiene.
+- **Every Moment would have been filler, forever (PR #682).** `ProviderFactory` is populated by `init_llm_providers()`, which only runs from the FastAPI startup hook. A CLI process never executes it, so the registry was empty and every model call raised `LLM provider 'None' not registered`. The sweep's graceful degradation then wrote its fallback body. **The result was the worst kind of green** — exit 0, `cadence_created: 1`, and filler in the feed. Invisible to unit tests by construction, since the fallback is *supposed* to work; caught only by reading the persisted row.
+
+### Verified end to end on dev
+Three one-off ECS RunTasks with the rule's exact network config. Dry-run enumerated 9 → **7** after the cohort fix. A real scoped run wrote a Moment with `trigger=cadence`, `source_ref=week:2026-W30`, `delivered=true`, `calendar_created=0` (correctly skipped — not consented), `emails_pending_delivery=0` (correctly not attempted). Final persisted body is real PRISM-grounded guidance: *"Your instinct to keep harmony and support others is genuinely powerful — but this week, tr…"* — not the fallback.
+
+### Deploy trap avoided
+`cdk diff` initially showed an ECS **task-definition replacement unrelated to this work**: `AGENT_ENGINE_HONOR_RESUME` is `true` on the deployed dev service but defaults to `false` in code — a hot-patch applied via `-c honorResume=true`. Deploying without the flag would have silently disabled a live Honor feature. Deployed with `--context honorResume=true`, reducing the diff to exactly three additive resources. **The stale default is still in the code and will trap the next person to deploy this stack.**
+
+### Still open
+- Lumen is **not on staging-B** — no code (needs a `release-stable-*` tag), no migrations, no entitlements there.
+- Two duplicate `user_entitlements` rows (jcboyd001, willb77) keyed by email-as-user_id; harmless now the sweep resolves through `public.users`, but worth cleaning.
+- Codify `honorResume` so the next deploy of the agent-engine stack doesn't flip it off.
+
 ## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
 
 The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white
