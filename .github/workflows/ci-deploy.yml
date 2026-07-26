@@ -97,6 +97,14 @@ jobs:
           # "My Clients" stays functional until the coach backend is promoted
           # there. Remove this line to fall back to stubs in dev too.
           echo "VITE_COACH_BACKEND=true" >> .env
+          # Credit-write controls (distributor purchase/allocate, practitioner
+          # use) — ON in dev only. The backend credit-write endpoints are live on
+          # dev but gated behind a backend flag; staging-b (which does NOT set
+          # this) keeps the original static Credits buttons, so the controls stay
+          # inert there until the backend is promoted. A flag-on frontend against
+          # a flag-off backend maps the 503 to a friendly toast. Remove this line
+          # to hide the write controls in dev too.
+          echo "VITE_CREDITS_WRITE=true" >> .env
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
