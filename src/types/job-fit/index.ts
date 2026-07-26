@@ -14,6 +14,13 @@ import type { DimensionCategory, JobTier } from '@/types/job-blueprint'
  */
 export type FitBand = string
 
+/**
+ * Scoring formula the user can choose (Decision D4). "gap" is gap-vs-benchmark
+ * (ranked by totalVariation, the default); "closeness" is weighted-closeness
+ * (ranked by closenessScore, higher = closer).
+ */
+export type FitMethod = 'gap' | 'closeness'
+
 /** One published role ranked against the user's profile (best-first). */
 export type FitMatch = {
   jobId: string
@@ -27,6 +34,10 @@ export type FitMatch = {
   aptitudeVariation: number
   coreTraitVariation: number
   confidence: number | null
+  /** Which formula produced this row (Decision D4). Absent on older backends. */
+  method?: FitMethod
+  /** 0..100 weighted-closeness score (higher = closer). Null under the gap read. */
+  closenessScore?: number | null
 }
 
 /** Per-dimension comparison of the user's score against the role benchmark. */
@@ -71,6 +82,14 @@ export type FitDetail = {
    * release. Optional: older backends omit it and the UI treats absent as false.
    */
   gated?: boolean
+  /** Scoring formula used (Decision D4). Absent on older backends. */
+  method?: FitMethod
+  /** 0..100 weighted-closeness score. Present only under the closeness read. */
+  closenessScore?: number | null
+  /** Dimension keys the closeness fit most rests on (closeness read only). */
+  closenessTopFactors?: string[]
+  /** Dimension keys furthest from the target (closeness read only). */
+  closenessTopGaps?: string[]
 }
 
 /** One adjacent role the user could grow toward. */

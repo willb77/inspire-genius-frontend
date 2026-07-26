@@ -5,14 +5,17 @@
  * mocked hooks across loading / error / empty / data states so the page modules
  * and the _shared/_fit helpers stay covered without hitting the network.
  */
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 
 /* ── Hook mocks ── */
 const mockUseFitMatches = jest.fn()
 const mockUseFitDetail = jest.fn()
 const mockUseFitPathway = jest.fn()
-jest.mock("@/hooks/job-fit/useFitMatches", () => ({ useFitMatches: () => mockUseFitMatches() }))
+// Forward args so tests can assert the Decision-D4 method the page passes.
+jest.mock("@/hooks/job-fit/useFitMatches", () => ({
+  useFitMatches: (...args: unknown[]) => mockUseFitMatches(...args),
+}))
 jest.mock("@/hooks/job-fit/useFitDetail", () => ({ useFitDetail: () => mockUseFitDetail() }))
 jest.mock("@/hooks/job-fit/useFitPathway", () => ({ useFitPathway: () => mockUseFitPathway() }))
 
@@ -149,6 +152,30 @@ describe("MatchesPage", () => {
     expect(screen.getByText("Revenue")).toBeInTheDocument()
     // Standardized matching-validation banner sits prominently at the top.
     expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
+  })
+
+  // ── Decision D4 — scoring-method toggle ──
+  test("defaults to the gap method", () => {
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    // the page asks the hook for the gap read by default
+    expect(mockUseFitMatches).toHaveBeenCalledWith("gap")
+    // gap read shows the variation descriptor, not a closeness percentage
+    expect(screen.getByText(/a strong overall match/i)).toBeInTheDocument()
+  })
+
+  test("choosing 'Overall closeness' refetches with the closeness method", () => {
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    fireEvent.click(screen.getByRole("radio", { name: /overall closeness/i }))
+    expect(mockUseFitMatches).toHaveBeenLastCalledWith("closeness")
+  })
+
+  test("closeness rows show a closeness percentage", () => {
+    const closeMatch: FitMatch = { ...MATCH, method: "closeness", closenessScore: 87 }
+    mockUseFitMatches.mockReturnValue({ data: [closeMatch], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText(/87% closeness to this role/i)).toBeInTheDocument()
   })
 })
 
