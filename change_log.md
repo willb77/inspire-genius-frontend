@@ -1,3 +1,29 @@
+## [2026-07-26] — Lumen promoted to staging-B
+
+Tag `release-stable-2026-07-26-lumen` on `development` → `staging-b-promote.yml` **all six jobs green** (pre-flight, agent-engine image, `cdk deploy --all`, ECS rollout, authenticated smoke matrix, notify).
+
+### Live on staging-B
+- **Code**: `GET /v1/agents/lumen/health` → `200 {"status":true,"data":{"vertical":"lumen"}}`.
+- **Frontend**: Lumen chunks deployed to `ig-staging-b-frontend-assets` (`LumenDashboard`, `LumenLayout`, `LumenOnboarding`, `LumenSettings`) — the automatic `ci-deploy` staging-B job had already shipped them.
+- **Migrations 019 + 020 applied** via `ig-staging-b-migration-runner`. All four indexes verified, including `ux_lumen_moments_source_ref`.
+- **Entitlements**: the same seven super-admins entitled, existing verticals preserved (`honor`, `grant`, `knowledge-continuity` intact).
+- **Scheduler**: `ig-staging-b-lumen-proactive-sweep` ENABLED, `cron(0 11 * * ? *)`, FARGATE RunTask target — created automatically by the promote's `cdk deploy --all`, no manual infra step.
+
+### Verified by running it, not by reading the workflow's exit code
+- Dry-run RunTask on staging-B: exit 0, **`would_sweep: 7`** — the cohort fix (#681) is in; `jcboyd001` has duplicate entitlement rows here too and still resolves to one sub.
+- Real scoped RunTask: `swept 1 / cadence_created 1 / calendar_created 0 (correctly skipped — not consented) / emails_pending_delivery 0 / errors 0`.
+- Persisted row: `cadence | week:2026-W30 | delivered=true` with **genuine PRISM-grounded guidance** — *"Your natural pull toward harmony and connection is a genuine asset — but this week, try us…"* — not the degraded fallback. That is the #682 provider-init fix confirmed in a second environment.
+
+### A blocker I called and then disproved
+Reading the promote workflow's `cdk-deploy` CTX, `-c honorResume=true` appeared to be missing, which would have meant `cdk deploy` flipping `AGENT_ENGINE_HONOR_RESUME` from `true` → `false` on staging-B and silently disabling the live Honor résumé feature. The deployed CFN template did hold `'true'`, so the risk looked real.
+
+**It was a false alarm from a truncated read** — the flag is passed on lines 158 and 261 of `staging-b-promote.yml`, just past where the slice ended. Confirmed empirically after the promote: task definition `:20`, `AGENT_ENGINE_HONOR_RESUME=true`, unchanged. No workflow edit was made or needed.
+
+The dev-side trap remains real and separate: `agent-engine-stack.ts` still defaults `honorResume` to `false`, so a **manual** `cdk deploy` of the dev stack without `-c honorResume=true` will still flip it. Worth codifying.
+
+### State
+Lumen is now live on **dev and staging-B**: code, schema, entitlements, and a daily proactive sweep proven to generate real Moments in both. No prod tier exists.
+
 ## [2026-07-26] — Lumen activated on dev: migrations applied, cohort entitled, scheduler wired
 
 Lumen went from "merged but inert" to running end to end on dev. Three asks plus the two open design questions from #664/#665.
