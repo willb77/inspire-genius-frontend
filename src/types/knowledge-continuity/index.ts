@@ -340,6 +340,24 @@ export type CreateTaxonomyRequest = {
   node_type: string
   /** Optional parent node id — set when persisting a blueprint tree level-by-level. */
   parent_id?: string
+  /** Optional metadata (e.g. the 8-section `section` + `rationale`) so a saved
+   * role's blueprint reloads faithfully. */
+  node_metadata?: Record<string, unknown>
+}
+
+/** A previously-saved role (one entry in the "Role" dropdown). */
+export type SavedRole = {
+  role_title: string
+  node_count: number
+  taxonomy_id: string
+  created_at: string | null
+}
+
+/** A saved role's blueprint reloaded from the store — same node shape the
+ * generator produces, so it renders in the same review/results view. */
+export type SavedRoleBlueprint = {
+  role_title: string
+  nodes: BlueprintNode[]
 }
 
 /** POST /v1/trainer/continuity/taxonomy response payload (the taxonomy node). */

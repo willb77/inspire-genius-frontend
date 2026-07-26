@@ -12,6 +12,8 @@ import type {
   RiskEntry,
   StartSessionRequest,
   StartSessionResponse,
+  SavedRole,
+  SavedRoleBlueprint,
   TaxonomyNode,
   UsageRequest,
   ValidationRequest,
@@ -90,6 +92,30 @@ export async function createTaxonomyNode(body: CreateTaxonomyRequest) {
   const { data } = await api.post<VerticalApiResponse<TaxonomyNode>>(
     `${PREFIX}/taxonomy`,
     body
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/roles — the roles previously blueprinted for an
+ * org, one entry per role, for the "Role" dropdown on Blueprint-a-role.
+ */
+export async function listSavedRoles(orgId: string) {
+  const { data } = await api.get<VerticalApiResponse<{ roles: SavedRole[] }>>(
+    `${PREFIX}/roles`,
+    { params: { org_id: orgId } }
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/role-blueprint — a saved role's blueprint tree,
+ * mapped into the generator's node shape so it renders in the same review view.
+ */
+export async function getSavedRoleBlueprint(orgId: string, roleTitle: string) {
+  const { data } = await api.get<VerticalApiResponse<SavedRoleBlueprint>>(
+    `${PREFIX}/role-blueprint`,
+    { params: { org_id: orgId, role_title: roleTitle } }
   )
   return data
 }
