@@ -1,8 +1,9 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Target, ChevronRight, Building2, TrendingUp } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
-import type { FitMatch } from "@/types/job-fit"
+import type { FitMatch, FitMethod } from "@/types/job-fit"
 import {
   FitPageHeader,
   FitCard,
@@ -36,7 +37,9 @@ function MatchRow({ match }: { match: FitMatch }) {
           <span>{tierLabel(match.tier)} role</span>
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="h-3.5 w-3.5" />
-            {variationDescriptor(match.totalVariation)}
+            {match.method === "closeness" && match.closenessScore != null
+              ? `${Math.round(match.closenessScore)}% closeness to this role`
+              : variationDescriptor(match.totalVariation)}
           </span>
         </div>
       </div>
@@ -49,8 +52,53 @@ function MatchRow({ match }: { match: FitMatch }) {
  * Job-Fit home — the user's own PRISM profile ranked against every published
  * Job DNA, best-first. Each row links to a full per-role breakdown.
  */
+const METHOD_OPTIONS: { value: FitMethod; label: string; hint: string }[] = [
+  { value: "gap", label: "Gap to benchmark", hint: "Distance from the role's target profile" },
+  { value: "closeness", label: "Overall closeness", hint: "Weighted similarity to the role" },
+]
+
+/** Decision D4 — let the user choose which scoring formula ranks their matches. */
+function MethodToggle({
+  method,
+  onChange,
+}: {
+  method: FitMethod
+  onChange: (m: FitMethod) => void
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Scoring method"
+      className="inline-flex rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-0.5"
+    >
+      {METHOD_OPTIONS.map((opt) => {
+        const active = method === opt.value
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            title={opt.hint}
+            onClick={() => onChange(opt.value)}
+            className={
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
+              (active
+                ? "bg-white text-[#0D9488] shadow-sm"
+                : "text-[#6b7280] hover:text-[#374151]")
+            }
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function MatchesPage() {
-  const { data, isLoading, isError } = useFitMatches()
+  const [method, setMethod] = useState<FitMethod>("gap")
+  const { data, isLoading, isError } = useFitMatches(method)
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -60,8 +108,9 @@ export default function MatchesPage() {
         description="How your behavioral profile lines up with open roles — ranked from closest match."
       />
 
-      <div className="mb-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <MatchingValidationBanner />
+        <MethodToggle method={method} onChange={setMethod} />
       </div>
 
       {isLoading && <FitLoading label="Matching your profile to open roles…" />}
