@@ -24,12 +24,18 @@ export function usePersistBlueprint() {
 
       for (const node of ordered) {
         const parentId = node.parent_ref ? refToId.get(node.parent_ref) : undefined
+        // Persist the 8-section `section` + `rationale` in metadata so a saved
+        // role reloads with the same shape it was drafted in.
+        const metadata: Record<string, unknown> = {}
+        if (node.section) metadata.section = node.section
+        if (node.rationale) metadata.rationale = node.rationale
         const res = await createTaxonomyNode({
           org_id,
           role_title,
           name: node.name,
           node_type: node.node_type,
           ...(parentId ? { parent_id: parentId } : {}),
+          ...(Object.keys(metadata).length > 0 ? { node_metadata: metadata } : {}),
         })
         const created = res.data
         if (!created?.id) throw new Error("Taxonomy node create returned no id")

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -6,9 +6,12 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   ArrowRight,
+  BookOpenCheck,
   CheckCircle2,
+  FileUp,
   GitBranch,
   Loader2,
+  MessagesSquare,
   RotateCcw,
   Sparkles,
   Trash2,
@@ -20,24 +23,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
+import { ACCEPTED_ROLE_FILE_TYPES, extractRoleText } from "@/lib/extractRoleText"
 import { useGenerateBlueprint } from "@/hooks/knowledge-continuity/useGenerateBlueprint"
 import { useJobDnaSeed } from "@/hooks/knowledge-continuity/useJobDnaSeed"
 import { usePersistBlueprint } from "@/hooks/knowledge-continuity/usePersistBlueprint"
+import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
+import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
 import { useJobDnaList } from "@/hooks/job-blueprint"
 import type {
   BlueprintArchetype,
   BlueprintGenerateResponse,
   BlueprintNode,
   BlueprintSeedNode,
+  SavedRoleBlueprint,
 } from "@/types/knowledge-continuity"
 
 // Blueprints created from this surface are grouped under the same stable org key
 // the capture front-door uses, so captures and their blueprint share an org.
 const BLUEPRINT_ORG_ID = "kce-capture"
-
-type Step = "form" | "review"
 
 const ARCHETYPE_CHOICES: { value: "" | BlueprintArchetype; label: string; hint: string }[] = [
   { value: "", label: "Auto-detect", hint: "Classify from the title" },
@@ -46,7 +52,108 @@ const ARCHETYPE_CHOICES: { value: "" | BlueprintArchetype; label: string; hint: 
   { value: "executive", label: "Executive", hint: "Strategy + relationships" },
 ]
 
-// ── Step 1: the generate form ──────────────────────────────────────────────
+const PROGRESS_STAGES = [
+  "Reading the role…",
+  "Classifying the role shape…",
+  "Drafting the knowledge areas…",
+  "Organizing the tree…",
+  "Finalizing the blueprint…",
+]
+
+// The page is a small state machine: create → review a fresh draft → done, plus
+// a read-only view when an existing saved role is loaded.
+type View =
+  | { step: "form" }
+  | { step: "review"; blueprint: BlueprintGenerateResponse }
+  | { step: "saved"; blueprint: SavedRoleBlueprint }
+  | { step: "done"; roleTitle: string; created: number }
+
+// ── shared tree rendering ────────────────────────────────────────────────────
+
+/** Order nodes as a depth-first tree (roots in order, then their children). */
+function buildDisplayOrder(nodes: BlueprintNode[]): BlueprintNode[] {
+  const childrenOf = new Map<string | null, BlueprintNode[]>()
+  for (const n of nodes) {
+    const key = n.parent_ref
+    const list = childrenOf.get(key) ?? []
+    list.push(n)
+    childrenOf.set(key, list)
+  }
+  const out: BlueprintNode[] = []
+  const walk = (parentRef: string | null) => {
+    for (const n of childrenOf.get(parentRef) ?? []) {
+      out.push(n)
+      walk(n.ref)
+    }
+  }
+  walk(null)
+  if (out.length < nodes.length) {
+    const shown = new Set(out.map((n) => n.ref))
+    for (const n of nodes) if (!shown.has(n.ref)) out.push(n)
+  }
+  return out
+}
+
+function sectionCount(nodes: BlueprintNode[]): number {
+  return new Set(nodes.map((n) => n.section).filter(Boolean)).size
+}
+
+function NodeRow({
+  node,
+  onRename,
+  onRemove,
+}: {
+  node: BlueprintNode
+  onRename?: (ref: string, name: string) => void
+  onRemove?: (ref: string) => void
+}) {
+  return (
+    <div
+      className="flex items-start gap-2 rounded-lg border border-border p-2.5"
+      style={{ marginLeft: `${Math.min(node.depth, 6) * 20}px` }}
+    >
+      <div className="flex flex-1 flex-col gap-1.5">
+        {onRename ? (
+          <Input
+            aria-label={`Node ${node.ref} name`}
+            value={node.name}
+            onChange={(e) => onRename(node.ref, e.target.value)}
+            className="h-8 text-sm font-medium"
+          />
+        ) : (
+          <div className="text-sm font-medium">{node.name}</div>
+        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className="text-[10px]">
+            {node.node_type.replace(/_/g, " ")}
+          </Badge>
+          {node.section && (
+            <Badge variant="secondary" className="text-[10px]">
+              {node.section}
+            </Badge>
+          )}
+          {node.rationale && (
+            <span className="text-xs text-muted-foreground">— {node.rationale}</span>
+          )}
+        </div>
+      </div>
+      {onRemove && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Remove ${node.name}`}
+          onClick={() => onRemove(node.ref)}
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  )
+}
+
+// ── Step 1: the generate form ────────────────────────────────────────────────
 
 const formSchema = z.object({
   role_title: z.string().min(1, "Name the role to blueprint"),
@@ -56,25 +163,55 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) => void }) {
+function FormStep({
+  onDrafted,
+  onLoadedSaved,
+}: {
+  onDrafted: (bp: BlueprintGenerateResponse) => void
+  onLoadedSaved: (bp: SavedRoleBlueprint) => void
+}) {
   const generate = useGenerateBlueprint()
   const jobDnaList = useJobDnaList()
   const jobDnaSeed = useJobDnaSeed()
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { role_title: "", context: "", archetype: "" },
-  })
+  const savedRoles = useSavedRoles(BLUEPRINT_ORG_ID)
+  const loadSavedRole = useSavedRoleBlueprint(BLUEPRINT_ORG_ID)
 
-  // When a Job Blueprint is picked, we seed the generator with its knowledge
-  // taxonomy so Maven enriches an existing role map instead of a bare title.
+  const { register, handleSubmit, control, setValue, getValues, formState: { errors } } =
+    useForm<FormValues>({
+      resolver: zodResolver(formSchema),
+      defaultValues: { role_title: "", context: "", archetype: "" },
+    })
+
   const [selectedJobDnaId, setSelectedJobDnaId] = useState("")
   const [seedNodes, setSeedNodes] = useState<BlueprintSeedNode[] | undefined>(undefined)
+  const [uploadName, setUploadName] = useState("")
+  const [extracting, setExtracting] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // ── drafting progress (the generate is one LLM call; animate to 90% then snap
+  //    to 100% on success so the user always sees it move + finish). ──
+  const [progress, setProgress] = useState(0)
+  const [statusMsg, setStatusMsg] = useState("")
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current) }, [])
+
+  const startProgress = () => {
+    setProgress(8)
+    setStatusMsg(PROGRESS_STAGES[0])
+    let p = 8
+    tickRef.current = setInterval(() => {
+      p = Math.min(90, p + 6)
+      setProgress(p)
+      const idx = Math.min(PROGRESS_STAGES.length - 1, Math.floor((p / 90) * PROGRESS_STAGES.length))
+      setStatusMsg(PROGRESS_STAGES[idx])
+    }, 550)
+  }
+  const stopProgress = (done: boolean) => {
+    if (tickRef.current) clearInterval(tickRef.current)
+    tickRef.current = null
+    setProgress(done ? 100 : 0)
+    if (!done) setStatusMsg("")
+  }
 
   const onPickJobDna = (id: string) => {
     setSelectedJobDnaId(id)
@@ -98,7 +235,33 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
     })
   }
 
+  const onPickSavedRole = (roleTitle: string) => {
+    if (!roleTitle) return
+    loadSavedRole.mutate(roleTitle, { onSuccess: onLoadedSaved })
+  }
+
+  const onFileChosen = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setExtracting(true)
+    try {
+      const { text, suggestedTitle } = await extractRoleText(file)
+      setValue("context", text, { shouldValidate: true })
+      if (!getValues("role_title").trim()) {
+        setValue("role_title", suggestedTitle, { shouldValidate: true })
+      }
+      setUploadName(file.name)
+      toast.success(`Loaded "${file.name}" — ${text.length.toLocaleString()} characters of context.`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't read that file.")
+    } finally {
+      setExtracting(false)
+      if (fileRef.current) fileRef.current.value = "" // allow re-uploading the same file
+    }
+  }
+
   const onSubmit = (values: FormValues) => {
+    startProgress()
     generate.mutate(
       {
         role_title: values.role_title.trim(),
@@ -106,9 +269,19 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
         archetype: values.archetype || undefined,
         seed_nodes: seedNodes && seedNodes.length > 0 ? seedNodes : undefined,
       },
-      { onSuccess: onDrafted }
+      {
+        onSuccess: (bp) => {
+          stopProgress(true)
+          toast.success(`Blueprint drafted — ${bp.nodes.length} knowledge areas across ${sectionCount(bp.nodes)} sections.`)
+          onDrafted(bp)
+        },
+        onError: () => stopProgress(false), // the hook surfaces the error toast
+      }
     )
   }
+
+  const drafting = generate.isPending
+  const roles = savedRoles.data ?? []
 
   return (
     <Card>
@@ -119,44 +292,100 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
         </CardTitle>
         <CardDescription>
           Draft the taxonomy of what a role <em>knows</em> — the map an expert interview should
-          cover. You review and edit it before anything is saved.
+          cover. Start from a title, an uploaded job description, or a saved role. You review and
+          edit it before anything is saved.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Load a saved role */}
+          {roles.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="saved_role">Role</Label>
+              <select
+                id="saved_role"
+                defaultValue=""
+                onChange={(e) => onPickSavedRole(e.target.value)}
+                disabled={loadSavedRole.isPending}
+                className={selectClass}
+              >
+                <option value="">Blueprint a new role…</option>
+                {roles.map((r) => (
+                  <option key={r.role_title} value={r.role_title}>
+                    {r.role_title} ({r.node_count} areas)
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {loadSavedRole.isPending
+                  ? "Loading the saved blueprint…"
+                  : "Pick a role you've already blueprinted to view it and start a capture, or leave it to draft a new one below."}
+              </p>
+            </div>
+          )}
+
+          {/* Upload a role document */}
+          <div className="space-y-2">
+            <Label>Upload a role <span className="text-muted-foreground">(optional — Word, PDF, or text)</span></Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                accept={ACCEPTED_ROLE_FILE_TYPES}
+                onChange={onFileChosen}
+                className="hidden"
+                aria-label="Upload a role document"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+                disabled={extracting}
+              >
+                {extracting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reading…</>
+                ) : (
+                  <><FileUp className="mr-2 h-4 w-4" /> Upload a role</>
+                )}
+              </Button>
+              {uploadName && !extracting && (
+                <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> {uploadName}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Drop in a job description or role charter — we read the text into the context below and
+              guess the title. Nothing is uploaded to a server.
+            </p>
+          </div>
+
+          {/* Seed from a Job Blueprint */}
           <div className="space-y-2">
             <Label htmlFor="job_dna_seed">
-              Seed from a Job Blueprint{" "}
-              <span className="text-muted-foreground">(optional)</span>
+              Seed from a Job Blueprint <span className="text-muted-foreground">(optional)</span>
             </Label>
             <select
               id="job_dna_seed"
               value={selectedJobDnaId}
               onChange={(e) => onPickJobDna(e.target.value)}
               disabled={jobDnaList.isLoading || jobDnaSeed.isPending}
-              className={cn(
-                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "ring-offset-background focus-visible:outline-none focus-visible:ring-2",
-                "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
-                "disabled:opacity-50"
-              )}
+              className={selectClass}
             >
               <option value="">Start from a role title instead</option>
               {(jobDnaList.data ?? []).map((jd) => (
-                <option key={jd.id} value={jd.id}>
-                  {jd.roleTitle}
-                </option>
+                <option key={jd.id} value={jd.id}>{jd.roleTitle}</option>
               ))}
             </select>
             <p className="text-xs text-muted-foreground">
               {jobDnaSeed.isPending
                 ? "Loading the blueprint's knowledge seed…"
-                : "Pick a Job Blueprint to seed the map from its role knowledge — Maven then enriches it. Leave unset to draft from just the title."}
+                : "Pick a Job Blueprint to seed the map from its role knowledge — Maven then enriches it."}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role_title">Role</Label>
+            <Label htmlFor="role_title">Role title</Label>
             <Input
               id="role_title"
               placeholder="e.g. Senior Wastewater Treatment Operator, or CIO"
@@ -168,13 +397,11 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="context">
-              Context <span className="text-muted-foreground">(optional)</span>
-            </Label>
+            <Label htmlFor="context">Context <span className="text-muted-foreground">(optional)</span></Label>
             <Textarea
               id="context"
-              rows={3}
-              placeholder="Paste a job description, or a few lines on what makes this role hard to hand over."
+              rows={4}
+              placeholder="Paste a job description, or a few lines on what makes this role hard to hand over. (An uploaded file fills this in.)"
               {...register("context")}
             />
           </div>
@@ -211,69 +438,53 @@ function FormStep({ onDrafted }: { onDrafted: (bp: BlueprintGenerateResponse) =>
             </p>
           </div>
 
-          <Button type="submit" disabled={generate.isPending} className="w-full">
-            {generate.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Drafting the blueprint…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" /> Draft the blueprint
-              </>
-            )}
-          </Button>
+          {/* Draft button + progress */}
+          {drafting ? (
+            <div className="space-y-2" role="status" aria-live="polite">
+              <Progress value={progress} aria-label="Drafting the blueprint" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {statusMsg} <span className="tabular-nums">({Math.round(progress)}%)</span>
+              </div>
+            </div>
+          ) : (
+            <Button type="submit" className="w-full">
+              <Sparkles className="mr-2 h-4 w-4" /> Draft the blueprint
+            </Button>
+          )}
         </form>
       </CardContent>
     </Card>
   )
 }
 
-// ── Step 2: review + edit the drafted tree ──────────────────────────────────
+const selectClass = cn(
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+  "ring-offset-background focus-visible:outline-none focus-visible:ring-2",
+  "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+)
 
-/** Order nodes as a depth-first tree (roots in order, then their children). */
-function buildDisplayOrder(nodes: BlueprintNode[]): BlueprintNode[] {
-  const childrenOf = new Map<string | null, BlueprintNode[]>()
-  for (const n of nodes) {
-    const key = n.parent_ref
-    const list = childrenOf.get(key) ?? []
-    list.push(n)
-    childrenOf.set(key, list)
-  }
-  const out: BlueprintNode[] = []
-  const walk = (parentRef: string | null) => {
-    for (const n of childrenOf.get(parentRef) ?? []) {
-      out.push(n)
-      walk(n.ref)
-    }
-  }
-  walk(null)
-  // Any node whose parent was pruned (orphan) still gets shown at the end.
-  if (out.length < nodes.length) {
-    const shown = new Set(out.map((n) => n.ref))
-    for (const n of nodes) if (!shown.has(n.ref)) out.push(n)
-  }
-  return out
-}
+// ── Step 2: review + edit a freshly drafted tree ─────────────────────────────
 
 function ReviewStep({
   blueprint,
   onStartOver,
+  onSaved,
 }: {
   blueprint: BlueprintGenerateResponse
   onStartOver: () => void
+  onSaved: (roleTitle: string, created: number) => void
 }) {
-  const navigate = useNavigate()
   const persist = usePersistBlueprint()
   const [nodes, setNodes] = useState<BlueprintNode[]>(blueprint.nodes)
-
   const displayNodes = useMemo(() => buildDisplayOrder(nodes), [nodes])
+  const keepCount = nodes.filter((n) => n.name.trim()).length
 
   const renameNode = (ref: string, name: string) =>
     setNodes((prev) => prev.map((n) => (n.ref === ref ? { ...n, name } : n)))
 
   const removeNode = (ref: string) =>
     setNodes((prev) => {
-      // remove the node and every descendant
       const doomed = new Set<string>([ref])
       let grew = true
       while (grew) {
@@ -298,8 +509,8 @@ function ReviewStep({
       { org_id: BLUEPRINT_ORG_ID, role_title: blueprint.role_title, nodes: clean },
       {
         onSuccess: (res) => {
-          toast.success(`Blueprint saved — ${res.created} knowledge areas ready to capture.`)
-          navigate(ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE)
+          toast.success(`Saved "${blueprint.role_title}" — ${res.created} knowledge areas.`)
+          onSaved(blueprint.role_title, res.created)
         },
       }
     )
@@ -307,27 +518,31 @@ function ReviewStep({
 
   return (
     <div className="space-y-5">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Completion summary — unmistakable that the draft finished. */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-primary" />
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <GitBranch className="h-5 w-5 text-primary" />
-                {blueprint.role_title}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Draft blueprint · review, edit, then save. Nothing is stored until you approve.
-              </CardDescription>
-            </div>
-            <div className="text-right">
-              <Badge variant="secondary" className="capitalize">
-                {blueprint.archetype} shape
-              </Badge>
-              <p className="mt-1 max-w-[16rem] text-xs text-muted-foreground">
-                {blueprint.archetype_rationale}
-              </p>
+              <div className="font-semibold">Blueprint drafted</div>
+              <div className="text-sm text-muted-foreground">
+                {keepCount} knowledge areas across {sectionCount(nodes)} sections ·{" "}
+                <span className="capitalize">{blueprint.archetype}</span> shape · review and edit below, then save.
+              </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-primary" />
+            {blueprint.role_title}
+          </CardTitle>
+          <CardDescription className="mt-1">
+            {blueprint.archetype_rationale}. Rename or remove anything — nothing is stored until you save.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {displayNodes.length === 0 && (
@@ -336,43 +551,7 @@ function ReviewStep({
             </p>
           )}
           {displayNodes.map((node) => (
-            <div
-              key={node.ref}
-              className="flex items-start gap-2 rounded-lg border border-border p-2.5"
-              style={{ marginLeft: `${Math.min(node.depth, 6) * 20}px` }}
-            >
-              <div className="flex flex-1 flex-col gap-1.5">
-                <Input
-                  aria-label={`Node ${node.ref} name`}
-                  value={node.name}
-                  onChange={(e) => renameNode(node.ref, e.target.value)}
-                  className="h-8 text-sm font-medium"
-                />
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="outline" className="text-[10px]">
-                    {node.node_type.replace(/_/g, " ")}
-                  </Badge>
-                  {node.section && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {node.section}
-                    </Badge>
-                  )}
-                  {node.rationale && (
-                    <span className="text-xs text-muted-foreground">— {node.rationale}</span>
-                  )}
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Remove ${node.name}`}
-                onClick={() => removeNode(node.ref)}
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            <NodeRow key={node.ref} node={node} onRename={renameNode} onRemove={removeNode} />
           ))}
         </CardContent>
       </Card>
@@ -381,19 +560,13 @@ function ReviewStep({
         <Button type="button" variant="ghost" onClick={onStartOver}>
           <RotateCcw className="mr-2 h-4 w-4" /> Start over
         </Button>
-        <Button
-          type="button"
-          onClick={approve}
-          disabled={persist.isPending || displayNodes.length === 0}
-        >
+        <Button type="button" onClick={approve} disabled={persist.isPending || displayNodes.length === 0}>
           {persist.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
-            </>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
           ) : (
             <>
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Approve &amp; create {nodes.filter((n) => n.name.trim()).length} nodes
+              Save role &amp; {keepCount} knowledge areas
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}
@@ -403,36 +576,161 @@ function ReviewStep({
   )
 }
 
-// ── Page ────────────────────────────────────────────────────────────────────
+// ── A previously-saved role, loaded read-only ────────────────────────────────
+
+function SavedRoleView({
+  blueprint,
+  onBack,
+}: {
+  blueprint: SavedRoleBlueprint
+  onBack: () => void
+}) {
+  const navigate = useNavigate()
+  const displayNodes = useMemo(() => buildDisplayOrder(blueprint.nodes), [blueprint.nodes])
+  return (
+    <div className="space-y-5">
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="flex items-center gap-3">
+            <BookOpenCheck className="h-6 w-6 shrink-0 text-primary" />
+            <div>
+              <div className="font-semibold">{blueprint.role_title}</div>
+              <div className="text-sm text-muted-foreground">
+                Saved blueprint · {blueprint.nodes.length} knowledge areas. Ready to capture against.
+              </div>
+            </div>
+          </div>
+          <Button type="button" onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE)}>
+            <MessagesSquare className="mr-2 h-4 w-4" /> Start a capture
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-2 pt-6">
+          {displayNodes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">This role has no saved knowledge areas.</p>
+          ) : (
+            displayNodes.map((node) => <NodeRow key={node.ref} node={node} />)
+          )}
+        </CardContent>
+      </Card>
+
+      <Button type="button" variant="ghost" onClick={onBack}>
+        <RotateCcw className="mr-2 h-4 w-4" /> Blueprint another role
+      </Button>
+    </div>
+  )
+}
+
+// ── Step 3: done — saved, with next-step guidance ────────────────────────────
+
+function DoneStep({
+  roleTitle,
+  created,
+  onBlueprintAnother,
+}: {
+  roleTitle: string
+  created: number
+  onBlueprintAnother: () => void
+}) {
+  const navigate = useNavigate()
+  return (
+    <Card>
+      <CardContent className="space-y-6 py-8 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <CheckCircle2 className="h-12 w-12 text-primary" />
+          <h2 className="text-xl font-semibold">Saved “{roleTitle}”</h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {created} knowledge areas are saved and ready. Here's what to do next.
+          </p>
+        </div>
+
+        <div className="mx-auto grid max-w-md gap-3 text-left">
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE)}
+            className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+          >
+            <MessagesSquare className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold">Start a capture <span className="text-muted-foreground">(recommended)</span></div>
+              <div className="text-xs text-muted-foreground">
+                Interview an expert against this role — Maven asks, Sage extracts the knowledge.
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onBlueprintAnother}
+            className="flex items-center gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:border-primary/50"
+          >
+            <Wand2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold">Blueprint another role</div>
+              <div className="text-xs text-muted-foreground">Map out the next role at risk.</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.DASHBOARD)}
+            className="flex items-center gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:border-primary/50"
+          >
+            <BookOpenCheck className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold">See Program Health</div>
+              <div className="text-xs text-muted-foreground">Coverage, freshness, and roles at risk.</div>
+            </div>
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function KceBlueprintPage() {
-  const [step, setStep] = useState<Step>("form")
-  const [blueprint, setBlueprint] = useState<BlueprintGenerateResponse | null>(null)
+  const [view, setView] = useState<View>({ step: "form" })
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Blueprint a role</h1>
         <p className="mt-1 text-muted-foreground">
-          Auto-draft the knowledge map for a role, edit it, and save it — then run a capture
-          against it. This replaces hand-authoring taxonomy nodes one by one.
+          Auto-draft the knowledge map for a role, edit it, and save it — then run a capture against
+          it. This replaces hand-authoring taxonomy nodes one by one.
         </p>
       </div>
 
-      {step === "form" || !blueprint ? (
+      {view.step === "form" && (
         <FormStep
-          onDrafted={(bp) => {
-            setBlueprint(bp)
-            setStep("review")
-          }}
+          onDrafted={(bp) => setView({ step: "review", blueprint: bp })}
+          onLoadedSaved={(bp) => setView({ step: "saved", blueprint: bp })}
         />
-      ) : (
+      )}
+
+      {view.step === "review" && (
         <ReviewStep
-          blueprint={blueprint}
-          onStartOver={() => {
-            setBlueprint(null)
-            setStep("form")
-          }}
+          blueprint={view.blueprint}
+          onStartOver={() => setView({ step: "form" })}
+          onSaved={(roleTitle, created) => setView({ step: "done", roleTitle, created })}
+        />
+      )}
+
+      {view.step === "saved" && (
+        <SavedRoleView blueprint={view.blueprint} onBack={() => setView({ step: "form" })} />
+      )}
+
+      {view.step === "done" && (
+        <DoneStep
+          roleTitle={view.roleTitle}
+          created={view.created}
+          onBlueprintAnother={() => setView({ step: "form" })}
         />
       )}
     </div>
