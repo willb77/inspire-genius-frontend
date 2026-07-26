@@ -2,6 +2,11 @@ import DistributorLayout from "@/layouts/DistributorLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDistributorCredits, useDistributorTransactions } from "@/hooks/distributor/useDistributor"
+import {
+  CREDITS_WRITE,
+  DistributorAllocateControl,
+  DistributorPurchaseControl,
+} from "@/components/credits/CreditsWriteControls"
 
 const FALLBACK_CHART_BARS = [
   { label: "Sep", val: 320, pct: 51.6 },
@@ -48,9 +53,16 @@ export default function DistributorCredits() {
           <h1 className="text-xl font-bold text-[#111827]">Credit Management</h1>
           <p className="text-[13px] text-[#6b7280]">Purchase, allocate, and track PRISM assessment credits.</p>
         </div>
-        <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors">
-          Purchase Credits
-        </button>
+        {CREDITS_WRITE ? (
+          <div className="flex items-center gap-2">
+            <DistributorAllocateControl />
+            <DistributorPurchaseControl className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors" />
+          </div>
+        ) : (
+          <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors">
+            Purchase Credits
+          </button>
+        )}
       </div>
 
       {/* Credit Summary */}
