@@ -2,6 +2,7 @@ import PractitionerLayout from "@/layouts/PractitionerLayout"
 import DataCard from "@/components/dashboard/DataCard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePractitionerCredits } from "@/hooks/practitioner/usePractitioner"
+import { CREDITS_WRITE, PractitionerUseControl } from "@/components/credits/CreditsWriteControls"
 
 const FALLBACK_MONTHLY = [
   { month: "Oct", used: 6, h: 48 },
@@ -117,9 +118,13 @@ export default function PractitionerCredits() {
       <DataCard title="Purchase Credits">
         <div className="flex items-center gap-4">
           <p className="text-[13px] text-[#6b7280] flex-1">Need more PRISM assessment credits? Contact your distributor or purchase directly.</p>
-          <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors shrink-0">
-            Request Credits
-          </button>
+          {CREDITS_WRITE ? (
+            <PractitionerUseControl />
+          ) : (
+            <button className="bg-[#3B5BFF] text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-[#2A47CC] transition-colors shrink-0">
+              Request Credits
+            </button>
+          )}
         </div>
       </DataCard>
     </PractitionerLayout>
