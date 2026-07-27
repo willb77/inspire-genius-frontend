@@ -130,6 +130,16 @@ export type KnowledgeUnit = {
 }
 
 /** An unresolved contradiction between two captured knowledge units. */
+/** A compact both-sides projection of a unit in a contradiction. */
+export type ContradictionUnitSide = {
+  id: string
+  title: string
+  category: string
+  body: string
+  validity_band: string
+  kvi: number
+}
+
 export type ContradictionRelation = {
   id: string
   from_unit_id: string
@@ -137,6 +147,16 @@ export type ContradictionRelation = {
   relation_type: string
   resolved: boolean
   created_at?: string
+  /** Present on the review-queue payload so the reviewer sees both units. */
+  from_unit?: ContradictionUnitSide | null
+  to_unit?: ContradictionUnitSide | null
+}
+
+/** How a reviewer adjudicates a candidate contradiction. */
+export type ResolveContradictionRequest = {
+  action: "dismiss" | "keep_both" | "supersede"
+  winner_unit_id?: string
+  notes?: string
 }
 
 /** GET /v1/trainer/continuity/review-queue response payload. */
@@ -455,4 +475,76 @@ export type PersistBlueprintRequest = {
 export type PersistBlueprintResult = {
   created: number
   rootId: string | null
+}
+
+// ── Provenance (replay the utterance) ────────────────────────────────────────
+
+/** One persisted interview exchange behind a synthesized unit. */
+export type CaptureTurn = {
+  id: string
+  session_id: string
+  taxonomy_node_id: string | null
+  seq: number
+  question: string
+  response: string
+  created_at?: string | null
+}
+
+/** GET /v1/trainer/continuity/units/{id}/turns response. */
+export type UnitTurns = {
+  unit_id: string
+  session_id: string
+  taxonomy_node_id: string | null
+  turns: CaptureTurn[]
+}
+
+// ── Curriculum authoring (build + publish) ───────────────────────────────────
+
+/** GET /v1/trainer/continuity/units?taxonomy_id=&bands= — a role's citable units. */
+export type CitableUnits = {
+  taxonomy_id: string
+  bands: string[]
+  units: KnowledgeUnit[]
+}
+
+/** A unit passed to Echo's curriculum builder. */
+export type CurriculumBuildUnit = {
+  id: string
+  category: string
+  title: string
+  body: string
+  taxonomy_node_id?: string | null
+}
+
+/** POST /v1/agents/kce/curriculum/build request. */
+export type BuildCurriculumRequest = {
+  units: CurriculumBuildUnit[]
+  taxonomy_id?: string | null
+  successor_profile?: Record<string, unknown> | null
+}
+
+/** POST /v1/agents/kce/curriculum/build response — modules ready to publish. */
+export type BuiltCurriculum = {
+  taxonomy_id: string | null
+  wiring_style: string | null
+  modules: CurriculumModule[]
+  cited_unit_ids: string[]
+  module_count: number
+  quarantined_count: number
+}
+
+/** POST /v1/trainer/continuity/curricula request (publish). */
+export type PublishCurriculumRequest = {
+  taxonomy_id?: string | null
+  session_id?: string | null
+  wiring_style: string
+  published_by?: string
+  modules: CurriculumModule[]
+}
+
+/** POST /v1/trainer/continuity/curricula response. */
+export type PublishCurriculumResult = {
+  template_id: string
+  module_count: number
+  cited_unit_count: number
 }

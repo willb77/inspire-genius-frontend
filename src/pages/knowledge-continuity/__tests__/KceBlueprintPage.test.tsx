@@ -142,9 +142,11 @@ describe("KceBlueprintPage", () => {
     expect(await screen.findByText(/saved “Chief Information Officer”/i)).toBeInTheDocument()
     expect(navigateMock).not.toHaveBeenCalled()
 
-    // the recommended next step navigates to capture
+    // the recommended next step navigates to capture, carrying the role
     await user.click(screen.getByRole("button", { name: /start a capture/i }))
-    expect(navigateMock).toHaveBeenCalledWith("/vertical/knowledge-continuity/capture")
+    expect(navigateMock).toHaveBeenCalledWith(
+      "/vertical/knowledge-continuity/capture?role=Chief%20Information%20Officer"
+    )
   })
 
   test("removing a parent prunes its descendants", async () => {
@@ -200,7 +202,9 @@ describe("KceBlueprintPage", () => {
 
     expect(await screen.findByText("Night-shift recovery")).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: /start a capture/i }))
-    expect(navigateMock).toHaveBeenCalledWith("/vertical/knowledge-continuity/capture")
+    expect(navigateMock).toHaveBeenCalledWith(
+      "/vertical/knowledge-continuity/capture?role=Senior%20Operator"
+    )
   })
 
   test("drafting without a Job Blueprint sends no seed_nodes", async () => {

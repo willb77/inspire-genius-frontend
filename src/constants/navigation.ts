@@ -75,6 +75,14 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   ]
 }
 
+/**
+ * Team Development Studio is feature-flagged for a pilot cohort.
+ * Enabled at build time via VITE_FEATURE_TEAM_DEVELOPMENT=true. Declared here
+ * (above SUPER_ADMIN_NAV_ITEMS) so both super-admin and manager nav can gate on it.
+ */
+const TEAM_DEVELOPMENT_ENABLED =
+  import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
+
 /** Navigation items for the super-admin role */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
@@ -97,15 +105,13 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
+  // Team Development Studio — also available to super-admins (platform scope),
+  // not just managers. Route guards already permit super-admin on /manager/*.
+  ...(TEAM_DEVELOPMENT_ENABLED
+    ? [{ to: ROUTES.MANAGER.DEVELOPMENT, icon: Sparkles, label: "Team Development" }]
+    : []),
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
-
-/**
- * Team Development Studio is feature-flagged for a pilot manager cohort.
- * Enabled at build time via VITE_FEATURE_TEAM_DEVELOPMENT=true.
- */
-const TEAM_DEVELOPMENT_ENABLED =
-  import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
 
 /** Navigation items for the manager role */
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [

@@ -1,4 +1,5 @@
 export { JobDnaWizard } from './JobDnaWizard'
+export { JobDnaDraftFlow } from './JobDnaDraftFlow'
 export { RankRateInput } from './RankRateInput'
 export { RoleInfoStep } from './RoleInfoStep'
 export { BehaviorRankRate } from './BehaviorRankRate'

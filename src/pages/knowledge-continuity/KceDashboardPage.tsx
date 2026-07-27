@@ -8,6 +8,15 @@ import {
   GraduationCap,
   AlertTriangle,
 } from "lucide-react"
+import {
+  Bar,
+  BarChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -21,7 +30,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useContinuityAnalytics } from "@/hooks/knowledge-continuity/useContinuityAnalytics"
-import type { CapturePriority, TopAtRiskEntry } from "@/types/knowledge-continuity"
+import type {
+  CapturePriority,
+  CaptureSessionStats,
+  TopAtRiskEntry,
+} from "@/types/knowledge-continuity"
 
 const PRIORITY_BADGE_CLASS: Record<CapturePriority, string> = {
   urgent: "bg-red-100 text-red-700 border-red-200",
@@ -42,6 +55,31 @@ const VALIDITY_LABELS: Record<keyof typeof VALIDITY_BADGE_CLASS, string> = {
   provisional: "Provisional",
   needs_review: "Needs review",
   deprecated: "Deprecated",
+}
+
+// Chart fills for the validity-band distribution — meaningful, theme-consistent.
+const VALIDITY_FILL: Record<keyof typeof VALIDITY_BADGE_CLASS, string> = {
+  validated: "#16a34a", // green
+  provisional: "#127A8A", // teal accent
+  needs_review: "#64748b", // slate
+  deprecated: "#dc2626", // red
+}
+
+// The capture pipeline funnel, in flow order.
+const CAPTURE_STAGES: { key: keyof CaptureSessionStats; label: string }[] = [
+  { key: "scheduled", label: "Scheduled" },
+  { key: "in_progress", label: "In progress" },
+  { key: "captured", label: "Captured" },
+  { key: "synthesized", label: "Synthesized" },
+  { key: "validated", label: "Validated" },
+]
+
+function NoDataYet() {
+  return (
+    <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+      No data yet.
+    </div>
+  )
 }
 
 function StatCard({
@@ -90,6 +128,98 @@ function StatCardSkeletons() {
         </Card>
       ))}
     </div>
+  )
+}
+
+function ValidityDistributionCard({
+  bands,
+}: {
+  bands: Record<keyof typeof VALIDITY_LABELS, number>
+}) {
+  const data = (Object.keys(VALIDITY_LABELS) as (keyof typeof VALIDITY_LABELS)[]).map(
+    (band) => ({
+      label: VALIDITY_LABELS[band],
+      count: bands[band],
+      fill: VALIDITY_FILL[band],
+    })
+  )
+  const total = data.reduce((sum, d) => sum + d.count, 0)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Validity-band distribution</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {total === 0 ? (
+          <NoDataYet />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -16 }}>
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                className="text-muted-foreground"
+                interval={0}
+              />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "currentColor" }} className="text-muted-foreground" />
+              <Tooltip
+                cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                formatter={(value: number) => [`${value} units`, "Count"]}
+              />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {data.map((entry) => (
+                  <Cell key={entry.label} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function CapturePipelineCard({ sessions }: { sessions: CaptureSessionStats }) {
+  const data = CAPTURE_STAGES.map((stage) => ({
+    label: stage.label,
+    count: sessions[stage.key],
+  }))
+  const total = data.reduce((sum, d) => sum + d.count, 0)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Capture pipeline</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {total === 0 ? (
+          <NoDataYet />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 4, right: 16, bottom: 4, left: 24 }}
+            >
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "currentColor" }} className="text-muted-foreground" />
+              <YAxis
+                type="category"
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                className="text-muted-foreground"
+                width={80}
+              />
+              <Tooltip
+                cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                formatter={(value: number) => [`${value} sessions`, "Count"]}
+              />
+              <Bar dataKey="count" fill="#127A8A" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -206,6 +336,11 @@ export default function KceDashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ValidityDistributionCard bands={analytics.validity_bands} />
+            <CapturePipelineCard sessions={analytics.capture_sessions} />
+          </div>
 
           <Card>
             <CardHeader>
