@@ -150,6 +150,24 @@ describe("MatchesPage", () => {
     // Standardized matching-validation banner sits prominently at the top.
     expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
   })
+
+  test("says what Job Fit is for before showing any score", () => {
+    // A fit percentage with no framing reads as a verdict, and a low one reads
+    // as a rejection. The framing must survive; it is the difference between a
+    // user who closes the tab and one who opens Coaching.
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText(/a comparison, not a verdict/i)).toBeInTheDocument()
+    expect(screen.getByText("Blueprint a role")).toBeInTheDocument()
+    expect(screen.getByText("Do something about it")).toBeInTheDocument()
+  })
+
+  test("the purpose panel shows even with nothing to match against", () => {
+    // The empty state is exactly when a user most needs to be told what this is.
+    mockUseFitMatches.mockReturnValue({ data: [], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText(/What Job Fit is for/i)).toBeInTheDocument()
+  })
 })
 
 describe("FitDetailPage", () => {
