@@ -1,12 +1,18 @@
 import { useState } from "react"
-import { Bookmark, Check, Sparkles, X } from "lucide-react"
+import { Bookmark, Check, Pin, Sparkles, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAskMoment, useMoments, useSetMomentState } from "@/hooks/lumen/useMoments"
-import type { Moment, MomentState } from "@/types/lumen"
+import {
+  useCreateSavedPrompt,
+  useDeleteSavedPrompt,
+  useSavedPrompts,
+  useTouchSavedPrompt,
+} from "@/hooks/lumen/useSavedPrompts"
+import type { Moment, MomentState, SavedPrompt } from "@/types/lumen"
 
 /**
  * "Moments" — just-in-time guidance at the point of use.
@@ -15,6 +21,12 @@ import type { Moment, MomentState } from "@/types/lumen"
  * everything generated so far (including proactive Moments once the scheduler
  * ships). The ask box is deliberately the top of the page — the pull path is
  * the one a user can rely on today.
+ *
+ * **On recall.** The guidance is already recallable: every ask is stored as a
+ * Moment carrying both the situation and the answer, and the feed below is that
+ * record. What the feed can't do is make a *recurring* situation cheap to ask
+ * again — so the ask box also carries the user's own saved situations, kept
+ * deliberately, sitting alongside the built-in presets.
  */
 
 /** Situations common enough to be worth one tap instead of typing. */
@@ -96,16 +108,87 @@ function MomentCard({ moment }: { moment: Moment }) {
   )
 }
 
+/**
+ * The user's own kept situations.
+ *
+ * Rendered above the built-in presets because they're better: a situation
+ * someone chose to keep is, by definition, one they walk into. Each carries its
+ * own remove control rather than a separate edit mode — an unpinned situation
+ * loses nothing, since the Moments it produced stay in the feed.
+ */
+function SavedSituations({
+  prompts,
+  onPick,
+  onRemove,
+  removing,
+}: {
+  prompts: SavedPrompt[]
+  onPick: (p: SavedPrompt) => void
+  onRemove: (id: string) => void
+  removing: boolean
+}) {
+  if (prompts.length === 0) return null
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">Your pinned situations</p>
+      <div className="flex flex-wrap gap-2">
+        {prompts.map((p) => (
+          <span
+            key={p.id}
+            className="inline-flex items-center overflow-hidden rounded-md border bg-background"
+          >
+            <button
+              type="button"
+              onClick={() => onPick(p)}
+              className="px-2.5 py-1.5 text-sm hover:bg-muted"
+            >
+              {p.label || p.text}
+            </button>
+            <button
+              type="button"
+              aria-label={`Remove "${p.label || p.text}"`}
+              disabled={removing}
+              onClick={() => onRemove(p.id)}
+              className="border-l px-1.5 py-1.5 text-muted-foreground hover:bg-muted hover:text-destructive disabled:opacity-50"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Moments() {
   const [context, setContext] = useState("")
   const { data: feed, isLoading } = useMoments()
   const { mutate: ask, data: fresh, isPending, isError } = useAskMoment()
 
+  const { data: saved = [] } = useSavedPrompts()
+  const { mutate: savePrompt, isPending: isSaving } = useCreateSavedPrompt()
+  const { mutate: removePrompt, isPending: isRemoving } = useDeleteSavedPrompt()
+  const { mutate: touchPrompt } = useTouchSavedPrompt()
+
+  const trimmed = context.trim()
+  // "Pin", not "Save": the Moment cards already have a Save, and it means
+  // something different (keep this piece of guidance). Nothing to pin if it's
+  // too short, or already pinned — re-saving is a no-op server-side, but an
+  // enabled button implies it would do something.
+  const alreadyPinned = saved.some((p) => p.text === trimmed.replace(/\s+/g, " "))
+  const canPin = trimmed.length >= 3 && !alreadyPinned
+
   const submit = () => {
-    const trimmed = context.trim()
     if (trimmed.length < 3) return
     ask({ context: trimmed })
     setContext("")
+  }
+
+  const pickSaved = (p: SavedPrompt) => {
+    setContext(p.text)
+    // Ordering only — the ask itself must not wait on a counter, and a failed
+    // bump is a slightly stale list, not a lost Moment.
+    touchPrompt(p.id)
   }
 
   return (
@@ -130,22 +213,41 @@ export default function Moments() {
             rows={3}
             aria-label="Describe the situation"
           />
-          <div className="flex flex-wrap gap-2">
-            {PRESETS.map((preset) => (
-              <Button
-                key={preset}
-                size="sm"
-                variant="secondary"
-                onClick={() => setContext(preset)}
-              >
-                {preset}
-              </Button>
-            ))}
+          <SavedSituations
+            prompts={saved}
+            onPick={pickSaved}
+            onRemove={removePrompt}
+            removing={isRemoving}
+          />
+
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">Common situations</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((preset) => (
+                <Button
+                  key={preset}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setContext(preset)}
+                >
+                  {preset}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={submit} disabled={isPending || context.trim().length < 3}>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={submit} disabled={isPending || trimmed.length < 3}>
               <Sparkles className="mr-1 h-4 w-4" aria-hidden />
               {isPending ? "Composing…" : "Get a Moment"}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!canPin || isSaving}
+              onClick={() => savePrompt({ text: trimmed })}
+            >
+              <Pin className="mr-1 h-4 w-4" aria-hidden />
+              {alreadyPinned ? "Pinned" : "Pin this situation"}
             </Button>
             {isError && (
               <span className="text-sm text-destructive">

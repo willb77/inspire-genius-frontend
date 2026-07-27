@@ -208,7 +208,9 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 
 // Lumen — B2C personal diagnostics + just-in-time coaching (entitlement-gated)
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
+const LumenShell = React.lazy(() => import("@/pages/lumen/LumenNav"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
+const LumenCoaching = React.lazy(() => import("@/pages/lumen/CoachingPage"));
 const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
 const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 const LumenSettings = React.lazy(() => import("@/pages/lumen/LumenSettings"));
@@ -600,10 +602,19 @@ export const routes: RouteObject[] = [
         element: withSuspense(<LumenLayout />),
         children: [
           { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
-          { path: "dashboard", element: withSuspense(<LumenDashboard />) },
-          { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
-          { path: "moments", element: withSuspense(<LumenMoments />) },
-          { path: "settings", element: withSuspense(<LumenSettings />) },
+          // Pathless layout: the in-vertical nav renders above every tool page.
+          // Onboarding sits outside it deliberately — it is a funnel, and a row
+          // of links to surfaces that are not ready yet invites leaving it.
+          {
+            element: withSuspense(<LumenShell />),
+            children: [
+              { path: "dashboard", element: withSuspense(<LumenDashboard />) },
+              { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
+              { path: "moments", element: withSuspense(<LumenMoments />) },
+              { path: "coaching", element: withSuspense(<LumenCoaching />) },
+              { path: "settings", element: withSuspense(<LumenSettings />) },
+            ],
+          },
           { path: "onboarding", element: withSuspense(<LumenOnboarding />) },
         ],
       },
