@@ -87,12 +87,19 @@ export function LumenNav() {
   )
 }
 
-/** Pathless layout route: nav above every Lumen page. */
+/**
+ * Pathless layout route: nav above every Lumen page.
+ *
+ * The nav carries its own padding rather than wrapping `Outlet` in a container —
+ * every Lumen page already sets its own `p-6`, and nesting them would double it.
+ */
 export default function LumenShell() {
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-4 sm:px-6">
-      <LumenNav />
+    <>
+      <div className="px-6 pt-6">
+        <LumenNav />
+      </div>
       <Outlet />
-    </div>
+    </>
   )
 }

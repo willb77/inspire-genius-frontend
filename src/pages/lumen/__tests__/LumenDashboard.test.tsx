@@ -18,12 +18,34 @@ describe("LumenDashboard", () => {
     ).toBeInTheDocument()
   })
 
-  test("names the three surfaces the vertical is building toward", () => {
-    // The placeholder's whole job is to be honest about what's coming; if a
-    // surface is dropped from the roadmap the copy should change with it.
+  test("names the three surfaces, each linking somewhere real", () => {
+    // Every surface now ships, so each card must link — a card without a link
+    // is the old placeholder state and should fail here.
     renderDashboard()
-    expect(screen.getByText("My Self-Portrait")).toBeInTheDocument()
-    expect(screen.getByText("Moments")).toBeInTheDocument()
-    expect(screen.getByText("Personal coaching")).toBeInTheDocument()
+    for (const title of ["My Self-Portrait", "Moments", "Personal coaching"]) {
+      // Each title also appears in the "how they fit together" paragraph, so
+      // assert on the link, which is unique per surface.
+      expect(
+        screen.getByRole("link", { name: `Open ${title}` })
+      ).toBeInTheDocument()
+    }
+  })
+
+  test("says what Lumen is for before listing its parts", () => {
+    // The ask was "purpose and intent needs to be clear". A user landing cold
+    // must be told what this is and who it's for, above the surface cards.
+    renderDashboard()
+    expect(
+      screen.getByText(/your own behavioral profile, put to work/i)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/for you, not your employer/i)).toBeInTheDocument()
+  })
+
+  test("explains what triggers each surface", () => {
+    // "Not sure what Personal coaching is or does. What triggers it?" — the
+    // push/pull distinction is the answer, so it is pinned.
+    renderDashboard()
+    expect(screen.getByText("Comes to you")).toBeInTheDocument()
+    expect(screen.getByText("You start it")).toBeInTheDocument()
   })
 })

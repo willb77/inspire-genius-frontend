@@ -129,6 +129,19 @@ export type LumenConsent = {
 
 export type ConsentUpdate = Partial<Omit<LumenConsent, "is_default">>
 
+/**
+ * The four evidence sources a portrait can rest on, in the order the backend
+ * reports them (`self_portrait.py::SOURCE_KEYS`).
+ */
+export type PortraitSourceKey = "prism" | "assessments" | "resume" | "bio"
+
+/**
+ * Which sources this person actually has. Always carries all four keys, so the
+ * UI can show what's missing as readily as what's present — an absent key would
+ * be indistinguishable from "not yet loaded".
+ */
+export type PortraitSources = Record<PortraitSourceKey, boolean>
+
 export type SelfPortrait = {
   /** Null when the user has no PRISM assessment on file yet. */
   prism: PrismAnchor | null
@@ -140,4 +153,11 @@ export type SelfPortrait = {
   headline: string
   instruments: string[]
   confidence: PortraitConfidence | null
+  /**
+   * Optional only for back-compat with a deployment older than the four-source
+   * composer — every current backend sends both.
+   */
+  sources?: PortraitSources
+  /** One line on what the portrait rests on and what would sharpen it next. */
+  coverage?: string
 }
