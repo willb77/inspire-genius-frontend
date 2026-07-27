@@ -60,6 +60,7 @@ function setup({
   askError = false,
   setState = jest.fn(),
   savedPrompts = [] as SavedPrompt[],
+  savedPromptsError = false,
   savePrompt = jest.fn(),
   removePrompt = jest.fn(),
   touchPrompt = jest.fn(),
@@ -80,6 +81,7 @@ function setup({
   } as unknown as ReturnType<typeof useSetMomentState>)
   mockUseSavedPrompts.mockReturnValue({
     data: savedPrompts,
+    isError: savedPromptsError,
   } as unknown as ReturnType<typeof useSavedPrompts>)
   mockUseCreateSavedPrompt.mockReturnValue({
     mutate: savePrompt,
@@ -218,6 +220,19 @@ describe("Moments", () => {
       render(<Moments />)
       fireEvent.click(screen.getByRole("button", { name: `Remove "${SAVED.text}"` }))
       expect(removePrompt).toHaveBeenCalledWith(SAVED.id)
+    })
+
+    test("hides pinning entirely against a backend without the routes", () => {
+      // The frontend ships to dev and staging-B on merge while the backend is
+      // promoted separately, so an environment WILL exist where these routes
+      // 404. An enabled button that silently fails is worse than no button.
+      setup({ savedPromptsError: true })
+      render(<Moments />)
+      expect(
+        screen.queryByRole("button", { name: /Pin this situation/ })
+      ).not.toBeInTheDocument()
+      // The rest of the page keeps working.
+      expect(screen.getByRole("button", { name: /Get a Moment/ })).toBeInTheDocument()
     })
 
     test("shows no pinned section when the user has kept nothing", () => {

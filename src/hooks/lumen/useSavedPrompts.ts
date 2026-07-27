@@ -10,11 +10,19 @@ import type { SavedPrompt } from "@/types/lumen"
 
 const KEY = ["lumen", "saved-prompts"] as const
 
-/** The caller's kept situations, most-reached-for first. */
+/**
+ * The caller's kept situations, most-reached-for first.
+ *
+ * `retry: false` so an environment whose agent-engine predates the saved-prompts
+ * routes fails fast with a 404 instead of retrying three times. Callers use
+ * `isError` to hide the pin controls entirely there — an enabled button that
+ * silently 404s is worse than no button.
+ */
 export function useSavedPrompts() {
   return useQuery<SavedPrompt[], AxiosError>({
     queryKey: KEY,
     queryFn: async () => (await getSavedPrompts()).data?.prompts ?? [],
+    retry: false,
   })
 }
 

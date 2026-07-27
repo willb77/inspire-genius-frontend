@@ -165,7 +165,12 @@ export default function Moments() {
   const { data: feed, isLoading } = useMoments()
   const { mutate: ask, data: fresh, isPending, isError } = useAskMoment()
 
-  const { data: saved = [] } = useSavedPrompts()
+  // `isError` here means the environment's agent-engine predates the
+  // saved-prompts routes (404). Pinning is then hidden entirely rather than
+  // offered and silently failing — the frontend deploys to dev AND staging-B
+  // on merge, while the backend is promoted separately, so the two genuinely
+  // do run out of step.
+  const { data: saved = [], isError: pinningUnavailable } = useSavedPrompts()
   const { mutate: savePrompt, isPending: isSaving } = useCreateSavedPrompt()
   const { mutate: removePrompt, isPending: isRemoving } = useDeleteSavedPrompt()
   const { mutate: touchPrompt } = useTouchSavedPrompt()
@@ -176,7 +181,7 @@ export default function Moments() {
   // too short, or already pinned — re-saving is a no-op server-side, but an
   // enabled button implies it would do something.
   const alreadyPinned = saved.some((p) => p.text === trimmed.replace(/\s+/g, " "))
-  const canPin = trimmed.length >= 3 && !alreadyPinned
+  const canPin = trimmed.length >= 3 && !alreadyPinned && !pinningUnavailable
 
   const submit = () => {
     if (trimmed.length < 3) return
@@ -241,14 +246,16 @@ export default function Moments() {
               <Sparkles className="mr-1 h-4 w-4" aria-hidden />
               {isPending ? "Composing…" : "Get a Moment"}
             </Button>
-            <Button
-              variant="outline"
-              disabled={!canPin || isSaving}
-              onClick={() => savePrompt({ text: trimmed })}
-            >
-              <Pin className="mr-1 h-4 w-4" aria-hidden />
-              {alreadyPinned ? "Pinned" : "Pin this situation"}
-            </Button>
+            {!pinningUnavailable && (
+              <Button
+                variant="outline"
+                disabled={!canPin || isSaving}
+                onClick={() => savePrompt({ text: trimmed })}
+              >
+                <Pin className="mr-1 h-4 w-4" aria-hidden />
+                {alreadyPinned ? "Pinned" : "Pin this situation"}
+              </Button>
+            )}
             {isError && (
               <span className="text-sm text-destructive">
                 That didn't work. Try again in a moment.
