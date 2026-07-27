@@ -161,6 +161,9 @@ describe("Authoring create → benchmark → save → reload", () => {
     ;(jobDnaHooks.useFinalizeBenchmark as jest.Mock).mockReturnValue({ mutateAsync: finalize, isPending: false })
 
     renderPage(<JobBlueprintAuthoringPage />)
+    // The authoring page lands on a method chooser — pick "Build manually" to
+    // reach the wizard.
+    fireEvent.click(screen.getByRole("button", { name: /build manually/i }))
     fireEvent.click(screen.getByText("submit-wizard"))
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
