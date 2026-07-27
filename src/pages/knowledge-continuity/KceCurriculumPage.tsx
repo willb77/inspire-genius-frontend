@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import {
   ArrowLeft,
   BookText,
@@ -8,6 +9,7 @@ import {
   HelpCircle,
   Layers,
   Loader2,
+  Sparkles,
   ThumbsDown,
   Unlink,
   User,
@@ -31,6 +33,10 @@ import { useAuth } from "@/context/useAuth"
 import { useCurricula } from "@/hooks/knowledge-continuity/useCurricula"
 import { useCurriculum } from "@/hooks/knowledge-continuity/useCurriculum"
 import { useRecordUsage } from "@/hooks/knowledge-continuity/useRecordUsage"
+import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
+import { useCitableUnits } from "@/hooks/knowledge-continuity/useCitableUnits"
+import { useBuildCurriculum } from "@/hooks/knowledge-continuity/useBuildCurriculum"
+import { usePublishCurriculum } from "@/hooks/knowledge-continuity/usePublishCurriculum"
 import type {
   CurriculumItem,
   CurriculumSummary,
@@ -38,6 +44,10 @@ import type {
 } from "@/types/knowledge-continuity"
 
 const ACCENT = "#127A8A"
+
+// Capture/curricula are grouped under a stable org key (the AuthUser carries no
+// organization) — matches the capture front door and the reviewer intake form.
+const CURRICULUM_ORG_ID = "kce-capture"
 
 // ── Validity-band presentation (plain labels, no scoring jargon) ─────────────
 const VALIDITY_BADGE_CLASS: Record<string, string> = {
@@ -454,6 +464,109 @@ function CurriculumWalkthrough({
   )
 }
 
+// ── Build a curriculum (authoring) ───────────────────────────────────────────
+
+function BuildCurriculumPanel({ onPublished }: { onPublished: (templateId: string) => void }) {
+  const { user } = useAuth()
+  const { data: roles = [], isLoading: rolesLoading } = useSavedRoles(CURRICULUM_ORG_ID)
+  const citable = useCitableUnits()
+  const build = useBuildCurriculum()
+  const publish = usePublishCurriculum()
+  const [roleTitle, setRoleTitle] = useState("")
+
+  const busy = citable.isPending || build.isPending || publish.isPending
+  const selected = roles.find((r) => r.role_title === roleTitle)
+
+  async function buildAndPublish() {
+    if (!selected) return
+    try {
+      const source = await citable.mutateAsync(selected.taxonomy_id)
+      if (source.units.length === 0) {
+        toast.error(
+          "This role has no validated knowledge yet. Validate some captured units in the Reviewer Console first."
+        )
+        return
+      }
+      const built = await build.mutateAsync({
+        taxonomy_id: selected.taxonomy_id,
+        units: source.units.map((u) => ({
+          id: u.id,
+          category: u.category,
+          title: u.title,
+          body: u.body,
+          taxonomy_node_id: u.taxonomy_node_id,
+        })),
+      })
+      if (built.modules.length === 0) {
+        toast.error("Couldn't assemble a curriculum from this role's validated knowledge.")
+        return
+      }
+      const res = await publish.mutateAsync({
+        taxonomy_id: selected.taxonomy_id,
+        wiring_style: built.wiring_style ?? "balanced",
+        published_by: user?.id,
+        modules: built.modules,
+      })
+      onPublished(res.template_id)
+    } catch {
+      // errors already surfaced by the mutation hooks
+    }
+  }
+
+  const buttonLabel = publish.isPending
+    ? "Publishing…"
+    : build.isPending
+      ? "Assembling…"
+      : citable.isPending
+        ? "Gathering knowledge…"
+        : "Build & publish"
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Sparkles className="h-4 w-4 text-[#127A8A]" />
+          Build a curriculum
+        </CardTitle>
+        <CardDescription>
+          Turn a role&apos;s validated knowledge into a wiring-adapted learning path for the next
+          person. Only validated and provisional units are used.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="build-role">Role</Label>
+            <select
+              id="build-role"
+              value={roleTitle}
+              onChange={(e) => setRoleTitle(e.target.value)}
+              disabled={rolesLoading || busy}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">{rolesLoading ? "Loading roles…" : "Select a role"}</option>
+              {roles.map((r) => (
+                <option key={r.taxonomy_id} value={r.role_title}>
+                  {r.role_title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button onClick={buildAndPublish} disabled={!selected || busy} className="gap-1.5">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {buttonLabel}
+          </Button>
+        </div>
+        {!rolesLoading && roles.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            No roles yet — blueprint and capture a role first, then validate its knowledge.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── Page ────────────────────────────────────────────────────────────────────
 
 /**
@@ -485,7 +598,10 @@ export default function KceCurriculumPage() {
           onBack={() => setSelectedTemplateId(null)}
         />
       ) : (
-        <CurriculumPicker onSelect={setSelectedTemplateId} />
+        <div className="space-y-6">
+          <BuildCurriculumPanel onPublished={setSelectedTemplateId} />
+          <CurriculumPicker onSelect={setSelectedTemplateId} />
+        </div>
       )}
     </div>
   )

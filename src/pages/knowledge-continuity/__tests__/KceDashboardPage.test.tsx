@@ -9,6 +9,22 @@ jest.mock("@/hooks/knowledge-continuity/useContinuityAnalytics", () => ({
   useContinuityAnalytics: (...a: unknown[]) => mockUseContinuityAnalytics(...a),
 }))
 
+// Recharts renders nothing measurable in jsdom (ResponsiveContainer needs a real
+// layout). Mock it to lightweight DOM so chart assertions stay deterministic.
+jest.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
+  BarChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="bar-chart">{children}</div>
+  ),
+  Bar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Cell: () => <div />,
+  XAxis: () => <div />,
+  YAxis: () => <div />,
+  Tooltip: () => <div />,
+}))
+
 import KceDashboardPage from "../KceDashboardPage"
 
 const ANALYTICS: ContinuityAnalytics = {
@@ -83,5 +99,36 @@ describe("KceDashboardPage", () => {
     expect(screen.getByText("0.91")).toBeInTheDocument()
     expect(screen.getByText("urgent")).toBeInTheDocument()
     expect(screen.getByText("not started")).toBeInTheDocument()
+
+    // Charts
+    expect(screen.getByText("Validity-band distribution")).toBeInTheDocument()
+    expect(screen.getByText("Capture pipeline")).toBeInTheDocument()
+    expect(screen.getAllByTestId("bar-chart").length).toBe(2)
+  })
+
+  test("renders 'No data yet' for the charts when all counts are zero", () => {
+    mockUseContinuityAnalytics.mockReturnValue({
+      data: {
+        ...ANALYTICS,
+        validity_bands: { validated: 0, provisional: 0, needs_review: 0, deprecated: 0 },
+        capture_sessions: {
+          scheduled: 0,
+          in_progress: 0,
+          captured: 0,
+          synthesized: 0,
+          validated: 0,
+        },
+      },
+      isLoading: false,
+      isError: false,
+    })
+    render(<KceDashboardPage />)
+
+    // Both chart cards still render their titles...
+    expect(screen.getByText("Validity-band distribution")).toBeInTheDocument()
+    expect(screen.getByText("Capture pipeline")).toBeInTheDocument()
+    // ...but fall back to the muted empty state instead of a chart.
+    expect(screen.getAllByText("No data yet.").length).toBe(2)
+    expect(screen.queryByTestId("bar-chart")).not.toBeInTheDocument()
   })
 })

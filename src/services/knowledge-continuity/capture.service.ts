@@ -4,6 +4,8 @@ import type { VerticalApiResponse } from "@/verticals/core"
 import type {
   BlueprintGenerateRequest,
   BlueprintGenerateResponse,
+  BuildCurriculumRequest,
+  BuiltCurriculum,
   ExtractRequest,
   ExtractResponse,
   JobDnaTaxonomySeed,
@@ -67,6 +69,21 @@ export async function generateBlueprint(body: BlueprintGenerateRequest) {
 export async function getJobDnaKnowledgeTaxonomy(blueprintId: string) {
   const { data } = await api.get<VerticalApiResponse<JobDnaTaxonomySeed>>(
     `/v1/blueprint/job-dna/${blueprintId}/knowledge-taxonomy`
+  )
+  return data
+}
+
+/**
+ * POST /v1/agents/kce/curriculum/build — Echo assembles already-validated units
+ * into a wiring-adapted curriculum (deterministic, no LLM). The returned
+ * `modules` map 1:1 onto the trainer-service publish body (`publishCurriculum`),
+ * which re-enforces the citation gate. Lives on the Agent Engine, so it routes
+ * through `getApi()` like the other capture LLM/agent endpoints.
+ */
+export async function buildCurriculum(body: BuildCurriculumRequest) {
+  const { data } = await getApi().post<VerticalApiResponse<BuiltCurriculum>>(
+    `/v1/agents/kce/curriculum/build`,
+    body
   )
   return data
 }

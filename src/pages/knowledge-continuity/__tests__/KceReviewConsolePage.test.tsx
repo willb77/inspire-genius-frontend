@@ -29,6 +29,16 @@ jest.mock("@/hooks/knowledge-continuity/useStartCaptureSession", () => ({
   useStartCaptureSession: (...a: unknown[]) => mockUseStartCaptureSession(...a),
 }))
 
+const mockResolveMutate = jest.fn()
+jest.mock("@/hooks/knowledge-continuity/useResolveContradiction", () => ({
+  useResolveContradiction: () => ({ mutate: mockResolveMutate, isPending: false }),
+}))
+
+const mockUseUnitTurns = jest.fn()
+jest.mock("@/hooks/knowledge-continuity/useUnitTurns", () => ({
+  useUnitTurns: (...a: unknown[]) => mockUseUnitTurns(...a),
+}))
+
 import KceReviewConsolePage from "../KceReviewConsolePage"
 
 const UNIT: KnowledgeUnit = {
@@ -54,8 +64,24 @@ const QUEUE_WITH_UNIT: ReviewQueue = {
       id: "contradiction-1",
       from_unit_id: "unit-1",
       to_unit_id: "unit-2",
-      relation_type: "conflicting_procedure",
+      relation_type: "contradicts",
       resolved: false,
+      from_unit: {
+        id: "unit-1",
+        title: "Purge before start",
+        category: "procedure",
+        body: "Always purge the line before ignition.",
+        validity_band: "provisional",
+        kvi: 0.7,
+      },
+      to_unit: {
+        id: "unit-2",
+        title: "Skip the purge",
+        category: "procedure",
+        body: "Never purge; just start.",
+        validity_band: "provisional",
+        kvi: 0.65,
+      },
     },
   ],
 }
@@ -68,6 +94,11 @@ beforeEach(() => {
   mockUseSubmitValidation.mockReturnValue({ mutate: mockMutate, isPending: false })
   mockUseRegisterAtRiskRole.mockReturnValue({ mutate: jest.fn(), isPending: false })
   mockUseStartCaptureSession.mockReturnValue({ mutate: jest.fn(), isPending: false })
+  mockUseUnitTurns.mockReturnValue({
+    data: { unit_id: "unit-1", session_id: "session-1", taxonomy_node_id: null, turns: [] },
+    isLoading: false,
+    isError: false,
+  })
 })
 
 describe("KceReviewConsolePage", () => {
@@ -79,7 +110,57 @@ describe("KceReviewConsolePage", () => {
     expect(screen.getByText("process")).toBeInTheDocument()
     expect(screen.getByText("High criticality")).toBeInTheDocument()
     expect(screen.getByText("KVI 0.62")).toBeInTheDocument()
-    expect(screen.getByText(/unit-1.*unit-2/)).toBeInTheDocument()
+    // the contradiction shows both units' titles, side by side
+    expect(screen.getByText("Purge before start")).toBeInTheDocument()
+    expect(screen.getByText("Skip the purge")).toBeInTheDocument()
+  })
+
+  test("superseding a contradiction resolves it with the chosen winner", async () => {
+    mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    const keepButtons = screen.getAllByRole("button", { name: /keep this, retire the other/i })
+    await user.click(keepButtons[0]) // keep from_unit (unit-1)
+
+    expect(mockResolveMutate).toHaveBeenCalledWith({
+      relationId: "contradiction-1",
+      body: { action: "supersede", winner_unit_id: "unit-1" },
+    })
+  })
+
+  test("dismissing a contradiction resolves it as not-a-contradiction", async () => {
+    mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    await user.click(screen.getByRole("button", { name: /not a contradiction/i }))
+
+    expect(mockResolveMutate).toHaveBeenCalledWith({
+      relationId: "contradiction-1",
+      body: { action: "dismiss" },
+    })
+  })
+
+  test("replaying the interview shows a unit's captured turns", async () => {
+    mockUseReviewQueue.mockReturnValue({ data: QUEUE_WITH_UNIT, isLoading: false, isError: false })
+    mockUseUnitTurns.mockReturnValue({
+      data: {
+        unit_id: "unit-1",
+        session_id: "session-1",
+        taxonomy_node_id: "node-1",
+        turns: [{ id: "t1", session_id: "session-1", taxonomy_node_id: "node-1", seq: 0, question: "How do you shut down?", response: "Close the main valve first." }],
+      },
+      isLoading: false,
+      isError: false,
+    })
+    const user = userEvent.setup()
+    render(<KceReviewConsolePage />)
+
+    await user.click(screen.getByRole("button", { name: /replay the interview/i }))
+
+    expect(screen.getByText("How do you shut down?")).toBeInTheDocument()
+    expect(screen.getByText("Close the main valve first.")).toBeInTheDocument()
   })
 
   test("clicking Approve submits a confirm verdict for the current user", async () => {
