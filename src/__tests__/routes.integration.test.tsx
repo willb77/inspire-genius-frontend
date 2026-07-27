@@ -91,6 +91,9 @@ const pageModules: Record<string, string> = {
   "@/pages/user/Documents": "UserDocumentsPage",
   "@/pages/user/Settings": "UserSettingsPage",
   "@/pages/user/Help": "UserHelpPage",
+  // /help now renders the support-request surface; the previous Help page (and
+  // its V2 re-skin) live at /help/classic.
+  "@/pages/user/Support": "UserSupportPage",
   "@/pages/user/PrismAssessment": "PrismAssessmentPage",
   "@/pages/user/FeedbackHistory": "FeedbackHistoryPage",
   "@/pages/user/Analytics": "UserAnalyticsPage",
@@ -331,7 +334,9 @@ describe("Route Integration Tests", () => {
       { path: "/coaches", testId: "UserCoachesPage" },
       { path: "/documents", testId: "UserDocumentsPage" },
       { path: "/settings", testId: "UserSettingsPage" },
-      { path: "/help", testId: "UserHelpPage" },
+      { path: "/help", testId: "UserSupportPage" },
+      { path: "/help/classic", testId: "UserHelpPage" },
+      { path: "/support", testId: "UserSupportPage" },
     ];
 
     it.each(userAccessible)(
