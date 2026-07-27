@@ -1,3 +1,45 @@
+## [2026-07-27] — Lumen + Job Fit UX build (COMPLETE, merged + live on dev)
+
+Resumed the paused `/full-go` and finished all five UX asks across both verticals. Five PRs — 3 merged, 2 open. Backend and frontend both **deployed and verified on dev**; staging-B has the frontend only (see the gap below).
+
+### Fixed — the broken WIP branch
+`feat/lumen-clarity-coaching` did not build: it referenced `ROUTES.LUMEN.COACHING` (never added), had no coaching page, and was not route-wired. All three fixed. Landed as `feat/lumen-clarity-coaching-v2` because the original needed a force-push after rebasing off a duplicated docs commit, and force-push is always-confirm.
+
+### Added — Lumen purpose and intent (#1)
+The dashboard now says what Lumen is before listing its parts, and each surface states **what triggers it**. "Personal coaching" had been landing as a mystery next to Moments; the distinction is push vs pull — Moments arrive when something is coming up, coaching is where you go with a question you already have. Pinned by a test rather than left as deletable copy.
+
+### Added — Self-Portrait from all four sources (#2)
+- **Backend** (`compose_portrait`): draws on PRISM, other assessments, résumé, and bio, and produces a useful read from any **one**. Adds `sources` (all four flags, always) and a `coverage` line.
+- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now *downgrades* the read instead of cancelling it, while still anchoring reconciliation where present.
+- **Frontend:** renders all four sources **including the ones you don't have**, with what each would add. Showing the gaps is the point. The no-PRISM card no longer claims "your portrait isn't ready yet".
+- Verified live on dev: `sources={prism:true, assessments:false, resume:true, bio:false}`, coverage names the missing instrument.
+
+### Added — Personal coaching (#3)
+Source checkboxes (defaulting to everything on file — Lumen's proposition is that the coach already knows you, so opting *out* is the deliberate act), a free-text "anything else", and 5×10 questions across Goals / Education / Career / Jobs / Relationships that inject into Meridian and **auto-submit** via the existing `{prefillPrompt, autoSubmit}` mechanism. Sources you lack are shown **disabled, not hidden**, so the page doubles as a prompt to add them.
+
+**Stated honestly in the code:** the checkboxes are written into the opening message as a *scope instruction*, not a server-side filter — the platform loads a profile ambiently and the page cannot unload it. Exclusions are named as well as inclusions, because someone who unticks their résumé means "don't argue from my job history", which an inclusion-only line never says.
+
+### Added — pinned situations (#4)
+Half the ask already worked: every Moment stores the situation with its guidance, so recall is the feed. What was missing is **curation**. New `lumen_saved_prompts` table (**migration 022**; 021 was taken by `dossier_jobs`) + 4 self-scoped routes. Ordered by what you actually reach for, not by what you saved last. Re-saving **promotes** rather than duplicating — verified live on dev, same row id, `use_count` 0→1, whitespace-normalised so `"a 1:1  "` and `"a 1:1"` collide.
+
+Called **"Pin"**, not "Save": the Moment cards already have a Save meaning something different (keep this guidance), and the collision was real enough that both buttons matched the same test query.
+
+### Added — navigation (#5) and Job Fit purpose copy
+`LumenNav`/`LumenShell` from a **pathless layout route**, not a shared header — putting nav in a presentational header is what broke every Job-Fit page test. Onboarding sits outside it deliberately. Job Fit gained its own purpose panel: a fit percentage with no framing reads as a verdict, and a low one reads as a rejection.
+
+### Fixed — frontend deploying ahead of the backend
+Probing staging-B after merge (rather than assuming) found the FE pipeline deploys to **dev *and* staging-B** on push, while the agent-engine is promoted separately by tag. The new UI went live on staging-B against a backend with neither the saved-prompts routes nor `sources`: a dead "Pin" button that silently 404'd, and a coaching page telling PRISM-complete users *"we have nothing to read about you yet"*. **"No sources field" is not "no sources".** Both now degrade honestly; the Self-Portrait already did, which is what made the other two stand out.
+
+### Fixed — migration-runner payload shape documented wrong
+The runner takes SQL **inline** as `{"sql": "..."}`; `{"sql_file": "..."}` returns 400. My header comment was copied from `lumen_consent.sql`, which is also wrong — as are several other mirrors in that directory, all written before anyone ran them. Corrected for the new file only.
+
+### Deployed + verified
+- **dev:** migration 022 applied, schema read back from `information_schema` (8 columns, 3 indexes) rather than trusted from the runner's exit code; agent-engine rolled; endpoints exercised end-to-end with a real token; probe row cleaned up afterwards.
+- **staging-B:** frontend only. Backend promotion is a separate, wider-blast-radius call — a release tag promotes everything on `development`, including other terminals' merged work — so it is flagged, not taken.
+
+### PRs
+Merged: BE #705, FE #292, FE #293. Open: BE #707 (doc fix), FE #295 (back-compat).
+
 ## [2026-07-27] — Lumen + Job Fit UX build (PAUSED mid-flight for compaction)
 
 A `/full-go` covering five UX asks across two verticals. **Job Fit is done; Lumen is part-done and one branch does not build.** Nothing is deployed. Recorded here honestly so the next session can pick it up — see the `lumen-jobfit-ux` resume pointer.
