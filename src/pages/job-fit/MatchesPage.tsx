@@ -12,6 +12,7 @@ import {
   FitError,
 } from "./_shared"
 import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
+import FitPurpose from "./FitPurpose"
 import { bandTone, bandLabel, tierLabel, variationDescriptor } from "./_fit"
 
 /** One ranked role match, linking through to its fit detail. */
@@ -59,6 +60,8 @@ export default function MatchesPage() {
         title="Your Role Matches"
         description="How your behavioral profile lines up with open roles — ranked from closest match."
       />
+
+      <FitPurpose />
 
       <div className="mb-5">
         <MatchingValidationBanner />
