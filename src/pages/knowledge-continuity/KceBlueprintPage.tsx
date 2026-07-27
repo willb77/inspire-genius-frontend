@@ -600,7 +600,14 @@ function SavedRoleView({
               </div>
             </div>
           </div>
-          <Button type="button" onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE)}>
+          <Button
+            type="button"
+            onClick={() =>
+              navigate(
+                `${ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE}?role=${encodeURIComponent(blueprint.role_title)}`
+              )
+            }
+          >
             <MessagesSquare className="mr-2 h-4 w-4" /> Start a capture
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -650,7 +657,11 @@ function DoneStep({
         <div className="mx-auto grid max-w-md gap-3 text-left">
           <button
             type="button"
-            onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE)}
+            onClick={() =>
+              navigate(
+                `${ROUTES.KNOWLEDGE_CONTINUITY.CAPTURE}?role=${encodeURIComponent(roleTitle)}`
+              )
+            }
             className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
           >
             <MessagesSquare className="h-5 w-5 shrink-0 text-primary" />
