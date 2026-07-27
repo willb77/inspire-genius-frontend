@@ -437,6 +437,11 @@ jobs:
             # coachClient service reads real data here instead of the stub
             # fixtures. Remove this line to fall back to stubs on staging-b.
             echo "VITE_COACH_BACKEND=true"
+            # Credit-write controls (Phase 6.5) — now ON for staging-b: the backend
+            # CREDITS_WRITE_ENABLED flag is enabled on the staging-b dashboard Lambda,
+            # so purchase/allocate/use call real endpoints here. Remove this line to
+            # keep the controls inert (wireframe buttons) on staging-b.
+            echo "VITE_CREDITS_WRITE=true"
           } >> .env
 
       - name: Install dependencies
