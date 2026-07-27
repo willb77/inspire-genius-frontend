@@ -1,13 +1,17 @@
 import { api } from "@/lib/axios"
 import type { VerticalApiResponse } from "@/verticals/core"
 import type {
+  CitableUnits,
   ContinuityAnalytics,
   CreateTaxonomyRequest,
   CurriculumDetail,
   CurriculumSummary,
   ExtractedUnit,
+  PublishCurriculumRequest,
+  PublishCurriculumResult,
   RecordTurnRequest,
   RegisterRiskRequest,
+  ResolveContradictionRequest,
   ReviewQueue,
   RiskEntry,
   StartSessionRequest,
@@ -15,6 +19,7 @@ import type {
   SavedRole,
   SavedRoleBlueprint,
   TaxonomyNode,
+  UnitTurns,
   UsageRequest,
   ValidationRequest,
   ValidationResponse,
@@ -178,6 +183,60 @@ export async function getCurriculum(templateId: string) {
 export async function recordUsage(unitId: string, body: UsageRequest) {
   const { data } = await api.post<VerticalApiResponse<unknown>>(
     `${PREFIX}/units/${unitId}/usage`,
+    body
+  )
+  return data
+}
+
+/**
+ * POST /v1/trainer/continuity/units/relations/{relationId}/resolve — reviewer
+ * adjudication of a candidate contradiction (dismiss | keep_both | supersede).
+ */
+export async function resolveContradiction(
+  relationId: string,
+  body: ResolveContradictionRequest
+) {
+  const { data } = await api.post<VerticalApiResponse<unknown>>(
+    `${PREFIX}/units/relations/${relationId}/resolve`,
+    body
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/units/{unitId}/turns — the interview exchanges
+ * behind a synthesized unit ("replay the utterance" provenance).
+ */
+export async function getUnitTurns(unitId: string) {
+  const { data } = await api.get<VerticalApiResponse<UnitTurns>>(
+    `${PREFIX}/units/${unitId}/turns`
+  )
+  return data
+}
+
+/**
+ * GET /v1/trainer/continuity/units?taxonomy_id=&bands= — a role's citable units
+ * (validated|provisional by default), the source set a curriculum is built from.
+ */
+export async function listCitableUnits(
+  taxonomyId: string,
+  bands = "validated,provisional"
+) {
+  const { data } = await api.get<VerticalApiResponse<CitableUnits>>(
+    `${PREFIX}/units`,
+    { params: { taxonomy_id: taxonomyId, bands } }
+  )
+  return data
+}
+
+/**
+ * POST /v1/trainer/continuity/curricula — publish a built curriculum. The
+ * server re-enforces the citation gate (every item must cite ≥1
+ * validated/provisional unit) before persisting.
+ */
+export async function publishCurriculum(body: PublishCurriculumRequest) {
+  const { data } = await api.post<VerticalApiResponse<PublishCurriculumResult>>(
+    `${PREFIX}/curricula`,
     body
   )
   return data

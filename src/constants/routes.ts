@@ -16,6 +16,7 @@ export const ROUTES = {
   SETTINGS: "/settings",
   SETTINGS_PRIVACY: "/settings/privacy",
   HELP: "/help",
+  SUPPORT: "/support",
   FEEDBACK: "/feedback",
   ANALYTICS: "/analytics",
   MERIDIAN_CHAT: "/meridian/chat",
@@ -201,6 +202,8 @@ export const ROUTES = {
     MATCHES: "/vertical/job-fit/matches",
     GAPS: "/vertical/job-fit/gaps",
     PATHWAY: "/vertical/job-fit/pathway",
+    BLUEPRINT: "/vertical/job-fit/blueprint",
+    COACH: "/vertical/job-fit/coach",
     /** Route pattern for a single role's fit detail (matched by <Route path>). */
     DETAIL: "/vertical/job-fit/fit/:jobId",
     /** Build the fit-detail path for a concrete role id. */
@@ -223,6 +226,7 @@ export const ROUTES = {
     DASHBOARD: "/vertical/lumen/dashboard",
     SELF_PORTRAIT: "/vertical/lumen/self-portrait",
     MOMENTS: "/vertical/lumen/moments",
+    COACHING: "/vertical/lumen/coaching",
     SETTINGS: "/vertical/lumen/settings",
     ONBOARDING: "/vertical/lumen/onboarding",
   },

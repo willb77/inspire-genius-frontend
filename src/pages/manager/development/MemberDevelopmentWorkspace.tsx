@@ -127,6 +127,20 @@ export default function MemberDevelopmentWorkspace() {
     )
   }
 
+  // Async compute in flight: the dossier orchestrates ~6 agents (~60s), so the
+  // backend returns 202 while the job runs and useMemberDossier polls. `null`
+  // = computing (distinct from `undefined`/error below).
+  if (dossier === null) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">
+        <RefreshCw className="h-6 w-6 animate-spin text-slate-400" aria-hidden="true" />
+        <p className="text-sm text-slate-500">
+          Generating the development dossier — this can take up to a minute…
+        </p>
+      </div>
+    )
+  }
+
   if (isError || !dossier) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">

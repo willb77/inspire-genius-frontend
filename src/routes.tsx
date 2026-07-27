@@ -45,6 +45,7 @@ const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
+const SupportPage = React.lazy(() => import("@/pages/user/Support"));
 // Wave 1 — new-design (HomeV2 system) variants of high-traffic user pages.
 // Flag-gated additive swaps; classic pages stay reachable at /<path>/classic.
 const CoachesV2 = React.lazy(() => import("@/pages/user/CoachesV2"));
@@ -207,7 +208,9 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 
 // Lumen — B2C personal diagnostics + just-in-time coaching (entitlement-gated)
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
+const LumenShell = React.lazy(() => import("@/pages/lumen/LumenNav"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
+const LumenCoaching = React.lazy(() => import("@/pages/lumen/CoachingPage"));
 const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
 const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 const LumenSettings = React.lazy(() => import("@/pages/lumen/LumenSettings"));
@@ -243,6 +246,9 @@ const JobFitMatchesPage = React.lazy(() => import("@/pages/job-fit/MatchesPage")
 const JobFitDetailPage = React.lazy(() => import("@/pages/job-fit/FitDetailPage"));
 const JobFitGapsPage = React.lazy(() => import("@/pages/job-fit/GapsPage"));
 const JobFitPathwayPage = React.lazy(() => import("@/pages/job-fit/PathwayPage"));
+const JobFitBlueprintPage = React.lazy(() => import("@/pages/job-fit/BlueprintStudioPage"));
+const JobFitCoachPage = React.lazy(() => import("@/pages/job-fit/CoachPage"));
+const JobFitShell = React.lazy(() => import("@/pages/job-fit/FitShell"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
@@ -412,8 +418,16 @@ export const routes: RouteObject[] = [
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
-      { path: "/help", element: withSuspense(<HelpSurface />) },
-      { path: "/help/classic", element: withSuspense(<HelpPage />) },
+      // Help & Support is the support-request surface: it posts to
+      // support-service (/v1/support/tickets), which emails
+      // contact@inspiresgenius.com on every submission.
+      { path: "/help", element: withSuspense(<SupportPage />) },
+      // The previous Help page — and its flag-gated V2 re-skin — posted to the
+      // legacy monolith /v1/issues (which has no route on staging-b). Both are
+      // preserved here rather than deleted.
+      { path: "/help/classic", element: withSuspense(<HelpSurface />) },
+      // Alias so /support keeps working for anyone who has it bookmarked.
+      { path: "/support", element: withSuspense(<SupportPage />) },
       { path: "/prism-assessment", element: withSuspense(<PrismAssessmentSurface />) },
       { path: "/prism-assessment/classic", element: withSuspense(<PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistorySurface />) },
@@ -591,10 +605,19 @@ export const routes: RouteObject[] = [
         element: withSuspense(<LumenLayout />),
         children: [
           { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
-          { path: "dashboard", element: withSuspense(<LumenDashboard />) },
-          { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
-          { path: "moments", element: withSuspense(<LumenMoments />) },
-          { path: "settings", element: withSuspense(<LumenSettings />) },
+          // Pathless layout: the in-vertical nav renders above every tool page.
+          // Onboarding sits outside it deliberately — it is a funnel, and a row
+          // of links to surfaces that are not ready yet invites leaving it.
+          {
+            element: withSuspense(<LumenShell />),
+            children: [
+              { path: "dashboard", element: withSuspense(<LumenDashboard />) },
+              { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
+              { path: "moments", element: withSuspense(<LumenMoments />) },
+              { path: "coaching", element: withSuspense(<LumenCoaching />) },
+              { path: "settings", element: withSuspense(<LumenSettings />) },
+            ],
+          },
           { path: "onboarding", element: withSuspense(<LumenOnboarding />) },
         ],
       },
@@ -637,10 +660,18 @@ export const routes: RouteObject[] = [
         element: withSuspense(<JobFitLayout />),
         children: [
           { index: true, element: <Navigate to="/vertical/job-fit/matches" replace /> },
-          { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
-          { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
-          { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
-          { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+          // Pathless layout route: renders the in-vertical nav above every page.
+          {
+            element: withSuspense(<JobFitShell />),
+            children: [
+              { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
+              { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
+              { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
+              { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+              { path: "blueprint", element: withSuspense(<JobFitBlueprintPage />) },
+              { path: "coach", element: withSuspense(<JobFitCoachPage />) },
+            ],
+          },
         ],
       },
 
