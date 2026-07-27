@@ -16,6 +16,7 @@ export const ROUTES = {
   SETTINGS: "/settings",
   SETTINGS_PRIVACY: "/settings/privacy",
   HELP: "/help",
+  SUPPORT: "/support",
   FEEDBACK: "/feedback",
   ANALYTICS: "/analytics",
   MERIDIAN_CHAT: "/meridian/chat",
