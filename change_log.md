@@ -1,3 +1,41 @@
+## [2026-07-26] — Support request system: post an issue, notify contact@inspiresgenius.com
+
+New authenticated surface where anyone on the platform can post a help/issue request. Every submission emails the support inbox with the poster's contact block and their full description, so support can reply without a lookup.
+
+Built on the **already-deployed but orphaned** `support-service` (`/v1/support/tickets`) rather than a new service — the Lambda already carried the `ses:SendEmail` grant, and `src/services/support/support.service.ts` + `src/hooks/support/useSupportTickets.ts` already existed with zero importers. The legacy `/help` page (monolith `/v1/issues`) is untouched.
+
+### Added — support-service
+- **`app/email.py`** (new) — cached module-level SES client (mirrors broadcast-service) + `render_support_request_email()`, a branded HTML notification (NAVY/TEAL/GOLD, priority accent, non-prod env banner). Body carries the contact block, the verbatim description (newlines preserved, all user input HTML-escaped), ticket metadata and a deep link. `ReplyToAddresses` is set to the requester, so Reply in the inbox goes straight back to them.
+- **`app/schemas.py`** — `MIN_DESCRIPTION_CHARS = 30` enforced by a `field_validator` (NOT `Field(min_length=)`, which short-circuits and would replace the guidance with pydantic's generic "String should have at least 30 characters"). Rejection text names what to include: what you were doing, what you expected, what happened. Contact fields validated with a light regex rather than `EmailStr` to avoid pulling `email-validator` into the bundle.
+- **`app/models.py`** + **`alembic/versions/002_support_ticket_contact_fields.py`** — nullable `contact_name` / `contact_email` / `contact_phone`.
+- **`tests/test_notifications.py`** (new, 24 tests) — detail enforcement, contact capture, HTML escaping, reply-to routing, and that an SES outage still returns 201 (the ticket is already committed; the send is best-effort and swallowed).
+
+### Changed — support-service
+- **`app/routes.py` / `app/service.py`** — ticket ownership and the fallback contact email now come from the **verified JWT**, not the request body. Previously `user_id` was taken from client-supplied JSON, so a caller could file a ticket in another user's name. `TicketCreate.user_id` is now optional and ignored when a token is present. Two existing filter tests were rewritten to assert the new rule (a spoofed `user_id` owns nothing).
+- **`app/main.py`** — `logging.basicConfig(..., force=True)`. The Lambda runtime installs a root handler at WARNING before import, making the previous call a silent no-op that swallowed every INFO record — including the notification receipt. Without this the SES MessageId was unverifiable.
+
+### Added — frontend
+- **`src/pages/user/Support.tsx`** + **`src/components/support/SupportRequestForm.tsx`** + **`SupportRequestList.tsx`** — the **Help & Support** surface at `/help`, contact block prefilled from the signed-in user (backfilled when auth hydrates late, never clobbering typing) and editable; category/priority/subject; a description box whose placeholder and helper text prompt for real detail, with a live "N more to go" counter. After submit the contact block is kept and only the issue fields clear.
+- **`src/types/support/component-types.ts`** — Zod schema mirroring the server's 30-char rule so the guidance shows inline instead of via a round-trip 422.
+- **`src/pages/user/__tests__/Support.test.tsx`** (8 tests).
+
+### Changed — frontend
+- **`src/hooks/support/useSupportTickets.ts`** — Sonner toasts on create/message. Added an `errorMessage()` extractor because the service is FastAPI: validation arrives as `{detail:[{msg}]}`, not `{message}`, so without it the user saw a generic failure instead of the detail guidance.
+- **`src/routes.tsx`** — `/help` now renders the support-request surface. The previous Help page **and** its flag-gated `HelpV2` re-skin (both posting to the legacy monolith `/v1/issues`) are preserved together at `/help/classic` rather than deleted; `/support` is kept as an alias. The existing "Help & Support" nav item already points at `/help`, so **`navigation.ts` is unchanged** — no second nav entry. The Voice Help callout was carried across so that route is not lost.
+
+### Changed — CDK
+- **`lib/services-stack.ts`** — support Lambda gains `SUPPORT_NOTIFY_EMAIL=contact@inspiresgenius.com`, `SUPPORT_NOTIFY_ENABLED`, `SES_FROM_EMAIL=noreply@3pp.com` (the uniform convention documented on auth-service), `SES_REGION`, `APP_BASE_URL`, and `ENVIRONMENT` (config.py uses `env_prefix=""`, so the pre-existing `SUPPORT_SERVICE_ENVIRONMENT` was never read). Timeout 15s→30s for the synchronous SES call; `staging-b` added to the reserved-concurrency list — it was the only env without one.
+
+### Deployed (dev) + verified
+- Migration 002 applied to dev Aurora via `ig-dev-migration-runner` (idempotent `ADD COLUMN IF NOT EXISTS`); columns confirmed present.
+- Lambda code + config deployed **surgically** (`update-function-code` / `update-function-configuration`) rather than `cdk deploy ig-dev-services`. `cdk diff` showed 9 unrelated Lambdas (Auth, Coach, Org, UserMgmt, Dashboard, Document, 3x Observability) with new code hashes purely from re-bundling unpinned deps — a full stack deploy would have shipped fastapi 0.140 / boto3 1.43.56 / sqlalchemy 2.0.51 to all of them. The CDK change is committed so the next full deploy stays consistent.
+- End-to-end on dev: short description → **422** with the guidance text; full request → **201** with the contact block echoed; `user_id` resolved from the token, not the body; list returns the ticket. **SES MessageId `0100019fa19db38a-569be79a-e256-45c4-bf8e-6cc00d2e477e-000000`** logged for the send to contact@inspiresgenius.com. Verification tickets deleted afterwards (dev left at 0).
+- Tests: support-service **78 passed**; frontend support suites **25 passed**; `npm run build` clean; ESLint adds 0 new errors (11 pre-existing in `routes.tsx`, identical before and after).
+
+### Known gaps (not introduced here)
+- An unrelated pre-existing IAM gap on the support Lambda role is tracked in the private infrastructure repo; it does not affect this feature.
+- Not deployed to staging-b. The support Lambda there has no reserved concurrency until the CDK change deploys, and per `services-stack.ts` the staging-b SES account's production-access status should be confirmed before enabling notifications.
+
 ## [2026-07-26] — Lumen promoted to staging-B
 
 Tag `release-stable-2026-07-26-lumen` on `development` → `staging-b-promote.yml` **all six jobs green** (pre-flight, agent-engine image, `cdk deploy --all`, ECS rollout, authenticated smoke matrix, notify).
