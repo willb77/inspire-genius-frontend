@@ -23,8 +23,8 @@ describe("useDraftBenchmark", () => {
   beforeEach(() => jest.clearAllMocks())
 
   it("returns the drafted benchmark on success", async () => {
-    const payload = { role_title: "CIO", archetype: "executive", rationale: "r", behaviors: [], aptitudes: [], core_traits: [] }
-    draftBenchmark.mockResolvedValue({ data: { data: payload } })
+    const payload = { role_title: "CIO", archetype: "executive", rationale: "r", behaviors: [{ dimension_id: 1 }], aptitudes: [], core_traits: [] }
+    draftBenchmark.mockResolvedValue({ data: payload })
 
     const { result } = renderHook(() => useDraftBenchmark(), { wrapper })
     act(() => { result.current.mutate({ role_title: "CIO", archetype: "executive" }) })
@@ -35,7 +35,7 @@ describe("useDraftBenchmark", () => {
   })
 
   it("surfaces a toast and errors when no blueprint is returned", async () => {
-    draftBenchmark.mockResolvedValue({ data: { data: null } })
+    draftBenchmark.mockResolvedValue({ data: null })
 
     const { result } = renderHook(() => useDraftBenchmark(), { wrapper })
     act(() => { result.current.mutate({ role_title: "CIO" }) })

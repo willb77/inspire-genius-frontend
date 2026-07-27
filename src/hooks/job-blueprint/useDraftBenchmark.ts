@@ -13,8 +13,10 @@ export function useDraftBenchmark() {
   return useMutation<DraftBenchmarkResponse, Error, DraftBenchmarkRequest>({
     mutationFn: async (body) => {
       const res = await draftService.draftBenchmark(body)
-      const data = res.data.data
-      if (!data) throw new Error('No blueprint returned from the server')
+      // The draft-benchmark endpoint returns a FLAT object (no {status,data}
+      // envelope) — see agent-engine app/routes/blueprint_draft.py.
+      const data = res.data
+      if (!data || !data.behaviors) throw new Error('No blueprint returned from the server')
       return data
     },
     onError: () => {

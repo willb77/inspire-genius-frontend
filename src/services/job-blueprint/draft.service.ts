@@ -1,5 +1,4 @@
 import { getApi } from '@/lib/agentApi'
-import type { BaseApiResponse } from '@/types/api'
 import type { DraftBenchmarkRequest, DraftBenchmarkResponse } from '@/types/job-blueprint'
 
 /**
@@ -11,7 +10,7 @@ import type { DraftBenchmarkRequest, DraftBenchmarkResponse } from '@/types/job-
  */
 export const draftService = {
   draftBenchmark(body: DraftBenchmarkRequest) {
-    return getApi().post<BaseApiResponse<DraftBenchmarkResponse>>(
+    return getApi().post<DraftBenchmarkResponse>(
       '/v1/agents/blueprint/draft-benchmark',
       body,
     )
