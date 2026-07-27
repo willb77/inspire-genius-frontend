@@ -224,6 +224,7 @@ export const ROUTES = {
     DASHBOARD: "/vertical/lumen/dashboard",
     SELF_PORTRAIT: "/vertical/lumen/self-portrait",
     MOMENTS: "/vertical/lumen/moments",
+    COACHING: "/vertical/lumen/coaching",
     SETTINGS: "/vertical/lumen/settings",
     ONBOARDING: "/vertical/lumen/onboarding",
   },

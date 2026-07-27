@@ -1,10 +1,16 @@
-import { AlertTriangle, Handshake, Sparkles } from "lucide-react"
+import { AlertTriangle, Check, Handshake, Minus, Sparkles } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
-import type { PrismQuadrant, PrismQuadrantScores } from "@/types/lumen"
+import type {
+  PortraitSourceKey,
+  PortraitSources,
+  PrismQuadrant,
+  PrismQuadrantScores,
+} from "@/types/lumen"
 
 /**
  * "My Self-Portrait" — one coherent behavioral read across every instrument.
@@ -13,6 +19,11 @@ import type { PrismQuadrant, PrismQuadrantScores } from "@/types/lumen"
  * backend reconciles everything else against. Corroborating instruments are
  * ordered most-trustworthy first, and tensions are shown rather than smoothed
  * over — a disagreement between instruments is usually the interesting part.
+ *
+ * The page also states **what it is built from** — PRISM, other assessments,
+ * résumé, bio — including the ones you don't have. Showing the gaps is the
+ * point: a portrait resting on a résumé alone is a real portrait, but the reader
+ * deserves to know that's what they're looking at, and what would sharpen it.
  */
 
 const QUADRANT_CLASS: Record<PrismQuadrant, string> = {
@@ -41,13 +52,93 @@ function PortraitSkeleton() {
   )
 }
 
-function NoPrismState({ headline }: { headline: string }) {
+const SOURCE_ROWS: { key: PortraitSourceKey; label: string; missing: string }[] = [
+  {
+    key: "prism",
+    label: "PRISM",
+    missing: "Complete PRISM and everything else gets an anchor to reconcile against.",
+  },
+  {
+    key: "assessments",
+    label: "Other assessments",
+    missing: "A second instrument is what turns a report into a corroboration.",
+  },
+  { key: "resume", label: "Résumé", missing: "Adds evidence to weigh the tendencies against." },
+  { key: "bio", label: "Bio", missing: "How you'd describe yourself is a signal in its own right." },
+]
+
+/**
+ * What the portrait is built from, present and absent alike.
+ *
+ * Rendered even when every source is missing — that state is precisely the one
+ * where a user needs to be told why the page looks thin.
+ */
+function SourceCoverage({ sources, coverage }: { sources: PortraitSources; coverage?: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Your portrait isn't ready yet</CardTitle>
+        <CardTitle className="text-base">What this is built from</CardTitle>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">{headline}</CardContent>
+      <CardContent className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SOURCE_ROWS.map(({ key, label, missing }) => {
+            const present = sources[key]
+            return (
+              <div
+                key={key}
+                className={cn(
+                  "flex items-start gap-2 rounded-lg border p-3 text-sm",
+                  present ? "border-emerald-200 bg-emerald-50/50" : "border-dashed"
+                )}
+              >
+                {present ? (
+                  <Check
+                    className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                    aria-label="on file"
+                  />
+                ) : (
+                  <Minus
+                    className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-label="not on file"
+                  />
+                )}
+                <span>
+                  <span className="block font-medium">{label}</span>
+                  {!present && (
+                    <span className="block text-xs text-muted-foreground">{missing}</span>
+                  )}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        {coverage && <p className="text-sm text-muted-foreground">{coverage}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * Shown in place of the PRISM card when there's no PRISM on file.
+ *
+ * Deliberately not titled "your portrait isn't ready" any more: with the
+ * four-source composer a résumé or a bio produces a genuine read, and telling
+ * someone who just uploaded one that nothing is ready is both wrong and the
+ * fastest way to lose them.
+ */
+function NoPrismState({ headline }: { headline: string }) {
+  return (
+    <Card className="border-dashed">
+      <CardHeader>
+        <CardTitle className="text-base">No PRISM profile yet</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <p>{headline}</p>
+        <p>
+          PRISM is the anchor the other sources reconcile against — without it this
+          reads what you've told us, but can't yet corroborate it.
+        </p>
+      </CardContent>
     </Card>
   )
 }
@@ -94,6 +185,10 @@ export default function SelfPortrait() {
           ))}
         </div>
       </header>
+
+      {portrait.sources && (
+        <SourceCoverage sources={portrait.sources} coverage={portrait.coverage} />
+      )}
 
       {!portrait.prism ? (
         <NoPrismState headline={portrait.headline} />
