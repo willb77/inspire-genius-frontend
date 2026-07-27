@@ -36,4 +36,27 @@ describe("fitService", () => {
     await fitService.getPathway()
     expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/pathway")
   })
+
+  // ── Decision D4 — scoring-method choice ──
+  test("gap method sends no ?method (bare GET, backend default)", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: [] } })
+    await fitService.getMatches("gap")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/matches")
+  })
+
+  test("closeness method sends ?method=closeness", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: [] } })
+    await fitService.getMatches("closeness")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/matches", {
+      params: { method: "closeness" },
+    })
+  })
+
+  test("getDetail forwards the closeness method", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: { data: { jobId: "j1" } } })
+    await fitService.getDetail("j1", "closeness")
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/blueprint/fit/j1", {
+      params: { method: "closeness" },
+    })
+  })
 })
