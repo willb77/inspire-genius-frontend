@@ -45,6 +45,7 @@ const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
 const HelpPage = React.lazy(() => import("@/pages/user/Help"));
+const SupportPage = React.lazy(() => import("@/pages/user/Support"));
 // Wave 1 — new-design (HomeV2 system) variants of high-traffic user pages.
 // Flag-gated additive swaps; classic pages stay reachable at /<path>/classic.
 const CoachesV2 = React.lazy(() => import("@/pages/user/CoachesV2"));
@@ -412,8 +413,16 @@ export const routes: RouteObject[] = [
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
       { path: "/settings/privacy", element: withSuspense(<UserSettingsPrivacySurface />) },
       { path: "/settings/privacy/classic", element: withSuspense(<UserSettingsPrivacy />) },
-      { path: "/help", element: withSuspense(<HelpSurface />) },
-      { path: "/help/classic", element: withSuspense(<HelpPage />) },
+      // Help & Support is the support-request surface: it posts to
+      // support-service (/v1/support/tickets), which emails
+      // contact@inspiresgenius.com on every submission.
+      { path: "/help", element: withSuspense(<SupportPage />) },
+      // The previous Help page — and its flag-gated V2 re-skin — posted to the
+      // legacy monolith /v1/issues (which has no route on staging-b). Both are
+      // preserved here rather than deleted.
+      { path: "/help/classic", element: withSuspense(<HelpSurface />) },
+      // Alias so /support keeps working for anyone who has it bookmarked.
+      { path: "/support", element: withSuspense(<SupportPage />) },
       { path: "/prism-assessment", element: withSuspense(<PrismAssessmentSurface />) },
       { path: "/prism-assessment/classic", element: withSuspense(<PrismAssessment />) },
       { path: "/feedback", element: withSuspense(<FeedbackHistorySurface />) },
