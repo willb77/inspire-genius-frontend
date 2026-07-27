@@ -28,11 +28,26 @@ export function getTeamDevelopmentRoster() {
   return getApi().get<BaseApiResponse<RosterMember[]>>(`${BASE}/roster`)
 }
 
-/** GET /members/{id}/dossier?refresh=bool → MemberDossier */
+/**
+ * GET /members/{id}/dossier?refresh=bool.
+ *
+ * Async compute: the ~60s dossier is never computed synchronously (it would
+ * exceed the API Gateway 30s cap). A warm cache returns 200 with the
+ * MemberDossier; a cold/computing dossier returns **202** with
+ * `{status:"computing", jobId}` and the caller polls until 200. Inspect
+ * `res.status` to distinguish (see useMemberDossier).
+ */
 export function getMemberDossier(memberId: string, refresh = false) {
   return getApi().get<BaseApiResponse<MemberDossier>>(
     `${BASE}/members/${memberId}/dossier`,
     { params: refresh ? { refresh: true } : undefined },
+  )
+}
+
+/** POST /members/{id}/dossier/recompute → 202 {status:"computing", jobId}. */
+export function recomputeDossier(memberId: string) {
+  return getApi().post<BaseApiResponse<{ status?: string; jobId?: string }>>(
+    `${BASE}/members/${memberId}/dossier/recompute`,
   )
 }
 
