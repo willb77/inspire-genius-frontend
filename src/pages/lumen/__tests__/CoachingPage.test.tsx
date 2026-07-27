@@ -105,6 +105,31 @@ describe("CoachingPage", () => {
     expect(prompt).toMatch(/Leave my résumé out/)
   })
 
+  test("an older backend hides the picker instead of claiming you have nothing", () => {
+      // A portrait with no `sources` field came from an agent-engine that
+      // predates the four-source composer. "No sources field" is not "no
+      // sources" — telling someone with a full PRISM profile that we have
+      // nothing to read about them would be a lie. The frontend deploys to dev
+      // and staging-B on merge while the backend is promoted separately, so
+      // this state is real, not hypothetical.
+      mockSources(undefined)
+      renderPage()
+      expect(screen.queryByLabelText(/My PRISM scores/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/nothing to read about you yet/)).not.toBeInTheDocument()
+      expect(screen.getByText(/draws on everything on your profile/)).toBeInTheDocument()
+  })
+
+  test("an older backend writes no scope line", () => {
+      // Claiming a scope the coach was never told about is worse than silence.
+      mockSources(undefined)
+      renderPage()
+      fireEvent.change(screen.getByLabelText("Question"), {
+        target: { value: "Which of my current goals should I drop?" },
+      })
+      const prompt = mockNavigate.mock.calls[0][1].state.prefillPrompt
+      expect(prompt).toBe("Which of my current goals should I drop?")
+  })
+
   test("works with nothing on file", () => {
     // A brand-new B2C user has no portrait yet; the page must still be usable.
     mockSources({ prism: false, assessments: false, resume: false, bio: false })
