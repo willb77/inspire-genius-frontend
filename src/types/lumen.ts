@@ -69,6 +69,29 @@ export type AskMomentRequest = {
   when?: string
 }
 
+/**
+ * A situation the user chose to keep for reuse in the ask box.
+ *
+ * Distinct from a Moment: every ask is already stored as a Moment with its
+ * guidance, so these are curation, not history. Deleting one leaves the
+ * guidance it produced intact.
+ */
+export type SavedPrompt = {
+  id: string
+  /** The situation text, as the user typed it (whitespace-normalised). */
+  text: string
+  /** Optional short name. Null means "show the text". */
+  label: string | null
+  /** Bumped on each reuse — the list is ordered by this, not by recency. */
+  use_count: number
+  last_used_at: string | null
+  created_at: string | null
+}
+
+export type SavedPromptsList = {
+  prompts: SavedPrompt[]
+}
+
 /** The single next action in Lumen's onboarding funnel. */
 export type OnboardingNextStep =
   | "request_prism"

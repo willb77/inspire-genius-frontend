@@ -11,6 +11,7 @@ import { ROUTES } from "@/constants/routes"
 import { LUMEN_QUESTION_GROUPS } from "@/constants/lumen/coachingQuestions"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
 import type { PortraitSourceKey, PortraitSources } from "@/types/lumen"
+import { SOURCE_LABELS, SOURCE_ORDER, buildScopeLine } from "./coachingScope"
 
 /**
  * Personal coaching — a Meridian conversation that starts already knowing you.
@@ -38,62 +39,11 @@ import type { PortraitSourceKey, PortraitSources } from "@/types/lumen"
  * which does not exist yet.
  */
 
-const SOURCE_LABELS: Record<PortraitSourceKey, { label: string; hint: string }> = {
-  prism: {
-    label: "My PRISM scores",
-    hint: "How you're wired — the anchor everything else reconciles against.",
-  },
-  assessments: {
-    label: "My other assessments",
-    hint: "Anything else you've taken — DISC, Big Five, MBTI, CliftonStrengths.",
-  },
-  resume: {
-    label: "My résumé",
-    hint: "The record of what you've actually done.",
-  },
-  bio: {
-    label: "My bio",
-    hint: "How you describe yourself, in your own words.",
-  },
-}
-
-const SOURCE_ORDER: PortraitSourceKey[] = ["prism", "assessments", "resume", "bio"]
-
 const selectClass = cn(
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
   "ring-offset-background focus-visible:outline-none focus-visible:ring-2",
   "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 )
-
-/**
- * The scope line prepended to the question.
- *
- * Naming what to leave out matters as much as naming what to use: a user who
- * unticks their résumé usually means "don't argue from my job history", and an
- * instruction that only lists inclusions doesn't say that.
- */
-export function buildScopeLine(
-  selected: PortraitSourceKey[],
-  available: PortraitSourceKey[],
-  extra: string
-): string {
-  const parts: string[] = []
-  const name = (k: PortraitSourceKey) => SOURCE_LABELS[k].label.replace(/^My /, "my ")
-
-  if (selected.length > 0) {
-    parts.push(`Draw on ${selected.map(name).join(", ")}.`)
-  }
-  const excluded = available.filter((k) => !selected.includes(k))
-  if (excluded.length > 0) {
-    parts.push(`Leave ${excluded.map(name).join(" and ")} out of this one.`)
-  }
-  if (selected.length === 0 && excluded.length > 0) {
-    parts.push("Answer from what I tell you here rather than from my profile.")
-  }
-  const trimmed = extra.trim()
-  if (trimmed) parts.push(`Also relevant: ${trimmed}`)
-  return parts.join(" ")
-}
 
 function SourcePicker({
   sources,
