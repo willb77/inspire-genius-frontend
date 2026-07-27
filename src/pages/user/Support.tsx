@@ -64,6 +64,11 @@ export default function Support() {
 
   const handleSubmit = async (values: SupportRequestValues) => {
     const ticket = await createMutation.mutateAsync({
+      // Backward compatibility only. The current support-service takes
+      // ownership from the verified JWT and ignores this field; older
+      // deployments (staging-b, as of 2026-07-27) still declare `user_id`
+      // required and reject the submission with a 422 without it.
+      user_id: user?.id,
       subject: values.subject,
       description: values.description,
       priority: values.priority,
