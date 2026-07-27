@@ -93,6 +93,14 @@ export default function CoachingPage() {
   const navigate = useNavigate()
   const { data: portrait, isLoading } = useSelfPortrait()
 
+  // A portrait that loaded WITHOUT `sources` came from an agent-engine that
+  // predates the four-source composer — which is a real state, because the
+  // frontend deploys to dev and staging-B on merge while the backend is
+  // promoted separately. "No sources field" is not "no sources": telling
+  // someone with a full PRISM profile that we have nothing to read about them
+  // would be a lie the UI has no business telling. So the picker is hidden and
+  // no scope line is written, leaving the coach's default behaviour intact.
+  const sourcesKnown = portrait?.sources !== undefined
   const sources: PortraitSources = portrait?.sources ?? {
     prism: false,
     assessments: false,
@@ -130,11 +138,13 @@ export default function CoachingPage() {
   const ask = (raw: string) => {
     const body = raw.trim()
     if (!body) return
-    const scope = buildScopeLine(
-      SOURCE_ORDER.filter((k) => selected.includes(k)),
-      available,
-      extra
-    )
+    const scope = sourcesKnown
+      ? buildScopeLine(
+          SOURCE_ORDER.filter((k) => selected.includes(k)),
+          available,
+          extra
+        )
+      : extra.trim() && `Also relevant: ${extra.trim()}`
     navigate(ROUTES.MERIDIAN_CHAT, {
       state: { prefillPrompt: scope ? `${body}\n\n${scope}` : body, autoSubmit: true },
     })
@@ -172,11 +182,20 @@ export default function CoachingPage() {
             </div>
           ) : (
             <>
-              <SourcePicker sources={sources} selected={selected} onToggle={toggle} />
-              {available.length === 0 && (
+              {sourcesKnown ? (
+                <>
+                  <SourcePicker sources={sources} selected={selected} onToggle={toggle} />
+                  {available.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      We have nothing to read about you yet, so the conversation starts
+                      from what you type. Add a résumé or complete PRISM and this fills in.
+                    </p>
+                  )}
+                </>
+              ) : (
                 <p className="text-sm text-muted-foreground">
-                  We have nothing to read about you yet, so the conversation starts from
-                  what you type. Add a résumé or complete PRISM and this fills in.
+                  The coach draws on everything on your profile. Choosing which parts to
+                  include isn't available in this environment yet.
                 </p>
               )}
               <div className="space-y-2">
