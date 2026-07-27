@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react"
-import { Controller, useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import {
   ArrowRight,
+  BookOpenCheck,
   CheckCircle2,
+  ClipboardList,
+  GraduationCap,
   Loader2,
   MessagesSquare,
   RotateCcw,
   Send,
   Sparkles,
+  Wand2,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,214 +21,321 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Progress } from "@/components/ui/progress"
 import { ROUTES } from "@/constants/routes"
-import { useCreateTaxonomyNode } from "@/hooks/knowledge-continuity/useCreateTaxonomyNode"
+import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
+import { useSavedRoleBlueprint } from "@/hooks/knowledge-continuity/useSavedRoleBlueprint"
 import { useStartCaptureSession } from "@/hooks/knowledge-continuity/useStartCaptureSession"
 import { useNextQuestion } from "@/hooks/knowledge-continuity/useNextQuestion"
 import { useRecordTurn } from "@/hooks/knowledge-continuity/useRecordTurn"
 import { useExtractUnits } from "@/hooks/knowledge-continuity/useExtractUnits"
 import { useSynthesizeUnits } from "@/hooks/knowledge-continuity/useSynthesizeUnits"
-import type { ExtractedUnit, TranscriptExchange } from "@/types/knowledge-continuity"
+import type {
+  BlueprintNode,
+  ExtractedUnit,
+  SavedRoleBlueprint,
+  TranscriptExchange,
+} from "@/types/knowledge-continuity"
 
 // Capture sessions started from this front door are grouped under a stable
 // org key — the AuthUser carries no organization, and the Reviewer Console's
 // intake form likewise takes org_id as a plain field.
 const CAPTURE_ORG_ID = "kce-capture"
 
-type Step = "setup" | "interview" | "done"
+type View = "choose" | "plan" | "interview" | "done"
 
-/** Everything the interview + synthesis steps need, fixed once setup succeeds. */
-type CaptureContext = {
-  roleTitle: string
-  captureArea: string
-  sessionId: string
-  taxonomyNodeId: string
+/** How the expert is being captured — collected once, reused for the session. */
+type ExpertConfig = {
+  expertName: string
+  realExpert: boolean
+  consentId: string
 }
 
-// ── Step 1: setup form ────────────────────────────────────────────────────────
+// A saved role's blueprint node carries the REAL taxonomy node id in `ref`
+// (the reload route maps node.id → ref), so we capture each area against its
+// own node with correct linkage — no fresh node minting.
+function rootTaxonomyId(nodes: BlueprintNode[]): string | null {
+  const root = nodes.find((n) => !n.parent_ref) ?? nodes[0]
+  return root?.ref ?? null
+}
 
-const setupSchema = z
-  .object({
-    role_title: z.string().min(1, "Tell us the role"),
-    capture_area: z.string().min(1, "Name the task or responsibility to capture"),
-    expert_name: z.string().min(1, "Who is sharing their know-how?"),
-    real_expert: z.boolean(),
-    consent_event_id: z.string().optional(),
-  })
-  .refine(
-    (values) => !values.real_expert || (values.consent_event_id?.trim().length ?? 0) > 0,
-    {
-      message: "A consent record id is required for a real expert.",
-      path: ["consent_event_id"],
-    }
-  )
+// ── How-it-works explainer (the "what do I do next" the flow was missing) ──────
 
-type SetupFormValues = z.infer<typeof setupSchema>
-
-function SetupStep({ onReady }: { onReady: (ctx: CaptureContext) => void }) {
-  const createTaxonomy = useCreateTaxonomyNode()
-  const startSession = useStartCaptureSession()
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-  } = useForm<SetupFormValues>({
-    resolver: zodResolver(setupSchema),
-    defaultValues: {
-      role_title: "",
-      capture_area: "",
-      expert_name: "",
-      real_expert: false,
-      consent_event_id: "",
-    },
-  })
-
-  const realExpert = watch("real_expert")
-  const isSettingUp = createTaxonomy.isPending || startSession.isPending
-
-  async function onSubmit(values: SetupFormValues) {
-    try {
-      // 1) Create the taxonomy node (the task being mined) …
-      const node = await createTaxonomy.mutateAsync({
-        org_id: CAPTURE_ORG_ID,
-        role_title: values.role_title.trim(),
-        name: values.capture_area.trim(),
-        node_type: "task",
-      })
-      // 2) … then open the capture session against it. A real expert without a
-      // consent id is rejected server-side (403) — the hook toasts that clearly.
-      const session = await startSession.mutateAsync({
-        org_id: CAPTURE_ORG_ID,
-        expert_user_id: values.expert_name.trim(),
-        role_title: values.role_title.trim(),
-        is_synthetic: !values.real_expert,
-        consent_event_id: values.real_expert
-          ? values.consent_event_id?.trim() || undefined
-          : undefined,
-        taxonomy_id: node.id,
-      })
-      onReady({
-        roleTitle: values.role_title.trim(),
-        captureArea: values.capture_area.trim(),
-        sessionId: session.id,
-        taxonomyNodeId: node.id,
-      })
-    } catch {
-      // Errors already surfaced by the mutation hooks — stay on the setup step.
-    }
-  }
-
+function HowItWorks() {
+  const steps = [
+    { icon: MessagesSquare, label: "Interview", text: "Maven interviews the expert, one area at a time." },
+    { icon: Sparkles, label: "Extract", text: "Sage turns each answer into typed knowledge units." },
+    { icon: BookOpenCheck, label: "Validate", text: "Units are scored and sent to the Reviewer Console." },
+    { icon: GraduationCap, label: "Transfer", text: "Validated knowledge becomes the successor's training." },
+  ]
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Set up the capture</CardTitle>
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm">How a capture works</CardTitle>
         <CardDescription>
-          Tell us whose know-how we&apos;re capturing and which task to focus on. Then Maven
-          interviews the expert one question at a time.
+          You interview the person who holds the role. What they know becomes validated,
+          reusable training for whoever comes next — and a lasting record of the role.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="capture-role-title">Role</Label>
-            <Input
-              id="capture-role-title"
-              placeholder="e.g. Senior Water Treatment Operator"
-              {...register("role_title")}
-            />
-            {errors.role_title && (
-              <p className="text-xs text-red-600">{errors.role_title.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="capture-area">Task or responsibility to capture</Label>
-            <Input
-              id="capture-area"
-              placeholder="e.g. Recover the plant after a power failure"
-              {...register("capture_area")}
-            />
-            {errors.capture_area && (
-              <p className="text-xs text-red-600">{errors.capture_area.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="capture-expert-name">Expert</Label>
-            <Input
-              id="capture-expert-name"
-              placeholder="Name of the person sharing their know-how"
-              {...register("expert_name")}
-            />
-            {errors.expert_name && (
-              <p className="text-xs text-red-600">{errors.expert_name.message}</p>
-            )}
-          </div>
-
-          <Controller
-            control={control}
-            name="real_expert"
-            render={({ field }) => (
-              <div className="flex items-start gap-3 rounded-md border p-3">
-                <Checkbox
-                  id="capture-real-expert"
-                  checked={field.value}
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
-                  className="mt-0.5"
-                />
-                <div className="space-y-0.5">
-                  <Label htmlFor="capture-real-expert" className="font-medium">
-                    This is a real expert (not a practice run)
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Real captures need a consent record on file before they can start. Leave
-                    this off for a practice or volunteer run.
-                  </p>
+        <ol className="grid gap-3 sm:grid-cols-2">
+          {steps.map((s, i) => (
+            <li key={s.label} className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                {i + 1}
+              </span>
+              <div>
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <s.icon className="h-3.5 w-3.5 text-[#127A8A]" />
+                  {s.label}
                 </div>
+                <p className="text-xs text-muted-foreground">{s.text}</p>
               </div>
-            )}
-          />
-
-          {realExpert && (
-            <div className="space-y-1.5">
-              <Label htmlFor="capture-consent-id">Consent record id</Label>
-              <Input
-                id="capture-consent-id"
-                placeholder="The id of the signed consent on file"
-                {...register("consent_event_id")}
-              />
-              {errors.consent_event_id && (
-                <p className="text-xs text-red-600">{errors.consent_event_id.message}</p>
-              )}
-            </div>
-          )}
-
-          <Button type="submit" disabled={isSettingUp} className="gap-1.5">
-            {isSettingUp ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowRight className="h-4 w-4" />
-            )}
-            Start the interview
-          </Button>
-        </form>
+            </li>
+          ))}
+        </ol>
       </CardContent>
     </Card>
   )
 }
 
-// ── Step 2: interview ─────────────────────────────────────────────────────────
+// ── Choose which saved role to capture (fallback when no ?role= is passed) ─────
+
+function ChooseRoleStep({ onPick }: { onPick: (roleTitle: string) => void }) {
+  const navigate = useNavigate()
+  const { data: roles = [], isLoading } = useSavedRoles(CAPTURE_ORG_ID)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Pick a role to capture</CardTitle>
+        <CardDescription>
+          Capture runs against a role you've already blueprinted. Choose one below, or blueprint
+          a new role first.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading your saved roles…
+          </div>
+        ) : roles.length === 0 ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              No saved roles yet. Blueprint a role first — it maps the knowledge areas this
+              capture will walk through.
+            </p>
+            <Button onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.BLUEPRINT)} className="gap-1.5">
+              <Wand2 className="h-4 w-4" /> Blueprint a role
+            </Button>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {roles.map((role) => (
+              <li key={role.taxonomy_id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(role.role_title)}
+                  className="flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{role.role_title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {role.node_count} knowledge areas
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── The capture plan: the blueprint's areas, status + progress ─────────────────
+
+function PlanStep({
+  blueprint,
+  expert,
+  setExpert,
+  capturedRefs,
+  starting,
+  onCaptureArea,
+  onFinish,
+  finishing,
+}: {
+  blueprint: SavedRoleBlueprint
+  expert: ExpertConfig
+  setExpert: (e: ExpertConfig) => void
+  capturedRefs: Set<string>
+  starting: boolean
+  onCaptureArea: (node: BlueprintNode) => void
+  onFinish: () => void
+  finishing: boolean
+}) {
+  const areas = blueprint.nodes
+  const capturedCount = areas.filter((n) => capturedRefs.has(n.ref)).length
+  const pct = areas.length ? Math.round((capturedCount / areas.length) * 100) : 0
+  const expertReady = expert.expertName.trim().length > 0 && (!expert.realExpert || expert.consentId.trim().length > 0)
+
+  return (
+    <div className="space-y-5">
+      <HowItWorks />
+
+      {/* Who's being captured */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Who are we capturing?</CardTitle>
+          <CardDescription>
+            Set this once — it applies to every area you capture in this session.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="expert-name">Expert</Label>
+            <Input
+              id="expert-name"
+              value={expert.expertName}
+              onChange={(e) => setExpert({ ...expert, expertName: e.target.value })}
+              placeholder="Name of the person who holds this role"
+              disabled={capturedCount > 0}
+            />
+          </div>
+          <div className="flex items-start gap-3 rounded-md border p-3">
+            <Checkbox
+              id="real-expert"
+              checked={expert.realExpert}
+              onCheckedChange={(c) => setExpert({ ...expert, realExpert: c === true })}
+              disabled={capturedCount > 0}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="real-expert" className="font-medium">
+                This is a real expert (not a practice run)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Real captures need a consent record on file. Leave off for a practice/volunteer run.
+              </p>
+            </div>
+          </div>
+          {expert.realExpert && (
+            <div className="space-y-1.5">
+              <Label htmlFor="consent-id">Consent record id</Label>
+              <Input
+                id="consent-id"
+                value={expert.consentId}
+                onChange={(e) => setExpert({ ...expert, consentId: e.target.value })}
+                placeholder="The id of the signed consent on file"
+                disabled={capturedCount > 0}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* The areas */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardList className="h-4 w-4 text-[#127A8A]" />
+            {blueprint.role_title} — capture plan
+          </CardTitle>
+          <CardDescription>
+            Work through the role's knowledge areas. Capture as many as the expert has time for —
+            you can come back and finish the rest later.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{capturedCount} of {areas.length} areas captured</span>
+              <span>{pct}%</span>
+            </div>
+            <Progress value={pct} />
+          </div>
+
+          {!expertReady && (
+            <p className="text-xs text-muted-foreground">
+              Enter who you're capturing above to begin.
+            </p>
+          )}
+
+          <ul className="space-y-2">
+            {areas.map((node) => {
+              const done = capturedRefs.has(node.ref)
+              return (
+                <li
+                  key={node.ref}
+                  className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2"
+                  style={{ marginLeft: Math.min(node.depth, 3) * 16 }}
+                >
+                  {done ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                  ) : (
+                    <MessagesSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">{node.name}</div>
+                    {node.section && (
+                      <Badge variant="outline" className="mt-0.5 bg-slate-50 text-[11px] text-slate-600">
+                        {node.section}
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={done ? "outline" : "default"}
+                    disabled={!expertReady || starting}
+                    onClick={() => onCaptureArea(node)}
+                    className="gap-1.5"
+                  >
+                    {starting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : done ? (
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    )}
+                    {done ? "Re-capture" : "Capture"}
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={onFinish} disabled={capturedCount === 0 || finishing} className="gap-1.5">
+          {finishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Finish &amp; see the outcome
+        </Button>
+        {capturedCount === 0 && (
+          <p className="text-xs text-muted-foreground">Capture at least one area to finish.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── The interview for one area (Maven Q&A) ─────────────────────────────────────
 
 function InterviewStep({
-  ctx,
-  onFinish,
+  roleTitle,
+  node,
+  sessionId,
+  onFinishArea,
+  onCancel,
   isFinishing,
 }: {
-  ctx: CaptureContext
-  onFinish: (transcript: TranscriptExchange[]) => void
+  roleTitle: string
+  node: BlueprintNode
+  sessionId: string
+  onFinishArea: (transcript: TranscriptExchange[]) => void
+  onCancel: () => void
   isFinishing: boolean
 }) {
   const nextQuestion = useNextQuestion()
@@ -237,23 +345,20 @@ function InterviewStep({
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null)
   const [coverageNote, setCoverageNote] = useState<string | null>(null)
   const [answerText, setAnswerText] = useState("")
-
-  // Guard against React 18 StrictMode double-invoking the first-question effect.
   const firstRequested = useRef(false)
+
+  const captureNode = { name: node.name, node_type: node.node_type }
 
   function applyQuestion(data: { question: string; coverage_note: string | null }) {
     setPendingQuestion(data.question)
     setCoverageNote(data.coverage_note)
   }
 
-  const node = { name: ctx.captureArea, node_type: "task" }
-
-  // Ask Maven to open the interview once, on entry.
   useEffect(() => {
     if (firstRequested.current) return
     firstRequested.current = true
     nextQuestion.mutate(
-      { role_title: ctx.roleTitle, node, transcript: [], is_first: true },
+      { role_title: roleTitle, node: captureNode, transcript: [], is_first: true },
       { onSuccess: applyQuestion }
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -270,30 +375,20 @@ function InterviewStep({
     setCoverageNote(null)
     setAnswerText("")
 
-    // Persist the exchange so nothing is lost if the expert stops here.
     recordTurn.mutate({
-      sessionId: ctx.sessionId,
-      body: {
-        taxonomy_node_id: ctx.taxonomyNodeId,
-        question: exchange.question,
-        response: exchange.answer,
-      },
+      sessionId,
+      body: { taxonomy_node_id: node.ref, question: exchange.question, response: exchange.answer },
     })
 
     nextQuestion.mutate(
-      { role_title: ctx.roleTitle, node, transcript: nextTranscript, is_first: false },
+      { role_title: roleTitle, node: captureNode, transcript: nextTranscript, is_first: false },
       { onSuccess: applyQuestion }
     )
   }
 
   function retryQuestion() {
     nextQuestion.mutate(
-      {
-        role_title: ctx.roleTitle,
-        node,
-        transcript,
-        is_first: transcript.length === 0,
-      },
+      { role_title: roleTitle, node: captureNode, transcript, is_first: transcript.length === 0 },
       { onSuccess: applyQuestion }
     )
   }
@@ -306,13 +401,12 @@ function InterviewStep({
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">{ctx.captureArea}</CardTitle>
+          <CardTitle className="text-base">{node.name}</CardTitle>
           <CardDescription>
-            {ctx.roleTitle} · Answer in your own words. Maven follows up on what you say.
+            {roleTitle} · Answer in your own words. Maven follows up on what you say.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Running transcript */}
           {transcript.length > 0 && (
             <ul className="space-y-4">
               {transcript.map((exchange, i) => (
@@ -329,7 +423,6 @@ function InterviewStep({
             </ul>
           )}
 
-          {/* Current question / thinking / retry */}
           {waitingForQuestion && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -339,12 +432,9 @@ function InterviewStep({
 
           {questionFailed && (
             <div className="space-y-2">
-              <p className="text-sm text-red-600">
-                Something went wrong getting the next question.
-              </p>
+              <p className="text-sm text-red-600">Something went wrong getting the next question.</p>
               <Button size="sm" variant="outline" onClick={retryQuestion} className="gap-1.5">
-                <RotateCcw className="h-4 w-4" />
-                Try again
+                <RotateCcw className="h-4 w-4" /> Try again
               </Button>
             </div>
           )}
@@ -359,9 +449,7 @@ function InterviewStep({
                 <p className="pl-6 text-xs italic text-muted-foreground">{coverageNote}</p>
               )}
               <div className="space-y-2">
-                <Label htmlFor="capture-answer" className="sr-only">
-                  Your answer
-                </Label>
+                <Label htmlFor="capture-answer" className="sr-only">Your answer</Label>
                 <Textarea
                   id="capture-answer"
                   value={answerText}
@@ -369,13 +457,8 @@ function InterviewStep({
                   placeholder="Type your answer…"
                   rows={4}
                 />
-                <Button
-                  onClick={submitAnswer}
-                  disabled={answerText.trim().length === 0}
-                  className="gap-1.5"
-                >
-                  <Send className="h-4 w-4" />
-                  Send answer
+                <Button onClick={submitAnswer} disabled={answerText.trim().length === 0} className="gap-1.5">
+                  <Send className="h-4 w-4" /> Send answer
                 </Button>
               </div>
             </div>
@@ -383,64 +466,55 @@ function InterviewStep({
         </CardContent>
       </Card>
 
-      {/* Finish — v1 captures a single task node; multi-node switching is a
-          later build. */}
       <div className="flex items-center gap-3">
-        <Button
-          onClick={() => onFinish(transcript)}
-          disabled={!canFinish}
-          className="gap-1.5"
-        >
-          {isFinishing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="h-4 w-4" />
-          )}
-          Finish capture
+        <Button onClick={() => onFinishArea(transcript)} disabled={!canFinish} className="gap-1.5">
+          {isFinishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Save this area
+        </Button>
+        <Button variant="ghost" onClick={onCancel} disabled={isFinishing}>
+          Back to plan
         </Button>
         {transcript.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            Answer at least one question to finish.
-          </p>
+          <p className="text-xs text-muted-foreground">Answer at least one question to save this area.</p>
         )}
       </div>
     </div>
   )
 }
 
-// ── Step 3: synthesized summary ───────────────────────────────────────────────
+// ── Outcome ────────────────────────────────────────────────────────────────────
 
 function DoneStep({
+  roleTitle,
   units,
+  areasCaptured,
   onRestart,
 }: {
+  roleTitle: string
   units: ExtractedUnit[]
+  areasCaptured: number
   onRestart: () => void
 }) {
   const navigate = useNavigate()
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-5 w-5 text-[#127A8A]" />
-          Capture complete
+          Capture complete — {roleTitle}
         </CardTitle>
         <CardDescription>
-          {units.length === 1
-            ? "1 knowledge unit was captured and sent for review."
-            : `${units.length} knowledge units were captured and sent for review.`}
+          {units.length} knowledge {units.length === 1 ? "unit" : "units"} captured across{" "}
+          {areasCaptured} {areasCaptured === 1 ? "area" : "areas"} and sent for review. Here's what
+          happens next.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {units.length > 0 && (
           <ul className="space-y-2">
             {units.map((unit, i) => (
-              <li
-                key={i}
-                className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
-              >
-                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">
+              <li key={i} className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                <Badge variant="outline" className="border-slate-200 bg-slate-100 text-slate-700">
                   {unit.category}
                 </Badge>
                 <span className="text-foreground">{unit.title}</span>
@@ -449,17 +523,41 @@ function DoneStep({
           </ul>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <Button
+        <div className="grid gap-3">
+          <button
+            type="button"
             onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.REVIEW)}
-            className="gap-1.5"
+            className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
           >
-            <ArrowRight className="h-4 w-4" />
-            Go to the Reviewer Console
-          </Button>
+            <BookOpenCheck className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold">
+                Review &amp; validate <span className="text-muted-foreground">(next step)</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Confirm, amend, or reject each unit. Validated knowledge is what successors are taught.
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.KNOWLEDGE_CONTINUITY.CURRICULUM)}
+            className="flex items-center gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:border-primary/50"
+          >
+            <GraduationCap className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold">Build the successor's training</div>
+              <div className="text-xs text-muted-foreground">
+                Turn validated knowledge into a wiring-adapted learning path for the next person.
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+
           <Button variant="outline" onClick={onRestart} className="gap-1.5">
-            <RotateCcw className="h-4 w-4" />
-            Start another capture
+            <RotateCcw className="h-4 w-4" /> Capture more of this role
           </Button>
         </div>
       </CardContent>
@@ -467,53 +565,114 @@ function DoneStep({
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Page ────────────────────────────────────────────────────────────────────────
 
 /**
- * Knowledge Continuity vertical — the "Start a capture" front door. A guided,
- * three-step flow: set up the capture (creates the taxonomy node + session),
- * run a Maven-led interview (persisting each turn), then synthesize the
- * transcript into knowledge units and hand them to the Reviewer Console.
+ * Knowledge Continuity vertical — the "Start a capture" front door.
  *
- * Renders inside the shared AppShell via KceLayout, which already gates the
- * vertical on entitlement — no extra access check needed here. Deliberately
- * plain language: no raw PRISM dimension names surfaced.
+ * Blueprint-driven: arriving from a role's blueprint (`?role=<title>`), it loads
+ * that role's saved knowledge areas and walks the expert through them, one area
+ * at a time — Maven interviews, Sage extracts, the trainer-service scores each
+ * unit and sends it to the Reviewer Console. Without a role it offers a saved-
+ * role picker. All captured areas share ONE session; a saved role's blueprint
+ * node carries the real taxonomy id in `ref`, so each area links correctly.
+ *
+ * Renders inside the shared AppShell via KceLayout (entitlement already gated).
+ * Deliberately plain language: no raw PRISM dimension names surfaced.
  */
 export default function KceCapturePage() {
-  const [step, setStep] = useState<Step>("setup")
-  const [ctx, setCtx] = useState<CaptureContext | null>(null)
-  const [units, setUnits] = useState<ExtractedUnit[]>([])
+  const [searchParams] = useSearchParams()
+  const roleParam = searchParams.get("role")?.trim() || null
 
+  const [view, setView] = useState<View>(roleParam ? "plan" : "choose")
+  const [roleTitle, setRoleTitle] = useState<string | null>(roleParam)
+  const [blueprint, setBlueprint] = useState<SavedRoleBlueprint | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [expert, setExpert] = useState<ExpertConfig>({
+    expertName: "",
+    realExpert: false,
+    consentId: "",
+  })
+  const [capturedRefs, setCapturedRefs] = useState<Set<string>>(new Set())
+  const [allUnits, setAllUnits] = useState<ExtractedUnit[]>([])
+  const [activeNode, setActiveNode] = useState<BlueprintNode | null>(null)
+
+  const loadBlueprint = useSavedRoleBlueprint(CAPTURE_ORG_ID)
+  const startSession = useStartCaptureSession()
   const extractUnits = useExtractUnits()
   const synthesize = useSynthesizeUnits()
-  const isFinishing = extractUnits.isPending || synthesize.isPending
 
-  async function handleFinish(transcript: TranscriptExchange[]) {
-    if (!ctx) return
+  const loadBlueprintMutate = loadBlueprint.mutate
+  const isFinishingArea = extractUnits.isPending || synthesize.isPending
+
+  // Load the blueprint whenever a role is chosen (from ?role= or the picker).
+  useEffect(() => {
+    if (!roleTitle) return
+    loadBlueprintMutate(roleTitle, {
+      onSuccess: (bp) => {
+        setBlueprint(bp)
+        setView("plan")
+      },
+      onError: () => setView("choose"),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleTitle])
+
+  // Ensure a session exists (created lazily on the first area), then interview.
+  async function captureArea(node: BlueprintNode) {
+    if (!roleTitle || !blueprint) return
+    try {
+      let sid = sessionId
+      if (!sid) {
+        const session = await startSession.mutateAsync({
+          org_id: CAPTURE_ORG_ID,
+          expert_user_id: expert.expertName.trim(),
+          role_title: roleTitle,
+          is_synthetic: !expert.realExpert,
+          consent_event_id: expert.realExpert ? expert.consentId.trim() || undefined : undefined,
+          taxonomy_id: rootTaxonomyId(blueprint.nodes) ?? undefined,
+        })
+        sid = session.id
+        setSessionId(sid)
+      }
+      setActiveNode(node)
+      setView("interview")
+    } catch {
+      // consent 403 / network already toasted by the hook — stay on the plan.
+    }
+  }
+
+  async function finishArea(transcript: TranscriptExchange[]) {
+    if (!roleTitle || !sessionId || !activeNode) return
     try {
       const extracted = await extractUnits.mutateAsync({
-        role_title: ctx.roleTitle,
-        node: { name: ctx.captureArea, node_type: "task" },
-        taxonomy_node_id: ctx.taxonomyNodeId,
+        role_title: roleTitle,
+        node: { name: activeNode.name, node_type: activeNode.node_type },
+        taxonomy_node_id: activeNode.ref,
         transcript,
       })
-      await synthesize.mutateAsync({ sessionId: ctx.sessionId, units: extracted.units })
-      setUnits(extracted.units)
+      await synthesize.mutateAsync({ sessionId, units: extracted.units })
+      setAllUnits((prev) => [...prev, ...extracted.units])
+      setCapturedRefs((prev) => new Set(prev).add(activeNode.ref))
       toast.success(
         extracted.units.length === 1
-          ? "1 knowledge unit captured and sent for review"
-          : `${extracted.units.length} knowledge units captured and sent for review`
+          ? `1 unit captured from "${activeNode.name}"`
+          : `${extracted.units.length} units captured from "${activeNode.name}"`
       )
-      setStep("done")
+      setActiveNode(null)
+      setView("plan")
     } catch {
       // Errors already surfaced by the mutation hooks — stay on the interview.
     }
   }
 
-  function handleRestart() {
-    setCtx(null)
-    setUnits([])
-    setStep("setup")
+  function finishCapture() {
+    setView("done")
+  }
+
+  function restart() {
+    setActiveNode(null)
+    setView("plan")
   }
 
   return (
@@ -524,25 +683,58 @@ export default function KceCapturePage() {
           Start a capture
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sit an expert down with Maven and turn what they know into knowledge units your
-          successors can learn from.
+          Sit the role-holder down with Maven and turn what they know into validated training for
+          whoever comes next.
         </p>
       </div>
 
-      {step === "setup" && (
-        <SetupStep
-          onReady={(readyCtx) => {
-            setCtx(readyCtx)
-            setStep("interview")
+      {view === "choose" && (
+        <ChooseRoleStep
+          onPick={(picked) => {
+            setRoleTitle(picked)
+            setView("plan")
           }}
         />
       )}
 
-      {step === "interview" && ctx && (
-        <InterviewStep ctx={ctx} onFinish={handleFinish} isFinishing={isFinishing} />
+      {view === "plan" && !blueprint && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading the role's knowledge areas…
+        </div>
       )}
 
-      {step === "done" && <DoneStep units={units} onRestart={handleRestart} />}
+      {view === "plan" && blueprint && (
+        <PlanStep
+          blueprint={blueprint}
+          expert={expert}
+          setExpert={setExpert}
+          capturedRefs={capturedRefs}
+          starting={startSession.isPending}
+          onCaptureArea={captureArea}
+          onFinish={finishCapture}
+          finishing={false}
+        />
+      )}
+
+      {view === "interview" && roleTitle && sessionId && activeNode && (
+        <InterviewStep
+          roleTitle={roleTitle}
+          node={activeNode}
+          sessionId={sessionId}
+          onFinishArea={finishArea}
+          onCancel={restart}
+          isFinishing={isFinishingArea}
+        />
+      )}
+
+      {view === "done" && roleTitle && (
+        <DoneStep
+          roleTitle={roleTitle}
+          units={allUnits}
+          areasCaptured={capturedRefs.size}
+          onRestart={restart}
+        />
+      )}
     </div>
   )
 }
