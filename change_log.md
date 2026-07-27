@@ -1,3 +1,30 @@
+## [2026-07-27] — Lumen + Job Fit UX build (PAUSED mid-flight for compaction)
+
+A `/full-go` covering five UX asks across two verticals. **Job Fit is done; Lumen is part-done and one branch does not build.** Nothing is deployed. Recorded here honestly so the next session can pick it up — see the `lumen-jobfit-ux` resume pointer.
+
+### Added — Job Fit (frontend PR #292, `feat/jobfit-blueprint-studio`)
+- **Blueprint Studio** (`BlueprintStudioPage`) — a deliberate duplicate of `KceBlueprintPage`'s UI per the owner's call ("duplicate the UI and call the same routes"). Everything requested already existed in the KCE page's hooks, so this reuses them rather than rebuilding: role dropdown (`useSavedRoles`/`useSavedRoleBlueprint`), roles from other surfaces (`useJobDnaList`/`useJobDnaSeed`, already cross-surface), upload-a-posting **or** describe-in-text (`extractRoleText` + textarea), draft status bar + completion toast (`Progress` + sonner), and save-role-back-into-the-dropdown (`usePersistBlueprint`). Job Fit saves under its own org key so neither surface disturbs the other's roles.
+- **Coaching** (`CoachPage`) — five categories × ten questions, every one anchored to a selected role via a `{role}` placeholder (test-pinned; a question without it drifts into generic coaching). Selecting one navigates to Meridian with `{ prefillPrompt, autoSubmit }` — the existing one-shot mechanism HomeV2's starter questions already use. Meridian is never bypassed: this seeds a question, it does not call an agent.
+- **Navigation** (`FitNav` + `FitShell`) — tool links plus a signposted way out; the switcher is registry-driven and entitlement-filtered.
+- Routes `/vertical/job-fit/{blueprint,coach}`. Build green, 34 tests, eslint clean, **KCE suites all still green**.
+
+### Changed — Lumen Self-Portrait, all four sources (backend, pushed as `feat/lumen-portrait-sources`, **no PR yet**)
+- `compose_portrait` now draws on **PRISM, other assessments, résumé, and bio**, and produces a useful read from any **one** of them. Adds `sources` flags (always all four, so the UI can render a breakdown) and a `coverage` line stating the basis and what would sharpen it next.
+- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now downgrades the read instead of cancelling it, while still leading where it exists (it remains the anchor the reconciliation engine resolves against, so convergences/tensions are only claimed when there is something to reconcile against).
+- Single-source reads name their own limits — a résumé is strong on evidence and silent on working preference; PRISM is the reverse. 157 tests pass. One existing test asserted the old blank-page behaviour and was rewritten to express the new intent rather than reverted.
+
+### Fixed — a self-inflicted regression, caught before it shipped
+- Putting `FitNav` inside the shared `FitPageHeader` **broke all eleven existing Job-Fit page tests**: a pure presentational header suddenly required auth + entitlement context. Reverted; the nav now renders from a **pathless layout route** inside the provider tree, leaving pages and their tests untouched and `FitPageHeader` pure. The same pattern is used for Lumen.
+
+### Known broken — `feat/lumen-clarity-coaching` (frontend, checkpoint `5522671`)
+Committed deliberately so the work survives compaction. **Does not build.** Complete: the Lumen coaching question library (5 × 10 — Goals, Education, Career, Jobs, Relationships) and `LumenNav`/`LumenShell`. Missing: `ROUTES.LUMEN.COACHING` (referenced but never added), a `CoachingPage` element, and the `LumenShell` route nesting.
+
+### Not started
+Lumen purpose copy; Job Fit purpose copy; rendering `sources`/`coverage` on the Self-Portrait page; the Blueprint Studio embedded in Lumen; the per-source **checkboxes** for coaching sessions; saved "what are you walking into" prompts + recall (needs migration 021); and all deployment (dev and staging-B both pending).
+
+### Recorded as debt
+The blueprint UI duplication is tracked with an explicit extract-when trigger — a third consumer, or the first observed drift between the two copies. Only the JSX is duplicated; the logic stays single-sourced in shared hooks.
+
 ## [2026-07-26] — Support request system: post an issue, notify contact@inspiresgenius.com
 
 New authenticated surface where anyone on the platform can post a help/issue request. Every submission emails the support inbox with the poster's contact block and their full description, so support can reply without a lookup.
