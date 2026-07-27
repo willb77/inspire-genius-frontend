@@ -184,6 +184,9 @@ describe("Help & Support page", () => {
     await waitFor(() => expect(mockCreateTicket).toHaveBeenCalledTimes(1));
     expect(mockCreateTicket).toHaveBeenCalledWith(
       expect.objectContaining({
+        // Older support-service deployments still require user_id and 422
+        // without it; the current one ignores it in favour of the JWT.
+        user_id: "user-123",
         subject: "Export broken",
         description: GOOD_DESCRIPTION,
         category: "technical",
