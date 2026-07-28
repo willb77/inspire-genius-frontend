@@ -10,7 +10,10 @@ import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
 import { GRANT_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
 import { useVerticalAccess } from "@/verticals/core";
-import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher";
+import {
+  useVerticalLauncherSection,
+  useWorkspaceNavItems,
+} from "@/components/layout/useVerticalLauncher";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 
@@ -21,7 +24,9 @@ export type SuperAdminLayoutProps = {
 
 export default function SuperAdminLayout({ children, className }: SuperAdminLayoutProps) {
   const agentEngineOn = useAgentEngine();
-  const userNavItems = getUserNavItems(agentEngineOn);
+  // My Workspace = the user menu plus any entitled workspace vertical
+  // (Job Fit, Lumen), spliced in above Settings/Help.
+  const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
   const { hasAccess: hasGrantAccess } = useVerticalAccess("grant");
   const launcherSection = useVerticalLauncherSection();
   const { user } = useAuth();

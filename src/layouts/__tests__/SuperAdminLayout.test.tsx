@@ -53,8 +53,14 @@ type MockLauncher =
   | { id: string; label: string; roles: string[]; items: { to: string; icon: () => null; label: string }[] }
   | null;
 const mockLauncher = jest.fn((): MockLauncher => null);
+// `useWorkspaceNavItems` splices entitled workspace verticals (Job Fit, Lumen)
+// into My Workspace; it has its own coverage in
+// `components/layout/__tests__/useVerticalLauncher.test.ts`. One test below
+// overrides this identity default to assert the layout passes them through.
+const mockWorkspaceNav = jest.fn((items: unknown) => items);
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useVerticalLauncherSection: () => mockLauncher(),
+  useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
 }));
 
 /** Open exactly one vertical's gate; all others stay closed. */
@@ -177,6 +183,7 @@ describe("SuperAdminLayout", () => {
       enabledVerticals: [],
     });
     mockLauncher.mockReturnValue(null); // no launcher vertical unless a test sets one
+    mockWorkspaceNav.mockImplementation((items: unknown) => items); // no workspace vertical
     mockEmail = "admin@example.com"; // non-owner by default
   });
 
@@ -333,5 +340,26 @@ describe("SuperAdminLayout", () => {
       "data-class",
       "custom-class",
     );
+  });
+
+  test("workspace verticals (Job Fit, Lumen) land in My Workspace, not Verticals", () => {
+    mockWorkspaceNav.mockImplementation((items: unknown) => [
+      ...(items as MockNavItem[]),
+      { to: "/vertical/job-fit/matches", label: "Job Fit" },
+      { to: "/vertical/lumen/dashboard", label: "Lumen" },
+    ]);
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const workspace = props.navSections.find((s: MockNavSection) => s.label === "My Workspace");
+    expect(workspace.items.map((i: MockNavItem) => i.label)).toEqual(
+      expect.arrayContaining(["Job Fit", "Lumen"]),
+    );
+    // No launcher section was produced, so they are not double-listed.
+    expect(props.navSections.some((s: MockNavSection) => s.label === "Verticals")).toBe(false);
   });
 });

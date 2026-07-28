@@ -38,6 +38,15 @@ jest.mock("@/lib/agentApi", () => ({
   useAgentEngine: () => false,
 }));
 
+// My Workspace = the user menu with entitled workspace verticals (Job Fit,
+// Lumen) spliced in. The splice has its own coverage in
+// `components/layout/__tests__/useVerticalLauncher.test.ts`; default to identity
+// here, and one test below overrides it to assert the layout passes them on.
+const mockWorkspaceNav = jest.fn((items: unknown) => items);
+jest.mock("@/components/layout/useVerticalLauncher", () => ({
+  useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
+}));
+
 const DummyIcon = () => null;
 const mockNavItems = [
   { to: "/home", icon: DummyIcon, label: "Home" },
@@ -77,6 +86,7 @@ describe("UserLayout", () => {
     jest.clearAllMocks();
     mockUseTour.mockReturnValue({ isRunning: false });
     mockUseAuth.mockReturnValue({ user: { role: "user" } });
+    mockWorkspaceNav.mockImplementation((items: unknown) => items);
   });
 
   test("renders children", () => {
@@ -117,5 +127,35 @@ describe("UserLayout", () => {
     render(<UserLayout><div /></UserLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.expandOnPath).toBe("/home");
+  });
+
+  test("entitled workspace verticals (Job Fit, Lumen) appear in the user's flat menu", () => {
+    mockWorkspaceNav.mockImplementation((items: unknown) => [
+      ...(items as Array<{ to: string; label: string }>),
+      { to: "/vertical/job-fit/matches", icon: DummyIcon, label: "Job Fit" },
+      { to: "/vertical/lumen/dashboard", icon: DummyIcon, label: "Lumen" },
+    ]);
+    render(<UserLayout><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navItems.map((i: { label: string }) => i.label)).toEqual([
+      "Home",
+      "Dashboard",
+      "Job Fit",
+      "Lumen",
+    ]);
+  });
+
+  test("workspace verticals reach the super-admin 'My Workspace' section too", () => {
+    mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
+    mockWorkspaceNav.mockImplementation((items: unknown) => [
+      ...(items as Array<{ to: string; label: string }>),
+      { to: "/vertical/lumen/dashboard", icon: DummyIcon, label: "Lumen" },
+    ]);
+    render(<UserLayout><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const workspace = props.navSections.find(
+      (s: { label: string }) => s.label === "My Workspace",
+    );
+    expect(workspace.items.map((i: { label: string }) => i.label)).toContain("Lumen");
   });
 });
