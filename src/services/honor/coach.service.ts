@@ -11,6 +11,8 @@ import type {
   HonorFellowGoals,
   HonorFellowSources,
   HonorPrismReport,
+  HonorPrismReportInput,
+  HonorPrismReportResult,
   HonorFellow,
   HonorResume,
   HonorResumeBody,
@@ -324,6 +326,20 @@ export async function requestFellowPrism(fellowId: string) {
   const { data } = await agentApi.post<HonorApiResponse<{ fellowId: string; requested: boolean }>>(
     `${COACH_BASE}/${encodeURIComponent(fellowId)}/prism/request`,
     {},
+  )
+  return data
+}
+
+/**
+ * Request a PRISM report for a NEW person (fname/lname/email). `role` ("user")
+ * and `organization` ("The Honor Foundation") are injected here and enforced
+ * server-side — the caller only supplies the person's name + email. Provisions a
+ * platform user login and submits a PRISM candidate under the fixed organisation.
+ */
+export async function requestPrismReport(input: HonorPrismReportInput) {
+  const { data } = await agentApi.post<HonorApiResponse<HonorPrismReportResult>>(
+    `/v1/agents/honor/coach/prism-request`,
+    { ...input, role: "user", organization: "The Honor Foundation" },
   )
   return data
 }

@@ -39,4 +39,23 @@ export async function uploadFellowDocument(
   await triggerProcessing(presigned.document_id)
 }
 
+/**
+ * Upload a job description for the Résumé Writer's "Target position description".
+ * Returns the `document_id` so the résumé route can server-side extract its text
+ * into `position_text` (via `positionFileIds`). Uploaded as a neutral `general`
+ * document, self-scoped (no `subject_user_id`), so it never lands in a Fellow's
+ * profile / RAG — it only describes the target job.
+ */
+export async function uploadJobDescription(file: File): Promise<string> {
+  const presigned = await initiateUpload({
+    filename: file.name,
+    content_type: file.type || "application/octet-stream",
+    file_size: file.size,
+    doc_kind: "general",
+  })
+  await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
+  await triggerProcessing(presigned.document_id)
+  return presigned.document_id
+}
+
 export { importFellowAssessment } from "./assessment.service"

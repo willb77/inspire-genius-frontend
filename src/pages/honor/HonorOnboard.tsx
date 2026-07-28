@@ -356,7 +356,7 @@ export default function HonorOnboard() {
 
       {/* Bulk import */}
       <HonorCard>
-        <HonorSectionTitle>Import a cohort</HonorSectionTitle>
+        <HonorSectionTitle>Import a Cohort</HonorSectionTitle>
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "rgba(232,121,43,0.12)" }}>

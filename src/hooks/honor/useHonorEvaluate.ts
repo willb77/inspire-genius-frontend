@@ -14,6 +14,7 @@ import {
   getFellowSources,
   listEvaluations,
   requestFellowPrism,
+  requestPrismReport,
   saveEvaluation,
 } from "@/services/honor/coach.service"
 import type {
@@ -21,6 +22,8 @@ import type {
   HonorEvaluation,
   HonorFellowSources,
   HonorPrismReport,
+  HonorPrismReportInput,
+  HonorPrismReportResult,
   HonorSavedEvaluation,
   HonorSavedEvaluationSummary,
   SaveEvaluationBody,
@@ -195,5 +198,21 @@ export function useRequestFellowPrism() {
     },
     onSuccess: () => toast.success("PRISM report requested."),
     onError: () => toast.error("Could not send the PRISM report request."),
+  })
+}
+
+/**
+ * Request a PRISM report for a NEW person (fname/lname/email). role=user and
+ * organization "The Honor Foundation" are fixed server-side. Provisions the
+ * person's platform login and submits the PRISM candidate.
+ */
+export function useRequestPrismReport() {
+  return useMutation<HonorPrismReportResult | undefined, Error, HonorPrismReportInput>({
+    mutationFn: async (input) => {
+      const res = await requestPrismReport(input)
+      return res.data
+    },
+    onSuccess: () => toast.success("PRISM report requested."),
+    onError: () => toast.error("Couldn't request the PRISM report. Please try again."),
   })
 }
