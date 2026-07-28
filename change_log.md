@@ -1,3 +1,20 @@
+## [2026-07-28] — Job Fit + Lumen moved into My Workspace
+
+### Changed
+- **Job Fit and Lumen now live in the My Workspace menu**, not the collapsed "Verticals" launcher section. Both are first-person surfaces — the signed-in user working on their OWN profile — so they read as everyday workspace tools next to Goal Setting and My Documents rather than separate products you launch into. FE PR #298.
+  - `WORKSPACE_VERTICALS` (`{job-fit, lumen}`) is excluded from the registry-driven launcher and re-surfaced by a new `useWorkspaceVerticalItems`, with per-vertical icons (`Briefcase` / `Lightbulb`) instead of the launcher's generic `Compass`.
+  - `withWorkspaceVerticals` splices them in **just above the Settings/Help tail** so those stay last, and appends when a role menu has no such tail (practitioner). De-duped by route; returns the input array unchanged when there is nothing to merge, so callers' memo identities stay stable and the sidebar does not re-render on every parent render.
+  - Wired through every chrome that renders a workspace menu: `UserLayout` + `SuperAdminLayout` (which build theirs from `getUserNavItems()`) and `useGatedNavItems` → `UnifiedLayout` (manager, company-admin, practitioner, distributor).
+  - Files: `src/components/layout/useVerticalLauncher.ts`, `src/hooks/nav/useGatedNavItems.ts`, `src/layouts/{UserLayout,SuperAdminLayout,UnifiedLayout}.tsx`
+
+### Deliberately unchanged
+- **Entitlement gating.** A user not entitled to Job Fit or Lumen sees no new item — the gate is still `enabled_verticals` read through the Vertical Core registry, not the nav layer. Neither vertical is double-listed: the same change that adds them to My Workspace removes them from the launcher.
+- No route, service, or backend change. This is nav placement only.
+
+### Verified
+- `npm run test:ci` — **502 suites / 3812 tests pass**; `npm run build` (tsc + vite) clean; ESLint on all 9 touched files adds **0 new errors** (the single reported error is the pre-existing `props: any` in the `UserLayout` SidebarScaffold mock, untouched here).
+- New coverage (9 tests): `useVerticalLauncher.test.ts` asserts splice position, tail-less append, stable-identity return, route de-dupe, and launcher exclusion against the **real** Core registry; `SuperAdminLayout.test.tsx` and `UserLayout.test.tsx` assert the items reach My Workspace (both the flat user menu and the super-admin section) and that no duplicate "Verticals" section is produced.
+
 ## [2026-07-27] — Lumen + Job Fit UX build (COMPLETE, merged + live on dev)
 
 Resumed the paused `/full-go` and finished all five UX asks across both verticals. Five PRs — 3 merged, 2 open. Backend and frontend both **deployed and verified on dev**; staging-B has the frontend only (see the gap below).
