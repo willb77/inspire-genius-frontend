@@ -8,6 +8,7 @@ import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 // API Gateway. The floating Alex assistant is no longer rendered.
 import { useAuth } from "@/context/useAuth";
 import { useAgentEngine } from "@/lib/agentApi";
+import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
 
 export type UserLayoutProps = {
   children: React.ReactNode;
@@ -18,7 +19,9 @@ export default function UserLayout({ children, className }: UserLayoutProps) {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super-admin";
   const agentEngineOn = useAgentEngine();
-  const userNavItems = getUserNavItems(agentEngineOn);
+  // My Workspace = the user menu plus any entitled workspace vertical
+  // (Job Fit, Lumen), spliced in above Settings/Help.
+  const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
 
   /** Super-admin viewing user pages: lead with "My Workspace" (user nav) so
    *  the simpler user experience is primary; Administration + Role Views

@@ -25,10 +25,12 @@ export default function UnifiedLayout({
   const auditLabel = role === "user" ? "user" : role
   usePageViewAudit(auditLabel)
 
+  // The role menu already includes entitled WORKSPACE verticals (Job Fit,
+  // Lumen) — they read as first-person workspace tools, not separate products.
   const navItems = useGatedNavItems(role)
   const verticalItems = useEntitledVerticalItems(role)
 
-  // When the user is entitled to verticals, render the role menu as a
+  // When the user is entitled to launcher verticals, render the role menu as a
   // header-less group at the top with a COLLAPSED "Verticals" section beneath;
   // otherwise just the flat role menu.
   const navSections: NavSectionDef[] | undefined = verticalItems.length
