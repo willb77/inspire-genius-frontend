@@ -4,7 +4,8 @@ import { toast } from "sonner"
 import { FileText, Loader2, Download, Mail, X, Sparkles, PenLine, Link2, ChevronDown } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useCaseload, useCoachHome } from "@/hooks/honor/useCoachData"
-import { useGenerateResume, isResumeDisabled } from "@/hooks/honor/useHonorResume"
+import { useGenerateResume, isResumeDisabled, useUploadJobDescription } from "@/hooks/honor/useHonorResume"
+import { FileDrop } from "./_FileDrop"
 import {
   useEmailHonorReport,
   useGenerateReportDocument,
@@ -86,6 +87,12 @@ export default function HonorResume() {
   const [careerArea, setCareerArea] = useState("")
   const [careerAreaOther, setCareerAreaOther] = useState("")
   const [positionText, setPositionText] = useState("")
+  // "Upload a job description" → the JD's document id(s) fill the Target position
+  // description server-side (positionFileIds); pasted text still wins if present.
+  const [jdFile, setJdFile] = useState<File | null>(null)
+  const [jdName, setJdName] = useState("")
+  const [positionFileIds, setPositionFileIds] = useState<string[]>([])
+  const uploadJd = useUploadJobDescription()
   // Feature 2 — the rewrite-from-evaluation context handed off from Evaluate.
   // When set, generation keys off the evaluation's suggestions; "Clear" drops
   // back to plain generation. Retained across re-generates until cleared.
@@ -120,6 +127,28 @@ export default function HonorResume() {
 
   const primary = fellows.find((f) => f.id === fellowId)
 
+  // Upload (or clear) the "Target position description" job-description file.
+  async function handleJdFile(f: File | null) {
+    if (!f) {
+      setJdFile(null)
+      setJdName("")
+      setPositionFileIds([])
+      return
+    }
+    setJdFile(f)
+    try {
+      const id = await uploadJd.mutateAsync(f)
+      setPositionFileIds([id])
+      setJdName(f.name)
+      toast.success(`Attached "${f.name}" as the target position description.`)
+    } catch {
+      setJdFile(null)
+      setJdName("")
+      setPositionFileIds([])
+      toast.error("Couldn't upload that job description. Please try again.")
+    }
+  }
+
   async function runGenerate() {
     if (!primary) {
       toast.warning("Select a fellow first.")
@@ -132,6 +161,9 @@ export default function HonorResume() {
           role: role.trim() || undefined,
           careerArea: effectiveCareerArea || undefined,
           positionText: positionText.trim() || undefined,
+          // Uploaded JD → server extracts into the target position description
+          // (used only when no text was pasted).
+          positionFileIds: positionFileIds.length ? positionFileIds : undefined,
           // Feature 2 — rewrite keyed off the evaluation, only for the fellow the
           // handoff targeted (guard against a fellow switch clearing intent).
           ...(rewriteFrom && rewriteFrom.fellowId === primary.id
@@ -415,6 +447,37 @@ export default function HonorResume() {
               className="min-h-[42px] w-full resize-y rounded-lg border border-[#dfe4ec] bg-white px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
             />
           </label>
+
+          {/* Upload a job description — fills the Target position description when
+              no text is pasted (extracted server-side). */}
+          <div className="mt-2">
+            {positionFileIds.length > 0 ? (
+              <div className="flex items-center gap-2 rounded-lg border border-[#dfe4ec] bg-[#f7f9fc] px-3 py-2 text-sm text-[#374151]">
+                <FileText className="h-4 w-4 shrink-0 text-[#1B2A4A]" />
+                <span className="truncate">{jdName}</span>
+                <button
+                  type="button"
+                  className="ml-auto text-[#9299a6] hover:text-[#374151]"
+                  onClick={() => handleJdFile(null)}
+                  aria-label="Remove job description"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <FileDrop
+                file={jdFile}
+                onFile={handleJdFile}
+                accept=".pdf,.doc,.docx,.txt,.md,.rtf"
+                placeholder={
+                  uploadJd.isPending
+                    ? "Uploading job description…"
+                    : "Upload a job description (PDF, Word, or text)"
+                }
+                compact
+              />
+            )}
+          </div>
         </div>
 
         <div className="mt-4">
