@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Users, UserPlus, Upload, Search, ArrowRight, Mail, Loader2 } from "lucide-react"
+import { Users, UserPlus, Upload, Search, ArrowRight, Mail, Loader2, ClipboardList } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useCaseload } from "@/hooks/honor/useCoachData"
 import { useHonorInvitations, useSetFellowStatus } from "@/hooks/honor/useHonorInvitations"
@@ -8,6 +8,7 @@ import type { FellowStatus, HonorFellow } from "@/types/honor"
 import { HonorCard, HonorEmptyState, HonorPageHeader, HonorPill, PrismDots } from "./_shared"
 import { HONOR_BTN_OUTLINE, HONOR_BTN_PRIMARY, fellowName, fellowStatusLabel } from "./_format"
 import InviteComposer from "./InviteComposer"
+import RequestPrismModal from "./RequestPrismModal"
 
 /**
  * Honor Coach Workbench — My Fellows (Caseload).
@@ -90,6 +91,7 @@ export default function HonorCaseload() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sendEmail, setSendEmail] = useState(true)
   const [composerOpen, setComposerOpen] = useState(false)
+  const [prismOpen, setPrismOpen] = useState(false)
 
   function toggleOne(id: string) {
     setSelected((prev) => {
@@ -140,6 +142,9 @@ export default function HonorCaseload() {
         description="The Honor fellows on your caseload. Open a fellow to run their intake, evaluation, and plan."
         action={
           <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPrismOpen(true)} className={HONOR_BTN_OUTLINE}>
+              <ClipboardList className="h-4 w-4" /> Request a PRISM report
+            </button>
             <Link to={ROUTES.HONOR.ONBOARD} className={HONOR_BTN_OUTLINE}>
               <Upload className="h-4 w-4" /> Import CSV
             </Link>
@@ -300,6 +305,8 @@ export default function HonorCaseload() {
         onSend={handleComposerSend}
         pending={invitations.isPending}
       />
+
+      <RequestPrismModal open={prismOpen} onClose={() => setPrismOpen(false)} />
     </div>
   )
 }
