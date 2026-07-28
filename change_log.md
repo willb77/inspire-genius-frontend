@@ -1,3 +1,25 @@
+## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B
+
+Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend are now both current on staging-B.
+
+### Migrations applied first, and verified
+A promote deploys code, not schema, so both agent-engine tables in the window went in **before** the tag and were confirmed by reading `information_schema` back rather than trusting the runner's exit code:
+
+- `lumen_saved_prompts` (022) — 8 columns
+- `dossier_jobs` (021) — 9 columns; the promoted agent-engine image serves `/agent/development/dossier/jobs`, so a missing table would have been a 500 waiting to happen
+
+**Deliberately not applied:** `growth_*.sql` (growth-service is not deployed on staging-B) and `prism_results_backfill_from_assessments.sql` (a data mutation on another surface, not a prerequisite of this promote).
+
+### Scope of the promote
+The tag carries **39 commits** since `release-stable-2026-07-26-lumen` — all of `development`, not just Lumen. Riding along: role-fit D1–D7, KCE capture / curriculum / provenance, foldersync, support requests, growth dossier async compute, blueprint shadow-validation, and the `/v1/targets` gateway fix. There is no Lumen-only promote; the tag is the mechanism.
+
+Pre-checked the known failure mode first — agent-engine ECS was `desired=1, running=1`, so the "promote goes red because the service is scaled to zero" trap was not in play.
+
+### Verified live on staging-B
+- `GET /v1/agents/lumen/saved-prompts` → **401** (was 404 before the promote; 401 proves the route exists and merely wants auth).
+- Authenticated round-trip with a real token: created a situation, re-saved it, and got the **same row id with `use_count` 0→1** — the whitespace-normalised dedupe promotes rather than duplicating, exactly as on dev. Probe row deleted afterwards.
+- Self-Portrait composed from **three** sources there (PRISM + résumé + bio) versus two on dev, so the four-source composer is demonstrably reading real per-environment data rather than a fixed shape.
+
 ## [2026-07-27] — Lumen + Job Fit UX build (COMPLETE, merged + live on dev)
 
 Resumed the paused `/full-go` and finished all five UX asks across both verticals. Five PRs — 3 merged, 2 open. Backend and frontend both **deployed and verified on dev**; staging-B has the frontend only (see the gap below).
