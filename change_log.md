@@ -1,3 +1,21 @@
+## [2026-07-28] — Honor: Request-a-PRISM-report modal + résumé JD upload + Cohort label (FE PR #299)
+
+Frontend additions to the Honor Coach Workbench. `npm run build` (tsc + vite) and ESLint clean; honor FE suite (85) + new (5) green. Requires the paired agent-engine endpoint `POST /v1/agents/honor/coach/prism-request` and the `positionFileIds` résumé field.
+
+### Added
+- **"Request a PRISM report"** button on **My Fellows** (Caseload) header → a modal collecting **first name, last name, email**, with **Role ("user")** and **Organization ("The Honor Foundation")** shown read-only. Fixed fields are injected in the service layer and enforced server-side.
+  - Files: `src/pages/honor/RequestPrismModal.tsx` (new), `src/pages/honor/HonorCaseload.tsx`, `src/hooks/honor/useHonorEvaluate.ts` (`useRequestPrismReport`), `src/services/honor/coach.service.ts` (`requestPrismReport`), `src/types/honor/index.ts`
+- **Résumé Writer "Upload a job description"** — a file drop under the *Target position description* textarea uploads the JD (`uploadJobDescription` → `document_id`) and passes `positionFileIds` on generate; the server extracts its text into the target. Pasted text still wins; a chip shows the attached filename with a remove control.
+  - Files: `src/pages/honor/HonorResume.tsx`, `src/hooks/honor/useHonorResume.ts` (`useUploadJobDescription`), `src/services/honor/artifact.service.ts` (`uploadJobDescription`), `src/types/honor/index.ts`
+
+### Changed
+- Capitalized the **"Import a Cohort"** section title on the Onboard page (`src/pages/honor/HonorOnboard.tsx`).
+
+### Tests
+- `src/pages/honor/__tests__/honor-prism-request.test.tsx`, `src/services/honor/__tests__/coach-prism-request.test.ts`.
+
+---
+
 ## [2026-07-28] — Job Fit + Lumen moved into My Workspace
 
 ### Changed
