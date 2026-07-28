@@ -11,9 +11,11 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCheckExistingCustomer } from '@/hooks/prism/useCheckExistingCustomer'
+import { useRequestPrismSurvey } from '@/hooks/prism/usePrismRequest'
 import {
   Card,
   CardContent,
@@ -73,11 +75,17 @@ type PrismInitiateFormProps = {
   /** Pre-fill values from auth context or parent */
   defaultValues?: Partial<InitiateFormValues>
   /**
-   * Called on submit. In the real app this calls usePrismInitiate.
-   * In the test harness this shows the payload preview.
+   * Optional submit observer. Fired *in addition to* the real API call —
+   * it does NOT replace it. Provided for the dev harness, which logs the
+   * values/payload it receives.
    */
   onSubmit?: (values: InitiateFormValues, apiPayload: Record<string, unknown>) => void
-  /** If true, shows the full PRISM API payload preview on submit (test mode) */
+  /**
+   * Harness mode. When true the form does NOT call the API — it renders
+   * the payload preview and a simulated questionnaire link instead. Used
+   * only by `/dev/prism-test-harness`. Defaults to false, so the real
+   * pages submit against `POST /v1/prism/requests`.
+   */
   showPayloadPreview?: boolean
 }
 
@@ -89,6 +97,7 @@ export default function PrismInitiateForm({
 }: PrismInitiateFormProps) {
   const [submittedPayload, setSubmittedPayload] = useState<Record<string, unknown> | null>(null)
   const [questionnaireUrl, setQuestionnaireUrl] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState(false)
   const [copied, setCopied] = useState(false)
   const [customerCheck, setCustomerCheck] = useState<{
     exists: boolean
@@ -97,6 +106,7 @@ export default function PrismInitiateForm({
   } | null>(null)
 
   const checkCustomer = useCheckExistingCustomer()
+  const requestSurvey = useRequestPrismSurvey()
 
   const form = useForm<InitiateFormValues>({
     resolver: zodResolver(initiateSchema) as Resolver<InitiateFormValues>,
@@ -114,7 +124,7 @@ export default function PrismInitiateForm({
     },
   })
 
-  function onSubmit(values: InitiateFormValues) {
+  async function onSubmit(values: InitiateFormValues) {
     // Build the full PRISM CreateCandidate-compatible payload.
     // The top-level fields here mirror `InitiateAssessmentRequest` exactly
     // (the shape sent to POST /v1/prism/initiate): gender is converted to a
@@ -157,15 +167,45 @@ export default function PrismInitiateForm({
       },
     }
 
+    // ── Harness mode — preview only, no network call ──
     if (showPayloadPreview) {
       setSubmittedPayload(apiPayload)
+      setSubmitted(true)
       // Simulate a questionnaire URL response
       setQuestionnaireUrl(
         `https://staging.prismbrainmapping.com/questionnaire/demo?ext=${encodeURIComponent(values.email)}`,
       )
+      onSubmitProp?.(values, apiPayload)
+      return
     }
 
-    onSubmitProp?.(values, apiPayload)
+    // ── Real submit — POST /v1/prism/requests (agent-engine) ──
+    try {
+      const res = await requestSurvey.mutateAsync({
+        forename: values.forename,
+        surname: values.surname,
+        email: values.email,
+        organisation: values.organisation || undefined,
+        qtype_id: values.questionnaireTypeId,
+        lang_id: values.languageId,
+        // PRISM convention: true = male.
+        gender: values.gender === 'male',
+        isGift: values.isGift,
+      })
+
+      setSubmittedPayload(apiPayload)
+      setQuestionnaireUrl(res?.action_url_1 ?? null)
+      setSubmitted(true)
+      toast.success('PRISM assessment requested — the questionnaire link is ready.')
+      onSubmitProp?.(values, apiPayload)
+    } catch (err) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? (err as Error)?.message
+      toast.error(
+        `Failed to request PRISM assessment${detail ? `: ${detail}` : '. Please try again.'}`,
+      )
+    }
   }
 
   async function handleCheckCustomer() {
@@ -198,11 +238,15 @@ export default function PrismInitiateForm({
   function handleReset() {
     setSubmittedPayload(null)
     setQuestionnaireUrl(null)
+    setSubmitted(false)
     form.reset()
   }
 
   // ── Success state ──
-  if (submittedPayload && questionnaireUrl) {
+  // Gated on `submitted`, NOT on the presence of a questionnaire URL — a
+  // request that succeeds without an `action_url_1` must still confirm to
+  // the user rather than silently leaving them on the form.
+  if (submitted) {
     return (
       <Card>
         <CardHeader>
@@ -218,18 +262,30 @@ export default function PrismInitiateForm({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Questionnaire link */}
-          <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-            <p className="text-sm font-medium">Questionnaire Link</p>
-            <p className="text-xs text-muted-foreground break-all">
-              {questionnaireUrl}
-            </p>
-            <Button size="sm" asChild>
-              <a href={questionnaireUrl} target="_blank" rel="noopener noreferrer">
-                Open Questionnaire <ExternalLink className="ml-1 h-3.5 w-3.5" />
-              </a>
-            </Button>
-          </div>
+          {/* Questionnaire link — PRISM does not always return one
+              immediately; fall back to an explanatory note. */}
+          {questionnaireUrl ? (
+            <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+              <p className="text-sm font-medium">Questionnaire Link</p>
+              <p className="text-xs text-muted-foreground break-all">
+                {questionnaireUrl}
+              </p>
+              <Button size="sm" asChild>
+                <a href={questionnaireUrl} target="_blank" rel="noopener noreferrer">
+                  Open Questionnaire <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">
+                PRISM has accepted the request but has not returned a
+                questionnaire link yet. The candidate will receive the
+                questionnaire by email, and the link will appear here once
+                PRISM issues it.
+              </p>
+            </div>
+          )}
 
           {/* API Payload preview */}
           {showPayloadPreview && (
@@ -613,14 +669,17 @@ export default function PrismInitiateForm({
 
             {/* ── Submit ── */}
             <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={disabled}>
-                Request Assessment
+              <Button type="submit" disabled={disabled || requestSurvey.isPending}>
+                {requestSurvey.isPending && (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                )}
+                {requestSurvey.isPending ? 'Requesting…' : 'Request Assessment'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => form.reset()}
-                disabled={disabled}
+                disabled={disabled || requestSurvey.isPending}
               >
                 Clear Form
               </Button>
