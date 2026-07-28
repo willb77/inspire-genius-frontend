@@ -9,17 +9,22 @@ import {
   BROADCAST_SIDEBAR_SECTION,
 } from "@/constants/sidebar-sections"
 import { useVerticalAccess } from "@/verticals/core"
-import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
+import {
+  useVerticalLauncherSection,
+  useWorkspaceNavItems,
+} from "@/components/layout/useVerticalLauncher"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 
 /**
- * A role's own menu — exactly its `NAV_ITEMS_BY_ROLE` list. Entitlement-gated
- * verticals are NOT mixed in here; they render separately (see
- * {@link useEntitledVerticalItems}) under a collapsed "Verticals" section, so a
- * role's own items stay prominent.
+ * A role's own menu — its `NAV_ITEMS_BY_ROLE` list, plus any entitled
+ * **workspace** vertical (Job Fit, Lumen), which read as everyday first-person
+ * tools rather than separate products and so belong in My Workspace. Every
+ * OTHER entitlement-gated vertical is NOT mixed in here; those render
+ * separately (see {@link useEntitledVerticalItems}) under a collapsed
+ * "Verticals" section, so a role's own items stay prominent.
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
-  return NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  return useWorkspaceNavItems(NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
 }
 
 /**
