@@ -22,7 +22,10 @@ import {
   FitError,
 } from "./_shared"
 import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
-import { tierLabel, gapTone, formatGap, variationDescriptor } from "./_fit"
+import { tierLabel, gapTone, formatGap, variationDescriptor, jobFitNarrativeEnabled } from "./_fit"
+import { FitSummaryCard } from "./FitSummaryCard"
+import { FitFollowUpCard } from "./FitFollowUpCard"
+import { FitActionsBar } from "./FitActionsBar"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"
 
@@ -77,6 +80,7 @@ export default function FitDetailPage() {
     () => (data ? toRadarInputs(data.perDimension) : null),
     [data]
   )
+  const narrative = jobFitNarrativeEnabled()
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -101,6 +105,9 @@ export default function FitDetailPage() {
             title={data.roleTitle}
             description={variationDescriptor(data.totalVariation)}
           />
+
+          {/* Action toolbar: Download PDF · Export As · Print · Save · Email · Copy link · Write Résumé */}
+          {narrative && <FitActionsBar data={data} />}
 
           <MatchingValidationBanner
             note={data.methodologyNote}
@@ -138,6 +145,9 @@ export default function FitDetailPage() {
               <FitPill tone="gray">Base tier: {tierLabel(data.baseTier)}</FitPill>
             )}
           </div>
+
+          {/* Fit narrative: plain-language read of the overlay + fit % + gaps */}
+          {narrative && <FitSummaryCard data={data} />}
 
           {/* Radar: your profile vs the role benchmark */}
           <FitCard className="mb-6">
@@ -224,6 +234,9 @@ export default function FitDetailPage() {
               </ul>
             </FitCard>
           )}
+
+          {/* Inline follow-up — answers render right here, not in a separate chat */}
+          {narrative && <FitFollowUpCard data={data} />}
         </>
       )}
 
