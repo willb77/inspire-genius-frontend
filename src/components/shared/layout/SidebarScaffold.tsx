@@ -45,13 +45,27 @@ export type NavItemDef = {
    * catalogue stays discoverable and the gate is legible rather than invisible.
    */
   disabled?: boolean;
+  /**
+   * Treat the item as active for any route under this prefix, instead of only
+   * on an exact `to` match. A vertical's launcher entry links to its *home*
+   * page, so without this it stops looking active the moment you navigate to
+   * any other page inside that vertical.
+   */
+  activePrefix?: string;
 };
 
 export type NavSectionDef = {
   label: string;
   items: NavItemDef[];
-  /** When true, the section renders as a clickable header that expands/collapses its items. */
+  /** Render as a clickable header, starting CLOSED. */
   defaultCollapsed?: boolean;
+  /**
+   * Render as a clickable header starting OPEN. `defaultCollapsed` already
+   * implies collapsible-and-closed; this is the other half — used by the active
+   * vertical's sub-nav, which opens on arrival but can still be rolled up.
+   * Ignored when `defaultCollapsed` is true.
+   */
+  collapsible?: boolean;
 };
 
 export type SidebarScaffoldProps = {
@@ -70,11 +84,13 @@ export type SidebarScaffoldProps = {
   collapseOnMount?: boolean;
 };
 
-function NavItem({ to, icon: Icon, label, state, disabled, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label, state, disabled, activePrefix, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
-  const isActive = location.pathname === to;
+  const isActive = activePrefix
+    ? location.pathname.startsWith(activePrefix)
+    : location.pathname === to;
   const activeClasses = "cursor-pointer !bg-ink !text-white [&>svg]:!text-white";
   const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A] glow-border-hover";
   // Locked (no entitlement): still listed so the catalogue is discoverable, but
@@ -117,6 +133,8 @@ function CollapsibleNavSection({
   showSeparator: boolean;
   expandOnPath?: string;
 }) {
+  // `defaultCollapsed` wins: a section is either collapsible-and-closed or
+  // (via `collapsible`) collapsible-and-open.
   const [open, setOpen] = React.useState(!section.defaultCollapsed);
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
@@ -202,7 +220,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           {navSections ? (
             navSections.map((section, si) => {
               const showSeparator = si < navSections.length - 1;
-              if (section.defaultCollapsed) {
+              if (section.defaultCollapsed || section.collapsible) {
                 return (
                   <CollapsibleNavSection
                     key={section.label}

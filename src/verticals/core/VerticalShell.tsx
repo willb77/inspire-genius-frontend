@@ -1,8 +1,7 @@
 import type { ReactNode } from "react"
 import { Outlet } from "react-router-dom"
-import SidebarScaffold, { type NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
-import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
-import { grantSidebarSectionForRole, KCE_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
+import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
+import { useVerticalPageSections } from "@/hooks/nav/useVerticalPageSections"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import { useAuth } from "@/context/useAuth"
 import { isUserRole, type UserRole } from "@/types/roles"
@@ -28,40 +27,20 @@ type VerticalShellProps = {
 }
 
 /**
- * The in-vertical sub-navigation section for verticals that reuse Core's chrome.
- * Returns `null` for verticals with no dedicated sidebar section (they render the
- * role menu only, matching their prior behaviour). GRANT/KCE keep their own
- * page lists so navigation between vertical pages is unchanged after the move
- * off the legacy `AppShell`/`AppSidebar`.
- */
-function verticalSubNav(vertical: VerticalKey, role: UserRole): NavSectionDef | null {
-  if (vertical === "grant") {
-    const section = grantSidebarSectionForRole(role)
-    return { label: section.label, items: section.items }
-  }
-  if (vertical === "knowledge-continuity") {
-    return { label: KCE_SIDEBAR_SECTION.label, items: KCE_SIDEBAR_SECTION.items }
-  }
-  return null
-}
-
-/**
- * Default vertical chrome: the standard `SidebarScaffold` (same as every role via
- * `UnifiedLayout`) showing the user's role menu plus, when the vertical defines
- * one, its own sub-nav section. Isolated in its own component so the page-view
- * audit fires only for the shared chrome — a themed vertical passing its own
- * `shell` (e.g. Honor) keeps its existing audit behaviour untouched.
+ * Default vertical chrome: the standard `SidebarScaffold`, showing the full app
+ * menu with **only the vertical you just entered expanded** — My Workspace,
+ * Role Views, Verticals and Administration are all present but rolled up. See
+ * {@link useVerticalPageSections} for the ordering and why.
+ *
+ * Isolated in its own component so the page-view audit fires only for the
+ * shared chrome — a themed vertical passing its own `shell` (e.g. Honor) keeps
+ * its existing audit behaviour untouched.
  */
 function CoreVerticalChrome({ vertical, role }: { vertical: VerticalKey; role: UserRole }) {
   usePageViewAudit(vertical)
-  const navItems = NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
-  const subNav = verticalSubNav(vertical, role)
-  const navSections: NavSectionDef[] = [
-    { label: "", items: navItems },
-    ...(subNav ? [subNav] : []),
-  ]
+  const navSections = useVerticalPageSections(vertical, role)
   return (
-    <SidebarScaffold navItems={navItems} navSections={navSections}>
+    <SidebarScaffold navItems={[]} navSections={navSections}>
       <Outlet />
     </SidebarScaffold>
   )
