@@ -25,6 +25,7 @@ import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidatio
 import { tierLabel, gapTone, formatGap, variationDescriptor, jobFitNarrativeEnabled } from "./_fit"
 import { FitSummaryCard } from "./FitSummaryCard"
 import { FitFollowUpCard } from "./FitFollowUpCard"
+import { FitActionsBar } from "./FitActionsBar"
 
 const NEUTRAL_BAND: InterpretationBand = "moderate"
 
@@ -104,6 +105,9 @@ export default function FitDetailPage() {
             title={data.roleTitle}
             description={variationDescriptor(data.totalVariation)}
           />
+
+          {/* Action toolbar: Download PDF · Export As · Print · Save · Email · Copy link · Write Résumé */}
+          {narrative && <FitActionsBar data={data} />}
 
           <MatchingValidationBanner
             note={data.methodologyNote}
