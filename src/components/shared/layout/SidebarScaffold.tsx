@@ -215,7 +215,11 @@ export default function SidebarScaffold({ navItems, navSections, children, class
               return (
                 <SidebarGroup key={section.label || `group-${si}`}>
                   {section.label && (
-                    <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    // Hidden in icon mode, same as CollapsibleNavSection's
+                    // header — otherwise the label clips to "MY WOR" / "VERT"
+                    // in the 48px rail. Newly load-bearing: Meridian Chat now
+                    // opens with the rail collapsed.
+                    <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
                       {section.label}
                     </div>
                   )}

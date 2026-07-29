@@ -119,4 +119,16 @@ describe("SidebarScaffold — collapseOnMount", () => {
     renderScaffold();
     expect(mockSetUIFlag).toHaveBeenCalled();
   });
+
+  it("hides expanded-section headers in icon mode so they cannot clip", () => {
+    // Caught by eye, not by a test: in the 48px rail an always-expanded section
+    // header rendered as "MY WOR" / "VERT" / "ADMI". Load-bearing now that
+    // Meridian Chat opens with the rail collapsed.
+    renderScaffold({
+      navSections: [{ label: "Verticals", items: ITEMS }],
+    });
+    expect(screen.getByText("Verticals")).toHaveClass(
+      "group-data-[collapsible=icon]:hidden",
+    );
+  });
 });
