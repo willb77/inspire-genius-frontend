@@ -12,7 +12,11 @@
  */
 import { agentApi } from '@/lib/agentApi'
 
-/** Outbound payload for `POST /v1/prism/requests` */
+/** Outbound payload for `POST /v1/prism/requests`.
+ *
+ *  Mirrors the backend `CreateRequestBody` model. Optional fields fall back
+ *  to the backend defaults when omitted (`qtype_id` 4 = Foundation,
+ *  `lang_id` 25 = US English, `gender` false, `isGift` false). */
 export type PrismSurveyRequestPayload = {
   forename: string
   surname: string
@@ -20,6 +24,13 @@ export type PrismSurveyRequestPayload = {
   organisation?: string
   /** PRISM questionnaire type id (Foundation / Personal / Professional). */
   qtype_id?: number
+  /** PRISM language id — 25 = US English (backend default). */
+  lang_id?: number
+  /** PRISM convention: `true` = male, `false` = female. */
+  gender?: boolean
+  /** Auto-marks the request as pre-paid so the report unlocks immediately.
+   *  Sent camelCase — the backend model aliases it to `is_gift`. */
+  isGift?: boolean
 }
 
 /** Lifecycle states the backend can return for a PRISM request */
