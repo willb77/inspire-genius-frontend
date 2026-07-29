@@ -71,6 +71,13 @@ export type FitDetail = {
   tier: JobTier
   baseTier: JobTier
   totalVariation: number
+  /**
+   * Explicit 1-100 fit score (higher = closer to the role's profile), from
+   * blueprint-service. Optional: older backends omit it and the UI derives an
+   * equivalent from totalVariation. Presented as an encouraging "Fit" percentage
+   * — never a binary fit/no-fit verdict.
+   */
+  fitScore?: number
   perDimension: PerDimensionFit[]
   criticalGaps: CoachingGap[]
   coachingGaps: CoachingGap[]
@@ -90,6 +97,35 @@ export type FitDetail = {
   closenessTopFactors?: string[]
   /** Dimension keys furthest from the target (closeness read only). */
   closenessTopGaps?: string[]
+}
+
+// ── Fit narration (agent-engine explain-fit) — FLAT responses, not enveloped ──
+
+/** One gap explained in plain language with how to close it. */
+export type ExplainedGap = {
+  dimension: string
+  plain: string
+  howToClose: string
+}
+
+/** Response from POST /v1/agents/blueprint/explain-fit (flat — read res.data). */
+export type ExplainFitResult = {
+  overview: string
+  gaps: ExplainedGap[]
+  closingActions: string[]
+  /** Present only when a follow-up question was asked. */
+  answer: string | null
+  /** Echoed back unchanged from the request — authoritative. */
+  fitScore: number
+  disclaimer: string
+}
+
+/** Response from POST /v1/agents/blueprint/write-resume (flat — read res.data). */
+export type WriteResumeResult = {
+  summary: string
+  strengths: string[]
+  suggestedBullets: string[]
+  disclaimer: string
 }
 
 /** One adjacent role the user could grow toward. */
