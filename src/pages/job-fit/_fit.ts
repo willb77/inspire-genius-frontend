@@ -67,3 +67,50 @@ export function gapTone(gap: number): Tone {
 export function formatGap(gap: number): string {
   return gap > 0 ? `+${gap}` : `${gap}`
 }
+
+/**
+ * Explicit 1-100 fit percentage (higher = closer). Prefer the backend's
+ * authoritative fitScore; when an older backend omits it, derive the SAME value
+ * from total variation (100 − mean per-dimension variation), floored at 1 so we
+ * never show a bare 0 that reads as a binary rejection.
+ */
+export function fitPercent(
+  fitScore: number | undefined,
+  totalVariation: number,
+  nDims: number
+): number {
+  if (typeof fitScore === "number" && Number.isFinite(fitScore)) {
+    return Math.max(1, Math.min(100, Math.round(fitScore)))
+  }
+  const denom = Math.max(1, nDims)
+  return Math.max(1, Math.min(100, Math.round(100 - totalVariation / denom)))
+}
+
+/** Tone for a fit percentage — encouraging, never binary. */
+export function fitPercentTone(pct: number): Tone {
+  if (pct >= 80) return "green"
+  if (pct >= 60) return "teal"
+  if (pct >= 40) return "amber"
+  return "red"
+}
+
+/** A short, encouraging label for a fit percentage (NEVER fit/no-fit). */
+export function fitPercentLabel(pct: number): string {
+  if (pct >= 80) return "Closely aligned with this role"
+  if (pct >= 60) return "Well aligned, with room to grow"
+  if (pct >= 40) return "Aligned in parts, with clear areas to develop"
+  return "Early alignment — real strengths and clear areas to develop"
+}
+
+/**
+ * The Job Fit narrative surface (fit %, description, gaps, follow-up, actions)
+ * is on by default. A localStorage kill-switch (`job_fit_narrative` = "false")
+ * disables it — mirrors the vertical's other client-side toggles.
+ */
+export function jobFitNarrativeEnabled(): boolean {
+  try {
+    return localStorage.getItem("job_fit_narrative") !== "false"
+  } catch {
+    return true
+  }
+}
