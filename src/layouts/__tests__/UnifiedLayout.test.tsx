@@ -26,7 +26,7 @@ jest.mock("@/hooks/audit/usePageViewAudit", () => ({
 // verticals from useEntitledVerticalItems. Mock both so this suite tests
 // UnifiedLayout's wiring in isolation (the entitlement hooks have their own
 // coverage). Entitled verticals default to empty; one test overrides it.
-type MockNav = Array<{ to: string; icon: () => null; label: string }>;
+type MockNav = Array<{ to: string; icon: () => null; label: string; disabled?: boolean }>;
 const mockEntitled = jest.fn(() => [] as MockNav);
 jest.mock("@/hooks/nav/useGatedNavItems", () => ({
   useGatedNavItems: (role: string) => {
@@ -111,14 +111,25 @@ describe("UnifiedLayout", () => {
     expect(props.navSections).toBeUndefined();
   });
 
-  test("adds a collapsed 'Verticals' section when the user is entitled to verticals", () => {
+  test("adds an EXPANDED 'Verticals' section beneath the role menu", () => {
+    // Expanded (not collapsed) since 2026-07-28: the section now lists the full
+    // catalogue with unentitled entries greyed, so it is a menu to browse.
     mockEntitled.mockReturnValue([{ to: "/vertical/grant", icon: () => null, label: "Financial Aid" }]);
     render(<UnifiedLayout role="user"><div /></UnifiedLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections).toHaveLength(2);
     expect(props.navSections[0].label).toBe(""); // header-less role menu
     expect(props.navSections[1].label).toBe("Verticals");
-    expect(props.navSections[1].defaultCollapsed).toBe(true);
+    expect(props.navSections[1].defaultCollapsed).toBe(false);
     expect(props.navSections[1].items[0].label).toBe("Financial Aid");
+  });
+
+  test("passes a vertical's disabled flag through to the sidebar untouched", () => {
+    mockEntitled.mockReturnValue([
+      { to: "/vertical/grant", icon: () => null, label: "Financial Aid", disabled: true },
+    ]);
+    render(<UnifiedLayout role="user"><div /></UnifiedLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections[1].items[0].disabled).toBe(true);
   });
 });

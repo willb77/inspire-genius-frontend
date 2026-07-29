@@ -50,7 +50,12 @@ jest.mock("@/verticals/core", () => ({
 // through it now, not a hardcoded section). Structural type — SuperAdminLayout
 // only reads .label/.items and hands items to the (mocked) SidebarScaffold.
 type MockLauncher =
-  | { id: string; label: string; roles: string[]; items: { to: string; icon: () => null; label: string }[] }
+  | {
+      id: string;
+      label: string;
+      roles: string[];
+      items: { to: string; icon: () => null; label: string; disabled?: boolean }[];
+    }
   | null;
 const mockLauncher = jest.fn((): MockLauncher => null);
 // `useWorkspaceNavItems` splices entitled workspace verticals (Job Fit, Lumen)
@@ -63,14 +68,9 @@ jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
 }));
 
-/** Open exactly one vertical's gate; all others stay closed. */
-function entitleOnly(vertical: string) {
-  mockUseVerticalAccess.mockImplementation((v: string) =>
-    v === vertical
-      ? { hasAccess: true, isLoading: false, enabledVerticals: [vertical] }
-      : { hasAccess: false, isLoading: false, enabledVerticals: [] }
-  );
-}
+// `entitleOnly` was removed with the bespoke GRANT section: the layout no
+// longer calls `useVerticalAccess` at all — entitlement now reaches it already
+// resolved, as the `disabled` flag on each launcher item.
 
 // 🔹 Stub the preview toggle (its own deps are tested separately)
 jest.mock("@/components/grant/GrantPreviewToggle", () => ({
@@ -142,7 +142,7 @@ jest.mock("@/context/useAuth", () => ({
 }));
 
 // 🔹 Capture props passed to SidebarScaffold
-type MockNavItem = { to: string; label: string };
+type MockNavItem = { to: string; label: string; disabled?: boolean };
 type MockNavSection = { label: string; items: MockNavItem[]; defaultCollapsed?: boolean };
 type MockScaffoldProps = {
   navSections?: MockNavSection[];
@@ -208,17 +208,20 @@ describe("SuperAdminLayout", () => {
 
     const props = mockSidebarScaffold.mock.calls[0][0];
 
+    // Order since 2026-07-28: My Workspace → Role Views → [Verticals] →
+    // Administration. Verticals is absent here only because `mockLauncher`
+    // defaults to null in this test's beforeEach.
     expect(props.navSections).toHaveLength(3);
     expect(props.navSections[0].label).toBe("My Workspace");
     expect(props.navSections[0].defaultCollapsed).toBe(true);
-    expect(props.navSections[1].label).toBe("Administration");
+    expect(props.navSections[1].label).toBe("Role Views");
+    expect(props.navSections[1].items).toHaveLength(5);
+    expect(props.navSections[1].defaultCollapsed).toBe(true);
+    expect(props.navSections[2].label).toBe("Administration");
     // 10 mock items minus the owner-only Dev Traffic Report (non-owner default) = 9.
-    expect(props.navSections[1].items).toHaveLength(9);
+    expect(props.navSections[2].items).toHaveLength(9);
     // Administration is expanded on super-admin pages (the user is mid-task)
-    expect(props.navSections[1].defaultCollapsed).toBe(false);
-    expect(props.navSections[2].label).toBe("Role Views");
-    expect(props.navSections[2].items).toHaveLength(5);
-    expect(props.navSections[2].defaultCollapsed).toBe(true);
+    expect(props.navSections[2].defaultCollapsed).toBe(false);
   });
 
   test("renders administration and role view labels", () => {
@@ -241,8 +244,19 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
   });
 
-  test("appends the GRANT section + renders the preview toggle when entitled", () => {
-    entitleOnly("grant");
+  test("Financial Aid is an entry INSIDE Verticals, not its own section", () => {
+    // GRANT lost its bespoke top-level section on 2026-07-28: it is one entry in
+    // the registry-driven Verticals catalogue, its nine aid pages reached
+    // through VerticalShell once you enter.
+    mockLauncher.mockReturnValue({
+      id: "verticals-launcher",
+      label: "Verticals",
+      roles: [],
+      items: [
+        { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid" },
+        { to: "/vertical/honor/dashboard", icon: () => null, label: "Honor Foundation" },
+      ],
+    });
     render(
       <SuperAdminLayout>
         <div />
@@ -250,13 +264,17 @@ describe("SuperAdminLayout", () => {
     );
 
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections).toHaveLength(4);
-    expect(props.navSections[3].label).toBe("Financial Aid");
-    // the preview toggle is passed through renderAfterContent
+    expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
+    const verticals = props.navSections.find((s: MockNavSection) => s.label === "Verticals");
+    expect(verticals.items.map((i: MockNavItem) => i.label)).toEqual([
+      "Financial Aid",
+      "Honor Foundation",
+    ]);
+    // the preview toggle is still passed through renderAfterContent
     expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
   });
 
-  test("appends the registry launcher section when a launcher vertical is entitled", () => {
+  test("Verticals sits after Role Views and before Administration", () => {
     mockLauncher.mockReturnValue({
       id: "verticals-launcher",
       label: "Verticals",
@@ -270,20 +288,33 @@ describe("SuperAdminLayout", () => {
     );
 
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections).toHaveLength(4);
-    expect(props.navSections[3].label).toBe("Verticals");
-    expect(props.navSections[3].items[0].label).toBe("Honor Foundation");
+    expect(props.navSections.map((s: MockNavSection) => s.label)).toEqual([
+      "My Workspace",
+      "Role Views",
+      "Verticals",
+      "Administration",
+    ]);
+    expect(props.navSections[2].items[0].label).toBe("Honor Foundation");
   });
 
-  test("omits the GRANT section when not entitled", () => {
+  test("unentitled verticals are listed greyed, not omitted", () => {
+    mockLauncher.mockReturnValue({
+      id: "verticals-launcher",
+      label: "Verticals",
+      roles: [],
+      items: [
+        { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid", disabled: true },
+      ],
+    });
     render(
       <SuperAdminLayout>
         <div />
       </SuperAdminLayout>,
     );
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections).toHaveLength(3);
-    expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
+    const verticals = props.navSections.find((s: MockNavSection) => s.label === "Verticals");
+    expect(verticals.items).toHaveLength(1);
+    expect(verticals.items[0].disabled).toBe(true);
   });
 
   test("hides the owner-only Dev Traffic Report item from non-owner super-admins", () => {

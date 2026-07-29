@@ -1,7 +1,14 @@
 import { useMemo } from "react"
-import { Briefcase, Compass, Lightbulb } from "lucide-react"
 import {
-  listEntitledVerticals,
+  Award,
+  Briefcase,
+  BookOpen,
+  Compass,
+  Lightbulb,
+  Wallet,
+} from "lucide-react"
+import {
+  listVerticals,
   useEnabledVerticals,
   type VerticalKey,
 } from "@/verticals/core"
@@ -12,72 +19,86 @@ import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
  * Registry-driven vertical launcher.
  *
  * Replaces per-vertical hardcoded sidebar wiring: instead of each layout
- * appending a bespoke section for GRANT/HONOR/…, the launcher reads the user's
- * entitled verticals straight from the Core registry
- * (`listEntitledVerticals(enabled_verticals)`) and renders one entry link per
- * vertical → its `homePath`. Registering a new vertical's manifest surfaces it
- * everywhere the launcher is mounted — no sidebar edit needed.
+ * appending a bespoke section for GRANT/HONOR/…, the launcher reads the vertical
+ * registry and renders one entry link per vertical → its `homePath`. Registering
+ * a new vertical's manifest surfaces it everywhere the launcher is mounted — no
+ * sidebar edit needed.
  *
- * Verticals that ship their OWN detailed sidebar sub-nav (currently just GRANT,
- * with 9 aid pages) are excluded here so they aren't double-listed; they keep
- * their richer section. Themed verticals (Honor, Summit-style) whose sub-nav
- * lives in their own shell appear as a single launcher link.
+ * **Every vertical is listed for every user** (2026-07-28). Entitlement decides
+ * whether an entry is *usable*, not whether it is *visible*: a vertical the user
+ * has no entitlement for renders greyed out and non-navigating (`disabled`), so
+ * the catalogue is discoverable and the gate is legible rather than invisible.
+ * Financial Aid (GRANT) and Knowledge Continuity are listed here too — their
+ * richer sub-nav lives inside their own shell (`VerticalShell`), reached once
+ * you enter, exactly like Honor.
  */
-const DETAILED_VERTICALS = new Set<VerticalKey>(["grant", "knowledge-continuity"])
 
 /**
- * Verticals that belong in **My Workspace** rather than the collapsed
- * "Verticals" launcher section.
+ * Verticals that belong in **My Workspace** rather than the "Verticals" section.
  *
  * Job Fit and Lumen are first-person surfaces — the signed-in user working on
  * their OWN profile — so they read as everyday workspace tools next to Goal
  * Setting and My Documents, not as a separate product the user launches into.
- * They are excluded from the launcher here and re-surfaced by
- * `useWorkspaceVerticalItems` (see `@/hooks/nav/useGatedNavItems`).
+ * They are excluded from the Verticals section here and re-surfaced by
+ * `useWorkspaceVerticalItems`.
  */
 export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "lumen"])
 
-/** Per-vertical sidebar icon; the generic `Compass` is the launcher fallback. */
-const WORKSPACE_VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
+/** Per-vertical sidebar icon; the generic `Compass` is the fallback. */
+const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,
   lumen: Lightbulb,
+  grant: Wallet,
+  "knowledge-continuity": BookOpen,
+  honor: Award,
 }
 
-/** The launcher sidebar section, or null when the user has no launcher-eligible vertical. */
-export function useVerticalLauncherSection(): SidebarSection | null {
-  const { data: enabled } = useEnabledVerticals()
-  const verticals = listEntitledVerticals(enabled ?? []).filter(
-    (v) => !DETAILED_VERTICALS.has(v.key) && !WORKSPACE_VERTICALS.has(v.key)
-  )
-  if (verticals.length === 0) return null
+function toNavItem(
+  v: { key: VerticalKey; title: string; homePath: string },
+  entitled: boolean,
+): NavItemDef {
   return {
-    id: "verticals-launcher",
-    label: "Verticals",
-    roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
-    items: verticals.map((v) => ({ to: v.homePath, icon: Compass, label: v.title })),
+    to: v.homePath,
+    icon: VERTICAL_ICONS[v.key] ?? Compass,
+    label: v.title,
+    disabled: !entitled,
   }
 }
 
 /**
- * Entitled workspace verticals (Job Fit, Lumen) as plain nav items, in registry
- * order. Empty when the user is entitled to neither. Consumers merge these into
- * the My Workspace menu — see `withWorkspaceVerticals`.
+ * The Verticals sidebar section — **every** registered vertical except the
+ * workspace ones, entitled or not. Never null: the catalogue is the point.
+ */
+export function useVerticalLauncherSection(): SidebarSection | null {
+  const { data: enabled } = useEnabledVerticals()
+  return useMemo(() => {
+    const entitlements = enabled ?? []
+    const verticals = listVerticals().filter((v) => !WORKSPACE_VERTICALS.has(v.key))
+    if (verticals.length === 0) return null
+    return {
+      id: "verticals-launcher",
+      label: "Verticals",
+      roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
+      items: verticals.map((v) => toNavItem(v, entitlements.includes(v.key))),
+    }
+  }, [enabled])
+}
+
+/**
+ * Workspace verticals (Job Fit, Lumen) as nav items, in registry order — shown
+ * to everyone, `disabled` when the user has no entitlement. Consumers merge
+ * these into the My Workspace menu — see {@link withWorkspaceVerticals}.
  */
 export function useWorkspaceVerticalItems(): NavItemDef[] {
   const { data: enabled } = useEnabledVerticals()
   // Memoised on the entitlement list so the returned array keeps a stable
   // identity across renders — it feeds the `navSections` memo in every layout.
-  return useMemo(
-    () =>
-      listEntitledVerticals(enabled ?? [])
-        .filter((v) => WORKSPACE_VERTICALS.has(v.key))
-        .map((v) => ({
-          to: v.homePath,
-          icon: WORKSPACE_VERTICAL_ICONS[v.key] ?? Compass,
-          label: v.title,
-        })),
-    [enabled],
-  )
+  return useMemo(() => {
+    const entitlements = enabled ?? []
+    return listVerticals()
+      .filter((v) => WORKSPACE_VERTICALS.has(v.key))
+      .map((v) => toNavItem(v, entitlements.includes(v.key)))
+  }, [enabled])
 }
 
 /**
@@ -106,8 +127,8 @@ export function withWorkspaceVerticals(
 }
 
 /**
- * A My Workspace menu with the user's entitled workspace verticals (Job Fit,
- * Lumen) spliced in above Settings/Help.
+ * A My Workspace menu with the workspace verticals (Job Fit, Lumen) spliced in
+ * above Settings/Help.
  *
  * Used by every layout that renders a workspace menu — `UserLayout` and
  * `SuperAdminLayout` build theirs from `getUserNavItems()`, and

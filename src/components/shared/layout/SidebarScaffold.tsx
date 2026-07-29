@@ -18,7 +18,7 @@ import { STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
 import { getUIFlag, setUIFlag } from "@/lib/storage";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown, ChevronRight, LogOut, Menu } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
@@ -39,6 +39,12 @@ export type NavItemDef = {
    * user's most recent PRISM CSV on mount.
    */
   state?: Record<string, unknown>;
+  /**
+   * Visible but not usable — the item renders greyed out with a lock and does
+   * not navigate. Used for verticals the user has no entitlement for: the
+   * catalogue stays discoverable and the gate is legible rather than invisible.
+   */
+  disabled?: boolean;
 };
 
 export type NavSectionDef = {
@@ -56,30 +62,47 @@ export type SidebarScaffoldProps = {
   className?: string;
   expandOnPath?: string;
   renderAfterContent?: React.ReactNode;
+  /**
+   * Start with the nav rail collapsed regardless of the stored preference —
+   * for content-dense pages that want the width (Meridian Chat). The forced
+   * state is not persisted, so other pages keep the user's own setting.
+   */
+  collapseOnMount?: boolean;
 };
 
-function NavItem({ to, icon: Icon, label, state, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label, state, disabled, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
   const isActive = location.pathname === to;
   const activeClasses = "cursor-pointer !bg-ink !text-white [&>svg]:!text-white";
   const inactiveClasses = "cursor-pointer !bg-transparent !text-[#1A1A1A] [&>svg]:!text-[#1A1A1A] glow-border-hover";
+  // Locked (no entitlement): still listed so the catalogue is discoverable, but
+  // greyed, non-navigating, and announced as disabled to assistive tech.
+  const lockedClasses =
+    "!bg-transparent !text-[#1A1A1A]/40 [&>svg]:!text-[#1A1A1A]/40 cursor-not-allowed hover:!bg-transparent";
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        isActive={isActive}
+        isActive={!disabled && isActive}
+        disabled={disabled}
+        aria-disabled={disabled || undefined}
+        title={disabled ? `${label} — not included in your plan` : undefined}
         onClick={() => {
+          if (disabled) return;
           if (expandOnPath && to === expandOnPath && !open) {
             setOpen(true);
           }
           navigate(to, state ? { state } : undefined);
         }}
         aria-label={label}
-        className={cn("py-2.5",isActive ? activeClasses : inactiveClasses)}
+        className={cn("py-2.5", disabled ? lockedClasses : isActive ? activeClasses : inactiveClasses)}
       >
         <Icon className="shrink-0 " />
         <span>{label}</span>
+        {disabled && (
+          <Lock className="ms-auto size-3.5 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
+        )}
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -137,17 +160,27 @@ function MobileMenuTrigger() {
   );
 }
 
-function SidebarOpenObserver() {
+function SidebarOpenObserver({ skipFirstWrite }: { skipFirstWrite?: boolean }) {
   const { open } = useSidebar();
+  // When a page force-collapses the sidebar on mount (`collapseOnMount`), the
+  // forced state is a per-page presentation choice, NOT a preference change —
+  // persisting it would leave every other page collapsed too. Skip that first
+  // write; any subsequent toggle IS the user's intent and persists normally.
+  const skipped = React.useRef(!skipFirstWrite);
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!skipped.current) {
+      skipped.current = true;
+      return;
+    }
     setUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN, open);
   }, [open]);
   return null;
 }
 
-export default function SidebarScaffold({ navItems, navSections, children, className, expandOnPath, renderAfterContent }: SidebarScaffoldProps) {
+export default function SidebarScaffold({ navItems, navSections, children, className, expandOnPath, renderAfterContent, collapseOnMount }: SidebarScaffoldProps) {
   const [initialSidebarOpen] = React.useState(() => {
+    if (collapseOnMount) return false;
     if (typeof window === 'undefined') return true;
     return getUIFlag(STORAGE_KEYS.UI_SIDEBAR_OPEN);
   });
@@ -157,7 +190,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
   return (
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
-        <SidebarOpenObserver />
+        <SidebarOpenObserver skipFirstWrite={collapseOnMount} />
         <SidebarSectionHeader className="h-14 px-2 mt-2 flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2 min-w-0 mr-auto">
             <img src="/Icon-Dark.svg" alt="Inspire Genius" className="size-8" />

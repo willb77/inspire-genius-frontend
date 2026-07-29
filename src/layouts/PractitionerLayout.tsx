@@ -4,6 +4,8 @@ import UnifiedLayout from "./UnifiedLayout"
 export type PractitionerLayoutProps = {
   children: React.ReactNode
   className?: string
+  /** Start with the nav rail collapsed (not persisted) — Meridian Chat. */
+  collapseSidebarOnMount?: boolean
 }
 
 /**
@@ -17,9 +19,17 @@ export type PractitionerLayoutProps = {
  * same Phase 1 (2026-07-22) — all four non-standard roles now share the
  * standard chrome; AppShell/AppSidebar are retired pending Phase 6 deletion.
  */
-export default function PractitionerLayout({ children, className }: PractitionerLayoutProps) {
+export default function PractitionerLayout({
+  children,
+  className,
+  collapseSidebarOnMount,
+}: PractitionerLayoutProps) {
   return (
-    <UnifiedLayout role="practitioner" className={className}>
+    <UnifiedLayout
+      role="practitioner"
+      className={className}
+      collapseSidebarOnMount={collapseSidebarOnMount}
+    >
       {children}
     </UnifiedLayout>
   )
