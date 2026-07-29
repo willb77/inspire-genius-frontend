@@ -1,6 +1,13 @@
 import { type RefObject, useState } from "react";
 import { motion } from "framer-motion";
-import { Copy, CirclePlay, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import { Copy, CirclePlay, Download, FileText, ChevronDown, ChevronUp, Users, Volume2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
 import { cn } from "@/lib/utils";
 import { formatFullTimestamp } from "@/lib/dateFormatters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -137,6 +144,44 @@ function CollaborationBadge({ agents }: { agents: string[] }) {
   );
 }
 
+/**
+ * Per-turn export link — "Export ▾" with Word and PDF.
+ *
+ * Sits in the same action row as Copy and Replay, so every answer can be kept
+ * on its own without exporting (and then trimming) the whole conversation.
+ */
+function TurnExport({
+  onExport,
+}: {
+  onExport: (format: TurnExportFormat) => void;
+}) {
+  const { t } = useTranslation("chat");
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          title={t("conversation.exportTurn.aria", { defaultValue: "Export this response" })}
+          data-testid="turn-export-trigger"
+          className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground/70 hover:text-foreground"
+        >
+          <Download className="size-4 text-black" />
+          <span>{t("conversation.exportTurn.label", { defaultValue: "Export" })}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-36">
+        <DropdownMenuItem onSelect={() => onExport("word")} data-testid="turn-export-word">
+          {t("conversation.exportTurn.word", { defaultValue: "Word (.doc)" })}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onExport("pdf")} data-testid="turn-export-pdf">
+          {t("conversation.exportTurn.pdf", { defaultValue: "PDF" })}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 const getDocKindBadgeClass = (kind?: string) => {
   if (kind === "pdf") return "bg-red-50 text-red-600";
   if (kind === "csv") return "bg-green-50 text-green-600";
@@ -157,6 +202,8 @@ type ChatWindowChatTabProps = {
   coachId?: string;
   conversationId?: string;
   onReplayMessage?: (text: string) => void;
+  /** Export a single turn as Word or PDF. Omitted → no per-turn export link. */
+  onExportMessage?: (message: ChatMessage, format: TurnExportFormat) => void;
 };
 
 export default function ChatWindowChatTab({
@@ -172,6 +219,7 @@ export default function ChatWindowChatTab({
   coachId,
   conversationId,
   onReplayMessage,
+  onExportMessage,
 }: ChatWindowChatTabProps) {
   const { t } = useTranslation("chat");
   const renderMessage = (m: ChatMessage) => {
@@ -229,6 +277,9 @@ export default function ChatWindowChatTab({
                       onClick={onShowAudioPlayer}
                     />
                   )}
+                {onExportMessage && m.text && (
+                  <TurnExport onExport={(format) => onExportMessage(m, format)} />
+                )}
               </div>
               <div className="flex flex-col items-end">
                 <div className="text-[11px] text-muted-foreground">{formatFullTimestamp(m.ts)}</div>
