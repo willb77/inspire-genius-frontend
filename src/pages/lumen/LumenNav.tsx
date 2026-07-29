@@ -1,16 +1,9 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import {
-  ArrowLeft,
-  LayoutDashboard,
-  MessagesSquare,
-  Settings,
-  Sparkles,
-  UserRoundSearch,
-} from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ROUTES } from "@/constants/routes"
 import { Button } from "@/components/ui/button"
 import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
+import { LUMEN_TOOLS } from "@/constants/vertical-subnav"
 
 /**
  * In-vertical navigation for Lumen, plus a signposted way back out.
@@ -25,13 +18,10 @@ import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
  * Lumen itself — the point of the control is leaving.
  */
 
-const TOOLS = [
-  { to: ROUTES.LUMEN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.LUMEN.SELF_PORTRAIT, icon: UserRoundSearch, label: "My Self-Portrait" },
-  { to: ROUTES.LUMEN.MOMENTS, icon: Sparkles, label: "Moments" },
-  { to: ROUTES.LUMEN.COACHING, icon: MessagesSquare, label: "Coaching" },
-  { to: ROUTES.LUMEN.SETTINGS, icon: Settings, label: "Settings" },
-]
+// The same list the sidebar renders inside Lumen — see
+// `@/constants/vertical-subnav`. Shared rather than duplicated so the pill row
+// and the left-rail menu can never disagree about what Lumen contains.
+const TOOLS = LUMEN_TOOLS
 
 export function LumenNav() {
   const navigate = useNavigate()

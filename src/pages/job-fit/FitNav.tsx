@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom"
-import { ArrowLeft, MessagesSquare, Route as RouteIcon, ScanSearch, Target, Wand2 } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ROUTES } from "@/constants/routes"
 import { Button } from "@/components/ui/button"
 import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
+import { JOB_FIT_TOOLS } from "@/constants/vertical-subnav"
 
 /**
  * In-vertical navigation for Job Fit, plus a way back out.
@@ -17,13 +17,10 @@ import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
  * added or an entitlement changes.
  */
 
-const TOOLS = [
-  { to: ROUTES.JOB_FIT.MATCHES, icon: ScanSearch, label: "My fit" },
-  { to: ROUTES.JOB_FIT.GAPS, icon: Target, label: "Gaps" },
-  { to: ROUTES.JOB_FIT.PATHWAY, icon: RouteIcon, label: "Pathway" },
-  { to: ROUTES.JOB_FIT.BLUEPRINT, icon: Wand2, label: "Blueprint a role" },
-  { to: ROUTES.JOB_FIT.COACH, icon: MessagesSquare, label: "Coaching" },
-]
+// The same list the sidebar renders inside Job Fit — see
+// `@/constants/vertical-subnav`. Shared rather than duplicated so the pill row
+// and the left-rail menu can never disagree about what Job Fit contains.
+const TOOLS = JOB_FIT_TOOLS
 
 export default function FitNav() {
   const navigate = useNavigate()
