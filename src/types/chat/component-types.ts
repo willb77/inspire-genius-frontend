@@ -50,6 +50,12 @@ export interface ChatWindowProps {
   // Replay voice for a specific assistant message (TTS at queue tail).
   onReplayMessage?: (text: string) => void;
   /**
+   * Export a single turn as Word or PDF, from the "Export ▾" link in that
+   * turn's action row. Omitted → the link is not rendered, so every existing
+   * consumer is unchanged.
+   */
+  onExportMessage?: (message: ChatMessage, format: "word" | "pdf") => void;
+  /**
    * When true, render the new (HomeV2) two-tile layout: a "Compose Prompt"
    * card on top and a full-height, scrollable "Conversation" card below it —
    * instead of the classic single card with the composer pinned to the bottom.
