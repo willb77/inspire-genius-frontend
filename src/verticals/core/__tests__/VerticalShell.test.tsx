@@ -3,7 +3,9 @@
  */
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import VerticalShell from "../VerticalShell"
+import { __resetRegistry, registerVertical } from "../registry"
 
 // Gate is exercised on its own in RequireVertical.test; here we force it open so
 // the tests isolate the chrome-selection behaviour (default SidebarScaffold vs
@@ -36,15 +38,24 @@ jest.mock("@/components/shared/layout/SidebarScaffold", () => ({
 }))
 
 function renderShell(element: React.ReactNode, vertical = "grant") {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MemoryRouter initialEntries={[`/vertical/${vertical}/page`]}>
-      <Routes>
-        <Route path={`/vertical/${vertical}`} element={element}>
-          <Route path="page" element={<div>routed page</div>} />
-        </Route>
-        <Route path="/home" element={<div>home</div>} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[`/vertical/${vertical}/page`]}>
+        <Routes>
+          <Route path={`/vertical/${vertical}`} element={element}>
+            <Route path="page" element={<div>routed page</div>} />
+          </Route>
+          <Route path="/home" element={<div>home</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+function sectionLabels(): string[] {
+  return JSON.parse(
+    screen.getByTestId("sidebar-scaffold").getAttribute("data-section-labels") ?? "[]",
   )
 }
 
@@ -52,6 +63,19 @@ describe("VerticalShell chrome selection", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseVerticalAccess.mockReturnValue({ hasAccess: true, isLoading: false, enabledVerticals: ["grant"] })
+    __resetRegistry()
+    registerVertical({
+      key: "grant",
+      title: "GRANT",
+      routePrefix: "/vertical/grant",
+      homePath: "/vertical/grant/dashboard",
+    })
+    registerVertical({
+      key: "knowledge-continuity",
+      title: "Knowledge Continuity",
+      routePrefix: "/vertical/knowledge-continuity",
+      homePath: "/vertical/knowledge-continuity/blueprint",
+    })
   })
 
   test("default: wraps the routed page in the standard SidebarScaffold", () => {
@@ -62,19 +86,23 @@ describe("VerticalShell chrome selection", () => {
 
   test("GRANT keeps its Financial Aid sub-nav after the AppShell removal", () => {
     renderShell(<VerticalShell vertical="grant" />)
-    const labels = JSON.parse(
-      screen.getByTestId("sidebar-scaffold").getAttribute("data-section-labels") ?? "[]",
-    )
-    // header-less role menu ("") + the vertical's own section
-    expect(labels).toContain("Financial Aid")
+    expect(sectionLabels()).toContain("Financial Aid")
   })
 
   test("KCE keeps its Knowledge Continuity sub-nav", () => {
     renderShell(<VerticalShell vertical="knowledge-continuity" />, "knowledge-continuity")
-    const labels = JSON.parse(
-      screen.getByTestId("sidebar-scaffold").getAttribute("data-section-labels") ?? "[]",
-    )
-    expect(labels).toContain("Knowledge Continuity")
+    expect(sectionLabels()).toContain("Knowledge Continuity")
+  })
+
+  test("the whole app menu stays present, in order, with the vertical between", () => {
+    // Entering a vertical used to REPLACE the menu; now My Workspace and the
+    // Verticals catalogue stay reachable (rolled up) around the open sub-nav.
+    renderShell(<VerticalShell vertical="grant" />)
+    expect(sectionLabels()).toEqual([
+      "My Workspace",
+      "Financial Aid",
+      "Verticals",
+    ])
   })
 
   test("custom shell REPLACES the scaffold (no shared chrome rendered) — the Honor path", () => {

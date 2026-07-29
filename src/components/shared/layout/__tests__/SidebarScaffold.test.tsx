@@ -12,9 +12,10 @@ jest.mock("@/lib/storage", () => ({
 }));
 
 const mockNavigate = jest.fn();
+let mockPathname = "/home";
 jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
-  useLocation: () => ({ pathname: "/home" }),
+  useLocation: () => ({ pathname: mockPathname }),
 }));
 
 jest.mock("@/context/useAuth", () => ({
@@ -102,6 +103,53 @@ describe("SidebarScaffold — disabled (unentitled) nav items", () => {
   });
 });
 
+describe("SidebarScaffold — activePrefix", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetUIFlag.mockReturnValue(true);
+    mockPathname = "/vertical/grant/loans";
+  });
+  afterEach(() => {
+    mockPathname = "/home";
+  });
+
+  it("marks an item active for a deeper route under its prefix", () => {
+    // Location is /vertical/grant/loans (see the react-router mock); the entry
+    // links to the vertical's HOME page, so an exact match would miss.
+    renderScaffold({
+      navItems: [
+        {
+          to: "/vertical/grant/dashboard",
+          icon: Wallet,
+          label: "GRANT",
+          activePrefix: "/vertical/grant",
+        },
+      ],
+    });
+    expect(screen.getByRole("button", { name: "GRANT" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  });
+
+  it("leaves an unrelated prefix inactive", () => {
+    renderScaffold({
+      navItems: [
+        {
+          to: "/vertical/lumen/dashboard",
+          icon: Wallet,
+          label: "Lumen",
+          activePrefix: "/vertical/lumen",
+        },
+      ],
+    });
+    expect(screen.getByRole("button", { name: "Lumen" })).not.toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  });
+});
+
 describe("SidebarScaffold — collapseOnMount", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -118,6 +166,30 @@ describe("SidebarScaffold — collapseOnMount", () => {
   it("persists normally when the page does not force a collapse", () => {
     renderScaffold();
     expect(mockSetUIFlag).toHaveBeenCalled();
+  });
+
+  it("renders a `collapsible` section OPEN but with a clickable header", () => {
+    // The active vertical's sub-nav: opens on arrival, can still be rolled up.
+    renderScaffold({
+      navSections: [{ label: "Aid pages", items: ITEMS, collapsible: true }],
+    });
+    const header = screen.getByRole("button", { name: /aid pages/i });
+    expect(header).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Home")).toBeInTheDocument();
+    fireEvent.click(header);
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Home")).toBeNull();
+  });
+
+  it("`defaultCollapsed` still wins — collapsible-and-closed", () => {
+    renderScaffold({
+      navSections: [
+        { label: "My Workspace", items: ITEMS, defaultCollapsed: true, collapsible: true },
+      ],
+    });
+    const header = screen.getByRole("button", { name: /my workspace/i });
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Home")).toBeNull();
   });
 
   it("hides expanded-section headers in icon mode so they cannot clip", () => {
