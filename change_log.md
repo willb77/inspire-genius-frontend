@@ -1,3 +1,30 @@
+## [2026-07-29] — Entering a vertical opens that vertical's left-side menu
+
+### Fixed
+- **Clicking into a vertical now opens its own sidebar menu.** Previously entering a vertical *replaced* the sidebar with the role menu plus — for GRANT and Knowledge Continuity only — that vertical's pages. The rest of the app vanished, and **Job Fit, Lumen and Job Blueprint showed no vertical menu at all** (their tool lists lived inside the page as horizontal pill rows; Job Blueprint's seven pages had no navigation of any kind and were reachable only by URL or a dashboard link). FE PR #303.
+- Every vertical page now renders the full app menu with exactly one section open — the one you clicked into:
+  - `My Workspace` — header only, rolled up until clicked
+  - `Role Views` — rolled up (super-admin only)
+  - **`{Vertical}` — OPEN**, still collapsible
+  - `Verticals` — rolled up, the whole catalogue
+  - `Administration` — rolled up, last (super-admin only)
+
+### Added
+- **`NavSectionDef.collapsible`** — the missing half of `defaultCollapsed`: collapsible-and-*open*. `defaultCollapsed` still wins where both are set, so no existing section changes behaviour.
+- **`NavItemDef.activePrefix`** — marks a launcher entry active for every route beneath the vertical. The entry links to `homePath`, so an exact match stopped highlighting the moment you navigated anywhere inside it.
+- **`src/constants/vertical-subnav.ts`** — the single source of truth for per-vertical sidebar menus. Job Fit and Lumen now **import** their tool lists from it instead of declaring their own, so the in-page pill row and the sidebar menu cannot drift; the dependency runs page → constants, never the reverse. Job Blueprint gets a menu for the first time.
+- **`src/hooks/nav/useVerticalPageSections.ts`** — assembles the ordered section list, gating the owner-only Dev Traffic Report route exactly as the layouts do.
+  - Files: `src/verticals/core/VerticalShell.tsx`, `src/components/shared/layout/SidebarScaffold.tsx`, `src/pages/job-fit/FitNav.tsx`, `src/pages/lumen/LumenNav.tsx`
+
+### Deliberately unchanged
+- **GRANT and KCE keep their friendlier section labels** ("Financial Aid", not the registry key `GRANT`); newer verticals fall back to their registry title.
+- **Honor is untouched** — it ships its own chrome via `VerticalShell`'s `shell` prop, so Core renders no sidebar for it. Where Core has no menu for a vertical the section is omitted rather than rendered empty, and the launcher entry still marks where you are.
+
+### Verified
+- `npm run test:ci` — **507 suites / 3869 tests pass** (+21); `npm run build` clean; **ESLint clean on all 9 changed files** (zero errors, not merely zero new ones).
+- **Rendered and eyeballed** the real `SidebarScaffold` with the exact sections the hook produces for a super-admin on a GRANT page: only Financial Aid open with all eight aid pages, My Workspace / Role Views / Verticals / Administration all rolled up, Administration last — and My Workspace expanding correctly on click. Harness deleted, not committed.
+- New coverage: `useVerticalPageSections.test.ts` (order for user vs super-admin, per-section roll-up state, owner-only route still gated, `activePrefix` applied only to the vertical you are in, section omitted when Core has no menu, label preference) · `SidebarScaffold.test.tsx` (`collapsible` opens with a clickable header, `defaultCollapsed` wins, `activePrefix` matches deeper routes) · `VerticalShell.test.tsx` (full menu present, in order, around the open sub-nav).
+
 ## [2026-07-28] — Verticals catalogue in the left menu + Meridian Chat chrome
 
 ### Changed — sidebar / My Workspace
