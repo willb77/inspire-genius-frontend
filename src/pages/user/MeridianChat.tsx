@@ -45,6 +45,8 @@ import {
 } from "@/services/agent/agentService";
 import { exportTranscriptPdfs, downloadBlob, type TranscriptMeta } from "@/lib/exportTranscript";
 import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
+import { exportTurn, type TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
+import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
 import { format } from "date-fns";
@@ -67,6 +69,7 @@ import {
   FastForward,
   X,
   Download,
+  Upload,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -136,7 +139,11 @@ export default function MeridianChat({
    * existing usage is unchanged; the practitioner route passes PractitionerLayout
    * so the same chat renders inside the practitioner sidebar.
    */
-  LayoutComponent?: ComponentType<{ children: ReactNode }>;
+  LayoutComponent?: ComponentType<{
+    children: ReactNode;
+    /** Optional — layouts that support it start the nav rail collapsed. */
+    collapseSidebarOnMount?: boolean;
+  }>;
 } = {}) {
   const isV2 = variant === "v2";
   const { t } = useTranslation("chat");
@@ -188,6 +195,9 @@ export default function MeridianChat({
   // the page owns the modal state since the stacked ChatWindow no longer
   // renders its own header/export trigger.
   const [exportOpen, setExportOpen] = useState(false);
+  // "Document Upload" in the header — the same modal the Documents panel uses,
+  // so an upload started mid-conversation lands in the same corpus.
+  const [uploadOpen, setUploadOpen] = useState(false);
   const demoAudioServiceRef = useRef<DemoAudioService | null>(null);
   if (!demoAudioServiceRef.current) demoAudioServiceRef.current = new DemoAudioService();
   const [isAudioPaused, setIsAudioPaused] = useState(false);
@@ -1272,6 +1282,47 @@ export default function MeridianChat({
     );
   }, [createConvMutation, disconnect, queryClient]);
 
+  /**
+   * Export ONE turn (the per-message "Export ▾" link) as Word or PDF.
+   *
+   * Deliberately client-side and separate from `handleExportChat`: the whole-
+   * conversation export is a two-document bundle with a cover page, which is
+   * the wrong artefact for "keep this one answer".
+   */
+  const handleExportMessage = useCallback(
+    async (message: ChatMessage, exportFormat: TurnExportFormat) => {
+      if (message.kind !== "text" || !message.text?.trim()) {
+        toast.error(t("meridian.exportTurn.empty", { defaultValue: "Nothing to export in this message." }));
+        return;
+      }
+      const userLabel = user?.fullName || user?.name || user?.email || t("common.you", { defaultValue: "You" });
+      const speaker =
+        message.sender === "user" ? userLabel : message.agent || COACH_NAME;
+      try {
+        await exportTurn(
+          {
+            speaker,
+            body: message.text,
+            timestamp: message.ts ? formatUSTimeSafe(message.ts) : undefined,
+            contributingAgents: message.contributingAgents,
+            userLabel,
+            slug: `meridian-${speaker}-${message.id}`,
+          },
+          exportFormat,
+        );
+        toast.success(
+          exportFormat === "word"
+            ? t("meridian.exportTurn.wordDone", { defaultValue: "Exported this response as a Word document." })
+            : t("meridian.exportTurn.pdfDone", { defaultValue: "Exported this response as a PDF." }),
+        );
+      } catch (err) {
+        console.warn("Per-turn export failed", err);
+        toast.error(t("meridian.exportTurn.failed", { defaultValue: "Couldn't export this response — please try again." }));
+      }
+    },
+    [t, user],
+  );
+
   const handleExportChat = useCallback(
     async (from: Date, to: Date) => {
       // Three-tier export pipeline (added end-to-end across PR #147 +
@@ -1486,13 +1537,17 @@ export default function MeridianChat({
   }, [consultedAgents]);
 
   return (
-    <LayoutComponent>
+    // The nav rail starts collapsed here — the chat is the densest surface in
+    // the app and the tile row now lives in the header. Not persisted, so every
+    // other page keeps whatever the user set (see SidebarScaffold).
+    <LayoutComponent collapseSidebarOnMount>
       {/* T8 — Sticky header. Wraps the Meridian label, consulted-agents
           sub-label (T10), dropdowns (T4/T5), and audio/voice controls so
           the controls stay visible as the chat scrolls. `sticky top-0`
           works because no ancestor in UserLayout sets `overflow: hidden`. */}
+      <div className="sticky top-0 z-30 -mx-4 mb-2 border-b bg-background px-4">
       <div
-        className="sticky top-0 z-30 bg-background border-b -mx-4 px-4 py-3 mb-2 flex flex-wrap items-center gap-3"
+        className="flex flex-wrap items-center gap-3 py-3"
         data-tour="meridian-header"
       >
         <div className="flex items-center gap-2">
@@ -1565,6 +1620,20 @@ export default function MeridianChat({
             selectedIds={selectedFileIds}
             onChange={(ids) => setSelectedFileIds(ids)}
           />
+          {/* Document Upload — DocumentsDropdown only *selects* files already
+              in the corpus; there was no way to add one without leaving the
+              conversation for /documents. */}
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            aria-label={t("meridian.upload.aria", { defaultValue: "Upload a document" })}
+            title={t("meridian.upload.aria", { defaultValue: "Upload a document" })}
+            data-testid="meridian-upload-button"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
+          >
+            <Upload className="size-4" />
+            <span>{t("meridian.upload.label", { defaultValue: "Document Upload" })}</span>
+          </button>
           <HistoryDropdown
             selectedIds={reviewConversationIds}
             onChange={setReviewConversationIds}
@@ -1708,30 +1777,39 @@ export default function MeridianChat({
         </div>
       </div>
 
-      {/* Canvas. V2 reads: nav (UserLayout) │ tile rail │ [Compose /
-          Conversation], and gives the grid a viewport-derived height so the
-          stacked Conversation card can flex-grow and scroll internally. Below
-          1024px the rail stacks above the chat column. Classic keeps the
-          full-width single ChatWindow (History via the header dropdown). */}
+      {/* Tile rail — Active Sessions / History / Last 5 / Projects / Knowledge.
+          Moved out of a 320px left column into a dropdown row directly under
+          the agent names (2026-07-28), which returns the full page width to the
+          conversation. Same tiles, same state, `orientation="horizontal"`.
+          Inside the sticky wrapper so it stays reachable as the chat scrolls —
+          the whole point of the move was to keep it one click away. */}
+      {isV2 && (
+        <MeridianTileRail
+          orientation="horizontal"
+          className="pb-3"
+          activeConversationId={selectedId}
+          onSelectConversation={(id) => {
+            void handleSelectConversation(id);
+          }}
+        />
+      )}
+      </div>
+
+      {/* Canvas. V2 now reads: nav (UserLayout) │ [tile row / Compose /
+          Conversation] as one full-width column, with a viewport-derived height
+          so the stacked Conversation card can flex-grow and scroll internally.
+          Classic keeps the full-width single ChatWindow (History via the header
+          dropdown). */}
       <div
         className={
           isV2
-            ? "grid h-[calc(100vh-8rem)] grid-cols-1 gap-5 rounded-2xl bg-panel p-4 md:p-6 lg:grid-cols-[320px_minmax(0,1fr)]"
+            ? "flex h-[calc(100vh-11rem)] flex-col gap-5 rounded-2xl bg-panel p-4 md:p-6"
             : "flex flex-col w-full"
         }
         data-tour="chat-window-canvas"
       >
-        {isV2 && (
-          <MeridianTileRail
-            className="overflow-y-auto pe-1"
-            activeConversationId={selectedId}
-            onSelectConversation={(id) => {
-              void handleSelectConversation(id);
-            }}
-          />
-        )}
         <div
-          className={isV2 ? "flex min-h-0 min-w-0 flex-col" : "w-full"}
+          className={isV2 ? "flex min-h-0 min-w-0 flex-1 flex-col" : "w-full"}
           data-tour="chat-window"
         >
           {reviewConversationIds.length > 0 && (
@@ -2136,6 +2214,7 @@ export default function MeridianChat({
             docOnDelete={docOnDelete}
             docOnDownload={docOnDownload}
             onReplayMessage={speakText}
+            onExportMessage={(m, fmt) => void handleExportMessage(m, fmt)}
           />
         </div>
       </div>
@@ -2150,6 +2229,18 @@ export default function MeridianChat({
           disableExport={false}
         />
       )}
+
+      {/* Header "Document Upload". Invalidates the documents list on success so
+          the new file is immediately selectable in DocumentsDropdown and shows
+          in the Knowledge tile without a reload. */}
+      <UploadDocumentsModal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onUploaded={() => {
+          setUploadOpen(false);
+          void queryClient.invalidateQueries({ queryKey: ["documents"] });
+        }}
+      />
     </LayoutComponent>
   );
 }

@@ -43,8 +43,13 @@ jest.mock("@/lib/agentApi", () => ({
 // `components/layout/__tests__/useVerticalLauncher.test.ts`; default to identity
 // here, and one test below overrides it to assert the layout passes them on.
 const mockWorkspaceNav = jest.fn((items: unknown) => items);
+// The Verticals catalogue section; null by default so the baseline assertions
+// (flat navItems, no navSections) hold. One test below supplies a section.
+type MockSection = { label: string; items: Array<{ to: string; label: string; disabled?: boolean }> } | null;
+const mockLauncher = jest.fn((): MockSection => null);
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
+  useVerticalLauncherSection: () => mockLauncher(),
 }));
 
 const DummyIcon = () => null;
@@ -62,6 +67,10 @@ jest.mock("@/constants/navigation", () => ({
     {
       label: "Administration",
       items: [{ to: "/super-admin/dashboard", icon: DummyIcon, label: "Dashboard" }],
+    },
+    {
+      label: "Role Views",
+      items: [{ to: "/home", icon: DummyIcon, label: "User Home" }],
     },
   ],
 }));
@@ -87,6 +96,7 @@ describe("UserLayout", () => {
     mockUseTour.mockReturnValue({ isRunning: false });
     mockUseAuth.mockReturnValue({ user: { role: "user" } });
     mockWorkspaceNav.mockImplementation((items: unknown) => items);
+    mockLauncher.mockReturnValue(null);
   });
 
   test("renders children", () => {
@@ -143,6 +153,43 @@ describe("UserLayout", () => {
       "Job Fit",
       "Lumen",
     ]);
+  });
+
+  test("renders a Verticals section for a plain user when the catalogue exists", () => {
+    mockLauncher.mockReturnValue({
+      label: "Verticals",
+      items: [
+        { to: "/vertical/grant/dashboard", label: "GRANT" },
+        { to: "/vertical/honor/dashboard", label: "Honor Foundation", disabled: true },
+      ],
+    });
+    render(<UserLayout><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual(["", "Verticals"]);
+    // Unentitled entries are listed, not hidden — greyed via `disabled`.
+    expect(props.navSections[1].items[1].disabled).toBe(true);
+  });
+
+  test("super-admin order is My Workspace → Role Views → Verticals → Administration", () => {
+    mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
+    mockLauncher.mockReturnValue({
+      label: "Verticals",
+      items: [{ to: "/vertical/grant/dashboard", label: "GRANT" }],
+    });
+    render(<UserLayout><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual([
+      "My Workspace",
+      "Role Views",
+      "Verticals",
+      "Administration",
+    ]);
+  });
+
+  test("forwards collapseSidebarOnMount to the scaffold", () => {
+    render(<UserLayout collapseSidebarOnMount><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.collapseOnMount).toBe(true);
   });
 
   test("workspace verticals reach the super-admin 'My Workspace' section too", () => {

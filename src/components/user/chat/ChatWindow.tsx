@@ -76,6 +76,7 @@ export default function ChatWindow({
   setShowAudioPlayer,
   showAudioPlayer,
   onReplayMessage,
+  onExportMessage,
   stacked,
 }: ChatWindowProps) {
   const { t } = useTranslation("chat");
@@ -335,6 +336,7 @@ const genericMessages =
               coachId={coachId}
               conversationId={conversationId}
               onReplayMessage={onReplayMessage}
+              onExportMessage={onExportMessage}
             />
           </div>
           {/* Floating audio player pinned to the bottom of the conversation card */}
@@ -435,6 +437,7 @@ const genericMessages =
             coachId={coachId}
             conversationId={conversationId}
             onReplayMessage={onReplayMessage}
+            onExportMessage={onExportMessage}
           />
         ) : (
           <DocumentsPanel

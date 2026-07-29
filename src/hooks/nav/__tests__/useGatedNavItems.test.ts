@@ -21,11 +21,6 @@ jest.mock("@/constants/navigation", () => ({
   },
 }))
 
-const mockUseVerticalAccess = jest.fn()
-jest.mock("@/verticals/core", () => ({
-  useVerticalAccess: (v: string) => mockUseVerticalAccess(v),
-}))
-
 // `useWorkspaceNavItems` (the Job Fit / Lumen splice) is covered in
 // `components/layout/__tests__/useVerticalLauncher.test.ts` against the real
 // registry; here it is the identity so this suite tests role-menu wiring alone.
@@ -42,8 +37,6 @@ jest.mock("@/hooks/super-admin/useBroadcast", () => ({
 }))
 
 jest.mock("@/constants/sidebar-sections", () => ({
-  grantSidebarSectionForRole: () => ({ items: [{ to: "/vertical/grant/dashboard", icon: () => null, label: "Grant sub" }] }),
-  KCE_SIDEBAR_SECTION: { items: [{ to: "/vertical/knowledge-continuity/capture", icon: () => null, label: "KCE sub" }] },
   BROADCAST_SIDEBAR_SECTION: { items: [{ to: "/super-admin/broadcast-alert", icon: () => null, label: "Broadcast Alerts" }] },
 }))
 
@@ -88,24 +81,38 @@ describe("useGatedNavItems", () => {
 describe("useEntitledVerticalItems", () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockUseVerticalAccess.mockReturnValue({ hasAccess: false })
     mockLauncher.mockReturnValue(null)
     mockBroadcast.mockReturnValue({ data: { authorized: false } })
   })
 
-  it("returns [] when the user has no entitled verticals", () => {
+  it("returns [] when the registry produced no section", () => {
     const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
     expect(result.current).toEqual([])
   })
 
-  it("returns one clean entry per entitled vertical (not GRANT's sub-pages)", () => {
-    mockUseVerticalAccess.mockReturnValue({ hasAccess: true })
-    mockLauncher.mockReturnValue({ items: [{ to: "/vertical/honor", icon: () => null, label: "Honor Foundation" }] })
-    mockBroadcast.mockReturnValue({ data: { authorized: true } })
+  it("passes the launcher catalogue straight through, disabled flags intact", () => {
+    // GRANT + KCE are no longer synthesized here: they are ordinary registry
+    // entries in the launcher section, so this hook must not double-add them.
+    mockLauncher.mockReturnValue({
+      items: [
+        { to: "/vertical/grant/dashboard", icon: () => null, label: "GRANT", disabled: false },
+        { to: "/vertical/honor", icon: () => null, label: "Honor Foundation", disabled: true },
+      ],
+    })
     const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
+    expect(result.current.map((i) => [i.label, i.disabled])).toEqual([
+      ["GRANT", false],
+      ["Honor Foundation", true],
+    ])
+  })
+
+  it("appends Platform Alerts only for an allow-listed super-admin", () => {
+    mockLauncher.mockReturnValue({
+      items: [{ to: "/vertical/honor", icon: () => null, label: "Honor Foundation" }],
+    })
+    mockBroadcast.mockReturnValue({ data: { authorized: true } })
+    const { result } = renderHook(() => useEntitledVerticalItems("super-admin"))
     expect(result.current.map((i) => i.label)).toEqual([
-      "Financial Aid",
-      "Knowledge Continuity",
       "Honor Foundation",
       "Broadcast Alerts",
     ])
