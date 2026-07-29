@@ -7,6 +7,7 @@
  */
 import { render, screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 /* ── Hook mocks ── */
 const mockUseFitMatches = jest.fn()
@@ -84,7 +85,15 @@ const DETAIL: FitDetail = {
 }
 
 function renderRouted(ui: React.ReactNode, path = "/") {
-  return render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>)
+  // A QueryClientProvider is needed now that the detail page mounts the fit
+  // narrative cards (which use React Query mutations). Retries off so the
+  // mocked-network mutations settle deterministically in tests.
+  const qc = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  )
 }
 
 beforeEach(() => jest.clearAllMocks())
