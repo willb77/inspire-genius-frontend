@@ -1,27 +1,35 @@
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import CoachPage from "../CoachPage"
 import FitNav from "../FitNav"
 import { JOB_FIT_QUESTION_GROUPS, withRole } from "@/constants/job-fit/coachingQuestions"
-import { useSavedRoles } from "@/hooks/knowledge-continuity/useSavedRoles"
 import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
+import type { FitDetail, FitMatch } from "@/types/job-fit"
 
 const mockNavigate = jest.fn()
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
 }))
-jest.mock("@/hooks/knowledge-continuity/useSavedRoles")
+
+// Coaching now answers INLINE via the fit hooks (not saved-roles → Meridian).
+const mockUseFitMatches = jest.fn()
+const mockUseFitDetail = jest.fn()
+const mockMutateAsync = jest.fn()
+jest.mock("@/hooks/job-fit/useFitMatches", () => ({ useFitMatches: () => mockUseFitMatches() }))
+jest.mock("@/hooks/job-fit/useFitDetail", () => ({ useFitDetail: (id?: string) => mockUseFitDetail(id) }))
+jest.mock("@/hooks/job-fit/useExplainFit", () => ({
+  useExplainFit: () => ({ mutateAsync: mockMutateAsync, isPending: false, data: undefined }),
+}))
+
 // The vertical registry is populated by importing the manifests barrel for its
-// side effect, which a bare component test doesn't do — so the filter is stubbed
-// rather than relying on registration order.
+// side effect, which a bare component test doesn't do — so the filter is stubbed.
 jest.mock("@/verticals/core", () => ({
   ...jest.requireActual("@/verticals/core"),
   useEnabledVerticals: jest.fn(),
   listEntitledVerticals: jest.fn(),
 }))
 
-const mockSavedRoles = useSavedRoles as jest.MockedFunction<typeof useSavedRoles>
 const mockEnabled = useEnabledVerticals as jest.MockedFunction<typeof useEnabledVerticals>
 const mockListEntitled = listEntitledVerticals as jest.MockedFunction<typeof listEntitledVerticals>
 
@@ -30,10 +38,24 @@ const VERTICALS = [
   { key: "lumen", title: "Lumen", routePrefix: "/vertical/lumen", homePath: "/vertical/lumen/dashboard" },
 ] as unknown as ReturnType<typeof listEntitledVerticals>
 
-const withRoles = (titles: string[]) =>
-  mockSavedRoles.mockReturnValue({
-    data: titles.map((t) => ({ role_title: t, node_count: 12 })),
-  } as unknown as ReturnType<typeof useSavedRoles>)
+const MATCH: FitMatch = {
+  jobId: "j1", roleTitle: "Director of Operations", department: null,
+  tier: "professional", baseTier: "professional", fitBand: "strong",
+  totalVariation: 20, behaviorVariation: 8, aptitudeVariation: 6,
+  coreTraitVariation: 6, confidence: null,
+}
+const DETAIL: FitDetail = {
+  jobId: "j1", roleTitle: "Director of Operations", tier: "professional",
+  baseTier: "professional", totalVariation: 20, fitScore: 91,
+  perDimension: [
+    { category: "behavior", dimensionId: 4, dimensionName: "Coordinating", candidateScore: 70, benchmarkScore: 78, gap: -8, coaching: "x" },
+  ],
+  criticalGaps: [], coachingGaps: [{ dimensionName: "Coordinating", category: "behavior", gap: -8 }],
+  overdoneFlags: [], interviewSelfAdvocacy: [], methodologyNote: "",
+}
+
+const withMatches = (list: FitMatch[]) =>
+  mockUseFitMatches.mockReturnValue({ data: list, isLoading: false, isError: false })
 
 const renderPage = () =>
   render(
@@ -45,6 +67,10 @@ const renderPage = () =>
 beforeEach(() => {
   mockEnabled.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useEnabledVerticals>)
   mockListEntitled.mockReturnValue([])
+  // default: role loaded only when an id is passed
+  mockUseFitDetail.mockImplementation((id?: string) => ({
+    data: id ? DETAIL : undefined, isLoading: false, isError: false,
+  }))
 })
 afterEach(() => jest.clearAllMocks())
 
@@ -53,11 +79,7 @@ afterEach(() => jest.clearAllMocks())
 describe("Job-Fit coaching questions", () => {
   test("has the five requested categories", () => {
     expect(JOB_FIT_QUESTION_GROUPS.map((g) => g.key)).toEqual([
-      "fit",
-      "gaps",
-      "closing",
-      "goals",
-      "interview",
+      "fit", "gaps", "closing", "goals", "interview",
     ])
   })
 
@@ -68,8 +90,6 @@ describe("Job-Fit coaching questions", () => {
   })
 
   test("every question is anchored to the selected role", () => {
-    // The whole point of Job-Fit coaching is that it is about YOU against ONE
-    // role — a question without {role} would drift into generic coaching.
     for (const g of JOB_FIT_QUESTION_GROUPS) {
       for (const q of g.questions) {
         expect(q).toContain("{role}")
@@ -86,57 +106,75 @@ describe("Job-Fit coaching questions", () => {
   })
 })
 
-// ── The page ─────────────────────────────────────────────────────────
+// ── The page (now answers INLINE) ─────────────────────────────────────
 
 describe("CoachPage", () => {
-  test("sends you to blueprint a role when none are saved", () => {
-    withRoles([])
+  test("points to matches when the user has no matched roles", () => {
+    withMatches([])
     renderPage()
-    expect(screen.getByText("No saved roles yet.")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /Blueprint a role first/ }))
-    expect(mockNavigate).toHaveBeenCalledWith("/vertical/job-fit/blueprint")
+    expect(screen.getByText("No matched roles yet.")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /See your role matches/ }))
+    expect(mockNavigate).toHaveBeenCalledWith("/vertical/job-fit/matches")
   })
 
-  test("picking a question injects it and auto-submits into Meridian", () => {
-    withRoles(["Director of Operations"])
+  test("picking a question answers it INLINE (not by navigating away)", async () => {
+    withMatches([MATCH])
     renderPage()
     fireEvent.change(screen.getByLabelText("Which role are we talking about?"), {
-      target: { value: "Director of Operations" },
+      target: { value: "j1" },
     })
     const first = JOB_FIT_QUESTION_GROUPS[0].questions[0]
+    mockMutateAsync.mockResolvedValueOnce({
+      overview: "", gaps: [], closingActions: [], answer: "Here's how you line up.", fitScore: 91, disclaimer: "",
+    })
     fireEvent.change(screen.getByLabelText("Question"), { target: { value: first } })
 
-    expect(mockNavigate).toHaveBeenCalledWith("/meridian/chat", {
-      state: {
-        prefillPrompt: withRole(first, "Director of Operations"),
-        autoSubmit: true,
-      },
-    })
+    // answer renders inline; no navigation to Meridian
+    await waitFor(() => expect(screen.getByText("Here's how you line up.")).toBeInTheDocument())
+    expect(mockNavigate).not.toHaveBeenCalledWith("/meridian/chat", expect.anything())
+    // the interpolated question is echoed on-page (appears both as the <option>
+    // and in the answer history → at least two matches)
+    expect(screen.getAllByText(withRole(first, "Director of Operations")).length).toBeGreaterThanOrEqual(2)
   })
 
   test("questions stay disabled until a role is chosen", () => {
-    withRoles(["CIO"])
+    withMatches([MATCH])
     renderPage()
     expect(screen.getByLabelText("Question")).toBeDisabled()
   })
 
-  test("a custom question is asked about the selected role too", () => {
-    withRoles(["CIO"])
+  test("a custom question is answered inline about the selected role", async () => {
+    withMatches([MATCH])
     renderPage()
     fireEvent.change(screen.getByLabelText("Which role are we talking about?"), {
-      target: { value: "CIO" },
+      target: { value: "j1" },
+    })
+    mockMutateAsync.mockResolvedValueOnce({
+      overview: "", gaps: [], closingActions: [], answer: "Surprising strength: coordination.", fitScore: 91, disclaimer: "",
     })
     fireEvent.change(screen.getByLabelText("Or ask your own"), {
       target: { value: "What would surprise me about {role}?" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /Ask Meridian/ }))
-    expect(mockNavigate).toHaveBeenCalledWith("/meridian/chat", {
-      state: { prefillPrompt: "What would surprise me about CIO?", autoSubmit: true },
+    fireEvent.click(screen.getByRole("button", { name: /Answer here/ }))
+    await waitFor(() =>
+      expect(screen.getByText("Surprising strength: coordination.")).toBeInTheDocument()
+    )
+  })
+
+  test("Open in Meridian remains as a secondary path", () => {
+    withMatches([MATCH])
+    renderPage()
+    fireEvent.change(screen.getByLabelText("Which role are we talking about?"), {
+      target: { value: "j1" },
     })
+    fireEvent.click(screen.getByRole("button", { name: /Open in Meridian/ }))
+    expect(mockNavigate).toHaveBeenCalledWith("/meridian/chat", expect.objectContaining({
+      state: expect.objectContaining({ autoSubmit: true }),
+    }))
   })
 
   test("switching category swaps the question set", () => {
-    withRoles(["CIO"])
+    withMatches([MATCH])
     renderPage()
     fireEvent.change(screen.getByLabelText("What do you want to work on?"), {
       target: { value: "interview" },
@@ -175,7 +213,6 @@ describe("FitNav", () => {
     mockListEntitled.mockReturnValue(VERTICALS)
     renderNav()
     expect(screen.getByRole("button", { name: "Lumen" })).toBeInTheDocument()
-    // GRANT is not entitled, so the filter never returns it.
     expect(screen.queryByRole("button", { name: "GRANT" })).not.toBeInTheDocument()
   })
 
@@ -185,8 +222,6 @@ describe("FitNav", () => {
     } as unknown as ReturnType<typeof useEnabledVerticals>)
     mockListEntitled.mockReturnValue(VERTICALS)
     renderNav()
-    // Job Fit is entitled and returned by the registry, but filtered out here —
-    // the point of the switcher is getting OUT.
     expect(screen.queryByRole("button", { name: "Job Fit" })).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Lumen" })).toBeInTheDocument()
   })
