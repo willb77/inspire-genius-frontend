@@ -180,11 +180,20 @@ describe("MatchesPage", () => {
     expect(mockUseFitMatches).toHaveBeenLastCalledWith("closeness")
   })
 
-  test("closeness rows show a closeness percentage", () => {
+  test("rows surface an explicit fit % (closeness score under the closeness method)", () => {
     const closeMatch: FitMatch = { ...MATCH, method: "closeness", closenessScore: 87 }
     mockUseFitMatches.mockReturnValue({ data: [closeMatch], isLoading: false, isError: false })
     renderRouted(<MatchesPage />)
-    expect(screen.getByText(/87% closeness to this role/i)).toBeInTheDocument()
+    // The closeness score is shown as the row's fit % badge (87 + %), so the
+    // person sees their fit on "My Fit" without opening the detail page.
+    expect(screen.getByText("87")).toBeInTheDocument()
+  })
+
+  test("gap-method rows show a derived fit % badge", () => {
+    // totalVariation 14 over 22 dims → 100 - round(14/22) = 99
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("99")).toBeInTheDocument()
   })
 
   test("says what Job Fit is for before showing any score", () => {
