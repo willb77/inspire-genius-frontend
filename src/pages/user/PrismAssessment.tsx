@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import UserLayout from '@/layouts/UserLayout'
 import PrismInitiateForm from '@/components/prism/PrismInitiateForm'
+import ActivePrismRequestCard from '@/components/prism/ActivePrismRequestCard'
 import PrismAssessmentCard from '@/components/prism/PrismAssessmentCard'
 import PrismReportViewer from '@/components/prism/PrismReportViewer'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,10 @@ export default function PrismAssessment() {
         )}
 
         {/* Request New */}
+        {/* Recover the questionnaire link for any survey already requested
+            but not yet completed — it is otherwise shown only once. */}
+        <ActivePrismRequestCard />
+
         <PrismInitiateForm disabled={!!activeAssessment} />
 
         {/* Report Viewer */}
