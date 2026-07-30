@@ -46,6 +46,7 @@ import {
 import { exportTranscriptPdfs, downloadBlob, type TranscriptMeta } from "@/lib/exportTranscript";
 import { parseMessages as parseChatMessages } from "@/lib/exportTranscript/parseMessages";
 import { exportTurn, type TurnExportFormat } from "@/lib/exportTranscript/exportTurn";
+import { applyPartialToMessages } from "@/lib/chat/applyPartial";
 import UploadDocumentsModal from "@/components/user/documents/UploadDocumentsModal";
 import { toast } from "sonner";
 // Agent engine toggle is handled internally by conversation hooks/services
@@ -512,7 +513,30 @@ export default function MeridianChat({
     [renderAssistantComplete],
   );
 
-  const meridianJob = useMeridianJob({ onJobSettled: handleJobSettled });
+  // ── Progressive delivery (2026-07-30) ──────────────────────────────
+  // The async-jobs poll already fetches `job.content` every 2s; it was
+  // only ever read once the job went terminal. The agent engine now
+  // flushes partial text onto the running row for single-agent turns, so
+  // the answer can be rendered as it is written instead of appearing all
+  // at once after ~45s.
+  //
+  // Deliberately defensive: when the backend has NOT been promoted yet,
+  // `content` stays null on running jobs and this is a no-op — which
+  // matters because a frontend merge deploys to dev AND staging-b while
+  // the backend only moves by tag.
+  const handleJobProgress = useCallback((job: ChatJob) => {
+    if (job.status === "complete" || job.status === "error") return;
+    const partial = job.content ?? "";
+    if (!partial) return;
+    // applyPartialToMessages returns the SAME array reference when nothing
+    // should change, so an unchanged poll costs no re-render.
+    setMessages((prev) => applyPartialToMessages(prev, partial));
+  }, []);
+
+  const meridianJob = useMeridianJob({
+    onJobSettled: handleJobSettled,
+    onJobUpdate: handleJobProgress,
+  });
   const meridianJobRef = useRef(meridianJob);
   meridianJobRef.current = meridianJob;
 
