@@ -33,14 +33,12 @@ beforeEach(() => {
 })
 
 describe('PrismBadge (G9 Agent C)', () => {
-  test('T1: renders "PRISM ready" chip + filename in tooltip when hasReadyPrism', () => {
+  test('T1: renders "PRISM ready" chip + completion date in tooltip', () => {
     mockUseLatestPrismStatus.mockReturnValue({
       latest: null,
       hasReadyPrism: true,
       ingest_status: 'done',
       completed_at: '2026-06-15T12:00:00Z',
-      csv_s3_key: 'users/x/prism/2026-06-15/PRISM,W,B,2026-06-15.csv',
-      pdf_s3_key: null,
       requested_at: '2026-06-14T00:00:00Z',
       isLoading: false,
       isError: false,
@@ -50,8 +48,11 @@ describe('PrismBadge (G9 Agent C)', () => {
 
     expect(screen.getByTestId('prism-ready-badge')).toBeInTheDocument()
     expect(screen.getByText('PRISM ready')).toBeInTheDocument()
-    // Tooltip content (Radix mocked) renders the CSV filename.
-    expect(screen.getByText('PRISM,W,B,2026-06-15.csv')).toBeInTheDocument()
+    // Tooltip shows the completion date. It used to be nested inside a
+    // filename branch fed by csv_s3_key — an internal S3 key the endpoint
+    // never returns — so this line could never render.
+    expect(screen.getByText('PRISM result available')).toBeInTheDocument()
+    expect(screen.getByText(/^Completed: /)).toBeInTheDocument()
   })
 
   test('T2: renders nothing when hasReadyPrism is false', () => {
@@ -60,8 +61,6 @@ describe('PrismBadge (G9 Agent C)', () => {
       hasReadyPrism: false,
       ingest_status: 'pending',
       completed_at: null,
-      csv_s3_key: null,
-      pdf_s3_key: null,
       requested_at: null,
       isLoading: false,
       isError: false,
@@ -72,5 +71,23 @@ describe('PrismBadge (G9 Agent C)', () => {
     expect(container.firstChild).toBeNull()
     expect(screen.queryByTestId('prism-ready-badge')).not.toBeInTheDocument()
     expect(screen.queryByText('PRISM ready')).not.toBeInTheDocument()
+  })
+
+
+  test('T3: omits the Completed line when no completion date is known', () => {
+    mockUseLatestPrismStatus.mockReturnValue({
+      latest: null,
+      hasReadyPrism: true,
+      ingest_status: 'done',
+      completed_at: null,
+      requested_at: '2026-06-14T00:00:00Z',
+      isLoading: false,
+      isError: false,
+    })
+
+    render(<PrismBadge />)
+
+    expect(screen.getByText('PRISM result available')).toBeInTheDocument()
+    expect(screen.queryByText(/^Completed: /)).not.toBeInTheDocument()
   })
 })
