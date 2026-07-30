@@ -59,10 +59,12 @@ export type PrismIngestStatus =
 
 /** Single row returned by `GET /v1/prism/requests/me`.
  *
- *  G9 P2 (poll + ingest) extends this row with the new ingest fields
- *  (`ingest_status`, `completed_at`, `csv_s3_key`, `pdf_s3_key`,
- *  `requested_at`). All G9 fields are optional + nullable so the type
- *  stays compatible with pre-G9 backend payloads. */
+ *  G9 P2 (poll + ingest) extends this row with `ingest_status`,
+ *  `completed_at` and `requested_at`. These are optional + nullable so the
+ *  type stays compatible with pre-G9 backend payloads.
+ *
+ *  The row's S3 keys are intentionally absent — see the note on the fields
+ *  below. */
 export type PrismRequestRow = {
   /** Backend field is `id` (RequestRow.id), NOT `request_id` — that name
    *  belongs to the POST response (`CreateRequestResponse`). */
@@ -87,10 +89,11 @@ export type PrismRequestRow = {
   ingest_status?: PrismIngestStatus | null
   /** ISO-8601 timestamp when the survey was completed. */
   completed_at?: string | null
-  /** S3 key of the PRISM CSV (preferred surface for "PRISM ready"). */
-  csv_s3_key?: string | null
-  /** S3 key of the PRISM PDF (optional secondary artifact). */
-  pdf_s3_key?: string | null
+  // NOTE: `csv_s3_key` / `pdf_s3_key` are deliberately NOT declared here.
+  // They exist on the prism_requests row but are internal S3 object keys
+  // (bucket layout + user id) that GET /v1/prism/requests/me does not return
+  // and should not — declaring them created a false expectation that fed a
+  // tooltip branch which could never render.
   /** ISO-8601 timestamp when the survey was requested.
    *  Distinct from `created_at` because P2 stamps this when the
    *  questionnaire link is opened by the user. */

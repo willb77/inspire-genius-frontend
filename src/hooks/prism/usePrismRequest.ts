@@ -49,8 +49,6 @@ export type LatestPrismStatus = {
   // ── Convenience accessors (also available on `latest`) ──
   ingest_status: PrismIngestStatus | null
   completed_at: string | null
-  csv_s3_key: string | null
-  pdf_s3_key: string | null
   requested_at: string | null
   // ── React Query passthrough ─────────────────────────────
   isLoading: boolean
@@ -87,8 +85,6 @@ export function useLatestPrismStatus(): LatestPrismStatus {
     hasReadyPrism,
     ingest_status,
     completed_at: latest?.completed_at ?? null,
-    csv_s3_key: latest?.csv_s3_key ?? null,
-    pdf_s3_key: latest?.pdf_s3_key ?? null,
     requested_at: latest?.requested_at ?? latest?.created_at ?? null,
     isLoading: q.isLoading,
     isError: q.isError,
