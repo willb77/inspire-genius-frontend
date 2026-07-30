@@ -457,7 +457,14 @@ export default function PrismInitiateForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    PRISM will send questionnaire access to this email
+                    {/* Deliberately NOT "PRISM will email this address".
+                        We make no such call — there is no SES send in the
+                        request route — and whether PRISM emails the candidate
+                        is their configuration, unverified by us. Promising
+                        delivery here made users wait for mail that may never
+                        arrive instead of using the link we show on submit. */}
+                    Identifies the candidate to PRISM. The questionnaire link
+                    appears here on submit — use that to start the survey
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

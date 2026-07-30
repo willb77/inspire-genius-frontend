@@ -64,16 +64,24 @@ export type PrismIngestStatus =
  *  `requested_at`). All G9 fields are optional + nullable so the type
  *  stays compatible with pre-G9 backend payloads. */
 export type PrismRequestRow = {
-  request_id: string
+  /** Backend field is `id` (RequestRow.id), NOT `request_id` — that name
+   *  belongs to the POST response (`CreateRequestResponse`). */
+  id: string
   action_url_1: string | null
-  quest_status_desc: PrismRequestStatusDesc
+  /** PRISM leaves ActionURL1 empty for a freshly-created candidate and puts
+   *  the questionnaire link in ActionURL2, so BOTH must be read. */
+  action_url_2: string | null
   forename: string | null
   surname: string | null
   email: string | null
   organisation: string | null
   qtype_id: number | null
-  created_at: string | null
-  updated_at: string | null
+  // ── Not returned by GET /v1/prism/requests/me ───────────
+  // Kept optional because the POST response and future revisions carry
+  // them; reading them off a list row will simply yield undefined.
+  quest_status_desc?: PrismRequestStatusDesc
+  created_at?: string | null
+  updated_at?: string | null
   // ── G9 P2 ingest pipeline fields ────────────────────────
   /** Lifecycle of the CSV → assessments ingest job. */
   ingest_status?: PrismIngestStatus | null
@@ -89,9 +97,13 @@ export type PrismRequestRow = {
   requested_at?: string | null
 }
 
-/** Paginated response from `GET /v1/prism/requests/me` */
+/** Paginated response from `GET /v1/prism/requests/me`.
+ *
+ *  The backend key is `rows` (`RequestListResponse.rows`). This type said
+ *  `items` and nothing ever matched, so `useLatestPrismStatus()` always saw
+ *  an empty list and the "PRISM ready" badge could never render. */
 export type PrismRequestListResponse = {
-  items: PrismRequestRow[]
+  rows: PrismRequestRow[]
   total: number
   page?: number
   page_size?: number
