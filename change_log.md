@@ -1,3 +1,29 @@
+## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
+
+Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend both current on staging-B.
+
+### Migrations applied first, and verified by reading schema back
+A promote deploys code, not schema, so both agent-engine tables in the window went in **before** the tag, then were confirmed from `information_schema` rather than trusted from the runner's exit code:
+
+- `lumen_saved_prompts` (022) — 8 columns
+- `dossier_jobs` (021) — 9 columns. Not part of this feature, but the promoted agent-engine image serves `/agent/development/dossier/jobs`, so a missing table would have been a 500 waiting to happen.
+
+**Deliberately not applied:** `growth_*.sql` (growth-service is not deployed on staging-B) and `prism_results_backfill_from_assessments.sql` (a data mutation on another surface, not a prerequisite of this promote).
+
+### Scope — a promote is not per-feature
+The tag carried **39 commits** since `release-stable-2026-07-26-lumen`: all of `development`, not just Lumen. Riding along were role-fit D1–D7, KCE capture / curriculum / provenance, foldersync, support requests, growth dossier async compute, blueprint shadow-validation, and the `/v1/targets` gateway fix. There is no Lumen-only promote — the tag is the mechanism, and that blast radius should be stated before tagging, not after. (Another terminal subsequently recorded its own `/v1/targets` work as having reached staging-B "via `release-stable-2026-07-27-lumen-ux`" — the same effect, observed from the other side.)
+
+Pre-checked the known failure mode first: agent-engine ECS was `desired=1, running=1`, so the "promote goes red because the service is scaled to zero" trap was not in play.
+
+### Verified live on staging-B
+- `saved-prompts` went **404 → 401**. The 401 is the proof — the route exists and merely wants auth.
+- Authenticated round-trip: created a situation, re-saved it, got the **same row id with `use_count` 0→1**, so the whitespace-normalised dedupe promotes rather than duplicating, exactly as on dev. Probe row deleted afterwards, both times.
+- Self-Portrait composed from **three** sources there (PRISM + résumé + bio) versus two on dev — the four-source composer is demonstrably reading real per-environment data rather than returning a fixed shape.
+- **Frontend bundle checked directly**, not taken from CI: pulled the live entry chunk from `stable.inspiresgenius.com` and confirmed `vertical/lumen/coaching` is present alongside dashboard / self-portrait / moments / settings. The deployed bundle is current, not stale.
+
+### Note for future staging-B verification
+The probe above used `POST /v1/magic-auth` for a token. **#717 has since gated `/v1/magic-auth` off on staging-B and prod** (email-only token bypass). The verification stands — it was run before that landed — but the same probe will no longer work there, and future staging-B checks need a real login or an admin-tools path instead.
+
 ## [2026-07-29] — Entering a vertical opens that vertical's left-side menu
 
 ### Fixed
