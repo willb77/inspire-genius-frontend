@@ -79,6 +79,32 @@ export default function PathwayPage() {
         description="Adjacent roles you could grow toward, and the skills that get you there."
       />
 
+      {/* Always-visible explainer so the page is self-describing even when empty */}
+      <FitCard className="mb-6">
+        <FitSectionTitle>What this is</FitSectionTitle>
+        <p className="text-sm leading-relaxed text-[#374151]">
+          Career Pathways looks beyond the roles you already match closely and highlights the ones
+          you&apos;re <span className="font-medium text-[#0f766e]">developing toward</span> — roles a
+          step or two out where your profile is a workable-but-growing fit. For each, it shows how
+          big the stretch is and the specific behaviors to build; the <span className="font-medium">skill
+          ladders</span> break those into small, concrete steps.
+        </p>
+        <ul className="mt-3 space-y-1.5 text-sm text-[#6b7280]">
+          <li className="flex items-start gap-2">
+            <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" />
+            <span><span className="font-medium text-[#374151]">Adjacent roles</span> — growth targets ranked by how reachable they are from where you are now.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" />
+            <span><span className="font-medium text-[#374151]">Skill ladders</span> — a few practical steps to close the gap toward those roles.</span>
+          </li>
+        </ul>
+        <p className="mt-3 text-xs text-[#9ca3af]">
+          Pathways are personalized to your PRISM profile and the roles published to you. As more
+          roles are published — or as you complete your assessment — more pathways appear here.
+        </p>
+      </FitCard>
+
       {isLoading && <FitLoading label="Looking for adjacent pathways…" />}
 
       {isError && (

@@ -14,10 +14,33 @@ import {
 } from "./_shared"
 import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
 import FitPurpose from "./FitPurpose"
-import { bandTone, bandLabel, tierLabel, variationDescriptor } from "./_fit"
+import {
+  bandTone,
+  bandLabel,
+  tierLabel,
+  variationDescriptor,
+  fitPercent,
+  fitPercentTone,
+} from "./_fit"
+
+const PCT_COLOR: Record<string, string> = {
+  green: "text-[#15803d]",
+  teal: "text-[#0f766e]",
+  amber: "text-[#b45309]",
+  red: "text-[#b91c1c]",
+  gray: "text-[#6b7280]",
+}
 
 /** One ranked role match, linking through to its fit detail. */
 function MatchRow({ match }: { match: FitMatch }) {
+  // Show an explicit 1-100 fit % on the row so the person sees their fit here on
+  // "My Fit" without opening the detail page. Uses the weighted-closeness score
+  // directly under that method; otherwise derives the same % the detail shows.
+  const pct =
+    match.method === "closeness" && match.closenessScore != null
+      ? Math.max(1, Math.min(100, Math.round(match.closenessScore)))
+      : fitPercent(undefined, match.totalVariation, 22)
+  const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
   return (
     <Link
       to={ROUTES.JOB_FIT.detail(match.jobId)}
@@ -38,11 +61,16 @@ function MatchRow({ match }: { match: FitMatch }) {
           <span>{tierLabel(match.tier)} role</span>
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="h-3.5 w-3.5" />
-            {match.method === "closeness" && match.closenessScore != null
-              ? `${Math.round(match.closenessScore)}% closeness to this role`
-              : variationDescriptor(match.totalVariation)}
+            {variationDescriptor(match.totalVariation)}
           </span>
         </div>
+      </div>
+      <div className="shrink-0 text-right">
+        <div className={`text-2xl font-bold leading-none ${pctColor}`}>
+          {pct}
+          <span className="text-sm font-semibold text-[#9ca3af]">%</span>
+        </div>
+        <div className="mt-0.5 text-[10px] uppercase tracking-wide text-[#9ca3af]">fit</div>
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-[#9ca3af] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0D9488]" />
     </Link>
