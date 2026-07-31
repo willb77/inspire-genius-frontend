@@ -1,3 +1,46 @@
+## [2026-07-30] — Lumen coaching answers on the page, with print + Word/PDF export
+
+Lumen **Personal coaching** now answers **on the page** instead of navigating away to the Meridian chat surface. Answers accumulate, so a run of questions reads as one session, and each answer can be **copied, printed, or exported to Word or PDF** — the same per-turn controls Meridian chat has.
+
+### Why the old behaviour was wrong
+Asking a question threw the person out of Lumen and discarded the context they had just assembled with the source checkboxes. The answer arrived somewhere that no longer knew why it had been asked.
+
+### Added
+- `src/pages/lumen/CoachingAnswers.tsx` — the response window. Renders through `AssistantMarkdown` (coaching answers are mostly headings and lists; flattening them to one grey paragraph is what makes an inline answer feel worse than the chat). Per-answer **Copy / Print / Export ▾ (Word, PDF)**.
+- `src/hooks/lumen/useCoachAnswer.ts` — wraps the Meridian async-job path into ask → answer. One session id per page mount, so successive questions are one conversation.
+- `src/lib/exportTranscript/printTurn.ts` — printing, sharing `buildTurnHtml` with `exportTurn`.
+
+### Changed
+- `src/pages/lumen/CoachingPage.tsx` — **"Answer it here"** is now the primary action; **"Open in Meridian"** remains as secondary for anyone who wants to keep talking rather than read one answer. Picking a question from the dropdown answers it inline.
+
+### How it works — and what it deliberately does NOT do
+Inline answers go through the **ordinary async-job path** (`POST /v1/agents/chat/async` → poll `GET /v1/agents/chat/jobs/{id}`):
+
+- **Meridian is not bypassed.** She still classifies and routes to whichever specialist the question needs.
+- **No backend change, so no promote is needed.** Job Fit could answer inline (#306) because it already had `explain-fit`; Lumen has no equivalent, and a *synchronous* LLM route would sit behind API Gateway's hard 30s cap. The async path is the one built for this.
+- **The poll is the delivery mechanism** — the `job_complete` WS push is not reachable through the production ws-proxy — so the hook opens no socket at all.
+
+### Decisions worth keeping
+- **Print and Export share one document builder.** The printout, the `.doc` and the PDF are the same artefact rather than three near-misses; a test pins the printed input as deep-equal to the exported one.
+- **The scope line is not part of the question.** `Draw on my PRISM scores…` is an instruction to the coach — it goes into the prompt but is kept out of the answer heading and the exported file, which read as the question actually asked. The exported document leads with the question, because a download read a week later has none of the on-screen context.
+- **`printTurn` uses an off-screen iframe, not `window.open`** — a popup blocker swallows the latter silently, leaving no error to explain the nothing that happened.
+- **One job at a time**; overlapping asks would land out of order. A start-job failure clears the pending state, since `onJobSettled` never fires for a job that was never accepted and the spinner would otherwise run forever.
+
+### Verified against dev before merging, not asserted
+Exercised the real path with a real token: `POST /v1/agents/chat/async` → **202**, poll → running → **complete in ~9s**, and `metadata.contributing_agents` came back as **`['Summit']`** — Meridian routed a goal question to the goal agent, which is the routing this design depends on.
+
+### Tests
+97 passing across `pages/lumen/`, `hooks/lumen/` and `lib/exportTranscript/`. Three existing tests asserted the old navigate-away behaviour and were **rewritten to express the new intent** rather than deleted.
+
+Deliberately stayed off `SelfPortrait.tsx`, `types/lumen.ts` and `useSelfPortrait.ts` — FE #312 was open on those files from another terminal, and merged mid-build. Re-checked afterwards: **no conflict**, merges clean.
+
+### Known duplication — Lumen now has two export document builders
+FE #312 landed `src/lib/lumen/portraitReport.ts` (Self-Portrait report) at almost the same time. It shares the *plumbing* — `renderHtmlToPdf` and `downloadBlob` from `exportTranscript` — but has its own HTML builder and its own small markdown→HTML converter, because a portrait report (headline, instruments, coverage, disclaimer, Q&A) is a genuinely different document shape from a single turn. This work reuses `buildTurnHtml` instead, because a coaching answer *is* a turn — which is also what was asked for ("like the one in chat with Meridian").
+
+So the duplication is limited to two small markdown converters, and is **accepted for now** rather than resolved by refactoring another terminal's freshly-merged code. Per the standing rule, extract on the **third** occurrence or the first behavioural drift between them.
+
+**PR:** FE #313. Frontend-only, so it reaches **dev and staging-B** on merge without a backend promote.
+
 ## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
 
 Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend both current on staging-B.
