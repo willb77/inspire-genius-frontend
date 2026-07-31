@@ -34,9 +34,13 @@ export function printTurn(input: TurnExportInput): void {
   frame.style.opacity = "0";
 
   let cleanedUp = false;
+  let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
   const cleanup = () => {
     if (cleanedUp) return;
     cleanedUp = true;
+    // Cancel the backstop when `afterprint` got there first — otherwise it
+    // stays pending for a full minute after the frame is already gone.
+    if (fallbackTimer !== undefined) clearTimeout(fallbackTimer);
     frame.remove();
   };
 
@@ -51,7 +55,7 @@ export function printTurn(input: TurnExportInput): void {
     // dismissed and never fire `afterprint`; the timer is the backstop. It must
     // not be shorter than a person plausibly spends in the print dialog, or the
     // document is torn out from under them mid-preview.
-    setTimeout(cleanup, CLEANUP_FALLBACK_MS);
+    fallbackTimer = setTimeout(cleanup, CLEANUP_FALLBACK_MS);
     win.focus();
     win.print();
   };

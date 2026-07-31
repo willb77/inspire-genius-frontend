@@ -37,7 +37,10 @@ describe("printTurn", () => {
     openSpy.mockRestore();
   });
 
-  test("removes the frame once printing is done", () => {
+  test("removes the frame once printing is done, and drops the backstop timer", () => {
+    // Fake timers so the assertion below is about the pending-timer count, and
+    // so no real 60s timer outlives the test and trips jest's teardown check.
+    jest.useFakeTimers();
     printTurn(input);
     const frame = document.querySelector("iframe") as HTMLIFrameElement;
     const win = frame.contentWindow as Window & { print: () => void };
@@ -46,9 +49,13 @@ describe("printTurn", () => {
 
     frame.onload?.(new Event("load"));
     expect(printSpy).toHaveBeenCalledTimes(1);
+    expect(jest.getTimerCount()).toBe(1);
 
     win.dispatchEvent(new Event("afterprint"));
     expect(document.querySelector("iframe")).toBeNull();
+    // The backstop fired its purpose already — leaving it pending would keep a
+    // timer alive for a full minute after the frame is gone.
+    expect(jest.getTimerCount()).toBe(0);
   });
 
   test("still cleans up when afterprint never fires", () => {
