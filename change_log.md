@@ -1,3 +1,17 @@
+## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
+
+Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
+
+### Added
+- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
+- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
+
+### Changed
+- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
+
 ## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
 
 Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
