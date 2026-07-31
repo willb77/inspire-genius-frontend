@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
+import { SelfPortraitNarrative } from "./SelfPortraitNarrative"
 import type {
   PortraitSourceKey,
   PortraitSources,
@@ -185,6 +186,10 @@ export default function SelfPortrait() {
           ))}
         </div>
       </header>
+
+      {/* Plain-language description + "ask your portrait" + PDF/Word export,
+          above the source list per the page's top-down read. */}
+      <SelfPortraitNarrative portrait={portrait} />
 
       {portrait.sources && (
         <SourceCoverage sources={portrait.sources} coverage={portrait.coverage} />
