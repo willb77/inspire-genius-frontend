@@ -195,6 +195,34 @@ describe("CoachingPage", () => {
     expect(opts.state.prefillPrompt).toContain("Where do I start?")
   })
 
+  test("the same question can be asked twice", () => {
+    // A select that keeps its value can never fire onChange for that value
+    // again. Someone who changes which sources to draw on and re-asks the same
+    // question would otherwise find the control silently dead.
+    mockSources({ prism: true, assessments: false, resume: true, bio: false })
+    renderPage()
+    const q = "Which of my current goals should I drop?"
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: q } })
+    fireEvent.click(screen.getByLabelText(/My résumé/))
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: q } })
+
+    expect(mockAsk).toHaveBeenCalledTimes(2)
+    expect(mockAsk.mock.calls[1][0].prompt).toMatch(/Leave my résumé out/)
+  })
+
+  test("picking a canned question doesn't wipe what you typed below", () => {
+    // The custom box is the person's own draft — a dropdown pick must not
+    // silently discard it.
+    mockSources({ prism: true, assessments: false, resume: false, bio: false })
+    renderPage()
+    const box = screen.getByLabelText("Ask your own question")
+    fireEvent.change(box, { target: { value: "half-written thought" } })
+    fireEvent.change(screen.getByLabelText("Question"), {
+      target: { value: "Which of my current goals should I drop?" },
+    })
+    expect(box).toHaveValue("half-written thought")
+  })
+
   test("a question in flight locks the controls so two can't overlap", () => {
     // One session id, one job at a time — a second question fired while the
     // first is still running would land out of order.

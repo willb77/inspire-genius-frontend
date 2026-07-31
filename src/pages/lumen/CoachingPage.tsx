@@ -126,7 +126,6 @@ export default function CoachingPage() {
 
   const [selected, setSelected] = useState<PortraitSourceKey[]>([])
   const [groupKey, setGroupKey] = useState(LUMEN_QUESTION_GROUPS[0].key)
-  const [question, setQuestion] = useState("")
   const [extra, setExtra] = useState("")
   const [custom, setCustom] = useState("")
   const coach = useCoachAnswer()
@@ -164,11 +163,13 @@ export default function CoachingPage() {
     return { question, prompt: scope ? `${question}\n\n${scope}` : question }
   }
 
-  const answerHere = (raw: string) => {
+  const answerHere = (raw: string, { clearCustom = false } = {}) => {
     const composed = compose(raw)
     if (!composed) return
     void coach.ask(composed)
-    setCustom("")
+    // Only the custom box empties itself — picking a canned question must not
+    // silently discard something the person had already typed below.
+    if (clearCustom) setCustom("")
   }
 
   const openInMeridian = (raw: string) => {
@@ -257,7 +258,6 @@ export default function CoachingPage() {
               value={groupKey}
               onChange={(e) => {
                 setGroupKey(e.target.value)
-                setQuestion("")
               }}
               className={selectClass}
             >
@@ -272,11 +272,16 @@ export default function CoachingPage() {
 
           <div className="space-y-2">
             <Label htmlFor="lumen_question">Question</Label>
+            {/*
+              Deliberately resets to the placeholder after each ask. A select
+              that keeps its value can never fire onChange for that same value
+              again, so the person could not ask the same question twice — which
+              they may well want to, after changing which sources to draw on.
+            */}
             <select
               id="lumen_question"
-              value={question}
+              value=""
               onChange={(e) => {
-                setQuestion(e.target.value)
                 if (e.target.value) answerHere(e.target.value)
               }}
               disabled={coach.isPending}
@@ -318,7 +323,7 @@ export default function CoachingPage() {
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              onClick={() => answerHere(custom)}
+              onClick={() => answerHere(custom, { clearCustom: true })}
               disabled={custom.trim().length === 0 || coach.isPending}
             >
               {coach.isPending ? (
