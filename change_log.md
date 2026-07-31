@@ -1,3 +1,19 @@
+## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
+
+Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
+
+### Added
+- `src/components/shared/layout/HelpSupportMenu.tsx` — the dropdown, rendered as a sidebar-footer button (opens above **Logout**).
+- `src/components/shared/layout/helpSupportLinks.ts` — the three asset URLs, app-relative under `/docs/guides/` so they resolve on whichever host the app runs on.
+- `src/components/shared/layout/__tests__/HelpSupportMenu.test.tsx` — trigger renders, links correct, menu opens with all three assets each `target=_blank`.
+- `public/docs/guides/honor-coach-workbench-user-guide.html` — the clickable HTML guide (sticky TOC, scroll-spy, in-page Download buttons), plus the `.pptx` and `.docx` next to it. Ship in `public/` so they deploy to the frontend's own S3/CloudFront origin.
+
+### Changed
+- `src/components/shared/layout/SidebarScaffold.tsx` — footer wires in `HelpSupportMenu` above the Logout item.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
+
 ## [2026-07-30] — Lumen coaching answers on the page, with print + Word/PDF export
 
 Lumen **Personal coaching** now answers **on the page** instead of navigating away to the Meridian chat surface. Answers accumulate, so a run of questions reads as one session, and each answer can be **copied, printed, or exported to Word or PDF** — the same per-turn controls Meridian chat has.
