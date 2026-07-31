@@ -30,14 +30,7 @@ import MatchesPage from "../MatchesPage"
 import FitDetailPage from "../FitDetailPage"
 import GapsPage from "../GapsPage"
 import PathwayPage from "../PathwayPage"
-import {
-  bandTone,
-  bandLabel,
-  tierLabel,
-  variationDescriptor,
-  gapTone,
-  formatGap,
-} from "../_fit"
+import { bandTone, bandLabel, tierLabel, gapTone, formatGap } from "../_fit"
 import type { FitMatch, FitDetail, FitPathway } from "@/types/job-fit"
 
 const MATCH: FitMatch = {
@@ -118,13 +111,6 @@ describe("_fit helpers", () => {
     expect(tierLabel("executive")).toBe("Executive")
   })
 
-  test("variationDescriptor buckets closeness", () => {
-    expect(variationDescriptor(5)).toMatch(/close/i)
-    expect(variationDescriptor(18)).toMatch(/strong/i)
-    expect(variationDescriptor(30)).toMatch(/workable/i)
-    expect(variationDescriptor(50)).toMatch(/stretch/i)
-  })
-
   test("gapTone and formatGap reflect direction", () => {
     expect(gapTone(5)).toBe("green")
     expect(gapTone(-8)).toBe("amber")
@@ -153,14 +139,18 @@ describe("MatchesPage", () => {
     expect(screen.getByText(/no published roles/i)).toBeInTheDocument()
   })
 
-  test("renders ranked matches with band pills", () => {
+  test("renders ranked matches (no verdict-style band label or disclaimer)", () => {
     mockUseFitMatches.mockReturnValue({ data: [MATCH, MATCH_2], isLoading: false, isError: false })
     renderRouted(<MatchesPage />)
     expect(screen.getByText("Customer Success Lead")).toBeInTheDocument()
     expect(screen.getByText("Operations Manager")).toBeInTheDocument()
     expect(screen.getByText("Revenue")).toBeInTheDocument()
-    // Standardized matching-validation banner sits prominently at the top.
-    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
+    // The "stretch/develop" descriptor and the decision-support banner were
+    // removed — neither should render. The band pill ("Strong fit"/"Poor fit")
+    // is gone too: the row's fitBand text must not appear as a label.
+    expect(screen.queryByText(/not a validated selection instrument/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/several areas to develop/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^(strong|stretch|poor|moderate) fit$/i)).not.toBeInTheDocument()
   })
 
   // ── Decision D4 — scoring-method toggle ──
@@ -169,8 +159,18 @@ describe("MatchesPage", () => {
     renderRouted(<MatchesPage />)
     // the page asks the hook for the gap read by default
     expect(mockUseFitMatches).toHaveBeenCalledWith("gap")
-    // gap read shows the variation descriptor, not a closeness percentage
-    expect(screen.getByText(/a strong overall match/i)).toBeInTheDocument()
+    // gap read shows the derived fit % badge (totalVariation 14 / 22 → 99)
+    expect(screen.getByText("99")).toBeInTheDocument()
+  })
+
+  test("prefers the backend fitScore for the row % when present", () => {
+    // With an authoritative fitScore the row shows exactly that (so it matches
+    // the role's detail page), not the derived 100 - total/22 fallback.
+    const scored: FitMatch = { ...MATCH, fitScore: 73 }
+    mockUseFitMatches.mockReturnValue({ data: [scored], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("73")).toBeInTheDocument()
+    expect(screen.queryByText("99")).not.toBeInTheDocument()
   })
 
   test("choosing 'Overall closeness' refetches with the closeness method", () => {
@@ -237,7 +237,7 @@ describe("FitDetailPage", () => {
     expect(screen.getByText(/couldn't load this role/i)).toBeInTheDocument()
   })
 
-  test("renders the full breakdown including the methodology note", () => {
+  test("renders the full breakdown", () => {
     mockUseFitDetail.mockReturnValue({ data: DETAIL, isLoading: false, isError: false })
     renderDetail()
     expect(screen.getByRole("heading", { name: "Customer Success Lead" })).toBeInTheDocument()
@@ -248,19 +248,8 @@ describe("FitDetailPage", () => {
     expect(screen.getByText(/watch for over-use/i)).toBeInTheDocument()
     expect(screen.getByText(/track record of new ideas/i)).toBeInTheDocument()
     expect(screen.getByText(/base tier/i)).toBeInTheDocument()
-    // The validation banner carries the backend methodology note as its body.
-    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
-    expect(screen.getByText(DETAIL.methodologyNote)).toBeInTheDocument()
-  })
-
-  test("surfaces the limited-release line when the role is gated", () => {
-    mockUseFitDetail.mockReturnValue({
-      data: { ...DETAIL, gated: true },
-      isLoading: false,
-      isError: false,
-    })
-    renderDetail()
-    expect(screen.getByText(/limited validation release/i)).toBeInTheDocument()
+    // The decision-support disclaimer banner was removed from the fit surfaces.
+    expect(screen.queryByText(/not a validated selection instrument/i)).not.toBeInTheDocument()
   })
 })
 

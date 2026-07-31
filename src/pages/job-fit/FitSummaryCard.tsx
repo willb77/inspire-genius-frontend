@@ -4,12 +4,7 @@ import type { FitDetail } from "@/types/job-fit"
 import { useExplainFit } from "@/hooks/job-fit/useExplainFit"
 import { toExplainBody } from "@/services/job-fit/explain.service"
 import { FitCard, FitSectionTitle, FitMeter } from "./_shared"
-import {
-  fitPercent,
-  fitPercentTone,
-  fitPercentLabel,
-  variationDescriptor,
-} from "./_fit"
+import { fitPercent, fitPercentTone, fitPercentLabel } from "./_fit"
 
 /**
  * Fit Summary — the plain-language read of the job↔person overlay.
@@ -38,11 +33,7 @@ export function FitSummaryCard({ data }: { data: FitDetail }) {
   const result = explain.data
   const overview =
     result?.overview?.trim() ||
-    (explain.isPending
-      ? ""
-      : `${fitPercentLabel(pct)} — about ${pct}% aligned overall. ${variationDescriptor(
-          data.totalVariation
-        )}.`)
+    (explain.isPending ? "" : `${fitPercentLabel(pct)} — about ${pct}% aligned overall.`)
   const gaps = result?.gaps?.length ? result.gaps : null
 
   return (
