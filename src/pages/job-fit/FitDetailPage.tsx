@@ -21,8 +21,7 @@ import {
   FitLoading,
   FitError,
 } from "./_shared"
-import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
-import { tierLabel, gapTone, formatGap, variationDescriptor, jobFitNarrativeEnabled } from "./_fit"
+import { tierLabel, gapTone, formatGap, jobFitNarrativeEnabled } from "./_fit"
 import { FitSummaryCard } from "./FitSummaryCard"
 import { FitFollowUpCard } from "./FitFollowUpCard"
 import { FitActionsBar } from "./FitActionsBar"
@@ -103,17 +102,11 @@ export default function FitDetailPage() {
           <FitPageHeader
             icon={Target}
             title={data.roleTitle}
-            description={variationDescriptor(data.totalVariation)}
+            description="How your behavioral profile compares with this role, dimension by dimension."
           />
 
           {/* Action toolbar: Download PDF · Export As · Print · Save · Email · Copy link · Write Résumé */}
           {narrative && <FitActionsBar data={data} />}
-
-          <MatchingValidationBanner
-            note={data.methodologyNote}
-            gated={data.gated}
-            className="mb-6"
-          />
 
           {/* Closeness summary */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">

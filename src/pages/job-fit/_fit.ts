@@ -45,17 +45,6 @@ export function bandLabel(band: FitBand): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-/**
- * Lower total variation = closer to the role's benchmark. Turn the raw number
- * into an encouraging, plain-language closeness descriptor.
- */
-export function variationDescriptor(totalVariation: number): string {
-  if (totalVariation <= 10) return "Very close to this role's profile"
-  if (totalVariation <= 20) return "A strong overall match"
-  if (totalVariation <= 35) return "A workable match with a few growth areas"
-  return "A stretch — several areas to develop"
-}
-
 /** Tone for a per-dimension gap: negative gap (below benchmark) = growth area. */
 export function gapTone(gap: number): Tone {
   if (gap >= 0) return "green"
