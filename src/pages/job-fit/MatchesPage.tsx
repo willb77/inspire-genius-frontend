@@ -1,27 +1,18 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { Target, ChevronRight, Building2, TrendingUp } from "lucide-react"
+import { Target, ChevronRight, Building2 } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import type { FitMatch, FitMethod } from "@/types/job-fit"
 import {
   FitPageHeader,
   FitCard,
-  FitPill,
   FitEmptyState,
   FitLoading,
   FitError,
 } from "./_shared"
-import { MatchingValidationBanner } from "@/components/job-fit/MatchingValidationBanner"
 import FitPurpose from "./FitPurpose"
-import {
-  bandTone,
-  bandLabel,
-  tierLabel,
-  variationDescriptor,
-  fitPercent,
-  fitPercentTone,
-} from "./_fit"
+import { tierLabel, fitPercent, fitPercentTone } from "./_fit"
 
 const PCT_COLOR: Record<string, string> = {
   green: "text-[#15803d]",
@@ -34,12 +25,14 @@ const PCT_COLOR: Record<string, string> = {
 /** One ranked role match, linking through to its fit detail. */
 function MatchRow({ match }: { match: FitMatch }) {
   // Show an explicit 1-100 fit % on the row so the person sees their fit here on
-  // "My Fit" without opening the detail page. Uses the weighted-closeness score
-  // directly under that method; otherwise derives the same % the detail shows.
+  // "My Fit" without opening the detail page. Under the closeness method, use the
+  // weighted-closeness score; otherwise prefer the backend's authoritative
+  // fitScore so this row shows the SAME number as the role's detail page (older
+  // backends omit it, so we fall back to the shared derivation).
   const pct =
     match.method === "closeness" && match.closenessScore != null
       ? Math.max(1, Math.min(100, Math.round(match.closenessScore)))
-      : fitPercent(undefined, match.totalVariation, 22)
+      : fitPercent(match.fitScore, match.totalVariation, 22)
   const pctColor = PCT_COLOR[fitPercentTone(pct)] ?? PCT_COLOR.teal
   return (
     <Link
@@ -49,7 +42,6 @@ function MatchRow({ match }: { match: FitMatch }) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="truncate text-base font-semibold text-[#1f2937]">{match.roleTitle}</span>
-          <FitPill tone={bandTone(match.fitBand)}>{bandLabel(match.fitBand)} fit</FitPill>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-[#6b7280]">
           {match.department && (
@@ -59,10 +51,6 @@ function MatchRow({ match }: { match: FitMatch }) {
             </span>
           )}
           <span>{tierLabel(match.tier)} role</span>
-          <span className="inline-flex items-center gap-1">
-            <TrendingUp className="h-3.5 w-3.5" />
-            {variationDescriptor(match.totalVariation)}
-          </span>
         </div>
       </div>
       <div className="shrink-0 text-right">
@@ -139,8 +127,7 @@ export default function MatchesPage() {
 
       <FitPurpose />
 
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <MatchingValidationBanner />
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
         <MethodToggle method={method} onChange={setMethod} />
       </div>
 

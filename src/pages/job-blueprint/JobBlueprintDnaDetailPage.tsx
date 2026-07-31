@@ -157,7 +157,7 @@ export default function JobBlueprintDnaDetailPage() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-sm">Behaviours</CardTitle>
           </CardHeader>
@@ -165,7 +165,7 @@ export default function JobBlueprintDnaDetailPage() {
             <BenchmarkBarChart benchmarks={jobDna.behaviors} height={250} />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-sm">Aptitudes</CardTitle>
           </CardHeader>
@@ -173,7 +173,7 @@ export default function JobBlueprintDnaDetailPage() {
             <BenchmarkBarChart benchmarks={jobDna.aptitudes} height={250} />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="text-sm">Core traits</CardTitle>
           </CardHeader>

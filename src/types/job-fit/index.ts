@@ -34,6 +34,13 @@ export type FitMatch = {
   aptitudeVariation: number
   coreTraitVariation: number
   confidence: number | null
+  /**
+   * Explicit 1-100 fit score (higher = closer), from blueprint-service. Computed
+   * with the SAME `_fit_percent(total, len(benchmark))` the detail page uses, so
+   * the "My Fit" row and the role's detail page show the identical number.
+   * Optional: older backends omit it and the UI derives an equivalent.
+   */
+  fitScore?: number
   /** Which formula produced this row (Decision D4). Absent on older backends. */
   method?: FitMethod
   /** 0..100 weighted-closeness score (higher = closer). Null under the gap read. */
