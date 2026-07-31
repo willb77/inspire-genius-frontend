@@ -165,6 +165,17 @@ export type PortraitSourceKey = "prism" | "assessments" | "resume" | "bio"
  */
 export type PortraitSources = Record<PortraitSourceKey, boolean>
 
+/**
+ * A narrated read of the Self-Portrait, or an answer to a question about it.
+ * Both come from `POST /self-portrait/{id}/ask`: no question → a description
+ * (`is_description: true`); a question → an answer. `answer` is markdown.
+ */
+export type PortraitAnswer = {
+  answer: string
+  is_description: boolean
+  disclaimer: string
+}
+
 export type SelfPortrait = {
   /** Null when the user has no PRISM assessment on file yet. */
   prism: PrismAnchor | null

@@ -1,11 +1,42 @@
 import { render, screen } from "@testing-library/react"
 import SelfPortrait from "../SelfPortrait"
-import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
+import {
+  useSelfPortrait,
+  useSelfPortraitDescription,
+  useAskSelfPortrait,
+} from "@/hooks/lumen/useSelfPortrait"
 import type { SelfPortrait as Portrait } from "@/types/lumen"
 
 jest.mock("@/hooks/lumen/useSelfPortrait")
 
+// react-markdown is ESM; jest can't transform it. Mock the renderer the
+// narrative card uses (same pattern as honor-evaluate.test).
+jest.mock("@/components/user/chat/AssistantMarkdown", () => {
+  return function AssistantMarkdown({ text }: { text: string }) {
+    return <div data-testid="assistant-markdown">{text}</div>
+  }
+})
+
 const mockUseSelfPortrait = useSelfPortrait as jest.MockedFunction<typeof useSelfPortrait>
+const mockDescribe = useSelfPortraitDescription as jest.MockedFunction<
+  typeof useSelfPortraitDescription
+>
+const mockAsk = useAskSelfPortrait as jest.MockedFunction<typeof useAskSelfPortrait>
+
+// The narrative card the page now mounts fetches a description and offers a
+// query box; give both benign defaults so the existing page assertions stand.
+beforeEach(() => {
+  mockDescribe.mockReturnValue({
+    data: { answer: "You lead with steadiness.", is_description: true, disclaimer: "A mirror, not a diagnosis." },
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useSelfPortraitDescription>)
+  mockAsk.mockReturnValue({
+    mutateAsync: jest.fn(),
+    isPending: false,
+    data: undefined,
+  } as unknown as ReturnType<typeof useAskSelfPortrait>)
+})
 
 function mockPortrait(data: Partial<Portrait> | undefined, extra = {}) {
   mockUseSelfPortrait.mockReturnValue({
