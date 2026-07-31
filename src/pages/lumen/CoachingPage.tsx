@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { MessagesSquare, Send } from "lucide-react"
+import { ExternalLink, Loader2, MessagesSquare, Send } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -10,8 +10,10 @@ import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { LUMEN_QUESTION_GROUPS } from "@/constants/lumen/coachingQuestions"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
+import { useCoachAnswer } from "@/hooks/lumen/useCoachAnswer"
 import type { PortraitSourceKey, PortraitSources } from "@/types/lumen"
 import { SOURCE_LABELS, SOURCE_ORDER, buildScopeLine } from "./coachingScope"
+import { CoachingAnswers } from "./CoachingAnswers"
 
 /**
  * Personal coaching — a Meridian conversation that starts already knowing you.
@@ -22,12 +24,19 @@ import { SOURCE_LABELS, SOURCE_ORDER, buildScopeLine } from "./coachingScope"
  * this is the pull half (you have a question, and the conversation shouldn't
  * begin by asking who you are).
  *
- * Reuses the platform Meridian chat surface rather than adding a second chat:
- * navigation carries `{ prefillPrompt, autoSubmit }` — the one-shot mechanism
- * HomeV2's starter questions already use. `MeridianChat` consumes it at mount,
- * submits once, and clears the history state so a refresh cannot resend.
- * Meridian is never bypassed; she routes to whichever specialist the question
- * needs, which is why this page seeds a question rather than calling an agent.
+ * **Answers land here, on this page.** Asking used to navigate away to the chat
+ * surface, which made a coaching question feel like leaving Lumen and cost the
+ * context the person had just assembled with the source checkboxes. Now the
+ * default action answers inline and the answers accumulate, so a run of
+ * questions reads as one session — each answer keepable on its own via Copy,
+ * Print and Export ▾ (see `CoachingAnswers`).
+ *
+ * Meridian is still never bypassed: inline answers go through the ordinary
+ * async-job path, so she classifies and routes to whichever specialist the
+ * question needs. "Open in Meridian" remains as the secondary action for anyone
+ * who wants to keep talking rather than read one answer — it carries
+ * `{ prefillPrompt, autoSubmit }`, the one-shot mechanism HomeV2's starter
+ * questions already use, which `MeridianChat` consumes once at mount.
  *
  * **What the source checkboxes actually do.** They are written into the opening
  * message as an explicit instruction ("Draw on my PRISM profile and my résumé;
@@ -120,6 +129,7 @@ export default function CoachingPage() {
   const [question, setQuestion] = useState("")
   const [extra, setExtra] = useState("")
   const [custom, setCustom] = useState("")
+  const coach = useCoachAnswer()
 
   // Default to everything on file: the point of Lumen is that the coach already
   // knows you, so opting *out* should be the deliberate act, not opting in.
@@ -135,9 +145,15 @@ export default function CoachingPage() {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     )
 
-  const ask = (raw: string) => {
-    const body = raw.trim()
-    if (!body) return
+  /**
+   * The scope line and the "anything else" note are instructions to the coach,
+   * not part of the question. They go into the prompt but are kept out of the
+   * label shown on the answer card and in the exported document, which should
+   * read as the question the person actually asked.
+   */
+  const compose = (raw: string): { question: string; prompt: string } | null => {
+    const question = raw.trim()
+    if (!question) return null
     const scope = sourcesKnown
       ? buildScopeLine(
           SOURCE_ORDER.filter((k) => selected.includes(k)),
@@ -145,8 +161,21 @@ export default function CoachingPage() {
           extra
         )
       : extra.trim() && `Also relevant: ${extra.trim()}`
+    return { question, prompt: scope ? `${question}\n\n${scope}` : question }
+  }
+
+  const answerHere = (raw: string) => {
+    const composed = compose(raw)
+    if (!composed) return
+    void coach.ask(composed)
+    setCustom("")
+  }
+
+  const openInMeridian = (raw: string) => {
+    const composed = compose(raw)
+    if (!composed) return
     navigate(ROUTES.MERIDIAN_CHAT, {
-      state: { prefillPrompt: scope ? `${body}\n\n${scope}` : body, autoSubmit: true },
+      state: { prefillPrompt: composed.prompt, autoSubmit: true },
     })
   }
 
@@ -158,8 +187,8 @@ export default function CoachingPage() {
           Personal coaching
         </h1>
         <p className="max-w-3xl text-muted-foreground">
-          A coaching conversation that opens already knowing your profile. Choose what
-          it should work from, pick something to talk about, and it starts there —
+          Coaching that opens already knowing your profile. Choose what it should work
+          from, pick something to talk about, and the answer appears right here —
           rather than spending the first ten minutes establishing who you are.
         </p>
         <p className="max-w-3xl text-sm text-muted-foreground">
@@ -248,11 +277,12 @@ export default function CoachingPage() {
               value={question}
               onChange={(e) => {
                 setQuestion(e.target.value)
-                if (e.target.value) ask(e.target.value)
+                if (e.target.value) answerHere(e.target.value)
               }}
+              disabled={coach.isPending}
               className={selectClass}
             >
-              <option value="">Pick a question to start the conversation…</option>
+              <option value="">Pick a question to answer it here…</option>
               {group.questions.map((q) => (
                 <option key={q} value={q}>
                   {q}
@@ -260,11 +290,17 @@ export default function CoachingPage() {
               ))}
             </select>
             <p className="text-xs text-muted-foreground">
-              Choosing a question opens the coach and asks it for you.
+              Choosing a question answers it below, on this page.
             </p>
           </div>
         </CardContent>
       </Card>
+
+      <CoachingAnswers
+        answers={coach.answers}
+        pendingQuestion={coach.pendingQuestion}
+        isError={coach.isError}
+      />
 
       <Card>
         <CardHeader>
@@ -279,14 +315,35 @@ export default function CoachingPage() {
             onChange={(e) => setCustom(e.target.value)}
             placeholder="Anything you want to work through…"
           />
-          <Button
-            type="button"
-            onClick={() => ask(custom)}
-            disabled={custom.trim().length === 0}
-          >
-            <Send className="mr-2 h-4 w-4" aria-hidden />
-            Start the conversation
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => answerHere(custom)}
+              disabled={custom.trim().length === 0 || coach.isPending}
+            >
+              {coach.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Send className="mr-2 h-4 w-4" aria-hidden />
+              )}
+              Answer it here
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => openInMeridian(custom)}
+              disabled={custom.trim().length === 0}
+              title="Continue this in a full Meridian conversation"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
+              Open in Meridian
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Answers appear on this page, and each one can be copied, printed or
+            exported to Word or PDF. Open in Meridian instead if you want to keep
+            talking it through.
+          </p>
         </CardContent>
       </Card>
     </div>
