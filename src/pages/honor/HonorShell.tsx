@@ -32,6 +32,7 @@ import { useAuth } from "@/context/useAuth"
 import { useHonorAdminAccess } from "@/hooks/honor/useHonorAdmin"
 import { MOCK_COACH } from "@/hooks/honor/mocks"
 import { initials } from "./_format"
+import HonorHelpMenu from "./HonorHelpMenu"
 import thfShield from "@/assets/honor/thf-shield.jpeg"
 import thfFlag from "@/assets/honor/thf-flag.jpeg"
 
@@ -163,12 +164,15 @@ export default function HonorShell() {
             <p className="mb-3 px-1 text-[11px] leading-relaxed text-white/45">
               Meridian orchestrates all AI output. Fellows see one voice; you see the agent trace.
             </p>
-            <button
-              onClick={() => navigate(ROUTES.HOME)}
-              className="flex w-full items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-[12.5px] text-slate-200 transition-colors hover:bg-white/10"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Back to Inspire Genius
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <HonorHelpMenu />
+              <button
+                onClick={() => navigate(ROUTES.HOME)}
+                className="flex w-full items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-[12.5px] text-slate-200 transition-colors hover:bg-white/10"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Back to Inspire Genius
+              </button>
+            </div>
           </div>
         </aside>
 
