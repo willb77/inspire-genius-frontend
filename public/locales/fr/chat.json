@@ -81,6 +81,14 @@
       "ready": "Voix prête",
       "connecting": "Connexion",
       "off": "Voix désactivée"
+    },
+    "personalRow": {
+      "aria": "Vos pages",
+      "selfPortrait": "Mon autoportrait",
+      "moments": "Moments",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} n'est pas activé pour votre compte"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Documents",
       "close": "Fermer les documents",
       "closeOverlay": "Fermer le panneau des documents"
-    }
+    },
+    "upload": "Téléverser un document"
   },
   "export": {
     "title": "Exporter le chat",

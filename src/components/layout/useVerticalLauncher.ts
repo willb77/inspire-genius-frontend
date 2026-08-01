@@ -34,15 +34,29 @@ import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
  */
 
 /**
- * Verticals that belong in **My Workspace** rather than the "Verticals" section.
+ * Verticals that belong in **My Workspace** rather than the "Tools" section.
  *
- * Job Fit and Lumen are first-person surfaces — the signed-in user working on
- * their OWN profile — so they read as everyday workspace tools next to Goal
- * Setting and My Documents, not as a separate product the user launches into.
- * They are excluded from the Verticals section here and re-surfaced by
- * `useWorkspaceVerticalItems`.
+ * Empty as of 2026-07-31: Job Fit and Lumen moved out of My Workspace, which is
+ * now a five-entry shortcut list. They are NOT hidden — they fall through to the
+ * Tools section like every other vertical, and Lumen's own pages plus Job Fit
+ * are additionally reachable from the Meridian header's second row.
+ *
+ * The mechanism is retained rather than deleted: `withWorkspaceVerticals` and
+ * `useWorkspaceNavItems` are no-ops while this set is empty (both return their
+ * input array unchanged), so re-promoting a vertical is a one-word edit here
+ * with no other wiring to redo.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "lumen"])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>([])
+
+/**
+ * Verticals hidden from the Tools section entirely (2026-07-31).
+ *
+ * Honor Foundation is a client-specific workbench, not something a general user
+ * should see listed. Unlike an unentitled vertical — which is deliberately shown
+ * greyed so the catalogue stays legible — this one is withheld outright, so it
+ * needs its own set rather than an entitlement change.
+ */
+export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
 
 /** Per-vertical sidebar icon; the generic `Compass` is the fallback. */
 const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
@@ -66,18 +80,29 @@ function toNavItem(
 }
 
 /**
- * The Verticals sidebar section — **every** registered vertical except the
- * workspace ones, entitled or not. Never null: the catalogue is the point.
+ * The **Tools** sidebar section — every registered vertical except the workspace
+ * ones and the explicitly hidden ones, entitled or not. Never null: the
+ * catalogue is the point.
+ *
+ * Renamed from "Verticals" on 2026-07-31 — "vertical" is our internal word for
+ * how the product is partitioned; "Tools" is what the thing is from the user's
+ * side. The section id is unchanged so stored collapse state survives the
+ * rename.
  */
 export function useVerticalLauncherSection(): SidebarSection | null {
   const { data: enabled } = useEnabledVerticals()
   return useMemo(() => {
     const entitlements = enabled ?? []
-    const verticals = listVerticals().filter((v) => !WORKSPACE_VERTICALS.has(v.key))
+    const verticals = listVerticals().filter(
+      (v) => !WORKSPACE_VERTICALS.has(v.key) && !HIDDEN_VERTICALS.has(v.key),
+    )
     if (verticals.length === 0) return null
     return {
       id: "verticals-launcher",
-      label: "Verticals",
+      label: "Tools",
+      // Rolled up by default: Tools is a catalogue you go looking for, not a
+      // list you navigate by. The user can expand it and the choice persists.
+      defaultCollapsed: true,
       roles: ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"],
       items: verticals.map((v) => toNavItem(v, entitlements.includes(v.key))),
     }

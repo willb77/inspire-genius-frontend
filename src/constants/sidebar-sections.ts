@@ -23,6 +23,12 @@ export type SidebarSection = {
   label: string
   roles: UserRole[]
   items: SidebarNavItem[]
+  /**
+   * Render the section rolled up. Mirrors `NavSectionDef.defaultCollapsed` in
+   * `SidebarScaffold` — declared here so a section can carry its own default
+   * instead of every consuming layout hard-coding one per id.
+   */
+  defaultCollapsed?: boolean
 }
 
 export type SidebarNavItem = NavItemDef & { badge?: number | string }

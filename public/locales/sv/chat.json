@@ -81,6 +81,14 @@
       "ready": "Röst klar",
       "connecting": "Ansluter",
       "off": "Röst av"
+    },
+    "personalRow": {
+      "aria": "Dina sidor",
+      "selfPortrait": "Mitt självporträtt",
+      "moments": "Ögonblick",
+      "coaching": "Coachning",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} är inte aktiverat för ditt konto"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Dokument",
       "close": "Stäng dokument",
       "closeOverlay": "Stäng dokumentpanel"
-    }
+    },
+    "upload": "Ladda upp ett dokument"
   },
   "export": {
     "title": "Exportera chatt",
