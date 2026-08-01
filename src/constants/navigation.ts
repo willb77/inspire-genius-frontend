@@ -100,6 +100,41 @@ export const HIDDEN_WORKSPACE_ROUTES = [
 const TEAM_DEVELOPMENT_ENABLED =
   import.meta.env.VITE_FEATURE_TEAM_DEVELOPMENT === "true"
 
+/**
+ * The Team Development Studio nav entry. Shared by the manager "Tools" rollup
+ * (via {@link TOOL_ITEMS_BY_ROLE} + UnifiedLayout) and the super-admin "Tools"
+ * section, so the label/route/icon stay in one place.
+ */
+const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
+  to: ROUTES.MANAGER.DEVELOPMENT,
+  icon: Sparkles,
+  label: "Team Development",
+}
+
+/**
+ * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
+ * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
+ * super-admin) rather than as flat top-level nav items. Empty when the pilot
+ * flag is off, which collapses the section away entirely.
+ */
+export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
+  manager: TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : [],
+  "super-admin": TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : [],
+}
+
+/**
+ * The super-admin "Tools" rollup section (collapsed by default), or `null` when
+ * there are no tool items. SuperAdminLayout splices it into its section list.
+ */
+export const SUPER_ADMIN_TOOLS_SECTION: NavSectionDef | null =
+  (TOOL_ITEMS_BY_ROLE["super-admin"]?.length ?? 0) > 0
+    ? {
+        label: "Tools",
+        items: TOOL_ITEMS_BY_ROLE["super-admin"]!,
+        defaultCollapsed: true,
+      }
+    : null
+
 /** Navigation items for the super-admin role */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
@@ -122,11 +157,9 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
-  // Team Development Studio — also available to super-admins (platform scope),
-  // not just managers. Route guards already permit super-admin on /manager/*.
-  ...(TEAM_DEVELOPMENT_ENABLED
-    ? [{ to: ROUTES.MANAGER.DEVELOPMENT, icon: Sparkles, label: "Team Development" }]
-    : []),
+  // Team Development Studio now lives in a dedicated collapsible "Tools" rollup
+  // (super-admin: SUPER_ADMIN_TOOLS_SECTION; manager: TOOL_ITEMS_BY_ROLE via
+  // UnifiedLayout) rather than inline here.
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
@@ -135,9 +168,8 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
   { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
-  ...(TEAM_DEVELOPMENT_ENABLED
-    ? [{ to: ROUTES.MANAGER.DEVELOPMENT, icon: Sparkles, label: "Team Development" }]
-    : []),
+  // Team Development Studio moved into the collapsible "Tools" rollup
+  // (TOOL_ITEMS_BY_ROLE, rendered by UnifiedLayout) — no longer a flat item.
   // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
   { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
   { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
