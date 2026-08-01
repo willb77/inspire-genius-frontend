@@ -1,3 +1,30 @@
+## [2026-08-01] — PRISM colour guard: don't rewrite "Orange" when the model is saying it isn't a colour
+
+Follow-up to the same-day PRISM fix (#743). **Found by an adversarial probe against deployed dev, not by a test.**
+
+### Fixed
+Asked *"Am I an Orange? What does my Orange score mean?"* — the case most likely to defeat the fix — Meridian correctly replied:
+
+> "Your quadrant is called **Red** in PRISM — there is no **Orange** colour in the framework."
+
+The `normalise_colour_names` output guard then rewrote that second "Orange" (it was followed by "colour", one of the quadrant-noun contexts) and what actually reached the user was:
+
+> "…there is no **Red** colour in the framework."
+
+Self-contradicting nonsense, in precisely the situation the guard exists to serve: the user uses the wrong term and the model explains that it isn't real.
+
+The guard now skips a match preceded within 60 characters by a negation cue (`no` / `not` / `never` / `isn't` / `rather than` / `instead of`). The window is deliberately bounded so a negation in an earlier clause cannot disable a legitimate rewrite later in the same response — there is a test for exactly that.
+
+- **+9 tests**, including the verbatim sentence from production.
+- Files: `services/agent-engine/app/prism_canon.py`, `tests/test_prism_canon.py`
+- PR **#746**, merged `7af79c3e`.
+
+### Everything else in that probe was correct
+Red 34 (Focusing 7 / Delivering 61), Blue 92, Green 91.5, Gold 52 — all matching the corrected derivation — and the word "Orange" appeared nowhere else despite the user using it four times.
+
+### Standing lesson
+Any regex that rewrites LLM output will eventually corrupt a *correct* sentence. Probe the adversarial case (user uses the wrong term, model explains why it's wrong), not just the happy path. The prompts and the injected `<prism_profile>` block are what actually stop the model saying "Orange"; this guard is only drift insurance and must never damage good output while doing its job.
+
 ## [2026-08-01] — PRISM: wrong colour scores + "Orange", duplicated TTS read-back, slow prompt injection
 
 Five reported defects. Every diagnosis below was confirmed against real dev data or a failing test — none inferred.
