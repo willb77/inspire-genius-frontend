@@ -23,6 +23,7 @@ import {
   type AddAssessmentTarget,
 } from "@/components/dashboard/v2/AddAssessmentModal";
 import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
+import { QuickDirectionCard } from "@/components/dashboard/v2/QuickDirectionCard";
 import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
@@ -47,6 +48,11 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *
  * The Watch-a-Video and Recent-Activity tiles were removed; the videos survive
  * inside the quick-action row's Videos dropdown, so nothing became unreachable.
+ *
+ * `QuickDirectionCard` sits after those two. It is self-gating — it renders
+ * null unless the user is entitled to Direction Setting AND the journey read
+ * succeeds — so for everyone else the two-tile layout above is exactly what
+ * renders, and a failure in a new vertical cannot clutter Home.
  */
 
 const VIDEOS: DashboardVideo[] = [
@@ -305,6 +311,11 @@ export default function HomeV2() {
               if (!open) setAddTarget(null);
             }}
           />
+
+          {/* Direction Setting — "what should I do next?". Renders null when the
+              user isn't entitled or the journey read fails, so it adds nothing
+              to Home for anyone outside the vertical. */}
+          <QuickDirectionCard />
         </div>
       </div>
     </UserLayout>

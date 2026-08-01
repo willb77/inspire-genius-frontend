@@ -17,6 +17,11 @@ jest.mock("@/hooks/documents/useLatestPrism", () => ({
 const mockEnabledVerticals = jest.fn(() => ({ data: ["lumen"] }));
 jest.mock("@/verticals/core", () => ({
   useEnabledVerticals: () => mockEnabledVerticals(),
+  // HomeV2 also renders QuickDirectionCard, which gates on entitlement before
+  // it will even attempt its journey read. Default to "no access" here so these
+  // tests keep exercising HomeV2 itself — the card's own states are covered in
+  // QuickDirectionCard.test.tsx.
+  useVerticalAccess: () => ({ hasAccess: false, isLoading: false }),
 }));
 
 // The regression: the backend returns a bare string[] of framework names.
