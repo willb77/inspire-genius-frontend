@@ -1,3 +1,29 @@
+## [2026-08-01] — Lumen "Answer it here": staging-B confirmed, plus two findings the feature shipped with
+
+Follow-up to the 2026-07-30 entry. **No product code changed** — this records three things learned after that work merged, two of which are actionable.
+
+### staging-B needed no promote — confirmed, not assumed
+Asked to promote the coaching feature to staging-B; checked first and there was **nothing to promote**. It is frontend-only, and FE merges deploy to dev *and* staging-B automatically, so it went out at 04:50 UTC alongside the dev deploy.
+
+- staging-B frontend at `3d3d179`, and the deployed coaching chunk there carries every UI string plus the print internals (`afterprint`, `srcdoc`) and the `lumen-coaching-` session marker.
+- staging-B backend already served the path: `/v1/agents/chat/async` → **401** (exists, wants auth), jobs route → **405** on a POST to a GET route (also proof it exists); `/v1/agents/health` → 200.
+- **0 unpromoted backend commits** — `release-stable-2026-07-31-lumen-portrait-qa` was cut at 00:12 that night by another terminal and `development` had nothing after it. A tag would have produced an empty promote.
+- Re-checked a day later, after other terminals' deploys moved both envs to `97965c8`: the feature is **still live on both**.
+
+### Finding 1 — `development` has no required-check gate (actionable)
+`gh pr merge --auto` on FE #313 **merged immediately** rather than waiting for tests, because no check is marked required on `development`. It came out fine — CI's Unit Tests subsequently passed on that exact commit, and a local run with CI's exact coverage threshold (`54/55/55/55`, 515 suites / 3922 tests) passed independently — but the gate genuinely is not there, and **any future `--auto` will behave the same way**. Fix: mark **Unit Tests** as a required check on `development`.
+
+### Finding 2 — a premise in the shipped code is now wrong on dev (actionable)
+`useCoachAnswer.ts` documents, as its reason for opening no WebSocket, that the `job_complete` push is unreachable through the ws-proxy. **PR #733 fixed that and it is live on dev** (verified there by a real WS frame, `delivered=1`); it is **not** on staging-B.
+
+The feature is **functionally unaffected** — the poll still delivers and still stops the moment a job settles, and on staging-B the poll remains the only path. But the comment now asserts something false on dev and should be corrected before someone reads it as current fact. Consuming the push (poll retained as fallback) would additionally make inline answers land faster.
+
+### Finding 3 — staging-B can no longer be functionally probed
+`POST /v1/magic-auth` returns **404** on staging-B since #717 gated it off. What was verified there is the deployed bundle and route existence — **not** an executed conversation. The equivalent live round-trip was run on dev (`chat/async` → 202 → complete in ~9s, `contributing_agents: ['Summit']`, answer quoting the user's own dimension scores). Future staging-B verification needs a real login or an admin-tools path.
+
+### Still outstanding on this feature
+The authenticated click-path has **never been exercised in a browser** — dev redirected to login, seeding a session token was declined, and passwords are off-limits. **Print is the priority** there: it is the only path with no automated end-to-end coverage. Session pointer: `project_lumen_answer_here_session_resume` (grep "lumen-answer-here").
+
 ## [2026-07-31] — Team Development Studio → standard IG (HomeV2) theme + real app chrome (Wave 2)
 
 The Team Development Studio (`/manager/development`, `/manager/development/:memberId`) was
