@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Impossibile caricare quel file. Controllalo e riprova.",
     "classic": "Classico",
     "new": "Nuovo",
-    "toggleNewHome": "Attiva/disattiva la nuova home page"
+    "toggleNewHome": "Attiva/disattiva la nuova home page",
+    "personalInfo": "Informazioni personali",
+    "otherAssessments": "Altre valutazioni",
+    "nOfM": "{{done}} di {{total}}",
+    "videos": "Video",
+    "quickSelfPortrait": "Autoritratto",
+    "quickTodaysPrep": "Preparazione di oggi",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} non è abilitato per il tuo account"
   }
 }

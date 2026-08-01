@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Kunne ikke laste opp den filen. Sjekk den og prøv igjen.",
     "classic": "Klassisk",
     "new": "Ny",
-    "toggleNewHome": "Veksle ny startside"
+    "toggleNewHome": "Veksle ny startside",
+    "personalInfo": "Personlig informasjon",
+    "otherAssessments": "Andre vurderinger",
+    "nOfM": "{{done}} av {{total}}",
+    "videos": "Videoer",
+    "quickSelfPortrait": "Selvportrett",
+    "quickTodaysPrep": "Dagens forberedelse",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} er ikke aktivert for kontoen din"
   }
 }

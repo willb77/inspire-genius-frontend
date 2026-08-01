@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Bu dosya yüklenemedi. Kontrol edip tekrar deneyin.",
     "classic": "Klasik",
     "new": "Yeni",
-    "toggleNewHome": "Yeni ana sayfayı aç/kapat"
+    "toggleNewHome": "Yeni ana sayfayı aç/kapat",
+    "personalInfo": "Kişisel Bilgiler",
+    "otherAssessments": "Diğer Değerlendirmeler",
+    "nOfM": "{{total}} içinden {{done}}",
+    "videos": "Videolar",
+    "quickSelfPortrait": "Öz Portre",
+    "quickTodaysPrep": "Bugünün Hazırlığı",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} hesabınız için etkin değil"
   }
 }
