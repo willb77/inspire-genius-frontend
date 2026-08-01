@@ -493,8 +493,14 @@ export default function MatchesPage() {
   const recorded = useRef<string | null>(null)
   useEffect(() => {
     if (gated || !selected || !detail) return
-    // One write per role per mount. Without this the effect re-fires on every
-    // refetch and rewrites the same artefact indefinitely.
+    // The two reads are separate queries. `useFitDetail` currently clears its
+    // data when the job id changes, so `detail` cannot lag `selected` — but
+    // that is a caching detail, and adding `placeholderData` to smooth the
+    // transition would silently start writing one role's gaps under another
+    // role's target. Assert the pairing instead of depending on it.
+    if (detail.jobId !== selected.jobId) return
+    // One write per role. Without this the effect re-fires on every refetch
+    // and rewrites the same artefact indefinitely.
     if (recorded.current === selected.jobId) return
     recorded.current = selected.jobId
 
