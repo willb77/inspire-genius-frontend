@@ -1,3 +1,18 @@
+## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
+
+Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.
+
+### Removed
+- `src/components/shared/layout/HelpSupportMenu.tsx` and its test — deleted.
+- `src/components/shared/layout/SidebarScaffold.tsx` — no longer imports/renders `HelpSupportMenu`; the footer is back to just Logout.
+
+### Kept
+- `src/components/shared/layout/helpSupportLinks.ts` (`GUIDE_LINKS`) — still the shared source of truth, now consumed only by `src/pages/honor/HonorHelpMenu.tsx`.
+- The `/docs/guides/` assets and the Honor Help / Support menu are unchanged.
+
+### Verified
+- `npm run build` (tsc + vite) clean (no dangling import of the deleted component); Jest SidebarScaffold 11/11 + honor-help-menu 2/2; eslint clean.
+
 ## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
 
 Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.

@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import HelpSupportMenu from "@/components/shared/layout/HelpSupportMenu";
 import { useAuth } from "@/context/useAuth";
 import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
 import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner";
@@ -270,9 +269,6 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         <SidebarSeparator className="!w-[80%]" />
         <SidebarFooter>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <HelpSupportMenu />
-            </SidebarMenuItem>
             <SidebarMenuItem>
               <ConfirmDialog
                 title="Log out"
