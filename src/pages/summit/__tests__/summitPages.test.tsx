@@ -173,4 +173,16 @@ describe("Summit surface pages", () => {
     expect(screen.getByText(/Career Coach/i)).toBeInTheDocument();
     expect(screen.getByText(/PRISM Coach/i)).toBeInTheDocument();
   });
+
+  it("counts each coach's goals from the live session", async () => {
+    // Was hardcoded 2/1/1 for everybody, from the wireframe. The single goal in
+    // SESSION is owned by job_mentor, so the other two must read zero.
+    renderWithRouter(<SummitCoaches />);
+    expect(await screen.findByText("1")).toBeInTheDocument();
+    expect(screen.getAllByText("0")).toHaveLength(2);
+    // The count and its label are separate elements, so assert the singular
+    // label exists alongside the two plural ones rather than as one string.
+    expect(screen.getByText("goal")).toBeInTheDocument();
+    expect(screen.getAllByText("goals")).toHaveLength(2);
+  });
 });
