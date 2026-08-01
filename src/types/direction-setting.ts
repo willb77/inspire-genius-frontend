@@ -737,3 +737,205 @@ export type RoiStartInput = {
   currency?: string | null
   targetRole?: string | { title?: string; blueprintId?: string } | null
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Stage 12 — rehearse. The optional one.
+ *
+ * Mirrors `app/tools/direction_setting/rehearsal.py`. Two shapes of this stage
+ * differ from every other one here, and both are load-bearing:
+ *
+ * 1. **Answering is synchronous.** The feedback is deterministic and arrives in
+ *    the POST response, so there is no job to wait on for the thing the person
+ *    came for. The only job is Nova re-saying that feedback more warmly, and if
+ *    it never lands nothing is missing — see `RehearsalNarrationJob`.
+ * 2. **Nothing in here is a measurement.** There is no score field, no grade, no
+ *    band and no pass/fail, because the backend composes none. A surface that
+ *    derives one from `RehearsalAnswerSignals` has rebuilt the evaluation tool
+ *    this stage exists not to be. A question counter is fine; a quality number
+ *    is not.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** not_started → in_progress → complete. There is no "failed" and no "abandoned". */
+export type RehearsalStatus = "not_started" | "in_progress" | "complete"
+
+/**
+ * Where a question came from. `focus` and `counter-productive` carry a `note`
+ * explaining why it is being asked — the counter-productive note in particular
+ * is what stops the question reading as an accusation, so it must be rendered.
+ */
+export type RehearsalQuestionSource =
+  | "warmup"
+  | "focus"
+  | "counter-productive"
+
+export type RehearsalQuestion = {
+  index: number
+  prompt: string
+  source: RehearsalQuestionSource | string
+  /** The PRISM dimension behind a focus question, when there is one. */
+  dimension?: string | null
+  /** The framing note. Present on `focus` and `counter-productive`. */
+  note?: string | null
+}
+
+/**
+ * What is deterministically true about one answer: four booleans and a word
+ * count. **Not a score, and not to be rendered as one.** It is on the wire so
+ * the feedback can be regenerated, not so a surface can total it up.
+ */
+export type RehearsalAnswerSignals = {
+  words: number
+  empty: boolean
+  brief: boolean
+  long: boolean
+  hasSituation: boolean
+  hasOutcome: boolean
+  hasFirstPerson: boolean
+}
+
+/**
+ * Feedback on one answer. One thing to say differently, one thing they already
+ * have — and no rating of any kind.
+ *
+ * `youAlreadyHave` is one of the person's **own** self-advocacy lines, generated
+ * upstream to never name a PRISM dimension or quote a score. Render it verbatim:
+ * reformatting it, truncating it, or labelling it as a strength turns the one
+ * plain-language sentence in this stage back into a rubric.
+ *
+ * `phrasing` says which wording arrived. `derived` is the deterministic text
+ * that shipped with the answer; `specialist` means Nova's warmer rewrite landed
+ * and replaced `statement`. Both are complete — the second is not "better data".
+ */
+export type RehearsalFeedback = {
+  questionIndex: number
+  noticed: string
+  tryThis: string
+  youAlreadyHave: string | null
+  statement: string
+  phrasing: "derived" | "specialist" | string
+  branch?: string
+  signals?: RehearsalAnswerSignals
+  /** The one line saying this is practice, not assessment. */
+  note?: string
+  /** Why a model rewrite was thrown away, when one was. */
+  refusals?: string[]
+}
+
+/** One question, the answer given to it, and the feedback on that answer. */
+export type RehearsalTurn = {
+  index: number
+  question: RehearsalQuestion
+  answer: string
+  feedback: RehearsalFeedback
+  answeredAt?: string | null
+}
+
+/**
+ * A rehearsal session.
+ *
+ * `questions` are frozen at start, so a surface must not refetch or rebuild them
+ * mid-session. `currentQuestion` is the server's own cursor — render that rather
+ * than indexing `questions` locally.
+ *
+ * `sharedWithCoach` is false unless the owner turned it on, and `retentionDays`
+ * is the rolling window from the last write. Both are user-facing promises, not
+ * metadata.
+ */
+export type RehearsalSession = {
+  rehearsalId: string
+  status: RehearsalStatus
+  questionIndex: number
+  questionCount: number
+  answered: number
+  currentQuestion: RehearsalQuestion | null
+  questions: RehearsalQuestion[]
+  turns: RehearsalTurn[]
+  roleTitle: string | null
+  selfAdvocacy: string[]
+  sharedWithCoach: boolean
+  expiresAt: string | null
+  retentionDays: number
+  createdAt?: string | null
+  updatedAt?: string | null
+  note: string
+}
+
+/**
+ * What stage 12 keeps in the journey — deliberately **not** the transcript.
+ *
+ * No answer text and no feedback text: the words stay in the session, which
+ * expires and which the person can delete. `rehearsalId` is null once they have
+ * deleted the session it pointed at.
+ */
+export type RehearsalArtefact = {
+  rehearsalId: string | null
+  roleTitle?: string | null
+  questionCount: number
+  answeredCount: number
+  areasPractised: string[]
+  completedAt?: string | null
+  transcriptKept: boolean
+  note: string
+}
+
+/**
+ * `POST /rehearsal/sessions` — start, or resume an unfinished one.
+ *
+ * `canRehearse: false` with a populated `note` is a **200 and not an error**:
+ * it is what somebody who reached stage 12 before stage 11 gets, and the note
+ * names the missing interview guide. Reaching the stages out of order is not a
+ * mistake, and this stage is optional either way.
+ */
+export type RehearsalStart = {
+  canRehearse: boolean
+  resumed: boolean
+  session: RehearsalSession | null
+  note: string | null
+}
+
+/** `GET /rehearsal` — the current session plus what stage 12 kept. */
+export type RehearsalStored = {
+  session: RehearsalSession | null
+  result: RehearsalArtefact | null
+}
+
+/**
+ * `POST /rehearsal/sessions/{id}/answers`.
+ *
+ * The feedback is in `turn.feedback`, right here, complete. `narrationJobId`
+ * names the optional rewrite; ignoring it entirely loses nothing.
+ */
+export type RehearsalAnswerResult = {
+  turn: RehearsalTurn
+  session: RehearsalSession
+  narrationJobId: string
+}
+
+/**
+ * The narration job's result. `applied: false` is a **success**: the rehearsal
+ * or the turn was deleted before the rewrite landed, which is the delete button
+ * working exactly as intended.
+ */
+export type RehearsalNarrationResult = {
+  applied: boolean
+  reason?: string
+  turnIndex?: number
+  feedback?: RehearsalFeedback
+}
+
+/** `GET /rehearsal/jobs/{jobId}` — the optional rewrite, and only ever that. */
+export type RehearsalNarrationJob = {
+  jobId: string
+  kind: string
+  status: DirectionJobStatus
+  result?: RehearsalNarrationResult | null
+  error?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** `DELETE /rehearsal/sessions/{id}` — the row is gone, not flagged. */
+export type RehearsalDeleted = {
+  deleted: boolean
+  rehearsalId: string
+}
