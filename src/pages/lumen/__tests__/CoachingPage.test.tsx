@@ -195,6 +195,39 @@ describe("CoachingPage", () => {
     expect(opts.state.prefillPrompt).toContain("Where do I start?")
   })
 
+  // 2026-07-31 — "Ask Your Own Question", reachable from the Meridian header's
+  // Coaching link. Distinct from "Open in Meridian" below it, which is disabled
+  // until the textarea has content — that leaves anyone who has not yet decided
+  // what to ask with no route into the full conversation, which is exactly the
+  // person most likely to want one.
+  test("Ask Your Own Question opens Meridian even with nothing typed", () => {
+    mockSources({ prism: true, assessments: false, resume: false, bio: false })
+    renderPage()
+    const btn = screen.getByTestId("lumen-ask-your-own-question")
+    expect(btn).not.toBeDisabled()
+    fireEvent.click(btn)
+
+    expect(mockAsk).not.toHaveBeenCalled()
+    const [path, opts] = mockNavigate.mock.calls[0]
+    expect(path).toBe("/meridian/chat")
+    // No question yet, so nothing to prefill or auto-send — just the surface.
+    expect(opts).toBeUndefined()
+  })
+
+  test("Ask Your Own Question carries a typed question through", () => {
+    mockSources({ prism: true, assessments: false, resume: false, bio: false })
+    renderPage()
+    fireEvent.change(screen.getByLabelText("Ask your own question"), {
+      target: { value: "What should I focus on?" },
+    })
+    fireEvent.click(screen.getByTestId("lumen-ask-your-own-question"))
+
+    const [path, opts] = mockNavigate.mock.calls[0]
+    expect(path).toBe("/meridian/chat")
+    expect(opts.state.autoSubmit).toBe(true)
+    expect(opts.state.prefillPrompt).toContain("What should I focus on?")
+  })
+
   test("the same question can be asked twice", () => {
     // A select that keeps its value can never fire onChange for that value
     // again. Someone who changes which sources to draw on and re-asks the same

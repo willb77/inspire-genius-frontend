@@ -4,7 +4,9 @@ import DocumentsDropdown from "@/components/meridian/DocumentsDropdown";
 import HistoryDropdown from "@/components/meridian/HistoryDropdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
+import { useEnabledVerticals } from "@/verticals/core";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
@@ -70,12 +72,56 @@ import {
   FastForward,
   X,
   Download,
-  Upload,
+  UserRoundSearch,
+  MessagesSquare,
+  Briefcase,
+  Lock,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * The second header row: the user's own pages, one click from the conversation.
+ *
+ * Lumen's three personal surfaces plus Job Fit. Job Fit lands on `MATCHES`
+ * rather than `BASE` because the vertical's home is a router-level redirect —
+ * pointing at the concrete page keeps the active-link state honest and avoids a
+ * double navigation.
+ *
+ * Declared at module scope so the array identity is stable across renders.
+ */
+const PERSONAL_ROW_LINKS = [
+  {
+    to: ROUTES.LUMEN.SELF_PORTRAIT,
+    vertical: "lumen",
+    labelKey: "meridian.personalRow.selfPortrait",
+    defaultLabel: "My Self-Portrait",
+    icon: UserRoundSearch,
+  },
+  {
+    to: ROUTES.LUMEN.MOMENTS,
+    vertical: "lumen",
+    labelKey: "meridian.personalRow.moments",
+    defaultLabel: "Moments",
+    icon: Sparkles,
+  },
+  {
+    to: ROUTES.LUMEN.COACHING,
+    vertical: "lumen",
+    labelKey: "meridian.personalRow.coaching",
+    defaultLabel: "Coaching",
+    icon: MessagesSquare,
+  },
+  {
+    to: ROUTES.JOB_FIT.MATCHES,
+    vertical: "job-fit",
+    labelKey: "meridian.personalRow.jobFit",
+    defaultLabel: "Job Fit",
+    icon: Briefcase,
+  },
+] as const;
 
 function extractSessionId(resp: unknown): string | undefined {
   try {
@@ -148,6 +194,10 @@ export default function MeridianChat({
 } = {}) {
   const isV2 = variant === "v2";
   const { t } = useTranslation("chat");
+  // Drives the personal row's locked state. Defaults to "entitled to nothing"
+  // while the query is in flight, so a slow response shows locks rather than
+  // links that would bounce off the route guard.
+  const { data: entitledVerticals = [] } = useEnabledVerticals();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -1640,24 +1690,29 @@ export default function MeridianChat({
             <SquarePen className="size-4" />
             <span>{t("meridian.newChat.label", { defaultValue: "New Chat" })}</span>
           </button>
+          {/* Documents — selecting corpus files AND uploading a new one, both
+              under one control (2026-07-31). They were two adjacent buttons,
+              which read as two unrelated features when they are two halves of
+              the same job; `onUpload` opens the same modal the standalone
+              button used to. */}
           <DocumentsDropdown
             selectedIds={selectedFileIds}
             onChange={(ids) => setSelectedFileIds(ids)}
+            onUpload={() => setUploadOpen(true)}
           />
-          {/* Document Upload — DocumentsDropdown only *selects* files already
-              in the corpus; there was no way to add one without leaving the
-              conversation for /documents. */}
-          <button
-            type="button"
-            onClick={() => setUploadOpen(true)}
-            aria-label={t("meridian.upload.aria", { defaultValue: "Upload a document" })}
-            title={t("meridian.upload.aria", { defaultValue: "Upload a document" })}
-            data-testid="meridian-upload-button"
-            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
-          >
-            <Upload className="size-4" />
-            <span>{t("meridian.upload.label", { defaultValue: "Document Upload" })}</span>
-          </button>
+          {/* Projects — promoted out of the tile row below, which was removed.
+              Rendered through the rail itself (filtered to one tile) so the
+              dropdown keeps its single implementation. */}
+          {isV2 && (
+            <MeridianTileRail
+              orientation="horizontal"
+              tiles={["projects"]}
+              activeConversationId={selectedId}
+              onSelectConversation={(id) => {
+                void handleSelectConversation(id);
+              }}
+            />
+          )}
           <HistoryDropdown
             selectedIds={reviewConversationIds}
             onChange={setReviewConversationIds}
@@ -1801,21 +1856,56 @@ export default function MeridianChat({
         </div>
       </div>
 
-      {/* Tile rail — Active Sessions / History / Last 5 / Projects / Knowledge.
-          Moved out of a 320px left column into a dropdown row directly under
-          the agent names (2026-07-28), which returns the full page width to the
-          conversation. Same tiles, same state, `orientation="horizontal"`.
-          Inside the sticky wrapper so it stays reachable as the chat scrolls —
-          the whole point of the move was to keep it one click away. */}
+      {/* Second header row — the personal surfaces (2026-07-31).
+          Replaces the five-tile dropdown row that used to sit here: Active
+          Sessions, Last 5 Chats and Knowledge were three routes into the same
+          conversation list the History dropdown already owns, and Projects was
+          promoted into the row above. What earns the space instead is the work
+          the user came to do — their Lumen self-knowledge pages and Job Fit —
+          which previously required leaving the conversation via the sidebar.
+          Plain links, so each opens its own page and the browser back button
+          returns here. */}
       {isV2 && (
-        <MeridianTileRail
-          orientation="horizontal"
-          className="pb-3"
-          activeConversationId={selectedId}
-          onSelectConversation={(id) => {
-            void handleSelectConversation(id);
-          }}
-        />
+        <nav
+          className="flex flex-wrap items-center gap-2 pb-3"
+          aria-label={t("meridian.personalRow.aria", { defaultValue: "Your pages" })}
+          data-testid="meridian-personal-row"
+        >
+          {PERSONAL_ROW_LINKS.map(({ to, vertical, labelKey, defaultLabel, icon: Icon }) => {
+            const label = t(labelKey, { defaultValue: defaultLabel });
+            const testId = `meridian-personal-${to.split("/").pop()}`;
+            // Entitlement gates USE, not SIGHT — the same rule the Tools
+            // section follows. An unentitled entry stays visible (so the
+            // capability is discoverable) but renders greyed, locked and
+            // non-navigating, rather than as a link that bounces off a guard.
+            return entitledVerticals.includes(vertical) ? (
+              <Link
+                key={to}
+                to={to}
+                data-testid={testId}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
+              >
+                <Icon className="size-4" aria-hidden />
+                <span>{label}</span>
+              </Link>
+            ) : (
+              <span
+                key={to}
+                data-testid={testId}
+                aria-disabled="true"
+                title={t("meridian.personalRow.locked", {
+                  defaultValue: "{{name}} isn't enabled for your account",
+                  name: label,
+                })}
+                className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
+              >
+                <Icon className="size-4" aria-hidden />
+                <span>{label}</span>
+                <Lock className="size-3.5 shrink-0 opacity-60" aria-hidden />
+              </span>
+            );
+          })}
+        </nav>
       )}
       </div>
 

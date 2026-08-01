@@ -44,7 +44,12 @@ export default function UserLayout({
             {
               label: launcherSection.label,
               items: launcherSection.items,
-              defaultCollapsed: false,
+              // Honour the section's own default (rolled up as of 2026-07-31)
+              // rather than forcing it open here — otherwise the roll-up set in
+              // useVerticalLauncher applies on vertical pages but not on user
+              // pages, and the section would expand and collapse as you move
+              // between them.
+              defaultCollapsed: launcherSection.defaultCollapsed ?? false,
             },
           ]
         : [],

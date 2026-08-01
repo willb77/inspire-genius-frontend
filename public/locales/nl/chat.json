@@ -81,6 +81,14 @@
       "ready": "Spraak gereed",
       "connecting": "Verbinden",
       "off": "Spraak uit"
+    },
+    "personalRow": {
+      "aria": "Jouw pagina's",
+      "selfPortrait": "Mijn zelfportret",
+      "moments": "Momenten",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} is niet ingeschakeld voor je account"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Documenten",
       "close": "Documenten sluiten",
       "closeOverlay": "Documentenpaneel sluiten"
-    }
+    },
+    "upload": "Een document uploaden"
   },
   "export": {
     "title": "Chat exporteren",

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FileText, ChevronDown, Sparkles } from "lucide-react";
+import { FileText, ChevronDown, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,16 @@ type DocumentsDropdownProps = {
   onChange: (ids: string[]) => void;
   autoAttachedId?: string | null;
   className?: string;
+  /**
+   * Open the upload modal. When supplied, an "Upload a document" action is
+   * rendered at the top of the panel and the empty state points at it instead
+   * of linking away to /documents.
+   *
+   * Added 2026-07-31: attaching and uploading were two adjacent header buttons,
+   * which read as unrelated features when they are two halves of one job.
+   * Optional so the component still stands alone where no modal is mounted.
+   */
+  onUpload?: () => void;
 };
 
 type ApiFile = {
@@ -53,6 +63,7 @@ export default function DocumentsDropdown({
   onChange,
   autoAttachedId,
   className,
+  onUpload,
 }: DocumentsDropdownProps) {
   const { t } = useTranslation("chat");
   const { data, isLoading, isError } = useListDocuments(1, 100);
@@ -112,6 +123,19 @@ export default function DocumentsDropdown({
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
           {t("documents.header", { defaultValue: "Attach documents to this chat" })}
         </div>
+        {onUpload && (
+          <div className="border-b p-2">
+            <button
+              type="button"
+              onClick={onUpload}
+              data-testid="documents-dropdown-upload"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-normal text-foreground hover:bg-muted"
+            >
+              <Upload className="size-4" aria-hidden />
+              <span>{t("documents.upload", { defaultValue: "Upload a document" })}</span>
+            </button>
+          </div>
+        )}
         <div className="max-h-72 overflow-y-auto p-2" data-testid="documents-dropdown-list">
           {isLoading ? (
             <div className="space-y-2 p-1" data-testid="documents-dropdown-loading">
@@ -129,12 +153,19 @@ export default function DocumentsDropdown({
           ) : flatCount === 0 ? (
             <div className="p-3 text-sm text-muted-foreground space-y-2">
               <div>{t("common.noDocuments", { defaultValue: "No documents uploaded yet." })}</div>
-              <Link
-                to={ROUTES.DOCUMENTS}
-                className="text-primary underline hover:no-underline"
-              >
-                {t("documents.uploadLink", { defaultValue: "Upload documents" })}
-              </Link>
+              {/* With the upload action available above, a second "Upload
+                  documents" link here is redundant AND worse — it navigates
+                  away to /documents, abandoning the conversation the person is
+                  in. Keep the link only as the fallback for callers that pass
+                  no `onUpload`. */}
+              {!onUpload && (
+                <Link
+                  to={ROUTES.DOCUMENTS}
+                  className="text-primary underline hover:no-underline"
+                >
+                  {t("documents.uploadLink", { defaultValue: "Upload documents" })}
+                </Link>
+              )}
             </div>
           ) : (
             <ul className="space-y-3">

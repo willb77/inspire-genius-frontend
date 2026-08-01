@@ -180,6 +180,24 @@ export default function CoachingPage() {
     })
   }
 
+  /**
+   * Open Meridian for a free-form question — including when nothing has been
+   * typed yet, which is the case `openInMeridian` deliberately refuses.
+   *
+   * With text: behaves exactly like "Open in Meridian" (prefilled, auto-sent).
+   * Without: navigates to an empty conversation and lets the person type there,
+   * rather than leaving them with a disabled button and no route forward.
+   */
+  const askYourOwnInMeridian = () => {
+    const composed = compose(custom)
+    navigate(
+      ROUTES.MERIDIAN_CHAT,
+      composed
+        ? { state: { prefillPrompt: composed.prompt, autoSubmit: true } }
+        : undefined,
+    )
+  }
+
   return (
     <div className="space-y-6 p-6">
       <header className="space-y-2">
@@ -251,6 +269,23 @@ export default function CoachingPage() {
           <CardTitle className="text-base">What do you want to talk about?</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Straight to Meridian, with or without a typed question (2026-07-31).
+              "Open in Meridian" further down is disabled until the textarea has
+              content, which makes the full conversation unreachable for anyone
+              who has not already decided what to ask — the exact person most
+              likely to want it. This one is never disabled; it carries whatever
+              is typed if anything is. */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => askYourOwnInMeridian()}
+            data-testid="lumen-ask-your-own-question"
+          >
+            <MessagesSquare className="mr-2 h-4 w-4" aria-hidden />
+            Ask Your Own Question
+          </Button>
+
           <div className="space-y-2">
             <Label htmlFor="lumen_category">Area</Label>
             <select

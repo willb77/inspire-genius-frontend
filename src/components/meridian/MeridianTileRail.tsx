@@ -214,6 +214,17 @@ export type MeridianTileRailProps = {
    * header under the agent names instead of down the left side.
    */
   orientation?: "vertical" | "horizontal";
+  /**
+   * Restrict the rail to a subset of tiles, in the rail's own order. Omit for
+   * all five.
+   *
+   * Added 2026-07-31 so Meridian's header can show **Projects only**, inline
+   * among the New Chat / Documents / History / Export buttons, without either
+   * duplicating the tile's implementation or dragging the other four tiles into
+   * a row that no longer wants them. Filtering here keeps one source of truth
+   * for what a tile is and does.
+   */
+  tiles?: readonly TileId[];
 };
 
 /**
@@ -243,10 +254,16 @@ export default function MeridianTileRail({
   onSelectConversation,
   className,
   orientation = "vertical",
+  tiles,
 }: MeridianTileRailProps) {
   const { t } = useTranslation("chat");
   const isHorizontal = orientation === "horizontal";
-  const TileShell = isHorizontal ? TileDropdown : Tile;
+  const BaseTileShell = isHorizontal ? TileDropdown : Tile;
+  // `tiles` narrows which of the five render. Implemented as a wrapper rather
+  // than five conditionals so adding a tile later can't forget the filter.
+  const visible = tiles ? new Set<TileId>(tiles) : null;
+  const TileShell = (props: TileProps) =>
+    visible && !visible.has(props.id) ? null : <BaseTileShell {...props} />;
   // Horizontal tiles are dropdowns: they start CLOSED regardless of the stored
   // state, because five popovers open at once on load would blanket the page.
   // Toggling still persists, so the vertical rail's remembered state is intact.

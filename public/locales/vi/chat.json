@@ -81,6 +81,14 @@
       "ready": "Giọng nói sẵn sàng",
       "connecting": "Đang kết nối",
       "off": "Tắt giọng nói"
+    },
+    "personalRow": {
+      "aria": "Trang của bạn",
+      "selfPortrait": "Chân dung của tôi",
+      "moments": "Khoảnh khắc",
+      "coaching": "Huấn luyện",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} chưa được bật cho tài khoản của bạn"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Tài liệu",
       "close": "Đóng tài liệu",
       "closeOverlay": "Đóng bảng tài liệu"
-    }
+    },
+    "upload": "Tải lên tài liệu"
   },
   "export": {
     "title": "Xuất cuộc trò chuyện",
