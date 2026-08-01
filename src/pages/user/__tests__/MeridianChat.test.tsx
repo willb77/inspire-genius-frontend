@@ -69,8 +69,15 @@ const mockStopRecording = jest.fn();
 // Mutable connection flag so individual tests can simulate "WS open" vs
 // "WS not yet open" without re-mocking the module.
 let mockIsConnected = true;
+// Captures the page's `onResponse` handler so tests can feed it real WS
+// frames (e.g. a `complete` frame) without a socket.
+let capturedOnResponse: ((resp: Record<string, unknown>) => void) | null = null;
 jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
-  useMeridianWebSocket: () => ({
+  useMeridianWebSocket: (opts?: {
+    onResponse?: (r: Record<string, unknown>) => void;
+  }) => {
+    capturedOnResponse = opts?.onResponse ?? null;
+    return {
     isConnected: mockIsConnected,
     isConnecting: false,
     isProcessing: false,
@@ -88,7 +95,8 @@ jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
     isRecording: false,
     startRecording: mockStartRecording,
     stopRecording: mockStopRecording,
-  }),
+    };
+  },
 }));
 
 jest.mock("@/hooks/agents/useAgentConversation", () => ({
@@ -702,5 +710,200 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
     expect(screen.queryByTestId("meridian-tile-rail")).toBeNull();
     expect(screen.queryByTestId("meridian-export-button")).toBeNull();
     expect(capturedChatWindowProps.stacked).toBeFalsy();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2026-08-01 regressions: duplicated TTS read-back, and slow/raw
+ * injection of questions from other surfaces.
+ * ------------------------------------------------------------------ */
+
+const synthesizeCalls = () =>
+  mockSharedApi.post.mock.calls.filter(
+    (c) => c[0] === "/v1/agents/voice/synthesize",
+  );
+
+describe("MeridianChat — TTS is never spoken twice for one turn", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAgentEngine.mockReturnValue(true);
+    capturedChatWindowProps = {};
+    capturedOnResponse = null;
+    mockIsConnected = true;
+    mockLocationState = null;
+    localStorage.setItem("meridian_voice", "true");
+    mockSharedApi.post.mockResolvedValue({
+      data: { job_id: "job-tts", session_id: "sess-1", status: "queued" },
+    });
+    mockSharedApi.get.mockResolvedValue({
+      data: { job_id: "job-tts", session_id: "sess-1", status: "queued", message: "" },
+    });
+  });
+
+  const ANSWER = "Your Blue score is 86. It is the mean of Supporting and Coordinating.";
+
+  it("synthesizes a completed answer once, not once per delivery path", async () => {
+    // The answer can arrive via BOTH the async-job settlement and the WS
+    // `complete` frame. Before the fix each call started its own
+    // per-sentence TTS loop, and the audio queue (a plain FIFO with no
+    // dedupe) played every sentence twice — the reported "read it back
+    // completely from start to finish" symptom.
+    renderPage();
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: ANSWER });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    const first = synthesizeCalls().length;
+    expect(first).toBeGreaterThan(0);
+
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: ANSWER });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(synthesizeCalls()).toHaveLength(first);
+  });
+
+  it("speaks a genuinely new answer in the same session", async () => {
+    // The dedupe must key on content, not latch permanently — otherwise
+    // the second question of a session comes back silent.
+    renderPage();
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: ANSWER });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    const first = synthesizeCalls().length;
+
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: "A different answer entirely." });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(synthesizeCalls().length).toBeGreaterThan(first);
+  });
+
+  it("stays silent when voice is muted", async () => {
+    localStorage.setItem("meridian_voice", "false");
+    renderPage();
+    await act(async () => {
+      capturedOnResponse?.({ type: "complete", content: ANSWER });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(synthesizeCalls()).toHaveLength(0);
+  });
+});
+
+describe("MeridianChat — injected questions (prefill)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAgentEngine.mockReturnValue(true);
+    capturedChatWindowProps = {};
+    mockIsConnected = true;
+    mockLocationState = null;
+    localStorage.setItem("meridian_voice", "false");
+    mockSharedApi.post.mockResolvedValue({
+      data: { job_id: "job-prefill", session_id: "sess-1", status: "queued" },
+    });
+    mockSharedApi.get.mockResolvedValue({
+      data: { job_id: "job-prefill", session_id: "sess-1", status: "queued", message: "" },
+    });
+  });
+
+  it("passes the injected prompt and its display text down to ChatWindow", () => {
+    mockLocationState = {
+      prefillPrompt: "What should I focus on?\n\nSources in scope: PRISM, résumé.",
+      prefillDisplay: "What should I focus on?",
+      autoSubmit: true,
+    };
+    renderPage();
+    expect(capturedChatWindowProps.autoSendText).toBe(
+      "What should I focus on?\n\nSources in scope: PRISM, résumé.",
+    );
+    expect(capturedChatWindowProps.autoSendDisplayText).toBe(
+      "What should I focus on?",
+    );
+  });
+
+  it("sends the full composed prompt but renders only the question the user asked", async () => {
+    // Lumen appends a machine-generated scope line. That belongs in the
+    // model's prompt, not in the user's own message bubble.
+    renderPage();
+    const onSendText = capturedChatWindowProps.onSendText as (
+      t: string,
+      d?: string,
+    ) => void;
+    await act(async () => {
+      onSendText("Where do I start?\n\nSources in scope: PRISM.", "Where do I start?");
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(mockSharedApi.post).toHaveBeenCalledWith(
+      "/v1/agents/chat/async",
+      expect.objectContaining({
+        message: "Where do I start?\n\nSources in scope: PRISM.",
+      }),
+    );
+    const messages = capturedChatWindowProps.messages as {
+      sender: string;
+      text?: string;
+    }[];
+    const userBubble = messages.find((m) => m.sender === "user");
+    expect(userBubble?.text).toBe("Where do I start?");
+  });
+
+  it("falls back to the sent text when no display text is supplied", async () => {
+    renderPage();
+    const onSendText = capturedChatWindowProps.onSendText as (
+      t: string,
+      d?: string,
+    ) => void;
+    await act(async () => {
+      onSendText("Plain question", undefined);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    const messages = capturedChatWindowProps.messages as {
+      sender: string;
+      text?: string;
+    }[];
+    expect(messages.find((m) => m.sender === "user")?.text).toBe("Plain question");
+  });
+
+  it("warms the agent before dispatching, and still dispatches if warmup never resolves", async () => {
+    // The warm-up GET and the auto-send used to fire in the same tick, so an
+    // injected question hit a cold ECS task and paid API GW's 30s cap plus
+    // startJob's retry backoff. The dispatch now waits for the health ping —
+    // but a hung ping must never strand the question.
+    jest.useFakeTimers();
+    let releaseHealth: (() => void) | null = null;
+    mockSharedApi.get.mockImplementation((url: string) => {
+      if (url === "/v1/agents/health") {
+        return new Promise((resolve) => {
+          releaseHealth = () => resolve({ data: { status: "ok" } });
+        });
+      }
+      return Promise.resolve({
+        data: { job_id: "job-prefill", session_id: "sess-1", status: "queued", message: "" },
+      });
+    });
+
+    renderPage();
+    const onSendText = capturedChatWindowProps.onSendText as (t: string) => void;
+    act(() => {
+      onSendText("Injected question");
+    });
+
+    // Health still pending → not dispatched yet.
+    expect(
+      mockSharedApi.post.mock.calls.filter((c) => c[0] === "/v1/agents/chat/async"),
+    ).toHaveLength(0);
+
+    // The safety cap fires and the question goes out regardless.
+    await act(async () => {
+      jest.advanceTimersByTime(8000);
+    });
+    expect(
+      mockSharedApi.post.mock.calls.filter((c) => c[0] === "/v1/agents/chat/async"),
+    ).toHaveLength(1);
+
+    expect(releaseHealth).not.toBeNull();
+    jest.useRealTimers();
   });
 });

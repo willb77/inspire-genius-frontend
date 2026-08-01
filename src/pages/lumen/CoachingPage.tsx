@@ -176,7 +176,11 @@ export default function CoachingPage() {
     const composed = compose(raw)
     if (!composed) return
     navigate(ROUTES.MERIDIAN_CHAT, {
-      state: { prefillPrompt: composed.prompt, autoSubmit: true },
+      state: {
+        prefillPrompt: composed.prompt,
+        prefillDisplay: composed.question,
+        autoSubmit: true,
+      },
     })
   }
 
@@ -193,7 +197,13 @@ export default function CoachingPage() {
     navigate(
       ROUTES.MERIDIAN_CHAT,
       composed
-        ? { state: { prefillPrompt: composed.prompt, autoSubmit: true } }
+        ? {
+            state: {
+              prefillPrompt: composed.prompt,
+              prefillDisplay: composed.question,
+              autoSubmit: true,
+            },
+          }
         : undefined,
     )
   }
