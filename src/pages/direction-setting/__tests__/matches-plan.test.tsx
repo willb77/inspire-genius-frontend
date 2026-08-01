@@ -29,8 +29,32 @@ jest.mock("@/hooks/job-fit/useFitDetail", () => ({
   useFitDetail: (...args: unknown[]) => mockUseFitDetail(...args),
 }))
 
+// Stages 9 and 10 both run the accept-then-poll machine; the machine itself is
+// exercised in the alignment suite, so here the hooks are stubbed and every
+// phase the page can land on is rendered directly.
+const mockUsePlan = jest.fn()
+const mockUseRoi = jest.fn()
+jest.mock("@/hooks/direction-setting/usePlan", () => ({
+  usePlan: () => mockUsePlan(),
+  useRoi: () => mockUseRoi(),
+}))
+
 import MatchesPage from "../MatchesPage"
-import PlanPage, { PlanSequence, MilestoneList, RoiSummary } from "../PlanPage"
+import PlanPage, {
+  MilestoneList,
+  PlanItemCard,
+  PlanSequence,
+  RecommendationPanel,
+  RoiSummary,
+} from "../PlanPage"
+import type {
+  PlanItem,
+  PlanResultPayload,
+  RoiBand,
+  RoiConfidence,
+  RoiRecommendation,
+  RoiResultPayload,
+} from "@/types/direction-setting"
 
 // The pure envelope reader is exercised against the real module — it is the one
 // piece of the hook that decides "empty" vs "switched off".
@@ -276,71 +300,653 @@ describe("MatchesPage — with matches", () => {
   })
 })
 
-describe("PlanPage — the shell before Phase 5", () => {
-  test("says the step isn't ready, and that nothing done so far is wasted", () => {
-    renderRouted(<PlanPage />)
-    expect(screen.getByText(/this step isn't ready yet/i)).toBeInTheDocument()
-    expect(screen.getByText(/nothing you do now is wasted/i)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /back to your journey/i })).toBeInTheDocument()
+/* ══════════════════════════════════════════════════════════════════════════
+ * Stages 9 and 10.
+ *
+ * The presentational pieces are driven with the **wire** payloads — the shapes
+ * `plan.py` and `roi.py` actually serialise — rather than a convenient local
+ * approximation. Two of them are load-bearing and would be lost by a friendlier
+ * fixture: a behavioural item has **no `cost` key at all** (not `cost: null`),
+ * and an ROI refusal carries codes plus prose while `roi` may still be a fully
+ * populated object.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+const BEHAVIOURAL: PlanItem = {
+  itemId: "i1",
+  gapId: "g1",
+  competency: "Investigative & Analytical",
+  title: "Practise structured analysis",
+  provider: null,
+  source: "behavioral",
+  costable: false,
+  severity: "critical",
+  rank: 1,
+  origin: "fit-engine",
+  goalId: null,
+  category: "aptitude",
+  currentScore: 34,
+  targetScore: 90,
+  magnitude: 56,
+  direction: "below",
+  format: "reading",
+  effort: {
+    hours: null,
+    horizon: "every fortnight",
+    known: false,
+    basis: "unknown",
+    statement:
+      "We do not know how long this takes. Nothing on file estimates it.",
+  },
+  why: "The biggest single distance between you and this role.",
+  status: "not_started",
+  phrasing: "derived",
+  // No `cost` key. Deliberate — see the block comment above.
+}
+
+const SKILL: PlanItem = {
+  ...BEHAVIOURAL,
+  itemId: "i2",
+  gapId: "g2",
+  competency: "Data Analysis Certificate",
+  title: "Data Analysis Certificate",
+  provider: "A named provider",
+  source: "skill",
+  costable: true,
+  severity: "coaching",
+  rank: 2,
+  effort: {
+    hours: 40,
+    horizon: "monthly",
+    known: true,
+    basis: "stated",
+    statement: "40 hours, as stated.",
+  },
+  why: "A credential the role's postings ask for by name.",
+  cost: {
+    amount: 1200,
+    currency: "USD",
+    known: true,
+    basis: "stated",
+    statement: "Priced at 1200 USD.",
+  },
+}
+
+const plan = (over: Partial<PlanResultPayload> = {}): PlanResultPayload => ({
+  targetRole: { title: "Operations Analyst", blueprintId: null },
+  targetRolePending: false,
+  gapsPending: false,
+  sequence: [BEHAVIOURAL, SKILL],
+  counts: { total: 2, behavioural: 1, skill: 1, critical: 1, coaching: 1 },
+  effort: {
+    statedHours: 40,
+    itemsWithStatedEffort: 1,
+    itemsWithUnknownEffort: 1,
+    complete: false,
+    statement:
+      "1 of 2 items state a duration; 1 does not and is not guessed at.",
+  },
+  cost: {
+    knownTotal: 1200,
+    currency: "USD",
+    costableItems: 1,
+    itemsWithKnownCost: 1,
+    itemsWithUnknownCost: 0,
+    itemsNotCostable: 1,
+    complete: true,
+    statement: "1 of 1 purchasable item(s) are priced.",
+  },
+  advisories: { overdone: [] },
+  refusals: [],
+  learningFormat: "reading",
+  dominantQuadrant: "analytical",
+  sequenceBasis:
+    "Critical gaps first, then coaching gaps; within a tier, the largest miss first.",
+  note: "Deterministic: sequenced from the fit engine's own gap tiers.",
+  ...over,
+})
+
+const band = (over: Partial<RoiBand> = {}): RoiBand => ({
+  atEntryWage: 4.1,
+  atMedianWage: 1.8,
+  atExperiencedWage: 0.9,
+  low: 0.9,
+  high: 4.1,
+  unit: "years",
+  basis: "the plan's priced items, divided by the uplift at each wage point",
+  known: true,
+  unreachableAt: [],
+  note: "A payback period is not a duration of study.",
+  ...over,
+})
+
+const CONFIDENCE: RoiConfidence = {
+  score: 0.6,
+  band: "moderate",
+  inputs: [],
+  degradedBy: [
+    {
+      key: "target-salary",
+      penalty: 0.15,
+      statement:
+        "The target wage is a curated static reference figure, not a live market read.",
+    },
+  ],
+  ceiling:
+    "No ROI computed from the curated static wage table can reach the 'high' band.",
+  statement: "Confidence: moderate.",
+}
+
+const NO_RECOMMENDATION: RoiRecommendation = {
+  recommendDifferentTarget: false,
+  tier: "strong",
+  criticalGaps: 0,
+  grounds: [],
+  decisiveGrounds: [],
+  cautions: [],
+  alternatives: [],
+  statement: "Nothing here argues against Operations Analyst.",
+}
+
+const roiPayload = (over: Partial<RoiResultPayload> = {}): RoiResultPayload => ({
+  targetRole: { title: "Operations Analyst", blueprintId: null },
+  targetRolePending: false,
+  occupation: {
+    code: "13-1111",
+    title: "Management Analyst",
+    source: "Curated static reference table",
+    asOf: "2024-05",
+  },
+  salary: {
+    low: 52000,
+    median: 83000,
+    high: 121000,
+    source: "Curated static reference table",
+    asOf: "2024-05",
+  },
+  outlook: null,
+  currentIncome: {
+    amount: 31000,
+    currency: "USD",
+    basis: "stated",
+    statedZero: false,
+    statement: "Computed against a stated current income of $31,000.",
+  },
+  cost: {
+    total: 1200,
+    currency: "USD",
+    costableItems: 1,
+    itemsWithKnownCost: 1,
+    itemsWithUnknownCost: 0,
+    complete: true,
+    basis: "stated",
+    statement: "Every purchasable item on the plan is priced.",
+  },
+  effort: {
+    statedHours: 40,
+    itemsWithStatedEffort: 1,
+    itemsWithUnknownEffort: 1,
+    complete: false,
+    convertedToMoney: false,
+    statement: "1 of 2 items state a duration.",
+  },
+  roi: {
+    currency: "USD",
+    horizonYears: 3,
+    upliftPerYear: band({ unit: "USD", atEntryWage: 21000, atMedianWage: 52000, atExperiencedWage: 90000 }),
+    paybackYears: band(),
+    netOverHorizon: band({ unit: "USD", atEntryWage: 61800, atMedianWage: 154800, atExperiencedWage: 268800 }),
+    unreachableAt: [],
+    statement: "At the median wage the priced part of your plan pays for itself.",
+    confidenceBand: "moderate",
+    confidenceScore: 0.6,
+  },
+  missing: [],
+  missingStatements: [],
+  computable: true,
+  confidence: CONFIDENCE,
+  recommendation: NO_RECOMMENDATION,
+  narration: null,
+  refusals: [],
+  note: "Deterministic: computed in Python. Decision support only.",
+  ...over,
+})
+
+/** The refusal that is easiest to render wrongly. */
+const PURCHASABLE_PATH_STATEMENT =
+  "Every gap on your plan is behavioural — coached, practised and reviewed, " +
+  "not bought. That is not a zero-cost path into this role; it means this is " +
+  "not a purchasable transition."
+
+const jobState = (over: Record<string, unknown> = {}) => ({
+  phase: "idle",
+  result: null,
+  jobStatus: null,
+  jobError: null,
+  isStarting: false,
+  start: jest.fn(),
+  storedFailed: false,
+  ...over,
+})
+
+describe("PlanPage — the two job surfaces", () => {
+  beforeEach(() => {
+    mockUsePlan.mockReturnValue(jobState())
+    mockUseRoi.mockReturnValue(jobState())
   })
 
-  test("renders the real sections, each explaining its own absence", () => {
+  test("with nothing run, offers to run each stage and invents nothing", () => {
+    const { container } = renderRouted(<PlanPage />)
+    expect(
+      screen.getByRole("button", { name: /work out your plan/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /work out whether it pays off/i })
+    ).toBeInTheDocument()
+    // No fabricated steps, timings or money on an unrun page.
+    expect(container.textContent).not.toMatch(/\$\s?\d/)
+    expect(screen.queryByText(/pays for itself/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: /back to your journey/i })
+    ).toBeInTheDocument()
+  })
+
+  test("waiting is a state with words, not a bare spinner", () => {
+    mockUsePlan.mockReturnValue(jobState({ phase: "waiting" }))
+    renderRouted(<PlanPage />)
+    expect(screen.getByText(/working on your plan/i)).toBeInTheDocument()
+    expect(screen.getByText(/carries on without you/i)).toBeInTheDocument()
+  })
+
+  test("a failed run says nothing was lost and offers a retry", () => {
+    const start = jest.fn()
+    mockUsePlan.mockReturnValue(
+      jobState({ phase: "failed", jobError: "worker died", start })
+    )
+    renderRouted(<PlanPage />)
+    expect(screen.getByText(/didn't finish/i)).toBeInTheDocument()
+    expect(screen.getByText("worker died")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }))
+    expect(start).toHaveBeenCalled()
+  })
+
+  test("a lost job id is its own state, not dressed up as a failure", () => {
+    mockUsePlan.mockReturnValue(jobState({ phase: "lost" }))
+    renderRouted(<PlanPage />)
+    expect(screen.getByText(/lost track of that run/i)).toBeInTheDocument()
+    expect(screen.queryByText(/didn't finish/i)).not.toBeInTheDocument()
+  })
+
+  test("a ready plan and a refusing ROI render side by side", () => {
+    mockUsePlan.mockReturnValue(jobState({ phase: "ready", result: plan() }))
+    mockUseRoi.mockReturnValue(
+      jobState({
+        phase: "ready",
+        result: roiPayload({
+          roi: null,
+          computable: false,
+          missing: ["purchasable-path"],
+          missingStatements: [PURCHASABLE_PATH_STATEMENT],
+        }),
+      })
+    )
     renderRouted(<PlanPage />)
     expect(screen.getByText(/how you'd close the gap/i)).toBeInTheDocument()
-    expect(screen.getByText(/there's no plan to show yet/i)).toBeInTheDocument()
-    expect(screen.getByText(/how you'll know it's working/i)).toBeInTheDocument()
-    expect(screen.getByText(/checkpoints appear once there's a plan/i)).toBeInTheDocument()
+    expect(screen.getByText("Practise structured analysis")).toBeInTheDocument()
     expect(screen.getByText(/is it worth it\?/i)).toBeInTheDocument()
-  })
-
-  test("fabricates no plan steps, timings or money", () => {
-    const { container } = renderRouted(<PlanPage />)
-    const text = container.textContent ?? ""
-    expect(text).not.toMatch(/\$/)
-    expect(text).not.toMatch(/\d+\s*months?\b/)
-    expect(screen.queryByText(/pays for itself/i)).not.toBeInTheDocument()
-  })
-
-  test("the ROI refuses to compute and names what is missing", () => {
-    renderRouted(<PlanPage />)
-    expect(screen.getByText(/can't work this out honestly yet/i)).toBeInTheDocument()
-    expect(screen.getByText(/rather show you nothing than a number we made up/i)).toBeInTheDocument()
-    expect(screen.getByText(/what you earn now, or last earned/i)).toBeInTheDocument()
-    expect(screen.getByText(/the going rate for the roles you're aiming at/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/this isn't a transition you can buy/i)
+    ).toBeInTheDocument()
   })
 })
 
-describe("PlanPage — the components Phase 5 will feed", () => {
-  const CRITICAL = {
-    id: "p1",
-    title: "Practise structured analysis",
-    why: "The biggest single distance between you and this role.",
-    kind: "critical" as const,
-    effort: "about two hours a week for a month",
-    cost: null,
-  }
-  const COACHING = {
-    id: "p2",
-    title: "Commit to calls sooner",
-    why: "A short distance that closes with practice.",
-    kind: "coaching" as const,
-    effort: "a few minutes a day",
-    cost: "$0",
-  }
-
-  test("orders by what moves the fit band, whatever order it was handed", () => {
-    // Coaching first on the way in; critical must still come out on top.
-    renderRouted(<PlanSequence items={[COACHING, CRITICAL]} />)
+describe("PlanSequence — the order is the server's", () => {
+  test("renders the sequence exactly as handed over, never re-sorted", () => {
+    // A coaching item first and a critical item second: the wrong-looking order
+    // on purpose. If this page ever re-sorts client-side, this flips.
+    const coachingFirst = { ...SKILL, rank: 1 }
+    const criticalSecond = { ...BEHAVIOURAL, rank: 2 }
+    renderRouted(
+      <PlanSequence plan={plan({ sequence: [coachingFirst, criticalSecond] })} />
+    )
     const steps = screen.getAllByRole("listitem")
-    expect(within(steps[0]).getByText(/practise structured analysis/i)).toBeInTheDocument()
-    expect(within(steps[1]).getByText(/commit to calls sooner/i)).toBeInTheDocument()
+    expect(
+      within(steps[0]).getByText("Data Analysis Certificate")
+    ).toBeInTheDocument()
+    expect(
+      within(steps[1]).getByText("Practise structured analysis")
+    ).toBeInTheDocument()
+  })
+
+  test("prints the backend's own reason for the ordering", () => {
+    renderRouted(<PlanSequence plan={plan()} />)
+    expect(
+      screen.getByText(/critical gaps first, then coaching gaps/i)
+    ).toBeInTheDocument()
     expect(screen.getByText(/moves your fit most/i)).toBeInTheDocument()
   })
 
-  test("a step carries its effort and its cost, with time-only said plainly", () => {
-    renderRouted(<PlanSequence items={[CRITICAL]} />)
-    expect(screen.getByText(/about two hours a week for a month/i)).toBeInTheDocument()
-    expect(screen.getByText(/your time only/i)).toBeInTheDocument()
+  test("empty is explained, not blank", () => {
+    renderRouted(
+      <PlanSequence
+        plan={plan({
+          sequence: [],
+          gapsPending: true,
+          note: "Nothing is in the way of this role that we can see.",
+        })}
+      />
+    )
+    expect(
+      screen.getByText(/nothing is in the way of this role/i)
+    ).toBeInTheDocument()
+  })
+
+  test("carries the plan's own totals, including what cannot be totalled", () => {
+    renderRouted(
+      <PlanSequence
+        plan={plan({
+          cost: {
+            ...plan().cost,
+            knownTotal: null,
+            currency: null,
+            itemsWithKnownCost: 0,
+            itemsWithUnknownCost: 1,
+            complete: false,
+            statement:
+              "1 item(s) could carry a price and none of them do. The total is unknown rather than zero.",
+          },
+        })}
+      />
+    )
+    expect(
+      screen.getByText(/the total is unknown rather than zero/i)
+    ).toBeInTheDocument()
+  })
+
+  test("reports refused inputs rather than swallowing them", () => {
+    renderRouted(
+      <PlanSequence
+        plan={plan({
+          refusals: ["A behavioural gap arrived carrying a price; it was dropped."],
+        })}
+      />
+    )
+    expect(screen.getByText(/1 input was refused/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/arrived carrying a price; it was dropped/i)
+    ).toBeInTheDocument()
+  })
+})
+
+describe("PlanItemCard — the taxonomy, at the point of render", () => {
+  test("a behavioural item shows no cost affordance at all", () => {
+    const { container } = renderRouted(
+      <ol>
+        <PlanItemCard item={BEHAVIOURAL} />
+      </ol>
+    )
+    // Not "$0", not "free", not a blank slot that reads as free.
+    expect(container.textContent).not.toMatch(/\$/)
+    expect(container.textContent).not.toMatch(/cost:/i)
+    expect(screen.getByText(/not something you buy/i)).toBeInTheDocument()
+  })
+
+  test("unknown effort says so in words, never as a number", () => {
+    const { container } = renderRouted(
+      <ol>
+        <PlanItemCard item={BEHAVIOURAL} />
+      </ol>
+    )
+    expect(
+      screen.getByText(/we don't know how long this takes/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/nothing on file estimates it/i)
+    ).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/\b0\s*hours?\b/)
+  })
+
+  test("a priced skill item shows its price and its stated effort", () => {
+    renderRouted(
+      <ol>
+        <PlanItemCard item={SKILL} />
+      </ol>
+    )
+    expect(screen.getByText(/cost: \$1,200/i)).toBeInTheDocument()
+    expect(screen.getByText(/effort: 40 hours/i)).toBeInTheDocument()
+  })
+
+  test("a costable item that nobody has priced says unknown, not free", () => {
+    renderRouted(
+      <ol>
+        <PlanItemCard
+          item={{
+            ...SKILL,
+            cost: {
+              amount: null,
+              currency: null,
+              known: false,
+              basis: "unknown",
+              statement:
+                "We do not know what this costs. Price it and it enters the ROI.",
+            },
+          }}
+        />
+      </ol>
+    )
+    expect(screen.getByText(/cost: not known/i)).toBeInTheDocument()
+    expect(screen.getByText(/price it and it enters the roi/i)).toBeInTheDocument()
+  })
+})
+
+describe("RoiSummary — refusal is the ordinary path", () => {
+  test("a purchasable-path refusal is not rendered as a free, instant route", () => {
+    const { container } = renderRouted(
+      <RoiSummary
+        result={roiPayload({
+          roi: null,
+          computable: false,
+          missing: ["purchasable-path"],
+          missingStatements: [PURCHASABLE_PATH_STATEMENT],
+        })}
+      />
+    )
+    expect(
+      screen.getByText(/this isn't a transition you can buy/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/not a zero-cost path into this role/i)
+    ).toBeInTheDocument()
+    // The failure mode: "£0 payback", or any payback figure at all.
+    expect(container.textContent).not.toMatch(/\$\s?0\b/)
+    expect(screen.queryByText(/before it pays for itself/i)).not.toBeInTheDocument()
+  })
+
+  test("numbers present but inputs missing still refuses, and says which", () => {
+    const { container } = renderRouted(
+      <RoiSummary
+        result={roiPayload({
+          missing: ["item-prices"],
+          missingStatements: [
+            "2 of 3 purchasable item(s) are unpriced. The figures below are a floor.",
+          ],
+        })}
+      />
+    )
+    // `roi` is a fully populated object here — and none of it is shown.
+    expect(screen.getByText(/floor, not an answer/i)).toBeInTheDocument()
+    expect(screen.getByText(/some of the plan is unpriced/i)).toBeInTheDocument()
+    expect(screen.queryByText(/before it pays for itself/i)).not.toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/1\.8 years/)
+  })
+
+  test("an unknown refusal code still reaches the reader via its statement", () => {
+    renderRouted(
+      <RoiSummary
+        result={roiPayload({
+          roi: null,
+          computable: false,
+          missing: ["some-future-code"],
+          missingStatements: ["Could not be established: some-future-code."],
+        })}
+      />
+    )
+    expect(
+      screen.getByText(/could not be established: some-future-code/i)
+    ).toBeInTheDocument()
+  })
+
+  test("a clean ROI shows a range across three wage points, never one figure", () => {
+    renderRouted(<RoiSummary result={roiPayload()} />)
+    expect(screen.getByText(/before it pays for itself/i)).toBeInTheDocument()
+    // Every band states all three points, so these repeat by design.
+    expect(screen.getAllByText("At the entry wage").length).toBe(3)
+    expect(screen.getAllByText("At the median wage").length).toBe(3)
+    expect(screen.getAllByText("At the experienced end").length).toBe(3)
+    expect(screen.getByText("4.1 years")).toBeInTheDocument()
+    expect(screen.getByText("1.8 years")).toBeInTheDocument()
+    // No scalar anywhere: there is no single "expected" payback to render.
+    expect(screen.queryByText(/expected payback/i)).not.toBeInTheDocument()
+  })
+
+  test("a wage point below current income reads as never, not as zero", () => {
+    renderRouted(
+      <RoiSummary
+        result={roiPayload({
+          roi: {
+            ...roiPayload().roi!,
+            paybackYears: band({
+              atEntryWage: null,
+              low: 0.9,
+              high: 1.8,
+              unreachableAt: ["entry"],
+            }),
+            unreachableAt: ["entry"],
+          },
+        })}
+      />
+    )
+    expect(
+      screen.getByText(/never reaches payback at this wage/i)
+    ).toBeInTheDocument()
+  })
+
+  test("confidence sits next to the numbers, with what degraded it", () => {
+    renderRouted(<RoiSummary result={roiPayload()} />)
+    expect(screen.getByText(/confidence: moderate/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/curated static reference figure, not a live market read/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/no roi computed from the curated static wage table can reach/i)
+    ).toBeInTheDocument()
+  })
+
+  test("confidence is shown on a refusal too, not only on a happy path", () => {
+    renderRouted(
+      <RoiSummary
+        result={roiPayload({
+          roi: null,
+          computable: false,
+          missing: ["current-income"],
+          missingStatements: ["No current income on file, and none assumed."],
+        })}
+      />
+    )
+    expect(screen.getByText(/confidence: moderate/i)).toBeInTheDocument()
+  })
+})
+
+describe("RecommendationPanel — a nearer target, said respectfully", () => {
+  const RECOMMEND: RoiRecommendation = {
+    recommendDifferentTarget: true,
+    tier: "misalignment",
+    criticalGaps: 2,
+    grounds: [
+      {
+        code: "critical-gaps",
+        decisive: true,
+        signal: { criticalGaps: 2 },
+        statement:
+          "2 dimensions this role treats as critical sit further than the guardrail allows from where you currently score.",
+      },
+    ],
+    decisiveGrounds: ["critical-gaps"],
+    cautions: [],
+    alternatives: [
+      {
+        family: "Analysis & Research",
+        affinity: 78,
+        pivotDifficulty: "moderate",
+        range: {
+          low: 52000,
+          median: 83000,
+          high: 121000,
+          source: "Curated static reference table",
+          asOf: "2024-05",
+        },
+        why: "Your own stage-3 ranking puts Analysis & Research at 78 affinity.",
+      },
+    ],
+    statement:
+      "A nearer one: Analysis & Research. That reads your profile, not this role's benchmark.",
+  }
+
+  test("names alternatives with reasons, and leaves the choice with the reader", () => {
+    const { container } = renderRouted(
+      <RecommendationPanel recommendation={RECOMMEND} />
+    )
+    expect(screen.getByText(/there may be a nearer target/i)).toBeInTheDocument()
+    expect(screen.getByText("Analysis & Research")).toBeInTheDocument()
+    expect(screen.getByText(/78 affinity/i)).toBeInTheDocument()
+    expect(screen.getByText(/\$52,000 – \$121,000/)).toBeInTheDocument()
+    expect(screen.getByText(/yours to overrule/i)).toBeInTheDocument()
+
+    // The phrasing the backend deliberately avoids, and so must this. Putting
+    // "you cannot do this" in front of a frightened reader — even to deny it —
+    // is the defect.
+    expect(container.textContent).not.toMatch(/you can'?t do this/i)
+    expect(container.textContent).not.toMatch(/cannot do it/i)
+    expect(container.textContent).not.toMatch(/not good enough/i)
+  })
+
+  test("shows the grounds it rests on rather than asserting a conclusion", () => {
+    renderRouted(<RecommendationPanel recommendation={RECOMMEND} />)
+    expect(screen.getByText(/what that's based on/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/further than the guardrail allows/i)
+    ).toBeInTheDocument()
+  })
+
+  test("a caution short of a recommendation is worded differently", () => {
+    renderRouted(
+      <RecommendationPanel
+        recommendation={{
+          ...RECOMMEND,
+          recommendDifferentTarget: false,
+          alternatives: [],
+          statement: "One thing is worth flagging before you commit to it.",
+        }}
+      />
+    )
+    expect(screen.getByText(/worth knowing before you commit/i)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/there may be a nearer target/i)
+    ).not.toBeInTheDocument()
+  })
+
+  test("renders nothing when there is nothing to say", () => {
+    const { container } = renderRouted(
+      <RecommendationPanel recommendation={NO_RECOMMENDATION} />
+    )
+    expect(container.textContent).toBe("")
+  })
+})
+
+describe("MilestoneList — no invented deadlines", () => {
+  test("empty explains why it is empty", () => {
+    renderRouted(<MilestoneList milestones={[]} />)
+    expect(screen.getByText(/don't set you dated checkpoints/i)).toBeInTheDocument()
+    expect(screen.getByText(/review horizon instead/i)).toBeInTheDocument()
   })
 
   test("milestones say how you'd know, not just what", () => {
@@ -359,27 +965,5 @@ describe("PlanPage — the components Phase 5 will feed", () => {
     expect(screen.getByText("First mock interview done")).toBeInTheDocument()
     expect(screen.getByText(/without notes/i)).toBeInTheDocument()
     expect(screen.getByText(/within three weeks/i)).toBeInTheDocument()
-  })
-
-  test("the ROI computes only when every input is real", () => {
-    const roi = {
-      paybackMonths: 18,
-      threeYearNet: 42000,
-      currency: "USD",
-      basis: "Based on the salary range you entered and the course cost you gave us.",
-    }
-    const { rerender } = renderRouted(<RoiSummary roi={roi} missing={[]} />)
-    expect(screen.getByText(/18 months/, { selector: "p" })).toBeInTheDocument()
-    expect(screen.getByText(/\$42,000/, { selector: "p" })).toBeInTheDocument()
-    expect(screen.getByText(/worth arguing with, not worth treating as a promise/i)).toBeInTheDocument()
-
-    // Same numbers, one input still outstanding — it must refuse anyway.
-    rerender(
-      <MemoryRouter>
-        <RoiSummary roi={roi} missing={["the going rate for the roles you're aiming at"]} />
-      </MemoryRouter>
-    )
-    expect(screen.queryByText(/18 months/, { selector: "p" })).not.toBeInTheDocument()
-    expect(screen.getByText(/can't work this out honestly yet/i)).toBeInTheDocument()
   })
 })

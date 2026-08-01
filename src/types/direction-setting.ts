@@ -252,3 +252,488 @@ export type AlignmentStored = {
   result: AlignmentResultPayload | null
   job: Omit<AlignmentJob, "result"> | null
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Stage 4 — the market.
+ *
+ * Mirrors `app/market/models.py` (`WageRange`, `Outlook`, `Occupation`,
+ * `OccupationMarket`) and the `/market/salaries` route.
+ *
+ * Two properties of that module survive into these types because they are the
+ * product, not an implementation detail:
+ *
+ * 1. **A wage is a range with a source and a vintage.** `MarketWageRange` has
+ *    no optional field. A point estimate is not expressible, on either side of
+ *    the wire — `WageRange.__post_init__` refuses to build one, and
+ *    `SalaryRangeCard` refuses to render one.
+ * 2. **Absence is `null`, never a stand-in figure.** There is no fallback row
+ *    and no "typical" default. An occupation we hold no wage series for comes
+ *    back with `salary: null` and a sentence; the retired GRANT `_FALLBACK`
+ *    that invented $38,000 for anything unknown is exactly what these nulls
+ *    exist to prevent. **Never render a null as `$0`.**
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Entry / median / experienced annual wage, with provenance. All required. */
+export type MarketWageRange = {
+  low: number
+  median: number
+  high: number
+  /** Who published it, named plainly enough to be checked. */
+  source: string
+  /** `YYYY-MM`, or `mixed: …` when a family roll-up spans vintages. */
+  asOf: string
+}
+
+/**
+ * Projected employment change.
+ *
+ * `growthPct` is **signed**. Some occupations are shrinking; a projection that
+ * can only be positive is a brochure. Render the minus sign.
+ */
+export type MarketOutlook = {
+  growthPct: number
+  horizonYears: number
+  source: string
+  /** The projection window, e.g. `2023-2033` — not a month. */
+  asOf: string
+}
+
+/** A canonical occupation: SOC-style code, title, and where both came from. */
+export type MarketOccupationRef = {
+  code: string
+  title: string
+  source: string
+  asOf: string
+}
+
+/** One occupation with the gaps left as gaps — either side may be `null`. */
+export type MarketOccupation = MarketOccupationRef & {
+  salary: MarketWageRange | null
+  outlook: MarketOutlook | null
+}
+
+/**
+ * One career area, priced.
+ *
+ * `range` is the roll-up across the area's occupations, or `null` when nothing
+ * in it has a wage series. `note` carries the backend's own sentence for that
+ * absence — said explicitly rather than left to the surface to infer, because
+ * "we have no wage data for this area" and "this area pays nothing" are one
+ * careless render apart.
+ *
+ * `affinity` and `pivotDifficulty` are `null` for a caller with no PRISM: the
+ * route then prices all nine areas unranked rather than showing nothing.
+ */
+export type MarketArea = {
+  family: string
+  affinity: number | null
+  pivotDifficulty: string | null
+  range: MarketWageRange | null
+  occupations: MarketOccupation[]
+  note: string | null
+}
+
+/** `GET /market/salaries`. */
+export type MarketSalaries = {
+  areas: MarketArea[]
+  /** False when there was no PRISM to rank with — all nine areas, unordered. */
+  ranked: boolean
+  /** The configured provider, e.g. `static-reference`. */
+  provider: string
+  /** The provider's vintage. Render it; it is not decoration. */
+  asOf: string
+  note: string
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Stages 9 and 10 — plan and ROI.
+ *
+ * Mirrors `app/tools/direction_setting/plan.py` and `roi.py`. Both stages sit
+ * on the same accept-then-poll path as stage 6, for the same reason: they make
+ * an unbounded specialist call, and API Gateway's 30-second cap does not
+ * forgive one.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Every Direction Setting job uses the same lifecycle. */
+export type DirectionJobStatus = AlignmentJobStatus
+
+/**
+ * How much work an item is — including when that is genuinely not knowable.
+ *
+ * `hours` is populated **only** from a stated figure; nothing derives one,
+ * because a derived hour count is indistinguishable on screen from a measured
+ * one. `known: false` with `basis: "unknown"` is the ordinary case and must
+ * render as "we don't know how long this takes" — never as a zero, never as a
+ * quietly-omitted line.
+ *
+ * `horizon` is a different kind of claim: when to look at this again, not how
+ * long it takes.
+ */
+export type PlanEffort = {
+  hours: number | null
+  horizon: string | null
+  known: boolean
+  basis: string
+  statement: string
+}
+
+/** What a purchasable item costs. `known: false` means unknown, not free. */
+export type PlanCost = {
+  amount: number | null
+  currency: string | null
+  known: boolean
+  basis: string
+  statement: string
+}
+
+/**
+ * One step in the plan.
+ *
+ * **`cost` is optional at the type level because the wire omits the key
+ * entirely on behavioural items** — not `cost: null`, which a consumer can
+ * happily sum as zero. `source` is `"skill"` exactly when a cost may exist,
+ * and `costable` says the same thing in a boolean. Never show a cost
+ * affordance on an item without the key, and never sum a missing cost as zero.
+ */
+export type PlanItem = {
+  itemId: string
+  gapId: string
+  competency: string
+  title: string
+  provider: string | null
+  /** `"behavioral"` — something you become — or `"skill"`: something you buy. */
+  source: string
+  costable: boolean
+  /** `"critical"` or `"coaching"`. Critical gaps are what move the fit band. */
+  severity: string
+  /** Server-assigned position. The sequence is already in this order. */
+  rank: number
+  origin: string
+  goalId: string | null
+  category: string | null
+  currentScore: number | null
+  targetScore: number | null
+  magnitude: number | null
+  direction: string | null
+  format: string
+  effort: PlanEffort
+  why: string
+  status: string
+  /** `"derived"` or `"specialist"` — who worded the title. */
+  phrasing: string
+  /** Present on skill items only. Absent — not null — on behavioural ones. */
+  cost?: PlanCost
+}
+
+export type PlanCounts = {
+  total: number
+  behavioural: number
+  skill: number
+  critical: number
+  coaching: number
+}
+
+/** What the plan can and cannot say about total time. */
+export type PlanEffortSummary = {
+  /** `null`, never `0`, when nothing stated a duration. */
+  statedHours: number | null
+  itemsWithStatedEffort: number
+  itemsWithUnknownEffort: number
+  complete: boolean
+  statement: string
+}
+
+/** What the plan can and cannot say about total money. */
+export type PlanCostSummary = {
+  /** `null` when nothing is priced, or when priced items disagree on currency. */
+  knownTotal: number | null
+  currency: string | null
+  costableItems: number
+  itemsWithKnownCost: number
+  itemsWithUnknownCost: number
+  itemsNotCostable: number
+  complete: boolean
+  statement: string
+}
+
+/** Over-expressions. Reported, never sequenced — there is nothing to close. */
+export type PlanOverdone = {
+  dimension: string | null
+  category: string | null
+  candidateScore: number | null
+}
+
+export type PlanTargetRole = {
+  title: string | null
+  blueprintId: string | null
+}
+
+/** The stage-9 artefact — what a completed plan job returns. */
+export type PlanResultPayload = {
+  targetRole: PlanTargetRole | null
+  /** True when nothing has been picked to aim at. Normal, not an error. */
+  targetRolePending: boolean
+  /** True when nothing is in the way. Also a real result, not an empty page. */
+  gapsPending: boolean
+  /** **Already ordered**: critical gaps first, then coaching. Do not re-sort. */
+  sequence: PlanItem[]
+  counts: PlanCounts
+  effort: PlanEffortSummary
+  cost: PlanCostSummary
+  advisories: { overdone: PlanOverdone[] }
+  /** Inputs the plan refused — e.g. a price attached to a behavioural gap. */
+  refusals: string[]
+  learningFormat: string
+  dominantQuadrant: string | null
+  /** Why the order is the order. Worth printing next to the list. */
+  sequenceBasis: string
+  note: string
+}
+
+/** One derived ROI figure, stated at each of the three wage points. */
+export type RoiBand = {
+  /** `null` at a wage point means *never reaches payback at that wage*. */
+  atEntryWage: number | null
+  atMedianWage: number | null
+  atExperiencedWage: number | null
+  /** Extremes of what resolved. **Not** a confidence interval. */
+  low: number | null
+  high: number | null
+  unit: string
+  basis: string
+  known: boolean
+  /** Which of `entry` / `median` / `experienced` came back `null`. */
+  unreachableAt: string[]
+  note: string
+}
+
+/**
+ * The arithmetic, when it could be done.
+ *
+ * There is deliberately no scalar `payback` or `expected` — every figure is a
+ * `RoiBand` across three wage points. A surface that wants one number has to
+ * name the wage point and thereby state its assumption.
+ */
+export type RoiComputed = {
+  currency: string
+  horizonYears: number
+  upliftPerYear: RoiBand
+  paybackYears: RoiBand
+  netOverHorizon: RoiBand
+  unreachableAt: string[]
+  statement?: string
+  /** Echoed inside the block so numbers cannot be rendered without the band. */
+  confidenceBand?: string
+  confidenceScore?: number
+}
+
+/** What the person earns now — stated, or an explicit refusal to guess. */
+export type RoiIncome = {
+  amount: number | null
+  currency: string | null
+  /** `"stated"` or `"unknown"`. A stated **zero** computes; an absent one does not. */
+  basis: string
+  statedZero: boolean
+  statement: string
+}
+
+/**
+ * The cost side. `basis` is the fact everything branches on:
+ * `none` (no plan) · `not-purchasable` (nothing on it can be bought — *not*
+ * free) · `unpriced` (unknown, not zero) · `partial` (a floor) · `stated`.
+ */
+export type RoiCostSide = {
+  total: number | null
+  currency: string | null
+  costableItems: number
+  itemsWithKnownCost: number
+  itemsWithUnknownCost: number
+  complete: boolean
+  basis: string
+  statement: string
+}
+
+/** The time side. Stated as time and **never converted into money**. */
+export type RoiEffortSide = {
+  statedHours: number | null
+  itemsWithStatedEffort: number
+  itemsWithUnknownEffort: number
+  complete: boolean
+  convertedToMoney: boolean
+  statement: string
+}
+
+/** One row of the confidence ledger, with the penalty it cost. */
+export type RoiConfidenceInput = {
+  key: string
+  basis: string
+  penalty: number
+  statement: string
+  source?: string
+  asOf?: string
+}
+
+/**
+ * How much the figures can be leaned on, and exactly why not more.
+ *
+ * A first-class output, not a footnote. `degradedBy` names which input is the
+ * weak one, which is the difference between "low confidence" and "low
+ * confidence *because nobody has priced two of your three courses*". No ROI
+ * computed from the curated static table can reach the `high` band — that is
+ * by construction, and `ceiling` says so.
+ */
+export type RoiConfidence = {
+  score: number
+  /** `high` · `moderate` · `low` · … — the backend owns the vocabulary. */
+  band: string
+  inputs: RoiConfidenceInput[]
+  degradedBy: { key: string; penalty: number; statement: string }[]
+  ceiling: string
+  statement: string
+}
+
+/** A nearer target, taken from stage 3's ranking of *this person*. */
+export type RoiAlternative = {
+  family: string
+  affinity: number | null
+  pivotDifficulty: string | null
+  range: MarketWageRange | null
+  why: string
+}
+
+/** One reason the target may be the wrong one. `decisive` ones stand alone. */
+export type RoiGround = {
+  code: string
+  decisive: boolean
+  signal: Record<string, unknown>
+  statement: string
+}
+
+/**
+ * The misalignment read.
+ *
+ * Same shape whether or not it recommends anything, so a surface never has to
+ * branch on presence. When it does recommend, it names alternatives with
+ * reasons — and the copy around it must never read as "you can't do this".
+ * The reader may be out of work and frightened.
+ */
+export type RoiRecommendation = {
+  recommendDifferentTarget: boolean
+  tier: string | null
+  criticalGaps: number
+  grounds: RoiGround[]
+  decisiveGrounds: string[]
+  cautions: string[]
+  alternatives: RoiAlternative[]
+  statement: string
+}
+
+/**
+ * The stable refusal codes.
+ *
+ * Kebab-case and matched by the backend's own constants. Typed as a union for
+ * the copy lookup, but `RoiResultPayload.missing` stays `string[]`: a code this
+ * frontend has never heard of must still render, via `missingStatements`.
+ */
+export type RoiMissingCode =
+  | "target-role"
+  | "target-occupation"
+  | "target-salary"
+  | "current-income"
+  | "plan"
+  | "purchasable-path"
+  | "plan-cost"
+  | "comparable-currency"
+  | "item-prices"
+
+/**
+ * The stage-10 artefact.
+ *
+ * **Refusal is the ordinary path.** `roi: null` with a populated `missing` is a
+ * successful compute that declined to invent an input, not a failure — and a
+ * payload with numbers *and* a non-empty `missing` is a floor, not an answer.
+ * `RoiSummary` refuses on either.
+ */
+export type RoiResultPayload = {
+  targetRole: PlanTargetRole | null
+  targetRolePending: boolean
+  occupation: MarketOccupationRef | null
+  salary: MarketWageRange | null
+  outlook: MarketOutlook | null
+  currentIncome: RoiIncome
+  cost: RoiCostSide
+  effort: RoiEffortSide
+  /** `null` whenever anything blocking could not be established. */
+  roi: RoiComputed | null
+  /** Stable kebab-case codes. Empty only when every input is real. */
+  missing: string[]
+  /** One prose sentence per code, in the same order. */
+  missingStatements: string[]
+  computable: boolean
+  confidence: RoiConfidence
+  recommendation: RoiRecommendation
+  narration: string | null
+  /** Stage 9's refusals, carried forward rather than restated. */
+  refusals: string[]
+  note: string
+}
+
+/** `GET /plan/jobs/{jobId}`. */
+export type PlanJob = {
+  jobId: string
+  kind: string
+  status: DirectionJobStatus
+  result?: PlanResultPayload | null
+  error?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** `GET /roi/jobs/{jobId}`. */
+export type RoiJob = {
+  jobId: string
+  kind: string
+  status: DirectionJobStatus
+  result?: RoiResultPayload | null
+  error?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** `POST /plan/jobs` and `POST /roi/jobs` — 202, before any work has happened. */
+export type DirectionJobStarted = {
+  jobId: string
+  kind: string
+  status: DirectionJobStatus
+}
+
+/** `GET /plan` — the stage-9 artefact plus the latest job's status. */
+export type PlanStored = {
+  result: PlanResultPayload | null
+  job: Omit<PlanJob, "result"> | null
+}
+
+/** `GET /roi` — the stage-10 artefact plus the latest job's status. */
+export type RoiStored = {
+  result: RoiResultPayload | null
+  job: Omit<RoiJob, "result"> | null
+}
+
+/** Body for `POST /plan/jobs`. Both fields optional — stages 7/8 supply them. */
+export type PlanStartInput = {
+  targetRole?: string | { title?: string; blueprintId?: string } | null
+  /** The user's half of the gap taxonomy: certifications, courses, portfolio. */
+  skillGaps?: Record<string, unknown>[]
+}
+
+/**
+ * Body for `POST /roi/jobs`.
+ *
+ * `currentIncome` has no fallback anywhere. Omitting it is a refusal; sending
+ * `0` is a *statement* that there is no income right now, which computes.
+ */
+export type RoiStartInput = {
+  currentIncome?: number | null
+  currency?: string | null
+  targetRole?: string | { title?: string; blueprintId?: string } | null
+}
