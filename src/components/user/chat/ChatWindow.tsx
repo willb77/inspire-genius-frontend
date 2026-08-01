@@ -47,6 +47,7 @@ export default function ChatWindow({
   onBack,
   onSendText,
   autoSendText,
+  autoSendDisplayText,
   onToggleRecording,
   isRecording,
   hasAudio,
@@ -156,10 +157,12 @@ export default function ChatWindow({
     const text = autoSendText?.trim();
     if (!text || autoSentRef.current) return;
     autoSentRef.current = true;
-    setInputText(text);
-    onSendText?.(text);
-    setInputText("");
-  }, [autoSendText, onSendText]);
+    // Deliberately NOT written into the composer first. Setting and clearing
+    // it in the same effect is invisible in React 18 (both updates batch),
+    // but under any path that flushed between them the injected prompt —
+    // scaffolding and all — would flash in the input box.
+    onSendText?.(text, autoSendDisplayText?.trim() || undefined);
+  }, [autoSendText, autoSendDisplayText, onSendText]);
 
     const selectDocsLottieSrc = useMemo(() => {
     const options = [
