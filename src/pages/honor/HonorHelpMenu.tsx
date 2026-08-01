@@ -13,12 +13,11 @@ import { GUIDE_LINKS } from "@/components/shared/layout/helpSupportLinks"
  * Help / Support control for the Honor (THF) Coach Workbench sidebar footer.
  *
  * HonorShell is a self-contained navy chrome with its own Tailwind styling and
- * NO shadcn SidebarProvider, so the shared `HelpSupportMenu` (which renders a
- * `SidebarMenuButton`) cannot drop in here. This is the THF-styled twin: a
- * footer button matching "Back to Inspire Genius" that opens a small menu
- * linking to the Coach Workbench guide (clickable web version), the slide deck,
- * and the Word document. It reuses the SAME `GUIDE_LINKS` source of truth as the
- * shared menu, so both surfaces always point at the same assets.
+ * NO shadcn SidebarProvider. This is Honor's Help / Support control: a footer
+ * button matching "Back to Inspire Genius" that opens a small menu linking to
+ * the Coach Workbench guide (clickable web version), the slide deck, and the
+ * Word document. It is the only Help / Support surface in the app — the shared
+ * app sidebar no longer carries one. URLs come from the `GUIDE_LINKS` constant.
  *
  * Links are app-relative under /docs/guides/ (deployed to the frontend's own
  * S3/CloudFront origin), so they resolve on dev, staging-b, or local. Each opens
