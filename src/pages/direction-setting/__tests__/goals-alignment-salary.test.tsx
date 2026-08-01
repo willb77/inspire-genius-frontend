@@ -2,16 +2,27 @@
  * @jest-environment jsdom
  */
 import { fireEvent, render, screen } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import type { ReactNode } from "react"
 
 import GoalsPage from "../GoalsPage"
 import AlignmentPage, {
   AlignmentReportView,
   AtTensionRow,
   ConflictCallout,
+  MixedGoalRow,
   SupportedGoalRow,
+  UnplacedGoalRow,
+  UnscoredNotice,
+  toReportView,
   type AlignmentReport,
 } from "../AlignmentPage"
 import SalaryPage, { SalaryRangeCard, type SalaryRange } from "../SalaryPage"
+import { useAlignment } from "@/hooks/direction-setting/useAlignment"
+import type {
+  AlignmentJobStatus,
+  AlignmentResultPayload,
+} from "@/types/direction-setting"
 
 /* ── Router ──────────────────────────────────────────────────────────────────
  * All three pages navigate imperatively (no <Link>), so a `useNavigate` stub is
@@ -32,6 +43,191 @@ jest.mock("@/hooks/direction-setting/useJourney", () => ({
   useJourney: () => journeyResult,
   useAdvanceJourney: () => ({ mutate: mockAdvance, isPending: false }),
 }))
+
+/* ── Alignment service (AlignmentPage only) ───────────────────────────────────
+ * The *service* is stubbed, not the hook. Stage 6 is on the async job path, and
+ * the accept-then-poll dance is the part most likely to break — a mocked hook
+ * would test the page against a machine nobody runs. So these tests drive the
+ * real `useAlignment` over a fake wire. */
+jest.mock("@/services/direction-setting/alignment.service", () => ({
+  getAlignment: jest.fn(),
+  startAlignmentJob: jest.fn(),
+  getAlignmentJob: jest.fn(),
+}))
+
+import {
+  getAlignment,
+  getAlignmentJob,
+  startAlignmentJob,
+} from "@/services/direction-setting/alignment.service"
+
+const mockGetAlignment = getAlignment as jest.MockedFunction<typeof getAlignment>
+const mockGetAlignmentJob = getAlignmentJob as jest.MockedFunction<
+  typeof getAlignmentJob
+>
+const mockStartAlignmentJob = startAlignmentJob as jest.MockedFunction<
+  typeof startAlignmentJob
+>
+
+/** A 404 from the poll: the job is gone, or was never ours. Terminal either way. */
+const notFound = () =>
+  Object.assign(new Error("Request failed with status code 404"), {
+    isAxiosError: true,
+    response: { status: 404 },
+  })
+
+const emptyReport = (
+  over: Partial<AlignmentResultPayload> = {}
+): AlignmentResultPayload => ({
+  goals: [],
+  conflicts: [],
+  unmapped: [],
+  summary: { total: 0 },
+  ...over,
+})
+
+/** One of each verdict the scorer can reach when a PRISM is on file. */
+const scoredReport: AlignmentResultPayload = emptyReport({
+  goals: [
+    {
+      title: "Finish the data certificate",
+      family: "Research & Analysis",
+      score: 78.0,
+      verdict: "supported",
+      conflict: false,
+      statement: "…",
+      drivers: {
+        supporting: [
+          {
+            dimension: "Investigative & Analytical",
+            yourScore: 84.0,
+            roleNeeds: 90.0,
+          },
+        ],
+        opposing: [],
+      },
+    },
+    {
+      title: "Move into enterprise sales",
+      family: "Sales & Business Development",
+      score: 41.0,
+      verdict: "at-tension",
+      conflict: true,
+      statement: "…",
+      drivers: {
+        supporting: [
+          { dimension: "Structured & Methodical", yourScore: 71.0, roleNeeds: 70.0 },
+        ],
+        opposing: [
+          { dimension: "Outgoing & Persuasive", yourScore: 34.0, roleNeeds: 90.0 },
+        ],
+      },
+    },
+    {
+      title: "Run a small team",
+      family: "Leadership & Management",
+      score: 57.0,
+      verdict: "mixed",
+      conflict: false,
+      statement: "…",
+      drivers: {
+        supporting: [],
+        opposing: [
+          { dimension: "Directive & Decisive", yourScore: 48.0, roleNeeds: 78.0 },
+        ],
+      },
+    },
+    {
+      title: "Be happier at work",
+      score: null,
+      verdict: "unmapped",
+      conflict: false,
+      statement:
+        "We could not place “Be happier at work” against any of the nine role families.",
+    },
+  ],
+  unmapped: [
+    {
+      title: "Be happier at work",
+      statement:
+        "We could not place “Be happier at work” against any of the nine role families.",
+    },
+  ],
+  summary: { total: 4, supported: 1, mixed: 1, atTension: 1, unmapped: 1 },
+  note: "Deterministic: no model call. Decision support only.",
+})
+
+/** The no-PRISM report: goals on file, nothing to score them against. */
+const unscoredReport: AlignmentResultPayload = emptyReport({
+  goals: [
+    {
+      title: "Move into product management",
+      family: "Leadership & Management",
+      score: null,
+      verdict: "unscored",
+      conflict: false,
+      statement:
+        "It is on file but cannot be scored yet: there is no behavioural assessment to compare it against.",
+    },
+  ],
+  summary: { total: 1, unscored: 1 },
+  scored: false,
+  prismNeeded: true,
+})
+
+const ok = <T,>(data: T) => ({ status: true, data })
+
+const Providers = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider
+    client={
+      new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      })
+    }
+  >
+    {children}
+  </QueryClientProvider>
+)
+
+const renderAlignment = () =>
+  render(
+    <Providers>
+      <AlignmentPage />
+    </Providers>
+  )
+
+/** Reads the hook straight, so the job machine can be asserted on its own. */
+function AlignmentProbe({ pollMs = 10 }: { pollMs?: number }) {
+  const { phase, jobStatus, jobError, report, start, isStarting } = useAlignment({
+    pollMs,
+  })
+  return (
+    <div>
+      <p>phase: {phase}</p>
+      <p>status: {jobStatus ?? "none"}</p>
+      <p>error: {jobError ?? "none"}</p>
+      <p>goals: {report ? String(report.summary.total) : "none"}</p>
+      <button type="button" onClick={start} disabled={isStarting}>
+        run it
+      </button>
+    </div>
+  )
+}
+
+const renderProbe = () =>
+  render(
+    <Providers>
+      <AlignmentProbe />
+    </Providers>
+  )
+
+const resetAlignmentMocks = () => {
+  mockGetAlignment.mockReset()
+  mockGetAlignmentJob.mockReset()
+  mockStartAlignmentJob.mockReset()
+  // Default: a user who has never run this.
+  mockGetAlignment.mockResolvedValue(ok({ result: null, job: null }))
+}
 
 beforeEach(() => {
   mockNavigate.mockReset()
@@ -135,9 +331,11 @@ describe("GoalsPage (stage 5) — a door into Summit, not a second goal system",
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-describe("AlignmentPage (stage 6) — honest until Phase 3 lands", () => {
-  test("says what the step does before admitting it isn't ready", () => {
-    render(<AlignmentPage />)
+describe("AlignmentPage (stage 6) — the page states", () => {
+  beforeEach(resetAlignmentMocks)
+
+  test("says what the step does, then offers the run", async () => {
+    renderAlignment()
     expect(
       screen.getByRole("heading", {
         level: 1,
@@ -145,14 +343,18 @@ describe("AlignmentPage (stage 6) — honest until Phase 3 lands", () => {
       })
     ).toBeInTheDocument()
     expect(screen.getByText(/what this step does/i)).toBeInTheDocument()
-    expect(screen.getByText(/this step isn't ready yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/nothing has been run yet/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /run the alignment/i })
+    ).toBeInTheDocument()
   })
 
-  test("shows no analysis at all rather than a plausible-looking one", () => {
+  test("shows no analysis at all before anything has been computed", async () => {
     // The failure this pins: someone adding sample rows "just to show the
     // layout". A fabricated tension about a real person's goals is not a
     // placeholder, it's a wrong answer.
-    render(<AlignmentPage />)
+    renderAlignment()
+    await screen.findByText(/nothing has been run yet/i)
     expect(
       screen.queryByText(/goals your wiring is behind/i)
     ).not.toBeInTheDocument()
@@ -162,14 +364,15 @@ describe("AlignmentPage (stage 6) — honest until Phase 3 lands", () => {
   })
 
   test("frames tension as information, not a verdict", () => {
-    render(<AlignmentPage />)
+    renderAlignment()
     expect(
       screen.getByText(/a tension is information about a trade-off, not a judgement/i)
     ).toBeInTheDocument()
   })
 
-  test("points at the two steps this one reads from", () => {
-    render(<AlignmentPage />)
+  test("points at the two steps this one reads from", async () => {
+    renderAlignment()
+    await screen.findByText(/nothing has been run yet/i)
 
     fireEvent.click(screen.getByRole("button", { name: /set my goals/i }))
     expect(mockNavigate).toHaveBeenCalledWith("/vertical/direction-setting/goals")
@@ -179,9 +382,379 @@ describe("AlignmentPage (stage 6) — honest until Phase 3 lands", () => {
       "/vertical/direction-setting/portrait"
     )
   })
+
+  test("the wait says what is happening, not just that something is", async () => {
+    // Reattaching to a run already in flight — the same state a returning user
+    // lands in. A bare spinner over a compute this slow reads as a stall.
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: null,
+        job: { jobId: "j1", kind: "alignment", status: "running" },
+      })
+    )
+    mockGetAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j1", kind: "alignment", status: "running", result: null })
+    )
+
+    renderAlignment()
+
+    expect(
+      await screen.findByText(/reading your goals against your profile/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/scoring each goal against the nine career families/i)
+    ).toBeInTheDocument()
+    // Reattached rather than re-run: no second compute was ordered.
+    expect(mockStartAlignmentJob).not.toHaveBeenCalled()
+  })
+
+  test("renders a finished report, unplaced goals included", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: scoredReport,
+        job: { jobId: "j1", kind: "alignment", status: "complete" },
+      })
+    )
+
+    renderAlignment()
+
+    expect(
+      await screen.findByRole("heading", { name: /goals your wiring is behind/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Finish the data certificate")).toBeInTheDocument()
+    expect(screen.getByText("Move into enterprise sales")).toBeInTheDocument()
+    expect(screen.getByText("Run a small team")).toBeInTheDocument()
+
+    // The one that must never quietly vanish.
+    expect(
+      screen.getByRole("heading", { name: /goals we couldn't place/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Be happier at work")).toBeInTheDocument()
+
+    // Still information, still per-row.
+    expect(
+      screen.getByText(/this doesn't mean don't\. it means go in knowing the price/i)
+    ).toBeInTheDocument()
+  })
+
+  test("unscored goals are named as unmeasured, not scored low", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: unscoredReport,
+        job: { jobId: "j1", kind: "alignment", status: "complete" },
+      })
+    )
+
+    renderAlignment()
+
+    expect(
+      await screen.findByRole("heading", { name: /not scored yet/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Move into product management")).toBeInTheDocument()
+    expect(
+      screen.getByText(/nothing below is a low score/i)
+    ).toBeInTheDocument()
+
+    // And a way to fix it — the Establish stage, where PRISM is taken.
+    fireEvent.click(
+      screen.getByRole("button", { name: /take the prism assessment/i })
+    )
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/vertical/direction-setting/establish"
+    )
+  })
+
+  test("a failed run says so, keeps the last good report, and offers a retry", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: scoredReport,
+        job: {
+          jobId: "j2",
+          kind: "alignment",
+          status: "error",
+          error: "goal store unreachable",
+        },
+      })
+    )
+    mockStartAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j3", kind: "alignment", status: "queued" })
+    )
+    mockGetAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j3", kind: "alignment", status: "queued", result: null })
+    )
+
+    renderAlignment()
+
+    expect(await screen.findByText(/that run didn't finish/i)).toBeInTheDocument()
+    expect(screen.getByText(/goal store unreachable/i)).toBeInTheDocument()
+    // The previous answer is not taken off the screen by a later failure.
+    expect(screen.getByText(/your most recent completed run/i)).toBeInTheDocument()
+    expect(screen.getByText("Finish the data certificate")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }))
+    expect(
+      await screen.findByText(/reading your goals against your profile/i)
+    ).toBeInTheDocument()
+  })
+
+  test("a job that no longer resolves is a dead end, not a spinner", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: null,
+        job: { jobId: "gone", kind: "alignment", status: "running" },
+      })
+    )
+    mockGetAlignmentJob.mockRejectedValue(notFound())
+
+    renderAlignment()
+
+    expect(
+      await screen.findByText(/we've lost track of that run/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/reading your goals against your profile/i)
+    ).not.toBeInTheDocument()
+  })
 })
 
-describe("AlignmentPage presentational pieces — the Phase 3 seam", () => {
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+describe("useAlignment — the accept-then-poll machine", () => {
+  beforeEach(resetAlignmentMocks)
+
+  test("starts idle when nothing has ever been run", async () => {
+    renderProbe()
+    expect(await screen.findByText("phase: idle")).toBeInTheDocument()
+    expect(screen.getByText("status: none")).toBeInTheDocument()
+    expect(mockStartAlignmentJob).not.toHaveBeenCalled()
+  })
+
+  test("walks queued → running → complete by polling, then stops", async () => {
+    let status: AlignmentJobStatus = "queued"
+    mockStartAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j1", kind: "alignment", status: "queued" })
+    )
+    mockGetAlignmentJob.mockImplementation(async () =>
+      ok({
+        jobId: "j1",
+        kind: "alignment",
+        status,
+        result: status === "complete" ? scoredReport : null,
+        error: null,
+      })
+    )
+
+    renderProbe()
+    fireEvent.click(await screen.findByRole("button", { name: /run it/i }))
+
+    expect(await screen.findByText("status: queued")).toBeInTheDocument()
+    expect(screen.getByText("phase: waiting")).toBeInTheDocument()
+
+    // Only a poll can move these on — the responses change under the hook.
+    status = "running"
+    expect(await screen.findByText("status: running")).toBeInTheDocument()
+    expect(screen.getByText("phase: waiting")).toBeInTheDocument()
+
+    status = "complete"
+    expect(await screen.findByText("phase: ready")).toBeInTheDocument()
+    expect(screen.getByText("goals: 4")).toBeInTheDocument()
+
+    // …and the timer is not still running against a job that finished.
+    const settled = mockGetAlignmentJob.mock.calls.length
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(mockGetAlignmentJob).toHaveBeenCalledTimes(settled)
+  })
+
+  test("an errored job is terminal and carries its reason", async () => {
+    mockStartAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j1", kind: "alignment", status: "queued" })
+    )
+    mockGetAlignmentJob.mockResolvedValue(
+      ok({
+        jobId: "j1",
+        kind: "alignment",
+        status: "error",
+        result: null,
+        error: "profile hydrate failed",
+      })
+    )
+
+    renderProbe()
+    fireEvent.click(await screen.findByRole("button", { name: /run it/i }))
+
+    expect(await screen.findByText("phase: failed")).toBeInTheDocument()
+    expect(screen.getByText("error: profile hydrate failed")).toBeInTheDocument()
+
+    const settled = mockGetAlignmentJob.mock.calls.length
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(mockGetAlignmentJob).toHaveBeenCalledTimes(settled)
+  })
+
+  test("a 404 stops the poll instead of retrying forever", async () => {
+    // Jobs are owner-scoped, so a 404 is "gone, or never yours" — a knowable
+    // end state. Retrying it is the one thing that turns this surface into an
+    // infinite spinner.
+    mockStartAlignmentJob.mockResolvedValue(
+      ok({ jobId: "j1", kind: "alignment", status: "queued" })
+    )
+    mockGetAlignmentJob.mockRejectedValue(notFound())
+
+    renderProbe()
+    fireEvent.click(await screen.findByRole("button", { name: /run it/i }))
+
+    expect(await screen.findByText("phase: lost")).toBeInTheDocument()
+
+    const settled = mockGetAlignmentJob.mock.calls.length
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(mockGetAlignmentJob).toHaveBeenCalledTimes(settled)
+  })
+
+  test("reattaches to a run already in flight rather than starting a second", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: null,
+        job: { jobId: "existing", kind: "alignment", status: "running" },
+      })
+    )
+    mockGetAlignmentJob.mockResolvedValue(
+      ok({ jobId: "existing", kind: "alignment", status: "running", result: null })
+    )
+
+    renderProbe()
+
+    expect(await screen.findByText("phase: waiting")).toBeInTheDocument()
+    expect(mockStartAlignmentJob).not.toHaveBeenCalled()
+    expect(mockGetAlignmentJob).toHaveBeenCalledWith("existing")
+  })
+
+  test("stops polling once the surface is gone", async () => {
+    mockGetAlignment.mockResolvedValue(
+      ok({
+        result: null,
+        job: { jobId: "existing", kind: "alignment", status: "running" },
+      })
+    )
+    mockGetAlignmentJob.mockResolvedValue(
+      ok({ jobId: "existing", kind: "alignment", status: "running", result: null })
+    )
+
+    const { unmount } = renderProbe()
+    await screen.findByText("phase: waiting")
+
+    unmount()
+    const atUnmount = mockGetAlignmentJob.mock.calls.length
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(mockGetAlignmentJob).toHaveBeenCalledTimes(atUnmount)
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+describe("toReportView — wire to sentences", () => {
+  test("prints both numbers for every dimension it names", () => {
+    // "You're low on X" is an opinion. "You 34, this work usually asks 90" is a
+    // fact the person can check — and disagree with, which is the point.
+    const view = toReportView(scoredReport)
+    expect(view.tensions[0].runsAgainst).toMatch(
+      /Outgoing & Persuasive \(you 34, this kind of work usually asks 90\)/
+    )
+    expect(view.supported[0].supportedBy).toMatch(
+      /Investigative & Analytical \(you 84, this kind of work usually asks 90\)/
+    )
+  })
+
+  test("never leaves a cost without an answer next to it", () => {
+    const view = toReportView(scoredReport)
+    expect(view.tensions[0].cost).toBeTruthy()
+    expect(view.tensions[0].whatHelps).toMatch(/lean on what is already carrying it/i)
+  })
+
+  test("falls back honestly when the profile names no lever", () => {
+    const bare = toReportView(
+      emptyReport({
+        goals: [
+          {
+            title: "Move into enterprise sales",
+            family: "Sales & Business Development",
+            score: 41.0,
+            verdict: "at-tension",
+            conflict: true,
+            statement: "…",
+            drivers: { supporting: [], opposing: [] },
+          },
+        ],
+        summary: { total: 1, atTension: 1 },
+      })
+    )
+    // No invented advice, and no bare cost either.
+    expect(bare.tensions[0].whatHelps).toMatch(/worth taking to a coach/i)
+    expect(bare.tensions[0].runsAgainst).toMatch(/no single dimension dominates/i)
+  })
+
+  test("says nothing on file rather than printing an imputed score", () => {
+    const view = toReportView(
+      emptyReport({
+        goals: [
+          {
+            title: "Present at the all-hands",
+            family: "Leadership & Management",
+            score: 44.0,
+            verdict: "at-tension",
+            conflict: true,
+            statement: "…",
+            drivers: {
+              supporting: [],
+              opposing: [
+                {
+                  dimension: "Outgoing & Persuasive",
+                  yourScore: null,
+                  roleNeeds: 90.0,
+                  imputed: true,
+                },
+              ],
+            },
+          },
+        ],
+        summary: { total: 1, atTension: 1 },
+      })
+    )
+    expect(view.tensions[0].runsAgainst).toMatch(/nothing on file for this one yet/i)
+    expect(view.tensions[0].runsAgainst).not.toMatch(/you 50/)
+  })
+
+  test("every goal comes out somewhere — nothing is filtered away", () => {
+    const view = toReportView(scoredReport)
+    expect(view.supported).toHaveLength(1)
+    expect(view.tensions).toHaveLength(1)
+    expect(view.mixed).toHaveLength(1)
+    expect(view.unplaced).toHaveLength(1)
+    expect(
+      view.supported.length +
+        view.tensions.length +
+        (view.mixed?.length ?? 0) +
+        (view.unplaced?.length ?? 0)
+    ).toBe(scoredReport.summary.total)
+  })
+
+  test("unscored goals become their own state, never a score", () => {
+    const view = toReportView(unscoredReport)
+    expect(view.unscored?.goals).toEqual(["Move into product management"])
+    expect(view.supported).toHaveLength(0)
+    expect(view.tensions).toHaveLength(0)
+    expect(view.mixed).toHaveLength(0)
+  })
+
+  test("does not manufacture pairwise conflicts out of individually scored goals", () => {
+    // The backend's `conflicts[]` is the at-tension goals over again; it never
+    // pairs them. Inventing "you want A and B — which goes?" would be a finding
+    // nobody computed, and someone could drop a real goal over it.
+    expect(toReportView(scoredReport).conflicts).toEqual([])
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+describe("AlignmentPage presentational pieces — the wire seam", () => {
   test("a supported goal names the goal and what backs it", () => {
     render(
       <ul>
@@ -291,6 +864,98 @@ describe("AlignmentPage presentational pieces — the Phase 3 seam", () => {
     expect(
       screen.getByText(/none found\. that's a real result, not a blank/i)
     ).toBeInTheDocument()
+  })
+
+  test("a mixed goal says it's workable and says what it costs", () => {
+    render(
+      <ul>
+        <MixedGoalRow
+          item={{
+            goal: "Run a small team",
+            readsAs: "You score 57 out of 100 against Leadership & Management work.",
+            whatItCosts: "Where the effort goes: Directive & Decisive (you 48, this kind of work usually asks 78).",
+          }}
+        />
+      </ul>
+    )
+    expect(screen.getByText("Run a small team")).toBeInTheDocument()
+    expect(screen.getByText(/close enough|57 out of 100/i)).toBeInTheDocument()
+    expect(screen.getByText(/directive & decisive \(you 48/i)).toBeInTheDocument()
+  })
+
+  test("an unplaced goal puts the limit on us, not on the person", () => {
+    render(
+      <ul>
+        <UnplacedGoalRow
+          item={{
+            goal: "Be happier at work",
+            why: "We could not place this against any of the nine role families.",
+          }}
+        />
+      </ul>
+    )
+    expect(screen.getByText("Be happier at work")).toBeInTheDocument()
+    expect(screen.getByText(/we could not place this/i)).toBeInTheDocument()
+    expect(screen.queryByText(/too vague|weakness|mismatch/i)).not.toBeInTheDocument()
+  })
+
+  test("the unscored notice explains and offers the fix", () => {
+    const onEstablish = jest.fn()
+    render(
+      <UnscoredNotice
+        item={{
+          goals: ["Move into product management"],
+          why: "There is no behavioural assessment to compare it against.",
+        }}
+        onEstablish={onEstablish}
+      />
+    )
+    expect(
+      screen.getByRole("heading", { name: /not scored yet/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText(/nothing below is a low score/i)).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /take the prism assessment/i })
+    )
+    expect(onEstablish).toHaveBeenCalled()
+  })
+
+  test("the report view shows unplaced and unscored goals rather than dropping them", () => {
+    render(
+      <AlignmentReportView
+        report={{
+          supported: [],
+          tensions: [],
+          conflicts: [],
+          unplaced: [{ goal: "Be happier at work", why: "Couldn't place it." }],
+          unscored: {
+            goals: ["Move into product management"],
+            why: "No behavioural assessment on file.",
+          },
+        }}
+      />
+    )
+    expect(
+      screen.getByRole("heading", { name: /goals we couldn't place/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Be happier at work")).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /not scored yet/i })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Move into product management")).toBeInTheDocument()
+  })
+
+  test("the tone words survive: no 'weakness', no 'mismatch'", () => {
+    // Cheap, and it is the thing most likely to erode under a later edit.
+    const { container } = render(
+      <AlignmentReportView report={toReportView(scoredReport)} />
+    )
+    expect(container.textContent).not.toMatch(/weakness|mismatch|deficien/i)
+    expect(container.textContent).toMatch(/supported by/i)
+    expect(container.textContent).toMatch(/runs against/i)
+    expect(container.textContent).toMatch(/what that costs/i)
+    expect(container.textContent).toMatch(/what helps/i)
   })
 })
 
