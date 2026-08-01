@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Nuk u ngarkua dot ai skedar. Kontrolloni dhe provoni perseri.",
     "classic": "Klasik",
     "new": "I ri",
-    "toggleNewHome": "Ndrysho faqen e re kryesore"
+    "toggleNewHome": "Ndrysho faqen e re kryesore",
+    "personalInfo": "Informacione personale",
+    "otherAssessments": "Vlerësime të tjera",
+    "nOfM": "{{done}} nga {{total}}",
+    "videos": "Video",
+    "quickSelfPortrait": "Autoportreti",
+    "quickTodaysPrep": "Përgatitja e sotme",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} nuk është aktivizuar për llogarinë tuaj"
   }
 }

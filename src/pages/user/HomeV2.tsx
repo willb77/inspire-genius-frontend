@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Briefcase, Sparkles, UserRoundSearch } from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
+import { useEnabledVerticals } from "@/verticals/core";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
-import { useAuditStats } from "@/hooks/audit/useAudit";
 import { useLoadedFrameworks, useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
   type WelcomeBackPersonalInfo,
+  type WelcomeBackQuickAction,
 } from "@/components/dashboard/v2/WelcomeBackTile";
 import {
   AddPersonalDocModal,
@@ -23,36 +25,34 @@ import {
 import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
 import { QuickDirectionCard } from "@/components/dashboard/v2/QuickDirectionCard";
 import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
-import {
-  WatchVideoCard,
-  type DashboardVideo,
-} from "@/components/dashboard/v2/WatchVideoCard";
-import {
-  RecentActivityCard,
-  type ActivityItem,
-} from "@/components/dashboard/v2/RecentActivityCard";
+import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
 /**
- * HomeV2 — the new wireframe user dashboard (ig-surfaces/user-dashboard).
+ * HomeV2 — the user dashboard (ig-surfaces/user-dashboard), and since
+ * 2026-08-01 the DEFAULT surface at /home. The original Home is untouched and
+ * stays reachable at /home/classic; see `isNewHomeEnabled` in
+ * `@/lib/surfaceFlags` for how the default is resolved.
  *
- * Additive + flag-gated (see routes.tsx `new_user_surfaces`); the original Home
- * is untouched and reachable at /home/classic. Data comes from existing hooks
- * only. PRISM status is sourced from GET /v1/documents/latest-prism; the
- * additional-assessment checkmarks are sourced from
+ * Data comes from existing hooks only. PRISM status is sourced from
+ * GET /v1/documents/latest-prism; the other-assessment checkmarks come from
  * GET /v1/profile/me/loaded-frameworks (useLoadedFrameworks) — an item is
  * "done" (Add greyed, checkmark filled) when the user holds an authoritative
  * assessment in that framework.
  *
- * Layout (single full-width column, reduced vertical density):
- *   1. WelcomeBackTile   — welcome + behavioral + completeness (assessments +
- *      personal info, each with an Add / done indicator)
- *   2. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter Questions
- *   3. QuickDirectionCard — Direction Setting's one-next-action entry point.
- *      Self-gating: renders null unless the user is entitled AND the journey
- *      read succeeds, so it can never break or clutter Home for anyone else.
- *   4. WatchVideoCard    — 5 real demo videos with HTML5 playback
- *   5. RecentActivityCard
- *   (the old inline Action tile — Upload/Goals/Careers — was removed per HomeV3.)
+ * Layout — two tiles, nothing below them:
+ *   1. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter
+ *      Questions (collapsed by default).
+ *   2. WelcomeBackTile    — welcome + behavioral + completion gauge, then the
+ *      quick-action row (Self-Portrait / Today's Prep / Job Fit / Videos) and
+ *      the Personal Info + Other Assessments dropdowns.
+ *
+ * The Watch-a-Video and Recent-Activity tiles were removed; the videos survive
+ * inside the quick-action row's Videos dropdown, so nothing became unreachable.
+ *
+ * `QuickDirectionCard` sits after those two. It is self-gating — it renders
+ * null unless the user is entitled to Direction Setting AND the journey read
+ * succeeds — so for everyone else the two-tile layout above is exactly what
+ * renders, and a failure in a new vertical cannot clutter Home.
  */
 
 const VIDEOS: DashboardVideo[] = [
@@ -83,29 +83,76 @@ const VIDEOS: DashboardVideo[] = [
   },
 ];
 
-// Additional-assessment roster → canonical framework name emitted by
-// GET /v1/profile/me/loaded-frameworks. (Enneagram has no backend adapter yet,
-// so it never resolves "done" — it stays addable, which is correct.)
-const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
-  { name: "DiSC", framework: "DISC" },
-  { name: "Myers-Briggs (MBTI)", framework: "MBTI" },
-  { name: "CliftonStrengths (StrengthsFinder)", framework: "CLIFTON" },
-  { name: "Hogan", framework: "HOGAN" },
-  { name: "The Big Five (OCEAN)", framework: "BIG_FIVE" },
-  { name: "Enneagram", framework: "ENNEAGRAM" },
+// Quick-action links under the completion gauge. Each belongs to an
+// entitlement-gated vertical, so each is resolved against the user's
+// enabled_verticals before it renders as a live link.
+const QUICK_ACTIONS: {
+  key: string;
+  labelKey: string;
+  defaultLabel: string;
+  to: string;
+  vertical: string;
+  icon: WelcomeBackQuickAction["icon"];
+}[] = [
+  {
+    key: "self-portrait",
+    labelKey: "homeV2.quickSelfPortrait",
+    defaultLabel: "Self-Portrait",
+    to: ROUTES.LUMEN.SELF_PORTRAIT,
+    vertical: "lumen",
+    icon: UserRoundSearch,
+  },
+  {
+    key: "moments",
+    labelKey: "homeV2.quickTodaysPrep",
+    defaultLabel: "Today's Prep",
+    to: ROUTES.LUMEN.MOMENTS,
+    vertical: "lumen",
+    icon: Sparkles,
+  },
+  {
+    key: "job-fit",
+    labelKey: "homeV2.quickJobFit",
+    defaultLabel: "Job Fit",
+    to: ROUTES.JOB_FIT.MATCHES,
+    vertical: "job-fit",
+    icon: Briefcase,
+  },
 ];
 
-// Resume / Bio / Additional info → the personal `doc_kind` uploaded, and the
-// doc_kinds that count as "done" for that row. Done-state is REAL — from
-// GET /me `personal_docs` (documents tagged resume/cv/bio/personal).
+// "Other Assessments" roster → canonical framework name emitted by
+// GET /v1/profile/me/loaded-frameworks.
+const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
+  { name: "DISC", framework: "DISC" },
+  { name: "Myers-Briggs", framework: "MBTI" },
+  { name: "Clifton Strengths", framework: "CLIFTON" },
+  { name: "Hogan", framework: "HOGAN" },
+  { name: "The Big Five", framework: "BIG_FIVE" },
+];
+
+// "Personal Info" roster. Everything except the PRISM report resolves its
+// done-state from GET /me `personal_docs` (documents tagged
+// resume/cv/bio/personal); PRISM resolves from GET /v1/documents/latest-prism
+// instead, which is why it carries no `matches` list.
+const PRISM_DOC_KIND = "prism";
 const PERSONAL_INFO_CATALOG: {
   name: string;
   docKind: string;
-  matches: string[];
+  /** Absent for PRISM — see above. */
+  matches?: string[];
+  accept?: string;
+  promptOverride?: string;
 }[] = [
+  {
+    name: "Prism Rpt .csv",
+    docKind: PRISM_DOC_KIND,
+    accept: ".csv,text/csv",
+    promptOverride:
+      "Upload your PRISM report (.csv). We'll tag it as your PRISM result so Meridian can read your brain map in every chat.",
+  },
   { name: "Resume", docKind: "resume", matches: ["resume", "cv"] },
   { name: "Bio", docKind: "bio", matches: ["bio"] },
-  { name: "Additional info", docKind: "personal", matches: ["personal"] },
+  { name: "Additional Info", docKind: "personal", matches: ["personal"] },
 ];
 
 export default function HomeV2() {
@@ -126,6 +173,23 @@ export default function HomeV2() {
     isError: prismError,
   } = useLatestPrism();
   const hasReport = !prismError && !!latestPrism?.file_name;
+
+  // Entitlement gates USE, not SIGHT: an unentitled quick action still renders
+  // (greyed + locked) so the capability stays discoverable. `[]` is also the
+  // loading default, so a slow query cannot flash a working link that the route
+  // guard then rejects.
+  const { data: entitledVerticals = [] } = useEnabledVerticals();
+  const quickActions: WelcomeBackQuickAction[] = useMemo(
+    () =>
+      QUICK_ACTIONS.map(({ key, labelKey, defaultLabel, to, vertical, icon }) => ({
+        key,
+        label: t(labelKey, { defaultValue: defaultLabel }),
+        to,
+        icon,
+        entitled: entitledVerticals.includes(vertical),
+      })),
+    [entitledVerticals, t],
+  );
 
   const { data: loadedFrameworks = [] } = useLoadedFrameworks();
   // loaded-frameworks is a bare string[] of framework names
@@ -153,28 +217,22 @@ export default function HomeV2() {
     () =>
       PERSONAL_INFO_CATALOG.map((p) => ({
         name: p.name,
-        done: p.matches.some((k) => personalSet.has(k)),
+        done: p.matches
+          ? p.matches.some((k) => personalSet.has(k))
+          : hasReport || personalSet.has(PRISM_DOC_KIND),
       })),
-    [personalSet],
+    [personalSet, hasReport],
   );
 
+  // PRISM now lives inside personalInfo, so it is counted there — counting it
+  // again as a standalone term would over-weight it and cap the gauge below
+  // 100% for a fully-complete profile.
   const profilePercent = useMemo(() => {
-    const doneCount =
-      (hasReport ? 1 : 0) +
-      assessments.filter((a) => a.done).length +
-      personalInfo.filter((p) => p.done).length;
-    const totalCount = 1 + assessments.length + personalInfo.length;
-    return Math.round((doneCount / totalCount) * 100);
-  }, [hasReport, assessments, personalInfo]);
-
-  const { data: auditData, isLoading: auditLoading } = useAuditStats();
-  const activityItems: ActivityItem[] = useMemo(() => {
-    const actions = auditData?.data?.top_actions ?? [];
-    return actions.slice(0, 5).map((a) => ({
-      label: a.action.replace(/_/g, " "),
-      meta: `${a.count}×`,
-    }));
-  }, [auditData]);
+    const items = [...assessments, ...personalInfo];
+    if (items.length === 0) return 0;
+    const doneCount = items.filter((i) => i.done).length;
+    return Math.round((doneCount / items.length) * 100);
+  }, [assessments, personalInfo]);
 
   // Route into the Meridian chat. When a prompt is supplied (typed ask or a
   // starter question) it is prefilled into the composer and auto-submitted so
@@ -195,17 +253,34 @@ export default function HomeV2() {
     if (entry) setAddTarget({ name: entry.name, framework: entry.framework });
   };
 
-  // Resume / Bio / Additional info → open the tagged-upload modal, which uploads
-  // the file with the right doc_kind so the profile loader can inject it.
+  // PRISM / Resume / Bio / Additional Info → open the tagged-upload modal,
+  // which uploads the file with the right doc_kind so the profile loader can
+  // inject it.
   const openAddPersonalInfo = (name: string): void => {
     const entry = PERSONAL_INFO_CATALOG.find((p) => p.name === name);
-    if (entry) setPersonalTarget({ name: entry.name, docKind: entry.docKind });
+    if (entry)
+      setPersonalTarget({
+        name: entry.name,
+        docKind: entry.docKind,
+        accept: entry.accept,
+        promptOverride: entry.promptOverride,
+      });
   };
 
   return (
     <UserLayout>
       <div className="rounded-2xl bg-[#FBF7F0] p-4 md:p-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-4">
+          {/* Chat with Meridian leads the page — the primary action. Starter
+              Questions start collapsed so the tile stays compact. */}
+          <MeridianEngageCard
+            firstName={firstName}
+            onAsk={(text) => goToChat(text)}
+            starterGroups={MERIDIAN_STARTER_GROUPS}
+            onStarterQuestion={(question) => goToChat(question)}
+            defaultStarterOpen={false}
+          />
+
           <WelcomeBackTile
             displayName={displayName}
             onResumeConversation={() => goToChat()}
@@ -219,6 +294,8 @@ export default function HomeV2() {
             personalInfo={personalInfo}
             onAddAssessment={openAddAssessment}
             onAddPersonalInfo={openAddPersonalInfo}
+            quickActions={quickActions}
+            videos={VIDEOS}
           />
 
           <AddPersonalDocModal
@@ -235,27 +312,10 @@ export default function HomeV2() {
             }}
           />
 
-          {/* Chat with Meridian tile — greeting + ask box + Starter Questions. */}
-          <MeridianEngageCard
-            firstName={firstName}
-            onAsk={(text) => goToChat(text)}
-            starterGroups={MERIDIAN_STARTER_GROUPS}
-            onStarterQuestion={(question) => goToChat(question)}
-          />
-
-          {/* Direction Setting — "what should I do next?". Renders null when
-              the user isn't entitled or the journey read fails. */}
+          {/* Direction Setting — "what should I do next?". Renders null when the
+              user isn't entitled or the journey read fails, so it adds nothing
+              to Home for anyone outside the vertical. */}
           <QuickDirectionCard />
-
-          <WatchVideoCard videos={VIDEOS} />
-
-          <RecentActivityCard
-            items={activityItems}
-            loading={auditLoading}
-            emptyLabel={t("homeV2.noRecentActivityYet", {
-              defaultValue: "No recent activity yet",
-            })}
-          />
         </div>
       </div>
     </UserLayout>

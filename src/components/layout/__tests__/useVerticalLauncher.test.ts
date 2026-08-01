@@ -54,26 +54,53 @@ beforeEach(() => {
   })
 })
 
-// The contract as of 2026-07-28: entitlement decides whether an entry is
-// USABLE (`disabled`), not whether it is VISIBLE. Every registered vertical is
-// listed for every user, so the catalogue is discoverable and the gate legible.
+// Contract as of 2026-07-31.
+//
+// Two rules, and they are independent:
+//   1. ENTITLEMENT decides whether an entry is USABLE (`disabled`), never
+//      whether it is VISIBLE — an unentitled vertical is listed greyed so the
+//      catalogue stays discoverable and the gate legible.
+//   2. HIDDEN_VERTICALS decides visibility outright. Honor Foundation is
+//      withheld from the list entirely — a different mechanism from (1), and
+//      the tests below pin that the two do not get conflated.
+//
+// The section is now labelled "Tools" and ships rolled up. WORKSPACE_VERTICALS
+// is empty, so Job Fit and Lumen fall through to it like every other vertical.
 describe("useVerticalLauncherSection", () => {
-  test("lists EVERY non-workspace vertical and links to homePath", () => {
-    setEnabled(["grant", "honor"])
+  test("is labelled Tools and ships rolled up", () => {
+    setEnabled(["grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current).not.toBeNull()
-    expect(result.current!.label).toBe("Verticals")
+    expect(result.current!.label).toBe("Tools")
+    expect(result.current!.defaultCollapsed).toBe(true)
+  })
+
+  test("lists every visible vertical and links to homePath", () => {
+    setEnabled(["grant", "job-fit"])
+    const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Honor Foundation",
+      "Job Fit",
+      "Lumen",
     ])
     expect(result.current!.items.map((i) => i.to)).toEqual([
       "/vertical/grant/dashboard",
-      "/vertical/honor/dashboard",
+      "/vertical/job-fit/matches",
+      "/vertical/lumen/dashboard",
     ])
   })
 
-  test("includes GRANT — financials live under Verticals, not their own section", () => {
+  test("HIDES Honor Foundation even for a user entitled to it", () => {
+    // The distinction that matters: entitlement greys, HIDDEN_VERTICALS omits.
+    // Honor is entitled here and must STILL be absent.
+    setEnabled(["honor", "grant"])
+    const { result } = renderHook(() => useVerticalLauncherSection())
+    expect(result.current!.items.map((i) => i.label)).not.toContain(
+      "Honor Foundation",
+    )
+  })
+
+  test("includes GRANT — financials live under Tools, not their own section", () => {
     setEnabled(["grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     const grant = result.current!.items.find((i) => i.label === "GRANT")
@@ -82,13 +109,14 @@ describe("useVerticalLauncherSection", () => {
   })
 
   test("greys out (does NOT hide) verticals the user has no entitlement for", () => {
-    setEnabled(["honor"])
+    setEnabled(["grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     const byLabel = Object.fromEntries(
       result.current!.items.map((i) => [i.label, i.disabled]),
     )
-    expect(byLabel["Honor Foundation"]).toBe(false)
-    expect(byLabel["GRANT"]).toBe(true)
+    expect(byLabel["GRANT"]).toBe(false)
+    expect(byLabel["Job Fit"]).toBe(true)
+    expect(byLabel["Lumen"]).toBe(true)
   })
 
   test("still lists the catalogue when the user is entitled to nothing", () => {
@@ -96,55 +124,39 @@ describe("useVerticalLauncherSection", () => {
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Honor Foundation",
+      "Job Fit",
+      "Lumen",
     ])
     expect(result.current!.items.every((i) => i.disabled)).toBe(true)
   })
 
   test("entitlement keys that aren't registered verticals invent nothing", () => {
-    setEnabled(["not-a-vertical", "honor"])
+    setEnabled(["not-a-vertical", "grant"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Honor Foundation",
+      "Job Fit",
+      "Lumen",
     ])
   })
 
-  test("excludes workspace verticals (Job Fit, Lumen) — they live in My Workspace", () => {
-    setEnabled(["honor", "job-fit", "lumen"])
+  test("Job Fit and Lumen are in Tools now, not held back for My Workspace", () => {
+    setEnabled(["job-fit", "lumen"])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).not.toEqual(
+    expect(result.current!.items.map((i) => i.label)).toEqual(
       expect.arrayContaining(["Job Fit", "Lumen"]),
     )
   })
 })
 
-describe("useWorkspaceVerticalItems", () => {
-  test("returns Job Fit + Lumen entries linked to their homePath", () => {
+// WORKSPACE_VERTICALS is empty, so the workspace-splice mechanism is dormant.
+// It is retained rather than deleted — re-promoting a vertical is a one-word
+// edit — so these pin that it stays a clean no-op meanwhile.
+describe("useWorkspaceVerticalItems (mechanism retained, currently empty)", () => {
+  test("returns nothing while WORKSPACE_VERTICALS is empty", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current.map((i) => i.label)).toEqual(["Job Fit", "Lumen"])
-    expect(result.current.map((i) => i.to)).toEqual([
-      "/vertical/job-fit/matches",
-      "/vertical/lumen/dashboard",
-    ])
-    expect(result.current.every((i) => i.disabled === false)).toBe(true)
-  })
-
-  test("lists BOTH workspace verticals, greying the unentitled one", () => {
-    setEnabled(["lumen"])
-    const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current.map((i) => [i.label, i.disabled])).toEqual([
-      ["Job Fit", true],
-      ["Lumen", false],
-    ])
-  })
-
-  test("all greyed when the user is entitled to no workspace vertical", () => {
-    setEnabled(["grant", "honor"])
-    const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current.map((i) => i.label)).toEqual(["Job Fit", "Lumen"])
-    expect(result.current.every((i) => i.disabled)).toBe(true)
+    expect(result.current).toEqual([])
   })
 })
 
@@ -188,33 +200,22 @@ describe("withWorkspaceVerticals", () => {
 })
 
 describe("useWorkspaceNavItems", () => {
-  test("puts Job Fit + Lumen into the workspace menu above Settings/Help", () => {
+  test("leaves the menu untouched, and returns the SAME array", () => {
+    // Identity matters, not just equality: this feeds a `navSections` memo in
+    // every layout, so a fresh array each render would churn them all.
     setEnabled(["job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
-    expect(result.current.map((i) => i.label)).toEqual([
-      "Home",
-      "My Documents",
-      "Job Fit",
-      "Lumen",
-      "Settings",
-      "Help & Support",
-    ])
+    expect(result.current).toBe(MENU)
   })
 
-  test("still lists them (greyed) for a user entitled to neither", () => {
-    setEnabled(["honor"])
+  test("no vertical is injected into My Workspace regardless of entitlement", () => {
+    setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current.map((i) => i.label)).toEqual([
       "Home",
       "My Documents",
-      "Job Fit",
-      "Lumen",
       "Settings",
       "Help & Support",
-    ])
-    expect(result.current.filter((i) => i.disabled).map((i) => i.label)).toEqual([
-      "Job Fit",
-      "Lumen",
     ])
   })
 })

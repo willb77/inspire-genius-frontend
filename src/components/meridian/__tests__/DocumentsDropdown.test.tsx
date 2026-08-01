@@ -236,4 +236,62 @@ describe("DocumentsDropdown (T4)", () => {
       screen.getByRole("button", { name: /select documents/i }),
     ).toHaveTextContent("Documents (3 selected)");
   });
+
+  // 2026-07-31 — upload folded into this dropdown. It was a separate header
+  // button beside it, which read as two unrelated features when attaching an
+  // existing file and adding a new one are two halves of the same job.
+  describe("upload action", () => {
+    it("renders an upload action and calls onUpload when clicked", () => {
+      mockUseListDocuments.mockReturnValue({
+        data: { date_groups: [] },
+        isLoading: false,
+        isError: false,
+      });
+      const onUpload = jest.fn();
+      renderDropdown({ onUpload });
+      openDropdown();
+      fireEvent.click(screen.getByTestId("documents-dropdown-upload"));
+      expect(onUpload).toHaveBeenCalledTimes(1);
+    });
+
+    it("omits the upload action when no handler is supplied", () => {
+      // The prop is optional so the component still stands alone anywhere no
+      // upload modal is mounted — offering a button that cannot work is worse
+      // than not offering one.
+      mockUseListDocuments.mockReturnValue({
+        data: { date_groups: [] },
+        isLoading: false,
+        isError: false,
+      });
+      renderDropdown();
+      openDropdown();
+      expect(screen.queryByTestId("documents-dropdown-upload")).toBeNull();
+    });
+
+    it("drops the navigate-away link from the empty state when uploading is possible", () => {
+      // Two upload affordances is one too many, and the link is the worse of
+      // the two: it abandons the conversation for /documents.
+      mockUseListDocuments.mockReturnValue({
+        data: { date_groups: [] },
+        isLoading: false,
+        isError: false,
+      });
+      renderDropdown({ onUpload: jest.fn() });
+      openDropdown();
+      expect(screen.queryByRole("link", { name: /upload documents/i })).toBeNull();
+    });
+
+    it("keeps the link as the fallback when no handler is supplied", () => {
+      mockUseListDocuments.mockReturnValue({
+        data: { date_groups: [] },
+        isLoading: false,
+        isError: false,
+      });
+      renderDropdown();
+      openDropdown();
+      expect(
+        screen.getByRole("link", { name: /upload documents/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });

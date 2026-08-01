@@ -22,7 +22,19 @@ export interface AddPersonalDocTarget {
   name: string;
   /** Backend doc_kind to tag the upload with, e.g. "resume". */
   docKind: string;
+  /**
+   * Optional `accept` override for the file input. The PRISM report is a `.csv`,
+   * which the default document accept-list deliberately excludes — without this
+   * the picker would filter the only file the user has out of view.
+   */
+  accept?: string;
+  /** Optional replacement for the "(PDF, Word, or text)" prompt. */
+  promptOverride?: string;
 }
+
+/** Default accept-list for personal documents (resume / bio / free-form info). */
+const DEFAULT_ACCEPT =
+  ".pdf,.doc,.docx,.txt,.md,application/pdf,text/plain";
 
 interface AddPersonalDocModalProps {
   target: AddPersonalDocTarget | null;
@@ -86,6 +98,10 @@ export function AddPersonalDocModal({
             }),
           );
           qc.invalidateQueries({ queryKey: profileKeys.me() });
+          // The PRISM row's done-state comes from useLatestPrism, not from
+          // profile.personal_docs — without this its checkmark would stay
+          // empty until the next full reload.
+          qc.invalidateQueries({ queryKey: ["documents", "latest-prism"] });
           onUploaded?.();
           onOpenChange(false);
         },
@@ -107,11 +123,12 @@ export function AddPersonalDocModal({
             })}
           </DialogTitle>
           <DialogDescription>
-            {t("homeV2.uploadPersonalPrompt", {
-              defaultValue:
-                "Upload your {{name}} (PDF, Word, or text). We'll add it to your profile so Meridian can use it across chats.",
-              name: target?.name?.toLowerCase() ?? "",
-            })}
+            {target?.promptOverride ??
+              t("homeV2.uploadPersonalPrompt", {
+                defaultValue:
+                  "Upload your {{name}} (PDF, Word, or text). We'll add it to your profile so Meridian can use it across chats.",
+                name: target?.name?.toLowerCase() ?? "",
+              })}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,7 +136,7 @@ export function AddPersonalDocModal({
           <input
             ref={inputRef}
             type="file"
-            accept=".pdf,.doc,.docx,.txt,.md,application/pdf,text/plain"
+            accept={target?.accept ?? DEFAULT_ACCEPT}
             className="sr-only"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />

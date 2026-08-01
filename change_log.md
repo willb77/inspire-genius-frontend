@@ -1,3 +1,79 @@
+## [2026-08-01] — Lumen "Answer it here": staging-B confirmed, plus two findings the feature shipped with
+
+Follow-up to the 2026-07-30 entry. **No product code changed** — this records three things learned after that work merged, two of which are actionable.
+
+### staging-B needed no promote — confirmed, not assumed
+Asked to promote the coaching feature to staging-B; checked first and there was **nothing to promote**. It is frontend-only, and FE merges deploy to dev *and* staging-B automatically, so it went out at 04:50 UTC alongside the dev deploy.
+
+- staging-B frontend at `3d3d179`, and the deployed coaching chunk there carries every UI string plus the print internals (`afterprint`, `srcdoc`) and the `lumen-coaching-` session marker.
+- staging-B backend already served the path: `/v1/agents/chat/async` → **401** (exists, wants auth), jobs route → **405** on a POST to a GET route (also proof it exists); `/v1/agents/health` → 200.
+- **0 unpromoted backend commits** — `release-stable-2026-07-31-lumen-portrait-qa` was cut at 00:12 that night by another terminal and `development` had nothing after it. A tag would have produced an empty promote.
+- Re-checked a day later, after other terminals' deploys moved both envs to `97965c8`: the feature is **still live on both**.
+
+### Finding 1 — `development` has no required-check gate (actionable)
+`gh pr merge --auto` on FE #313 **merged immediately** rather than waiting for tests, because no check is marked required on `development`. It came out fine — CI's Unit Tests subsequently passed on that exact commit, and a local run with CI's exact coverage threshold (`54/55/55/55`, 515 suites / 3922 tests) passed independently — but the gate genuinely is not there, and **any future `--auto` will behave the same way**. Fix: mark **Unit Tests** as a required check on `development`.
+
+### Finding 2 — a premise in the shipped code is now wrong on dev (actionable)
+`useCoachAnswer.ts` documents, as its reason for opening no WebSocket, that the `job_complete` push is unreachable through the ws-proxy. **PR #733 fixed that and it is live on dev** (verified there by a real WS frame, `delivered=1`); it is **not** on staging-B.
+
+The feature is **functionally unaffected** — the poll still delivers and still stops the moment a job settles, and on staging-B the poll remains the only path. But the comment now asserts something false on dev and should be corrected before someone reads it as current fact. Consuming the push (poll retained as fallback) would additionally make inline answers land faster.
+
+### Finding 3 — staging-B can no longer be functionally probed
+`POST /v1/magic-auth` returns **404** on staging-B since #717 gated it off. What was verified there is the deployed bundle and route existence — **not** an executed conversation. The equivalent live round-trip was run on dev (`chat/async` → 202 → complete in ~9s, `contributing_agents: ['Summit']`, answer quoting the user's own dimension scores). Future staging-B verification needs a real login or an admin-tools path.
+
+### Still outstanding on this feature
+The authenticated click-path has **never been exercised in a browser** — dev redirected to login, seeding a session token was declined, and passwords are off-limits. **Print is the priority** there: it is the only path with no automated end-to-end coverage. Session pointer: `project_lumen_answer_here_session_resume` (grep "lumen-answer-here").
+
+## [2026-07-31] — Team Development Studio → standard IG (HomeV2) theme + real app chrome (Wave 2)
+
+The Team Development Studio (`/manager/development`, `/manager/development/:memberId`) was
+rendering as **bare content with no app chrome** — both pages returned a plain `<div>` and,
+unlike every other manager page, never wrapped `ManagerLayout` (no sidebar, no header) — and
+its content still used the pre-migration slate/blue palette. This lands the Wave-2 reskin: the
+pages now sit in the standard `ManagerLayout`, and when the `new_user_surfaces` flag is on they
+adopt the HomeV2 editorial look (cream `bg-panel` frame, navy `text-ink`, orange `accent-orange`,
+serif headings, `rounded-2xl` hairline cards). Classic stays byte-identical and is always
+reachable at `…/classic`. Pure presentation change — no logic, hooks, data, props, testids, or
+copy changed.
+
+### Added
+- `src/components/manager/development/skin.tsx` — the Studio skin. `useDevSkin()` context hook
+  returns a `sk` object of PRE-RESOLVED class strings built from two flat literals
+  (`CLASSIC`/`V2`) selected by one function; plus `resolveDevV2()`, `DevSkinProvider`, and
+  `DevPageFrame` (cream `V2Panel` on v2, bare column on classic). All classic/v2 branching lives
+  here so leaf components add zero new branches — keeps the tight CI branch-coverage gate safe.
+- `src/components/manager/development/__tests__/skin.test.tsx` — 7 tests: both token maps,
+  `resolveDevV2` precedence, default-classic context, provider flow, and the `DevPageFrame` switch
+  (skin.tsx = 100% coverage).
+- `/manager/development/classic` + `/manager/development/:memberId/classic` routes — permanent
+  escape hatch to the original look.
+
+### Changed
+- `src/pages/manager/development/DevelopmentStudio.tsx` + `MemberDevelopmentWorkspace.tsx` —
+  wrapped in `ManagerLayout` (the missing chrome) + `DevSkinProvider`/`DevPageFrame`; accept an
+  optional `variant` prop that defaults to the flag; serif-ink headings; every shell / empty /
+  error / computing state tokenized and given the chrome.
+- 11 Studio components reskinned via `sk.*` tokens — `MemberCard`, `CoverageChips`,
+  `ConfidenceDot`, `ProgressRing`, and the 6 tab panels (`BehavioralProfilePanel`, `GoalsPanel`,
+  `GapAnalysisPanel`, `LearningPlanPanel`, `CareerMatchPanel`, `RoadmapTimeline`) +
+  `MeridianDevelopmentPanel`. Slate text/borders/backgrounds, the `#3B5BFF`/`#2DD4BF` brand
+  accents (avatar gradient, active tab, selected card, PRISM radar stroke/fill, gap progress bars,
+  Meridian chat bubbles/send affordances) and card radii all now resolve from the skin.
+  `PlanStatusBadge` unchanged (purely semantic badge). Semantic colours (emerald/amber/red,
+  PRISM quadrant colours) stay hardcoded on both looks.
+- `src/routes.tsx` — Studio pages self-resolve classic vs HomeV2 from `new_user_surfaces`; added
+  the two `/classic` routes (static segment out-ranks `:memberId`).
+
+### Verified
+- `npm run build` (tsc + vite) clean; the new token utilities (`bg-panel`, `text-ink`, `text-mute`,
+  `border-hairline`, `bg-accent-orange` incl. the `/10`·`/5`·`/40` opacity + hover/focus variants,
+  `from-ink`/`to-accent-orange`) are all emitted into the production CSS bundle.
+- `tsc -p tsconfig.app.json --noEmit` → 0 errors.
+- Full `jest --ci --coverage` → 3931 tests / 517 suites pass; global coverage above the CI gate
+  (branches 56.26 ≥ 54, functions 58.83 ≥ 55, lines 73.33 ≥ 55, statements 70.78 ≥ 55).
+- No new i18n keys (Studio copy already routes through `useDevelopmentText`), so 21-locale
+  key-parity is untouched.
+
 ## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
 
 Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.
@@ -43,6 +119,22 @@ Added a **Help / Support** entry at the bottom of the left sidebar (shared app c
 ### Verified
 - `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
 
+## [2026-07-31] — Honor Coach Workbench User Guide refreshed + PowerPoint deck (PR #734)
+
+Updated the coach-facing **Honor Coach Workbench User Guide** with this cycle's new functions and added a matching **PowerPoint deck**. Docs-tooling only — no product code, no infra. `docs/*.docx` is gitignored, so the generator scripts are the tracked source of truth; the `.docx`/`.pptx` are produced locally on demand.
+
+### Added
+- `scripts/build_honor_coach_user_guide_pptx.py` — 13-slide, THF-branded (`#1B2A4A`/`#E8792B`) deck mirroring the guide: title, What's new, workbench-at-a-glance, 12-step workflow overview, five step slides, branded-document, privacy, live-vs-coming, close.
+- Guide: new **Step 5 — Request a PRISM report** (First/Last/Email; Role fixed `user`, Organization fixed `The Honor Foundation`; 24h idempotency note).
+- Guide: **Target position description** on the Résumé Writer — paste **or** *Upload a job description* (pasted text wins).
+- Guide: **What's new** callout + glossary entries (PRISM request, Cohort, Target position description).
+- `scripts/build_honor_coach_user_guide_html.py` — emits the **clickable HTML** version of the guide (sticky table of contents, scroll-spy, in-page Download buttons for the `.pptx`/`.docx`). The rendered HTML ships as a frontend static asset under `public/docs/guides/` and is wired to the app's new **Help / Support** sidebar menu (frontend repo). The `.docx`/`.pptx`/`.html` are also uploaded to the dev frontend S3 bucket (`ig-dev-frontend-assets/docs/guides/`, served via CloudFront) — verified live at `https://dev.inspiresgenius.com/docs/guides/`.
+
+### Changed
+- `scripts/build_honor_coach_user_guide.py` — renumbered the workflow to **12 steps**; **Import a Cohort** label (Onboarding step + nav + glossary); new **How your report reads** callout (left-justified responses + step-by-step plans); refreshed the *live vs. coming soon* table.
+  - Files: `scripts/build_honor_coach_user_guide.py`, `scripts/build_honor_coach_user_guide_pptx.py`
+  - Output (local, gitignored): `docs/Honor_Coach_Workbench_User_Guide.docx`, `docs/guides/Honor_Coach_Workbench_User_Guide.docx`, `docs/Honor_Coach_Workbench_User_Guide.pptx`
+
 ## [2026-07-30] — Lumen coaching answers on the page, with print + Word/PDF export
 
 Lumen **Personal coaching** now answers **on the page** instead of navigating away to the Meridian chat surface. Answers accumulate, so a run of questions reads as one session, and each answer can be **copied, printed, or exported to Word or PDF** — the same per-turn controls Meridian chat has.
@@ -85,6 +177,252 @@ FE #312 landed `src/lib/lumen/portraitReport.ts` (Self-Portrait report) at almos
 So the duplication is limited to two small markdown converters, and is **accepted for now** rather than resolved by refactoring another terminal's freshly-merged code. Per the standing rule, extract on the **third** occurrence or the first behavioural drift between them.
 
 **PR:** FE #313. Frontend-only, so it reaches **dev and staging-B** on merge without a backend promote.
+
+## [2026-07-30] — Lumen Self-Portrait: description, ask-your-portrait, PDF/Word export
+
+On `/vertical/lumen/self-portrait`. FE PR willb77/inspire-genius-frontend#312,
+backend PR willb77/inspire-genius#729.
+
+### Added
+- **A formatted plain-language description of the portrait**, above "What this
+  is built from" — a markdown-rendered read of who the portrait says you are,
+  fetched once and cached like the portrait itself.
+- **"Ask your self-portrait"** — a free-text prompt box plus suggestion chips
+  that answers inline, grounded in the same composed portrait, accumulating a
+  Q&A thread on the page (no navigation away).
+- **Export to PDF and Word** — the description + Q&A, one click each. PDF via the
+  shared html2canvas/jsPDF renderer; Word as an HTML `.doc` (no `docx`
+  dependency, matching the repo convention).
+- **Backend:** `POST /v1/agents/lumen/self-portrait/{id}/ask` — one self-only
+  endpoint powering both the description (no question) and the query (a
+  question). Meridian-voiced via `ProviderFactory.get_for_agent("Meridian")`;
+  never raises — falls back to a deterministic, portrait-derived text when the
+  provider is unavailable, so the surface always renders. No Bedrock.
+  - Files: `services/agent-engine/app/tools/lumen/portrait_qa.py`,
+    `services/agent-engine/app/routes/lumen.py`,
+    FE `src/pages/lumen/SelfPortraitNarrative.tsx`,
+    `src/lib/lumen/portraitReport.ts`,
+    `src/hooks/lumen/useSelfPortrait.ts`,
+    `src/services/lumen/selfPortrait.service.ts`, `src/types/lumen.ts`
+
+### Verified
+- Backend: full lumen suite 151 tests pass (8 new). FE: tsc clean, 75 lumen jest
+  tests pass (incl. new narrative + report-serializer tests), production build
+  green. Non-clinical throughout — a mirror, not a diagnosis.
+
+## [2026-07-30] — Job Fit / JobDNA UI fixes: charts, disclaimer, tier labels, % consistency
+
+Four reported UI issues across the JobDNA and Job Fit surfaces. FE PR
+willb77/inspire-genius-frontend#311, backend PR willb77/inspire-genius#727.
+
+### Fixed
+- **Job DNA blueprint detail — bar charts under the radar were invisible.** An
+  oversized `left: 120` chart margin plus a 110px YAxis exceeded the width of the
+  narrow `md:grid-cols-3` columns, collapsing the plot area to ≤0 so no bars drew.
+  Reduced the margin (the YAxis width already reserves label room), added
+  `min-w-0` so the chart can shrink inside grid cells, and set
+  `ResponsiveContainer minWidth={0}`.
+  - Files: `src/components/job-blueprint/job-dna/BenchmarkBarChart.tsx`,
+    `src/pages/job-blueprint/JobBlueprintDnaDetailPage.tsx`
+- **My Fit percentages were inconsistent with the detail page.** The row derived
+  `100 − total/22` (hardcoded dimension count) while the detail page uses the
+  authoritative `fit_score = _fit_percent(total, len(benchmark))`. `fit_matches`
+  now returns `fit_score` (same formula), and the FE `FitMatch.fitScore` is
+  preferred on the row (graceful fallback on older backends).
+  - Files: `services/blueprint-service/app/{schemas.py,service.py,tests/test_fit_matches.py}`,
+    `src/types/job-fit/index.ts`, `src/pages/job-fit/MatchesPage.tsx`
+
+### Removed
+- **The amber "Decision support only — not a validated selection instrument"
+  disclaimer banner** from all Job Fit surfaces (Matches, Detail, Gaps);
+  `MatchingValidationBanner` component + test deleted.
+- **The miscalibrated "Poor fit" / misalignment band pill and the
+  "A stretch — several areas to develop" descriptor** from My Fit. The backend
+  `_fit_band` cut-points (100/200/300) sit on a different scale than the real
+  ~22-dimension `total_variation`, so nearly every saved role read as Poor while
+  the row still showed a high %. Removed both (and the `variationDescriptor`
+  helper); the detail header and summary fallback no longer use it.
+  - Files: `src/pages/job-fit/{MatchesPage,FitDetailPage,GapsPage,FitSummaryCard,_fit}.{tsx,ts}`,
+    deleted `src/components/job-fit/MatchingValidationBanner.tsx`
+
+### Verified
+- FE: `tsc -b` clean · 54 job-fit + job-blueprint jest tests pass · production
+  `vite build` green. Backend: 24 blueprint-service fit tests pass.
+
+## [2026-07-30] — Team Development Studio enabled on staging-b frontend (FE PR #305, LIVE)
+
+The manager-facing Team Development Studio was serving the OLD interface on staging-b: the whole surface (nav item + `/manager/development` routes) is gated behind the build-time flag `VITE_FEATURE_TEAM_DEVELOPMENT`, which was set ON in the dev build only. The staging-b build (rebuilt against `.env.staging-b`) never set it, so the Studio was dark there even though the backend (growth-service + agent-engine dossier + PRISM read-model) is promoted and demo data is seeded on staging-b.
+
+### Changed (frontend repo `inspire-genius-frontend`, PR #305)
+- `.env.staging-b`: `VITE_FEATURE_TEAM_DEVELOPMENT=true` (the staging-b build uses this as its base `.env`), alongside the other staging-b feature flags.
+- `.github/workflows/ci-deploy.yml`: updated the dev build-step comment (flag no longer dev-only).
+
+### Diagnosis (definitive, from live bundles)
+- Both dev + staging-b were on the same git build but different bundles (different `.env`). Grepping the deployed JS: the **dev** bundle contained the "Team Development" nav (flag on → Studio live); the **staging-b** bundle did NOT (flag off → old interface). The Studio surfaces already consume the real `growthService` (`/v1/growth`) — no mock data — so the only gap was the build flag.
+
+### Verified (live)
+- FE PR #305 merged → ci-deploy rebuilt + deployed both envs. staging-b now serves version `8c6e7cb` with the "Team Development" nav present in the bundle (was absent); dev unchanged (no regression). Backend confirmed earlier: staging-b roster query returns the 6 seeded members by name; member dossier computes real PRISM (assessment-derived) + seeded goals. So the Studio is live + wired to real data on staging-b (browser access via magic-link/Cognito — email-only magic-auth is off there per #717).
+
+## [2026-07-29] — Job Fit fixes: /fit/pathway 500, fit % on My Fit, self-describing Pathway, inline Coaching (LIVE dev + staging-b)
+
+Follow-up fixing reported Job Fit issues (backend #722, FE #306).
+
+### Fixed
+- **`/fit/pathway` 500** — blueprint-service never had the route; the FE's `getPathway()` fell through to `/fit/{job_id}` with `job_id='pathway'` → UUID cast → asyncpg DataError → 500. Added `GET /fit/pathway` **declared before** `/fit/{job_id}`; `service.fit_pathway` returns real growth-target roles (potential/moderate-fit, excludes strong-fit + misalignment) + skill ladders, and never 500s (explanatory note when empty). New schemas `FitPathway/PathwaySuggestion/SkillLadder`. Files: `services/blueprint-service/app/{routes,service,schemas}.py`, `tests/test_fit_pathway.py`.
+
+### Added / Changed (frontend `inspire-genius-frontend`, PR #306)
+- **Fit % on "My Fit" rows** — each Matches row shows an explicit 1–100 fit % (closeness score under the closeness method; else the same derived % as the detail). Surfaces the fit on the page the user lands on (the narrative cards live on the detail page). Files: `src/pages/job-fit/MatchesPage.tsx`.
+- **Pathway self-describing** — always-visible "What this is" block (Career Pathways / adjacent roles / skill ladders) so the page explains itself even when empty. `PathwayPage.tsx`.
+- **Coaching answers INLINE** — was a fragile `location.state` handoff to Meridian (lost on refresh/remount, disconnected). Now sources roles from the user's fit **matches** and answers inline via `explain-fit`, grounded in the selected role's numbers; "Open in Meridian" kept as a secondary path. `CoachPage.tsx`.
+- **Cross-page data** — Coaching reuses the matches + detail React Query caches; fit % is one formula across Matches and detail.
+
+### Notes
+- "Only one role on My Fit" is not a FE cap — `fit_matches` returns all visible published blueprints (own-org OR org-agnostic); only one is published/visible to that org (content/data). "Can't see the built cards" = they render on the *detail* page (click a role); the transient `/fit/{id}` 503 (during the earlier promote) blocked them momentarily. dev willb77 has no PRISM (matches empty there).
+- Deployed: backend #722 → dev + staging-b (`release-stable-2026-07-29-jobfit-pathway`, no migration). FE #306 → dev + staging-b. blueprint-service + agent-engine + FE CI green; 44 job-fit jest + 10 blueprint-service fit/pathway tests pass.
+
+## [2026-07-29] — Job Fit: fit % + overlay narrative + inline follow-up + action toolbar + Write Résumé (LIVE dev + staging-b)
+
+On the Job Fit detail surface (`/vertical/job-fit/fit/:jobId`) the job↔person radar overlay now has a plain-language interpretation beside it, plus a Honor-Evaluate-style action toolbar. Everything is NON-BINARY (no fit/no-fit, pass/fail, or hiring-verdict language) and behind the `job_fit_narrative` flag (default on).
+
+### Added
+- **blueprint-service (T1):** shared `_fit_percent(total_variation, n_dims)` helper (the same `100 − mean-per-dimension-variation` formula the recruiter insight uses, so both surfaces show the same number; floor 1) + `fit_score` (alias `fitScore`, 1–100) on `schemas.FitDetail`, populated in `fit_detail`. Files: `services/blueprint-service/app/{service.py,schemas.py}`, `tests/test_fit_percent.py`.
+- **agent-engine (T2):** `POST /v1/agents/blueprint/explain-fit` — narrates the already-computed fit numbers in encouraging, non-binary prose and answers an optional follow-up. Anthropic-direct Haiku (never Bedrock); `fitScore` echoed (immutable); deterministic `neutralize()` post-filter rewrites any binary/verdict phrasing; neutral deterministic fallback on LLM failure; `role:user` allowed (person-side). Files: `services/agent-engine/app/routes/blueprint_explain.py`, `main.py`, `tests/test_blueprint_explain.py` (10 tests).
+- **agent-engine (T6b):** `POST /v1/agents/blueprint/write-resume` — drafts a role-aligned résumé from the person's strengths; same posture. Files: `blueprint_resume.py`, `tests/test_blueprint_resume.py` (5 tests).
+- **frontend (T3/T4/T6):** `FitSummaryCard` (explicit 1–100 fit %, overlay description, gaps + how-to-close), `FitFollowUpCard` (inline answer rendered IN Job Fit — not a navigate-to-Meridian), `FitActionsBar` (Download PDF · Export As (PDF/MD/HTML/Text) · Print · Save · Email (mailto) · Copy link · Write Résumé — reuses `exportTranscript` + `honor/shareReportLink`, no new deps), `explain.service`/`resume.service` + `useExplainFit`/`useWriteResume`, `src/lib/job-fit/fitReport.ts` serializers, `job_fit_narrative` flag in `_fit.ts`. `FitDetailPage` mounts the toolbar + summary + follow-up.
+
+### Changed
+- `src/types/job-fit/index.ts`: `+fitScore?`, `+ExplainFitResult`/`+WriteResumeResult`. Job-fit page test harness now provides a `QueryClientProvider` for the mutation-backed cards.
+
+### Deployed
+- Backend **PR #721** → `development` (dev Staged Deploy) + **staging-b** via tag `release-stable-2026-07-29-jobfit-narrative` (promote COMPLETED success; no migration — `fitScore` is computed). FE **PR #304** → `development` (dev + staging-b via ci-deploy). CI green both repos (blueprint-service + agent-engine pytest; FE build + 47 job-fit jest).
+
+### Notes
+- No scoring/tier/guardrail/gating changes; `MatchingValidationBanner` intact. Built in-thread (background build agents kept dying on API 529s during the session).
+
+## [2026-07-29] — Growth roster resolves member NAMES via direct public.team_members read (PR #719, LIVE dev + staging-b)
+
+Fixed the Team Development roster showing member IDs instead of names (surfaced by the staging-b Summit seed).
+
+### Fixed
+- `growth-service list_roster` sourced its team from `client.get_team()`, which calls `settings.agent_engine_url + /api/manager/team` — but `/api/manager/team` is a **dashboard-service** route the agent-engine doesn't serve, so it 404'd, the exception was swallowed, and the roster fell back to persisted dossiers whose `member.name` is the raw `member_id`. (Even reaching dashboard, it gates on role `manager`; magic-auth mints `role:user`.)
+  - Now reads dashboard-service's `public.team_members` **directly** over the shared Aurora/RDS-Proxy connection (sanctioned cross-schema read) — it carries the real name/email/prism_color, no HTTP hop, no manager-role token. New `_fetch_team_members()`; schema-qualified so `search_path`-independent; any error → `[]` so the persisted-dossier + legacy `get_team` fallbacks still run.
+  - Files: `services/growth-service/app/service.py`, tests `services/growth-service/tests/test_team_members_read.py` (48 growth tests pass).
+
+### Verified
+- **Dev E2E** (magic-auth on `8umg6xioz5`): seeded one dev `team_members` row (willb77→Donna Rhode) → `GET /v1/growth/roster` returns **`name":"Donna Rhode"`** (team-backed member resolves the real name; dossier-only members correctly still show IDs). Dev verify row removed after.
+- **staging-b** (promoted via tag `release-stable-2026-07-28-roster-names`, delta = #719 only, no migrations; growth Lambda redeployed 04:06 UTC): the exact query the fix runs returns all 6 seeded names (John Boyd, John Boyd Jr., Liam Boyd, Naomi Boyer, Rachel Kelly-Brown, Rebekah Hartberger) — all 6 are `team_members`-backed so the roster resolves them by name. (magic-auth is now off on staging-b per #717, so the full API E2E was done on dev; the deployed code + data path are confirmed on staging-b.)
+
+## [2026-07-28] — Security: gate /v1/magic-auth off on staging-b + prod (auth-service, PR #717)
+
+`POST /v1/magic-auth` mints an HS256 session token from an **email alone** (no password, no emailed link, no one-time-use) — a dev convenience that was live on staging-b (de-facto prod), letting anyone who knows an active user's email mint a valid session. Found while verifying the Honor staging-b promote.
+
+### Fixed
+- `settings.magic_auth_enabled: bool = True` (env `MAGIC_AUTH_ENABLED`); the `magic_auth()` route returns **404** (endpoint hidden) when disabled, short-circuiting **before any DB lookup**.
+  - Files: `services/auth-service/app/config.py`, `services/auth-service/app/routes/magic_auth.py`
+- CDK sets `MAGIC_AUTH_ENABLED='false'` on the auth Lambda for **staging-b + prod**, `'true'` for **dev** (dev test-token convenience preserved).
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **Does NOT affect the emailed magic-LINK login** (`/v1/magic-link/request` + `/verify`), which mints its own single-use tokens via `_build_session_response`. All 16 magic-link tests pass alongside 2 new magic-auth gate tests (22 passed).
+  - Files: `services/auth-service/tests/test_magic_auth.py`
+- Promoted to staging-b via tag `release-stable-2026-07-28-magic-auth-gate`.
+
+---
+
+## [2026-07-28] — Summit Team-Development dossier data seeded on staging-b (data + growth schema, DEMO)
+
+Seeded the Team Development Studio on staging-b so the manager-facing Summit dossier renders end-to-end (follows the #712 PRISM read-model promote). **Data/schema only — no code change.** Approved cohort: willb77 as manager over 6 of the 28 PRISM-assessed users.
+
+### Added (staging-b only)
+- **Growth `growth` schema applied** — baseline `001_baseline_growth_service` (8 tables + 2 views + enums + triggers, 36 stmts) PLUS the 4 async-compute migrations that were on dev but never on staging-b: `growth_dossier_compute_status` (`compute_job_id`/`compute_status`), `growth_id_columns_to_text`, `growth_enum_columns_to_text`, `dossier_jobs` (54 stmts). The staging-b growth Lambda was already at development level (deployed in the 2026-07-27 lumen-ux promote) but its schema was behind → roster 500'd on `development_dossiers.compute_job_id` until these landed.
+- **`team_members`** — 6 rows: willb77 (`b49824c8-…`) as manager over Rebekah Hartberger, John Boyd Jr., Naomi Boyer, Liam Boyd, John Boyd, Rachel Kelly-Brown.
+- **`goals`** — 16 rows (2–3 per member, `status=confirmed`, generic professional goals), each tagged `provenance_quotes=["seed:staging-b-demo-2026-07-28"]`.
+- **`prism_results`** — backfilled 27 rows (idempotent #702 SQL, radar-tuple grouping, `version='2.5-backfill'`) for the dashboard roster PRISM colours.
+
+### Verified (live staging-b, real API `anj1cbzsf8`)
+- magic-auth willb77 (super-admin, sub `b49824c8`) → `GET /v1/growth/members/{id}/dossier` → 202 computing → poll → **200** with `prismNeeded:null`, `goalsPending:null`, the **8 true per-dim PRISM scores** (assessment-derived via #712, distinct pairs e.g. Focusing=7/Delivering=43), the 3 seeded Summit goals surfacing, generated gaps + career matches. Pre-warmed all 6 → **`GET /v1/growth/roster` shows all 6 members** with computed dossiers.
+
+### Known limitations (pre-existing, NOT this seed)
+- Roster shows member **IDs, not names** — the named roster comes from dashboard-service `/api/manager/team` which requires role `manager`; magic-auth mints `role:user`, so growth's `get_team` 403s and the roster falls back to persisted dossiers (id-labelled). The magic-auth role:user gap is tracked separately.
+- The dossier reconciliation labels a Supporting-dominant profile "Red" — the documented radar-vs-manual quadrant-mapping conflict, deliberately untouched.
+
+### Reversal (staging-b)
+`DELETE FROM public.goals WHERE provenance_quotes @> '["seed:staging-b-demo-2026-07-28"]'`; `DELETE FROM public.team_members WHERE manager_id='b49824c8-e071-704e-f14c-e3642c80710a'`; `DELETE FROM public.prism_results WHERE version='2.5-backfill'`; `DROP SCHEMA growth CASCADE` (also drops the computed dossiers).
+
+## [2026-07-28] — Honor: PRISM-report request + résumé JD upload + grounding formatting (agent-engine, PR #714)
+
+Backend additions to the Honor Coach Workbench (merged to `development` via #714; pairs with FE #299). Full honor suite 333 passed / 6 skipped.
+
+### Added
+- **THF grounding / system prompt** (`app/honor/grounding.py`): two formatting instructions in `THF_GROUNDING` — **left-justify every response** (never center/right-align) and, **when asked for a plan, respond with a numbered step-by-step plan**. Content-only (SME-tunable); flows into Meridian chat + the résumé prompt automatically. Grounding substring tests extended.
+- **"Request a PRISM report" for a new person** — `POST /v1/agents/honor/coach/prism-request` (`require_coach`). New `app/tools/honor/prism_report.py` provisions a platform `user` login (magic-link + honor entitlement) and submits a PRISM candidate under the fixed organisation **"The Honor Foundation"**, reusing `PrismClient.create_candidate` + a `prism_requests` row (poller/ingestor attach the report later). `role="user"`/org fixed server-side; the body cannot override. 24h idempotency per subject.
+  - Files: `services/agent-engine/app/tools/honor/prism_report.py`, `services/agent-engine/app/routes/honor.py` (`CoachPrismReportRequest`, `post_coach_prism_report_route`)
+- **Résumé "Upload a job description"** — `CoachResumeRequest.positionFileIds`: the route extracts the uploaded JD's text server-side (`fetch_attached_document_texts`) into the Target position description (`position_text`) when no text is pasted; kept separate from `attachments` (fellow evidence). Pasted text wins.
+  - Files: `services/agent-engine/app/routes/honor.py`
+- New tests: `tests/honor/test_honor_prism_report_route.py`, `tests/honor/test_honor_resume_route.py`; extended `tests/honor/test_honor_grounding.py`.
+
+---
+
+## [2026-07-28] — Job DNA buildout: "Draft a blueprint" front-door + shadow-validation + entitlements
+
+Full Job DNA / Job Blueprint buildout landed this session (all merged to `development`, live dev + stable). See resume memory `job-dna-buildout` for the complete pointer.
+
+### Added
+- **"Draft a blueprint" front-door (KCE-mirrored).** Backend `POST /v1/agents/blueprint/draft-benchmark` (agent-engine, monorepo **#701** `ced619aa`) — LLM drafts the 22-dim benchmark from role text; **§3 tier-shape 3/2/3·3/0/5·3/0/3 guaranteed via deterministic Python repair**; Haiku tier; 14 tests. Returns a FLAT object (no `{status,data}` envelope). FE **#291** `4cfc23ad` — `JobDnaDraftFlow` + `useAllRoles` (cross-vertical: Job DNA blueprints + KCE saved roles) + `useDraftBenchmark`/`draft.service` (via `getApi()`/agent-engine) + method chooser on the authoring page (keeps manual `JobDnaWizard`). Upload role (Word/PDF/text, client-side `extractRoleText`) → staged progress bar + toast → editable results → save → cross-vertical Role dropdown. Live dev + stable.
+- **§10 shadow-validation.** Harness `services/blueprint-service/app/shadow_validation/` (**#677**) + runbook `docs/runbooks/blueprint_shadow_validation.md` + seed cohort `services/blueprint-service/shadow_seed/` (**#687**) — applied to dev (96 candidate×blueprint pairs, real `ig-blueprint-scoring` engine, tagged `org_id='SHADOW-VAL-2026'`, reversible).
+- **Sign-off packets + as-built guide** (`.docx` at root; generators in `scripts/`).
+
+### Changed
+- Job DNA / Job Fit **entitlements** — granted `{grant,honor,job-blueprint,job-fit,knowledge-continuity,lumen}` to willb77 + John Boyd (×2) + Mark Tully + Gary Burnette on dev + stable (`public.user_entitlements`).
+
+### Fixed
+- FE draft service/hook read `res.data.data` (envelope) but the endpoint returns a flat object → `res.data` (`a269da7`).
+
+---
+
+## [2026-07-28] — Unified Role-Fit Engine (D1–D7) — merged, deployed dev + staging-b, verified
+
+The full Unified Role-Fit Engine memo (D1–D7) built this session was merged to `development` in order and is now LIVE on both dev and staging-b. Backend-only, additive, all gated; no migrations (D1–D7 are stateless).
+
+### Merged (in order)
+- **#684** (D1–D3): JD→vector **extractor** (`ig_blueprint_scoring/extractor.py`, injected LLM, provenance), **PRISM vocab bridge** (`app/honor/prism_bridge.py`), **Honor consumer** path (`app/honor/rolefit.py`, gated OFF).
+- **#709** (D4, replaced auto-closed #688): **both scorers as a choice** — weighted-closeness moved into `ig_blueprint_scoring/closeness.py` (agent-engine `app/evaluation/scorer.py` now a re-export); unified `score_fit(method∈{gap,closeness})`; blueprint-service `/fit/*` gained a `method` query param (default gap, non-breaking).
+- **FE #283**: scoring-method **toggle** on the Job-Fit self-fit view (`MatchesPage`), `method` threaded through service+hooks. Merged with a hand-union against development's new `FitPurpose` panel.
+- **#703** (D5–D7): `governance.py` (`enforce_advisory` — "informs, doesn't decide" enforced at runtime; `AdverseImpactMonitor` four-fifths rule; retired the IO-psych SME gate framing), `isolation.py` (`assert_vector_only` — vector-only, rejects PII/rosters), and the neutral **shared target service** `/v1/targets/{extract,score,adverse-impact}`.
+
+### Fixed
+- **#710** — D7's `/v1/targets/*` was deployed in the Lambda but **unreachable** (post-deploy dev check: `/v1/blueprint/fit/matches`→401 but `/v1/targets/score`→404). API Gateway only had `ANY /v1/blueprint/{proxy+}`; added a second `CfnRoute` `ANY /v1/targets/{proxy+}` → same blueprint-service integration (`infrastructure/cdk/lib/blueprint-service-stack.ts`). Re-verified dev: `/v1/targets/*`→401.
+
+### Deployed + verified
+- **Dev:** staged-deploy succeeded; `/v1/targets/*` + `/v1/blueprint/fit/*` → 401 (reachable, auth-gated).
+- **Staging-b:** already promoted via `release-stable-2026-07-27-lumen-ux` (tag = #710 commit `5933e24c`), promote completed success 2026-07-28 00:35; curl-verified `/v1/targets/*` + `/v1/blueprint/fit/*` → 401. (Also carried forward in the later `release-stable-2026-07-28-prism-readmodel` tag.)
+- Tests at merge: `ig-blueprint-scoring` 106, `blueprint-service` 175, agent-engine evaluation+Honor 341/6 (unchanged — re-export behavior-preserving).
+
+### Notes
+- No re-promote performed for role-fit — another terminal's promote already carried it to staging-b (collision avoided).
+- `blueprint_matching_enabled` default unchanged (recruiter rollout is a product call; D5 guardrails always apply regardless).
+
+## [2026-07-28] — PRISM read-model from authoritative assessments + 8-dim inject (agent-engine, LIVE dev + staging-b)
+
+Closed the P1 chat-accuracy half left open after the 2026-07-27 `prism_results` backfill (#702): future PRISM uploads write to `assessments`/`assessment_scores` (the §16 ingestor source of truth) but not to `prism_results`, so the dossier + chat memory-inject would silently re-degrade to `prismNeeded` for every newly-assessed user. Fixed without a projection that can drift and without touching the §16 ingestor (T5 enforces it never writes `prism_results`). PR #712 merged; agent-engine auto-rolled to dev (ECS task def :52).
+
+### Added
+- `LongTermMemory.get_latest_prism` now derives the live profile from the **authoritative assessments** (latest PRISM `assessments` + `assessment_scores`, `is_authoritative`), computing the 4 colour means **and** surfacing the true 8 per-dimension scores; falls back to the legacy `prism_results` table only for users without an authoritative assessment. Both the dossier (`_load_prism`) and the chat memory-inject read through this one function, so every completed report is reflected immediately — nothing to keep in sync, can't go stale.
+  - Files: `services/agent-engine/app/memory/long_term.py` (`_derive_prism_colours`, `_load_prism_from_assessments`, `_PRISM_QUADRANT_DIMS`)
+- The `<prism_profile>` memory-inject block now carries the 8 dimensions (`<dimensions><dimension name=…>`), with the 4 colour means retained for backward compatibility.
+  - Files: `services/agent-engine/app/memory/integration.py`
+- New tests: `services/agent-engine/tests/test_prism_assessment_derived.py` (derivation means, assessments-first, precedence over stale `prism_results`, fallback, non-authoritative ignored, incomplete-dims fallback, latest-wins, radar true-dims + fallback, inject 8-dim + omit).
+
+### Changed
+- `PrismAgent.prism_radar` renders the true per-dimension spread when present (Innovating ≠ Initiating) instead of collapsing each pair to its quadrant mean; falls back to the quadrant score for 4-colour-only rows.
+  - Files: `services/agent-engine/app/agents/coaching/prism_agent.py`
+- Colour derivation pinned to the dossier radar-tuple grouping (identical to `migrations/prism_results_backfill_from_assessments.sql`) so all `prism_results` — backfilled AND assessment-derived — agree. Does NOT resolve the separate, deliberately-unfixed manual-vs-radar quadrant-mapping conflict.
+
+### Fixed
+- `PrismAgent._publish_behavioral_context` no longer clobbers the well-known PRISM slot (`set_prism_profile`) with its raw 500-char LLM reply. That slot carries the structured profile the CoachingOrchestrator / `unified_behavioral_context` publish before the turn; downstream agents read it via `get_prism_profile()` expecting PRISM data. Aura's behavioral read now lands under a dedicated per-user key only. Updated the maven clobber test to assert the corrected contract.
+
+### Verified
+- 246 tests green across memory/dossier/prism/meridian suites (local + CI); the one pre-existing unrelated failure (`test_prism_knowledge` COLOUR_GREEN) also fails on clean `origin/development` and passes in CI (env-only).
+- **Live dev proof (ECS-exec against running task + live Aurora):** deployed code physically present in the `agent-engine` container; `get_latest_prism("3468e498-…")` returned `version="assessment-derived"` with the 8 true per-dim scores — Focusing=7.0/Delivering=61.0 and Finishing=13.0/Evaluating=91.0 (distinct pairs the old quadrant-inherit code collapsed to 34/52) — and colour means gold=34.0, green=91.5, blue=52.0, orange=92.0.
+- **Promoted to staging-b (2026-07-28, tag `release-stable-2026-07-28-prism-readmodel`):** delta since the last promote was #712 only — no other terminals' work, no migrations. All 6 promote jobs green (agent-engine build, cdk deploy all stacks, ECS roll, authenticated smoke matrix). **staging-b had 28 authoritative PRISM assessments but an empty `prism_results` — the exact scenario #712 fixes — so the read-model derivation unlocks real PRISM there with NO backfill needed** (unlike dev, which needed #702). Live-verified via ECS-exec on `ig-staging-b-agent-engine`: `get_latest_prism("a4f81418-…")` → `version="assessment-derived"`, 8 true dims (Focusing=7/Delivering=46, Finishing=70/Evaluating=96), colours gold=26.5/green=75.0/blue=83.0/orange=73.0.
 
 ## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
 
@@ -267,6 +605,63 @@ Lumen purpose copy; Job Fit purpose copy; rendering `sources`/`coverage` on the 
 ### Recorded as debt
 The blueprint UI duplication is tracked with an explicit extract-when trigger — a third consumer, or the first observed drift between the two copies. Only the JSX is duplicated; the logic stays single-sourced in shared hooks.
 
+## [2026-07-27] — KCE reviewer/curriculum/dashboard surfaces + replay-the-utterance provenance (LIVE dev + staging-b)
+
+Completed the three deferred KCE Phase-7 frontend surfaces plus per-turn interview provenance. All live on dev + staging-b.
+
+### Added — trainer-service (continuity) [monorepo PR #704, merged; staged-deploy → dev]
+- **`knowledge_capture_turns` table (migration 006, applied to dev Aurora)** + model + repo. `POST /sessions/{id}/turns` now **persists** each question→answer (was coverage-only). `GET /sessions/{id}/turns` + `GET /units/{id}/turns` serve provenance (a unit's turns share its `session_id` + `taxonomy_node_id`).
+- **`POST /units/relations/{id}/resolve`** — reviewer adjudication of a candidate contradiction: `dismiss | keep_both | supersede` (supersede deprecates the loser + records a `supersedes` edge). New event `knowledge.capture.contradiction_resolved`.
+- **`GET /review-queue`** now carries both units' summaries per contradiction (`from_unit`/`to_unit`).
+- **`GET /continuity/units?taxonomy_id=&bands=`** — a role's citable units (across sessions) — the curriculum build source.
+
+### Added — agent-engine [same PR; agent-engine-image → dev ECS]
+- **`POST /v1/agents/kce/curriculum/build`** — exposes Echo's deterministic `build_curriculum` (session_agent) over HTTP; caller passes band-filtered units, gets back modules mapping 1:1 onto trainer `POST /curricula` (which re-enforces the citation gate). No LLM.
+
+### Changed — frontend [FE PR #294, merged; deployed dev + staging-b]
+- **`KceReviewConsolePage.tsx`** — contradictions are now **resolvable**: each renders both units side by side (title/body/band/KVI); reviewer keeps a winner (supersede), marks both true, or dismisses. Every unit has **Replay the interview** — lazily loads the captured Q→A exchanges behind it (provenance).
+- **`KceCurriculumPage.tsx`** — new **Build a curriculum** panel: pick a role → fetch validated/provisional units → Echo assembles → publish (citation gate) → open it. Consume/feedback flow unchanged.
+- **`KceDashboardPage.tsx`** — real recharts: validity-band distribution (colored bars) + capture-pipeline funnel (was in the data, unrendered). Existing cards + risk table kept.
+- New services/hooks/types: `resolveContradiction`, `getUnitTurns`, `listCitableUnits`, `publishCurriculum` (trainer); `buildCurriculum` (agent-engine); `useResolveContradiction`, `useUnitTurns`, `useCitableUnits`, `useBuildCurriculum`, `usePublishCurriculum`; contradiction `from_unit`/`to_unit`, `CaptureTurn`/`UnitTurns`, curriculum build/publish types.
+- **Tests:** +12 trainer + 3 agent-engine backend tests (103 continuity + 14 kce_capture green); FE 65 KCE tests green; tsc + eslint + build clean.
+- **Verified live:** deployed dev chunks contain the new strings (Review: "Replay the interview"/"Not a contradiction"/"retire the other"; Curriculum: "Build a curriculum"/"Build & publish"; Dashboard: "Capture pipeline"/"Validity of captured"); agent-engine container has the `curriculum/build` route (ECS exec).
+
+## [2026-07-27] — Team Development dossier: async compute + prism_results backfill for all users
+
+Two pieces that make **any** member's dossier render real behavioral data in-browser on dev (previously only Bill's pre-warmed cache worked; the ~60s compute exceeded both the API-Gateway 30s cap and the agent-engine ALB 60s idle timeout).
+
+### Added — async dossier compute (kick-off + poll; clones the Meridian `/v1/agents/chat/async` pattern)
+- **agent-engine (PR #695, `9040f2fa`, ECS-rolled):** `public.dossier_jobs` table (DB-backed — dev autoscales to 4 tasks) + `dossier_job_repository`; `POST /agent/development/dossier/jobs` (202, fast) / `GET …/jobs/{id}`; the compute runs in an `asyncio` background task (strong-ref set). Alembic `021` + migration-runner SQL. Files: `services/agent-engine/app/routes/development.py`, `app/repositories/dossier_job_repository.py`.
+- **growth-service (#695):** `GET /members/{id}/dossier` is now a poll-driver — warm→200; job in flight→poll agent-engine + persist on completion (200) else **202 `{status:"computing"}`**; cold/stale/refresh→kick off + 202. New `POST …/dossier/recompute`. `_persist_computed` extracted (shared). +`compute_job_id`/`compute_status` columns. Files: `app/routes.py`, `app/service.py`, `app/agent_client.py`, `app/models.py`.
+- **FE (PR #285, `8471c2ec`, deployed):** `useMemberDossier` models "computing" as `null` and polls every 3s; `recomputeDossier`; a "Generating…" state in `MemberDevelopmentWorkspace`.
+
+### Fixed — three latent Postgres-only bugs the async path exposed (PR #699; sync compute never completed before, sqlite hides them)
+- Native-enum columns compared to varchar → `cast(col, String)`.
+- ORM maps child `id` + all enum columns as `String` but the DB is native `UUID`/`enum` → INSERT `DatatypeMismatch` → migrations convert **all** growth child-table `id` PKs + enum columns to `TEXT` (drop/recreate 2 views + the `learning_plans` FK).
+- Stale asyncpg prepared-statement cache after the type migration (`cannot decode UUID, expected 16 bytes, got 36`) → `statement_cache_size=0` (also RDS-Proxy-safe). File: `services/growth-service/app/database.py`.
+
+### Added — prism_results backfill for all users (PR #702; the P1 structured-PRISM item)
+- Backfilled `public.prism_results` for all **14 authoritative-PRISM users** from `assessments`/`assessment_scores` (framework=PRISM, `is_authoritative`, keyed by `user_id` — **not** the `documents` table, avoiding the coachee→coach attribution trap). Colors = mean per radar-tuple quadrant. Idempotent (latest authoritative assessment/user; skips already-present; reversible via `version='2.5-backfill'`). File: `services/migration-runner/migrations/prism_results_backfill_from_assessments.sql`. Applied to dev.
+
+### Verified (dev)
+- Async E2E: cold no-PRISM member → 202 → poll → 200 (fast); **Bill (PRISM) recompute → 202 → 7×202 (~56s full 6-agent pipeline) → 200 fully populated**. A backfilled non-Bill user → dossier `prismNeeded:false` with a real radar/headline. 45 growth tests green.
+- Coord-clean: data-only + migrations, no `prism_agent.py`/agent-engine code change; announced in `COORD_DRIFT_TRACKER.md`. Dev-only (staging-b PRISM is separate — #496).
+
+## [2026-07-27] — KCE capture flow wired end-to-end: blueprint → guided capture → outcome
+
+The KCE backend capture engine (Phases 0–6) was complete, but the frontend for it was deferred — "Start a capture" was a dead end (no blueprint context, re-typed the role, minted a throwaway node, no process). Wired the blueprint→capture handoff and made capture blueprint-driven, live on dev + staging-b.
+
+### Added — trainer-service capture-session reads (monorepo PR #697, merged; deploys with trainer-service)
+- **`GET /v1/trainer/continuity/sessions?org_id=[&role_title=]`** → capture sessions newest-first, each with `unit_count`.
+- **`GET /v1/trainer/continuity/sessions/{id}`** → session + its captured knowledge units (kvi + validity_band each) — the capture-outcome / validated role-history view.
+- Repo: `list_sessions`, `list_units_by_session`, `count_units_by_session`. +3 route tests (18/18 continuity-route tests green). Read-only, no LLM.
+
+### Changed — frontend (FE PRs #287 + #288, `willb77/inspire-genius-frontend`, merged; deployed dev + staging-b)
+- **`src/pages/knowledge-continuity/KceBlueprintPage.tsx`** — both "Start a capture" CTAs now pass `?role=<title>` (SavedRoleView + DoneStep), carrying the just-built/saved role into capture.
+- **`src/pages/knowledge-continuity/KceCapturePage.tsx`** — rewritten as a blueprint-driven guided capture: reads `?role=`, loads the saved blueprint, and shows a capture plan (a "how a capture works" explainer, the role's knowledge areas as a checklist with a progress bar, a one-time "who are we capturing" step + consent gate). Captures **area by area** — Maven interviews, then on save extracts + synthesizes each area's units against **that area's real taxonomy node** (a saved blueprint node carries the real id in `ref`), accumulating in ONE session. Outcome screen lists captured units and points to the next steps (Review & validate → Build the successor's training). No role → a saved-role picker (no blank page).
+- Rewrote `KceCapturePage.test.tsx` (4 tests) for the new flow; fixed `KceBlueprintPage.test.tsx`'s 2 CTA assertions to expect the `?role=` URL (#288 — the first dev deploy's Unit Tests gate caught the stale assertions before anything shipped). `tsc -b`, ESLint, `npm run build` green.
+- **Verified live:** deployed dev bundle's `KceCapturePage` chunk contains "How a capture works", "capture plan", "Who are we capturing", "see the outcome", "Build the successor"; dev + staging-b deploys green.
+
 ## [2026-07-26] — Support request system: post an issue, notify contact@inspiresgenius.com
 
 New authenticated surface where anyone on the platform can post a help/issue request. Every submission emails the support inbox with the poster's contact block and their full description, so support can reply without a lookup.
@@ -367,6 +762,527 @@ Three one-off ECS RunTasks with the rule's exact network config. Dry-run enumera
 - Lumen is **not on staging-B** — no code (needs a `release-stable-*` tag), no migrations, no entitlements there.
 - Two duplicate `user_entitlements` rows (jcboyd001, willb77) keyed by email-as-user_id; harmless now the sweep resolves through `public.users`, but worth cleaning.
 - Codify `honorResume` so the next deploy of the agent-engine stack doesn't flip it off.
+
+## [2026-07-26] — KCE Blueprint drafted 0 nodes — salvage truncated draft + rebuild-on-package-change
+
+After the 503/timeout fix, **Draft the Blueprint** ran (Haiku, 21.3s) but returned **0 knowledge areas / 0 sections** (Save disabled). Fixed.
+
+### Fixed — shared `ig-knowledge-taxonomy` (PR #693, merged to `development`; agent-engine image rebuilt + rolled to dev ECS)
+- **`ig_knowledge_taxonomy/generate.py`** — the draft hits `max_tokens` (dev logs: `output_tokens: 2500` == the exact cap) and is cut off **mid-array**, so the reply has no closing `]`. `extract_node_list` then failed strict `json.loads` **and** the `[...]` regex → returned `[]`, discarding an otherwise-good draft over its truncated tail. (Latent under Sonnet too; the 503 hid it.) New **`_salvage_objects`** scans (string/escape aware) for balanced brace objects after the first `[`, parses each complete node, drops the incomplete trailing one — handles a bare array and a `{"nodes":[...]}` wrapper. Verified live via ECS exec: `extract_node_list('[{"name":"a"},{"name":"b"},{"na')` → 2 nodes.
+- **Prompt tightened** — 12–24 nodes, `name` <8 words, `rationale` <12 words, explicit "never truncate the array" — so the array closes within budget more often; salvage is the safety net.
+- Shared package → fixes both KCE (agent-engine) and Job DNA (blueprint-service). +3 tests (18/18 pass).
+
+### Fixed — CI (same PR)
+- **`.github/workflows/agent-engine-image.yml`** — added `packages/ig-knowledge-taxonomy/**` to both push + pull_request path filters. The agent-engine image vendors this package (Dockerfile:18-19, since Build C) but the workflow only watched `ig-auth`, so a package-only change would have shipped a **stale image**. Now a taxonomy-package change rebuilds + rolls the image.
+
+## [2026-07-26] — KCE Blueprint "Could not draft the content" (503) fixed — Haiku tier beats API GW 30s timeout
+
+The KCE **Draft the Blueprint** action returned a **503** in the browser every time ("Could not draft the content"). Root-caused and fixed.
+
+### Fixed — agent-engine (PR #691, merged to `development`; built + rolled to dev ECS)
+- **`app/routes/kce_blueprint.py`** — blueprint drafting moved from the Sonnet tier (`TIER_1_COMPLEX`) to **Haiku 4.5** (`TIER_2_MODERATE`). The Sonnet call ran **~41s** for a full 2500-token taxonomy (`llm_call … claude-sonnet-4-6 latency_ms:40932 output_tokens:2500`). API Gateway (HTTP API) caps integration at a hard **30s**, so the browser got a 503 at 30s while the ECS task finished at ~41s and logged its 200 — the blueprint was generated but never reached the client. Latency is generation-bound (input was only ~2100 tokens), and `max_tokens=2500` is fully consumed so it can't be lowered without truncation → faster model is the only clean lever. Haiku drafts the same structured taxonomy at ~2x the token rate, comfortably under the cap. Output is SME-reviewed at the FE review step regardless (Opus 400s on `temperature`, so it is not an option).
+  - Verified deployed via ECS exec: running container's `kce_blueprint.py:153` reads `ModelTier.TIER_2_MODERATE`. 15/15 `ig-knowledge-taxonomy` pure-logic tests pass; full agent-engine CI green.
+  - Durable follow-up (not needed for current role sizes): move this call to an async job path (return id + poll) so arbitrarily large roles can run on Sonnet/Opus and the FE progress bar becomes real.
+## [2026-07-26] — foldersync: add and edit folder pairs from the dashboard
+
+### Added
+- **Folder-pair management in the UI** — the dashboard was read-only; adding a folder meant hand-editing YAML. Now `+ Add folder` / `Edit` / `Remove`, with Browse pickers for the local filesystem, Dropbox and Google Drive (cloud pickers read live from the account; they degrade to manual entry with an explanation when unauthenticated).
+  - `foldersync/configstore.py` — comment-preserving read/modify/write via ruamel round-trip, atomic replace (temp + rename) with a `.bak`, mode 600 preserved. A plain PyYAML round-trip would have deleted every explanatory comment in the starter config on first save.
+  - API: `GET/POST /api/pairs`, `PUT|DELETE /api/pairs/{name}`, `POST /api/pairs/validate`, `GET /api/browse/local`, `GET /api/browse/{dropbox|gdrive}`. Validation returns **all** problems at once. A pasted Drive folder URL is reduced to its ID (people copy the address bar; a URL stored as an ID fails much later with an opaque 404).
+  - `FolderWatcher.resync_watches()` — a folder added in the UI is watched immediately rather than at the next daemon restart.
+  - Files: `foldersync/configstore.py`, `foldersync/server/app.py`, `foldersync/server/static/{index.html,app.js,styles.css}`, `foldersync/watcher.py`, `foldersync/providers/{base,dropbox_provider,gdrive_provider}.py`
+
+### Fixed
+- **Dashboard served a stale app shell.** No `Cache-Control` was sent, and the service worker intercepted navigations, so a new UI could not displace a cached one — after upgrading foldersync you would get the previous UI talking to the current API with no visible clue. Now: `no-cache, must-revalidate` on the shell, the service worker no longer touches HTML at all, and asset URLs carry `?v=<package version>`.
+  - Files: `foldersync/server/app.py`, `foldersync/server/static/sw.js`, `foldersync/server/static/index.html`
+- **Watcher regression caught in review** — the `resync_watches` refactor initially left the debounce/periodic thread startup inside the new method instead of `start()`, so no filesystem event was ever processed. Five existing tests failed; fixed before commit.
+  - Files: `foldersync/watcher.py`
+
+### Changed
+- Added `ruamel.yaml>=0.18` — required for comment-preserving config writes.
+- Tests: 71 → 99.
+
+## [2026-07-26] — Team Development Studio: dossier renders in-browser + exposed to super-admins
+
+Closed the gap so a super-admin (Bill) can open a member's development dossier in the browser on dev, and made the surface available to super-admins as well as managers.
+
+### Fixed / Changed — growth-service (PR #689, merged `b64d118c`; deployed dev)
+- **`app/authz.py`** — `assert_member_access` now resolves the caller's real role from the monolith roster (`public.users`/`user_profiles`/`roles`) by the signed JWT `sub`+email when the JWT role is below company-admin. Magic-auth tokens hardcode `role:user`, so DB super-admins/managers were 403'd on every member-scoped route; this upgrades them (mirrors agent-engine `resolve_role` #578). +3 test assertions.
+- **`app/service.py`** — coerce `str(row.id)` in `_gap_out`/`_learning_out`/`_milestone_out`/`_match_out`. The ORM types `id` as `String(36)` but the Postgres PK columns are native `UUID`, so asyncpg returns `uuid.UUID`; the `str` schema fields made pydantic 500 on **every** dossier with children (latent — the compute path always timed out first). +2 unit tests.
+- **`app/agent_client.py`** — dedicated 150s timeout for the ~60s dossier recompute (fast roster/goals calls keep 20s).
+- **`infrastructure/cdk/lib/growth-service-stack.ts`** — growth Lambda timeout 30s→180s (headroom for the out-of-band recompute; API Gateway still caps browser calls at 30s).
+
+### Changed — frontend (PR #284 `willb77/inspire-genius-frontend`, merged `c242b249`; auto-deploys dev)
+- **`src/constants/navigation.ts`** — added the flag-gated "Team Development" item to `SUPER_ADMIN_NAV_ITEMS` (hoisted `TEAM_DEVELOPMENT_ENABLED`). Route guards already permitted super-admin on `/manager/*`, so no route change.
+
+### Data (dev)
+- Seeded a `growth.development_dossiers` roster row (manager=member=Bill's sub) and **pre-warmed** his dossier cache (`development_dossiers` + `member_assessments` + `development_gaps`) from his real computed PRISM, so the browser GET returns it cached (200 in ~0.5s) instead of triggering a 65s recompute.
+
+### Known limitation (follow-up)
+- The dossier compute (~65s, 6 agents) exceeds the API Gateway 30s cap and the agent-engine ALB 60s idle timeout, so any member whose cache is cold (or a manual "refresh") 504s. General fix = **async dossier compute** (kick-off + poll) or raising the shared ALB idle timeout (owner sign-off). The shared ALB was intentionally NOT modified here.
+
+## [2026-07-26] — foldersync tests now run in CI; inert gitleaks ignore removed
+
+### Added
+- **`Test foldersync` job in `.github/workflows/pr-validation.yml`** — `tools/foldersync/` sits outside `services/`, so the `test-services` matrix could never see it and PR #678 merged ~6k lines whose 71 tests had never run in CI once. New `detect-changes` output `foldersync` fires the job on `tools/foldersync/**` (and on `pr-validation.yml` itself, mirroring `cdk_touched`, so a PR editing the gate exercises the gate). Wired into the `summary` job's `needs` + FAIL loop + table, so it actually gates branch protection rather than running decoratively.
+  - Verified green on `linux/amd64` in Docker before the job was written — the suite includes a real watchdog end-to-end test, and inotify behaves differently from macOS FSEvents.
+  - Files: `.github/workflows/pr-validation.yml`
+
+### Removed
+- **`.gitleaksignore`** — added in #678 to suppress a false-positive `dropbox-api-token` hit on a realistic-looking placeholder in the foldersync README, pinned to commit `53939519`. #678 was squash-merged, so that commit is not in `development`'s history and the fingerprint now matches nothing. The README already uses an obviously-fake placeholder, so the suppression is unnecessary as well as inert.
+  - Files: `.gitleaksignore`
+
+## [2026-07-25] — New utility: `tools/foldersync` (local → Dropbox + Google Drive, with subscriber alerts)
+
+### Added
+- **`tools/foldersync/`** — standalone Python utility (unrelated to the IG app; own venv, own tests, not wired into IG CI). Watches local folders, syncs them to Dropbox and Google Drive, and emails the Drive folder's subscribers when new files land.
+  - **Trigger + reconcile**: `watchdog` filesystem watcher with a debounce so a bulk drop is one sync, plus a periodic full sync (default 15 min) that reconciles the whole tree. The second exists because every OS watch API drops events (sleep/wake, network volumes, save-by-rename).
+  - **Existence check without downloads**: each file is read once and hashed three ways — SHA-256, MD5 (Drive's `md5Checksum`), and Dropbox's block-based `content_hash`. Both providers expose their hash in metadata, so "is this already up there?" costs one listing call. Hashes cached in SQLite on `(size, mtime)`.
+  - **Subscriber alerts**: audience read live from the Drive folder's permission list (needs the full `drive` scope — `drive.file` cannot see a pre-existing shared folder). Announced once per content hash; batches below `min_files` are queued and carried forward rather than lost.
+  - **Mobile**: the sync engine is desktop-only by OS constraint (iOS/Android permit neither arbitrary local-drive access nor a long-lived background watcher; Apple bars a Python runtime outright). Phones get an installable FastAPI-served PWA — status, live SSE activity feed, Sync-now — plus optional ntfy/Pushover push. Token auth is mandatory when bound off-loopback.
+  - **Safety**: `mirror` (remote deletion) is off by default, full-sync-only, and refuses to run when the local scan comes back empty or would delete far more than exists locally — the signature of an unmounted volume. Drive deletions go to trash. Google-native Docs/Sheets/Slides are never overwritten.
+  - Files: `tools/foldersync/foldersync/{config,hashing,scanner,state,engine,watcher,service,cli}.py`, `providers/{base,dropbox_provider,gdrive_provider}.py`, `notify/{dispatcher,email_sender,push}.py`, `server/app.py` + `server/static/*`
+  - Tests: 71 passing (`pytest -q`, ~8s) — engine against an in-memory provider, alert logic, config parsing, dashboard API, and a real end-to-end watcher run. No test touches a network or sends mail.
+
+## [2026-07-25] — Honor super-admin close-out: emailed Gary his sign-in link + verified the magic-auth IAM grant (no fix needed)
+
+### Changed / Verified
+- **Emailed Gary Burnette his magic sign-in link** on staging-b via the platform's own flow (`POST /v1/magic-link/request` → SES one-click "Your Inspire Genius sign-in link"). **Confirmed sent** by CloudWatch `AWS/SES Send`=1 at 20:46 UTC, 0 bounces/complaints/rejects.
+- **Investigated the reported magic-auth-secret IAM "gap" → NOT a gap.** The staging-b `ig-staging-b-auth-lambda-role` **already grants** `secretsmanager:GetSecretValue` on `…/magic-auth/jwt-secret*` (codified in CDK `services-stack.ts` `grantMagicAuthSecretRead(authLambdaRole)`); `iam simulate-principal-policy` = **allowed** for both the full and the partial ARN the code passes. The `AccessDenied` log at 20:47 was a **stale warm Lambda container** that cold-started before today's promote deployed the grant and cached the (functionally-identical) `SECRET_KEY` env-var fallback — self-heals on the next cold-start; zero functional impact. Forcing an immediate cold-start (Lambda config touch) was declined by the auto-mode classifier — offered to the owner.
+- **Generated a branded `.docx`** of `Honor_Production_Hardening_Build_Plan.md` (python-docx, logo cover + THF navy/gold, 10 Word tables) via `scripts/build_honor_hardening_plan_docx.py`.
+
+## [2026-07-25] — Lumen: the full 5-PR stack merged to development
+
+All ten Lumen PRs merged (monorepo #656/#657/#664/#665/#668, frontend #271/#272/#273/#275/#278) as true merge commits. `development` now carries the whole vertical: Core wiring, the Self-Portrait composer, the Moments engine, the proactive consent + sweep, and B2C onboarding — plus alembic **019** and **020** and their `migration-runner` `.sql` mirrors.
+
+### Two things the merge surfaced (neither visible before rebasing on development)
+- **`@/layouts/AppShell` no longer exists.** Verticals were migrated onto `SidebarScaffold`, and `LumenLayout` had hand-rolled the old chrome to get its request-access branch — so the import broke. Fixed by having the entitled path delegate to Core's `VerticalShell` outright (it owns the chrome, the role nav, and the page-view audit); only the unentitled branch stays Lumen's. A second hand-rolled copy would have broken again the next time Core's chrome moved.
+- **`VerticalKey` union conflict.** development added `job-blueprint` + `job-fit` while Lumen added `lumen`. Resolved as the union of all six — dropping either side would have silently closed a gate.
+
+### Merge mechanics worth remembering
+- `gh pr merge --delete-branch` on a stacked PR **closes the PR stacked on top of it** (GitHub closes dependents when their base ref is deleted; it does not retarget them). #657 was closed this way and had to be recovered by recreating the deleted branch, reopening, and retargeting. **Retarget the next PR to `development` BEFORE merging the current one**, then delete branches at the end.
+- `change_log.md` and `.secrets.baseline` conflicted at every level of the stack; both are append/generated files. The changelog was resolved keeping both sides (verified as a pure insertion — 21 added, 0 removed), the baseline by taking the incoming copy and letting the hook regenerate.
+
+### Verification
+- Backend regression on the stack tip before merge: **750 passed, 6 skipped**. Post-merge on `development`: Backend CI — Services Security & Tests **success**; Agent Engine — Build & Push Image **success**.
+- Frontend on the stack tip: `npm run build` clean, **95 tests / 16 suites** green.
+- Alembic chain verified `018 → 019 → 020` with no collision (development added no revisions).
+
+### NOT done — the gap between merged and demo-able
+- **Migrations 019 + 020 are NOT applied** to any environment. Apply manually via the migration-runner Lambda (`lumen_moments.sql`, then `lumen_consent.sql` — the second ALTERs the first's table).
+- **No user is entitled to `lumen`**, so the vertical is invisible in the UI until `user_entitlements.verticals` is seeded.
+- **PR-4's scheduling is still unwired** — the sweep is super-admin-triggered only, pending a service-identity decision.
+
+## [2026-07-25] — growth-service calls the LIVE agent-engine orchestrator (dossier wiring)
+
+Follow-on to the RDS Proxy fix below. growth-service was serving the deterministic **StubAgentClient** dossier (canned "Jordan Rivera") because `AGENT_ENGINE_URL` was empty; and even wired, its `HttpAgentClient` forwarded **no auth**, so the `require_auth`-gated agent-engine routes would 401. Both fixed so growth composes a real per-member dossier from the live orchestrator (Aura + Summit + Meridian).
+
+### Changed — growth-service (agent-engine wiring)
+- **`app/agent_client.py`** — `HttpAgentClient._post/_get` now send an `access-token` header. Added `_mint_service_token()`: a short-lived (120s) HS256 token signed with the shared `SECRET_KEY` (the same secret growth uses to VALIDATE inbound tokens, so the agent-engine accepts it — verified by transitivity: a magic-auth token validates at both growth and the agent-engine). Falls back to no header when no secret (stub path).
+- **`infrastructure/cdk/lib/growth-service-stack.ts`** — `AGENT_ENGINE_URL` now imports the agent-engine ALB DNS (`Fn.importValue('ig-{env}-agent-engine-alb-dns')` → `http://…`); a `-c agentEngineUrl=` context override still wins. Added a `:80` egress rule (VPC CIDR) on the growth Lambda SG — the internal ALB listener is HTTP :80 and `allowAllOutbound` is false, so without it the call silently fell back to the stub.
+- **`tests/test_agent_client_adapter.py`** — +2 tests (service token is valid HS256 with the shared secret; `_headers()` sends `access-token`). 41 growth tests green.
+
+### Verified (dev)
+- `cdk diff` = exactly 3 changes (SG :80 egress, Lambda code, `AGENT_ENGINE_URL`); deployed via `CDK_DOCKER_BUNDLING=1 --exclusively`.
+- `AGENT_ENGINE_URL=http://internal-ig-dev-agent-engine-alb-v2-….elb.amazonaws.com` on the Lambda → `get_agent_client()` returns `HttpAgentClient` (live, not stub).
+- **Network path proven**: a `/v1/growth/roster` call fired growth's `get_team` → the agent-engine ALB; agent-engine log shows `GET /api/manager/team … 404` sourced from the growth Lambda ENI (10.0.16.195) — request reaches the engine.
+- **Not fully E2E-verified through the front door**: the member-scoped dossier route is `manager+`-gated and magic-auth only mints `role:user` (the signing secret is access-guarded), so a live populated dossier through `/v1/growth/members/{id}/dossier` still needs a real manager JWT (separate documented blocker). Also unrelated: `get_team` targets the agent-engine base but `/api/manager/team` is a dashboard-service path (pre-existing; non-fatal, roster falls back to persisted dossiers).
+## [2026-07-25] — Honor: add platform super-admins from the Admin console (+ provision Gary Burnette)
+
+### Added
+- **Backend super-admin provisioning** (Agent Engine #671): `app/tools/honor/admin.py` — `create_super_admin` (link-or-JIT a `public.users` magic-link login, grant the `honor` entitlement, grant the TOP `super-admin` platform role + reactivate the account so magic-auth lets them in; **not** written to the coach registry), `_grant_super_admin_role` (unconditional promote — case-insensitive `public.roles` match), `list_super_admins`, `remove_super_admin` (demote to `user`; **self-removal guarded**). Routes `GET/POST/DELETE /v1/agents/honor/admin/super-admins` (`require_super_admin`; the request `role` field is ignored — privilege is never taken from the body). Emits `honor.admin.super_admin_created/removed`. 11 tests; full honor suite 317 passed.
+- **Admin "Super-Admins" tab** (Frontend #279): a tab on the Honor Administration console (super-admin only) with an add form — **first name, last name, email; role = Super Admin (fixed)** — plus a list + remove (demote). `AdminSuperAdmin` types, `list/create/deleteSuperAdmin` service, `useAdminSuperAdmins`/`useCreateSuperAdmin`/`useDeleteSuperAdmin` hooks, `SuperAdminsTab`. `npm run build` green; honor-admin 9/9.
+- **Provisioned Gary Burnette** (`garyburnettenc@gmail.com`) as a platform super-admin **on dev** (idempotent seed via `ig-dev-migration-runner`, mirrors `create_super_admin`). **Verified on dev:** `POST /v1/magic-auth` mints a token; `/admin/whoami` → `{role: "super-admin", isHonorAdmin: true}`; the new endpoint E2E round-trip (list → add throwaway → resolves super-admin → self-removal 422 → cleanup) all green.
+
+### Deploy
+- Merged #671 (BE) + #279 (FE) to `development`; agent-engine rolled on dev (endpoint live), FE auto-deployed dev + staging-b.
+- **Now LIVE on staging-b too** (owner-confirmed 2026-07-25): Gary provisioned on staging-b Aurora (seed 5/5 OK) — **magic-link login verified** (`/admin/whoami` → super-admin on `stable.inspiresgenius.com`); agent-engine promoted via tag `release-stable-2026-07-25-honor-superadmin` (all promote jobs green, no park-at-0, ECS 1/1) so `/admin/super-admins` backs the tab there (GET lists Gary among 7 super-admins). Add-super-admin console + Gary's account are live on **dev + staging-b**.
+## [2026-07-24] — growth-service RDS Proxy connectivity fix (Team Development Studio dossier E2E)
+
+Investigating the Team Development Studio / Summit "authenticated E2E dossier render" on dev surfaced that **growth-service's DB layer had never functioned on dev** — every `/v1/growth/*` endpoint 500'd on `asyncpg InvalidAuthorizationSpecificationError: This RDS Proxy requires TLS connections`. (#587's 2026-07-19 "verified" was Lambda/stack-level only — the `obs_rds_proxy_role` "deploy≠endpoint-works" trap.)
+
+### Fixed — growth-service (PR #666, branch `fix/growth-service-rds-proxy-tls`)
+- **`services/growth-service/app/database.py`** — the async engine was created with no `connect_args` for Postgres, missing three things the RDS Proxy path requires:
+  1. **TLS** — permissive SSL context handed to asyncpg (mirrors `broadcast-service`).
+  2. **Password injection** — the Lambda ships `DATABASE_URL` without a password (RDS Proxy master creds live in Secrets Manager via `DB_SECRET_ARN`; the support/audit/broadcast pattern); the code never injected it. Now resolved at import via `make_url(...).set(password=...).render_as_string(hide_password=False)`.
+  3. **search_path** — growth models carry no schema qualifier + the service issues unqualified table names, so the connection now defaults `search_path` to `growth,public`.
+- Verified live (hotpatched dev Lambda zip): `GET /v1/growth/roster` **500→200** `{"data":[]}`; `GET /v1/growth/members/{id}/dossier` **500→403** (authz gate reached, no longer crashing). 39 growth unit tests green (sqlite path unchanged).
+
+### Added — dev Aurora
+- Applied the never-run growth baseline migration `001_baseline_growth_service` via migration-runner (created the `growth` schema + 8 tables + 2 views + enums/triggers), stamped `growth.alembic_version`.
+
+### Notes
+- Populated browser dossier render still blocked (separate items): `prism_results`=0 (P1 backfill) → dossiers degrade `prismNeeded:true`; growth `AGENT_ENGINE_URL=""` → stub dossier + no auth-forward; magic-auth hardcodes `role:user` → no manager JWT. Core orchestrator itself proven LIVE via ECS-exec (Aura+Summit+Meridian fire).
+- `cdk deploy ig-dev-growth` will supersede the transient hotpatch with the committed code.
+
+## [2026-07-24] — Honor production-hardening build plan (5-dimension survey → 8-phase plan)
+
+### Added
+- **`docs/plans/Honor_Production_Hardening_Build_Plan.md`** — a production-hardening build plan for the live THF Coach Workbench vertical, authored in the multi-agent/one-terminal orchestration model. Grounded in a 5-agent parallel survey of `origin/development` (security/authz, reliability, observability/scale, data/DR, tests/CI) + live AWS probes; every P0 anchor spot-verified against live code.
+- **8 phases** (each = one clean compaction stop, with ready-to-paste CC prompts + sub-agent roster + DoD + LOE + gate): 0 go-live gates + ground-truth reconciliation · 1 trust boundary (RS256 JWKS verify + un-neuter the CI gate + ownership-SQL test) · 2 safe-translation enforcement + bearer-token hardening · 3 backend reliability (async I/O + timeouts + error-handling + input caps) · 4 long-generation async (beat the 30s API-GW ceiling) · 5 edge WAF + observability + scale · 6 data safety/DR + right-to-delete + migration ledger + token encryption · 7 coverage lift + CI gates. ~14.5–18.5h human / ~14.5 CC sessions.
+- **Headline P0s (verified):** agent-engine `_decode_token` accepts RS256 **unverified** (`get_unverified_claims`); Honor résumé/eval **504 at the 30 000 ms API-GW ceiling**; public confirm/invite endpoints have **no WAF/IP rate-limit**; staging-b Aurora `deletionProtection=false`+`DESTROY` and documents bucket `autoDeleteObjects`; `remove_fellow` never purges Fellow PII/PRISM/docs/evals (no right-to-delete); `coach_owns_fellow` SQL mocked in 100% of tests + backend coverage gate neutered (`|| true`).
+- **Ground-truth corrections folded in** (supersede memory): SES production access is now ENABLED in **both** accounts (`3pp.com` verified); staging-b `honor_report_email=true` (email path live); dev agent-engine autoscale floor drifted to min=0.
+- Plan documents what is **already solid and must NOT be refactored**: the ownership model (no `x-user-role` trust in any Honor route), SAVEPOINT batch isolation, constant-time token verify, dark-flag shipping, audit DLQ+retry, deterministic zero-model-call evaluator.
+- Registered in auto-memory (`project_honor_hardening_plan`). **Plan only — no hardening code executed.**
+
+## [2026-07-24] — Tool-calling document-generation gate (staging-b John Boyd real-estate résumé follow-on)
+
+Follow-on to the résumé/docgen fix below. New staging-b incident (session `95b79a8c`): "assess my resume for a career change as a real estate agent, put your findings in a word document" never produced a document, and a specialist (Bridge) improvised a persona-breaking refusal ("I'm a specialist backend system… I provide content to Meridian"). Root-caused from fresh CloudWatch logs: the regex/keyword docgen gate returned `is_doc=False` on every turn ("put … in" is not a creation verb; the LLM fallback was a stateless, precision-biased classifier), so the request fell through to `career_talent` → **Bridge**, which sticky-routed the whole session. User asked for a non-regex solution.
+
+### Changed — Agent Engine (PR #658, merged `16cd564e`; live on dev, taskdef :52)
+- **New `app/tools/docgen/tool_gate.py`** — replaces the regex gate with a context-aware **tool-calling** decision. The fastest model is shown the recent conversation and a `generate_document` tool, and emits the same `{"tool","parameters"}` block `base_agent.extract_tool_call` parses everywhere (IG-native text-emitted MCP protocol — no provider-layer change). Meridian-owned + runs before routing, so a firing gate also neutralizes the Bridge misroute and the persona break for any doc request.
+- `meridian._maybe_generate_document` now dispatches to the tool gate (default) or the preserved `_legacy_maybe_generate_document` behind `docgen_tool_calling_enabled`; a cheap document-cue cost guard keeps the router off ordinary chat unless `docgen_tool_gate_always`.
+- Config: `docgen_tool_calling_enabled` (default True), `docgen_tool_gate_always` (default False).
+
+### Fixed — history source (PR #660, merged `87311dd7`; live on dev, taskdef :52)
+- The REST `/v1/agents/chat` handler routes the request `context` into working memory, leaving `context.conversation_history` empty — so the router could not resolve confirmations/follow-ups. Found via live dev test (a follow-up misrouted to Sage: "which previous response?"). Fix: `tool_gate` pulls recent turns from `memory_manager.short_term.get_history` (where REST/WS turns persist — the source sticky-routing uses), falling back to any in-request history.
+
+### Verified / Released — live on dev (Boyd's real account `jcboyd001@gmail.com`)
+- **Turn-1** "…put your findings and recommendation in a word document" → gate fires `fmt=docx` → **44 KB** `resume-assessment-for-real-estate-career-transition.docx`; **no Bridge** (routing bypassed).
+- **2-turn confirmation** "then proceed with the Word document export" → turn 1 routed to **Nova** (résumé owner); turn 2 gate fires reading turn 1 from short-term memory → grounded instruction ("Create a … resume for John Boyd transitioning from a 25+ year defense…") → **39.5 KB** `john-boyd.docx`. This is the exact phrase that returned `is_doc=False` on staging-b.
+- Tests: +12 (`tests/test_docgen_tool_gate.py`); honor bypass updated for the tool path; 3 legacy-gate tests pinned to `docgen_tool_calling_enabled=False`. Full agent-engine suite failure set **identical to pristine dev (70), +12 passing, zero new regressions**.
+- **NOT yet on staging-b** — promote pending owner confirmation.
+
+---
+## [2026-07-24] — Lumen vertical PR-1: Vertical Core wiring (backend + frontend shell)
+
+Resumed the Lumen build (B2C personal behavioral diagnostics + just-in-time "Moments" coaching). The blocker recorded in the resume pointer is cleared: Vertical Core landed 2026-07-16 (monorepo #573, frontend #200), so PR-1 built directly on `origin/development`. Branch `feat/lumen-core-wiring` in both repos. **Not deployed** — per the build plan's PR-1 exit criteria.
+
+### Added — Agent Engine (branch `feat/lumen-core-wiring`)
+- `app/verticals/lumen.py` — `MANIFEST` with the locked key `lumen` (entitlement value + API segment + route segment). Modelled on GRANT, the reference implementation.
+- `app/routes/lumen.py` — `vertical_router("lumen")` + `GET /health`. The router factory is what guarantees the `/v1/agents/lumen` prefix; a vertical mounted anywhere else passes every unit test and 404s in the browser.
+- `app/tools/lumen/__init__.py` — `build_lumen_registry()`, scoped via `REGISTRY.for_vertical("lumen")` so it can never hand back another vertical's tools from the process-wide registry. Empty at PR-1; `compose_self_portrait` (PR-2) and `generate_moment` (PR-3) register into it.
+- `app/verticals/bootstrap.py` — the two-line registration. `main.py` untouched.
+- `tests/lumen/test_lumen_wiring.py` — covers the failure modes that are invisible from the code: a vertical written correctly but never registered, and the bare-`/v1` mount that 404s only in a browser. 26 passed with `tests/verticals`; grant/honor/routes regression 617 passed, 6 skipped.
+
+### Added — Frontend (public repo, branch `feat/lumen-core-wiring`)
+- `src/verticals/lumen/manifest.ts` + barrel export; `"lumen"` added to the `VerticalKey` union.
+- `src/pages/lumen/LumenLayout.tsx` (Core's `VerticalShell`, no forked chrome) + `LumenDashboard.tsx` placeholder naming the three surfaces still to come.
+- `routes.tsx` / `constants/routes.ts` — `/vertical/lumen{,/dashboard}`, entitlement-gated.
+- No sidebar edit needed: the launcher is registry-driven, so an entitled user sees Lumen automatically. `npm run build` passes; jest 50 tests green; eslint adds no new errors.
+
+### Added — Lumen PR-5: B2C onboarding, org-less, NO paygate (monorepo PR #668, frontend PR #278; stacked on PR-4, not deployed)
+- `app/tools/lumen/onboarding.py` — funnel state **derived** from `prism_requests` + the composed portrait, never stored (a progress column would be a second source of truth to drift). `GET /v1/agents/lumen/onboarding/status` → `request_prism | complete_survey | awaiting_report | ready`; says nothing about entitlement (that stays the one shared `/v1/agents/me/verticals` read). `POST /v1/agents/lumen/onboarding/prism-request` **delegates** to `prism_request.create_request` — that function owns the PRISM v2.5 call plus a 24h idempotency window that stops a retrying client burning survey quota, and calling it server-side keeps the Lumen UI on one prefix.
+- **Org-less audit (PR-5 item 1) = NO PATCH NEEDED.** `AuthContext.finalizeAuth` already reads `payload.organization_id ?? null` and never gates on it; forced onboarding was already disabled (2026-07-21 #241); `/vertical/*` isn't in `ROLE_PREFIXES`. The org-less path works as-is.
+- **Bug caught while wiring the status read:** `prism_requests.user_id` is a UUID and the sub→UUID mapping is NOT a plain cast — `_user_id_from_claims` falls back to a deterministic UUID5 for the non-UUID subs some magic-auth tokens carry. Querying with the raw string sub would have matched nothing on Postgres and left **every user stuck at "request_prism"** forever. Now reuses that function.
+- A composed portrait wins over an unfinished PRISM request — scores can arrive by CSV import, so insisting on a questionnaire the user no longer needs would be a dead end.
+- Frontend: `pages/lumen/onboarding/LumenOnboarding.tsx` (4 states) + route `/vertical/lumen/onboarding`, onboarding service/hook, and `LumenRequestAccess.tsx`. **`LumenLayout` no longer redirects unentitled users** — Core's `RequireVertical` navigates to `/home`, which for a B2C visitor reads as the product not existing; §7.3 wants a "not enabled yet / request access" state and never a paywall. The patch is in the vertical layer; **Core untouched**, `useVerticalAccess` still the single entitlement truth, `lumen_dev_access` preview override still works.
+- Status query does NOT poll by default (a PRISM questionnaire takes minutes-to-days on an external site); only "awaiting report" opts in at 30s.
+- Three tests exist to stop regressions of the *decision*: no price/plan/checkout on the onboarding page, the unentitled state isn't an upgrade prompt, and the layout waits for entitlement rather than flashing "not enabled" at entitled users. The no-billing module check is **AST-based** — a text grep flagged the docstring documenting the no-paygate rule as a violation of it.
+- `tests/lumen` 101 passed; regression 737 passed / 6 skipped. Frontend build + 44 jest (7 suites) + eslint clean.
+
+### Added — Lumen PR-4: proactive Moments — consent + daily sweep (monorepo PR #665, frontend PR #275; stacked on PR-3, not deployed)
+- `app/tools/lumen/consent.py` — three independent grants: `proactive` ON by default (in-app feed is a surface the user opens; nothing leaves the product), `calendar` OFF (reading a schedule is its own grant), `email` OFF (the only grant reaching someone who never opened Lumen — what §9's "push is opt-in" governs). Absent row = documented defaults, so a user who never saw the consent screen is in a defined state.
+- `app/tools/lumen/proactive.py` — the daily sweep: weekly cadence Moment per consenting user + pre-event Moments when calendar is granted. `GET/PATCH /v1/agents/lumen/consent`; `POST /v1/agents/lumen/internal/run-proactive` (super-admin, returns a summary not the Moments). `public.lumen_consent` + `lumen_moments.source_ref` + unique `(user_id, trigger, source_ref)` via **alembic 020** + `.sql` mirror.
+- **Build-plan premise corrected #1 — the calendar source doesn't exist.** `app/tools/calendar.py` reads coach-service `/v1/bookings` (coaching *sessions*, not a work calendar) and FABRICATES events tagged `source: "stub"` when that service is down. The sweep therefore generates Moments before real coaching sessions and **refuses stub data outright** — unprompted confident guidance about a meeting the user doesn't have is this feature's worst failure mode, and an inventing fallback makes it silent. Test-pinned. Real Google Calendar OAuth DOES exist (`app/tools/honor/google_calendar.py`) but holds the write-only `calendar.events` scope, only pushes, and is coach-scoped — generalizing it (read scope + per-user token store) is the actual path to the plan's feature.
+- **Build-plan premise corrected #2 — a daily rule can't do "30–60 min before".** The sweep covers the rest of the current day; sub-hour precision is a scheduling change.
+- Decisions: idempotent on `source_ref` (ISO week / booking id) checked before generating, with the unique index as the real race guarantee — pull Moments carry NULL and are never deduped; one user's failure is logged and the sweep continues; email is counted as `emails_pending_delivery` and **never claimed as sent** (Beacon/broadcast path unreachable from the agent-engine today, and unreachable in practice while the default is off).
+- Frontend: `services/lumen/consent.service.ts`, `hooks/lumen/useConsent.ts`, `pages/lumen/LumenSettings.tsx`, route `/vertical/lumen/settings`. Three separate switches (the grants are different acts); the page states plainly that Lumen can't see a work calendar and that email delivery isn't available yet, both test-asserted so the copy can't drift from the truth; `is_default` badge distinguishes "haven't chosen" from "chose this".
+- **NOT done, deliberately: the EventBridge schedule + CDK.** The sweep is super-admin gated — manually runnable, not machine-callable. Scheduling needs a service identity and the agent-engine has no shared-secret scheme to reuse; inventing one for one route is a design call for Bill. PR-4's "cdk diff clean / dev cron run" exit criterion is therefore **NOT met**.
+- `tests/lumen` 85 passed; regression 721 passed / 6 skipped; migration chain 020→019 + ORM/migration parity asserted. Frontend build + 30 jest (5 suites) + eslint clean.
+
+### Added — Lumen PR-3: the Moments JIT-guidance engine, pull path (monorepo PR #664, frontend PR #273; stacked on PR-2, not deployed)
+- `app/tools/lumen/moments.py` — `generate_moment` tool + prompt construction + deterministic body assembly + the three-query store. `POST /moments/ask`, `GET /moments`, `PATCH /moments/{id}`. `public.lumen_moments` via alembic **019** + the `migration-runner` `.sql` mirror (NOT applied — manual via the Lambda). `LumenMoment` ORM model; `emit_lumen_moment_event` lifecycle events.
+- **Meridian's voice** comes from a direct persona call via `ProviderFactory.get_for_agent("Meridian")` — the same machinery the Synthesizer, `Meridian._handle_meta_conversation`, and `orchestration/dossier.py::_meridian_synthesis` use. `.claude/rules/agents.md`'s concern is *multi-voice* output; there is exactly one voice here and it is hers. `Meridian.respond()` would spin intent classification + orchestrator + DAG + memory for a 120-word nudge and would surface a specialist's voice. Flagged in the PR body for review, not assumed.
+- Decisions: word cap enforced in code, not just prompted; a failed/unparseable model response degrades to a deterministic portrait-based Moment rather than a 500; ownership sits in the `UPDATE`'s `WHERE` clause (no mutation window) and a non-owned Moment is a **404 not 403** (a 403 confirms the id exists); events carry only `trigger`/`state` and **never** the body or the user's stated context (test-pinned); `body` assembled from nudge/opener/watch-out so every Moment reads the same across models; the generator takes portrait+context+trigger so the scheduler seam is vertical-parameterized (Lumen-native now, lift-not-rewrite later).
+- Caught in self-review: `user_id` `index=True` created an ORM index the migration didn't. Removed — the composite `(user_id, created_at)` index already serves it. ORM/migration parity now asserted.
+- Frontend: `services/lumen/moments.service.ts`, `hooks/lumen/useMoments.ts`, `pages/lumen/Moments.tsx`, route `/vertical/lumen/moments`, dashboard card linked.
+- `tests/lumen` 55 passed; regression across lumen/verticals/grant/honor/routes 691 passed, 6 skipped. Frontend build + 20 jest (4 suites) + eslint clean.
+- ⚠️ `tests/memory::test_history_token_budget` + `test_memory_rollups` fail — **verified pre-existing on pristine `origin/development`**, unrelated to Lumen.
+
+### Added — Lumen PR-2: Behavioral Self-Portrait (monorepo PR #657, frontend PR #272; stacked on PR-1, not deployed)
+- `app/tools/lumen/self_portrait.py` — `compose_self_portrait` tool plus pure helpers (`compose_portrait`, `prism_quadrant_scores`, `extract_overlay_signals`). Composes over `load_user_profile` + `reconcile_cross_framework` rather than rebuilding either; reconciliation's `agreements`/`discrepancies` become the portrait's convergences/tensions. Quadrants derive from PRISM's eight `BehaviorPreferences` dimensions using the licensed-manual mapping, with a test pinning it against the rotated frontend config.
+- `GET /v1/agents/lumen/self-portrait/{id}` — self-only (403 otherwise); entitlement gates visibility, this is the authorization boundary.
+- Frontend: `types/lumen.ts`, `services/lumen/selfPortrait.service.ts` (agentApi), `hooks/lumen/useSelfPortrait.ts`, `pages/lumen/SelfPortrait.tsx`, route `/vertical/lumen/self-portrait`.
+- Product calls: no PRISM on file yields an honest empty portrait rather than a reading built from overlays alone; an unscored quadrant is omitted, never zeroed; the headline is deterministic (provenance + confidence), leaving interpretation to Moments where Meridian owns the voice.
+- **Deferred on purpose:** the `lumen_profiles` cache table (§5d). Composition is pure CPU over a profile load the chat path already performs every turn, so a cache adds a staleness-bug surface for no measured win.
+- `tests/lumen` 27 passed; regression across lumen/verticals/grant/honor/routes 663 passed, 6 skipped. Frontend build + 10 jest + eslint clean.
+
+### Findings — two build-plan premises corrected, one pre-existing defect surfaced
+- **The plan's §5a "run each type through its existing interpreter in `app/profile/adapters/*`" is wrong.** Those adapters are *ingest parsers* (raw CSV/JSON → ORM kwargs; they never read the DB). The real assets are richer and sit elsewhere: `app/profile/loader.py::load_user_profile` (authoritative row per framework + top scores, already privacy-aware), the five interpreters at `app/agents/coaching/frameworks/*_interpreter.py`, and `frameworks/reconciliation.py::reconcile_cross_framework`, which already returns PRISM-anchored `agreements`/`discrepancies` plus a calibrated confidence band — i.e. the Self-Portrait's convergences/tensions engine already exists. PR-2 should compose over these, not the adapters.
+- **`prism_results` is legacy read-only audit** (`app/routes/prism.py`), so the PRISM quadrant anchor must be derived from `assessment_scores`, not read from that table.
+- **PRISM dimension→quadrant mapping disagrees in two places, on 6 of 8 dimensions.** `app/agents/coaching/prism_knowledge.py` carries the licensed manual text verbatim ("Blue Behaviour (Supporting + Co-Ordinating quadrant)", "Dimension — Supporting (Blue Quadrant)"): Green = Innovating+Initiating, Blue = Supporting+Co-Ordinating, Red = Focusing+Delivering, Gold = Finishing+Evaluating. But the frontend `BEHAVIOUR_CONFIG` (`src/constants/prism.ts`) colours Supporting/Coordinating red, Focusing/Delivering gold, Finishing/Evaluating blue — a 3-cycle rotation — and `prism_agent._DIMENSIONS` faithfully mirrors that frontend config. The manual text is authoritative, so the frontend radar and `unified_behavioral_context` (consumed by the Team Development Studio dossier) are assigning 6 of 8 dimensions to the wrong quadrant. Pre-existing and outside Lumen's scope — flagged, not changed.
+
+## [2026-07-24] — Résumé assessment / document-generation / routing fix (staging-b John Boyd repro) + forward fix + backfill
+
+Deep-dive on staging-b "trouble assessing résumés / creating documents / routing to wrong agents" (John Boyd sessions 2026-07-23 ~3–5pm ET). Three independent root causes, each verified against fresh CloudWatch logs, the actual S3 documents the user received, and live Aurora. Fixed from three directions; zero agent-engine regression proven (diffed against pristine `development` HEAD).
+
+### Fixed — Agent Engine (PR #647, merged `8cdb62c1`; dev + staging-b, tag `release-stable-2026-07-23-resume-docgen-routing`)
+- **Docgen truncation → degraded documents.** `app/tools/docgen/spec_builder.py` capped Haiku at `max_tokens=3000`; long/detailed specs (a full résumé, "include all sections", "title page + TOC + tables") truncated mid-object → `_extract_json` failed → pipeline echoed the raw request as a one-paragraph doc (2 of Boyd's 3 docs). Fix: `_MAX_TOKENS` 3000→8000 + `_repair_truncated_json` (balances the open string/objects/arrays at the last complete member).
+- **Uploaded résumés invisible.** `documents.doc_kind` defaults to `'general'`; the profile loader only injects `doc_kind IN ('resume','cv','bio','personal')`, so Boyd's résumés (all `'general'`, text extracted — 5,830 chars) were excluded → `[Company Name]` placeholders. Fix: `app/profile/loader.py::_select_personal_docs_by_filename` recovers untagged résumés/bios by filename (precision-first, subject-scoped, read-only); docgen chat_gate requests the full résumé (`_RESUME_DOC_MAX_CHARS=12000`) on résumé-building turns.
+- **Résumé routing.** "resume"/"cv" were in no keyword set → fell to the domain default (Aura) instead of Nova. Fix: résumé/CV keywords added to Nova in `orchestration/planner.py` + `agents/meridian.py` `_COACHING_KEYWORDS`. Also corrected a stale `test_keyword_select_session`.
+- E2E on live staging-b: generated a résumé for a 9,458-char-résumé user → complete 111-paragraph résumé with real content, zero placeholders.
+
+### Added — document-service forward fix (PR #648, merged `b016f13c`; dev + staging-b, tag `release-stable-2026-07-24-resume-autoclassify`)
+- **`app/classifier.py`** — deterministic, zero-latency auto-classification of `doc_kind` at the source. `classify_by_filename` (unambiguous résumé/CV/bio markers, word-boundaried), `classify_by_content` (conservative multi-signal: ≥3 résumé section headers, or contact header + ≥2 sections, or an explicit "Curriculum Vitae"/"Résumé" title; CSV/spreadsheet bodies never match → PRISM CSVs stay out), `autoclassify` (only acts when the kind is the default `''`/`None`/`'general'`; explicit kinds respected).
+- Wired into `initiate_upload` (filename-classify at row creation, skipped for shared corpus docs) and `process_document` (content-classify a still-'general' doc once text is extracted).
+- 33 new tests (26 pure + 7 upload/extraction integration); full document-service suite 191 passed. Zero agent-engine files changed; agent-engine consumer suites re-run green (176 passed). Live e2e both envs: résumé filename → `resume`, generic → `general`.
+
+### Changed — one-time `doc_kind` backfill (dev + staging-b Aurora, owner-approved)
+- Reclassified existing `doc_kind='general'` non-shared documents with unambiguous résumé/CV filenames → `'resume'` via `ig-{env}-migration-runner` (filename-based, previewed row-by-row first, zero false positives). **Dev: 6 rows. Staging-b: 8 rows** (incl. Boyd's résumés). Verified `remaining_general_resumes = 0` in both. Now served by the loader's primary query, not just the #647 read-time fallback. No other tables/rows touched; explicit kinds and shared docs left alone.
+
+### Verified / Released
+- **John Boyd end-to-end (staging-b):** generated a résumé as his own account → a complete **90-paragraph** document built from his real uploaded résumés (contact header, executive summary, full NATO/EUCOM/National Guard experience with detailed bullets) — **zero placeholders, not the raw-request fallback**. The exact opposite of the reported symptom. Verification artifact removed afterward.
+- **Consolidated release tag `release-stable-2026-07-24-resume-fix-complete`** (dev HEAD `cdc2f52c`) — promote **completed success** (smoke gate green). Re-confirmed both fixes live on the running staging-b tasks: agent-engine has all four #647 markers (`_repair_truncated_json`, `_select_personal_docs_by_filename`, `_MAX_TOKENS = 8000`, Nova résumé keywords); document-service live upload → résumé filename `resume`, generic `general`. (This tag's only delta over the two prior per-fix promotes was docs-only #649, so CDK deployed no new code — the smoke gate validated the already-live #647+#648.)
+
+## [2026-07-23] — Honor post-evaluation feature set: persist evaluations, rewrite-from-eval, export polish (Features 1–3)
+
+Three clean-stop features on the Coach Workbench Evaluate + Résumé surfaces. All merged to `development`, deployed to dev, E2E-verified on a real fellow. **Not yet on staging-b** (always-confirm promote pending owner go).
+
+### Added — Feature 1: persist + Save evaluations (Agent Engine #644 / Frontend #264, dev-verified)
+- **New table `public.honor_evaluations`** — migration `017_create_honor_evaluations.py` + migration-runner SQL mirror `honor_evaluations.sql` (applied to dev Aurora, 5/5 OK). Coach-scoped, soft-deleted, reuses the shared `public._set_updated_at()` trigger; JSONB columns for the deterministic backbone + sources-used provenance.
+- **`app/tools/honor/evaluations.py`** — save/list/get/delete data layer. Every read scoped by `coach_sub` AND `fellow_id` (a coach never sees another coach's saved evaluations for the same fellow). Caller owns the commit.
+- **`app/routes/honor.py`** — `POST/GET/GET-one/DELETE /coach/students/{fellow_id}/evaluations*`, ownership-gated via `require_fellow_access`. 422 nothing-to-save; 404 missing/unowned; emits `honor.evaluation.saved`.
+- **FE** — "Save evaluation" button (flips to "Saved", no duplicate save) + "Saved evaluations" history panel (load a past run back into the view, delete). Provenance (dimensions + sources used) captured at save. Types/service/hooks: `HonorSavedEvaluation(+Summary)`, `SaveEvaluationBody`, `saveEvaluation`/`listEvaluations`/`getEvaluation`/`deleteEvaluation`, `useSaveEvaluation`/`useEvaluationHistory`/`useLoadSavedEvaluation`/`useDeleteEvaluation`.
+- **E2E on dev (real fellow):** SAVE→LIST(1)→GET(full backbone+narrative)→DELETE→LIST(0, soft-delete excluded).
+
+### Added — Feature 2: rewrite résumé keyed off a prior evaluation (Agent Engine #645 / Frontend #265, dev-verified)
+- **`app/honor/resume.py`** — `extract_improvements()` pulls the `## Suggestions for Improvement` section from a saved eval's Nova narrative (falls back to the whole narrative, capped). `build_resume_messages(profile, target, improvements=None)` folds them in **without relaxing the hard grounding rules**; the plain path is byte-identical (regression-tested).
+- **`app/routes/honor.py`** — `CoachResumeRequest` gains optional `evaluationId` + `improvements`. `evaluationId` loads the saved eval via `get_evaluation` (coach-scoped); explicit `improvements` short-circuits. Response + `honor.resume.generated` carry `fromEvaluation`.
+- **FE** — "Rewrite résumé from this" button on Evaluate hands off to the Résumé Writer (saved `evaluationId` when saved, else the narrative as `improvements`). Résumé Writer consumes the handoff (router state): pre-selects the fellow, shows a "Rewriting from the evaluation's suggestions" banner with a **Clear → write plainly** escape, threads the context into generate. Plain generation unchanged.
+- **E2E on dev (real fellow):** saved an eval with a Suggestions section → `POST …/resume {evaluationId}` returned `fromEvaluation: true` with a Nova-rewritten résumé; plain path `fromEvaluation: false`.
+
+### Added — Feature 3: export polish (Frontend #266, FE-only)
+- **`lib/honor/shareReportLink`** — `copyReportLink` (clipboard) + `buildMailtoLink`/`emailReportLink`. **"Email a link" opens the coach's OWN mail client** (`mailto:`) pre-filled with the short-lived presigned download URL — not a server-side SES send (no `honor_report_email` flag, no confirmation; a Fellow's document never routes through our mail path). **"Copy link"** puts the URL on the clipboard.
+- **Evaluate** — `.txt` added to the export menu; "Email a link" + "Copy link" (generate PDF → share the presigned URL).
+- **Résumé Writer** — a "More formats" menu (txt / md / html, clean + unbranded) + the same "Email a link" / "Copy link" for sending a résumé to a hiring manager.
+
+### Tests
+- Backend honor suite green (**301 passed, 3 skipped**): evaluations route (auth/scoping/validation/404) + store (view-mappers, param serialization, coach-scoping); résumé rewrite (extract_improvements section/fallback/empty, plain-path byte-identical, route from-saved-eval / from-text / plain).
+- Frontend green (`npm run build` + jest): honor-evaluate 20/20, honor-resume 10/10, shareReportLink 4/4.
+
+### Coordination
+Ran through coord PR #640 with the parallel IG Core session (scope declaration, ping-before + confirm-after each `resume.py` edit and each agent-engine ECS roll). No file conflicts; the parallel session's attachment-grounding path in `resume.py` preserved verbatim.
+
+## [2026-07-23] — Honor Evaluate/Résumé: Nova routing, clean Word/PDF résumé export, PRISM-optional doc assessment (combined promote #639+#641+#642)
+
+### Fixed (Agent Engine — PR #639, merged, deployed Dev + Staging-B, live-verified)
+- **Evaluation was returning a downloadable `.md` file instead of an inline evaluation.** The narration prompt's *"format in Markdown … with a table"* tripped Meridian's document-generation gate (`_maybe_generate_document`), so the turn routed to the docgen tool and returned *"Here's your Markdown file — [Download …md]"* — the "raw .md dump" a coach reported. **Fix:** an honor turn with `context.surface=="honor"` + `context.intent=="member_evaluation"` now **skips the docgen gate** (`app/agents/meridian.py`) → normal inline synthesis. Scoped to the evaluation intent; ordinary "create a Word doc" chat still reaches docgen. Verified on dev + staging-b (no `.md` link).
+
+### Changed / Added (Agent Engine — PR #641 + Frontend #262/#263, merged, deployed Dev + Staging-B, live-verified)
+- **Evaluation → Nova.** Honor `member_evaluation` chat turns dispatch deterministically to **Nova** (FeedbackAgent — career strategy + feedback) via `Meridian._maybe_honor_evaluation()`, bypassing intent-classification which misrouted "evaluate/assessment/scoring" → Maven. Nova reads the fellow's injected `<USER_PROFILE>` (résumé/bio + any PRISM) and assesses the attached document(s) **with or without PRISM**. Evaluation prompt now asks Nova to assess the document, add a **"Suggestions for Improvement"** section, and (no-PRISM) assess from the attached document(s) alone.
+- **Résumé → Nova.** Résumé route uses `get_for_agent("Nova")` instead of the generic Meridian provider.
+- **Clean, hiring-manager-ready résumé export (Word + PDF).** New `build_resume_document_payload()` (`app/honor/report_document.py`) + unbranded `plain` docgen theme (`branding.py`) render the résumé with **no Inspire Genius/THF cover page, brand line, or confidential footer** — just name, contact/headline, standard sections. Renderers skip the brand line when `theme.name` is empty; `normalize_spec` respects an explicit empty `author` (no default-"Inspire Genius" leak). Backend WeasyPrint/docx renderers reserve proper page margins → **no header/footer overlap** (fixes the old client-PDF slice-and-stamp overlap). `/report/generate` gains a `kind="resume"` branch + `resume` field. FE Résumé Writer replaces the branded client PDF with **Download Word (.docx) + Download PDF** (clean backend); the branded PDF path is dropped.
+- **Live E2E on staging-b (real fellow, Marcus Ellison):** evaluation `agent=Nova`, inline, assessing his bio+résumé; résumé generation live (honor_resume enabled); Word/Markdown export contain **no "Honor Foundation" / "Inspire Genius" / "Confidential Data"**, valid `.docx`.
+
+### Added (Agent Engine — PR #642, parallel session, complementary)
+- **Chat-attachment PRISM-optional assessment.** Documents attached via the chat "document checkbox" (`file_ids`) are threaded into a separate `<ATTACHED_DOCUMENTS>` block and feed the same Nova assess/suggest/rewrite path, PRISM-optional (`base_agent.py`, `rag/personal_data.py`, `honor/evaluation.py`, `honor/resume.py`, `profile/loader.py`, SharedContext DAG-carry in `meridian.py`/`coaching_orchestrator.py`). Complementary to #641 (profile-doc grounding); no file conflicts.
+
+### Deployed
+- **Combined staging-b promote** (tag `release-stable-2026-07-23-honor-nova-resume-attach`, #639+#641+#642) — all jobs green (no park-at-0; ECS 1/1; smoke matrix passed), E2E verified on staging-b.
+- **Cross-session coordination** ran through coord PR #640 (scope declaration, stable-base handoff `653f69ea`, serialized shared agent-engine ECS, mutual diff verification). One self-inflicted `--amend` slip (dropped 2 FE files → brief FE-CI red) fixed forward in #263.
+
+## [2026-07-23] — Honor: fix — coach-uploaded fellow documents never appeared in the fellow's profile
+
+### Fixed (Agent Engine — PR #636, merged to development, deployed Dev + Staging-B, live-verified)
+- **Root cause: WRITE/READ key mismatch.** A coach uploading a document *for a fellow* stores it in `documents` with `subject_user_id = <fellow>` and `user_id = <coach>` (the uploader). The agent-engine read path `_select_personal_docs` (`app/profile/loader.py` — feeds the honor `/sources` endpoint, the `<USER_PROFILE>` résumé/bio injection, AND the résumé-based Evaluate gate) filtered on `documents.user_id = <fellow>` and never looked at `subject_user_id` → `WHERE user_id = fellow` never matched a coach upload. The doc showed absent everywhere and Evaluate 422'd ("no résumé on file") even with the row present + text extracted. Only self-uploads worked. (Assessments were unaffected — their import keys the fellow as `user_id`.)
+- **Fix:** `_select_personal_docs` is now subject-aware — `WHERE (subject_user_id = :uid OR (COALESCE(subject_user_id,'') = '' AND user_id = :uid))` — matching coach-uploaded fellow docs, self-uploads, and legacy rows (subject NULL → user_id fallback). Also swapped Postgres-only `LEFT(x,n)` → portable `substr(x,1,n)` (identical) so the query is exercisable under SQLite.
+- **Verified against real staging-b data:** 4 coach-uploaded personal docs for fellow `afd5182b` (Marcus Ellison) existed with `subject_user_id ≠ user_id` + `extracted_text` populated; the new query returns all 4. **Live E2E on staging-b (coach token):** Marcus `/sources` → `resume/bio/additionalInfo = true` (was all false); Evaluate → **200** (was 422).
+- Tests: 2 new subject-aware cases in `test_profile_loader.py`; incidental stale-assertion fix in `test_documents_latest_prism.py` (the `LIKE '%prism%.csv'` clause was removed in #546).
+- **Follow-ups (noted, not done):** FE onboarding uploads "Additional info" file as `doc_kind=bio` / goals-file as `personal` (post-fix they show but under the wrong row — cosmetic); RAG chunk retrieval is still uploader-scoped (profile injection already carries the résumé text, so Evaluate is unaffected).
+
+## [2026-07-22] — Honor Coach Workbench: résumé-based Evaluate + auto-formatted narrative + multi-format export + Résumé Writer enabled
+
+### Changed (Agent Engine — PR #631, merged to development, deployed Dev; staging-b codified)
+- **Evaluate now runs from a résumé.** Relaxed the evaluate + résumé routes: fall back to `fellow_id` as the profile/document subject for still-`managed` (un-invited) fellows, and require *evaluable evidence* (résumé OR assessment OR bio) → **422** with a clear message instead of the old **409** "invite first". Comparison subjects resolve the same way. A résumé alone is now enough; assessments/bio enrich. Files: `services/agent-engine/app/routes/honor.py` (`_has_evaluable_evidence`, evaluate + résumé gates).
+
+### Added (Agent Engine — PR #631)
+- **Multi-format report export.** New `POST /coach/students/{id}/report/generate` renders the evaluation (deterministic backbone + Meridian narrative markdown) to any docgen format (docx·pdf·pptx·xlsx·csv·md·html·txt) via the Core document-generation engine, THF-branded (cover + confidential footer), uploaded to S3 → presigned URL. Deterministic, no model call. New `app/honor/report_document.py` (markdown→blocks + structured sections + tabular sheets). Tests: `tests/honor/test_honor_report_generate.py`.
+
+### Changed (Frontend — public repo PR #256, merged to development, auto-deployed Dev + Staging-B)
+- **Run evaluation auto-composes Meridian's written evaluation** and renders it as the primary, formatted output (headings/bullets/tables/bold via react-markdown), with the deterministic cited backbone below as supporting detail — meaningful even when a fellow has only a résumé. "Regenerate with Meridian" re-runs it. Old "Narrate with Meridian" (written prose, not audio) is now automatic + relabelled.
+- **Export menu** ("Export as…") produces Word/PowerPoint/Excel/CSV/Markdown/HTML via the new backend route, alongside the branded PDF/Print/Email. Files: `src/pages/honor/HonorEvaluate.tsx`, `src/services/honor/coach.service.ts`, `src/hooks/honor/useHonorReport.ts`.
+
+### Changed (Infra — Résumé Writer enabled)
+- `AGENT_ENGINE_HONOR_RESUME` codified on: staging-b via `staging-b-promote.yml` (PR #631), dev via `staged-deploy.yml` deploy-dev (PR #632). Flips the Résumé Writer from `{"disabled": true}` to a live agent-engine call. (Was intentionally dark pending the safe-translation SME sign-off; enabled per direct user instruction — the safe-translation frame is applied to the prompt regardless.)
+
+## [2026-07-21] — Fix: PRISM dimension definitions reliably in Aura's context — PR #622
+
+### Fixed (Agent Engine — merged to development, deployed Dev + Staging-B, live-verified)
+- **Root-caused + fixed Aura confabulating PRISM dimension definitions** (tester report 21 Jul: plausible-but-wrong descriptions, same-quadrant blends, correct only when "pushed"). The canonical definitions were frequently ABSENT from context, so no "read verbatim" directive could quote them.
+  - **Cause 1:** colour-level questions ("the Red dimensions") selected only the colour overview — zero dimension definitions. **Fix:** each colour now pulls its two quadrant dimensions' definitions (Red→Focusing+Delivering, etc.).
+  - **Cause 2:** the 10,000-char reference budget DROPPED dimension definitions on full-profile turns (alphabetical drop → Delivering/Evaluating/Finishing/Focusing drop first — the tester's exact problem dims). **Fix:** definitions removed from `_DROP_ORDER` (non-droppable); budget raised 10,000→16,000. `prism_knowledge.py` + tests.
+  - **Confirmed the hypothesis was already implemented + insufficient:** the "DEFINITIONS ARE VERBATIM" directive shipped in PR #570 (merged 14 Jul, live on dev+staging-b) — Alex tested 21 Jul *with it active* and still failed, proving the gap was upstream (definition absent), not the prompt. No prompt change made.
+  - **Live-verified:** dev + staging-b — "the Red dimensions" now routes to Aura, injects `COLOUR_RED,DIM_DELIVERING,DIM_FOCUSING` (log confirmed), and quotes the canonical Focusing definition verbatim ("An aggressive and emotional drive to achieve own goals.").
+  - Diagnosis report: `Architecture/IG Core/IG_PRISM_Definition_Retrieval_Diagnosis.docx`. Staging-B promoted via targeted image-copy + task-def rev 17 (keeps DOCUMENTS_BUCKET).
+
+## [2026-07-20] — Document generation: frontend download button + user guide
+
+### Added (Frontend — public repo PR #237, `feat/docgen-download-button` → development)
+- **Download button for Meridian-generated documents.** When Meridian returns a generated file, the chat response's typed `attachments` array now renders a branded Download control beneath the assistant bubble (in addition to the link already embedded in the reply markdown).
+  - `ChatAttachment` type + `attachments?` on the text `ChatMessage`; mapped through `MeridianChat.renderAssistantComplete` (WS `complete` + async `job_complete`); typed on the WS + async-job metadata; new `MessageAttachments` component wired into `ChatWindowChatTab`; `MessageAttachments.test.tsx`.
+  - Verified: `npm run build` (tsc+vite) ✓, eslint 0 errors, jest MessageAttachments 6/6 + chat suite 37/37.
+
+### Added (Docs — IG Core)
+- **Document & File Generation User Guide** (`IG_Core_DocumentGeneration_UserGuide.docx`): complete users guide (chat triggers, all 8 formats, themes, download, tips) + "how to use it from the verticals" (per-vertical patterns + builder levers + programmatic use). Added to `Architecture/IG Core/`, linked from the master index (now 32 links), published to the `ig-core` CDN prefix (CloudFront 200).
+
+## [2026-07-20] — Document & File Generation skill: PROMOTED to staging-b + E2E-verified — PR #613
+
+### Deployed / Fixed (Agent Engine — staging-b, targeted promotion, live-verified)
+- **Promoted the doc-generation skill to staging-b** (`stable.inspiresgenius.com`) and verified E2E: chatting "create a branded Word document with a summary of my PRISM strengths" on `api-stable` returned a presigned link on **`ig-staging-b-documents`** → downloaded a valid 39 KB .docx grounded in willb77's PRISM (assessed 2026-06-24).
+- **Targeted (agent-engine-only) promotion, NOT a full `cdk deploy --all`** — the last `release-stable-*` tag was 40 days stale, so a full promote would have carried 40 days of unrelated dev changes to staging-b. Instead: the agent-engine image is env-agnostic, so copied dev `:latest` (= development HEAD, docgen included) → staging-b ECR `:latest` + `docgen-2026-07-20`; registered staging-b task-def **rev 15** = rev 14 + `DOCUMENTS_BUCKET=ig-staging-b-documents`; `force-new-deployment`; ECS stable + edge health 200. Rollback preserved via immutable tag `sha-962ab874`.
+- **Fix #613 — `DOCUMENTS_BUCKET` per-env.** `documents.py` + `document_generator.py` default it to `ig-dev-documents`; it was unset on the ECS task, so staging-b would write to the dev-account bucket. Set `DOCUMENTS_BUCKET=ig-${env}-documents` in `agent-engine-stack.ts` so a future staging-b CDK deploy stays converged with the task-def rev 15 hot-set. staging-b task role already had PutObject on `ig-staging-b-documents/users/*`.
+
+## [2026-07-20] — Document & File Generation skill: DEPLOYED to dev + E2E-verified — PR #611, #612
+
+### Deployed / Fixed (Agent Engine — merged to development, ECS-rolled on dev, live-verified)
+- **Deployed the doc-generation skill to dev** and **verified end-to-end from a real chat turn.** Merging #608/#611/#612 to `development` auto-built the agent-engine image (`:latest`) and rolled `ig-dev-agent-engine`. E2E: `POST /v1/agents/chat/async` "create a branded Word document with a summary of my PRISM strengths…" → Meridian replied with a presigned link → downloaded a **valid 39 KB .docx grounded in real PRISM scores** (Orderly & Efficient = 100, Self-Awareness = 76).
+- **Fix #611 — profile tuple.** `_best_effort_profile` returned the whole `(profile, block)` tuple from `load_user_profile_block_for_chat`; `spec_builder`'s join choked → the gate's `except` swallowed it and the turn fell through to a raw specialist "I cannot generate a .docx" response. Now unpacks the tuple; `spec_builder` join made `str()`-defensive. +2 regression tests.
+- **Fix #612 — S3 prefix.** `PutObject` to `ig-dev-documents/generated/*` was `AccessDenied`; the task role only has PutObject on `ig-dev-documents/users/*` (+ bucket-wide GetObject). Moved the key to `users/{uid}/generated/…` — lands in the existing grant, no IAM/CDK change.
+- **Deploy prereq:** adding `python-pptx` to pyproject required `poetry lock` too (Dockerfile does `poetry export` from the lock) — else the image build fast-fails.
+
+## [2026-07-20] — IG Core: Document & File Generation skill (chat-triggered) — PR #608
+
+### Added (Agent Engine — `feat/docgen-tool`, PR #608 → development)
+- **New IG Core capability: generate a branded file from a chat turn.** Ask Meridian "create a branded Word document with…" (or PDF / PowerPoint / Excel / CSV / Markdown / HTML / text) → the Agent Engine structures the content, renders a themed file, uploads to S3, and replies with a presigned download link.
+  - Engine `app/tools/docgen/`: `spec.py` (DocumentSpec + tolerant `normalize_spec`), `branding.py` (themes ig/honor/grant, reusing the §7 export tokens), 8 lazy-loaded renderers (docx/pdf via WeasyPrint/pptx/xlsx/csv/md/html/txt), `render.py` dispatch.
+  - `app/tools/document_generator.py`: `generate_and_store()` (render → S3 `put_object` → presigned URL) + the 7th MCP built-in tool (`registry.py`).
+  - Chat trigger (additive, flag-gated, no tool-loop dependency): `intent.py` (precise `is_document_request`), `spec_builder.py` (one structured LLM call → spec JSON + fallback), `chat_gate.py`, and a `_maybe_generate_document()` gate in `meridian.py` `respond()` + `route()` guarded by `settings.document_generation_enabled`.
+  - Delivery: link in reply `content` (survives synthesis) + typed `ChatResponse.attachments` / `metadata['attachments']`.
+  - Deps/config: `+python-pptx`; `AGENT_ENGINE_DOCUMENT_GENERATION` (default on), `DOCGEN_URL_EXPIRY_SECONDS` (3600), reuses `DOCUMENTS_BUCKET`.
+  - Tests: `tests/test_docgen.py` (8 renderers + 15 intent cases + degradation), `tests/test_document_generator.py` (S3 mock, spec-builder, gate). MCP registry 6→7. Meridian suite (118) green — gate additive.
+  - Plan doc: `scripts/build_ig_core_docgen_plan.py` → `IG_Core_DocumentGeneration_Spec.docx` (built generation + planned email-attachments + curated-URL phases).
+  - Files: `services/agent-engine/app/tools/docgen/*`, `.../document_generator.py`, `.../registry.py`, `.../config.py`, `.../agents/meridian.py`, `.../main.py`, `.../pyproject.toml`, tests, `scripts/build_ig_core_docgen_plan.py`.
+
+## [2026-07-20] — Session rollup: résumé injection fix (shipped) + IG Core documentation set
+
+Consolidated record for this session (details in the per-item entries below + on other branches):
+
+### Fixed / Changed (Agent Engine — merged to development, deployed Dev + staging-b, live-verified)
+- **Résumé "Meridian only reads 1 page" — root-caused and fixed.** Traced the live path to the always-on Option C structured injector (`app/profile/`), whose per-doc cap `_PERSONAL_DOC_MAX_CHARS=1500` truncated a 3-page résumé to ~1 page (verified on a real Dev session: `block_chars=2689`, Meridian "I can only see a partial excerpt"). Fix = **intent-gated injection** (PR #603): ordinary turns keep an 1800-char excerpt, résumé-review turns inject the full résumé (12000) with a widened block cap (16000); single chokepoint `honor/injection.build_injection_block` covers Honor + non-Honor; Honor team turns bounded. Then **timeout bump 200→400 ms** (PR #604) after logs showed 215–221 ms loads failing open to empty. Live-verified: Dev `block_chars 2689→11689` (incl. a 236 ms load that previously timed out), staging-b `→12962`.
+
+### Added (IG Core documentation — on feat/content-builder-ai-models + Dropbox/Architecture + CDN)
+- **IG Core Reusable Services documentation set:** catalog + mermaid connection diagram + **27 per-service AS-BUILT specs** (code-introspected) + master index (30 links), published to the review CDN at `https://dj7od5nj42063.cloudfront.net/ig-core/index.html`. Generators under `scripts/ig_core_*` / `build_ig_core_*`. growth-service documented as registry #17 (Summit vertical manager module).
+
+## [2026-07-20] — Agent Engine: raise structured-profile load timeout 200 → 400ms
+
+### Fixed
+- **`profile_load_timeout_ms` 200 → 400** (`services/agent-engine/app/config.py`). Dev logs after the résumé-injection ship showed structured-profile loads landing at **215–221 ms** — just over the 200 ms fail-open budget — returning an **empty** `UserProfile` (`block_chars=0`), which zeroed out PRISM + résumé on those turns. p50 is ~80 ms; 400 ms clears the observed spikes with ~2x headroom while staying imperceptible at connect. Updated the pin test `tests/test_profile_loader.py::test_profile_load_timeout_default_preserved` (200 → 400).
+
+## [2026-07-20] — Agent Engine: résumé intent-gated profile injection (fixes "Meridian only reads 1 page")
+
+### Fixed
+- **Root cause:** the live Option C profile injector (`app/profile/loader.py`) hard-capped every personal doc at `_PERSONAL_DOC_MAX_CHARS = 1500` via `LEFT(extracted_text, 1500)`, truncating a 3-page résumé to ~1 page **before** the 8 KB block cap ever applied. Verified against a real Dev session (`profile.loaded … frameworks=1 block_chars=2689`; Meridian replied "I can only see a partial excerpt").
+
+### Changed
+- **Intent-gated résumé injection.** Ordinary turns keep a small always-on excerpt (`resume_ambient_max_chars=1800`); when the message is about the résumé (`app/profile/resume_intent.py::is_resume_review`), the injector swaps in the FULL résumé (`resume_full_max_chars=12000`) and widens the whole-block cap (`profile_block_max_chars_full=16000`) so a multi-page résumé isn't crowded out by assessments. This keeps the per-agent/every-turn context footprint flat for normal turns and only pays the big injection on résumé-review turns.
+- **Single chokepoint** = `app/tools/honor/injection.py::build_injection_block` (handles Honor *and* non-Honor, since `resolve_injection_subjects` returns `[caller_sub]` off-Honor). Wired at both live sites — REST `/v1/agents/chat` and async `/v1/agents/chat/async` (the path browser chat actually uses).
+- **Honor covered by the same change.** A coach reviewing a Fellow's résumé hits the identical caps. Honor **team** turns are bounded by `honor_multi_subject_total_chars=14000` split across Fellows so a big team can't balloon the prompt.
+- Flag `AGENT_ENGINE_RESUME_INTENT_INJECTION` (default ON) reverts to the always-on excerpt.
+- Files: `app/profile/{loader.py,system_prompt.py,__init__.py,resume_intent.py}`, `app/tools/honor/injection.py`, `app/config.py`, `app/main.py`; tests `tests/test_resume_intent_injection.py` (17) + honor mock signature fix. 271 profile+honor tests green.
+
+## [2026-07-19] — Honor go-live: résumé + email flipped ON for staging-b (owner-authorized)
+
+### Deployed (staging-b, account 918349930728)
+- **`ig-staging-b-agent-engine` → task-def rev 12** via `cdk deploy ig-staging-b-agent-engine --exclusively` with the full staging-b context set + `-c honorResume=true -c honorReportEmail=true -c honorReportSender=noreply@inspiresgenius.com` (fixed-tag `latest` ECR image → no rebuild). **Verified live on the running task:** `AGENT_ENGINE_HONOR_RESUME=true`, `AGENT_ENGINE_HONOR_REPORT_EMAIL=true`, `AGENT_ENGINE_HONOR_REPORT_SENDER=noreply@inspiresgenius.com`; the task-role SES IAM `ses:FromAddress` condition flipped `noreply@3pp.com` → `noreply@inspiresgenius.com` (matches the verified staging-b SES identity). Service scaled desired 0→1 (the known staging-b park-at-zero state); running=1 on rev 12, HEALTHY, `/v1/agents/health` 200. **Résumé generation + report email are now live on stable** (routes no longer return `{disabled}`). Owner-authorized go-live; the safe-translation control is the THF grounding frame + résumé prompt rules (SME empirical review S6/S7 not performed — accepted residual risk).
+- **Frontend** (public repo, PR #221): `USE_HONOR_REPORT_EMAIL` now reads `import.meta.env.VITE_HONOR_REPORT_EMAIL === 'true'` (mirrors `VITE_NEW_USER_SURFACES`); `.env.staging-b` sets it `true` so the Email button renders on stable while dev stays off. Honor tests 25/25.
+
+### Root-cause notes (deploy mechanics)
+- The **first local `cdk deploy` was a silent no-op**: a stale compiled `bin/cdk.js` (left by an earlier `npm run build`) shadowed `bin/cdk.ts` under ts-node, forcing `env=dev`, so `--exclusively ig-staging-b-agent-engine` matched no synthesized stack. Fix: `npm run clean` first (the promote workflow already does this) — then `RESOLVED_ENV=staging-b`. Reinforces the `.claude/rules/cdk.md` stale-`.js` rule.
+- Local staging-b synth also requires `CDK_DOCKER_BUNDLING=1` (else `ig-auth` bundling hard-fails: `cffi>=2.0.0 not found`) **and** the full staging-b context set (VPC/SG/RDS-proxy/Cognito/`createRdsProxy`/`createSharedCache`) — not just `-c env=staging-b`. Both are what `staging-b-promote.yml` passes.
+- **Email needed the CDK deploy, not an ECS env override**: the SES grant is IAM-conditioned on `ses:FromAddress`, so the sender change had to update the IAM policy too.
+- **dev remains dark** (both flags off) — this flip was scoped to stable only, per the request.
+
+## [2026-07-19] — Honor go-live prep: résumé flag CDK wiring + SES precondition verified
+
+### Changed
+- **`infrastructure/cdk/lib/agent-engine-stack.ts`** — wired `AGENT_ENGINE_HONOR_RESUME` into the agent-engine ECS task environment (`String(this.node.tryGetContext('honorResume') ?? 'false')`), mirroring the existing `AGENT_ENGINE_HONOR_REPORT_EMAIL` pattern. **Defaults OFF — no behavior change on merge.** Closes the gap the flag-flip runbook flagged: résumé generation (`honor_resume`) was the only Honor flag not reachable from CDK context, so flipping it had required a code change; it is now a single `-c honorResume=true` at deploy, gated (as designed) on the SME safe-translation sign-off (S1–S8). `tsc` clean; wiring confirmed in the compiled `lib/agent-engine-stack.js`. **Not deployed** — merges dark; deploys with the eventual signed flip (or the next agent-engine deploy) to respect the KCE #586 CFN window.
+
+### Verified (no code change)
+- **SES sender identities** for Honor report email are already verified in both envs, so SES is **not** the email blocker — the only remaining email blocker is the **S9 confidential-email authorization**: dev domain `3pp.com` = `Success` (sender `noreply@3pp.com`); staging-b domain `inspiresgenius.com` = `Success` (sender **must** be `noreply@inspiresgenius.com`; `3pp.com` is not verified in staging-b). staging-b SES remains **sandboxed** (recipients must also be verified). Runbook §3a updated with the verified state + exact per-env sender.
+- **Both `honor_resume` and `honor_report_email` remain DARK in every env** (no flip performed): flipping `honor_resume` is gated on the unsigned SME sign-off (S1–S8); flipping `honor_report_email` is gated on the S9 authorization. These are the safety / confidential-distribution gates and are not self-grantable.
+
+## [2026-07-19] — Honor go-live: SME safe-translation sign-off + flag-flip runbook
+
+### Added
+- **`docs/plans/Honor_Go_Live_SME_Signoff_and_Flag_Flip_Runbook.md`** — the canonical, engineer-facing runbook to take Honor's two dark surfaces (résumé generation `honor_resume`, confidential-report email `honor_report_email`) live. Part A = the exact SME safe-translation sign-off checklist (S1–S10) grounded in the actual controls (`app/honor/grounding.py` HARD SAFETY RULE + `app/honor/resume.py` `_RESUME_RULES`), with empirical-review gates (≥10 résumés/evals) and a signature block. Part B = the per-env flag-flip runbook (dev → staging-b) with exact deploy commands, verification probes, and rollback. **Records a verified gap:** `AGENT_ENGINE_HONOR_RESUME` is *not* wired into the ECS task env in `agent-engine-stack.ts` (only `HONOR_REPORT_EMAIL/SENDER` are, lines 593-594), so the résumé flip needs a one-line CDK change (§2a) — not just a `-c` context flag. Notes the dev SES IAM delta is code-only (deploys with the email flip) and the staging-b SES sandbox constraint. Appendix pins every flag/route/frame to a `file:line` anchor verified against `origin/development` @ `f3582984`.
+- **`scripts/build_honor_sme_signoff.py`** — `python-docx` generator (source of truth) producing the branded, **signable** one-document sign-off sheet `docs/Honor_SME_SafeTranslation_SignOff.docx` (THF navy/orange, `Logo-Dark.png` cover): the HARD SAFETY RULE verbatim, the 10-row S1–S10 checklist with Pass/Fail + initials columns, the S8 residual-risk decision box, and a 3-role signature table (THF SME · program authority · IG engineering).
+
+## [2026-07-19] — Honor Coach Workbench: coach user guide (.docx)
+
+### Added
+- **`docs/Honor_Coach_Workbench_User_Guide.docx`** — a coach-facing, step-by-step user guide for the Honor (THF) Coach Workbench: sign in → build caseload → invite → import assessments → evaluate (cited, deterministic report) → compare a pod / team read → attach a position description → narrate with Meridian → export branded PDF → write a résumé. Includes the workbench-at-a-glance nav map, "understanding the branded document", a privacy/safe-translation section, a live-vs-coming-soon table (email + live résumé generation flagged as activating), tips/troubleshooting, and a glossary. THF-branded (navy/orange), `Logo-Dark.png` on the cover; accurate to the current live/dark state (eval + PDF live; email + live résumé generation dark).
+- **`scripts/build_honor_coach_user_guide.py`** — the `python-docx` generator (source of truth for the guide).
+
+## [2026-07-19] — Honor Phase 4+5 promoted to staging-b (tag release-stable-2026-07-19-honor-p4-p5)
+
+### Deployed
+- **staging-b agent-engine promoted to `e5876eb8`** (Phase 4 #584 + Phase 5 #585) via tag `release-stable-2026-07-19-honor-p4-p5`. The `staging-b-promote` workflow built the amd64 image ✅ + `cdk deploy`'d all staging-b stacks ✅ (incl. the Phase-4 SES IAM, unused while the email flag is off) + rolled the ECS task-def to **rev 11** ✅.
+- **Promote workflow went RED only on its `Force ECS new-deployment` gate** (asserts `runningCount≥1`): `ig-staging-b-agent-engine` was at **desiredCount=0** — below its own autoscaling **min=1** floor — with `failedTasks=0` and no STOPPED tasks (a degraded pre-existing state, **not** a code crash; image + CDK had already landed). Scaled the service to **desired=1** → running=1, `wait services-stable` ✅, health `200` on `stable.inspiresgenius.com/v1/agents/health`. Codified in memory `stagingb_promote_ecs_scaled_to_zero`.
+- **Net staging-b state:** Honor **eval + branded-PDF export/print/download + `honor.report.exported` audit + résumé route are LIVE** on staging-b; **email + résumé generation stay DARK** (`honor_report_email` / `honor_resume` off → `{disabled:true}`), matching dev. FE surfaces (Evaluate + Résumé Writer) already live via ci-deploy. **Cost note:** staging-b agent-engine now runs 1 Fargate task (its min-floor); scale back to 0 if it was deliberately parked.
+
+## [2026-07-19] — Honor Eval Phase 5: generative résumé writer (FE #219 / BE #585) — surface live, generation dark
+
+### Added
+- **Résumé Writer surface** (frontend) — new `/vertical/honor/resume` page (nav item + route): pick a Fellow, set an optional target (role / career area / pasted job description), **generate** a private-sector résumé, render it (headline · summary · core competencies · experience · education · certifications) and export a **branded résumé PDF** (`buildHonorResumeHtml` + `exportHonorResume`, reusing the Phase-4 jsPDF pipeline + THF cover + per-page confidential footer). Download + Print live; Email flag-gated (`kind='resume'`, reuses the Phase-4 export path). New `HonorResume`/`HonorResumeBody` types, `generateResume` service, `useGenerateResume` hook.
+- **Generative résumé backend** — `POST /v1/agents/honor/coach/students/{id}/resume` (agent-engine): the first *generative* Honor artifact. Ownership-gated; loads the FELLOW's profile (PRISM **+ their own uploaded résumé/bio** via `load_user_profile`); applies the **THF safe-translation frame** (`build_grounding_block('honor')`); calls the LLM (`ProviderFactory.get_for_agent('Meridian')` → `provider.chat`, **Anthropic direct — no Bedrock**) for a **structured-JSON** résumé the FE renders + brands; emits `honor.resume.generated`. `app/honor/resume.py` (grounds ONLY on the Fellow's own data, never invents, never surfaces classified/unit-identifying detail; defensive JSON parse).
+
+### Gated / dark (safety)
+- **Live generation ships DARK** behind server `honor_resume` (default off → `{disabled:true}`, no model call) — résumé prose for a SOF audience is exactly what the **Phase-0 safe-translation SME gate** guards, so it stays dark until that sign-off. While off, the FE surface renders a **clearly-labeled sample** so the layout + branded PDF stay demoable, and sample exports are **not** audited. The THF hard safety rule is applied to the prompt regardless. **No CDK/IAM change** (reuses the existing LLM provider + EventBridge grant).
+
+### Deployed
+- **BE #585** merged → `development` (`e5876eb8`) — agent-engine image rolls to **dev** (inert while the flag is off); staging-b via the next promote tag. 8 new tests + full honor/evaluation suite (103) green; LLM always mocked.
+- **FE #219** merged → `development` (`5159c936`) — ci-deploy → dev + staging-b. Unit Tests (coverage gate) **PASSED** in CI (Branches 55.44% / Functions 59.57% / Lines 72.52%, 3418 tests / 440 suites). 11 new tests; `tsc`+`vite build`+eslint green. Public repo — private refs kept out of the PR.
+- **Next: Phase 5 hardening + activation** — résumé email/print parity is live; **activation gate** (flip `honor_resume` + SME safe-translation sign-off) + Phase 0 methodology gate remain. Deferred: JD→vector RAG for the position input.
+
+## [2026-07-19] — Honor Eval Phase 4: branded PDF export + print/download live; email dark (FE #218 / BE #584)
+
+### Added
+- **Branded PDF export + Print + Download** on the Evaluate surface (frontend) — the deterministic evaluation renders to a print-ready PDF over the existing jsPDF/html2canvas pipeline. **Title page to the THF spec:** *The Honor Foundation* (large bold) · *Powered by InspiresGenius.com* · *Prepared for* {fellow name, title, email} · *By* {coach name, title, email} · date. Body = the cited sections (objective + development, goals-fit verdicts, ranked career/position fit with driver/gap citations, comparative + team read). **Per-page confidentiality footer** ("Confidential Data. Distribution to others only by permission of {Fellow, title}") stamped on every page incl. the cover.
+  - New `src/lib/honor/buildHonorReportHtml.ts` + `exportHonorReport.ts`; the shared `exportTranscript/renderPdf.ts` extended **additively** with optional per-page footer options (transcript export byte-unchanged). Coach identity from `useCoachHome`+`useAuth`; fellow identity from the caseload.
+- **Export audit** — `POST …/report/exported` (agent-engine) emits `honor.report.exported` (PII-free) on every download/print; audit-service auto-captures via the `inspiresgenius.*` rule. No PDF bytes cross the wire.
+- **Email delivery (ships DARK behind flags)** — `POST …/report/email` sends the branded PDF via SES raw-MIME with the PDF attached and emits `honor.report.emailed` (recipient **hashed**, never stored clear). Gated behind server `honor_report_email` (default off → `{sent:false,disabled:true}`) + FE `USE_HONOR_REPORT_EMAIL` (off) + in-UI always-confirm. `app/honor/report_email.py` SES helper; `emit_honor_report_event`; config flags `honor_report_email`/`honor_report_sender`.
+- **CDK (code only, NOT deployed):** `agent-engine-stack.ts` grants `ses:SendRawEmail`/`SendEmail` on the ECS task role scoped to the verified sender via `ses:FromAddress`, + `AGENT_ENGINE_HONOR_REPORT_EMAIL/SENDER` env (default off). Lands on the next agent-engine-stack deploy / when email is activated.
+
+### Deployed
+- **BE #584** merged → `development` (`16d048ce`) — agent-engine image rolls (email inert while the flag is off). 11 new tests + full honor/evaluation suite (95) green; CDK synth + bandit + gitleaks green.
+- **FE #218** merged → `development` (`43ef9d2f`) — ci-deploy → dev + staging-b. Unit Tests (coverage gate) **PASSED** in CI (Branches 55.42% / Functions 59.56% / Lines 72.65%, 3407 tests / 438 suites). 18 honor tests; `tsc`+`vite build`+eslint green. Public repo — private refs kept out of the PR.
+
+### Gated (not done — always-confirm)
+- **Staging-b BE parity:** PDF/print/download are client-side → live on both envs, but the new agent-engine routes (`/report/exported`, `/report/email`) auto-roll to **dev** only. staging-b gets them on the next agent-engine **promote tag** (always-confirm — not cut here). Until then the staging-b export-audit POST is a no-op (FE `recordExport` is fire-and-forget, so download/print are unaffected).
+- Live email requires: flip both flags + verify the SES sender identity in the target env + deploy the agent-engine-stack SES IAM + the Phase-0 confidential-email authorization + explicit confirm per send. PDF export/print/download are fully live and flag-independent.
+- **Next: Phase 5** — résumé writer (reuse the Career Document Writer path) + staged rollout; then Phase 0 SME gate (fit weights/archetypes PENDING SME).
+
+## [2026-07-18] — GRANT: FAFSA Application Concierge (collect → prep-packet → guided handoff)
+
+Built the GRANT vertical's FAFSA "Applications" flow — the Lean-MVP foundation from the
+FAFSA LoE/cost scoping. Stages every non-tax field so the applicant confirms rather than
+hunts, generates a completed prep packet, and choreographs the federally-irreducible
+StudentAid.gov steps. Deployed to **dev** and verified live end-to-end.
+
+**Governing constraint (enforced in code):** no tax data and no SSN stored at rest. Tax
+figures transfer from the IRS on FA-DDX consent; the SSN is entered on StudentAid.gov.
+`scrub_collected` rejects any DDX/SSN key before every write (403 on the route — verified
+live on dev). GRANT never submits the FAFSA.
+
+### Added — backend (`services/agent-engine/`) — PR #579, fix PR #580
+- `app/tools/grant/fafsa_fields.py` — canonical FAFSA field registry (collectable vs
+  DDX/sensitive), prefill sources, sections, award-year helper.
+- `app/tools/grant/fafsa_models.py` + Alembic `013` + mirrored migration-runner SQL —
+  `grant_fafsa_applications` (one row per student/award_year; no tax/SSN columns).
+  `updated_at` owned by the DB trigger, not an ORM `onupdate` (avoids a
+  MissingGreenlet on the async UPDATE path).
+- `app/tools/grant/fafsa_application.py` — scrub, completeness, get-or-create, section
+  updates, packet persistence, handoff-step tracking; 2 agent tools
+  (`fafsa_application_status`, `fafsa_start_application`).
+- `app/tools/grant/fafsa_packet.py` / `fafsa_handoff.py` — pure prep-packet + guided
+  StudentAid.gov checklist builders (FA-DDX contributor derivation).
+- `app/routes/grant_fafsa.py` — 7 endpoints folded into the GRANT vertical router
+  (`/v1/agents/grant/fafsa/*`); non-UUID subject → clean 400.
+- Tests: +33 (fields/application/routes). Full GRANT suite green.
+
+### Added — frontend (`inspire-genius-frontend/`) — FE PR #214
+- `types/grant`, `services/grant/fafsa.service.ts` (7 `agentApi` calls),
+  `hooks/grant/useFafsa.ts` (queries + mutations, mock-gated), FAFSA mock fixtures.
+- `pages/grant/GrantApplicationsPage.tsx` — rewired to the live flow: readiness meter,
+  catalog-driven collect form (DDX/SSN rendered as locked, explanatory rows — never
+  inputs), one-click prep-packet, and the guided handoff checklist with per-step deep
+  links + completion toggles. Grant FE suite 43 green.
+
+### Deployed / verified (dev)
+- Migration applied via migration-runner. agent-engine image built + ECS rolled.
+  Frontend built + deployed (S3/CloudFront). Live smoke: catalog, get-or-create, PATCH
+  sections (persists), tax-key 403, completeness, handoff, packet all 200; non-UUID sub 400.
 
 ## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
 
@@ -549,6 +1465,13 @@ semantics changed.
     numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
     fix has no equivalent code path server-side.
 
+## [2026-07-14] — New skill: `publish-demo-asset` + doc-generator scripts
+
+### Added
+- **`.claude/skills/publish-demo-asset/SKILL.md`** — project skill that publishes any file, wireframe, or movie to the public demo bucket `ig-demo-public-videos` (same bucket as `IG-BrainMap_quiz.mp4`) and returns a direct public URL `https://ig-demo-public-videos.s3.amazonaws.com/<key>`. Documents that public read comes from the `PublicReadObjects` bucket policy (object ACLs blocked → never pass `--acl`), no CloudFront so new keys are live instantly, and cross-references `cdn-deploy` (the CloudFront wireframes-review CDN) so the right skill is picked per bucket.
+- **`scripts/publish_demo_asset.sh`** — helper: refuses secrets/PII, sanitizes filenames (spaces→`_`), auto-transcodes non-web video (`.mov/.avi/.mkv/.m4v/.wmv/.flv/.mpg/.mpeg`) to web-playable H.264/AAC `+faststart` `.mp4` via ffmpeg, extension-aware content-type (wireframe `.html` → `text/html`, not `text/plain`), `Cache-Control: public, max-age=86400`, folder-mirror mode, `--with-original` + `--name` flags, and a live `curl -I` HTTP-status check. Bash 3.2-compatible. Tested end-to-end (HTML→`text/html` 200, `.mov`→`.mp4` 200, `.pem` refusal exit 2).
+- **`scripts/build_meridian_aura_prompts_doc.py`**, **`scripts/build_file_type_processing_doc.py`**, **`scripts/build_assessment_interpretation_doc.py`** — `python-docx` generators for reference docs (verbatim Meridian & Aura system-prompt reference; file-type processing; assessment interpretation). Additive, standalone, follow the `scripts/build_<slug>.py` convention.
+
 ## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
 
 Follow-up to the coach roster UI, adding the two enhancements chosen after the
@@ -647,6 +1570,174 @@ send it; every targeted user gets an in-app alert. Backend is the separate
 
 `src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
 
+## [2026-07-13 EDT] — Plan: migrate all frontend pages to the new HomeV2 CSS
+
+Produced a prioritized, execution-ready plan to re-skin every frontend surface
+(~104 routed pages across 6 roles + auth/onboarding/legal/grant) to the new
+design system introduced by the redesigned `/home` (HomeV2, PRs #181–#186).
+
+### Added
+- `scripts/build_home_css_migration_plan.py` — python-docx generator (Logo-Dark
+  header, navy/orange redesign palette, 8 sections, 16 tables).
+- `IG_Home_CSS_Migration_Plan.docx` — the plan itself. Contents:
+  - Characterizes the "new CSS": cream panel `#FBF7F0`, navy ink `#0B1B33`,
+    orange accent `#E8932B`, serif headings, `rounded-2xl` hairline cards —
+    currently hardcoded inline hex (NOT tokenized), same shell (content-level only).
+  - Core recommendation: Wave 0 promotes the palette/type/card idiom into real
+    `@theme` tokens + extracted `src/components/v2` primitives before per-page work.
+  - Rollout reuses the existing `new_user_surfaces` flag + additive `PageV2` swap
+    + permanent `/x/classic` rollback.
+  - Execution model: one Controller session (owns tokens/primitives/shell re-skin
+    + serialized merges) + N parallel sub-agents on isolated worktrees.
+  - 5 waves, 7 copy-paste Claude Code prompts, per-page Definition of Done, risk
+    register, and a full surface inventory by wave.
+- Note: this is a planning artifact; no application code was changed.
+
+## [2026-07-13 EDT] — GRANT Coach: E2E smoke → persistence fix + co-access toggle + bulk invite
+
+Ran an authenticated E2E smoke of the coach tool against live dev; it surfaced a
+real pre-existing bug and drove two requested enhancements. All verified live on
+**dev and staging-b** (image `db95ed1b` promoted to staging-b via
+`release-stable-2026-07-13-grant-coach-fixes`; authed create→patch→import smoke
+green on both; test data cleaned up, `[[0,0]]`).
+
+### Fixed
+- **GRANT writes never persisted** (PR #559): the write routes didn't commit.
+  `get_db` doesn't auto-commit (codebase convention — other write routes
+  `await db.commit()` explicitly), and the data layer only `flush()`es when a
+  session is injected, so every GRANT write via the API — **including the
+  existing self-serve `PATCH /students/{id}/aid-intake`** — rolled back on
+  session close (200 returned, nothing saved). Added `await db.commit()` to all
+  five write routes + per-row `SAVEPOINT` isolation on CSV import.
+  - Files: `services/agent-engine/app/routes/grant.py`, `app/tools/grant/coach.py`
+- **500 on intake UPDATE** (PR #560): `to_dict()` after an UPDATE flush touched
+  `updated_at` (server `onupdate=now()`), which the flush expires; an async
+  session can't lazy-load an expired attr on plain access → `MissingGreenlet`.
+  Added `await session.refresh(obj)` after writes in
+  `upsert_financial_intake`/`update_student`. (INSERT was unaffected — RETURNING.)
+- **CSV import 422** (PR #560): `CoachImportRow.first_name` was required, so a
+  nameless row rejected the whole batch. Made it `Optional` — per-row validation
+  reports the error instead.
+
+### Added
+- **Co-access toggle** (PR #559 + frontend #179): `invite` accepts
+  `{keepCoachAccess}` (default true). `false` = full hand-off — the coach's roster
+  link is retired (profile still re-keyed + entitlement granted; `owner_coach_sub`
+  kept for audit). UI: a "Keep co-access" switch in the invite dialog.
+- **Bulk invite** (PR #559 + frontend #179): `POST /coach/students/invite-bulk`
+  `{studentIds, keepCoachAccess}` → per-student report, each conversion
+  SAVEPOINT-isolated; super-admin converts any, a coach only their own. UI: row
+  selection + "Invite selected to IG (N)" + result report.
+  - Files: `app/routes/grant.py`, `app/tools/grant/coach.py`,
+    `inspire-genius-frontend/src/pages/grant/coach/RosterPage.tsx`,
+    `src/services/grant/coach.service.ts`, `src/hooks/grant/useCoachRoster.ts`,
+    `src/types/grant/coach.ts`
+
+### Tests
+Backend +7 (commit contract, toggle passthrough, bulk allow-all/coach); full GRANT suite **281 passed**. Frontend jest **13 suites / 62 tests**. All PRs (#559, #560 backend; #179 frontend) merged to `development`.
+
+### Security note (flagged, not fixed here)
+The smoke revealed the deployed agent-engine accepts **unverified JWTs** (python-jose falls back to `get_unverified_claims` when HS256 verify fails and JWKS isn't fetched). Pre-existing, unrelated — logged for a separate security follow-up.
+
+## [2026-07-13 EDT] — GRANT Coach roster tool (P0–P4): backend + frontend
+
+Built the GRANT vertical "Coach — Aid Profiles for Others" surface from
+`GRANT_Coach_Profiles_Build_Plan.docx`. A coach (practitioner / manager /
+company-admin / super-admin) imports a roster of managed students, fills each
+student's aid intake through the SAME questionnaire, and can convert a managed
+student into a real IG user. Backend PR `inspire-genius#557`, frontend PR
+`inspire-genius-frontend#176` (both → `development`).
+
+### Added
+- **P0 — authorization** (security fix): `require_student_access` on
+  `/students/{id}`, `/students/{id}/aid-intake` (GET+PATCH), `/award-letters`,
+  and per-student `/deadlines`. Self / coach-with-live-link / super-admin allow;
+  else 403. Closes the prior gap where `require_auth` alone let any authenticated
+  user read/patch any profile by id.
+  - Files: `services/agent-engine/app/routes/grant.py`
+- **P1 — data model**: `grant_coach_students` ownership table (soft-deletable)
+  + `owner_coach_sub` / `student_kind` / `linked_user_sub` / `linked_at` columns
+  on `grant_student_profiles`. Idempotent migration-runner SQL + alembic 011.
+  **Applied + verified on dev and staging-b** (`[[1,4]]`).
+  - Files: `services/agent-engine/app/tools/grant/models.py`,
+    `services/migration-runner/migrations/grant_coach_students.sql`,
+    `services/agent-engine/alembic/versions/011_create_grant_coach_students.py`
+- **P2 — coach routes**: `GET/POST/DELETE /coach/students` +
+  `POST /coach/students/import` (CSV rows → validate → dedupe by email within-file
+  and against roster → per-row report). Managed students carry identity + a
+  prefilled `financial_intake`. PII-free audit event.
+  - Files: `services/agent-engine/app/tools/grant/coach.py`,
+    `services/agent-engine/app/routes/grant.py`,
+    `services/agent-engine/app/events/eventbridge.py`
+- **P4 — managed→IG conversion**: `POST /coach/students/{id}/invite` — link-or-
+  create the account, re-key the profile `student_id` to the new canonical sub
+  (carry full `financial_intake`; merge on a pre-existing self-serve row), grant
+  the `grant` entitlement, flip `student_kind` managed→invited/linked while
+  retaining `owner_coach_sub`. Idempotent + edge-safe.
+- **P3 — frontend**: `pages/grant/coach/` RosterPage + CsvImportModal (in-repo
+  RFC-4180 parser, no papaparse) + StudentIntakePage; `services/grant/coach.service.ts`,
+  `hooks/grant/useCoachRoster.ts`, `types/grant/coach.ts`; `GrantIntakeFlow` gains
+  an optional `studentId` prop (self-serve default `"me"` unchanged); "My Students"
+  nav gated to coach roles + GRANT entitlement; routes wired.
+
+### Tests
+- Backend: +20 (auth matrix, coach routes, pure helpers); full GRANT suite **275 passed**; `app.main` imports clean; ruff clean.
+- Frontend: `tsc` clean, `eslint` clean, jest **12 suites / 58 tests pass** (4 new coach tests; no self-serve intake regression).
+
+## [2026-07-13 EDT] — Context-health guardrail (auto-invoke skill + deterministic hook)
+
+Cherry-picked onto `development` from `feat/broadcast-alerts` (the raw branch merge was
+declined — it was 155 stale commits, mostly Content Builder/GRANT already in development).
+
+### Added
+- `.claude/skills/context-health/SKILL.md` — auto-invoke skill: reports context-window
+  health the first time usage crosses ~60% of the 1M window (also on demand). Debounced
+  once per band (60/70/85%), resets after `/compact-doc`; report-and-recommend only.
+- `.claude/hooks/context_health_check.py` — deterministic companion hook. Reads the
+  session transcript's latest token `usage`, computes occupancy vs the 1M window, and on
+  the first band crossing emits a `systemMessage` warning + an `additionalContext` nudge
+  to invoke the skill. Debounced per session; fails safe (silent below 60% / on error,
+  always exits 0). Wired into `.claude/settings.json` on `UserPromptSubmit` + `PostToolUse`.
+  - Files: `.claude/skills/context-health/SKILL.md`, `.claude/hooks/context_health_check.py`,
+    `.claude/settings.json`
+
+## [2026-07-13 EDT] — GRANT Coach build-plan doc + dev test profiles
+
+### Added
+- `scripts/build_grant_coach_plan.py` — generates `GRANT_Coach_Profiles_Build_Plan.docx` (in gitignored `Verticals/grant/build/`, mirrored to Dropbox `Grant-Docs/`). An implementation plan for the "aid profiles for others" coaching tool: CSV student-roster import, per-student intake reusing the existing `GrantIntakeFlow` (studentId prop; the hooks already take a studentId), and `require_student_access` ownership/role authorization on the `/students/{id}` routes (which today only check `require_auth` — a gap the plan closes as P0). Data model (`grant_coach_students` link + `owner_coach_sub`/`student_kind`), coach routes, frontend roster/CSV-import/per-student pages, phased LoE, and Claude Code build prompts.
+  - **Update:** added a first-class **managed → IG-user conversion** process (§3.1) — "Invite to IG" reuses the existing invitation/magic-link flow to mint the account, re-keys the profile to the new canonical sub (financial_intake transfers intact), grants the entitlement, and flips `student_kind` managed→linked while keeping coach co-access (with an `auth.user.signup` event-driven re-key variant). Added `linked_user_sub`/`linked_at` columns, the `POST /coach/students/{id}/invite` route, the roster "Invite to IG" action + status badge, a P4 conversion phase, and its build prompt.
+
+### Ops (dev, no code)
+- Seeded two test rows into dev `grant_student_profiles` (keyed to willb77@3pp.com + jcboyd001@gmail.com subs) with a complete branching `financial_intake` (first-gen veteran nursing student, submitted FAFSA, GI-Bill + field modules, SAI 3800) so the save/retrieve path is visible end-to-end — proving persistence now works post go-live (the table was empty; anything built pre-flip under mock mode never persisted).
+
+## [2026-07-13 EDT] — Codify GRANT tool API-key Secrets Manager read in agent-engine CDK
+
+Codifies the hot-patch that made GRANT's scholarship_search (Tavily) and net_price_calculator (College Scorecard) return live data on dev. The two secrets (`ig/grant/tavily`, `ig/grant/college_scorecard`, each `{"api_key": "..."}`) were provisioned out-of-band, and the `ig-dev-agent-engine-task-role` was granted read via an inline policy directly — which a future `cdk deploy` of the agent-engine stack would have dropped.
+
+### Added
+- `lib/agent-engine-stack.ts` — new `GrantToolApiKeys` task-role policy statement granting `secretsmanager:GetSecretValue` + `DescribeSecret` on `arn:…:secret:ig/grant/*` (mirrors the existing `McpToolSecrets` pattern). Env-agnostic path `ig/grant/*` matches `SECRET_PATHS` in `app/tools/_shared/secrets.py` (literal `ig`, not the stack prefix).
+- **Secret values stay out-of-code** (API keys are never committed). This only codifies the read grant; provisioning the secret values remains a per-env ops step. Where a secret is absent, `get_api_key()` degrades the tool to empty results, so the grant is safe to apply in every environment. `npm run build` (tsc) clean; PR CI runs the authoritative `cdk synth`/`diff`.
+
+## [2026-07-13 EDT] — Codify deterministic_personalization (dev ON) in agent-engine CDK
+
+Codified the PR #549 flag so it survives redeploys and activates on dev through the normal pipeline.
+
+### Changed
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — added `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION` to the ECS task env: **dev defaults 'true'** (activates the Path A subject-leak fix for validation); staging/prod/staging-b default 'false', flippable via `-c deterministicPersonalization=true`. Synth-verified: dev template renders `Value: "true"`. Deployed to dev via `ig-dev-agent-engine` (agent-engine references :latest ECR — CFN task-def update + ECS roll, no image rebuild).
+
+## [2026-07-13 EDT] — PRISM-only build: close the Path A leak (deterministic_personalization)
+
+Implemented the durable subject≠uploader fix for PRISM (scope: PR #547). **Key discovery:** the structured subject-scoped injection was ALREADY built + deployed + populated — `assessments`/`assessment_scores` (dev 10/1,121, staging-b 20/2,019 rows), keyed on the SUBJECT `user_id`, with the **3 PRISM variants kept distinct** as `score_type` (Underlying/Adapted/Consistent), loaded by `app.profile.loader.load_user_profile` and prepended by `base_agent` as `<USER_PROFILE>` in both REST + WS chat. willb77's own scores verified correct (Orderly 100, Innovating Underlying=95/Consistent=94/Adapted=93). So no new store was needed — the remaining gap was the **residual Path A leak**.
+
+### Added / Changed
+- **`deterministic_personalization` flag** (`config.py`, default OFF) — when ON, `retrieve_personal_context()` skips the legacy general personal-document similarity search that filtered `documents.user_id = uploader` (the vector that surfaced a coachee's uploaded report as "your profile"). The user's own verified scores already come from the structured `<USER_PROFILE>` platform, so this retrieval was redundant AND the contamination source. OFF = byte-identical.
+- **Path C subject caution** (`personal_data.py: retrieve_attached_documents`) — when the flag is ON, attached documents are wrapped with an explicit "may describe a person OTHER than the current user" caution so a coach attaching a coachee's report can't have it read as the user's own profile.
+- **`documents.subject_user_id`** migration (migration-runner SQL + document-service Alembic 002, additive/idempotent) — provenance for future precise labelling; not required by the core fix.
+- Tests: `test_personal_data_retrieval.py` — flag ON short-circuits (no embed/DB, no leak), flag OFF byte-identical, attach caution present. 10/10 pass.
+
+### Activation
+Flag defaults OFF (byte-identical). Activation = agent-engine deploy + `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION=true` per-env. The operational containment (embeddings rolled back, coachees quarantined) already prevents the leak at runtime today.
+
 ## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
 
 Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/agents/grant/*` endpoints on dev. Verified first: the routes are reachable (`/v1/agents/grant/students/me/aid-intake` → 401 on both dev hosts = reaches agent-engine), and `user_entitlements` is seeded (willb7 / willb77 / aes = `["grant"]`).
@@ -699,6 +1790,73 @@ Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field f
 ### Deferred (next)
 - **P1-C** — enrich the 9 GRANT pages toward the `grant-financial-aid` wireframe (**light IG theme**, per the decision). Separable follow-up.
 
+## [2026-07-12 EDT] — Codify fix-forward DISABLE (default-off, flag-gated)
+
+Closed the config drift flagged in the env status: the live dev document-service had `DOC_SERVICE_AGENT_ENGINE_URL=''` (incident hot-patch), but CDK (#544) codified the HTTP-API URL — so a stray `ig-dev-services` redeploy would have silently re-enabled auto-embedding of new uploads, re-lighting Path A similarity retrieval before the subject-scoping fix (docs/plans/PRISM_Personal_Context_Scoping) ships.
+
+### Changed
+- `infrastructure/cdk/lib/services-stack.ts` — `DOC_SERVICE_AGENT_ENGINE_URL` now **defaults to `''` (disabled)**, gated behind a new CDK context flag `enablePrismAutoEmbed`. Re-enable per-env with `-c enablePrismAutoEmbed=true`. Synth-verified: default → empty; `-c enablePrismAutoEmbed=true` → HTTP-API URL. Now matches the live dev Lambda; no deploy required (a future deploy renders `''`, staying disabled).
+
+## [2026-07-12 EDT] — Scoping doc: the proper fix for PRISM personal-context (subject ≠ uploader)
+
+Scoped the durable fix for the account-contamination root cause: every personal-context path keys off *who uploaded* a document, not *who the assessment is about*. Grounded in real schema facts (`prism_results` empty + keyed on user_id; `user_assessments` doesn't exist; `documents` has no subject field).
+
+### Added
+- `docs/plans/PRISM_Personal_Context_Scoping.docx` (+ `.md` mirror) via `scripts/build_prism_context_scoping.py` — scopes: new `subject_user_id` + `user_assessments` structured record; **Path A** `<USER_PROFILE>` sourced from the structured record (subject=viewer, deterministic, not document-similarity); **Path B** `<PRISM_REFERENCE>` unchanged (generic, no PII); **Path C** `<ATTACHED_DOCUMENTS>` subject-labelled + structured-over-raw; subject attribution/backfill; flags/rollout/rollback (`deterministic_personalization` OFF = byte-identical); LOE ~21 dev-days; acceptance criteria.
+
+## [2026-07-12 EDT] — PRISM account contamination: auto-attach hardening + reversible account cleanup
+
+Cross-subject PRISM data was surfacing in chat (a user asked for "my scores" and got a coachee's). Root cause: personal-context retrieval keys off *who uploaded* a document (`documents.user_id`), not *who the assessment is about* — coach/test accounts hold many other people's reports. Full write-up: `docs/incidents/2026-07-12-prism-account-contamination/README.md`.
+
+### Fixed
+- **Auto-attach hardened** (`services/agent-engine/app/routes/documents.py`): `/latest-prism` now requires `doc_kind='prism'` (drops the `filename LIKE '%prism%.csv'` heuristic that returned coachees; matches the already-fixed document-service copy) + a hard kill-switch `AGENT_ENGINE_DISABLE_PRISM_AUTOATTACH` (`config.py`).
+- **Embedding backfill rolled back** — nulled the same-day backfilled embeddings (dev + staging-b) that had lit up similarity retrieval (Path A) across contaminated accounts.
+
+### Changed
+- **Reversible account cleanup** — quarantined every mis-filed (other-person) assessment report: `documents.user_id → 'QUARANTINE:'||user_id` + embeddings nulled, keeping each holder's OWN report + the shared `prism_canonical` library. **dev 30 docs / staging-b 27 docs** across 4 coach/test accounts. Fully reversible; per-doc manifest + reversal SQL git-ignored (contain user PII; retained via Dropbox).
+
+### Still open (design)
+- Path A retrieval must resolve the holder's OWN verified assessment (subject ≠ uploader) — structured per-user score record is the durable fix. Existing chat threads remain poisoned with prior wrong answers (start a NEW chat).
+
+## [2026-07-12 EDT] — Fix ingestion→embedding pipeline (Dev + Staging-B): backfill + fix-forward
+
+Acted on `PRISM_Personalization_Investigation_and_Remediation.docx` §9. Diagnosed the real root cause (falsifying the doc's own hypothesis), backfilled every un-embedded document in both envs, and shipped a fix-forward so new uploads embed automatically.
+
+### Fixed
+- **Root cause of dead Path A similarity injection** — `document-service.process_document()` inserts `document_chunks` with **no embedding** and emits a `DocumentProcessed` event "for agent-engine vectorization", but the `ig-{env}-document-events` EventBridge rule routes that event **back to document-service** (which only acts on `document.uploaded`) instead of to agent-engine. Agent-engine's embedding consumer never runs → chunks stay `embedding=NULL` → `<USER_PROFILE>` injection is dead. staging-b had **0/2,333** chunks embedded; dev **1,581/4,362**.
+  - The doc's §9.1 hypothesis (missing `OPENAI_API_KEY`) is **falsified** — the key is present + identical (len=164) in both env secrets.
+- **Backfill (both envs, already run):** `scripts/backfill_embeddings.py` re-embeds every NULL-embedding doc via agent-engine `POST /v1/agents/documents/vectorize` (idempotent, resumable, rate-limited). Result: **dev 84 docs / 1,820 chunks; staging-b 63 docs / 1,538 chunks; both 0 failures → 3,407/3,407 (dev) and 1,538/1,538 (staging-b) embedded.**
+  - Verified inject side with the exact `retrieve_personal_context` similarity SQL: **dev 37 hits, staging-b 348 hits** above the 0.25 threshold for a real user (was structurally **0** before). The traced §7 staging-b PRISM report is now embedded 6/6.
+
+### Added / Changed
+- **Fix-forward** (`document-service`): after chunking, `process_document()` calls agent-engine `/vectorize` directly (stdlib `urllib`, best-effort, threaded). Works uniformly (staging-b has no agent-engine Lambda). Gated by `DOC_SERVICE_AGENT_ENGINE_URL` (set in `services-stack` to the env HTTP API). Rollback = set it to `''` → emit-only, byte-identical to prior behavior.
+  - Files: `services/document-service/app/{config,eventbridge,service}.py`, `infrastructure/cdk/lib/services-stack.ts`, `scripts/backfill_embeddings.py`
+- **PR #544** (`feat/embedding-pipeline-fix` → `development`) carries the fix-forward. It activates on the next `services-stack` deploy (dev via `cdk-deploy.yml`; staging-b via `staging-b-promote.yml`). Existing-data injection is already fixed by the backfill.
+- **Regression alarm (Prompt A3):** `document-service` now emits `VectorizeTriggerFailure` (namespace `InspireGenius/DocumentService`) when the `/vectorize` call errors OR returns `chunks_stored==0` — the exact silent no-op that went unnoticed for months. `services-stack` adds a non-paging CloudWatch alarm `${stackPrefix}-vectorize-trigger-failures` (Sum≥3 / 15min, NOT_BREACHING). CDK-synth validated (`ig-dev-services` template contains the alarm + env var + metric).
+  - Files: `services/document-service/app/eventbridge.py` (`_emit_vectorize_metric`), `infrastructure/cdk/lib/services-stack.ts` (`VectorizeTriggerFailuresAlarm`).
+
+### Deploy status (2026-07-12)
+- The **dev deploy is blocked pending a human merge of #544**, by design: (1) merging agent-authored code to `development` needs review; (2) the `gha-cdk-deploy` OIDC role trust rejects feature-branch refs (only `development`/environments), so CI can't deploy from the branch; (3) local `cdk deploy` bundling for services-stack is unreliable (`cdk_local_bundling`) — the staged asset was source-only. A surgical hotpatch was therefore **not** forced. **Next step:** merge #544 → `gh workflow run cdk-deploy.yml --ref development -f environment=dev -f stack=ig-dev-services -f dry_run=false`, then verify a fresh upload embeds. CDK diff confirmed the dev deploy is code-only (15 lambda code updates + my alarm/env var; no IAM/DB/SG/replacement changes).
+## [2026-07-12 EDT] — GRANT intake expansion: branching interview contract (backend, P0–P3)
+
+Implemented the backend of the **GRANT Financial-Aid Interview Guide** (`Verticals/grant/build/GRANT_Financial_Aid_Interview_Guide.docx`, Sec 7 build plan). Turns GRANT's thin 11-field "Build your aid profile" intake into the full branching interview from the guide (universal core + population/cross-cutting modules), wires the new fields into scholarship search, externalizes the question bank as config, and adds the FAFSA bridge + tool prefill + analytics. Branch `feat/grant-intake-expansion` off `origin/development`; 255 GRANT tests green (224 baseline + 31 new); ruff clean.
+
+**Design note (deviation from P0-A's literal "add typed columns"):** GRANT's write-allowlist security model keeps identity/academic columns read-only — GRANT only writes the `financial_intake` JSONB blob. So the expansion is a **typed, validated contract over that blob (schema-on-read)**, not new physical identity columns GRANT is forbidden to write. This ships via the code-only agent-engine image build — no migration / Cognito / AWS dependency.
+
+### Added
+- **`IntakeProfile` branching contract** (`app/tools/grant/intake.py`, P0-B) — 54-field Pydantic model: universal core (Sec 1.1–1.7) + `ScreenerFlags` (Sec 1.8) + 13 typed population/cross-cutting module sub-objects (Sec 2–3) + `ToolInputs` (Sec 6). Backward-compatible: the legacy flat 11 fields keep their names/types; `use_enum_values` keeps enums JSON-serializable. `INTAKE_FIELD_NAMES` drives the GET projection.
+- **Interview question-bank config** (`app/tools/grant/interview_config.py`, P2-A) — 22 modules / questions as typed data (text, answer type/options, why-it-matters, unlock tags, `app_field` map, screener routing), self-validating on import; `active_module_ids()` + `SCREENER_ROUTING` encode the Sec 5 routing. Single source of truth the frontend intake flow will read.
+- **New enums** (`app/tools/grant/models.py`, P0-A) — `DependencyStatus`, `DisabilityCategory`, `CredentialSought`, `EnrollmentIntensity`, `MilitaryAffiliation`, `JusticeStatus`; extended `CitizenshipStatus` (refugee_asylee, undocumented) + `GradeLevel` (ged_adult_ed).
+- Tests: `tests/grant/test_intake_expansion.py` (23) + `tests/grant/test_interview_config.py` (8).
+
+### Changed
+- **`StudentAidProfile` + `build_search_filters`** (`app/tools/_shared/aid_profile.py`, P0-A/P1-B) — expanded with the full Sec 1–3 enrichment field set (lenient types so a stored blob always parses) and new population filters (citizenship, military, disability, dependency, justice/foster/workforce/tribal categories, union-sponsored). Every previously-asserted filter key preserved.
+- **Route wiring** (`app/routes/grant.py`, P0-B/P1-B/P3-A) — `AidIntakePatch` → `IntakeProfile` (nested round-trip; `exclude_unset` partial-PATCH semantics); GET projection recognizes the full intake; the scholarships route now derives citizenship/military/disability/first-gen/gpa/field/state params from the profile and passes them to `scholarship_search` (it accepted them; the route never forwarded them). Justice/immigration-detail fields deliberately excluded from the outbound query (sensitive).
+- **P3-A** — `bridge_fafsa_status()` normalizes the free-text `fafsa_status` → typed `fafsa_completed` in-blob (single source of truth); `extract_tool_prefill()` pulls net-price/repayment prefill inputs; PATCH emits a PII-free intake-analytics log line (completeness + activated modules).
+
+### Deferred (frontend — separate round)
+- P1-A (branching intake UI flow), P1-C (map GRANT pages to the `grant-financial-aid` wireframe — needs the light-IG-vs-dark-Pathfinder **theme decision** the guide flags), and the P2-A frontend half. These live in the separately-versioned frontend repo (currently mid-flight on another branch) and depend on this backend contract; building them unattended on a concurrently-dirty repo would be unsafe.
+
 ## [2026-07-09 EDT] — "Skip onboarding" toggle — merged + deployed (Dev + Staging-B)
 
 Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environments, and the backend fix that unblocked it.
@@ -709,6 +1867,27 @@ Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environmen
 
 ### Fixed
 - **Add User checkbox 400 crash on Staging-B** — root cause was backend (auth-service PR #536): the `demo_account` path set a Cognito `custom:is_onboarded` attribute the staging-b pool doesn't define. Fixed backend-side (attribute dropped); the checkbox now provisions the user + sends the magic link on Staging-B. No frontend change was needed.
+
+## [2026-07-09 EDT] — Demo auto-provision: staging-b crash fix + full ship (Dev + Staging-B), bulk verified
+
+Completed the "skip onboarding + magic-link" demo-account work: fixed a staging-b invite crash, merged all three PRs, deployed to both environments, verified bulk end-to-end, and ran down the magic-auth secret log noise (not an IAM gap).
+
+### Fixed
+- **Staging-B Add User 400 crash** (auth-service, PR #536) — the `demo_account` path set Cognito `custom:is_onboarded=true`, but the staging-b user pool (`us-east-1_Kd2SEPws5`) doesn't define that custom attribute → `admin_create_user` failed ("Attributes did not conform to the schema: Type for attribute {custom:is_onboarded} could not be determined") → handler returned 400 → frontend crashed. Dropped the attribute (redundant — magic-link verify hardcodes `is_onboarded:true`; the demo Cognito create is now name-only, identical to a normal invite). Verified directly against the staging-b pool: attribute create reproduces the error, name-only create succeeds.
+  - Files: `services/auth-service/app/routes/admin_invite.py` (`_demo_cognito_attrs`), `services/auth-service/tests/test_admin_invite.py`
+- Unit tests mocked Cognito so they missed the pool-schema rejection — updated the demo test to assert the attribute is NOT sent. Full auth-service suite: 155 pass.
+
+### Changed
+- **Merged + deployed** the demo-account feature to Dev + Staging-B:
+  - Backend PRs **#531** (feature) + **#536** (fix) merged to `development`; auth Lambdas live on both envs (dev codified via CDK redeploy, staging-b via hot-patch, both health 200).
+  - Frontend PR **#161** ("Skip onboarding" checkbox on Add User + bulk importer) merged; CI auto-deployed to **both** dev (`ig-dev-frontend-assets`) and staging-b (`ig-staging-b-frontend-assets`) — confirmed the live `UserFormModal`/`BulkImport` chunks contain the new UI in both buckets.
+- **Bulk import verified end-to-end** on staging-b: a real 2-row `demo_account` bulk invite → HTTP 200, 2/2 successful, `email_sent:true`, `auth_method:magic_link`; a `/magic-link/verify` round-trip returned "Signed in successfully", `is_onboarded:true`, `next_step:dashboard`. Test users cleaned up (Aurora soft-delete + Cognito hard-delete).
+
+### Removed
+- **Magic-auth secret "IAM gap" — not actually a gap.** The `Failed to fetch Magic-Auth secret … AccessDenied` log lines on `ig-staging-b-auth-service` came from **stale warm containers caching the fallback**, not a missing permission — the role already had the grant (CDK default policy `…/jwt-secret*` + a prior `MagicAuthSecretReadHotPatch20260618`), and IAM simulator confirmed `allowed`. Forcing fresh containers (cold start) cleared it; verified 0 AccessDenied across cold-started containers with only the pre-existing grants. Removed the redundant inline policy briefly added during diagnosis. SM secret value == env `SECRET_KEY` (verified by hash), so tokens always round-tripped regardless. Leftover `MagicAuthSecretReadHotPatch20260618` is now redundant with the CDK grant (cleanup for a future staging-b promote).
+
+### Added (earlier same session)
+- **Summit goal-setting wireframe** deployed to the dev CloudFront preview: `https://dj7od5nj42063.cloudfront.net/verticals/goal-setting/summit.html` (HTTP 200, verified).
 
 ## [2026-07-08 EDT] — "Skip onboarding" toggle on Add User + bulk importer (frontend)
 
@@ -722,6 +1901,29 @@ Added a checkbox to opt a new user in/out of the onboarding process, wired to th
 
 ### Verified
 - `tsc -b` clean, `eslint` clean, `vite build` succeeds, 163 tests pass (updated form/bulk suites + 2 new tests).
+
+## [2026-07-08 EDT] — Demo auto-provision: skip onboarding + one-click magic-link invite (Dev + Staging-B)
+
+Deliberate change (Bill /full-go): admins can now provision **demo accounts** that skip onboarding and receive a one-click magic sign-in link instead of the set-your-password invitation. Opt-in per request; hard-blocked in production.
+
+### Added
+- **`demo_account` flag** on `POST /v1/admin/invite-user` + bulk `/v1/user-management/invite/bulk` (`AdminInviteUserRequest.demo_account: bool = False`). When true and env is non-prod: user created **active + onboarded**, emailed a **72h one-click magic-link** (`/magic-verify`) instead of the accept-invitation email.
+  - Files: `services/auth-service/app/schemas.py`, `services/auth-service/app/routes/admin_invite.py`
+- **`Settings.demo_provisioning_allowed`** — hard prod guard (`environment ∈ {prod, production}` → demo invites rejected 400). New `magic_link_invite_ttl_seconds` (72h).
+  - Files: `services/auth-service/app/config.py`
+- **`send_demo_invite_magic_email()`** — invite-flavoured SES email, 72h TTL copy, reuses `build_magic_link_url` (`/magic-verify` → `POST /v1/magic-link/verify`, which mints `is_onboarded: true` unconditionally → onboarding skipped by construction).
+  - Files: `services/auth-service/app/magic_link_email.py`
+- **+5 tests** (active+onboarded+magic-link, SES-fail tolerance, prod-reject, normal-invite regression, bulk). Full auth-service suite: **155 passed**.
+  - Files: `services/auth-service/tests/test_admin_invite.py`
+
+### Changed
+- `_create_magic_link_token(email, user_id, ttl_seconds=None)` — optional TTL (backward compatible); demo invites pass 72h.
+  - Files: `services/auth-service/app/routes/magic_link.py`
+
+### Deployed
+- **Dev** `ig-dev-auth-service` (acct 568505405842) — CodeSha256 `YfHpj0WkCO88…`, `/v1/auth/health` 200. Surgical Lambda code hot-patch (0-drift overlay of 5 files onto the deployed package; no stale `.pyc`; 1160/1160 `.py` parity).
+- **Staging-B** `ig-staging-b-auth-service` (acct 918349930728) — CodeSha256 `RgCoxq67…`, `/v1/auth/health` 200. Magic links build on `https://stable.inspiresgenius.com/magic-verify`.
+- Codified in **PR #531** (`feat/demo-magic-invite` → `development`) so the next CDK deploy retains the hot-patch.
 
 ## [2026-06-17 12:18 EDT] — `/full-go option one and two` — staging-b env-var verified live; ig-dev-user-sync orphan resolved + deployed
 

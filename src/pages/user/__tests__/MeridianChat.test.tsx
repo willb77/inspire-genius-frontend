@@ -262,7 +262,16 @@ jest.mock("react-router-dom", () => ({
 
 /* ---- Imports (after mocks) ---- */
 
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor, within } from "@testing-library/react";
+
+// Entitlement drives the personal row's locked state. Mock the leaf module the
+// barrel re-exports from, so the real registry stays intact.
+const mockEnabledVerticals = jest.fn<{ data: string[] | undefined; isLoading: boolean }, []>(
+  () => ({ data: [], isLoading: false }),
+);
+jest.mock("@/verticals/core/useEnabledVerticals", () => ({
+  useEnabledVerticals: () => mockEnabledVerticals(),
+}));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
@@ -616,12 +625,69 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
     expect(capturedChatWindowProps.stacked).toBe(true);
   });
 
-  it("renders the five-tile Meridian rail", () => {
+  // 2026-07-31 — the five-tile row under the header is gone. Active Sessions,
+  // Last 5 Chats and Knowledge were three more routes into the conversation
+  // list the History dropdown already owns; Projects moved up into the button
+  // row, and the freed line now carries the user's own pages.
+  it("keeps Projects in the header and drops the other four tiles", () => {
     renderV2("v2");
-    expect(screen.getByTestId("meridian-tile-rail")).toBeInTheDocument();
-    for (const id of ["active", "history", "last5", "projects", "knowledge"]) {
-      expect(screen.getByTestId(`rail-toggle-${id}`)).toBeInTheDocument();
+    expect(screen.getByTestId("rail-toggle-projects")).toBeInTheDocument();
+    for (const id of ["active", "history", "last5", "knowledge"]) {
+      expect(screen.queryByTestId(`rail-toggle-${id}`)).toBeNull();
     }
+  });
+
+  it("renders the personal row: Lumen's three pages then Job Fit", () => {
+    renderV2("v2");
+    const row = screen.getByTestId("meridian-personal-row");
+    expect(row).toBeInTheDocument();
+    for (const label of [/my self-portrait/i, /moments/i, /coaching/i, /job fit/i]) {
+      expect(within(row).getByText(label)).toBeInTheDocument();
+    }
+  });
+
+  it("points the personal row at real pages, Job Fit at a concrete one", () => {
+    // Job Fit links to MATCHES, not the vertical BASE: the vertical home is a
+    // router-level redirect, so linking there would double-navigate and leave
+    // the active-link state wrong.
+    mockEnabledVerticals.mockReturnValue({
+      data: ["lumen", "job-fit"],
+      isLoading: false,
+    });
+    renderV2("v2");
+    const row = screen.getByTestId("meridian-personal-row");
+    const hrefs = within(row)
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual([
+      "/vertical/lumen/self-portrait",
+      "/vertical/lumen/moments",
+      "/vertical/lumen/coaching",
+      "/vertical/job-fit/matches",
+    ]);
+  });
+
+  // Entitlement gates USE, not SIGHT — the rule the Tools section already
+  // follows. A link that bounces off the route guard is worse than a visible
+  // lock, because it teaches nothing about why it didn't work.
+  it("locks personal-row entries the user has no entitlement for", () => {
+    mockEnabledVerticals.mockReturnValue({ data: ["lumen"], isLoading: false });
+    renderV2("v2");
+    const row = screen.getByTestId("meridian-personal-row");
+    // Lumen entitled → three real links; Job Fit not → no link for it.
+    expect(within(row).getAllByRole("link")).toHaveLength(3);
+    const jobFit = screen.getByTestId("meridian-personal-matches");
+    expect(jobFit).toHaveAttribute("aria-disabled", "true");
+    expect(jobFit.tagName).toBe("SPAN");
+  });
+
+  it("locks everything while the entitlement query is still loading", () => {
+    // Defaulting to "entitled" during the fetch would flash working links that
+    // then bounce; defaulting to locked is the safe direction to be wrong in.
+    mockEnabledVerticals.mockReturnValue({ data: undefined, isLoading: true });
+    renderV2("v2");
+    const row = screen.getByTestId("meridian-personal-row");
+    expect(within(row).queryAllByRole("link")).toHaveLength(0);
   });
 
   it("renders the Export button next to History", () => {

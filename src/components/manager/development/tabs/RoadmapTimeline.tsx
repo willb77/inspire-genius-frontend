@@ -23,6 +23,7 @@ import {
 } from "@/constants/development"
 import type { Milestone, MilestoneStatus, SummitGoal } from "@/types/development"
 import { useSharePlan, useUpdateMilestone } from "@/hooks/manager/development"
+import { useDevSkin } from "../skin"
 
 const STATUS_BADGE: Record<MilestoneStatus, "default" | "secondary" | "destructive" | "outline"> = {
   planned: "outline",
@@ -40,18 +41,19 @@ function MilestoneItem({
   goalTitle?: string
   onStatusChange: (status: MilestoneStatus) => void
 }) {
+  const sk = useDevSkin()
   return (
-    <div className="rounded-lg border border-slate-100 bg-white p-3">
+    <div className={cn("rounded-lg border bg-white p-3", sk.border100)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-slate-800">{milestone.title}</div>
-          {goalTitle ? <div className="truncate text-xs text-slate-500">Goal: {goalTitle}</div> : null}
+          <div className={cn("truncate text-sm font-medium", sk.text800)}>{milestone.title}</div>
+          {goalTitle ? <div className={cn("truncate text-xs", sk.text500)}>Goal: {goalTitle}</div> : null}
         </div>
         <Badge variant={STATUS_BADGE[milestone.status]} className="shrink-0">
           {MILESTONE_STATUS_LABEL[milestone.status]}
         </Badge>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+      <div className={cn("mt-2 flex flex-wrap items-center gap-2 text-[11px]", sk.text400)}>
         {milestone.dueDate ? <span>Due {new Date(milestone.dueDate).toLocaleDateString()}</span> : null}
         {milestone.gapIds?.length ? <span>{milestone.gapIds.length} gap(s)</span> : null}
         {milestone.learningItemIds?.length ? <span>{milestone.learningItemIds.length} learning item(s)</span> : null}
@@ -85,6 +87,7 @@ export type RoadmapTimelineProps = {
 }
 
 export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: RoadmapTimelineProps) {
+  const sk = useDevSkin()
   const share = useSharePlan(memberId)
   const update = useUpdateMilestone(memberId)
   const goalTitle = new Map(goals.map((g) => [g.goalId, g.title]))
@@ -104,7 +107,7 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
   if (milestones.length === 0) {
     return (
       <Card className="border-dashed">
-        <CardContent className="p-6 text-center text-sm text-slate-500">
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
           No milestones planned yet.
         </CardContent>
       </Card>
@@ -113,7 +116,7 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className={cn("flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between", sk.border200)}>
         <div className="flex items-center gap-2">
           {atRisk ? (
             <AlertTriangle className="h-5 w-5 text-red-500" aria-hidden="true" />
@@ -124,7 +127,7 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
             <div className={cn("text-sm font-semibold", atRisk ? "text-red-700" : "text-emerald-700")}>
               {atRisk ? "At risk" : "On track"}
             </div>
-            <div className="text-xs text-slate-500">Next best action: {nextBestAction}</div>
+            <div className={cn("text-xs", sk.text500)}>Next best action: {nextBestAction}</div>
           </div>
         </div>
         <Button size="sm" onClick={() => share.mutate({ includePdf: true })} disabled={share.isPending}>
@@ -147,7 +150,7 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {lane.length === 0 ? (
-                    <p className="text-xs text-slate-400">No milestones in this lane.</p>
+                    <p className={cn("text-xs", sk.text400)}>No milestones in this lane.</p>
                   ) : (
                     lane.map((m) => (
                       <MilestoneItem
@@ -166,17 +169,17 @@ export function RoadmapTimeline({ memberId, milestones, goals, trajectory }: Roa
       </div>
 
       {/* Accessible list/table fallback */}
-      <details className="rounded-lg border border-slate-200 p-3">
-        <summary className="cursor-pointer text-sm font-medium text-slate-600">
+      <details className={cn("rounded-lg border p-3", sk.border200)}>
+        <summary className={cn("cursor-pointer text-sm font-medium", sk.text600)}>
           View as list (accessible)
         </summary>
         <ul className="mt-2 space-y-1 text-sm">
           {[...milestones]
             .sort((a, b) => MILESTONE_HORIZON_ORDER.indexOf(a.horizon) - MILESTONE_HORIZON_ORDER.indexOf(b.horizon) || a.sequence - b.sequence)
             .map((m) => (
-              <li key={m.milestoneId} className="flex items-center justify-between gap-2 border-b border-slate-100 py-1 last:border-0">
+              <li key={m.milestoneId} className={cn("flex items-center justify-between gap-2 border-b py-1 last:border-0", sk.border100)}>
                 <span className="truncate">
-                  <span className="text-slate-400">{MILESTONE_HORIZON_LABEL[m.horizon]}: </span>
+                  <span className={sk.text400}>{MILESTONE_HORIZON_LABEL[m.horizon]}: </span>
                   {m.title}
                 </span>
                 <Badge variant={STATUS_BADGE[m.status]} className="shrink-0">

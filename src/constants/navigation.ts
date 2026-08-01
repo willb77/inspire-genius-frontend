@@ -20,7 +20,6 @@ import {
   Sparkles,
   BarChart3,
   MessageCircle,
-  Target,
   GitBranch,
   UserPlus,
   Eye,
@@ -63,17 +62,35 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.
-    { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
-    { to: ROUTES.SUMMIT.BASE, icon: Target, label: "Goal Setting" },
-    { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
-    { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
+    //
+    // 2026-07-31 — My Workspace pared back to five entries. Request Assessment,
+    // Goal Setting, My Documents, Feedback and the Onboarding Wizard are NOT
+    // deleted: their routes still resolve and each is reachable from the
+    // surface that owns it (documents + history from the Meridian header rows,
+    // the rest from Home and the Tools section). The menu is a shortcut list,
+    // not the route table — see HIDDEN_WORKSPACE_ROUTES below for the full
+    // accounting so a future reader doesn't assume the pages were dropped.
     { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
-    // Combined Plan §A.E3.4 — Forge onboarding wizard
-    { to: ROUTES.ONBOARDING.WIZARD, icon: Wand2, label: "Onboarding Wizard" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]
 }
+
+/**
+ * Routes deliberately absent from the My Workspace menu as of 2026-07-31.
+ *
+ * Kept as a named constant rather than deleted comments so the decision is
+ * greppable: every one of these pages still exists and still routes; only the
+ * sidebar shortcut was withdrawn. Restoring one means adding a line back to
+ * {@link getUserNavItems}, nothing more.
+ */
+export const HIDDEN_WORKSPACE_ROUTES = [
+  ROUTES.PRISM_ASSESSMENT,
+  ROUTES.SUMMIT.BASE,
+  ROUTES.DOCUMENTS,
+  ROUTES.FEEDBACK,
+  ROUTES.ONBOARDING.WIZARD,
+] as const
 
 /**
  * Team Development Studio is feature-flagged for a pilot cohort.

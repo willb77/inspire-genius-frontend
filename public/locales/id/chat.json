@@ -81,6 +81,14 @@
       "ready": "Suara siap",
       "connecting": "Menghubungkan",
       "off": "Suara nonaktif"
+    },
+    "personalRow": {
+      "aria": "Halaman Anda",
+      "selfPortrait": "Potret Diri Saya",
+      "moments": "Momen",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} tidak diaktifkan untuk akun Anda"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Dokumen",
       "close": "Tutup dokumen",
       "closeOverlay": "Tutup panel dokumen"
-    }
+    },
+    "upload": "Unggah dokumen"
   },
   "export": {
     "title": "Ekspor Obrolan",

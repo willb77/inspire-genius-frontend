@@ -96,12 +96,14 @@ describe("VerticalShell chrome selection", () => {
 
   test("the whole app menu stays present, in order, with the vertical between", () => {
     // Entering a vertical used to REPLACE the menu; now My Workspace and the
-    // Verticals catalogue stay reachable (rolled up) around the open sub-nav.
+    // Tools catalogue stay reachable (rolled up) around the open sub-nav.
+    // "Verticals" was renamed to "Tools" on 2026-07-31 — the section id is
+    // unchanged, so stored collapse state survived the rename.
     renderShell(<VerticalShell vertical="grant" />)
     expect(sectionLabels()).toEqual([
       "My Workspace",
       "Financial Aid",
-      "Verticals",
+      "Tools",
     ])
   })
 

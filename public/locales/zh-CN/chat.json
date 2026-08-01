@@ -81,6 +81,14 @@
       "ready": "语音就绪",
       "connecting": "连接中",
       "off": "语音关闭"
+    },
+    "personalRow": {
+      "aria": "你的页面",
+      "selfPortrait": "我的自画像",
+      "moments": "瞬间",
+      "coaching": "教练",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} 未对你的账户启用"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "文档",
       "close": "关闭文档",
       "closeOverlay": "关闭文档面板"
-    }
+    },
+    "upload": "上传文档"
   },
   "export": {
     "title": "导出聊天",
