@@ -213,6 +213,46 @@ describe("InterviewPage — with a target role", () => {
     )
   })
 
+  // The defect that made stage 12 unreachable for everyone: the page marked
+  // stage 11 complete but dropped the guide. Rehearsal reads the stage-11
+  // journey artefact and nothing else — it will not read blueprint-service's
+  // own table, which is keyed on a recruiter-pipeline candidate row a
+  // self-serve user does not have. So `canRehearse` was false forever, and the
+  // empty state's "build my prep sheet" button sent people back to this page to
+  // repeat the step that had just silently failed them. A closed loop.
+  describe("persisting the guide (stage 11 → stage 12)", () => {
+    const runOnSuccess = (guide: InterviewGuide | undefined) => {
+      renderPage(<InterviewPage />)
+      fireEvent.click(screen.getByRole("button", { name: /Build my prep sheet/ }))
+      const opts = mockGenerateMutate.mock.calls[0][1]
+      opts.onSuccess(guide)
+    }
+
+    it("stores the built guide as the stage-11 artefact", () => {
+      runOnSuccess(GUIDE)
+      expect(mockAdvanceMutate).toHaveBeenCalledWith({
+        stageId: "11",
+        state: "complete",
+        artefact: GUIDE,
+      })
+    })
+
+    it("keeps the keys build_questions reads", () => {
+      runOnSuccess(GUIDE)
+      const artefact = mockAdvanceMutate.mock.calls[0][0].artefact
+      expect(artefact.generalQuestions.length).toBeGreaterThan(0)
+      expect(artefact.focusDimensions[0].questions.length).toBeGreaterThan(0)
+      expect(artefact.counterProductiveQuestions[0].questions.length).toBeGreaterThan(0)
+    })
+
+    it("does not claim the stage is done when the guide is missing", () => {
+      // A 200 with nothing in the envelope. Marking it complete would recreate
+      // the original defect quietly: a green stage 11, an unopenable stage 12.
+      runOnSuccess(undefined)
+      expect(mockAdvanceMutate).not.toHaveBeenCalled()
+    })
+  })
+
   it("renders gap-derived questions and the self-advocacy lines together", () => {
     mockGenerate.mockReturnValue({
       mutate: mockGenerateMutate,

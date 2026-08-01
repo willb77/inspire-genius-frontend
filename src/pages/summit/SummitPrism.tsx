@@ -1,6 +1,6 @@
 import { Info, Sprout, Gauge } from "lucide-react";
 import { MAPS, QUADS } from "@/pages/summit/summitData";
-import { PageHead, Card, MiniLabel, CardH } from "@/pages/summit/components/ui";
+import { PageHead, Card, MiniLabel, CardH, SampleNotice } from "@/pages/summit/components/ui";
 import { cn } from "@/lib/utils";
 
 export default function SummitPrism() {
@@ -11,6 +11,13 @@ export default function SummitPrism() {
         title="The PRISM lens on your goals"
         sub="PRISM goal-setting aligns objectives with how you're wired. Four principles shape every goal Summit sets: align to your maps, tailor to your quadrant, exploit neuroplasticity, and reframe threat as reward."
       />
+
+      {/* The quadrant and map figures below are the wireframe's, for a person
+          who does not exist. There is no member-facing endpoint on this surface
+          that returns real per-dimension scores yet — the data exists server
+          side, but reaching it needs a route that has not been built. Until it
+          is, say so rather than let someone read these as their own profile. */}
+      <SampleNotice what="The scores and maps shown here illustrate how the PRISM lens works." />
 
       <Card>
         <MiniLabel>Principle 1 · Align to your brain maps</MiniLabel>

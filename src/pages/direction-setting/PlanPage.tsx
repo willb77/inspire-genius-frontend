@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import {
   AlertTriangle,
@@ -259,10 +260,21 @@ export function PlanSequence({ plan }: { plan: PlanResultPayload | null }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {plan?.note ??
-              "There's no plan to show yet. This gets built from your matched role and the gaps between you and it — the biggest ones first, because those are what actually move your fit, not the ones that are easiest to tick off."}
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {plan?.note ??
+                "There's no plan to show yet. This gets built from your matched role and the gaps between you and it — the biggest ones first, because those are what actually move your fit, not the ones that are easiest to tick off."}
+            </p>
+            {/* The server's note names "stages 7 and 8" — numbers the user has
+                never seen, since the nav calls that page Job matches. Give them
+                the door rather than the internal vocabulary. */}
+            <Button asChild variant="outline" size="sm">
+              <Link to={ROUTES.DIRECTION_SETTING.MATCHES}>
+                Pick a role to aim at
+                <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          </div>
         ) : (
           <>
             {plan?.targetRole?.title && (
@@ -801,9 +813,98 @@ function JobStates({
   return null
 }
 
+/**
+ * The one input nothing on this platform knows.
+ *
+ * The ROI refuses without it, and its refusal text says "if you are not earning
+ * anything at the moment, say so explicitly — a stated zero computes". Until
+ * now there was nowhere to say either thing: the page called `roi.start()` with
+ * no argument, so `current-income` was missing on every single run and the ROI
+ * could never compute through the app. Being told what to do with no way to do
+ * it is the most frustrating shape a screen can take.
+ *
+ * The "I'm not earning" checkbox is not a nicety. A stated zero and an omitted
+ * value mean different things to the backend — one computes, one refuses — and
+ * an empty number field cannot express the difference.
+ */
+function CurrentIncomeField({
+  value,
+  notEarning,
+  onValue,
+  onNotEarning,
+}: {
+  value: string
+  notEarning: boolean
+  onValue: (next: string) => void
+  onNotEarning: (next: boolean) => void
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Coins className="h-4 w-4 text-muted-foreground" aria-hidden />
+          What you earn now
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Working out whether a move pays off needs the side of the sum only you
+          know. It is used for this calculation and nothing else.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="ds-current-income"
+            className="text-sm font-medium text-muted-foreground"
+          >
+            Current annual income
+          </label>
+          <input
+            id="ds-current-income"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1000}
+            disabled={notEarning}
+            value={notEarning ? "" : value}
+            onChange={(e) => onValue(e.target.value)}
+            placeholder="e.g. 42000"
+            className="w-40 rounded-lg border border-border bg-background px-3 py-1.5 text-sm disabled:opacity-50"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={notEarning}
+            onChange={(e) => onNotEarning(e.target.checked)}
+            className="h-4 w-4 rounded border-border"
+          />
+          I&apos;m not earning anything at the moment
+        </label>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function PlanPage() {
   const plan = usePlan()
   const roi = useRoi()
+
+  const [income, setIncome] = useState("")
+  const [notEarning, setNotEarning] = useState(false)
+
+  /**
+   * `undefined` when nothing has been said, `0` when "not earning" is ticked.
+   *
+   * The distinction is the whole point: `undefined` omits the field and the
+   * ROI refuses; `0` is a statement and computes. Never coerce a blank box to
+   * zero — that would put words in someone's mouth about their income.
+   */
+  const parsed = Number(income)
+  const statedIncome: number | undefined = notEarning
+    ? 0
+    : income.trim() !== "" && Number.isFinite(parsed) && parsed >= 0
+      ? parsed
+      : undefined
 
   return (
     <div className="space-y-6 p-6">
@@ -854,13 +955,19 @@ export default function PlanPage() {
       </section>
 
       <section className="space-y-4" aria-label="Is it worth it?">
+        <CurrentIncomeField
+          value={income}
+          notEarning={notEarning}
+          onValue={setIncome}
+          onNotEarning={setNotEarning}
+        />
         <JobStates
           what="whether it pays off"
           phase={roi.phase}
           jobError={roi.jobError}
           isStarting={roi.isStarting}
           storedFailed={roi.storedFailed}
-          onStart={() => roi.start()}
+          onStart={() => roi.start({ currentIncome: statedIncome })}
         />
 
         {roi.result && roi.phase !== "loading" && (

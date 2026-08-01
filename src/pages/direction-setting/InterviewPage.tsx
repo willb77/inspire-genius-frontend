@@ -254,11 +254,34 @@ export default function InterviewPage() {
     generate.mutate(
       { jobId, candidateId },
       {
-        onSuccess: () => {
+        onSuccess: (built) => {
           // Stage ids are the backend's; "11" is this page, the same way
           // JourneyPage's route map keys off them. Recording it here means the
           // journey's "next action" moves on without the user having to tell it.
-          advance.mutate({ stageId: "11", state: "complete" })
+          //
+          // The guide MUST travel with the advance. Rehearsal (stage 12) reads
+          // the stage-11 journey artefact and nothing else — it deliberately
+          // will not read blueprint-service's own table, which is keyed on a
+          // recruiter-pipeline candidate row a self-serve user does not have.
+          // Marking the stage complete while dropping the guide left stage 12
+          // permanently unrehearsable, and its empty state sent people back
+          // here to repeat the step that had just silently failed them.
+          //
+          // `build_questions` reads generalQuestions / focusDimensions /
+          // counterProductiveQuestions and tolerates either casing, so the
+          // guide is stored verbatim rather than reshaped into a second
+          // contract that could drift from this one.
+          if (!built) {
+            // A 200 with no guide in the envelope. Claiming the stage is done
+            // would recreate the original defect in a quieter form: a green
+            // stage 11 and a stage 12 that can never open.
+            return
+          }
+          advance.mutate({
+            stageId: "11",
+            state: "complete",
+            artefact: built as unknown as Record<string, unknown>,
+          })
         },
       }
     )
