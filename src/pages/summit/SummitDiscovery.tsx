@@ -1,11 +1,15 @@
-import { Check, Flag, Info, Heart } from "lucide-react";
-import { CATEGORIES, LADDER } from "@/pages/summit/summitData";
+import { Check, Flag, Info, Heart, Loader2 } from "lucide-react";
+import { LADDER } from "@/pages/summit/summitData";
 import { PageHead, Card, MiniLabel, CardH, StatusPill } from "@/pages/summit/components/ui";
 import { cn } from "@/lib/utils";
+import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 
 const STATUS_LABEL = { explored: "Explored", active: "In progress", todo: "Not started" } as const;
 
 export default function SummitDiscovery() {
+  const { data: session, isLoading, isError } = useGoalSession();
+  const categories = useSummitCategories(session);
+
   return (
     <div className="flex flex-col gap-[18px]">
       <PageHead
@@ -14,41 +18,68 @@ export default function SummitDiscovery() {
         sub="Summit gathers organically across sessions. For each category it explores, probes for patterns, runs the WHY ladder to your true motivation, then converts the discussion into candidate goals."
       />
 
-      <div className="flex flex-col gap-2.5">
-        {CATEGORIES.map((c) => (
-          <Card key={c.key} className="flex gap-4 !p-[18px]">
-            <div
-              className={cn(
-                "grid h-9 w-9 flex-shrink-0 place-items-center rounded-[10px] text-sm font-bold",
-                c.status === "explored" ? "bg-[#5B8A72] text-white" : c.status === "active" ? "bg-[#127A8A] text-white" : "bg-[#F1ECE2] text-[#7C93B5]",
-              )}
-            >
-              {c.status === "explored" ? <Check className="h-4 w-4" /> : c.n}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-[15.5px] font-bold text-[#0B1B33]">{c.label}</span>
-                <StatusPill status={c.status} label={STATUS_LABEL[c.status]} />
+      {isLoading && (
+        <div className="flex items-center gap-2 text-[13.5px] text-[#13294B]/70">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          Reading your progress…
+        </div>
+      )}
+
+      {!isLoading && isError && (
+        <Card className="!p-5">
+          <p className="text-[14px] text-[#13294B]/80">
+            We couldn&apos;t read your progress just now. Refresh to try again —
+            nothing you&apos;ve worked through has been lost.
+          </p>
+        </Card>
+      )}
+
+      {!isLoading && !isError && (
+        <div className="flex flex-col gap-2.5">
+          {categories.map((c) => (
+            <Card key={c.key} className="flex gap-4 !p-[18px]">
+              <div
+                className={cn(
+                  "grid h-9 w-9 flex-shrink-0 place-items-center rounded-[10px] text-sm font-bold",
+                  c.status === "explored" ? "bg-[#5B8A72] text-white" : c.status === "active" ? "bg-[#127A8A] text-white" : "bg-[#F1ECE2] text-[#7C93B5]",
+                )}
+              >
+                {c.status === "explored" ? <Check className="h-4 w-4" /> : c.n}
               </div>
-              <p className="mt-1.5 text-[13.5px] leading-snug text-[#13294B]/85">{c.insight}</p>
-              <div className="mt-2 flex flex-wrap gap-3.5 text-[12px] text-[#7C93B5]">
-                <span className="inline-flex items-center gap-1.5">
-                  <Flag className="h-3 w-3" /> {c.goals} goal{c.goals === 1 ? "" : "s"} surfaced
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Info className="h-3 w-3" /> {c.summary}
-                </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="text-[15.5px] font-bold text-[#0B1B33]">{c.label}</span>
+                  <StatusPill status={c.status} label={STATUS_LABEL[c.status]} />
+                </div>
+                {/* `summary` is written by the discovery save and is often "".
+                    An empty string renders nothing rather than an empty row. */}
+                {c.summary && (
+                  <p className="mt-1.5 text-[13.5px] leading-snug text-[#13294B]/85">{c.summary}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-3.5 text-[12px] text-[#7C93B5]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Flag className="h-3 w-3" /> {c.goalCount} goal{c.goalCount === 1 ? "" : "s"} surfaced
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Info className="h-3 w-3" />
+                    {c.answers.length} question{c.answers.length === 1 ? "" : "s"} answered
+                  </span>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card>
-        <MiniLabel>Live example · the WHY ladder</MiniLabel>
-        <CardH>How "better leadership" became a real goal</CardH>
+        {/* Illustration, not this person's data. It was previously headed "Live
+            example", which read as a transcript of their own conversation. */}
+        <MiniLabel>How it works · the WHY ladder</MiniLabel>
+        <CardH>How &quot;better leadership&quot; becomes a real goal</CardH>
         <p className="mb-3 text-[14.5px] leading-relaxed text-[#13294B]/80">
-          We don't stop at the first answer. Asking "why" a few times reaches the motivation the goal actually hooks onto.
+          We don&apos;t stop at the first answer. Asking &quot;why&quot; a few times
+          reaches the motivation the goal actually hooks onto. This is an example of
+          the shape it takes — yours will be in your own words.
         </p>
         <div className="flex flex-col">
           {LADDER.map((r, i) => (
