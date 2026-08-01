@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { agentApi } from "@/lib/agentApi";
 import AssistantMarkdown from "@/components/user/chat/AssistantMarkdown";
 import MessageAttachments from "@/components/user/chat/MessageAttachments";
+import PrismMapFigure from "@/components/prism/PrismMapFigure";
 import MessageFeedback from "@/components/user/chat/MessageFeedback";
 import ObservabilityPanel from "@/components/observability/ObservabilityPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -292,6 +293,9 @@ export default function ChatWindowChatTab({
               <p className="mt-1 text-xs text-muted-foreground">
                 {t("conversation.viaAgent", { defaultValue: "via {{agent}}", agent: m.agent })}
               </p>
+            )}
+            {m.kind === "text" && m.sender === "assistant" && m.prismMap && (
+              <PrismMapFigure map={m.prismMap} />
             )}
             {m.kind === "text" &&
               m.sender === "assistant" &&
