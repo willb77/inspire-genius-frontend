@@ -1,3 +1,58 @@
+## [2026-08-01] — PRISM: wrong colour scores + "Orange", duplicated TTS read-back, slow prompt injection
+
+Five reported defects. Every diagnosis below was confirmed against real dev data or a failing test — none inferred.
+
+### Fixed — Red was being reported as "Orange" (there is no Orange in PRISM)
+PRISM has four colours: **Gold, Green, Blue, Red**. "Orange" survives only as the name of the legacy `prism_results.orange` DB column. That name was leaking into the model's own context two ways: the injected `<prism_profile>` block emitted `<orange>`, and Aura's system prompt said verbatim *"Treat Red and Orange as synonyms; mirror the user's wording."* The model was doing what it was told.
+- Inject block now emits `<red>`; the DB column keeps its name (no migration, no benefit to renaming).
+- Aura's **and** Meridian's prompts now forbid the word as a colour name outright, and instruct answering in "Red" even when the user says "Orange".
+- Reference text no longer offers it as an alias: `prism_knowledge`, `disc_knowledge`, `enneagram_knowledge`, `reconciliation`, `prism_parser`, `report_import`.
+- `prism_canon.normalise_colour_names()` is a last-resort guard applied to Meridian's response. Scoped deliberately narrowly — it rewrites "Orange" only in PRISM contexts (adjacent to a quadrant noun, to Focusing/Delivering, or in a colour list) so ordinary prose ("orange juice", "an orange dress") is untouched. It also fixes the article, since "an Orange quadrant" would otherwise become "an Red quadrant".
+  - Files: `services/agent-engine/app/prism_canon.py`, `app/llm/prompts.py`, `app/memory/integration.py`, `app/agents/meridian.py`, `app/agents/coaching/prism_knowledge.py`
+
+### Fixed — the Blue score was wrong, and so were Gold and Red
+Each colour is the mean of the two behaviours in its quadrant, but the pairing was **rotated** against the licensed PRISM manual. Confirmed arithmetically against dev assessment `4f1066ba` (Innovating 88, Initiating 13, Supporting 92, Coordinating 80, Focusing 32, Delivering 46, Finishing 60, Evaluating 96):
+
+| Colour | Stored | Correct | |
+|---|---|---|---|
+| Green | 50.5 | (88+13)/2 = **50.5** | correct |
+| **Blue** | **78.0** | (92+80)/2 = **86.0** | was Gold's pair |
+| Gold | 39.0 | (60+96)/2 = **78.0** | was Red's pair |
+| Red | 86.0 | (32+46)/2 = **39.0** | was Blue's pair |
+
+Only Green was right — its pair is identical under both groupings, which is why the error survived. The row's own `raw_data.color_derivation` recorded the wrong pairing in plain text. **The user reported Blue; three of the four colours were affected.**
+
+The rotation lived in four places (storage, Aura's radar, the frontend colours, and a one-time backfill) and was documented in-code as *"a pre-existing, deliberately-unfixed quadrant-mapping inconsistency."* All now derive from one dependency-free source of truth.
+  - Files: `services/agent-engine/app/prism_canon.py`, `app/memory/long_term.py`, `app/agents/coaching/prism_agent.py`, `app/agents/coaching/frameworks/reconciliation.py`, `inspire-genius-frontend/src/constants/prism.ts`
+
+### Fixed — stored rows corrected with no data migration
+`get_latest_prism` derives colours at **read time** from the authoritative `assessment_scores` rows, so fixing the mapping corrected every user with an assessment immediately (all 10 on dev). Legacy `prism_results` rows are repaired on read from `raw_data.dimensions` when present, and log when they are. No `UPDATE` was run against user data.
+
+### Fixed — "scores get misrepresented at times"
+The read was already per-turn and uncached, and `SharedContext` is per-request, so staleness was not the mechanism. The real hazard was **absence**: memory sections render in priority order (corrections → goals → PRISM → …), each gated on remaining token budget, so enough corrections or goals silently pushed the entire `<prism_profile>` block out of context. With no scores present the model falls back to numbers from earlier in the conversation — indistinguishable, to the user, from a stale score. The block's cost is now reserved before the variable-length sections.
+  - Files: `services/agent-engine/app/memory/integration.py`
+
+### Fixed — Meridian read responses back twice
+Reported as *"once completely from start to finish, other times repeating paragraphs and sentences."* Both symptoms are the same bug. `speakText` had no re-entrancy protection: it replaced `ttsAbortRef` with a fresh controller **without aborting the previous one** and reset the cancelled flag, so a second call for the same turn left the first run's in-flight sentence requests resolving into the audio queue — a plain FIFO with no dedupe. Two clean runs read the whole answer twice; two overlapping runs interleave and repeat fragments. A settled turn can reach TTS from more than one delivery path (async-job settlement and the WS `complete` frame), which is what triggered it.
+- Dedupe on content, so one turn is spoken at most once.
+- Genuinely abort a previous run when different text arrives.
+- The streaming-TTS path records what it spoke — gated on whether it *actually ran*, since muting creates no controller and suppressing the fallback would have produced silence instead of a duplicate.
+
+Verified non-vacuous: with the guard removed the test fails with both sentences synthesized twice, in order.
+  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
+
+### Fixed — injected questions were slow and displayed raw scaffolding
+The warm-up `GET /v1/agents/health` and the auto-send fired in the **same tick**, so a question injected from another surface got zero warm-up window and hit a cold ECS task — paying API Gateway's 30s cap and then `startJob`'s 3s/6s retry backoff before the job was even accepted. A typed question never pays this, because the user's typing time *is* the warm-up window. That is the entire gap between "typed here" and "arrived from elsewhere". The dispatch now waits for the health ping (sub-second when warm, capped at 8s so a hung ping can never strand a question); bubbles still render immediately, so there is no blank screen.
+
+Separately, Lumen sends `question + scope line` as the prompt and the whole composed string was rendered as the user's own message. `prefillDisplay` / `autoSendDisplayText` lets the full prompt reach the model while the bubble shows only what the person asked.
+  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`, `src/components/user/chat/ChatWindow.tsx`, `src/types/chat/component-types.ts`, `src/pages/lumen/CoachingPage.tsx`
+
+### Verification
+- Agent engine: **+29 tests**; full suite 4264 passed. The 167 failures are pre-existing (no OpenAI key / AWS credentials locally) — failure sets diffed against `origin/development` and found **byte-identical**, so zero regressions.
+- Frontend: **+8 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **520 suites / 3986 tests, exit 0**. `npm run build` (tsc + vite) clean.
+- The token-budget test asserts the budget was genuinely exhausted first, so it cannot pass vacuously.
+- PRs: monorepo **#743**, frontend **#327**.
+
 ## [2026-08-01] — Lumen "Answer it here": staging-B confirmed, plus two findings the feature shipped with
 
 Follow-up to the 2026-07-30 entry. **No product code changed** — this records three things learned after that work merged, two of which are actionable.
