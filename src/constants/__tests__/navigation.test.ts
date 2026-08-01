@@ -2,6 +2,8 @@ import {
   NAV_ITEMS_BY_ROLE,
   HOME_ROUTE_BY_ROLE,
   DEFAULT_ROLE_CONFIGS,
+  TOOL_ITEMS_BY_ROLE,
+  SUPER_ADMIN_TOOLS_SECTION,
 } from "../navigation"
 import type { UserRole } from "@/types/roles"
 
@@ -23,6 +25,33 @@ describe("constants/navigation", () => {
           expect(typeof item.label).toBe("string")
           expect(item.icon).toBeDefined()
         }
+      }
+    })
+  })
+
+  describe("Tools rollup", () => {
+    it("defines tool-item arrays for manager and super-admin", () => {
+      expect(Array.isArray(TOOL_ITEMS_BY_ROLE.manager)).toBe(true)
+      expect(Array.isArray(TOOL_ITEMS_BY_ROLE["super-admin"])).toBe(true)
+    })
+
+    it("every tool item is well-formed (to, icon, label)", () => {
+      for (const items of Object.values(TOOL_ITEMS_BY_ROLE)) {
+        for (const item of items ?? []) {
+          expect(typeof item.to).toBe("string")
+          expect(typeof item.label).toBe("string")
+          expect(item.icon).toBeDefined()
+        }
+      }
+    })
+
+    it("super-admin Tools section is a collapsed 'Tools' rollup or null", () => {
+      if (SUPER_ADMIN_TOOLS_SECTION) {
+        expect(SUPER_ADMIN_TOOLS_SECTION.label).toBe("Tools")
+        expect(SUPER_ADMIN_TOOLS_SECTION.defaultCollapsed).toBe(true)
+        expect(SUPER_ADMIN_TOOLS_SECTION.items.length).toBeGreaterThan(0)
+      } else {
+        expect(SUPER_ADMIN_TOOLS_SECTION).toBeNull()
       }
     })
   })

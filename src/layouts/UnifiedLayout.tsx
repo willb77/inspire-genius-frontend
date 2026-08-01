@@ -2,6 +2,7 @@ import React from "react"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold"
 import { useGatedNavItems, useEntitledVerticalItems } from "@/hooks/nav/useGatedNavItems"
+import { TOOL_ITEMS_BY_ROLE } from "@/constants/navigation"
 import { usePageViewAudit } from "@/hooks/audit/usePageViewAudit"
 import type { UserRole } from "@/types/roles"
 
@@ -40,12 +41,23 @@ export default function UnifiedLayout({
   // beneath it. Verticals is EXPANDED (2026-07-28) — it lists every vertical,
   // greyed where the user has no entitlement, so it is a menu to browse rather
   // than a drawer to remember to open.
-  const navSections: NavSectionDef[] | undefined = verticalItems.length
-    ? [
-        { label: "", items: navItems },
-        { label: "Verticals", items: verticalItems, defaultCollapsed: false },
-      ]
-    : undefined
+  // Role-specific "Tools" rollup (e.g. Team Development for managers) — a
+  // collapsed-by-default group so utility surfaces are grouped rather than
+  // crowding the primary role menu.
+  const toolItems = TOOL_ITEMS_BY_ROLE[role] ?? []
+
+  const navSections: NavSectionDef[] | undefined =
+    toolItems.length || verticalItems.length
+      ? [
+          { label: "", items: navItems },
+          ...(toolItems.length
+            ? [{ label: "Tools", items: toolItems, defaultCollapsed: true }]
+            : []),
+          ...(verticalItems.length
+            ? [{ label: "Verticals", items: verticalItems, defaultCollapsed: false }]
+            : []),
+        ]
+      : undefined
 
   return (
     <SidebarScaffold
