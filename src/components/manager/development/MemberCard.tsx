@@ -2,12 +2,14 @@ import { useNavigate } from "react-router-dom"
 import { Briefcase, TrendingUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import type { RosterMember } from "@/types/development"
 import { CoverageChips } from "./CoverageChips"
 import { PlanStatusBadge } from "./PlanStatusBadge"
 import { ProgressRing } from "./ProgressRing"
 import { ConfidenceDot } from "./ConfidenceDot"
+import { useDevSkin } from "./skin"
 
 function initials(name: string): string {
   return name
@@ -31,6 +33,7 @@ export type MemberCardProps = {
  */
 export function MemberCard({ member, onInvite }: MemberCardProps) {
   const navigate = useNavigate()
+  const sk = useDevSkin()
   const target = ROUTES.MANAGER.DEVELOPMENT_MEMBER.replace(":memberId", member.memberId)
   const go = () => navigate(target)
 
@@ -49,18 +52,23 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
           go()
         }
       }}
-      className="flex cursor-pointer flex-col gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B5BFF]"
+      className={cn(
+        "flex cursor-pointer flex-col gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+        sk.radius,
+        sk.border200,
+        sk.focusRing,
+      )}
     >
       <div className="flex items-start gap-3">
         <Avatar className="h-10 w-10">
           {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt="" /> : null}
-          <AvatarFallback className="bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] text-sm font-bold text-white">
+          <AvatarFallback className={cn("bg-gradient-to-br text-sm font-bold text-white", sk.avatarGradient)}>
             {initials(member.name)}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-slate-900">{member.name}</div>
-          <div className="truncate text-xs text-slate-500">
+          <div className={cn("truncate text-sm font-semibold", sk.text900)}>{member.name}</div>
+          <div className={cn("truncate text-xs", sk.text500)}>
             {member.title ?? "—"}
             {member.department ? ` · ${member.department}` : ""}
           </div>
@@ -82,17 +90,17 @@ export function MemberCard({ member, onInvite }: MemberCardProps) {
       {headline ? (
         <div className="flex items-start gap-1.5">
           {member.headlineConfidence ? <ConfidenceDot level={member.headlineConfidence} className="mt-1" /> : null}
-          <p className="line-clamp-2 text-xs text-slate-600">{headline}</p>
+          <p className={cn("line-clamp-2 text-xs", sk.text600)}>{headline}</p>
         </div>
       ) : needsPrism ? (
-        <p className="text-xs italic text-slate-400">Invite to complete PRISM to build a profile.</p>
+        <p className={cn("text-xs italic", sk.text400)}>Invite to complete PRISM to build a profile.</p>
       ) : null}
 
       {member.topMatch ? (
-        <div className="mt-auto flex items-center gap-1.5 border-t border-slate-100 pt-2 text-xs text-slate-600">
-          <Briefcase className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+        <div className={cn("mt-auto flex items-center gap-1.5 border-t pt-2 text-xs", sk.border100, sk.text600)}>
+          <Briefcase className={cn("h-3.5 w-3.5", sk.text400)} aria-hidden="true" />
           <span className="truncate">{member.topMatch.title}</span>
-          <span className="ml-auto inline-flex items-center gap-0.5 font-medium text-slate-700">
+          <span className={cn("ml-auto inline-flex items-center gap-0.5 font-medium", sk.text700)}>
             <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
             {Math.round(member.topMatch.fitScore)}%
           </span>

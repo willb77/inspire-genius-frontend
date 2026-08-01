@@ -6,9 +6,10 @@
  * lazy-loaded, plus the member-scoped Meridian assistant panel. Loading /
  * degraded / error handled at the shell.
  */
-import { Suspense, lazy, useMemo } from "react"
+import { Suspense, lazy, useMemo, type ReactNode } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Download, MessageSquare, RefreshCw, Share2 } from "lucide-react"
+import ManagerLayout from "@/layouts/ManagerLayout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import {
   CONFIDENCE_BADGE_VARIANT,
@@ -35,6 +37,13 @@ import {
 import { CoverageChips } from "@/components/manager/development/CoverageChips"
 import { ConfidenceDot } from "@/components/manager/development/ConfidenceDot"
 import { MeridianDevelopmentPanel } from "@/components/manager/development/MeridianDevelopmentPanel"
+import {
+  DevSkinProvider,
+  DevPageFrame,
+  getDevSkin,
+  resolveDevV2,
+  type DevVariant,
+} from "@/components/manager/development/skin"
 
 // Lazy-loaded tab panels
 const BehavioralProfilePanel = lazy(() =>
@@ -80,11 +89,23 @@ function TabFallback() {
   )
 }
 
-export default function MemberDevelopmentWorkspace() {
+export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevVariant }) {
+  const v2 = resolveDevV2(variant)
+  const sk = getDevSkin(v2)
   const { memberId } = useParams<{ memberId: string }>()
   const navigate = useNavigate()
   const { t } = useDevelopmentText()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // Standard manager chrome + (flag-gated) HomeV2 cream frame around whichever
+  // shell state we return below.
+  const frame = (node: ReactNode) => (
+    <ManagerLayout>
+      <DevSkinProvider v2={v2}>
+        <DevPageFrame>{node}</DevPageFrame>
+      </DevSkinProvider>
+    </ManagerLayout>
+  )
 
   const tabParam = (searchParams.get("tab") as DevTab | null) ?? "profile"
   const activeTab: DevTab = TABS.some((x) => x.value === tabParam) ? tabParam : "profile"
@@ -119,11 +140,11 @@ export default function MemberDevelopmentWorkspace() {
 
   // --- Shell states ---
   if (isLoading) {
-    return (
+    return frame(
       <div className="space-y-4">
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-96 w-full rounded-xl" />
-      </div>
+        <Skeleton className={cn("h-24 w-full", sk.radius)} />
+        <Skeleton className={cn("h-96 w-full", sk.radius)} />
+      </div>,
     )
   }
 
@@ -131,24 +152,24 @@ export default function MemberDevelopmentWorkspace() {
   // backend returns 202 while the job runs and useMemberDossier polls. `null`
   // = computing (distinct from `undefined`/error below).
   if (dossier === null) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-slate-400" aria-hidden="true" />
-        <p className="text-sm text-slate-500">
+    return frame(
+      <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
+        <RefreshCw className={cn("h-6 w-6 animate-spin", sk.text400)} aria-hidden="true" />
+        <p className={cn("text-sm", sk.text500)}>
           Generating the development dossier — this can take up to a minute…
         </p>
-      </div>
+      </div>,
     )
   }
 
   if (isError || !dossier) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">
-        <p className="text-sm text-slate-500">{isError ? t("dev.workspace.error") : t("dev.workspace.notFound")}</p>
+    return frame(
+      <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
+        <p className={cn("text-sm", sk.text500)}>{isError ? t("dev.workspace.error") : t("dev.workspace.notFound")}</p>
         <Button variant="outline" onClick={() => navigate(ROUTES.MANAGER.DEVELOPMENT)}>
           Back to roster
         </Button>
-      </div>
+      </div>,
     )
   }
 
@@ -161,41 +182,41 @@ export default function MemberDevelopmentWorkspace() {
 
   const handleInvite = () => session.mutate("invite")
 
-  return (
+  return frame(
     <div className="space-y-4">
       <button
         type="button"
         onClick={() => navigate(ROUTES.MANAGER.DEVELOPMENT)}
-        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800"
+        className={cn("inline-flex items-center gap-1 text-xs hover:text-slate-800", sk.text500)}
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         Back to roster
       </button>
 
       {/* Persistent header */}
-      <header className="rounded-xl border border-slate-200 bg-white p-4">
+      <header className={cn("border bg-white p-4", sk.radius, sk.border200)}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-3">
             <Avatar className="h-12 w-12">
               {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt="" /> : null}
-              <AvatarFallback className="bg-gradient-to-br from-[#3B5BFF] to-[#2DD4BF] font-bold text-white">
+              <AvatarFallback className={cn("bg-gradient-to-br font-bold text-white", sk.avatarGradient)}>
                 {initials(member.name)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-slate-900">{member.name}</h1>
+                <h1 className={cn("text-lg font-semibold", sk.heading)}>{member.name}</h1>
                 <Badge variant={CONFIDENCE_BADGE_VARIANT[overallConfidence]}>
                   {CONFIDENCE_LABEL[overallConfidence]}
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className={cn("text-xs", sk.text500)}>
                 {member.title ?? "—"}
                 {member.department ? ` · ${member.department}` : ""}
               </p>
               <div className="mt-1.5 flex items-start gap-1.5">
                 <ConfidenceDot level={overallConfidence} className="mt-1" />
-                <p className="text-sm text-slate-700">{reconciledHeadline}</p>
+                <p className={cn("text-sm", sk.text700)}>{reconciledHeadline}</p>
               </div>
               <div className="mt-2">
                 <CoverageChips coverage={coverage} showDates onInvite={handleInvite} />
@@ -212,20 +233,20 @@ export default function MemberDevelopmentWorkspace() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80">
-                  <div className="text-xs font-semibold text-slate-700">Interpretation provenance</div>
-                  <p className="mt-0.5 text-[11px] text-slate-400">Which agent produced what, confidence, and any discrepancies.</p>
+                  <div className={cn("text-xs font-semibold", sk.text700)}>Interpretation provenance</div>
+                  <p className={cn("mt-0.5 text-[11px]", sk.text400)}>Which agent produced what, confidence, and any discrepancies.</p>
                   <ul className="mt-2 space-y-2">
                     {dossier.events.map((ev, i) => (
-                      <li key={i} className="rounded-md border border-slate-100 p-2 text-xs">
+                      <li key={i} className={cn("rounded-md border p-2 text-xs", sk.border100)}>
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-slate-700">{ev.agent}</span>
+                          <span className={cn("font-medium", sk.text700)}>{ev.agent}</span>
                           {ev.confidence ? (
                             <Badge variant={CONFIDENCE_BADGE_VARIANT[ev.confidence]} className="text-[10px]">
                               {CONFIDENCE_LABEL[ev.confidence]}
                             </Badge>
                           ) : null}
                         </div>
-                        <div className="text-slate-500">{ev.eventType}</div>
+                        <div className={sk.text500}>{ev.eventType}</div>
                         {ev.discrepancies && ev.discrepancies.length > 0 ? (
                           <ul className="mt-1 list-inside list-disc text-[11px] text-amber-600">
                             {ev.discrepancies.map((d, j) => (
@@ -318,6 +339,6 @@ export default function MemberDevelopmentWorkspace() {
           </div>
         </aside>
       </div>
-    </div>
+    </div>,
   )
 }

@@ -517,8 +517,14 @@ export const routes: RouteObject[] = [
       { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
       // Team Development Studio (roster + per-member workspace)
+      // Team Development Studio. The page resolves classic vs the HomeV2 look
+      // from the `new_user_surfaces` flag internally; /classic forces the
+      // original look as a permanent escape hatch (static segment out-ranks
+      // :memberId in the router).
       { path: "/manager/development", element: withSuspense(<DevelopmentStudio />) },
+      { path: "/manager/development/classic", element: withSuspense(<DevelopmentStudio variant="classic" />) },
       { path: "/manager/development/:memberId", element: withSuspense(<MemberDevelopmentWorkspace />) },
+      { path: "/manager/development/:memberId/classic", element: withSuspense(<MemberDevelopmentWorkspace variant="classic" />) },
       { path: "/manager/training", element: withSuspense(<ManagerTraining />) },
       { path: "/manager/career-mgmt", element: withSuspense(<ManagerCareerManagement />) },
       { path: "/manager/team-building", element: withSuspense(<ManagerTeamBuilding />) },

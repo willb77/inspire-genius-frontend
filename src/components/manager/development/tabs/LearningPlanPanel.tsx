@@ -9,20 +9,23 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { LEARNING_STATUS_LABEL } from "@/constants/development"
 import type { DevelopmentGap, LearningItem, SummitGoal } from "@/types/development"
+import { useDevSkin } from "../skin"
 
 function LearningItemRow({ item, onAssign }: { item: LearningItem; onAssign: () => void }) {
+  const sk = useDevSkin()
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-slate-100 p-3">
+    <div className={cn("flex flex-col gap-2 rounded-lg border p-3", sk.border100)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-sm font-medium text-slate-800">
-            <BookOpen className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+          <div className={cn("flex items-center gap-1.5 text-sm font-medium", sk.text800)}>
+            <BookOpen className={cn("h-3.5 w-3.5 shrink-0", sk.text400)} aria-hidden="true" />
             <span className="truncate">{item.title}</span>
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div className={cn("mt-0.5 flex flex-wrap items-center gap-2 text-xs", sk.text500)}>
             <span>{item.provider}</span>
             {item.estHours ? (
               <span className="inline-flex items-center gap-0.5">
@@ -42,7 +45,7 @@ function LearningItemRow({ item, onAssign }: { item: LearningItem; onAssign: () 
       ) : null}
       <div className="flex items-center justify-between">
         {typeof item.quizScore === "number" ? (
-          <span className="text-xs text-slate-500">Quiz: {item.quizScore}%</span>
+          <span className={cn("text-xs", sk.text500)}>Quiz: {item.quizScore}%</span>
         ) : (
           <span />
         )}
@@ -61,12 +64,13 @@ export type LearningPlanPanelProps = {
 }
 
 export function LearningPlanPanel({ learning, gaps, goals }: LearningPlanPanelProps) {
+  const sk = useDevSkin()
   const navigate = useNavigate()
 
   if (learning.length === 0) {
     return (
       <Card className="border-dashed">
-        <CardContent className="p-6 text-center text-sm text-slate-500">
+        <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
           No learning items yet. Close a gap to seed one.
         </CardContent>
       </Card>
@@ -93,13 +97,13 @@ export function LearningPlanPanel({ learning, gaps, goals }: LearningPlanPanelPr
 
   return (
     <div className="space-y-5">
-      <p className="rounded-md bg-slate-50 p-2.5 text-xs text-slate-500">
+      <p className={cn("rounded-md p-2.5 text-xs", sk.bgMuted50, sk.text500)}>
         Pacing note: items are sequenced to match this member’s behavioral learning preference —
         avoid front-loading; space experiential items between reflective ones.
       </p>
       {Array.from(groups.entries()).map(([group, items]) => (
         <div key={group} className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</h3>
+          <h3 className={cn("text-xs font-semibold uppercase tracking-wide", sk.text500)}>{group}</h3>
           <div className="space-y-2">
             {items.map((item) => (
               <LearningItemRow key={item.itemId} item={item} onAssign={assign} />
