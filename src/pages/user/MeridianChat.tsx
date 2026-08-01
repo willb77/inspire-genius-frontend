@@ -163,6 +163,15 @@ function formatUSTimeSafe(input: unknown): string {
 const AGENT_ID = "meridian";
 const COACH_NAME = "Meridian";
 
+/**
+ * Longest we will hold a chat dispatch waiting for the ECS warm-up ping.
+ * A warm task answers `/v1/agents/health` in well under a second; a cold one
+ * can take several. Past this we send anyway and let startJob's own
+ * retry-with-backoff handle it — a hung health check must never strand a
+ * question.
+ */
+const WARMUP_MAX_WAIT_MS = 8000;
+
 export type MeridianChatVariant = "classic" | "v2";
 
 /**
@@ -211,6 +220,47 @@ export default function MeridianChat({
       | null;
     return s?.autoSubmit && s.prefillPrompt ? s.prefillPrompt : undefined;
   });
+  // Optional display-only counterpart. Surfaces that wrap the question in
+  // scaffolding (Lumen appends a "sources in scope" line) send the clean
+  // question here so the user's bubble shows what they actually asked rather
+  // than the machine-composed prompt.
+  const [autoSendDisplayText] = useState<string | undefined>(() => {
+    const s = location.state as { prefillDisplay?: string } | null;
+    return s?.prefillDisplay || undefined;
+  });
+
+  // ── Warm-up gate for injected questions (2026-08-01) ───────────────
+  //
+  // Reported symptom: a question injected from another surface took far
+  // longer to answer than the same question typed here. Cause: the warmup
+  // `GET /v1/agents/health` and the auto-send fire in the SAME tick, so an
+  // injected question gets ZERO warm-up window and hits a cold ECS task —
+  // paying API GW's 30s cap, then startJob's 3s/6s retry backoff, before the
+  // job is even accepted. A typed question never pays this, because the
+  // user's typing time IS the warm-up window.
+  //
+  // So we defer only the network dispatch (never the bubbles — the user sees
+  // their question and "Meridian is thinking…" immediately). For a typed
+  // send the warmup settled long ago and `runWhenWarm` runs inline, so this
+  // is a no-op on that path.
+  const warmupSettledRef = useRef(false);
+  const pendingWarmDispatchRef = useRef<(() => void) | null>(null);
+
+  const markWarm = useCallback(() => {
+    if (warmupSettledRef.current) return;
+    warmupSettledRef.current = true;
+    const queued = pendingWarmDispatchRef.current;
+    pendingWarmDispatchRef.current = null;
+    queued?.();
+  }, []);
+
+  const runWhenWarm = useCallback((fn: () => void) => {
+    if (warmupSettledRef.current) {
+      fn();
+      return;
+    }
+    pendingWarmDispatchRef.current = fn;
+  }, []);
   useEffect(() => {
     if (autoSendText) {
       navigate(location.pathname + location.search, {
@@ -598,21 +648,27 @@ export default function MeridianChat({
   // intentional empty deps array.
   useEffect(() => {
     const ac = new AbortController();
+    const done = () => markWarm();
+    // Never let a hung health check strand an auto-submitted question.
+    const cap = setTimeout(done, WARMUP_MAX_WAIT_MS);
     try {
       const promise = getAgentApi().get("/v1/agents/health", { signal: ac.signal });
       // Defensive — under test mocks `getAgentApi()` may not return a
       // real axios instance.  Only chain when we actually got a thenable.
-      if (promise && typeof (promise as { catch?: unknown }).catch === "function") {
-        (promise as Promise<unknown>).catch(() => {
-          // Swallow — best-effort warmup. The retry-with-backoff in
-          // startJob handles real cold-start cases.
-        });
+      if (promise && typeof (promise as { then?: unknown }).then === "function") {
+        (promise as Promise<unknown>).then(done, done);
+      } else {
+        done();
       }
     } catch {
       // Same — never let warmup throw out of the effect.
+      done();
     }
-    return () => ac.abort();
-  }, []);
+    return () => {
+      clearTimeout(cap);
+      ac.abort();
+    };
+  }, [markWarm]);
 
   // G6: the latest-PRISM client-side auto-attach effect was removed here.
   // Server-side profile preload (G3) now handles the equivalent ingestion
@@ -771,6 +827,11 @@ export default function MeridianChat({
   // the per-sentence /v1/agents/voice/synthesize loop, not just stop the queue.
   const ttsAbortRef = useRef<AbortController | null>(null);
   const ttsCancelledRef = useRef(false);
+  // The exact text most recently handed to TTS. A settled turn can reach
+  // `speakText` from more than one delivery path (async-job settlement, WS
+  // `complete` frame); comparing on content makes the second call a no-op so
+  // the answer is never read aloud twice. Cleared when a new question is sent.
+  const lastSpokenTextRef = useRef<string | null>(null);
 
   // Streaming-TTS sentence queue (T22 voice streaming, flag-gated).
   // Each sentence emitted by SentenceStreamer triggers a TTS POST
@@ -921,6 +982,34 @@ export default function MeridianChat({
     async (text: string) => {
       const responseText = (text || "").trim();
       if (!responseText) return;
+
+      // ── Duplicate-playback guards (2026-08-01) ──────────────────────
+      //
+      // Reported symptom: Meridian sometimes read a response back twice from
+      // start to finish, and sometimes repeated paragraphs/sentences within
+      // one response. Both are the same defect. A settled turn can reach TTS
+      // from more than one delivery path (the async-job settlement AND the WS
+      // `complete` frame), and this function had NO re-entrancy protection:
+      // it overwrote `ttsAbortRef` with a fresh controller WITHOUT aborting
+      // the previous one, and reset `ttsCancelledRef` to false. The first
+      // run's in-flight sentence requests therefore kept resolving and kept
+      // calling `enqueueAudio`, into a queue that is a plain FIFO with no
+      // dedupe — so both runs' audio played. Two clean runs read the whole
+      // answer twice; two overlapping runs interleave and repeat fragments.
+      //
+      // Guard 1: same text already spoken (or being spoken) for this turn →
+      // no-op. This is what actually stops the double read-back.
+      if (lastSpokenTextRef.current === responseText) return;
+      lastSpokenTextRef.current = responseText;
+
+      // Guard 2: a different response is arriving while one is still being
+      // synthesised (e.g. the user sent another message) — cancel the old
+      // run properly instead of letting the two race into the audio queue.
+      if (ttsAbortRef.current) {
+        try { ttsAbortRef.current.abort(); } catch { /* already settled */ }
+        ttsAbortRef.current = null;
+      }
+
       const sentences = responseText
         .replace(/([.!?;:])\s+/g, "$1\n")
         .split("\n")
@@ -1106,6 +1195,10 @@ export default function MeridianChat({
   const sseTtsControllerRef = useRef<ReturnType<
     typeof createStreamingTtsController
   > | null>(null);
+  // Whether the streaming-TTS controller actually produced audio this turn.
+  // Distinguishes "already spoken, don't repeat" from "never spoke, the
+  // legacy speakText fallback must still run".
+  const sseTtsSpokeRef = useRef(false);
   const sseStream = useMeridianSSEStream({
     onToken: (tok: string) => {
       // T22 streaming voice: drive per-sentence TTS in lockstep with
@@ -1117,6 +1210,7 @@ export default function MeridianChat({
         sseTtsControllerRef.current =
           createStreamingTtsControllerRef.current?.("shimmer") ?? null;
       }
+      if (sseTtsControllerRef.current) sseTtsSpokeRef.current = true;
       sseTtsControllerRef.current?.push(tok);
     },
     onComplete: () => {
@@ -1145,6 +1239,16 @@ export default function MeridianChat({
   // Finalize the placeholder once the complete frame arrives.
   useEffect(() => {
     if (!_sseLastComplete) return;
+    // If the streaming-TTS controller actually spoke this turn, record the
+    // text so a later `speakText` for the same turn is a no-op rather than a
+    // second full read-back. Gated on `sseTtsSpokeRef`: when voice is muted
+    // or the streaming flag is OFF no controller is ever created, and
+    // suppressing the legacy `speakText` fallback would leave the user with
+    // silence instead of a duplicate.
+    if (sseTtsSpokeRef.current && _sseLastComplete.content) {
+      lastSpokenTextRef.current = _sseLastComplete.content.trim();
+    }
+    sseTtsSpokeRef.current = false;
     const placeholderId = sseStreamingMessageIdRef.current;
     if (!placeholderId) return;
     setMessages((prev) =>
@@ -1943,13 +2047,18 @@ export default function MeridianChat({
             coachId={AGENT_ID}
             conversationId={conversationId}
             autoSendText={autoSendText}
+            autoSendDisplayText={autoSendDisplayText}
             onBack={() => navigate(-1)}
-            onSendText={(text) => {
+            onSendText={(text, displayText) => {
               demoAudioServiceRef.current?.resetAudioState();
               setHasAudio(false);
               setIsAudioPaused(false);
               setAgentAttribution(null);
               stopAudio(); // Clear any previous audio queue
+              // New turn — allow TTS again. (Without this, asking the same
+              // question twice in a session would return a silent answer.)
+              lastSpokenTextRef.current = null;
+              sseTtsSpokeRef.current = false;
               const timeStr = formatUSTimeSafe(new Date());
               const tsNow = Date.now();
               setMessages((prev) => [
@@ -1958,7 +2067,8 @@ export default function MeridianChat({
                   id: `msg-${Date.now()}-user`,
                   kind: "text",
                   sender: "user",
-                  text: text,
+                  // Show what the person asked, not the composed prompt.
+                  text: displayText || text,
                   time: timeStr,
                   ts: tsNow,
                 },
@@ -2043,6 +2153,7 @@ export default function MeridianChat({
                     // rather than swallowing it here.
                   });
               } else {
+                runWhenWarm(() => {
                 void meridianJob
                   .startJob({
                     message: text,
@@ -2064,6 +2175,7 @@ export default function MeridianChat({
                       },
                     ]);
                   });
+                });
               }
               // Keep the WS open in the background so push frames land
               // when the job settles. The socket is not required for

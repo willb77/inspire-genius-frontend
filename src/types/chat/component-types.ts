@@ -9,13 +9,22 @@ export interface ChatWindowProps {
   conversationId?: string;
   className?: string;
   onBack?: () => void;
-  onSendText?: (text: string) => void;
+  /**
+   * `text` is what gets sent to the model. `displayText`, when supplied, is
+   * what the user's own message bubble shows instead — for callers that wrap
+   * the question in machine-generated scaffolding (e.g. Lumen appends a
+   * "sources in scope" line) and shouldn't have that rendered as if the user
+   * had typed it.
+   */
+  onSendText?: (text: string, displayText?: string) => void;
   /**
    * When set, the composer is prefilled with this text and submitted once on
    * mount (used by starter questions / the HomeV2 ask box to open the chat on a
    * live response). Fires a single time per mount.
    */
   autoSendText?: string;
+  /** Display-only counterpart to `autoSendText` — see `onSendText`. */
+  autoSendDisplayText?: string;
   onToggleRecording?: () => void;
   isRecording?: boolean;
   onDocumentsSelectionChange?: (ids: string[]) => void;
