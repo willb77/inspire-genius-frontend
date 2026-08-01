@@ -100,6 +100,14 @@
     "errCouldNotUpload": "No se pudo subir ese archivo. Revísalo e inténtalo de nuevo.",
     "classic": "Clásico",
     "new": "Nuevo",
-    "toggleNewHome": "Alternar nueva página de inicio"
+    "toggleNewHome": "Alternar nueva página de inicio",
+    "personalInfo": "Información personal",
+    "otherAssessments": "Otras evaluaciones",
+    "nOfM": "{{done}} de {{total}}",
+    "videos": "Vídeos",
+    "quickSelfPortrait": "Autorretrato",
+    "quickTodaysPrep": "Preparación de hoy",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} no está habilitado para tu cuenta"
   }
 }

@@ -100,6 +100,14 @@
     "errCouldNotUpload": "そのファイルをアップロードできませんでした。確認して再度お試しください。",
     "classic": "クラシック",
     "new": "新規",
-    "toggleNewHome": "新しいホームページを切り替え"
+    "toggleNewHome": "新しいホームページを切り替え",
+    "personalInfo": "個人情報",
+    "otherAssessments": "その他のアセスメント",
+    "nOfM": "{{total}} 件中 {{done}} 件",
+    "videos": "動画",
+    "quickSelfPortrait": "セルフポートレート",
+    "quickTodaysPrep": "今日の準備",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} はお使いのアカウントでは利用できません"
   }
 }

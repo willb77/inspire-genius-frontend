@@ -3,7 +3,11 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
-import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags";
+import {
+  isNewHomeEnabled,
+  isNewUserSurfacesEnabled,
+  setNewUserSurfaces,
+} from "@/lib/surfaceFlags";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -257,10 +261,12 @@ function withSuspense(element: React.ReactNode) {
 }
 
 // ── /home surface resolver ──────────────────────────────────────────────────
-// Additive, flag-gated swap: renders the new wireframe dashboard (HomeV2) when
-// the `new_user_surfaces` flag is ON, otherwise the original Home. Both are lazy,
-// so only the selected branch is loaded. The original stays reachable at
-// /home/classic regardless of the flag (permanent rollback path).
+// HomeV2 is the DEFAULT here as of 2026-08-01 (`isNewHomeEnabled`), unlike every
+// other surface below, which stays opt-in behind `isNewUserSurfacesEnabled`.
+// Both branches are lazy, so only the selected one is loaded, and the original
+// stays reachable at /home/classic regardless of the flag (permanent rollback
+// path). An explicit user choice still wins — the two predicates read the same
+// localStorage key and differ only in what an ABSENT value means.
 //
 // A HomeSurfaceToggle sits above the resolved page so users can flip between the
 // new and classic home themselves. The inner Suspense wraps only the lazy page,
@@ -270,7 +276,7 @@ function HomeSurface() {
   // in-place (client-side re-render) instead of doing a full page reload.
   // A hard reload could bounce the user to /login via the fresh-boot auth
   // path; an in-place swap keeps the live session intact.
-  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
+  const [enabled, setEnabled] = React.useState(isNewHomeEnabled);
   return (
     <>
       <HomeSurfaceToggle

@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Não foi possível enviar esse arquivo. Verifique-o e tente novamente.",
     "classic": "Clássico",
     "new": "Novo",
-    "toggleNewHome": "Alternar nova página inicial"
+    "toggleNewHome": "Alternar nova página inicial",
+    "personalInfo": "Informações pessoais",
+    "otherAssessments": "Outras avaliações",
+    "nOfM": "{{done}} de {{total}}",
+    "videos": "Vídeos",
+    "quickSelfPortrait": "Autorretrato",
+    "quickTodaysPrep": "Preparação de hoje",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} não está habilitado na sua conta"
   }
 }

@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Could not upload that file. Check it and try again.",
     "classic": "Classic",
     "new": "New",
-    "toggleNewHome": "Toggle new home page"
+    "toggleNewHome": "Toggle new home page",
+    "personalInfo": "Personal Info",
+    "otherAssessments": "Other Assessments",
+    "nOfM": "{{done}} of {{total}}",
+    "videos": "Videos",
+    "quickSelfPortrait": "Self-Portrait",
+    "quickTodaysPrep": "Today's Prep",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} isn't enabled for your account"
   }
 }

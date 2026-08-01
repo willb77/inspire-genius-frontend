@@ -100,6 +100,14 @@
     "errCouldNotUpload": "ไม่สามารถอัปโหลดไฟล์นั้นได้ ตรวจสอบแล้วลองอีกครั้ง",
     "classic": "คลาสสิก",
     "new": "ใหม่",
-    "toggleNewHome": "สลับหน้าแรกใหม่"
+    "toggleNewHome": "สลับหน้าแรกใหม่",
+    "personalInfo": "ข้อมูลส่วนตัว",
+    "otherAssessments": "การประเมินอื่น ๆ",
+    "nOfM": "{{done}} จาก {{total}}",
+    "videos": "วิดีโอ",
+    "quickSelfPortrait": "ภาพเหมือนตนเอง",
+    "quickTodaysPrep": "การเตรียมตัววันนี้",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} ไม่ได้เปิดใช้งานสำหรับบัญชีของคุณ"
   }
 }

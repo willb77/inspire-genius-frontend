@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Impossible de télécharger ce fichier. Vérifiez-le et réessayez.",
     "classic": "Classique",
     "new": "Nouveau",
-    "toggleNewHome": "Basculer vers la nouvelle page d'accueil"
+    "toggleNewHome": "Basculer vers la nouvelle page d'accueil",
+    "personalInfo": "Informations personnelles",
+    "otherAssessments": "Autres évaluations",
+    "nOfM": "{{done}} sur {{total}}",
+    "videos": "Vidéos",
+    "quickSelfPortrait": "Autoportrait",
+    "quickTodaysPrep": "Préparation du jour",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} n'est pas activé pour votre compte"
   }
 }

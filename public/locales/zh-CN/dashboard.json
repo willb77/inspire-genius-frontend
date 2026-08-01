@@ -100,6 +100,14 @@
     "errCouldNotUpload": "无法上传该文件。请检查后重试。",
     "classic": "经典版",
     "new": "新版",
-    "toggleNewHome": "切换新主页"
+    "toggleNewHome": "切换新主页",
+    "personalInfo": "个人信息",
+    "otherAssessments": "其他评估",
+    "nOfM": "{{total}} 项中的 {{done}} 项",
+    "videos": "视频",
+    "quickSelfPortrait": "自画像",
+    "quickTodaysPrep": "今日准备",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} 未对你的账户启用"
   }
 }

@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Tidak dapat mengunggah file itu. Periksa dan coba lagi.",
     "classic": "Klasik",
     "new": "Baru",
-    "toggleNewHome": "Alihkan halaman beranda baru"
+    "toggleNewHome": "Alihkan halaman beranda baru",
+    "personalInfo": "Info Pribadi",
+    "otherAssessments": "Asesmen Lainnya",
+    "nOfM": "{{done}} dari {{total}}",
+    "videos": "Video",
+    "quickSelfPortrait": "Potret Diri",
+    "quickTodaysPrep": "Persiapan Hari Ini",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} tidak diaktifkan untuk akun Anda"
   }
 }

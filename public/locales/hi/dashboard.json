@@ -100,6 +100,14 @@
     "errCouldNotUpload": "वह फ़ाइल अपलोड नहीं हो सकी। इसे जाँचें और पुनः प्रयास करें।",
     "classic": "क्लासिक",
     "new": "नया",
-    "toggleNewHome": "नया होम पेज टॉगल करें"
+    "toggleNewHome": "नया होम पेज टॉगल करें",
+    "personalInfo": "व्यक्तिगत जानकारी",
+    "otherAssessments": "अन्य आकलन",
+    "nOfM": "{{total}} में से {{done}}",
+    "videos": "वीडियो",
+    "quickSelfPortrait": "स्व-चित्र",
+    "quickTodaysPrep": "आज की तैयारी",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} आपके खाते के लिए सक्षम नहीं है"
   }
 }

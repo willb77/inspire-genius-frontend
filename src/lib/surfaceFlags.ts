@@ -40,6 +40,30 @@ export function isNewUserSurfacesEnabled(): boolean {
   }
 }
 
+/**
+ * True when `/home` should render HomeV2. **Default: ON** (2026-08-01) — HomeV2
+ * is the default My Workspace home page.
+ *
+ * Deliberately separate from `isNewUserSurfacesEnabled`. The two read the SAME
+ * localStorage key, so an explicit user choice (the on-page toggle, or a manual
+ * override) still governs both — but they differ in what an *absent* value
+ * means. `new_user_surfaces` also gates Dashboard, Coaches, Help, Documents,
+ * Profile, Analytics, Feedback-History, PRISM-Assessment and Settings-Privacy;
+ * defaulting that flag ON to move Home would have flipped all nine of those
+ * surfaces as a side effect. Only Home was asked for, so only Home defaults ON.
+ *
+ * `/home/classic` remains the permanent escape hatch regardless of this value.
+ */
+export function isNewHomeEnabled(): boolean {
+  try {
+    const val = localStorage.getItem(FLAG_KEY);
+    if (val === null) return true;
+    return val === "true";
+  } catch {
+    return true;
+  }
+}
+
 /** Explicitly set the flag (persists to localStorage). Caller reloads to apply. */
 export function setNewUserSurfaces(enabled: boolean): void {
   try {
