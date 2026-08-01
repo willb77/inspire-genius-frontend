@@ -22,6 +22,8 @@ import { useAlignment } from "@/hooks/direction-setting/useAlignment"
 import type {
   AlignmentJobStatus,
   AlignmentResultPayload,
+  MarketArea,
+  MarketSalaries,
 } from "@/types/direction-setting"
 
 /* ── Router ──────────────────────────────────────────────────────────────────
@@ -67,6 +69,20 @@ const mockGetAlignmentJob = getAlignmentJob as jest.MockedFunction<
 >
 const mockStartAlignmentJob = startAlignmentJob as jest.MockedFunction<
   typeof startAlignmentJob
+>
+
+/* ── Market service (SalaryPage only) ─────────────────────────────────────────
+ * Stage 4 is a plain read, not a job, so the *service* is stubbed and the real
+ * `useMarketSalaries` runs over it — same principle as the alignment mocks
+ * above: test the page against the machine that actually ships. */
+jest.mock("@/services/direction-setting/market.service", () => ({
+  getMarketSalaries: jest.fn(),
+}))
+
+import { getMarketSalaries } from "@/services/direction-setting/market.service"
+
+const mockGetMarketSalaries = getMarketSalaries as jest.MockedFunction<
+  typeof getMarketSalaries
 >
 
 /** A 404 from the poll: the job is gone, or was never ours. Terminal either way. */
@@ -961,32 +977,206 @@ describe("AlignmentPage presentational pieces — the wire seam", () => {
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-describe("SalaryPage (stage 4) — honest until Phase 4 lands", () => {
-  test("states the step's purpose and admits the data isn't connected", () => {
-    render(<SalaryPage />)
+/* ── Stage 4 fixtures ─────────────────────────────────────────────────────────
+ * Shaped from `app/market/models.py`'s `to_dict()` output: a wage range that
+ * always carries `source` + `asOf`, and independently-nullable `salary` and
+ * `outlook` on every occupation. */
+
+const OEWS =
+  "Curated static reference table (in-repo), approximating BLS OEWS May 2024 " +
+  "national annual wages. Not live data; planning reference only."
+const PROJECTION = "Curated static reference projections"
+
+const AREA_PRICED: MarketArea = {
+  family: "Analysis & Research",
+  affinity: 78,
+  pivotDifficulty: "moderate",
+  range: {
+    low: 52000,
+    median: 83000,
+    high: 121000,
+    source: OEWS,
+    asOf: "2024-05",
+  },
+  occupations: [
+    {
+      code: "15-1252",
+      title: "Software Developer",
+      source: OEWS,
+      asOf: "2024-05",
+      salary: {
+        low: 74000,
+        median: 132000,
+        high: 208000,
+        source: OEWS,
+        asOf: "2024-05",
+      },
+      outlook: {
+        growthPct: 17.9,
+        horizonYears: 10,
+        source: PROJECTION,
+        asOf: "2023-2033",
+      },
+    },
+    {
+      // The occupation this table deliberately shows shrinking.
+      code: "43-3031",
+      title: "Bookkeeping & Accounting Clerk",
+      source: OEWS,
+      asOf: "2024-05",
+      salary: {
+        low: 36000,
+        median: 47000,
+        high: 65000,
+        source: OEWS,
+        asOf: "2024-05",
+      },
+      outlook: {
+        growthPct: -5,
+        horizonYears: 10,
+        source: PROJECTION,
+        asOf: "2023-2033",
+      },
+    },
+  ],
+  note: null,
+}
+
+/** An area we hold nothing for. There is no fallback row behind it, by design. */
+const AREA_UNPRICED: MarketArea = {
+  family: "Creative & Design",
+  affinity: 41,
+  pivotDifficulty: "high",
+  range: null,
+  occupations: [
+    {
+      code: "27-1024",
+      title: "Graphic Designer",
+      source: OEWS,
+      asOf: "2024-05",
+      salary: null,
+      outlook: null,
+    },
+  ],
+  note: "No wage data on file for this career area yet.",
+}
+
+const salaries = (over: Partial<MarketSalaries> = {}): MarketSalaries => ({
+  areas: [AREA_PRICED],
+  ranked: true,
+  provider: "static-reference",
+  asOf: "2024-05",
+  note:
+    "Wage figures are reference ranges — entry, median and experienced — not " +
+    "offers, and not a prediction of what any individual will be paid.",
+  ...over,
+})
+
+describe("SalaryPage (stage 4) — priced, sourced and dated", () => {
+  beforeEach(() => {
+    mockGetMarketSalaries.mockReset()
+    mockGetMarketSalaries.mockResolvedValue(ok(salaries()))
+  })
+
+  const renderSalary = () =>
+    render(
+      <Providers>
+        <SalaryPage />
+      </Providers>
+    )
+
+  test("states the step's purpose and what it will and won't show", async () => {
+    renderSalary()
     expect(
       screen.getByRole("heading", { level: 1, name: /what does that pay/i })
     ).toBeInTheDocument()
-    expect(screen.getByText(/this step isn't ready yet/i)).toBeInTheDocument()
-  })
-
-  test("shows no figures at all while the adapter is missing", () => {
-    // Not even a greyed-out example. A placeholder salary gets believed.
-    const { container } = render(<SalaryPage />)
-    expect(container.textContent).not.toMatch(/\$\s?\d/)
-  })
-
-  test("commits to a range with provenance, up front", () => {
-    render(<SalaryPage />)
     expect(screen.getByText(/never a single number/i)).toBeInTheDocument()
     expect(
       screen.getByText(/where it came from and when it was collected/i)
     ).toBeInTheDocument()
+    // Heading and range card both name the area, so presence, not uniqueness.
+    expect((await screen.findAllByText("Analysis & Research")).length).toBeGreaterThan(0)
   })
 
-  test("routes to the step it reads from", () => {
-    render(<SalaryPage />)
-    fireEvent.click(screen.getByRole("button", { name: /look at career areas/i }))
+  test("names the provider and its vintage before any figure is read", async () => {
+    renderSalary()
+    // Not a tooltip and not a footnote: the difference between a planning aid
+    // and an implied forecast is whether the reader can see the vintage.
+    expect(await screen.findByText(/static-reference/)).toBeInTheDocument()
+    expect(screen.getByText(/vintage May 2024/)).toBeInTheDocument()
+  })
+
+  test("prints the source and the vintage next to each range", async () => {
+    renderSalary()
+    const sourced = await screen.findAllByText(
+      /source: .*BLS OEWS May 2024.*as of May 2024/i
+    )
+    expect(sourced.length).toBeGreaterThan(0)
+  })
+
+  test("carries the not-a-prediction note from the backend", async () => {
+    renderSalary()
+    expect(
+      await screen.findByText(/not a prediction of what any individual will be paid/i)
+    ).toBeInTheDocument()
+  })
+
+  test("renders a falling projection as a fall, with its sign", async () => {
+    renderSalary()
+    // −5% is in today's table on purpose. It must not be clamped, hidden, or
+    // rendered as growth.
+    expect(await screen.findByText("-5%")).toBeInTheDocument()
+    expect(screen.getByText(/projected to fall/i)).toBeInTheDocument()
+    expect(screen.getByText(/shrinking is not the same as closed/i)).toBeInTheDocument()
+    // And a growing one still reads as growth.
+    expect(screen.getByText("+17.9%")).toBeInTheDocument()
+  })
+
+  test("an area with no wage data reads as absent, never as zero", async () => {
+    mockGetMarketSalaries.mockResolvedValue(
+      ok(salaries({ areas: [AREA_UNPRICED] }))
+    )
+    const { container } = renderSalary()
+
+    expect(
+      await screen.findByText(/no wage data on file for this career area yet/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/no wage data on file for this occupation/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/no employment projection on file for this occupation/i)
+    ).toBeInTheDocument()
+    // The failure this whole path exists to prevent: a null rendered as money.
+    expect(container.textContent).not.toMatch(/\$\s?0\b/)
+    expect(container.textContent).not.toMatch(/\$\s?\d/)
+  })
+
+  test("an unranked read explains itself instead of showing nothing", async () => {
+    mockGetMarketSalaries.mockResolvedValue(
+      ok(salaries({ ranked: false, note: "No PRISM on file yet." }))
+    )
+    renderSalary()
+    expect(await screen.findByText("Every career area")).toBeInTheDocument()
+    expect(screen.getByText(/aren't ranked for you yet/i)).toBeInTheDocument()
+  })
+
+  test("a failed read says so without claiming there is nothing to show", async () => {
+    mockGetMarketSalaries.mockRejectedValue(new Error("boom"))
+    const { container } = renderSalary()
+    expect(
+      await screen.findByText(/couldn't load the pay data/i)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/fault on our side/i)).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/\$\s?\d/)
+  })
+
+  test("with nothing to price, routes to the step it reads from", async () => {
+    mockGetMarketSalaries.mockResolvedValue(ok(salaries({ areas: [] })))
+    renderSalary()
+    fireEvent.click(
+      await screen.findByRole("button", { name: /look at career areas/i })
+    )
     expect(mockNavigate).toHaveBeenCalledWith(
       "/vertical/direction-setting/careers"
     )
