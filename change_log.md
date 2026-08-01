@@ -1,3 +1,22 @@
+## [2026-08-01] — Interview Prep: STAR question bank browser (PR #330)
+
+### Added
+- Reviewer-facing **Question Bank** tab in Maven's Interview Prep surface
+  (manager + practitioner) — surfaces the shared STAR bank with scoring anchors.
+  - `src/services/interview/interview.service.ts` — `getQuestionBank()` → agent-engine
+    `GET /v1/agents/interview/question-bank` (via `agentApi`).
+  - `src/hooks/interview/useQuestionBank.ts` — React Query wrapper (constant → generous staleTime).
+  - `src/components/task-agents/QuestionBankPanel.tsx` — 3-section tabs
+    (Vision / Behavioral / Productivity), each competency's STAR question + probes, and a
+    collapsible "what to listen for" with strong/baseline/weak exemplars.
+
+### Changed
+- `src/components/task-agents/InterviewPrepBody.tsx` — wrap the existing prep form + the
+  new panel in Generate / Bank tabs (non-breaking).
+
+### Tests
+- `src/services/interview/__tests__/interview.service.test.ts` (2). Full `npm run build` (tsc+vite) green.
+
 ## [2026-08-01] — PRISM colour guard: don't rewrite "Orange" when the model is saying it isn't a colour
 
 Follow-up to the same-day PRISM fix (#743). **Found by an adversarial probe against deployed dev, not by a test.**
