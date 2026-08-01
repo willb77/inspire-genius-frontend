@@ -25,6 +25,17 @@ Red 34 (Focusing 7 / Delivering 61), Blue 92, Green 91.5, Gold 52 — all matchi
 ### Standing lesson
 Any regex that rewrites LLM output will eventually corrupt a *correct* sentence. Probe the adversarial case (user uses the wrong term, model explains why it's wrong), not just the happy path. The prompts and the injected `<prism_profile>` block are what actually stop the model saying "Orange"; this guard is only drift insurance and must never damage good output while doing its job.
 
+## [2026-08-01] — Team Development moved into a collapsible "Tools" rollup (PR #326)
+
+### Changed
+- Team Development Studio was a flat top-level sidebar item for managers and super-admins. It now lives in a dedicated, collapsed-by-default **"Tools"** rollup, so utility surfaces are grouped rather than crowding the primary role menu.
+  - `constants/navigation.ts`: added `TOOL_ITEMS_BY_ROLE` (per-role Tools items) and `SUPER_ADMIN_TOOLS_SECTION`; removed the inline "Team Development" entries from `MANAGER_NAV_ITEMS` / `SUPER_ADMIN_NAV_ITEMS`.
+  - `layouts/UnifiedLayout.tsx`: renders a collapsed `Tools` section (above `Verticals`) for any role with tool items (managers today).
+  - `layouts/SuperAdminLayout.tsx`: splices the Tools rollup in above `Administration`.
+  - Still gated by `VITE_FEATURE_TEAM_DEVELOPMENT`; the section collapses away entirely when the flag is off.
+  - Files: `src/constants/navigation.ts`, `src/layouts/UnifiedLayout.tsx`, `src/layouts/SuperAdminLayout.tsx`, `src/layouts/__tests__/UnifiedLayout.tools.test.tsx`, `src/constants/__tests__/navigation.test.ts`
+- Pure navigation reorganization — the route (`/manager/development`) and the Studio pages are unchanged. Merged to `development`; auto-deployed to dev + staging-b. Pairs with the backend roster fix (monorepo PR #741) that resolves the manager's direct reports from the canonical `employee_profiles.manager_id → user_profiles` relation.
+
 ## [2026-08-01] — PRISM: wrong colour scores + "Orange", duplicated TTS read-back, slow prompt injection
 
 Five reported defects. Every diagnosis below was confirmed against real dev data or a failing test — none inferred.
