@@ -275,6 +275,19 @@ describe("MatchesPage — with matches", () => {
       renderRouted(<MatchesPage />)
       expect(mockAdvance).not.toHaveBeenCalled()
     })
+
+    test("will not file one role's gaps under another role's target", () => {
+      // The two reads are separate queries. If the detail ever lags the
+      // selection — one `placeholderData` away — the pairing must not be
+      // written rather than written wrongly.
+      mockUseFitDetail.mockReturnValue({
+        data: { ...DETAIL, jobId: "some-other-role" },
+        isLoading: false,
+        isError: false,
+      })
+      renderRouted(<MatchesPage />)
+      expect(mockAdvance).not.toHaveBeenCalled()
+    })
   })
 
   test("lists ranked roles with a fit percentage and a plain-language band", () => {
