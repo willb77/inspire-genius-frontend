@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   AlertTriangle,
@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
+import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
 import type { FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
 import {
@@ -451,6 +452,7 @@ export default function MatchesPage() {
   const [method, setMethod] = useState<FitMethod>("gap")
   const [picked, setPicked] = useState<string | null>(null)
   const { data, isLoading, isError } = useMatches(method)
+  const advance = useAdvanceJourney()
 
   const matches = data?.matches ?? []
   const gated = data?.gated === true
@@ -465,6 +467,51 @@ export default function MatchesPage() {
     selectedId ?? undefined,
     method
   )
+
+  /**
+   * Record stages 7 and 8 on the journey — the step this page was missing.
+   *
+   * Everything downstream (the plan, the ROI, the rehearsal's self-advocacy
+   * read) is built from `direction_journey.artefacts`, keyed by stage. This
+   * page renders both stages and was the only surface that could write them,
+   * but never did: it read matches and fit detail and kept both in React
+   * Query alone. So the plan reported "no target role and no gaps on file"
+   * however long someone spent here, and the ROI refused to compute for want
+   * of a target — and following the instruction to "work through stages 7 and
+   * 8" changed nothing, because there was nothing to change.
+   *
+   * Stage 7 is wrapped as `{targetRole}` deliberately: `compute_plan` picks
+   * that key out of the artefact, and the fit row nested underneath carries
+   * `roleTitle` + `jobId`, which `normalise_target_role` reads. Stage 8 stores
+   * the fit detail as-is — `collect_gaps` reads `criticalGaps`,
+   * `coachingGaps`, `overdoneFlags` and `skillGaps` straight off it.
+   *
+   * Fire-and-forget, and only ever additive: this is bookkeeping that must not
+   * cost the user a spinner, and a failed write leaves the stage where it was
+   * rather than claiming progress that isn't stored.
+   */
+  const recorded = useRef<string | null>(null)
+  useEffect(() => {
+    if (gated || !selected || !detail) return
+    // One write per role per mount. Without this the effect re-fires on every
+    // refetch and rewrites the same artefact indefinitely.
+    if (recorded.current === selected.jobId) return
+    recorded.current = selected.jobId
+
+    advance.mutate({
+      stageId: "7",
+      state: "complete",
+      artefact: { targetRole: selected as unknown as Record<string, unknown> },
+    })
+    advance.mutate({
+      stageId: "8",
+      state: "complete",
+      artefact: detail as unknown as Record<string, unknown>,
+    })
+    // `advance` is a stable mutation object; including it would re-run this on
+    // every render for no benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gated, selected, detail])
 
   return (
     <div className="space-y-6 p-6">
