@@ -42,12 +42,17 @@ import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
  * They are excluded from the Verticals section here and re-surfaced by
  * `useWorkspaceVerticalItems`.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit", "lumen"])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>([
+  "job-fit",
+  "lumen",
+  "direction-setting",
+])
 
 /** Per-vertical sidebar icon; the generic `Compass` is the fallback. */
 const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,
   lumen: Lightbulb,
+  "direction-setting": Compass,
   grant: Wallet,
   "knowledge-continuity": BookOpen,
   honor: Award,

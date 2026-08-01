@@ -4,6 +4,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
 import { isNewUserSurfacesEnabled, setNewUserSurfaces } from "@/lib/surfaceFlags";
+// Eager, not lazy: the shell is the entitlement gate for a vertical route
+// subtree, so it must resolve before the subtree renders rather than after.
+import { VerticalShell } from "@/verticals/core";
 
 // ── Auth pages ──────────────────────────────────────────────────────────────
 const Login = React.lazy(() => import("@/pages/auth/Login"));
@@ -215,6 +218,22 @@ const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"))
 const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 const LumenSettings = React.lazy(() => import("@/pages/lumen/LumenSettings"));
 const LumenOnboarding = React.lazy(() => import("@/pages/lumen/onboarding/LumenOnboarding"));
+
+// Direction Setting — the guided path from jobless to employed
+// (entitlement-gated). The journey map is the home surface; each other route is
+// one stage, reachable directly because the journey is resumed over weeks.
+const DirectionSettingShell = React.lazy(() => import("@/pages/direction-setting/DirectionSettingNav"));
+const DirectionJourney = React.lazy(() => import("@/pages/direction-setting/JourneyPage"));
+const DirectionEstablish = React.lazy(() => import("@/pages/direction-setting/EstablishPage"));
+const DirectionPortrait = React.lazy(() => import("@/pages/direction-setting/PortraitPage"));
+const DirectionCareers = React.lazy(() => import("@/pages/direction-setting/CareersPage"));
+const DirectionSalary = React.lazy(() => import("@/pages/direction-setting/SalaryPage"));
+const DirectionGoals = React.lazy(() => import("@/pages/direction-setting/GoalsPage"));
+const DirectionAlignment = React.lazy(() => import("@/pages/direction-setting/AlignmentPage"));
+const DirectionMatches = React.lazy(() => import("@/pages/direction-setting/MatchesPage"));
+const DirectionPlan = React.lazy(() => import("@/pages/direction-setting/PlanPage"));
+const DirectionInterview = React.lazy(() => import("@/pages/direction-setting/InterviewPage"));
+const DirectionRehearse = React.lazy(() => import("@/pages/direction-setting/RehearsePage"));
 
 // The Honor Foundation — Coach Workbench vertical (reskinned; entitlement-gated)
 const HonorLanding = React.lazy(() => import("@/pages/honor/HonorLanding"));
@@ -619,6 +638,35 @@ export const routes: RouteObject[] = [
             ],
           },
           { path: "onboarding", element: withSuspense(<LumenOnboarding />) },
+        ],
+      },
+
+      // Direction Setting — entitlement-gated by VerticalShell, which wraps
+      // every child in the existing AppShell and redirects unentitled users.
+      // Nothing inside is locked by stage: every stage is enterable and
+      // explains what it is missing rather than refusing.
+      {
+        path: "/vertical/direction-setting",
+        element: <VerticalShell vertical="direction-setting" />,
+        children: [
+          { index: true, element: <Navigate to="/vertical/direction-setting/journey" replace /> },
+          // Pathless layout: the in-vertical nav renders above every stage page.
+          {
+            element: withSuspense(<DirectionSettingShell />),
+            children: [
+              { path: "journey", element: withSuspense(<DirectionJourney />) },
+              { path: "establish", element: withSuspense(<DirectionEstablish />) },
+              { path: "portrait", element: withSuspense(<DirectionPortrait />) },
+              { path: "careers", element: withSuspense(<DirectionCareers />) },
+              { path: "salary", element: withSuspense(<DirectionSalary />) },
+              { path: "goals", element: withSuspense(<DirectionGoals />) },
+              { path: "alignment", element: withSuspense(<DirectionAlignment />) },
+              { path: "matches", element: withSuspense(<DirectionMatches />) },
+              { path: "plan", element: withSuspense(<DirectionPlan />) },
+              { path: "interview", element: withSuspense(<DirectionInterview />) },
+              { path: "rehearse", element: withSuspense(<DirectionRehearse />) },
+            ],
+          },
         ],
       },
 

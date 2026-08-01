@@ -21,6 +21,7 @@ import {
   type AddAssessmentTarget,
 } from "@/components/dashboard/v2/AddAssessmentModal";
 import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
+import { QuickDirectionCard } from "@/components/dashboard/v2/QuickDirectionCard";
 import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import {
   WatchVideoCard,
@@ -46,8 +47,11 @@ import {
  *   1. WelcomeBackTile   — welcome + behavioral + completeness (assessments +
  *      personal info, each with an Add / done indicator)
  *   2. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter Questions
- *   3. WatchVideoCard    — 5 real demo videos with HTML5 playback
- *   4. RecentActivityCard
+ *   3. QuickDirectionCard — Direction Setting's one-next-action entry point.
+ *      Self-gating: renders null unless the user is entitled AND the journey
+ *      read succeeds, so it can never break or clutter Home for anyone else.
+ *   4. WatchVideoCard    — 5 real demo videos with HTML5 playback
+ *   5. RecentActivityCard
  *   (the old inline Action tile — Upload/Goals/Careers — was removed per HomeV3.)
  */
 
@@ -238,6 +242,10 @@ export default function HomeV2() {
             starterGroups={MERIDIAN_STARTER_GROUPS}
             onStarterQuestion={(question) => goToChat(question)}
           />
+
+          {/* Direction Setting — "what should I do next?". Renders null when
+              the user isn't entitled or the journey read fails. */}
+          <QuickDirectionCard />
 
           <WatchVideoCard videos={VIDEOS} />
 
