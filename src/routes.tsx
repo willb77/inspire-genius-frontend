@@ -248,6 +248,7 @@ const JobFitGapsPage = React.lazy(() => import("@/pages/job-fit/GapsPage"));
 const JobFitPathwayPage = React.lazy(() => import("@/pages/job-fit/PathwayPage"));
 const JobFitBlueprintPage = React.lazy(() => import("@/pages/job-fit/BlueprintStudioPage"));
 const JobFitCoachPage = React.lazy(() => import("@/pages/job-fit/CoachPage"));
+const JobFitTargetPage = React.lazy(() => import("@/pages/job-fit/TargetPreviewPage"));
 const JobFitShell = React.lazy(() => import("@/pages/job-fit/FitShell"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
@@ -670,6 +671,7 @@ export const routes: RouteObject[] = [
               { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
               { path: "blueprint", element: withSuspense(<JobFitBlueprintPage />) },
               { path: "coach", element: withSuspense(<JobFitCoachPage />) },
+              { path: "target", element: withSuspense(<JobFitTargetPage />) },
             ],
           },
         ],
