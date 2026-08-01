@@ -45,6 +45,7 @@ export const JOB_FIT_TOOLS: NavItemDef[] = [
   { to: ROUTES.JOB_FIT.GAPS, icon: Target, label: "Gaps" },
   { to: ROUTES.JOB_FIT.PATHWAY, icon: RouteIcon, label: "Pathway" },
   { to: ROUTES.JOB_FIT.BLUEPRINT, icon: Wand2, label: "Blueprint a role" },
+  { to: ROUTES.JOB_FIT.TARGET, icon: Sparkles, label: "Fit a JD" },
   { to: ROUTES.JOB_FIT.COACH, icon: MessagesSquare, label: "Coaching" },
 ]
 

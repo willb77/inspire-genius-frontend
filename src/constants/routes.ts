@@ -204,6 +204,8 @@ export const ROUTES = {
     PATHWAY: "/vertical/job-fit/pathway",
     BLUEPRINT: "/vertical/job-fit/blueprint",
     COACH: "/vertical/job-fit/coach",
+    /** Neutral D7 target service consumer — preview the target for a pasted JD. */
+    TARGET: "/vertical/job-fit/target",
     /** Route pattern for a single role's fit detail (matched by <Route path>). */
     DETAIL: "/vertical/job-fit/fit/:jobId",
     /** Build the fit-detail path for a concrete role id. */
