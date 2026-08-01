@@ -28,6 +28,25 @@ export interface ChatAttachment {
   expires_in?: number; // seconds the URL stays valid
 }
 
+/**
+ * The PRISM Brain Map for a turn that reported the user's own scores.
+ *
+ * Arrives under `metadata.prism_map`, deliberately NOT inside the response
+ * text: the text-to-speech path speaks `content`, and an inline SVG there
+ * would be read aloud as markup. `table` and `description` carry the same
+ * numbers in plain text for TTS, screen readers and plain-text export.
+ */
+export interface PrismMap {
+  format: "svg";
+  /** Self-contained SVG markup — no external fonts, images or scripts. */
+  svg: string;
+  /** Markdown table with the identical numbers. */
+  table: string;
+  /** One-line text equivalent. */
+  description: string;
+  assessed_at?: string | null;
+}
+
 // RAG source attribution
 export interface RAGSource {
   filename: string;
@@ -54,6 +73,7 @@ export type ChatMessage =
       contributingAgents?: string[];
       synthesized?: boolean;
       attachments?: ChatAttachment[];
+      prismMap?: PrismMap;
     }
   | {
       id: string;
