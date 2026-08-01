@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import {
   SUPER_ADMIN_NAV_SECTIONS,
+  SUPER_ADMIN_TOOLS_SECTION,
   getUserNavItems,
   OWNER_ONLY_NAV_ROUTES,
   isPlatformOwner,
@@ -66,6 +67,9 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
             },
           ]
         : []),
+      // Team Development Studio (and any future utility surfaces) in a
+      // collapsed "Tools" rollup, above the Administration plumbing.
+      ...(SUPER_ADMIN_TOOLS_SECTION ? [SUPER_ADMIN_TOOLS_SECTION] : []),
       // Administration stays expanded — a super-admin on an admin page is mid-task.
       ...bySection("Administration").map((s) => ({ ...s, defaultCollapsed: false })),
     ];
