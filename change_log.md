@@ -1,3 +1,53 @@
+## [2026-07-31] — Team Development Studio → standard IG (HomeV2) theme + real app chrome (Wave 2)
+
+The Team Development Studio (`/manager/development`, `/manager/development/:memberId`) was
+rendering as **bare content with no app chrome** — both pages returned a plain `<div>` and,
+unlike every other manager page, never wrapped `ManagerLayout` (no sidebar, no header) — and
+its content still used the pre-migration slate/blue palette. This lands the Wave-2 reskin: the
+pages now sit in the standard `ManagerLayout`, and when the `new_user_surfaces` flag is on they
+adopt the HomeV2 editorial look (cream `bg-panel` frame, navy `text-ink`, orange `accent-orange`,
+serif headings, `rounded-2xl` hairline cards). Classic stays byte-identical and is always
+reachable at `…/classic`. Pure presentation change — no logic, hooks, data, props, testids, or
+copy changed.
+
+### Added
+- `src/components/manager/development/skin.tsx` — the Studio skin. `useDevSkin()` context hook
+  returns a `sk` object of PRE-RESOLVED class strings built from two flat literals
+  (`CLASSIC`/`V2`) selected by one function; plus `resolveDevV2()`, `DevSkinProvider`, and
+  `DevPageFrame` (cream `V2Panel` on v2, bare column on classic). All classic/v2 branching lives
+  here so leaf components add zero new branches — keeps the tight CI branch-coverage gate safe.
+- `src/components/manager/development/__tests__/skin.test.tsx` — 7 tests: both token maps,
+  `resolveDevV2` precedence, default-classic context, provider flow, and the `DevPageFrame` switch
+  (skin.tsx = 100% coverage).
+- `/manager/development/classic` + `/manager/development/:memberId/classic` routes — permanent
+  escape hatch to the original look.
+
+### Changed
+- `src/pages/manager/development/DevelopmentStudio.tsx` + `MemberDevelopmentWorkspace.tsx` —
+  wrapped in `ManagerLayout` (the missing chrome) + `DevSkinProvider`/`DevPageFrame`; accept an
+  optional `variant` prop that defaults to the flag; serif-ink headings; every shell / empty /
+  error / computing state tokenized and given the chrome.
+- 11 Studio components reskinned via `sk.*` tokens — `MemberCard`, `CoverageChips`,
+  `ConfidenceDot`, `ProgressRing`, and the 6 tab panels (`BehavioralProfilePanel`, `GoalsPanel`,
+  `GapAnalysisPanel`, `LearningPlanPanel`, `CareerMatchPanel`, `RoadmapTimeline`) +
+  `MeridianDevelopmentPanel`. Slate text/borders/backgrounds, the `#3B5BFF`/`#2DD4BF` brand
+  accents (avatar gradient, active tab, selected card, PRISM radar stroke/fill, gap progress bars,
+  Meridian chat bubbles/send affordances) and card radii all now resolve from the skin.
+  `PlanStatusBadge` unchanged (purely semantic badge). Semantic colours (emerald/amber/red,
+  PRISM quadrant colours) stay hardcoded on both looks.
+- `src/routes.tsx` — Studio pages self-resolve classic vs HomeV2 from `new_user_surfaces`; added
+  the two `/classic` routes (static segment out-ranks `:memberId`).
+
+### Verified
+- `npm run build` (tsc + vite) clean; the new token utilities (`bg-panel`, `text-ink`, `text-mute`,
+  `border-hairline`, `bg-accent-orange` incl. the `/10`·`/5`·`/40` opacity + hover/focus variants,
+  `from-ink`/`to-accent-orange`) are all emitted into the production CSS bundle.
+- `tsc -p tsconfig.app.json --noEmit` → 0 errors.
+- Full `jest --ci --coverage` → 3931 tests / 517 suites pass; global coverage above the CI gate
+  (branches 56.26 ≥ 54, functions 58.83 ≥ 55, lines 73.33 ≥ 55, statements 70.78 ≥ 55).
+- No new i18n keys (Studio copy already routes through `useDevelopmentText`), so 21-locale
+  key-parity is untouched.
+
 ## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
 
 Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.

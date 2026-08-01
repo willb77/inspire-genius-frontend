@@ -27,6 +27,7 @@ import {
   useLearningPlan,
   useCreateMilestone,
 } from "@/hooks/manager/development"
+import { useDevSkin } from "../skin"
 
 const SEVERITY_META: Record<GapSeverity, { className: string; icon: typeof AlertTriangle }> = {
   critical: { className: "text-red-600", icon: AlertTriangle },
@@ -41,9 +42,10 @@ const FIT_BANNER: Record<FitClassification, { className: string; icon: typeof Ch
 }
 
 function DisclaimerNote() {
+  const sk = useDevSkin()
   return (
-    <p className="flex items-start gap-1.5 rounded-md bg-slate-50 p-2.5 text-[11px] text-slate-500">
-      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+    <p className={cn("flex items-start gap-1.5 rounded-md p-2.5 text-[11px]", sk.bgMuted50, sk.text500)}>
+      <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sk.text400)} aria-hidden="true" />
       <span>{DEVELOPMENT_INPUT_DISCLAIMER}</span>
     </p>
   )
@@ -58,6 +60,7 @@ export type GapAnalysisPanelProps = {
 }
 
 export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnalysisPanelProps) {
+  const sk = useDevSkin()
   const targetOptions = useMemo(
     () => matches.filter((m) => m.blueprintId),
     [matches],
@@ -95,7 +98,7 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-slate-600">Analyze gaps against a target role.</div>
+        <div className={cn("text-sm", sk.text600)}>Analyze gaps against a target role.</div>
         {targetOptions.length > 0 ? (
           <Select value={targetId} onValueChange={setTargetId}>
             <SelectTrigger className="w-[240px]" aria-label="Target role">
@@ -110,7 +113,7 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
             </SelectContent>
           </Select>
         ) : (
-          <span className="text-xs text-slate-400">No target roles available yet.</span>
+          <span className={cn("text-xs", sk.text400)}>No target roles available yet.</span>
         )}
       </div>
 
@@ -133,10 +136,10 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
       <DisclaimerNote />
 
       {isLoading ? (
-        <div className="py-10 text-center text-sm text-slate-400">Analyzing gaps…</div>
+        <div className={cn("py-10 text-center text-sm", sk.text400)}>Analyzing gaps…</div>
       ) : (gaps?.length ?? 0) === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center text-sm text-slate-500">
+          <CardContent className={cn("p-6 text-center text-sm", sk.text500)}>
             No gaps identified against this target.
           </CardContent>
         </Card>
@@ -158,10 +161,10 @@ export function GapAnalysisPanel({ memberId, matches, initialTargetId }: GapAnal
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-3 text-xs text-slate-500">
+                  <div className={cn("flex items-center gap-3 text-xs", sk.text500)}>
                     <span>Current {gap.currentLevel}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded bg-slate-100">
-                      <div className="h-full rounded bg-[#3B5BFF]" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
+                    <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
+                      <div className={cn("h-full rounded", sk.accentBg)} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
                     </div>
                     <span>Target {gap.targetLevel}</span>
                     <Badge variant="secondary" className="capitalize">{gap.source}</Badge>

@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, Users } from "lucide-react"
+import ManagerLayout from "@/layouts/ManagerLayout"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
 import { PLAN_STATUS_LABEL } from "@/constants/development"
 import type { PlanStatus, RosterMember } from "@/types/development"
@@ -26,6 +28,13 @@ import {
   useDevelopmentText,
 } from "@/hooks/manager/development"
 import { MemberCard } from "@/components/manager/development/MemberCard"
+import {
+  DevSkinProvider,
+  DevPageFrame,
+  getDevSkin,
+  resolveDevV2,
+  type DevVariant,
+} from "@/components/manager/development/skin"
 
 type CoverageFilter = "all" | "complete" | "partial" | "none"
 type SortKey = "readiness" | "activity"
@@ -54,7 +63,9 @@ function lastActivity(m: RosterMember): number {
   return Math.max(0, ...dates)
 }
 
-export default function DevelopmentStudio() {
+export default function DevelopmentStudio({ variant }: { variant?: DevVariant }) {
+  const v2 = resolveDevV2(variant)
+  const sk = getDevSkin(v2)
   const navigate = useNavigate()
   const { t } = useDevelopmentText()
   const { data: roster, isLoading, isError, refetch } = useTeamDevelopmentRoster()
@@ -109,16 +120,18 @@ export default function DevelopmentStudio() {
   }
 
   return (
-    <div className="space-y-6">
+    <ManagerLayout>
+      <DevSkinProvider v2={v2}>
+        <DevPageFrame>
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-slate-900">{t("dev.studio.title")}</h1>
-        <p className="text-sm text-slate-500">{t("dev.studio.subtitle")}</p>
+        <h1 className={cn("text-2xl font-semibold", sk.heading)}>{t("dev.studio.title")}</h1>
+        <p className={cn("text-sm", sk.text500)}>{t("dev.studio.subtitle")}</p>
       </header>
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <Search className={cn("pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2", sk.text400)} aria-hidden="true" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -183,27 +196,27 @@ export default function DevelopmentStudio() {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 w-full rounded-xl" />
+            <Skeleton key={i} className={cn("h-44 w-full", sk.radius)} />
           ))}
         </div>
       ) : isError ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">
-          <p className="text-sm text-slate-500">{t("dev.studio.error")}</p>
+        <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
+          <p className={cn("text-sm", sk.text500)}>{t("dev.studio.error")}</p>
           <Button variant="outline" onClick={() => refetch()}>
             Retry
           </Button>
         </div>
       ) : (roster?.length ?? 0) === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center">
-          <Users className="h-8 w-8 text-slate-300" aria-hidden="true" />
+        <div className={cn("flex flex-col items-center gap-3 border border-dashed py-16 text-center", sk.radius, sk.border200)}>
+          <Users className={cn("h-8 w-8", sk.text400)} aria-hidden="true" />
           <div>
-            <p className="text-base font-medium text-slate-700">{t("dev.studio.empty.title")}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">{t("dev.studio.empty.body")}</p>
+            <p className={cn("text-base font-medium", sk.text700)}>{t("dev.studio.empty.title")}</p>
+            <p className={cn("mx-auto mt-1 max-w-sm text-sm", sk.text500)}>{t("dev.studio.empty.body")}</p>
           </div>
           <Button onClick={() => navigate(ROUTES.MANAGER.BULK_IMPORT)}>{t("dev.studio.empty.cta")}</Button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 py-16 text-center text-sm text-slate-500">
+        <div className={cn("border border-dashed py-16 text-center text-sm", sk.radius, sk.border200, sk.text500)}>
           No members match the current filters.
         </div>
       ) : (
@@ -213,6 +226,8 @@ export default function DevelopmentStudio() {
           ))}
         </div>
       )}
-    </div>
+        </DevPageFrame>
+      </DevSkinProvider>
+    </ManagerLayout>
   )
 }
