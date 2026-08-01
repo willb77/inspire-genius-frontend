@@ -1,6 +1,7 @@
 import {
   ClipboardCheck,
   ClipboardList,
+  Compass,
   LayoutDashboard,
   MessagesSquare,
   Route as RouteIcon,
@@ -70,6 +71,22 @@ export const JOB_BLUEPRINT_TOOLS: NavItemDef[] = [
   { to: "/vertical/job-blueprint/analytics", icon: BarChart3, label: "Analytics" },
 ]
 
+/**
+ * Direction Setting — also rendered as the in-page pill row by
+ * `DirectionSettingNav`. The Journey map leads deliberately: it is the surface
+ * that answers "what is the one next thing?", and every other entry here is a
+ * shortcut into a stage the user has already reached.
+ */
+export const DIRECTION_SETTING_TOOLS: NavItemDef[] = [
+  { to: ROUTES.DIRECTION_SETTING.JOURNEY, icon: RouteIcon, label: "My journey" },
+  { to: ROUTES.DIRECTION_SETTING.PORTRAIT, icon: UserRoundSearch, label: "Who I am" },
+  { to: ROUTES.DIRECTION_SETTING.CAREERS, icon: Compass, label: "Career areas" },
+  { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "My goals" },
+  { to: ROUTES.DIRECTION_SETTING.MATCHES, icon: ScanSearch, label: "Job matches" },
+  { to: ROUTES.DIRECTION_SETTING.PLAN, icon: ClipboardList, label: "My plan" },
+  { to: ROUTES.DIRECTION_SETTING.INTERVIEW, icon: ClipboardCheck, label: "Interview prep" },
+]
+
 export type VerticalSubNav = {
   /**
    * Section heading. GRANT and KCE keep the friendlier labels their sections
@@ -104,6 +121,8 @@ export function verticalSubNavItems(
       return { items: LUMEN_TOOLS }
     case "job-blueprint":
       return { items: JOB_BLUEPRINT_TOOLS }
+    case "direction-setting":
+      return { items: DIRECTION_SETTING_TOOLS }
     default:
       return null
   }
