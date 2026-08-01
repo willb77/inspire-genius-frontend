@@ -100,6 +100,14 @@
     "errCouldNotUpload": "해당 파일을 업로드할 수 없습니다. 확인하고 다시 시도하세요.",
     "classic": "클래식",
     "new": "새로 만들기",
-    "toggleNewHome": "새 홈페이지 전환"
+    "toggleNewHome": "새 홈페이지 전환",
+    "personalInfo": "개인 정보",
+    "otherAssessments": "기타 평가",
+    "nOfM": "{{total}}개 중 {{done}}개",
+    "videos": "동영상",
+    "quickSelfPortrait": "자화상",
+    "quickTodaysPrep": "오늘의 준비",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}}은(는) 계정에서 사용할 수 없습니다"
   }
 }

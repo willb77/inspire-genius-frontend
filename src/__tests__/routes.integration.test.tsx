@@ -84,7 +84,12 @@ const pageModules: Record<string, string> = {
   "@/pages/onboarding/OnboardingFive": "OnboardingFivePage",
   "@/pages/onboarding/OnboardingDetailsOne": "OnboardingDetailsOnePage",
   "@/pages/onboarding/OnboardingDetailsTwo": "OnboardingDetailsTwoPage",
+  // /home resolves to HomeV2 by DEFAULT as of 2026-08-01 (`isNewHomeEnabled`),
+  // so the V2 mock is what these route tests land on. The classic page is still
+  // mocked — it is what /home/classic renders, and what /home falls back to when
+  // the user explicitly opts out via the on-page toggle.
   "@/pages/user/Home": "UserHomePage",
+  "@/pages/user/HomeV2": "UserHomeV2Page",
   "@/pages/user/Dashboard": "UserDashboardPage",
   "@/pages/user/Coaches": "UserCoachesPage",
   "@/pages/user/CoachChat": "UserCoachChatPage",
@@ -329,7 +334,8 @@ describe("Route Integration Tests", () => {
 
   describe("Role-based access: user role", () => {
     const userAccessible = [
-      { path: "/home", testId: "UserHomePage" },
+      { path: "/home", testId: "UserHomeV2Page" },
+      { path: "/home/classic", testId: "UserHomePage" },
       { path: "/dashboard", testId: "UserDashboardPage" },
       { path: "/coaches", testId: "UserCoachesPage" },
       { path: "/documents", testId: "UserDocumentsPage" },
@@ -366,7 +372,7 @@ describe("Route Integration Tests", () => {
         renderWithRouter(path, ctx);
         await advancePastBoot();
         // User should be redirected to /home
-        expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+        expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
       },
     );
   });
@@ -520,7 +526,7 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
       expect(screen.queryByTestId("OnboardingOnePage")).not.toBeInTheDocument();
     });
 
@@ -543,7 +549,7 @@ describe("Route Integration Tests", () => {
       const ctx = makeAuthContext({ user });
       renderWithRouter("/home", ctx);
       await advancePastBoot();
-      expect(await screen.findByTestId("UserHomePage")).toBeInTheDocument();
+      expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
     });
   });
 });

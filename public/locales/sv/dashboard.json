@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Kunde inte ladda upp den filen. Kontrollera den och försök igen.",
     "classic": "Klassisk",
     "new": "Ny",
-    "toggleNewHome": "Växla ny startsida"
+    "toggleNewHome": "Växla ny startsida",
+    "personalInfo": "Personlig information",
+    "otherAssessments": "Andra bedömningar",
+    "nOfM": "{{done}} av {{total}}",
+    "videos": "Videor",
+    "quickSelfPortrait": "Självporträtt",
+    "quickTodaysPrep": "Dagens förberedelse",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} är inte aktiverat för ditt konto"
   }
 }
