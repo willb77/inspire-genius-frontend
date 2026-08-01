@@ -149,4 +149,24 @@ describe("MeridianTileRail — horizontal orientation", () => {
     render(<MeridianTileRail />);
     expect(screen.getByTestId("rail-body-history")).toBeInTheDocument();
   });
+
+  // 2026-07-31 — `tiles` narrows the rail so Meridian's header can show
+  // Projects only, inline among the other header buttons, without duplicating
+  // the tile's implementation.
+  describe("tiles filter", () => {
+    it("renders only the named tiles", () => {
+      render(<MeridianTileRail orientation="horizontal" tiles={["projects"]} />);
+      expect(screen.getByText(/projects/i)).toBeInTheDocument();
+      expect(screen.queryByText(/active sessions/i)).toBeNull();
+      expect(screen.queryByText(/last 5/i)).toBeNull();
+      expect(screen.queryByText(/knowledge/i)).toBeNull();
+    });
+
+    it("renders all five when the prop is omitted", () => {
+      render(<MeridianTileRail orientation="horizontal" />);
+      expect(screen.getByText(/active sessions/i)).toBeInTheDocument();
+      expect(screen.getByText(/projects/i)).toBeInTheDocument();
+      expect(screen.getByText(/knowledge/i)).toBeInTheDocument();
+    });
+  });
 });

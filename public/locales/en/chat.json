@@ -81,6 +81,14 @@
       "ready": "Voice ready",
       "connecting": "Connecting",
       "off": "Voice off"
+    },
+    "personalRow": {
+      "aria": "Your pages",
+      "selfPortrait": "My Self-Portrait",
+      "moments": "Moments",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} isn't enabled for your account"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Documents",
       "close": "Close documents",
       "closeOverlay": "Close documents panel"
-    }
+    },
+    "upload": "Upload a document"
   },
   "export": {
     "title": "Export Chat",
