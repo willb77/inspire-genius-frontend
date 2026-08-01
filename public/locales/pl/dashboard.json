@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Nie udało się przesłać tego pliku. Sprawdź go i spróbuj ponownie.",
     "classic": "Klasyczny",
     "new": "Nowy",
-    "toggleNewHome": "Przełącz nową stronę główną"
+    "toggleNewHome": "Przełącz nową stronę główną",
+    "personalInfo": "Dane osobowe",
+    "otherAssessments": "Inne oceny",
+    "nOfM": "{{done}} z {{total}}",
+    "videos": "Filmy",
+    "quickSelfPortrait": "Autoportret",
+    "quickTodaysPrep": "Przygotowanie na dziś",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} nie jest włączone dla Twojego konta"
   }
 }

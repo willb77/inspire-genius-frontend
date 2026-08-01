@@ -6,7 +6,6 @@ import {
   MessagesSquare,
   Route as RouteIcon,
   ScanSearch,
-  Settings,
   Sparkles,
   Target,
   UserRoundSearch,
@@ -46,6 +45,7 @@ export const JOB_FIT_TOOLS: NavItemDef[] = [
   { to: ROUTES.JOB_FIT.GAPS, icon: Target, label: "Gaps" },
   { to: ROUTES.JOB_FIT.PATHWAY, icon: RouteIcon, label: "Pathway" },
   { to: ROUTES.JOB_FIT.BLUEPRINT, icon: Wand2, label: "Blueprint a role" },
+  { to: ROUTES.JOB_FIT.TARGET, icon: Sparkles, label: "Fit a JD" },
   { to: ROUTES.JOB_FIT.COACH, icon: MessagesSquare, label: "Coaching" },
 ]
 
@@ -55,7 +55,10 @@ export const LUMEN_TOOLS: NavItemDef[] = [
   { to: ROUTES.LUMEN.SELF_PORTRAIT, icon: UserRoundSearch, label: "My Self-Portrait" },
   { to: ROUTES.LUMEN.MOMENTS, icon: Sparkles, label: "Moments" },
   { to: ROUTES.LUMEN.COACHING, icon: MessagesSquare, label: "Coaching" },
-  { to: ROUTES.LUMEN.SETTINGS, icon: Settings, label: "Settings" },
+  // Settings intentionally absent (2026-07-31): one Settings entry, in My
+  // Workspace. The page still exists at ROUTES.LUMEN.SETTINGS and still routes;
+  // only the duplicate sidebar entry was withdrawn, so a person is not choosing
+  // between two things called "Settings" depending on which page they are on.
 ]
 
 /**

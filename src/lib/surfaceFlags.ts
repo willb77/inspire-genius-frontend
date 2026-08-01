@@ -40,6 +40,40 @@ export function isNewUserSurfacesEnabled(): boolean {
   }
 }
 
+/**
+ * True when `/home` should render HomeV2. **Default: ON** (2026-08-01) — HomeV2
+ * is the default My Workspace home page.
+ *
+ * Deliberately separate from `isNewUserSurfacesEnabled`. The two read the SAME
+ * localStorage key, so an explicit user choice (the on-page toggle, or a manual
+ * override) still governs both — they differ only in what an *absent* value
+ * means.
+ *
+ * Why not just default `new_user_surfaces` ON? Because it ALSO gates Dashboard,
+ * Coaches, Help, Documents, Profile, Analytics, Feedback-History,
+ * PRISM-Assessment and Settings-Privacy — nine surfaces nobody asked to move.
+ *
+ * **Scope of this function, stated precisely:** `ci-deploy.yml` already writes
+ * `VITE_NEW_USER_SURFACES=true`, so on dev and staging-b `envDefault()` is
+ * already `true` and Home was already V2 there — this function changes NOTHING
+ * on those two hosts. What it changes is everywhere the env var is absent
+ * (local `npm run dev`, and any future environment that doesn't set it): Home
+ * is V2 there too, while the other nine stay opt-in. In other words it moves
+ * "HomeV2 is the default" out of CI configuration and into the code, where it
+ * can't be lost by editing a workflow file.
+ *
+ * `/home/classic` remains the permanent escape hatch regardless of this value.
+ */
+export function isNewHomeEnabled(): boolean {
+  try {
+    const val = localStorage.getItem(FLAG_KEY);
+    if (val === null) return true;
+    return val === "true";
+  } catch {
+    return true;
+  }
+}
+
 /** Explicitly set the flag (persists to localStorage). Caller reloads to apply. */
 export function setNewUserSurfaces(enabled: boolean): void {
   try {

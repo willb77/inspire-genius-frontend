@@ -103,3 +103,11 @@ export function jobFitNarrativeEnabled(): boolean {
     return true
   }
 }
+
+/** Tone for extractor confidence (0–1): higher confidence reads greener. */
+export function confidenceTone(confidence: number): Tone {
+  if (confidence >= 0.75) return "green"
+  if (confidence >= 0.5) return "teal"
+  if (confidence >= 0.25) return "amber"
+  return "gray"
+}

@@ -38,6 +38,7 @@ import type {
   CliftonTheme,
   PrismQuadrantId,
 } from "@/types/development"
+import { useDevSkin } from "../skin"
 
 type CliftonDomain = CliftonTheme["domain"]
 
@@ -53,11 +54,12 @@ function quadrantColor(q: PrismQuadrantId): string {
 }
 
 function InviteToAddCard({ framework, onInvite }: { framework: string; onInvite?: () => void }) {
+  const sk = useDevSkin()
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-start gap-2 p-4">
-        <div className="text-sm font-medium text-slate-700">Invite to add {framework}</div>
-        <p className="text-xs text-slate-500">
+        <div className={cn("text-sm font-medium", sk.text700)}>Invite to add {framework}</div>
+        <p className={cn("text-xs", sk.text500)}>
           Not yet assessed. This overlay is missing, which lowers reconciliation confidence.
         </p>
         {onInvite ? (
@@ -76,6 +78,7 @@ export type BehavioralProfilePanelProps = {
 }
 
 export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfilePanelProps) {
+  const sk = useDevSkin()
   const { prism, clifton, disc, reconciliation, coverage } = profile
 
   const radarData = prism.map((d) => ({
@@ -89,7 +92,7 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
       {/* PRISM radar + text table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">PRISM behavioral map</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>PRISM behavioral map</CardTitle>
         </CardHeader>
         <CardContent>
           {coverage.prism && prism.length > 0 ? (
@@ -106,8 +109,8 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
                     <Radar
                       name="PRISM"
                       dataKey="score"
-                      stroke="#3B5BFF"
-                      fill="#3B5BFF"
+                      stroke={sk.brandHex}
+                      fill={sk.brandHex}
                       fillOpacity={0.25}
                       dot={(props: { cx?: number; cy?: number; payload?: { quadrant?: PrismQuadrantId } }) => {
                         const q = props.payload?.quadrant ?? 1
@@ -171,7 +174,7 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
         {/* CliftonStrengths */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">CliftonStrengths</CardTitle>
+            <CardTitle className={cn("text-base", sk.heading)}>CliftonStrengths</CardTitle>
           </CardHeader>
           <CardContent>
             {coverage.clifton && clifton && clifton.length > 0 ? (
@@ -184,9 +187,9 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
                   const cfg = CLIFTON_DOMAIN_CONFIG[domain]
                   return (
                     <div key={domain}>
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <div className={cn("mb-1.5 flex items-center gap-1.5 text-xs font-semibold", sk.text600)}>
                         {cfg.label}
-                        <span className="text-slate-400">→</span>
+                        <span className={sk.text400}>→</span>
                         <span
                           className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
                           style={{
@@ -200,7 +203,7 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
                       <div className="flex flex-wrap gap-1.5">
                         {themes.map((th) => (
                           <Badge key={th.name} variant="secondary" className="gap-1">
-                            <span className="tabular-nums text-slate-400">{th.rank}</span>
+                            <span className={cn("tabular-nums", sk.text400)}>{th.rank}</span>
                             {th.name}
                           </Badge>
                         ))}
@@ -218,17 +221,17 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
         {/* DISC */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">DISC</CardTitle>
+            <CardTitle className={cn("text-base", sk.heading)}>DISC</CardTitle>
           </CardHeader>
           <CardContent>
             {coverage.disc && disc ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="rounded bg-slate-100 px-2 py-1">
+                  <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>
                     Primary: <strong>{disc.primaryStyle}</strong>
                   </span>
                   {disc.adaptedStyle ? (
-                    <span className="rounded bg-slate-100 px-2 py-1">
+                    <span className={cn("rounded px-2 py-1", sk.bgMuted100)}>
                       Adapted: <strong>{disc.adaptedStyle}</strong>
                     </span>
                   ) : null}
@@ -239,8 +242,8 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
                     const value = disc[k]
                     return (
                       <div key={k} className="flex items-center gap-2">
-                        <span className="w-24 shrink-0 text-xs text-slate-600">{legend.label}</span>
-                        <div className="h-2 flex-1 overflow-hidden rounded bg-slate-100">
+                        <span className={cn("w-24 shrink-0 text-xs", sk.text600)}>{legend.label}</span>
+                        <div className={cn("h-2 flex-1 overflow-hidden rounded", sk.bgMuted100)}>
                           <div
                             className="h-full rounded"
                             style={{
@@ -249,12 +252,12 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
                             }}
                           />
                         </div>
-                        <span className="w-8 text-right text-xs tabular-nums text-slate-600">{value}</span>
+                        <span className={cn("w-8 text-right text-xs tabular-nums", sk.text600)}>{value}</span>
                       </div>
                     )
                   })}
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className={cn("text-[11px]", sk.text400)}>
                   Legend: D→Red · I→Green · S→Green · C→Blue (PRISM quadrant mapping)
                 </p>
               </div>
@@ -268,19 +271,19 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
       {/* Reconciliation */}
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">Aura reconciliation</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>Aura reconciliation</CardTitle>
           <Badge variant={CONFIDENCE_BADGE_VARIANT[reconciliation.confidence]}>
             {CONFIDENCE_LABEL[reconciliation.confidence]}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className={cn("text-sm font-medium text-slate-800")}>{reconciliation.headline}</p>
-          <p className="text-sm text-slate-600">{reconciliation.throughLine}</p>
+          <p className={cn("text-sm font-medium", sk.text800)}>{reconciliation.headline}</p>
+          <p className={cn("text-sm", sk.text600)}>{reconciliation.throughLine}</p>
 
           {reconciliation.discrepancies.length > 0 ? (
             <div>
-              <div className="mb-1 text-xs font-semibold text-slate-500">Discrepancies</div>
-              <ul className="list-inside list-disc space-y-1 text-sm text-slate-600">
+              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>Discrepancies</div>
+              <ul className={cn("list-inside list-disc space-y-1 text-sm", sk.text600)}>
                 {reconciliation.discrepancies.map((d, i) => (
                   <li key={i}>{d}</li>
                 ))}
@@ -289,9 +292,9 @@ export function BehavioralProfilePanel({ profile, onInvite }: BehavioralProfileP
           ) : null}
 
           {reconciliation.actionableInsights && reconciliation.actionableInsights.length > 0 ? (
-            <div className="rounded-lg bg-slate-50 p-3">
-              <div className="mb-1 text-xs font-semibold text-slate-500">How to work with this person</div>
-              <ul className="space-y-1 text-sm text-slate-700">
+            <div className={cn("rounded-lg p-3", sk.bgMuted50)}>
+              <div className={cn("mb-1 text-xs font-semibold", sk.text500)}>How to work with this person</div>
+              <ul className={cn("space-y-1 text-sm", sk.text700)}>
                 {reconciliation.actionableInsights.map((ins, i) => (
                   <li key={i}>• {ins}</li>
                 ))}

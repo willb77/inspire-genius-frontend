@@ -81,6 +81,14 @@
       "ready": "音声準備完了",
       "connecting": "接続中",
       "off": "音声オフ"
+    },
+    "personalRow": {
+      "aria": "あなたのページ",
+      "selfPortrait": "セルフポートレート",
+      "moments": "モーメント",
+      "coaching": "コーチング",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} はお使いのアカウントでは利用できません"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "ドキュメント",
       "close": "ドキュメントを閉じる",
       "closeOverlay": "ドキュメントパネルを閉じる"
-    }
+    },
+    "upload": "ドキュメントをアップロード"
   },
   "export": {
     "title": "チャットをエクスポート",

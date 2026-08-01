@@ -60,7 +60,9 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
             {
               label: launcherSection.label,
               items: launcherSection.items,
-              defaultCollapsed: false,
+              // Same reasoning as UserLayout: take the section's own default so
+              // the roll-up is consistent across user, admin and vertical pages.
+              defaultCollapsed: launcherSection.defaultCollapsed ?? false,
             },
           ]
         : []),

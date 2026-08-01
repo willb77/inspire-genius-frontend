@@ -81,6 +81,14 @@
       "ready": "Stemme klar",
       "connecting": "Kobler til",
       "off": "Stemme av"
+    },
+    "personalRow": {
+      "aria": "Sidene dine",
+      "selfPortrait": "Mitt selvportrett",
+      "moments": "Øyeblikk",
+      "coaching": "Coaching",
+      "jobFit": "Job Fit",
+      "locked": "{{name}} er ikke aktivert for kontoen din"
     }
   },
   "header": {
@@ -193,7 +201,8 @@
       "title": "Dokumenter",
       "close": "Lukk dokumenter",
       "closeOverlay": "Lukk dokumentpanel"
-    }
+    },
+    "upload": "Last opp et dokument"
   },
   "export": {
     "title": "Eksporter chat",

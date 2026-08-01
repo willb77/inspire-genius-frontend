@@ -100,6 +100,14 @@
     "errCouldNotUpload": "Не удалось загрузить этот файл. Проверьте его и попробуйте снова.",
     "classic": "Классический",
     "new": "Новый",
-    "toggleNewHome": "Переключить новую главную страницу"
+    "toggleNewHome": "Переключить новую главную страницу",
+    "personalInfo": "Личная информация",
+    "otherAssessments": "Другие оценки",
+    "nOfM": "{{done}} из {{total}}",
+    "videos": "Видео",
+    "quickSelfPortrait": "Автопортрет",
+    "quickTodaysPrep": "Подготовка на сегодня",
+    "quickJobFit": "Job Fit",
+    "quickActionLocked": "{{name}} не подключён для вашей учётной записи"
   }
 }
