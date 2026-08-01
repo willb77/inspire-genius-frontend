@@ -232,6 +232,25 @@ export const ROUTES = {
     SETTINGS: "/vertical/lumen/settings",
     ONBOARDING: "/vertical/lumen/onboarding",
   },
+  // Direction Setting — the guided path from jobless to employed
+  // (entitlement-gated by enabled_verticals: "direction-setting"). The journey
+  // map is the home surface; every other route is one stage of it, reachable
+  // from the map or directly, because the journey is resumed over weeks and
+  // nobody re-walks it from the top.
+  DIRECTION_SETTING: {
+    BASE: "/vertical/direction-setting",
+    JOURNEY: "/vertical/direction-setting/journey",
+    ESTABLISH: "/vertical/direction-setting/establish",
+    PORTRAIT: "/vertical/direction-setting/portrait",
+    CAREERS: "/vertical/direction-setting/careers",
+    SALARY: "/vertical/direction-setting/salary",
+    GOALS: "/vertical/direction-setting/goals",
+    ALIGNMENT: "/vertical/direction-setting/alignment",
+    MATCHES: "/vertical/direction-setting/matches",
+    PLAN: "/vertical/direction-setting/plan",
+    INTERVIEW: "/vertical/direction-setting/interview",
+    REHEARSE: "/vertical/direction-setting/rehearse",
+  },
   ONBOARDING: {
     ONE: "/onboarding/one",
     TWO: "/onboarding/two",

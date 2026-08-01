@@ -62,6 +62,7 @@ export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
 const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,
   lumen: Lightbulb,
+  "direction-setting": Compass,
   grant: Wallet,
   "knowledge-continuity": BookOpen,
   honor: Award,
