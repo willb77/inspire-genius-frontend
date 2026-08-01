@@ -1,6 +1,7 @@
 import { Check, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { FrameworkCoverage } from "@/types/development"
+import { useDevSkin } from "./skin"
 
 type FrameworkKey = "prism" | "clifton" | "disc"
 
@@ -39,6 +40,7 @@ export function CoverageChips({
   className,
   size = "md",
 }: CoverageChipsProps) {
+  const sk = useDevSkin()
   return (
     <ul className={cn("flex flex-wrap items-center gap-2", className)} aria-label="Assessment coverage">
       {FRAMEWORKS.map(({ key, label, dateKey }) => {
@@ -65,7 +67,10 @@ export function CoverageChips({
                 onClick={() => onInvite(key)}
                 className={cn(
                   chipBase,
-                  "border-dashed border-slate-300 bg-transparent text-slate-500 hover:border-slate-400 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B5BFF]",
+                  "border-dashed bg-transparent hover:border-slate-400 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+                  sk.border300,
+                  sk.text500,
+                  sk.focusRing,
                 )}
                 data-testid={`coverage-${key}-invite`}
               >
@@ -75,7 +80,7 @@ export function CoverageChips({
               </button>
             ) : (
               <span
-                className={cn(chipBase, "border-dashed border-slate-300 bg-transparent text-slate-400")}
+                className={cn(chipBase, "border-dashed bg-transparent", sk.border300, sk.text400)}
                 data-testid={`coverage-${key}-missing`}
               >
                 <Plus className="h-3 w-3" aria-hidden="true" />
@@ -83,7 +88,7 @@ export function CoverageChips({
                 <span className="sr-only"> — not assessed</span>
               </span>
             )}
-            {date ? <span className="pl-1 text-[10px] text-slate-400">{date}</span> : null}
+            {date ? <span className={cn("pl-1 text-[10px]", sk.text400)}>{date}</span> : null}
           </li>
         )
       })}

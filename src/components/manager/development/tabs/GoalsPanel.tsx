@@ -29,6 +29,7 @@ import {
   useGoalSession,
   useRatifyGoal,
 } from "@/hooks/manager/development"
+import { useDevSkin } from "../skin"
 
 const CATEGORY_ORDER: GoalCategory[] = [
   "career_history",
@@ -39,6 +40,7 @@ const CATEGORY_ORDER: GoalCategory[] = [
 ]
 
 function CoverageStrip({ coverage }: { coverage: GoalCategoryCoverage[] }) {
+  const sk = useDevSkin()
   const byCat = new Map(coverage.map((c) => [c.category, c.state]))
   const stateColor: Record<string, string> = {
     covered: "bg-emerald-500",
@@ -50,7 +52,7 @@ function CoverageStrip({ coverage }: { coverage: GoalCategoryCoverage[] }) {
       {CATEGORY_ORDER.map((cat) => {
         const state = byCat.get(cat) ?? "not_started"
         return (
-          <div key={cat} className="flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs text-slate-600">
+          <div key={cat} className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs", sk.border200, sk.text600)}>
             <span className={cn("h-2 w-2 rounded-full", stateColor[state])} aria-hidden="true" />
             {GOAL_CATEGORY_LABEL[cat]}
             <span className="sr-only"> — {state.replace("_", " ")}</span>
@@ -62,6 +64,7 @@ function CoverageStrip({ coverage }: { coverage: GoalCategoryCoverage[] }) {
 }
 
 function AlignmentBadge({ alignment }: { alignment: PrismAlignment }) {
+  const sk = useDevSkin()
   const parts: string[] = []
   if (alignment.dimensions?.length) {
     parts.push(alignment.dimensions.map((d) => BEHAVIOUR_CONFIG[d]?.label ?? `Dim ${d}`).join(", "))
@@ -73,7 +76,7 @@ function AlignmentBadge({ alignment }: { alignment: PrismAlignment }) {
         <Sparkles className="h-3 w-3" aria-hidden="true" />
         {PRISM_ALIGNMENT_LABEL[alignment.kind]}
       </Badge>
-      {parts.length > 0 ? <span className="text-xs text-slate-500">{parts.join(" · ")}</span> : null}
+      {parts.length > 0 ? <span className={cn("text-xs", sk.text500)}>{parts.join(" · ")}</span> : null}
     </div>
   )
 }
@@ -87,12 +90,13 @@ function GoalCard({
   onRatify: (goalId: string) => void
   ratifying: boolean
 }) {
+  const sk = useDevSkin()
   const confirmed = goal.status === "confirmed"
   return (
     <Card>
       <CardHeader className="space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{goal.title}</CardTitle>
+          <CardTitle className={cn("text-base", sk.heading)}>{goal.title}</CardTitle>
           <Badge variant={confirmed ? "default" : "secondary"} className="shrink-0 gap-1">
             {confirmed ? <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> : null}
             {confirmed ? "Confirmed" : "Provisional"}
@@ -106,21 +110,21 @@ function GoalCard({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div>
-          <div className="text-xs font-semibold text-slate-500">Why it matters</div>
-          <p className="text-slate-700">{goal.motivation}</p>
+          <div className={cn("text-xs font-semibold", sk.text500)}>Why it matters</div>
+          <p className={sk.text700}>{goal.motivation}</p>
         </div>
         <AlignmentBadge alignment={goal.prismAlignment} />
         {goal.prismAlignment.note ? (
-          <p className="text-xs text-slate-500">{goal.prismAlignment.note}</p>
+          <p className={cn("text-xs", sk.text500)}>{goal.prismAlignment.note}</p>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-xs font-semibold text-slate-500">Execution style</div>
-            <p className="text-slate-700">{goal.executionStyle}</p>
+            <div className={cn("text-xs font-semibold", sk.text500)}>Execution style</div>
+            <p className={sk.text700}>{goal.executionStyle}</p>
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-500">Success metric</div>
-            <p className="text-slate-700">{goal.successMetric}</p>
+            <div className={cn("text-xs font-semibold", sk.text500)}>Success metric</div>
+            <p className={sk.text700}>{goal.successMetric}</p>
           </div>
         </div>
         <div className="rounded-lg bg-emerald-50 p-2.5">
@@ -128,12 +132,12 @@ function GoalCard({
           <p className="text-emerald-800">{goal.firstStep}</p>
         </div>
         {goal.provenanceQuotes.length > 0 ? (
-          <details className="text-xs text-slate-500">
+          <details className={cn("text-xs", sk.text500)}>
             <summary className="cursor-pointer font-medium">Provenance ({goal.provenanceQuotes.length})</summary>
             <ul className="mt-1 space-y-1">
               {goal.provenanceQuotes.map((q, i) => (
                 <li key={i} className="flex gap-1.5">
-                  <Quote className="mt-0.5 h-3 w-3 shrink-0 text-slate-300" aria-hidden="true" />
+                  <Quote className={cn("mt-0.5 h-3 w-3 shrink-0", sk.text400)} aria-hidden="true" />
                   <span className="italic">“{q}”</span>
                 </li>
               ))}
@@ -150,7 +154,7 @@ function GoalCard({
             <MessageSquarePlus className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
             Co-ratify
           </Button>
-          <span className="text-[11px] text-slate-400">Managers co-sign — the member’s own ratification is never overwritten.</span>
+          <span className={cn("text-[11px]", sk.text400)}>Managers co-sign — the member’s own ratification is never overwritten.</span>
         </div>
       </CardContent>
     </Card>
@@ -162,12 +166,13 @@ export type GoalsPanelProps = {
 }
 
 export function GoalsPanel({ memberId }: GoalsPanelProps) {
+  const sk = useDevSkin()
   const { data, isLoading } = useDevelopmentGoals(memberId)
   const session = useGoalSession(memberId)
   const ratify = useRatifyGoal(memberId)
 
   if (isLoading) {
-    return <div className="py-10 text-center text-sm text-slate-400">Loading goals…</div>
+    return <div className={cn("py-10 text-center text-sm", sk.text400)}>Loading goals…</div>
   }
 
   const goals = data?.goals ?? []
@@ -178,8 +183,8 @@ export function GoalsPanel({ memberId }: GoalsPanelProps) {
     return (
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-start gap-3 p-6">
-          <h3 className="text-base font-semibold text-slate-800">PRISM needed</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className={cn("text-base font-semibold", sk.text800)}>PRISM needed</h3>
+          <p className={cn("text-sm", sk.text500)}>
             Set this member up with Aura to map their PRISM profile before goal discovery can begin.
           </p>
           <Button
@@ -200,8 +205,8 @@ export function GoalsPanel({ memberId }: GoalsPanelProps) {
         <CoverageStrip coverage={coverage} />
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-start gap-3 p-6">
-            <h3 className="text-base font-semibold text-slate-800">No goals discovered yet</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className={cn("text-base font-semibold", sk.text800)}>No goals discovered yet</h3>
+            <p className={cn("text-sm", sk.text500)}>
               Invite this member to a Summit discovery session to formalize their goals.
             </p>
             <Button onClick={() => session.mutate("invite")} disabled={session.isPending}>
