@@ -513,6 +513,10 @@ export default function MeridianChat({
       // IG Core document-generation skill — files produced this turn, each with
       // a presigned download URL. Rendered as a download button in the bubble.
       const attachments = metadata?.attachments?.filter((a) => a?.url) ?? [];
+      // PRISM Brain Map — accompanies a turn that reported the user's scores.
+      // Only accepted when it carries actual SVG; a partial payload renders
+      // nothing rather than an empty frame.
+      const prismMap = metadata?.prism_map?.svg ? metadata.prism_map : undefined;
       const assistantMessageId =
         (metadata as { assistant_message_id?: string } | undefined)?.assistant_message_id
           ?? `msg-${Date.now()}`;
@@ -537,6 +541,7 @@ export default function MeridianChat({
                 contributingAgents,
                 synthesized,
                 attachments: attachments.length > 0 ? attachments : undefined,
+                prismMap,
               },
             ];
           }
@@ -554,6 +559,7 @@ export default function MeridianChat({
               contributingAgents,
               synthesized,
               attachments: attachments.length > 0 ? attachments : undefined,
+              prismMap,
             },
           ];
         });
@@ -1485,6 +1491,14 @@ export default function MeridianChat({
             contributingAgents: message.contributingAgents,
             userLabel,
             slug: `meridian-${speaker}-${message.id}`,
+            // Carry the PRISM Brain Map into the Word/PDF/print artefact so
+            // the exported turn matches what was on screen.
+            figure: message.prismMap?.svg
+              ? {
+                  svg: message.prismMap.svg,
+                  caption: message.prismMap.description,
+                }
+              : undefined,
           },
           exportFormat,
         );
