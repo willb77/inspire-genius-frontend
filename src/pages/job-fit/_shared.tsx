@@ -8,7 +8,14 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Tone } from "./_fit"
 
-/** Standard page header: icon chip + title + subtitle. */
+/**
+ * Standard page header: icon chip + title + subtitle.
+ *
+ * Deliberately pure — no data, no routing. The vertical's navigation lives in
+ * `FitShell` (a pathless layout route) rather than here: an earlier attempt put
+ * it in this component and broke every page test, because a presentational
+ * header suddenly required auth and entitlement context.
+ */
 export function FitPageHeader({
   icon: Icon,
   title,

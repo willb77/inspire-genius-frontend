@@ -13,6 +13,11 @@ export type UnifiedLayoutProps = {
   expandOnPath?: string
   /** Optional content to render after the main content area (e.g. floating components) */
   renderAfterContent?: React.ReactNode
+  /**
+   * Start with the nav rail collapsed (not persisted) — for content-dense
+   * pages such as Meridian Chat that want the horizontal room.
+   */
+  collapseSidebarOnMount?: boolean
 }
 
 export default function UnifiedLayout({
@@ -21,20 +26,24 @@ export default function UnifiedLayout({
   className,
   expandOnPath,
   renderAfterContent,
+  collapseSidebarOnMount,
 }: UnifiedLayoutProps) {
   const auditLabel = role === "user" ? "user" : role
   usePageViewAudit(auditLabel)
 
+  // The role menu already includes entitled WORKSPACE verticals (Job Fit,
+  // Lumen) — they read as first-person workspace tools, not separate products.
   const navItems = useGatedNavItems(role)
   const verticalItems = useEntitledVerticalItems(role)
 
-  // When the user is entitled to verticals, render the role menu as a
-  // header-less group at the top with a COLLAPSED "Verticals" section beneath;
-  // otherwise just the flat role menu.
+  // Role menu as a header-less group at the top, with the Verticals catalogue
+  // beneath it. Verticals is EXPANDED (2026-07-28) — it lists every vertical,
+  // greyed where the user has no entitlement, so it is a menu to browse rather
+  // than a drawer to remember to open.
   const navSections: NavSectionDef[] | undefined = verticalItems.length
     ? [
         { label: "", items: navItems },
-        { label: "Verticals", items: verticalItems, defaultCollapsed: true },
+        { label: "Verticals", items: verticalItems, defaultCollapsed: false },
       ]
     : undefined
 
@@ -45,6 +54,7 @@ export default function UnifiedLayout({
       className={className}
       expandOnPath={expandOnPath}
       renderAfterContent={renderAfterContent}
+      collapseOnMount={collapseSidebarOnMount}
     >
       {children}
     </SidebarScaffold>

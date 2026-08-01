@@ -5,15 +5,41 @@ import {
   useMoments,
   useSetMomentState,
 } from "@/hooks/lumen/useMoments"
-import type { Moment } from "@/types/lumen"
+import {
+  useCreateSavedPrompt,
+  useDeleteSavedPrompt,
+  useSavedPrompts,
+  useTouchSavedPrompt,
+} from "@/hooks/lumen/useSavedPrompts"
+import type { Moment, SavedPrompt } from "@/types/lumen"
 
 jest.mock("@/hooks/lumen/useMoments")
+jest.mock("@/hooks/lumen/useSavedPrompts")
 
 const mockUseMoments = useMoments as jest.MockedFunction<typeof useMoments>
 const mockUseAskMoment = useAskMoment as jest.MockedFunction<typeof useAskMoment>
 const mockUseSetMomentState = useSetMomentState as jest.MockedFunction<
   typeof useSetMomentState
 >
+const mockUseSavedPrompts = useSavedPrompts as jest.MockedFunction<typeof useSavedPrompts>
+const mockUseCreateSavedPrompt = useCreateSavedPrompt as jest.MockedFunction<
+  typeof useCreateSavedPrompt
+>
+const mockUseDeleteSavedPrompt = useDeleteSavedPrompt as jest.MockedFunction<
+  typeof useDeleteSavedPrompt
+>
+const mockUseTouchSavedPrompt = useTouchSavedPrompt as jest.MockedFunction<
+  typeof useTouchSavedPrompt
+>
+
+const SAVED: SavedPrompt = {
+  id: "sp-1",
+  text: "My weekly skip-level",
+  label: null,
+  use_count: 3,
+  last_used_at: "2026-07-26T12:00:00Z",
+  created_at: "2026-07-01T12:00:00Z",
+}
 
 const MOMENT: Moment = {
   id: "m-1",
@@ -33,6 +59,11 @@ function setup({
   askPending = false,
   askError = false,
   setState = jest.fn(),
+  savedPrompts = [] as SavedPrompt[],
+  savedPromptsError = false,
+  savePrompt = jest.fn(),
+  removePrompt = jest.fn(),
+  touchPrompt = jest.fn(),
 } = {}) {
   mockUseMoments.mockReturnValue({
     data: { moments, limit: 20, offset: 0, has_more: false },
@@ -48,7 +79,22 @@ function setup({
     mutate: setState,
     isPending: false,
   } as unknown as ReturnType<typeof useSetMomentState>)
-  return { ask, setState }
+  mockUseSavedPrompts.mockReturnValue({
+    data: savedPrompts,
+    isError: savedPromptsError,
+  } as unknown as ReturnType<typeof useSavedPrompts>)
+  mockUseCreateSavedPrompt.mockReturnValue({
+    mutate: savePrompt,
+    isPending: false,
+  } as unknown as ReturnType<typeof useCreateSavedPrompt>)
+  mockUseDeleteSavedPrompt.mockReturnValue({
+    mutate: removePrompt,
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeleteSavedPrompt>)
+  mockUseTouchSavedPrompt.mockReturnValue({
+    mutate: touchPrompt,
+  } as unknown as ReturnType<typeof useTouchSavedPrompt>)
+  return { ask, setState, savePrompt, removePrompt, touchPrompt }
 }
 
 describe("Moments", () => {
@@ -130,5 +176,69 @@ describe("Moments", () => {
     setup({ askError: true })
     render(<Moments />)
     expect(screen.getByText(/That didn't work/)).toBeInTheDocument()
+  })
+
+  describe("saved situations", () => {
+    test("pins what the user typed", () => {
+      const { savePrompt } = setup()
+      render(<Moments />)
+      fireEvent.change(screen.getByLabelText("Describe the situation"), {
+        target: { value: "the quarterly board update" },
+      })
+      fireEvent.click(screen.getByRole("button", { name: /Pin this situation/ }))
+      expect(savePrompt).toHaveBeenCalledWith({ text: "the quarterly board update" })
+    })
+
+    test("won't offer to pin something already pinned", () => {
+      // Re-pinning is a harmless no-op server-side, but an enabled button
+      // implies it would do something.
+      setup({ savedPrompts: [SAVED] })
+      render(<Moments />)
+      fireEvent.change(screen.getByLabelText("Describe the situation"), {
+        target: { value: SAVED.text },
+      })
+      expect(screen.getByRole("button", { name: /Pinned/ })).toBeDisabled()
+    })
+
+    test("won't offer to pin something too short to be a situation", () => {
+      setup()
+      render(<Moments />)
+      expect(screen.getByRole("button", { name: /Pin this situation/ })).toBeDisabled()
+    })
+
+    test("picking a saved situation fills the box and records the reuse", () => {
+      // The counter drives ordering only — the ask must never wait on it.
+      const { touchPrompt } = setup({ savedPrompts: [SAVED] })
+      render(<Moments />)
+      fireEvent.click(screen.getByRole("button", { name: SAVED.text }))
+      expect(screen.getByLabelText("Describe the situation")).toHaveValue(SAVED.text)
+      expect(touchPrompt).toHaveBeenCalledWith(SAVED.id)
+    })
+
+    test("a pinned situation can be unpinned", () => {
+      const { removePrompt } = setup({ savedPrompts: [SAVED] })
+      render(<Moments />)
+      fireEvent.click(screen.getByRole("button", { name: `Remove "${SAVED.text}"` }))
+      expect(removePrompt).toHaveBeenCalledWith(SAVED.id)
+    })
+
+    test("hides pinning entirely against a backend without the routes", () => {
+      // The frontend ships to dev and staging-B on merge while the backend is
+      // promoted separately, so an environment WILL exist where these routes
+      // 404. An enabled button that silently fails is worse than no button.
+      setup({ savedPromptsError: true })
+      render(<Moments />)
+      expect(
+        screen.queryByRole("button", { name: /Pin this situation/ })
+      ).not.toBeInTheDocument()
+      // The rest of the page keeps working.
+      expect(screen.getByRole("button", { name: /Get a Moment/ })).toBeInTheDocument()
+    })
+
+    test("shows no pinned section when the user has kept nothing", () => {
+      setup()
+      render(<Moments />)
+      expect(screen.queryByText("Your pinned situations")).not.toBeInTheDocument()
+    })
   })
 })

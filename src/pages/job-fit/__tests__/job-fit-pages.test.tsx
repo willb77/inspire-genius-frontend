@@ -5,14 +5,18 @@
  * mocked hooks across loading / error / empty / data states so the page modules
  * and the _shared/_fit helpers stay covered without hitting the network.
  */
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 /* ── Hook mocks ── */
 const mockUseFitMatches = jest.fn()
 const mockUseFitDetail = jest.fn()
 const mockUseFitPathway = jest.fn()
-jest.mock("@/hooks/job-fit/useFitMatches", () => ({ useFitMatches: () => mockUseFitMatches() }))
+// Forward args so tests can assert the Decision-D4 method the page passes.
+jest.mock("@/hooks/job-fit/useFitMatches", () => ({
+  useFitMatches: (...args: unknown[]) => mockUseFitMatches(...args),
+}))
 jest.mock("@/hooks/job-fit/useFitDetail", () => ({ useFitDetail: () => mockUseFitDetail() }))
 jest.mock("@/hooks/job-fit/useFitPathway", () => ({ useFitPathway: () => mockUseFitPathway() }))
 
@@ -26,14 +30,7 @@ import MatchesPage from "../MatchesPage"
 import FitDetailPage from "../FitDetailPage"
 import GapsPage from "../GapsPage"
 import PathwayPage from "../PathwayPage"
-import {
-  bandTone,
-  bandLabel,
-  tierLabel,
-  variationDescriptor,
-  gapTone,
-  formatGap,
-} from "../_fit"
+import { bandTone, bandLabel, tierLabel, gapTone, formatGap } from "../_fit"
 import type { FitMatch, FitDetail, FitPathway } from "@/types/job-fit"
 
 const MATCH: FitMatch = {
@@ -81,7 +78,15 @@ const DETAIL: FitDetail = {
 }
 
 function renderRouted(ui: React.ReactNode, path = "/") {
-  return render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>)
+  // A QueryClientProvider is needed now that the detail page mounts the fit
+  // narrative cards (which use React Query mutations). Retries off so the
+  // mocked-network mutations settle deterministically in tests.
+  const qc = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  )
 }
 
 beforeEach(() => jest.clearAllMocks())
@@ -104,13 +109,6 @@ describe("_fit helpers", () => {
     expect(tierLabel("front-line")).toBe("Front-line")
     expect(tierLabel("professional")).toBe("Professional")
     expect(tierLabel("executive")).toBe("Executive")
-  })
-
-  test("variationDescriptor buckets closeness", () => {
-    expect(variationDescriptor(5)).toMatch(/close/i)
-    expect(variationDescriptor(18)).toMatch(/strong/i)
-    expect(variationDescriptor(30)).toMatch(/workable/i)
-    expect(variationDescriptor(50)).toMatch(/stretch/i)
   })
 
   test("gapTone and formatGap reflect direction", () => {
@@ -141,14 +139,79 @@ describe("MatchesPage", () => {
     expect(screen.getByText(/no published roles/i)).toBeInTheDocument()
   })
 
-  test("renders ranked matches with band pills", () => {
+  test("renders ranked matches (no verdict-style band label or disclaimer)", () => {
     mockUseFitMatches.mockReturnValue({ data: [MATCH, MATCH_2], isLoading: false, isError: false })
     renderRouted(<MatchesPage />)
     expect(screen.getByText("Customer Success Lead")).toBeInTheDocument()
     expect(screen.getByText("Operations Manager")).toBeInTheDocument()
     expect(screen.getByText("Revenue")).toBeInTheDocument()
-    // Standardized matching-validation banner sits prominently at the top.
-    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
+    // The "stretch/develop" descriptor and the decision-support banner were
+    // removed — neither should render. The band pill ("Strong fit"/"Poor fit")
+    // is gone too: the row's fitBand text must not appear as a label.
+    expect(screen.queryByText(/not a validated selection instrument/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/several areas to develop/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^(strong|stretch|poor|moderate) fit$/i)).not.toBeInTheDocument()
+  })
+
+  // ── Decision D4 — scoring-method toggle ──
+  test("defaults to the gap method", () => {
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    // the page asks the hook for the gap read by default
+    expect(mockUseFitMatches).toHaveBeenCalledWith("gap")
+    // gap read shows the derived fit % badge (totalVariation 14 / 22 → 99)
+    expect(screen.getByText("99")).toBeInTheDocument()
+  })
+
+  test("prefers the backend fitScore for the row % when present", () => {
+    // With an authoritative fitScore the row shows exactly that (so it matches
+    // the role's detail page), not the derived 100 - total/22 fallback.
+    const scored: FitMatch = { ...MATCH, fitScore: 73 }
+    mockUseFitMatches.mockReturnValue({ data: [scored], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("73")).toBeInTheDocument()
+    expect(screen.queryByText("99")).not.toBeInTheDocument()
+  })
+
+  test("choosing 'Overall closeness' refetches with the closeness method", () => {
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    fireEvent.click(screen.getByRole("radio", { name: /overall closeness/i }))
+    expect(mockUseFitMatches).toHaveBeenLastCalledWith("closeness")
+  })
+
+  test("rows surface an explicit fit % (closeness score under the closeness method)", () => {
+    const closeMatch: FitMatch = { ...MATCH, method: "closeness", closenessScore: 87 }
+    mockUseFitMatches.mockReturnValue({ data: [closeMatch], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    // The closeness score is shown as the row's fit % badge (87 + %), so the
+    // person sees their fit on "My Fit" without opening the detail page.
+    expect(screen.getByText("87")).toBeInTheDocument()
+  })
+
+  test("gap-method rows show a derived fit % badge", () => {
+    // totalVariation 14 over 22 dims → 100 - round(14/22) = 99
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("99")).toBeInTheDocument()
+  })
+
+  test("says what Job Fit is for before showing any score", () => {
+    // A fit percentage with no framing reads as a verdict, and a low one reads
+    // as a rejection. The framing must survive; it is the difference between a
+    // user who closes the tab and one who opens Coaching.
+    mockUseFitMatches.mockReturnValue({ data: [MATCH], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText(/a comparison, not a verdict/i)).toBeInTheDocument()
+    expect(screen.getByText("Blueprint a role")).toBeInTheDocument()
+    expect(screen.getByText("Do something about it")).toBeInTheDocument()
+  })
+
+  test("the purpose panel shows even with nothing to match against", () => {
+    // The empty state is exactly when a user most needs to be told what this is.
+    mockUseFitMatches.mockReturnValue({ data: [], isLoading: false, isError: false })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText(/What Job Fit is for/i)).toBeInTheDocument()
   })
 })
 
@@ -174,7 +237,7 @@ describe("FitDetailPage", () => {
     expect(screen.getByText(/couldn't load this role/i)).toBeInTheDocument()
   })
 
-  test("renders the full breakdown including the methodology note", () => {
+  test("renders the full breakdown", () => {
     mockUseFitDetail.mockReturnValue({ data: DETAIL, isLoading: false, isError: false })
     renderDetail()
     expect(screen.getByRole("heading", { name: "Customer Success Lead" })).toBeInTheDocument()
@@ -185,19 +248,8 @@ describe("FitDetailPage", () => {
     expect(screen.getByText(/watch for over-use/i)).toBeInTheDocument()
     expect(screen.getByText(/track record of new ideas/i)).toBeInTheDocument()
     expect(screen.getByText(/base tier/i)).toBeInTheDocument()
-    // The validation banner carries the backend methodology note as its body.
-    expect(screen.getByText(/not a validated selection instrument/i)).toBeInTheDocument()
-    expect(screen.getByText(DETAIL.methodologyNote)).toBeInTheDocument()
-  })
-
-  test("surfaces the limited-release line when the role is gated", () => {
-    mockUseFitDetail.mockReturnValue({
-      data: { ...DETAIL, gated: true },
-      isLoading: false,
-      isError: false,
-    })
-    renderDetail()
-    expect(screen.getByText(/limited validation release/i)).toBeInTheDocument()
+    // The decision-support disclaimer banner was removed from the fit surfaces.
+    expect(screen.queryByText(/not a validated selection instrument/i)).not.toBeInTheDocument()
   })
 })
 

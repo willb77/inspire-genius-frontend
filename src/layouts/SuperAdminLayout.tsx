@@ -8,9 +8,10 @@ import {
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
-import { GRANT_SIDEBAR_SECTION } from "@/constants/sidebar-sections";
-import { useVerticalAccess } from "@/verticals/core";
-import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher";
+import {
+  useVerticalLauncherSection,
+  useWorkspaceNavItems,
+} from "@/components/layout/useVerticalLauncher";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 
@@ -21,8 +22,9 @@ export type SuperAdminLayoutProps = {
 
 export default function SuperAdminLayout({ children, className }: SuperAdminLayoutProps) {
   const agentEngineOn = useAgentEngine();
-  const userNavItems = getUserNavItems(agentEngineOn);
-  const { hasAccess: hasGrantAccess } = useVerticalAccess("grant");
+  // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
+  // spliced in above Settings/Help — greyed when unentitled.
+  const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
   const launcherSection = useVerticalLauncherSection();
   const { user } = useAuth();
   // Owner-only nav routes (e.g. Dev Traffic Report) stay in their normal
@@ -30,29 +32,29 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   // The backend independently hard-403s any non-owner caller.
   const isOwner = isPlatformOwner(user?.email);
 
-  /** On admin pages, keep Administration expanded (the user is mid-task) but
-   *  still surface "My Workspace" so they can hop back to the user experience.
-   *  Entitlement-gated vertical sections are appended after the admin ones and
-   *  toggle live via the preview switch (GrantPreviewToggle). */
+  /**
+   * Section order (2026-07-28): **My Workspace → Role Views → Verticals →
+   * Administration.** Verticals sits directly after the role views, and
+   * Administration moved below it — day-to-day surfaces first, platform
+   * plumbing last.
+   *
+   * Financial Aid (GRANT) no longer gets a bespoke top-level section; it is one
+   * entry inside Verticals like every other vertical, with its nine aid pages
+   * reached through `VerticalShell` once you enter. Verticals lists the FULL
+   * catalogue — unentitled ones render greyed and non-navigating — and the
+   * GRANT preview switch still flips entitlement live.
+   */
   const sections: NavSectionDef[] = useMemo(() => {
     const gate = (items: NavSectionDef["items"]) =>
       isOwner ? items : items.filter((i) => !OWNER_ONLY_NAV_ROUTES.has(i.to));
+    const bySection = (label: string) =>
+      SUPER_ADMIN_NAV_SECTIONS.filter((s) => s.label === label).map((s) => ({
+        ...s,
+        items: gate(s.items),
+      }));
     return [
       { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
-      ...SUPER_ADMIN_NAV_SECTIONS.map((s) =>
-        s.label === "Administration"
-          ? { ...s, items: gate(s.items), defaultCollapsed: false }
-          : { ...s, items: gate(s.items) },
-      ),
-      ...(hasGrantAccess
-        ? [
-            {
-              label: GRANT_SIDEBAR_SECTION.label,
-              items: GRANT_SIDEBAR_SECTION.items,
-              defaultCollapsed: false,
-            },
-          ]
-        : []),
+      ...bySection("Role Views"),
       ...(launcherSection
         ? [
             {
@@ -62,8 +64,10 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
             },
           ]
         : []),
+      // Administration stays expanded — a super-admin on an admin page is mid-task.
+      ...bySection("Administration").map((s) => ({ ...s, defaultCollapsed: false })),
     ];
-  }, [userNavItems, hasGrantAccess, launcherSection, isOwner]);
+  }, [userNavItems, launcherSection, isOwner]);
 
   return (
     <SidebarScaffold

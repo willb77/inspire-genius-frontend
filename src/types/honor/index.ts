@@ -335,11 +335,37 @@ export type HonorResume = {
 /** The route returns this shape while the server `honor_resume` flag is off. */
 export type HonorResumeDisabled = { disabled: boolean }
 
+/**
+ * "Request a PRISM report" for a NEW person (Caseload). Only these fields are
+ * collected — `role` is always `user` and `organization` is always
+ * "The Honor Foundation", injected in the service layer and enforced server-side.
+ */
+export type HonorPrismReportInput = { firstName: string; lastName: string; email: string }
+
+/** Result of a PRISM report request. */
+export type HonorPrismReportResult = {
+  requestId: string
+  userId: string
+  email: string
+  role: string
+  organization: string
+  actionUrl?: string | null
+  status: string
+  linkedExisting: boolean
+  submitted: boolean
+}
+
 /** Request body for the résumé route (any/all optional). */
 export type HonorResumeBody = {
   role?: string
   careerArea?: string
   positionText?: string
+  /**
+   * Uploaded job-description document id(s) — the "Upload a job description"
+   * button. The server extracts their text into the Target position description
+   * (position_text) when `positionText` is empty. Pasted text wins.
+   */
+  positionFileIds?: string[]
   /**
    * Feature 2 — rewrite keyed off a prior evaluation. Supply a saved
    * evaluation's id (the server loads it and pulls its "Suggestions for

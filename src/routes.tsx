@@ -208,7 +208,9 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 
 // Lumen — B2C personal diagnostics + just-in-time coaching (entitlement-gated)
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
+const LumenShell = React.lazy(() => import("@/pages/lumen/LumenNav"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
+const LumenCoaching = React.lazy(() => import("@/pages/lumen/CoachingPage"));
 const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
 const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 const LumenSettings = React.lazy(() => import("@/pages/lumen/LumenSettings"));
@@ -244,6 +246,9 @@ const JobFitMatchesPage = React.lazy(() => import("@/pages/job-fit/MatchesPage")
 const JobFitDetailPage = React.lazy(() => import("@/pages/job-fit/FitDetailPage"));
 const JobFitGapsPage = React.lazy(() => import("@/pages/job-fit/GapsPage"));
 const JobFitPathwayPage = React.lazy(() => import("@/pages/job-fit/PathwayPage"));
+const JobFitBlueprintPage = React.lazy(() => import("@/pages/job-fit/BlueprintStudioPage"));
+const JobFitCoachPage = React.lazy(() => import("@/pages/job-fit/CoachPage"));
+const JobFitShell = React.lazy(() => import("@/pages/job-fit/FitShell"));
 
 // ── Suspense wrapper helper ─────────────────────────────────────────────────
 function withSuspense(element: React.ReactNode) {
@@ -600,10 +605,19 @@ export const routes: RouteObject[] = [
         element: withSuspense(<LumenLayout />),
         children: [
           { index: true, element: <Navigate to="/vertical/lumen/dashboard" replace /> },
-          { path: "dashboard", element: withSuspense(<LumenDashboard />) },
-          { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
-          { path: "moments", element: withSuspense(<LumenMoments />) },
-          { path: "settings", element: withSuspense(<LumenSettings />) },
+          // Pathless layout: the in-vertical nav renders above every tool page.
+          // Onboarding sits outside it deliberately — it is a funnel, and a row
+          // of links to surfaces that are not ready yet invites leaving it.
+          {
+            element: withSuspense(<LumenShell />),
+            children: [
+              { path: "dashboard", element: withSuspense(<LumenDashboard />) },
+              { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
+              { path: "moments", element: withSuspense(<LumenMoments />) },
+              { path: "coaching", element: withSuspense(<LumenCoaching />) },
+              { path: "settings", element: withSuspense(<LumenSettings />) },
+            ],
+          },
           { path: "onboarding", element: withSuspense(<LumenOnboarding />) },
         ],
       },
@@ -646,10 +660,18 @@ export const routes: RouteObject[] = [
         element: withSuspense(<JobFitLayout />),
         children: [
           { index: true, element: <Navigate to="/vertical/job-fit/matches" replace /> },
-          { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
-          { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
-          { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
-          { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+          // Pathless layout route: renders the in-vertical nav above every page.
+          {
+            element: withSuspense(<JobFitShell />),
+            children: [
+              { path: "matches", element: withSuspense(<JobFitMatchesPage />) },
+              { path: "fit/:jobId", element: withSuspense(<JobFitDetailPage />) },
+              { path: "gaps", element: withSuspense(<JobFitGapsPage />) },
+              { path: "pathway", element: withSuspense(<JobFitPathwayPage />) },
+              { path: "blueprint", element: withSuspense(<JobFitBlueprintPage />) },
+              { path: "coach", element: withSuspense(<JobFitCoachPage />) },
+            ],
+          },
         ],
       },
 

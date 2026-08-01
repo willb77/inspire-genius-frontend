@@ -1,3 +1,272 @@
+## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
+
+Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.
+
+### Removed
+- `src/components/shared/layout/HelpSupportMenu.tsx` and its test — deleted.
+- `src/components/shared/layout/SidebarScaffold.tsx` — no longer imports/renders `HelpSupportMenu`; the footer is back to just Logout.
+
+### Kept
+- `src/components/shared/layout/helpSupportLinks.ts` (`GUIDE_LINKS`) — still the shared source of truth, now consumed only by `src/pages/honor/HonorHelpMenu.tsx`.
+- The `/docs/guides/` assets and the Honor Help / Support menu are unchanged.
+
+### Verified
+- `npm run build` (tsc + vite) clean (no dangling import of the deleted component); Jest SidebarScaffold 11/11 + honor-help-menu 2/2; eslint clean.
+
+## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
+
+Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
+
+### Added
+- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
+- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
+
+### Changed
+- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
+
+## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
+
+Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
+
+### Added
+- `src/components/shared/layout/HelpSupportMenu.tsx` — the dropdown, rendered as a sidebar-footer button (opens above **Logout**).
+- `src/components/shared/layout/helpSupportLinks.ts` — the three asset URLs, app-relative under `/docs/guides/` so they resolve on whichever host the app runs on.
+- `src/components/shared/layout/__tests__/HelpSupportMenu.test.tsx` — trigger renders, links correct, menu opens with all three assets each `target=_blank`.
+- `public/docs/guides/honor-coach-workbench-user-guide.html` — the clickable HTML guide (sticky TOC, scroll-spy, in-page Download buttons), plus the `.pptx` and `.docx` next to it. Ship in `public/` so they deploy to the frontend's own S3/CloudFront origin.
+
+### Changed
+- `src/components/shared/layout/SidebarScaffold.tsx` — footer wires in `HelpSupportMenu` above the Logout item.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
+
+## [2026-07-30] — Lumen coaching answers on the page, with print + Word/PDF export
+
+Lumen **Personal coaching** now answers **on the page** instead of navigating away to the Meridian chat surface. Answers accumulate, so a run of questions reads as one session, and each answer can be **copied, printed, or exported to Word or PDF** — the same per-turn controls Meridian chat has.
+
+### Why the old behaviour was wrong
+Asking a question threw the person out of Lumen and discarded the context they had just assembled with the source checkboxes. The answer arrived somewhere that no longer knew why it had been asked.
+
+### Added
+- `src/pages/lumen/CoachingAnswers.tsx` — the response window. Renders through `AssistantMarkdown` (coaching answers are mostly headings and lists; flattening them to one grey paragraph is what makes an inline answer feel worse than the chat). Per-answer **Copy / Print / Export ▾ (Word, PDF)**.
+- `src/hooks/lumen/useCoachAnswer.ts` — wraps the Meridian async-job path into ask → answer. One session id per page mount, so successive questions are one conversation.
+- `src/lib/exportTranscript/printTurn.ts` — printing, sharing `buildTurnHtml` with `exportTurn`.
+
+### Changed
+- `src/pages/lumen/CoachingPage.tsx` — **"Answer it here"** is now the primary action; **"Open in Meridian"** remains as secondary for anyone who wants to keep talking rather than read one answer. Picking a question from the dropdown answers it inline.
+
+### How it works — and what it deliberately does NOT do
+Inline answers go through the **ordinary async-job path** (`POST /v1/agents/chat/async` → poll `GET /v1/agents/chat/jobs/{id}`):
+
+- **Meridian is not bypassed.** She still classifies and routes to whichever specialist the question needs.
+- **No backend change, so no promote is needed.** Job Fit could answer inline (#306) because it already had `explain-fit`; Lumen has no equivalent, and a *synchronous* LLM route would sit behind API Gateway's hard 30s cap. The async path is the one built for this.
+- **The poll is the delivery mechanism** — the `job_complete` WS push is not reachable through the production ws-proxy — so the hook opens no socket at all.
+
+### Decisions worth keeping
+- **Print and Export share one document builder.** The printout, the `.doc` and the PDF are the same artefact rather than three near-misses; a test pins the printed input as deep-equal to the exported one.
+- **The scope line is not part of the question.** `Draw on my PRISM scores…` is an instruction to the coach — it goes into the prompt but is kept out of the answer heading and the exported file, which read as the question actually asked. The exported document leads with the question, because a download read a week later has none of the on-screen context.
+- **`printTurn` uses an off-screen iframe, not `window.open`** — a popup blocker swallows the latter silently, leaving no error to explain the nothing that happened.
+- **One job at a time**; overlapping asks would land out of order. A start-job failure clears the pending state, since `onJobSettled` never fires for a job that was never accepted and the spinner would otherwise run forever.
+
+### Verified against dev before merging, not asserted
+Exercised the real path with a real token: `POST /v1/agents/chat/async` → **202**, poll → running → **complete in ~9s**, and `metadata.contributing_agents` came back as **`['Summit']`** — Meridian routed a goal question to the goal agent, which is the routing this design depends on.
+
+### Tests
+97 passing across `pages/lumen/`, `hooks/lumen/` and `lib/exportTranscript/`. Three existing tests asserted the old navigate-away behaviour and were **rewritten to express the new intent** rather than deleted.
+
+Deliberately stayed off `SelfPortrait.tsx`, `types/lumen.ts` and `useSelfPortrait.ts` — FE #312 was open on those files from another terminal, and merged mid-build. Re-checked afterwards: **no conflict**, merges clean.
+
+### Known duplication — Lumen now has two export document builders
+FE #312 landed `src/lib/lumen/portraitReport.ts` (Self-Portrait report) at almost the same time. It shares the *plumbing* — `renderHtmlToPdf` and `downloadBlob` from `exportTranscript` — but has its own HTML builder and its own small markdown→HTML converter, because a portrait report (headline, instruments, coverage, disclaimer, Q&A) is a genuinely different document shape from a single turn. This work reuses `buildTurnHtml` instead, because a coaching answer *is* a turn — which is also what was asked for ("like the one in chat with Meridian").
+
+So the duplication is limited to two small markdown converters, and is **accepted for now** rather than resolved by refactoring another terminal's freshly-merged code. Per the standing rule, extract on the **third** occurrence or the first behavioural drift between them.
+
+**PR:** FE #313. Frontend-only, so it reaches **dev and staging-B** on merge without a backend promote.
+
+## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
+
+Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend both current on staging-B.
+
+### Migrations applied first, and verified by reading schema back
+A promote deploys code, not schema, so both agent-engine tables in the window went in **before** the tag, then were confirmed from `information_schema` rather than trusted from the runner's exit code:
+
+- `lumen_saved_prompts` (022) — 8 columns
+- `dossier_jobs` (021) — 9 columns. Not part of this feature, but the promoted agent-engine image serves `/agent/development/dossier/jobs`, so a missing table would have been a 500 waiting to happen.
+
+**Deliberately not applied:** `growth_*.sql` (growth-service is not deployed on staging-B) and `prism_results_backfill_from_assessments.sql` (a data mutation on another surface, not a prerequisite of this promote).
+
+### Scope — a promote is not per-feature
+The tag carried **39 commits** since `release-stable-2026-07-26-lumen`: all of `development`, not just Lumen. Riding along were role-fit D1–D7, KCE capture / curriculum / provenance, foldersync, support requests, growth dossier async compute, blueprint shadow-validation, and the `/v1/targets` gateway fix. There is no Lumen-only promote — the tag is the mechanism, and that blast radius should be stated before tagging, not after. (Another terminal subsequently recorded its own `/v1/targets` work as having reached staging-B "via `release-stable-2026-07-27-lumen-ux`" — the same effect, observed from the other side.)
+
+Pre-checked the known failure mode first: agent-engine ECS was `desired=1, running=1`, so the "promote goes red because the service is scaled to zero" trap was not in play.
+
+### Verified live on staging-B
+- `saved-prompts` went **404 → 401**. The 401 is the proof — the route exists and merely wants auth.
+- Authenticated round-trip: created a situation, re-saved it, got the **same row id with `use_count` 0→1**, so the whitespace-normalised dedupe promotes rather than duplicating, exactly as on dev. Probe row deleted afterwards, both times.
+- Self-Portrait composed from **three** sources there (PRISM + résumé + bio) versus two on dev — the four-source composer is demonstrably reading real per-environment data rather than returning a fixed shape.
+- **Frontend bundle checked directly**, not taken from CI: pulled the live entry chunk from `stable.inspiresgenius.com` and confirmed `vertical/lumen/coaching` is present alongside dashboard / self-portrait / moments / settings. The deployed bundle is current, not stale.
+
+### Note for future staging-B verification
+The probe above used `POST /v1/magic-auth` for a token. **#717 has since gated `/v1/magic-auth` off on staging-B and prod** (email-only token bypass). The verification stands — it was run before that landed — but the same probe will no longer work there, and future staging-B checks need a real login or an admin-tools path instead.
+
+## [2026-07-29] — Entering a vertical opens that vertical's left-side menu
+
+### Fixed
+- **Clicking into a vertical now opens its own sidebar menu.** Previously entering a vertical *replaced* the sidebar with the role menu plus — for GRANT and Knowledge Continuity only — that vertical's pages. The rest of the app vanished, and **Job Fit, Lumen and Job Blueprint showed no vertical menu at all** (their tool lists lived inside the page as horizontal pill rows; Job Blueprint's seven pages had no navigation of any kind and were reachable only by URL or a dashboard link). FE PR #303.
+- Every vertical page now renders the full app menu with exactly one section open — the one you clicked into:
+  - `My Workspace` — header only, rolled up until clicked
+  - `Role Views` — rolled up (super-admin only)
+  - **`{Vertical}` — OPEN**, still collapsible
+  - `Verticals` — rolled up, the whole catalogue
+  - `Administration` — rolled up, last (super-admin only)
+
+### Added
+- **`NavSectionDef.collapsible`** — the missing half of `defaultCollapsed`: collapsible-and-*open*. `defaultCollapsed` still wins where both are set, so no existing section changes behaviour.
+- **`NavItemDef.activePrefix`** — marks a launcher entry active for every route beneath the vertical. The entry links to `homePath`, so an exact match stopped highlighting the moment you navigated anywhere inside it.
+- **`src/constants/vertical-subnav.ts`** — the single source of truth for per-vertical sidebar menus. Job Fit and Lumen now **import** their tool lists from it instead of declaring their own, so the in-page pill row and the sidebar menu cannot drift; the dependency runs page → constants, never the reverse. Job Blueprint gets a menu for the first time.
+- **`src/hooks/nav/useVerticalPageSections.ts`** — assembles the ordered section list, gating the owner-only Dev Traffic Report route exactly as the layouts do.
+  - Files: `src/verticals/core/VerticalShell.tsx`, `src/components/shared/layout/SidebarScaffold.tsx`, `src/pages/job-fit/FitNav.tsx`, `src/pages/lumen/LumenNav.tsx`
+
+### Deliberately unchanged
+- **GRANT and KCE keep their friendlier section labels** ("Financial Aid", not the registry key `GRANT`); newer verticals fall back to their registry title.
+- **Honor is untouched** — it ships its own chrome via `VerticalShell`'s `shell` prop, so Core renders no sidebar for it. Where Core has no menu for a vertical the section is omitted rather than rendered empty, and the launcher entry still marks where you are.
+
+### Verified
+- `npm run test:ci` — **507 suites / 3869 tests pass** (+21); `npm run build` clean; **ESLint clean on all 9 changed files** (zero errors, not merely zero new ones).
+- **Rendered and eyeballed** the real `SidebarScaffold` with the exact sections the hook produces for a super-admin on a GRANT page: only Financial Aid open with all eight aid pages, My Workspace / Role Views / Verticals / Administration all rolled up, Administration last — and My Workspace expanding correctly on click. Harness deleted, not committed.
+- New coverage: `useVerticalPageSections.test.ts` (order for user vs super-admin, per-section roll-up state, owner-only route still gated, `activePrefix` applied only to the vertical you are in, section omitted when Core has no menu, label preference) · `SidebarScaffold.test.tsx` (`collapsible` opens with a clickable header, `defaultCollapsed` wins, `activePrefix` matches deeper routes) · `VerticalShell.test.tsx` (full menu present, in order, around the open sub-nav).
+
+## [2026-07-28] — Verticals catalogue in the left menu + Meridian Chat chrome
+
+### Changed — sidebar / My Workspace
+- **Section order is now My Workspace → Role Views → Verticals → Administration.** Verticals sits directly after the role views and Administration moved below it: day-to-day surfaces first, platform plumbing last. The same order is used by `SuperAdminLayout` and by `UserLayout`'s super-admin path, so the menu does not reshuffle as a super-admin moves between user and admin pages. FE PR #301.
+- **Every vertical is now visible to every user; entitlement decides whether it is _usable_, not whether it is _visible_.** An unentitled vertical renders greyed, non-navigating and lock-marked via a new `NavItemDef.disabled`, so the catalogue is discoverable and the gate is legible instead of invisible. The same treatment applies to the two workspace verticals (Job Fit, Lumen) in My Workspace, since they are verticals too.
+- **Financial Aid (GRANT) lost its bespoke top-level section** and is one entry inside Verticals like everything else; its nine aid pages are still reached through `VerticalShell` once you enter — exactly how Honor and Knowledge Continuity already worked.
+- `useEntitledVerticalItems` no longer synthesizes GRANT/KCE entries: they are ordinary registry rows now, so there is one source of truth and no way for the two lists to disagree.
+  - Files: `src/components/layout/useVerticalLauncher.ts`, `src/hooks/nav/useGatedNavItems.ts`, `src/layouts/{SuperAdminLayout,UserLayout,UnifiedLayout,PractitionerLayout}.tsx`, `src/components/shared/layout/SidebarScaffold.tsx`
+
+### Changed — Meridian Chat
+- **The nav rail starts collapsed.** The forced state is deliberately *not* persisted (`SidebarOpenObserver` skips that first write) — persisting it would leave every other page collapsed too, silently overwriting the user's own setting. A later toggle on the page is real intent and persists normally.
+- **New "Document Upload" button in the header.** `DocumentsDropdown` only ever *selected* files already in the corpus; there was no way to add one without leaving the conversation for `/documents`. Reuses `UploadDocumentsModal` and invalidates the documents query, so an upload is immediately selectable and appears in the Knowledge tile.
+- **Export ▾ (Word / PDF) after every turn.** New `src/lib/exportTranscript/exportTurn.ts` shares one HTML document between both formats: PDF through the existing jsPDF/html2canvas renderer (lazily imported, so ~400 kB only loads if someone exports), Word through Word's own HTML-document format. Deliberately **no new dependency** — `docx` is ~500 kB for what is one formatted page, and Word/Pages/LibreOffice all open this natively with the brand CSS intact. Separate from the whole-conversation export, which is a two-document bundle with a cover page and the wrong artefact for "keep this one answer".
+- **The five left-rail tiles moved to the top.** Active Sessions / History / Last 5 Chats / Projects / Knowledge are now a dropdown row under the agent names, *inside* the sticky header so they stay one click away as the chat scrolls. Same tiles, same state, same test ids — `orientation="horizontal"` swaps the stacked card for a Popover shell (Popover rather than DropdownMenu because two bodies contain a text input and scrollable lists, which a menu's roving-focus model fights with). They start closed there regardless of stored state, since five popovers open at once would blanket the page; the vertical rail still honours what was remembered. The chat column reclaims the 320px the rail used to hold.
+  - Files: `src/pages/user/MeridianChat.tsx`, `src/components/meridian/MeridianTileRail.tsx`, `src/components/user/chat/{ChatWindow,ChatWindowChatTab}.tsx`, `src/types/chat/component-types.ts`, `src/lib/exportTranscript/exportTurn.ts`
+
+### Fixed
+- **Expanded-section headers clipped in the collapsed icon rail** ("MY WOR" / "VERT" / "ADMI"). `CollapsibleNavSection` already hid its header in icon mode; the always-expanded branch did not. Pre-existing, but load-bearing twice over now: Verticals adds a second expanded section, and Meridian Chat opens with the rail collapsed, so it is a state users land in rather than one they go looking for. **Found by looking at the rendered sidebar, not by a test** — then pinned with one.
+
+### Verified
+- `npm run test:ci` — **507 suites / 3848 tests pass** (+5 suites, +36 tests); `npm run build` clean; ESLint on all 15 touched files adds **0 new errors** (the 3 reported are pre-existing `props: any` in test mocks on `origin/development`).
+- **Rendered and eyeballed** both surfaces in Chrome against a local harness (stub providers, real components): confirmed the section order, the greyed + lock treatment on unentitled verticals in both My Workspace and Verticals, the horizontal tile row under the agent names, a tile dropdown opening correctly, and the full-width conversation card. The harness was deleted, not committed.
+- New coverage: `exportTurn.test.ts` (Markdown→HTML, Word namespaces, speaker escaping, `.doc` vs `.pdf` routing, slugification, empty-turn throw) · `SidebarScaffold.test.tsx` (locked items listed-not-hidden, disabled for AT, do not navigate, **`collapseOnMount` does not persist**, icon-mode header hidden) · `MeridianTileRail.test.tsx` (horizontal row renders all five, starts closed ignoring stored state, opens/selects, vertical rail still honours storage) · `ChatWindowChatTab.turn-export.test.tsx` (absent without a handler, one per turn, each menu exports **its own** message).
+
+## [2026-07-28] — Honor: Request-a-PRISM-report modal + résumé JD upload + Cohort label (FE PR #299)
+
+Frontend additions to the Honor Coach Workbench. `npm run build` (tsc + vite) and ESLint clean; honor FE suite (85) + new (5) green. Requires the paired agent-engine endpoint `POST /v1/agents/honor/coach/prism-request` and the `positionFileIds` résumé field.
+
+### Added
+- **"Request a PRISM report"** button on **My Fellows** (Caseload) header → a modal collecting **first name, last name, email**, with **Role ("user")** and **Organization ("The Honor Foundation")** shown read-only. Fixed fields are injected in the service layer and enforced server-side.
+  - Files: `src/pages/honor/RequestPrismModal.tsx` (new), `src/pages/honor/HonorCaseload.tsx`, `src/hooks/honor/useHonorEvaluate.ts` (`useRequestPrismReport`), `src/services/honor/coach.service.ts` (`requestPrismReport`), `src/types/honor/index.ts`
+- **Résumé Writer "Upload a job description"** — a file drop under the *Target position description* textarea uploads the JD (`uploadJobDescription` → `document_id`) and passes `positionFileIds` on generate; the server extracts its text into the target. Pasted text still wins; a chip shows the attached filename with a remove control.
+  - Files: `src/pages/honor/HonorResume.tsx`, `src/hooks/honor/useHonorResume.ts` (`useUploadJobDescription`), `src/services/honor/artifact.service.ts` (`uploadJobDescription`), `src/types/honor/index.ts`
+
+### Changed
+- Capitalized the **"Import a Cohort"** section title on the Onboard page (`src/pages/honor/HonorOnboard.tsx`).
+
+### Tests
+- `src/pages/honor/__tests__/honor-prism-request.test.tsx`, `src/services/honor/__tests__/coach-prism-request.test.ts`.
+
+---
+
+## [2026-07-28] — Job Fit + Lumen moved into My Workspace
+
+### Changed
+- **Job Fit and Lumen now live in the My Workspace menu**, not the collapsed "Verticals" launcher section. Both are first-person surfaces — the signed-in user working on their OWN profile — so they read as everyday workspace tools next to Goal Setting and My Documents rather than separate products you launch into. FE PR #298.
+  - `WORKSPACE_VERTICALS` (`{job-fit, lumen}`) is excluded from the registry-driven launcher and re-surfaced by a new `useWorkspaceVerticalItems`, with per-vertical icons (`Briefcase` / `Lightbulb`) instead of the launcher's generic `Compass`.
+  - `withWorkspaceVerticals` splices them in **just above the Settings/Help tail** so those stay last, and appends when a role menu has no such tail (practitioner). De-duped by route; returns the input array unchanged when there is nothing to merge, so callers' memo identities stay stable and the sidebar does not re-render on every parent render.
+  - Wired through every chrome that renders a workspace menu: `UserLayout` + `SuperAdminLayout` (which build theirs from `getUserNavItems()`) and `useGatedNavItems` → `UnifiedLayout` (manager, company-admin, practitioner, distributor).
+  - Files: `src/components/layout/useVerticalLauncher.ts`, `src/hooks/nav/useGatedNavItems.ts`, `src/layouts/{UserLayout,SuperAdminLayout,UnifiedLayout}.tsx`
+
+### Deliberately unchanged
+- **Entitlement gating.** A user not entitled to Job Fit or Lumen sees no new item — the gate is still `enabled_verticals` read through the Vertical Core registry, not the nav layer. Neither vertical is double-listed: the same change that adds them to My Workspace removes them from the launcher.
+- No route, service, or backend change. This is nav placement only.
+
+### Verified
+- `npm run test:ci` — **502 suites / 3812 tests pass**; `npm run build` (tsc + vite) clean; ESLint on all 9 touched files adds **0 new errors** (the single reported error is the pre-existing `props: any` in the `UserLayout` SidebarScaffold mock, untouched here).
+- New coverage (9 tests): `useVerticalLauncher.test.ts` asserts splice position, tail-less append, stable-identity return, route de-dupe, and launcher exclusion against the **real** Core registry; `SuperAdminLayout.test.tsx` and `UserLayout.test.tsx` assert the items reach My Workspace (both the flat user menu and the super-admin section) and that no duplicate "Verticals" section is produced.
+
+## [2026-07-27] — Lumen + Job Fit UX build (COMPLETE, merged + live on dev)
+
+Resumed the paused `/full-go` and finished all five UX asks across both verticals. Five PRs — 3 merged, 2 open. Backend and frontend both **deployed and verified on dev**; staging-B has the frontend only (see the gap below).
+
+### Fixed — the broken WIP branch
+`feat/lumen-clarity-coaching` did not build: it referenced `ROUTES.LUMEN.COACHING` (never added), had no coaching page, and was not route-wired. All three fixed. Landed as `feat/lumen-clarity-coaching-v2` because the original needed a force-push after rebasing off a duplicated docs commit, and force-push is always-confirm.
+
+### Added — Lumen purpose and intent (#1)
+The dashboard now says what Lumen is before listing its parts, and each surface states **what triggers it**. "Personal coaching" had been landing as a mystery next to Moments; the distinction is push vs pull — Moments arrive when something is coming up, coaching is where you go with a question you already have. Pinned by a test rather than left as deletable copy.
+
+### Added — Self-Portrait from all four sources (#2)
+- **Backend** (`compose_portrait`): draws on PRISM, other assessments, résumé, and bio, and produces a useful read from any **one**. Adds `sources` (all four flags, always) and a `coverage` line.
+- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now *downgrades* the read instead of cancelling it, while still anchoring reconciliation where present.
+- **Frontend:** renders all four sources **including the ones you don't have**, with what each would add. Showing the gaps is the point. The no-PRISM card no longer claims "your portrait isn't ready yet".
+- Verified live on dev: `sources={prism:true, assessments:false, resume:true, bio:false}`, coverage names the missing instrument.
+
+### Added — Personal coaching (#3)
+Source checkboxes (defaulting to everything on file — Lumen's proposition is that the coach already knows you, so opting *out* is the deliberate act), a free-text "anything else", and 5×10 questions across Goals / Education / Career / Jobs / Relationships that inject into Meridian and **auto-submit** via the existing `{prefillPrompt, autoSubmit}` mechanism. Sources you lack are shown **disabled, not hidden**, so the page doubles as a prompt to add them.
+
+**Stated honestly in the code:** the checkboxes are written into the opening message as a *scope instruction*, not a server-side filter — the platform loads a profile ambiently and the page cannot unload it. Exclusions are named as well as inclusions, because someone who unticks their résumé means "don't argue from my job history", which an inclusion-only line never says.
+
+### Added — pinned situations (#4)
+Half the ask already worked: every Moment stores the situation with its guidance, so recall is the feed. What was missing is **curation**. New `lumen_saved_prompts` table (**migration 022**; 021 was taken by `dossier_jobs`) + 4 self-scoped routes. Ordered by what you actually reach for, not by what you saved last. Re-saving **promotes** rather than duplicating — verified live on dev, same row id, `use_count` 0→1, whitespace-normalised so `"a 1:1  "` and `"a 1:1"` collide.
+
+Called **"Pin"**, not "Save": the Moment cards already have a Save meaning something different (keep this guidance), and the collision was real enough that both buttons matched the same test query.
+
+### Added — navigation (#5) and Job Fit purpose copy
+`LumenNav`/`LumenShell` from a **pathless layout route**, not a shared header — putting nav in a presentational header is what broke every Job-Fit page test. Onboarding sits outside it deliberately. Job Fit gained its own purpose panel: a fit percentage with no framing reads as a verdict, and a low one reads as a rejection.
+
+### Fixed — frontend deploying ahead of the backend
+Probing staging-B after merge (rather than assuming) found the FE pipeline deploys to **dev *and* staging-B** on push, while the agent-engine is promoted separately by tag. The new UI went live on staging-B against a backend with neither the saved-prompts routes nor `sources`: a dead "Pin" button that silently 404'd, and a coaching page telling PRISM-complete users *"we have nothing to read about you yet"*. **"No sources field" is not "no sources".** Both now degrade honestly; the Self-Portrait already did, which is what made the other two stand out.
+
+### Fixed — migration-runner payload shape documented wrong
+The runner takes SQL **inline** as `{"sql": "..."}`; `{"sql_file": "..."}` returns 400. My header comment was copied from `lumen_consent.sql`, which is also wrong — as are several other mirrors in that directory, all written before anyone ran them. Corrected for the new file only.
+
+### Deployed + verified
+- **dev:** migration 022 applied, schema read back from `information_schema` (8 columns, 3 indexes) rather than trusted from the runner's exit code; agent-engine rolled; endpoints exercised end-to-end with a real token; probe row cleaned up afterwards.
+- **staging-B:** frontend only. Backend promotion is a separate, wider-blast-radius call — a release tag promotes everything on `development`, including other terminals' merged work — so it is flagged, not taken.
+
+### PRs
+Merged: BE #705, FE #292, FE #293. Open: BE #707 (doc fix), FE #295 (back-compat).
+
+## [2026-07-27] — Lumen + Job Fit UX build (PAUSED mid-flight for compaction)
+
+A `/full-go` covering five UX asks across two verticals. **Job Fit is done; Lumen is part-done and one branch does not build.** Nothing is deployed. Recorded here honestly so the next session can pick it up — see the `lumen-jobfit-ux` resume pointer.
+
+### Added — Job Fit (frontend PR #292, `feat/jobfit-blueprint-studio`)
+- **Blueprint Studio** (`BlueprintStudioPage`) — a deliberate duplicate of `KceBlueprintPage`'s UI per the owner's call ("duplicate the UI and call the same routes"). Everything requested already existed in the KCE page's hooks, so this reuses them rather than rebuilding: role dropdown (`useSavedRoles`/`useSavedRoleBlueprint`), roles from other surfaces (`useJobDnaList`/`useJobDnaSeed`, already cross-surface), upload-a-posting **or** describe-in-text (`extractRoleText` + textarea), draft status bar + completion toast (`Progress` + sonner), and save-role-back-into-the-dropdown (`usePersistBlueprint`). Job Fit saves under its own org key so neither surface disturbs the other's roles.
+- **Coaching** (`CoachPage`) — five categories × ten questions, every one anchored to a selected role via a `{role}` placeholder (test-pinned; a question without it drifts into generic coaching). Selecting one navigates to Meridian with `{ prefillPrompt, autoSubmit }` — the existing one-shot mechanism HomeV2's starter questions already use. Meridian is never bypassed: this seeds a question, it does not call an agent.
+- **Navigation** (`FitNav` + `FitShell`) — tool links plus a signposted way out; the switcher is registry-driven and entitlement-filtered.
+- Routes `/vertical/job-fit/{blueprint,coach}`. Build green, 34 tests, eslint clean, **KCE suites all still green**.
+
+### Changed — Lumen Self-Portrait, all four sources (backend, pushed as `feat/lumen-portrait-sources`, **no PR yet**)
+- `compose_portrait` now draws on **PRISM, other assessments, résumé, and bio**, and produces a useful read from any **one** of them. Adds `sources` flags (always all four, so the UI can render a breakdown) and a `coverage` line stating the basis and what would sharpen it next.
+- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now downgrades the read instead of cancelling it, while still leading where it exists (it remains the anchor the reconciliation engine resolves against, so convergences/tensions are only claimed when there is something to reconcile against).
+- Single-source reads name their own limits — a résumé is strong on evidence and silent on working preference; PRISM is the reverse. 157 tests pass. One existing test asserted the old blank-page behaviour and was rewritten to express the new intent rather than reverted.
+
+### Fixed — a self-inflicted regression, caught before it shipped
+- Putting `FitNav` inside the shared `FitPageHeader` **broke all eleven existing Job-Fit page tests**: a pure presentational header suddenly required auth + entitlement context. Reverted; the nav now renders from a **pathless layout route** inside the provider tree, leaving pages and their tests untouched and `FitPageHeader` pure. The same pattern is used for Lumen.
+
+### Known broken — `feat/lumen-clarity-coaching` (frontend, checkpoint `5522671`)
+Committed deliberately so the work survives compaction. **Does not build.** Complete: the Lumen coaching question library (5 × 10 — Goals, Education, Career, Jobs, Relationships) and `LumenNav`/`LumenShell`. Missing: `ROUTES.LUMEN.COACHING` (referenced but never added), a `CoachingPage` element, and the `LumenShell` route nesting.
+
+### Not started
+Lumen purpose copy; Job Fit purpose copy; rendering `sources`/`coverage` on the Self-Portrait page; the Blueprint Studio embedded in Lumen; the per-source **checkboxes** for coaching sessions; saved "what are you walking into" prompts + recall (needs migration 021); and all deployment (dev and staging-B both pending).
+
+### Recorded as debt
+The blueprint UI duplication is tracked with an explicit extract-when trigger — a third consumer, or the first observed drift between the two copies. Only the JSX is duplicated; the logic stays single-sourced in shared hooks.
+
 ## [2026-07-26] — Support request system: post an issue, notify contact@inspiresgenius.com
 
 New authenticated surface where anyone on the platform can post a help/issue request. Every submission emails the support inbox with the poster's contact block and their full description, so support can reply without a lookup.

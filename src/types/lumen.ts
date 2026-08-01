@@ -69,6 +69,29 @@ export type AskMomentRequest = {
   when?: string
 }
 
+/**
+ * A situation the user chose to keep for reuse in the ask box.
+ *
+ * Distinct from a Moment: every ask is already stored as a Moment with its
+ * guidance, so these are curation, not history. Deleting one leaves the
+ * guidance it produced intact.
+ */
+export type SavedPrompt = {
+  id: string
+  /** The situation text, as the user typed it (whitespace-normalised). */
+  text: string
+  /** Optional short name. Null means "show the text". */
+  label: string | null
+  /** Bumped on each reuse — the list is ordered by this, not by recency. */
+  use_count: number
+  last_used_at: string | null
+  created_at: string | null
+}
+
+export type SavedPromptsList = {
+  prompts: SavedPrompt[]
+}
+
 /** The single next action in Lumen's onboarding funnel. */
 export type OnboardingNextStep =
   | "request_prism"
@@ -129,6 +152,30 @@ export type LumenConsent = {
 
 export type ConsentUpdate = Partial<Omit<LumenConsent, "is_default">>
 
+/**
+ * The four evidence sources a portrait can rest on, in the order the backend
+ * reports them (`self_portrait.py::SOURCE_KEYS`).
+ */
+export type PortraitSourceKey = "prism" | "assessments" | "resume" | "bio"
+
+/**
+ * Which sources this person actually has. Always carries all four keys, so the
+ * UI can show what's missing as readily as what's present — an absent key would
+ * be indistinguishable from "not yet loaded".
+ */
+export type PortraitSources = Record<PortraitSourceKey, boolean>
+
+/**
+ * A narrated read of the Self-Portrait, or an answer to a question about it.
+ * Both come from `POST /self-portrait/{id}/ask`: no question → a description
+ * (`is_description: true`); a question → an answer. `answer` is markdown.
+ */
+export type PortraitAnswer = {
+  answer: string
+  is_description: boolean
+  disclaimer: string
+}
+
 export type SelfPortrait = {
   /** Null when the user has no PRISM assessment on file yet. */
   prism: PrismAnchor | null
@@ -140,4 +187,11 @@ export type SelfPortrait = {
   headline: string
   instruments: string[]
   confidence: PortraitConfidence | null
+  /**
+   * Optional only for back-compat with a deployment older than the four-source
+   * composer — every current backend sends both.
+   */
+  sources?: PortraitSources
+  /** One line on what the portrait rests on and what would sharpen it next. */
+  coverage?: string
 }

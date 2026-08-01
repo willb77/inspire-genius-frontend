@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { generateResume } from "@/services/honor/coach.service"
+import { uploadJobDescription } from "@/services/honor/artifact.service"
 import type { HonorResume, HonorResumeBody, HonorResumeDisabled } from "@/types/honor"
 
 /** True when the route returned the server-flag-off `{ disabled }` shape. */
@@ -25,5 +26,16 @@ export function useGenerateResume() {
       const res = await generateResume(fellowId, body)
       return res.data
     },
+  })
+}
+
+/**
+ * Upload a job description for the Résumé Writer's "Target position description".
+ * Resolves to the `document_id` to pass as `positionFileIds` on generate — the
+ * server extracts its text into `position_text`.
+ */
+export function useUploadJobDescription() {
+  return useMutation<string, Error, File>({
+    mutationFn: (file) => uploadJobDescription(file),
   })
 }

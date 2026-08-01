@@ -1,11 +1,42 @@
 import { render, screen } from "@testing-library/react"
 import SelfPortrait from "../SelfPortrait"
-import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
+import {
+  useSelfPortrait,
+  useSelfPortraitDescription,
+  useAskSelfPortrait,
+} from "@/hooks/lumen/useSelfPortrait"
 import type { SelfPortrait as Portrait } from "@/types/lumen"
 
 jest.mock("@/hooks/lumen/useSelfPortrait")
 
+// react-markdown is ESM; jest can't transform it. Mock the renderer the
+// narrative card uses (same pattern as honor-evaluate.test).
+jest.mock("@/components/user/chat/AssistantMarkdown", () => {
+  return function AssistantMarkdown({ text }: { text: string }) {
+    return <div data-testid="assistant-markdown">{text}</div>
+  }
+})
+
 const mockUseSelfPortrait = useSelfPortrait as jest.MockedFunction<typeof useSelfPortrait>
+const mockDescribe = useSelfPortraitDescription as jest.MockedFunction<
+  typeof useSelfPortraitDescription
+>
+const mockAsk = useAskSelfPortrait as jest.MockedFunction<typeof useAskSelfPortrait>
+
+// The narrative card the page now mounts fetches a description and offers a
+// query box; give both benign defaults so the existing page assertions stand.
+beforeEach(() => {
+  mockDescribe.mockReturnValue({
+    data: { answer: "You lead with steadiness.", is_description: true, disclaimer: "A mirror, not a diagnosis." },
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useSelfPortraitDescription>)
+  mockAsk.mockReturnValue({
+    mutateAsync: jest.fn(),
+    isPending: false,
+    data: undefined,
+  } as unknown as ReturnType<typeof useAskSelfPortrait>)
+})
 
 function mockPortrait(data: Partial<Portrait> | undefined, extra = {}) {
   mockUseSelfPortrait.mockReturnValue({
@@ -58,20 +89,51 @@ describe("SelfPortrait", () => {
     expect(screen.getByText("confidence 0.85")).toBeInTheDocument()
   })
 
-  test("renders the empty state when the user has no PRISM on file", () => {
+  test("still reads the sources it does have when PRISM is absent", () => {
+    // This used to say "your portrait isn't ready yet". With the four-source
+    // composer a résumé alone produces a genuine read, and telling someone who
+    // just uploaded one that nothing is ready is both wrong and how you lose
+    // them. PRISM's absence downgrades the read; it no longer cancels it.
     mockPortrait({
       ...FULL,
       prism: null,
       corroborating: [],
       convergences: [],
       tensions: [],
-      headline: "No PRISM profile on file yet.",
+      headline: "Built from your résumé — the record of what you've actually done.",
       instruments: [],
-      confidence: null,
+      confidence: "low",
+      sources: { prism: false, assessments: false, resume: true, bio: false },
+      coverage: "This read rests on your résumé alone.",
     })
     render(<SelfPortrait />)
-    expect(screen.getByText("Your portrait isn't ready yet")).toBeInTheDocument()
+    expect(screen.getByText("No PRISM profile yet")).toBeInTheDocument()
     expect(screen.queryByText(/leads$/)).not.toBeInTheDocument()
+    expect(screen.getByText(/rests on your résumé alone/)).toBeInTheDocument()
+  })
+
+  test("shows every source, present and absent alike", () => {
+    // Showing the gaps is the point: the user needs to know what would sharpen
+    // the portrait, not just what it already has.
+    mockPortrait({
+      ...FULL,
+      sources: { prism: true, assessments: false, resume: true, bio: false },
+      coverage: "Composed from 2 sources.",
+    })
+    render(<SelfPortrait />)
+    expect(screen.getByText("What this is built from")).toBeInTheDocument()
+    expect(screen.getByText("Résumé")).toBeInTheDocument()
+    // An absent source renders its "what this would add" prompt.
+    expect(screen.getByText(/signal in its own right/)).toBeInTheDocument()
+    expect(screen.getByText("Composed from 2 sources.")).toBeInTheDocument()
+  })
+
+  test("omits the coverage panel against a backend that predates it", () => {
+    // `sources` is optional purely for back-compat; the page must not render an
+    // all-absent panel and imply the user has nothing on file.
+    mockPortrait(FULL)
+    render(<SelfPortrait />)
+    expect(screen.queryByText("What this is built from")).not.toBeInTheDocument()
   })
 
   test("shows a skeleton while loading", () => {

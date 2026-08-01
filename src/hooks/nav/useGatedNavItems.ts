@@ -1,61 +1,52 @@
 import { useMemo } from "react"
-import { Wallet, BookOpen } from "lucide-react"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import type { UserRole } from "@/types/roles"
 import { NAV_ITEMS_BY_ROLE } from "@/constants/navigation"
+import { BROADCAST_SIDEBAR_SECTION } from "@/constants/sidebar-sections"
 import {
-  grantSidebarSectionForRole,
-  KCE_SIDEBAR_SECTION,
-  BROADCAST_SIDEBAR_SECTION,
-} from "@/constants/sidebar-sections"
-import { useVerticalAccess } from "@/verticals/core"
-import { useVerticalLauncherSection } from "@/components/layout/useVerticalLauncher"
+  useVerticalLauncherSection,
+  useWorkspaceNavItems,
+} from "@/components/layout/useVerticalLauncher"
 import { useBroadcastAccess } from "@/hooks/super-admin/useBroadcast"
 
 /**
- * A role's own menu — exactly its `NAV_ITEMS_BY_ROLE` list. Entitlement-gated
- * verticals are NOT mixed in here; they render separately (see
- * {@link useEntitledVerticalItems}) under a collapsed "Verticals" section, so a
- * role's own items stay prominent.
+ * A role's own menu — its `NAV_ITEMS_BY_ROLE` list, plus the **workspace**
+ * verticals (Job Fit, Lumen), which read as everyday first-person tools rather
+ * than separate products and so belong in My Workspace. Every OTHER vertical is
+ * NOT mixed in here; those render separately (see {@link useEntitledVerticalItems})
+ * under a "Verticals" section, so a role's own items stay prominent.
  */
 export function useGatedNavItems(role: UserRole): NavItemDef[] {
-  return NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
+  return useWorkspaceNavItems(NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user)
 }
 
 /**
- * One nav entry per vertical the signed-in user is entitled to (Financial Aid,
- * Knowledge Continuity, any launcher vertical like Honor, and — for allow-listed
- * super-admins — Platform Alerts). `UnifiedLayout` renders these under a
- * COLLAPSED "Verticals" section so they stay one click away without cluttering
- * the role menu. Empty when the user has no entitled verticals.
+ * The Verticals section's items: **every** registered vertical (Financial Aid,
+ * Knowledge Continuity, Honor, …) plus — for allow-listed super-admins —
+ * Platform Alerts.
  *
- * Each vertical is a single entry-point link (its own detailed sub-nav appears
- * inside its shell once entered) — we deliberately do NOT flatten GRANT's nine
- * aid pages into the sidebar.
+ * Visibility is no longer gated (2026-07-28): the whole catalogue is listed for
+ * every user, and a vertical the user has no entitlement for arrives already
+ * marked `disabled`, so it renders greyed and non-navigating. Entitlement
+ * decides what you can *use*, not what you can *see*.
+ *
+ * Each vertical is a single entry-point link — its detailed sub-nav appears
+ * inside its own shell once entered, so GRANT's nine aid pages are deliberately
+ * NOT flattened into the sidebar.
  */
 export function useEntitledVerticalItems(role: UserRole): NavItemDef[] {
-  const { hasAccess: hasGrantAccess } = useVerticalAccess("grant")
-  const { hasAccess: hasKceAccess } = useVerticalAccess("knowledge-continuity")
   const launcherSection = useVerticalLauncherSection()
   const { data: broadcastAccess } = useBroadcastAccess()
 
   return useMemo(() => {
-    const items: NavItemDef[] = []
-    if (hasGrantAccess) {
-      const grant = grantSidebarSectionForRole(role)
-      items.push({ to: grant.items[0]?.to ?? "/vertical/grant", icon: Wallet, label: "Financial Aid" })
-    }
-    if (hasKceAccess) {
-      items.push({
-        to: KCE_SIDEBAR_SECTION.items[0]?.to ?? "/vertical/knowledge-continuity",
-        icon: BookOpen,
-        label: "Knowledge Continuity",
-      })
-    }
-    if (launcherSection) items.push(...launcherSection.items)
+    void role // the catalogue is role-independent; entitlement is the only gate
+    const items: NavItemDef[] = launcherSection ? [...launcherSection.items] : []
+    // Platform Alerts is access-gated (DB allowlist), not a vertical — it stays
+    // hidden rather than greyed, because a non-allowlisted super-admin has no
+    // "upgrade" path to advertise.
     if (broadcastAccess?.authorized) items.push(...BROADCAST_SIDEBAR_SECTION.items)
     return items
-  }, [role, hasGrantAccess, hasKceAccess, launcherSection, broadcastAccess])
+  }, [role, launcherSection, broadcastAccess])
 }
 
 export default useGatedNavItems
