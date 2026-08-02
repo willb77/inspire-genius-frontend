@@ -65,6 +65,8 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
     // Bio Capture — the Chronicle life-narrative surface (viewer + chat + memoir).
     { to: ROUTES.BIO_CAPTURE, icon: BookOpenText, label: "Bio Capture" },
+    // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
+    { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.
     //
