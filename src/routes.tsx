@@ -71,6 +71,7 @@ const PrismAssessment = React.lazy(() => import("@/pages/user/PrismAssessment"))
 const FeedbackHistory = React.lazy(() => import("@/pages/user/FeedbackHistory"));
 const UserAnalytics = React.lazy(() => import("@/pages/user/Analytics"));
 const MeridianChat = React.lazy(() => import("@/pages/user/MeridianChat"));
+const BioCapture = React.lazy(() => import("@/pages/user/BioCapture"));
 // Summit — Goal Setting surface
 const SummitLayout = React.lazy(() => import("@/pages/summit/SummitLayout"));
 const SummitDashboard = React.lazy(() => import("@/pages/summit/SummitDashboard"));
@@ -424,6 +425,8 @@ export const routes: RouteObject[] = [
       { path: "/dashboard/:coach/chat", element: withSuspense(<CoachChat />) },
       { path: "/meridian/chat", element: withSuspense(<MeridianChatSurface />) },
       { path: "/meridian/chat/classic", element: withSuspense(<MeridianChat />) },
+      // Bio Capture — Chronicle life-narrative surface (viewer + chat + memoir export)
+      { path: "/bio", element: withSuspense(<BioCapture />) },
       // Summit — Goal Setting surface (nested; SummitLayout renders the sub-nav + Meridian chat)
       {
         path: "/summit",
