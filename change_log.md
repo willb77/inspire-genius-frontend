@@ -1,3 +1,15 @@
+## [2026-08-02] — Staging-B Platform User Guide (.docx)
+
+### Added
+- **A 28-page branded Word user guide to the platform as deployed on the Staging-B environment** — getting started, the sidebar and page chrome, the shared coaching experience, all six roles, the seven verticals, eight step-by-step tasks, troubleshooting, and three appendices including a full page index.
+  - Generated from a script rather than hand-edited, so it can be regenerated when the environment moves. The generator lives in the platform repo; the `.docx` itself is gitignored.
+  - Render-verified LibreOffice → PDF → PNG across all 28 pages. Two layout bugs were invisible in the source and visible only in the render: an empty table header bar, and Word's `List Number` style continuing its counter document-wide so later task lists started at 27 instead of 1. Both fixed.
+  - No credentials, tokens or test-account details appear in the document.
+
+### Changed
+- **The guide documents Staging-B specifically, not dev.** Every "what is live" claim was checked against the running environment rather than inferred from the source tree, and the guide records both what was checked and what it deliberately does *not* claim — page descriptions come from how a page is built, not from a click-through of every page as each of the six roles.
+- Frontend surfaces confirmed present in the deployed Staging-B build and documented accordingly: the four sidebar sections (My Workspace, Role Views, This vertical, Tools) and their collapsed-by-default behaviour, the per-role navigation, the seven registered verticals with their entitlement gating, and the `/classic` twin routes that back up each redesigned page.
+
 ## [2026-08-02] — Backend infrastructure hardening + staging-B verification tooling
 
 > Backend/infrastructure only — no frontend code changed. Details are recorded in the

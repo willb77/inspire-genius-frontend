@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1287</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1288</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3032,6 +3032,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-02 &mdash; Prompt #1288 [Staging-B Platform User Guide]</div>
+  <div class="prompt-text">create a full users guide for the staging-b platform in a branded word document</div>
+  <div class="prompt-text"><b>Outcome:</b> A <b>28-page branded Word user guide to the platform as deployed on Staging-B</b> &mdash; getting started, the sidebar and page chrome, the shared coaching experience, all six roles, the seven verticals, eight step-by-step tasks, troubleshooting, and three appendices including a full page index. Generated from a script so it can be regenerated when the environment moves; the <code>.docx</code> itself is gitignored.</div>
+  <div class="prompt-text"><b>Truth boundary was the point.</b> The guide documents <i>Staging-B specifically, not dev</i>. Every &ldquo;what is live&rdquo; claim was checked against the running environment rather than inferred from the source tree, and the guide records both what was checked and what it deliberately does <b>not</b> claim &mdash; there was no click-through of every page as each of the six roles, so page descriptions come from how a page is built.</div>
+  <div class="prompt-text"><b>Frontend surfaces documented from the deployed build:</b> the four sidebar sections (My Workspace, Role Views, This vertical, Tools) and their collapsed-by-default behaviour, the per-role navigation, the seven registered verticals with their entitlement gating, and the <code>/classic</code> twin routes that back up each redesigned page.</div>
+  <div class="prompt-text"><b>Render-verified</b> LibreOffice &rarr; PDF &rarr; PNG across all 28 pages. Two layout bugs were invisible in the source and visible only in the render: an empty table header bar, and Word&rsquo;s <code>List Number</code> style continuing its counter document-wide so later task lists started at 27 instead of 1. Both fixed. No credentials appear in the document.</div>
+</div>
+
         <div class="prompt-entry">
           <div class="timestamp">2026-08-02 EDT — Prompt #1287 [backend infra hardening + staging-b verification tooling]</div>
           <div class="prompt-text"><strong>Backend / infrastructure only — no frontend code changed.</strong> Recorded here to keep the project log continuous; the detail lives in the private infrastructure repository. <strong>Fixed:</strong> an environment-conditional flag in the CDK service stack was written as a <em>denylist</em> (naming the environments to exclude) instead of an <em>allowlist</em> (naming the one environment permitted), so a configured-but-undeployed environment matched no branch and inherited the permissive value. Reworked to an allowlist — an unrecognised environment now resolves to the restrictive value and <strong>fails closed</strong>. Never reachable (that environment has never been deployed), and <strong>no deploy required</strong>: the synthesised value is unchanged for every deployed environment. Same class of <code>envName</code> string-comparison bug as the API Gateway throttle fix in the previous entry — the fourth occurrence, so it is now pinned by tests rather than fixed case-by-case. <strong>Added:</strong> CDK tests pinning the flag for every configured environment, including a set-equality assertion so a future environment added to the permitted side fails CI — confirmed failing against the previous expression before being committed. Plus tooling and documentation for running an <strong>authenticated</strong> verification pass against staging-B through the ordinary login path, so staging-B behaviour can be checked directly rather than inferred from deployed-code inspection. <strong>Changed:</strong> corrected a standing note that had recorded a deliberate security control as a defect “blocking staging-B verification”. It was the control working as designed; the real gap was the missing verification tooling, now built.</div>
