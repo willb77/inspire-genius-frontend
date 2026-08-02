@@ -1,5 +1,7 @@
 import { getApi } from "@/lib/agentApi"
 import type {
+  CaptureRequest,
+  CaptureResponse,
   MemberNarrative,
   MemoirRequest,
   MemoirResponse,
@@ -48,6 +50,28 @@ export async function generateMemoir(
   const { data } = await getApi().post<MemoirResponse>(
     `${PREFIX}/${encodeURIComponent(memberId)}/memoir`,
     opts,
+  )
+  return data
+}
+
+/**
+ * POST /{memberId}/capture — extract, persist, and reflect back a single chat
+ * turn.
+ *
+ * Fired alongside the Chronicle chat send (not in place of it): the WebSocket
+ * carries the conversational reply, while this call returns the structured
+ * reflection ("Captured to your profile") and the content-specific followups
+ * that replace the old generic probe rotation. Per the backend contract it
+ * never 500s — a turn with nothing extractable comes back `captured: false`
+ * with an empty `episodes` array, which the caller renders as "no card".
+ */
+export async function captureBioTurn(
+  memberId: string,
+  body: CaptureRequest,
+): Promise<CaptureResponse> {
+  const { data } = await getApi().post<CaptureResponse>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/capture`,
+    body,
   )
   return data
 }

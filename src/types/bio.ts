@@ -118,3 +118,44 @@ export interface MemoirResponse {
   style: MemoirStyle
   generated: boolean
 }
+
+/**
+ * One structured memory extracted from a single chat turn by the capture
+ * endpoint. Distinct from `BioEpisode` (the persisted, fully-distilled record):
+ * this is the lighter, turn-scoped reflection shown back to the member
+ * immediately, so `people`/`places`/`era`/`feeling`/`meaning` are all optional.
+ */
+export interface EpisodeCapture {
+  title: string
+  facts: string
+  people?: string[]
+  places?: string[]
+  era?: string
+  feeling?: string
+  meaning?: string
+}
+
+/** Request body for `POST /v1/agents/bio/{id}/capture`. */
+export interface CaptureRequest {
+  message: string
+  /** Optional nudge toward a specific module; the backend may ignore it. */
+  moduleHint?: string | null
+}
+
+/**
+ * Response from `POST /v1/agents/bio/{id}/capture`.
+ *
+ * The endpoint extracts + persists what the member said this turn and reflects
+ * it back structured. It never 500s: `captured: false` with an empty `episodes`
+ * array means nothing was extractable this turn — the UI shows no capture card.
+ * `suggestedFollowups` are content-specific probes derived from what was said,
+ * which the panel uses in place of any generic prompt set.
+ */
+export interface CaptureResponse {
+  memberId: string
+  moduleType: string
+  episodes: EpisodeCapture[]
+  whatStandsOut: string
+  suggestedFollowups: string[]
+  captured: boolean
+}
