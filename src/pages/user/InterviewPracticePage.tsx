@@ -1,14 +1,17 @@
 /**
- * /interview-practice — Candidate Interview Coach (build-plan Phase 3).
+ * /interview-practice — Candidate Interview Coach.
  *
- * A practice surface where the user drills their OWN STAR answers and gets
- * supportive, rubric-anchored coaching from Alex (interview-coach mode) — never
- * a score, never the evaluator's exemplars. Pick a competency → read the
- * question + probes → write an answer → get coaching feedback inline → try
- * again or move on. Coaching runs over the async-job chat path (useMeridianJob).
+ * 1) Set the interview frame (the seat you're practising for).
+ * 2) Practice loop: pick a competency → read the STAR question + probes → answer
+ *    (typed OR by voice) → get supportive coaching from Alex (interview-coach
+ *    mode) inline → try again / next. NEVER a score, never evaluator exemplars.
+ *
+ * Voice mode uses the Meridian voice interface: useTTS speaks the question and
+ * the coaching aloud; useSpeechDictation captures the spoken answer. Coaching
+ * runs over the async-job chat path (useMeridianJob).
  */
-import { useMemo, useState } from "react"
-import { Loader2, RefreshCw, ArrowRight, MessageSquareText } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Loader2, RefreshCw, ArrowRight, MessageSquareText, Mic, MicOff, Volume2, Pencil } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,13 +19,19 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
+import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
 import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
+import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useMeridianJob, type ChatJob } from "@/hooks/agents/useMeridianJob"
+import { useTTS } from "@/hooks/useTTS"
 import {
   buildCoachMessage,
-  PRACTICE_JOB_CONTEXT,
+  practiceJobContext,
+  type InterviewFrame,
   type PracticeCompetency,
 } from "@/services/interview/practice.service"
 
@@ -36,11 +45,18 @@ function newSessionId(): string {
 export default function InterviewPracticePage() {
   const { data, isLoading, isError } = usePracticeQuestions()
   const [sessionId] = useState(newSessionId)
+  const [frame, setFrame] = useState<InterviewFrame | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [answer, setAnswer] = useState("")
   const [feedback, setFeedback] = useState<string | null>(null)
   const [coaching, setCoaching] = useState(false)
   const [practiced, setPracticed] = useState<Set<string>>(new Set())
+  const [voiceMode, setVoiceMode] = useState(false)
+
+  const { speak, stop: stopSpeaking } = useTTS({ voice: "coral" })
+  const dictation = useSpeechDictation({
+    onFinal: (chunk) => setAnswer((prev) => (prev ? `${prev} ${chunk}` : chunk)),
+  })
 
   const { startJob } = useMeridianJob({
     onJobSettled: (job: ChatJob) => {
@@ -49,7 +65,9 @@ export default function InterviewPracticePage() {
         toast.error(job.error || "Coaching failed — please try again.")
         return
       }
-      setFeedback(job.content || "")
+      const content = job.content || ""
+      setFeedback(content)
+      if (voiceMode && content) void speak(content)
     },
   })
 
@@ -59,21 +77,33 @@ export default function InterviewPracticePage() {
   )
   const selected = flatCompetencies.find((c) => c.id === selectedId) ?? null
 
+  // In voice mode, read each newly-selected question aloud.
+  const spokenRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (voiceMode && selected && spokenRef.current !== selected.id) {
+      spokenRef.current = selected.id
+      void speak(selected.question)
+    }
+  }, [voiceMode, selected, speak])
+
   const pick = (c: PracticeCompetency) => {
     setSelectedId(c.id)
     setAnswer("")
     setFeedback(null)
+    dictation.stop()
   }
 
   const submit = async () => {
     if (!selected || !answer.trim()) return
+    dictation.stop()
+    stopSpeaking()
     setCoaching(true)
     setFeedback(null)
     try {
       await startJob({
-        message: buildCoachMessage(selected.question, answer.trim()),
+        message: buildCoachMessage(selected.question, answer.trim(), frame),
         sessionId,
-        context: { ...PRACTICE_JOB_CONTEXT },
+        context: practiceJobContext(frame),
       })
       setPracticed((prev) => new Set(prev).add(selected.id))
     } catch (e) {
@@ -85,19 +115,56 @@ export default function InterviewPracticePage() {
   const nextQuestion = () => {
     if (!selected) return
     const idx = flatCompetencies.findIndex((c) => c.id === selected.id)
-    const next = flatCompetencies[(idx + 1) % flatCompetencies.length]
-    pick(next)
+    pick(flatCompetencies[(idx + 1) % flatCompetencies.length])
   }
+
+  // ── Step 1: frame setup ──────────────────────────────────────
+  if (!frame) {
+    return (
+      <UserLayout>
+        <div className="mx-auto max-w-3xl py-8 space-y-4">
+          <header>
+            <h1 className="text-2xl font-semibold">Interview Practice</h1>
+            <p className="text-sm text-slate-600">
+              Rehearse your answers and get supportive coaching — no scores, just
+              tips to help your story land.
+            </p>
+          </header>
+          <InterviewFrameForm onConfirm={setFrame} />
+        </div>
+      </UserLayout>
+    )
+  }
+
+  // ── Step 2: practice loop ────────────────────────────────────
+  const currentSectionKey = selected
+    ? data?.sections.find((s) => s.competencies.some((c) => c.id === selected.id))?.key
+    : data?.sections[0]?.key
 
   return (
     <UserLayout>
       <div className="mx-auto max-w-3xl py-8 space-y-4">
-        <header>
-          <h1 className="text-2xl font-semibold">Interview Practice</h1>
-          <p className="text-sm text-slate-600">
-            Rehearse your answers and get supportive coaching. This is practice —
-            there are no scores, just tips to help your story land.
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">Interview Practice</h1>
+            <p className="text-sm text-slate-600">
+              {frame.roleTitle} · {frame.company}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-slate-500" />
+              <Label htmlFor="voice-mode" className="text-xs text-slate-600">Voice mode</Label>
+              <Switch
+                id="voice-mode"
+                checked={voiceMode}
+                onCheckedChange={(v) => { setVoiceMode(v); if (!v) { stopSpeaking(); dictation.stop() } }}
+              />
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setFrame(null)}>
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Edit setup
+            </Button>
+          </div>
         </header>
 
         {isLoading && (
@@ -118,7 +185,7 @@ export default function InterviewPracticePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Tabs
-                value={selected ? data.sections.find((s) => s.competencies.some((c) => c.id === selected.id))?.key : data.sections[0]?.key}
+                value={currentSectionKey}
                 onValueChange={(k) => {
                   const sec = data.sections.find((s) => s.key === k)
                   if (sec?.competencies[0]) pick(sec.competencies[0])
@@ -130,12 +197,8 @@ export default function InterviewPracticePage() {
                   ))}
                 </TabsList>
               </Tabs>
-
               <div className="flex flex-wrap gap-2">
-                {(data.sections.find((s) => selected
-                  ? s.competencies.some((c) => c.id === selected.id)
-                  : s.key === data.sections[0]?.key)?.competencies ?? []
-                ).map((c) => (
+                {(data.sections.find((s) => s.key === currentSectionKey)?.competencies ?? []).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => pick(c)}
@@ -156,8 +219,17 @@ export default function InterviewPracticePage() {
         {selected && (
           <Card>
             <CardHeader>
-              <Badge variant="secondary" className="mb-1 w-fit">{selected.competency}</Badge>
-              <CardTitle className="text-base font-medium leading-snug">{selected.question}</CardTitle>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <Badge variant="secondary" className="mb-1 w-fit">{selected.competency}</Badge>
+                  <CardTitle className="text-base font-medium leading-snug">{selected.question}</CardTitle>
+                </div>
+                {voiceMode && (
+                  <Button variant="ghost" size="sm" onClick={() => void speak(selected.question)} title="Read question aloud">
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {selected.starProbes.length > 0 && (
@@ -177,7 +249,29 @@ export default function InterviewPracticePage() {
                 onChange={(e) => setAnswer(e.target.value)}
               />
 
-              <div className="flex gap-2">
+              {voiceMode && (
+                <div className="flex items-center gap-2">
+                  {dictation.supported ? (
+                    <Button
+                      type="button"
+                      variant={dictation.listening ? "default" : "outline"}
+                      size="sm"
+                      onClick={dictation.toggle}
+                    >
+                      {dictation.listening
+                        ? <><MicOff className="mr-2 h-4 w-4" /> Stop recording</>
+                        : <><Mic className="mr-2 h-4 w-4" /> Answer by voice</>}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-slate-500">
+                      Voice input isn't supported in this browser — please type your answer.
+                    </span>
+                  )}
+                  {dictation.listening && <span className="text-xs text-indigo-600">Listening…</span>}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={submit} disabled={coaching || !answer.trim()}>
                   {coaching
                     ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Coaching…</>
@@ -195,9 +289,14 @@ export default function InterviewPracticePage() {
 
               {feedback && (
                 <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                    Coaching feedback
-                  </p>
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Coaching feedback</p>
+                    {voiceMode && (
+                      <Button variant="ghost" size="sm" onClick={() => void speak(feedback)} title="Read coaching aloud">
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                   <p className="whitespace-pre-wrap text-sm text-slate-700">{feedback}</p>
                 </div>
               )}
