@@ -131,11 +131,13 @@ const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
  * super-admin) rather than as flat top-level nav items. Empty when the pilot
  * flag is off, which collapses the section away entirely.
  */
+// NOTE: `user` intentionally omitted — the user role renders UserLayout (flat
+// sidebar) which already carries "Interview Practice" in USER_NAV_ITEMS; adding
+// it here would also give the user a UnifiedLayout Tools section it never uses.
+// These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
-  user: [INTERVIEW_PRACTICE_ITEM],
   manager: [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
   practitioner: [INTERVIEW_PRACTICE_ITEM],
-  "company-admin": [INTERVIEW_PRACTICE_ITEM],
   "super-admin": [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
 }
 
