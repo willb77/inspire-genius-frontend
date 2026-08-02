@@ -48,6 +48,7 @@ const Dashboard = React.lazy(() => import("@/pages/user/Dashboard"));
 const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
+const InterviewPractice = React.lazy(() => import("@/pages/user/InterviewPracticePage"));
 const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
@@ -439,6 +440,7 @@ export const routes: RouteObject[] = [
       },
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
+      { path: "/interview-practice", element: withSuspense(<InterviewPractice />) },
       { path: "/profile", element: withSuspense(<ProfileSurface />) },
       { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
