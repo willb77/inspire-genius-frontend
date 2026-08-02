@@ -116,15 +116,29 @@ const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
   label: "Team Development",
 }
 
+// Candidate-side interview rehearsal (Alex interview-coach). A universal,
+// un-gated feature — surfaced in the "Tools" rollup for every role that renders
+// one, so it's discoverable regardless of which role is logged in.
+const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
+  to: ROUTES.INTERVIEW_PRACTICE,
+  icon: MessagesSquare,
+  label: "Interview Practice",
+}
+
 /**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
  * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
  * super-admin) rather than as flat top-level nav items. Empty when the pilot
  * flag is off, which collapses the section away entirely.
  */
+// NOTE: `user` intentionally omitted — the user role renders UserLayout (flat
+// sidebar) which already carries "Interview Practice" in USER_NAV_ITEMS; adding
+// it here would also give the user a UnifiedLayout Tools section it never uses.
+// These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
-  manager: TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : [],
-  "super-admin": TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : [],
+  manager: [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
+  practitioner: [INTERVIEW_PRACTICE_ITEM],
+  "super-admin": [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
 }
 
 /**
