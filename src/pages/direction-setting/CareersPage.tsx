@@ -6,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
-import { useCareerAreas } from "@/hooks/direction-setting/useJourney"
+import {
+  useCareerAreas,
+  useRecordStageComplete,
+} from "@/hooks/direction-setting/useJourney"
 import type { RoleFamilyAffinity } from "@/types/direction-setting"
 
 /**
@@ -118,6 +121,11 @@ function NoDataYet({ note }: { note: string }) {
 
 export default function CareersPage() {
   const { data, isLoading, isError } = useCareerAreas()
+
+  // Ranked families, not a page view. With no PRISM on file the route returns
+  // `families: []` plus a note explaining why — the page working correctly, but
+  // no outcome, so the stage stays unstarted.
+  useRecordStageComplete("3", (data?.families?.length ?? 0) > 0)
 
   if (isLoading) {
     return (

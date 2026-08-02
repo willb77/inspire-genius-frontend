@@ -60,6 +60,31 @@ export type AdvanceInput = {
   artefact?: Record<string, unknown>
 }
 
+/**
+ * The file formats the journey report can be rendered as. The backend is
+ * deliberately loose — an unrecognised string degrades to docx rather than
+ * 422ing a download — but the surface only offers the ones worth offering.
+ */
+export type ReportFormat = "docx" | "pdf" | "md" | "html"
+
+/**
+ * A rendered journey report.
+ *
+ * `stagesComplete` / `stagesTotal` are echoed by the backend so the surface can
+ * say how much of the document is real *before* the click. A journey report is
+ * built to be downloaded half-finished, and the completion count is the honest
+ * headline for that.
+ */
+export type JourneyReport = {
+  downloadUrl: string
+  filename: string | null
+  format: string
+  contentType: string | null
+  expiresIn: number | null
+  stagesComplete: number | null
+  stagesTotal: number | null
+}
+
 /** Stage 3 — one role family ranked against the user's PRISM. */
 export type RoleFamilyAffinity = {
   family: string

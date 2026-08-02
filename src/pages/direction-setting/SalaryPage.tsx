@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ROUTES } from "@/constants/routes"
+import { useRecordStageComplete } from "@/hooks/direction-setting/useJourney"
 import { useMarketSalaries } from "@/hooks/direction-setting/useMarket"
 import type {
   MarketArea,
@@ -389,6 +390,11 @@ export default function SalaryPage() {
 
   const areas = data?.areas ?? []
   const priced = areas.filter((area) => area.range).length
+
+  // Stage 4 is "what does that pay?", so the outcome is a PRICED area. Areas
+  // can come back with `range: null` when there is genuinely no wage data —
+  // that is the route being honest, not the stage being done.
+  useRecordStageComplete("4", priced > 0)
 
   return (
     <div className="space-y-6 p-6">
