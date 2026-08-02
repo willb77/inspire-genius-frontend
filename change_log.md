@@ -1,3 +1,38 @@
+## [2026-08-01] — Staging-B promote: PRISM brain map, Orange-guard fix, Chronicle, direction-setting, STAR bank
+
+Tag **`release-stable-2026-08-01-prism-brain-map`** → `4cac5809`. Promote workflow green on all six jobs (pre-flight, build+push image, cdk deploy, ECS rollout, authenticated smoke matrix, notify).
+
+### Promoted (backend only — the frontend was already there)
+`d2c5964` was already serving on **both** dev and staging-B, because frontend merges auto-deploy to both environments. Only the agent-engine needed a tag. Contents since `release-stable-2026-08-01-env-identity`:
+
+| PR | Change |
+|---|---|
+| **#755** | PRISM Brain Map emitted on turns that report the user's own scores |
+| **#746** | Colour guard no longer rewrites "Orange" when the model is correctly saying it isn't a PRISM colour |
+| #752 | Chronicle — Bio Capture interview agent |
+| #754 | direction-setting: repair the PRISM read blocking Career Areas |
+| #750 | Maven — shared STAR interview bank (questions, exemplars, tool + API) |
+
+**Three of the five are other terminals' work.** That is the documented "Promote ALL" strategy rather than cherry-picking, and it was explicitly approved — but it is worth naming, because a promote labelled for one change carried four others.
+
+### Schema — applied manually, before the tag
+The promote workflow has **no migration step** (verified by reading `staging-b-promote.yml`, not by trusting the note): its jobs are pre-flight → build → cdk-deploy → ecs-rollout → smoke → notify. #752's `bio_store` migration was therefore **not** going to be applied by the deploy, and tagging without it would have put Chronicle's routes live against three non-existent tables.
+
+Applied `services/migration-runner/migrations/bio_store.sql` to staging-B first — 15 statements, all OK — and verified the result: `bio_modules` (9 cols), `bio_episodes` (18), `bio_coverage` (6). Purely additive: `CREATE TABLE IF NOT EXISTS` + indexes, with `DROP TRIGGER IF EXISTS` guards only on the tables the same migration creates. No data touched. It was the only migration in the promoted range.
+
+### A moving target, caught before the push
+Between scoping the promote and creating the tag, another terminal merged **#750**, so the first tag silently contained a feature that had not been assessed. Caught before pushing: checked #750 (pure agent-engine Python — no migration, no new `packages/ig-*`, no CDK change), then **recreated the tag** so its release notes list what is actually in it rather than understating the contents.
+
+### Verified on staging-B after the rollout
+- ECS: **desired 1 / running 1 / COMPLETED**, deployment 22:40:06. The `desiredCount → 0` trap that has bitten this service before did **not** fire.
+- Inside the running container (`fd925ae2`), all timestamped from this build: `prism_canon.py` with the corrected `"blue": ("Supporting", …)` pairing, `prism_map.py`, `_NEGATION_BEFORE` (the Orange-guard negation fix), `_attach_prism_map` wired into `meridian.py`, and Chronicle's `bio_store.py`.
+- `GET /v1/agents/health` → 200 with all four memory tiers up; `POST /v1/agents/chat/async` → 401 (route present, wants auth).
+
+### Not verified on staging-B — stated rather than implied
+`POST /v1/magic-auth` returns **404** there (unchanged since #717), so no live authenticated conversation could be run. What was verified on staging-B is **deployed code and route existence**, not an executed turn. The workflow's own authenticated smoke matrix passed, which is independent evidence, but it is not the same thing.
+
+The functional proof of both PRISM fixes stands on **dev**, where live conversations were run earlier: Blue correctly 92.0 as the mean of Supporting + Coordinating, "Orange" appearing only inside a negation, and the brain map returned with correct scores and the canonical quadrant layout.
+
 ## [2026-08-01] — Interview Prep: STAR question bank browser (PR #330)
 
 ### Added
