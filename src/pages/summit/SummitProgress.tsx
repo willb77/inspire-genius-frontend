@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Layers, Brain, Users, Check, Target } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { MILESTONES, DELTAS } from "@/pages/summit/summitData";
-import { PageHead, Card, MiniLabel } from "@/pages/summit/components/ui";
+import { PageHead, Card, MiniLabel, SampleNotice } from "@/pages/summit/components/ui";
 import { cn } from "@/lib/utils";
 
 export default function SummitProgress() {
@@ -13,6 +13,12 @@ export default function SummitProgress() {
         title="Your living goal plan"
         sub="Goals persist to a shared store every agent can read, reference, and update. As your situation shifts, the plan re-ranks — and tells you exactly what changed and why."
       />
+
+      {/* Milestones and the change history are decoration: the goal session is
+          overwritten in place with no revision table, and milestones live on a
+          different (manager-facing) service entirely. Your real goals are on
+          My Goals — this page is the shape of what's coming. */}
+      <SampleNotice what="Milestones and the change history aren't kept yet, so these are illustrative; your real goals are on My Goals." />
 
       <Card className="flex items-center justify-between gap-4 border-none bg-gradient-to-br from-[#0B1B33] to-[#1D3A66]">
         <div>

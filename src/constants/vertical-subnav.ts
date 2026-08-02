@@ -88,6 +88,11 @@ export const DIRECTION_SETTING_TOOLS: NavItemDef[] = [
   { to: ROUTES.DIRECTION_SETTING.MATCHES, icon: ScanSearch, label: "Job matches" },
   { to: ROUTES.DIRECTION_SETTING.PLAN, icon: ClipboardList, label: "My plan" },
   { to: ROUTES.DIRECTION_SETTING.INTERVIEW, icon: ClipboardCheck, label: "Interview prep" },
+  // Rehearse had no nav entry, and its only other way in was a button on the
+  // Interview page gated behind a guide that was never persisted — so the
+  // stage was unreachable in practice. It stands on its own: preparing and
+  // practising are different sittings, usually on different days.
+  { to: ROUTES.DIRECTION_SETTING.REHEARSE, icon: MessagesSquare, label: "Practise answers" },
 ]
 
 export type VerticalSubNav = {

@@ -17,6 +17,53 @@
 ### Tests
 - `src/services/interview/__tests__/interview.service.test.ts` (2). Full `npm run build` (tsc+vite) green.
 
+## [2026-08-01] — PRISM Brain Map diagram, and the Underlying-vs-Consistent score-type comparison
+
+Two pieces: a diagram emitted whenever a turn reports the user's own scores, and a read-only comparison of the two PRISM score maps for every dev user.
+
+### Added — PRISM Brain Map, emitted with any turn that reports the user's scores
+The four colour scores were only ever delivered as prose. They now arrive as the canonical map, with labels and scores.
+
+**The layout is not a free choice** — it comes from the licensed reference text in `prism_knowledge` (`AXES_DISCERNING_DYNAMIC`): *"The top left of the PRISM map is the Gold quadrant … the bottom right is Blue … The top right … is Green … the bottom left is Red."*
+
+Two things a naive 2×2 gets wrong, both now encoded **and asserted against the rendered SVG geometry** so a future edit cannot quietly rotate it the way the score pairing was:
+- **The axes are DIAGONALS**, not the grid lines. Gold + Blue share "less powerful" (Discerning); Green + Red share "more powerful" (Dynamic).
+- **Opposites mirror HORIZONTALLY**, not through the centre — they *"apply across the Gold/Green colour quadrants and the Red/Blue colour quadrants"*. Evaluating faces Initiating, Finishing faces Innovating, Focusing faces Supporting, Delivering faces Co-Ordinating; each panel's rows are ordered to put them literally opposite one another.
+
+**Delivered in `metadata["prism_map"]`, never in the response text.** TTS synthesises `content`; an inline SVG there would be read aloud as markup — the exact failure mode removed earlier the same day. A markdown table and a one-line description carry identical numbers for TTS, screen readers and plain-text export.
+
+**When it fires:** "each time scores are requested" is deliberately *not* every PRISM turn — a map on *"what does high Focusing mean?"* is clutter. Primary signal is that the answer **actually quotes at least two of the user's four colour scores** (self-correcting, no keyword vocabulary to maintain); an explicit *"show me my profile"* is a second trigger. Number matching is boundary-guarded so `52` does not match `1952`.
+
+**A bug this nearly shipped with:** the first implementation read `context.metadata["prism_scores"]` — as several existing call sites do. **That key is never populated** on the REST or WS chat paths (metadata carries only `file_ids` / `system_prompt_override` / `user_profile_block`), so the map would have silently never rendered. Scores now come from the memory manager, behind a cheap no-DB pre-check so an ordinary turn adds no query.
+
+**Frontend:** rendered through a **data-URI `<img>`, not `dangerouslySetInnerHTML`** — the markup is server-generated and asserted script-free, but an `<img>` cannot execute script under any circumstance. `encodeURIComponent` not `btoa` (the map contains `↔` and `·`). `alt` is the full numeric read-out so screen readers get data, not "image", with a "Show the numbers" toggle. `buildTurnHtml` gained an optional `figure` field rather than smuggling markup through the escaped markdown `body`; a test asserts the body is still escaped when a figure is present.
+
+- Files: `services/agent-engine/app/prism_map.py`, `app/agents/meridian.py`, `inspire-genius-frontend/src/components/prism/PrismMapFigure.tsx`, `src/components/user/chat/ChatWindowChatTab.tsx`, `src/lib/exportTranscript/exportTurn.ts`, `src/pages/user/MeridianChat.tsx`, `src/types/chat/data-types.ts`, `src/hooks/agents/useMeridianWebSocket.ts`
+- PRs: mono **#755**, FE **#332**
+
+**Render-verified, not just unit-tested.** The SVG was rasterised and inspected: the first version placed the axis captions on top of the panel borders, illegible — completely invisible in the source. Moved to a footer legend and re-checked.
+
+### Reported (no change made) — Underlying vs Consistent, all 14 dev users
+PRISM measures each behaviour three times: **Underlying** (instinctive), **Adapted** (environment-modified), **Consistent** (the manual's "likely overall behaviour" / "normal" preferences). The platform derives every colour score from **`Underlying`** only — a pre-existing choice, hardcoded as `SCORE_TYPE = "Underlying"`.
+
+Read-only comparison across all 14 dev users with an authoritative PRISM assessment:
+- **52 of 56 colour scores would change** under `Consistent`
+- mean shift **8.5** points, max **22.0**
+- **25 intensity-band changes**
+- movement is almost entirely **downward**
+
+**The consequence that matters:** many scores drop out of the **≥75 overdone-strength band**, which drives specific coaching language. User `3468e498` shows Green 91.5 / Blue 92 under `Underlying` (both flagged overdone) versus 74 / 72.5 under `Consistent` — just below threshold, so those warnings would disappear entirely.
+
+**Nothing was changed.** Switching the score type would silently move every number for every user; that is a product decision for Bill or a PRISM-accredited practitioner, not an inference. Tooling: `scratchpad/compare_score_types.py` (SELECT only).
+
+**Incidental finding:** six dev users share byte-identical scores (78 / 50.5 / 86 / 39) — almost certainly duplicated test data, worth a look independently of this decision.
+
+**Also learned:** the migration-runner Lambda truncates result sets at **10 rows**. Earlier queries in this session looked complete but were silently cut off. Aggregate into a single `json_agg` row when pulling anything larger.
+
+### Verification
+- Agent engine: **+31 tests**; full suite 4305 passed; failure set **byte-identical** to `origin/development` (167 pre-existing, no API keys locally) → zero regressions. One run showed 168 — a flaky test; two re-runs and a clean-baseline diff agree at 167.
+- Frontend: **+12 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **529 suites / 4171 tests, exit 0**; `npm run build` clean.
+
 ## [2026-08-01] — PRISM colour guard: don't rewrite "Orange" when the model is saying it isn't a colour
 
 Follow-up to the same-day PRISM fix (#743). **Found by an adversarial probe against deployed dev, not by a test.**
