@@ -1,9 +1,12 @@
 /**
  * @jest-environment jsdom
  *
- * Light render/interaction cover for the Chronicle voice additions:
+ * Light render/interaction cover for the Chronicle panel:
  *  - intro + suggested prompts stay present,
- *  - "Go deeper" probes render and send as a steer,
+ *  - before any turn, the starter "Go deeper" probes render and send as a steer,
+ *  - a user send fires the capture call alongside the chat send,
+ *  - on a captured turn a "Captured to your profile" card renders inline AND
+ *    the "Go deeper" chips become the content-specific followups,
  *  - voice toggle reveals the mic when speech recognition is supported,
  *  - the mic is disabled when unsupported (graceful fallback).
  */
@@ -26,6 +29,21 @@ jest.mock("@/hooks/agents/useMeridianWebSocket", () => ({
     sendMessage: mockSendMessage,
     currentResponse: "",
   }),
+}))
+
+// Capture mutation: `mutate(vars, { onSuccess })` — the panel fires it alongside
+// the chat send. Tests drive the reflection by controlling what it resolves to.
+let captureResult: import("@/types/bio").CaptureResponse
+const mockCaptureMutate = jest.fn(
+  (
+    _vars: unknown,
+    opts?: { onSuccess?: (r: import("@/types/bio").CaptureResponse) => void },
+  ) => {
+    opts?.onSuccess?.(captureResult)
+  },
+)
+jest.mock("@/hooks/useCaptureBioTurn", () => ({
+  useCaptureBioTurn: () => ({ mutate: mockCaptureMutate }),
 }))
 
 const mockSpeak = jest.fn()
@@ -75,9 +93,18 @@ beforeAll(() => {
 beforeEach(() => {
   jest.clearAllMocks()
   dictationSupported = true
+  // Default: a turn that captured nothing — no card, no new chips.
+  captureResult = {
+    memberId: "member-1",
+    moduleType: "background",
+    episodes: [],
+    whatStandsOut: "",
+    suggestedFollowups: [],
+    captured: false,
+  }
 })
 
-describe("ChronicleChatPanel voice + go-deeper", () => {
+describe("ChronicleChatPanel capture + go-deeper + voice", () => {
   it("keeps the introduction and suggested prompts", () => {
     render(<ChronicleChatPanel memberId="member-1" />)
     expect(
@@ -88,14 +115,89 @@ describe("ChronicleChatPanel voice + go-deeper", () => {
     ).toBeInTheDocument()
   })
 
-  it("sends a 'go deeper' probe as a steer", () => {
+  it("shows the starter 'go deeper' probes before any turn and sends one as a steer", () => {
     render(<ChronicleChatPanel memberId="member-1" />)
-    const probe = screen.getByRole("button", { name: /what did you notice first\?/i })
+    const probe = screen.getByRole("button", {
+      name: /tell me about where i grew up/i,
+    })
     fireEvent.click(probe)
     expect(mockSendMessage).toHaveBeenCalledWith(
-      "What did you notice first?",
+      "Tell me about where I grew up.",
       expect.objectContaining({ surface: "bio_capture", agent_hint: "chronicle" }),
     )
+  })
+
+  it("fires the capture call alongside the chat send", () => {
+    render(<ChronicleChatPanel memberId="member-1" />)
+    fireEvent.change(screen.getByRole("textbox", { name: /message chronicle/i }), {
+      target: { value: "I was born in Lagos, the youngest of six." },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+    expect(mockCaptureMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memberId: "member-1",
+        message: "I was born in Lagos, the youngest of six.",
+      }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+  })
+
+  it("renders a 'Captured to your profile' card and swaps in content-derived chips on a captured turn", () => {
+    captureResult = {
+      memberId: "member-1",
+      moduleType: "culture",
+      episodes: [
+        {
+          title: "Born in Lagos",
+          facts: "Youngest of six, raised in a Yoruba household.",
+          people: ["mother"],
+          places: ["Lagos"],
+          era: "1980s",
+        },
+      ],
+      whatStandsOut: "Family and heritage anchor your sense of self.",
+      suggestedFollowups: [
+        "Tell me about your mother's background",
+        "What was it like being the youngest of six?",
+      ],
+      captured: true,
+    }
+
+    render(<ChronicleChatPanel memberId="member-1" />)
+    fireEvent.change(screen.getByRole("textbox", { name: /message chronicle/i }), {
+      target: { value: "I was born in Lagos, the youngest of six." },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
+
+    // The structured reflection renders inline.
+    expect(screen.getByText(/captured to your profile/i)).toBeInTheDocument()
+    expect(screen.getByText("Born in Lagos")).toBeInTheDocument()
+    expect(
+      screen.getByText(/family and heritage anchor your sense of self/i),
+    ).toBeInTheDocument()
+
+    // The "Go deeper" chips are now the content-specific followups; the static
+    // starter probe is gone.
+    expect(
+      screen.getByRole("button", { name: /tell me about your mother's background/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /tell me about where i grew up/i }),
+    ).toBeNull()
+  })
+
+  it("shows no capture card when nothing was captured", () => {
+    render(<ChronicleChatPanel memberId="member-1" />)
+    fireEvent.change(screen.getByRole("textbox", { name: /message chronicle/i }), {
+      target: { value: "hmm" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
+    expect(screen.queryByText(/captured to your profile/i)).toBeNull()
+    // Starter chips remain since no followups came back.
+    expect(
+      screen.getByRole("button", { name: /tell me about where i grew up/i }),
+    ).toBeInTheDocument()
   })
 
   it("reveals the mic when voice mode is on and speech is supported", () => {
