@@ -1,3 +1,33 @@
+## [2026-08-02] — Backend infrastructure hardening + staging-B verification tooling
+
+> Backend/infrastructure only — no frontend code changed. Details are recorded in the
+> private infrastructure repository; this entry exists to keep the project log continuous.
+
+### Fixed
+- An environment-conditional flag in the CDK service stack was expressed as a denylist
+  (naming the environments to exclude) rather than an allowlist (naming the one environment
+  permitted). A configured-but-undeployed environment therefore matched no branch and
+  inherited the permissive value. Reworked to an allowlist so an unrecognised environment
+  resolves to the restrictive value — it now fails closed rather than open.
+  - Never reachable: the environment in question has never been deployed.
+  - No deploy required — the synthesised value is unchanged for every deployed environment.
+  - Same class of `envName` string-comparison bug as the API Gateway throttle fix in the
+    previous entry; that made this the fourth occurrence, so it is now pinned by tests
+    rather than fixed case-by-case.
+
+### Added
+- CDK tests pinning that flag for every configured environment, including a set-equality
+  assertion so a future environment added to the permitted side fails CI. Confirmed failing
+  against the previous expression before being committed.
+- Tooling and documentation for running an **authenticated** verification pass against
+  staging-B through the ordinary login path, so staging-B behaviour can be checked directly
+  instead of inferred from deployed-code inspection.
+
+### Changed
+- Corrected a standing note that had recorded a deliberate security control as a defect
+  "blocking staging-B verification". It was the control working as designed; the real gap was
+  the absence of verification tooling, which the entry above addresses.
+
 ## [2026-08-01] — Staging-B promote: PRISM brain map, Orange-guard fix, Chronicle, direction-setting, STAR bank
 
 Tag **`release-stable-2026-08-01-prism-brain-map`** → `4cac5809`. Promote workflow green on all six jobs (pre-flight, build+push image, cdk deploy, ECS rollout, authenticated smoke matrix, notify).
