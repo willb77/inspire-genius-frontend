@@ -4,7 +4,9 @@ import type {
   AdvanceInput,
   CareerAreas,
   Journey,
+  JourneyReport,
   JourneyStage,
+  ReportFormat,
 } from "@/types/direction-setting"
 
 // Direction Setting's routes live on the Agent Engine, so they go through
@@ -37,6 +39,27 @@ export async function advanceJourney(body: AdvanceInput) {
   const { data } = await getApi().post<VerticalApiResponse<Journey>>(
     `${PREFIX}/journey/advance`,
     body
+  )
+  return data
+}
+
+/**
+ * POST /journey/report — render the journey to a downloadable file.
+ *
+ * Deterministic and server-side: the document is composed from the artefacts
+ * the journey already stored, so it says exactly as much as the person has
+ * actually done and nothing more. Returns a presigned URL rather than bytes,
+ * so the browser downloads directly and a large document never travels through
+ * the SPA.
+ *
+ * Available at any point, including with nothing done — the builder states
+ * completion on the cover, per stage, and in the page footer precisely because
+ * someone will export this in week one and show it to someone in week six.
+ */
+export async function generateJourneyReport(format: ReportFormat = "docx") {
+  const { data } = await getApi().post<VerticalApiResponse<JourneyReport>>(
+    `${PREFIX}/journey/report`,
+    { format }
   )
   return data
 }

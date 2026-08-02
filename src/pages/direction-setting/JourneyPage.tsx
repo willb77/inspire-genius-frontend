@@ -1,9 +1,11 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   CircleDashed,
+  Download,
   Loader2,
   Lock,
   RotateCcw,
@@ -12,8 +14,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
-import { useJourney, useResetJourney } from "@/hooks/direction-setting/useJourney"
-import type { JourneyStage, StageState } from "@/types/direction-setting"
+import {
+  useJourney,
+  useJourneyReport,
+  useResetJourney,
+} from "@/hooks/direction-setting/useJourney"
+import type {
+  JourneyStage,
+  ReportFormat,
+  StageState,
+} from "@/types/direction-setting"
 
 /**
  * The journey map — the home surface of Direction Setting.
@@ -147,6 +157,109 @@ function StageRow({
   )
 }
 
+/**
+ * Export the journey as a document the person keeps.
+ *
+ * The backend has composed this since the vertical shipped — 13 sections, every
+ * format the doc engine supports — and nothing called it. This is that button.
+ *
+ * Three choices worth stating, because each is about not overselling the file:
+ *
+ * 1. **Says how much is real before the click, not after.** `done of total` is
+ *    rendered on the card. The document itself states completion on the cover,
+ *    per section and in the footer, but someone deciding whether to send it to a
+ *    mentor should know it is four-thirteenths of a journey without downloading
+ *    it first.
+ * 2. **No download until the URL exists.** The response is a presigned link, so
+ *    the browser fetches from storage directly and a large file never travels
+ *    through the SPA. The anchor is created only on success.
+ * 3. **A failure says so.** Report generation is the one thing here that can
+ *    fail server-side (502 from the doc engine), and a silent no-op on a button
+ *    press is indistinguishable from a dead button.
+ */
+function ExportCard({ done, total }: { done: number; total: number }) {
+  const [format, setFormat] = useState<ReportFormat>("docx")
+  const report = useJourneyReport()
+
+  const run = () => {
+    report.mutate(format, {
+      onSuccess: (data) => {
+        if (!data?.downloadUrl) return
+        // Deliberately not `window.open`: a popup blocker silently eats it, and
+        // a download that does nothing looks identical to a broken button.
+        const a = document.createElement("a")
+        a.href = data.downloadUrl
+        if (data.filename) a.download = data.filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      },
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Take it with you</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Everything you&apos;ve done so far, as one document — your portrait, career
+          areas, goals, target role, gaps and plan. Steps you haven&apos;t reached yet
+          are listed as not done rather than left out, so nobody reading it can
+          mistake a short document for a thin person.
+        </p>
+        <p className="text-sm">
+          <span className="font-medium">
+            {done} of {total} steps
+          </span>{" "}
+          <span className="text-muted-foreground">
+            {done === 0
+              ? "— you can still export it, it will just be mostly empty."
+              : "are in the document."}
+          </span>
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="radiogroup" aria-label="File format" className="flex gap-1">
+            {(["docx", "pdf", "md", "html"] as ReportFormat[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                role="radio"
+                aria-checked={format === f}
+                onClick={() => setFormat(f)}
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs uppercase transition-colors",
+                  format === f
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50"
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <Button type="button" size="sm" disabled={report.isPending} onClick={run}>
+            {report.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Download className="mr-1.5 h-4 w-4" aria-hidden />
+            )}
+            {report.isPending ? "Building…" : "Download"}
+          </Button>
+        </div>
+        {report.isError && (
+          <p className="flex items-start gap-1.5 text-sm text-amber-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            We couldn&apos;t build the document just now. Try again — nothing you&apos;ve
+            done has been lost.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function JourneyPage() {
   const navigate = useNavigate()
   const { data: journey, isLoading, isError } = useJourney()
@@ -265,6 +378,8 @@ export default function JourneyPage() {
           ))}
         </ul>
       </section>
+
+      <ExportCard done={progress.done} total={progress.total} />
 
       {progress.done > 0 && (
         <footer className="border-t pt-4">
