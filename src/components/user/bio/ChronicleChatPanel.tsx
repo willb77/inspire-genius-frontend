@@ -16,10 +16,14 @@
  * unavailable the mic is disabled with an explanation and typing still works;
  * if TTS is unavailable it degrades silently to text.
  *
- * "Go deeper" probes draw the storyteller out: a small rotating set of episodic
- * questions (from the life-story method's episodic-anchoring set) that, when
- * tapped, are sent as the member's steer so a generalization becomes one
- * specific, sensory scene.
+ * Every turn is also mirrored back. Alongside the chat send (never blocking the
+ * reply) the panel calls `POST /v1/agents/bio/{id}/capture`, which extracts and
+ * persists what the member just said and returns it structured. That structured
+ * reflection renders inline as a "Captured to your profile" card, and its
+ * content-specific `suggestedFollowups` become the "Go deeper" chips — so the
+ * probes are about what the person actually said ("Tell me about your mother's
+ * background"), not a generic rotating script. Before the first turn a tiny
+ * starter set stands in until the first capture returns real followups.
  *
  * The panel is intentionally lightweight (no document attach): the heavy
  * MeridianChat page owns that. When a turn settles we tell the parent so it can
@@ -46,6 +50,9 @@ import {
   useMeridianWebSocket,
   type MeridianResponse,
 } from "@/hooks/agents/useMeridianWebSocket"
+import { useCaptureBioTurn } from "@/hooks/useCaptureBioTurn"
+import CapturedTurnCard from "@/components/user/bio/CapturedTurnCard"
+import type { CaptureResponse } from "@/types/bio"
 
 type ChatTurn = { role: "user" | "assistant"; content: string; id: string }
 
@@ -57,21 +64,15 @@ const SUGGESTED_PROMPTS = [
 ]
 
 /**
- * Episodic-anchoring probes — the ones that turn a generalization into one
- * specific scene. Rotated a few at a time so the panel nudges without clutter.
+ * Minimal starter probes shown only before the first turn returns real,
+ * content-derived followups. After that, the "Go deeper" chips come entirely
+ * from the capture endpoint's `suggestedFollowups` for the last thing said.
  */
-const DEEPER_PROBES = [
-  "What did you notice first?",
-  "What were you thinking but didn't say?",
-  "Where were you — who else was there?",
-  "What happened in the ten minutes after?",
-  "Was that typical, or the one time?",
-  "Tell me about one specific time it happened.",
-  "What would a stranger standing there not have understood?",
-  "When was the last time that happened?",
+const STARTER_FOLLOWUPS = [
+  "Tell me about where I grew up.",
+  "Ask me about the people who shaped me.",
+  "Help me capture a turning point in my life.",
 ] as const
-
-const PROBES_SHOWN = 3
 
 export type ChronicleChatPanelProps = {
   memberId: string
@@ -102,10 +103,17 @@ export function ChronicleChatPanel({
   const [turns, setTurns] = useState<ChatTurn[]>([])
   const [input, setInput] = useState("")
   const [voiceMode, setVoiceMode] = useState(false)
-  const [probeOffset, setProbeOffset] = useState(0)
+  // Structured reflections keyed by the user turn they belong to, so each
+  // "Captured to your profile" card renders directly under its own message.
+  const [captures, setCaptures] = useState<Record<string, CaptureResponse>>({})
+  // Content-specific "Go deeper" chips from the latest capture. Empty until the
+  // first turn returns real followups; a starter set stands in until then.
+  const [followups, setFollowups] = useState<string[]>([])
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const onTurnSettledRef = useRef(onTurnSettled)
   onTurnSettledRef.current = onTurnSettled
+
+  const { mutate: captureTurn } = useCaptureBioTurn()
 
   const onResponse = useCallback((res: MeridianResponse) => {
     if (res.type === "complete" && res.content) {
@@ -171,9 +179,10 @@ export function ChronicleChatPanel({
       // talk over each other.
       dictation.stop()
       stopSpeaking()
+      const userTurnId = `u-${Date.now()}`
       setTurns((prev) => [
         ...prev,
-        { role: "user", content: trimmed, id: `u-${Date.now()}` },
+        { role: "user", content: trimmed, id: userTurnId },
       ])
       sendMessage(trimmed, {
         // Steer Meridian's router to the Chronicle coaching specialist and give
@@ -185,10 +194,32 @@ export function ChronicleChatPanel({
         suggested_module: suggestedModule ?? undefined,
       })
       setInput("")
-      // Advance the rotating probe window so the next nudge feels fresh.
-      setProbeOffset((o) => (o + PROBES_SHOWN) % DEEPER_PROBES.length)
+
+      // Fire the capture ALONGSIDE the chat send — the WebSocket carries the
+      // conversational reply; this call returns the structured reflection and
+      // the content-specific followups. It must never block or gate the reply,
+      // so it runs in parallel and its failure is swallowed (best-effort).
+      captureTurn(
+        { memberId, message: trimmed, moduleHint: suggestedModule ?? null },
+        {
+          onSuccess: (res) => {
+            if (res.captured && res.episodes.length > 0) {
+              setCaptures((prev) => ({ ...prev, [userTurnId]: res }))
+            }
+            // Replace the "Go deeper" chips with probes derived from what was
+            // just said. On a captured:false / no-followups turn we keep the
+            // previous chips rather than blanking the affordance.
+            if (res.suggestedFollowups.length > 0) {
+              setFollowups(res.suggestedFollowups)
+            }
+          },
+          // A transport failure on the best-effort capture must not surface as
+          // an error — the chat reply is unaffected.
+          onError: () => {},
+        },
+      )
     },
-    [sendMessage, memberId, suggestedModule, dictation, stopSpeaking],
+    [sendMessage, memberId, suggestedModule, dictation, stopSpeaking, captureTurn],
   )
 
   // Expose a seed function so the viewer's "Continue with Chronicle" CTA can
@@ -201,17 +232,12 @@ export function ChronicleChatPanel({
     return () => registerSeed(null)
   }, [registerSeed, send])
 
-  // The rotating window of "go deeper" probes.
-  const visibleProbes = useMemo(() => {
-    return Array.from(
-      { length: PROBES_SHOWN },
-      (_, i) => DEEPER_PROBES[(probeOffset + i) % DEEPER_PROBES.length],
-    )
-  }, [probeOffset])
-
-  const cycleProbes = useCallback(() => {
-    setProbeOffset((o) => (o + PROBES_SHOWN) % DEEPER_PROBES.length)
-  }, [])
+  // "Go deeper" chips: the content-specific followups from the last capture,
+  // falling back to a minimal starter set before the first turn returns any.
+  const visibleProbes = useMemo(
+    () => (followups.length > 0 ? followups : [...STARTER_FOLLOWUPS]),
+    [followups],
+  )
 
   const toggleVoiceMode = useCallback(
     (on: boolean) => {
@@ -284,8 +310,8 @@ export function ChronicleChatPanel({
           </div>
         ) : (
           turns.map((turn) => (
+            <div key={turn.id} className="space-y-2">
             <div
-              key={turn.id}
               className={cn(
                 "flex gap-2",
                 turn.role === "user" ? "flex-row-reverse" : "",
@@ -337,6 +363,11 @@ export function ChronicleChatPanel({
                 )}
               </div>
             </div>
+            {/* Structured reflection for this turn, if anything was captured. */}
+            {turn.role === "user" && captures[turn.id] ? (
+              <CapturedTurnCard capture={captures[turn.id]} />
+            ) : null}
+            </div>
           ))
         )}
         {isProcessing && currentResponse ? (
@@ -351,20 +382,12 @@ export function ChronicleChatPanel({
         ) : null}
       </div>
 
-      {/* "Go deeper" — episodic probes that draw out one specific, sensory scene. */}
+      {/* "Go deeper" — content-specific probes drawn from what was just said. */}
       <div className="border-t px-3 pt-2 pb-1">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[11px] font-medium text-muted-foreground">
             Go deeper
           </span>
-          <button
-            type="button"
-            onClick={cycleProbes}
-            className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            aria-label="Show different prompts"
-          >
-            More prompts
-          </button>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {visibleProbes.map((probe) => (
