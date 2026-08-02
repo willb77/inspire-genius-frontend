@@ -15,10 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import {
-  type InterviewFrame,
-  DEFAULT_LENGTH_PREF,
-} from "@/services/interview/practice.service"
+import { type InterviewFrame } from "@/services/interview/practice.service"
 
 const schema = z.object({
   company: z.string().min(1, "Company is required").max(255),
@@ -28,7 +25,8 @@ const schema = z.object({
   scope: z.string().min(1, "Scope of responsibility is required").max(600),
   candidateType: z.enum(["", "external", "internal"]).optional(),
   weightedFocus: z.string().max(600).optional(),
-  lengthPref: z.string().max(300).optional(),
+  numQuestions: z.number().int().min(1, "At least 1").max(12, "Max 12 (the STAR bank size)"),
+  lengthMinutes: z.number().int().min(1, "At least 1 minute").max(180),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -50,7 +48,8 @@ export default function InterviewFrameForm({
       scope: initial?.scope ?? "",
       candidateType: initial?.candidateType ?? "",
       weightedFocus: initial?.weightedFocus ?? "",
-      lengthPref: initial?.lengthPref ?? "",
+      numQuestions: initial?.numQuestions ?? 12,
+      lengthMinutes: initial?.lengthMinutes ?? 50,
     },
   })
 
@@ -117,16 +116,23 @@ export default function InterviewFrameForm({
             </Label>
             <Textarea id="weightedFocus" rows={2} {...form.register("weightedFocus")} />
           </div>
-          <div>
-            <Label htmlFor="lengthPref">Interview length preference</Label>
-            <Input id="lengthPref" placeholder={DEFAULT_LENGTH_PREF} {...form.register("lengthPref")} />
-            <p className="mt-1 text-xs text-slate-500">
-              Default is {DEFAULT_LENGTH_PREF}. Leave blank to accept, or adjust.
-            </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="numQuestions">Number of questions</Label>
+              <Input id="numQuestions" type="number" min={1} max={12} {...form.register("numQuestions", { valueAsNumber: true })} />
+              {err("numQuestions")}
+              <p className="mt-1 text-xs text-slate-500">1–12. Default 12 (4 vision, 4 behavioral, 4 productivity).</p>
+            </div>
+            <div>
+              <Label htmlFor="lengthMinutes">Interview length (minutes)</Label>
+              <Input id="lengthMinutes" type="number" min={1} max={180} {...form.register("lengthMinutes", { valueAsNumber: true })} />
+              {err("lengthMinutes")}
+              <p className="mt-1 text-xs text-slate-500">Default 50. The interview ends after your questions — it won't loop.</p>
+            </div>
           </div>
 
           <div className="pt-2">
-            <Button type="submit">Confirm &amp; start practicing</Button>
+            <Button type="submit">Confirm &amp; start the interview</Button>
           </div>
         </form>
       </CardContent>
