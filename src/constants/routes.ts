@@ -21,6 +21,8 @@ export const ROUTES = {
   FEEDBACK: "/feedback",
   ANALYTICS: "/analytics",
   MERIDIAN_CHAT: "/meridian/chat",
+  /** Bio Capture — the Chronicle life-narrative surface. */
+  BIO_CAPTURE: "/bio",
   PRISM_ASSESSMENT: "/prism-assessment",
   SUMMIT: {
     BASE: "/summit",
