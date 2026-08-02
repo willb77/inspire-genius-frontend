@@ -29,6 +29,16 @@ jest.mock("@/hooks/job-fit/useFitDetail", () => ({
   useFitDetail: (...args: unknown[]) => mockUseFitDetail(...args),
 }))
 
+// MatchesPage records stages 7 and 8 on the journey as soon as it has a role
+// and its fit detail — the write everything downstream is built from. Captured
+// here rather than stubbed away, so the assertions below can check what it
+// stores; the real hook needs a QueryClient this suite deliberately does not
+// mount.
+const mockAdvance = jest.fn()
+jest.mock("@/hooks/direction-setting/useJourney", () => ({
+  useAdvanceJourney: () => ({ mutate: mockAdvance, isPending: false }),
+}))
+
 // Stages 9 and 10 both run the accept-then-poll machine; the machine itself is
 // exercised in the alignment suite, so here the hooks are stubbed and every
 // phase the page can land on is rendered directly.
@@ -213,10 +223,71 @@ describe("MatchesPage — states before any match exists", () => {
 
 describe("MatchesPage — with matches", () => {
   beforeEach(() => {
+    mockAdvance.mockClear()
     mockUseMatches.mockReturnValue(
       matchesState({ data: { matches: [MATCH, MATCH_2], gated: false } })
     )
     mockUseFitDetail.mockReturnValue({ data: DETAIL, isLoading: false, isError: false })
+  })
+
+  // The bug this page shipped with: it rendered stages 7 and 8 and stored
+  // neither. Everything downstream — the plan, the ROI, the rehearsal's
+  // self-advocacy read — is built from the journey artefacts, so the plan
+  // reported "no target role and no gaps on file" no matter how long someone
+  // spent here, and the advice to "work through stages 7 and 8" was unfollowable.
+  describe("recording stages 7 and 8", () => {
+    test("stores the chosen role as the stage-7 artefact", () => {
+      renderRouted(<MatchesPage />)
+      const stage7 = mockAdvance.mock.calls.find((c) => c[0]?.stageId === "7")?.[0]
+      expect(stage7).toBeDefined()
+      expect(stage7.state).toBe("complete")
+      // Wrapped under `targetRole` because compute_plan picks that key out;
+      // the row underneath carries roleTitle + jobId for normalise_target_role.
+      expect(stage7.artefact.targetRole.roleTitle).toBe("Customer Success Lead")
+      expect(stage7.artefact.targetRole.jobId).toBe("j1")
+    })
+
+    test("stores the fit detail as the stage-8 artefact, gaps intact", () => {
+      renderRouted(<MatchesPage />)
+      const stage8 = mockAdvance.mock.calls.find((c) => c[0]?.stageId === "8")?.[0]
+      expect(stage8).toBeDefined()
+      expect(stage8.state).toBe("complete")
+      // collect_gaps reads these three straight off the artefact.
+      expect(stage8.artefact.criticalGaps).toHaveLength(1)
+      expect(stage8.artefact.coachingGaps).toHaveLength(1)
+      expect(stage8.artefact.overdoneFlags).toHaveLength(1)
+    })
+
+    test("writes once per role, not on every refetch", () => {
+      const { rerender } = renderRouted(<MatchesPage />)
+      rerender(
+        <MemoryRouter>
+          <MatchesPage />
+        </MemoryRouter>
+      )
+      expect(mockAdvance.mock.calls.filter((c) => c[0]?.stageId === "7")).toHaveLength(1)
+    })
+
+    test("records nothing while matching is on hold", () => {
+      mockUseMatches.mockReturnValue(
+        matchesState({ data: { matches: [MATCH], gated: true } })
+      )
+      renderRouted(<MatchesPage />)
+      expect(mockAdvance).not.toHaveBeenCalled()
+    })
+
+    test("will not file one role's gaps under another role's target", () => {
+      // The two reads are separate queries. If the detail ever lags the
+      // selection — one `placeholderData` away — the pairing must not be
+      // written rather than written wrongly.
+      mockUseFitDetail.mockReturnValue({
+        data: { ...DETAIL, jobId: "some-other-role" },
+        isLoading: false,
+        isError: false,
+      })
+      renderRouted(<MatchesPage />)
+      expect(mockAdvance).not.toHaveBeenCalled()
+    })
   })
 
   test("lists ranked roles with a fit percentage and a plain-language band", () => {
@@ -532,6 +603,47 @@ describe("PlanPage — the two job surfaces", () => {
   beforeEach(() => {
     mockUsePlan.mockReturnValue(jobState())
     mockUseRoi.mockReturnValue(jobState())
+  })
+
+  // The ROI names `current-income` as a blocking input and its refusal text
+  // tells the reader to state it — but the page called `roi.start()` with no
+  // argument and had no field, so the ROI could never compute through the app.
+  describe("stating current income", () => {
+    test("omits the income entirely when nothing has been said", () => {
+      const start = jest.fn()
+      mockUseRoi.mockReturnValue(jobState({ start }))
+      renderRouted(<PlanPage />)
+      fireEvent.click(
+        screen.getByRole("button", { name: /work out whether it pays off/i })
+      )
+      // undefined, NOT 0 — a blank box must not put words in someone's mouth
+      // about their income. Omitting refuses; a stated zero computes.
+      expect(start).toHaveBeenCalledWith({ currentIncome: undefined })
+    })
+
+    test("passes a typed income through", () => {
+      const start = jest.fn()
+      mockUseRoi.mockReturnValue(jobState({ start }))
+      renderRouted(<PlanPage />)
+      fireEvent.change(screen.getByLabelText(/current annual income/i), {
+        target: { value: "42000" },
+      })
+      fireEvent.click(
+        screen.getByRole("button", { name: /work out whether it pays off/i })
+      )
+      expect(start).toHaveBeenCalledWith({ currentIncome: 42000 })
+    })
+
+    test("'not earning' states a zero, which is different from saying nothing", () => {
+      const start = jest.fn()
+      mockUseRoi.mockReturnValue(jobState({ start }))
+      renderRouted(<PlanPage />)
+      fireEvent.click(screen.getByLabelText(/not earning anything/i))
+      fireEvent.click(
+        screen.getByRole("button", { name: /work out whether it pays off/i })
+      )
+      expect(start).toHaveBeenCalledWith({ currentIncome: 0 })
+    })
   })
 
   test("with nothing run, offers to run each stage and invents nothing", () => {

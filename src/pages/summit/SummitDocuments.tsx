@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { WRITERS, type Writer } from "@/pages/summit/summitData";
-import { PageHead, Card, MiniLabel, Callout } from "@/pages/summit/components/ui";
+import { PageHead, Card, MiniLabel, SampleNotice } from "@/pages/summit/components/ui";
 import { generateDocuments, type DocType, type GeneratedDoc } from "@/services/summit/documentWriter";
 import { cn } from "@/lib/utils";
 
@@ -67,11 +67,15 @@ export default function SummitDocuments() {
       <PageHead
         eyebrow="Career document writer"
         title="Build the documents your goals point to"
-        sub="Summit already knows your history, your current role, your ambitions, and how you're wired. Pick any — or all — and it drafts them from that same profile, in a voice tuned to your PRISM strengths."
+        sub="When this is wired, Summit will draft these from your own history, your current role, your ambitions and how you're wired — in a voice tuned to your PRISM strengths."
       />
-      <Callout tone="brain" icon={<Sparkles className="h-4 w-4 text-[#0E5F6B]" />}>
-        Choose <strong>any or all</strong>. Everything is drafted from your goal-setting data — nothing is auto-published, and every draft is yours to edit before it leaves Summit.
-      </Callout>
+      {/* The generator is not connected: `POST /v1/documents/generate` does not
+          exist, and `generateDocuments` returns fixed drafts written for the
+          wireframe's fictional person. Those drafts have Copy and Download
+          buttons on them, so somebody could walk away with a CV of someone
+          else's invented career believing it was theirs. Until the endpoint
+          ships, this has to be impossible to mistake. */}
+      <SampleNotice what="The drafts this produces are fixed examples for a made-up person — the writer isn't connected to your profile yet, so don't use them as your own." />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {WRITERS.map((w: Writer) => {
@@ -129,7 +133,10 @@ export default function SummitDocuments() {
 
       {built && built.length > 0 && (
         <>
-          <MiniLabel>Generated drafts · {built.length}</MiniLabel>
+          <MiniLabel>Sample drafts · {built.length}</MiniLabel>
+          {/* Repeated next to the Copy/Download buttons on purpose: someone who
+              scrolled straight to a result never saw the notice at the top. */}
+          <SampleNotice what="These are example documents for a made-up person, not drafts about you." />
           {built.map((doc) => {
             const Icon = iconFor(doc.type);
             return (

@@ -35,6 +35,16 @@ export type TurnExportInput = {
   userLabel?: string;
   /** Filename stem; `.doc` / `.pdf` is appended. Defaults to `meridian-turn`. */
   slug?: string;
+  /**
+   * A figure to place above the body — currently the PRISM Brain Map.
+   *
+   * Passed as its own field rather than smuggled through `body`, because
+   * `body` is markdown and gets escaped; weakening that to let markup through
+   * would open the escaping contract for every caller. Embedded as a data-URI
+   * `<img>` so Word and the print frame render it without a network fetch and
+   * no script can execute.
+   */
+  figure?: { svg: string; caption?: string };
 };
 
 function esc(s: string): string {
@@ -47,7 +57,14 @@ function esc(s: string): string {
 
 /** The shared document body — identical bytes behind both formats. */
 export function buildTurnHtml(input: TurnExportInput): string {
-  const { speaker, body, timestamp, contributingAgents, userLabel } = input;
+  const { speaker, body, timestamp, contributingAgents, userLabel, figure } = input;
+  const figureHtml = figure?.svg
+    ? `<div class="figure" style="margin:0 0 14px"><img alt="${esc(
+        figure.caption ?? "PRISM Brain Map",
+      )}" style="width:100%;max-width:660px" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+        figure.svg,
+      )}"></div>`
+    : "";
   const metaBits = [
     timestamp ? `<div>Time<b>${esc(timestamp)}</b></div>` : "",
     userLabel ? `<div>Participant<b>${esc(userLabel)}</b></div>` : "",
@@ -85,6 +102,7 @@ body { padding: 24px 28px; }
 ${metaBits}
   </div>
 </div>
+${figureHtml}
 <div class="msg">${markdownToHtml(body)}</div>
 <div class="tagline">&ldquo;${BRAND_TOKENS.tagline}&rdquo;</div>
 </body>
