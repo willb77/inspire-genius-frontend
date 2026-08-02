@@ -346,6 +346,54 @@ describe("MatchesPage — with matches", () => {
     expect(mockUseMatches).toHaveBeenLastCalledWith("closeness")
   })
 
+  test("under a closeness read, the gap engine's band is not shown", () => {
+    // The regression: the two reads are different engines on different scales,
+    // so a closeness score of 81 sat next to the gap engine's "Poor" and the
+    // row read as a failure. With no displayBand from the backend there is no
+    // honest band to show, and showing none beats showing the wrong one.
+    mockUseMatches.mockReturnValue({
+      data: {
+        matches: [{ ...MATCH, method: "closeness", closenessScore: 81, fitBand: "poor" }],
+        gated: false,
+        methodologyNote: "This compares your profile with a role's published benchmark.",
+      },
+      isLoading: false,
+      isError: false,
+    })
+    renderRouted(<MatchesPage />)
+    // The number and its "%" are separate nodes, so match the number alone.
+    expect(screen.getByText("81")).toBeInTheDocument()
+    expect(screen.queryByText("Poor")).not.toBeInTheDocument()
+  })
+
+  test("under a closeness read, the backend's displayBand is shown instead", () => {
+    mockUseMatches.mockReturnValue({
+      data: {
+        matches: [
+          {
+            ...MATCH,
+            method: "closeness",
+            closenessScore: 81,
+            fitBand: "poor",
+            displayBand: "Excellent",
+          },
+        ],
+        gated: false,
+        methodologyNote: "This compares your profile with a role's published benchmark.",
+      },
+      isLoading: false,
+      isError: false,
+    })
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("Excellent")).toBeInTheDocument()
+    expect(screen.queryByText("Poor")).not.toBeInTheDocument()
+  })
+
+  test("under the gap read, the band is unchanged", () => {
+    renderRouted(<MatchesPage />)
+    expect(screen.getByText("Strong")).toBeInTheDocument()
+  })
+
   test("carries the not-a-hiring-decision note from the backend", () => {
     renderRouted(<MatchesPage />)
     expect(
