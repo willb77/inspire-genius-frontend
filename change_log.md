@@ -1,3 +1,18 @@
+## [2026-08-02] — Staging-B User Guide: HTML edition
+
+### Added
+- **A clickable HTML edition of the Staging-B Platform User Guide**, mirroring the Word version. Built by its own generator in the platform repo, following the existing one-generator-per-format convention rather than a shared content module, so the already render-verified Word builder was left untouched.
+  - **Single self-contained file** — inline CSS and JS, logo embedded as a data URI, **zero external requests** (verified by grepping the built page for any external `src`, `href`, `@import` or font-CDN reference). It renders offline, from any host, and prints cleanly.
+  - Sticky contents column with scroll-spy, light/dark aware via `prefers-color-scheme`, responsive single-column layout under 900px, dedicated print stylesheet, `noindex,nofollow`.
+
+### Fixed — three bugs found by rendering in a real browser, none visible in the source
+- **Contents “Part” labels were dark ink on a dark navy chip** — unreadable. The contents list reused the CSS class that carries the navy divider styling in the main column. Given its own class, with a comment recording why the two must not share one.
+- **The logo vanished into the cover.** `Logo-Dark.png` is dark artwork intended for light backgrounds; on the navy cover it had almost no contrast. It now sits on a white rounded chip, which is robust regardless of the artwork.
+- **Scroll-spy stuck on the first section.** The original `IntersectionObserver` implementation picked the first heading in document order carrying a live intersection flag, so jumping far down the page left the contents highlighting the opening section while the reader was in the appendices. Replaced with a deterministic scroll handler — the *last* heading whose top has passed a threshold — which also scrolls the active entry into view inside the contents column.
+
+### Verified
+- Rendered and inspected in Chrome; no console errors. A fourth suspected fault was **measured rather than guessed** — an apparently blank tail turned out to be the main column's bottom padding, with the screenshot caught mid-smooth-scroll. No bug; nothing changed.
+
 ## [2026-08-02] — Staging-B Platform User Guide (.docx)
 
 ### Added

@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1288</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1289</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3032,6 +3032,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-02 &mdash; Prompt #1289 [Staging-B User Guide &mdash; HTML edition]</div>
+  <div class="prompt-text">create a html version of the Staging-B platform user guide</div>
+  <div class="prompt-text"><b>Outcome:</b> A clickable <b>HTML edition</b> of the Staging-B Platform User Guide, mirroring the Word version. Built by its own generator, following the existing one-generator-per-format convention rather than a shared content module, so the already render-verified Word builder was left untouched.</div>
+  <div class="prompt-text"><b>Single self-contained file</b> &mdash; inline CSS and JS, logo embedded as a data URI, <b>zero external requests</b> (verified by grepping the built page for any external <code>src</code>, <code>href</code>, <code>@import</code> or font-CDN reference). Sticky contents with scroll-spy, light/dark aware, responsive under 900px, dedicated print stylesheet, <code>noindex,nofollow</code>.</div>
+  <div class="prompt-text"><b>Three bugs found by rendering in a real browser, none visible in the source:</b> the contents &ldquo;Part&rdquo; labels were <b>dark ink on a dark navy chip</b> because the contents list reused the class carrying the navy divider styling in the main column; the <b>logo vanished into the cover</b> (dark artwork on a navy background &mdash; now on a white chip); and the <b>scroll-spy stuck on the first section</b>, because the <code>IntersectionObserver</code> picked the first heading in document order with a live flag, so jumping far down left it highlighting the opening section while the reader was in the appendices. Replaced with a deterministic scroll handler that also scrolls the active entry into view.</div>
+  <div class="prompt-text"><b>Measured rather than guessed on a fourth suspected fault:</b> an apparently blank tail turned out to be the main column&rsquo;s bottom padding &mdash; the screenshot had been caught mid-smooth-scroll. <b>No bug; nothing changed.</b> No console errors.</div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-02 &mdash; Prompt #1288 [Staging-B Platform User Guide]</div>
   <div class="prompt-text">create a full users guide for the staging-b platform in a branded word document</div>
