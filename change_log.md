@@ -1,3 +1,69 @@
+## [2026-08-03] — PRISM admin writes now land in prism_results (the store the app reads)
+
+Monorepo PR **#794**, merged as **`dd43b142`**; Staged Deploy run
+`30786467340` green to **dev** (staging behind its manual gate).
+
+### Fixed — imports were invisible to the entire application
+`assessments` / `assessment_scores` is the canonical assessment store, but a
+repo-wide grep found **no runtime code reads it** — `routes/prism.py`,
+`memory/long_term.py`, `rag/prism_vectorizer.py` and dashboard-service all
+read `prism_results`. Admin imports wrote only the canonical tables, so a
+complete, authoritative 107-row PRISM import produced **nothing the user could
+see**: no scores in chat, on the dashboard or in RAG, and
+`GET /v1/documents/latest-prism` returning 404 — while the data looked
+perfectly healthy in SQL. Two staging-b users were in exactly that state.
+- Files: `services/agent-engine/app/routes/profile_admin.py`
+
+### Added — `_project_to_prism_results()`
+- Colours derived via `prism_canon.derive_colours` — **the same function the
+  app reads through**, not a second SQL copy of the quadrant pairing. That
+  pairing has been rotated once already; a divergent reimplementation is how
+  such a bug becomes permanent.
+- Wired into **all three** admin write paths (create, import-csv, reprocess),
+  not just the CSV import. `reprocess` regenerates scores, so without it
+  `prism_results` would be left holding **stale** colours.
+- Idempotent: `uuid5(ns, "user_id:assessment_id")` + `ON CONFLICT`.
+  `prism_results` has no unique key on `user_id` and readers take
+  `ORDER BY assessed_at DESC`, so a duplicate would be silently ambiguous.
+- **Incomplete dimension sets write nothing** — a partial profile renders a
+  misleading radar chart, worse than an obviously-absent one.
+- `raw_data.dimensions` populated so the `long_term.py` read-path self-heal
+  can recompute colours if the pairing ever changes again.
+
+### Fixed — ORM/schema drift on `prism_results`
+`created_at` + `updated_at` were added to the live tables by
+`r29_prism_results_audit_columns.sql` but never mirrored into the ORM model,
+so SQLite test tables lacked both while Postgres had them — the same class of
+drift that previously shipped a 500. Deliberately no `onupdate=` (ORM
+`onupdate` on an async session raises `MissingGreenlet`).
+- Files: `services/agent-engine/app/memory/models.py`
+
+### Added — backfill for rows written before the fix
+`scripts/backfill_prism_results_from_assessments.py`: dry-run by default,
+idempotent, and it **reports users it cannot fix rather than silently
+omitting them**.
+- **staging-b: 27 → 29 rows.** Two affected users now resolve;
+  both had full 107-row imports the app could not see.
+- Verified the backfilled colours **exactly match what the read-path
+  self-heal recomputes**, so reads log no repair.
+- **Deliberately NOT backfilled:** One user (present on dev AND staging-b). Her legacy import has `score_type = NULL` and only one
+  unidentified variant of the 3; 17 of 18 other legacy imports label all
+  three correctly, so hers is a broken import, not a labelling convention.
+  Guessing the variant would invent data — she needs a CSV re-import.
+
+### Verified
+3 new tests (projection correctness vs `derive_colours`, idempotency across
+reprocess, refusal to write a partial set), **proven non-vacuous by reverting
+the source fix**. Full agent-engine suite: **4425 passed** with the *same 171
+pre-existing failures* as `origin/development` — failure sets diffed, zero
+introduced. All 31 PR checks green. Deployed code confirmed **in the running
+dev container** via ECS exec, not merely "deploy succeeded".
+
+### Not done
+The agent-engine on **staging-b still runs the old code** — backend promotion
+is tag-gated, so a future admin CSV upload *there* would recreate the problem
+until it is promoted. The staging-b **data** is already repaired.
+
 ## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
 
 ### Added
