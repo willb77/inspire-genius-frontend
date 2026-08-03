@@ -1,3 +1,25 @@
+## [2026-08-03] — HomeV2: My Journey, uploaded material links, and a PDF viewer
+
+### Removed
+- **The "Complete profile" gauge** — headline percentage and progress bar. The Personal Info and Other Assessments dropdowns still show "n of m" per group, so completeness remains legible without a single score dominating the tile.
+- **The standalone Direction Setting card** that sat at the bottom of Home.
+
+### Added
+- **"My Journey" quick action**, between *Today's Prep* and *Job Fit*, opening the Direction Setting journey. Same destination as the card it replaces, but in the row people actually scan. It follows the platform rule that **entitlement gates use, not sight** — unentitled users still see it, greyed and locked, rather than having it vanish.
+- **Links to your uploaded profile material** under the latest PRISM line — resume, bio and additional info — each opening in a viewer modal. These were previously write-only: you could upload them but never reopen one from Home.
+  - New `useProfileMaterial` hook. `useMyProfile().personal_docs` reports only which *kinds* exist and carries no document IDs, so it could never produce a link; this lists the real documents.
+- **`ProfileDocViewerDialog`** — opens a document in a modal. PDFs render in a frame and images inline; anything else (CSV, XLSX, DOCX) gets an explicit "open in a new tab" action rather than an iframe that would silently download or show a blank frame. The presigned URL is minted when the dialog opens, not up front, because those URLs expire and a page left open would otherwise hand out a dead link.
+
+### Changed
+- **"View Inventory PDF" now opens the stored report in the viewer.** It previously navigated to the assessment request page, which never showed the report at all.
+
+### Fixed
+- **Uploading a non-PRISM assessment failed with a 422.** The extraction normalizer required every parsed row to carry a number or a text label, so a **ranked** instrument — Clifton Strengths reports ordered themes with neither — had every row discarded as noise, leaving nothing to save. Rank is now treated as a real result. Fixed in the agent-engine alongside two related faults: numeric coercion rejecting the forms reports actually use (`"85%"`, `"72 / 100"`, `"1,234"`), and a token ceiling that truncated long ranked reports.
+
+### Tests
+- 38 tests across the HomeV2 and WelcomeBackTile suites, including assertions that the gauge is **absent** and that My Journey sits between Today's Prep and Job Fit — a percentage or a re-ordered row silently returning is exactly the regression these guard.
+- 227 tests across 32 suites in the dashboard, user-page and documents areas all pass. Build and targeted lint clean.
+
 ## [2026-08-03] — CORRECTION: the outstanding PRISM user cannot be fixed by re-import
 
 No code and no data changed. This entry corrects an earlier one.
