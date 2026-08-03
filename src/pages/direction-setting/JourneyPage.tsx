@@ -96,6 +96,10 @@ function StageRow({
   onOpen: (id: string) => void
 }) {
   const done = stage.state === "complete" || stage.state === "skipped"
+  // `unmetNeeds` is the live view; `needs` is the standing list. Fall back only
+  // when the backend predates the field — `?? stage.needs` on an empty served
+  // array would wrongly re-list satisfied requirements.
+  const missing = stage.unmetNeeds ?? stage.needs
   return (
     <li>
       <button
@@ -131,6 +135,11 @@ function StageRow({
                 Next
               </span>
             )}
+            {stage.optional && !done && (
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                Optional
+              </span>
+            )}
           </span>
           <span className="mt-0.5 block text-sm text-muted-foreground">
             {stage.question}
@@ -138,12 +147,21 @@ function StageRow({
           <span className="mt-1 block text-xs text-muted-foreground/80">
             {stage.outcome}
           </span>
-          {!done && stage.needs.length > 0 && (
+          {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
+              `needs` keeps an older backend rendering something true-ish rather
+              than nothing, but on a current one a satisfied requirement stops
+              being mentioned at all. */}
+          {!done && missing.length > 0 && (
             <span className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" aria-hidden />
               Thin without{" "}
-              {stage.needs.map((n) => NEEDS_LABEL[n] ?? n).join(" and ")} — you can
+              {missing.map((n) => NEEDS_LABEL[n] ?? n).join(" and ")} — you can
               still open it
+            </span>
+          )}
+          {!done && missing.length === 0 && stage.needs.length > 0 && (
+            <span className="mt-1.5 block text-[11px] text-emerald-700">
+              Ready — everything it needs is on file
             </span>
           )}
         </span>
