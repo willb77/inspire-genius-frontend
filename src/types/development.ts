@@ -254,3 +254,43 @@ export type MemberDossier = {
   events?: DossierEvent[]
   computedAt?: string
 }
+
+// ── Add team members (single + bulk) ─────────────────────────────────────────
+
+/** Payload to add a team member under the calling manager. `prism` optionally
+ *  carries the 8 behaviours (id 1..8, score 0..100) to populate the map on add. */
+export type MemberCreateInput = {
+  name: string
+  email?: string
+  title?: string
+  department?: string
+  prism?: { id: number; score: number }[]
+}
+
+export type MemberCreateResult = {
+  memberId: string
+  name: string
+  title?: string
+  department?: string
+  prismWritten: boolean
+}
+
+export type BulkMemberRow = {
+  ok: boolean
+  memberId?: string
+  name?: string
+  error?: string
+}
+
+export type BulkMembersResult = {
+  created: number
+  failed: number
+  rows: BulkMemberRow[]
+}
+
+/** The caller's own 8 PRISM behaviours, for the HomeV2 behavioral-map popup. */
+export type SelfPrismResponse = {
+  dimensions: PrismDimension[]
+  hasData: boolean
+  assessedAt?: string | null
+}

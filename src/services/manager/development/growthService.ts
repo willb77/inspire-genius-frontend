@@ -11,13 +11,17 @@
 import { getApi } from "@/lib/agentApi"
 import type { BaseApiResponse } from "@/types/api"
 import type {
+  BulkMembersResult,
   CareerMatch,
   DevelopmentGap,
   GoalCategoryCoverage,
   LearningItem,
+  MemberCreateInput,
+  MemberCreateResult,
   MemberDossier,
   Milestone,
   RosterMember,
+  SelfPrismResponse,
   SummitGoal,
 } from "@/types/development"
 
@@ -168,4 +172,28 @@ export function sharePlan(memberId: string, input: SharePlanInput = {}) {
     `${BASE}/members/${memberId}/share`,
     input,
   )
+}
+
+// ── Add team members (single + bulk) ─────────────────────────────────────────
+
+/** POST /members — add a single member under the calling manager. */
+export function addTeamMember(input: MemberCreateInput) {
+  return getApi().post<BaseApiResponse<MemberCreateResult>>(`${BASE}/members`, input)
+}
+
+/** POST /members/bulk — bulk-add members (CSV upload) under the manager. */
+export function bulkAddTeamMembers(members: MemberCreateInput[]) {
+  return getApi().post<BaseApiResponse<BulkMembersResult>>(`${BASE}/members/bulk`, {
+    members,
+  })
+}
+
+/** DELETE /members/{id} — remove a manager-added member. */
+export function deleteTeamMember(memberId: string) {
+  return getApi().delete<BaseApiResponse<{ deleted: boolean }>>(`${BASE}/members/${memberId}`)
+}
+
+/** GET /me/prism — the caller's own 8 PRISM behaviours for the map popup. */
+export function getMyPrism() {
+  return getApi().get<BaseApiResponse<SelfPrismResponse>>(`${BASE}/me/prism`)
 }
