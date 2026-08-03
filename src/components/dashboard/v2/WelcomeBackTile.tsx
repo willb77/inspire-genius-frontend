@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
+import { BehavioralMapDialog } from "@/components/dashboard/v2/BehavioralMapDialog";
 
 export interface WelcomeBackAssessment {
   name: string;
@@ -442,6 +443,7 @@ export function WelcomeBackTile({
             {t("homeV2.latestReportPrefix", { defaultValue: "Latest report:" })}{" "}
             {reportFileName}
           </span>
+          <BehavioralMapDialog />
         </div>
       ) : null}
 
