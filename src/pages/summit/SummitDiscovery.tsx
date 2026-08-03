@@ -9,6 +9,7 @@ const STATUS_LABEL = { explored: "Explored", active: "In progress", todo: "Not s
 export default function SummitDiscovery() {
   const { data: session, isLoading, isError } = useGoalSession();
   const categories = useSummitCategories(session);
+  const whyRoots = (session?.why_roots ?? []).filter((r) => r.root);
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -71,6 +72,32 @@ export default function SummitDiscovery() {
         </div>
       )}
 
+      {/* Once the ladder has actually run, show what it found. These are the
+          person's own roots, written by POST /why-ladder — the illustration
+          below is only shown while there are none, because an example sitting
+          where someone's own answer should be is the thing that made this
+          surface feel like a brochure. */}
+      {whyRoots.length > 0 && (
+        <Card>
+          <MiniLabel>Your why</MiniLabel>
+          <CardH>What sits underneath what you said you wanted</CardH>
+          <div className="mt-3 flex flex-col gap-3">
+            {whyRoots.map((r, i) => (
+              <div key={i} className="border-l-2 border-[#C88B1B] pl-3.5">
+                <div className="text-[13px] text-[#13294B]/70">
+                  &ldquo;{r.stated_goal}&rdquo;
+                </div>
+                <div className="mt-1 flex items-start gap-2 text-[14.5px] font-semibold leading-snug text-[#0B1B33]">
+                  <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#A9720F]" aria-hidden />
+                  {r.root}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {whyRoots.length === 0 && (
       <Card>
         {/* Illustration, not this person's data. It was previously headed "Live
             example", which read as a transcript of their own conversation. */}
@@ -103,6 +130,7 @@ export default function SummitDiscovery() {
           ))}
         </div>
       </Card>
+      )}
     </div>
   );
 }

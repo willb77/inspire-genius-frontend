@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import MeridianPanel from "@/pages/summit/components/MeridianPanel";
+import SummitInterviewPanel from "@/components/summit/SummitInterviewPanel";
 import { useAuth } from "@/context/useAuth";
 import { useGoalSession, useSummitCategories } from "@/hooks/summit/useGoalSession";
 
@@ -160,14 +160,18 @@ export default function SummitLayout() {
           </span>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        {/* The interview stacks under the content below `lg` rather than being
+            hidden. It was `hidden lg:flex`, which was defensible when the panel
+            was an optional chat companion — but the interview is the way goals
+            get made, and hiding it made goal-setting a desktop-only feature. */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex-1 overflow-y-auto px-6 py-7 lg:px-8">
             <div className="mx-auto max-w-3xl">
               <Outlet />
             </div>
           </div>
-          <div className="hidden w-[344px] flex-shrink-0 lg:flex">
-            <MeridianPanel />
+          <div className="flex w-full flex-shrink-0 border-t lg:w-[344px] lg:border-t-0">
+            <SummitInterviewPanel />
           </div>
         </div>
       </main>
