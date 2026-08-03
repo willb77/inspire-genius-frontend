@@ -1,3 +1,41 @@
+## [2026-08-03] — CORRECTION: the outstanding PRISM user cannot be fixed by re-import
+
+No code and no data changed. This entry corrects an earlier one.
+
+### Corrected — "needs a proper CSV re-import" was wrong
+The 2026-08-03 dual-store entry said the one un-backfillable user needed her
+PRISM CSV re-imported. **Re-importing is a no-op.** Fetched her actual file
+from S3 (a single copy, byte-identical in dev and staging-b) and ran the
+production `parse_prism_csv` on it: it reproduces **exactly** the rows already
+stored, which is why they carry `score_type = NULL`.
+
+**Her original import was faithful — the source export is incomplete:**
+- 1 populated score row with an **empty variant label**, holding only **26 of
+  89** values
+- the other two variant rows are entirely blank
+- a well-formed export has **three labelled rows** (verified against 13 others)
+
+### Ruled out — position cannot identify the variant
+The tempting inference is "it is row 0, so it is Underlying". Surveyed all 13
+well-formed exports: **10 lead with `Adapted`, 3 with `Underlying`**. Row
+position carries no information here.
+
+### Not done, deliberately
+Her 8 quadrant behaviours ARE present and numeric, so `derive_colours` would
+run and her profile would load immediately. The sole blocker is not knowing
+which variant the numbers are — and `prism_results` is read as the
+**authoritative profile platform-wide** (chat injection, dashboard, Job Fit),
+so loading an unknown variant would quietly misrepresent a real person's
+natural style as adapted behaviour, or vice versa.
+
+**Decision: obtain a fresh complete export from the PRISM portal**
+rather than infer. Loading the existing row as Underlying was explicitly
+rejected. Once the export exists it goes through `admin_csv_upload`, which now
+writes both stores, and takes about two minutes.
+
+Nothing else is wrong with her account or the pipeline — she is the only
+remaining case on either environment.
+
 ## [2026-08-03] — PRISM dual-store fix confirmed LIVE on staging-b (no tag cut)
 
 Asked to promote monorepo #794 (`dd43b142`) to staging-b. **It was already
