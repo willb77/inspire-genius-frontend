@@ -10,3 +10,8 @@ export { useMilestones, useCreateMilestone, useUpdateMilestone } from "./useMile
 export { useCareerMatches } from "./useCareerMatches"
 export { useSharePlan } from "./useSharePlan"
 export { useDevelopmentText } from "./useDevelopmentText"
+export {
+  useAddTeamMember,
+  useBulkAddTeamMembers,
+  useDeleteTeamMember,
+} from "./useAddTeamMember"

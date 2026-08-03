@@ -28,6 +28,7 @@ import {
   useDevelopmentText,
 } from "@/hooks/manager/development"
 import { MemberCard } from "@/components/manager/development/MemberCard"
+import { AddMemberDialog } from "@/components/manager/development/AddMemberDialog"
 import {
   DevSkinProvider,
   DevPageFrame,
@@ -123,9 +124,12 @@ export default function DevelopmentStudio({ variant }: { variant?: DevVariant })
     <ManagerLayout>
       <DevSkinProvider v2={v2}>
         <DevPageFrame>
-      <header className="space-y-1">
-        <h1 className={cn("text-2xl font-semibold", sk.heading)}>{t("dev.studio.title")}</h1>
-        <p className={cn("text-sm", sk.text500)}>{t("dev.studio.subtitle")}</p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className={cn("text-2xl font-semibold", sk.heading)}>{t("dev.studio.title")}</h1>
+          <p className={cn("text-sm", sk.text500)}>{t("dev.studio.subtitle")}</p>
+        </div>
+        <AddMemberDialog />
       </header>
 
       {/* Toolbar */}
@@ -213,7 +217,7 @@ export default function DevelopmentStudio({ variant }: { variant?: DevVariant })
             <p className={cn("text-base font-medium", sk.text700)}>{t("dev.studio.empty.title")}</p>
             <p className={cn("mx-auto mt-1 max-w-sm text-sm", sk.text500)}>{t("dev.studio.empty.body")}</p>
           </div>
-          <Button onClick={() => navigate(ROUTES.MANAGER.BULK_IMPORT)}>{t("dev.studio.empty.cta")}</Button>
+          <AddMemberDialog />
         </div>
       ) : filtered.length === 0 ? (
         <div className={cn("border border-dashed py-16 text-center text-sm", sk.radius, sk.border200, sk.text500)}>
