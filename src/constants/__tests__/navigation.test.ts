@@ -4,7 +4,10 @@ import {
   DEFAULT_ROLE_CONFIGS,
   TOOL_ITEMS_BY_ROLE,
   SUPER_ADMIN_TOOLS_SECTION,
+  getUserNavItems,
+  HIDDEN_WORKSPACE_ROUTES,
 } from "../navigation"
+import { ROUTES } from "@/constants/routes"
 import type { UserRole } from "@/types/roles"
 
 const ALL_ROLES: UserRole[] = ["user", "manager", "company-admin", "practitioner", "distributor", "super-admin"]
@@ -76,5 +79,37 @@ describe("constants/navigation", () => {
         expect(config.navItems.length).toBeGreaterThan(0)
       }
     })
+  })
+})
+
+describe("Document Library in My Workspace", () => {
+  it("appears in the user menu under both agent-engine toggle states", () => {
+    for (const agentEngineOn of [true, false]) {
+      const items = getUserNavItems(agentEngineOn)
+      const doc = items.find((i) => i.to === ROUTES.DOCUMENTS)
+      expect(doc).toBeDefined()
+      expect(doc!.label).toBe("Document Library")
+    }
+  })
+
+  it("is no longer listed as a hidden workspace route", () => {
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DOCUMENTS)
+  })
+
+  it("HIDDEN_WORKSPACE_ROUTES never contradicts the rendered menu", () => {
+    // The constant is documentation-as-code with no runtime consumer, so
+    // nothing else would catch it drifting out of step with the real menu —
+    // a route claimed "hidden" while actually rendered is a silent lie to
+    // whoever reads it next.
+    const rendered = new Set(getUserNavItems(true).map((i) => i.to))
+    for (const hidden of HIDDEN_WORKSPACE_ROUTES) {
+      expect(rendered.has(hidden)).toBe(false)
+    }
+  })
+
+  it("keeps the route itself unchanged so existing links still resolve", () => {
+    // The rename is label-only. If ROUTES.DOCUMENTS ever moved, bookmarks and
+    // the Meridian header entry point would break silently.
+    expect(ROUTES.DOCUMENTS).toBe("/documents")
   })
 })

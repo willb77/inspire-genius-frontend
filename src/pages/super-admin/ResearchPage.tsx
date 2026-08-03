@@ -55,7 +55,8 @@ function ResearchUploadPanel() {
         <p className="text-sm text-slate-600">
           Files are stored and indexed through the standard document pipeline
           (virus scan → text extraction → chunk → embed into the searchable
-          corpus) — the same path used by My Documents and the home "Add" flow.
+          corpus) — the same path used by the Document Library and the home
+          "Add" flow.
         </p>
         <input
           ref={inputRef}

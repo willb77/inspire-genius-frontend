@@ -39,7 +39,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
-  { to: ROUTES.DOCUMENTS, icon: FileText, label: "My Documents" },
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
   { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
@@ -67,16 +67,21 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     { to: ROUTES.BIO_CAPTURE, icon: BookOpenText, label: "Bio Capture" },
     // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+    // Document Library — restored to the menu 2026-08-03 and renamed from
+    // "My Documents". The route (ROUTES.DOCUMENTS) never changed, so existing
+    // links, bookmarks and the Meridian header entry point all still resolve;
+    // only the sidebar shortcut and its label moved.
+    { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.
     //
-    // 2026-07-31 — My Workspace pared back to five entries. Request Assessment,
-    // Goal Setting, My Documents, Feedback and the Onboarding Wizard are NOT
-    // deleted: their routes still resolve and each is reachable from the
-    // surface that owns it (documents + history from the Meridian header rows,
-    // the rest from Home and the Tools section). The menu is a shortcut list,
-    // not the route table — see HIDDEN_WORKSPACE_ROUTES below for the full
-    // accounting so a future reader doesn't assume the pages were dropped.
+    // 2026-07-31 — My Workspace pared back. Request Assessment, Goal Setting,
+    // Feedback and the Onboarding Wizard are NOT deleted: their routes still
+    // resolve and each is reachable from the surface that owns it (history
+    // from the Meridian header rows, the rest from Home and the Tools
+    // section). The menu is a shortcut list, not the route table — see
+    // HIDDEN_WORKSPACE_ROUTES below for the full accounting so a future
+    // reader doesn't assume the pages were dropped.
     { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
@@ -90,11 +95,14 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
  * greppable: every one of these pages still exists and still routes; only the
  * sidebar shortcut was withdrawn. Restoring one means adding a line back to
  * {@link getUserNavItems}, nothing more.
+ *
+ * 2026-08-03 — ROUTES.DOCUMENTS was restored to the menu as "Document Library"
+ * and removed from this list. The two must stay in step: a route listed here
+ * AND present in getUserNavItems would make this constant lie about the menu.
  */
 export const HIDDEN_WORKSPACE_ROUTES = [
   ROUTES.PRISM_ASSESSMENT,
   ROUTES.SUMMIT.BASE,
-  ROUTES.DOCUMENTS,
   ROUTES.FEEDBACK,
   ROUTES.ONBOARDING.WIZARD,
 ] as const
