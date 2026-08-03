@@ -1,3 +1,53 @@
+## [2026-08-03] — Document Library restored to the My Workspace menu
+
+Frontend PR **#348** (`willb77/inspire-genius-frontend`), merged as
+**`78c0a29`**; CI/CD deploys to **dev + staging-b** in the same run.
+
+### Added — the menu entry is back, renamed
+- Documents was withdrawn from My Workspace on 2026-07-31 (the page always
+  still routed; only the sidebar shortcut was removed). It is back, between
+  Interview Practice and Analytics — its original relative position — and
+  relabelled **"My Documents" → "Document Library"**.
+  - Files: `src/constants/navigation.ts`
+
+### Changed — `HIDDEN_WORKSPACE_ROUTES` kept honest
+- `ROUTES.DOCUMENTS` removed from the list. That constant has **no runtime
+  consumer** — it is documentation-as-code — so nothing would have caught it
+  drifting out of step and claiming a route was hidden while it actually
+  renders. Added a test that pins the constant against the rendered menu.
+- **The route itself is unchanged**, so bookmarks, deep links and the
+  Meridian header entry point all keep working. Pinned by a test too.
+
+### Changed — two user-VISIBLE strings that named the old surface
+Left alone, these would have sent users hunting for a menu entry that no
+longer exists — a defect the rename itself would have introduced.
+- `InterviewPracticePage`: "Saved to My Documents." → "Saved to your Document
+  Library." (now consistent with sibling toasts, e.g. "Saved to your
+  workspace.")
+- `ResearchPage`: rendered helper text describing the shared upload path.
+
+### Deliberately NOT changed
+- **`PreviewHome`** — a mock explicitly marked "TEMPORARY preview page —
+  remove before deploy". Not the real menu, and its own test pins the old
+  string.
+- **Internal comments / type-file headers** — no user impact, pure churn.
+- **The Documents page `<h1>` still reads "Documents Uploaded."** Renaming a
+  page heading was not part of "rename the menu item" — flagged rather than decided unilaterally.
+
+### Notes
+Nav labels are plain strings rendered as `{label}` with no `t()` and **no
+locale entries at all**, so this needed no 21-locale i18n work — established
+by grepping `public/locales/`, not assumed.
+
+### Verified
+4 new tests, **proven non-vacuous by reverting the source change** (2 go
+red). Full suite **539 suites / 4243 tests green**. Clean `tsc` + `vite`
+build. **0 lint issues in the touched files** (846 pre-existing elsewhere,
+untouched). **Rendered in Chrome** via dev quick-login: the label appears in
+the sidebar, clicking navigates to `/documents`, and the nav item shows
+active — plus the built bundle confirmed to carry the new strings and to
+retain "My Documents" only inside the PreviewHome mock.
+
 ## [2026-08-03] — PRISM admin writes now land in prism_results (the store the app reads)
 
 Monorepo PR **#794**, merged as **`dd43b142`**; Staged Deploy run
