@@ -1,3 +1,35 @@
+## [2026-08-03] — PRISM dual-store fix confirmed LIVE on staging-b (no tag cut)
+
+Asked to promote monorepo #794 (`dd43b142`) to staging-b. **It was already
+promoted** — no release tag was cut, and nothing was deployed.
+
+### Verified — already shipped in another terminal's tag
+- `dd43b142` is an ancestor of **`release-stable-2026-08-03-ws-proxy-cap`**;
+  another terminal folded it in alongside the ws-proxy concurrency cap.
+  Promote run `30811300048`: pre-flight, agent-engine image build, CDK deploy
+  of all staging-b stacks, forced ECS new-deployment and the **authenticated
+  smoke matrix** all green.
+- **Checked before tagging** — `git merge-base --is-ancestor dd43b142 <tag>`
+  answers this in one command. Cutting a second tag would have re-deployed
+  staging-b for no reason.
+
+### Verified — in the RUNNING container, not from the green pipeline
+ECS exec into the live staging-b task:
+- `_project_to_prism_results` present
+- **all 3 call sites wired** (create / import-csv / reprocess)
+- `prism_canon` imported; model carries the `created_at`/`updated_at` columns
+- `desiredCount` = **1**, rollout COMPLETED — the previously-seen CFN
+  scale-to-zero-on-promote trap did **not** recur
+
+### Verified — data state holds
+All three previously-affected users resolve a `prism_results` row. **No new user has fallen into the gap** since the fix landed; the only
+remaining case is the known un-backfillable one legacy import (with
+`score_type = NULL` and one unidentified variant — needs a CSV re-import, not
+a backfill).
+
+**Net effect: staging-b needs nothing. The recurrence risk flagged when #794
+merged is closed.**
+
 ## [2026-08-03] — Documents page heading renamed to "Document Library"
 
 Frontend PR **#350** (`willb77/inspire-genius-frontend`), merged as
