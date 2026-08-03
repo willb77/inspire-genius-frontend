@@ -15,10 +15,38 @@ import {
 import { PrismBehavioralMap } from "@/components/prism/PrismBehavioralMap"
 import { useMyPrism } from "@/hooks/prism/useMyPrism"
 
+/** The data-fetching body — mounted only when the dialog is open, so the
+ *  React Query hook never runs while the tile sits closed on Home. */
+function BehavioralMapContent() {
+  const { data, isLoading, isError } = useMyPrism(true)
+
+  if (isLoading) {
+    return (
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        Loading your behavioral map…
+      </p>
+    )
+  }
+  if (isError) {
+    return (
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        Couldn't load your behavioral map. Please try again.
+      </p>
+    )
+  }
+  if (data?.hasData) {
+    return <PrismBehavioralMap prism={data.dimensions} />
+  }
+  return (
+    <p className="py-10 text-center text-sm text-muted-foreground">
+      No PRISM assessment found yet. Complete a PRISM assessment to see your
+      behavioral map here.
+    </p>
+  )
+}
+
 export function BehavioralMapDialog() {
   const [open, setOpen] = useState(false)
-  // Only fetch once the popup is opened.
-  const { data, isLoading, isError } = useMyPrism(open)
 
   return (
     <>
@@ -39,23 +67,9 @@ export function BehavioralMapDialog() {
               Your PRISM 8-dimension profile and scores.
             </DialogDescription>
           </DialogHeader>
-
-          {isLoading ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Loading your behavioral map…
-            </p>
-          ) : isError ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Couldn't load your behavioral map. Please try again.
-            </p>
-          ) : data?.hasData ? (
-            <PrismBehavioralMap prism={data.dimensions} />
-          ) : (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              No PRISM assessment found yet. Complete a PRISM assessment to see
-              your behavioral map here.
-            </p>
-          )}
+          {/* Mount (and fetch) only while open — keeps the query out of the
+              closed tile's render, which has no QueryClientProvider in tests. */}
+          {open ? <BehavioralMapContent /> : null}
         </DialogContent>
       </Dialog>
     </>
