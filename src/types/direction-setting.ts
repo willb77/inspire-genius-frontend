@@ -28,6 +28,28 @@ export type JourneyStage = {
   question: string
   outcome: string
   needs: string[]
+  /**
+   * The subset of `needs` no completed stage has produced yet.
+   *
+   * `needs` is the stage's standing requirement list and never changes;
+   * `unmetNeeds` is what is missing *right now*. Rendering `needs` was why a
+   * stage kept saying "thin without your PRISM results" to someone whose PRISM
+   * had been on file for weeks.
+   *
+   * Optional on the type because an older backend does not send it — the
+   * surface falls back rather than rendering `undefined`.
+   */
+  unmetNeeds?: string[]
+  /** `unmetNeeds` is empty. Presentation only — every stage stays enterable. */
+  reachable?: boolean
+  /**
+   * Nothing downstream depends on this stage.
+   *
+   * Optional stages are real work worth doing; they are just not allowed to sit
+   * in front of the funnel as "your next step". The server decides this — see
+   * `stages.py` — and `nextAction` already accounts for it.
+   */
+  optional?: boolean
   state: StageState
 }
 
