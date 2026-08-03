@@ -1,3 +1,10 @@
+## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
+
+### Added
+- **Add team members** on the Development Studio roster — an "Add member" dialog with a **Single** form (name / title / department / email) and a **Bulk upload** tab (paste or upload a `name,email,title,department` CSV). New members create roster cards immediately (`growthService.addTeamMember` / `bulkAddTeamMembers` → `POST /v1/growth/members[/bulk]`); the roster refetches on success. Also replaces the empty-state CTA.
+- **HomeV2 behavioral-map popup** — a "Behavioral map" link next to the PRISM CSV filename in `WelcomeBackTile` (My Workspace) opens a modal with the PRISM radar + 8-dimension scores — the same map the manager sees on a member card, extracted into a standalone `PrismBehavioralMap`. Fed by the user's own PRISM (`useMyPrism` → `GET /v1/growth/me/prism`), fetched lazily on open.
+- Files: `components/manager/development/AddMemberDialog.tsx`, `components/prism/PrismBehavioralMap.tsx`, `components/dashboard/v2/BehavioralMapDialog.tsx`, `hooks/manager/development/useAddTeamMember.ts`, `hooks/prism/useMyPrism.ts`, updates to `growthService.ts`, `types/development.ts`, `DevelopmentStudio.tsx`, `WelcomeBackTile.tsx`. Tests: `parseMemberCsv`, `PrismBehavioralMap`.
+
 ## [2026-08-02] — Backend infrastructure hardening + staging-B verification tooling
 
 > Backend/infrastructure only — no frontend code changed. Details are recorded in the
