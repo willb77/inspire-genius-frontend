@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
+import { useRecordStageComplete } from "@/hooks/direction-setting/useJourney"
 import { useSelfPortrait } from "@/hooks/lumen/useSelfPortrait"
 import { SelfPortraitNarrative } from "@/pages/lumen/SelfPortraitNarrative"
 import type {
@@ -189,6 +190,10 @@ function NothingYet() {
 
 export default function PortraitPage() {
   const { data: portrait, isLoading, isError } = useSelfPortrait()
+
+  // Stage 2 is done when there is a portrait to read. `NothingYet` below is the
+  // no-PRISM case — a correct render of nothing, which is not an outcome.
+  useRecordStageComplete("2", Boolean(portrait))
 
   if (isLoading) {
     return (
