@@ -41,9 +41,15 @@ let journeyResult: {
   isError: boolean
 } = { data: undefined, isLoading: false, isError: false }
 
+const mockRecordStage = jest.fn()
 jest.mock("@/hooks/direction-setting/useJourney", () => ({
   useJourney: () => journeyResult,
   useAdvanceJourney: () => ({ mutate: mockAdvance, isPending: false }),
+  // SalaryPage records stage 4 once the areas come back priced. Captured rather
+  // than stubbed away so the assertions below can check WHEN it fires — the
+  // whole point of the hook is that it does not fire on a bare page view.
+  useRecordStageComplete: (stageId: string, produced: boolean) =>
+    mockRecordStage(stageId, produced),
 }))
 
 /* ── Alignment service (AlignmentPage only) ───────────────────────────────────

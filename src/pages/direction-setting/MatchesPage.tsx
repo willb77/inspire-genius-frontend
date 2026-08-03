@@ -19,7 +19,7 @@ import { ROUTES } from "@/constants/routes"
 import { useMatches } from "@/hooks/direction-setting/useMatches"
 import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
-import type { FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
+import type { FitBand, FitDetail, FitMatch, FitMethod } from "@/types/job-fit"
 import {
   bandLabel,
   fitPercent,
@@ -53,13 +53,16 @@ import {
  *    the largest card on the page.
  * 3. **The empty state is the real state.** Matching runs against *published*
  *    role benchmarks — an organisation's own, plus a shared library open to
- *    everyone. Someone arriving without an employer sees only the shared library,
- *    and that library has nothing in it yet: each benchmark is reviewed by a
- *    person before it is published, and that review hasn't happened. So the
- *    audience this journey exists for is, today, the audience that gets zero
- *    rows. That has to read as an honest "there's nothing to compare you with
- *    yet" — never as a fault in them, never as a bug, and never patched over
- *    with invented sample roles.
+ *    everyone. Someone arriving without an employer sees only the shared library.
+ *    That library was empty for a long time, which made this page's zero-row
+ *    state the *normal* one; it now carries 32 org-agnostic roles, so the empty
+ *    state is back to being genuinely exceptional. It still has to read as an
+ *    honest "there's nothing to compare you with yet" when it happens — never as
+ *    a fault in them, never as a bug, and never patched over with invented
+ *    sample roles.
+ *
+ * One thing this page must NOT show: the gap engine's band beside a closeness
+ * percentage. See `rowBand`.
  */
 
 /** Tone → text colour. Local to this vertical; Job-Fit's palette is its own. */
@@ -104,6 +107,24 @@ function rowPercent(match: FitMatch): number {
   return fitPercent(match.fitScore, match.totalVariation, 22)
 }
 
+/**
+ * The band to show beside that percentage.
+ *
+ * `fitBand` comes from the gap engine and bands total variation; the percentage
+ * beside it, under the closeness read, comes from a different engine on a
+ * different scale. Showing them together produced rows reading "81% · Poor" —
+ * the ranking was fine, the label buried it. The backend now resolves the right
+ * band for the method in force, so prefer that and keep `fitBand` only as the
+ * fallback for a backend that predates the field.
+ */
+function rowBand(match: FitMatch): FitBand | null {
+  if (match.displayBand) return match.displayBand
+  // Older backend: under a closeness read there is no honest band to show, and
+  // showing the gap band would be worse than showing none.
+  if (match.method === "closeness" && match.closenessScore != null) return null
+  return match.fitBand ?? null
+}
+
 /** One ranked role. Selecting it opens its breakdown below, in place. */
 function MatchRow({
   match,
@@ -138,7 +159,7 @@ function MatchRow({
               </span>
             )}
             <span>{tierLabel(match.tier)} role</span>
-            {match.fitBand && <span>{bandLabel(match.fitBand)}</span>}
+            {rowBand(match) && <span>{bandLabel(rowBand(match) as FitBand)}</span>}
           </span>
         </span>
 
@@ -301,7 +322,7 @@ function FitBreakdown({ match, detail }: { match: FitMatch; detail: FitDetail })
             <span className="block font-medium">{detail.roleTitle}</span>
             <span className="block text-sm text-muted-foreground">
               {fitPercentLabel(pct)}
-              {match.fitBand ? ` · ${bandLabel(match.fitBand)}` : ""}
+              {rowBand(match) ? ` · ${bandLabel(rowBand(match) as FitBand)}` : ""}
             </span>
           </span>
         </CardContent>

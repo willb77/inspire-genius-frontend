@@ -45,6 +45,17 @@ export type FitMatch = {
   method?: FitMethod
   /** 0..100 weighted-closeness score (higher = closer). Null under the gap read. */
   closenessScore?: number | null
+  /**
+   * The band a surface should actually render, already resolved by the backend
+   * for the method in force. Under the gap read it equals `fitBand`; under the
+   * closeness read it bands `closenessScore` instead.
+   *
+   * `fitBand` bands total variation and says nothing about a closeness score.
+   * Rendering it beside one is how a working ranking — 81 / 77 / 75 / 73 / 70 —
+   * came out labelled "Poor" on every row. Prefer this field; fall back to
+   * `fitBand` only for older backends that do not send it.
+   */
+  displayBand?: FitBand
 }
 
 /** Per-dimension comparison of the user's score against the role benchmark. */
