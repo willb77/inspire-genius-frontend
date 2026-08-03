@@ -1,24 +1,21 @@
 /**
  * /interview-practice — Candidate Interview Coach (structured interview).
  *
- * Three phases:
- *   1) SETUP  — confirm the interview frame (seat, weighting) + number of
- *      questions and length. This builds a BOUNDED, ordered question plan.
- *   2) RUN    — a real interview: "Question X of N — <Section>", answer (typed or
- *      by voice), get supportive coaching, advance. Ends after N questions or
- *      when the user clicks "End interview" — it never loops forever.
- *   3) FINDINGS — a developmental read-out (Key Strengths, Areas to Improve,
- *      Recommended Actions, Coverage, Confidence) — NO score — plus the full
- *      Q&A transcript and a Print button.
+ *   1) SETUP    — frame (seat + weighting) + number of questions & length.
+ *   2) RUN      — "Question X of N", answer (typed or by voice), coaching over the
+ *                 async-job path (same as Meridian chat here), advance. Bounded.
+ *   3) FINDINGS — developmental read-out (no score) + full Q&A transcript, with
+ *                 audio controls and Word / PDF / Save-to-My-Documents export.
  *
- * Voice mode uses the Meridian voice (server OpenAI TTS via useTTS) to read
- * questions + coaching aloud, and useSpeechDictation to capture spoken answers.
- * Coaching + findings run over the async-job chat path (useMeridianJob).
+ * Voice mode reads questions + coaching aloud in the real Meridian voice
+ * (useMeridianVoice → /v1/agents/voice/synthesize) with full transport controls,
+ * and useSpeechDictation captures spoken answers. Latency matches Meridian via
+ * the backend RAG-skip for interview turns + a tight async-job poll.
  */
 import { useEffect, useRef, useState } from "react"
 import {
   Loader2, RefreshCw, ArrowRight, MessageSquareText, Mic, MicOff,
-  Volume2, Pencil, Printer, Flag, CheckCircle2,
+  Volume2, Pencil, Printer, Flag, CheckCircle2, FileText, FileDown, Save,
 } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
@@ -30,7 +27,9 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
+import { useAuth } from "@/context/useAuth"
 import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
+import AudioControls from "@/components/interview/AudioControls"
 import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useMeridianJob, type ChatJob } from "@/hooks/agents/useMeridianJob"
@@ -46,6 +45,11 @@ import {
   type InterviewFrame,
   type PlannedQuestion,
 } from "@/services/interview/practice.service"
+import {
+  downloadInterview,
+  saveInterviewToDocuments,
+  type InterviewSession,
+} from "@/services/interview/interviewExport"
 
 type Phase = "setup" | "interview" | "findings"
 
@@ -58,6 +62,7 @@ function newSessionId(): string {
 
 export default function InterviewPracticePage() {
   const { data, isLoading, isError } = usePracticeQuestions()
+  const { user } = useAuth()
   const [sessionId] = useState(newSessionId)
 
   const [phase, setPhase] = useState<Phase>("setup")
@@ -71,31 +76,41 @@ export default function InterviewPracticePage() {
   const [busy, setBusy] = useState(false)
   const [findings, setFindings] = useState<string | null>(null)
   const [voiceMode, setVoiceMode] = useState(false)
+  const [exporting, setExporting] = useState<"word" | "pdf" | "save" | null>(null)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
 
-  const { speak, stop: stopSpeaking } = useMeridianVoice("nova")
+  const voice = useMeridianVoice("nova")
   const dictation = useSpeechDictation({
     onFinal: (chunk) => setAnswer((prev) => (prev ? `${prev} ${chunk}` : chunk)),
   })
 
+  const finalize = (content: string) => {
+    setBusy(false)
+    const pending = pendingRef.current
+    pendingRef.current = null
+    if (pending?.kind === "findings") {
+      setFindings(content)
+      if (voiceMode && content) void voice.speak(content)
+    } else if (pending?.kind === "coach") {
+      setCoaching((prev) => ({ ...prev, [pending.number]: content }))
+      if (voiceMode && content) void voice.speak(content)
+    }
+  }
+
+  // SSE streaming is disabled on this environment (chat/stream 404s), so the
+  // coaching runs over the async-job path — the same path Meridian chat uses
+  // here. A tighter poll interval trims the perceived lag; the big latency win
+  // is the backend skipping the personal-RAG backfill for interview turns.
   const { startJob } = useMeridianJob({
+    pollIntervalMs: 700,
     onJobSettled: (job: ChatJob) => {
-      setBusy(false)
-      const pending = pendingRef.current
-      pendingRef.current = null
       if (job.status === "error") {
+        setBusy(false); pendingRef.current = null
         toast.error(job.error || "Something went wrong — please try again.")
         return
       }
-      const content = job.content || ""
-      if (pending?.kind === "findings") {
-        setFindings(content)
-        if (voiceMode && content) void speak(content)
-      } else if (pending?.kind === "coach") {
-        setCoaching((prev) => ({ ...prev, [pending.number]: content }))
-        if (voiceMode && content) void speak(content)
-      }
+      finalize(job.content ?? "")
     },
   })
 
@@ -104,94 +119,106 @@ export default function InterviewPracticePage() {
   const isLast = idx === total - 1
   const currentCoaching = current ? coaching[current.number] : undefined
 
-  // Read each new question aloud in voice mode.
   const spokenRef = useRef<number | null>(null)
   useEffect(() => {
     if (voiceMode && phase === "interview" && current && spokenRef.current !== current.number) {
       spokenRef.current = current.number
-      void speak(`Question ${current.number} of ${total}. ${current.question}`)
+      void voice.speak(`Question ${current.number} of ${total}. ${current.question}`)
     }
-  }, [voiceMode, phase, current, total, speak])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceMode, phase, current, total])
 
   // ── Actions ──────────────────────────────────────────────────
   const startInterview = (f: InterviewFrame) => {
     if (!data) return
-    setFrame(f)
-    setPlan(buildInterviewPlan(data, f))
-    setIdx(0)
-    setAnswer("")
-    setCoaching({})
-    setExchanges([])
-    setFindings(null)
-    setPhase("interview")
+    setFrame(f); setPlan(buildInterviewPlan(data, f)); setIdx(0)
+    setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); setPhase("interview")
   }
 
   const submitAnswer = async () => {
     if (!current || !answer.trim() || busy) return
-    dictation.stop(); stopSpeaking()
+    dictation.stop(); voice.stop()
     setBusy(true)
-    // Record the exchange (idempotent per question number).
     setExchanges((prev) => {
       const rest = prev.filter((e) => e.number !== current.number)
       return [...rest, {
-        number: current.number,
-        sectionTitle: current.sectionTitle,
-        competency: current.competency,
-        question: current.question,
-        answer: answer.trim(),
+        number: current.number, sectionTitle: current.sectionTitle,
+        competency: current.competency, question: current.question, answer: answer.trim(),
       }].sort((a, b) => a.number - b.number)
     })
     pendingRef.current = { kind: "coach", number: current.number }
     try {
       await startJob({
         message: buildCoachMessage(current.question, answer.trim(), frame),
-        sessionId,
-        context: practiceJobContext(frame),
+        sessionId, context: practiceJobContext(frame),
       })
-    } catch (e) {
-      setBusy(false); pendingRef.current = null
-      toast.error(e instanceof Error ? e.message : "Could not get coaching.")
+    } catch {
+      setBusy(false); pendingRef.current = null; toast.error("Could not get coaching.")
     }
   }
 
   const next = () => {
     if (isLast) { void finish(); return }
-    setIdx((i) => i + 1)
-    setAnswer("")
+    setIdx((i) => i + 1); setAnswer("")
   }
 
-  const finish = async (endedEarly = false) => {
+  const finish = async () => {
     if (!frame) return
-    dictation.stop(); stopSpeaking()
-    setPhase("findings")
-    // Compile findings from whatever was answered.
-    const answered = exchanges
-    if (answered.length === 0) {
-      setFindings("You ended the interview before answering any questions, so there's nothing to summarize yet. Start again whenever you're ready — even one full answer gives us something to work with.")
+    dictation.stop(); voice.stop(); setPhase("findings")
+    if (exchanges.length === 0) {
+      setFindings("You ended the interview before answering any questions, so there's nothing to summarize yet. Start again whenever you're ready.")
       return
     }
     setBusy(true)
     pendingRef.current = { kind: "findings" }
     try {
       await startJob({
-        message: buildFindingsMessage(frame, answered),
-        sessionId,
-        context: practiceJobContext(frame),
+        message: buildFindingsMessage(frame, exchanges),
+        sessionId, context: practiceJobContext(frame),
       })
-    } catch (e) {
-      setBusy(false); pendingRef.current = null
-      toast.error(e instanceof Error ? e.message : "Could not compile findings.")
+    } catch {
+      setBusy(false); pendingRef.current = null; toast.error("Could not compile findings.")
     }
-    void endedEarly
   }
 
   const restart = () => {
     setPhase("setup"); setFrame(null); setPlan([]); setIdx(0)
-    setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null)
-    spokenRef.current = null
+    setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); spokenRef.current = null
+    voice.stop()
   }
 
-  // ── Render: SETUP ────────────────────────────────────────────
+  const session = (): InterviewSession => ({
+    frame: frame!, exchanges, coaching, findings, planned: frame ? frameQuestionCount(frame) : exchanges.length,
+    userLabel: user?.name || user?.email,
+  })
+
+  const doExport = async (kind: "word" | "pdf" | "save") => {
+    if (!frame) return
+    setExporting(kind)
+    try {
+      if (kind === "save") {
+        await saveInterviewToDocuments(session())
+        toast.success("Saved to My Documents.")
+      } else {
+        await downloadInterview(session(), kind)
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  const audioBar = (
+    <AudioControls
+      loading={voice.loading} ready={voice.ready} playing={voice.playing}
+      currentTime={voice.currentTime} duration={voice.duration}
+      onPlayPause={voice.toggle} onStop={voice.stop} onSeek={voice.seek}
+      className="mt-2"
+    />
+  )
+
+  // ── SETUP ────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
       <UserLayout>
@@ -211,7 +238,7 @@ export default function InterviewPracticePage() {
     )
   }
 
-  // ── Render: FINDINGS ─────────────────────────────────────────
+  // ── FINDINGS ─────────────────────────────────────────────────
   if (phase === "findings" && frame) {
     const planned = frameQuestionCount(frame)
     return (
@@ -221,28 +248,40 @@ export default function InterviewPracticePage() {
             <div>
               <h1 className="text-2xl font-semibold">Interview Findings</h1>
               <p className="text-sm text-slate-600">
-                {frame.roleTitle} · {frame.company} — {exchanges.length} of {planned} questions answered
-                {" · "}{frameLengthMinutes(frame)} min target
+                {frame.roleTitle} · {frame.company} — {exchanges.length} of {planned} answered · {frameLengthMinutes(frame)} min target
               </p>
             </div>
-            <div className="flex gap-2 print:hidden">
-              <Button variant="outline" size="sm" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" /> Print / Save PDF
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("word")}>
+                {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} Word
               </Button>
-              <Button variant="ghost" size="sm" onClick={restart}>
-                <RefreshCw className="mr-2 h-4 w-4" /> New interview
+              <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("pdf")}>
+                {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} PDF
               </Button>
+              <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => doExport("save")}>
+                {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+              <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New</Button>
             </div>
           </header>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Coaching summary</CardTitle></CardHeader>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base">Coaching summary</CardTitle>
+              {findings && (
+                <Button variant="ghost" size="sm" className="print:hidden" title="Read aloud" onClick={() => void voice.speak(findings)}>
+                  <Volume2 className="h-4 w-4" />
+                </Button>
+              )}
+            </CardHeader>
             <CardContent>
               {busy && !findings ? (
-                <div className="flex items-center py-6 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compiling your findings…</div>
+                <span className="flex items-center text-sm text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compiling your findings…</span>
               ) : (
                 <p className="whitespace-pre-wrap text-sm text-slate-700">{findings}</p>
               )}
+              <div className="print:hidden">{audioBar}</div>
             </CardContent>
           </Card>
 
@@ -251,14 +290,10 @@ export default function InterviewPracticePage() {
             <CardContent className="space-y-4">
               {exchanges.map((e) => (
                 <div key={e.number} className="border-b border-slate-100 pb-3 last:border-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Question {e.number} · {e.sectionTitle} · {e.competency}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Question {e.number} · {e.sectionTitle} · {e.competency}</p>
                   <p className="mt-1 text-sm font-medium text-slate-900">{e.question}</p>
                   <p className="mt-1 text-sm text-slate-700"><span className="font-semibold">Your answer:</span> {e.answer}</p>
-                  {coaching[e.number] && (
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-700"><span className="font-semibold">Coaching:</span> {coaching[e.number]}</p>
-                  )}
+                  {coaching[e.number] && <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-700"><span className="font-semibold">Coaching:</span> {coaching[e.number]}</p>}
                 </div>
               ))}
             </CardContent>
@@ -268,7 +303,9 @@ export default function InterviewPracticePage() {
     )
   }
 
-  // ── Render: INTERVIEW ────────────────────────────────────────
+  // ── INTERVIEW ────────────────────────────────────────────────
+  const currentSectionKey = current?.sectionTitle
+
   return (
     <UserLayout>
       <div className="mx-auto max-w-3xl py-8 space-y-4">
@@ -282,26 +319,22 @@ export default function InterviewPracticePage() {
               <Volume2 className="h-4 w-4 text-slate-500" />
               <Label htmlFor="voice-mode" className="text-xs text-slate-600">Voice mode</Label>
               <Switch id="voice-mode" checked={voiceMode}
-                onCheckedChange={(v) => { setVoiceMode(v); if (!v) { stopSpeaking(); dictation.stop() } }} />
+                onCheckedChange={(v) => { setVoiceMode(v); if (!v) voice.stop(); if (!v) dictation.stop() }} />
             </div>
-            <Button variant="ghost" size="sm" onClick={restart}>
-              <Pencil className="mr-1 h-3.5 w-3.5" /> Edit setup
-            </Button>
+            <Button variant="ghost" size="sm" onClick={restart}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit setup</Button>
           </div>
         </header>
 
-        {/* Progress */}
         {total > 0 && (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>Question {current?.number} of {total} · {current?.sectionTitle}</span>
-              <Button variant="ghost" size="sm" className="h-6 text-rose-600 hover:text-rose-700" onClick={() => void finish(true)}>
+              <span>Question {current?.number} of {total} · {currentSectionKey}</span>
+              <Button variant="ghost" size="sm" className="h-6 text-rose-600 hover:text-rose-700" onClick={() => void finish()}>
                 <Flag className="mr-1 h-3.5 w-3.5" /> End interview
               </Button>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-indigo-500 transition-all"
-                style={{ width: `${((current?.number ?? 1) / total) * 100}%` }} />
+              <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${((current?.number ?? 1) / total) * 100}%` }} />
             </div>
           </div>
         )}
@@ -315,19 +348,17 @@ export default function InterviewPracticePage() {
                   <CardTitle className="text-base font-medium leading-snug">{current.question}</CardTitle>
                 </div>
                 {voiceMode && (
-                  <Button variant="ghost" size="sm" title="Read question aloud"
-                    onClick={() => void speak(current.question)}>
+                  <Button variant="ghost" size="sm" title="Read question aloud" onClick={() => void voice.speak(current.question)}>
                     <Volume2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
+              {voiceMode && <div>{audioBar}</div>}
             </CardHeader>
             <CardContent className="space-y-4">
               {current.starProbes.length > 0 && (
                 <ul className="space-y-1">
-                  {current.starProbes.map((p, i) => (
-                    <li key={i} className="flex gap-2 text-xs text-slate-500"><span aria-hidden>↳</span><span>{p}</span></li>
-                  ))}
+                  {current.starProbes.map((p, i) => <li key={i} className="flex gap-2 text-xs text-slate-500"><span aria-hidden>↳</span><span>{p}</span></li>)}
                 </ul>
               )}
 
@@ -337,24 +368,17 @@ export default function InterviewPracticePage() {
               {voiceMode && (
                 <div className="flex items-center gap-2">
                   {dictation.supported ? (
-                    <Button type="button" size="sm"
-                      variant={dictation.listening ? "default" : "outline"} onClick={dictation.toggle}>
-                      {dictation.listening
-                        ? <><MicOff className="mr-2 h-4 w-4" /> Stop recording</>
-                        : <><Mic className="mr-2 h-4 w-4" /> Answer by voice</>}
+                    <Button type="button" size="sm" variant={dictation.listening ? "default" : "outline"} onClick={dictation.toggle}>
+                      {dictation.listening ? <><MicOff className="mr-2 h-4 w-4" /> Stop recording</> : <><Mic className="mr-2 h-4 w-4" /> Answer by voice</>}
                     </Button>
-                  ) : (
-                    <span className="text-xs text-slate-500">Voice input isn't supported in this browser — please type.</span>
-                  )}
+                  ) : <span className="text-xs text-slate-500">Voice input isn't supported in this browser — please type.</span>}
                   {dictation.listening && <span className="text-xs text-indigo-600">Listening…</span>}
                 </div>
               )}
 
               <div className="flex flex-wrap gap-2">
                 <Button onClick={submitAnswer} disabled={busy || !answer.trim()}>
-                  {busy
-                    ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Coaching…</>
-                    : <><MessageSquareText className="mr-2 h-4 w-4" /> Submit answer</>}
+                  {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Coaching…</> : <><MessageSquareText className="mr-2 h-4 w-4" /> Submit answer</>}
                 </Button>
                 {currentCoaching && (
                   <Button variant="outline" onClick={() => { setAnswer(""); setCoaching((c) => { const n = { ...c }; delete n[current.number]; return n }) }}>
@@ -373,7 +397,7 @@ export default function InterviewPracticePage() {
                   <div className="mb-1 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Coaching</p>
                     {voiceMode && (
-                      <Button variant="ghost" size="sm" title="Read coaching aloud" onClick={() => void speak(currentCoaching)}>
+                      <Button variant="ghost" size="sm" title="Read coaching aloud" onClick={() => void voice.speak(currentCoaching)}>
                         <Volume2 className="h-4 w-4" />
                       </Button>
                     )}
