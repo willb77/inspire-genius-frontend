@@ -198,7 +198,7 @@ export default function InterviewPracticePage() {
     try {
       if (kind === "save") {
         await saveInterviewToDocuments(session())
-        toast.success("Saved to My Documents.")
+        toast.success("Saved to your Document Library.")
       } else {
         await downloadInterview(session(), kind)
       }
