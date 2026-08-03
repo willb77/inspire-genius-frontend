@@ -1,3 +1,40 @@
+## [2026-08-03] — Documents page heading renamed to "Document Library"
+
+Frontend PR **#350** (`willb77/inspire-genius-frontend`), merged as
+**`9b08e5d`**; CI/CD deploys to **dev + staging-b** in the same run.
+
+### Changed — the page now agrees with the menu
+- #348 renamed the My Workspace entry to "Document Library", but the page it
+  landed on still read **"Documents Uploaded"** — menu and destination
+  disagreed. Both now read "Document Library".
+- Renamed in **BOTH** surfaces, not just the shipping one:
+  - `DocumentsV2` — what renders in every deployed environment
+    (`VITE_NEW_USER_SURFACES=true` in CI)
+  - `Documents` — the legacy surface, still reachable behind the toggle
+  - Leaving the legacy page behind would have made the page's name depend on
+    which surface variant a user happened to get.
+  - Files: `src/pages/user/DocumentsV2.tsx`, `src/pages/user/Documents.tsx`
+
+### Added — coverage gap found on the way
+- **`DocumentsV2` had no test file at all**, so the heading of the surface
+  that actually ships was completely unguarded. Added a case to the existing
+  `Documents` suite rather than duplicating its substantial mock setup
+  (axios, layout, six hooks, five components) into a new file.
+  - Files: `src/pages/user/__tests__/Documents.test.tsx`
+
+### Unchanged
+- The subtitle "Upload documents to access them in the chat." — it describes
+  what the page *does*, not what it is *called*.
+
+### Verified
+Both heading assertions **proven non-vacuous by reverting the source change**
+(one fails per surface). Full suite **539 suites / 4244 tests green** (+1).
+Clean `tsc` + `vite` build. Lint on touched files **identical to baseline by
+message** — 14 pre-existing `any` casts in the test mocks; line numbers shift
+because of the added import, so the comparison ignores position rather than
+reporting false positives. **Rendered in Chrome** via dev quick-login:
+heading reads "Document Library", matching the sidebar entry.
+
 ## [2026-08-03] — Document Library restored to the My Workspace menu
 
 Frontend PR **#348** (`willb77/inspire-genius-frontend`), merged as
