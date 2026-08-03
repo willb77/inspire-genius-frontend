@@ -74,9 +74,56 @@ export type SummitGoal = {
   status: SummitGoalStatus
 }
 
+export type SummitWhyRoot = { stated_goal: string; root: string }
+
 export type SummitSession = {
   version: number
   categories: Record<string, SummitCategory>
   goals: SummitGoal[]
-  why_roots?: { stated_goal: string; root: string }[]
+  why_roots?: SummitWhyRoot[]
+}
+
+/**
+ * The three structured interview calls.
+ *
+ * These are deliberately NOT chat. The interview is deterministic — the client
+ * always knows which category it is on and which rung of the WHY ladder it has
+ * reached — so it drives `/ask`, `/why-ladder` and `/synthesize` directly.
+ * Routing the same thing through free-text chat and inferring intent would
+ * reintroduce exactly the ambiguity these routes exist to remove.
+ */
+
+/** POST /ask — the thread of questions for one discovery category. */
+export type SummitAskResponse = {
+  category: SummitCategoryKey | string
+  label: string
+  /** One warm sentence opening the topic. May be "". */
+  intro: string
+  /** 3–4 open questions. The backend caps at 5. */
+  questions: string[]
+}
+
+/**
+ * POST /why-ladder — one rung.
+ *
+ * `is_root` is the terminator. The backend hard-caps the ladder at 5 rungs and
+ * forces `is_root` at the cap, so a client loop on `!is_root` always ends — but
+ * the UI counts rungs anyway, because trusting a remote loop bound to be
+ * enforced remotely is how you get an interrogation.
+ */
+export type SummitWhyResponse = {
+  is_root: boolean
+  /** The next "why" question. "" once `is_root`. */
+  question: string
+  /** The underlying motivation. "" until `is_root`. */
+  root: string
+}
+
+/** One rung as the ladder endpoint wants it echoed back. */
+export type SummitWhyExchange = { question: string; answer: string }
+
+/** POST /synthesize — captured answers become structured goals. */
+export type SummitSynthesizeResponse = {
+  goals: SummitGoal[]
+  session: SummitSession
 }

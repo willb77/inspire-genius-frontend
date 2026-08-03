@@ -1,5 +1,15 @@
 import { getApi } from "@/lib/agentApi"
-import type { SummitGoal, SummitSession } from "@/types/summit"
+import type {
+  SummitAnswer,
+  SummitAskResponse,
+  SummitCategoryKey,
+  SummitCategoryStatus,
+  SummitGoal,
+  SummitSession,
+  SummitSynthesizeResponse,
+  SummitWhyExchange,
+  SummitWhyResponse,
+} from "@/types/summit"
 
 /**
  * Summit's live goal store.
@@ -47,4 +57,78 @@ export async function patchGoal(
 /** DELETE /{goal_id} — 204 on success, 404 if it was already gone. */
 export async function deleteGoal(goalId: string) {
   await getApi().delete(`${PREFIX}/${goalId}`)
+}
+
+// ─── The interview ──────────────────────────────────────────────────────
+//
+// Three structured calls, driven directly rather than through chat. The client
+// knows the category and the rung at every point, so there is nothing for
+// intent classification to get wrong. These existed and worked on the backend
+// long before anything called them — the interview was built and never driven.
+
+/**
+ * POST /ask — the question thread for one discovery category.
+ *
+ * The backend personalises to the caller's PRISM profile and to whatever they
+ * have already answered in this category, so re-asking a partly-explored
+ * category continues rather than repeats.
+ */
+export async function askCategory(category: SummitCategoryKey | string) {
+  const { data } = await getApi().post<SummitAskResponse>(`${PREFIX}/ask`, {
+    category,
+  })
+  return data
+}
+
+/**
+ * POST /why-ladder — the next "why", or the root.
+ *
+ * Stateless: the whole ladder so far goes up on every call, and the backend
+ * decides whether we have bottomed out. When it says we have, it also persists
+ * the root against the stated goal so synthesis can use it as the motivation.
+ */
+export async function whyLadder(
+  statedGoal: string,
+  exchanges: SummitWhyExchange[] = []
+) {
+  const { data } = await getApi().post<SummitWhyResponse>(
+    `${PREFIX}/why-ladder`,
+    { stated_goal: statedGoal, exchanges }
+  )
+  return data
+}
+
+/**
+ * POST /discovery/{category} — bank the answers for a category.
+ *
+ * Answers are appended, so this must be called once per category with the
+ * answers gathered in that pass — calling it again with the same payload
+ * duplicates them.
+ */
+export async function saveDiscovery(
+  category: SummitCategoryKey | string,
+  body: { answers: SummitAnswer[]; summary?: string; status?: SummitCategoryStatus }
+) {
+  const { data } = await getApi().post<SummitSession>(
+    `${PREFIX}/discovery/${category}`,
+    body
+  )
+  return data
+}
+
+/**
+ * POST /synthesize — captured answers + PRISM become structured goals.
+ *
+ * Goals the person has acted on are preserved; prior unconfirmed proposals are
+ * replaced. Returns both the fresh goals and the whole updated session, so the
+ * caller can seed the cache instead of re-reading.
+ *
+ * Returns no goals when nothing has been captured — that is the backend saying
+ * "there is nothing to synthesise yet", not a failure.
+ */
+export async function synthesizeGoals() {
+  const { data } = await getApi().post<SummitSynthesizeResponse>(
+    `${PREFIX}/synthesize`
+  )
+  return data
 }
