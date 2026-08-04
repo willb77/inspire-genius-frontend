@@ -108,6 +108,13 @@
     "quickSelfPortrait": "自画像",
     "quickTodaysPrep": "今日准备",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} 未对你的账户启用"
+    "quickActionLocked": "{{name}} 未对你的账户启用",
+    "quickMyJourney": "我的旅程",
+    "yourMaterial": "你的材料",
+    "prismReport": "PRISM 报告",
+    "openingDocument": "正在打开文档…",
+    "docOpenFailed": "无法打开该文档。它可能仍在处理中。",
+    "noInlinePreview": "此文件类型无法在此预览。请在新标签页中打开。",
+    "openInNewTab": "在新标签页中打开"
   }
 }

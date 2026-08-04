@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Autoportreti",
     "quickTodaysPrep": "Përgatitja e sotme",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} nuk është aktivizuar për llogarinë tuaj"
+    "quickActionLocked": "{{name}} nuk është aktivizuar për llogarinë tuaj",
+    "quickMyJourney": "Udhëtimi im",
+    "yourMaterial": "Materiali juaj",
+    "prismReport": "Raporti PRISM",
+    "openingDocument": "Po hapet dokumenti…",
+    "docOpenFailed": "Ai dokument nuk mund të hapej. Mund të jetë ende duke u përpunuar.",
+    "noInlinePreview": "Ky lloj skedari nuk mund të shfaqet këtu. Hapeni në një skedë të re.",
+    "openInNewTab": "Hape në skedë të re"
   }
 }

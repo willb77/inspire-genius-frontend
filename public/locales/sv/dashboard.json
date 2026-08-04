@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Självporträtt",
     "quickTodaysPrep": "Dagens förberedelse",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} är inte aktiverat för ditt konto"
+    "quickActionLocked": "{{name}} är inte aktiverat för ditt konto",
+    "quickMyJourney": "Min resa",
+    "yourMaterial": "Ditt material",
+    "prismReport": "PRISM-rapport",
+    "openingDocument": "Öppnar dokument…",
+    "docOpenFailed": "Dokumentet kunde inte öppnas. Det kanske fortfarande bearbetas.",
+    "noInlinePreview": "Den här filtypen kan inte förhandsgranskas här. Öppna den i en ny flik i stället.",
+    "openInNewTab": "Öppna i ny flik"
   }
 }
