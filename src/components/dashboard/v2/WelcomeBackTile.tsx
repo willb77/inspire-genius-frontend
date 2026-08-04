@@ -50,14 +50,6 @@ export interface WelcomeBackQuickAction {
   icon: LucideIcon;
 }
 
-/** An uploaded profile document, surfaced as a link under the PRISM line. */
-export interface WelcomeBackMaterial {
-  id: string;
-  label: string;
-  fileName?: string;
-  contentType?: string;
-}
-
 interface WelcomeBackTileProps {
   displayName: string;
   lastTopic?: string;
@@ -68,10 +60,6 @@ interface WelcomeBackTileProps {
   onRequestAssessment: () => void;
   /** Opens the stored PRISM report in a viewer modal. */
   onViewReportPdf: () => void;
-  /** Other profile material the user has uploaded (resume, bio, …). */
-  profileMaterial?: WelcomeBackMaterial[];
-  /** Opens one piece of profile material in the viewer modal. */
-  onOpenDocument?: (doc: WelcomeBackMaterial) => void;
   assessments: WelcomeBackAssessment[];
   personalInfo: WelcomeBackPersonalInfo[];
   onAddAssessment?: (name: string) => void;
@@ -351,8 +339,6 @@ export function WelcomeBackTile({
   prismLoading = false,
   onRequestAssessment,
   onViewReportPdf,
-  profileMaterial = [],
-  onOpenDocument,
   assessments,
   personalInfo,
   onAddAssessment,
@@ -459,38 +445,12 @@ export function WelcomeBackTile({
         </div>
       ) : null}
 
-      {/* 5. Other uploaded profile material, each opening in a viewer modal.
-          Sits under the PRISM line because it answers the same question — "what
-          do you already hold about me?" — and was previously unreachable from
-          Home once uploaded. */}
-      {profileMaterial.length > 0 && (
-        <div className="mt-2" data-testid="homev2-profile-material">
-          <span className="text-[12px] font-medium uppercase tracking-wide text-[#7C93B5]">
-            {t("homeV2.yourMaterial", { defaultValue: "Your material" })}
-          </span>
-          <ul className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-            {profileMaterial.map((doc) => (
-              <li key={doc.id} className="flex min-w-0 items-center gap-1.5">
-                <FileText
-                  className="size-3.5 shrink-0 text-[#7C93B5]"
-                  aria-hidden="true"
-                />
-                <button
-                  type="button"
-                  onClick={() => onOpenDocument?.(doc)}
-                  data-testid={`homev2-material-${doc.id}`}
-                  title={doc.fileName ?? doc.label}
-                  className="min-w-0 truncate text-[13px] font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
-                >
-                  {doc.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* 6. Quick actions. */}
+      {/* 5. Quick actions.
+          The "Your material" list that used to sit here — every uploaded
+          résumé/bio rendered as a link — was removed on request. Uploaded
+          material is still reachable from the Personal Info dropdown below and
+          from the Documents surface; nothing became unreachable, the Home tile
+          just stopped listing files. */}
       {(quickActions.length > 0 || videos.length > 0) && (
         <QuickActions actions={quickActions} videos={videos} />
       )}
