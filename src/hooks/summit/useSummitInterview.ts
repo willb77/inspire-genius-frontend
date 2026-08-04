@@ -377,6 +377,10 @@ export function useSummitInterview({
   }, [busy, phase, push, qc, openCategory, session])
 
   const categoryKey = categoryRef.current
+  // Where this area sits in the run of five, 1-based. 0 when no area is open.
+  const categoryNumber = categoryKey
+    ? SUMMIT_CATEGORY_KEYS.indexOf(categoryKey) + 1
+    : 0
   return {
     turns,
     phase,
@@ -386,6 +390,15 @@ export function useSummitInterview({
     /** 1-based position within the current category's questions. */
     questionNumber: qIndexRef.current + 1,
     questionCount: questionsRef.current.length,
+    /** 1-based position of the open area among the five. 0 when none is open. */
+    categoryNumber,
+    /** How many areas the interview covers in total. Fixed at five. */
+    categoryTotal: SUMMIT_CATEGORY_KEYS.length,
+    /** Questions still unanswered in the open area, including the current one. */
+    questionsRemaining: Math.max(
+      0,
+      questionsRef.current.length - qIndexRef.current
+    ),
     /** How many rungs of the ladder have been climbed. */
     ladderRung: exchangesRef.current.length,
     statedGoal: statedGoalRef.current,
