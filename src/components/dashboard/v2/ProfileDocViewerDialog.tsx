@@ -16,6 +16,23 @@ export interface ViewableDoc {
   label: string;
   fileName?: string;
   contentType?: string;
+  /**
+   * A ready-made URL to render, skipping the `getDownloadUrl` lookup.
+   *
+   * Used by the PRISM report, which is generated on demand rather than stored:
+   * there is no document row to look up, and the URL comes back from the same
+   * call that built the file. Without this the dialog would have to invent an
+   * id for something that does not exist in the documents table.
+   */
+  url?: string;
+  /**
+   * The document is still being generated. Lets a caller open the dialog on
+   * click and fill it in when the file is ready, rather than leaving the button
+   * looking inert for the second or two the render takes.
+   */
+  pending?: boolean;
+  /** Generation failed. Shows the same honest error as a failed lookup. */
+  failed?: boolean;
 }
 
 interface ProfileDocViewerDialogProps {
@@ -58,6 +75,27 @@ export function ProfileDocViewerDialog({
     if (!doc) {
       setUrl(null);
       setError(false);
+      return;
+    }
+    // Still being generated — hold the dialog in its loading state.
+    if (doc.pending) {
+      setUrl(null);
+      setError(false);
+      setLoading(true);
+      return;
+    }
+    if (doc.failed) {
+      setUrl(null);
+      setError(true);
+      setLoading(false);
+      return;
+    }
+    // A doc that arrives with its own URL is already resolved — generated on
+    // demand rather than stored, so there is nothing to look up.
+    if (doc.url) {
+      setUrl(doc.url);
+      setError(false);
+      setLoading(false);
       return;
     }
     let cancelled = false;

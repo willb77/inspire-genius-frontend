@@ -27,7 +27,7 @@ import {
   ProfileDocViewerDialog,
   type ViewableDoc,
 } from "@/components/dashboard/v2/ProfileDocViewerDialog";
-import { useProfileMaterial } from "@/hooks/documents/useProfileMaterial";
+import { generatePrismReport } from "@/services/documents/prismReport.service";
 import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
@@ -247,11 +247,6 @@ export default function HomeV2() {
     [personalSet, hasReport],
   );
 
-  // Other uploaded profile material (resume, bio, …) surfaced as links under
-  // the PRISM line. Previously these were write-only: you could upload them but
-  // never open one again from Home.
-  const { data: profileMaterial } = useProfileMaterial();
-
   // Route into the Meridian chat. When a prompt is supplied (typed ask or a
   // starter question) it is prefilled into the composer and auto-submitted so
   // the user lands on a live response; with no prompt we just open the chat.
@@ -265,16 +260,37 @@ export default function HomeV2() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  // "View Inventory PDF" now opens the stored report in a modal rather than
-  // navigating to the assessment page, which is where it used to land and which
-  // did not show the report at all.
-  const openPrismReport = (): void => {
-    if (!latestPrism?.document_id) return;
-    setViewDoc({
-      id: latestPrism.document_id,
-      label: t("homeV2.prismReport", { defaultValue: "PRISM Report" }),
-      fileName: latestPrism.file_name,
-    });
+  /**
+   * "View Inventory PDF" — build the report, then show it.
+   *
+   * It used to open the *stored* PRISM document. For anyone whose PRISM arrived
+   * by import that document is a synthesised `text/csv` row at an S3 key with
+   * no object behind it, so the viewer said "this file type can't be previewed
+   * here" and the new-tab fallback 404'd. Both confirmed on dev.
+   *
+   * Now it asks the backend to render the report (the Self-Portrait, through
+   * the shared docgen engine) and passes the returned URL straight to the
+   * viewer. Generated per click rather than cached — the URL is presigned and
+   * short-lived, and a dead link is exactly what this replaced.
+   */
+  const openPrismReport = async (): Promise<void> => {
+    const label = t("homeV2.prismReport", { defaultValue: "PRISM Report" });
+    // Show the dialog immediately in its loading state. Generation takes a
+    // moment, and a button that looks inert until a document appears reads as
+    // broken — which is the impression this whole path is fixing.
+    setViewDoc({ id: "prism-report", label, pending: true });
+    try {
+      const report = await generatePrismReport("pdf");
+      setViewDoc({
+        id: "prism-report",
+        label,
+        fileName: report.fileName,
+        contentType: report.contentType,
+        url: report.downloadUrl,
+      });
+    } catch {
+      setViewDoc({ id: "prism-report", label, failed: true });
+    }
   };
 
   // Add an assessment → open the inline upload/ingest modal for that framework.
@@ -318,9 +334,7 @@ export default function HomeV2() {
             reportFileName={latestPrism?.file_name}
             prismLoading={prismLoading}
             onRequestAssessment={goToAssessment}
-            onViewReportPdf={openPrismReport}
-            profileMaterial={profileMaterial}
-            onOpenDocument={(doc) => setViewDoc(doc)}
+            onViewReportPdf={() => { void openPrismReport(); }}
             assessments={assessments}
             personalInfo={personalInfo}
             onAddAssessment={openAddAssessment}
