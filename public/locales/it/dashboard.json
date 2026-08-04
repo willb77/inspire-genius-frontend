@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Autoritratto",
     "quickTodaysPrep": "Preparazione di oggi",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} non è abilitato per il tuo account"
+    "quickActionLocked": "{{name}} non è abilitato per il tuo account",
+    "quickMyJourney": "Il mio percorso",
+    "yourMaterial": "Il tuo materiale",
+    "prismReport": "Report PRISM",
+    "openingDocument": "Apertura del documento…",
+    "docOpenFailed": "Impossibile aprire il documento. Potrebbe essere ancora in elaborazione.",
+    "noInlinePreview": "Questo tipo di file non può essere visualizzato qui. Aprilo in una nuova scheda.",
+    "openInNewTab": "Apri in una nuova scheda"
   }
 }
