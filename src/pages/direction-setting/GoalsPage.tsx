@@ -1,6 +1,5 @@
-import { useNavigate } from "react-router-dom"
+import { useEffect } from "react"
 import {
-  ArrowRight,
   Check,
   CornerDownRight,
   Heart,
@@ -9,30 +8,31 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ROUTES } from "@/constants/routes"
 import { useAdvanceJourney, useJourney } from "@/hooks/direction-setting/useJourney"
+import { useGoalSession } from "@/hooks/summit/useGoalSession"
+import GoalInterviewPanel from "@/components/direction-setting/GoalInterviewPanel"
 import type { StageState } from "@/types/direction-setting"
 
 /**
  * Stage 5 — "What do I actually want?"
  *
- * **This page is a door, not an engine.** The goal interview already exists and
- * already works: Summit (the `GoalAgent`) runs it at `/summit/*` against the
- * live `/v1/agents/goals/*` endpoints — five-category discovery, the WHY ladder,
- * synthesis into goals. That surface is a full-screen three-column shell with
- * its own sub-nav and its own Meridian chat panel, so it cannot be embedded in
- * a Direction Setting page without either forking it or gutting it.
+ * **This page used to be a door.** It explained the step and sent people to
+ * `/summit/*`, and its own header argued that was correct: Summit's surface is
+ * a three-column shell with its own sub-nav and chat panel, so it could not be
+ * embedded without forking or gutting it — and a second goal system would drift
+ * from the first within a release, leaving a person with two lists of goals and
+ * no idea which one counted.
  *
- * Both of those are worse than a link. A second goal system would drift from
- * the first within a release, and the person would end up with two lists of
- * goals and no idea which one counted. So this page does three honest things:
+ * That reasoning was right about the risk and wrong about the options, and it
+ * is now obsolete. The interview is no longer a surface: `useSummitInterview`
+ * is a headless state machine over `/ask`, `/why-ladder` and `/synthesize`. So
+ * the interview runs *here*, driving the same three routes against the same
+ * store. There is still exactly one list of goals — this is a second way into
+ * the same conversation, not a second conversation.
  *
- * 1. Says what the step is for, in the words of someone who is out of work and
- *    tired of being asked to "define their objectives".
- * 2. Hands off to Summit, recording the handoff on the journey so the map knows
- *    this stage is under way.
- * 3. Lets the person say when they're done, because only they can tell whether
- *    the conversation actually reached anything.
+ * And it is spoken. A goal interview is a conversation, and typing paragraphs
+ * about why your job is going nowhere is a different and worse activity than
+ * saying it out loud. Voice leads; text is one toggle away.
  *
  * The one thing worth defending in the copy: Summit does not collect
  * intentions. The WHY ladder walks each stated goal down — up to five rungs,
@@ -75,8 +75,8 @@ function StageBadge({ state }: { state: StageState }) {
 }
 
 export default function GoalsPage() {
-  const navigate = useNavigate()
   const { data: journey, isLoading, isError } = useJourney()
+  const { data: session } = useGoalSession()
   const advance = useAdvanceJourney()
 
   // Absent journey (still loading, or the fetch failed) is treated as
@@ -85,21 +85,37 @@ export default function GoalsPage() {
   // the journey row, and refusing to render it because a progress marker failed
   // to load would be the wrong trade.
   const state: StageState = journey?.stageStatus?.[STAGE_ID] ?? "not_started"
-  const started = state === "in_progress" || state === "complete"
+  const goals = session?.goals ?? []
 
   /**
-   * Hand off to Summit, recording the start on the way out.
+   * Mark the stage under way as soon as the interview actually starts.
    *
    * Fire-and-forget on purpose: the interview is the point, and making someone
-   * wait on a progress write before they can reach it would be spending their
-   * patience on our bookkeeping. If the write fails the worst case is the map
-   * still says "not started", which the person can correct below.
+   * wait on a progress write would be spending their patience on our
+   * bookkeeping. If the write fails the worst case is the map still says "not
+   * started", which the person can correct below.
    */
-  const openSummit = (to: string) => {
-    if (state === "not_started") {
-      advance.mutate({ stageId: STAGE_ID, state: "in_progress" })
+  useEffect(() => {
+    if (state === "not_started" && goals.length === 0) return
+    if (state !== "not_started") return
+    advance.mutate({ stageId: STAGE_ID, state: "in_progress" })
+    // `advance` is a stable mutation object; re-running on its identity would
+    // re-post the same write.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, goals.length])
+
+  /**
+   * Goals came back — the stage has produced its artefact, so record it.
+   *
+   * This is what stage 5 exists to produce, and recording it here is what lets
+   * the journey map move someone on to job matches without them having to
+   * remember to press a button. They can still mark it done by hand below; this
+   * just stops the common case depending on that.
+   */
+  const onGoalsSynthesised = (count: number) => {
+    if (count > 0 && state !== "complete") {
+      advance.mutate({ stageId: STAGE_ID, state: "complete" })
     }
-    navigate(to)
   }
 
   const markDone = () => {
@@ -120,39 +136,41 @@ export default function GoalsPage() {
         </p>
       </header>
 
-      {/* The handoff. Everything below this card is context for it. */}
-      <Card className="border-primary/30 bg-primary/[0.03]">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Mountain className="h-4 w-4 text-primary" aria-hidden />
-            {started ? "Pick up where you left off" : "Start the conversation"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            The goal interview lives in Summit, which is a room of its own — a
-            sub-nav down the side and Summit itself on the right to talk to. It
-            opens in this same app, and this step stays exactly where it is when
-            you come back.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              onClick={() => openSummit(ROUTES.SUMMIT.DISCOVERY)}
-            >
-              {started ? "Continue the goal interview" : "Start the goal interview"}
-              <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => openSummit(ROUTES.SUMMIT.GOALS)}
-            >
-              See the goals I have so far
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* The interview itself. It used to be a link to Summit; it is now the
+          conversation, in place. */}
+      <GoalInterviewPanel onGoalsSynthesised={onGoalsSynthesised} />
+
+      {/* Goals already banked. Reached without leaving the step, because the
+          previous version sent people to a different room to look at them and
+          they did not always come back. */}
+      {goals.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Mountain className="h-4 w-4 text-primary" aria-hidden />
+              The goals you have so far
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {goals.map((goal) => (
+                <li key={goal.goal_id} className="border-l-2 border-primary/40 pl-3">
+                  <p className="text-sm font-medium">{goal.title}</p>
+                  {/* The motivation is the WHY-ladder root. It is the whole
+                      point of the interview, so it is shown with the goal
+                      rather than hidden behind a detail view. */}
+                  {goal.motivation && (
+                    <p className="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <Heart className="mt-0.5 h-3 w-3 shrink-0 text-amber-600" aria-hidden />
+                      {goal.motivation}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Why this step is not a list of new year's resolutions. */}
       <Card>
