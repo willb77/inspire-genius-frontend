@@ -1,21 +1,19 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { NavLink, Outlet } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
 import { DIRECTION_SETTING_TOOLS } from "@/constants/vertical-subnav"
 
 /**
- * In-vertical navigation for Direction Setting, plus a signposted way back out.
+ * In-vertical navigation for Direction Setting.
  *
  * Rendered from a pathless layout route (see `routes.tsx`) rather than from a
  * shared header component: the nav needs auth + entitlement context, and putting
  * it in a presentational header couples pure components to data-fetching — that
  * mistake broke every Job-Fit page test when it was tried there.
  *
- * The "switch to" list is registry-driven and entitlement-filtered, so it needs
- * no edit when a vertical is added, and it excludes Direction Setting itself —
- * the point of the control is leaving.
+ * 2026-08-04 — the "Back to Inspire Genius / or switch to …" vertical-switcher
+ * row was removed at the user's request; the pages below now sit higher on the
+ * screen. Leaving a vertical is done from the left sidebar (My Workspace + the
+ * Tools rollup), so the on-page switcher was redundant with it.
  */
 
 // The same list the sidebar renders inside the vertical — see
@@ -24,58 +22,30 @@ import { DIRECTION_SETTING_TOOLS } from "@/constants/vertical-subnav"
 const TOOLS = DIRECTION_SETTING_TOOLS
 
 export function DirectionSettingNav() {
-  const navigate = useNavigate()
-  const { data: enabled } = useEnabledVerticals()
-  const others = listEntitledVerticals(enabled ?? []).filter(
-    (v) => v.key !== "direction-setting"
-  )
-
   return (
-    <div className="mb-6 space-y-3">
-      <nav aria-label="Direction Setting" className="flex flex-wrap gap-1.5">
-        {TOOLS.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end
-            className={({ isActive }) =>
-              cn(
-                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                isActive
-                  ? "border-primary bg-primary/10 font-medium text-primary"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/50"
-              )
-            }
-          >
-            <Icon className="h-4 w-4" aria-hidden />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/home")}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
-          Back to Inspire Genius
-        </Button>
-        {others.length > 0 && (
-          <>
-            <span className="text-xs text-muted-foreground">or switch to</span>
-            {others.map((v) => (
-              <Button
-                key={v.key}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(v.homePath)}
-              >
-                {v.title}
-              </Button>
-            ))}
-          </>
-        )}
-      </div>
-    </div>
+    <nav
+      aria-label="Direction Setting"
+      className="mb-6 flex flex-wrap gap-1.5"
+    >
+      {TOOLS.map(({ to, icon: Icon, label }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end
+          className={({ isActive }) =>
+            cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors",
+              isActive
+                ? "border-primary bg-primary/10 font-medium text-primary"
+                : "border-border bg-background text-muted-foreground hover:border-primary/50"
+            )
+          }
+        >
+          <Icon className="h-4 w-4" aria-hidden />
+          {label}
+        </NavLink>
+      ))}
+    </nav>
   )
 }
 

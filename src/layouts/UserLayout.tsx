@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
+import { BookOpenText } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { getUserNavItems, SUPER_ADMIN_NAV_SECTIONS } from "@/constants/navigation";
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
-import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
+import type { NavItemDef, NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 // AlexFloating retired (monolith sunset): its device-id call hit the deprecated
 // monolith route GET /v1/chat/AlexChat/device-id, which 404s + fails CORS on the
 // API Gateway. The floating Alex assistant is no longer rendered.
@@ -37,13 +38,21 @@ export default function UserLayout({
   // Full vertical catalogue; unentitled entries render greyed + non-navigating.
   const launcherSection = useVerticalLauncherSection();
 
+  // Bio Capture lives in the "Tools" rollup (moved out of the flat workspace
+  // menu 2026-08-04). It is not a vertical, so it is spliced in at the top of the
+  // Tools section rather than coming from the registry-driven launcher.
+  const bioCaptureToolItem: NavItemDef = useMemo(
+    () => ({ to: ROUTES.BIO_CAPTURE, icon: BookOpenText, label: "Bio Capture" }),
+    [],
+  );
+
   const verticalsSection: NavSectionDef[] = useMemo(
     () =>
       launcherSection
         ? [
             {
               label: launcherSection.label,
-              items: launcherSection.items,
+              items: [bioCaptureToolItem, ...launcherSection.items],
               // Honour the section's own default (rolled up as of 2026-07-31)
               // rather than forcing it open here — otherwise the roll-up set in
               // useVerticalLauncher applies on vertical pages but not on user
@@ -53,7 +62,7 @@ export default function UserLayout({
             },
           ]
         : [],
-    [launcherSection],
+    [launcherSection, bioCaptureToolItem],
   );
 
   /** Plain user: the flat workspace menu as a header-less group, with the
