@@ -157,3 +157,57 @@ describe("HomeV2", () => {
     });
   });
 });
+
+// ── 2026-08-03 layout changes ──────────────────────────────────────────────
+describe("HomeV2 — 2026-08-03 changes", () => {
+  it("no longer renders the completion gauge", () => {
+    wrap();
+    expect(screen.queryByText(/Complete profile/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("no longer renders the standalone Direction Setting card", () => {
+    // The card rendered its own heading; My Journey replaced it. Entitlement is
+    // granted here so a surviving card would actually render and fail this.
+    mockEnabledVerticals.mockReturnValue({
+      data: ["lumen", "job-fit", "direction-setting"],
+    });
+    wrap();
+    expect(screen.queryByTestId("quick-direction-card")).not.toBeInTheDocument();
+  });
+
+  it("renders My Journey between Today's Prep and Job Fit", () => {
+    mockEnabledVerticals.mockReturnValue({
+      data: ["lumen", "job-fit", "direction-setting"],
+    });
+    wrap();
+
+    // Assert the destination, not the label: i18n resolves to the key under
+    // test, which is why every other quick-action test here checks href too.
+    const journey = screen.getByTestId("homev2-quick-my-journey");
+    expect(journey).toHaveAttribute(
+      "href",
+      "/vertical/direction-setting/journey",
+    );
+
+    // Order matters — the ask was for it to sit *between* these two.
+    const row = screen.getByTestId("homev2-quick-actions");
+    const keys = Array.from(
+      row.querySelectorAll("[data-testid^='homev2-quick-']"),
+    ).map((el) => el.getAttribute("data-testid"));
+    expect(keys.indexOf("homev2-quick-my-journey")).toBeGreaterThan(
+      keys.indexOf("homev2-quick-moments"),
+    );
+    expect(keys.indexOf("homev2-quick-my-journey")).toBeLessThan(
+      keys.indexOf("homev2-quick-job-fit"),
+    );
+  });
+
+  it("shows My Journey greyed when the vertical isn't entitled", () => {
+    mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
+    wrap();
+    const journey = screen.getByTestId("homev2-quick-my-journey");
+    expect(journey).toHaveAttribute("aria-disabled", "true");
+    expect(journey).not.toHaveAttribute("href");
+  });
+});

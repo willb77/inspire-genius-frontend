@@ -50,6 +50,14 @@ export interface WelcomeBackQuickAction {
   icon: LucideIcon;
 }
 
+/** An uploaded profile document, surfaced as a link under the PRISM line. */
+export interface WelcomeBackMaterial {
+  id: string;
+  label: string;
+  fileName?: string;
+  contentType?: string;
+}
+
 interface WelcomeBackTileProps {
   displayName: string;
   lastTopic?: string;
@@ -58,8 +66,12 @@ interface WelcomeBackTileProps {
   reportFileName?: string;
   prismLoading?: boolean;
   onRequestAssessment: () => void;
+  /** Opens the stored PRISM report in a viewer modal. */
   onViewReportPdf: () => void;
-  profilePercent: number;
+  /** Other profile material the user has uploaded (resume, bio, …). */
+  profileMaterial?: WelcomeBackMaterial[];
+  /** Opens one piece of profile material in the viewer modal. */
+  onOpenDocument?: (doc: WelcomeBackMaterial) => void;
   assessments: WelcomeBackAssessment[];
   personalInfo: WelcomeBackPersonalInfo[];
   onAddAssessment?: (name: string) => void;
@@ -339,7 +351,8 @@ export function WelcomeBackTile({
   prismLoading = false,
   onRequestAssessment,
   onViewReportPdf,
-  profilePercent,
+  profileMaterial = [],
+  onOpenDocument,
   assessments,
   personalInfo,
   onAddAssessment,
@@ -348,7 +361,6 @@ export function WelcomeBackTile({
   videos = [],
 }: WelcomeBackTileProps): JSX.Element {
   const { t } = useTranslation("dashboard");
-  const pct = Math.max(0, Math.min(100, Math.round(profilePercent)));
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
@@ -447,35 +459,38 @@ export function WelcomeBackTile({
         </div>
       ) : null}
 
-      {/* 5. Complete-profile progress */}
-      <div className="mt-5">
-        <div className="mb-1.5 flex items-baseline justify-between gap-3">
-          <span className="text-[14px] font-medium text-[#0B1B33]">
-            {t("homeV2.completeProfile", {
-              defaultValue: "Complete profile ({{pct}}%)",
-              pct,
-            })}
+      {/* 5. Other uploaded profile material, each opening in a viewer modal.
+          Sits under the PRISM line because it answers the same question — "what
+          do you already hold about me?" — and was previously unreachable from
+          Home once uploaded. */}
+      {profileMaterial.length > 0 && (
+        <div className="mt-2" data-testid="homev2-profile-material">
+          <span className="text-[12px] font-medium uppercase tracking-wide text-[#7C93B5]">
+            {t("homeV2.yourMaterial", { defaultValue: "Your material" })}
           </span>
-          <span className="font-serif text-[24px] leading-none text-[#0B1B33]">{pct}%</span>
+          <ul className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+            {profileMaterial.map((doc) => (
+              <li key={doc.id} className="flex min-w-0 items-center gap-1.5">
+                <FileText
+                  className="size-3.5 shrink-0 text-[#7C93B5]"
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  onClick={() => onOpenDocument?.(doc)}
+                  data-testid={`homev2-material-${doc.id}`}
+                  title={doc.fileName ?? doc.label}
+                  className="min-w-0 truncate text-[13px] font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
+                >
+                  {doc.label}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div
-          className="h-2.5 w-full overflow-hidden rounded-full bg-[rgba(11,27,51,0.08)]"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={t("homeV2.completeProfileAria", {
-            defaultValue: "Complete profile",
-          })}
-        >
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[#E8932B] to-[#5B8A72] transition-[width] duration-300"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
+      )}
 
-      {/* 6. Quick actions — directly under the gauge. */}
+      {/* 6. Quick actions. */}
       {(quickActions.length > 0 || videos.length > 0) && (
         <QuickActions actions={quickActions} videos={videos} />
       )}

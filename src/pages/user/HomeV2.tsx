@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Sparkles, UserRoundSearch } from "lucide-react";
+import { Briefcase, Compass, Sparkles, UserRoundSearch } from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
@@ -23,7 +23,11 @@ import {
   type AddAssessmentTarget,
 } from "@/components/dashboard/v2/AddAssessmentModal";
 import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
-import { QuickDirectionCard } from "@/components/dashboard/v2/QuickDirectionCard";
+import {
+  ProfileDocViewerDialog,
+  type ViewableDoc,
+} from "@/components/dashboard/v2/ProfileDocViewerDialog";
+import { useProfileMaterial } from "@/hooks/documents/useProfileMaterial";
 import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
@@ -42,17 +46,24 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  * Layout — two tiles, nothing below them:
  *   1. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter
  *      Questions (collapsed by default).
- *   2. WelcomeBackTile    — welcome + behavioral + completion gauge, then the
- *      quick-action row (Self-Portrait / Today's Prep / Job Fit / Videos) and
- *      the Personal Info + Other Assessments dropdowns.
+ *   2. WelcomeBackTile    — welcome + behavioral row + the user's uploaded
+ *      material, then the quick-action row (Self-Portrait / Today's Prep /
+ *      My Journey / Job Fit / Videos) and the Personal Info + Other
+ *      Assessments dropdowns.
  *
  * The Watch-a-Video and Recent-Activity tiles were removed; the videos survive
  * inside the quick-action row's Videos dropdown, so nothing became unreachable.
  *
- * `QuickDirectionCard` sits after those two. It is self-gating — it renders
- * null unless the user is entitled to Direction Setting AND the journey read
- * succeeds — so for everyone else the two-tile layout above is exactly what
- * renders, and a failure in a new vertical cannot clutter Home.
+ * 2026-08-03 changes:
+ *   - The completion gauge ("Complete profile N%") was removed. The two
+ *     dropdowns still show "n of m" per group, so completeness is still
+ *     legible without a headline percentage.
+ *   - The standalone QuickDirectionCard was removed and Direction Setting is
+ *     now reached from the "My Journey" quick action, which sits between
+ *     Today's Prep and Job Fit. Same destination, in the row people scan.
+ *   - Uploaded profile material is listed under the PRISM line and opens in a
+ *     viewer modal, as does "View Inventory PDF" — previously that button
+ *     navigated to the assessment page and never showed the report.
  */
 
 const VIDEOS: DashboardVideo[] = [
@@ -110,6 +121,17 @@ const QUICK_ACTIONS: {
     vertical: "lumen",
     icon: Sparkles,
   },
+  // My Journey replaces the standalone Direction Setting card that used to sit
+  // at the bottom of Home. Same destination, but it now lives in the row people
+  // actually scan instead of below the fold.
+  {
+    key: "my-journey",
+    labelKey: "homeV2.quickMyJourney",
+    defaultLabel: "My Journey",
+    to: ROUTES.DIRECTION_SETTING.JOURNEY,
+    vertical: "direction-setting",
+    icon: Compass,
+  },
   {
     key: "job-fit",
     labelKey: "homeV2.quickJobFit",
@@ -162,6 +184,7 @@ export default function HomeV2() {
   const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
+  const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
   const firstName =
     user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
   const displayName =
@@ -224,15 +247,10 @@ export default function HomeV2() {
     [personalSet, hasReport],
   );
 
-  // PRISM now lives inside personalInfo, so it is counted there — counting it
-  // again as a standalone term would over-weight it and cap the gauge below
-  // 100% for a fully-complete profile.
-  const profilePercent = useMemo(() => {
-    const items = [...assessments, ...personalInfo];
-    if (items.length === 0) return 0;
-    const doneCount = items.filter((i) => i.done).length;
-    return Math.round((doneCount / items.length) * 100);
-  }, [assessments, personalInfo]);
+  // Other uploaded profile material (resume, bio, …) surfaced as links under
+  // the PRISM line. Previously these were write-only: you could upload them but
+  // never open one again from Home.
+  const { data: profileMaterial } = useProfileMaterial();
 
   // Route into the Meridian chat. When a prompt is supplied (typed ask or a
   // starter question) it is prefilled into the composer and auto-submitted so
@@ -245,6 +263,18 @@ export default function HomeV2() {
 
   const goToAssessment = (): void => {
     navigate(ROUTES.PRISM_ASSESSMENT);
+  };
+
+  // "View Inventory PDF" now opens the stored report in a modal rather than
+  // navigating to the assessment page, which is where it used to land and which
+  // did not show the report at all.
+  const openPrismReport = (): void => {
+    if (!latestPrism?.document_id) return;
+    setViewDoc({
+      id: latestPrism.document_id,
+      label: t("homeV2.prismReport", { defaultValue: "PRISM Report" }),
+      fileName: latestPrism.file_name,
+    });
   };
 
   // Add an assessment → open the inline upload/ingest modal for that framework.
@@ -288,8 +318,9 @@ export default function HomeV2() {
             reportFileName={latestPrism?.file_name}
             prismLoading={prismLoading}
             onRequestAssessment={goToAssessment}
-            onViewReportPdf={goToAssessment}
-            profilePercent={profilePercent}
+            onViewReportPdf={openPrismReport}
+            profileMaterial={profileMaterial}
+            onOpenDocument={(doc) => setViewDoc(doc)}
             assessments={assessments}
             personalInfo={personalInfo}
             onAddAssessment={openAddAssessment}
@@ -312,10 +343,15 @@ export default function HomeV2() {
             }}
           />
 
-          {/* Direction Setting — "what should I do next?". Renders null when the
-              user isn't entitled or the journey read fails, so it adds nothing
-              to Home for anyone outside the vertical. */}
-          <QuickDirectionCard />
+          {/* Direction Setting is reached from the "My Journey" quick action
+              above; the standalone card that used to sit here was removed. */}
+
+          <ProfileDocViewerDialog
+            doc={viewDoc}
+            onOpenChange={(open) => {
+              if (!open) setViewDoc(null);
+            }}
+          />
         </div>
       </div>
     </UserLayout>
