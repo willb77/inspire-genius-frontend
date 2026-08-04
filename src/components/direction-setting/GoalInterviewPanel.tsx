@@ -39,6 +39,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Bot,
   Loader2,
+  Sparkles,
   Mic,
   MicOff,
   Send,
@@ -56,7 +57,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { useTTS } from "@/hooks/useTTS"
+import { MERIDIAN_VOICE, useTTS } from "@/hooks/useTTS"
 import { useSpeechDictation } from "@/hooks/interview/useSpeechDictation"
 import { useGoalSession } from "@/hooks/summit/useGoalSession"
 import {
@@ -66,12 +67,20 @@ import {
 import { SUMMIT_CATEGORY_KEYS } from "@/types/summit"
 
 /**
- * How long a spoken answer sits in the box before it sends itself.
+ * How long the mic must go quiet before a spoken answer sends itself.
  *
- * Long enough to read it and hit cancel; short enough that the conversation
- * does not stall after every sentence.
+ * This was 2500ms and measured from the last *finalised phrase*, which is not
+ * the same thing as the person having finished. Someone asked why their job
+ * matters pauses to think mid-answer — and the timer fired on whatever had been
+ * captured so far. Combined with recognition that was not restarting after its
+ * own timeout, that is the "captures maybe a few words" report.
+ *
+ * Now it is measured from the last sign of speech of ANY kind, interim included,
+ * so thinking mid-sentence does not end the answer. Six seconds is long enough
+ * to gather a thought and short enough that the conversation does not stall;
+ * the countdown is visible and cancellable throughout, and typing overrides it.
  */
-export const AUTO_SEND_DELAY_MS = 2500
+export const AUTO_SEND_DELAY_MS = 6000
 
 export interface GoalInterviewPanelProps {
   /** Called when goals have been synthesised, with how many. */
@@ -134,13 +143,26 @@ export default function GoalInterviewPanel({
     categoryKey,
     questionNumber,
     questionCount,
+    categoryNumber,
+    categoryTotal,
+    questionsRemaining,
     start,
     answer,
     skipCategory,
     synthesise,
   } = interview
 
-  const { speak, stop: stopSpeaking, speaking } = useTTS({ voice: "coral" })
+  // Meridian's voice — the only voice the platform speaks in. `useTTS` now
+  // defaults to it, but state it here so the intent is on the page.
+  const { speak, stop: stopSpeaking, speaking } = useTTS({ voice: MERIDIAN_VOICE })
+
+  // The dictation callbacks are registered once and would otherwise close over
+  // the first render's values — reading `voiceMode` there would keep reporting
+  // whatever it was when the mic first opened.
+  const voiceModeRef = useRef(voiceMode)
+  voiceModeRef.current = voiceMode
+  const answerRef = useRef(answer)
+  answerRef.current = answer
 
   const cancelAutoSend = useCallback(() => {
     if (autoSendRef.current) {
@@ -150,25 +172,38 @@ export default function GoalInterviewPanel({
     setPendingSend(false)
   }, [])
 
+  /** Arm (or re-arm) the send countdown. Any speech at all defers it. */
+  const armAutoSend = useCallback(() => {
+    if (autoSendRef.current) clearTimeout(autoSendRef.current)
+    setPendingSend(true)
+    autoSendRef.current = setTimeout(() => {
+      autoSendRef.current = null
+      setPendingSend(false)
+      setInput((current) => {
+        const text = current.trim()
+        if (text) void answerRef.current(text)
+        return ""
+      })
+    }, AUTO_SEND_DELAY_MS)
+  }, [])
+
   const dictation = useSpeechDictation({
+    // Still speaking — push the send back. Without this, a pause to think is
+    // indistinguishable from the end of an answer.
+    onInterim: () => {
+      if (!voiceModeRef.current) return
+      if (autoSendRef.current) {
+        clearTimeout(autoSendRef.current)
+        autoSendRef.current = null
+      }
+      setPendingSend(false)
+    },
     onFinal: (chunk) => {
       // Append rather than replace: recognition emits in phrases, and a long
       // answer arrives as several finals.
       setInput((prev) => (prev ? `${prev} ${chunk}` : chunk))
-      if (!voiceMode) return
-      // Restart the countdown on every phrase, so a pause mid-sentence does not
-      // send half an answer.
-      if (autoSendRef.current) clearTimeout(autoSendRef.current)
-      setPendingSend(true)
-      autoSendRef.current = setTimeout(() => {
-        autoSendRef.current = null
-        setPendingSend(false)
-        setInput((current) => {
-          const text = current.trim()
-          if (text) void answer(text)
-          return ""
-        })
-      }, AUTO_SEND_DELAY_MS)
+      if (!voiceModeRef.current) return
+      armAutoSend()
     },
   })
 
@@ -280,6 +315,42 @@ export default function GoalInterviewPanel({
       )}
       data-testid="goal-interview"
     >
+      {/* Item 3: a person answering questions out loud cannot see how long
+          this goes on for. The five areas are fixed and knowable; the questions
+          inside one are only known once Summit has asked for them, so the
+          within-area count appears when it is real rather than being guessed
+          up front. Promising "12 questions" and then asking 17 would be worse
+          than saying nothing. */}
+      {phase !== "idle" && categoryNumber > 0 && (
+        <div className="border-b bg-muted/30 px-3 py-2" data-testid="interview-progress">
+          <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+            <span>
+              Area {categoryNumber} of {categoryTotal}
+              {categoryLabel ? ` · ${categoryLabel}` : ""}
+            </span>
+            {questionCount > 0 && phase === "question" && (
+              <span>
+                Question {Math.min(questionNumber, questionCount)} of {questionCount}
+                {questionsRemaining > 1 ? ` · ${questionsRemaining - 1} more here` : ""}
+              </span>
+            )}
+          </div>
+          <div
+            className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={categoryTotal}
+            aria-valuenow={categoryNumber}
+            aria-label={`Area ${categoryNumber} of ${categoryTotal}`}
+          >
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${(categoryNumber / categoryTotal) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2 border-b p-3">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Bot className="h-4 w-4" aria-hidden />
@@ -379,7 +450,7 @@ export default function GoalInterviewPanel({
       </div>
 
       {(phase === "question" || canSynthesise || stalled) && (
-        <div className="flex flex-wrap gap-2 border-t px-3 pt-2">
+        <div className="flex flex-col gap-2 border-t px-3 pt-2">
           {stalled && (
             <Button type="button" size="sm" className="h-7 px-2 text-[11px]" onClick={start}>
               Try again
@@ -398,15 +469,21 @@ export default function GoalInterviewPanel({
               Skip this area
             </Button>
           )}
+          {/* Item 4: this is the action the whole interview exists to reach, and
+              it was a 7px-tall ghost pill sitting beside "Skip this area" —
+              indistinguishable from the secondary controls. It now reads as the
+              primary action it is. Full width on its own row so it is not
+              competing with the skip control for the eye. */}
           {canSynthesise && (
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-[11px]"
+              size="default"
               onClick={() => void synthesise()}
+              data-testid="draft-goals"
+              className="w-full gap-2 bg-primary font-semibold shadow-sm hover:bg-primary/90"
             >
-              Draft my goals now
+              <Sparkles className="h-4 w-4" aria-hidden />
+              Draft my goals
             </Button>
           )}
         </div>

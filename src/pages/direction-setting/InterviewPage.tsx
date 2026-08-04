@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/constants/routes"
-import { useAuth } from "@/context/useAuth"
 import { useAdvanceJourney } from "@/hooks/direction-setting/useJourney"
 import { useFitMatches } from "@/hooks/job-fit/useFitMatches"
 import { useFitDetail } from "@/hooks/job-fit/useFitDetail"
@@ -216,10 +215,29 @@ function GuideSections({
   )
 }
 
+/**
+ * Sent where the recruiter surface sends a real candidate id. The backend maps
+ * this (and "", "self", "pending") onto the caller's token subject.
+ */
+const SELF_CANDIDATE = "me"
+
 export default function InterviewPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const candidateId = user?.id ?? ""
+  /**
+   * The candidate this guide is for — always the person looking at the page.
+   *
+   * `user.id` is NOT a usable subject id here. `AuthContext` seeds it to the
+   * literal string "me" (`id: stored?.id ?? "me"`), so this page was asking the
+   * backend for a candidate called "me": the generated guide was built against
+   * nobody, and the peek's `candidateId === candidateId` comparison could never
+   * match a real id, so no guide ever rendered. That is both reported symptoms
+   * — the page not loading a prep sheet, and the build button doing nothing.
+   *
+   * The backend now resolves a placeholder to the caller's own token subject,
+   * which is the only identity a self-serve user can legitimately ask about. So
+   * the honest thing to send is "this is me", not a guess at an id.
+   */
+  const candidateId = SELF_CANDIDATE
 
   const {
     data: matches,
@@ -243,14 +261,19 @@ export default function InterviewPage() {
   // header note about the missing `candidateId` on the shared GET client.
   const guide: InterviewGuide | undefined = useMemo(() => {
     if (generate.data) return generate.data
-    if (fetchedGuide && fetchedGuide.candidateId === candidateId) {
+    // The peek is trustworthy when it came back scoped to a person at all —
+    // the backend resolves our placeholder to the caller, so a guide that
+    // carries any candidate id is this caller's. Comparing it to the string we
+    // sent would never match, which is what suppressed every guide before.
+    if (fetchedGuide && fetchedGuide.candidateId) {
       return fetchedGuide
     }
     return undefined
-  }, [generate.data, fetchedGuide, candidateId])
+  }, [generate.data, fetchedGuide])
 
   const build = () => {
-    if (!jobId || !candidateId) return
+    // Only the job is genuinely required — the candidate is always the caller.
+    if (!jobId) return
     generate.mutate(
       { jobId, candidateId },
       {
