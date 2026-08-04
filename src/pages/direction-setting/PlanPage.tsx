@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   AlertTriangle,
@@ -891,6 +891,33 @@ export default function PlanPage() {
 
   const [income, setIncome] = useState("")
   const [notEarning, setNotEarning] = useState(false)
+
+  /**
+   * Build the plan on arrival instead of asking for another click.
+   *
+   * Someone who followed "My plan" from the journey map has already said what
+   * they want. Landing them on an idle page with a button that says, in effect,
+   * "did you mean it?" is a step that exists for the software's benefit rather
+   * than theirs — and it read as the page being broken, because nothing
+   * appeared.
+   *
+   * Guarded three ways so this stays a convenience and never a loop:
+   *  - only from `idle` — never re-runs a plan that is ready, waiting or failed;
+   *  - `startedRef` fires it at most once per mount, so a phase that flickers
+   *    back through idle cannot start a second job;
+   *  - a failure is left alone. `JobStates` already offers a retry, and
+   *    automatically retrying a failing job on every render is how you turn one
+   *    broken plan into a queue of them.
+   */
+  const startedRef = useRef(false)
+  useEffect(() => {
+    if (startedRef.current) return
+    if (plan.phase !== "idle" || plan.isStarting) return
+    startedRef.current = true
+    plan.start()
+    // `plan` is rebuilt every render; depending on it would re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan.phase, plan.isStarting])
 
   /**
    * `undefined` when nothing has been said, `0` when "not earning" is ticked.

@@ -48,12 +48,17 @@ jest.mock("@/hooks/useTTS", () => ({
 }))
 
 let dictationOnFinal: ((chunk: string) => void) | null = null
+let dictationOnInterim: ((chunk: string) => void) | null = null
 const mockStartListening = jest.fn()
 const mockStopListening = jest.fn()
 let dictationSupported = true
 jest.mock("@/hooks/interview/useSpeechDictation", () => ({
-  useSpeechDictation: (opts: { onFinal?: (c: string) => void }) => {
+  useSpeechDictation: (opts: {
+    onFinal?: (c: string) => void
+    onInterim?: (c: string) => void
+  }) => {
     dictationOnFinal = opts?.onFinal ?? null
+    dictationOnInterim = opts?.onInterim ?? null
     return {
       supported: dictationSupported,
       listening: false,
@@ -108,6 +113,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   dictationSupported = true
   dictationOnFinal = null
+  dictationOnInterim = null
   mockGetGoalSession.mockResolvedValue(session())
   mockAskCategory.mockResolvedValue({
     category: "personal",
@@ -161,7 +167,7 @@ describe("it is the same interview, not a second one", () => {
       await screen.findByRole("button", { name: /continue the conversation/i })
     )
     await screen.findByText("Let's talk about you outside work.")
-    await user.click(screen.getByRole("button", { name: /draft my goals now/i }))
+    await user.click(screen.getByRole("button", { name: /draft my goals/i }))
     await waitFor(() => expect(onGoalsSynthesised).toHaveBeenCalledWith(1))
   })
 })
@@ -296,5 +302,86 @@ describe("text mode is a complete alternative", () => {
     await user.click(await screen.findByRole("switch", { name: /voice mode/i }))
     await startIt(user)
     expect(mockSpeak).not.toHaveBeenCalled()
+  })
+})
+
+describe("it waits for the whole answer", () => {
+  it("defers sending while the person is still speaking", async () => {
+    // The reported symptom: "asks questions but doesn't wait for answers —
+    // captures maybe a few words". A pause mid-sentence must not end the turn.
+    jest.useFakeTimers({ doNotFake: ["performance"] })
+    try {
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+      renderPanel()
+      await user.click(await screen.findByRole("button", { name: /the conversation/i }))
+      await screen.findByText("Let's talk about you outside work.")
+
+      act(() => {
+        dictationOnFinal?.("I read a lot")
+      })
+      // Most of the way through the countdown…
+      act(() => {
+        jest.advanceTimersByTime(AUTO_SEND_DELAY_MS - 500)
+      })
+      // …then they carry on talking. That must reset it, not send.
+      act(() => {
+        dictationOnInterim?.("and I also")
+      })
+      act(() => {
+        jest.advanceTimersByTime(AUTO_SEND_DELAY_MS - 500)
+      })
+      expect(mockSaveDiscovery).not.toHaveBeenCalled()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  it("gives a person long enough to gather a thought", () => {
+    // Six seconds of silence, not two and a half. The old value fired while
+    // people were still thinking.
+    expect(AUTO_SEND_DELAY_MS).toBeGreaterThanOrEqual(5000)
+  })
+})
+
+describe("it says how far through the interview you are", () => {
+  it("shows which area you are on, out of how many", async () => {
+    const user = userEvent.setup()
+    renderPanel()
+    await startIt(user)
+    const progress = await screen.findByTestId("interview-progress")
+    expect(progress).toHaveTextContent(/Area 5 of 5/i)
+  })
+
+  it("shows the question count once the questions are real", async () => {
+    mockAskCategory.mockResolvedValue({
+      category: "personal",
+      label: "Personal Goals",
+      intro: "Let's talk about you outside work.",
+      questions: ["First?", "Second?", "Third?"],
+    })
+    const user = userEvent.setup()
+    renderPanel()
+    await startIt(user)
+    const progress = await screen.findByTestId("interview-progress")
+    expect(progress).toHaveTextContent(/Question 1 of 3/i)
+    expect(progress).toHaveTextContent(/2 more here/i)
+  })
+
+  it("shows no progress bar before the interview starts", () => {
+    renderPanel()
+    expect(screen.queryByTestId("interview-progress")).not.toBeInTheDocument()
+  })
+})
+
+describe("the draft-goals action", () => {
+  it("is the primary action, not a ghost pill beside Skip", async () => {
+    const user = userEvent.setup()
+    renderPanel()
+    await startIt(user)
+    const btn = screen.getByTestId("draft-goals")
+    // It carries the primary surface and fills its row — it was h-7 ghost-
+    // outline text-[11px], visually indistinguishable from "Skip this area".
+    expect(btn.className).toMatch(/bg-primary/)
+    expect(btn.className).toMatch(/w-full/)
   })
 })
