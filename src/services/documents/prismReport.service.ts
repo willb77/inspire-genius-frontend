@@ -46,10 +46,14 @@ interface PrismReportWire {
 }
 
 /**
- * POST /v1/documents/prism-report — build the caller's report and return a URL.
+ * POST /v1/agents/documents/prism-report — build the report, return a URL.
  *
- * `/v1/documents/*` reaches the agent-engine (verified against dev, same prefix
- * as `latest-prism`), so this goes through the standard `api` instance.
+ * **The prefix is load-bearing.** This first shipped on `/v1/documents/...`,
+ * reasoning that `latest-prism` lives there and returns 200. That inference was
+ * wrong: API Gateway maps `/v1/documents/*` to the **document-service Lambda**,
+ * so a new path added there is served by a process that does not implement it
+ * and answers 405. `POST /v1/agents/{proxy+}` → the agent-engine ALB, which is
+ * where this endpoint actually lives.
  *
  * Minted per view rather than cached: the URL expires, and handing someone a
  * dead link from a page that has been open a while is the failure mode this
@@ -58,7 +62,7 @@ interface PrismReportWire {
 export async function generatePrismReport(
   format: string = "pdf"
 ): Promise<PrismReport> {
-  const resp = await api.post("/v1/documents/prism-report", { format });
+  const resp = await api.post("/v1/agents/documents/prism-report", { format });
   // Tolerate both the bare body and an `ok()`-style envelope — this route
   // returns the former today, but reading both means an envelope added later
   // degrades to working rather than to `undefined`.
