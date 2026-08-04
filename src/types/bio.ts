@@ -159,3 +159,39 @@ export interface CaptureResponse {
   suggestedFollowups: string[]
   captured: boolean
 }
+
+/**
+ * A saved Chronicle interview session — the *conversation*, separate from the
+ * distilled narrative. Backed by `/v1/agents/bio/{id}/sessions`.
+ *
+ * `BioSessionSummary` is the light list-row (no transcript); `BioSessionDetail`
+ * adds the ordered turns so a session can be resumed. These endpoints MAY 404 in
+ * environments where the session backend has not been promoted yet — callers
+ * degrade to a local-only "unsaved" experience rather than erroring.
+ */
+export interface BioSessionTurn {
+  role: "user" | "assistant"
+  content: string
+}
+
+export interface BioSessionSummary {
+  sessionId: string
+  title: string
+  turnCount: number
+  summary: string
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface BioSessionDetail extends BioSessionSummary {
+  transcript: BioSessionTurn[]
+}
+
+/** Request body for `POST /v1/agents/bio/{id}/sessions` (create or upsert). */
+export interface SaveBioSessionRequest {
+  /** Omit to create a new session; include to update an existing one. */
+  sessionId?: string | null
+  title?: string | null
+  transcript?: BioSessionTurn[]
+  summary?: string | null
+}
