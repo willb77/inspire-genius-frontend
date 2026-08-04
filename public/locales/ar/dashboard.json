@@ -108,6 +108,13 @@
     "quickSelfPortrait": "الصورة الذاتية",
     "quickTodaysPrep": "تحضير اليوم",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} غير مُفعَّل لحسابك"
+    "quickActionLocked": "{{name}} غير مُفعَّل لحسابك",
+    "quickMyJourney": "رحلتي",
+    "yourMaterial": "موادك",
+    "prismReport": "تقرير PRISM",
+    "openingDocument": "جارٍ فتح المستند…",
+    "docOpenFailed": "تعذّر فتح هذا المستند. قد يكون قيد المعالجة.",
+    "noInlinePreview": "لا يمكن معاينة هذا النوع من الملفات هنا. افتحه في علامة تبويب جديدة.",
+    "openInNewTab": "فتح في علامة تبويب جديدة"
   }
 }

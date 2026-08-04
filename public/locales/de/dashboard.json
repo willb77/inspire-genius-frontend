@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Selbstporträt",
     "quickTodaysPrep": "Heutige Vorbereitung",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} ist für dein Konto nicht aktiviert"
+    "quickActionLocked": "{{name}} ist für dein Konto nicht aktiviert",
+    "quickMyJourney": "Meine Reise",
+    "yourMaterial": "Ihre Unterlagen",
+    "prismReport": "PRISM-Bericht",
+    "openingDocument": "Dokument wird geöffnet…",
+    "docOpenFailed": "Dieses Dokument konnte nicht geöffnet werden. Möglicherweise wird es noch verarbeitet.",
+    "noInlinePreview": "Dieser Dateityp kann hier nicht angezeigt werden. Öffnen Sie ihn in einem neuen Tab.",
+    "openInNewTab": "In neuem Tab öffnen"
   }
 }

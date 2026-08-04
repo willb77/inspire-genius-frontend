@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Autoportret",
     "quickTodaysPrep": "Przygotowanie na dziś",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} nie jest włączone dla Twojego konta"
+    "quickActionLocked": "{{name}} nie jest włączone dla Twojego konta",
+    "quickMyJourney": "Moja ścieżka",
+    "yourMaterial": "Twoje materiały",
+    "prismReport": "Raport PRISM",
+    "openingDocument": "Otwieranie dokumentu…",
+    "docOpenFailed": "Nie udało się otworzyć tego dokumentu. Może być jeszcze przetwarzany.",
+    "noInlinePreview": "Tego typu pliku nie można wyświetlić tutaj. Otwórz go w nowej karcie.",
+    "openInNewTab": "Otwórz w nowej karcie"
   }
 }

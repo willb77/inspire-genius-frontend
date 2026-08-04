@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Zelfportret",
     "quickTodaysPrep": "Voorbereiding van vandaag",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} is niet ingeschakeld voor je account"
+    "quickActionLocked": "{{name}} is niet ingeschakeld voor je account",
+    "quickMyJourney": "Mijn traject",
+    "yourMaterial": "Jouw materiaal",
+    "prismReport": "PRISM-rapport",
+    "openingDocument": "Document wordt geopend…",
+    "docOpenFailed": "Dat document kon niet worden geopend. Mogelijk wordt het nog verwerkt.",
+    "noInlinePreview": "Dit bestandstype kan hier niet worden weergegeven. Open het in een nieuw tabblad.",
+    "openInNewTab": "Openen in nieuw tabblad"
   }
 }
