@@ -35,7 +35,7 @@
  * silence, not to a broken page. Voice off is a complete, first-class way to do
  * the whole interview.
  */
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Bot,
   Loader2,
@@ -88,7 +88,14 @@ export interface GoalInterviewPanelProps {
   className?: string
 }
 
-function Turn({ turn }: { turn: InterviewTurn }) {
+function Turn({
+  turn,
+  questionNumber,
+}: {
+  turn: InterviewTurn
+  /** 1-based running number for this turn when it is an actual question. */
+  questionNumber?: number
+}) {
   const isUser = turn.role === "user"
   return (
     <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
@@ -104,21 +111,31 @@ function Turn({ turn }: { turn: InterviewTurn }) {
           <Bot className="h-4 w-4 text-primary" aria-hidden />
         )}
       </span>
-      <div
-        className={cn(
-          "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-          isUser
-            ? "whitespace-pre-wrap bg-muted"
-            : turn.kind === "root"
-              ? // The root is what the whole ladder is for. It should not scroll
-                // past looking like one more grey bubble.
-                "border border-amber-300/60 bg-amber-50 font-medium text-foreground"
-              : turn.kind === "error"
-                ? "bg-destructive/10 text-destructive"
-                : "bg-muted/50"
+      <div className={cn("max-w-[80%]", isUser && "flex flex-col items-end")}>
+        {/* Item 8: a running number on each question so the person can feel
+            progress and roughly how much is left. Only real questions are
+            numbered — intros, why-ladder follow-ups and the root are not. */}
+        {questionNumber != null && (
+          <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary/70">
+            Question {questionNumber}
+          </div>
         )}
-      >
-        {turn.text}
+        <div
+          className={cn(
+            "rounded-lg px-3 py-2 text-sm",
+            isUser
+              ? "whitespace-pre-wrap bg-muted"
+              : turn.kind === "root"
+                ? // The root is what the whole ladder is for. It should not scroll
+                  // past looking like one more grey bubble.
+                  "border border-amber-300/60 bg-amber-50 font-medium text-foreground"
+                : turn.kind === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-muted/50"
+          )}
+        >
+          {turn.text}
+        </div>
       </div>
     </div>
   )
@@ -155,6 +172,16 @@ export default function GoalInterviewPanel({
   // Meridian's voice — the only voice the platform speaks in. `useTTS` now
   // defaults to it, but state it here so the intent is on the page.
   const { speak, stop: stopSpeaking, speaking } = useTTS({ voice: MERIDIAN_VOICE })
+
+  // `speak`'s identity is NOT stable: calling it flips `useTTS` internal state
+  // (speaking/activeProvider), which re-renders and hands back a new `speak`.
+  // The speaking-queue effect below must NOT list `speak` in its deps, or that
+  // churn re-runs the effect mid-queue, its cleanup sets `cancelled = true`, and
+  // the `for` loop breaks after the FIRST turn — the classic "only the first
+  // question is spoken, the rest are silent" bug. Read `speak` through a ref so
+  // the queue always calls the latest one without depending on its identity.
+  const speakRef = useRef(speak)
+  speakRef.current = speak
 
   // The dictation callbacks are registered once and would otherwise close over
   // the first render's values — reading `voiceMode` there would keep reporting
@@ -238,7 +265,7 @@ export default function GoalInterviewPanel({
     void (async () => {
       for (const turn of pending) {
         if (cancelled || !voiceMode) break
-        await speak(turn.text)
+        await speakRef.current(turn.text)
       }
       speakingQueueRef.current = false
       if (cancelled || !voiceMode || !dictation.supported) return
@@ -253,10 +280,11 @@ export default function GoalInterviewPanel({
       cancelled = true
       speakingQueueRef.current = false
     }
-    // `dictation` is intentionally excluded — it is recreated each render and
-    // would re-run this effect (and re-speak) on every keystroke.
+    // `speak` is read through `speakRef` (its identity is unstable — see above),
+    // and `dictation` is recreated each render; listing either would re-run this
+    // effect mid-queue and drop every turn after the first.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [turns, voiceMode, speak])
+  }, [turns, voiceMode])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
@@ -307,10 +335,31 @@ export default function GoalInterviewPanel({
     ? session?.categories?.[categoryKey]?.label
     : undefined
 
+  // A running 1-based number for every actual question turn (not intros, why-
+  // ladder follow-ups or the root), so each question can show "Question N" and
+  // the header can show how many have been asked so far. Cheap to recompute:
+  // the transcript is small and this only runs when `turns` changes.
+  const questionOrdinals = useMemo(() => {
+    const map = new Map<string, number>()
+    let n = 0
+    for (const t of turns) {
+      if (t.role === "summit" && t.kind === "question") {
+        n += 1
+        map.set(t.id, n)
+      }
+    }
+    return map
+  }, [turns])
+  const askedCount = questionOrdinals.size
+
   return (
     <div
       className={cn(
-        "flex min-h-[30rem] flex-col overflow-hidden rounded-lg border bg-card",
+        // Bounded height so the progress strip + header stay put while ONLY the
+        // conversation scrolls inside the tile (item 7). Without a ceiling the
+        // panel grows with the transcript and the whole page scrolls, taking the
+        // "fixed" header with it.
+        "flex h-[calc(100vh-15rem)] max-h-[46rem] min-h-[28rem] flex-col overflow-hidden rounded-lg border bg-card",
         className
       )}
       data-testid="goal-interview"
@@ -374,24 +423,37 @@ export default function GoalInterviewPanel({
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-1.5">
-          {voiceMode ? (
-            <Volume2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-          ) : (
-            <VolumeX className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+        <div className="ml-auto flex items-center gap-2">
+          {/* Item 7: a persistent question count pinned in the fixed header
+              border, so how far along you are stays visible no matter how far
+              the conversation below has scrolled. */}
+          {askedCount > 0 && (
+            <span
+              className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+              data-testid="question-count"
+            >
+              Question {askedCount}
+            </span>
           )}
-          <Label
-            htmlFor="goal-interview-voice"
-            className="text-[11px] text-muted-foreground"
-          >
-            Voice
-          </Label>
-          <Switch
-            id="goal-interview-voice"
-            checked={voiceMode}
-            onCheckedChange={toggleVoice}
-            aria-label="Voice mode: Summit reads its questions aloud and listens for your answer"
-          />
+          <div className="flex items-center gap-1.5">
+            {voiceMode ? (
+              <Volume2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+            ) : (
+              <VolumeX className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+            )}
+            <Label
+              htmlFor="goal-interview-voice"
+              className="text-[11px] text-muted-foreground"
+            >
+              Voice
+            </Label>
+            <Switch
+              id="goal-interview-voice"
+              checked={voiceMode}
+              onCheckedChange={toggleVoice}
+              aria-label="Voice mode: Summit reads its questions aloud and listens for your answer"
+            />
+          </div>
         </div>
       </div>
 
@@ -421,7 +483,13 @@ export default function GoalInterviewPanel({
             </Button>
           </div>
         ) : (
-          turns.map((turn) => <Turn key={turn.id} turn={turn} />)
+          turns.map((turn) => (
+            <Turn
+              key={turn.id}
+              turn={turn}
+              questionNumber={questionOrdinals.get(turn.id)}
+            />
+          ))
         )}
 
         {busy && (

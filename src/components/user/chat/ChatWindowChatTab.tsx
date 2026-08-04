@@ -205,6 +205,13 @@ type ChatWindowChatTabProps = {
   onReplayMessage?: (text: string) => void;
   /** Export a single turn as Word or PDF. Omitted → no per-turn export link. */
   onExportMessage?: (message: ChatMessage, format: TurnExportFormat) => void;
+  /**
+   * When true, assistant ("response") bubbles fill the width of the conversation
+   * tile instead of being capped at 70%. Used by the V2 stacked Meridian layout,
+   * whose scroll body carries a 5px inset so the bubble sits ~5px from the tile
+   * edges on all sides. Off by default so the classic layout is unchanged.
+   */
+  responseBubbleFullWidth?: boolean;
 };
 
 export default function ChatWindowChatTab({
@@ -221,6 +228,7 @@ export default function ChatWindowChatTab({
   conversationId,
   onReplayMessage,
   onExportMessage,
+  responseBubbleFullWidth,
 }: ChatWindowChatTabProps) {
   const { t } = useTranslation("chat");
   const renderMessage = (m: ChatMessage) => {
@@ -228,7 +236,18 @@ export default function ChatWindowChatTab({
       const right = m.sender === "user";
       return (
         <div key={m.id} className="space-y-1">
-          <div className={cn("max-w-[70%] min-w-40 w-fit ", right ? "ml-auto" : undefined)}>
+          <div
+            className={cn(
+              // A user turn stays a compact right-aligned bubble; an assistant
+              // "response" fills the tile when responseBubbleFullWidth is set
+              // (V2 Meridian layout), otherwise keeps the classic 70% cap.
+              right
+                ? "max-w-[70%] min-w-40 w-fit ml-auto"
+                : responseBubbleFullWidth
+                  ? "w-full"
+                  : "max-w-[70%] min-w-40 w-fit"
+            )}
+          >
             <div
               className={cn(
                 "rounded-2xl p-3 text-sm text-foreground/90 shadow-sm",

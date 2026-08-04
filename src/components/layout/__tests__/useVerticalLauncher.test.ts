@@ -64,8 +64,9 @@ beforeEach(() => {
 //      withheld from the list entirely — a different mechanism from (1), and
 //      the tests below pin that the two do not get conflated.
 //
-// The section is now labelled "Tools" and ships rolled up. WORKSPACE_VERTICALS
-// is empty, so Job Fit and Lumen fall through to it like every other vertical.
+// The section is now labelled "Tools" and ships rolled up. As of 2026-08-04
+// WORKSPACE_VERTICALS = {job-fit}, so Job Fit is promoted to My Workspace and
+// drops OUT of Tools; Lumen (and the rest) still fall through to Tools.
 describe("useVerticalLauncherSection", () => {
   test("is labelled Tools and ships rolled up", () => {
     setEnabled(["grant"])
@@ -75,17 +76,15 @@ describe("useVerticalLauncherSection", () => {
     expect(result.current!.defaultCollapsed).toBe(true)
   })
 
-  test("lists every visible vertical and links to homePath", () => {
+  test("lists every visible vertical and links to homePath (Job Fit now lives in My Workspace)", () => {
     setEnabled(["grant", "job-fit"])
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Job Fit",
       "Lumen",
     ])
     expect(result.current!.items.map((i) => i.to)).toEqual([
       "/vertical/grant/dashboard",
-      "/vertical/job-fit/matches",
       "/vertical/lumen/dashboard",
     ])
   })
@@ -115,8 +114,9 @@ describe("useVerticalLauncherSection", () => {
       result.current!.items.map((i) => [i.label, i.disabled]),
     )
     expect(byLabel["GRANT"]).toBe(false)
-    expect(byLabel["Job Fit"]).toBe(true)
     expect(byLabel["Lumen"]).toBe(true)
+    // Job Fit is no longer in Tools — it lives in My Workspace now.
+    expect(byLabel["Job Fit"]).toBeUndefined()
   })
 
   test("still lists the catalogue when the user is entitled to nothing", () => {
@@ -124,7 +124,6 @@ describe("useVerticalLauncherSection", () => {
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Job Fit",
       "Lumen",
     ])
     expect(result.current!.items.every((i) => i.disabled)).toBe(true)
@@ -135,28 +134,34 @@ describe("useVerticalLauncherSection", () => {
     const { result } = renderHook(() => useVerticalLauncherSection())
     expect(result.current!.items.map((i) => i.label)).toEqual([
       "GRANT",
-      "Job Fit",
       "Lumen",
     ])
   })
 
-  test("Job Fit and Lumen are in Tools now, not held back for My Workspace", () => {
+  test("Lumen stays in Tools; Job Fit is promoted out of it to My Workspace", () => {
     setEnabled(["job-fit", "lumen"])
     const { result } = renderHook(() => useVerticalLauncherSection())
-    expect(result.current!.items.map((i) => i.label)).toEqual(
-      expect.arrayContaining(["Job Fit", "Lumen"]),
-    )
+    const labels = result.current!.items.map((i) => i.label)
+    expect(labels).toContain("Lumen")
+    expect(labels).not.toContain("Job Fit")
   })
 })
 
-// WORKSPACE_VERTICALS is empty, so the workspace-splice mechanism is dormant.
-// It is retained rather than deleted — re-promoting a vertical is a one-word
-// edit — so these pin that it stays a clean no-op meanwhile.
-describe("useWorkspaceVerticalItems (mechanism retained, currently empty)", () => {
-  test("returns nothing while WORKSPACE_VERTICALS is empty", () => {
+// WORKSPACE_VERTICALS = {job-fit} as of 2026-08-04, so the workspace-splice
+// mechanism now promotes Job Fit into My Workspace (greyed when unentitled).
+describe("useWorkspaceVerticalItems (Job Fit promoted to My Workspace)", () => {
+  test("returns Job Fit, entitled → usable", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current).toEqual([])
+    expect(result.current.map((i) => i.label)).toEqual(["Job Fit"])
+    expect(result.current[0].disabled).toBe(false)
+  })
+
+  test("returns Job Fit greyed when the user is not entitled", () => {
+    setEnabled(["grant"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current.map((i) => i.label)).toEqual(["Job Fit"])
+    expect(result.current[0].disabled).toBe(true)
   })
 })
 
@@ -200,20 +205,25 @@ describe("withWorkspaceVerticals", () => {
 })
 
 describe("useWorkspaceNavItems", () => {
-  test("leaves the menu untouched, and returns the SAME array", () => {
+  test("keeps a stable array identity across re-renders (feeds navSections memos)", () => {
     // Identity matters, not just equality: this feeds a `navSections` memo in
-    // every layout, so a fresh array each render would churn them all.
+    // every layout, so a fresh array each render would churn them all. Even now
+    // that Job Fit is spliced in, the memo must return the SAME array when the
+    // inputs are unchanged.
     setEnabled(["job-fit", "lumen"])
-    const { result } = renderHook(() => useWorkspaceNavItems(MENU))
-    expect(result.current).toBe(MENU)
+    const { result, rerender } = renderHook(() => useWorkspaceNavItems(MENU))
+    const first = result.current
+    rerender()
+    expect(result.current).toBe(first)
   })
 
-  test("no vertical is injected into My Workspace regardless of entitlement", () => {
+  test("splices Job Fit into My Workspace above the Settings/Help tail", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current.map((i) => i.label)).toEqual([
       "Home",
       "My Documents",
+      "Job Fit",
       "Settings",
       "Help & Support",
     ])

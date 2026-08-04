@@ -76,7 +76,7 @@ jest.mock("@/constants/navigation", () => ({
 }));
 
 jest.mock("@/constants/routes", () => ({
-  ROUTES: { HOME: "/home" },
+  ROUTES: { HOME: "/home", BIO_CAPTURE: "/bio" },
 }));
 
 jest.mock("lucide-react", () => ({
@@ -86,6 +86,7 @@ jest.mock("lucide-react", () => ({
   HelpCircle: () => null,
   Bot: () => null,
   LayoutDashboard: () => null,
+  BookOpenText: () => null,
 }));
 
 import UserLayout from "../UserLayout";
@@ -155,7 +156,7 @@ describe("UserLayout", () => {
     ]);
   });
 
-  test("renders a Verticals section for a plain user when the catalogue exists", () => {
+  test("renders the Tools section (Bio Capture + catalogue) for a plain user when the catalogue exists", () => {
     mockLauncher.mockReturnValue({
       label: "Verticals",
       items: [
@@ -166,8 +167,13 @@ describe("UserLayout", () => {
     render(<UserLayout><div /></UserLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections.map((s: { label: string }) => s.label)).toEqual(["", "Verticals"]);
-    // Unentitled entries are listed, not hidden — greyed via `disabled`.
-    expect(props.navSections[1].items[1].disabled).toBe(true);
+    const tools = props.navSections[1].items as Array<{ label: string; disabled?: boolean }>;
+    // Bio Capture is injected at the top of the Tools rollup (moved out of the
+    // flat menu 2026-08-04).
+    expect(tools[0].label).toBe("Bio Capture");
+    // Unentitled catalogue entries are listed, not hidden — greyed via `disabled`.
+    const honor = tools.find((i) => i.label === "Honor Foundation");
+    expect(honor?.disabled).toBe(true);
   });
 
   test("super-admin order is My Workspace → Role Views → Verticals → Administration", () => {
