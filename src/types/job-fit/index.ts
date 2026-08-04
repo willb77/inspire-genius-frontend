@@ -56,6 +56,19 @@ export type FitMatch = {
    * `fitBand` only for older backends that do not send it.
    */
   displayBand?: FitBand
+  /**
+   * How many critical dimensions (benchmark ≥ 65) this person misses by more
+   * than 25 points.
+   *
+   * **Two or more caps `tier` at `misalignment` no matter how close the overall
+   * profile is.** That is why a row can carry `baseTier: "strong-fit"`,
+   * `fitScore: 81` and `tier: "misalignment"` simultaneously — all three are
+   * true, and showing only the last of them as an unexplained "Poor" is what
+   * made every match look like a rejection.
+   *
+   * Optional: older backends do not send it, and absent is not zero.
+   */
+  criticalGapCount?: number
 }
 
 /** Per-dimension comparison of the user's score against the role benchmark. */

@@ -160,6 +160,18 @@ function MatchRow({
             )}
             <span>{tierLabel(match.tier)} role</span>
             {rowBand(match) && <span>{bandLabel(rowBand(match) as FitBand)}</span>}
+            {/* The band reflects how close the profile is overall. The tier can
+                still be capped to misalignment by critical gaps, and saying so
+                is the difference between "you are a poor match" and "you are
+                close, with N specific things to close". Both are true; only the
+                second is useful. */}
+            {(match.criticalGapCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 text-amber-700">
+                <AlertTriangle className="h-3 w-3" aria-hidden />
+                {match.criticalGapCount} critical gap
+                {match.criticalGapCount === 1 ? "" : "s"} to close
+              </span>
+            )}
           </span>
         </span>
 
