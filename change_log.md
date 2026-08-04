@@ -1,3 +1,45 @@
+## [2026-08-03] — User roster generators (dev + staging-b), .docx and .xlsx
+
+### Added
+- `scripts/build_ig_user_roster.py` — Word roster (landscape, repeating header
+  row, brand palette, logo).
+- `scripts/build_ig_user_roster_xlsx.py` — Excel roster: frozen header,
+  autofilter across all columns, plus a Summary sheet.
+- Columns: First name · Last name · Email · Environment · Primary profile ·
+  Status · Added (EDT). **289 accounts** (stable 105, dev 184).
+
+### Guarded — the migration-runner row cap
+The runner caps returned **rows at 10**, so a naive roster query would have
+returned 10 users and looked entirely healthy. Both environments are
+aggregated **server-side into a single `jsonb` value**, and the fetch step
+**asserts the returned length equals `COUNT(*)`** per environment, refusing to
+build a partial roster. Both matched (105 / 184).
+
+### Decisions worth keeping
+- **Soft-deleted accounts are included and marked, not dropped.** Dev holds 70
+  of them; filtering to active would have quietly turned "all users" into 217
+  instead of 289.
+- **Unnamed accounts sort last.** The first build sorted purely by surname,
+  which pushed every blank-name account to the front and made page 1 a wall of
+  dashes — caught by rendering the PDF, not by reading the source.
+- Blank names are shown as-is rather than derived from the email address;
+  inventing names in a roster is worse than an honest blank.
+- One dev account has a genuinely NULL `created_at`; it reads **"unknown"**
+  rather than blank so it does not look like a formatting glitch.
+- `Added (EDT)` is written as a **real datetime** in the workbook (not text) so
+  Excel's date filters and chronological sort work; the UTC→`America/New_York`
+  conversion happens once in SQL.
+
+### Not committed — deliberately
+The generated `.docx` / `.xlsx` hold **289 real users' names and emails**. Both
+are gitignored; only the generators are in the tree. Intermediate JSON and
+render artefacts were deleted after use.
+
+### Verified
+Workbook **read back after writing**: 289 rows, 0 blank emails, 288 real
+datetimes + 1 "unknown", autofilter `A1:G290`, per-environment totals matching
+the live DB exactly. Word version rendered to PDF→PNG and inspected.
+
 ## [2026-08-03] — HomeV2: My Journey, uploaded material links, and a PDF viewer
 
 ### Removed
