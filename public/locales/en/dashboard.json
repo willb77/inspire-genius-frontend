@@ -55,8 +55,12 @@
     "viewInventoryPdf": "View Inventory PDF",
     "checkingReport": "Checking your latest report…",
     "latestReportPrefix": "Latest report:",
-    "completeProfile": "Complete profile ({{pct}}%)",
-    "completeProfileAria": "Complete profile",
+    "yourMaterial": "Your material",
+    "prismReport": "PRISM Report",
+    "openingDocument": "Opening document…",
+    "docOpenFailed": "That document couldn't be opened. It may still be processing.",
+    "noInlinePreview": "This file type can't be previewed here. Open it in a new tab instead.",
+    "openInNewTab": "Open in a new tab",
     "additionalAssessments": "Additional assessments",
     "additionalPersonalInfo": "Additional Personal Info",
     "chatWithMeridian": "Chat with Meridian",
@@ -107,6 +111,7 @@
     "videos": "Videos",
     "quickSelfPortrait": "Self-Portrait",
     "quickTodaysPrep": "Today's Prep",
+    "quickMyJourney": "My Journey",
     "quickJobFit": "Job Fit",
     "quickActionLocked": "{{name}} isn't enabled for your account"
   }

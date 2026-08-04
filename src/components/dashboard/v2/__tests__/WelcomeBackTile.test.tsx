@@ -5,6 +5,7 @@ import { Briefcase, UserRoundSearch } from "lucide-react";
 import {
   WelcomeBackTile,
   type WelcomeBackAssessment,
+  type WelcomeBackMaterial,
   type WelcomeBackPersonalInfo,
   type WelcomeBackQuickAction,
 } from "@/components/dashboard/v2/WelcomeBackTile";
@@ -23,12 +24,15 @@ function renderTile(overrides?: {
   onAddPersonalInfo?: (name: string) => void;
   quickActions?: WelcomeBackQuickAction[];
   videos?: DashboardVideo[];
+  profileMaterial?: WelcomeBackMaterial[];
+  onOpenDocument?: (doc: WelcomeBackMaterial) => void;
 }) {
   const onResumeConversation = overrides?.onResumeConversation ?? jest.fn();
   const onRequestAssessment = overrides?.onRequestAssessment ?? jest.fn();
   const onViewReportPdf = overrides?.onViewReportPdf ?? jest.fn();
   const onAddAssessment = overrides?.onAddAssessment ?? jest.fn();
   const onAddPersonalInfo = overrides?.onAddPersonalInfo ?? jest.fn();
+  const onOpenDocument = overrides?.onOpenDocument ?? jest.fn();
 
   const assessments: WelcomeBackAssessment[] = [
     { name: "DISC", done: true },
@@ -49,13 +53,14 @@ function renderTile(overrides?: {
         reportFileName="X.csv"
         onRequestAssessment={onRequestAssessment}
         onViewReportPdf={onViewReportPdf}
-        profilePercent={40}
         assessments={assessments}
         personalInfo={personalInfo}
         onAddAssessment={onAddAssessment}
         onAddPersonalInfo={onAddPersonalInfo}
         quickActions={overrides?.quickActions}
         videos={overrides?.videos}
+        profileMaterial={overrides?.profileMaterial}
+        onOpenDocument={onOpenDocument}
       />
     </MemoryRouter>,
   );
@@ -66,6 +71,7 @@ function renderTile(overrides?: {
     onViewReportPdf,
     onAddAssessment,
     onAddPersonalInfo,
+    onOpenDocument,
   };
 }
 
@@ -84,9 +90,40 @@ describe("WelcomeBackTile", () => {
     expect(screen.getByText("willb77")).toBeInTheDocument();
   });
 
-  it("renders the profile completion label", () => {
+  // The completion gauge was removed on 2026-08-03. Asserting its ABSENCE is
+  // the point: a percentage silently reappearing is exactly the regression this
+  // change is meant to prevent.
+  it("does not render a profile completion gauge", () => {
     renderTile();
-    expect(screen.getByText("Complete profile (40%)")).toBeInTheDocument();
+    expect(screen.queryByText(/Complete profile/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  describe("uploaded profile material", () => {
+    const material: WelcomeBackMaterial[] = [
+      { id: "doc-1", label: "Resume", fileName: "willb77_cv.pdf" },
+      { id: "doc-2", label: "Bio", fileName: "bio.docx" },
+    ];
+
+    it("renders a link per uploaded document", () => {
+      renderTile({ profileMaterial: material });
+      expect(screen.getByTestId("homev2-profile-material")).toBeInTheDocument();
+      expect(screen.getByText("Resume")).toBeInTheDocument();
+      expect(screen.getByText("Bio")).toBeInTheDocument();
+    });
+
+    it("passes the clicked document to onOpenDocument", () => {
+      const { onOpenDocument } = renderTile({ profileMaterial: material });
+      fireEvent.click(screen.getByTestId("homev2-material-doc-1"));
+      expect(onOpenDocument).toHaveBeenCalledWith(material[0]);
+    });
+
+    it("renders nothing when the user has uploaded no material", () => {
+      renderTile({ profileMaterial: [] });
+      expect(
+        screen.queryByTestId("homev2-profile-material"),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("renders the latest report file name", () => {
