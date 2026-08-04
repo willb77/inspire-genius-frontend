@@ -204,11 +204,19 @@ describe("InterviewPage — with a target role", () => {
     ).toBeInTheDocument()
   })
 
-  it("generates for this candidate and records the stage", () => {
+  it("generates for the caller, not for a client-guessed id", () => {
+    // This asserted `candidateId: "cand-1"` — a value taken from `user.id`.
+    // `AuthContext` seeds that field to the literal string "me", so in the
+    // running app the page asked for a candidate that cannot exist: the guide
+    // built against nobody and the button appeared to do nothing.
+    //
+    // The identity of a self-serve candidate is not something the client can
+    // know. It is in the token, so the backend resolves it — the page says
+    // "this is me" and the server maps that to the caller's own subject.
     renderPage(<InterviewPage />)
     fireEvent.click(screen.getByRole("button", { name: /Build my prep sheet/ }))
     expect(mockGenerateMutate).toHaveBeenCalledWith(
-      { jobId: "job-1", candidateId: "cand-1" },
+      { jobId: "job-1", candidateId: "me" },
       expect.anything()
     )
   })
@@ -272,9 +280,20 @@ describe("InterviewPage — with a target role", () => {
     ).toBeInTheDocument()
   })
 
-  it("ignores a fetched guide belonging to a different candidate", () => {
+  it("ignores a guide that is not scoped to a person at all", () => {
+    // This used to compare the fetched guide's candidateId against the one the
+    // page sent, which was defence-in-depth against a GET client that omits
+    // the param. It could never pass once the page stopped inventing an id —
+    // and more to the point, a client cannot adjudicate its own identity: it
+    // does not know its own subject. The backend now self-scopes the lookup,
+    // so anything that comes back IS the caller's.
+    //
+    // What the page can still tell, and must, is scoped from generic. A guide
+    // with no candidate on it is the blueprint-level one — right for a
+    // recruiter browsing a role, wrong for someone preparing for their own
+    // interview, because none of their gaps are in it.
     mockUseInterviewGuide.mockReturnValue({
-      data: { ...GUIDE, candidateId: "someone-else" },
+      data: { ...GUIDE, candidateId: "" },
       isLoading: false,
     })
     renderPage(<InterviewPage />)
