@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Автопортрет",
     "quickTodaysPrep": "Подготовка на сегодня",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} не подключён для вашей учётной записи"
+    "quickActionLocked": "{{name}} не подключён для вашей учётной записи",
+    "quickMyJourney": "Мой путь",
+    "yourMaterial": "Ваши материалы",
+    "prismReport": "Отчёт PRISM",
+    "openingDocument": "Открытие документа…",
+    "docOpenFailed": "Не удалось открыть этот документ. Возможно, он ещё обрабатывается.",
+    "noInlinePreview": "Этот тип файла нельзя просмотреть здесь. Откройте его в новой вкладке.",
+    "openInNewTab": "Открыть в новой вкладке"
   }
 }

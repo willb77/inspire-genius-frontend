@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Selvportrett",
     "quickTodaysPrep": "Dagens forberedelse",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} er ikke aktivert for kontoen din"
+    "quickActionLocked": "{{name}} er ikke aktivert for kontoen din",
+    "quickMyJourney": "Min reise",
+    "yourMaterial": "Materialet ditt",
+    "prismReport": "PRISM-rapport",
+    "openingDocument": "Åpner dokument…",
+    "docOpenFailed": "Dokumentet kunne ikke åpnes. Det behandles kanskje fortsatt.",
+    "noInlinePreview": "Denne filtypen kan ikke forhåndsvises her. Åpne den i en ny fane i stedet.",
+    "openInNewTab": "Åpne i ny fane"
   }
 }

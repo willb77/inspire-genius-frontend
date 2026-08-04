@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Öz Portre",
     "quickTodaysPrep": "Bugünün Hazırlığı",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} hesabınız için etkin değil"
+    "quickActionLocked": "{{name}} hesabınız için etkin değil",
+    "quickMyJourney": "Yolculuğum",
+    "yourMaterial": "Materyalleriniz",
+    "prismReport": "PRISM Raporu",
+    "openingDocument": "Belge açılıyor…",
+    "docOpenFailed": "Bu belge açılamadı. Hâlâ işleniyor olabilir.",
+    "noInlinePreview": "Bu dosya türü burada önizlenemez. Bunun yerine yeni bir sekmede açın.",
+    "openInNewTab": "Yeni sekmede aç"
   }
 }

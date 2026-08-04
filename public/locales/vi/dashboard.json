@@ -108,6 +108,13 @@
     "quickSelfPortrait": "Chân dung",
     "quickTodaysPrep": "Chuẩn bị hôm nay",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} chưa được bật cho tài khoản của bạn"
+    "quickActionLocked": "{{name}} chưa được bật cho tài khoản của bạn",
+    "quickMyJourney": "Hành trình của tôi",
+    "yourMaterial": "Tài liệu của bạn",
+    "prismReport": "Báo cáo PRISM",
+    "openingDocument": "Đang mở tài liệu…",
+    "docOpenFailed": "Không thể mở tài liệu đó. Có thể tài liệu vẫn đang được xử lý.",
+    "noInlinePreview": "Không thể xem trước loại tệp này tại đây. Hãy mở trong tab mới.",
+    "openInNewTab": "Mở trong tab mới"
   }
 }
