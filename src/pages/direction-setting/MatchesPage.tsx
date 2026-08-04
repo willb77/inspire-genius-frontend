@@ -458,6 +458,30 @@ function MatchingPaused() {
           Everything else in your journey is unaffected, and anything you finish now
           feeds straight into your matches the moment they&apos;re back.
         </p>
+        {/* The operator note. Someone seeing this card is usually one env var
+            away from matches working, and previously the page gave them nothing
+            to act on — so the most common response was to go looking for a fault
+            in the user's profile, where there isn't one. Plain text rather than
+            a link: this is a deploy-time change, not something to click. */}
+        <div className="rounded-md border border-dashed bg-muted/40 p-3 text-xs">
+          <p className="font-medium text-foreground">Turning it on</p>
+          <p className="mt-1">
+            Matching is always computed — this flag only controls who can see it.
+            Set <code className="rounded bg-muted px-1">BLUEPRINT_MATCHING_ENABLED=true</code>{" "}
+            on the blueprint-service Lambda via CDK
+            (<code className="rounded bg-muted px-1">-c blueprintMatching=true</code>),
+            not by editing the Lambda directly — a direct edit is reverted by the
+            next deploy. Full steps in{" "}
+            <code className="rounded bg-muted px-1">
+              docs/runbooks/enable_role_matching.md
+            </code>
+            .
+          </p>
+          <p className="mt-1">
+            This gates Job Matches, and Job Matches gates My Plan and Interview
+            Prep — so all three come back together.
+          </p>
+        </div>
         <Button asChild variant="outline" size="sm">
           <Link to={ROUTES.DIRECTION_SETTING.JOURNEY}>
             Back to your journey
