@@ -1,3 +1,21 @@
+## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
+
+### Fixed
+- **The first deploy attempt failed and shipped nothing.** The HomeV2 change added seven `homeV2` keys to `en/dashboard.json` only. CI enforces locale parity (`src/__tests__/i18n.test.ts`): every English key must exist in the other locales, and `zh-CN` must match exactly. The gate failed with **10 failures out of 4,272**, and both `Deploy to Dev` and `Deploy to Staging-B` were skipped.
+  - Root of the mistake: relying on i18next's `defaultValue` fallback. It keeps the UI correct at runtime but does **not** satisfy the parity test — and the local test run only covered the suites that were touched, so the i18n suite was never exercised.
+  - Real translations added for all seven keys (`quickMyJourney`, `yourMaterial`, `prismReport`, `openingDocument`, `docOpenFailed`, `noInlinePreview`, `openInNewTab`) across **all 20** non-English locales, not just the 9 the test currently checks, so extending the test later cannot reopen this. Additions only — 8 lines plus a trailing comma per file, no reformatting.
+
+### Deployed
+- Live on **dev** and **staging-b**. Verified at the code level rather than by the workflow's status: the deployed `HomeV2` chunk on staging-b contains `My Journey`, `Your material`, `PRISM Report`, `Open in a new tab`, and **zero** occurrences of `Complete profile`, `completeProfile`, `progressbar` or `QuickDirection`. The served `locales/en/dashboard.json` carries all seven new keys. The entry bundle hash and ETag both changed.
+- Browser check: `/home` correctly redirects an unauthenticated session to `/login`; the app boots with **no console errors**. The logged-in tile itself was not visually confirmed — that needs a real session.
+
+### Note on a neighbouring red run
+PR #356 (user roster generators) merged during the window where `en` had keys the other locales lacked, so its CI run inherited the failure and shows red. It is harmless — that commit is an ancestor of the green run that deployed — but the red mark is not that PR's fault.
+
+### Verified
+- Full CI-equivalent suite run locally against the same content: **541 suites, 4,272 tests, all passing**; coverage clear of every threshold (statements 71.67 vs 55, branches 58.56 vs 54, functions 59.73 vs 55, lines 74.23 vs 55).
+  - Files: `public/locales/*/dashboard.json` (20 locales)
+
 ## [2026-08-03] — User roster generators (dev + staging-b), .docx and .xlsx
 
 ### Added
