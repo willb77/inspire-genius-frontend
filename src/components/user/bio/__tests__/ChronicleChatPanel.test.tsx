@@ -46,6 +46,24 @@ jest.mock("@/hooks/useCaptureBioTurn", () => ({
   useCaptureBioTurn: () => ({ mutate: mockCaptureMutate }),
 }))
 
+// Session hooks (save / list / resume). The list drives the Sessions dropdown;
+// save/load are exercised via the toolbar. Mocked so the panel needn't a
+// QueryClientProvider in this light render test.
+const mockSaveSession = jest.fn(async () => ({
+  sessionId: "s-1",
+  title: "t",
+  turnCount: 1,
+  summary: "",
+  createdAt: null,
+  updatedAt: null,
+}))
+const mockLoadSession = jest.fn()
+jest.mock("@/hooks/useBioSessions", () => ({
+  useBioSessions: () => ({ data: [], isLoading: false }),
+  useSaveBioSession: () => ({ mutateAsync: mockSaveSession, isPending: false }),
+  useLoadBioSession: () => ({ mutateAsync: mockLoadSession }),
+}))
+
 const mockSpeak = jest.fn()
 const mockStopSpeaking = jest.fn()
 jest.mock("@/hooks/useTTS", () => ({
@@ -170,12 +188,13 @@ describe("ChronicleChatPanel capture + go-deeper + voice", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /^send$/i }))
 
-    // The structured reflection renders inline.
+    // The structured reflection renders inline. The captured title also appears
+    // in the session insight rail, so it's present in at least one place.
     expect(screen.getByText(/captured to your profile/i)).toBeInTheDocument()
-    expect(screen.getByText("Born in Lagos")).toBeInTheDocument()
+    expect(screen.getAllByText("Born in Lagos").length).toBeGreaterThanOrEqual(1)
     expect(
-      screen.getByText(/family and heritage anchor your sense of self/i),
-    ).toBeInTheDocument()
+      screen.getAllByText(/family and heritage anchor your sense of self/i).length,
+    ).toBeGreaterThanOrEqual(1)
 
     // The "Go deeper" chips are now the content-specific followups; the static
     // starter probe is gone.

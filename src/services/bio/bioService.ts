@@ -1,10 +1,13 @@
 import { getApi } from "@/lib/agentApi"
 import type {
+  BioSessionDetail,
+  BioSessionSummary,
   CaptureRequest,
   CaptureResponse,
   MemberNarrative,
   MemoirRequest,
   MemoirResponse,
+  SaveBioSessionRequest,
 } from "@/types/bio"
 
 /**
@@ -72,6 +75,56 @@ export async function captureBioTurn(
   const { data } = await getApi().post<CaptureResponse>(
     `${PREFIX}/${encodeURIComponent(memberId)}/capture`,
     body,
+  )
+  return data
+}
+
+/**
+ * GET /{memberId}/sessions — the member's saved interview sessions.
+ *
+ * MAY 404 where the session backend hasn't been promoted; callers treat that as
+ * "no saved sessions" rather than an error, so the interview still works
+ * unsaved. Response is `{ sessions: [...] }`, not the `ok()` envelope.
+ */
+export async function listBioSessions(
+  memberId: string,
+): Promise<BioSessionSummary[]> {
+  const { data } = await getApi().get<{ sessions: BioSessionSummary[] }>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/sessions`,
+  )
+  return data.sessions ?? []
+}
+
+/**
+ * POST /{memberId}/sessions — save (create or upsert) an interview session.
+ *
+ * Create when `sessionId` is omitted, update when present. Returns the saved
+ * session's summary (no transcript). MAY 404 where the backend isn't promoted —
+ * the caller surfaces that as "couldn't save" and keeps the in-memory session.
+ */
+export async function saveBioSession(
+  memberId: string,
+  body: SaveBioSessionRequest,
+): Promise<BioSessionSummary> {
+  const { data } = await getApi().post<BioSessionSummary>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/sessions`,
+    body,
+  )
+  return data
+}
+
+/**
+ * GET /{memberId}/sessions/{sessionId} — one full session (with transcript) so
+ * the surface can resume it. 404s for an unknown/foreign id.
+ */
+export async function getBioSession(
+  memberId: string,
+  sessionId: string,
+): Promise<BioSessionDetail> {
+  const { data } = await getApi().get<BioSessionDetail>(
+    `${PREFIX}/${encodeURIComponent(memberId)}/sessions/${encodeURIComponent(
+      sessionId,
+    )}`,
   )
   return data
 }

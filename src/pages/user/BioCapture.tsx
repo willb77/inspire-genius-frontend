@@ -1,11 +1,15 @@
 /**
  * Bio Capture — the member-facing home for the Chronicle life-narrative agent.
  *
- * Two columns: the narrative viewer (chapters, coverage, episode timeline) on
- * the left, and the Chronicle chat on the right. Talking to Chronicle distils
- * new episodes; when a turn settles the chat tells this page, which refetches the
- * narrative so the left column stays in step with the conversation beside it.
+ * Single column, top to bottom:
+ *   1. a thin "suggested next" bar + a compact 2×3 grid of the six chapters
+ *      (`BioChaptersStrip`) — orientation, at a glance;
+ *   2. the Chronicle interview tile (`ChronicleChatPanel`) — the interactive,
+ *      optionally-spoken interview, with the captured results, live insight and
+ *      the end-of-session recap all rendered inside its own scroll area.
  *
+ * Talking to Chronicle distils new episodes; when a turn settles the tile tells
+ * this page, which refetches the narrative so the chapters strip stays in step.
  * "Export memoir" prefers the backend memoir endpoint and falls back to a
  * client-side assembly when it is absent — see `useGenerateMemoir`.
  */
@@ -16,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/context/useAuth"
 import { useBioNarrative } from "@/hooks/useBioNarrative"
-import NarrativeViewer from "@/components/user/bio/NarrativeViewer"
+import BioChaptersStrip from "@/components/user/bio/BioChaptersStrip"
 import ChronicleChatPanel from "@/components/user/bio/ChronicleChatPanel"
 import MemoirExportMenu from "@/components/user/bio/MemoirExportMenu"
 
@@ -26,9 +30,9 @@ export default function BioCapture() {
   const { data: narrative, isLoading, isError, refetch } =
     useBioNarrative(memberId || null)
 
-  // Bridge the viewer's "Continue with Chronicle" CTA to the chat input. The
-  // chat panel owns its own send loop and registers a seed function here on
-  // mount; the viewer calls it through `startSuggested`.
+  // Bridge the chapters strip's tiles to the interview input. The interview
+  // panel owns its own send loop and registers a seed function here on mount;
+  // the strip calls it through `startSuggested`.
   const seedChatRef = useRef<((moduleType: string) => void) | null>(null)
   const registerSeed = useCallback(
     (seed: ((moduleType: string) => void) | null) => {
@@ -45,8 +49,8 @@ export default function BioCapture() {
 
   return (
     <UserLayout>
-      <div className="mx-auto w-full max-w-6xl px-4 py-6">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <BookOpenText className="h-5 w-5" aria-hidden />
@@ -63,43 +67,39 @@ export default function BioCapture() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="min-w-0">
-            {isLoading && (
-              <div className="space-y-4">
-                <Skeleton className="h-24 w-full" />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-32 w-full" />
-                </div>
-              </div>
-            )}
-
-            {isError && (
-              <Card>
-                <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
-                  <AlertCircle className="h-5 w-5 text-destructive" aria-hidden />
-                  We couldn&apos;t load your story just now. Please refresh to try
-                  again.
-                </CardContent>
-              </Card>
-            )}
-
-            {narrative && (
-              <NarrativeViewer
-                narrative={narrative}
-                onStartSuggested={startSuggested}
-              />
-            )}
+        {isLoading && (
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+            <Skeleton className="h-[34rem] w-full" />
           </div>
+        )}
 
-          <aside className="lg:sticky lg:top-6 lg:self-start">
+        {isError && (
+          <Card>
+            <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
+              <AlertCircle className="h-5 w-5 text-destructive" aria-hidden />
+              We couldn&apos;t load your story just now. Please refresh to try
+              again.
+            </CardContent>
+          </Card>
+        )}
+
+        {narrative && (
+          <div className="space-y-5">
+            <BioChaptersStrip
+              narrative={narrative}
+              onStartSuggested={startSuggested}
+            />
+
             {memberId ? (
               <ChronicleChatPanel
                 memberId={memberId}
-                suggestedModule={narrative?.nextSuggestedModule}
+                suggestedModule={narrative.nextSuggestedModule}
                 onTurnSettled={handleTurnSettled}
                 registerSeed={registerSeed}
               />
@@ -110,8 +110,8 @@ export default function BioCapture() {
                 </CardContent>
               </Card>
             )}
-          </aside>
-        </div>
+          </div>
+        )}
       </div>
     </UserLayout>
   )
