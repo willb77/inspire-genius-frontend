@@ -26,11 +26,11 @@ import {
   Eye,
   Network,
   BookOpen,
-  BookOpenText,
   BookHeart,
   ShieldCheck,
   SearchCheck,
   Activity,
+  Target,
 } from "lucide-react"
 
 /** Navigation items for the regular user role */
@@ -63,8 +63,9 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
           state: { autoLoadPrism: true },
         }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-    // Bio Capture — the Chronicle life-narrative surface (viewer + chat + memoir).
-    { to: ROUTES.BIO_CAPTURE, icon: BookOpenText, label: "Bio Capture" },
+    // Bio Capture moved into the "Tools" rollup (see UserLayout) 2026-08-04 —
+    // it is a tool you go to, not a primary workspace shortcut. The route
+    // (ROUTES.BIO_CAPTURE) is unchanged; only the sidebar placement moved.
     // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Document Library — restored to the menu 2026-08-03 and renamed from
@@ -83,6 +84,10 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // HIDDEN_WORKSPACE_ROUTES below for the full accounting so a future
     // reader doesn't assume the pages were dropped.
     { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+    // Goals — the "My Goals" interview (Direction Setting stage 5). Promoted to a
+    // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
+    // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
+    { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]

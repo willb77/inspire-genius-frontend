@@ -45,8 +45,12 @@ import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
  * `useWorkspaceNavItems` are no-ops while this set is empty (both return their
  * input array unchanged), so re-promoting a vertical is a one-word edit here
  * with no other wiring to redo.
+ *
+ * 2026-08-04 — Job Fit re-promoted to the workspace menu at the user's request:
+ * it now shows as a top-level "Job Fit" shortcut (spliced above Settings/Help)
+ * and drops out of the Tools rollup below, which filters `WORKSPACE_VERTICALS`.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>([])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
 
 /**
  * Verticals hidden from the Tools section entirely (2026-07-31).
