@@ -21,6 +21,11 @@ Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
   conversation notifies the host so the chat starts a fresh one.
   - Files: `src/components/meridian/HistoryDropdown.tsx`
 
+- **"Chat with Meridian" button** in the behavioral row, to the LEFT of the request button.
+  Reuses `onResumeConversation` with no id — the same callback the topics dropdown uses — so it
+  opens the chat on the user's current conversation rather than deep-linking. Outline rather than
+  filled, so the row keeps a single primary action.
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`
 ### Fixed
 - **Auto-created conversation clobbered a deep link.** With no stored conversation the chat page
   auto-creates one; that network round trip lands AFTER the deep-link effect, replacing the
@@ -37,8 +42,18 @@ Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
   never open. A button click mounts it.
   - Files: `src/pages/user/HomeV2.tsx`
 
+- **Renamed two buttons:** "Request PRISM Inventory" → **"Request PRISM Survey"**, and
+  "View Inventory PDF" → **"View PRISM Report"**. Applied to the component defaultValues,
+  `public/locales/en/dashboard.json`, and the four comments elsewhere that name these buttons.
+  **The i18n KEYS are deliberately unchanged** (`requestPrismInventory`, `viewInventoryPdf`):
+  renaming them would drop all 20 non-English locales to the English fallback. Those locales keep
+  rendering, but now say "Inventory" in their own language where English says "Survey" —
+  **outstanding translation debt, not fixed here.**
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `public/locales/en/dashboard.json`,
+    `src/components/v2/AccentButton.tsx`, `src/hooks/documents/useProfileMaterial.ts`,
+    `src/pages/user/HomeV2.tsx`, `src/services/documents/prismReport.service.ts`
 ### Verification
-- `npm run build` (tsc + vite) clean; **550 suites / 4386 tests passing**; ESLint clean on every
+- `npm run build` (tsc + vite) clean; **550 suites / 4388 tests passing**; ESLint clean on every
   touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
 - New coverage: 5-day boundary in and out, day grouping, unusable timestamps, deep-link precedence
   over both the stored and the auto-created conversation, the delete two-step (arm / confirm /
