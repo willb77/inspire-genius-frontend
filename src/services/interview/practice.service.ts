@@ -29,6 +29,21 @@ export type PracticeQuestions = {
   totalCompetencies?: number
 }
 
+/**
+ * One-time personalization payload for the coach — the signed-in user's OWN
+ * profile block (PRISM summary + ambient résumé), fetched ONCE at interview
+ * start and replayed into each turn. `enabled` is false when the backend flag
+ * (AGENT_ENGINE_INTERVIEW_PRACTICE_PERSONALIZATION) is off; `personalContext`
+ * is empty when the user has no PRISM/résumé on file. It is the user's own data,
+ * never an evaluator score — the candidate-safe contract is unchanged.
+ */
+export type PracticeContext = {
+  enabled: boolean
+  hasPrism: boolean
+  hasResume: boolean
+  personalContext: string
+}
+
 export const practiceService = {
   async getPracticeQuestions(params?: {
     section?: PracticeSection["key"]
@@ -36,6 +51,19 @@ export const practiceService = {
     const { data } = await agentApi.get<PracticeQuestions>(
       "/v1/agents/interview/practice-questions",
       { params: { section: params?.section } },
+    )
+    return data
+  },
+
+  /**
+   * Fetch the caller's own coaching-context block ONCE at interview start. The
+   * expensive assembly happens here (cheap SQL, no pgvector) and the result is
+   * replayed by the page into every turn's job context — so the per-turn path
+   * never pays a retrieval cost.
+   */
+  async getPracticeContext(): Promise<PracticeContext> {
+    const { data } = await agentApi.get<PracticeContext>(
+      "/v1/agents/interview/practice-context",
     )
     return data
   },
@@ -206,11 +234,22 @@ export function buildCoachMessage(question: string, answer: string, frame?: Inte
   )
 }
 
-/** Job context for the async-chat coaching call. Includes the frame when set. */
-export function practiceJobContext(frame?: InterviewFrame | null): Record<string, unknown> {
-  return frame
-    ? { alex_mode: "interview_coach", interview_frame: frame }
-    : { alex_mode: "interview_coach" }
+/**
+ * Job context for the async-chat coaching call. Includes the frame when set, and
+ * the one-time `personal_context` blob when personalization is on — the backend
+ * (Alex interview-coach mode) folds it into the prompt as grounding. Passed via
+ * job context (not the visible message) so a multi-KB profile block never bloats
+ * the transcript. Omitted entirely when empty, so the coach degrades to bank +
+ * frame only.
+ */
+export function practiceJobContext(
+  frame?: InterviewFrame | null,
+  personalContext?: string | null,
+): Record<string, unknown> {
+  const ctx: Record<string, unknown> = { alex_mode: "interview_coach" }
+  if (frame) ctx.interview_frame = frame
+  if (personalContext && personalContext.trim()) ctx.personal_context = personalContext
+  return ctx
 }
 
 export const PRACTICE_JOB_CONTEXT = { alex_mode: "interview_coach" } as const
