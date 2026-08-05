@@ -1,3 +1,28 @@
+## [2026-08-05] — Interview Coach: one-time PRISM + ambient-résumé personalization (LIVE dev + staging-b)
+
+The candidate Interview Coach can now ground STAR feedback in the user's OWN profile — PRISM
+summary + an ambient résumé excerpt — with **no per-turn retrieval cost**. Fetched ONCE at
+interview start (cheap deterministic SQL, no pgvector) and replayed into each turn. Also completes
+the #787 latency fix. The user's own data, candidate-safe (coach stays scoreless). LIVE + enabled
+on dev and staging-b.
+
+### Added
+- **FE one-time fetch + privacy toggle** — `practiceService.getPracticeContext`, `PracticeContext`
+  type, `practiceJobContext(frame, personalContext)` (`personal_context` job-context key), a
+  "Personalize coaching to my profile" toggle (default on, opt-out) + "Personalized" indicator,
+  fetched once in `startInterview` and replayed each turn. FE **#364**.
+  - Files: `src/services/interview/practice.service.ts`, `src/pages/user/InterviewPracticePage.tsx`
+  - Tests: +3 `src/services/interview/__tests__/practice.service.test.ts` cases.
+- **Backend (mono repo #811)** — `GET /v1/agents/interview/practice-context` (cheap Path-B SQL
+  loader, no pgvector); `alex_agent` folds the profile into the prompt + sets `skip_rag=True`
+  (**completes #787**); flag `AGENT_ENGINE_INTERVIEW_PRACTICE_PERSONALIZATION` (CDK #812 dev,
+  #813 staging-b).
+
+### Verified
+- dev `practice-context` 200 `enabled:true`; staging-b promoted (`release-stable-2026-08-05-
+  interview-personalization`), task-def env flag `= "true"`, routes 401 unauth. Honor product
+  surfaces NOT affected (they use the cheap Path-B loader, no per-turn pgvector).
+
 ## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
 
 ### Fixed
