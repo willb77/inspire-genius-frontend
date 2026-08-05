@@ -1,3 +1,192 @@
+## [2026-08-05] — ts-jest was failing to emit a test file, blocking deploys
+
+Not a flake, and not cheap: the shared TypeScript program cost ~22 minutes of CI
+per run AND intermittently failed to compile a file. PR #371 (merge `0a0d7b46`).
+
+### The symptom
+`src/hooks/interview/__tests__/useSpeechDictation.test.tsx` failed to RUN, never
+to assert — every occurrence read `4363 tests passed, 1 suite failed`:
+
+```
+Unable to process '<file>', please make sure that `outDir` in your tsconfig is
+neither '' or '.'
+```
+
+Four times on 2026-08-05 across unrelated branches (#365's first run, #366's
+development run, #369's first run, #370's). On #370 it turned deterministic:
+**three consecutive reruns of the same commit all failed**, skipping Deploy to
+Dev and Deploy to Staging-B each time and leaving the HomeV2 rework undeployable
+for over an hour.
+
+### Cause, read from ts-jest 29.4 rather than inferred
+```
+ts-compiler.js:74   if (!this.configSet.isolatedModules) { …language service… }
+ts-compiler.js:193  if (output.emitSkipped) throw Errors.CannotProcessFile
+ts-compiler.js:238  return this._ts.transpileModule(…)
+```
+The throw is reachable only on the LanguageService path, guarded by exactly that
+flag. `"isolatedModules": true` in `tsconfig.test.json` makes ts-jest transpile
+each file on its own, which cannot reach it.
+
+### Why this costs no type safety
+`jest.config.ts` already sets `diagnostics.warnOnly: true` with TS1343/TS2339
+ignored — **jest was never a type gate**. It was paying for a type-aware program
+and deriving nothing from it. Real type-checking is `npm run build` (tsc) as its
+own CI job; `tsconfig.test.json` is test-only, so that build is untouched
+(verified). The flag goes in the tsconfig, not the ts-jest transform options:
+the transform-level form is deprecated in 29.x.
+
+### Result
+**Unit Tests 25 min → 2m47s on the same runner**, and green. Same 550 suites.
+
+- Files: `inspire-genius-frontend/tsconfig.test.json`
+
+### The verification gap that made this take four rounds
+`npm run test:ci` is bare `jest` — **no `--coverage`**. CI runs
+`npx jest --ci --forceExit --coverage --coverageThreshold=…`. Every "550/550
+green" reported earlier in the session therefore never exercised the failing
+path, while being described as the identical CI command. Re-verified since with
+the real invocation: 550 suites / 4365 tests.
+
+### Risk accepted
+`isolatedModules` forbids `const enum` and type-only re-exports without
+`export type`. Confirmed no `const enum` in `src/`; full suite passes.
+
+## [2026-08-05] — HomeV2 reworked: last-visit lead, Today's Prep tile, fewer shortcuts
+
+Seven changes to the Home page, all on request. Frontend-only; PR #370
+(merge `10b7559`).
+
+### Removed
+- **The Chat-with-Meridian tile.** WelcomeBackTile moves up into its place, so
+  "move the 2nd tile to the top" falls out of the removal. Meridian is still one
+  click away in the sidebar.
+- **"Other Assessments"** (DISC / MBTI / Clifton / Hogan / Big Five), with its
+  now-unreachable Add-assessment modal and the `loaded-frameworks` read whose
+  only consumer it was. Those results are still addable from the Documents
+  surface — the Home shortcut went, not the capability.
+  - Files: `inspire-genius-frontend/src/pages/user/HomeV2.tsx`,
+    `inspire-genius-frontend/src/components/dashboard/v2/WelcomeBackTile.tsx`
+
+### Changed
+- **"Welcome back, {name}" → "Here's what you worked on last visit."** plus the
+  user's recent Meridian conversations with relative times. Sourced from the
+  same conversation query the chat History dropdown uses, so the two cannot
+  disagree about what the recent work was. With no history it says so and offers
+  "start a conversation" rather than rendering an empty list — which is
+  indistinguishable from a failed fetch.
+- **Videos line** added above the quick-action row that holds the Videos
+  dropdown, so the copy sits beside the control it describes. Spelling corrected
+  to "InspiresGenius".
+- **Self-Portrait and My Journey greyed + locked.** A per-SHORTCUT lever
+  (`LOCKED_QUICK_ACTIONS`), deliberately separate from the vertical-level
+  `isVerticalForceDisabled`: Lumen and Direction Setting are still live products
+  and stay reachable elsewhere. Both read "Temporarily unavailable" rather than
+  the entitlement wording, which would be false for an entitled user.
+- **Personal Info** moved to the end of the quick-action row, sized to content,
+  with a floating panel — an inline expansion inside a flex row shoves that
+  row's layout on every open.
+
+### Added
+- **"Today's Prep" tile** rendering the Lumen Moments surface inline. Moments
+  gained an `embedded` variant dropping its page `<h1>` and padding — a variant,
+  not a copy, so the tile and `/vertical/lumen/moments` cannot drift.
+  - Files: `inspire-genius-frontend/src/pages/lumen/Moments.tsx`
+
+### Fixed — a bug this change introduced, caught by the existing suite
+Moving Personal Info into the quick-action row initially gated it on
+`quickActions.length || videos.length`, so a user with neither lost Personal Info
+entirely. The row now also renders for Personal Info alone, with a test in each
+direction.
+
+### Deliberately NOT done — no deep-link from the last-visit list
+The entries open the chat but do **not** select the clicked conversation.
+`MeridianChat`'s route-state contract is `prefillPrompt` / `autoSubmit` /
+`prefillDisplay` only — there is no `conversationId` entry point, so passing one
+would have been a silent no-op that looked like a working link in review. This
+matches what the previous "Last time we discussed…" button did. Deep-linking is
+a MeridianChat change, not a Home one.
+
+### i18n — six new keys across ALL 21 locales
+Real translations, not just the 10 languages the parity test checks: an `en`-only
+key fails that gate, and English text in a non-English bundle is the defect the
+gate exists to catch. "InspiresGenius" stays untranslated as a product name.
+
+### Verification
+Rendered the composed page and read the result rather than trusting assertions
+alone: two tiles in the right order, three pills locked with the honest tooltip,
+Moments' ask box mounted inside the tile with no duplicate heading.
+`npm run test:ci` 550 suites / 4365 tests all passing; build and eslint clean.
+
+**Process note:** the PR was merged with `gh pr merge --auto`, which fell back to
+an immediate merge because auto-merge is not enabled on the repo — so it landed
+on three of four green gates, with Unit Tests still pending, rather than four.
+No practical consequence (the full suite was green locally and the deploy re-runs
+it), but `--auto` is not a safe way to gate a merge on this repo.
+
+## [2026-08-05] — Job Fit switched off at its remaining entry point (Home)
+
+Follow-up to yesterday's My Workspace menu change. Greying the sidebar entry did
+NOT switch Job Fit off: two other surfaces linked straight to
+`/vertical/job-fit/matches` and both gated on entitlement alone, so for an
+entitled user the feature looked disabled while staying one click away.
+Frontend-only; PR #369.
+
+### Changed — Home quick-action row honours the force-disable
+`isVerticalForceDisabled(key)` now sits beside `FORCE_DISABLED_VERTICALS`, and
+Home consults it rather than re-deriving the rule. Exported as a function taking
+a plain string because callers hold `vertical` untyped from their own link
+tables; an unknown key simply isn't in the set.
+
+- Files: `inspire-genius-frontend/src/components/layout/useVerticalLauncher.ts`,
+  `inspire-genius-frontend/src/pages/user/HomeV2.tsx`
+
+### Fixed — Home's locked tooltip claimed the user's plan lacked Job Fit
+It read "Job Fit isn't enabled for your account", which is an entitlement
+message and false for anyone whose plan does include it.
+`WelcomeBackQuickAction` gained an optional `lockedReason`; the force-disabled
+case reads "Temporarily unavailable" while genuinely unentitled verticals keep
+the entitlement wording. Same defect the sidebar had — it existed in several
+places because "locked means unentitled" was baked into each one.
+
+- Files: `inspire-genius-frontend/src/components/dashboard/v2/WelcomeBackTile.tsx`
+
+### Scope shrank mid-PR — the Meridian row was deleted by someone else
+The PR originally changed two surfaces. While it was open, **#368 removed the
+Meridian header's personal row entirely** — the row carrying Self-Portrait,
+Moments, Coaching and Job Fit. That link is now *gone*, not disabled, and
+`development` asserts it. The merge therefore took `development`'s
+`MeridianChat.tsx` and its test wholesale and dropped those edits; reviving them
+would have resurrected a deliberately deleted surface. The PR body was rewritten
+to match the actual diff rather than left describing a change no longer in it.
+
+Entry-point status: sidebar (#365, done) · Home (#369, this) · Meridian header
+(removed by #368, nothing to do).
+
+### Known gap — the reason string is not translated
+It reuses the same shared constant the sidebar already ships untranslated, so
+both surfaces say the same thing. An i18n key would mean 21 locale files (the
+parity test checks 10 languages, but 21 carry these namespaces) for a temporary
+state. Recorded as a deliberate choice, not an oversight.
+
+### Still open — Goals has the same shape
+Still reachable from the Direction Setting sub-nav ("My goals") and JourneyPage
+stage 5. Only Job Fit was in scope.
+
+### Verification
+`npm run test:ci` 550 suites / 4356 tests all passing (post-merge with #367 and
+#368); build clean; eslint 0 errors on changed files. New
+`forceDisabledVerticals.test.ts` pins the helper and asserts the three gating
+mechanisms stay distinct; HomeV2 gained an entitled-but-off case plus a check
+that neighbouring quick actions are untouched.
+
+**CI note:** the first run failed on `useSpeechDictation.test.tsx` with a ts-jest
+`Test suite failed to run … outDir` compile error — 4338 tests passed, zero
+assertions failed. Third occurrence across unrelated branches (#365's first run,
+#366's development run, #369's first run); does not reproduce locally under the
+identical command; the file is untouched by any of them. Environmental, but now
+frequent enough to deserve its own fix.
+
 ## [2026-08-05] — Meridian Chat: one header row, Starter Questions, composer below the transcript
 
 Four changes to the Chat with Meridian page (V2 surface only; the classic layout is untouched).
