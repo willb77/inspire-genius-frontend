@@ -6,6 +6,7 @@ import {
   SUPER_ADMIN_TOOLS_SECTION,
   getUserNavItems,
   HIDDEN_WORKSPACE_ROUTES,
+  WORKSPACE_ITEM_UNAVAILABLE_REASON,
 } from "../navigation"
 import { ROUTES } from "@/constants/routes"
 import type { UserRole } from "@/types/roles"
@@ -111,5 +112,105 @@ describe("Document Library in My Workspace", () => {
     // The rename is label-only. If ROUTES.DOCUMENTS ever moved, bookmarks and
     // the Meridian header entry point would break silently.
     expect(ROUTES.DOCUMENTS).toBe("/documents")
+  })
+})
+
+// ── 2026-08-04, user request ──────────────────────────────────────────────
+// My Workspace order fixed, and Analytics / Goals / Job Fit switched off.
+// Job Fit is spliced in from the vertical registry, so its half of the change
+// is pinned in components/layout/__tests__/useVerticalLauncher.test.ts.
+describe("My Workspace menu order + switched-off entries", () => {
+  const labels = (agentEngineOn: boolean) =>
+    getUserNavItems(agentEngineOn).map((i) => i.label)
+
+  it("orders the usable entries Home → Chat → Document Library → Interview Practice → Help", () => {
+    // Asserted as a subsequence, not the whole array: the greyed entries and
+    // Settings sit between them, and Job Fit is spliced in later by
+    // useWorkspaceNavItems. What was specified is the RELATIVE order of these
+    // five, so that is what is pinned.
+    const wanted = [
+      "Home",
+      "Chat with Meridian",
+      "Document Library",
+      "Interview Practice",
+      "Help & Support",
+    ]
+    const positions = wanted.map((l) => labels(true).indexOf(l))
+    expect(positions).not.toContain(-1)
+    expect(positions).toEqual([...positions].sort((a, b) => a - b))
+  })
+
+  it("puts Document Library ahead of Interview Practice (they swapped)", () => {
+    for (const on of [true, false]) {
+      const l = labels(on)
+      expect(l.indexOf("Document Library")).toBeLessThan(
+        l.indexOf("Interview Practice"),
+      )
+    }
+  })
+
+  it("keeps Help & Support last", () => {
+    for (const on of [true, false]) {
+      expect(labels(on).at(-1)).toBe("Help & Support")
+    }
+  })
+
+  it("greys out Analytics and Goals under BOTH agent-engine toggle states", () => {
+    for (const on of [true, false]) {
+      const items = getUserNavItems(on)
+      for (const route of [ROUTES.ANALYTICS, ROUTES.DIRECTION_SETTING.GOALS]) {
+        const item = items.find((i) => i.to === route)
+        expect(item).toBeDefined()
+        expect(item!.disabled).toBe(true)
+      }
+    }
+  })
+
+  it("explains WHY they are off instead of blaming the user's plan", () => {
+    // NavItemDef's default locked title is "not included in your plan". These
+    // three are off for everyone, so that default would be untrue — a menu
+    // that misinforms is worse than one that says nothing.
+    const items = getUserNavItems(true)
+    for (const route of [ROUTES.ANALYTICS, ROUTES.DIRECTION_SETTING.GOALS]) {
+      expect(items.find((i) => i.to === route)!.disabledReason).toBe(
+        WORKSPACE_ITEM_UNAVAILABLE_REASON,
+      )
+    }
+  })
+
+  it("leaves the switched-off entries VISIBLE — disabled is not deleted", () => {
+    const rendered = labels(true)
+    expect(rendered).toContain("Analytics")
+    expect(rendered).toContain("Goals")
+  })
+
+  it("does not list them as hidden — they are present, just not usable", () => {
+    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu". Adding a greyed
+    // entry to it would make the constant lie, and the invariant test above
+    // ("never contradicts the rendered menu") would fail.
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.ANALYTICS)
+    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
+  })
+
+  it("keeps every switched-off route resolvable so re-enabling is one line", () => {
+    const items = getUserNavItems(true)
+    expect(items.find((i) => i.label === "Analytics")!.to).toBe(ROUTES.ANALYTICS)
+    expect(items.find((i) => i.label === "Goals")!.to).toBe(
+      ROUTES.DIRECTION_SETTING.GOALS,
+    )
+  })
+
+  it("leaves the four usable entries usable", () => {
+    const items = getUserNavItems(true)
+    for (const label of [
+      "Home",
+      "Chat with Meridian",
+      "Document Library",
+      "Interview Practice",
+      "Settings",
+      "Help & Support",
+    ]) {
+      expect(items.find((i) => i.label === label)!.disabled).toBeFalsy()
+    }
   })
 })

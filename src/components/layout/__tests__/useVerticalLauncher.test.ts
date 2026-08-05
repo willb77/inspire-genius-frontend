@@ -149,12 +149,34 @@ describe("useVerticalLauncherSection", () => {
 
 // WORKSPACE_VERTICALS = {job-fit} as of 2026-08-04, so the workspace-splice
 // mechanism now promotes Job Fit into My Workspace (greyed when unentitled).
+//
+// Later the same day Job Fit was ALSO switched off for everyone
+// (FORCE_DISABLED_VERTICALS), so it is now listed-but-greyed in every case. It
+// stays in WORKSPACE_VERTICALS so that it keeps its My Workspace placement and
+// does not reappear in the Tools rollup while switched off.
 describe("useWorkspaceVerticalItems (Job Fit promoted to My Workspace)", () => {
-  test("returns Job Fit, entitled → usable", () => {
+  test("returns Job Fit greyed even for an ENTITLED user (force-disabled)", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceVerticalItems())
     expect(result.current.map((i) => i.label)).toEqual(["Job Fit"])
-    expect(result.current[0].disabled).toBe(false)
+    expect(result.current[0].disabled).toBe(true)
+  })
+
+  test("tells an entitled user it is unavailable, NOT that their plan lacks it", () => {
+    // The default locked wording is an entitlement message. Showing it to a
+    // user who *is* entitled would be a plain falsehood about their account.
+    setEnabled(["job-fit"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current[0].disabledReason).toBe("Temporarily unavailable")
+  })
+
+  test("keeps the entitlement wording for a user who genuinely lacks it", () => {
+    setEnabled(["grant"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current[0].disabled).toBe(true)
+    // Undefined = fall through to NavItemDef's "not included in your plan",
+    // which is true for this user.
+    expect(result.current[0].disabledReason).toBeUndefined()
   })
 
   test("returns Job Fit greyed when the user is not entitled", () => {
@@ -162,6 +184,13 @@ describe("useWorkspaceVerticalItems (Job Fit promoted to My Workspace)", () => {
     const { result } = renderHook(() => useWorkspaceVerticalItems())
     expect(result.current.map((i) => i.label)).toEqual(["Job Fit"])
     expect(result.current[0].disabled).toBe(true)
+  })
+
+  test("the vertical itself is untouched — only the menu entry is off", () => {
+    // Re-enabling must be a one-line change here, not a route restoration.
+    setEnabled(["job-fit"])
+    const { result } = renderHook(() => useWorkspaceVerticalItems())
+    expect(result.current[0].to).toBe("/vertical/job-fit/matches")
   })
 })
 

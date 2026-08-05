@@ -14,6 +14,7 @@ import {
 } from "@/verticals/core"
 import type { SidebarSection } from "@/constants/sidebar-sections"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
+import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
 
 /**
  * Registry-driven vertical launcher.
@@ -62,6 +63,23 @@ export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
  */
 export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
 
+/**
+ * Verticals switched off for EVERYONE, regardless of entitlement (2026-08-04,
+ * user request).
+ *
+ * A third, independent mechanism, deliberately not folded into the other two:
+ * `HIDDEN_VERTICALS` removes an entry from the list, entitlement decides whether
+ * an entry you can see is usable, and this set overrides entitlement to force an
+ * entry greyed even for a user who *is* entitled. Job Fit is here because it was
+ * turned off alongside Analytics and Goals in the My Workspace menu — the other
+ * two are plain nav items in `constants/navigation.ts`, but Job Fit reaches the
+ * menu through this registry, so it needs its own lever.
+ *
+ * The vertical, its routes and its pages are untouched — re-enabling is emptying
+ * this set.
+ */
+export const FORCE_DISABLED_VERTICALS = new Set<VerticalKey>(["job-fit"])
+
 /** Per-vertical sidebar icon; the generic `Compass` is the fallback. */
 const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,
@@ -76,11 +94,18 @@ function toNavItem(
   v: { key: VerticalKey; title: string; homePath: string },
   entitled: boolean,
 ): NavItemDef {
+  const forcedOff = FORCE_DISABLED_VERTICALS.has(v.key)
   return {
     to: v.homePath,
     icon: VERTICAL_ICONS[v.key] ?? Compass,
     label: v.title,
-    disabled: !entitled,
+    disabled: forcedOff || !entitled,
+    // An entitled-but-switched-off vertical must not claim it is missing from
+    // the user's plan — that would be false. Unentitled entries keep the
+    // default plan wording (see NavItemDef.disabledReason).
+    ...(forcedOff && entitled
+      ? { disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON }
+      : {}),
   }
 }
 
