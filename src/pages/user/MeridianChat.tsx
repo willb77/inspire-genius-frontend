@@ -185,6 +185,21 @@ export default function MeridianChat({
     return s?.prefillDisplay || undefined;
   });
 
+  // Deep-link into an existing conversation (2026-08-05). HomeV2's "what you
+  // worked on last visit" list sends the conversation id here so picking an
+  // entry lands on that transcript already loaded in the Conversation tile,
+  // rather than dumping the user into a blank chat to go find it again.
+  //
+  // Captured once at mount, like the prefill above, so a refresh or a
+  // back-navigation does not yank the user out of whatever they have since
+  // selected. Applied by the effect below once the handler exists.
+  const [deepLinkConversationId] = useState<string | undefined>(() => {
+    const s = location.state as { conversationId?: string } | null;
+    return typeof s?.conversationId === "string" && s.conversationId
+      ? s.conversationId
+      : undefined;
+  });
+
   // ── Warm-up gate for injected questions (2026-08-01) ───────────────
   //
   // Reported symptom: a question injected from another surface took far
@@ -1289,6 +1304,20 @@ export default function MeridianChat({
 
   // Hydrate conversation on mount
   useEffect(() => {
+    // A deep link is an explicit instruction about which conversation to open,
+    // so it outranks both the stored conversation and auto-creating a new one.
+    //
+    // The auto-create branch below is the one that actually breaks without
+    // this: it is a network round trip, so its onSuccess lands well after the
+    // deep-link effect and overwrites the chosen conversation with a fresh
+    // empty one — and burns a conversation server-side on every deep link.
+    // Covered by "does not auto-create a conversation over the deep-linked
+    // one", which is red without this line.
+    //
+    // The stored-conversation branch happens to resolve in the right order
+    // today, so it survives without the guard; this makes that independent of
+    // which async chain wins rather than leaving it to timing.
+    if (deepLinkConversationId) return;
     let mounted = true;
     (async () => {
       const stored = await secureGetItem<{ id?: string }>("conv");
@@ -1378,6 +1407,20 @@ export default function MeridianChat({
     },
     [disconnect, selectedId],
   );
+
+  // Apply a deep-linked conversation exactly once, after mount.
+  //
+  // This runs in its own effect rather than as the initial `selectedId` so it
+  // goes through handleSelectConversation — the one path that also tears down
+  // the socket, resets audio and clears the previous transcript. Setting the
+  // id directly would load the new messages while leaving the old
+  // conversation's audio and WS still running.
+  const deepLinkAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!deepLinkConversationId || deepLinkAppliedRef.current) return;
+    deepLinkAppliedRef.current = true;
+    void handleSelectConversation(deepLinkConversationId);
+  }, [deepLinkConversationId, handleSelectConversation]);
 
   // "New Chat" header action. Mirrors handleSelectConversation's cleanup,
   // then calls the same createConv path used on first mount (lines 1083-
@@ -1927,6 +1970,12 @@ export default function MeridianChat({
             activeId={selectedId ?? null}
             onSelectActive={(id) => {
               void handleSelectConversation(id);
+            }}
+            onDeletedActive={() => {
+              // The open conversation was just deleted. Clear the pane rather
+              // than leaving a transcript the server no longer has, and start
+              // a fresh chat so the composer stays usable.
+              void handleNewChat();
             }}
           />
           {/* Moments — promoted from the second row, which held four personal

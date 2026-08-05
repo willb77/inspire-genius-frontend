@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * AccentButton — the orange call-to-action button for the new (HomeV2) design
- * system (e.g. "Request PRISM Inventory", primary Meridian CTA). Colors from
+ * system (e.g. "Request PRISM Survey", primary Meridian CTA). Colors from
  * tokens (bg-accent-orange → hover bg-accent-orange-dark). RTL-safe.
  *
  * Wave 0 primitive. For the navy primary action use PrimaryButton.

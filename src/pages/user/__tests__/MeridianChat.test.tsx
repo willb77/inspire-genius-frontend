@@ -318,6 +318,25 @@ function renderPage() {
   );
 }
 
+/**
+ * Render as if navigated in from HomeV2 carrying a conversation to open.
+ *
+ * Sets `mockLocationState` rather than MemoryRouter's `initialEntries`:
+ * `useLocation` is mocked at the module level in this file, so router state
+ * never reaches the component.
+ */
+function renderPageWithState(state: Record<string, unknown>) {
+  mockLocationState = state;
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={["/meridian/chat"]}>
+        <MeridianChat />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
 /* ---- Tests ---- */
 
 describe("MeridianChat", () => {
@@ -705,6 +724,82 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
       "aria-disabled",
       "true",
     );
+  });
+
+  // ── deep link from HomeV2 (2026-08-05) ────────────────────────────────
+  // Before this the chat had no entry point for a specific conversation, so
+  // "resume what you worked on" could only drop the user into a blank chat.
+  it("opens the conversation it was deep-linked to", async () => {
+    renderPageWithState({ conversationId: "conv-deep" });
+    await waitFor(() => {
+      expect(capturedChatWindowProps.conversationId).toBe("conv-deep");
+    });
+  });
+
+  it("beats a stored conversation restored on mount", async () => {
+    const { secureGetItem } = jest.requireMock("@/lib/secureStorage");
+    (secureGetItem as jest.Mock).mockResolvedValueOnce({ id: "conv-stored" });
+
+    renderPageWithState({ conversationId: "conv-deep" });
+
+    await waitFor(() => {
+      expect(capturedChatWindowProps.conversationId).toBe("conv-deep");
+    });
+    // Let the async hydrate settle, then confirm it did not win a late race.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    expect(capturedChatWindowProps.conversationId).toBe("conv-deep");
+  });
+
+  // The case that genuinely bites. With no stored conversation the page
+  // auto-creates one; that is a network round trip, so its onSuccess lands
+  // well after the deep-link effect and overwrites the conversation the user
+  // asked for with a brand-new empty one.
+  it("does not auto-create a conversation over the deep-linked one", async () => {
+    const { secureGetItem } = jest.requireMock("@/lib/secureStorage");
+    (secureGetItem as jest.Mock).mockResolvedValueOnce(null);
+
+    // Auto-create resolves late, the way a real request would.
+    mockCreateConvMutate.mockImplementation(
+      (_vars: unknown, opts?: { onSuccess?: (r: unknown) => void }) => {
+        setTimeout(
+          () => opts?.onSuccess?.({ data: { conversation: { id: "conv-new" } } }),
+          5,
+        );
+      },
+    );
+
+    renderPageWithState({ conversationId: "conv-deep" });
+
+    await waitFor(() => {
+      expect(capturedChatWindowProps.conversationId).toBe("conv-deep");
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30));
+    });
+    expect(capturedChatWindowProps.conversationId).toBe("conv-deep");
+    // And it should not have burned a conversation on the server at all.
+    expect(mockCreateConvMutate).not.toHaveBeenCalled();
+  });
+
+  it("ignores a deep link with no conversation id", async () => {
+    renderPageWithState({});
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    // Falls back to whatever the page would normally restore — critically, it
+    // does not select a conversation named "undefined".
+    expect(capturedChatWindowProps.conversationId).not.toBe("undefined");
+  });
+
+  it("ignores a non-string conversation id rather than selecting garbage", async () => {
+    renderPageWithState({ conversationId: 42 });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(capturedChatWindowProps.conversationId).not.toBe(42);
+    expect(capturedChatWindowProps.conversationId).not.toBe("42");
   });
 
   it("offers the Starter Questions dropdown in the header row", () => {

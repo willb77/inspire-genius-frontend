@@ -7,7 +7,7 @@
  * This hook lists the real documents so each one can be opened in a viewer.
  *
  * The PRISM report is deliberately excluded: it already has its own line and
- * its own "View Inventory PDF" button, and listing it twice would imply the
+ * its own "View PRISM Report" button, and listing it twice would imply the
  * user had uploaded two different things.
  */
 
