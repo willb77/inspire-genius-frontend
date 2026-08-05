@@ -33,15 +33,32 @@ import {
   Target,
 } from "lucide-react"
 
+/**
+ * Why the three switched-off My Workspace entries are greyed (2026-08-04).
+ *
+ * NOT an entitlement gate — these are turned off for everyone, so the default
+ * "not included in your plan" hover text in {@link NavItemDef} would be a lie.
+ * Shared with `useVerticalLauncher` so Job Fit — which is greyed by the same
+ * decision but reaches the menu through the vertical registry rather than this
+ * list — gives the identical explanation.
+ */
+export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
+
 /** Navigation items for the regular user role */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
   { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
-  { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
+  { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
-  { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  {
+    to: ROUTES.ANALYTICS,
+    icon: BarChart3,
+    label: "Analytics",
+    disabled: true,
+    disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
+  },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -66,13 +83,15 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // Bio Capture moved into the "Tools" rollup (see UserLayout) 2026-08-04 —
     // it is a tool you go to, not a primary workspace shortcut. The route
     // (ROUTES.BIO_CAPTURE) is unchanged; only the sidebar placement moved.
-    // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
-    { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
+    //
     // Document Library — restored to the menu 2026-08-03 and renamed from
     // "My Documents". The route (ROUTES.DOCUMENTS) never changed, so existing
     // links, bookmarks and the Meridian header entry point all still resolve;
-    // only the sidebar shortcut and its label moved.
+    // only the sidebar shortcut and its label moved. Ordered ahead of Interview
+    // Practice on 2026-08-04 (the two swapped places) — see the order note below.
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
+    // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
+    { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
     // admin-only route at /super-admin/agent-trace-console.
     //
@@ -83,11 +102,36 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // section). The menu is a shortcut list, not the route table — see
     // HIDDEN_WORKSPACE_ROUTES below for the full accounting so a future
     // reader doesn't assume the pages were dropped.
-    { to: ROUTES.ANALYTICS, icon: BarChart3, label: "Analytics" },
+    //
+    // ── 2026-08-04, user request: menu order + three entries switched off ──
+    // Live order is Home → Chat with Meridian → Document Library → Interview
+    // Practice, then the greyed trio (Analytics, Goals, and Job Fit — spliced
+    // in below by useWorkspaceNavItems), then the Settings/Help tail.
+    //
+    // Analytics, Goals and Job Fit are DISABLED, not removed: still listed, but
+    // greyed, lock-marked and non-navigating. Deliberately not deleted — the
+    // pages and routes are untouched, so re-enabling is dropping `disabled`
+    // here (and from FORCE_DISABLED_VERTICALS in useVerticalLauncher for Job
+    // Fit), with no route or layout work. They are NOT added to
+    // HIDDEN_WORKSPACE_ROUTES: that constant means "absent from the menu", and
+    // these are present — just not usable.
+    {
+      to: ROUTES.ANALYTICS,
+      icon: BarChart3,
+      label: "Analytics",
+      disabled: true,
+      disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
+    },
     // Goals — the "My Goals" interview (Direction Setting stage 5). Promoted to a
     // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
     // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
-    { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" },
+    {
+      to: ROUTES.DIRECTION_SETTING.GOALS,
+      icon: Target,
+      label: "Goals",
+      disabled: true,
+      disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
+    },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]
