@@ -1,3 +1,84 @@
+## [2026-08-04] — My Workspace menu: fixed order, three entries switched off
+
+User request: reorder the My Workspace left menu and grey out Analytics, Goals
+and Job Fit. Frontend-only; PR #365 (`feat/workspace-menu-order-disable`).
+
+### Changed — menu order
+Live order is now Home → Chat with Meridian → Document Library → Interview
+Practice, then the three switched-off entries, then the Settings/Help tail.
+Document Library and Interview Practice swapped places; nothing else moved.
+
+Settings was not in the requested list but was **kept** — it is the only sidebar
+route to `/settings`, and removing it was not part of the ask. The greyed trio
+sits ahead of the Settings/Help tail so the five specified entries keep exactly
+the relative order given.
+
+- Files: `inspire-genius-frontend/src/constants/navigation.ts`
+
+### Changed — Analytics, Goals and Job Fit disabled (not deleted)
+Still listed, greyed, lock-marked and non-navigating. Routes and pages are
+untouched, so re-enabling is removing a flag rather than restoring a surface.
+
+Deliberately **not** added to `HIDDEN_WORKSPACE_ROUTES`: that constant means
+"absent from the menu", and these are present but unusable. The existing
+invariant test ("HIDDEN_WORKSPACE_ROUTES never contradicts the rendered menu")
+would fail if the two disagreed.
+
+### Added — `FORCE_DISABLED_VERTICALS`, because Job Fit needed its own lever
+Job Fit is **not in `getUserNavItems` at all**. It reaches My Workspace from the
+vertical registry via `useWorkspaceNavItems`, where `disabled` is derived from
+entitlement — so setting the flag in the nav list could not reach it. The new
+set overrides entitlement, greying Job Fit **even for a user who is entitled to
+it**. It stays in `WORKSPACE_VERTICALS` so it keeps its menu position and does
+not reappear in the Tools rollup while switched off.
+
+Three independent mechanisms now, kept separate on purpose: `HIDDEN_VERTICALS`
+removes an entry, entitlement decides whether a visible entry is usable, and
+`FORCE_DISABLED_VERTICALS` overrides entitlement to force one off.
+
+- Files: `inspire-genius-frontend/src/components/layout/useVerticalLauncher.ts`
+
+### Fixed — the locked hover text would have lied
+Until now the only reason an item could be locked was entitlement, so
+`NavItemDef` hardcoded `"<label> — not included in your plan"`. These three are
+off for **everyone**, including users whose plan does include Job Fit, so that
+message would have been false. Added `NavItemDef.disabledReason`; the three read
+"Temporarily unavailable". Unentitled verticals keep the plan wording, which is
+accurate for them.
+
+- Files: `inspire-genius-frontend/src/components/shared/layout/SidebarScaffold.tsx`
+
+### Verification — rendered DOM, not just the nav array
+The array can be correct while the rendering is wrong, and Job Fit is not in the
+array until it is spliced in. Rendered the composed menu through the real
+`SidebarScaffold` markup, for a user **entitled** to Job Fit:
+
+```
+ 1. Home                 disabled=false aria=null  greyed=false title=-
+ 2. Chat with Meridian   disabled=false aria=null  greyed=false title=-
+ 3. Document Library     disabled=false aria=null  greyed=false title=-
+ 4. Interview Practice   disabled=false aria=null  greyed=false title=-
+ 5. Analytics            disabled=true  aria=true  greyed=true  title=Temporarily unavailable
+ 6. Goals                disabled=true  aria=true  greyed=true  title=Temporarily unavailable
+ 7. Job Fit              disabled=true  aria=true  greyed=true  title=Temporarily unavailable
+ 8. Settings             disabled=false aria=null  greyed=false title=-
+ 9. Help & Support       disabled=false aria=null  greyed=false title=-
+```
+
+`npm run test:ci` 545 suites / 4322 tests all passing; `npm run build` clean;
+eslint clean on every changed file. Two pre-existing assertions in
+`useVerticalLauncher.test.ts` expected Job Fit usable when entitled — updated to
+the new contract rather than left to fail.
+
+**Not browser-verified on a deployed environment.** This is a static nav
+definition with render-level coverage; the visual result on dev is unconfirmed
+until CI deploys.
+
+### Added — tests
+- Files: `inspire-genius-frontend/src/constants/__tests__/workspace-menu.render.test.tsx` (new, render-level),
+  `inspire-genius-frontend/src/constants/__tests__/navigation.test.ts`,
+  `inspire-genius-frontend/src/components/layout/__tests__/useVerticalLauncher.test.ts`
+
 ## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
 
 ### Fixed
