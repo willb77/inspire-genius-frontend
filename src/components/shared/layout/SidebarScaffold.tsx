@@ -46,6 +46,14 @@ export type NavItemDef = {
    */
   disabled?: boolean;
   /**
+   * Why the item is disabled, shown as its hover title. Defaults to the
+   * entitlement wording ("not included in your plan"), which was the only
+   * reason an item could be locked until 2026-08-04. Items switched off for
+   * other reasons must set this — otherwise the menu tells the user something
+   * untrue about their plan.
+   */
+  disabledReason?: string;
+  /**
    * Treat the item as active for any route under this prefix, instead of only
    * on an exact `to` match. A vertical's launcher entry links to its *home*
    * page, so without this it stops looking active the moment you navigate to
@@ -84,7 +92,7 @@ export type SidebarScaffoldProps = {
   collapseOnMount?: boolean;
 };
 
-function NavItem({ to, icon: Icon, label, state, disabled, activePrefix, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
+function NavItem({ to, icon: Icon, label, state, disabled, disabledReason, activePrefix, expandOnPath }: NavItemDef & { expandOnPath?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, setOpen } = useSidebar();
@@ -103,7 +111,7 @@ function NavItem({ to, icon: Icon, label, state, disabled, activePrefix, expandO
         isActive={!disabled && isActive}
         disabled={disabled}
         aria-disabled={disabled || undefined}
-        title={disabled ? `${label} — not included in your plan` : undefined}
+        title={disabled ? disabledReason ?? `${label} — not included in your plan` : undefined}
         onClick={() => {
           if (disabled) return;
           if (expandOnPath && to === expandOnPath && !open) {
