@@ -34,7 +34,28 @@ jest.mock("@/hooks/profile/useProfile", () => ({
   useConfirmImportAssessment: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false }),
 }));
 
+// Defaults to "no data", exactly what the unmocked hook produced before, so
+// every pre-existing test in this file is unaffected. The recent-topics tests
+// below override it per-case.
+const mockUseAgentConversation = jest.fn(() => ({
+  data: undefined,
+  isLoading: false,
+}));
+jest.mock("@/hooks/agents/useAgentConversation", () => ({
+  useAgentConversation: () => mockUseAgentConversation(),
+}));
+
 import HomeV2 from "@/pages/user/HomeV2";
+
+/** Build a conversation whose last activity was `daysAgo` days back. */
+function convAt(id: string, title: string, daysAgo: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  // Mid-day, so a test running near midnight cannot slide an entry into the
+  // adjacent calendar day and make the assertions flap.
+  d.setHours(12, 0, 0, 0);
+  return { id, title, updated_at: d.toISOString() };
+}
 
 function wrap() {
   const qc = new QueryClient();
@@ -52,6 +73,65 @@ const ASSESSMENTS = "homev2-other-assessments-dropdown";
 
 beforeEach(() => {
   mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
+  mockUseAgentConversation.mockReturnValue({ data: undefined, isLoading: false });
+});
+
+describe("HomeV2 — recent topics (5-day window)", () => {
+  function withConversations(rows: ReturnType<typeof convAt>[]) {
+    mockUseAgentConversation.mockReturnValue({
+      data: { data: { conversations: rows } },
+      isLoading: false,
+    } as unknown as { data: undefined; isLoading: boolean });
+    wrap();
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    return screen.getByTestId("homev2-last-actions-list");
+  }
+
+  it("includes conversations from inside the window", () => {
+    const list = withConversations([
+      convAt("a", "Today's thread", 0),
+      convAt("b", "Four days back", 4),
+    ]);
+    expect(list).toHaveTextContent("Today's thread");
+    expect(list).toHaveTextContent("Four days back");
+  });
+
+  it("excludes anything older than the window", () => {
+    // The heading promises recent work; a six-day-old thread under it would
+    // make the window meaningless.
+    const list = withConversations([
+      convAt("a", "Today's thread", 0),
+      convAt("old", "Six days back", 6),
+    ]);
+    expect(list).toHaveTextContent("Today's thread");
+    expect(list).not.toHaveTextContent("Six days back");
+  });
+
+  it("labels days rather than only relative times", () => {
+    const list = withConversations([convAt("a", "Today's thread", 0)]);
+    expect(list).toHaveTextContent("Today");
+  });
+
+  it("shows the empty state when everything is outside the window", () => {
+    // Not an empty list that reads as a failed fetch — the same rule the tile
+    // already follows for a user with no history at all.
+    mockUseAgentConversation.mockReturnValue({
+      data: { data: { conversations: [convAt("old", "Ancient", 30)] } },
+      isLoading: false,
+    } as unknown as { data: undefined; isLoading: boolean });
+    wrap();
+    expect(screen.queryByTestId("homev2-last-actions-trigger")).toBeNull();
+    expect(screen.getByText(/Nothing yet/i)).toBeInTheDocument();
+  });
+
+  it("drops rows with an unusable timestamp rather than widening the window", () => {
+    const list = withConversations([
+      convAt("a", "Today's thread", 0),
+      { id: "bad", title: "No timestamp", updated_at: "" },
+    ] as ReturnType<typeof convAt>[]);
+    expect(list).toHaveTextContent("Today's thread");
+    expect(list).not.toHaveTextContent("No timestamp");
+  });
 });
 
 describe("HomeV2", () => {
@@ -114,8 +194,24 @@ describe("HomeV2", () => {
       expect(todaysPrep).toBeGreaterThan(lastVisit);
     });
 
-    it("renders the Today's Prep tile with the Moments interface inside it", () => {
+    // 2026-08-05: Today's Prep starts collapsed. The tile chrome is present on
+    // load but Moments is NOT mounted, so Home stops paying for a surface most
+    // visits never open.
+    it("does not mount Moments on load", () => {
       wrap();
+      expect(screen.getByTestId("homev2-todays-prep")).toBeInTheDocument();
+      expect(screen.getByTestId("homev2-todays-prep-toggle")).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      expect(
+        screen.queryByLabelText("Describe the situation"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders the Today's Prep tile with the Moments interface inside it once opened", () => {
+      wrap();
+      fireEvent.click(screen.getByTestId("homev2-todays-prep-toggle"));
       const tile = screen.getByTestId("homev2-todays-prep");
       expect(tile).toBeInTheDocument();
       // Moments' own ask box, proving the embedded surface actually mounted
@@ -125,9 +221,20 @@ describe("HomeV2", () => {
       ).toBeInTheDocument();
     });
 
+    it("closes Today's Prep again on a second click", () => {
+      wrap();
+      const toggle = screen.getByTestId("homev2-todays-prep-toggle");
+      fireEvent.click(toggle);
+      fireEvent.click(toggle);
+      expect(
+        screen.queryByLabelText("Describe the situation"),
+      ).not.toBeInTheDocument();
+    });
+
     it("does not repeat the Moments page heading inside the tile", () => {
       // `embedded` drops Moments' own <h1>; two stacked headings read as a bug.
       wrap();
+      fireEvent.click(screen.getByTestId("homev2-todays-prep-toggle"));
       const headings = screen
         .getAllByRole("heading")
         .map((h) => h.textContent?.trim());

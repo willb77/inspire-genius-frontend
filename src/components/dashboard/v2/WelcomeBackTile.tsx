@@ -63,6 +63,12 @@ export interface WelcomeBackLastAction {
   label: string;
   /** Relative time ("2 days ago"); omitted when the timestamp is unusable. */
   meta?: string;
+  /**
+   * Day bucket ("Today", "Yesterday", "Mon 4 Aug"). Entries arrive newest
+   * first already grouped by the host; the tile renders a header wherever
+   * this changes. Omitted when the timestamp is unusable.
+   */
+  dayLabel?: string;
 }
 
 interface WelcomeBackTileProps {
@@ -74,11 +80,16 @@ interface WelcomeBackTileProps {
   lastActions?: WelcomeBackLastAction[];
   lastActionsLoading?: boolean;
   /**
-   * Open the Meridian chat. Intentionally takes no conversation id — the chat
-   * page has no deep-link entry point for one, so a per-conversation callback
-   * here would promise navigation the host cannot deliver.
+   * Open the Meridian chat, optionally on a specific conversation.
+   *
+   * The id argument landed 2026-08-05 together with the chat page's deep-link
+   * entry point. Before that this deliberately took no id, because the chat
+   * had no way to open one and the callback would have promised navigation
+   * the host could not deliver. It can now, so picking a topic resumes that
+   * transcript instead of opening a blank chat. Called with no argument from
+   * the empty-state "start a conversation" link.
    */
-  onResumeConversation: () => void;
+  onResumeConversation: (conversationId?: string) => void;
   hasReport: boolean;
   reportFileName?: string;
   prismLoading?: boolean;
@@ -393,6 +404,9 @@ export function WelcomeBackTile({
   videos = [],
 }: WelcomeBackTileProps): JSX.Element {
   const { t } = useTranslation("dashboard");
+  // Collapsed by default — the tile's job is to hand back the thread, not to
+  // spend the top of the page on a list the user may not need today.
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
@@ -400,7 +414,10 @@ export function WelcomeBackTile({
           Replaced "Welcome back, {name}" on 2026-08-05: the greeting told the
           user their own name, where this hands back the thread they were on.
           Each entry resumes that conversation. */}
-      <h2 className="font-serif text-[22px] leading-tight text-[#0B1B33]">
+      {/* `text-left` is explicit rather than relying on the default: the
+          heading is the tile's first line and nothing downstream should be
+          able to centre it by inheriting alignment from a future wrapper. */}
+      <h2 className="text-left font-serif text-[22px] leading-tight text-[#0B1B33]">
         {t("homeV2.lastVisitHeading", {
           defaultValue: "Here's what you worked on last visit.",
         })}
@@ -411,24 +428,77 @@ export function WelcomeBackTile({
           {t("homeV2.loadingActivity", { defaultValue: "Loading activity…" })}
         </p>
       ) : lastActions.length > 0 ? (
-        <ul className="mt-2 flex flex-col gap-1" data-testid="homev2-last-actions">
-          {lastActions.map((action) => (
-            <li key={action.id} className="flex min-w-0 items-baseline gap-2">
-              <button
-                type="button"
-                onClick={onResumeConversation}
-                className="min-w-0 truncate text-start text-[13px] font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
-              >
-                {action.label}
-              </button>
-              {action.meta ? (
-                <span className="shrink-0 text-[12px] text-[#7C93B5]">
-                  {action.meta}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        // A dropdown rather than an inline list (2026-08-05): five days of
+        // topics is too many rows to sit permanently at the top of the page,
+        // and the list pushed everything below it down as the user's history
+        // grew. Collapsed, the tile keeps a fixed height whatever the volume.
+        <div className="mt-2" data-testid="homev2-last-actions">
+          <button
+            type="button"
+            onClick={() => setActionsOpen((open) => !open)}
+            aria-expanded={actionsOpen}
+            aria-controls="homev2-last-actions-list"
+            data-testid="homev2-last-actions-trigger"
+            className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[rgba(11,27,51,0.14)] bg-white px-3 py-2 text-[13px] font-medium text-[#0B1B33] transition-colors hover:bg-[#FBF7F0]"
+          >
+            <span className="truncate">
+              {t("homeV2.recentTopics", {
+                defaultValue: "Recent topics ({{count}})",
+                count: lastActions.length,
+              })}
+            </span>
+            <ChevronDown
+              aria-hidden
+              className={cn(
+                "size-4 shrink-0 text-[#7C93B5] transition-transform",
+                actionsOpen && "rotate-180",
+              )}
+            />
+          </button>
+
+          {actionsOpen && (
+            <ul
+              id="homev2-last-actions-list"
+              className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]"
+              data-testid="homev2-last-actions-list"
+            >
+              {lastActions.map((action, index) => {
+                // Day headers only where the day changes, so five days of
+                // topics read as five groups rather than one long run.
+                const showDay =
+                  !!action.dayLabel &&
+                  action.dayLabel !== lastActions[index - 1]?.dayLabel;
+                return (
+                  <li key={action.id}>
+                    {showDay && (
+                      <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-[#7C93B5]">
+                        {action.dayLabel}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        onResumeConversation(action.id);
+                      }}
+                      data-testid={`homev2-last-action-${action.id}`}
+                      className="flex w-full min-w-0 items-baseline gap-2 px-3 py-2 text-start transition-colors hover:bg-[#F3ECDD]"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#C9711A]">
+                        {action.label}
+                      </span>
+                      {action.meta ? (
+                        <span className="shrink-0 text-[12px] text-[#7C93B5]">
+                          {action.meta}
+                        </span>
+                      ) : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       ) : (
         // No history yet: say so plainly and offer the one useful next step,
         // rather than an empty list that reads as a failed fetch.

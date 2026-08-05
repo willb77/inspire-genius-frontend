@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Briefcase, UserRoundSearch } from "lucide-react";
 
@@ -21,7 +21,7 @@ const LAST_ACTIONS: WelcomeBackLastAction[] = [
 ];
 
 function renderTile(overrides?: {
-  onResumeConversation?: () => void;
+  onResumeConversation?: (conversationId?: string) => void;
   onRequestAssessment?: () => void;
   onViewReportPdf?: () => void;
   onAddPersonalInfo?: (name: string) => void;
@@ -87,20 +87,55 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByText(/Welcome back,/)).not.toBeInTheDocument();
   });
 
-  it("lists the recent items with their relative times", () => {
+  // 2026-08-05: the inline list became a collapsed dropdown, so the topics
+  // are behind the trigger rather than always on the page.
+  it("keeps the recent topics collapsed until asked for", () => {
     renderTile();
-    const list = screen.getByTestId("homev2-last-actions");
+    expect(screen.getByTestId("homev2-last-actions-trigger")).toBeInTheDocument();
+    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
+    expect(screen.queryByText("Preparing for my review")).toBeNull();
+  });
+
+  it("lists the recent items with their relative times once opened", () => {
+    renderTile();
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    const list = screen.getByTestId("homev2-last-actions-list");
     expect(list).toHaveTextContent("Preparing for my review");
     expect(list).toHaveTextContent("2 days ago");
     expect(list).toHaveTextContent("Working through a team conflict");
   });
 
-  it("resumes the conversation when a last-visit item is clicked", () => {
+  it("groups the topics under day headers", () => {
+    // Five days of topics read as five groups; a header renders only where
+    // the day changes, so consecutive same-day entries share one.
+    renderTile({
+      lastActions: [
+        { id: "a", label: "First today", meta: "1 hour ago", dayLabel: "Today" },
+        { id: "b", label: "Also today", meta: "3 hours ago", dayLabel: "Today" },
+        { id: "c", label: "From before", meta: "1 day ago", dayLabel: "Yesterday" },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    const list = screen.getByTestId("homev2-last-actions-list");
+    expect(within(list).getAllByText("Today")).toHaveLength(1);
+    expect(within(list).getAllByText("Yesterday")).toHaveLength(1);
+  });
+
+  // The point of the deep link: picking a topic must resume THAT conversation,
+  // not just open the chat. Before 2026-08-05 the callback took no id at all.
+  it("resumes the specific conversation that was clicked", () => {
     const { onResumeConversation } = renderTile();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Preparing for my review" }),
-    );
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
     expect(onResumeConversation).toHaveBeenCalledTimes(1);
+    expect(onResumeConversation).toHaveBeenCalledWith("c1");
+  });
+
+  it("closes the dropdown after a topic is chosen", () => {
+    renderTile();
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
+    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
   });
 
   it("offers a way in when there is no history rather than an empty list", () => {
