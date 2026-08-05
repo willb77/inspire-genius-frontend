@@ -144,6 +144,33 @@ describe("HomeV2", () => {
       expect(jobFit).not.toHaveAttribute("href");
     });
 
+    // Job Fit was switched off platform-wide on 2026-08-05. Home is one of the
+    // three ways in (sidebar and the Meridian header row are the others), and
+    // greying only the sidebar left this tile live — the feature looked off
+    // while remaining one click away.
+    it("locks Job Fit even when job-fit IS entitled", () => {
+      mockEnabledVerticals.mockReturnValue({
+        data: ["lumen", "job-fit", "direction-setting"],
+      });
+      wrap();
+      const jobFit = screen.getByTestId("homev2-quick-job-fit");
+      expect(jobFit).toHaveAttribute("aria-disabled", "true");
+      expect(jobFit).not.toHaveAttribute("href");
+      // Must NOT claim the plan lacks it — this user's plan includes it.
+      expect(jobFit).toHaveAttribute("title", "Temporarily unavailable");
+    });
+
+    it("leaves the other entitled quick actions alone", () => {
+      // The force-disable must be surgical: switching Job Fit off cannot take
+      // its neighbours with it.
+      mockEnabledVerticals.mockReturnValue({
+        data: ["lumen", "job-fit", "direction-setting"],
+      });
+      wrap();
+      expect(screen.getByTestId("homev2-quick-self-portrait")).toHaveAttribute("href");
+      expect(screen.getByTestId("homev2-quick-my-journey")).toHaveAttribute("href");
+    });
+
     it("locks every action while entitlements are still loading", () => {
       // No `data` yet — the hook's default must not flash working links.
       mockEnabledVerticals.mockReturnValue({ data: undefined as never });

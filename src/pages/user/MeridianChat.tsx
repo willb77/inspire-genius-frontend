@@ -7,6 +7,8 @@ import type { ComponentType, ReactNode } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
 import { useEnabledVerticals } from "@/verticals/core";
+import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher";
+import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage, RAGSource } from "@/types/chat";
 import { useAuth } from "@/context/useAuth";
@@ -1996,7 +1998,14 @@ export default function MeridianChat({
             // section follows. An unentitled entry stays visible (so the
             // capability is discoverable) but renders greyed, locked and
             // non-navigating, rather than as a link that bounces off a guard.
-            return entitledVerticals.includes(vertical) ? (
+            //
+            // A vertical can also be switched off for EVERYONE, which is a
+            // different thing and must not borrow the entitlement wording: this
+            // row is one of three entry points into Job Fit, so it honours the
+            // force-disable, and says "temporarily unavailable" rather than
+            // telling an entitled user their account lacks it.
+            const forcedOff = isVerticalForceDisabled(vertical);
+            return entitledVerticals.includes(vertical) && !forcedOff ? (
               <Link
                 key={to}
                 to={to}
@@ -2011,10 +2020,14 @@ export default function MeridianChat({
                 key={to}
                 data-testid={testId}
                 aria-disabled="true"
-                title={t("meridian.personalRow.locked", {
-                  defaultValue: "{{name}} isn't enabled for your account",
-                  name: label,
-                })}
+                title={
+                  forcedOff
+                    ? WORKSPACE_ITEM_UNAVAILABLE_REASON
+                    : t("meridian.personalRow.locked", {
+                        defaultValue: "{{name}} isn't enabled for your account",
+                        name: label,
+                      })
+                }
                 className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
               >
                 <Icon className="size-4" aria-hidden />

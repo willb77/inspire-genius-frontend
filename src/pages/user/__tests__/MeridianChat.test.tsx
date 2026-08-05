@@ -284,6 +284,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import MeridianChat from "../MeridianChat";
 import { useLoadedFrameworks } from "@/hooks/profile/useProfile";
+import { ROUTES } from "@/constants/routes";
 
 const mockUseLoadedFrameworks = useLoadedFrameworks as jest.MockedFunction<
   typeof useLoadedFrameworks
@@ -654,10 +655,7 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
     }
   });
 
-  it("points the personal row at real pages, Job Fit at a concrete one", () => {
-    // Job Fit links to MATCHES, not the vertical BASE: the vertical home is a
-    // router-level redirect, so linking there would double-navigate and leave
-    // the active-link state wrong.
+  it("points the personal row at real pages", () => {
     mockEnabledVerticals.mockReturnValue({
       data: ["lumen", "job-fit"],
       isLoading: false,
@@ -667,12 +665,39 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
     const hrefs = within(row)
       .getAllByRole("link")
       .map((a) => a.getAttribute("href"));
+    // Job Fit is deliberately absent: it is switched off platform-wide
+    // (FORCE_DISABLED_VERTICALS) as of 2026-08-05, so it renders locked here
+    // even though this user IS entitled to it. Its destination is still pinned
+    // below, so the "MATCHES not BASE" decision does not go unrecorded.
     expect(hrefs).toEqual([
       "/vertical/lumen/self-portrait",
       "/vertical/lumen/moments",
       "/vertical/lumen/coaching",
-      "/vertical/job-fit/matches",
     ]);
+  });
+
+  // Job Fit reaches this row from the vertical registry, the same source the
+  // sidebar uses. Switching it off in the menu alone left it live here and on
+  // Home — the feature looked off while staying one click away.
+  it("locks Job Fit here even for an entitled user, and says why", () => {
+    mockEnabledVerticals.mockReturnValue({
+      data: ["lumen", "job-fit"],
+      isLoading: false,
+    });
+    renderV2("v2");
+    const jobFit = screen.getByTestId("meridian-personal-matches");
+    expect(jobFit.tagName).toBe("SPAN");
+    expect(jobFit).toHaveAttribute("aria-disabled", "true");
+    expect(jobFit).not.toHaveAttribute("href");
+    // NOT the entitlement wording — this user's plan does include Job Fit.
+    expect(jobFit).toHaveAttribute("title", "Temporarily unavailable");
+  });
+
+  it("still targets MATCHES rather than the vertical BASE", () => {
+    // The vertical home is a router-level redirect, so linking there would
+    // double-navigate and leave the active-link state wrong. Kept as its own
+    // assertion so re-enabling Job Fit cannot quietly lose the decision.
+    expect(ROUTES.JOB_FIT.MATCHES).toBe("/vertical/job-fit/matches");
   });
 
   // Entitlement gates USE, not SIGHT — the rule the Tools section already
