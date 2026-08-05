@@ -7,10 +7,16 @@ import PrismAssessmentCard from '@/components/prism/PrismAssessmentCard'
 import PrismReportViewer from '@/components/prism/PrismReportViewer'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Upload, Loader2 } from 'lucide-react'
+import { Upload, Loader2, FileDown, ExternalLink } from 'lucide-react'
+import { toast } from 'sonner'
+import DocumentIframeModal from '@/components/user/chat/DocumentIframeModal'
 import { useAuth } from '@/context/useAuth'
 import { usePrismHistory } from '@/hooks/prism/usePrismHistory'
 import { usePrismImport } from '@/hooks/prism/usePrismImport'
+import {
+  useMyPrismReport,
+  usePrismReportDownloadUrl,
+} from '@/hooks/prism/usePrismReportDownload'
 import { ASSESSMENT_STATUS } from '@/constants/prism'
 
 const ACTIVE_STATUSES: Set<string> = new Set([
@@ -28,6 +34,27 @@ export default function PrismAssessment() {
   const importMutation = usePrismImport()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewingReportId, setViewingReportId] = useState<string | null>(null)
+
+  // Real PRISM report (the genuine PRISM Brain Mapping PDF from the poll-ingest
+  // pipeline) — distinct from the docgen Self-Portrait.
+  const { data: myReport } = useMyPrismReport(!!user?.id)
+  const downloadUrl = usePrismReportDownloadUrl()
+  const [pdfViewer, setPdfViewer] = useState<{ url: string; name: string } | null>(
+    null,
+  )
+
+  async function handleViewPrismPdf() {
+    if (!myReport?.request_id) return
+    try {
+      const res = await downloadUrl.mutateAsync({
+        requestId: myReport.request_id,
+        kind: 'pdf',
+      })
+      setPdfViewer({ url: res.url, name: res.filename })
+    } catch {
+      toast.error('Could not open your PRISM report. Please try again.')
+    }
+  }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -58,7 +85,23 @@ export default function PrismAssessment() {
               {t("coaching:prism.completeDescription")}
             </p>
           </div>
-          <div>
+          <div className="flex items-center gap-2">
+            {/* Download the real PRISM report PDF (ingested from PRISM), when
+                one is available for this user. Distinct from the Self-Portrait. */}
+            {myReport?.available && myReport?.pdf_available && myReport.request_id && (
+              <Button
+                size="sm"
+                onClick={handleViewPrismPdf}
+                disabled={downloadUrl.isPending}
+              >
+                {downloadUrl.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-1.5 h-4 w-4" />
+                )}
+                View PRISM Report PDF
+              </Button>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -81,6 +124,20 @@ export default function PrismAssessment() {
             </Button>
           </div>
         </div>
+
+        {/* Q3 — retrieve directly from the PRISM Brain Mapping portal, when
+            UnlockReport handed back a portal URL for this candidate. */}
+        {myReport?.available && myReport?.portal_url && (
+          <a
+            href={myReport.portal_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Retrieve from the PRISM portal
+          </a>
+        )}
 
         {/* Active Assessment */}
         {activeAssessment && (
@@ -139,6 +196,18 @@ export default function PrismAssessment() {
           )
         )}
       </div>
+
+      {/* Real PRISM PDF popup — mirrors the Documents-page iframe modal UX. */}
+      {pdfViewer && (
+        <DocumentIframeModal
+          open={!!pdfViewer}
+          onOpenChange={(open) => {
+            if (!open) setPdfViewer(null)
+          }}
+          fileUrl={pdfViewer.url}
+          fileName={pdfViewer.name}
+        />
+      )}
     </UserLayout>
   )
 }
