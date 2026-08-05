@@ -115,6 +115,12 @@
     "openingDocument": "Öppnar dokument…",
     "docOpenFailed": "Dokumentet kunde inte öppnas. Det kanske fortfarande bearbetas.",
     "noInlinePreview": "Den här filtypen kan inte förhandsgranskas här. Öppna den i en ny flik i stället.",
-    "openInNewTab": "Öppna i ny flik"
+    "openInNewTab": "Öppna i ny flik",
+    "lastVisitHeading": "Här är vad du arbetade med förra gången.",
+    "noLastVisit": "Inget än —",
+    "startConversation": "starta en konversation",
+    "untitledConversation": "Namnlös konversation",
+    "videosBlurb": "Se de här videorna för att få ut mesta möjliga av InspiresGenius",
+    "todaysPrep": "Dagens förberedelse"
   }
 }

@@ -115,6 +115,12 @@
     "openingDocument": "Belge açılıyor…",
     "docOpenFailed": "Bu belge açılamadı. Hâlâ işleniyor olabilir.",
     "noInlinePreview": "Bu dosya türü burada önizlenemez. Bunun yerine yeni bir sekmede açın.",
-    "openInNewTab": "Yeni sekmede aç"
+    "openInNewTab": "Yeni sekmede aç",
+    "lastVisitHeading": "Son ziyaretinizde üzerinde çalıştıklarınız.",
+    "noLastVisit": "Henüz bir şey yok —",
+    "startConversation": "bir sohbet başlatın",
+    "untitledConversation": "Başlıksız sohbet",
+    "videosBlurb": "InspiresGenius'tan en iyi şekilde yararlanmak için bu videoları izleyin",
+    "todaysPrep": "Bugünün Hazırlığı"
   }
 }

@@ -115,6 +115,12 @@
     "openingDocument": "Otwieranie dokumentu…",
     "docOpenFailed": "Nie udało się otworzyć tego dokumentu. Może być jeszcze przetwarzany.",
     "noInlinePreview": "Tego typu pliku nie można wyświetlić tutaj. Otwórz go w nowej karcie.",
-    "openInNewTab": "Otwórz w nowej karcie"
+    "openInNewTab": "Otwórz w nowej karcie",
+    "lastVisitHeading": "Oto nad czym pracowałeś podczas ostatniej wizyty.",
+    "noLastVisit": "Jeszcze nic —",
+    "startConversation": "rozpocznij rozmowę",
+    "untitledConversation": "Rozmowa bez tytułu",
+    "videosBlurb": "Obejrzyj te filmy, aby w pełni wykorzystać InspiresGenius",
+    "todaysPrep": "Dzisiejsze przygotowanie"
   }
 }

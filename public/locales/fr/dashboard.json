@@ -115,6 +115,12 @@
     "openingDocument": "Ouverture du document…",
     "docOpenFailed": "Ce document n'a pas pu être ouvert. Il est peut-être encore en cours de traitement.",
     "noInlinePreview": "Ce type de fichier ne peut pas être prévisualisé ici. Ouvrez-le dans un nouvel onglet.",
-    "openInNewTab": "Ouvrir dans un nouvel onglet"
+    "openInNewTab": "Ouvrir dans un nouvel onglet",
+    "lastVisitHeading": "Voici ce sur quoi vous avez travaillé lors de votre dernière visite.",
+    "noLastVisit": "Rien pour l'instant —",
+    "startConversation": "démarrer une conversation",
+    "untitledConversation": "Conversation sans titre",
+    "videosBlurb": "Regardez ces vidéos pour tirer le meilleur parti d'InspiresGenius",
+    "todaysPrep": "Préparation du jour"
   }
 }

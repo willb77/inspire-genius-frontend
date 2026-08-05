@@ -115,6 +115,12 @@
     "openingDocument": "दस्तावेज़ खोला जा रहा है…",
     "docOpenFailed": "वह दस्तावेज़ नहीं खोला जा सका. हो सकता है यह अभी प्रोसेस हो रहा हो.",
     "noInlinePreview": "इस फ़ाइल प्रकार का पूर्वावलोकन यहाँ नहीं किया जा सकता. इसे नए टैब में खोलें.",
-    "openInNewTab": "नए टैब में खोलें"
+    "openInNewTab": "नए टैब में खोलें",
+    "lastVisitHeading": "पिछली बार आपने इन पर काम किया था।",
+    "noLastVisit": "अभी कुछ नहीं —",
+    "startConversation": "बातचीत शुरू करें",
+    "untitledConversation": "बिना शीर्षक वाली बातचीत",
+    "videosBlurb": "InspiresGenius का अधिकतम लाभ उठाने के लिए ये वीडियो देखें",
+    "todaysPrep": "आज की तैयारी"
   }
 }
