@@ -115,6 +115,12 @@
     "openingDocument": "Åpner dokument…",
     "docOpenFailed": "Dokumentet kunne ikke åpnes. Det behandles kanskje fortsatt.",
     "noInlinePreview": "Denne filtypen kan ikke forhåndsvises her. Åpne den i en ny fane i stedet.",
-    "openInNewTab": "Åpne i ny fane"
+    "openInNewTab": "Åpne i ny fane",
+    "lastVisitHeading": "Her er det du jobbet med sist.",
+    "noLastVisit": "Ingenting ennå —",
+    "startConversation": "start en samtale",
+    "untitledConversation": "Samtale uten tittel",
+    "videosBlurb": "Se disse videoene for å få mest mulig ut av InspiresGenius",
+    "todaysPrep": "Dagens forberedelse"
   }
 }

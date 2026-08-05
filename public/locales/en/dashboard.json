@@ -113,6 +113,12 @@
     "quickTodaysPrep": "Today's Prep",
     "quickMyJourney": "My Journey",
     "quickJobFit": "Job Fit",
-    "quickActionLocked": "{{name}} isn't enabled for your account"
+    "quickActionLocked": "{{name}} isn't enabled for your account",
+    "lastVisitHeading": "Here's what you worked on last visit.",
+    "noLastVisit": "Nothing yet —",
+    "startConversation": "start a conversation",
+    "untitledConversation": "Untitled conversation",
+    "videosBlurb": "View these videos on how to get the most from InspiresGenius",
+    "todaysPrep": "Today's Prep"
   }
 }

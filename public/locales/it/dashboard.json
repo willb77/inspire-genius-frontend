@@ -115,6 +115,12 @@
     "openingDocument": "Apertura del documento…",
     "docOpenFailed": "Impossibile aprire il documento. Potrebbe essere ancora in elaborazione.",
     "noInlinePreview": "Questo tipo di file non può essere visualizzato qui. Aprilo in una nuova scheda.",
-    "openInNewTab": "Apri in una nuova scheda"
+    "openInNewTab": "Apri in una nuova scheda",
+    "lastVisitHeading": "Ecco su cosa hai lavorato durante l'ultima visita.",
+    "noLastVisit": "Ancora nulla —",
+    "startConversation": "inizia una conversazione",
+    "untitledConversation": "Conversazione senza titolo",
+    "videosBlurb": "Guarda questi video per sfruttare al meglio InspiresGenius",
+    "todaysPrep": "Preparazione di oggi"
   }
 }

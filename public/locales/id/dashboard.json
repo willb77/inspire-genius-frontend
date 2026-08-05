@@ -115,6 +115,12 @@
     "openingDocument": "Membuka dokumen…",
     "docOpenFailed": "Dokumen itu tidak dapat dibuka. Mungkin masih diproses.",
     "noInlinePreview": "Jenis file ini tidak dapat dipratinjau di sini. Buka di tab baru.",
-    "openInNewTab": "Buka di tab baru"
+    "openInNewTab": "Buka di tab baru",
+    "lastVisitHeading": "Inilah yang Anda kerjakan pada kunjungan terakhir.",
+    "noLastVisit": "Belum ada —",
+    "startConversation": "mulai percakapan",
+    "untitledConversation": "Percakapan tanpa judul",
+    "videosBlurb": "Tonton video ini untuk memaksimalkan InspiresGenius",
+    "todaysPrep": "Persiapan Hari Ini"
   }
 }

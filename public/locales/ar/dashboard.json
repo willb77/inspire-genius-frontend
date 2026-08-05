@@ -115,6 +115,12 @@
     "openingDocument": "جارٍ فتح المستند…",
     "docOpenFailed": "تعذّر فتح هذا المستند. قد يكون قيد المعالجة.",
     "noInlinePreview": "لا يمكن معاينة هذا النوع من الملفات هنا. افتحه في علامة تبويب جديدة.",
-    "openInNewTab": "فتح في علامة تبويب جديدة"
+    "openInNewTab": "فتح في علامة تبويب جديدة",
+    "lastVisitHeading": "إليك ما عملت عليه في زيارتك الأخيرة.",
+    "noLastVisit": "لا شيء بعد —",
+    "startConversation": "ابدأ محادثة",
+    "untitledConversation": "محادثة بدون عنوان",
+    "videosBlurb": "شاهد هذه الفيديوهات لتحقيق أقصى استفادة من InspiresGenius",
+    "todaysPrep": "تحضير اليوم"
   }
 }

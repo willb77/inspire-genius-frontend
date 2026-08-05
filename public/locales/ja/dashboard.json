@@ -115,6 +115,12 @@
     "openingDocument": "ドキュメントを開いています…",
     "docOpenFailed": "そのドキュメントを開けませんでした。まだ処理中の可能性があります。",
     "noInlinePreview": "このファイル形式はここではプレビューできません。新しいタブで開いてください。",
-    "openInNewTab": "新しいタブで開く"
+    "openInNewTab": "新しいタブで開く",
+    "lastVisitHeading": "前回取り組んだ内容です。",
+    "noLastVisit": "まだありません —",
+    "startConversation": "会話を始める",
+    "untitledConversation": "無題の会話",
+    "videosBlurb": "InspiresGenius を最大限に活用する方法はこちらの動画をご覧ください",
+    "todaysPrep": "今日の準備"
   }
 }

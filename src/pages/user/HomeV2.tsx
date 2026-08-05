@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 import { Briefcase, Compass, Sparkles, UserRoundSearch } from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
@@ -9,10 +10,10 @@ import { useEnabledVerticals } from "@/verticals/core";
 import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher";
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
-import { useLoadedFrameworks, useMyProfile } from "@/hooks/profile/useProfile";
+import { useMyProfile } from "@/hooks/profile/useProfile";
 import {
   WelcomeBackTile,
-  type WelcomeBackAssessment,
+  type WelcomeBackLastAction,
   type WelcomeBackPersonalInfo,
   type WelcomeBackQuickAction,
 } from "@/components/dashboard/v2/WelcomeBackTile";
@@ -21,16 +22,12 @@ import {
   type AddPersonalDocTarget,
 } from "@/components/dashboard/v2/AddPersonalDocModal";
 import {
-  AddAssessmentModal,
-  type AddAssessmentTarget,
-} from "@/components/dashboard/v2/AddAssessmentModal";
-import { MeridianEngageCard } from "@/components/dashboard/v2/MeridianEngageCard";
-import {
   ProfileDocViewerDialog,
   type ViewableDoc,
 } from "@/components/dashboard/v2/ProfileDocViewerDialog";
 import { generatePrismReport } from "@/services/documents/prismReport.service";
-import { MERIDIAN_STARTER_GROUPS } from "@/constants/meridianStarterQuestions";
+import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
+import Moments from "@/pages/lumen/Moments";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
 /**
@@ -40,18 +37,25 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  * `@/lib/surfaceFlags` for how the default is resolved.
  *
  * Data comes from existing hooks only. PRISM status is sourced from
- * GET /v1/documents/latest-prism; the other-assessment checkmarks come from
- * GET /v1/profile/me/loaded-frameworks (useLoadedFrameworks) — an item is
- * "done" (Add greyed, checkmark filled) when the user holds an authoritative
- * assessment in that framework.
+ * GET /v1/documents/latest-prism; Personal Info done-states from GET /me
+ * `personal_docs`; the last-visit list from the same conversation query the
+ * chat History dropdown uses.
  *
- * Layout — two tiles, nothing below them:
- *   1. MeridianEngageCard — "Chat with Meridian": greeting + ask box + Starter
- *      Questions (collapsed by default).
- *   2. WelcomeBackTile    — welcome + behavioral row + the user's uploaded
- *      material, then the quick-action row (Self-Portrait / Today's Prep /
- *      My Journey / Job Fit / Videos) and the Personal Info + Other
- *      Assessments dropdowns.
+ * The "Other Assessments" group (DISC/MBTI/Clifton/Hogan/Big Five, driven by
+ * GET /v1/profile/me/loaded-frameworks) was removed on 2026-08-05 on request,
+ * along with its now-unreachable Add-assessment modal. Those results can still
+ * be added from the Documents surface — the Home shortcut went, not the
+ * capability.
+ *
+ * Layout (2026-08-05) — two tiles, nothing below them:
+ *   1. WelcomeBackTile — last-visit summary + behavioral row, then the
+ *      quick-action row (Self-Portrait / Today's Prep / My Journey / Job Fit /
+ *      Videos) with the Personal Info dropdown pinned to its end.
+ *   2. Today's Prep    — the Lumen "Moments" surface, embedded.
+ *
+ * The MeridianEngageCard ("Chat with Meridian") that used to lead the page was
+ * removed on request; WelcomeBackTile moved up into its place. Meridian is
+ * still one click away from the sidebar, so nothing became unreachable.
  *
  * The Watch-a-Video and Recent-Activity tiles were removed; the videos survive
  * inside the quick-action row's Videos dropdown, so nothing became unreachable.
@@ -144,15 +148,40 @@ const QUICK_ACTIONS: {
   },
 ];
 
-// "Other Assessments" roster → canonical framework name emitted by
-// GET /v1/profile/me/loaded-frameworks.
-const ASSESSMENT_CATALOG: { name: string; framework: string }[] = [
-  { name: "DISC", framework: "DISC" },
-  { name: "Myers-Briggs", framework: "MBTI" },
-  { name: "Clifton Strengths", framework: "CLIFTON" },
-  { name: "Hogan", framework: "HOGAN" },
-  { name: "The Big Five", framework: "BIG_FIVE" },
-];
+/**
+ * Quick actions switched off for everyone (2026-08-05, on request).
+ *
+ * Distinct from `isVerticalForceDisabled`, which turns off a whole vertical
+ * everywhere it appears. Lumen and Direction Setting are still live products —
+ * only these two Home shortcuts are being withheld — so the lever is per
+ * quick-action key, and both verticals keep working elsewhere.
+ */
+const LOCKED_QUICK_ACTIONS = new Set(["self-portrait", "my-journey"]);
+
+/** How many past conversations the last-visit summary lists. */
+const LAST_ACTION_LIMIT = 3;
+
+/** The Meridian agent id — the conversation list is per-agent. */
+const AGENT_ID = "meridian";
+
+type ConversationRow = {
+  id: string;
+  title?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+type ConversationListResponse = {
+  data?: { conversations?: ConversationRow[] };
+};
+
+/** "2 days ago", or "" when the timestamp is missing/unparseable. */
+function formatRelative(input?: string): string {
+  if (!input) return "";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return "";
+  return formatDistanceToNow(d, { addSuffix: true });
+}
 
 // "Personal Info" roster. Everything except the PRISM report resolves its
 // done-state from GET /me `personal_docs` (documents tagged
@@ -183,14 +212,12 @@ export default function HomeV2() {
   const { t } = useTranslation("dashboard");
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [addTarget, setAddTarget] = useState<AddAssessmentTarget | null>(null);
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
   const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
-  const firstName =
-    user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
-  const displayName =
-    user?.name?.trim() || user?.email?.split("@")[0] || firstName;
+  // `user` is still read for the profile queries below; the name is no longer
+  // rendered since the greeting was replaced by the last-visit summary.
+  void user;
 
   const {
     data: latestPrism,
@@ -212,7 +239,14 @@ export default function HomeV2() {
         // is switched off for everyone. Home is one of three ways into Job Fit
         // (sidebar and the Meridian header row are the others), so it has to
         // honour the force-disable or the "off" surface stays one click away.
-        const forcedOff = isVerticalForceDisabled(vertical);
+        //
+        // A third reason as of 2026-08-05: this specific Home shortcut is
+        // switched off even though its vertical is fine everywhere else
+        // (Self-Portrait, My Journey). Kept separate from the vertical-level
+        // lever so turning a shortcut back on cannot accidentally re-enable a
+        // vertical, or vice versa.
+        const forcedOff =
+          isVerticalForceDisabled(vertical) || LOCKED_QUICK_ACTIONS.has(key);
         return {
           key,
           label: t(labelKey, { defaultValue: defaultLabel }),
@@ -225,22 +259,34 @@ export default function HomeV2() {
     [entitledVerticals, t],
   );
 
-  const { data: loadedFrameworks = [] } = useLoadedFrameworks();
-  // loaded-frameworks is a bare string[] of framework names
-  // (LoadedFramework = string; see the type). Match by upper-cased name.
-  const loadedSet = useMemo(
-    () => new Set(loadedFrameworks.map((f) => f.toUpperCase())),
-    [loadedFrameworks],
+  // "What you worked on last visit" — the user's recent Meridian conversations,
+  // newest first. Same hook and shape the chat History dropdown reads, so the
+  // two cannot disagree about what the recent work was.
+  const { data: convData, isLoading: convLoading } = useAgentConversation(
+    AGENT_ID,
+    { page: 1, limit: 20 },
   );
-
-  const assessments: WelcomeBackAssessment[] = useMemo(
-    () =>
-      ASSESSMENT_CATALOG.map((a) => ({
-        name: a.name,
-        done: loadedSet.has(a.framework),
-      })),
-    [loadedSet],
-  );
+  const lastActions: WelcomeBackLastAction[] = useMemo(() => {
+    const list = (convData as ConversationListResponse | undefined)?.data
+      ?.conversations;
+    if (!Array.isArray(list)) return [];
+    return [...list]
+      .sort(
+        (a, b) =>
+          new Date(b.updated_at || b.created_at || 0).getTime() -
+          new Date(a.updated_at || a.created_at || 0).getTime(),
+      )
+      .slice(0, LAST_ACTION_LIMIT)
+      .map((c) => ({
+        id: c.id,
+        label:
+          c.title?.trim() ||
+          t("homeV2.untitledConversation", {
+            defaultValue: "Untitled conversation",
+          }),
+        meta: formatRelative(c.updated_at || c.created_at),
+      }));
+  }, [convData, t]);
 
   const { data: profileMe } = useMyProfile();
   const personalSet = useMemo(
@@ -258,13 +304,18 @@ export default function HomeV2() {
     [personalSet, hasReport],
   );
 
-  // Route into the Meridian chat. When a prompt is supplied (typed ask or a
-  // starter question) it is prefilled into the composer and auto-submitted so
-  // the user lands on a live response; with no prompt we just open the chat.
-  const goToChat = (prompt?: string): void => {
-    navigate(ROUTES.MERIDIAN_CHAT, {
-      state: prompt ? { prefillPrompt: prompt, autoSubmit: true } : {},
-    });
+  /**
+   * Open the Meridian chat.
+   *
+   * Deliberately does NOT deep-link to the clicked conversation: MeridianChat's
+   * route-state contract is `prefillPrompt` / `autoSubmit` / `prefillDisplay`
+   * only — it has no `conversationId` entry point, so passing one would be a
+   * silent no-op that looks like a working link. This matches what the previous
+   * "Last time we discussed…" button did. Deep-linking is a MeridianChat
+   * change, not a Home one.
+   */
+  const goToChat = (): void => {
+    navigate(ROUTES.MERIDIAN_CHAT, { state: {} });
   };
 
   const goToAssessment = (): void => {
@@ -304,12 +355,6 @@ export default function HomeV2() {
     }
   };
 
-  // Add an assessment → open the inline upload/ingest modal for that framework.
-  const openAddAssessment = (name: string): void => {
-    const entry = ASSESSMENT_CATALOG.find((a) => a.name === name);
-    if (entry) setAddTarget({ name: entry.name, framework: entry.framework });
-  };
-
   // PRISM / Resume / Bio / Additional Info → open the tagged-upload modal,
   // which uploads the file with the right doc_kind so the profile loader can
   // inject it.
@@ -328,31 +373,42 @@ export default function HomeV2() {
     <UserLayout>
       <div className="rounded-2xl bg-[#FBF7F0] p-4 md:p-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-4">
-          {/* Chat with Meridian leads the page — the primary action. Starter
-              Questions start collapsed so the tile stays compact. */}
-          <MeridianEngageCard
-            firstName={firstName}
-            onAsk={(text) => goToChat(text)}
-            starterGroups={MERIDIAN_STARTER_GROUPS}
-            onStarterQuestion={(question) => goToChat(question)}
-            defaultStarterOpen={false}
-          />
-
+          {/* Leads the page since the Chat-with-Meridian card was removed
+              (2026-08-05). */}
           <WelcomeBackTile
-            displayName={displayName}
-            onResumeConversation={() => goToChat()}
+            lastActions={lastActions}
+            lastActionsLoading={convLoading}
+            onResumeConversation={goToChat}
             hasReport={hasReport}
             reportFileName={latestPrism?.file_name}
             prismLoading={prismLoading}
             onRequestAssessment={goToAssessment}
             onViewReportPdf={() => { void openPrismReport(); }}
-            assessments={assessments}
             personalInfo={personalInfo}
-            onAddAssessment={openAddAssessment}
             onAddPersonalInfo={openAddPersonalInfo}
             quickActions={quickActions}
             videos={VIDEOS}
           />
+
+          {/* Today's Prep — the Lumen "Moments" surface, embedded rather than
+              linked. Same component the /vertical/lumen/moments page renders
+              (`embedded` drops its page heading and padding), so the two cannot
+              drift apart. */}
+          <section
+            data-testid="homev2-todays-prep"
+            aria-labelledby="homev2-todays-prep-heading"
+            className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm"
+          >
+            <h2
+              id="homev2-todays-prep-heading"
+              className="font-serif text-[22px] leading-tight text-[#0B1B33]"
+            >
+              {t("homeV2.todaysPrep", { defaultValue: "Today's Prep" })}
+            </h2>
+            <div className="mt-4">
+              <Moments embedded />
+            </div>
+          </section>
 
           <AddPersonalDocModal
             target={personalTarget}
@@ -360,16 +416,6 @@ export default function HomeV2() {
               if (!open) setPersonalTarget(null);
             }}
           />
-
-          <AddAssessmentModal
-            target={addTarget}
-            onOpenChange={(open) => {
-              if (!open) setAddTarget(null);
-            }}
-          />
-
-          {/* Direction Setting is reached from the "My Journey" quick action
-              above; the standalone card that used to sit here was removed. */}
 
           <ProfileDocViewerDialog
             doc={viewDoc}
