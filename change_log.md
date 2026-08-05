@@ -1,3 +1,48 @@
+## [2026-08-05] — Meridian Chat: one header row, Starter Questions, composer below the transcript
+
+Four changes to the Chat with Meridian page (V2 surface only; the classic layout is untouched).
+
+### Added
+- **Starter Questions dropdown in the Meridian chat header** — the same persona-grouped library
+  HomeV2 shows on its "Chat with Meridian" tile, now available inside the conversation, after
+  Moments. Selecting a question injects AND submits it in one step. On HomeV2 a starter question
+  is how you *open* a chat, so the prompts were gone exactly when a stuck mid-conversation user
+  needs them.
+  - Files: `src/components/meridian/StarterQuestionsDropdown.tsx`,
+    `src/components/meridian/__tests__/StarterQuestionsDropdown.test.tsx`
+- **Expandable prompt box** — a drag strip sets a persisted composer height (double-click resets
+  to auto-grow), reusing `useResizableHeight`: the same hook and interaction as the Conversation
+  card above it. Auto-grow stands down while a manual height is set so the two do not fight over
+  the same style property.
+  - Files: `src/components/user/chat/ChatWindowInputBar.tsx`
+
+### Changed
+- **Header reduced to a single row.** Moments promoted to row 1 after History, keeping its
+  entitlement gate (visible-but-locked when Lumen is not entitled — sight vs. use).
+- **Compose Prompt card moved below the Conversation card** and slimmed: tighter padding, section
+  label inline with the status banner, `shrink-0` so it holds its height as the transcript grows.
+  Reads like every other chat surface — transcript on top, the box you type in at the bottom edge.
+  - Files: `src/components/user/chat/ChatWindow.tsx`
+- **`onSendText` lifted verbatim out of the ChatWindow JSX into `handleSendText`** so the dropdown
+  dispatches through the same async-jobs path as the composer — one dispatch implementation, so
+  the two entry points cannot drift. Kept a plain function, not `useCallback`: the inline arrow it
+  replaced was re-created every render, so identity semantics are unchanged and no dependency
+  array can go stale.
+  - Files: `src/pages/user/MeridianChat.tsx`
+
+### Removed
+- **Four header links** — Projects (last tile of an already-removed rail), My Self-Portrait,
+  Coaching and Job Fit. The latter three are destinations already reachable from the sidebar, so a
+  permanent row of chrome was duplicating navigation. The second row is now empty and gone.
+
+### Verification
+- `npm run build` (tsc + vite) clean; **547 suites / 4340 tests passing**; ESLint clean on every
+  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
+- New coverage: dropdown rendering/selection, the page's send wiring, card order asserted by DOM
+  position rather than a class, and the expandable box's precedence over auto-grow.
+- **Not verified:** rendered appearance — no browser check was run.
+- PR: frontend #368.
+
 ## [2026-08-05] — Interview Coach: one-time PRISM + ambient-résumé personalization (LIVE dev + staging-b)
 
 The candidate Interview Coach can now ground STAR feedback in the user's OWN profile — PRISM
