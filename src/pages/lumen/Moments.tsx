@@ -160,7 +160,21 @@ function SavedSituations({
   )
 }
 
-export default function Moments() {
+export interface MomentsProps {
+  /**
+   * Render for embedding inside a host tile (Home's "Today's Prep") rather than
+   * as a standalone page: drops the page `<h1>`/description and the outer page
+   * padding, because the host supplies both and two headings stacked reads as a
+   * bug.
+   *
+   * A variant rather than a copy: the ask box, saved situations, presets and
+   * feed are the same behaviour in both places, and a duplicate would drift the
+   * first time either side changed.
+   */
+  embedded?: boolean
+}
+
+export default function Moments({ embedded = false }: MomentsProps = {}) {
   const [context, setContext] = useState("")
   const { data: feed, isLoading } = useMoments()
   const { mutate: ask, data: fresh, isPending, isError } = useAskMoment()
@@ -197,14 +211,16 @@ export default function Moments() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Moments</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Short, specific guidance for the thing you're about to walk into — grounded
-          in your own behavioral profile.
-        </p>
-      </header>
+    <div className={embedded ? "space-y-4" : "space-y-6 p-6"}>
+      {!embedded && (
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Moments</h1>
+          <p className="max-w-2xl text-muted-foreground">
+            Short, specific guidance for the thing you're about to walk into — grounded
+            in your own behavioral profile.
+          </p>
+        </header>
+      )}
 
       <Card>
         <CardHeader>

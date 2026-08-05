@@ -4,7 +4,7 @@ import { Briefcase, UserRoundSearch } from "lucide-react";
 
 import {
   WelcomeBackTile,
-  type WelcomeBackAssessment,
+  type WelcomeBackLastAction,
   type WelcomeBackPersonalInfo,
   type WelcomeBackQuickAction,
 } from "@/components/dashboard/v2/WelcomeBackTile";
@@ -15,25 +15,26 @@ const VIDEOS: DashboardVideo[] = [
   { id: "b", title: "Brain-Map Quiz", src: "https://x/b.mp4" },
 ];
 
+const LAST_ACTIONS: WelcomeBackLastAction[] = [
+  { id: "c1", label: "Preparing for my review", meta: "2 days ago" },
+  { id: "c2", label: "Working through a team conflict", meta: "5 days ago" },
+];
+
 function renderTile(overrides?: {
   onResumeConversation?: () => void;
   onRequestAssessment?: () => void;
   onViewReportPdf?: () => void;
-  onAddAssessment?: (name: string) => void;
   onAddPersonalInfo?: (name: string) => void;
   quickActions?: WelcomeBackQuickAction[];
   videos?: DashboardVideo[];
+  lastActions?: WelcomeBackLastAction[];
+  lastActionsLoading?: boolean;
 }) {
   const onResumeConversation = overrides?.onResumeConversation ?? jest.fn();
   const onRequestAssessment = overrides?.onRequestAssessment ?? jest.fn();
   const onViewReportPdf = overrides?.onViewReportPdf ?? jest.fn();
-  const onAddAssessment = overrides?.onAddAssessment ?? jest.fn();
   const onAddPersonalInfo = overrides?.onAddPersonalInfo ?? jest.fn();
 
-  const assessments: WelcomeBackAssessment[] = [
-    { name: "DISC", done: true },
-    { name: "Hogan", done: false },
-  ];
   const personalInfo: WelcomeBackPersonalInfo[] = [
     { name: "Prism Rpt .csv", done: true },
     { name: "Resume", done: false },
@@ -43,15 +44,14 @@ function renderTile(overrides?: {
   render(
     <MemoryRouter>
       <WelcomeBackTile
-        displayName="willb77"
+        lastActions={overrides?.lastActions ?? LAST_ACTIONS}
+        lastActionsLoading={overrides?.lastActionsLoading}
         onResumeConversation={onResumeConversation}
         hasReport
         reportFileName="X.csv"
         onRequestAssessment={onRequestAssessment}
         onViewReportPdf={onViewReportPdf}
-        assessments={assessments}
         personalInfo={personalInfo}
-        onAddAssessment={onAddAssessment}
         onAddPersonalInfo={onAddPersonalInfo}
         quickActions={overrides?.quickActions}
         videos={overrides?.videos}
@@ -63,7 +63,6 @@ function renderTile(overrides?: {
     onResumeConversation,
     onRequestAssessment,
     onViewReportPdf,
-    onAddAssessment,
     onAddPersonalInfo,
   };
 }
@@ -77,10 +76,57 @@ const PERSONAL = "homev2-personal-info-dropdown";
 const ASSESSMENTS = "homev2-other-assessments-dropdown";
 
 describe("WelcomeBackTile", () => {
-  it("renders the welcome heading with the display name", () => {
+  // 2026-08-05: "Welcome back, {name}" was replaced by a last-visit summary.
+  // Asserting the greeting's ABSENCE too — it is the sort of thing a merge
+  // reinstates, and two headings would then stack.
+  it("leads with what the user worked on last visit, not a greeting", () => {
     renderTile();
-    expect(screen.getByText(/Welcome back,/)).toBeInTheDocument();
-    expect(screen.getByText("willb77")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Here's what you worked on last visit/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Welcome back,/)).not.toBeInTheDocument();
+  });
+
+  it("lists the recent items with their relative times", () => {
+    renderTile();
+    const list = screen.getByTestId("homev2-last-actions");
+    expect(list).toHaveTextContent("Preparing for my review");
+    expect(list).toHaveTextContent("2 days ago");
+    expect(list).toHaveTextContent("Working through a team conflict");
+  });
+
+  it("resumes the conversation when a last-visit item is clicked", () => {
+    const { onResumeConversation } = renderTile();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Preparing for my review" }),
+    );
+    expect(onResumeConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers a way in when there is no history rather than an empty list", () => {
+    // An empty list here is indistinguishable from a failed fetch; say so and
+    // give the one useful next step.
+    const { onResumeConversation } = renderTile({ lastActions: [] });
+    expect(screen.queryByTestId("homev2-last-actions")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: /start a conversation/i }),
+    );
+    expect(onResumeConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it("says it is loading rather than showing 'nothing yet' mid-fetch", () => {
+    renderTile({ lastActionsLoading: true, lastActions: [] });
+    expect(screen.getByText(/Loading activity/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing yet/i)).not.toBeInTheDocument();
+  });
+
+  it("points at the videos control with a line of copy", () => {
+    renderTile({ videos: VIDEOS });
+    expect(
+      screen.getByText(
+        /View these videos on how to get the most from InspiresGenius/i,
+      ),
+    ).toBeInTheDocument();
   });
 
   // The completion gauge was removed on 2026-08-03. Asserting its ABSENCE is
@@ -124,17 +170,20 @@ describe("WelcomeBackTile", () => {
   });
 
   describe("completeness dropdowns", () => {
-    it("renders both groups as dropdowns", () => {
+    // "Other Assessments" was removed from this tile on 2026-08-05 (request).
+    // Personal Info is the only group left, and it now lives at the end of the
+    // quick-action row rather than as a full-width block below it.
+    it("renders Personal Info and NOT Other Assessments", () => {
       renderTile();
       expect(screen.getByText("Personal Info")).toBeInTheDocument();
-      expect(screen.getByText("Other Assessments")).toBeInTheDocument();
+      expect(screen.queryByText("Other Assessments")).not.toBeInTheDocument();
+      expect(screen.queryByTestId(ASSESSMENTS)).toBeNull();
     });
 
     it("starts collapsed — no Add rows are visible", () => {
       renderTile();
-      expect(screen.queryByRole("button", { name: "Add Hogan" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Add Resume" })).toBeNull();
-      expect(screen.getByTestId(ASSESSMENTS)).toHaveAttribute(
+      expect(screen.getByTestId(PERSONAL)).toHaveAttribute(
         "aria-expanded",
         "false",
       );
@@ -142,33 +191,35 @@ describe("WelcomeBackTile", () => {
 
     it("shows the done-count in the trigger so progress is legible while collapsed", () => {
       renderTile();
-      // Personal Info: 1 of 3 done. Other Assessments: 1 of 2 done.
+      // Personal Info: 1 of 3 done.
       expect(screen.getByText("1 of 3")).toBeInTheDocument();
-      expect(screen.getByText("1 of 2")).toBeInTheDocument();
     });
 
     it("reveals its rows when opened", () => {
       renderTile();
-      openDropdown(ASSESSMENTS);
+      openDropdown(PERSONAL);
       expect(
-        screen.getByRole("button", { name: "Add Hogan" }),
+        screen.getByRole("button", { name: "Add Resume" }),
       ).toBeInTheDocument();
     });
 
-    it("calls onAddAssessment with the name for a not-done assessment", () => {
-      const { onAddAssessment } = renderTile();
-      openDropdown(ASSESSMENTS);
-      fireEvent.click(screen.getByRole("button", { name: "Add Hogan" }));
-      expect(onAddAssessment).toHaveBeenCalledWith("Hogan");
-    });
-
-    it("greys out (disables) the Add button for a done assessment", () => {
-      const { onAddAssessment } = renderTile();
-      openDropdown(ASSESSMENTS);
-      const doneAdd = screen.getByRole("button", { name: "DISC added" });
+    it("greys out (disables) the Add button for a done item", () => {
+      const { onAddPersonalInfo } = renderTile();
+      openDropdown(PERSONAL);
+      const doneAdd = screen.getByRole("button", { name: "Prism Rpt .csv added" });
       expect(doneAdd).toBeDisabled();
       fireEvent.click(doneAdd);
-      expect(onAddAssessment).not.toHaveBeenCalled();
+      expect(onAddPersonalInfo).not.toHaveBeenCalled();
+    });
+
+    it("floats the panel rather than expanding the row", () => {
+      // It sits inside the quick-action row now; an inline expansion would
+      // shove that row's layout around every time it opened.
+      renderTile();
+      openDropdown(PERSONAL);
+      expect(screen.getByTestId(`${PERSONAL}-panel`).className).toContain(
+        "absolute",
+      );
     });
 
     it("calls onAddPersonalInfo with the name for a personal-info item", () => {
@@ -245,8 +296,28 @@ describe("WelcomeBackTile", () => {
       expect(locked).not.toHaveAttribute("href");
     });
 
-    it("omits the whole row when there are no actions and no videos", () => {
+    // Personal Info moved INTO this row on 2026-08-05, so the row now survives
+    // on Personal Info alone. Gating it on actions/videos only would silently
+    // drop Personal Info for a user with neither.
+    it("keeps the row for Personal Info even with no actions and no videos", () => {
       renderTile();
+      expect(screen.getByTestId("homev2-quick-actions")).toBeInTheDocument();
+      expect(screen.getByTestId(PERSONAL)).toBeInTheDocument();
+    });
+
+    it("omits the row entirely when there is nothing at all to put in it", () => {
+      render(
+        <MemoryRouter>
+          <WelcomeBackTile
+            lastActions={LAST_ACTIONS}
+            onResumeConversation={jest.fn()}
+            hasReport={false}
+            onRequestAssessment={jest.fn()}
+            onViewReportPdf={jest.fn()}
+            personalInfo={[]}
+          />
+        </MemoryRouter>,
+      );
       expect(screen.queryByTestId("homev2-quick-actions")).toBeNull();
     });
   });

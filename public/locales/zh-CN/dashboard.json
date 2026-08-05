@@ -115,6 +115,12 @@
     "openingDocument": "正在打开文档…",
     "docOpenFailed": "无法打开该文档。它可能仍在处理中。",
     "noInlinePreview": "此文件类型无法在此预览。请在新标签页中打开。",
-    "openInNewTab": "在新标签页中打开"
+    "openInNewTab": "在新标签页中打开",
+    "lastVisitHeading": "这是您上次访问时处理的内容。",
+    "noLastVisit": "暂无 —",
+    "startConversation": "开始对话",
+    "untitledConversation": "未命名对话",
+    "videosBlurb": "观看这些视频，充分利用 InspiresGenius",
+    "todaysPrep": "今日准备"
   }
 }

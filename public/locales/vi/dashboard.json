@@ -115,6 +115,12 @@
     "openingDocument": "Đang mở tài liệu…",
     "docOpenFailed": "Không thể mở tài liệu đó. Có thể tài liệu vẫn đang được xử lý.",
     "noInlinePreview": "Không thể xem trước loại tệp này tại đây. Hãy mở trong tab mới.",
-    "openInNewTab": "Mở trong tab mới"
+    "openInNewTab": "Mở trong tab mới",
+    "lastVisitHeading": "Đây là những gì bạn đã làm trong lần truy cập trước.",
+    "noLastVisit": "Chưa có gì —",
+    "startConversation": "bắt đầu cuộc trò chuyện",
+    "untitledConversation": "Cuộc trò chuyện chưa đặt tên",
+    "videosBlurb": "Xem các video này để tận dụng tối đa InspiresGenius",
+    "todaysPrep": "Chuẩn bị hôm nay"
   }
 }

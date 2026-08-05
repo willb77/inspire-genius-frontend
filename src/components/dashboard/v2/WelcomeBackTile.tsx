@@ -57,9 +57,27 @@ export interface WelcomeBackQuickAction {
   icon: LucideIcon;
 }
 
+/** One thing the user worked on last visit — a recent conversation. */
+export interface WelcomeBackLastAction {
+  id: string;
+  label: string;
+  /** Relative time ("2 days ago"); omitted when the timestamp is unusable. */
+  meta?: string;
+}
+
 interface WelcomeBackTileProps {
-  displayName: string;
-  lastTopic?: string;
+  /**
+   * What the user worked on last visit, newest first. Replaces the
+   * "Welcome back, {name}" greeting (2026-08-05): the greeting said nothing the
+   * user did not already know, where this resumes their actual work.
+   */
+  lastActions?: WelcomeBackLastAction[];
+  lastActionsLoading?: boolean;
+  /**
+   * Open the Meridian chat. Intentionally takes no conversation id — the chat
+   * page has no deep-link entry point for one, so a per-conversation callback
+   * here would promise navigation the host cannot deliver.
+   */
   onResumeConversation: () => void;
   hasReport: boolean;
   reportFileName?: string;
@@ -67,9 +85,7 @@ interface WelcomeBackTileProps {
   onRequestAssessment: () => void;
   /** Opens the stored PRISM report in a viewer modal. */
   onViewReportPdf: () => void;
-  assessments: WelcomeBackAssessment[];
   personalInfo: WelcomeBackPersonalInfo[];
-  onAddAssessment?: (name: string) => void;
   onAddPersonalInfo?: (name: string) => void;
   /** Quick-action links rendered directly under the completion gauge. */
   quickActions?: WelcomeBackQuickAction[];
@@ -154,36 +170,44 @@ function CompletionDropdown({
   const [open, setOpen] = useState(false);
   const doneCount = items.filter((i) => i.done).length;
 
+  // Sized to its content and floated open, rather than a full-width block that
+  // pushed the tile taller (2026-08-05). It now sits at the end of the
+  // quick-action row, so an inline expansion would shove that row's layout
+  // around every time it opened — hence the absolute panel, matching Videos.
   return (
-    <div className="rounded-xl border border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]">
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         data-testid={testId}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start"
+        className={cn(
+          QUICK_PILL,
+          "border-[rgba(11,27,51,0.10)] bg-[#FBF7F0] text-[#0B1B33] hover:bg-white",
+        )}
       >
-        <span className="text-[13px] font-semibold text-[#0B1B33]">{label}</span>
-        <span className="inline-flex items-center gap-2">
-          <span className="text-[12px] font-medium text-[#7C93B5]">
-            {t("homeV2.nOfM", {
-              defaultValue: "{{done}} of {{total}}",
-              done: doneCount,
-              total: items.length,
-            })}
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className={cn(
-              "h-4 w-4 text-[#7C93B5] transition-transform",
-              open && "rotate-180",
-            )}
-          />
+        <span className="font-semibold">{label}</span>
+        <span className="text-[12px] font-medium text-[#7C93B5]">
+          {t("homeV2.nOfM", {
+            defaultValue: "{{done}} of {{total}}",
+            done: doneCount,
+            total: items.length,
+          })}
         </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn(
+            "h-4 w-4 text-[#7C93B5] transition-transform",
+            open && "rotate-180",
+          )}
+        />
       </button>
 
       {open && (
-        <ul className="grid grid-cols-1 gap-3 border-t border-[rgba(11,27,51,0.10)] px-4 py-3 sm:grid-cols-2">
+        <ul
+          data-testid={`${testId}-panel`}
+          className="absolute end-0 z-20 mt-1 flex w-72 flex-col gap-3 rounded-xl border border-[rgba(11,27,51,0.10)] bg-white px-4 py-3 shadow-lg"
+        >
           {items.map((item) => (
             <CompletionRow
               key={item.name}
@@ -210,9 +234,12 @@ const QUICK_PILL =
 function QuickActions({
   actions,
   videos,
+  trailing,
 }: {
   actions: WelcomeBackQuickAction[];
   videos: DashboardVideo[];
+  /** Pinned to the end of the row — the Personal Info dropdown. */
+  trailing?: JSX.Element | null;
 }): JSX.Element {
   const { t } = useTranslation("dashboard");
   const [videosOpen, setVideosOpen] = useState(false);
@@ -220,6 +247,12 @@ function QuickActions({
 
   return (
     <div className="mt-4" data-testid="homev2-quick-actions">
+      <p className="mb-2 text-[13px] text-[#4b5f80]">
+        {t("homeV2.videosBlurb", {
+          defaultValue:
+            "View these videos on how to get the most from InspiresGenius",
+        })}
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         {actions.map(({ key, label, to, entitled, lockedReason, icon: Icon }) =>
           entitled ? (
@@ -306,6 +339,11 @@ function QuickActions({
             )}
           </div>
         )}
+
+        {/* Personal Info sits at the END of this row (2026-08-05) — it used to
+            be a full-width block below, which spent a whole row of the tile on
+            a control that is closed most of the time. */}
+        {trailing ? <div className="ms-auto">{trailing}</div> : null}
       </div>
 
       <Dialog
@@ -341,17 +379,15 @@ function QuickActions({
 }
 
 export function WelcomeBackTile({
-  displayName,
-  lastTopic,
+  lastActions = [],
+  lastActionsLoading = false,
   onResumeConversation,
   hasReport,
   reportFileName,
   prismLoading = false,
   onRequestAssessment,
   onViewReportPdf,
-  assessments,
   personalInfo,
-  onAddAssessment,
   onAddPersonalInfo,
   quickActions = [],
   videos = [],
@@ -360,43 +396,57 @@ export function WelcomeBackTile({
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
-      {/* 1. Header */}
+      {/* 1. Header — what you worked on last visit.
+          Replaced "Welcome back, {name}" on 2026-08-05: the greeting told the
+          user their own name, where this hands back the thread they were on.
+          Each entry resumes that conversation. */}
       <h2 className="font-serif text-[22px] leading-tight text-[#0B1B33]">
-        {t("homeV2.welcomeBackPrefix", { defaultValue: "Welcome back," })}{" "}
-        <span className="text-[#C9711A]">{displayName}</span>.
+        {t("homeV2.lastVisitHeading", {
+          defaultValue: "Here's what you worked on last visit.",
+        })}
       </h2>
 
-      {/* 2. Continuation line */}
-      <p className="mt-1.5 text-[13px] text-[#4b5f80]">
-        {lastTopic ? (
-          <>
-            {t("homeV2.lastDiscussedPrefix", {
-              defaultValue: "Last time we discussed",
-            })}{" "}
-            <button
-              type="button"
-              onClick={onResumeConversation}
-              className="font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
-            >
-              {lastTopic}
-            </button>
-            {t("homeV2.lastDiscussedSuffix", {
-              defaultValue: ". Continue, or start a new conversation?",
-            })}
-          </>
-        ) : (
+      {lastActionsLoading ? (
+        <p className="mt-1.5 text-[13px] text-[#4b5f80]">
+          {t("homeV2.loadingActivity", { defaultValue: "Loading activity…" })}
+        </p>
+      ) : lastActions.length > 0 ? (
+        <ul className="mt-2 flex flex-col gap-1" data-testid="homev2-last-actions">
+          {lastActions.map((action) => (
+            <li key={action.id} className="flex min-w-0 items-baseline gap-2">
+              <button
+                type="button"
+                onClick={onResumeConversation}
+                className="min-w-0 truncate text-start text-[13px] font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
+              >
+                {action.label}
+              </button>
+              {action.meta ? (
+                <span className="shrink-0 text-[12px] text-[#7C93B5]">
+                  {action.meta}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        // No history yet: say so plainly and offer the one useful next step,
+        // rather than an empty list that reads as a failed fetch.
+        <p className="mt-1.5 text-[13px] text-[#4b5f80]">
+          {t("homeV2.noLastVisit", {
+            defaultValue: "Nothing yet —",
+          })}{" "}
           <button
             type="button"
-            onClick={onResumeConversation}
-            className="text-start hover:text-[#0B1B33]"
+            onClick={() => onResumeConversation()}
+            className="font-medium text-[#C9711A] underline underline-offset-2 hover:text-[#E8932B]"
           >
-            {t("homeV2.continuePrompt", {
-              defaultValue:
-                "Continue where you left off, or start a new conversation?",
+            {t("homeV2.startConversation", {
+              defaultValue: "start a conversation",
             })}
           </button>
-        )}
-      </p>
+        </p>
+      )}
 
       {/* 3. Divider */}
       <div className="my-5 h-px w-full bg-[rgba(11,27,51,0.10)]" />
@@ -461,30 +511,32 @@ export function WelcomeBackTile({
           material is still reachable from the Personal Info dropdown below and
           from the Documents surface; nothing became unreachable, the Home tile
           just stopped listing files. */}
-      {(quickActions.length > 0 || videos.length > 0) && (
-        <QuickActions actions={quickActions} videos={videos} />
+      {/* Personal Info now rides at the end of this row rather than as its own
+          full-width block below it, and "Other Assessments" was removed
+          entirely (2026-08-05, both on request). Adding a DISC/MBTI/Clifton
+          result is still possible from the Documents surface — the Home
+          shortcut went, not the capability. */}
+      {/* `personalInfo` counts toward rendering this row: it now LIVES in the
+          row, so gating solely on actions/videos would silently drop Personal
+          Info for anyone with neither. */}
+      {(quickActions.length > 0 ||
+        videos.length > 0 ||
+        personalInfo.length > 0) && (
+        <QuickActions
+          actions={quickActions}
+          videos={videos}
+          trailing={
+            personalInfo.length > 0 ? (
+              <CompletionDropdown
+                testId="homev2-personal-info-dropdown"
+                label={t("homeV2.personalInfo", { defaultValue: "Personal Info" })}
+                items={personalInfo}
+                onAdd={onAddPersonalInfo}
+              />
+            ) : null
+          }
+        />
       )}
-
-      {/* 7. Divider */}
-      <div className="my-5 h-px w-full bg-[rgba(11,27,51,0.10)]" />
-
-      {/* 8. Personal Info + Other Assessments, as collapsed dropdowns. */}
-      <div className="flex flex-col gap-3">
-        <CompletionDropdown
-          testId="homev2-personal-info-dropdown"
-          label={t("homeV2.personalInfo", { defaultValue: "Personal Info" })}
-          items={personalInfo}
-          onAdd={onAddPersonalInfo}
-        />
-        <CompletionDropdown
-          testId="homev2-other-assessments-dropdown"
-          label={t("homeV2.otherAssessments", {
-            defaultValue: "Other Assessments",
-          })}
-          items={assessments}
-          onAdd={onAddAssessment}
-        />
-      </div>
     </div>
   );
 }

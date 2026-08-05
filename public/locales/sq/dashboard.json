@@ -115,6 +115,12 @@
     "openingDocument": "Po hapet dokumenti…",
     "docOpenFailed": "Ai dokument nuk mund të hapej. Mund të jetë ende duke u përpunuar.",
     "noInlinePreview": "Ky lloj skedari nuk mund të shfaqet këtu. Hapeni në një skedë të re.",
-    "openInNewTab": "Hape në skedë të re"
+    "openInNewTab": "Hape në skedë të re",
+    "lastVisitHeading": "Ja për çfarë punuat vizitën e fundit.",
+    "noLastVisit": "Ende asgjë —",
+    "startConversation": "nisni një bisedë",
+    "untitledConversation": "Bisedë pa titull",
+    "videosBlurb": "Shikoni këto video për të përfituar sa më shumë nga InspiresGenius",
+    "todaysPrep": "Përgatitja e sotme"
   }
 }

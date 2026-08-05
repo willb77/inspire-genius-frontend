@@ -115,6 +115,12 @@
     "openingDocument": "Document wordt geopend…",
     "docOpenFailed": "Dat document kon niet worden geopend. Mogelijk wordt het nog verwerkt.",
     "noInlinePreview": "Dit bestandstype kan hier niet worden weergegeven. Open het in een nieuw tabblad.",
-    "openInNewTab": "Openen in nieuw tabblad"
+    "openInNewTab": "Openen in nieuw tabblad",
+    "lastVisitHeading": "Dit is waar u de vorige keer aan werkte.",
+    "noLastVisit": "Nog niets —",
+    "startConversation": "start een gesprek",
+    "untitledConversation": "Naamloos gesprek",
+    "videosBlurb": "Bekijk deze video's om het meeste uit InspiresGenius te halen",
+    "todaysPrep": "Voorbereiding van vandaag"
   }
 }

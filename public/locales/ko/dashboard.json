@@ -115,6 +115,12 @@
     "openingDocument": "문서를 여는 중…",
     "docOpenFailed": "문서를 열 수 없습니다. 아직 처리 중일 수 있습니다.",
     "noInlinePreview": "이 파일 형식은 여기서 미리 볼 수 없습니다. 새 탭에서 여세요.",
-    "openInNewTab": "새 탭에서 열기"
+    "openInNewTab": "새 탭에서 열기",
+    "lastVisitHeading": "지난 방문에서 작업한 내용입니다.",
+    "noLastVisit": "아직 없습니다 —",
+    "startConversation": "대화 시작하기",
+    "untitledConversation": "제목 없는 대화",
+    "videosBlurb": "InspiresGenius를 최대한 활용하는 방법은 이 동영상을 참고하세요",
+    "todaysPrep": "오늘의 준비"
   }
 }

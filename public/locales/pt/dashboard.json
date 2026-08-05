@@ -115,6 +115,12 @@
     "openingDocument": "Abrindo documento…",
     "docOpenFailed": "Não foi possível abrir esse documento. Ele pode ainda estar em processamento.",
     "noInlinePreview": "Este tipo de arquivo não pode ser visualizado aqui. Abra-o em uma nova aba.",
-    "openInNewTab": "Abrir em uma nova aba"
+    "openInNewTab": "Abrir em uma nova aba",
+    "lastVisitHeading": "Veja o que você trabalhou na última visita.",
+    "noLastVisit": "Nada ainda —",
+    "startConversation": "iniciar uma conversa",
+    "untitledConversation": "Conversa sem título",
+    "videosBlurb": "Assista a estes vídeos para aproveitar ao máximo o InspiresGenius",
+    "todaysPrep": "Preparação de hoje"
   }
 }
