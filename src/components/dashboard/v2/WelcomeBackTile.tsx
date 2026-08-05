@@ -47,6 +47,13 @@ export interface WelcomeBackQuickAction {
   label: string;
   to: string;
   entitled: boolean;
+  /**
+   * Overrides the locked tooltip. The default wording blames the user's plan,
+   * which is only true for an entitlement gate — an action switched off for
+   * everyone (see `isVerticalForceDisabled`) must say so instead of telling an
+   * entitled user their account lacks something it has.
+   */
+  lockedReason?: string;
   icon: LucideIcon;
 }
 
@@ -214,7 +221,7 @@ function QuickActions({
   return (
     <div className="mt-4" data-testid="homev2-quick-actions">
       <div className="flex flex-wrap items-center gap-2">
-        {actions.map(({ key, label, to, entitled, icon: Icon }) =>
+        {actions.map(({ key, label, to, entitled, lockedReason, icon: Icon }) =>
           entitled ? (
             <Link
               key={key}
@@ -233,10 +240,13 @@ function QuickActions({
               key={key}
               data-testid={`homev2-quick-${key}`}
               aria-disabled="true"
-              title={t("homeV2.quickActionLocked", {
-                defaultValue: "{{name}} isn't enabled for your account",
-                name: label,
-              })}
+              title={
+                lockedReason ??
+                t("homeV2.quickActionLocked", {
+                  defaultValue: "{{name}} isn't enabled for your account",
+                  name: label,
+                })
+              }
               className={cn(
                 QUICK_PILL,
                 "cursor-not-allowed border-[rgba(11,27,51,0.06)] bg-[#F1F1F1] text-[#9AA3B0]",
