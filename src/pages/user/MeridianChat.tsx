@@ -55,7 +55,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
 import PrismBadge from "@/components/chat/PrismBadge";
-import MeridianTileRail from "@/components/meridian/MeridianTileRail";
+import StarterQuestionsDropdown from "@/components/meridian/StarterQuestionsDropdown";
 import ExportChatModal from "@/components/user/chat/ExportChatModal";
 import {
   Sparkles,
@@ -72,56 +72,12 @@ import {
   FastForward,
   X,
   Download,
-  UserRoundSearch,
-  MessagesSquare,
-  Briefcase,
   Lock,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * The second header row: the user's own pages, one click from the conversation.
- *
- * Lumen's three personal surfaces plus Job Fit. Job Fit lands on `MATCHES`
- * rather than `BASE` because the vertical's home is a router-level redirect —
- * pointing at the concrete page keeps the active-link state honest and avoids a
- * double navigation.
- *
- * Declared at module scope so the array identity is stable across renders.
- */
-const PERSONAL_ROW_LINKS = [
-  {
-    to: ROUTES.LUMEN.SELF_PORTRAIT,
-    vertical: "lumen",
-    labelKey: "meridian.personalRow.selfPortrait",
-    defaultLabel: "My Self-Portrait",
-    icon: UserRoundSearch,
-  },
-  {
-    to: ROUTES.LUMEN.MOMENTS,
-    vertical: "lumen",
-    labelKey: "meridian.personalRow.moments",
-    defaultLabel: "Moments",
-    icon: Sparkles,
-  },
-  {
-    to: ROUTES.LUMEN.COACHING,
-    vertical: "lumen",
-    labelKey: "meridian.personalRow.coaching",
-    defaultLabel: "Coaching",
-    icon: MessagesSquare,
-  },
-  {
-    to: ROUTES.JOB_FIT.MATCHES,
-    vertical: "job-fit",
-    labelKey: "meridian.personalRow.jobFit",
-    defaultLabel: "Job Fit",
-    icon: Briefcase,
-  },
-] as const;
 
 function extractSessionId(resp: unknown): string | undefined {
   try {
@@ -1728,6 +1684,153 @@ export default function MeridianChat({
     return t("meridian.consultedAgents", { defaultValue: "+ {{agents}}", agents: titled.join(", ") });
   }, [consultedAgents]);
 
+  /**
+   * Dispatch one Meridian turn.
+   *
+   * Lifted out of the ChatWindow JSX (2026-08-05) so the header's Starter
+   * Questions dropdown can start a turn through exactly the same path the
+   * composer uses -- injecting the question and submitting it in one step,
+   * with no duplicate dispatch logic to drift.
+   *
+   * Deliberately a plain function rather than useCallback: the inline arrow
+   * this replaces was re-created on every render, so this preserves identity
+   * semantics exactly and cannot go stale behind a dependency array.
+   */
+  const handleSendText = (text: string, displayText?: string) => {
+    demoAudioServiceRef.current?.resetAudioState();
+    setHasAudio(false);
+    setIsAudioPaused(false);
+    setAgentAttribution(null);
+    stopAudio(); // Clear any previous audio queue
+    // New turn — allow TTS again. (Without this, asking the same
+    // question twice in a session would return a silent answer.)
+    lastSpokenTextRef.current = null;
+    sseTtsSpokeRef.current = false;
+    const timeStr = formatUSTimeSafe(new Date());
+    const tsNow = Date.now();
+    setMessages((prev) => [
+      ...prev.filter((m) => m.kind !== "processing"),
+      {
+        id: `msg-${Date.now()}-user`,
+        kind: "text",
+        sender: "user",
+        // Show what the person asked, not the composed prompt.
+        text: displayText || text,
+        time: timeStr,
+        ts: tsNow,
+      },
+      {
+        id: `msg-${Date.now()}-assistant`,
+        kind: "processing",
+        sender: "assistant",
+        time: timeStr,
+        ts: tsNow,
+        isProcessing: true,
+        type: "processing",
+        text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
+      },
+    ]);
+    // Route text chat through the async-jobs path. POST
+    // /v1/agents/chat/async returns a job_id immediately and
+    // runs meridian.respond() in the background — sidestepping
+    // API GW HTTP API's 30s integration cap that killed
+    // multi-agent DAG responses. Completion arrives via the
+    // WS `job_complete` push frame (when the socket is open)
+    // or by polling GET /v1/agents/chat/jobs/{job_id}.
+    //
+    // The placeholder bubble is replaced inside
+    // handleJobSettled → renderAssistantComplete via the
+    // shared rendering path.
+    const sessionForJob = conversationId || "default";
+
+    // T22 — SSE fallback branch. Fires only when the WS
+    // reconnect budget is fully exhausted; the happy path
+    // (next clause) is unchanged. On the SSE path the
+    // assistant placeholder is the streaming bubble itself.
+    if (_wsReconnectExhausted) {
+      const placeholderId = `msg-${Date.now()}-assistant`;
+      // Re-tag the placeholder (which was inserted above with
+      // the same Date.now() in the same tick) so the SSE
+      // effects above can target it. We patch the LAST
+      // processing bubble belonging to the assistant.
+      setMessages((prev) => {
+        const idx = [...prev].reverse().findIndex(
+          (m) => m.sender === "assistant" && m.kind === "processing",
+        );
+        if (idx === -1) return prev;
+        const realIdx = prev.length - 1 - idx;
+        const copy = prev.slice();
+        copy[realIdx] = { ...copy[realIdx], id: placeholderId };
+        return copy;
+      });
+      sseStreamingMessageIdRef.current = placeholderId;
+      void sseStream
+        .send({
+          message: text,
+          sessionId: sessionForJob,
+          context: { conversation_id: conversationId, session_id: sessionForJob },
+          fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+        })
+        .catch((err: unknown) => {
+          // Preflight option C — the server redirected us to
+          // the async-jobs path. Hand off to the existing
+          // meridianJob flow so polling + final render goes
+          // through the canonical settlement code.
+          if (err instanceof PreflightAsyncRedirectError) {
+            sseStreamingMessageIdRef.current = null;
+            void meridianJob
+              .startJob({
+                message: text,
+                sessionId: sessionForJob,
+                fileIds:
+                  selectedFileIds.length > 0 ? selectedFileIds : undefined,
+                context: {
+                  conversation_id: conversationId,
+                  session_id: sessionForJob,
+                  preflight_redirect_job_id: err.redirect.jobId,
+                },
+              })
+              .catch(() => {
+                setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
+              });
+          }
+          // All other errors — including STREAMING_DISABLED
+          // — already surface via sseStream.lastError; let the
+          // UI render the error frame text on the placeholder
+          // rather than swallowing it here.
+        });
+    } else {
+      runWhenWarm(() => {
+      void meridianJob
+        .startJob({
+          message: text,
+          sessionId: sessionForJob,
+          fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
+          context: { conversation_id: conversationId, session_id: sessionForJob },
+        })
+        .catch(() => {
+          setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
+          setMessages((prev) => [
+            ...prev.filter((m) => m.kind !== "processing"),
+            {
+              id: `msg-${Date.now()}-err`,
+              kind: "text" as const,
+              sender: "assistant" as const,
+              text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
+              time: formatUSTimeSafe(new Date()),
+              ts: Date.now(),
+            },
+          ]);
+        });
+      });
+    }
+    // Keep the WS open in the background so push frames land
+    // when the job settles. The socket is not required for
+    // correctness (polling is the fallback), but it removes
+    // the poll-cycle wait when the user is still on the page.
+    if (!_isConnected && accessToken) wsConnect(accessToken);
+  };
+
   return (
     // The nav rail starts collapsed here — the chat is the densest surface in
     // the app and the tile row now lives in the header. Not persisted, so every
@@ -1818,19 +1921,6 @@ export default function MeridianChat({
             onChange={(ids) => setSelectedFileIds(ids)}
             onUpload={() => setUploadOpen(true)}
           />
-          {/* Projects — promoted out of the tile row below, which was removed.
-              Rendered through the rail itself (filtered to one tile) so the
-              dropdown keeps its single implementation. */}
-          {isV2 && (
-            <MeridianTileRail
-              orientation="horizontal"
-              tiles={["projects"]}
-              activeConversationId={selectedId}
-              onSelectConversation={(id) => {
-                void handleSelectConversation(id);
-              }}
-            />
-          )}
           <HistoryDropdown
             selectedIds={reviewConversationIds}
             onChange={setReviewConversationIds}
@@ -1839,6 +1929,50 @@ export default function MeridianChat({
               void handleSelectConversation(id);
             }}
           />
+          {/* Moments — promoted from the second row, which held four personal
+              links and is now gone. Moments is the one that belongs beside the
+              conversation: it is where a turn worth keeping ends up, so it is
+              part of the chat loop rather than a separate destination.
+              Entitlement gates USE, not SIGHT — an unentitled account still
+              sees it, greyed and locked, so the capability stays discoverable
+              instead of bouncing off a route guard. */}
+          {isV2 && (
+            entitledVerticals.includes("lumen") ? (
+              <Link
+                to={ROUTES.LUMEN.MOMENTS}
+                data-testid="meridian-personal-moments"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
+              >
+                <Sparkles className="size-4" aria-hidden />
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+              </Link>
+            ) : (
+              <span
+                data-testid="meridian-personal-moments"
+                aria-disabled="true"
+                title={t("meridian.personalRow.locked", {
+                  defaultValue: "{{name}} isn't enabled for your account",
+                  name: t("meridian.personalRow.moments", { defaultValue: "Moments" }),
+                })}
+                className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
+              >
+                <Sparkles className="size-4" aria-hidden />
+                <span>{t("meridian.personalRow.moments", { defaultValue: "Moments" })}</span>
+                <Lock className="size-3.5 shrink-0 opacity-60" aria-hidden />
+              </span>
+            )
+          )}
+          {/* Starter Questions — the same persona-grouped library HomeV2 shows
+              on its "Chat with Meridian" tile. On HomeV2 a starter question is
+              how you open a chat; bringing it in here means it is also how you
+              get unstuck mid-conversation. Picking one sends immediately
+              through handleSendText — the composer's own dispatch path. */}
+          {isV2 && (
+            <StarterQuestionsDropdown
+              disabled={isProcessing}
+              onSelect={(question) => handleSendText(question)}
+            />
+          )}
           {/* V2 — Export moved next to History. */}
           {isV2 && (
             <button
@@ -1974,57 +2108,13 @@ export default function MeridianChat({
         </div>
       </div>
 
-      {/* Second header row — the personal surfaces (2026-07-31).
-          Replaces the five-tile dropdown row that used to sit here: Active
-          Sessions, Last 5 Chats and Knowledge were three routes into the same
-          conversation list the History dropdown already owns, and Projects was
-          promoted into the row above. What earns the space instead is the work
-          the user came to do — their Lumen self-knowledge pages and Job Fit —
-          which previously required leaving the conversation via the sidebar.
-          Plain links, so each opens its own page and the browser back button
-          returns here. */}
-      {isV2 && (
-        <nav
-          className="flex flex-wrap items-center gap-2 pb-3"
-          aria-label={t("meridian.personalRow.aria", { defaultValue: "Your pages" })}
-          data-testid="meridian-personal-row"
-        >
-          {PERSONAL_ROW_LINKS.map(({ to, vertical, labelKey, defaultLabel, icon: Icon }) => {
-            const label = t(labelKey, { defaultValue: defaultLabel });
-            const testId = `meridian-personal-${to.split("/").pop()}`;
-            // Entitlement gates USE, not SIGHT — the same rule the Tools
-            // section follows. An unentitled entry stays visible (so the
-            // capability is discoverable) but renders greyed, locked and
-            // non-navigating, rather than as a link that bounces off a guard.
-            return entitledVerticals.includes(vertical) ? (
-              <Link
-                key={to}
-                to={to}
-                data-testid={testId}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-foreground hover:bg-muted"
-              >
-                <Icon className="size-4" aria-hidden />
-                <span>{label}</span>
-              </Link>
-            ) : (
-              <span
-                key={to}
-                data-testid={testId}
-                aria-disabled="true"
-                title={t("meridian.personalRow.locked", {
-                  defaultValue: "{{name}} isn't enabled for your account",
-                  name: label,
-                })}
-                className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border bg-background px-3 text-sm font-normal text-muted-foreground opacity-60"
-              >
-                <Icon className="size-4" aria-hidden />
-                <span>{label}</span>
-                <Lock className="size-3.5 shrink-0 opacity-60" aria-hidden />
-              </span>
-            );
-          })}
-        </nav>
-      )}
+      {/* The second header row is gone (2026-08-05). It carried My
+          Self-Portrait, Moments, Coaching and Job Fit; three of those were
+          destinations that pull the user out of the conversation and are
+          already reachable from the sidebar, so they cost a permanent row of
+          chrome to duplicate navigation. Moments earned its keep and moved up
+          beside History; the row it leaves behind is reclaimed for the
+          conversation. */}
       </div>
 
       {/* Canvas. V2 now reads: nav (UserLayout) │ [tile row / Compose /
@@ -2063,140 +2153,7 @@ export default function MeridianChat({
             autoSendText={autoSendText}
             autoSendDisplayText={autoSendDisplayText}
             onBack={() => navigate(-1)}
-            onSendText={(text, displayText) => {
-              demoAudioServiceRef.current?.resetAudioState();
-              setHasAudio(false);
-              setIsAudioPaused(false);
-              setAgentAttribution(null);
-              stopAudio(); // Clear any previous audio queue
-              // New turn — allow TTS again. (Without this, asking the same
-              // question twice in a session would return a silent answer.)
-              lastSpokenTextRef.current = null;
-              sseTtsSpokeRef.current = false;
-              const timeStr = formatUSTimeSafe(new Date());
-              const tsNow = Date.now();
-              setMessages((prev) => [
-                ...prev.filter((m) => m.kind !== "processing"),
-                {
-                  id: `msg-${Date.now()}-user`,
-                  kind: "text",
-                  sender: "user",
-                  // Show what the person asked, not the composed prompt.
-                  text: displayText || text,
-                  time: timeStr,
-                  ts: tsNow,
-                },
-                {
-                  id: `msg-${Date.now()}-assistant`,
-                  kind: "processing",
-                  sender: "assistant",
-                  time: timeStr,
-                  ts: tsNow,
-                  isProcessing: true,
-                  type: "processing",
-                  text: t("meridian.thinking", { defaultValue: "Meridian is thinking..." }),
-                },
-              ]);
-              // Route text chat through the async-jobs path. POST
-              // /v1/agents/chat/async returns a job_id immediately and
-              // runs meridian.respond() in the background — sidestepping
-              // API GW HTTP API's 30s integration cap that killed
-              // multi-agent DAG responses. Completion arrives via the
-              // WS `job_complete` push frame (when the socket is open)
-              // or by polling GET /v1/agents/chat/jobs/{job_id}.
-              //
-              // The placeholder bubble is replaced inside
-              // handleJobSettled → renderAssistantComplete via the
-              // shared rendering path.
-              const sessionForJob = conversationId || "default";
-
-              // T22 — SSE fallback branch. Fires only when the WS
-              // reconnect budget is fully exhausted; the happy path
-              // (next clause) is unchanged. On the SSE path the
-              // assistant placeholder is the streaming bubble itself.
-              if (_wsReconnectExhausted) {
-                const placeholderId = `msg-${Date.now()}-assistant`;
-                // Re-tag the placeholder (which was inserted above with
-                // the same Date.now() in the same tick) so the SSE
-                // effects above can target it. We patch the LAST
-                // processing bubble belonging to the assistant.
-                setMessages((prev) => {
-                  const idx = [...prev].reverse().findIndex(
-                    (m) => m.sender === "assistant" && m.kind === "processing",
-                  );
-                  if (idx === -1) return prev;
-                  const realIdx = prev.length - 1 - idx;
-                  const copy = prev.slice();
-                  copy[realIdx] = { ...copy[realIdx], id: placeholderId };
-                  return copy;
-                });
-                sseStreamingMessageIdRef.current = placeholderId;
-                void sseStream
-                  .send({
-                    message: text,
-                    sessionId: sessionForJob,
-                    context: { conversation_id: conversationId, session_id: sessionForJob },
-                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                  })
-                  .catch((err: unknown) => {
-                    // Preflight option C — the server redirected us to
-                    // the async-jobs path. Hand off to the existing
-                    // meridianJob flow so polling + final render goes
-                    // through the canonical settlement code.
-                    if (err instanceof PreflightAsyncRedirectError) {
-                      sseStreamingMessageIdRef.current = null;
-                      void meridianJob
-                        .startJob({
-                          message: text,
-                          sessionId: sessionForJob,
-                          fileIds:
-                            selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                          context: {
-                            conversation_id: conversationId,
-                            session_id: sessionForJob,
-                            preflight_redirect_job_id: err.redirect.jobId,
-                          },
-                        })
-                        .catch(() => {
-                          setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
-                        });
-                    }
-                    // All other errors — including STREAMING_DISABLED
-                    // — already surface via sseStream.lastError; let the
-                    // UI render the error frame text on the placeholder
-                    // rather than swallowing it here.
-                  });
-              } else {
-                runWhenWarm(() => {
-                void meridianJob
-                  .startJob({
-                    message: text,
-                    sessionId: sessionForJob,
-                    fileIds: selectedFileIds.length > 0 ? selectedFileIds : undefined,
-                    context: { conversation_id: conversationId, session_id: sessionForJob },
-                  })
-                  .catch(() => {
-                    setStatusBanner({ type: "error", text: t("meridian.error.unreachableShort", { defaultValue: "Couldn't reach Meridian" }) });
-                    setMessages((prev) => [
-                      ...prev.filter((m) => m.kind !== "processing"),
-                      {
-                        id: `msg-${Date.now()}-err`,
-                        kind: "text" as const,
-                        sender: "assistant" as const,
-                        text: t("meridian.error.unreachable", { defaultValue: "Sorry, I couldn't reach Meridian. Please try again." }),
-                        time: formatUSTimeSafe(new Date()),
-                        ts: Date.now(),
-                      },
-                    ]);
-                  });
-                });
-              }
-              // Keep the WS open in the background so push frames land
-              // when the job settles. The socket is not required for
-              // correctness (polling is the fallback), but it removes
-              // the poll-cycle wait when the user is still on the page.
-              if (!_isConnected && accessToken) wsConnect(accessToken);
-            }}
+            onSendText={handleSendText}
             onToggleRecording={() => {
               if (voiceRecording) {
                 // Stop recording — SpeechRecognition will fire onend/onresult
