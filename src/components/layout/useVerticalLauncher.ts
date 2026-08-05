@@ -80,6 +80,24 @@ export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
  */
 export const FORCE_DISABLED_VERTICALS = new Set<VerticalKey>(["job-fit"])
 
+/**
+ * Is this vertical switched off for everyone?
+ *
+ * Exported as a function rather than leaving callers to poke at the Set,
+ * because the sidebar is NOT the only way into a vertical: Home's quick-action
+ * row and the Meridian header's personal row link straight to Job Fit, and both
+ * gate on entitlement alone. Greying the menu while those stayed live would look
+ * like the feature was off when it was still one click away. Any surface that
+ * decides whether a vertical is usable must consult this too.
+ *
+ * Takes a plain string: the callers above hold `vertical` as an untyped string
+ * from their own link tables, and making each one cast to `VerticalKey` would
+ * be friction with no safety gained — an unknown key simply isn't in the set.
+ */
+export function isVerticalForceDisabled(key: string): boolean {
+  return FORCE_DISABLED_VERTICALS.has(key as VerticalKey)
+}
+
 /** Per-vertical sidebar icon; the generic `Compass` is the fallback. */
 const VERTICAL_ICONS: Partial<Record<VerticalKey, NavItemDef["icon"]>> = {
   "job-fit": Briefcase,

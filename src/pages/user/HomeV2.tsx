@@ -6,6 +6,8 @@ import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useEnabledVerticals } from "@/verticals/core";
+import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher";
+import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useLoadedFrameworks, useMyProfile } from "@/hooks/profile/useProfile";
 import {
@@ -204,13 +206,22 @@ export default function HomeV2() {
   const { data: entitledVerticals = [] } = useEnabledVerticals();
   const quickActions: WelcomeBackQuickAction[] = useMemo(
     () =>
-      QUICK_ACTIONS.map(({ key, labelKey, defaultLabel, to, vertical, icon }) => ({
-        key,
-        label: t(labelKey, { defaultValue: defaultLabel }),
-        to,
-        icon,
-        entitled: entitledVerticals.includes(vertical),
-      })),
+      QUICK_ACTIONS.map(({ key, labelKey, defaultLabel, to, vertical, icon }) => {
+        // Two independent reasons an action can be locked, and they must not be
+        // conflated in the tooltip: the user has no entitlement, or the vertical
+        // is switched off for everyone. Home is one of three ways into Job Fit
+        // (sidebar and the Meridian header row are the others), so it has to
+        // honour the force-disable or the "off" surface stays one click away.
+        const forcedOff = isVerticalForceDisabled(vertical);
+        return {
+          key,
+          label: t(labelKey, { defaultValue: defaultLabel }),
+          to,
+          icon,
+          entitled: entitledVerticals.includes(vertical) && !forcedOff,
+          ...(forcedOff ? { lockedReason: WORKSPACE_ITEM_UNAVAILABLE_REASON } : {}),
+        };
+      }),
     [entitledVerticals, t],
   );
 

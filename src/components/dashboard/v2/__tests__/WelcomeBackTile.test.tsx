@@ -222,6 +222,29 @@ describe("WelcomeBackTile", () => {
       expect(locked).not.toHaveAttribute("href");
     });
 
+    // A locked action has two possible causes and they must not share wording:
+    // no entitlement, or switched off for everyone. The default tooltip blames
+    // the user's plan, which is false in the second case.
+    it("uses the entitlement wording when no reason is supplied", () => {
+      renderTile({ quickActions: ACTIONS });
+      expect(screen.getByTestId("homev2-quick-job-fit")).toHaveAttribute(
+        "title",
+        expect.stringContaining("isn't enabled for your account"),
+      );
+    });
+
+    it("prefers an explicit lockedReason over the entitlement wording", () => {
+      renderTile({
+        quickActions: [
+          { ...ACTIONS[1], lockedReason: "Temporarily unavailable" },
+        ],
+      });
+      const locked = screen.getByTestId("homev2-quick-job-fit");
+      expect(locked).toHaveAttribute("title", "Temporarily unavailable");
+      expect(locked).toHaveAttribute("aria-disabled", "true");
+      expect(locked).not.toHaveAttribute("href");
+    });
+
     it("omits the whole row when there are no actions and no videos", () => {
       renderTile();
       expect(screen.queryByTestId("homev2-quick-actions")).toBeNull();
