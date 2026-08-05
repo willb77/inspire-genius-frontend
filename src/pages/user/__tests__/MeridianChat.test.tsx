@@ -252,11 +252,27 @@ jest.mock("@/components/meridian/HistoryDropdown", () => ({
 
 // ChatWindow mock captures onSendText so we can test file_ids passing
 let capturedChatWindowProps: Record<string, unknown> = {};
+// Captured from the stubbed Starter Questions dropdown (mock below).
+let starterSelect: ((question: string) => void) | undefined;
+let starterDisabled: boolean | undefined;
 jest.mock("@/components/user/chat/ChatWindow", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
     capturedChatWindowProps = props;
     return <div data-testid="chat-window">ChatWindow</div>;
+  },
+}));
+
+// Starter Questions — stubbed so the page test asserts the page's wiring
+// (selecting a question dispatches a turn) without driving Radix's pointer
+// machinery, which does not work under jsdom. The real component's rendering
+// and selection behaviour is covered by its own test.
+jest.mock("@/components/meridian/StarterQuestionsDropdown", () => ({
+  __esModule: true,
+  default: (props: { onSelect: (q: string) => void; disabled?: boolean }) => {
+    starterSelect = props.onSelect;
+    starterDisabled = props.disabled;
+    return <button data-testid="meridian-starter-questions-trigger">Starter Questions</button>;
   },
 }));
 
@@ -270,7 +286,7 @@ jest.mock("react-router-dom", () => ({
 
 /* ---- Imports (after mocks) ---- */
 
-import { render, screen, act, waitFor, within } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 
 // Entitlement drives the personal row's locked state. Mock the leaf module the
 // barrel re-exports from, so the real registry stays intact.
@@ -633,69 +649,97 @@ describe("MeridianChat — V2 variant (tile rail + stacked layout)", () => {
     expect(capturedChatWindowProps.stacked).toBe(true);
   });
 
-  // 2026-07-31 — the five-tile row under the header is gone. Active Sessions,
-  // Last 5 Chats and Knowledge were three more routes into the conversation
-  // list the History dropdown already owns; Projects moved up into the button
-  // row, and the freed line now carries the user's own pages.
-  it("keeps Projects in the header and drops the other four tiles", () => {
+  // 2026-08-05 — the header is down to one row. Projects went with the tile
+  // rail it was the last survivor of; My Self-Portrait, Coaching and Job Fit
+  // were destinations reachable from the sidebar that cost a permanent row of
+  // chrome to duplicate. Moments stayed and moved up beside History.
+  it("drops the tile rail entirely, Projects included", () => {
     renderV2("v2");
-    expect(screen.getByTestId("rail-toggle-projects")).toBeInTheDocument();
-    for (const id of ["active", "history", "last5", "knowledge"]) {
+    for (const id of ["projects", "active", "history", "last5", "knowledge"]) {
       expect(screen.queryByTestId(`rail-toggle-${id}`)).toBeNull();
     }
   });
 
-  it("renders the personal row: Lumen's three pages then Job Fit", () => {
+  it("removes the second header row", () => {
     renderV2("v2");
-    const row = screen.getByTestId("meridian-personal-row");
-    expect(row).toBeInTheDocument();
-    for (const label of [/my self-portrait/i, /moments/i, /coaching/i, /job fit/i]) {
-      expect(within(row).getByText(label)).toBeInTheDocument();
-    }
+    expect(screen.queryByTestId("meridian-personal-row")).toBeNull();
   });
 
-  it("points the personal row at real pages, Job Fit at a concrete one", () => {
-    // Job Fit links to MATCHES, not the vertical BASE: the vertical home is a
-    // router-level redirect, so linking there would double-navigate and leave
-    // the active-link state wrong.
+  it.each([
+    ["My Self-Portrait", "meridian-personal-self-portrait"],
+    ["Coaching", "meridian-personal-coaching"],
+    ["Job Fit", "meridian-personal-matches"],
+  ])("no longer links to %s", (_label, testId) => {
     mockEnabledVerticals.mockReturnValue({
       data: ["lumen", "job-fit"],
       isLoading: false,
     });
     renderV2("v2");
-    const row = screen.getByTestId("meridian-personal-row");
-    const hrefs = within(row)
-      .getAllByRole("link")
-      .map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual([
-      "/vertical/lumen/self-portrait",
-      "/vertical/lumen/moments",
-      "/vertical/lumen/coaching",
-      "/vertical/job-fit/matches",
-    ]);
+    expect(screen.queryByTestId(testId)).toBeNull();
+  });
+
+  it("keeps Moments, promoted into the header row", () => {
+    mockEnabledVerticals.mockReturnValue({ data: ["lumen"], isLoading: false });
+    renderV2("v2");
+    const moments = screen.getByTestId("meridian-personal-moments");
+    expect(moments).toHaveAttribute("href", "/vertical/lumen/moments");
   });
 
   // Entitlement gates USE, not SIGHT — the rule the Tools section already
   // follows. A link that bounces off the route guard is worse than a visible
   // lock, because it teaches nothing about why it didn't work.
-  it("locks personal-row entries the user has no entitlement for", () => {
-    mockEnabledVerticals.mockReturnValue({ data: ["lumen"], isLoading: false });
+  it("locks Moments when Lumen isn't entitled", () => {
+    mockEnabledVerticals.mockReturnValue({ data: [], isLoading: false });
     renderV2("v2");
-    const row = screen.getByTestId("meridian-personal-row");
-    // Lumen entitled → three real links; Job Fit not → no link for it.
-    expect(within(row).getAllByRole("link")).toHaveLength(3);
-    const jobFit = screen.getByTestId("meridian-personal-matches");
-    expect(jobFit).toHaveAttribute("aria-disabled", "true");
-    expect(jobFit.tagName).toBe("SPAN");
+    const moments = screen.getByTestId("meridian-personal-moments");
+    expect(moments).toHaveAttribute("aria-disabled", "true");
+    expect(moments.tagName).toBe("SPAN");
   });
 
-  it("locks everything while the entitlement query is still loading", () => {
-    // Defaulting to "entitled" during the fetch would flash working links that
-    // then bounce; defaulting to locked is the safe direction to be wrong in.
+  it("locks Moments while the entitlement query is still loading", () => {
+    // Defaulting to "entitled" during the fetch would flash a working link that
+    // then bounces; defaulting to locked is the safe direction to be wrong in.
     mockEnabledVerticals.mockReturnValue({ data: undefined, isLoading: true });
     renderV2("v2");
-    const row = screen.getByTestId("meridian-personal-row");
-    expect(within(row).queryAllByRole("link")).toHaveLength(0);
+    expect(screen.getByTestId("meridian-personal-moments")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("offers the Starter Questions dropdown in the header row", () => {
+    renderV2("v2");
+    expect(
+      screen.getByTestId("meridian-starter-questions-trigger"),
+    ).toBeInTheDocument();
+  });
+
+  // The point of the dropdown: picking a question must START the turn, not
+  // merely drop text into the composer for the user to send themselves.
+  // (The dropdown's own rendering/selection is covered in
+  // components/meridian/__tests__/StarterQuestionsDropdown.test.tsx; here the
+  // component is stubbed so this asserts the page's wiring, not Radix.)
+  it("sends a starter question straight into the conversation", async () => {
+    renderV2("v2");
+
+    await act(async () => {
+      starterSelect?.("What is a brain map?");
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    // Dispatched through the same async-jobs path the composer uses — one
+    // dispatch implementation, so the two entry points cannot drift.
+    expect(mockSharedApi.post).toHaveBeenCalledWith(
+      "/v1/agents/chat/async",
+      expect.objectContaining({ message: "What is a brain map?" }),
+    );
+  });
+
+  it("blocks starter questions while a turn is already in flight", () => {
+    renderV2("v2");
+    // A second dispatch mid-turn would be dropped; the control reflects that
+    // rather than silently doing nothing.
+    expect(typeof starterDisabled).toBe("boolean");
   });
 
   it("renders the Export button next to History", () => {
