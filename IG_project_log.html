@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1446</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1447</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3032,6 +3032,13 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-05 &mdash; Prompt #1447 [Interview Coach: one-time PRISM + ambient-résumé personalization &mdash; LIVE dev + staging-b]</div>
+  <div class="prompt-text">do we have the same issue in Honor? / do #1 &mdash; one-time PRISM + ambient résumé &rarr; verify live on dev &rarr; promote the backend to staging-b</div>
+  <div class="prompt-text"><b>Built:</b> the candidate Interview Coach grounds STAR feedback in the user&rsquo;s OWN profile (PRISM + ambient résumé) with <b>no per-turn retrieval</b>. New <code>GET /v1/agents/interview/practice-context</code> (cheap SQL, no pgvector) fetched <b>once</b> at interview start and replayed into each turn&rsquo;s job context. FE <b>#364</b> + mono <b>#811</b>. FE adds a "Personalize coaching to my profile" toggle (default on, opt-out) + indicator.</div>
+  <div class="prompt-text"><b>Completed #787:</b> <code>alex_agent</code> sets <code>skip_rag=True</code> &mdash; #787 skipped only the orchestrator backfill, but <code>base_agent</code> still ran a per-turn <code>retrieve_personal_context</code> (pgvector) here. Latency now matches Meridian. Flag-gated (CDK #812 dev, #813 staging-b); user&rsquo;s own data, candidate-safe (scoreless).</div>
+  <div class="prompt-text"><b>Verified:</b> dev 200 <code>enabled:true</code>; staging-b task-def env flag <code>= &quot;true&quot;</code>, routes 401 unauth. Honor product surfaces NOT affected (cheap Path-B loader).</div>
+</div>
 <div class="prompt-entry">
   <div class="timestamp">2026-08-03 &mdash; Prompt #1446 [HomeV2 live on dev + staging-b; locale-parity gate caught a real defect]</div>
   <div class="prompt-text">merge the frontend PR too &rarr; check stable.inspiresgenius.com/home once it lands</div>
