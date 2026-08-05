@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react"
 import {
   Loader2, RefreshCw, ArrowRight, MessageSquareText, Mic, MicOff,
-  Volume2, Pencil, Printer, Flag, CheckCircle2, FileText, FileDown, Save,
+  Volume2, Pencil, Printer, Flag, CheckCircle2, FileText, FileDown, Save, Sparkles,
 } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
@@ -39,6 +39,7 @@ import {
   buildFindingsMessage,
   buildInterviewPlan,
   practiceJobContext,
+  practiceService,
   frameQuestionCount,
   frameLengthMinutes,
   type InterviewExchange,
@@ -77,6 +78,13 @@ export default function InterviewPracticePage() {
   const [findings, setFindings] = useState<string | null>(null)
   const [voiceMode, setVoiceMode] = useState(false)
   const [exporting, setExporting] = useState<"word" | "pdf" | "save" | null>(null)
+  // Personalization: ground coaching in the user's OWN PRISM + ambient résumé,
+  // fetched ONCE at interview start and replayed into each turn's job context.
+  // On by default (their own data); a privacy-conscious user can turn it off.
+  const [personalize, setPersonalize] = useState(true)
+  const [personalContext, setPersonalContext] = useState("")
+  const [personalizedApplied, setPersonalizedApplied] = useState(false)
+  const [starting, setStarting] = useState(false)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
 
@@ -129,10 +137,27 @@ export default function InterviewPracticePage() {
   }, [voiceMode, phase, current, total])
 
   // ── Actions ──────────────────────────────────────────────────
-  const startInterview = (f: InterviewFrame) => {
-    if (!data) return
+  const startInterview = async (f: InterviewFrame) => {
+    if (!data || starting) return
+    setStarting(true)
+    // ONE-TIME personalization fetch (cheap SQL, no pgvector). The result is
+    // replayed into every turn's job context, so the per-turn path never pays a
+    // retrieval cost. Degrades to empty when the backend flag is off or the user
+    // has no PRISM/résumé on file — the coach then runs on bank + frame only.
+    let pctx = ""
+    if (personalize) {
+      try {
+        const res = await practiceService.getPracticeContext()
+        pctx = res.enabled ? (res.personalContext || "") : ""
+      } catch {
+        pctx = "" // never block the interview on the personalization fetch
+      }
+    }
+    setPersonalContext(pctx)
+    setPersonalizedApplied(Boolean(pctx))
     setFrame(f); setPlan(buildInterviewPlan(data, f)); setIdx(0)
-    setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); setPhase("interview")
+    setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null)
+    setPhase("interview"); setStarting(false)
   }
 
   const submitAnswer = async () => {
@@ -150,7 +175,7 @@ export default function InterviewPracticePage() {
     try {
       await startJob({
         message: buildCoachMessage(current.question, answer.trim(), frame),
-        sessionId, context: practiceJobContext(frame),
+        sessionId, context: practiceJobContext(frame, personalContext),
       })
     } catch {
       setBusy(false); pendingRef.current = null; toast.error("Could not get coaching.")
@@ -174,7 +199,7 @@ export default function InterviewPracticePage() {
     try {
       await startJob({
         message: buildFindingsMessage(frame, exchanges),
-        sessionId, context: practiceJobContext(frame),
+        sessionId, context: practiceJobContext(frame, personalContext),
       })
     } catch {
       setBusy(false); pendingRef.current = null; toast.error("Could not compile findings.")
@@ -184,6 +209,7 @@ export default function InterviewPracticePage() {
   const restart = () => {
     setPhase("setup"); setFrame(null); setPlan([]); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); spokenRef.current = null
+    setPersonalContext(""); setPersonalizedApplied(false)
     voice.stop()
   }
 
@@ -232,7 +258,24 @@ export default function InterviewPracticePage() {
           </header>
           {isLoading && <div className="flex items-center py-16 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading…</div>}
           {isError && <Card><CardContent className="py-8 text-sm text-rose-600">Couldn't load the question bank. Please try again later.</CardContent></Card>}
-          {data && <InterviewFrameForm onConfirm={startInterview} />}
+          {data && (
+            <>
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 p-3">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                  <div>
+                    <Label htmlFor="personalize" className="text-sm font-medium">Personalize coaching to my profile</Label>
+                    <p className="text-xs text-slate-500">
+                      Uses your own PRISM summary and résumé to ground tips in your real experience —
+                      your data, never a score. Turn off to practise without it.
+                    </p>
+                  </div>
+                </div>
+                <Switch id="personalize" checked={personalize} onCheckedChange={setPersonalize} />
+              </div>
+              <InterviewFrameForm onConfirm={startInterview} />
+            </>
+          )}
         </div>
       </UserLayout>
     )
@@ -313,6 +356,11 @@ export default function InterviewPracticePage() {
           <div>
             <h1 className="text-2xl font-semibold">Interview Practice</h1>
             <p className="text-sm text-slate-600">{frame?.roleTitle} · {frame?.company}</p>
+            {personalizedApplied && (
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-indigo-600">
+                <Sparkles className="h-3 w-3" /> Personalized to your profile
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
