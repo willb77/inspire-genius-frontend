@@ -132,6 +132,33 @@ describe("interview frame in coaching", () => {
   })
 })
 
+describe("one-time personalization", () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it("getPracticeContext GETs the practice-context endpoint", async () => {
+    const ctx = { enabled: true, hasPrism: true, hasResume: true, personalContext: "<USER_PROFILE>…</USER_PROFILE>" }
+    mockAxios.get.mockResolvedValueOnce({ data: ctx })
+    const result = await practiceService.getPracticeContext()
+    expect(mockAxios.get).toHaveBeenCalledWith("/v1/agents/interview/practice-context")
+    expect(result).toEqual(ctx)
+  })
+
+  it("practiceJobContext folds in personal_context when provided (replayed each turn)", () => {
+    const ctx = practiceJobContext(FRAME, "<USER_PROFILE>PRISM…</USER_PROFILE>")
+    expect(ctx).toEqual({
+      alex_mode: "interview_coach",
+      interview_frame: FRAME,
+      personal_context: "<USER_PROFILE>PRISM…</USER_PROFILE>",
+    })
+  })
+
+  it("practiceJobContext omits personal_context when empty/absent (degrades to bank+frame)", () => {
+    expect(practiceJobContext(FRAME, "")).toEqual({ alex_mode: "interview_coach", interview_frame: FRAME })
+    expect(practiceJobContext(FRAME, "   ")).toEqual({ alex_mode: "interview_coach", interview_frame: FRAME })
+    expect(practiceJobContext(FRAME, null)).toEqual({ alex_mode: "interview_coach", interview_frame: FRAME })
+  })
+})
+
 describe("bounded interview plan", () => {
   const bank = mkBank()
 
