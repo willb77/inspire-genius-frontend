@@ -81,7 +81,7 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     now reached from the "My Journey" quick action, which sits between
  *     Today's Prep and Job Fit. Same destination, in the row people scan.
  *   - Uploaded profile material is listed under the PRISM line and opens in a
- *     viewer modal, as does "View Inventory PDF" — previously that button
+ *     viewer modal, as does "View PRISM Report" — previously that button
  *     navigated to the assessment page and never showed the report.
  */
 
@@ -383,7 +383,7 @@ export default function HomeV2() {
   };
 
   /**
-   * "View Inventory PDF" — build the report, then show it.
+   * "View PRISM Report" — build the report, then show it.
    *
    * It used to open the *stored* PRISM document. For anyone whose PRISM arrived
    * by import that document is a synthesised `text/csv` row at an S3 key with

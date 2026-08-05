@@ -8,6 +8,7 @@ import {
   Circle,
   FileText,
   Lock,
+  MessageSquare,
   Play,
   Plus,
   type LucideIcon,
@@ -534,6 +535,24 @@ export function WelcomeBackTile({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          {/* Chat with Meridian leads the row (2026-08-05). Reuses
+              onResumeConversation with no id — the same callback the topics
+              dropdown uses, which opens the chat on the user's current
+              conversation rather than a specific one. Outline rather than
+              filled so the row keeps a single primary action; the request
+              button's weighting is unchanged. */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onResumeConversation()}
+            data-testid="homev2-chat-with-meridian"
+            className="border-[rgba(11,27,51,0.10)] text-[#0B1B33]"
+          >
+            <MessageSquare className="size-4" />
+            {t("homeV2.chatWithMeridian", {
+              defaultValue: "Chat with Meridian",
+            })}
+          </Button>
           <Button
             type="button"
             onClick={onRequestAssessment}
@@ -541,7 +560,7 @@ export function WelcomeBackTile({
           >
             <CalendarDays className="size-4" />
             {t("homeV2.requestPrismInventory", {
-              defaultValue: "Request PRISM Inventory",
+              defaultValue: "Request PRISM Survey",
             })}
           </Button>
           {hasReport ? (
@@ -552,7 +571,7 @@ export function WelcomeBackTile({
               className={cn("border-[rgba(11,27,51,0.10)] text-[#0B1B33]")}
             >
               <FileText className="size-4" />
-              {t("homeV2.viewInventoryPdf", { defaultValue: "View Inventory PDF" })}
+              {t("homeV2.viewInventoryPdf", { defaultValue: "View PRISM Report" })}
             </Button>
           ) : null}
         </div>

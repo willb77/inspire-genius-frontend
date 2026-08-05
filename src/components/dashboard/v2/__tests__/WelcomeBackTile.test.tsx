@@ -138,6 +138,28 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
   });
 
+  // 2026-08-05: added to the behavioral row, ahead of Request PRISM Survey.
+  it("puts Chat with Meridian to the LEFT of Request PRISM Survey", () => {
+    renderTile();
+    const chat = screen.getByTestId("homev2-chat-with-meridian");
+    const request = screen.getByRole("button", {
+      name: /Request PRISM Survey/i,
+    });
+    // Asserted by DOM position rather than a class, so a restyle cannot
+    // quietly reorder them.
+    expect(
+      chat.compareDocumentPosition(request) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("opens the chat when Chat with Meridian is clicked", () => {
+    const { onResumeConversation } = renderTile();
+    fireEvent.click(screen.getByTestId("homev2-chat-with-meridian"));
+    expect(onResumeConversation).toHaveBeenCalledTimes(1);
+    // No id — this opens the chat as-is rather than deep-linking somewhere.
+    expect(onResumeConversation).toHaveBeenCalledWith();
+  });
+
   it("offers a way in when there is no history rather than an empty list", () => {
     // An empty list here is indistinguishable from a failed fetch; say so and
     // give the one useful next step.
@@ -193,14 +215,14 @@ describe("WelcomeBackTile", () => {
   it("calls onRequestAssessment when the request button is clicked", () => {
     const { onRequestAssessment } = renderTile();
     fireEvent.click(
-      screen.getByRole("button", { name: /Request PRISM Inventory/i }),
+      screen.getByRole("button", { name: /Request PRISM Survey/i }),
     );
     expect(onRequestAssessment).toHaveBeenCalledTimes(1);
   });
 
   it("calls onViewReportPdf when the view report button is clicked", () => {
     const { onViewReportPdf } = renderTile();
-    fireEvent.click(screen.getByRole("button", { name: /View Inventory PDF/i }));
+    fireEvent.click(screen.getByRole("button", { name: /View PRISM Report/i }));
     expect(onViewReportPdf).toHaveBeenCalledTimes(1);
   });
 

@@ -171,14 +171,25 @@ describe("HomeV2", () => {
   });
 
   describe("layout", () => {
-    // The Chat-with-Meridian card led the page until 2026-08-05. Asserting its
+    // The Chat-with-Meridian CARD led the page until 2026-08-05. Asserting its
     // absence, and that the tile which sat second now leads.
+    //
+    // Guards the card, not the phrase: a "Chat with Meridian" BUTTON was added
+    // to the behavioral row on 2026-08-05, so matching the bare string would
+    // fail on that button while still not proving the card had gone. The card
+    // is identified by what only it had — the ask box and Starter Questions.
     it("drops the Chat with Meridian tile", () => {
       wrap();
-      expect(screen.queryByText("Chat with Meridian")).toBeNull();
       expect(
         screen.queryByRole("button", { name: /Starter Questions/ }),
       ).toBeNull();
+      expect(
+        screen.queryByPlaceholderText(/Ask Meridian|What would you like/i),
+      ).toBeNull();
+      // The surviving match must be the row button, nothing card-shaped.
+      expect(
+        screen.getAllByText("Chat with Meridian").map((el) => el.closest("button")),
+      ).toEqual([screen.getByTestId("homev2-chat-with-meridian")]);
     });
 
     it("leads with the last-visit tile, above Today's Prep", () => {
