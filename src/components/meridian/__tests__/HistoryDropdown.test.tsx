@@ -2,11 +2,24 @@
  * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockUseAgentConversation = jest.fn();
 jest.mock("@/hooks/agents/useAgentConversation", () => ({
   useAgentConversation: (...args: unknown[]) => mockUseAgentConversation(...args),
+}));
+
+// The delete path is exercised through the REAL useDeleteConversation hook
+// (so its query invalidation stays covered); only the network call underneath
+// is stubbed.
+const mockDeleteConversation = jest.fn();
+jest.mock("@/services/agent/agentService", () => ({
+  deleteConversation: (...args: unknown[]) => mockDeleteConversation(...args),
+}));
+
+jest.mock("sonner", () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
 }));
 
 // Radix DropdownMenu — render inline as in DocumentsDropdown.test.tsx.
@@ -72,6 +85,11 @@ jest.mock("@/components/ui/dropdown-menu", () => {
 
 import HistoryDropdown from "../HistoryDropdown";
 
+// A QueryClientProvider is required since the row-level delete landed
+// (2026-08-05): useDeleteConversation is a real mutation, unlike the mocked
+// useAgentConversation above. The component always renders inside a provider
+// in the app, so wrapping here keeps the harness faithful rather than mocking
+// the hook away.
 function renderDropdown(
   props: Partial<React.ComponentProps<typeof HistoryDropdown>> = {},
 ) {
@@ -81,7 +99,14 @@ function renderDropdown(
     activeId: null as string | null,
     onSelectActive: jest.fn(),
   };
-  return render(<HistoryDropdown {...defaults} {...props} />);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <HistoryDropdown {...defaults} {...props} />
+    </QueryClientProvider>,
+  );
 }
 
 describe("HistoryDropdown (T5)", () => {
@@ -204,5 +229,87 @@ describe("HistoryDropdown (T5)", () => {
     const rows = screen.getAllByTestId(/history-dropdown-row-/);
     expect(rows[0]).toHaveAttribute("data-testid", "history-dropdown-row-newer");
     expect(rows[1]).toHaveAttribute("data-testid", "history-dropdown-row-older");
+  });
+
+  // ── delete (2026-08-05) ───────────────────────────────────────────────
+  describe("delete", () => {
+    beforeEach(() => {
+      mockUseAgentConversation.mockReturnValue({
+        data: {
+          data: {
+            conversations: [
+              { id: "conv-1", title: "PRISM debrief", created_at: "2026-06-10T12:00:00Z" },
+            ],
+          },
+        },
+        isLoading: false,
+        isError: false,
+      });
+      mockDeleteConversation.mockReset();
+      mockDeleteConversation.mockResolvedValue({});
+    });
+
+    // The whole point of the two-step: deleting is irreversible and the
+    // control sits next to the one that merely opens the conversation.
+    it("does not delete on the first click — it only arms", () => {
+      renderDropdown();
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      expect(mockDeleteConversation).not.toHaveBeenCalled();
+      expect(
+        screen.getByTestId("history-dropdown-confirm-delete-conv-1"),
+      ).toBeInTheDocument();
+    });
+
+    it("deletes only after the confirm click", async () => {
+      renderDropdown();
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      fireEvent.click(screen.getByTestId("history-dropdown-confirm-delete-conv-1"));
+      await waitFor(() => {
+        expect(mockDeleteConversation).toHaveBeenCalledWith("conv-1");
+      });
+    });
+
+    it("disarms on cancel, leaving the conversation intact", () => {
+      renderDropdown();
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      fireEvent.click(screen.getByTestId("history-dropdown-cancel-delete-conv-1"));
+      expect(mockDeleteConversation).not.toHaveBeenCalled();
+      expect(screen.getByTestId("history-dropdown-delete-conv-1")).toBeInTheDocument();
+    });
+
+    it("tells the host when the ACTIVE conversation was deleted", async () => {
+      // Otherwise the chat keeps rendering a transcript the server no longer
+      // has — an empty pane that looks like a load failure.
+      const onDeletedActive = jest.fn();
+      renderDropdown({ activeId: "conv-1", onDeletedActive });
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      fireEvent.click(screen.getByTestId("history-dropdown-confirm-delete-conv-1"));
+      await waitFor(() => {
+        expect(onDeletedActive).toHaveBeenCalledWith("conv-1");
+      });
+    });
+
+    it("does not fire onDeletedActive for a non-active conversation", async () => {
+      const onDeletedActive = jest.fn();
+      renderDropdown({ activeId: "something-else", onDeletedActive });
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      fireEvent.click(screen.getByTestId("history-dropdown-confirm-delete-conv-1"));
+      await waitFor(() => {
+        expect(mockDeleteConversation).toHaveBeenCalled();
+      });
+      expect(onDeletedActive).not.toHaveBeenCalled();
+    });
+
+    it("drops a deleted conversation from the review selection", async () => {
+      // A deleted id left in the selection would keep asking the chat to
+      // render a conversation that no longer exists.
+      const onChange = jest.fn();
+      renderDropdown({ selectedIds: ["conv-1"], onChange });
+      fireEvent.click(screen.getByTestId("history-dropdown-delete-conv-1"));
+      fireEvent.click(screen.getByTestId("history-dropdown-confirm-delete-conv-1"));
+      await waitFor(() => {
+        expect(onChange).toHaveBeenCalledWith([]);
+      });
+    });
   });
 });

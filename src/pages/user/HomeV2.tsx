@@ -1,9 +1,22 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
-import { Briefcase, Compass, Sparkles, UserRoundSearch } from "lucide-react";
+import {
+  format,
+  formatDistanceToNow,
+  isSameDay,
+  startOfDay,
+  subDays,
+} from "date-fns";
+import {
+  Briefcase,
+  ChevronDown,
+  Compass,
+  Sparkles,
+  UserRoundSearch,
+} from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useEnabledVerticals } from "@/verticals/core";
@@ -68,7 +81,7 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     now reached from the "My Journey" quick action, which sits between
  *     Today's Prep and Job Fit. Same destination, in the row people scan.
  *   - Uploaded profile material is listed under the PRISM line and opens in a
- *     viewer modal, as does "View Inventory PDF" — previously that button
+ *     viewer modal, as does "View PRISM Report" — previously that button
  *     navigated to the assessment page and never showed the report.
  */
 
@@ -158,8 +171,21 @@ const QUICK_ACTIONS: {
  */
 const LOCKED_QUICK_ACTIONS = new Set(["self-portrait", "my-journey"]);
 
-/** How many past conversations the last-visit summary lists. */
-const LAST_ACTION_LIMIT = 3;
+/**
+ * How far back the "what you worked on" dropdown reaches, in days.
+ *
+ * Replaced a flat top-3 on 2026-08-05. A count showed three items whether they
+ * were from this morning or last spring; a window answers the question the
+ * heading actually asks — what was I recently working on — and returns nothing
+ * when the answer is genuinely "nothing recently".
+ */
+const LAST_ACTION_DAYS = 5;
+
+/**
+ * Safety cap on rendered rows. The window is the real filter; this only stops
+ * a very heavy week from producing an unbounded list.
+ */
+const LAST_ACTION_MAX = 40;
 
 /** The Meridian agent id — the conversation list is per-agent. */
 const AGENT_ID = "meridian";
@@ -181,6 +207,20 @@ function formatRelative(input?: string): string {
   const d = new Date(input);
   if (Number.isNaN(d.getTime())) return "";
   return formatDistanceToNow(d, { addSuffix: true });
+}
+
+/**
+ * Day bucket for the recent-topics dropdown: "Today", "Yesterday", or a short
+ * date. Compared on calendar day, not elapsed hours — 23:50 last night is
+ * "Yesterday" to a person even though it is under a day ago.
+ */
+function dayBucket(input: string | undefined, now: Date): string {
+  if (!input) return "";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return "";
+  if (isSameDay(d, now)) return "Today";
+  if (isSameDay(d, subDays(now, 1))) return "Yesterday";
+  return format(d, "EEE d MMM");
 }
 
 // "Personal Info" roster. Everything except the PRISM report resolves its
@@ -215,6 +255,8 @@ export default function HomeV2() {
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
   const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
+  // Today's Prep starts closed so Moments does not fetch on every Home load.
+  const [todaysPrepOpen, setTodaysPrepOpen] = useState(false);
   // `user` is still read for the profile queries below; the name is no longer
   // rendered since the greeting was replaced by the last-visit summary.
   void user;
@@ -270,13 +312,26 @@ export default function HomeV2() {
     const list = (convData as ConversationListResponse | undefined)?.data
       ?.conversations;
     if (!Array.isArray(list)) return [];
+    const now = new Date();
+    // Inclusive of the whole 5th day back, so the window is five calendar
+    // days rather than 120 rolling hours — matching how the day headers read.
+    const cutoff = startOfDay(subDays(now, LAST_ACTION_DAYS - 1)).getTime();
     return [...list]
+      .filter((c) => {
+        const raw = c.updated_at || c.created_at;
+        if (!raw) return false;
+        const ts = new Date(raw).getTime();
+        // Drop unparseable timestamps: without one an entry cannot be placed
+        // in the window or under a day header, and showing it anyway would
+        // silently widen the range the heading promises.
+        return Number.isFinite(ts) && ts >= cutoff;
+      })
       .sort(
         (a, b) =>
           new Date(b.updated_at || b.created_at || 0).getTime() -
           new Date(a.updated_at || a.created_at || 0).getTime(),
       )
-      .slice(0, LAST_ACTION_LIMIT)
+      .slice(0, LAST_ACTION_MAX)
       .map((c) => ({
         id: c.id,
         label:
@@ -285,6 +340,7 @@ export default function HomeV2() {
             defaultValue: "Untitled conversation",
           }),
         meta: formatRelative(c.updated_at || c.created_at),
+        dayLabel: dayBucket(c.updated_at || c.created_at, now),
       }));
   }, [convData, t]);
 
@@ -314,8 +370,12 @@ export default function HomeV2() {
    * "Last time we discussed…" button did. Deep-linking is a MeridianChat
    * change, not a Home one.
    */
-  const goToChat = (): void => {
-    navigate(ROUTES.MERIDIAN_CHAT, { state: {} });
+  const goToChat = (conversationId?: string): void => {
+    // Carrying the id opens that transcript in the Conversation tile; without
+    // one the chat opens as it always did, on the user's current conversation.
+    navigate(ROUTES.MERIDIAN_CHAT, {
+      state: conversationId ? { conversationId } : {},
+    });
   };
 
   const goToAssessment = (): void => {
@@ -323,7 +383,7 @@ export default function HomeV2() {
   };
 
   /**
-   * "View Inventory PDF" — build the report, then show it.
+   * "View PRISM Report" — build the report, then show it.
    *
    * It used to open the *stored* PRISM document. For anyone whose PRISM arrived
    * by import that document is a synthesised `text/csv` row at an S3 key with
@@ -393,21 +453,42 @@ export default function HomeV2() {
           {/* Today's Prep — the Lumen "Moments" surface, embedded rather than
               linked. Same component the /vertical/lumen/moments page renders
               (`embedded` drops its page heading and padding), so the two cannot
-              drift apart. */}
+              drift apart.
+
+              Collapsed on load as of 2026-08-05, and deliberately NOT merely
+              hidden with CSS: `Moments` is only mounted once the user opens
+              the section, so its data fetching no longer runs on every Home
+              load for a surface most visits never look at. */}
           <section
             data-testid="homev2-todays-prep"
             aria-labelledby="homev2-todays-prep-heading"
             className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm"
           >
-            <h2
+            <button
+              type="button"
               id="homev2-todays-prep-heading"
-              className="font-serif text-[22px] leading-tight text-[#0B1B33]"
+              onClick={() => setTodaysPrepOpen((open) => !open)}
+              aria-expanded={todaysPrepOpen}
+              aria-controls="homev2-todays-prep-panel"
+              data-testid="homev2-todays-prep-toggle"
+              className="flex w-full items-center justify-between gap-3 text-left"
             >
-              {t("homeV2.todaysPrep", { defaultValue: "Today's Prep" })}
-            </h2>
-            <div className="mt-4">
-              <Moments embedded />
-            </div>
+              <h2 className="font-serif text-[22px] leading-tight text-[#0B1B33]">
+                {t("homeV2.todaysPrep", { defaultValue: "Today's Prep" })}
+              </h2>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  "size-5 shrink-0 text-[#7C93B5] transition-transform",
+                  todaysPrepOpen && "rotate-180",
+                )}
+              />
+            </button>
+            {todaysPrepOpen && (
+              <div className="mt-4" id="homev2-todays-prep-panel">
+                <Moments embedded />
+              </div>
+            )}
           </section>
 
           <AddPersonalDocModal

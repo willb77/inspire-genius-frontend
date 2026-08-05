@@ -1,3 +1,67 @@
+## [2026-08-05] — HomeV2 recent-topics dropdown, chat deep-link, history delete, collapsed Today's Prep
+
+Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
+
+### Added
+- **Recent-topics dropdown over a 5-day window** replaces the flat top-3 inline list on the
+  last-visit tile. Entries group under day headers (Today / Yesterday / short date), compared on
+  **calendar day** rather than elapsed hours so 23:50 last night reads as "Yesterday". Rows with an
+  unusable timestamp are dropped rather than silently widening the range; an empty window falls
+  through to the existing "Nothing yet" state.
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `src/pages/user/HomeV2.tsx`
+- **Deep-link into a conversation from HomeV2.** Picking a topic now opens THAT transcript in the
+  Conversation tile. This required a new capability: the chat page had no deep-link entry point,
+  which is why `onResumeConversation` deliberately took no id. The id arrives via navigation state
+  and routes through `handleSelectConversation` — the path that also tears down the socket, resets
+  audio and clears the previous transcript.
+  - Files: `src/pages/user/MeridianChat.tsx`, `src/pages/user/HomeV2.tsx`
+- **Delete conversations from the chat History dropdown.** Two-step (arm, then confirm), never one
+  click: deleting is irreversible and the control sits beside the one that merely opens the
+  conversation. A deleted id is dropped from the review selection, and deleting the ACTIVE
+  conversation notifies the host so the chat starts a fresh one.
+  - Files: `src/components/meridian/HistoryDropdown.tsx`
+
+- **"Chat with Meridian" button** in the behavioral row, to the LEFT of the request button.
+  Reuses `onResumeConversation` with no id — the same callback the topics dropdown uses — so it
+  opens the chat on the user's current conversation rather than deep-linking. Outline rather than
+  filled, so the row keeps a single primary action.
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`
+### Fixed
+- **Auto-created conversation clobbered a deep link.** With no stored conversation the chat page
+  auto-creates one; that network round trip lands AFTER the deep-link effect, replacing the
+  conversation the user asked for with a fresh empty one — and burning a conversation server-side
+  on every deep link. The mount-hydrate effect now stands down when a deep link is present.
+  Verified red without the guard (`Expected "conv-deep", Received "conv-new"`).
+  - Files: `src/pages/user/MeridianChat.tsx`
+
+### Changed
+- **"Here's what you worked on last visit." is explicitly left-justified** (`text-left`) rather
+  than relying on the default, so no future wrapper can centre it by inherited alignment.
+- **Today's Prep starts collapsed on HomeV2** and is deliberately UNMOUNTED rather than hidden with
+  CSS, so `Moments`' data fetching no longer runs on every Home load for a surface most visits
+  never open. A button click mounts it.
+  - Files: `src/pages/user/HomeV2.tsx`
+
+- **Renamed two buttons:** "Request PRISM Inventory" → **"Request PRISM Survey"**, and
+  "View Inventory PDF" → **"View PRISM Report"**. Applied to the component defaultValues,
+  `public/locales/en/dashboard.json`, and the four comments elsewhere that name these buttons.
+  **The i18n KEYS are deliberately unchanged** (`requestPrismInventory`, `viewInventoryPdf`):
+  renaming them would drop all 20 non-English locales to the English fallback. Those locales keep
+  rendering, but now say "Inventory" in their own language where English says "Survey" —
+  **outstanding translation debt, not fixed here.**
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `public/locales/en/dashboard.json`,
+    `src/components/v2/AccentButton.tsx`, `src/hooks/documents/useProfileMaterial.ts`,
+    `src/pages/user/HomeV2.tsx`, `src/services/documents/prismReport.service.ts`
+### Verification
+- `npm run build` (tsc + vite) clean; **550 suites / 4388 tests passing**; ESLint clean on every
+  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
+- New coverage: 5-day boundary in and out, day grouping, unusable timestamps, deep-link precedence
+  over both the stored and the auto-created conversation, the delete two-step (arm / confirm /
+  cancel / active-deleted / selection cleanup), and Today's Prep mount behaviour.
+- `HistoryDropdown`'s test harness gained a `QueryClientProvider` now that the component runs a
+  real mutation; only the network call underneath is stubbed, so cache invalidation stays covered.
+- PR: frontend #373.
+
 ## [2026-08-05] — ts-jest was failing to emit a test file, blocking deploys
 
 Not a flake, and not cheap: the shared TypeScript program cost ~22 minutes of CI

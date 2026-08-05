@@ -4,7 +4,7 @@ import { api } from "@/lib/axios";
  * The PRISM report, rendered server-side as a viewable document.
  *
  * **Why this exists rather than `latest-prism` + `getDownloadUrl`.** That pair
- * is what "View Inventory PDF" used to call, and it could not work. For anyone
+ * is what "View PRISM Report" used to call, and it could not work. For anyone
  * whose PRISM arrived by import, the document it resolves to is a synthesised
  * row: filename `prism_report_<date>.csv`, content-type `text/csv`, at an S3
  * key under `prism-virtual/` that **no object is ever written to**. So the

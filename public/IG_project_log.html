@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1458</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1459</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3032,6 +3032,10 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-05 — Prompt #1459 [HomeV2 topics dropdown + chat deep-link + history delete]</div>
+          <div class="prompt-text">A few adjustments. Left justify 'Here's what you worked on last visit.' Make the list of links to what was worked on a dropdown of the last 5 days of topics. Open the selected past worked-on link in the Chat with Meridian page and load the past chat in the Conversation tile. On the 'Chat with Meridian' page enable the deletion of items from the history list. Plus: do not open 'Today's Prep' on the load of HomeV2 — let the button click handle it. Add a 'Chat with Meridian' button to the left of 'Request PRISM Inventory'. Rename 'Request PRISM Inventory' to 'Request PRISM Survey' and 'View Inventory PDF' to 'View PRISM Report'.</div>
+        </div>
 <div class="prompt-entry">
   <div class="timestamp">2026-08-05 &mdash; Prompt #1458 [ts-jest emit failure blocking deploys &mdash; diagnosed and fixed]</div>
   <div class="prompt-text">A test suite had been failing to COMPILE on GitHub runners &mdash; never an assertion failure; every occurrence read &quot;4363 tests passed, 1 suite failed to run&quot; with ts-jest's &quot;Unable to process &lt;file&gt;, make sure outDir is neither '' or '.'&quot;. Four times across unrelated branches, and on #370 it went DETERMINISTIC: three consecutive reruns of the same commit all failed, skipping both deploy jobs and leaving the HomeV2 rework undeployable for over an hour. Cause read from ts-jest 29.4's source, not inferred: the throw at ts-compiler.js:193 is reachable ONLY on the LanguageService path, guarded at :74 by `isolatedModules`; setting it in tsconfig.test.json switches to per-file transpileModule, which cannot reach the throw. COSTS NO TYPE SAFETY &mdash; jest.config.ts already sets diagnostics.warnOnly:true, so jest was paying for a type-aware program and deriving nothing from it; real checking is `npm run build` (tsc) as its own CI job, and tsconfig.test.json is test-only so the build is untouched. RESULT: Unit Tests 25 min -&gt; 2m47s on the same runner, and green. THE MISTAKE THAT MADE THIS TAKE FOUR ROUNDS: `npm run test:ci` is bare `jest` with NO --coverage, while CI runs `npx jest --ci --forceExit --coverage --coverageThreshold=...` &mdash; so every &quot;550/550 green&quot; reported earlier never exercised the failing path, while being described as the identical CI command. Re-verified with the real invocation. Also corrected mid-task: my first proposed fix put the flag in the ts-jest transform options, which is deprecated in 29.x and only sets a TypeScript flag rather than selecting the transpile path. Deployed and verified on stable: bundle hash moved, welcomeBackPrefix/otherAssessments/MeridianEngageCard gone, Moments chunk reachable from HomeV2, and all 6 new i18n keys SERVED (checked en/es/ja/ar/tr on both tiers &mdash; runtime-fetched, so repo presence is not evidence).</div>

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Briefcase, UserRoundSearch } from "lucide-react";
 
@@ -21,7 +21,7 @@ const LAST_ACTIONS: WelcomeBackLastAction[] = [
 ];
 
 function renderTile(overrides?: {
-  onResumeConversation?: () => void;
+  onResumeConversation?: (conversationId?: string) => void;
   onRequestAssessment?: () => void;
   onViewReportPdf?: () => void;
   onAddPersonalInfo?: (name: string) => void;
@@ -87,20 +87,77 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByText(/Welcome back,/)).not.toBeInTheDocument();
   });
 
-  it("lists the recent items with their relative times", () => {
+  // 2026-08-05: the inline list became a collapsed dropdown, so the topics
+  // are behind the trigger rather than always on the page.
+  it("keeps the recent topics collapsed until asked for", () => {
     renderTile();
-    const list = screen.getByTestId("homev2-last-actions");
+    expect(screen.getByTestId("homev2-last-actions-trigger")).toBeInTheDocument();
+    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
+    expect(screen.queryByText("Preparing for my review")).toBeNull();
+  });
+
+  it("lists the recent items with their relative times once opened", () => {
+    renderTile();
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    const list = screen.getByTestId("homev2-last-actions-list");
     expect(list).toHaveTextContent("Preparing for my review");
     expect(list).toHaveTextContent("2 days ago");
     expect(list).toHaveTextContent("Working through a team conflict");
   });
 
-  it("resumes the conversation when a last-visit item is clicked", () => {
+  it("groups the topics under day headers", () => {
+    // Five days of topics read as five groups; a header renders only where
+    // the day changes, so consecutive same-day entries share one.
+    renderTile({
+      lastActions: [
+        { id: "a", label: "First today", meta: "1 hour ago", dayLabel: "Today" },
+        { id: "b", label: "Also today", meta: "3 hours ago", dayLabel: "Today" },
+        { id: "c", label: "From before", meta: "1 day ago", dayLabel: "Yesterday" },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    const list = screen.getByTestId("homev2-last-actions-list");
+    expect(within(list).getAllByText("Today")).toHaveLength(1);
+    expect(within(list).getAllByText("Yesterday")).toHaveLength(1);
+  });
+
+  // The point of the deep link: picking a topic must resume THAT conversation,
+  // not just open the chat. Before 2026-08-05 the callback took no id at all.
+  it("resumes the specific conversation that was clicked", () => {
     const { onResumeConversation } = renderTile();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Preparing for my review" }),
-    );
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
     expect(onResumeConversation).toHaveBeenCalledTimes(1);
+    expect(onResumeConversation).toHaveBeenCalledWith("c1");
+  });
+
+  it("closes the dropdown after a topic is chosen", () => {
+    renderTile();
+    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
+    fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
+    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
+  });
+
+  // 2026-08-05: added to the behavioral row, ahead of Request PRISM Survey.
+  it("puts Chat with Meridian to the LEFT of Request PRISM Survey", () => {
+    renderTile();
+    const chat = screen.getByTestId("homev2-chat-with-meridian");
+    const request = screen.getByRole("button", {
+      name: /Request PRISM Survey/i,
+    });
+    // Asserted by DOM position rather than a class, so a restyle cannot
+    // quietly reorder them.
+    expect(
+      chat.compareDocumentPosition(request) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("opens the chat when Chat with Meridian is clicked", () => {
+    const { onResumeConversation } = renderTile();
+    fireEvent.click(screen.getByTestId("homev2-chat-with-meridian"));
+    expect(onResumeConversation).toHaveBeenCalledTimes(1);
+    // No id — this opens the chat as-is rather than deep-linking somewhere.
+    expect(onResumeConversation).toHaveBeenCalledWith();
   });
 
   it("offers a way in when there is no history rather than an empty list", () => {
@@ -158,14 +215,14 @@ describe("WelcomeBackTile", () => {
   it("calls onRequestAssessment when the request button is clicked", () => {
     const { onRequestAssessment } = renderTile();
     fireEvent.click(
-      screen.getByRole("button", { name: /Request PRISM Inventory/i }),
+      screen.getByRole("button", { name: /Request PRISM Survey/i }),
     );
     expect(onRequestAssessment).toHaveBeenCalledTimes(1);
   });
 
   it("calls onViewReportPdf when the view report button is clicked", () => {
     const { onViewReportPdf } = renderTile();
-    fireEvent.click(screen.getByRole("button", { name: /View Inventory PDF/i }));
+    fireEvent.click(screen.getByRole("button", { name: /View PRISM Report/i }));
     expect(onViewReportPdf).toHaveBeenCalledTimes(1);
   });
 
