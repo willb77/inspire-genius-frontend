@@ -285,11 +285,15 @@ const genericMessages =
   } = useResizableHeight("meridian-conversation-height", { min: 260, max: 1400 });
 
   // ── HomeV2 stacked layout ────────────────────────────────────────────
-  // Two separate cards — "Compose Prompt" on top, a full-height scrollable
-  // "Conversation" below — matching the Meridian Chat V2 wireframe. Reuses
-  // every piece of ChatWindow state/handlers (inputText, handleSend, scroll
-  // refs, auto-send/auto-scroll effects, modals); only the arrangement +
-  // skin differ. The classic single-card layout below is unchanged. Export
+  // Two separate cards — a full-height scrollable "Conversation" on top and
+  // "Compose Prompt" beneath it (2026-08-05; the composer used to sit above).
+  // Putting the composer last matches how every other chat surface reads: the
+  // transcript occupies the page and the box you type in sits at the bottom
+  // edge, next to the newest message rather than a scroll away from it.
+  //
+  // Reuses every piece of ChatWindow state/handlers (inputText, handleSend,
+  // scroll refs, auto-send/auto-scroll effects, modals); only the arrangement
+  // + skin differ. The classic single-card layout below is unchanged. Export
   // is triggered from the page header in V2, so no export trigger here.
   //
   // The Conversation card is user-resizable: a drag strip at its bottom sets a
@@ -298,33 +302,6 @@ const genericMessages =
   if (stacked) {
     return (
       <div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
-        {/* Compose Prompt card */}
-        <V2Card className="flex flex-col gap-3 p-4 md:p-5" data-testid="v2-compose-card">
-          <SectionLabel>{t("compose.sectionLabel", { defaultValue: "Compose Prompt" })}</SectionLabel>
-          <ChatWindowTopBanner
-            selectedDocNames={selectedDocNames}
-            selectedSummary={selectedSummary}
-            selectedTooltip={selectedDocsTooltip}
-            isConnecting={isConnecting}
-            statusBanner={statusBanner}
-            activeTab="chat"
-            selectDocsLottieSrc={selectDocsLottieSrc}
-          />
-          <ChatWindowInputBar
-            inputText={inputText}
-            onInputTextChange={setInputText}
-            onSend={handleSend}
-            onToggleRecording={onToggleRecording}
-            isRecording={isRecording}
-            hasAudio={hasAudio}
-            isAudioPaused={isAudioPaused}
-            onToggleAudioPlayback={onToggleAudioPlayback}
-            isMuted={isMuted}
-            onToggleMute={onToggleMute}
-            muteTooltipText={muteTooltipText}
-          />
-        </V2Card>
-
         {/* Conversation card — vertically visible top→bottom, scrollable, and
             user-resizable via the drag strip at its bottom edge. */}
         <V2Card
@@ -399,6 +376,49 @@ const genericMessages =
               onCloseAudioPlayer={onCloseAudioPlayer}
             />
           </div>
+        </V2Card>
+
+        {/* Compose Prompt card — now beneath the conversation, and deliberately
+            slimmer than it was: `shrink-0` so it never gets squeezed, tighter
+            padding, and the section label inline with the status banner rather
+            than on its own line. The height it gives up goes to the transcript.
+
+            The textarea inside is user-expandable (drag strip at the bottom
+            edge) for composing something longer than the auto-grow ceiling —
+            the same interaction, and the same hook, as the Conversation card
+            above it. */}
+        <V2Card
+          className="flex shrink-0 flex-col gap-2 p-3 md:p-4"
+          data-testid="v2-compose-card"
+        >
+          <div className="flex items-center gap-3">
+            <SectionLabel>{t("compose.sectionLabel", { defaultValue: "Compose Prompt" })}</SectionLabel>
+            <div className="min-w-0 flex-1">
+              <ChatWindowTopBanner
+                selectedDocNames={selectedDocNames}
+                selectedSummary={selectedSummary}
+                selectedTooltip={selectedDocsTooltip}
+                isConnecting={isConnecting}
+                statusBanner={statusBanner}
+                activeTab="chat"
+                selectDocsLottieSrc={selectDocsLottieSrc}
+              />
+            </div>
+          </div>
+          <ChatWindowInputBar
+            inputText={inputText}
+            onInputTextChange={setInputText}
+            onSend={handleSend}
+            onToggleRecording={onToggleRecording}
+            isRecording={isRecording}
+            hasAudio={hasAudio}
+            isAudioPaused={isAudioPaused}
+            onToggleAudioPlayback={onToggleAudioPlayback}
+            isMuted={isMuted}
+            onToggleMute={onToggleMute}
+            muteTooltipText={muteTooltipText}
+            expandable
+          />
         </V2Card>
 
         {copied ? (
