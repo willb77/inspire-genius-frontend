@@ -1,3 +1,86 @@
+## [2026-08-06] — Summit goal discovery grounded in real PRISM; Goals menu restored for the owner
+
+Two related pieces of work: the Goals shortcut came back for one account, and the goal-discovery
+flow behind it was found to have never been PRISM-based at all.
+
+### Fixed
+- **Summit goal discovery was not grounded in PRISM in either deployed environment** — despite the
+  module documenting that it was. `_prism_context` read through `retrieve_personal_context`, which
+  returns `""` outright when `deterministic_personalization` is on. That flag is `true` on dev, so
+  every `ask`/`synthesize` call ran with `(none on file)`. On staging-b the flag is `false`, so the
+  same call fell through to the legacy uploader-keyed document search — the 2026-07-12
+  cross-subject contamination vector, capped at 500 tokens of arbitrary chunks, and not a source of
+  structured scores in any case. Neither tier ever saw a dimension score.
+  - Reads now go through the structured profile platform (`load_user_profile_block_for_chat`) — the
+    same path `routes/interview.py` uses: plain SQL over `assessments`/`assessment_scores` plus the
+    user's own doc_kind-tagged résumé and bio, no embeddings, and unaffected by
+    `deterministic_personalization` by design. It also picks up facts, any non-PRISM instrument the
+    user has taken, and the `chat_excluded_frameworks` privacy filter the pgvector path ignored.
+  - The WHY ladder now gets the profile too — its root becomes each goal's motivation.
+  - Note the chat path was never affected: `GoalAgent` extends `BaseAgent`, which injects the real
+    `<USER_PROFILE>`. Only the structured UI calls were blind, because they hit `provider.chat` directly.
+  - Files: `services/agent-engine/app/goals/agent_calls.py`
+- **Synthesis was fabricating PRISM alignment for every goal.** With no profile in the prompt, the
+  model was still asked for a `prism_alignment` — and produced a quadrant, a dimension list and an
+  execution style, invented whole. Goals were shown to users as PRISM-aligned when the alignment was
+  imaginary, which is worse than no alignment: it is wrong in a way the reader cannot check.
+  - New `_sanitise_alignment` drops any behavioural claim the loaded profile does not support: no
+    profile → no alignment and no execution style; unknown dimensions dropped; if none survive the
+    whole alignment goes (a bare quadrant is still an unsupported claim); enum values outside the
+    documented sets dropped rather than passed through.
+  - The synthesis prompt is now conditional — with no profile it explicitly instructs `null` and
+    forbids inferring traits — so the sanitiser is a backstop, not the only defence.
+  - `POST /v1/agents/goals/synthesize` now returns `hasPrism` so the surface can say which case it is in.
+  - Files: `services/agent-engine/app/goals/agent_calls.py`, `services/agent-engine/app/routes/goals.py`
+
+### Changed
+- **PRISM score type pinned to `Underlying`** (the disposition) for goal setting. Dev stores three
+  variants of every `BehaviorPreferences` dimension — Underlying 150 rows, Adapted 124, Consistent
+  124 — and they disagree by design; an unfiltered read mixed all three and took whichever row
+  sorted first. `Underlying` is what `prism_canon.SCORE_TYPE` already declared authoritative.
+  - Legacy `NULL`-typed rows are accepted only when the user has no Underlying rows at all. Adapted
+    is never substituted for a missing Underlying.
+- **`ScoreView` now projects `score_type`** — an optional, additive field. The loader never selected
+  the column, so Underlying and Adapted were indistinguishable to every consumer; anything needing
+  one specific variant had to guess or pretend (see the `score_type` synthesis in
+  `app/tools/direction_setting/alignment.py`, which is candid about doing exactly that). Rows
+  predating the column and instruments without variants load as `None`; existing consumers unaffected.
+  - Files: `services/agent-engine/app/profile/loader.py`
+- **Quadrant mapping pinned to `app/prism_canon.py`.** Every quadrant and dimension fact now comes
+  from the canon module rather than model output. The PRISM brief is rendered deterministically
+  under the licensed-manual grouping (Blue = Supporting + Co-Ordinating, Gold = Finishing +
+  Evaluating), and a goal's quadrant is *derived* from its surviving dimensions rather than accepted
+  from the model — so Summit cannot reintroduce the rotation that made Supporting/Co-Ordinating
+  render as the wrong colour in three other places. Output runs through `normalise_colour_names`:
+  PRISM has four colours and Orange is not one of them.
+- **Goals restored to the My Workspace menu for the platform owner only** (`willb77@3pp.com`).
+  #365 had greyed Analytics, Goals and Job Fit together. Every other user's menu is byte-identical
+  to 2026-08-04 — same position, same greying, same "Temporarily unavailable" tooltip.
+  - `getUserNavItems` takes the viewer's *email* rather than a pre-computed `isOwner` flag, so the
+    owner rule lives in one place (`isPlatformOwner`, already used for the Dev Traffic Report gate)
+    and no chrome can apply it differently. Omitting it is fail-closed. All three chromes pass it:
+    `UserLayout`, `SuperAdminLayout`, `useVerticalPageSections`.
+  - Deliberately NOT added to `OWNER_ONLY_NAV_ROUTES` — that set *removes* routes for non-owners,
+    and Goals was already a visible greyed row for everyone; removing it would change what other
+    users see. Goals also keeps its position rather than being promoted, so the gate cannot reshuffle
+    anyone's menu.
+  - This is a shortcut gate, not an access gate: the route was never removed, and Goals stayed
+    reachable for all users via the Direction Setting sub-nav and JourneyPage stage 5.
+  - Files: `src/constants/navigation.ts`, `src/layouts/UserLayout.tsx`,
+    `src/layouts/SuperAdminLayout.tsx`, `src/hooks/nav/useVerticalPageSections.ts`
+
+### Verification
+- Backend: 37 tests in the goals suites (24 new in `test_goals_prism_grounding.py`). Full
+  agent-engine suite **4535 passed vs 4511 on the base commit**, with a **byte-identical set of 174
+  pre-existing failures** (`test_websocket`, `test_ws_handler`, `test_history_token_budget`) —
+  verified by diffing failure lists with the change stashed. No regressions. Those 174 are
+  pre-existing on `development` and were left alone.
+- Frontend: 135 tests green across `constants` / `components/layout` / `layouts` / `hooks/nav`;
+  `npm run build` clean; eslint clean on all changed files. The pre-existing greyed-Goals assertions
+  pass **unchanged** — they use the no-email (non-owner) path, which is the evidence that nobody
+  else's menu moved.
+- PRs: frontend #374 (`3e429aa4`), backend #819 (`d19cdacc`), both merged to `development`.
+
 ## [2026-08-05] — HomeV2 recent-topics dropdown, chat deep-link, history delete, collapsed Today's Prep
 
 Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
