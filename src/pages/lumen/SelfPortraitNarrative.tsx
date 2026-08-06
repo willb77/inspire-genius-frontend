@@ -79,6 +79,16 @@ export function SelfPortraitNarrative({ portrait }: { portrait: SelfPortrait }) 
   }, [history.length])
 
   function reportInput() {
+    const prism = portrait.prism
+    // Title-cased for the document; the wire format is lowercase keys.
+    const rows = (scores: Record<string, number | undefined> | undefined) =>
+      Object.entries(scores ?? {})
+        .filter(([, v]) => typeof v === "number")
+        .map(([label, value]) => ({
+          label: label.charAt(0).toUpperCase() + label.slice(1),
+          value: value as number,
+        }))
+
     return {
       headline: portrait.headline,
       description: description || portrait.headline || "",
@@ -86,6 +96,15 @@ export function SelfPortraitNarrative({ portrait }: { portrait: SelfPortrait }) 
       instruments: portrait.instruments,
       coverage: portrait.coverage,
       disclaimer: disclaimer || undefined,
+      quadrants: rows(prism?.quadrants),
+      dimensions: rows(prism?.dimensions),
+      orientation: rows(prism?.orientation),
+      scoreType: prism?.score_type,
+      evidence: (portrait.evidence ?? []).map((e) => ({
+        source: e.source,
+        detail: e.detail,
+      })),
+      evidenceNote: portrait.evidence_note,
     }
   }
 
