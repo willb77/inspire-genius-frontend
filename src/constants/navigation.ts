@@ -64,10 +64,27 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
 ]
 
 /**
+ * Options for {@link getUserNavItems}.
+ *
+ * `viewerEmail` is the signed-in user's email, used for owner-only entries.
+ * The EMAIL is passed rather than a pre-computed `isOwner` boolean so the
+ * owner rule lives in exactly one place (this module, via
+ * {@link isPlatformOwner}) and no chrome can apply it slightly differently.
+ * Omitting it is fail-closed: the caller gets the non-owner menu.
+ */
+export interface UserNavOptions {
+  viewerEmail?: string | null
+}
+
+/**
  * Toggle-aware navigation items for the user role.
  * When Agent Engine is ON, shows "Chat with Meridian" instead of "Chat with Coaches".
  */
-export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
+export function getUserNavItems(
+  agentEngineEnabled: boolean,
+  options: UserNavOptions = {},
+): NavItemDef[] {
+  const ownerOnlyUnlocked = isPlatformOwner(options.viewerEmail)
   return [
     { to: ROUTES.HOME, icon: Home, label: "Home" },
     agentEngineEnabled
@@ -125,13 +142,27 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // Goals — the "My Goals" interview (Direction Setting stage 5). Promoted to a
     // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
     // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
-    {
-      to: ROUTES.DIRECTION_SETTING.GOALS,
-      icon: Target,
-      label: "Goals",
-      disabled: true,
-      disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
-    },
+    //
+    // ── 2026-08-06, user request: switched back on FOR THE PLATFORM OWNER ONLY ──
+    // Everyone else's menu is byte-identical to 2026-08-04 — same position, same
+    // greying, same tooltip. Only willb77@3pp.com gets a live row. Position is
+    // deliberately unchanged rather than promoted up beside the usable
+    // shortcuts, so the owner-gate cannot reshuffle anyone else's menu.
+    //
+    // This is a SHORTCUT gate, not an access gate. The route was never removed
+    // and Goals stayed reachable throughout from the Direction Setting sub-nav
+    // ("My goals" in constants/vertical-subnav.ts) and JourneyPage stage 5 — for
+    // every user, owner or not. If Goals ever needs to be genuinely unreachable
+    // for non-owners, that is a route/authz change and this line is not it.
+    ownerOnlyUnlocked
+      ? { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" }
+      : {
+          to: ROUTES.DIRECTION_SETTING.GOALS,
+          icon: Target,
+          label: "Goals",
+          disabled: true,
+          disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
+        },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]
@@ -334,6 +365,18 @@ export function isPlatformOwner(email: string | null | undefined): boolean {
 export const OWNER_ONLY_NAV_ROUTES: ReadonlySet<string> = new Set<string>([
   ROUTES.SUPER_ADMIN.DEV_TRAFFIC_REPORT,
 ])
+
+/**
+ * NOT the only owner gate — My Workspace's Goals entry is owner-gated too, but
+ * differently, and deliberately so.
+ *
+ * Routes in {@link OWNER_ONLY_NAV_ROUTES} are REMOVED for non-owners. Goals is
+ * instead left in place and greyed (see {@link getUserNavItems}), because it
+ * was already a visible-but-disabled row for every user before the owner got
+ * it back on 2026-08-06 — removing it would have changed what everyone else
+ * sees, which the request did not ask for. Adding Goals to this set would do
+ * exactly that, so don't.
+ */
 
 /** Lookup from role to its nav items */
 export const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItemDef[]> = {
