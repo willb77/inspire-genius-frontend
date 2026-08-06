@@ -7,6 +7,9 @@
 
 export type PortraitQA = { question: string; answer: string }
 
+/** A label/value pair for one score row. */
+export type PortraitScoreRow = { label: string; value: number }
+
 export type PortraitReportInput = {
   /** One-line headline from the composed portrait. */
   headline?: string
@@ -20,6 +23,29 @@ export type PortraitReportInput = {
   coverage?: string
   /** Non-clinical framing stamped on the report. */
   disclaimer?: string
+  /**
+   * The four quadrant means and the eight dimensions they average.
+   *
+   * Until now the export carried prose only — a user who downloaded their
+   * portrait got the narration and none of the numbers it described.
+   */
+  quadrants?: PortraitScoreRow[]
+  dimensions?: PortraitScoreRow[]
+  /**
+   * Which score variant the numbers are (PRISM stores up to three). Omitted
+   * when unrecorded — the report then says so rather than implying one.
+   */
+  scoreType?: string | null
+  /**
+   * Introversion / Extroversion. Kept apart from `quadrants` and `dimensions`
+   * because it belongs to no quadrant, and a reader scanning a score table has
+   * no way to know that unless the document says it.
+   */
+  orientation?: PortraitScoreRow[]
+  /** Descriptive observations from the résumé and bio. Never measurements. */
+  evidence?: { source: string; detail: string }[]
+  /** The caveat that must travel with `evidence` wherever it is rendered. */
+  evidenceNote?: string | null
 }
 
 const esc = (s: string) =>
@@ -63,6 +89,38 @@ export function buildPortraitReportText(input: PortraitReportInput): string {
   if (input.headline) L.push("", input.headline)
   if (input.instruments?.length) L.push("", `Built from: ${input.instruments.join(", ")}`)
   L.push("", "DESCRIPTION", "", input.description.trim())
+
+  if (input.quadrants?.length) {
+    L.push("", "QUADRANT SCORES")
+    for (const { label, value } of input.quadrants) {
+      L.push(`  ${label}: ${Math.round(value)}`)
+    }
+  }
+  if (input.dimensions?.length) {
+    L.push(
+      "",
+      input.scoreType
+        ? `BEHAVIOURAL DIMENSIONS (${input.scoreType})`
+        : "BEHAVIOURAL DIMENSIONS (score variant not recorded)"
+    )
+    for (const { label, value } of input.dimensions) {
+      L.push(`  ${label}: ${Math.round(value)}`)
+    }
+  }
+  if (input.orientation?.length) {
+    L.push("", "ENERGY DIRECTION (belongs to no quadrant)")
+    for (const { label, value } of input.orientation) {
+      L.push(`  ${label}: ${Math.round(value)}`)
+    }
+  }
+  if (input.evidence?.length) {
+    L.push("", "FROM YOUR OWN WORDS")
+    if (input.evidenceNote) L.push(input.evidenceNote)
+    for (const { source, detail } of input.evidence) {
+      L.push(`  [${source}] ${detail}`)
+    }
+  }
+
   if (input.qa?.length) {
     L.push("", "QUESTIONS & ANSWERS")
     for (const { question, answer } of input.qa) {
@@ -87,6 +145,42 @@ export function buildPortraitReportHtml(input: PortraitReportInput): string {
         )
         .join("")}`
     : ""
+  // Every value below is escaped: évidence details are derived from a
+  // user-uploaded résumé, so this is the one path in the report where the input
+  // is genuinely untrusted.
+  const scoreTable = (rows: PortraitScoreRow[]) =>
+    `<table class="scores">${rows
+      .map(
+        (r) =>
+          `<tr><td>${esc(r.label)}</td><td class="v">${Math.round(r.value)}</td></tr>`
+      )
+      .join("")}</table>`
+
+  const quadrants = input.quadrants?.length
+    ? `<h2>Quadrant scores</h2>${scoreTable(input.quadrants)}`
+    : ""
+  const dimensions = input.dimensions?.length
+    ? `<h2>Behavioural dimensions</h2><p class="meta">${
+        input.scoreType
+          ? `These are your ${esc(input.scoreType)} scores.`
+          : "The score variant wasn't recorded for these."
+      } Each quadrant above is the average of two of these.</p>${scoreTable(
+        input.dimensions
+      )}`
+    : ""
+  const orientation = input.orientation?.length
+    ? `<h2>Energy direction</h2><p class="meta">Measured alongside the eight dimensions, but part of no quadrant — neither end is better.</p>${scoreTable(
+        input.orientation
+      )}`
+    : ""
+  const evidence = input.evidence?.length
+    ? `<h2>From your own words</h2>${
+        input.evidenceNote ? `<p class="note">${esc(input.evidenceNote)}</p>` : ""
+      }<ul>${input.evidence
+        .map((e) => `<li>[${esc(e.source)}] ${esc(e.detail)}</li>`)
+        .join("")}</ul>`
+    : ""
+
   const coverage = input.coverage
     ? `<p class="meta">${esc(input.coverage)}</p>`
     : ""
@@ -104,12 +198,19 @@ export function buildPortraitReportHtml(input: PortraitReportInput): string {
     .qa{border-left:3px solid #ede9fe;padding-left:12px;margin:12px 0}
     .qa .q{font-weight:700;color:#4c1d95;margin:0 0 4px}
     .note{margin-top:24px;color:#9ca3af;font-size:11px;font-family:Arial,Helvetica,sans-serif}
+    table.scores{border-collapse:collapse;margin:8px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px}
+    table.scores td{padding:3px 16px 3px 0}
+    table.scores td.v{text-align:right;font-weight:700;color:#4c1d95}
   </style></head><body>
     <h1>My Self-Portrait</h1>
     ${input.headline ? `<p class="headline">${esc(input.headline)}</p>` : ""}
     ${instruments}
     <h2>Description</h2>
     ${mdToHtml(input.description)}
+    ${quadrants}
+    ${dimensions}
+    ${orientation}
+    ${evidence}
     ${qa}
     ${coverage}
     ${disclaimer}
