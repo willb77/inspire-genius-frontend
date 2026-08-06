@@ -1,3 +1,98 @@
+## [2026-08-06] — Lumen Self-Portrait: the whole PRISM read, and a résumé that actually counts
+
+Monorepo PR #827, frontend PR #376. Both **merged to `development`**. **Dev and
+staging-b deploys did NOT happen** — see "Deploy status" below.
+
+The Self-Portrait advertised four sources and scored from one and a bit. Three
+separate defects, none visible from the page: each rendered as a perfectly
+plausible chart.
+
+### Fixed
+- **Quadrant scores blended three different measures.** PRISM stores up to three
+  variants of every behavioural dimension — `Underlying` / `Adapted` /
+  `Consistent` — and `prism_quadrant_scores` selected on category alone.
+  Measured on dev: **124 of 160 (assessment, dimension) pairs carry all three
+  rows**, so each quadrant was the mean of up to six numbers spanning three
+  conceptually different measures. Now filtered to `Underlying` (the platform's
+  standing decision), with a fallback for rows predating the column — one dev
+  assessment carries all ten with `score_type` NULL, and a strict filter would
+  blank exactly the users whose data is oldest. The resolved variant is reported
+  rather than assumed.
+  - Files: `services/agent-engine/app/tools/lumen/self_portrait.py`
+- **The profile loader was discarding most of the input.**
+  `_SCORES_PER_ASSESSMENT_CAP = 30` is sized for prompt injection and ranks by
+  absolute magnitude with **no category awareness**, so wide categories crowd out
+  the anchor. Measured on dev: **275 of 408 behavioural rows trimmed (67%)**,
+  **15 of 16 assessments** affected, a typical assessment left with **3–5 of its
+  10 dimensions** — and after the variant filter, **at most 5, sometimes 0**. The
+  test account had exactly **two** (Coordinating, Supporting). `load_user_profile`
+  gains an optional `scores_per_assessment_cap`; the default is unchanged so no
+  existing caller moves, and the portrait raises it.
+  - Files: `services/agent-engine/app/profile/loader.py`
+- **Résumé and bio were read, then thrown away.** Both were loaded (2500 chars
+  each), both counted toward the "built from" list, and both were coerced to
+  `bool()` and never looked at again — they flipped a checkmark and changed a
+  sentence of copy. The page's central claim was false.
+
+### Added
+- **`evidence`** — deterministic, non-scoring observations from the résumé and
+  bio (career span, recurring language families), each attributed to its source
+  and carrying an explicit caveat. **Kept strictly out of reconciliation**: the
+  confidence bands come from the licensed manual's per-framework validity
+  evidence, and letting a verb count move a quadrant would make those bands
+  meaningless while still displaying them. `test_evidence_cannot_move_the_anchor`
+  pins it.
+- **`prism.dimensions` + `prism.orientation` + `prism.score_type`** — all eight
+  behavioural dimensions and Introversion/Extroversion, beside the quadrant means
+  and **never inside `quadrants`**: `prism_report._quadrant_rows` and
+  `moments._portrait_brief` both iterate that dict, so a key there becomes a fifth
+  quadrant in a generated document and silently inflates an LLM prompt nobody
+  watches. Two tests guard it.
+- Frontend: dimensions section (grouped under their quadrant, reusing
+  `BEHAVIOUR_CONFIG`), Introversion/Extroversion as a **spectrum** rather than a
+  bar (a bar asserts "higher is more", which the instrument does not), and an
+  evidence section with no confidence figures or quadrant badges — those belong to
+  things that measure.
+- Generated report gains dimensions, orientation and evidence sections.
+- PDF/Word export now carries the scores it narrates; previously prose only.
+
+### Changed
+- **Enneagram removed from the portrait only.** Dropped from
+  `extract_overlay_signals`, `FRAMEWORK_CONFIDENCE` and the instruments list. The
+  reconciliation engine keeps full support and
+  `test_the_exclusion_is_a_portrait_decision_not_an_engine_one` is the boundary
+  marker. Measured: **zero dev users hold an Enneagram assessment**, so the
+  confidence-band shift this could cause has no instances to observe.
+- **Frontend de-duplicated.** `pages/lumen/SelfPortrait.tsx` and
+  `pages/direction-setting/PortraitPage.tsx` each carried private copies of every
+  constant and JSX block, already drifted (three of four source-row descriptions
+  differed; only one file said why). Extracted to
+  `components/lumen/portrait`. Nothing shared imports `react-router-dom` — the
+  Lumen page renders with no router in its test tree, so navigation arrives as
+  slots.
+- `_headline` / `_coverage_note` rewritten to distinguish what **measures** from
+  what **describes**; the old "composed from N sources" read identically whether
+  those sources contributed or not.
+
+### Deploy status — NOT DEPLOYED
+**GitHub Actions was in a declared major outage** (incident `qcvjkzcs7j74`, began
+15:22 UTC, Actions + Pages critical). Webhook triggers were throttled and **neither
+merge produced a workflow run**. The agent-engine image was built
+(`--platform linux/amd64`) and pushed to dev ECR as
+`ig-dev-agent-engine:portrait-full-scores` / `:latest`
+(`sha256:6429748d40be76f0ddaf5ddca086375967c54c4f7182b79d918ac142af4e1d07`), but
+the ECS rollout, the frontend S3/CloudFront deploy and the staging-b promote were
+**not performed**. Code is on `development`; **dev and staging-b are still running
+the previous build.**
+
+### Verification (code, not deployed behaviour)
+- Backend `252 passed` across `tests/lumen/`, `test_prism_report.py`,
+  `test_profile_loader.py`, `test_reconciliation_cross_framework.py`
+- Backend full suite **4590 passed / 174 failed**; measured baseline on
+  `origin/development` **4545 passed / 174 failed** — same pre-existing failure set
+  (`test_websocket.py`, `test_ws_handler.py`). Net **+45 passing, zero new failures**
+- Frontend **4415 passed, 551 suites, 0 failures**; `npm run build` clean; ESLint
+  clean on every changed file
 ## [2026-08-06] — Summit goal discovery grounded in real PRISM; Goals menu restored for the owner
 
 Two related pieces of work: the Goals shortcut came back for one account, and the goal-discovery

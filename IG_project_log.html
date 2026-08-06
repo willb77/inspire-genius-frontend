@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1460</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1461</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3043,6 +3043,11 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-06 — Prompt #1461 [Lumen Self-Portrait — full PRISM read + résumé/bio evidence]</div>
+  <div class="prompt-text">Work on the Lumen Self-Portrait: surface the full PRISM scores (eight dimensions + Introversion/Extroversion, which belong to no quadrant), make the résumé and bio actually feed the portrait rather than only flipping a checkmark, remove Enneagram from this surface, and update the compose/assemble steps to take the new input. Delivered as BE #827 + FE #376, both merged to development. Three defects found by measuring dev data rather than reading code: quadrant means blended three score-type variants; the loader's 30-row cap trimmed 275 of 408 behavioural rows leaving 3-5 of 10 dimensions; résumé and bio were loaded then discarded. Frontend de-duplicated into components/lumen/portrait. NOT deployed — GitHub Actions was in a declared major outage and neither merge triggered a workflow.</div>
+</div>
+
         <div class="prompt-entry">
           <div class="timestamp">2026-08-06 &mdash; Prompt #1460 [Goals menu for the owner + Summit PRISM grounding &mdash; MERGED, deploying dev]</div>
           <div class="prompt-text">restore Goals / what needs to be done to complete goals discovery based on prisom and additional information scores? / commit the Goals menu restore just for willb77@3pp.com, then do the P0 PRISM fix and P1 use underlying, and for quadrant mapping Pin to prism_canon.py</div>
