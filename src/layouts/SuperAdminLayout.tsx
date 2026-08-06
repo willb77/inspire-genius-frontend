@@ -23,14 +23,21 @@ export type SuperAdminLayoutProps = {
 
 export default function SuperAdminLayout({ children, className }: SuperAdminLayoutProps) {
   const agentEngineOn = useAgentEngine();
+  // Read before the nav build below — My Workspace's owner-gated Goals entry
+  // needs the viewer's email.
+  const { user } = useAuth();
   // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
   // spliced in above Settings/Help — greyed when unentitled.
-  const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
+  const userNavItems = useWorkspaceNavItems(
+    getUserNavItems(agentEngineOn, { viewerEmail: user?.email }),
+  );
   const launcherSection = useVerticalLauncherSection();
-  const { user } = useAuth();
   // Owner-only nav routes (e.g. Dev Traffic Report) stay in their normal
   // section but are hidden from every super-admin except the platform owner.
   // The backend independently hard-403s any non-owner caller.
+  //
+  // Goals is owner-gated too but NOT through this set — it stays visible and
+  // greyed for non-owners rather than disappearing. See OWNER_ONLY_NAV_ROUTES.
   const isOwner = isPlatformOwner(user?.email);
 
   /**
