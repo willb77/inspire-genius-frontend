@@ -17,9 +17,51 @@ export type PrismQuadrantScores = Partial<
   Record<"green" | "blue" | "red" | "gold" | "orange", number>
 >
 
+/**
+ * The eight behavioural dimensions, two per quadrant.
+ *
+ * The quadrant scores are means of these, and a mean hides which of its two
+ * dimensions is carrying it: a Green of 68 built from Innovating 90 /
+ * Initiating 46 describes a very different person from one built from 67 / 69,
+ * and both used to render identically.
+ */
+export type PrismDimensionKey =
+  | "innovating"
+  | "initiating"
+  | "supporting"
+  | "coordinating"
+  | "focusing"
+  | "delivering"
+  | "finishing"
+  | "evaluating"
+
+/** Absent = not measured. Same contract as `PrismQuadrantScores`. */
+export type PrismDimensionScores = Partial<Record<PrismDimensionKey, number>>
+
+/**
+ * Introversion / Extroversion.
+ *
+ * PRISM stores these in the same category as the eight dimensions, but they
+ * belong to no quadrant — they describe energy direction, not working style.
+ * Kept separate from `quadrants` and `dimensions` for that reason, and rendered
+ * as a spectrum rather than a bar: neither end is "more".
+ */
+export type PrismOrientation = Partial<
+  Record<"introversion" | "extroversion", number>
+>
+
 export type PrismAnchor = {
   dominant_quadrant: PrismQuadrant
   quadrants: PrismQuadrantScores
+  /** Optional for back-compat with an engine that predates the full read. */
+  dimensions?: PrismDimensionScores
+  orientation?: PrismOrientation
+  /**
+   * Which variant these scores are — PRISM stores up to three per dimension
+   * (Underlying / Adapted / Consistent). `null` means the stored rows carried
+   * no variant, which must be reported as unknown rather than assumed.
+   */
+  score_type?: string | null
 }
 
 /** One non-PRISM instrument, mapped into PRISM space. */
@@ -166,6 +208,23 @@ export type PortraitSourceKey = "prism" | "assessments" | "resume" | "bio"
 export type PortraitSources = Record<PortraitSourceKey, boolean>
 
 /**
+ * One observation drawn from the résumé or bio.
+ *
+ * Deliberately a separate concept from `CorroboratingInstrument`. An instrument
+ * is a measurement carrying a calibrated confidence band from the licensed
+ * manual; this is a reading of what someone wrote about themselves. Rendering
+ * the two alike would launder one into the other, which is why this type has no
+ * `confidence` field and never maps to a quadrant.
+ */
+export type PortraitEvidenceItem = {
+  source: Extract<PortraitSourceKey, "resume" | "bio">
+  /** `span` = a period the résumé covers; `emphasis` = a recurring theme. */
+  kind: "span" | "emphasis"
+  label: string
+  detail: string
+}
+
+/**
  * A narrated read of the Self-Portrait, or an answer to a question about it.
  * Both come from `POST /self-portrait/{id}/ask`: no question → a description
  * (`is_description: true`); a question → an answer. `answer` is markdown.
@@ -194,4 +253,11 @@ export type SelfPortrait = {
   sources?: PortraitSources
   /** One line on what the portrait rests on and what would sharpen it next. */
   coverage?: string
+  /**
+   * What the résumé and bio contribute. Descriptive observations, never
+   * measurements — see `evidence_note`. Optional for back-compat.
+   */
+  evidence?: PortraitEvidenceItem[]
+  /** The caveat that rides with `evidence`. Null when there is none to show. */
+  evidence_note?: string | null
 }
