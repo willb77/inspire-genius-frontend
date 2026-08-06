@@ -192,6 +192,69 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
   })
 
+  // ── 2026-08-06, user request: Goals back on for the platform owner only ──
+  //
+  // Every assertion above calls getUserNavItems(on) with no options, which is
+  // the NON-owner path — so they keep passing unchanged, and that is the point:
+  // the gate must not alter anyone else's menu. These cases cover the owner.
+  describe("Goals — owner-only restore", () => {
+    const OWNER = "willb77@3pp.com"
+    const goalsFor = (email?: string | null) =>
+      getUserNavItems(true, { viewerEmail: email }).find(
+        (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
+      )!
+
+    it("gives the platform owner a live Goals entry", () => {
+      for (const on of [true, false]) {
+        const item = getUserNavItems(on, { viewerEmail: OWNER }).find(
+          (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
+        )!
+        expect(item.disabled).toBeFalsy()
+        expect(item.disabledReason).toBeUndefined()
+      }
+    })
+
+    it("matches the owner email case- and whitespace-insensitively", () => {
+      // The email arrives from the auth profile, not from a form; a stored
+      // "WillB77@3pp.com" must not silently lock the owner out of his own row.
+      for (const variant of [OWNER, "WillB77@3PP.com", "  willb77@3pp.com  "]) {
+        expect(goalsFor(variant).disabled).toBeFalsy()
+      }
+    })
+
+    it("leaves Goals greyed for everyone else", () => {
+      for (const email of ["someone@3pp.com", "willb77@example.com", "", null, undefined]) {
+        const item = goalsFor(email)
+        expect(item.disabled).toBe(true)
+        expect(item.disabledReason).toBe(WORKSPACE_ITEM_UNAVAILABLE_REASON)
+      }
+    })
+
+    it("fails CLOSED when a caller forgets to pass the email", () => {
+      // Three chromes build this menu. A new one that omits viewerEmail should
+      // under-grant (owner sees the old greyed row) rather than over-grant.
+      expect(getUserNavItems(true).find(
+        (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
+      )!.disabled).toBe(true)
+    })
+
+    it("does not move Goals or change anyone else's menu shape", () => {
+      // The owner gate flips one row's `disabled`; it must not reorder or
+      // add/remove entries, or the owner and everyone else drift apart.
+      const owner = getUserNavItems(true, { viewerEmail: OWNER })
+      const other = getUserNavItems(true, { viewerEmail: "someone@3pp.com" })
+      expect(owner.map((i) => i.label)).toEqual(other.map((i) => i.label))
+      expect(owner.map((i) => i.to)).toEqual(other.map((i) => i.to))
+    })
+
+    it("keeps Analytics greyed for the owner too — only Goals was restored", () => {
+      const analytics = getUserNavItems(true, { viewerEmail: OWNER }).find(
+        (i) => i.to === ROUTES.ANALYTICS,
+      )!
+      expect(analytics.disabled).toBe(true)
+    })
+  })
+
   it("keeps every switched-off route resolvable so re-enabling is one line", () => {
     const items = getUserNavItems(true)
     expect(items.find((i) => i.label === "Analytics")!.to).toBe(ROUTES.ANALYTICS)

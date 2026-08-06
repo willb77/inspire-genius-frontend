@@ -60,7 +60,7 @@ Object.defineProperty(window, "matchMedia", {
  * by default — the harder case, since a force-disabled entry must stay greyed
  * for someone whose plan *does* include it.
  */
-function renderMenu(entitlements: string[] = ["job-fit"]) {
+function renderMenu(entitlements: string[] = ["job-fit"], viewerEmail?: string) {
   __resetRegistry()
   registerVertical({
     key: "job-fit",
@@ -72,7 +72,10 @@ function renderMenu(entitlements: string[] = ["job-fit"]) {
   mockUseEnabledVerticals.mockReturnValue({ data: entitlements, isLoading: false })
 
   const { result } = renderHook(() => useWorkspaceVerticalItems())
-  const menu = withWorkspaceVerticals(getUserNavItems(true), result.current)
+  const menu = withWorkspaceVerticals(
+    getUserNavItems(true, { viewerEmail }),
+    result.current,
+  )
 
   render(
     <MemoryRouter initialEntries={["/home"]}>
@@ -148,5 +151,52 @@ describe("My Workspace — rendered menu", () => {
     for (const label of ["Analytics", "Goals", "Job Fit"]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+  })
+})
+
+// ── 2026-08-06 — Goals restored for the platform owner only ───────────────
+// Rendered, not just asserted on the nav array: the greying lives in
+// SidebarScaffold's NavItem, so only a render proves the owner's row actually
+// clicks through rather than merely carrying the right flag.
+describe("My Workspace — Goals for the platform owner", () => {
+  const OWNER = "willb77@3pp.com"
+
+  it("draws Goals live for the owner", () => {
+    renderMenu(["job-fit"], OWNER)
+    expect(row("Goals")).toBeEnabled()
+    expect(row("Goals")).not.toHaveAttribute("aria-disabled", "true")
+    expect(row("Goals")).not.toHaveAttribute("title", "Temporarily unavailable")
+    expect(isGreyed("Goals")).toBe(false)
+  })
+
+  it("still greys Analytics and Job Fit for the owner", () => {
+    // Only Goals was asked for. If the gate ever widens to the whole greyed
+    // block, the owner silently gets two features nobody switched back on.
+    renderMenu(["job-fit"], OWNER)
+    for (const label of ["Analytics", "Job Fit"]) {
+      expect(row(label)).toBeDisabled()
+      expect(isGreyed(label)).toBe(true)
+    }
+  })
+
+  it("keeps the menu in the same order for the owner", () => {
+    const menu = renderMenu(["job-fit"], OWNER)
+    expect(menu.map((i) => i.label)).toEqual([
+      "Home",
+      "Chat with Meridian",
+      "Document Library",
+      "Interview Practice",
+      "Analytics",
+      "Goals",
+      "Job Fit",
+      "Settings",
+      "Help & Support",
+    ])
+  })
+
+  it("leaves Goals greyed for a non-owner", () => {
+    renderMenu(["job-fit"], "someone-else@3pp.com")
+    expect(row("Goals")).toBeDisabled()
+    expect(isGreyed("Goals")).toBe(true)
   })
 })

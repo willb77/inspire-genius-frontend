@@ -48,7 +48,7 @@ export function useVerticalPageSections(
   // where "My Workspace" means the user experience, not the admin tools);
   // otherwise the role's own menu. Workspace verticals splice in either way.
   const baseItems = isSuperAdmin
-    ? getUserNavItems(agentEngineOn)
+    ? getUserNavItems(agentEngineOn, { viewerEmail: user?.email })
     : NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
   const workspaceItems = useWorkspaceNavItems(baseItems)
 
