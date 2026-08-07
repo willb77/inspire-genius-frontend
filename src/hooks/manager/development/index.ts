@@ -9,6 +9,7 @@ export { useLearningPlan } from "./useLearningPlan"
 export { useMilestones, useCreateMilestone, useUpdateMilestone } from "./useMilestones"
 export { useCareerMatches } from "./useCareerMatches"
 export { useSharePlan } from "./useSharePlan"
+export { useDossierChat, useSaveChatMessage } from "./useDossierChat"
 export { useDevelopmentText } from "./useDevelopmentText"
 export {
   useAddTeamMember,

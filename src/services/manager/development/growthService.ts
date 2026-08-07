@@ -174,6 +174,29 @@ export function sharePlan(memberId: string, input: SharePlanInput = {}) {
   )
 }
 
+// ── Meridian chat persistence (per manager + member) ─────────────────────────
+
+export type DossierChatMessage = {
+  role: "user" | "assistant"
+  content: string
+  createdAt?: string
+}
+
+/** GET /members/{id}/chat — persisted Meridian chat so the manager can resume. */
+export function getMemberChat(memberId: string) {
+  return getApi().get<BaseApiResponse<{ messages: DossierChatMessage[] }>>(
+    `${BASE}/members/${memberId}/chat`,
+  )
+}
+
+/** POST /members/{id}/chat — persist one chat turn (question or reply). */
+export function postMemberChat(memberId: string, message: DossierChatMessage) {
+  return getApi().post<BaseApiResponse<DossierChatMessage>>(
+    `${BASE}/members/${memberId}/chat`,
+    { role: message.role, content: message.content },
+  )
+}
+
 // ── Add team members (single + bulk) ─────────────────────────────────────────
 
 /** POST /members — add a single member under the calling manager. */

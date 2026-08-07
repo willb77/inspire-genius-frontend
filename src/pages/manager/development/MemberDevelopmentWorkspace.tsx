@@ -20,7 +20,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { exportDossierPdf } from "@/lib/dossierPdf"
 import { ROUTES } from "@/constants/routes"
 import {
   CONFIDENCE_BADGE_VARIANT,
@@ -264,11 +266,36 @@ export default function MemberDevelopmentWorkspace({ variant }: { variant?: DevV
               <RefreshCw className={refresh.isPending ? "mr-1.5 h-3.5 w-3.5 animate-spin" : "mr-1.5 h-3.5 w-3.5"} aria-hidden="true" />
               {t("dev.workspace.refresh")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => share.mutate({})} disabled={share.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                share.mutate(
+                  {},
+                  {
+                    onSuccess: () =>
+                      toast.success(`Development plan shared with ${member.name || "the member"}.`),
+                    onError: () => toast.error("Couldn't share the plan. Try again."),
+                  },
+                )
+              }
+              disabled={share.isPending}
+            >
               <Share2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.share")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => share.mutate({ includePdf: true })} disabled={share.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                try {
+                  exportDossierPdf(dossier)
+                  toast.success("Dossier exported as PDF.")
+                } catch {
+                  toast.error("Couldn't generate the PDF.")
+                }
+              }}
+            >
               <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {t("dev.workspace.export")}
             </Button>
