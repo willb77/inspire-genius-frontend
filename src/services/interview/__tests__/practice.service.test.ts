@@ -3,6 +3,7 @@
  */
 import {
   practiceService,
+  getTailoredPracticeQuestions,
   buildCoachMessage,
   buildInterviewPlan,
   buildFindingsMessage,
@@ -39,10 +40,13 @@ function mkBank(): PracticeQuestions {
   }
 }
 
-const mockAxios = { get: jest.fn() }
+const mockAxios = { get: jest.fn(), post: jest.fn() }
 
 jest.mock("@/lib/agentApi", () => ({
-  agentApi: { get: (...args: unknown[]) => mockAxios.get(...args) },
+  agentApi: {
+    get: (...args: unknown[]) => mockAxios.get(...args),
+    post: (...args: unknown[]) => mockAxios.post(...args),
+  },
 }))
 
 const practice = {
@@ -92,6 +96,34 @@ describe("practiceService.getPracticeQuestions", () => {
     const comp = practice.sections[0].competencies[0] as Record<string, unknown>
     expect(comp).not.toHaveProperty("exemplars")
     expect(practice).not.toHaveProperty("rubric")
+  })
+})
+
+describe("getTailoredPracticeQuestions", () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it("POSTs the job title (+ description, + section) to the tailored endpoint", async () => {
+    mockAxios.post.mockResolvedValueOnce({ data: { ...practice, tailored: true } })
+    const result = await getTailoredPracticeQuestions("VP Engineering", "Own the platform roadmap", "behavioral")
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      "/v1/agents/interview/practice-questions/tailored",
+      { job_title: "VP Engineering", job_description: "Own the platform roadmap", section: "behavioral" },
+    )
+    expect(result).toEqual({ ...practice, tailored: true })
+  })
+
+  it("falls back to the static bank when the tailored POST rejects", async () => {
+    mockAxios.post.mockRejectedValueOnce(new Error("network error"))
+    mockAxios.get.mockResolvedValueOnce({ data: practice })
+
+    const result = await getTailoredPracticeQuestions("VP Engineering")
+
+    expect(mockAxios.post).toHaveBeenCalled()
+    expect(mockAxios.get).toHaveBeenCalledWith(
+      "/v1/agents/interview/practice-questions",
+      { params: { section: undefined } },
+    )
+    expect(result).toEqual(practice)
   })
 })
 
