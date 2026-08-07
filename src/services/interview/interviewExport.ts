@@ -14,6 +14,7 @@ import {
 import { downloadBlob } from "@/lib/exportTranscript"
 import { initiateUpload, uploadToS3 } from "@/services/documents/documentService"
 import type { InterviewExchange, InterviewFrame } from "@/services/interview/practice.service"
+import type { FinalizeResult } from "@/services/interview/live.service"
 
 export type InterviewSession = {
   frame: InterviewFrame
@@ -91,6 +92,142 @@ export async function saveInterviewToDocuments(s: InterviewSession): Promise<str
     file_size: file.size,
     doc_kind: "interview-transcript",
     tags: ["interview-practice", s.frame.roleTitle].filter(Boolean),
+  })
+  await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
+  return presigned.document_id
+}
+
+// ─── Scored (Live Interview) export ────────────────────────────────
+//
+// The scoreless functions above are for the candidate-side PRACTICE flow
+// (coaching, no scores, "Your answer"). This section is the EVALUATOR-side
+// counterpart for a real, scored Live Interview (`live.service.ts`
+// `finalize()` result): interviewer ratings, STAR evidence, section scores,
+// and a banded recommendation. Reuses the same branded `exportTurn` engine —
+// only the markdown body and the save `doc_kind` differ.
+
+export type ScoredInterviewExport = {
+  result: FinalizeResult
+  /** Signed-in interviewer's display name, for the header meta line. */
+  userLabel?: string
+}
+
+const STAR_LABELS: Array<{ key: "S" | "T" | "A" | "R"; label: string }> = [
+  { key: "S", label: "Situation" },
+  { key: "T", label: "Task" },
+  { key: "A", label: "Action" },
+  { key: "R", label: "Result" },
+]
+
+/** Markdown body for the scored, evaluator-facing write-up. */
+export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
+  const { result } = s
+  const frame = result.session.frame
+  const candidate = result.session.candidate
+  const lines: string[] = []
+
+  if (frame) {
+    lines.push(`**Role:** ${frame.roleTitle} · **Company:** ${frame.company} · **Industry:** ${frame.industry}`)
+  }
+  if (candidate) {
+    lines.push(
+      `**Candidate:** ${candidate.display_name}` +
+        (candidate.external_id ? ` (ID: ${candidate.external_id})` : ""),
+    )
+  }
+  lines.push(`**Questions scored:** ${result.answers.length}`)
+  lines.push("")
+
+  lines.push("## Recommendation")
+  lines.push(`**${result.recommendation}**`)
+  lines.push(
+    `Overall score: **${result.overall_score} / 5** · Overall mean: **${result.overall_mean.toFixed(2)}**`,
+  )
+  lines.push("")
+
+  lines.push("## Rubric Summary")
+  lines.push("| Section | Score | Questions |")
+  lines.push("|---|---|---|")
+  for (const sec of result.section_scores) {
+    lines.push(`| ${sec.section} | ${sec.score.toFixed(2)} / 5 | ${sec.count ?? "—"} |`)
+  }
+  lines.push("")
+
+  lines.push("## Answer-by-Answer")
+  result.answers.forEach((a, idx) => {
+    const heading = a.section ? `${a.section} · ${a.competency_id}` : a.competency_id
+    lines.push(`### Question ${idx + 1} — ${heading}`)
+    if (a.question_text) lines.push(`**Question:** ${a.question_text}`)
+    lines.push(`**Candidate answer:** ${a.captured_answer}`)
+    const evidence = STAR_LABELS.map(
+      ({ key, label }) => `${label}: ${a.star_evidence[key]?.present ? "Present" : "Not observed"}`,
+    ).join(" · ")
+    lines.push(`**STAR evidence:** ${evidence}`)
+    lines.push(`**Final score:** ${a.final_score ?? "—"} / 5${a.capped ? " (capped)" : ""}`)
+    if (typeof a.suggested_score === "number") {
+      lines.push(`**AI-suggested score (advisory):** ${a.suggested_score} / 5`)
+    }
+    lines.push(`**Interviewer notes:** ${a.interviewer_notes?.trim() || "_None recorded._"}`)
+    lines.push("")
+  })
+
+  return lines.join("\n")
+}
+
+function toScoredInput(s: ScoredInterviewExport): TurnExportInput {
+  const frame = s.result.session.frame
+  const candidate = s.result.session.candidate
+  const stamp = frame ? `${frame.roleTitle} — ${frame.company}` : undefined
+  return {
+    speaker: "Interview Scorecard",
+    body: buildScoredInterviewMarkdown(s),
+    timestamp: stamp,
+    userLabel: s.userLabel,
+    slug: `interview-scorecard-${candidate?.display_name ?? frame?.roleTitle ?? s.result.session.session_id}`,
+  }
+}
+
+/** Download the scored interview write-up as Word (.doc) or PDF. */
+export async function downloadScoredInterview(
+  s: ScoredInterviewExport,
+  format: "word" | "pdf",
+): Promise<void> {
+  await exportTurn(toScoredInput(s), format)
+}
+
+function safeScoredName(s: ScoredInterviewExport): string {
+  const frame = s.result.session.frame
+  const candidate = s.result.session.candidate
+  const raw = `Interview Scorecard - ${candidate?.display_name ?? "Candidate"} - ${frame?.roleTitle ?? ""}`
+  return raw.replace(/[^a-zA-Z0-9 \-_]/g, "").slice(0, 120).trim() || "Interview Scorecard"
+}
+
+function scoredWordBlob(s: ScoredInterviewExport): Blob {
+  const html = buildTurnHtml(toScoredInput(s))
+  return new Blob(["﻿", html], { type: "application/msword;charset=utf-8" })
+}
+
+/**
+ * Save the scored interview write-up (Word) to the interviewer's documents,
+ * under the "interview-scorecard" doc_kind — distinct from the scoreless
+ * practice transcript's "interview-transcript" — so a report can later
+ * filter/search the two apart. Returns the created document id.
+ */
+export async function saveScoredInterviewToDocuments(s: ScoredInterviewExport): Promise<string> {
+  const blob = scoredWordBlob(s)
+  const filename = `${safeScoredName(s)}.doc`
+  const file = new File([blob], filename, { type: "application/msword" })
+
+  const frame = s.result.session.frame
+  const candidate = s.result.session.candidate
+  const presigned = await initiateUpload({
+    filename,
+    content_type: "application/msword",
+    file_size: file.size,
+    doc_kind: "interview-scorecard",
+    tags: ["interview-scorecard", candidate?.display_name, frame?.roleTitle].filter(
+      (t): t is string => Boolean(t),
+    ),
   })
   await uploadToS3(presigned.upload_url, presigned.upload_fields, file)
   return presigned.document_id
