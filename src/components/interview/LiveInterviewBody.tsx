@@ -26,7 +26,7 @@ import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowRight, CheckCircle2, Flag, Loader2, RefreshCw, UserRound } from "lucide-react"
+import { ArrowRight, CheckCircle2, FileDown, FileText, Flag, Loader2, RefreshCw, Save, UserRound } from "lucide-react"
 import { toast } from "sonner"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,6 +38,7 @@ import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
 import ConsentGate from "@/components/interview/ConsentGate"
 import AnswerScorePanel from "@/components/interview/AnswerScorePanel"
 import { useQuestionBank } from "@/hooks/interview/useQuestionBank"
+import { useAuth } from "@/context/useAuth"
 import {
   useCreateLiveSession,
   useFinalizeLiveSession,
@@ -54,6 +55,7 @@ import type {
   LivePlanQuestion,
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
+import { downloadScoredInterview, saveScoredInterviewToDocuments } from "@/services/interview/interviewExport"
 
 type Phase = "setup" | "interview" | "findings"
 type SetupStep = "consent" | "candidate" | "frame"
@@ -115,6 +117,7 @@ type AnswerState = {
 
 export default function LiveInterviewBody() {
   const { data: bank } = useQuestionBank({ includeExemplars: true })
+  const { user } = useAuth()
 
   const [phase, setPhase] = useState<Phase>("setup")
   const [setupStep, setSetupStep] = useState<SetupStep>("consent")
@@ -127,6 +130,7 @@ export default function LiveInterviewBody() {
   const [idx, setIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({})
   const [finalizeResult, setFinalizeResult] = useState<FinalizeResult | null>(null)
+  const [exporting, setExporting] = useState<"word" | "pdf" | "save" | null>(null)
 
   const createSession = useCreateLiveSession()
   const submitAnswer = useSubmitLiveAnswer()
@@ -228,6 +232,23 @@ export default function LiveInterviewBody() {
     setSessionId(null); setPlan([]); setIdx(0); setAnswers({}); setFinalizeResult(null)
   }
 
+  const doExport = async (kind: "word" | "pdf" | "save") => {
+    if (!finalizeResult) return
+    setExporting(kind)
+    try {
+      if (kind === "save") {
+        await saveScoredInterviewToDocuments({ result: finalizeResult, userLabel: user?.name || user?.email })
+        toast.success("Saved to your Document Library.")
+      } else {
+        await downloadScoredInterview({ result: finalizeResult, userLabel: user?.name || user?.email }, kind)
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed.")
+    } finally {
+      setExporting(null)
+    }
+  }
+
   // ── SETUP ────────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
@@ -261,7 +282,22 @@ export default function LiveInterviewBody() {
               {candidate?.display_name} · {frame?.roleTitle} · {frame?.company}
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New interview</Button>
+          <div className="flex flex-wrap gap-2">
+            {finalizeResult && (
+              <>
+                <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("word")}>
+                  {exporting === "word" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />} Word
+                </Button>
+                <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("pdf")}>
+                  {exporting === "pdf" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} PDF
+                </Button>
+                <Button variant="outline" size="sm" disabled={!!exporting} onClick={() => void doExport("save")}>
+                  {exporting === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="sm" onClick={restart}><RefreshCw className="mr-2 h-4 w-4" /> New interview</Button>
+          </div>
         </header>
 
         {!finalizeResult ? (
