@@ -220,17 +220,8 @@ export function GoalsPanel({ memberId }: GoalsPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CoverageStrip coverage={coverage} />
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => session.mutate("resume")}
-          disabled={session.isPending}
-        >
-          Resume session
-        </Button>
-      </div>
+      {/* "Continue session" lives in the Meridian panel header now. */}
+      <CoverageStrip coverage={coverage} />
       <div className="grid gap-4 lg:grid-cols-2">
         {goals.map((goal) => (
           <GoalCard
