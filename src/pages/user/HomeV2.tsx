@@ -9,14 +9,15 @@ import {
   subDays,
 } from "date-fns";
 import {
-  Briefcase,
-  ChevronDown,
-  Compass,
+  CalendarDays,
+  FileText,
+  MessageSquare,
   Sparkles,
+  Target,
   UserRoundSearch,
 } from "lucide-react";
 import UserLayout from "@/layouts/UserLayout";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { useEnabledVerticals } from "@/verticals/core";
@@ -40,7 +41,6 @@ import {
 } from "@/components/dashboard/v2/ProfileDocViewerDialog";
 import { generatePrismReport } from "@/services/documents/prismReport.service";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
-import Moments from "@/pages/lumen/Moments";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
 /**
@@ -60,15 +60,21 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  * be added from the Documents surface — the Home shortcut went, not the
  * capability.
  *
- * Layout (2026-08-05) — two tiles, nothing below them:
- *   1. WelcomeBackTile — last-visit summary + behavioral row, then the
- *      quick-action row (Self-Portrait / Today's Prep / My Journey / Job Fit /
- *      Videos) with the Personal Info dropdown pinned to its end.
- *   2. Today's Prep    — the Lumen "Moments" surface, embedded.
+ * Layout (2026-08-06) — a header and a single tile:
+ *   1. Header — "Welcome {first} — What are we working on today?" on one line,
+ *      with three primary actions beneath it: Chat with Meridian (left),
+ *      View PRISM Report (centre, only when a report exists), Request PRISM
+ *      Survey (right). All three moved up out of the tile.
+ *   2. WelcomeBackTile — the last four recent topics (each deep-links into the
+ *      chat), the behavioral row with "Latest report" beside "Powered by
+ *      PRISM", then the quick-action row (Self-Portrait / Today's Prep /
+ *      Goals(off) / Videos) with Personal Info pinned to its end.
  *
- * The MeridianEngageCard ("Chat with Meridian") that used to lead the page was
- * removed on request; WelcomeBackTile moved up into its place. Meridian is
- * still one click away from the sidebar, so nothing became unreachable.
+ * Removed along the way, each on request: the MeridianEngageCard that used to
+ * lead the page (2026-08-05), the embedded "Today's Prep" Moments tile, and the
+ * My Journey / Job Fit quick actions (2026-08-06). Every destination is still
+ * reachable — Meridian and Goals from the sidebar, Moments from its own page
+ * and the chat header, Direction Setting from its sub-nav.
  *
  * The Watch-a-Video and Recent-Activity tiles were removed; the videos survive
  * inside the quick-action row's Videos dropdown, so nothing became unreachable.
@@ -140,36 +146,34 @@ const QUICK_ACTIONS: {
     vertical: "lumen",
     icon: Sparkles,
   },
-  // My Journey replaces the standalone Direction Setting card that used to sit
-  // at the bottom of Home. Same destination, but it now lives in the row people
-  // actually scan instead of below the fold.
+  // Goals — added to the row on 2026-08-06 (request), switched off. The route
+  // is untouched and Goals stays reachable from the left menu (live for the
+  // platform owner) and from the Direction Setting sub-nav; this is a shortcut,
+  // not an access gate.
   {
-    key: "my-journey",
-    labelKey: "homeV2.quickMyJourney",
-    defaultLabel: "My Journey",
-    to: ROUTES.DIRECTION_SETTING.JOURNEY,
+    key: "goals",
+    labelKey: "homeV2.quickGoals",
+    defaultLabel: "Goals",
+    to: ROUTES.DIRECTION_SETTING.GOALS,
     vertical: "direction-setting",
-    icon: Compass,
-  },
-  {
-    key: "job-fit",
-    labelKey: "homeV2.quickJobFit",
-    defaultLabel: "Job Fit",
-    to: ROUTES.JOB_FIT.MATCHES,
-    vertical: "job-fit",
-    icon: Briefcase,
+    icon: Target,
   },
 ];
 
 /**
- * Quick actions switched off for everyone (2026-08-05, on request).
+ * Quick actions switched off for everyone.
  *
  * Distinct from `isVerticalForceDisabled`, which turns off a whole vertical
- * everywhere it appears. Lumen and Direction Setting are still live products —
- * only these two Home shortcuts are being withheld — so the lever is per
- * quick-action key, and both verticals keep working elsewhere.
+ * everywhere it appears. Direction Setting is still a live product — only this
+ * Home shortcut is withheld — so the lever is per quick-action key.
+ *
+ * 2026-08-06 (request): Self-Portrait was UN-locked (it is now a live link),
+ * Goals was added here in its place, and My Journey / Job Fit were removed from
+ * the row entirely rather than greyed. Job Fit remains switched off at the
+ * vertical level via `isVerticalForceDisabled`, so removing its Home pill does
+ * not re-expose it anywhere.
  */
-const LOCKED_QUICK_ACTIONS = new Set(["self-portrait", "my-journey"]);
+const LOCKED_QUICK_ACTIONS = new Set(["goals"]);
 
 /**
  * How far back the "what you worked on" dropdown reaches, in days.
@@ -182,10 +186,14 @@ const LOCKED_QUICK_ACTIONS = new Set(["self-portrait", "my-journey"]);
 const LAST_ACTION_DAYS = 5;
 
 /**
- * Safety cap on rendered rows. The window is the real filter; this only stops
- * a very heavy week from producing an unbounded list.
+ * How many topics the tile lists.
+ *
+ * Four, by request (2026-08-06), and now a real cap rather than a safety net:
+ * the topics render inline instead of behind a dropdown, so this is what keeps
+ * the tile a fixed height. The {@link LAST_ACTION_DAYS} window still applies
+ * first — four recent topics, not the four most recent whenever they happened.
  */
-const LAST_ACTION_MAX = 40;
+const LAST_ACTION_MAX = 4;
 
 /** The Meridian agent id — the conversation list is per-agent. */
 const AGENT_ID = "meridian";
@@ -255,11 +263,10 @@ export default function HomeV2() {
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
   const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
-  // Today's Prep starts closed so Moments does not fetch on every Home load.
-  const [todaysPrepOpen, setTodaysPrepOpen] = useState(false);
-  // `user` is still read for the profile queries below; the name is no longer
-  // rendered since the greeting was replaced by the last-visit summary.
-  void user;
+  // First name for the page greeting (restored 2026-08-06). Falls back through
+  // fullName → name → "there" so the heading never renders "Welcome ,".
+  const firstName =
+    user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
 
   const {
     data: latestPrism,
@@ -431,8 +438,89 @@ export default function HomeV2() {
 
   return (
     <UserLayout>
-      <div className="rounded-2xl bg-[#FBF7F0] p-4 md:p-6">
+      {/* The page-level tan wrapper that used to sit here was removed on
+          2026-08-06: the colour moved to SidebarScaffold so EVERY page gets it,
+          and keeping this one would have nested the same tan inside itself. */}
+      <div>
         <div className="mx-auto flex max-w-6xl flex-col gap-4">
+          {/* Page header (2026-08-06, request): greeting and the day's question
+              on ONE line, with the three primary actions on the row beneath —
+              left / centre / right. They were previously inside the tile's
+              behavioral row. */}
+          <header data-testid="homev2-header" className="pt-1">
+            <h1 className="font-serif text-[26px] leading-tight text-[#0B1B33]">
+              {t("homeV2.welcomePrefix", { defaultValue: "Welcome" })}{" "}
+              <span className="text-[#C9711A]">{firstName}</span>
+              {" — "}
+              <span className="text-[#4b5f80]">
+                {t("homeV2.whatToday", {
+                  defaultValue: "What are we working on today?",
+                })}
+              </span>
+            </h1>
+
+            {/* Three columns rather than a flex row with spacers, so the middle
+                button is centred against the PAGE, not against whatever width
+                its neighbours happen to be. On narrow screens the grid
+                collapses to a stack and the justification classes stop
+                applying. */}
+            <div
+              data-testid="homev2-header-actions"
+              className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center"
+            >
+              <div className="sm:justify-self-start">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => goToChat()}
+                  data-testid="homev2-chat-with-meridian"
+                  className="w-full border-[rgba(11,27,51,0.10)] text-[#0B1B33] sm:w-auto"
+                >
+                  <MessageSquare className="size-4" />
+                  {t("homeV2.chatWithMeridian", {
+                    defaultValue: "Chat with Meridian",
+                  })}
+                </Button>
+              </div>
+
+              <div className="sm:justify-self-center">
+                {/* Only rendered when a report exists — the same condition the
+                    tile used. An always-present button that opens a viewer with
+                    nothing in it is the failure this path already fixed once. */}
+                {hasReport ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      void openPrismReport();
+                    }}
+                    data-testid="homev2-view-prism-report"
+                    className="w-full border-[rgba(11,27,51,0.10)] text-[#0B1B33] sm:w-auto"
+                  >
+                    <FileText className="size-4" />
+                    {t("homeV2.viewInventoryPdf", {
+                      defaultValue: "View PRISM Report",
+                    })}
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="sm:justify-self-end">
+                <Button
+                  type="button"
+                  onClick={goToAssessment}
+                  data-testid="homev2-request-prism-survey"
+                  className="w-full bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90 sm:w-auto"
+                >
+                  <CalendarDays className="size-4" />
+                  {t("homeV2.requestPrismInventory", {
+                    defaultValue: "Request PRISM Survey",
+                  })}
+                </Button>
+              </div>
+            </div>
+          </header>
+
           {/* Leads the page since the Chat-with-Meridian card was removed
               (2026-08-05). */}
           <WelcomeBackTile
@@ -442,54 +530,18 @@ export default function HomeV2() {
             hasReport={hasReport}
             reportFileName={latestPrism?.file_name}
             prismLoading={prismLoading}
-            onRequestAssessment={goToAssessment}
-            onViewReportPdf={() => { void openPrismReport(); }}
             personalInfo={personalInfo}
             onAddPersonalInfo={openAddPersonalInfo}
             quickActions={quickActions}
             videos={VIDEOS}
           />
 
-          {/* Today's Prep — the Lumen "Moments" surface, embedded rather than
-              linked. Same component the /vertical/lumen/moments page renders
-              (`embedded` drops its page heading and padding), so the two cannot
-              drift apart.
-
-              Collapsed on load as of 2026-08-05, and deliberately NOT merely
-              hidden with CSS: `Moments` is only mounted once the user opens
-              the section, so its data fetching no longer runs on every Home
-              load for a surface most visits never look at. */}
-          <section
-            data-testid="homev2-todays-prep"
-            aria-labelledby="homev2-todays-prep-heading"
-            className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm"
-          >
-            <button
-              type="button"
-              id="homev2-todays-prep-heading"
-              onClick={() => setTodaysPrepOpen((open) => !open)}
-              aria-expanded={todaysPrepOpen}
-              aria-controls="homev2-todays-prep-panel"
-              data-testid="homev2-todays-prep-toggle"
-              className="flex w-full items-center justify-between gap-3 text-left"
-            >
-              <h2 className="font-serif text-[22px] leading-tight text-[#0B1B33]">
-                {t("homeV2.todaysPrep", { defaultValue: "Today's Prep" })}
-              </h2>
-              <ChevronDown
-                aria-hidden
-                className={cn(
-                  "size-5 shrink-0 text-[#7C93B5] transition-transform",
-                  todaysPrepOpen && "rotate-180",
-                )}
-              />
-            </button>
-            {todaysPrepOpen && (
-              <div className="mt-4" id="homev2-todays-prep-panel">
-                <Moments embedded />
-              </div>
-            )}
-          </section>
+          {/* The "Today's Prep" tile that embedded Lumen Moments was removed on
+              2026-08-06 (request). Moments itself is untouched: still its own
+              page at /vertical/lumen/moments, still in the Meridian chat header,
+              and still the "Today's Prep" pill in the quick-action row above.
+              The `embedded` variant added for that tile stays on the component —
+              it costs nothing and is the thing to reuse if it ever comes back. */}
 
           <AddPersonalDocModal
             target={personalTarget}

@@ -121,6 +121,9 @@
     "startConversation": "bắt đầu cuộc trò chuyện",
     "untitledConversation": "Cuộc trò chuyện chưa đặt tên",
     "videosBlurb": "Xem các video này để tận dụng tối đa InspiresGenius",
-    "todaysPrep": "Chuẩn bị hôm nay"
+    "todaysPrep": "Chuẩn bị hôm nay",
+    "welcomePrefix": "Chào mừng",
+    "whatToday": "Hôm nay chúng ta làm gì?",
+    "quickGoals": "Mục tiêu"
   }
 }

@@ -97,11 +97,15 @@ describe("My Workspace — rendered menu", () => {
     expect(menu.map((i) => i.label)).toEqual([
       "Home",
       "Chat with Meridian",
-      "Document Library",
       "Interview Practice",
       "Analytics",
       "Goals",
       "Job Fit",
+      // Document Library moved down to sit DIRECTLY above Settings on
+      // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
+      // workspace-vertical splice (Job Fit) would otherwise land between the
+      // two and separate them.
+      "Document Library",
       "Settings",
       "Help & Support",
     ])
@@ -184,11 +188,15 @@ describe("My Workspace — Goals for the platform owner", () => {
     expect(menu.map((i) => i.label)).toEqual([
       "Home",
       "Chat with Meridian",
-      "Document Library",
       "Interview Practice",
       "Analytics",
       "Goals",
       "Job Fit",
+      // Document Library moved down to sit DIRECTLY above Settings on
+      // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
+      // workspace-vertical splice (Job Fit) would otherwise land between the
+      // two and separate them.
+      "Document Library",
       "Settings",
       "Help & Support",
     ])

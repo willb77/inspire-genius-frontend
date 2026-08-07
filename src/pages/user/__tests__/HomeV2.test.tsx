@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -83,8 +83,8 @@ describe("HomeV2 — recent topics (5-day window)", () => {
       isLoading: false,
     } as unknown as { data: undefined; isLoading: boolean });
     wrap();
-    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
-    return screen.getByTestId("homev2-last-actions-list");
+    // Inline since 2026-08-06 — no trigger to click.
+    return screen.getByTestId("homev2-last-actions");
   }
 
   it("includes conversations from inside the window", () => {
@@ -107,9 +107,18 @@ describe("HomeV2 — recent topics (5-day window)", () => {
     expect(list).not.toHaveTextContent("Six days back");
   });
 
-  it("labels days rather than only relative times", () => {
-    const list = withConversations([convAt("a", "Today's thread", 0)]);
-    expect(list).toHaveTextContent("Today");
+  it("caps the list at four even when more fall inside the window", () => {
+    // The cap is what keeps the tile a fixed height now that the topics render
+    // inline rather than behind a dropdown.
+    const list = withConversations([
+      convAt("a", "One", 0),
+      convAt("b", "Two", 1),
+      convAt("c", "Three", 2),
+      convAt("d", "Four", 3),
+      convAt("e", "Five", 4),
+    ]);
+    expect(within(list).getAllByRole("button")).toHaveLength(4);
+    expect(list).not.toHaveTextContent("Five");
   });
 
   it("shows the empty state when everything is outside the window", () => {
@@ -120,7 +129,7 @@ describe("HomeV2 — recent topics (5-day window)", () => {
       isLoading: false,
     } as unknown as { data: undefined; isLoading: boolean });
     wrap();
-    expect(screen.queryByTestId("homev2-last-actions-trigger")).toBeNull();
+    expect(screen.queryByTestId("homev2-last-actions")).toBeNull();
     expect(screen.getByText(/Nothing yet/i)).toBeInTheDocument();
   });
 
@@ -192,64 +201,35 @@ describe("HomeV2", () => {
       ).toEqual([screen.getByTestId("homev2-chat-with-meridian")]);
     });
 
-    it("leads with the last-visit tile, above Today's Prep", () => {
+    // The Today's Prep tile (embedded Lumen Moments) was REMOVED on 2026-08-06.
+    // Asserting its absence, and that Moments is not mounted from Home at all —
+    // the tile's whole cost was mounting that surface on a page most visits use
+    // for something else.
+    it("no longer renders the Today's Prep tile", () => {
+      wrap();
+      expect(screen.queryByTestId("homev2-todays-prep")).toBeNull();
+      expect(screen.queryByTestId("homev2-todays-prep-toggle")).toBeNull();
+      expect(
+        screen.queryByLabelText("Describe the situation"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("keeps Today's Prep reachable as a quick action", () => {
+      // Removing the tile must not remove the destination.
+      wrap();
+      expect(screen.getByTestId("homev2-quick-moments")).toHaveAttribute(
+        "href",
+        "/vertical/lumen/moments",
+      );
+    });
+
+    it("leads with the greeting, then the tile", () => {
       const { container } = wrap();
       const html = container.innerHTML;
+      const header = html.indexOf('data-testid="homev2-header"');
       const lastVisit = html.indexOf("worked on last visit");
-      // Anchor on the testid, not the rendered label: the apostrophe in
-      // "Today's Prep" is HTML-escaped, so matching the text is a guess about
-      // the entity encoding.
-      const todaysPrep = html.indexOf('data-testid="homev2-todays-prep"');
-      expect(lastVisit).toBeGreaterThan(-1);
-      expect(todaysPrep).toBeGreaterThan(-1);
-      expect(todaysPrep).toBeGreaterThan(lastVisit);
-    });
-
-    // 2026-08-05: Today's Prep starts collapsed. The tile chrome is present on
-    // load but Moments is NOT mounted, so Home stops paying for a surface most
-    // visits never open.
-    it("does not mount Moments on load", () => {
-      wrap();
-      expect(screen.getByTestId("homev2-todays-prep")).toBeInTheDocument();
-      expect(screen.getByTestId("homev2-todays-prep-toggle")).toHaveAttribute(
-        "aria-expanded",
-        "false",
-      );
-      expect(
-        screen.queryByLabelText("Describe the situation"),
-      ).not.toBeInTheDocument();
-    });
-
-    it("renders the Today's Prep tile with the Moments interface inside it once opened", () => {
-      wrap();
-      fireEvent.click(screen.getByTestId("homev2-todays-prep-toggle"));
-      const tile = screen.getByTestId("homev2-todays-prep");
-      expect(tile).toBeInTheDocument();
-      // Moments' own ask box, proving the embedded surface actually mounted
-      // rather than just the tile chrome.
-      expect(
-        screen.getByLabelText("Describe the situation"),
-      ).toBeInTheDocument();
-    });
-
-    it("closes Today's Prep again on a second click", () => {
-      wrap();
-      const toggle = screen.getByTestId("homev2-todays-prep-toggle");
-      fireEvent.click(toggle);
-      fireEvent.click(toggle);
-      expect(
-        screen.queryByLabelText("Describe the situation"),
-      ).not.toBeInTheDocument();
-    });
-
-    it("does not repeat the Moments page heading inside the tile", () => {
-      // `embedded` drops Moments' own <h1>; two stacked headings read as a bug.
-      wrap();
-      fireEvent.click(screen.getByTestId("homev2-todays-prep-toggle"));
-      const headings = screen
-        .getAllByRole("heading")
-        .map((h) => h.textContent?.trim());
-      expect(headings.filter((h) => h === "Moments")).toHaveLength(0);
+      expect(header).toBeGreaterThan(-1);
+      expect(lastVisit).toBeGreaterThan(header);
     });
 
     it("drops the Watch-a-Video and Recent Activity tiles", () => {
@@ -278,61 +258,54 @@ describe("HomeV2", () => {
     // per-SHORTCUT lock, not a vertical-level one: Lumen and Direction Setting
     // are still live products, so the two must stay reachable elsewhere while
     // these Home pills are dark.
-    it.each([
-      ["self-portrait", "homev2-quick-self-portrait"],
-      ["my-journey", "homev2-quick-my-journey"],
-    ])("locks %s even when its vertical is entitled", (_key, testId) => {
+    // 2026-08-06: Self-Portrait was UN-locked, Goals added switched-off, and
+    // My Journey / Job Fit removed from the row outright.
+    it("links Self-Portrait now that it is switched back on", () => {
+      mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
+      wrap();
+      expect(screen.getByTestId("homev2-quick-self-portrait")).toHaveAttribute(
+        "href",
+        "/vertical/lumen/self-portrait",
+      );
+    });
+
+    it("locks Goals even when Direction Setting is entitled", () => {
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "direction-setting"],
       });
       wrap();
-      const pill = screen.getByTestId(testId);
-      expect(pill).toHaveAttribute("aria-disabled", "true");
-      expect(pill).not.toHaveAttribute("href");
-      // Their verticals ARE in the plan, so the entitlement wording would lie.
-      expect(pill).toHaveAttribute("title", "Temporarily unavailable");
+      const goals = screen.getByTestId("homev2-quick-goals");
+      expect(goals).toHaveAttribute("aria-disabled", "true");
+      expect(goals).not.toHaveAttribute("href");
+      // Its vertical IS in the plan, so the entitlement wording would lie.
+      expect(goals).toHaveAttribute("title", "Temporarily unavailable");
     });
 
-    // Job Fit is NOT in the mocked entitlements — it must render locked rather
-    // than as a link that the route guard would reject.
-    it("locks Job Fit when job-fit is not entitled", () => {
-      wrap();
-      const jobFit = screen.getByTestId("homev2-quick-job-fit");
-      expect(jobFit).toHaveAttribute("aria-disabled", "true");
-      expect(jobFit).not.toHaveAttribute("href");
-    });
-
-    // Job Fit was switched off platform-wide on 2026-08-05. Home is one of the
-    // three ways in (sidebar and the Meridian header row are the others), and
-    // greying only the sidebar left this tile live — the feature looked off
-    // while remaining one click away.
-    it("locks Job Fit even when job-fit IS entitled", () => {
+    it("drops My Journey and Job Fit from the row entirely", () => {
+      // Removed, not greyed — and Job Fit stays switched off at the VERTICAL
+      // level, so dropping its pill does not re-expose it anywhere.
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "job-fit", "direction-setting"],
       });
       wrap();
-      const jobFit = screen.getByTestId("homev2-quick-job-fit");
-      expect(jobFit).toHaveAttribute("aria-disabled", "true");
-      expect(jobFit).not.toHaveAttribute("href");
-      // Must NOT claim the plan lacks it — this user's plan includes it.
-      expect(jobFit).toHaveAttribute("title", "Temporarily unavailable");
+      expect(screen.queryByTestId("homev2-quick-my-journey")).toBeNull();
+      expect(screen.queryByTestId("homev2-quick-job-fit")).toBeNull();
     });
 
     it("leaves the quick actions that were NOT switched off alone", () => {
-      // The locks must be surgical: Today's Prep is the one pill still live,
-      // and it has to survive its three neighbours being switched off.
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "job-fit", "direction-setting"],
       });
       wrap();
       expect(screen.getByTestId("homev2-quick-moments")).toHaveAttribute("href");
+      expect(screen.getByTestId("homev2-quick-self-portrait")).toHaveAttribute("href");
     });
 
     it("locks every action while entitlements are still loading", () => {
       // No `data` yet — the hook's default must not flash working links.
       mockEnabledVerticals.mockReturnValue({ data: undefined as never });
       wrap();
-      for (const key of ["self-portrait", "moments", "job-fit"]) {
+      for (const key of ["self-portrait", "moments", "goals"]) {
         expect(screen.getByTestId(`homev2-quick-${key}`)).toHaveAttribute(
           "aria-disabled",
           "true",
@@ -360,31 +333,20 @@ describe("HomeV2 — 2026-08-03 changes", () => {
     expect(screen.queryByTestId("quick-direction-card")).not.toBeInTheDocument();
   });
 
-  it("keeps My Journey between Today's Prep and Job Fit in the row", () => {
+  it("orders the row Self-Portrait → Today's Prep → Goals", () => {
     mockEnabledVerticals.mockReturnValue({
       data: ["lumen", "job-fit", "direction-setting"],
     });
     wrap();
-
-    // Position is still pinned even though the pill is now locked (2026-08-05)
-    // — switching a shortcut off must not silently reshuffle the row.
     const row = screen.getByTestId("homev2-quick-actions");
     const keys = Array.from(
       row.querySelectorAll("[data-testid^='homev2-quick-']"),
     ).map((el) => el.getAttribute("data-testid"));
-    expect(keys.indexOf("homev2-quick-my-journey")).toBeGreaterThan(
+    expect(keys.indexOf("homev2-quick-self-portrait")).toBeLessThan(
       keys.indexOf("homev2-quick-moments"),
     );
-    expect(keys.indexOf("homev2-quick-my-journey")).toBeLessThan(
-      keys.indexOf("homev2-quick-job-fit"),
+    expect(keys.indexOf("homev2-quick-moments")).toBeLessThan(
+      keys.indexOf("homev2-quick-goals"),
     );
-  });
-
-  it("shows My Journey greyed when the vertical isn't entitled", () => {
-    mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
-    wrap();
-    const journey = screen.getByTestId("homev2-quick-my-journey");
-    expect(journey).toHaveAttribute("aria-disabled", "true");
-    expect(journey).not.toHaveAttribute("href");
   });
 });
