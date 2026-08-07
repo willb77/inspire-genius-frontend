@@ -93,6 +93,8 @@ export const ROUTES = {
     SETTINGS: "/manager/settings",
     JOB_BLUEPRINT: "/manager/job-blueprint",
     INTERVIEW_PREP: "/manager/interview-prep",
+    /** Live Scored Candidate Interview — Phase 3. The candidate is NOT the signed-in user. */
+    INTERVIEW_LIVE: "/manager/interview-live",
     TEAM_COMPOSITION: "/manager/team-composition",
     // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
     DEVELOPMENT: "/manager/development",
@@ -131,6 +133,8 @@ export const ROUTES = {
     // Wave 4 Lane 4.D (P7.2) — task-agent forms mirrored from manager.
     JOB_BLUEPRINT: "/practitioner/job-blueprint",
     INTERVIEW_PREP: "/practitioner/interview-prep",
+    /** Live Scored Candidate Interview — Phase 3. The candidate is NOT the signed-in user. */
+    INTERVIEW_LIVE: "/practitioner/interview-live",
     TEAM_COMPOSITION: "/practitioner/team-composition",
   },
   DISTRIBUTOR: {

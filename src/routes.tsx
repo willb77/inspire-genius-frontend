@@ -134,6 +134,8 @@ const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"))
 // Combined Plan §A.E3.4 — task-agent pages
 const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprintPage"));
 const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
+// Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
+const ManagerInterviewLive = React.lazy(() => import("@/pages/manager/InterviewLivePage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
@@ -170,6 +172,8 @@ const PractitionerAnalytics = React.lazy(() => import("@/pages/practitioner/Anal
 // Wave 4 Lane 4.D — practitioner task-agent forms (mirrors manager)
 const PractitionerJobBlueprint = React.lazy(() => import("@/pages/practitioner/JobBlueprintPage"));
 const PractitionerInterviewPrep = React.lazy(() => import("@/pages/practitioner/InterviewPrepPage"));
+// Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
+const PractitionerInterviewLive = React.lazy(() => import("@/pages/practitioner/InterviewLivePage"));
 const PractitionerTeamComposition = React.lazy(() => import("@/pages/practitioner/TeamCompositionPage"));
 // Phase 2 (Practitioner page wireframes) — Home, Meridian chat, and clickable
 // placeholders for the Schedule/Meeting surfaces (built out in later phases).
@@ -516,6 +520,8 @@ export const routes: RouteObject[] = [
       // Combined Plan §A.E3.4 — task-agent pages
       { path: "/manager/job-blueprint", element: withSuspense(<ManagerJobBlueprint />) },
       { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
+      // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
+      { path: "/manager/interview-live", element: withSuspense(<ManagerInterviewLive />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
       // Team Development Studio (roster + per-member workspace)
       // Team Development Studio. The page resolves classic vs the HomeV2 look
@@ -561,6 +567,8 @@ export const routes: RouteObject[] = [
       // Wave 4 Lane 4.D (P7.2) — task-agent forms now available to practitioner
       { path: "/practitioner/job-blueprint", element: withSuspense(<PractitionerJobBlueprint />) },
       { path: "/practitioner/interview-prep", element: withSuspense(<PractitionerInterviewPrep />) },
+      // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
+      { path: "/practitioner/interview-live", element: withSuspense(<PractitionerInterviewLive />) },
       { path: "/practitioner/team-composition", element: withSuspense(<PractitionerTeamComposition />) },
 
       // Distributor pages
