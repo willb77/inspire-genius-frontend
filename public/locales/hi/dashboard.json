@@ -121,6 +121,9 @@
     "startConversation": "बातचीत शुरू करें",
     "untitledConversation": "बिना शीर्षक वाली बातचीत",
     "videosBlurb": "InspiresGenius का अधिकतम लाभ उठाने के लिए ये वीडियो देखें",
-    "todaysPrep": "आज की तैयारी"
+    "todaysPrep": "आज की तैयारी",
+    "welcomePrefix": "स्वागत है",
+    "whatToday": "आज हम किस पर काम कर रहे हैं?",
+    "quickGoals": "लक्ष्य"
   }
 }

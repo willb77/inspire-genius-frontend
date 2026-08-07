@@ -295,8 +295,14 @@ export default function SidebarScaffold({ navItems, navSections, children, class
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className={cn("", className)}>
-        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur">
+      {/* The warm tan (#FBF7F0) was HomeV2's own page background; as of
+          2026-08-06 it is the app background for every page rendered through
+          this scaffold, on request. Applied here rather than page-by-page so a
+          new page inherits it instead of quietly shipping on white.
+          HomeV2's own wrapper was removed at the same time — nesting the same
+          colour twice just paid for an extra rounded box. */}
+      <SidebarInset className={cn("bg-[#FBF7F0]", className)}>
+        <div className="sticky top-0 z-20 bg-[#FBF7F0]/80 backdrop-blur">
           <div className="h-14 flex items-center gap-2 px-3">
             <MobileMenuTrigger />
             <UserTopHeader />

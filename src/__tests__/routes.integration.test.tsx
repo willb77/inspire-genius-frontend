@@ -5,6 +5,7 @@
  * and onboarding redirect behavior.
  */
 import { render, screen, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useRoutes } from "react-router-dom";
 import { routes } from "@/routes";
 import { AuthContext } from "@/context/auth-context";
@@ -92,6 +93,14 @@ const pageModules: Record<string, string> = {
   "@/pages/user/HomeV2": "UserHomeV2Page",
   "@/pages/user/Dashboard": "UserDashboardPage",
   "@/pages/user/Coaches": "UserCoachesPage",
+  // V2 stubs. The Wave-1 surfaces became the DEFAULT on 2026-08-06, so /dashboard,
+  // /coaches, /documents and /help now land on these rather than the classic
+  // pages above. Without stubs the real components mount and drag their whole
+  // data layer into a routing test.
+  "@/pages/user/DashboardV2": "UserDashboardV2Page",
+  "@/pages/user/CoachesV2": "UserCoachesV2Page",
+  "@/pages/user/DocumentsV2": "UserDocumentsV2Page",
+  "@/pages/user/HelpV2": "UserHelpV2Page",
   "@/pages/user/CoachChat": "UserCoachChatPage",
   "@/pages/user/Documents": "UserDocumentsPage",
   "@/pages/user/Settings": "UserSettingsPage",
@@ -236,12 +245,24 @@ function renderWithRouter(
   initialPath: string,
   authCtx: AuthContextValue,
 ) {
+  // QueryClientProvider mirrors App.tsx, which wraps the whole tree in one.
+  // Needed here since 2026-08-06: the new user surfaces became the default, and
+  // several of them (DashboardV2, CoachesV2, DocumentsV2) call useQuery on
+  // mount. Without a client this harness threw "No QueryClient set" — a gap in
+  // the harness rather than in the app, which has always had the provider.
+  // A fresh client per render keeps tests isolated; retries off so a failed
+  // fetch surfaces immediately instead of stalling the test.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <AuthContext.Provider value={authCtx}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <AppRoutes />
-      </MemoryRouter>
-    </AuthContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={authCtx}>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </QueryClientProvider>,
   );
 }
 
@@ -336,12 +357,15 @@ describe("Route Integration Tests", () => {
     const userAccessible = [
       { path: "/home", testId: "UserHomeV2Page" },
       { path: "/home/classic", testId: "UserHomePage" },
-      { path: "/dashboard", testId: "UserDashboardPage" },
-      { path: "/coaches", testId: "UserCoachesPage" },
-      { path: "/documents", testId: "UserDocumentsPage" },
+      { path: "/dashboard", testId: "UserDashboardV2Page" },
+      { path: "/coaches", testId: "UserCoachesV2Page" },
+      { path: "/documents", testId: "UserDocumentsV2Page" },
       { path: "/settings", testId: "UserSettingsPage" },
       { path: "/help", testId: "UserSupportPage" },
-      { path: "/help/classic", testId: "UserHelpPage" },
+      // /help/classic is where the Help PAGE lives (/help is the support-request
+      // surface), and it resolves V2 like any other Wave-1 surface — so with new
+      // as the default since 2026-08-06 it lands on HelpV2, not the classic page.
+      { path: "/help/classic", testId: "UserHelpV2Page" },
       { path: "/support", testId: "UserSupportPage" },
     ];
 

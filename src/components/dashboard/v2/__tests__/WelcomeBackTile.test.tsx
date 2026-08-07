@@ -22,8 +22,6 @@ const LAST_ACTIONS: WelcomeBackLastAction[] = [
 
 function renderTile(overrides?: {
   onResumeConversation?: (conversationId?: string) => void;
-  onRequestAssessment?: () => void;
-  onViewReportPdf?: () => void;
   onAddPersonalInfo?: (name: string) => void;
   quickActions?: WelcomeBackQuickAction[];
   videos?: DashboardVideo[];
@@ -31,8 +29,6 @@ function renderTile(overrides?: {
   lastActionsLoading?: boolean;
 }) {
   const onResumeConversation = overrides?.onResumeConversation ?? jest.fn();
-  const onRequestAssessment = overrides?.onRequestAssessment ?? jest.fn();
-  const onViewReportPdf = overrides?.onViewReportPdf ?? jest.fn();
   const onAddPersonalInfo = overrides?.onAddPersonalInfo ?? jest.fn();
 
   const personalInfo: WelcomeBackPersonalInfo[] = [
@@ -49,8 +45,6 @@ function renderTile(overrides?: {
         onResumeConversation={onResumeConversation}
         hasReport
         reportFileName="X.csv"
-        onRequestAssessment={onRequestAssessment}
-        onViewReportPdf={onViewReportPdf}
         personalInfo={personalInfo}
         onAddPersonalInfo={onAddPersonalInfo}
         quickActions={overrides?.quickActions}
@@ -61,8 +55,6 @@ function renderTile(overrides?: {
 
   return {
     onResumeConversation,
-    onRequestAssessment,
-    onViewReportPdf,
     onAddPersonalInfo,
   };
 }
@@ -87,77 +79,50 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByText(/Welcome back,/)).not.toBeInTheDocument();
   });
 
-  // 2026-08-05: the inline list became a collapsed dropdown, so the topics
-  // are behind the trigger rather than always on the page.
-  it("keeps the recent topics collapsed until asked for", () => {
+  // 2026-08-06: back to an inline list, capped at four by the host. The
+  // dropdown existed to stop an uncapped list growing without bound; the cap
+  // handles that, so the topics are visible without a click again.
+  it("lists the recent topics inline, with no trigger to open", () => {
     renderTile();
-    expect(screen.getByTestId("homev2-last-actions-trigger")).toBeInTheDocument();
-    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
-    expect(screen.queryByText("Preparing for my review")).toBeNull();
-  });
-
-  it("lists the recent items with their relative times once opened", () => {
-    renderTile();
-    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
-    const list = screen.getByTestId("homev2-last-actions-list");
+    expect(screen.queryByTestId("homev2-last-actions-trigger")).toBeNull();
+    const list = screen.getByTestId("homev2-last-actions");
     expect(list).toHaveTextContent("Preparing for my review");
     expect(list).toHaveTextContent("2 days ago");
     expect(list).toHaveTextContent("Working through a team conflict");
   });
 
-  it("groups the topics under day headers", () => {
-    // Five days of topics read as five groups; a header renders only where
-    // the day changes, so consecutive same-day entries share one.
+  it("renders one row per topic, in the order given", () => {
     renderTile({
       lastActions: [
-        { id: "a", label: "First today", meta: "1 hour ago", dayLabel: "Today" },
-        { id: "b", label: "Also today", meta: "3 hours ago", dayLabel: "Today" },
-        { id: "c", label: "From before", meta: "1 day ago", dayLabel: "Yesterday" },
+        { id: "a", label: "First", meta: "1 hour ago" },
+        { id: "b", label: "Second", meta: "3 hours ago" },
+        { id: "c", label: "Third", meta: "1 day ago" },
+        { id: "d", label: "Fourth", meta: "2 days ago" },
       ],
     });
-    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
-    const list = screen.getByTestId("homev2-last-actions-list");
-    expect(within(list).getAllByText("Today")).toHaveLength(1);
-    expect(within(list).getAllByText("Yesterday")).toHaveLength(1);
+    const rows = within(screen.getByTestId("homev2-last-actions")).getAllByRole(
+      "button",
+    );
+    expect(rows).toHaveLength(4);
+    // Label and meta are adjacent spans, so textContent runs them together —
+    // assert the parts, not a joined string.
+    expect(rows.map((r) => r.querySelector("span")?.textContent)).toEqual([
+      "First",
+      "Second",
+      "Third",
+      "Fourth",
+    ]);
+    expect(rows[0]).toHaveTextContent("1 hour ago");
+    expect(rows[3]).toHaveTextContent("2 days ago");
   });
 
   // The point of the deep link: picking a topic must resume THAT conversation,
-  // not just open the chat. Before 2026-08-05 the callback took no id at all.
+  // not just open the chat.
   it("resumes the specific conversation that was clicked", () => {
     const { onResumeConversation } = renderTile();
-    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
     fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
     expect(onResumeConversation).toHaveBeenCalledTimes(1);
     expect(onResumeConversation).toHaveBeenCalledWith("c1");
-  });
-
-  it("closes the dropdown after a topic is chosen", () => {
-    renderTile();
-    fireEvent.click(screen.getByTestId("homev2-last-actions-trigger"));
-    fireEvent.click(screen.getByTestId("homev2-last-action-c1"));
-    expect(screen.queryByTestId("homev2-last-actions-list")).toBeNull();
-  });
-
-  // 2026-08-05: added to the behavioral row, ahead of Request PRISM Survey.
-  it("puts Chat with Meridian to the LEFT of Request PRISM Survey", () => {
-    renderTile();
-    const chat = screen.getByTestId("homev2-chat-with-meridian");
-    const request = screen.getByRole("button", {
-      name: /Request PRISM Survey/i,
-    });
-    // Asserted by DOM position rather than a class, so a restyle cannot
-    // quietly reorder them.
-    expect(
-      chat.compareDocumentPosition(request) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-  });
-
-  it("opens the chat when Chat with Meridian is clicked", () => {
-    const { onResumeConversation } = renderTile();
-    fireEvent.click(screen.getByTestId("homev2-chat-with-meridian"));
-    expect(onResumeConversation).toHaveBeenCalledTimes(1);
-    // No id — this opens the chat as-is rather than deep-linking somewhere.
-    expect(onResumeConversation).toHaveBeenCalledWith();
   });
 
   it("offers a way in when there is no history rather than an empty list", () => {
@@ -177,13 +142,17 @@ describe("WelcomeBackTile", () => {
     expect(screen.queryByText(/Nothing yet/i)).not.toBeInTheDocument();
   });
 
-  it("points at the videos control with a line of copy", () => {
+  // The "View these videos…" line above the quick-action row was removed on
+  // 2026-08-06. The Videos control itself stays — only the sentence went, so
+  // assert both halves.
+  it("drops the videos blurb but keeps the videos control", () => {
     renderTile({ videos: VIDEOS });
     expect(
-      screen.getByText(
+      screen.queryByText(
         /View these videos on how to get the most from InspiresGenius/i,
       ),
-    ).toBeInTheDocument();
+    ).toBeNull();
+    expect(screen.getByTestId("homev2-quick-videos")).toBeInTheDocument();
   });
 
   // The completion gauge was removed on 2026-08-03. Asserting its ABSENCE is
@@ -212,18 +181,20 @@ describe("WelcomeBackTile", () => {
     expect(screen.getByText(/X\.csv/)).toBeInTheDocument();
   });
 
-  it("calls onRequestAssessment when the request button is clicked", () => {
-    const { onRequestAssessment } = renderTile();
-    fireEvent.click(
-      screen.getByRole("button", { name: /Request PRISM Survey/i }),
-    );
-    expect(onRequestAssessment).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls onViewReportPdf when the view report button is clicked", () => {
-    const { onViewReportPdf } = renderTile();
-    fireEvent.click(screen.getByRole("button", { name: /View PRISM Report/i }));
-    expect(onViewReportPdf).toHaveBeenCalledTimes(1);
+  // Request PRISM Survey / View PRISM Report / Chat with Meridian moved OUT of
+  // this tile to the page header on 2026-08-06. Asserting their absence here is
+  // the point: rendering them in both places would double the primary actions,
+  // and that is exactly what a careless merge would reinstate. Their behaviour
+  // is covered in HomeV2.test.tsx, which owns them now.
+  it("no longer renders the primary action buttons — the header owns them", () => {
+    renderTile();
+    for (const name of [
+      /Request PRISM Survey/i,
+      /View PRISM Report/i,
+      /Chat with Meridian/i,
+    ]) {
+      expect(screen.queryByRole("button", { name })).toBeNull();
+    }
   });
 
   describe("completeness dropdowns", () => {
@@ -369,8 +340,6 @@ describe("WelcomeBackTile", () => {
             lastActions={LAST_ACTIONS}
             onResumeConversation={jest.fn()}
             hasReport={false}
-            onRequestAssessment={jest.fn()}
-            onViewReportPdf={jest.fn()}
             personalInfo={[]}
           />
         </MemoryRouter>,

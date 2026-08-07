@@ -121,6 +121,9 @@
     "startConversation": "会話を始める",
     "untitledConversation": "無題の会話",
     "videosBlurb": "InspiresGenius を最大限に活用する方法はこちらの動画をご覧ください",
-    "todaysPrep": "今日の準備"
+    "todaysPrep": "今日の準備",
+    "welcomePrefix": "ようこそ",
+    "whatToday": "今日は何に取り組みますか？",
+    "quickGoals": "目標"
   }
 }
