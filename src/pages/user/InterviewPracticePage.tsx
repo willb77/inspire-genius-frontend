@@ -38,6 +38,7 @@ import {
   buildCoachMessage,
   buildFindingsMessage,
   buildInterviewPlan,
+  getTailoredPracticeQuestions,
   practiceJobContext,
   practiceService,
   frameQuestionCount,
@@ -45,6 +46,7 @@ import {
   type InterviewExchange,
   type InterviewFrame,
   type PlannedQuestion,
+  type PracticeQuestions,
 } from "@/services/interview/practice.service"
 import {
   downloadInterview,
@@ -85,6 +87,9 @@ export default function InterviewPracticePage() {
   const [personalContext, setPersonalContext] = useState("")
   const [personalizedApplied, setPersonalizedApplied] = useState(false)
   const [starting, setStarting] = useState(false)
+  // Job-aware tailoring: when the frame has a role/job title, questions are
+  // fetched from the LLM-backed tailored endpoint instead of the static bank.
+  const [tailoredApplied, setTailoredApplied] = useState(false)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
 
@@ -140,6 +145,21 @@ export default function InterviewPracticePage() {
   const startInterview = async (f: InterviewFrame) => {
     if (!data || starting) return
     setStarting(true)
+
+    // Job-aware tailoring: when the candidate gave a role/job title, fetch
+    // questions tailored to it (+ description, if pasted) instead of using
+    // the static 12-competency bank. Falls back to the static bank server-side
+    // (and again client-side via getTailoredPracticeQuestions) on any failure,
+    // so the interview never breaks.
+    const jobTitle = f.roleTitle?.trim()
+    let bank: PracticeQuestions = data
+    let tailored = false
+    if (jobTitle) {
+      bank = await getTailoredPracticeQuestions(jobTitle, f.jobDescription?.trim() || undefined)
+      tailored = Boolean(bank.tailored)
+    }
+    setTailoredApplied(tailored)
+
     // ONE-TIME personalization fetch (cheap SQL, no pgvector). The result is
     // replayed into every turn's job context, so the per-turn path never pays a
     // retrieval cost. Degrades to empty when the backend flag is off or the user
@@ -155,7 +175,7 @@ export default function InterviewPracticePage() {
     }
     setPersonalContext(pctx)
     setPersonalizedApplied(Boolean(pctx))
-    setFrame(f); setPlan(buildInterviewPlan(data, f)); setIdx(0)
+    setFrame(f); setPlan(buildInterviewPlan(bank, f)); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null)
     setPhase("interview"); setStarting(false)
   }
@@ -209,7 +229,7 @@ export default function InterviewPracticePage() {
   const restart = () => {
     setPhase("setup"); setFrame(null); setPlan([]); setIdx(0)
     setAnswer(""); setCoaching({}); setExchanges([]); setFindings(null); spokenRef.current = null
-    setPersonalContext(""); setPersonalizedApplied(false)
+    setPersonalContext(""); setPersonalizedApplied(false); setTailoredApplied(false)
     voice.stop()
   }
 
@@ -356,11 +376,18 @@ export default function InterviewPracticePage() {
           <div>
             <h1 className="text-2xl font-semibold">Interview Practice</h1>
             <p className="text-sm text-slate-600">{frame?.roleTitle} · {frame?.company}</p>
-            {personalizedApplied && (
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-indigo-600">
-                <Sparkles className="h-3 w-3" /> Personalized to your profile
-              </p>
-            )}
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              {tailoredApplied && (
+                <p className="flex items-center gap-1 text-xs text-emerald-600">
+                  <Sparkles className="h-3 w-3" /> Tailored to {frame?.roleTitle}
+                </p>
+              )}
+              {personalizedApplied && (
+                <p className="flex items-center gap-1 text-xs text-indigo-600">
+                  <Sparkles className="h-3 w-3" /> Personalized to your profile
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
