@@ -26,6 +26,8 @@ import {
   useLearningPlan,
   useCreateMilestone,
   useGoalSession,
+  useDossierChat,
+  useSaveChatMessage,
 } from "@/hooks/manager/development"
 import type { Milestone, SummitGoal, DevelopmentGap } from "@/types/development"
 import { useDevSkin } from "./skin"
@@ -105,16 +107,35 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
   const [input, setInput] = useState("")
   const [staged, setStaged] = useState<ProposedAction | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const seededRef = useRef(false)
 
   const learning = useLearningPlan(memberId)
   const milestone = useCreateMilestone(memberId)
   const session = useGoalSession(memberId)
 
+  // Persisted history so the manager can leave and resume the conversation.
+  const { data: history } = useDossierChat(memberId)
+  const saveChat = useSaveChatMessage(memberId)
+  const saveRef = useRef(saveChat.mutate)
+  saveRef.current = saveChat.mutate
+
+  // Seed the visible transcript from stored history once, on first load.
+  useEffect(() => {
+    if (seededRef.current || !history || history.length === 0) return
+    seededRef.current = true
+    setTurns(
+      history.map((m, i) => ({ role: m.role, content: m.content, id: `h-${i}` })),
+    )
+  }, [history])
+
   const onResponse = useCallback((res: MeridianResponse) => {
     if (res.type === "complete" && res.content) {
       const action = parseProposedAction(res.content)
       const text = stripActionBlock(res.content)
-      setTurns((prev) => [...prev, { role: "assistant", content: text || "(no response)", id: `a-${Date.now()}` }])
+      const content = text || "(no response)"
+      setTurns((prev) => [...prev, { role: "assistant", content, id: `a-${Date.now()}` }])
+      // Persist Meridian's reply so it survives navigation (fire-and-forget).
+      saveRef.current({ role: "assistant", content })
       if (action) setStaged(action)
     }
   }, [])
@@ -146,6 +167,7 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
     const trimmed = text.trim()
     if (!trimmed) return
     setTurns((prev) => [...prev, { role: "user", content: trimmed, id: `u-${Date.now()}` }])
+    saveChat.mutate({ role: "user", content: trimmed })
     sendMessage(trimmed, {
       surface: "team_development",
       member_id: memberId,
@@ -182,6 +204,16 @@ export function MeridianDevelopmentPanel({ memberId, memberName, tab, goals, gap
             {isConnected ? "Connected" : "Connecting…"}
           </div>
         </div>
+        {/* Continue a Summit goal-discovery session (resume = continue, not a CV). */}
+        <Button
+          size="sm"
+          variant="outline"
+          className="ml-auto"
+          onClick={() => session.mutate("resume")}
+          disabled={session.isPending}
+        >
+          Continue session
+        </Button>
       </div>
 
       <div className={cn("flex flex-wrap gap-1.5 border-b px-3 py-2", sk.border100)}>
