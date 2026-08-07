@@ -25,6 +25,7 @@ const schema = z.object({
   scope: z.string().min(1, "Scope of responsibility is required").max(600),
   candidateType: z.enum(["", "external", "internal"]).optional(),
   weightedFocus: z.string().max(600).optional(),
+  jobDescription: z.string().max(8000).optional(),
   numQuestions: z.number().int().min(1, "At least 1").max(12, "Max 12 (the STAR bank size)"),
   lengthMinutes: z.number().int().min(1, "At least 1 minute").max(180),
 })
@@ -48,6 +49,7 @@ export default function InterviewFrameForm({
       scope: initial?.scope ?? "",
       candidateType: initial?.candidateType ?? "",
       weightedFocus: initial?.weightedFocus ?? "",
+      jobDescription: initial?.jobDescription ?? "",
       numQuestions: initial?.numQuestions ?? 12,
       lengthMinutes: initial?.lengthMinutes ?? 50,
     },
@@ -85,6 +87,7 @@ export default function InterviewFrameForm({
               <Label htmlFor="roleTitle">Role title being interviewed for</Label>
               <Input id="roleTitle" {...form.register("roleTitle")} />
               {err("roleTitle")}
+              <p className="mt-1 text-xs text-slate-500">Used as the job title to tailor your questions.</p>
             </div>
             <div>
               <Label htmlFor="reportingLine">Reporting line (who this role reports to)</Label>
@@ -115,6 +118,15 @@ export default function InterviewFrameForm({
               Any competencies or risks to weight more heavily? (e.g. turnaround experience, M&amp;A integration, regulatory exposure)
             </Label>
             <Textarea id="weightedFocus" rows={2} {...form.register("weightedFocus")} />
+          </div>
+          <div>
+            <Label htmlFor="jobDescription">
+              Paste the job description (optional) — questions will be tailored to it
+            </Label>
+            <Textarea id="jobDescription" rows={4} {...form.register("jobDescription")} />
+            <p className="mt-1 text-xs text-slate-500">
+              Leave blank to use the role title alone, or the general STAR bank.
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
