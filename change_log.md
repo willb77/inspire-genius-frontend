@@ -1,7 +1,9 @@
 ## [2026-08-06] — Lumen Self-Portrait: the whole PRISM read, and a résumé that actually counts
 
-Monorepo PR #827, frontend PR #376. Both **merged to `development`**. **Dev and
-staging-b deploys did NOT happen** — see "Deploy status" below.
+Monorepo PR #827, frontend PR #376, docs #828 / FE #377. **Merged and deployed to
+dev + staging-b**, both verified against the live services — see "Deploy status".
+(An earlier revision of this entry said NOT DEPLOYED: correct at the time, because
+GitHub Actions was mid-outage. Actions recovered and the deploys completed.)
 
 The Self-Portrait advertised four sources and scored from one and a bit. Three
 separate defects, none visible from the page: each rendered as a perfectly
@@ -74,18 +76,50 @@ plausible chart.
   what **describes**; the old "composed from N sources" read identically whether
   those sources contributed or not.
 
-### Deploy status — NOT DEPLOYED
-**GitHub Actions was in a declared major outage** (incident `qcvjkzcs7j74`, began
-15:22 UTC, Actions + Pages critical). Webhook triggers were throttled and **neither
-merge produced a workflow run**. The agent-engine image was built
-(`--platform linux/amd64`) and pushed to dev ECR as
-`ig-dev-agent-engine:portrait-full-scores` / `:latest`
-(`sha256:6429748d40be76f0ddaf5ddca086375967c54c4f7182b79d918ac142af4e1d07`), but
-the ECS rollout, the frontend S3/CloudFront deploy and the staging-b promote were
-**not performed**. Code is on `development`; **dev and staging-b are still running
-the previous build.**
+### Deploy status — LIVE on dev + staging-b
+Deployed through the sanctioned pipelines after a **declared GitHub Actions major
+outage** (incident `qcvjkzcs7j74`, Actions + Pages critical from 15:22 UTC) delayed
+them by ~1h. During the outage webhook triggers were throttled and neither merge
+produced a workflow run; an interim manual ECR push was made and then superseded by
+CI's own build, which is what is running.
 
-### Verification (code, not deployed behaviour)
+**dev** — agent-engine running digest `sha256:7e361cde…`, ECR tags `dev-a2a9bcd` /
+`pr-827-a2a9bcd`. Frontend `version.json` reports `498ff5bb…`.
+**staging-b** — promoted by tag `release-stable-2026-08-06-lumen-portrait-full-scores`;
+running digest `sha256:611e1cf0…`, ECR tags carry that release tag + `sha-64832d2b`;
+ECS PRIMARY created 20:02:33 EDT, rollout COMPLETED 1/1, after the tag push and image
+build. Authenticated smoke matrix passed as a required gate. No migrations in the
+promote window.
+
+### Deploy hazards observed (worth acting on)
+- **The stale-webhook replay nearly reverted this.** Actions' backlog replayed an old
+  push, so a Staged Deploy on `b6a4f49a` — **four commits behind** — ran *concurrently*
+  with the one on `a2a9bcdc`. `staged-deploy.yml` is `group: staged-deploy`,
+  `cancel-in-progress: false`, so they serialised **old-first**, and the final state was
+  correct. Reversed, the stale run would have landed last and silently reverted #827,
+  #824 and #826 — **and reported success either way.** It did report success.
+- **dev's task definition tracks `:latest`, so it pins nothing.** The stale run is what
+  actually rolled dev's ECS, at 23:11 UTC — one minute after CI happened to push
+  `:latest` for `a2a9bcdc` at 23:10. The right code is live by timing, not by design.
+  staging-b's promote pins by `sha-<commit>` and cannot fail this way; **dev should do
+  the same.**
+
+### Verification (live behaviour on dev, deployment only on staging-b)
+- **dev, read off the live endpoint** — `dimensions` **8/8** (this account previously
+  had **2**: Coordinating, Supporting), `orientation` reported separately
+  (Introversion 59 / Extroversion 41), `score_type: "Underlying"`, `quadrants` clean
+  (four keys, no dimension/orientation contamination), Enneagram absent from
+  `instruments`. Green 35.0 = `(innovating 50 + initiating 20) / 2` — neither row
+  survived the cap before. Meridian's narration cites "Coordinating is your highest",
+  i.e. it is grounded in the new per-dimension data.
+- **staging-b, deployment proven but behaviour NOT observed.** Routes answer 401
+  (`GET /self-portrait/me`, `POST …/ask`) against a 404 control, health 200, image
+  digest resolves to the release tag. An authenticated round-trip was not possible:
+  magic-auth is gated off there by design and the smoke password is a CI secret.
+- **The `evidence` block is unobserved on both tiers** — it needs an account with a
+  résumé or bio on file, and the dev test account has neither. Test-covered only.
+
+### Verification (code)
 - Backend `252 passed` across `tests/lumen/`, `test_prism_report.py`,
   `test_profile_loader.py`, `test_reconciliation_cross_framework.py`
 - Backend full suite **4590 passed / 174 failed**; measured baseline on
