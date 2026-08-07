@@ -27,6 +27,9 @@ export type PracticeQuestions = {
   guidance: string
   sections: PracticeSection[]
   totalCompetencies?: number
+  /** True when the backend generated these questions from a specific job
+   * title/description rather than serving the static 12-competency bank. */
+  tailored?: boolean
 }
 
 /**
@@ -70,6 +73,34 @@ export const practiceService = {
 }
 
 /**
+ * Fetch questions tailored to a specific job title / description via the
+ * agent-engine's LLM-backed endpoint. Candidate-safe — same shape as the
+ * static bank (no rubric, no exemplars). On ANY failure (network error,
+ * timeout, non-2xx) this falls back to the static
+ * `practiceService.getPracticeQuestions(section)` bank so the interview
+ * never breaks.
+ */
+export async function getTailoredPracticeQuestions(
+  jobTitle: string,
+  jobDescription?: string,
+  section?: PracticeSection["key"],
+): Promise<PracticeQuestions> {
+  try {
+    const { data } = await agentApi.post<PracticeQuestions>(
+      "/v1/agents/interview/practice-questions/tailored",
+      {
+        job_title: jobTitle,
+        job_description: jobDescription,
+        section,
+      },
+    )
+    return data
+  } catch {
+    return practiceService.getPracticeQuestions({ section })
+  }
+}
+
+/**
  * The interview seat the candidate is practising for. Collected up-front by the
  * frame form and passed into coaching so Alex tailors questions + feedback to
  * the specific role, reporting line, and scope (and weights flagged risks).
@@ -82,6 +113,10 @@ export type InterviewFrame = {
   scope: string
   candidateType?: "external" | "internal" | ""
   weightedFocus?: string
+  /** Optional job description pasted by the candidate — when set, the
+   * interview questions are tailored to it (via getTailoredPracticeQuestions)
+   * instead of using the static 12-competency bank. */
+  jobDescription?: string
   /** How many questions the interview should run (default 12). */
   numQuestions?: number
   /** Target length in minutes (default 50). */
