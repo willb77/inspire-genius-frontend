@@ -31,6 +31,7 @@ import {
   SearchCheck,
   Activity,
   Target,
+  ClipboardCheck,
 } from "lucide-react"
 
 /**
@@ -222,6 +223,29 @@ const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
   label: "Interview Practice",
 }
 
+// Live Scored Candidate Interview (Phase 3) — a REAL, scored interview an
+// interviewer (manager/practitioner) runs of a candidate who is NOT the
+// signed-in user. Distinct route per role since the underlying page is a
+// role-layout wrapper, same as Interview Prep.
+//
+// TODO: gate on the server-side `live_interview_scoring` flag once there is a
+// clean mechanism to surface a backend feature flag to the FE nav (e.g. via
+// GET /v1/agents/me). No such mechanism exists today — interview-practice v5
+// personalization degrades gracefully per-request rather than gating
+// visibility, so there's nothing to reuse here. Gated by role only for now;
+// the backend routes 404 when the flag is off, which is an acceptable
+// fallback (not a broken link — just an inert menu entry until launch).
+const INTERVIEW_LIVE_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
+const INTERVIEW_LIVE_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
+
 /**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
  * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
@@ -233,8 +257,12 @@ const INTERVIEW_PRACTICE_ITEM: NavItemDef = {
 // it here would also give the user a UnifiedLayout Tools section it never uses.
 // These roles render UnifiedLayout / SuperAdminLayout, which show the Tools rollup.
 export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
-  manager: [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
-  practitioner: [INTERVIEW_PRACTICE_ITEM],
+  manager: [
+    ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_MANAGER,
+  ],
+  practitioner: [INTERVIEW_PRACTICE_ITEM, INTERVIEW_LIVE_ITEM_PRACTITIONER],
   "super-admin": [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
 }
 
