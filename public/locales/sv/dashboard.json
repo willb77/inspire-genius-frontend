@@ -121,6 +121,9 @@
     "startConversation": "starta en konversation",
     "untitledConversation": "Namnlös konversation",
     "videosBlurb": "Se de här videorna för att få ut mesta möjliga av InspiresGenius",
-    "todaysPrep": "Dagens förberedelse"
+    "todaysPrep": "Dagens förberedelse",
+    "welcomePrefix": "Välkommen",
+    "whatToday": "Vad arbetar vi med i dag?",
+    "quickGoals": "Mål"
   }
 }

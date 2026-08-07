@@ -2,12 +2,7 @@ import React, { Suspense } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import HomeSurfaceToggle from "@/components/home/HomeSurfaceToggle";
-import {
-  isNewHomeEnabled,
-  isNewUserSurfacesEnabled,
-  setNewUserSurfaces,
-} from "@/lib/surfaceFlags";
+import { isNewHomeEnabled, isNewUserSurfacesEnabled } from "@/lib/surfaceFlags";
 // Eager, not lazy: the shell is the entitlement gate for a vertical route
 // subtree, so it must resolve before the subtree renders rather than after.
 import { VerticalShell } from "@/verticals/core";
@@ -289,28 +284,16 @@ function withSuspense(element: React.ReactNode) {
 // path). An explicit user choice still wins — the two predicates read the same
 // localStorage key and differ only in what an ABSENT value means.
 //
-// A HomeSurfaceToggle sits above the resolved page so users can flip between the
-// new and classic home themselves. The inner Suspense wraps only the lazy page,
-// keeping the toggle visible while the selected variant loads.
+// The on-page Classic/New toggle was removed on 2026-08-06 (request). The flag
+// still resolves, so a stored `"false"` set from the console is honoured, and
+// /home/classic remains the permanent escape hatch — the switch went, not the
+// destination.
 function HomeSurface() {
-  // The flag is owned here as state so flipping the toggle swaps the page
-  // in-place (client-side re-render) instead of doing a full page reload.
-  // A hard reload could bounce the user to /login via the fresh-boot auth
-  // path; an in-place swap keeps the live session intact.
-  const [enabled, setEnabled] = React.useState(isNewHomeEnabled);
+  const enabled = isNewHomeEnabled();
   return (
-    <>
-      <HomeSurfaceToggle
-        enabled={enabled}
-        onChange={(next) => {
-          setNewUserSurfaces(next); // persist so it survives the next full load
-          setEnabled(next); // swap now, no reload
-        }}
-      />
-      <Suspense fallback={<LoadingSpinner />}>
-        {enabled ? <HomeV2 /> : <Home />}
-      </Suspense>
-    </>
+    <Suspense fallback={<LoadingSpinner />}>
+      {enabled ? <HomeV2 /> : <Home />}
+    </Suspense>
   );
 }
 
@@ -347,26 +330,15 @@ function UserSettingsPrivacySurface() {
 function ProfileSurface() {
   return isNewUserSurfacesEnabled() ? <ProfileV2 /> : <Profile />;
 }
-// Meridian Chat carries an in-page toggle (like /home) rather than the silent
-// Wave-1 resolver, because the user asked for a visible classic/new switch on
-// this surface. The flag is owned as state so flipping swaps the page in-place
-// (no full reload → no fresh-boot auth bounce to /login). Classic stays at
-// /meridian/chat/classic.
+// Meridian Chat used to carry its own in-page Classic/New toggle. Removed with
+// the /home one on 2026-08-06 (request) — same reasoning: the flag still
+// resolves, and /meridian/chat/classic stays as the escape hatch.
 function MeridianChatSurface() {
-  const [enabled, setEnabled] = React.useState(isNewUserSurfacesEnabled);
+  const enabled = isNewUserSurfacesEnabled();
   return (
-    <>
-      <HomeSurfaceToggle
-        enabled={enabled}
-        onChange={(next) => {
-          setNewUserSurfaces(next); // persist so it survives the next full load
-          setEnabled(next); // swap now, no reload
-        }}
-      />
-      <Suspense fallback={<LoadingSpinner />}>
-        <MeridianChat variant={enabled ? "v2" : "classic"} />
-      </Suspense>
-    </>
+    <Suspense fallback={<LoadingSpinner />}>
+      <MeridianChat variant={enabled ? "v2" : "classic"} />
+    </Suspense>
   );
 }
 
@@ -456,6 +428,11 @@ export const routes: RouteObject[] = [
       // The previous Help page — and its flag-gated V2 re-skin — posted to the
       // legacy monolith /v1/issues (which has no route on staging-b). Both are
       // preserved here rather than deleted.
+      // NOT an escape hatch, despite the path. `/help` renders the
+      // support-request surface; the Help PAGE lives here, and it resolves V2
+      // vs classic like any other Wave-1 surface — hence HelpSurface rather
+      // than HelpPage directly. Pointing this at HelpPage would make HelpV2
+      // unreachable, which the "HelpSurface is unused" build error catches.
       { path: "/help/classic", element: withSuspense(<HelpSurface />) },
       // Alias so /support keeps working for anyone who has it bookmarked.
       { path: "/support", element: withSuspense(<SupportPage />) },

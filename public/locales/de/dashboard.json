@@ -121,6 +121,9 @@
     "startConversation": "ein Gespräch beginnen",
     "untitledConversation": "Unbenannte Unterhaltung",
     "videosBlurb": "Sehen Sie sich diese Videos an, um das Beste aus InspiresGenius herauszuholen",
-    "todaysPrep": "Heutige Vorbereitung"
+    "todaysPrep": "Heutige Vorbereitung",
+    "welcomePrefix": "Willkommen",
+    "whatToday": "Woran arbeiten wir heute?",
+    "quickGoals": "Ziele"
   }
 }

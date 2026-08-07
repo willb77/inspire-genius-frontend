@@ -121,6 +121,9 @@
     "startConversation": "ابدأ محادثة",
     "untitledConversation": "محادثة بدون عنوان",
     "videosBlurb": "شاهد هذه الفيديوهات لتحقيق أقصى استفادة من InspiresGenius",
-    "todaysPrep": "تحضير اليوم"
+    "todaysPrep": "تحضير اليوم",
+    "welcomePrefix": "مرحبًا",
+    "whatToday": "على ماذا نعمل اليوم؟",
+    "quickGoals": "الأهداف"
   }
 }

@@ -121,6 +121,9 @@
     "startConversation": "start en samtale",
     "untitledConversation": "Samtale uten tittel",
     "videosBlurb": "Se disse videoene for å få mest mulig ut av InspiresGenius",
-    "todaysPrep": "Dagens forberedelse"
+    "todaysPrep": "Dagens forberedelse",
+    "welcomePrefix": "Velkommen",
+    "whatToday": "Hva jobber vi med i dag?",
+    "quickGoals": "Mål"
   }
 }

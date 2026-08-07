@@ -1954,30 +1954,17 @@ export default function MeridianChat({
             <SquarePen className="size-4" />
             <span>{t("meridian.newChat.label", { defaultValue: "New Chat" })}</span>
           </button>
-          {/* Documents — selecting corpus files AND uploading a new one, both
-              under one control (2026-07-31). They were two adjacent buttons,
-              which read as two unrelated features when they are two halves of
-              the same job; `onUpload` opens the same modal the standalone
-              button used to. */}
-          <DocumentsDropdown
-            selectedIds={selectedFileIds}
-            onChange={(ids) => setSelectedFileIds(ids)}
-            onUpload={() => setUploadOpen(true)}
-          />
-          <HistoryDropdown
-            selectedIds={reviewConversationIds}
-            onChange={setReviewConversationIds}
-            activeId={selectedId ?? null}
-            onSelectActive={(id) => {
-              void handleSelectConversation(id);
-            }}
-            onDeletedActive={() => {
-              // The open conversation was just deleted. Clear the pane rather
-              // than leaving a transcript the server no longer has, and start
-              // a fresh chat so the composer stays usable.
-              void handleNewChat();
-            }}
-          />
+          {/* Starter Questions — the same persona-grouped library HomeV2 shows
+              on its "Chat with Meridian" tile. On HomeV2 a starter question is
+              how you open a chat; bringing it in here means it is also how you
+              get unstuck mid-conversation. Picking one sends immediately
+              through handleSendText — the composer's own dispatch path. */}
+          {isV2 && (
+            <StarterQuestionsDropdown
+              disabled={isProcessing}
+              onSelect={(question) => handleSendText(question)}
+            />
+          )}
           {/* Moments — promoted from the second row, which held four personal
               links and is now gone. Moments is the one that belongs beside the
               conversation: it is where a turn worth keeping ends up, so it is
@@ -2011,18 +1998,34 @@ export default function MeridianChat({
               </span>
             )
           )}
-          {/* Starter Questions — the same persona-grouped library HomeV2 shows
-              on its "Chat with Meridian" tile. On HomeV2 a starter question is
-              how you open a chat; bringing it in here means it is also how you
-              get unstuck mid-conversation. Picking one sends immediately
-              through handleSendText — the composer's own dispatch path. */}
-          {isV2 && (
-            <StarterQuestionsDropdown
-              disabled={isProcessing}
-              onSelect={(question) => handleSendText(question)}
-            />
-          )}
-          {/* V2 — Export moved next to History. */}
+          {/* History then Documents, after Moments. Row order is fixed by
+              request (2026-08-06): New Chat · Starter Questions · Moments ·
+              History · Documents · Export. */}
+          <HistoryDropdown
+            selectedIds={reviewConversationIds}
+            onChange={setReviewConversationIds}
+            activeId={selectedId ?? null}
+            onSelectActive={(id) => {
+              void handleSelectConversation(id);
+            }}
+            onDeletedActive={() => {
+              // The open conversation was just deleted. Clear the pane rather
+              // than leaving a transcript the server no longer has, and start
+              // a fresh chat so the composer stays usable.
+              void handleNewChat();
+            }}
+          />
+          {/* Documents — selecting corpus files AND uploading a new one, both
+              under one control (2026-07-31). They were two adjacent buttons,
+              which read as two unrelated features when they are two halves of
+              the same job; `onUpload` opens the same modal the standalone
+              button used to. */}
+          <DocumentsDropdown
+            selectedIds={selectedFileIds}
+            onChange={(ids) => setSelectedFileIds(ids)}
+            onUpload={() => setUploadOpen(true)}
+          />
+          {/* Export closes the row. */}
           {isV2 && (
             <button
               type="button"

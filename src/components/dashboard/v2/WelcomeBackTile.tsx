@@ -2,19 +2,16 @@ import { useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
-  CalendarDays,
   CheckCircle2,
   ChevronDown,
   Circle,
   FileText,
   Lock,
-  MessageSquare,
   Play,
   Plus,
   type LucideIcon,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -94,9 +91,10 @@ interface WelcomeBackTileProps {
   hasReport: boolean;
   reportFileName?: string;
   prismLoading?: boolean;
-  onRequestAssessment: () => void;
-  /** Opens the stored PRISM report in a viewer modal. */
-  onViewReportPdf: () => void;
+  // `onRequestAssessment` and `onViewReportPdf` were dropped on 2026-08-06:
+  // both buttons moved to the page header, and the host owns them there. The
+  // tile still receives `hasReport`/`reportFileName` because it renders the
+  // "Latest report" line beside "Powered by PRISM".
   personalInfo: WelcomeBackPersonalInfo[];
   onAddPersonalInfo?: (name: string) => void;
   /** Quick-action links rendered directly under the completion gauge. */
@@ -258,13 +256,10 @@ function QuickActions({
   const [playing, setPlaying] = useState<DashboardVideo | null>(null);
 
   return (
+    // The "View these videos on how to get the most from InspiresGenius" line
+    // that sat above this row was removed on 2026-08-06 (request). The Videos
+    // control itself stays in the row — only the sentence went.
     <div className="mt-4" data-testid="homev2-quick-actions">
-      <p className="mb-2 text-[13px] text-[#4b5f80]">
-        {t("homeV2.videosBlurb", {
-          defaultValue:
-            "View these videos on how to get the most from InspiresGenius",
-        })}
-      </p>
       <div className="flex flex-wrap items-center gap-2">
         {actions.map(({ key, label, to, entitled, lockedReason, icon: Icon }) =>
           entitled ? (
@@ -397,17 +392,12 @@ export function WelcomeBackTile({
   hasReport,
   reportFileName,
   prismLoading = false,
-  onRequestAssessment,
-  onViewReportPdf,
   personalInfo,
   onAddPersonalInfo,
   quickActions = [],
   videos = [],
 }: WelcomeBackTileProps): JSX.Element {
   const { t } = useTranslation("dashboard");
-  // Collapsed by default — the tile's job is to hand back the thread, not to
-  // spend the top of the page on a list the user may not need today.
-  const [actionsOpen, setActionsOpen] = useState(false);
 
   return (
     <div className="rounded-2xl border border-[rgba(11,27,51,0.10)] bg-white p-6 shadow-sm">
@@ -429,77 +419,40 @@ export function WelcomeBackTile({
           {t("homeV2.loadingActivity", { defaultValue: "Loading activity…" })}
         </p>
       ) : lastActions.length > 0 ? (
-        // A dropdown rather than an inline list (2026-08-05): five days of
-        // topics is too many rows to sit permanently at the top of the page,
-        // and the list pushed everything below it down as the user's history
-        // grew. Collapsed, the tile keeps a fixed height whatever the volume.
-        <div className="mt-2" data-testid="homev2-last-actions">
-          <button
-            type="button"
-            onClick={() => setActionsOpen((open) => !open)}
-            aria-expanded={actionsOpen}
-            aria-controls="homev2-last-actions-list"
-            data-testid="homev2-last-actions-trigger"
-            className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[rgba(11,27,51,0.14)] bg-white px-3 py-2 text-[13px] font-medium text-[#0B1B33] transition-colors hover:bg-[#FBF7F0]"
-          >
-            <span className="truncate">
-              {t("homeV2.recentTopics", {
-                defaultValue: "Recent topics ({{count}})",
-                count: lastActions.length,
-              })}
-            </span>
-            <ChevronDown
-              aria-hidden
-              className={cn(
-                "size-4 shrink-0 text-[#7C93B5] transition-transform",
-                actionsOpen && "rotate-180",
-              )}
-            />
-          </button>
-
-          {actionsOpen && (
-            <ul
-              id="homev2-last-actions-list"
-              className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-[rgba(11,27,51,0.10)] bg-[#FBF7F0]"
-              data-testid="homev2-last-actions-list"
-            >
-              {lastActions.map((action, index) => {
-                // Day headers only where the day changes, so five days of
-                // topics read as five groups rather than one long run.
-                const showDay =
-                  !!action.dayLabel &&
-                  action.dayLabel !== lastActions[index - 1]?.dayLabel;
-                return (
-                  <li key={action.id}>
-                    {showDay && (
-                      <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-[#7C93B5]">
-                        {action.dayLabel}
-                      </p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActionsOpen(false);
-                        onResumeConversation(action.id);
-                      }}
-                      data-testid={`homev2-last-action-${action.id}`}
-                      className="flex w-full min-w-0 items-baseline gap-2 px-3 py-2 text-start transition-colors hover:bg-[#F3ECDD]"
-                    >
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#C9711A]">
-                        {action.label}
-                      </span>
-                      {action.meta ? (
-                        <span className="shrink-0 text-[12px] text-[#7C93B5]">
-                          {action.meta}
-                        </span>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        // Inline again as of 2026-08-06 (request): show the last four topics
+        // outright rather than behind a "Recent topics (n)" dropdown.
+        //
+        // The dropdown existed because an uncapped list grew without bound and
+        // pushed the page down. That concern is handled by the cap instead —
+        // the host slices to LAST_ACTION_LIMIT — so the tile keeps a bounded
+        // height while the topics are visible without a click.
+        //
+        // Each row deep-links: `onResumeConversation(id)` navigates to the chat
+        // with that conversation selected.
+        <ul
+          className="mt-2 flex flex-col"
+          data-testid="homev2-last-actions"
+        >
+          {lastActions.map((action) => (
+            <li key={action.id}>
+              <button
+                type="button"
+                onClick={() => onResumeConversation(action.id)}
+                data-testid={`homev2-last-action-${action.id}`}
+                className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 items-baseline gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-[#FBF7F0]"
+              >
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#C9711A] underline underline-offset-2">
+                  {action.label}
+                </span>
+                {action.meta ? (
+                  <span className="shrink-0 text-[12px] text-[#7C93B5]">
+                    {action.meta}
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : (
         // No history yet: say so plainly and offer the one useful next step,
         // rather than an empty list that reads as a failed fetch.
@@ -522,7 +475,14 @@ export function WelcomeBackTile({
       {/* 3. Divider */}
       <div className="my-5 h-px w-full bg-[rgba(11,27,51,0.10)]" />
 
-      {/* 4. Behavioral row */}
+      {/* 4. Behavioral row.
+          The three buttons that used to sit on the right — Chat with Meridian,
+          Request PRISM Survey, View PRISM Report — moved to the page header
+          above the tile on 2026-08-06 (request), so this row is now the label
+          plus the report status only.
+          "Latest report: …" moved up beside "Powered by PRISM" in the same
+          move: it is a property of the assessment, and it was previously a
+          detached line below the row. */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-serif text-base text-[#0B1B33]">
@@ -530,69 +490,34 @@ export function WelcomeBackTile({
               defaultValue: "Behavioral assessment",
             })}
           </h3>
-          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-[#7C93B5]">
-            {t("homeV2.poweredByPrism", { defaultValue: "Powered by PRISM" })}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Chat with Meridian leads the row (2026-08-05). Reuses
-              onResumeConversation with no id — the same callback the topics
-              dropdown uses, which opens the chat on the user's current
-              conversation rather than a specific one. Outline rather than
-              filled so the row keeps a single primary action; the request
-              button's weighting is unchanged. */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onResumeConversation()}
-            data-testid="homev2-chat-with-meridian"
-            className="border-[rgba(11,27,51,0.10)] text-[#0B1B33]"
-          >
-            <MessageSquare className="size-4" />
-            {t("homeV2.chatWithMeridian", {
-              defaultValue: "Chat with Meridian",
-            })}
-          </Button>
-          <Button
-            type="button"
-            onClick={onRequestAssessment}
-            className="bg-[#0B1B33] text-white hover:bg-[#0B1B33]/90"
-          >
-            <CalendarDays className="size-4" />
-            {t("homeV2.requestPrismInventory", {
-              defaultValue: "Request PRISM Survey",
-            })}
-          </Button>
-          {hasReport ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onViewReportPdf}
-              className={cn("border-[rgba(11,27,51,0.10)] text-[#0B1B33]")}
-            >
-              <FileText className="size-4" />
-              {t("homeV2.viewInventoryPdf", { defaultValue: "View PRISM Report" })}
-            </Button>
-          ) : null}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-[#7C93B5]">
+              {t("homeV2.poweredByPrism", { defaultValue: "Powered by PRISM" })}
+            </p>
+            {prismLoading ? (
+              <span className="text-[13px] text-[#4b5f80]">
+                {t("homeV2.checkingReport", {
+                  defaultValue: "Checking your latest report…",
+                })}
+              </span>
+            ) : hasReport ? (
+              <span
+                className="flex min-w-0 items-center gap-2 text-[13px] text-[#4b5f80]"
+                data-testid="homev2-latest-report"
+              >
+                <FileText className="size-3.5 shrink-0 text-[#7C93B5]" />
+                <span className="min-w-0 truncate">
+                  {t("homeV2.latestReportPrefix", {
+                    defaultValue: "Latest report:",
+                  })}{" "}
+                  {reportFileName}
+                </span>
+                <BehavioralMapDialog />
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
-
-      {prismLoading ? (
-        <p className="mt-3 text-[13px] text-[#4b5f80]">
-          {t("homeV2.checkingReport", {
-            defaultValue: "Checking your latest report…",
-          })}
-        </p>
-      ) : hasReport ? (
-        <div className="mt-3 flex min-w-0 items-center gap-2 text-[13px] text-[#4b5f80]">
-          <FileText className="size-3.5 shrink-0 text-[#7C93B5]" />
-          <span className="min-w-0 truncate">
-            {t("homeV2.latestReportPrefix", { defaultValue: "Latest report:" })}{" "}
-            {reportFileName}
-          </span>
-          <BehavioralMapDialog />
-        </div>
-      ) : null}
 
       {/* 5. Quick actions.
           The "Your material" list that used to sit here — every uploaded

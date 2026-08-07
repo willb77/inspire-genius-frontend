@@ -121,6 +121,9 @@
     "startConversation": "mulai percakapan",
     "untitledConversation": "Percakapan tanpa judul",
     "videosBlurb": "Tonton video ini untuk memaksimalkan InspiresGenius",
-    "todaysPrep": "Persiapan Hari Ini"
+    "todaysPrep": "Persiapan Hari Ini",
+    "welcomePrefix": "Selamat datang",
+    "whatToday": "Apa yang kita kerjakan hari ini?",
+    "quickGoals": "Sasaran"
   }
 }

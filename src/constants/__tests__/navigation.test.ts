@@ -123,16 +123,18 @@ describe("My Workspace menu order + switched-off entries", () => {
   const labels = (agentEngineOn: boolean) =>
     getUserNavItems(agentEngineOn).map((i) => i.label)
 
-  it("orders the usable entries Home → Chat → Document Library → Interview Practice → Help", () => {
+  it("orders the usable entries Home → Chat → Interview Practice → Document Library → Help", () => {
     // Asserted as a subsequence, not the whole array: the greyed entries and
     // Settings sit between them, and Job Fit is spliced in later by
-    // useWorkspaceNavItems. What was specified is the RELATIVE order of these
-    // five, so that is what is pinned.
+    // useWorkspaceNavItems. What was specified is the RELATIVE order, so that
+    // is what is pinned.
+    //
+    // Document Library moved from third to just above Settings on 2026-08-06.
     const wanted = [
       "Home",
       "Chat with Meridian",
-      "Document Library",
       "Interview Practice",
+      "Document Library",
       "Help & Support",
     ]
     const positions = wanted.map((l) => labels(true).indexOf(l))
@@ -140,12 +142,14 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b))
   })
 
-  it("puts Document Library ahead of Interview Practice (they swapped)", () => {
+  it("puts Document Library DIRECTLY above Settings, with nothing between", () => {
+    // Adjacency is the requirement, not just order: the workspace-vertical
+    // splice used to land between the two, which is why "Document Library" is
+    // in MENU_TAIL_LABELS. A plain indexOf(<) comparison would not catch that
+    // regression, so this asserts the gap is exactly one.
     for (const on of [true, false]) {
       const l = labels(on)
-      expect(l.indexOf("Document Library")).toBeLessThan(
-        l.indexOf("Interview Practice"),
-      )
+      expect(l.indexOf("Settings") - l.indexOf("Document Library")).toBe(1)
     }
   })
 

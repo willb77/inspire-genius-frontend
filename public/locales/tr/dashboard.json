@@ -121,6 +121,9 @@
     "startConversation": "bir sohbet başlatın",
     "untitledConversation": "Başlıksız sohbet",
     "videosBlurb": "InspiresGenius'tan en iyi şekilde yararlanmak için bu videoları izleyin",
-    "todaysPrep": "Bugünün Hazırlığı"
+    "todaysPrep": "Bugünün Hazırlığı",
+    "welcomePrefix": "Hoş geldiniz",
+    "whatToday": "Bugün ne üzerinde çalışıyoruz?",
+    "quickGoals": "Hedefler"
   }
 }

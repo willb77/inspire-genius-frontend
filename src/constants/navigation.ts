@@ -101,12 +101,11 @@ export function getUserNavItems(
     // it is a tool you go to, not a primary workspace shortcut. The route
     // (ROUTES.BIO_CAPTURE) is unchanged; only the sidebar placement moved.
     //
-    // Document Library — restored to the menu 2026-08-03 and renamed from
-    // "My Documents". The route (ROUTES.DOCUMENTS) never changed, so existing
-    // links, bookmarks and the Meridian header entry point all still resolve;
-    // only the sidebar shortcut and its label moved. Ordered ahead of Interview
-    // Practice on 2026-08-04 (the two swapped places) — see the order note below.
-    { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
+    // Document Library moved DOWN to sit directly above Settings on 2026-08-06
+    // (request) — see the tail of this list. It is a reference surface you go to
+    // occasionally, not a daily shortcut, so it now sits with Settings/Help
+    // rather than among the primary actions. The route is unchanged.
+    //
     // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
     // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
@@ -163,6 +162,14 @@ export function getUserNavItems(
           disabled: true,
           disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
         },
+    // Document Library sits directly above Settings as of 2026-08-06 (request),
+    // moved down from its old position between Chat and Interview Practice.
+    //
+    // "Document Library" is in MENU_TAIL_LABELS (useVerticalLauncher) so the
+    // workspace-vertical splice lands ABOVE it. Without that, verticals were
+    // inserted before "Settings" — i.e. BETWEEN Document Library and Settings —
+    // and the two were no longer adjacent.
+    { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
   ]

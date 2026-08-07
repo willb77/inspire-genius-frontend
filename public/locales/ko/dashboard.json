@@ -121,6 +121,9 @@
     "startConversation": "대화 시작하기",
     "untitledConversation": "제목 없는 대화",
     "videosBlurb": "InspiresGenius를 최대한 활용하는 방법은 이 동영상을 참고하세요",
-    "todaysPrep": "오늘의 준비"
+    "todaysPrep": "오늘의 준비",
+    "welcomePrefix": "환영합니다",
+    "whatToday": "오늘은 무엇을 해볼까요?",
+    "quickGoals": "목표"
   }
 }

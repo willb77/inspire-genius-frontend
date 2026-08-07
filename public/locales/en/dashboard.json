@@ -119,6 +119,9 @@
     "startConversation": "start a conversation",
     "untitledConversation": "Untitled conversation",
     "videosBlurb": "View these videos on how to get the most from InspiresGenius",
-    "todaysPrep": "Today's Prep"
+    "todaysPrep": "Today's Prep",
+    "welcomePrefix": "Welcome",
+    "whatToday": "What are we working on today?",
+    "quickGoals": "Goals"
   }
 }

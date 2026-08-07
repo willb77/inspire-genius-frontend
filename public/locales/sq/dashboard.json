@@ -121,6 +121,9 @@
     "startConversation": "nisni një bisedë",
     "untitledConversation": "Bisedë pa titull",
     "videosBlurb": "Shikoni këto video për të përfituar sa më shumë nga InspiresGenius",
-    "todaysPrep": "Përgatitja e sotme"
+    "todaysPrep": "Përgatitja e sotme",
+    "welcomePrefix": "Mirë se vini",
+    "whatToday": "Për çfarë po punojmë sot?",
+    "quickGoals": "Objektivat"
   }
 }

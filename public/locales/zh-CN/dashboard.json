@@ -121,6 +121,9 @@
     "startConversation": "开始对话",
     "untitledConversation": "未命名对话",
     "videosBlurb": "观看这些视频，充分利用 InspiresGenius",
-    "todaysPrep": "今日准备"
+    "todaysPrep": "今日准备",
+    "welcomePrefix": "欢迎",
+    "whatToday": "今天我们做点什么？",
+    "quickGoals": "目标"
   }
 }

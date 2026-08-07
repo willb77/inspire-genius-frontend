@@ -177,8 +177,17 @@ export function useWorkspaceVerticalItems(): NavItemDef[] {
 /**
  * Labels that always sit at the BOTTOM of a workspace menu. Workspace verticals
  * are spliced in ahead of them so Settings/Help stay last, where users expect.
+ *
+ * "Document Library" joined the set on 2026-08-06, when it was moved to sit
+ * directly above Settings. Without it here the splice landed between the two
+ * (… Document Library · Job Fit · Settings …), which is not "directly above".
+ * Membership is about menu POSITION, not about what kind of thing an entry is.
  */
-const MENU_TAIL_LABELS = new Set(["Settings", "Help & Support"])
+const MENU_TAIL_LABELS = new Set([
+  "Document Library",
+  "Settings",
+  "Help & Support",
+])
 
 /**
  * Merge workspace verticals into a menu, just above its Settings/Help tail — or

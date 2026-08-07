@@ -121,6 +121,9 @@
     "startConversation": "start een gesprek",
     "untitledConversation": "Naamloos gesprek",
     "videosBlurb": "Bekijk deze video's om het meeste uit InspiresGenius te halen",
-    "todaysPrep": "Voorbereiding van vandaag"
+    "todaysPrep": "Voorbereiding van vandaag",
+    "welcomePrefix": "Welkom",
+    "whatToday": "Waar werken we vandaag aan?",
+    "quickGoals": "Doelen"
   }
 }
