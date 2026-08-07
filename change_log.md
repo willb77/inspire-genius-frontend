@@ -1,3 +1,207 @@
+## [2026-08-06] — Moments-in-history promoted to staging-b, tagged deliberately short
+
+`release-stable-2026-08-06-moments-in-history` → run 31140173806, all six jobs
+green including the authenticated smoke matrix.
+
+### Tagged at f9577830, NOT at development HEAD
+Between the merge and the promote, another terminal landed **#831 (Live In-Room
+Scored Candidate Interview)**: 2,315 lines, a CDK change to
+`agent-engine-stack.ts`, and alembic **`028_create_interview_tables`**.
+staging-b runs migrations MANUALLY, so tagging HEAD would have deployed code
+expecting `interview` tables that database does not have — and it is another
+terminal's feature, not what the promote was for.
+
+The tag therefore covers exactly two commits (`#830` + a docs correction), with
+no migrations and no CDK. The reasoning is written into the tag's own annotation
+so the next reader does not have to reconstruct it.
+
+⚠️ **`development` HEAD still carries #831 and migration 028, unpromoted.**
+Whoever promotes next inherits it and must run that migration on staging-b
+first.
+
+### A near-miss worth recording
+The first migration check was `grep -i migration` over the changed paths and
+returned "none". **False negative** — the file is
+`alembic/versions/028_create_interview_tables.py`, which does not contain the
+word "migration". Trusting it would have promoted a schema-dependent feature
+onto a database without the schema and reported it clean. Check `alembic|
+versions/`, not the word.
+
+### Verified on staging-b's running container, with a BEFORE baseline
+| check | before | after |
+|---|---|---|
+| ECS task | `1e871b4f…` | `1e33dfe7…` (replaced) |
+| `_mirror_moment_to_chat_history` | **0** | **2** (def + call) |
+| `chat_message_repository` | — | 3 (import + 2 inserts) |
+| `'lumen.moment'` | — | 2 |
+| service | 1/1 COMPLETED | 1/1 COMPLETED |
+
+The **0 first** is what makes the rest evidence: on dev this was only measured
+after, where a pre-existing match would have looked identical to a successful
+deploy.
+
+Both prior-incident checks came back clean — CloudFormation did NOT re-assert
+`desiredCount: 0`, and the smoke matrix ran rather than being skipped.
+
+### An expectation of mine that was wrong
+I predicted the task-definition revision would advance past `:25`. It did not —
+`force-new-deployment` reuses the revision and re-pulls the image behind the
+same tag, so the number never moves on this workflow. Treating "revision
+unchanged" as failure would have raised a false alarm; treating it as proof
+would have missed a genuine no-op. The container grep is what distinguishes them.
+
+### Still unverified
+That a Moment asked through the real UI surfaces in History. The code path is
+proven deployed on both tiers; the end-to-end behaviour is not.
+
+## [2026-08-06] — Lumen: one nav row, and Moments now appear in Meridian history
+
+Three changes on request. Frontend PR #380 (merge `4f98a18c`), backend PR #830
+(merge `f9577830`).
+
+### Changed — Lumen nav collapsed to one row
+The second row held "Back to Inspire Genius" plus an "or switch to …" list of
+every other entitled vertical. Both are gone; "Back to Inspire Genius" moved up
+beside the Lumen tools, pushed to the end of the row since it is the one control
+that LEAVES Lumen. Nothing became unreachable — the other verticals are in the
+sidebar's Tools section on every page, which the switcher only duplicated.
+
+- Files: `inspire-genius-frontend/src/pages/lumen/LumenNav.tsx`
+
+### Removed — "Coaching" from the Lumen nav
+Route and page untouched, and the Lumen **Dashboard** still links to it
+(checked before removing), so only the nav entry went. It lives in
+`LUMEN_TOOLS`, which feeds BOTH the pill row and the sidebar — shared
+deliberately ("must not drift"), so one deletion covers both.
+
+- Files: `inspire-genius-frontend/src/constants/vertical-subnav.ts`
+
+### Added — a Moment now shows in Chat with Meridian history
+`POST /v1/agents/lumen/moments/ask` mirrors the ask into `public.chat_messages`
+as a two-message conversation: the situation as the `user` row, the guidance as
+`assistant`, attributed to Meridian.
+
+**Why two INSERTs and not a conversation API:** the conversation list is
+DERIVED, not stored — `GET /v1/chat/conversations` groups `chat_messages` by
+`session_id` and takes the title from the first `user` row. There is no
+conversations table; writing the messages IS creating the conversation. The
+situation becomes the History title, which is what a person scans for.
+
+One conversation per ask, keyed `moment-<id>` so a Moment and its transcript
+can be matched later and a retry cannot double-write. **Never fails the ask** —
+the Moment is the product and is already in the feed by then; a mirror failure
+logs and returns. An empty context or body writes nothing rather than a title
+with no reply. **Pull Moments only**: proactive scheduler Moments are not
+mirrored, because the user never asked anything and History should record what
+they said, not what the system did. That is why it lives in the route, not in
+`generate_moment`, which the scheduler shares.
+
+- Files: `services/agent-engine/app/routes/lumen.py`
+
+### Added — LumenNav tests, which did not exist
+The nav had NO coverage, which is why deleting a whole cross-vertical switcher
+broke nothing: the absence of a failure was the absence of a test. The new suite
+mocks entitlements **generously** (Job Fit, GRANT, Direction Setting all
+entitled) so a reinstated switcher fails loudly instead of passing against an
+empty fixture.
+
+- Files: `inspire-genius-frontend/src/pages/lumen/__tests__/LumenNav.test.tsx`
+
+### Verification
+Frontend 552 suites / 4411 tests under the real CI command (`--coverage`);
+build + eslint clean. Backend `tests/lumen` 33 passed; the full agent-engine
+suite showed 4595 passed / 174 failed — **the same 174 as the untouched
+baseline** (websocket + DynamoDB tests needing AWS credentials locally),
+confirmed by re-running on a stash; CI's own agent-engine job passed.
+
+**Verified on the deployed artefacts, not on green ticks:**
+- dev ECS rolled to taskdef `:56`, PRIMARY/COMPLETED, 1/1 running; ECS-exec into
+  the running container found `_mirror_moment_to_chat_history` twice in
+  `app/routes/lumen.py` (definition + call site).
+- stable bundle: the `LumenNav` chunk has `lumen-back-to-ig` and "Back to
+  Inspire Genius" and ZERO hits for "or switch to", "Coaching" and
+  `listEntitledVerticals`; the shared chunk's `LUMEN_TOOLS` is exactly
+  Dashboard / My Self-Portrait / Moments.
+
+### NOT done — backend is dev-only
+The frontend deployed to dev **and** staging-b (a merge does both), but the
+agent-engine change is on **dev only**. staging-b needs a separate
+`release-stable-*` tag promote, which is a deliberate stop. Until then, Moments
+on staging-b will not appear in Meridian history — the FE half is inert there,
+which is harmless because the change is purely additive.
+
+## [2026-08-06] — Home round 2: greeting header, four recent topics, tan app background
+
+Frontend-only; PR #378 (merge `e0cfe81d`), deployed and verified on dev + staging-b.
+
+### Changed — all pages
+- **Classic/New toggle removed** (both instances — `/home` and Meridian Chat) and
+  the new surfaces are now the default. Less of a behaviour change than it reads:
+  `ci-deploy.yml` already writes `VITE_NEW_USER_SURFACES=true`, and the shipped
+  bundle proved it (`envDefault` compiled to `return !0`), so dev and staging-b
+  were already on the new surfaces. What actually changes is local dev, any env
+  without the var, and anyone who had explicitly chosen Classic. The
+  `/<path>/classic` routes remain — the switch went, not the destination.
+- **Tan (#FBF7F0) moved to `SidebarScaffold`**, so every page inherits it instead
+  of HomeV2 carrying its own wrapper.
+
+### Changed — HomeV2
+- Header: "Welcome {first} — What are we working on today?" on one line, with
+  Chat with Meridian (left) · View PRISM Report (centre) · Request PRISM Survey
+  (right) beneath. A 3-column grid, not flex-with-spacers, so the middle button
+  centres against the PAGE rather than its neighbours.
+- Those three buttons left the tile; "Latest report: …" moved up beside
+  "Powered by PRISM".
+- Recent topics inline again, **capped at four**, each deep-linking into the
+  conversation it names.
+- Removed: the "View these videos…" line (the Videos control stays), the embedded
+  Today's Prep tile, the My Journey and Job Fit pills.
+- Self-Portrait un-locked; Goals added, locked. Job Fit stays off at the VERTICAL
+  level, so dropping its pill re-exposes nothing.
+
+### Changed — chat + left menu
+- Meridian header row: New Chat · Starter Questions · Moments · History ·
+  Documents · Export.
+- Document Library sits **directly above Settings**. "Directly" is why it also
+  joined `MENU_TAIL_LABELS`: the workspace-vertical splice inserts ahead of the
+  first tail label, so without it Job Fit landed between the two. The test
+  asserts adjacency (`gap === 1`), not relative order — an `indexOf` comparison
+  would not have caught it.
+
+### Fixed — two pre-existing bugs the default-flip surfaced
+1. `coachAudioPreviewService.ts` **cast `import.meta`** before reading `.env`.
+   The Jest AST transformer matches the MetaProperty node, so the cast made the
+   rewrite silently miss and untransformed `import.meta` reached the CJS runtime
+   as *"Cannot use 'import.meta' outside a module"*. Latent until CoachesV2
+   became default and four route tests failed on a file nobody had touched.
+2. `window.matchMedia` was hand-stubbed in three test files; the polyfill moved
+   to `jest.setup.ts`, guarded for node-environment suites.
+
+### Reverted mid-task — /help/classic is NOT an escape hatch
+I first "fixed" it to render `HelpPage` directly, reading the name as a rollback
+path. It isn't: `/help` is the support-request surface and `/help/classic` is
+where the Help PAGE lives, V2 resolution included. The change made HelpV2
+unreachable; `tsc` caught it as an unused `HelpSurface`. Restored, with a comment.
+
+### i18n
+Three new keys (`welcomePrefix`, `whatToday`, `quickGoals`) across **all 21**
+locales with real translations, not just the 10 the parity test checks.
+
+### Verification
+Rendered the composed page rather than trusting assertions: header line,
+left/centre/right columns, exactly four topics with the fifth correctly outside
+the cap, Self-Portrait live, Goals locked, Today's Prep / My Journey / Job Fit /
+videos blurb all absent. Full suite under the REAL CI command (`--coverage`,
+which `npm run test:ci` omits): **551 suites / 4406 tests**. Build clean; ESLint
+unchanged from baseline (routes.tsx carries 11 pre-existing react-refresh errors,
+same count before and after).
+
+**Verified on the deployed bundle**, not on a green tick: hash
+`index-wK1CpleA` → `index-C9mcccWe`; `toggleNewHome` and `homeV2.classic` gone;
+flag default compiles to `i===null?!0`; HomeV2 chunk has `whatToday` /
+`homev2-header-actions` and zero hits for `homev2-todays-prep`, `my-journey`,
+`job-fit`, `videosBlurb`; all three new keys served in en/es/ja/tr on both tiers.
+
 ## [2026-08-06] — Lumen Self-Portrait: the whole PRISM read, and a résumé that actually counts
 
 Monorepo PR #827, frontend PR #376, docs #828 / FE #377. **Merged and deployed to
