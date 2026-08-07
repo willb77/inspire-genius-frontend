@@ -10,7 +10,6 @@ import {
 } from "date-fns";
 import {
   CalendarDays,
-  FileText,
   MessageSquare,
   Sparkles,
   Target,
@@ -35,11 +34,7 @@ import {
   AddPersonalDocModal,
   type AddPersonalDocTarget,
 } from "@/components/dashboard/v2/AddPersonalDocModal";
-import {
-  ProfileDocViewerDialog,
-  type ViewableDoc,
-} from "@/components/dashboard/v2/ProfileDocViewerDialog";
-import { generatePrismReport } from "@/services/documents/prismReport.service";
+import { PrismDataMenu } from "@/components/dashboard/v2/PrismDataMenu";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
@@ -262,7 +257,6 @@ export default function HomeV2() {
   const navigate = useNavigate();
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
-  const [viewDoc, setViewDoc] = useState<ViewableDoc | null>(null);
   // First name for the page greeting (restored 2026-08-06). Falls back through
   // fullName → name → "there" so the heading never renders "Welcome ,".
   const firstName =
@@ -389,39 +383,6 @@ export default function HomeV2() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  /**
-   * "View PRISM Report" — build the report, then show it.
-   *
-   * It used to open the *stored* PRISM document. For anyone whose PRISM arrived
-   * by import that document is a synthesised `text/csv` row at an S3 key with
-   * no object behind it, so the viewer said "this file type can't be previewed
-   * here" and the new-tab fallback 404'd. Both confirmed on dev.
-   *
-   * Now it asks the backend to render the report (the Self-Portrait, through
-   * the shared docgen engine) and passes the returned URL straight to the
-   * viewer. Generated per click rather than cached — the URL is presigned and
-   * short-lived, and a dead link is exactly what this replaced.
-   */
-  const openPrismReport = async (): Promise<void> => {
-    const label = t("homeV2.prismReport", { defaultValue: "PRISM Report" });
-    // Show the dialog immediately in its loading state. Generation takes a
-    // moment, and a button that looks inert until a document appears reads as
-    // broken — which is the impression this whole path is fixing.
-    setViewDoc({ id: "prism-report", label, pending: true });
-    try {
-      const report = await generatePrismReport("pdf");
-      setViewDoc({
-        id: "prism-report",
-        label,
-        fileName: report.fileName,
-        contentType: report.contentType,
-        url: report.downloadUrl,
-      });
-    } catch {
-      setViewDoc({ id: "prism-report", label, failed: true });
-    }
-  };
-
   // PRISM / Resume / Bio / Additional Info → open the tagged-upload modal,
   // which uploads the file with the right doc_kind so the profile loader can
   // inject it.
@@ -484,25 +445,14 @@ export default function HomeV2() {
               </div>
 
               <div className="sm:justify-self-center">
-                {/* Only rendered when a report exists — the same condition the
-                    tile used. An always-present button that opens a viewer with
-                    nothing in it is the failure this path already fixed once. */}
-                {hasReport ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      void openPrismReport();
-                    }}
-                    data-testid="homev2-view-prism-report"
-                    className="w-full border-[rgba(11,27,51,0.10)] text-[#0B1B33] sm:w-auto"
-                  >
-                    <FileText className="size-4" />
-                    {t("homeV2.viewInventoryPdf", {
-                      defaultValue: "View PRISM Report",
-                    })}
-                  </Button>
-                ) : null}
+                {/* "View PRISM Report" became the "Prism Data" dropdown on
+                    2026-08-07 (request): the real PRISM PDF fetched from S3 plus
+                    the Brain Map, instead of a single button that generated the
+                    Self-Portrait. Still gated on `hasReport` — the same
+                    condition the button used — so it never appears with nothing
+                    behind it. The Self-Portrait itself stays reachable from the
+                    tile's Self-Portrait quick action. */}
+                {hasReport ? <PrismDataMenu /> : null}
               </div>
 
               <div className="sm:justify-self-end">
@@ -547,13 +497,6 @@ export default function HomeV2() {
             target={personalTarget}
             onOpenChange={(open) => {
               if (!open) setPersonalTarget(null);
-            }}
-          />
-
-          <ProfileDocViewerDialog
-            doc={viewDoc}
-            onOpenChange={(open) => {
-              if (!open) setViewDoc(null);
             }}
           />
         </div>
