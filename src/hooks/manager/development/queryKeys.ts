@@ -14,4 +14,5 @@ export const developmentKeys = {
     [...developmentKeys.all, "milestones", memberId] as const,
   matches: (memberId: string, kind: "internal" | "external") =>
     [...developmentKeys.all, "matches", memberId, kind] as const,
+  chat: (memberId: string) => [...developmentKeys.all, "chat", memberId] as const,
 }
