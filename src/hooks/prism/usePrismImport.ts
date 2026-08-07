@@ -13,11 +13,16 @@ export function usePrismImport() {
   return useMutation({
     mutationFn: ({ userId, file }: ImportPrismParams) =>
       importPrismFile(userId, file),
-    onSuccess: (data) => {
+    onSuccess: (data: { score_count?: number }) => {
       queryClient.invalidateQueries({ queryKey: ['prism-history'] })
-      const scores = data.parsed_scores
+      // The import endpoint returns AdminAssessmentCreated (score_count), not a
+      // parsed-colours object — the old toast always read undefined and showed
+      // "Gold: 0, Green: 0…" on every successful import.
+      const n = data?.score_count
       toast.success(
-        `PRISM report imported — Gold: ${scores?.gold ?? 0}, Green: ${scores?.green ?? 0}, Blue: ${scores?.blue ?? 0}, Orange: ${scores?.orange ?? 0}`,
+        typeof n === 'number'
+          ? `PRISM report imported — ${n} scores added.`
+          : 'PRISM report imported.',
       )
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {

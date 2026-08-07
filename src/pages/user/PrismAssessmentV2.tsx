@@ -69,7 +69,7 @@ export default function PrismAssessmentV2() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx"
+              accept=".csv,text/csv"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -78,13 +78,14 @@ export default function PrismAssessmentV2() {
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={importMutation.isPending}
+              title="Upload your PRISM report as a CSV file"
             >
               {importMutation.isPending ? (
                 <Loader2 className="me-1.5 h-4 w-4 animate-spin" />
               ) : (
                 <Upload className="me-1.5 h-4 w-4" />
               )}
-              Import Existing Report
+              Import Existing Report (CSV)
             </Button>
           </div>
         </div>

@@ -105,7 +105,7 @@ export default function PrismAssessment() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,.csv,.xls,.xlsx"
+              accept=".csv,text/csv"
               onChange={handleFileSelect}
               className="hidden"
             />
