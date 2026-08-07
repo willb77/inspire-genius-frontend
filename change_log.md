@@ -1,3 +1,42 @@
+## [2026-08-07] — HomeV2: productionised PRISM Brain Map + "Prism Data" dropdown
+
+Two HomeV2 changes (request). PR willb77/inspire-genius-frontend#384.
+
+### Added
+- `PrismRadialMap` — self-contained inline-SVG PRISM 8-Dimensional "wheel":
+  four colour quadrants (Gold TL / Green TR / Blue BR / Red BL), eight behaviour
+  spokes, grid rings 35/65/75/100, with profile layers overlaid (Underlying red
+  solid, Adapted purple dashed, Consistent blue solid, Blueprint green). Accepts
+  optional adapted/consistent/blueprint layers — only Underlying is persisted
+  today, so one polygon renders; the rest light up automatically once captured.
+  - Files: `src/components/prism/PrismRadialMap.tsx`
+- `PrismSelfMapContent` — shared lazy fetch (`useMyPrism`) + loading/error/empty
+  states, used by both the "Behavioral map" pill and the new dropdown.
+  - Files: `src/components/prism/PrismSelfMapContent.tsx`
+- `PrismDataMenu` — the "Prism Data" header dropdown: the real PRISM PDF fetched
+  from S3 as a presigned URL (`useMyPrismReport` → `usePrismReportDownloadUrl`)
+  plus the Brain Map. Report query is lazy (fires only when the menu opens).
+  - Files: `src/components/dashboard/v2/PrismDataMenu.tsx`
+- Tests: `PrismRadialMap`, `PrismSelfMapContent`, `PrismDataMenu` (10).
+
+### Changed
+- `BehavioralMapDialog` — the "Behavioral map" pill now opens the radial
+  `PrismRadialMap` (via `PrismSelfMapContent`) instead of the recharts spider.
+  - Files: `src/components/dashboard/v2/BehavioralMapDialog.tsx`
+- `HomeV2` — the header centre "View PRISM Report" button became `<PrismDataMenu/>`
+  (still gated on `hasReport`); removed the now-dead `openPrismReport` /
+  `ProfileDocViewerDialog` / `generatePrismReport` path. Self-Portrait stays on
+  the tile's Self-Portrait quick action.
+  - Files: `src/pages/user/HomeV2.tsx`
+
+### Notes
+- `PrismBehavioralMap` (the old spider) is unchanged — still used by the Team
+  Development Studio member card.
+- Reference generator + rendered sample live in the monorepo `docs/prism/brain-map/`
+  (PR willb77/inspire-genius#842).
+
+---
+
 ## [2026-08-06] — Moments-in-history promoted to staging-b, tagged deliberately short
 
 `release-stable-2026-08-06-moments-in-history` → run 31140173806, all six jobs
