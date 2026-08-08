@@ -43,8 +43,20 @@ const SUGGESTIONS = [
  * The numbers and structure live in the cards below this on the page; this is
  * the plain-language read on top of them. Non-clinical throughout — a mirror to
  * think with, never a diagnosis.
+ *
+ * `showAsk` exists because the two pages that mount this diverged: the Lumen
+ * Self-Portrait dropped the question box, Direction-Setting's Establish stage
+ * kept it. Note that the non-clinical disclaimer normally sits inside that box,
+ * so it is re-homed under the description whenever the box is hidden — the
+ * caveat is not the ask box's to take with it.
  */
-export function SelfPortraitNarrative({ portrait }: { portrait: SelfPortrait }) {
+export function SelfPortraitNarrative({
+  portrait,
+  showAsk = true,
+}: {
+  portrait: SelfPortrait
+  showAsk?: boolean
+}) {
   const describe = useSelfPortraitDescription()
   const ask = useAskSelfPortrait()
   const [question, setQuestion] = useState("")
@@ -196,10 +208,14 @@ export function SelfPortraitNarrative({ portrait }: { portrait: SelfPortrait }) 
               className="prose prose-sm max-w-none text-sm leading-relaxed text-foreground [&_h2]:mt-4 [&_h2]:text-sm [&_h2]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
             />
           )}
+          {!showAsk && disclaimer && (
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{disclaimer}</p>
+          )}
         </CardContent>
       </Card>
 
       {/* ── Ask your portrait ── */}
+      {showAsk && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -280,6 +296,7 @@ export function SelfPortraitNarrative({ portrait }: { portrait: SelfPortrait }) 
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }
