@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import SelfPortrait from "../SelfPortrait"
 import {
   useSelfPortrait,
@@ -48,7 +48,15 @@ function mockPortrait(data: Partial<Portrait> | undefined, extra = {}) {
 }
 
 const FULL: Portrait = {
-  prism: { dominant_quadrant: "Green", quadrants: { green: 80, blue: 20 } },
+  prism: {
+    dominant_quadrant: "Green",
+    quadrants: { green: 80, blue: 20 },
+    // The page no longer renders the quadrant means, so the dimensions are what
+    // carries the PRISM read — a fixture without them tests a blank card.
+    dimensions: { innovating: 90, initiating: 70, supporting: 30, coordinating: 10 },
+    orientation: { introversion: 40, extroversion: 60 },
+    score_type: "Underlying",
+  },
   corroborating: [
     { framework: "BigFive", confidence: 0.92, maps_to: "Green", agrees_with_prism: true },
     { framework: "DISC", confidence: 0.85, maps_to: "Blue", agrees_with_prism: false },
@@ -63,30 +71,89 @@ const FULL: Portrait = {
 describe("SelfPortrait", () => {
   afterEach(() => jest.resetAllMocks())
 
-  test("leads with the PRISM anchor", () => {
+  test("leads with the headline and the behavioural dimensions", () => {
     mockPortrait(FULL)
     render(<SelfPortrait />)
     expect(screen.getByRole("heading", { level: 1, name: "My Self-Portrait" })).toBeInTheDocument()
-    expect(screen.getByText("Green leads")).toBeInTheDocument()
+    expect(screen.getByText("The eight behavioural dimensions")).toBeInTheDocument()
+    expect(screen.getByText("Innovating")).toBeInTheDocument()
   })
 
-  test("shows tensions rather than smoothing them over", () => {
+  test("keeps the quadrant read even though the quadrant card is gone", () => {
+    // The whole justification for removing `PortraitQuadrants` from this page:
+    // the dimensions card groups each pair under its quadrant colour, so
+    // Green/Blue/Red/Gold survive — with their constituent scores, not just the
+    // mean. If that grouping ever disappears, this removal starts losing data.
     mockPortrait(FULL)
     render(<SelfPortrait />)
-    expect(screen.getByText("Where they pull apart")).toBeInTheDocument()
-    expect(
-      screen.getByText("DISC implies Blue but PRISM shows Green.")
-    ).toBeInTheDocument()
+    // Scoped to the dimensions card: "Green" and "Blue" also appear in the
+    // corroborating list as `maps_to`, and an unscoped query would pass on
+    // those alone — i.e. it would pass even if the grouping were gone.
+    const card = screen
+      .getByText("The eight behavioural dimensions")
+      .closest("[data-slot='card']") as HTMLElement
+    expect(within(card).getByText("Green")).toBeInTheDocument()
+    expect(within(card).getByText("Blue")).toBeInTheDocument()
+    expect(within(card).getByText("Innovating")).toBeInTheDocument()
+    expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
   })
 
   test("lists corroborating instruments with their confidence", () => {
     mockPortrait(FULL)
     render(<SelfPortrait />)
-    // "BigFive" appears twice — once as an instrument badge, once in the
-    // corroborating list — so assert on the confidence line, which is unique.
-    expect(screen.getAllByText("BigFive").length).toBeGreaterThan(0)
+    // "BigFive" used to appear twice — instrument badge and corroborating list.
+    // The badge row is gone, so the corroborating list is now its only mention.
+    expect(screen.getAllByText("BigFive")).toHaveLength(1)
     expect(screen.getByText("confidence 0.92")).toBeInTheDocument()
     expect(screen.getByText("confidence 0.85")).toBeInTheDocument()
+  })
+
+  test("drops the six sections that were removed by request", () => {
+    // Removals are as much a contract as additions — without this, any of them
+    // could be reinstated by a careless merge and nothing would object.
+    mockPortrait({
+      ...FULL,
+      sources: { prism: true, assessments: true, resume: true, bio: true },
+      coverage: "Composed from 4 sources.",
+      evidence: [
+        { source: "resume", kind: "emphasis", label: "leading others", detail: "mentioned often" },
+      ],
+      evidence_note: "Drawn from your own words, not from an assessment.",
+    })
+    render(<SelfPortrait />)
+
+    expect(screen.queryByText("Ask your self-portrait")).not.toBeInTheDocument()
+    expect(screen.queryByText("What this is built from")).not.toBeInTheDocument()
+    expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
+    expect(screen.queryByText("What your own words add")).not.toBeInTheDocument()
+    expect(screen.queryByText("Where your instruments agree")).not.toBeInTheDocument()
+    expect(screen.queryByText("Where they pull apart")).not.toBeInTheDocument()
+    expect(screen.queryByText("Confidence: moderate")).not.toBeInTheDocument()
+  })
+
+  test("the data behind the removed sections still reaches the page", () => {
+    // The sections were removed from the view, not from the payload: the export
+    // in the narrative card still writes evidence and quadrants into the PDF.
+    // A backend change that stopped sending them would be a different bug, and
+    // this asserts the page is not the thing that dropped them.
+    const withEverything: Partial<Portrait> = {
+      ...FULL,
+      evidence: [
+        { source: "resume", kind: "span", label: "9 years", detail: "2015–2024" },
+      ],
+    }
+    mockPortrait(withEverything)
+    render(<SelfPortrait />)
+    expect(screen.getByText("PDF")).toBeInTheDocument()
+    expect(screen.getByText("Word")).toBeInTheDocument()
+  })
+
+  test("keeps the non-clinical disclaimer that used to live in the ask box", () => {
+    // The disclaimer was rendered inside "Ask your self-portrait". Removing that
+    // card must not quietly remove the caveat with it.
+    mockPortrait(FULL)
+    render(<SelfPortrait />)
+    expect(screen.getByText("A mirror, not a diagnosis.")).toBeInTheDocument()
   })
 
   test("still reads the sources it does have when PRISM is absent", () => {
@@ -109,31 +176,24 @@ describe("SelfPortrait", () => {
     render(<SelfPortrait />)
     expect(screen.getByText("No PRISM profile yet")).toBeInTheDocument()
     expect(screen.queryByText(/leads$/)).not.toBeInTheDocument()
-    expect(screen.getByText(/rests on your résumé alone/)).toBeInTheDocument()
+    // The coverage line moved off this page with "What this is built from".
+    expect(screen.queryByText(/rests on your résumé alone/)).not.toBeInTheDocument()
   })
 
-  test("shows every source, present and absent alike", () => {
-    // Showing the gaps is the point: the user needs to know what would sharpen
-    // the portrait, not just what it already has.
+  test("renders nothing PRISM-shaped when the anchor carries no dimensions", () => {
+    // Honest consequence of dropping the quadrant card: a portrait that has
+    // quadrant means but no per-dimension detail now shows no PRISM section at
+    // all, because `PortraitDimensions` returns null. The live backend always
+    // sends dimensions; this pins the shape of the gap rather than hiding it.
     mockPortrait({
       ...FULL,
-      sources: { prism: true, assessments: false, resume: true, bio: false },
-      coverage: "Composed from 2 sources.",
+      prism: { dominant_quadrant: "Green", quadrants: { green: 80, blue: 20 } },
     })
     render(<SelfPortrait />)
-    expect(screen.getByText("What this is built from")).toBeInTheDocument()
-    expect(screen.getByText("Résumé")).toBeInTheDocument()
-    // An absent source renders its "what this would add" prompt.
-    expect(screen.getByText(/signal in its own right/)).toBeInTheDocument()
-    expect(screen.getByText("Composed from 2 sources.")).toBeInTheDocument()
-  })
-
-  test("omits the coverage panel against a backend that predates it", () => {
-    // `sources` is optional purely for back-compat; the page must not render an
-    // all-absent panel and imply the user has nothing on file.
-    mockPortrait(FULL)
-    render(<SelfPortrait />)
-    expect(screen.queryByText("What this is built from")).not.toBeInTheDocument()
+    expect(screen.queryByText("The eight behavioural dimensions")).not.toBeInTheDocument()
+    expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
+    // The rest of the page still stands.
+    expect(screen.getByText("confidence 0.92")).toBeInTheDocument()
   })
 
   test("shows a skeleton while loading", () => {
