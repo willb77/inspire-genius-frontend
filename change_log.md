@@ -1,3 +1,63 @@
+## [2026-08-09] — Journey tiles shortened (192px → 78px, measured); Moments shows only what you pick
+
+Frontend PR [#389](https://github.com/willb77/inspire-genius-frontend/pull/389),
+merged `5bbe8c56`. **LIVE on dev + staging-b** — both report the merge commit in
+`version.json` and carry the new chip and unpicked default.
+
+### Fixed
+- **The tiles shipped hours earlier were taller than the rows they replaced.**
+  Seven columns inside a 1280px container is ~169px per tile, and at that width
+  every sentence wrapped to four or five lines. Tiling them had defeated its own
+  purpose.
+  - The face now carries only what fits on one or two lines: stage number, state
+    icon, name, state chips. `question` and `outcome` move into the tile's
+    `title` alongside the full readiness sentence — one hover away, not lost.
+  - **Readiness stays visible** as a coloured chip (`Ready` / `Thin: PRISM`).
+    It is the reason to look at the page at all — the difference between a door
+    you can open now and one that will disappoint you. Only its wording shrank:
+    new `NEEDS_SHORT` gives one-word chip forms while `NEEDS_LABEL` keeps the
+    long ones for the tooltip.
+  - Files: `src/pages/direction-setting/JourneyPage.tsx`
+
+| | before | after |
+|---|---|---|
+| Tile height | 192px | **78px** |
+| Grid height | 392px | **164px** |
+| Tile width | 169px | 169px |
+
+### Changed
+- **Moments no longer prints the whole history on load.** Arriving for one piece
+  of guidance and getting a wall of old ones is the opposite of the point.
+  Nothing renders until a Moment is picked; "All Moments" survives as a
+  deliberate choice rather than the default.
+  - The picker now shows from the **first** Moment rather than the second —
+    gating on two, now that nothing renders unpicked, would strand a
+    single-Moment user with guidance they cannot open.
+  - A selection that vanishes from a refetched feed falls back to the
+    **unpicked** state, not to the whole list: printing everything in place of
+    the one thing asked for answers a question nobody asked.
+  - The has-Moments-but-none-picked state reads "You have N Moments on file.
+    Pick one above to read it." — never "no Moments", which would tell someone
+    with a full history that it is empty.
+  - Files: `src/pages/lumen/Moments.tsx`
+
+### Verification
+- **Measured, not eyeballed.** jsdom has no layout engine, so the 4452-test
+  suite is structurally incapable of catching tile height — the exact thing this
+  change is about. Rendered the real component, served it against the real built
+  CSS, and measured before and after.
+- **560 suites / 4452 tests, zero failures**; build clean; ESLint clean.
+- Tests strengthened rather than relaxed: readiness assertions now check **the
+  chip and the tooltip**, so shortening the face cannot quietly drop the detail;
+  a new test pins that question and outcome remain reachable in the tooltip; the
+  Moments cases select before asserting — several would otherwise have passed
+  *because nothing renders at all*, the failure mode of testing a page that
+  starts empty.
+- **One deploy check was badly designed and proved nothing:** grepping the
+  deployed chunk for the long readiness sentence returns a hit either way, since
+  that string is now the tooltip text. A string grep cannot distinguish face
+  from tooltip. The evidence for shortening is the local measurement.
+
 ## [2026-08-09] — Left-align by default, Moments history picker, Direction-Setting layout pass
 
 Frontend PR [#388](https://github.com/willb77/inspire-genius-frontend/pull/388),

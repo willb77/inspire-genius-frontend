@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1467</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1468</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3043,6 +3043,18 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-09 &mdash; Prompt #1468 [shorter Journey tiles, Moments picker-only]</div>
+  <div class="prompt-text">&ldquo;The tiles you created are very long, shorten them but display their info. In Moments don&rsquo;t display the full history list &mdash; it should be displayed when selected in the dropdown.&rdquo;</div>
+  <div class="prompt-text"><b>The tiles shipped hours earlier were taller than the rows they replaced.</b> Seven columns inside a 1280px container is ~169px per tile, and at that width every sentence wrapped to four or five lines &mdash; tiling had defeated its own purpose. The face now carries only number, state icon, name and chips; <code>question</code> and <code>outcome</code> moved into the tile <code>title</code> with the full readiness sentence.</div>
+  <div class="prompt-text"><b>Readiness stayed visible</b> as a coloured chip (<code>Ready</code> / <code>Thin: PRISM</code>) &mdash; it is the difference between a door you can open now and one that will disappoint you. Only its wording shrank: new <code>NEEDS_SHORT</code> for the chip, <code>NEEDS_LABEL</code> kept for the tooltip.</div>
+  <div class="prompt-text"><b>Measured, not eyeballed:</b> jsdom has no layout engine, so the 4452-test suite is structurally incapable of catching tile height &mdash; the exact thing being changed. Rendered the real component against the real built CSS and measured: <b>tile 192px &rarr; 78px, grid 392px &rarr; 164px</b>, unchanged 169px width, 13 tiles in two rows of 7+6.</div>
+  <div class="prompt-text"><b>Moments no longer prints the whole history on load.</b> Nothing renders until a Moment is picked; &ldquo;All Moments&rdquo; survives as a choice rather than the default. The picker now shows from the <i>first</i> Moment (gating on two would strand a single-Moment user with guidance they cannot open), and a selection that vanishes from a refetched feed falls back to <i>unpicked</i> rather than to the whole list. The none-picked state says &ldquo;You have N Moments on file&rdquo; &mdash; never &ldquo;no Moments&rdquo;.</div>
+  <div class="prompt-text"><b>Tests strengthened, not relaxed:</b> readiness now asserted on the chip <i>and</i> the tooltip, so shortening the face cannot quietly drop detail; Moments cases select before asserting &mdash; several would otherwise have passed <i>because nothing renders at all</i>.</div>
+  <div class="prompt-text"><b>One deploy check was badly designed and proved nothing</b> &mdash; grepping the deployed chunk for the long readiness sentence hits either way, since that string is now the tooltip text. The evidence for shortening is the measurement.</div>
+  <div class="prompt-text"><b>Status: PR <a href="https://github.com/willb77/inspire-genius-frontend/pull/389">#389</a> merged <code>5bbe8c56</code>, LIVE on dev + staging-b</b> (both report the merge commit in <code>version.json</code>).</div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-09 &mdash; Prompt #1467 [left-align default, Moments picker, DS layout]</div>
   <div class="prompt-text">&ldquo;Make the text in Self-portrait and Moments left justified. In Moments add a dropdown to select the Moments history and display it. In Moments change &lsquo;Short, specific guidance for the thing you&rsquo;re about to walk into&hellip;&rsquo; to &lsquo;Short, specific guidance&hellip;&rsquo;&rdquo; &mdash; then: &ldquo;My Journey &mdash; left justify, 2 rows of clickable tiles for the 13 steps. Direction Settings Establish &mdash; left justify the heading, make tiles smaller so they&rsquo;re visible without scrolling. Make the &lsquo;Who am I&rsquo; page look like the self portrait page.&rdquo;</div>
