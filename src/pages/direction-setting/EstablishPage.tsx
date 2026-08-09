@@ -74,20 +74,20 @@ function Tile({
   return (
     <Card
       className={cn(
-        "flex h-full flex-col",
+        "flex h-full flex-col gap-0 py-3",
         done ? "border-emerald-200 bg-emerald-50/40" : undefined
       )}
     >
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+      <CardHeader className="px-4 pb-1.5">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{blurb}</p>
+      <CardContent className="flex flex-1 flex-col justify-between gap-2 px-4">
+        <p className="text-xs leading-relaxed text-muted-foreground">{blurb}</p>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span
             className={cn(
               "inline-flex items-center gap-1.5 text-xs",
@@ -105,6 +105,7 @@ function Tile({
           <Button
             type="button"
             size="sm"
+            className="h-7 px-2.5 text-xs"
             variant={done ? "outline" : "default"}
             onClick={onAction}
           >
@@ -180,7 +181,7 @@ export default function EstablishPage() {
   const doneCount = [hasPrismScores, hasResume, hasBio].filter(Boolean).length
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6">
       <header>
         <h1 className="text-2xl font-semibold">What we know about you</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -196,7 +197,13 @@ export default function EstablishPage() {
           : `${doneCount} of 3 on file. Anything you add from here sharpens what comes next.`}
       </p>
 
-      <section aria-label="Ways to tell us about you" className="grid gap-4 sm:grid-cols-2">
+      {/* Four across on a wide screen so the whole set is above the fold — the
+          point of this page is that you can see all four options at once and
+          pick one, and a 2×2 that ran off the bottom hid half the choices. */}
+      <section
+        aria-label="Ways to tell us about you"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <Tile
           icon={ClipboardList}
           title="Request your PRISM survey"
