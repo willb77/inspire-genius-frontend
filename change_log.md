@@ -1,3 +1,65 @@
+## [2026-08-08] — Lumen Self-Portrait trimmed to the read itself
+
+Frontend PR [#387](https://github.com/willb77/inspire-genius-frontend/pull/387),
+branch `feat/lumen-portrait-trim-tiles`. **Open, not merged — not deployed to
+either tier.** Merging the frontend ships to dev *and* staging-b in one step, so
+the merge is held for explicit approval.
+
+Six sections removed from `/vertical/lumen/self-portrait` by request.
+
+### Removed
+- **Ask your self-portrait** — the question box and its suggestion chips.
+- **What this is built from** — the four-source coverage panel.
+- **The PRISM quadrant card** — the "… leads" summary.
+- **What your own words add** — the résumé/bio evidence block.
+- **Where your instruments agree** / **Where they pull apart**.
+- **The Confidence + instrument badge row** in the page header.
+  - Files: `src/pages/lumen/SelfPortrait.tsx`
+
+### Changed
+- `SelfPortraitNarrative` gained `showAsk` (default `true`). The ask box lives
+  inside a component **both** portrait pages mount, so it is gated rather than
+  deleted; Lumen passes `false`, Direction-Setting's Establish stage is
+  untouched.
+  - Files: `src/pages/lumen/SelfPortraitNarrative.tsx`
+- Shared dimensions card no longer says "each quadrant **above**" — still true
+  on Establish, dangling on Lumen now that nothing is above it.
+  - Files: `src/components/lumen/portrait/PortraitSections.tsx`
+
+### Not removed — worth being precise about
+- **No component was deleted.** All five section components are still rendered by
+  `pages/direction-setting/PortraitPage.tsx`, which this PR does not touch. The
+  two pages now differ in *composition* as well as in voice and navigation.
+- **The backend is untouched.** It still returns `sources`, `evidence`,
+  `convergences`, `tensions` and the `/ask` route, and the PDF/Word export still
+  carries all of it. This changes what one page shows, not what exists.
+- **The quadrant read survives.** `PortraitDimensions` groups all eight
+  dimensions under their quadrant colour, so Green/Blue/Red/Gold remain on the
+  page — with their constituent scores rather than just the mean. Pinned by a
+  test scoped *inside* the dimensions card: the colour names also appear in the
+  corroborating list as `maps_to`, so an unscoped assertion would have passed
+  even if the grouping vanished.
+- **The non-clinical disclaimer survives.** It was rendered inside the ask box
+  and is re-homed under the description when that box is hidden. Losing "a
+  mirror, not a diagnosis" as a side effect of a layout change is the kind of
+  regression nothing here would otherwise have caught.
+
+### Known, deliberate consequence
+A portrait carrying quadrant means but **no** per-dimension detail now renders no
+PRISM section at all — `PortraitDimensions` returns `null`. The live backend
+always sends dimensions. A test pins the shape of that gap rather than adding a
+fallback, because a fallback would reinstate the card just removed.
+
+### Verification
+- Full frontend suite **560 suites / 4442 tests, zero failures**
+- `npm run build` clean (tsc + vite); ESLint clean on every changed file
+- Direction-Setting suites pass untouched — the specific check that the shared
+  components didn't leak
+- Removal-as-contract: a test asserts all six sections are absent, so a careless
+  merge cannot quietly reinstate them
+- **Not verified in a browser** — no authenticated render was performed. The
+  evidence here is tests and build, not observed behaviour.
+
 ## [2026-08-07] — HomeV2: productionised PRISM Brain Map + "Prism Data" dropdown
 
 Two HomeV2 changes (request). PR willb77/inspire-genius-frontend#384.

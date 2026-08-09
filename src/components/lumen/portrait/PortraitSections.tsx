@@ -232,9 +232,9 @@ export function PortraitDimensions({
         {hasDimensions && (
           <>
             <p className="text-sm text-muted-foreground">
-              Each quadrant above is the average of the two dimensions below it.
-              A Green of 68 built from Innovating 90 and Initiating 46 is a very
-              different read from one built from 67 and 69.
+              Each quadrant is the average of the two dimensions grouped under
+              it. A Green of 68 built from Innovating 90 and Initiating 46 is a
+              very different read from one built from 67 and 69.
               {prism.score_type
                 ? ` These are your ${prism.score_type} scores.`
                 : " The score variant wasn't recorded for these."}
