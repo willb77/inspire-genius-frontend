@@ -1,3 +1,69 @@
+## [2026-08-09] — Left-align by default, Moments history picker, Direction-Setting layout pass
+
+Frontend PR [#388](https://github.com/willb77/inspire-genius-frontend/pull/388),
+branch `feat/lumen-ds-layout-pass`. Six requested changes across Lumen and
+Direction Setting.
+
+### Fixed
+- **Alignment was one line, not four pages.** `#root { text-align: center }` in
+  `src/App.css` is `create-vite`'s React scaffold default — the sibling `.logo`
+  and `.read-the-docs` rules are from the same template — and was never
+  revisited. Sitting on `#root`, every string in the app that does not set its
+  own alignment inherited **centred**, which is why left-alignment complaints
+  arrived against four unrelated surfaces at once rather than against one.
+  - Files: `src/App.css`
+  - **The one change the test suite cannot see** — jsdom does not apply this
+    stylesheet, so 4449 green tests prove nothing about it. Verified in a
+    browser: `#root` computes `left`; the login page keeps its deliberately
+    centred "or continue with" / "OR" dividers; the dashboard's "No coaches
+    available" empty state stays centred. Those carry an explicit `text-center`.
+    Inherited centring is gone; chosen centring stands.
+
+### Added
+- **Moments history picker.** Names Moments by **situation** ("Salary
+  negotiation"), not by id or date, because that is what a reader recognises;
+  proactive Moments with no situation fall back to their trigger. Filters rows
+  already on the page rather than fetching — the feed *is* the history, and a
+  second endpoint would be a second source of truth for the same rows. Falls
+  back to showing everything when a selected Moment disappears from a refetched
+  feed, rather than rendering an empty list under a picker still naming it.
+  - Files: `src/pages/lumen/Moments.tsx`
+- Feed window 20 → 50, so something calling itself "your history" can reach
+  past the last twenty.
+
+### Changed
+- **Moments copy** → "Short, specific guidance — grounded in your own behavioral
+  profile."
+- **My Journey: 13 stages from rows to tiles.** They were 13 full-width rows, so
+  the map needed scrolling before you could see the shape of the journey — the
+  one thing a map is for. Now 7 across at desktop width (two rows, 7 + 6),
+  stepping down on smaller screens rather than scrolling horizontally. `outcome`
+  moves to the tile's `title`, `question` clamps to two lines. **Readiness does
+  not move**: "thin without X" and "ready" are the difference between a door you
+  can open now and one that will disappoint you, so it stays on the tile face.
+  - Files: `src/pages/direction-setting/JourneyPage.tsx`
+- **Establish tiles compacted** (smaller type, tighter padding, 4-up at `xl`) so
+  all four ways in are visible without scrolling. The heading needed nothing
+  beyond the `App.css` fix.
+  - Files: `src/pages/direction-setting/EstablishPage.tsx`
+- **"Who I am" matched to Lumen.** The same six sections dropped. Both pages read
+  the same portrait engine and had diverged for two days purely because Lumen was
+  trimmed first — sequencing, not a decision. The one piece of *journey* function
+  that would have gone with the source-coverage card, its "add what's missing"
+  door back to Establish, moves into the header rather than being deleted: this
+  page's job is to route onward, and Lumen's is not.
+  - Files: `src/pages/direction-setting/PortraitPage.tsx`
+
+### Verification
+- **560 suites / 4449 tests, zero failures**; `npm run build` clean; ESLint clean
+- New tests pin the picker's filtering and its missing-selection fallback, and
+  pin both portrait pages against silently drifting apart again
+- **Not visually verified: the four pages themselves.** The dev test account is
+  not entitled to either vertical, so its nav does not offer them and a hard
+  navigation drops the dev-quick-login session. Those changes rest on the test
+  suite; the alignment change — the only one tests cannot reach — rests on the
+  browser check above.
+
 ## [2026-08-08] — Lumen Self-Portrait trimmed to the read itself
 
 Frontend PR [#387](https://github.com/willb77/inspire-genius-frontend/pull/387),

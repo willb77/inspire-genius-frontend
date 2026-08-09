@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1466</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1467</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3043,6 +3043,18 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-09 &mdash; Prompt #1467 [left-align default, Moments picker, DS layout]</div>
+  <div class="prompt-text">&ldquo;Make the text in Self-portrait and Moments left justified. In Moments add a dropdown to select the Moments history and display it. In Moments change &lsquo;Short, specific guidance for the thing you&rsquo;re about to walk into&hellip;&rsquo; to &lsquo;Short, specific guidance&hellip;&rsquo;&rdquo; &mdash; then: &ldquo;My Journey &mdash; left justify, 2 rows of clickable tiles for the 13 steps. Direction Settings Establish &mdash; left justify the heading, make tiles smaller so they&rsquo;re visible without scrolling. Make the &lsquo;Who am I&rsquo; page look like the self portrait page.&rdquo;</div>
+  <div class="prompt-text"><b>Alignment turned out to be one line, not four pages.</b> <code>#root { text-align: center }</code> in <code>App.css</code> is <code>create-vite</code>&rsquo;s React scaffold default &mdash; the sibling <code>.logo</code>/<code>.read-the-docs</code> rules are from the same template &mdash; and was never revisited. On <code>#root</code> it meant every string in the app that doesn&rsquo;t set its own alignment inherited <i>centred</i>, which is why complaints arrived against four unrelated surfaces at once.</div>
+  <div class="prompt-text"><b>That is the one change the test suite cannot see</b> &mdash; jsdom doesn&rsquo;t apply the stylesheet, so 4449 green tests prove nothing about it. Verified in a browser instead: <code>#root</code> computes <code>left</code>; the login page keeps its deliberately centred &ldquo;or continue with&rdquo;/&ldquo;OR&rdquo; dividers; the dashboard&rsquo;s &ldquo;No coaches available&rdquo; empty state stays centred. Those carry an explicit <code>text-center</code>. <b>Inherited centring gone; chosen centring stands.</b></div>
+  <div class="prompt-text"><b>Moments</b> &mdash; history picker naming Moments by <i>situation</i> rather than id or date (proactive ones fall back to their trigger), filtering rows already on the page rather than fetching: the feed <i>is</i> the history, and a second endpoint would be a second source of truth for the same rows. Falls back to showing everything when a selected Moment vanishes from a refetched feed. Feed window 20&rarr;50. Copy trimmed as asked.</div>
+  <div class="prompt-text"><b>My Journey</b> &mdash; 13 full-width rows became tiles, 7 across at desktop width (two rows, 7+6). The map needed scrolling before you could see the shape of the journey, which is the one thing a map is for. <code>outcome</code> moved to the tile title and <code>question</code> clamps to two lines; <b>readiness did not move</b> &mdash; &ldquo;thin without X&rdquo; vs &ldquo;ready&rdquo; is the difference between a door you can open now and one that will disappoint you.</div>
+  <div class="prompt-text"><b>Establish</b> tiles compacted (4-up at <code>xl</code>) so all four ways in fit above the fold. <b>&ldquo;Who I am&rdquo;</b> matched to Lumen&rsquo;s composition &mdash; same six sections dropped; they had diverged for two days purely because Lumen was trimmed first. Its &ldquo;add what&rsquo;s missing&rdquo; door back to Establish moved into the header rather than being deleted: that page&rsquo;s job is to route onward.</div>
+  <div class="prompt-text"><b>Verification:</b> 560 suites / 4449 tests, zero failures; build clean; ESLint clean. <b>Not visually verified: the four pages themselves</b> &mdash; the dev test account isn&rsquo;t entitled to either vertical, so its nav doesn&rsquo;t offer them and a hard navigation drops the dev-quick-login session.</div>
+  <div class="prompt-text"><b>Status: PR <a href="https://github.com/willb77/inspire-genius-frontend/pull/388">#388</a> open.</b></div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-08 &mdash; Prompt #1466 [Lumen Self-Portrait: remove six sections]</div>
   <div class="prompt-text">&ldquo;In self portrait remove and change the following: the Ask your self-portrait tile remove it, the What this is built from tile, the PRISM Blue leads tile, the What your own words add tile, the Where your instruments agree and Where they pull apart tiles.&rdquo; &mdash; then: &ldquo;add remove Confidence: moderate PRISM to the list&rdquo;</div>
