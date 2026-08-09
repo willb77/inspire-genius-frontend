@@ -16,6 +16,36 @@ import type { Moment, SavedPrompt } from "@/types/lumen"
 jest.mock("@/hooks/lumen/useMoments")
 jest.mock("@/hooks/lumen/useSavedPrompts")
 
+// Radix's Select never opens under jsdom (no pointer events), so the history
+// picker would be untestable as-is. Swapped for a native <select> — the same
+// mock the settings and form-modal suites already use, but wired through
+// `onValueChange` so the *filtering* is exercised and not just the markup.
+jest.mock("@/components/ui/select", () => ({
+  Select: ({
+    value,
+    onValueChange,
+    children,
+  }: {
+    value: string
+    onValueChange: (v: string) => void
+    children: React.ReactNode
+  }) => (
+    <select
+      aria-label="Choose a Moment from your history"
+      value={value}
+      onChange={(e) => onValueChange(e.target.value)}
+    >
+      {children}
+    </select>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
+    <option value={value}>{children}</option>
+  ),
+  SelectTrigger: () => null,
+  SelectValue: () => null,
+}))
+
 const mockUseMoments = useMoments as jest.MockedFunction<typeof useMoments>
 const mockUseAskMoment = useAskMoment as jest.MockedFunction<typeof useAskMoment>
 const mockUseSetMomentState = useSetMomentState as jest.MockedFunction<
@@ -241,4 +271,86 @@ describe("Moments", () => {
       expect(screen.queryByText("Your pinned situations")).not.toBeInTheDocument()
     })
   })
+
+  describe("history picker", () => {
+    const OTHER: Moment = {
+      id: "m-2",
+      trigger: "pull",
+      context: "Salary negotiation",
+      body: "Name a number first.",
+      state: "new",
+      created_at: "2026-07-25T12:00:00Z",
+      delivered_at: "2026-07-25T12:00:00Z",
+    }
+
+    test("does not appear when there is nothing to choose between", () => {
+      // One Moment and a picker offering it is furniture, not a feature.
+      setup({ moments: [MOMENT] })
+      render(<Moments />)
+      expect(
+        screen.queryByRole("combobox", { name: /choose a moment/i })
+      ).not.toBeInTheDocument()
+    })
+
+    test("names each Moment by its situation, not its id or trigger", () => {
+      setup({ moments: [MOMENT, OTHER] })
+      render(<Moments />)
+      expect(screen.getByRole("option", { name: /1:1 with a skip-level/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: /Salary negotiation/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: "All Moments (2)" })).toBeInTheDocument()
+    })
+
+    test("selecting one shows that Moment and hides the rest", () => {
+      setup({ moments: [MOMENT, OTHER] })
+      render(<Moments />)
+      expect(screen.getByText("Name a number first.")).toBeInTheDocument()
+
+      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
+        target: { value: "m-1" },
+      })
+
+      expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
+      expect(screen.queryByText("Name a number first.")).not.toBeInTheDocument()
+    })
+
+    test("offers a way back to the whole list", () => {
+      setup({ moments: [MOMENT, OTHER] })
+      render(<Moments />)
+      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
+        target: { value: "m-1" },
+      })
+
+      fireEvent.click(screen.getByRole("button", { name: /show all 2 moments/i }))
+      expect(screen.getByText("Name a number first.")).toBeInTheDocument()
+    })
+
+    test("a selection that no longer exists falls back to everything", () => {
+      // Ask again and the feed refetches; the selected id can vanish. Rendering
+      // an empty list under a picker still naming it would read as data loss.
+      const { rerender } = renderMoments([MOMENT, OTHER])
+      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
+        target: { value: "m-2" },
+      })
+      expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
+
+      setup({ moments: [MOMENT] })
+      rerender(<Moments />)
+      expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
+    })
+
+    test("proactive Moments fall back to their trigger for a label", () => {
+      const cadence: Moment = { ...OTHER, id: "m-3", trigger: "cadence", context: null }
+      setup({ moments: [MOMENT, cadence] })
+      render(<Moments />)
+      expect(
+        screen.getByRole("option", { name: /Weekly check-in/ })
+      ).toBeInTheDocument()
+    })
+  })
 })
+
+/** Render helper for the picker cases that need to re-render with new data. */
+function renderMoments(moments: Moment[]) {
+  setup({ moments })
+  return render(<Moments />)
+}

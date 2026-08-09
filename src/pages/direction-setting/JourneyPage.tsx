@@ -86,7 +86,21 @@ function StateIcon({ state }: { state: StageState }) {
   return <CircleDashed className="h-4 w-4 text-muted-foreground/50" aria-hidden />
 }
 
-function StageRow({
+/**
+ * One stage, as a tile in the map.
+ *
+ * This was a full-width row per stage — thirteen of them, so the map itself
+ * needed scrolling before you could see the shape of the journey, which is the
+ * one thing a map is for. As a tile the whole route fits in two rows.
+ *
+ * What a tile can't carry is the row's two lines of prose. The stage's
+ * `outcome` moves to the tile's `title`, and the `question` is clamped to two
+ * lines: both are orientation, and the reader already has the stage name. What
+ * does NOT move is readiness — "thin without X" and "ready" are the difference
+ * between a door you can open now and one that will disappoint you, and a
+ * gap-shaped truth belongs on the face of the tile, not behind a hover.
+ */
+function StageTile({
   stage,
   isNext,
   onOpen,
@@ -101,75 +115,76 @@ function StageRow({
   // array would wrongly re-list satisfied requirements.
   const missing = stage.unmetNeeds ?? stage.needs
   return (
-    <li>
+    <li className="min-w-0">
       <button
         type="button"
         onClick={() => onOpen(stage.id)}
         aria-current={isNext ? "step" : undefined}
+        title={stage.outcome || undefined}
         className={cn(
-          "flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors",
+          "flex h-full w-full flex-col gap-1.5 rounded-lg border p-2.5 text-left transition-colors",
           isNext
             ? "border-primary bg-primary/5"
             : "border-border bg-background hover:border-primary/50"
         )}
       >
-        <span
-          className={cn(
-            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
-            done
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : isNext
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-muted text-muted-foreground"
-          )}
-        >
-          {stage.id}
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
+              done
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : isNext
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-muted text-muted-foreground"
+            )}
+          >
+            {stage.id}
+          </span>
+          <StateIcon state={stage.state} />
+          <ArrowRight
+            className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
         </span>
 
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="font-medium">{stage.name}</span>
-            <StateIcon state={stage.state} />
-            {isNext && (
-              <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
-                Next
-              </span>
-            )}
-            {stage.optional && !done && (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                Optional
-              </span>
-            )}
-          </span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            {stage.question}
-          </span>
-          <span className="mt-1 block text-xs text-muted-foreground/80">
-            {stage.outcome}
-          </span>
-          {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
-              `needs` keeps an older backend rendering something true-ish rather
-              than nothing, but on a current one a satisfied requirement stops
-              being mentioned at all. */}
-          {!done && missing.length > 0 && (
-            <span className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Lock className="h-3 w-3" aria-hidden />
-              Thin without{" "}
-              {missing.map((n) => NEEDS_LABEL[n] ?? n).join(" and ")} — you can
-              still open it
+        <span className="block text-sm font-medium leading-tight">{stage.name}</span>
+
+        <span className="line-clamp-2 block text-xs leading-snug text-muted-foreground">
+          {stage.question}
+        </span>
+
+        <span className="mt-auto flex flex-wrap items-center gap-1 pt-1">
+          {isNext && (
+            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+              Next
             </span>
           )}
-          {!done && missing.length === 0 && stage.needs.length > 0 && (
-            <span className="mt-1.5 block text-[11px] text-emerald-700">
-              Ready — everything it needs is on file
+          {stage.optional && !done && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              Optional
             </span>
           )}
         </span>
 
-        <ArrowRight
-          className="mt-1 h-4 w-4 shrink-0 text-muted-foreground"
-          aria-hidden
-        />
+        {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
+            `needs` keeps an older backend rendering something true-ish rather
+            than nothing, but on a current one a satisfied requirement stops
+            being mentioned at all. */}
+        {!done && missing.length > 0 && (
+          <span className="flex items-start gap-1 text-[11px] leading-snug text-muted-foreground">
+            <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+            <span>
+              Thin without {missing.map((n) => NEEDS_LABEL[n] ?? n).join(" and ")} —
+              you can still open it
+            </span>
+          </span>
+        )}
+        {!done && missing.length === 0 && stage.needs.length > 0 && (
+          <span className="block text-[11px] leading-snug text-emerald-700">
+            Ready — everything it needs is on file
+          </span>
+        )}
       </button>
     </li>
   )
@@ -385,9 +400,12 @@ export default function JourneyPage() {
           />
         </div>
 
-        <ul className="space-y-2">
+        {/* Two rows at desktop width: 13 stages over 7 columns is 7 + 6. The
+            column count steps down on smaller screens rather than forcing a
+            horizontal scroll — a map you have to drag is not a map. */}
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7">
           {journey.stages.map((s) => (
-            <StageRow
+            <StageTile
               key={s.id}
               stage={s}
               isNext={s.id === next.id}
