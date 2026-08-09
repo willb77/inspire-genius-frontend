@@ -90,14 +90,24 @@ function renderWith(stages: unknown[], nextActionId = "3") {
 }
 
 describe("what a stage says it is missing", () => {
+  /**
+   * The tile face is ~165px wide at seven columns, so the full sentence moved
+   * into the tooltip and a short chip stayed behind. These assert BOTH: the
+   * chip is what a user sees at a glance, the tooltip is where the detail went,
+   * and a change that dropped either would be a real loss.
+   */
+  const tileFor = (name: string) =>
+    screen.getByText(name).closest("button") as HTMLElement
+
   test("names only what is actually outstanding, not the standing list", async () => {
     renderWith([
       stage("0", "Land", { state: "complete" }),
       stage("3", "Explore", { needs: ["prism"], unmetNeeds: [] }),
     ])
     expect(await screen.findByText("Explore")).toBeInTheDocument()
-    expect(screen.queryByText(/thin without/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/everything it needs is on file/i)).toBeInTheDocument()
+    expect(screen.queryByText(/^Thin:/)).not.toBeInTheDocument()
+    expect(screen.getByText("Ready")).toBeInTheDocument()
+    expect(tileFor("Explore").title).toMatch(/everything it needs is on file/i)
   })
 
   test("still explains a genuinely missing input", async () => {
@@ -105,11 +115,11 @@ describe("what a stage says it is missing", () => {
       stage("0", "Land", { state: "complete" }),
       stage("9", "Plan", { needs: ["gaps"], unmetNeeds: ["gaps"] }),
     ])
-    expect(
-      await screen.findByText(/thin without your gap analysis/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Thin: gaps")).toBeInTheDocument()
+    const tile = tileFor("Plan")
+    expect(tile.title).toMatch(/thin without your gap analysis/i)
     // Still openable — nothing locks.
-    expect(screen.getByText(/you can still open it/i)).toBeInTheDocument()
+    expect(tile.title).toMatch(/you can still open it/i)
   })
 
   test("lists several missing inputs together", async () => {
@@ -119,9 +129,10 @@ describe("what a stage says it is missing", () => {
         unmetNeeds: ["plan", "salary"],
       }),
     ])
-    expect(
-      await screen.findByText(/thin without your plan and salary data/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Thin: plan, salary")).toBeInTheDocument()
+    expect(tileFor("Justify").title).toMatch(
+      /thin without your plan and salary data/i
+    )
   })
 
   test("falls back to `needs` when the backend predates `unmetNeeds`", async () => {
@@ -136,9 +147,18 @@ describe("what a stage says it is missing", () => {
       state: "not_started",
     }
     renderWith([old])
-    expect(
-      await screen.findByText(/thin without your gap analysis/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Thin: gaps")).toBeInTheDocument()
+    expect(tileFor("Plan").title).toMatch(/thin without your gap analysis/i)
+  })
+
+  test("the tooltip carries the prose the tile face cannot", async () => {
+    // The question and outcome left the face when the tiles were shortened.
+    // They did not leave the page.
+    renderWith([stage("3", "Explore", { needs: [], unmetNeeds: [] })])
+    await screen.findByText("Explore")
+    const title = tileFor("Explore").title
+    expect(title).toContain("q3")
+    expect(title).toContain("o3")
   })
 
   test("says nothing about needs on a finished stage", async () => {

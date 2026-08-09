@@ -130,11 +130,15 @@ function setup({
 describe("Moments", () => {
   afterEach(() => jest.resetAllMocks())
 
-  test("renders the ask box and the feed", () => {
+  test("renders the ask box, and the history only once asked for", () => {
     setup()
     render(<Moments />)
     expect(screen.getByRole("heading", { level: 1, name: "Moments" })).toBeInTheDocument()
     expect(screen.getByLabelText("Describe the situation")).toBeInTheDocument()
+    // Nothing from the history until it is picked.
+    expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
+
+    selectMoment("m-1")
     expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
   })
 
@@ -168,6 +172,7 @@ describe("Moments", () => {
   test("act / save / dismiss set the Moment's state", () => {
     const { setState } = setup()
     render(<Moments />)
+    selectMoment("m-1")
     fireEvent.click(screen.getByRole("button", { name: /I used this/ }))
     expect(setState).toHaveBeenCalledWith({ momentId: "m-1", state: "acted" })
 
@@ -181,6 +186,10 @@ describe("Moments", () => {
   test("a Moment already acted on offers no further actions", () => {
     setup({ moments: [{ ...MOMENT, state: "acted" }] })
     render(<Moments />)
+    // Select it first — otherwise this passes because nothing is rendered at
+    // all, which would assert nothing about acted-on Moments.
+    selectMoment("m-1")
+    expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /I used this/ })).not.toBeInTheDocument()
   })
 
@@ -283,13 +292,33 @@ describe("Moments", () => {
       delivered_at: "2026-07-25T12:00:00Z",
     }
 
-    test("does not appear when there is nothing to choose between", () => {
-      // One Moment and a picker offering it is furniture, not a feature.
+    test("appears from the very first Moment", () => {
+      // Nothing renders until something is picked, so with a single Moment the
+      // picker is the only way to reach it. Gating it on two would strand that
+      // user with guidance they cannot open.
       setup({ moments: [MOMENT] })
       render(<Moments />)
       expect(
-        screen.queryByRole("combobox", { name: /choose a moment/i })
-      ).not.toBeInTheDocument()
+        screen.getByRole("combobox", { name: /choose a moment/i })
+      ).toBeInTheDocument()
+    })
+
+    test("shows nothing, and says why, until something is picked", () => {
+      setup({ moments: [MOMENT, OTHER] })
+      render(<Moments />)
+      expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
+      expect(screen.queryByText("Name a number first.")).not.toBeInTheDocument()
+      // Never "you have none" — that would tell someone with a full history
+      // that it is empty.
+      expect(screen.getByText(/You have 2 Moments on file/)).toBeInTheDocument()
+    })
+
+    test("All Moments is available, but only as a choice", () => {
+      setup({ moments: [MOMENT, OTHER] })
+      render(<Moments />)
+      selectMoment("__all__")
+      expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
+      expect(screen.getByText("Name a number first.")).toBeInTheDocument()
     })
 
     test("names each Moment by its situation, not its id or trigger", () => {
@@ -300,15 +329,10 @@ describe("Moments", () => {
       expect(screen.getByRole("option", { name: "All Moments (2)" })).toBeInTheDocument()
     })
 
-    test("selecting one shows that Moment and hides the rest", () => {
+    test("selecting one shows that Moment and only that one", () => {
       setup({ moments: [MOMENT, OTHER] })
       render(<Moments />)
-      expect(screen.getByText("Name a number first.")).toBeInTheDocument()
-
-      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
-        target: { value: "m-1" },
-      })
-
+      selectMoment("m-1")
       expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
       expect(screen.queryByText("Name a number first.")).not.toBeInTheDocument()
     })
@@ -316,26 +340,24 @@ describe("Moments", () => {
     test("offers a way back to the whole list", () => {
       setup({ moments: [MOMENT, OTHER] })
       render(<Moments />)
-      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
-        target: { value: "m-1" },
-      })
-
+      selectMoment("m-1")
       fireEvent.click(screen.getByRole("button", { name: /show all 2 moments/i }))
       expect(screen.getByText("Name a number first.")).toBeInTheDocument()
     })
 
-    test("a selection that no longer exists falls back to everything", () => {
-      // Ask again and the feed refetches; the selected id can vanish. Rendering
-      // an empty list under a picker still naming it would read as data loss.
+    test("a selection that no longer exists returns to the unpicked state", () => {
+      // Ask again and the feed refetches; the selected id can vanish. Falling
+      // back to the whole list would answer a question nobody asked — the user
+      // wanted one Moment, so the honest response is to ask again.
       const { rerender } = renderMoments([MOMENT, OTHER])
-      fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
-        target: { value: "m-2" },
-      })
-      expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
+      selectMoment("m-2")
+      expect(screen.getByText("Name a number first.")).toBeInTheDocument()
 
       setup({ moments: [MOMENT] })
       rerender(<Moments />)
-      expect(screen.getByText("Lead with the question.")).toBeInTheDocument()
+      expect(screen.queryByText("Name a number first.")).not.toBeInTheDocument()
+      expect(screen.queryByText("Lead with the question.")).not.toBeInTheDocument()
+      expect(screen.getByText(/You have 1 Moment on file/)).toBeInTheDocument()
     })
 
     test("proactive Moments fall back to their trigger for a label", () => {
@@ -353,4 +375,16 @@ describe("Moments", () => {
 function renderMoments(moments: Moment[]) {
   setup({ moments })
   return render(<Moments />)
+}
+
+/**
+ * Pick from the history dropdown.
+ *
+ * Nothing in the feed renders until something is selected, so most assertions
+ * about a Moment's contents have to go through here first.
+ */
+function selectMoment(value: string) {
+  fireEvent.change(screen.getByRole("combobox", { name: /choose a moment/i }), {
+    target: { value },
+  })
 }
