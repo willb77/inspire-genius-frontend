@@ -1,10 +1,17 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Bookmark, Check, Pin, Sparkles, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useAskMoment, useMoments, useSetMomentState } from "@/hooks/lumen/useMoments"
 import {
   useCreateSavedPrompt,
@@ -27,6 +34,13 @@ import type { Moment, MomentState, SavedPrompt } from "@/types/lumen"
  * record. What the feed can't do is make a *recurring* situation cheap to ask
  * again — so the ask box also carries the user's own saved situations, kept
  * deliberately, sitting alongside the built-in presets.
+ *
+ * **On the history picker.** The feed is chronological and unbounded-looking,
+ * which is fine at five Moments and useless at fifty — the one you want is the
+ * one you can no longer scroll to. The picker names Moments by *situation*
+ * rather than by date or id, because that is what a user recognises. It filters
+ * the list already on the page rather than fetching: the feed is the history,
+ * and a second endpoint would be a second source of truth for the same rows.
  */
 
 /** Situations common enough to be worth one tap instead of typing. */
@@ -49,6 +63,37 @@ const TRIGGER_LABEL: Record<Moment["trigger"], string> = {
   pull: "You asked",
   calendar: "Before your meeting",
   cadence: "Weekly check-in",
+}
+
+/**
+ * How many Moments the history picker can reach.
+ *
+ * The feed's own default is 20. A picker that silently stops at twenty would be
+ * a worse lie than no picker — it presents itself as "your history".
+ */
+const HISTORY_LIMIT = 50
+
+/** Sentinel for "don't filter". A real id can never collide with it. */
+const ALL = "__all__"
+
+/**
+ * One line identifying a Moment in the picker.
+ *
+ * The situation is what the user recognises — they remember asking about the
+ * skip-level, not that it was a `pull` on the 9th. Proactive Moments have no
+ * situation, so they fall back to their trigger. The date disambiguates the
+ * same situation asked twice, which is exactly the case a picker exists for.
+ */
+function momentLabel(moment: Moment): string {
+  const when = moment.created_at
+    ? new Date(moment.created_at).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : null
+  const what = moment.context?.trim() || TRIGGER_LABEL[moment.trigger]
+  const trimmed = what.length > 70 ? `${what.slice(0, 69).trimEnd()}…` : what
+  return when ? `${when} — ${trimmed}` : trimmed
 }
 
 function MomentBody({ body }: { body: string }) {
@@ -176,7 +221,8 @@ export interface MomentsProps {
 
 export default function Moments({ embedded = false }: MomentsProps = {}) {
   const [context, setContext] = useState("")
-  const { data: feed, isLoading } = useMoments()
+  const [selected, setSelected] = useState<string>(ALL)
+  const { data: feed, isLoading } = useMoments(HISTORY_LIMIT)
   const { mutate: ask, data: fresh, isPending, isError } = useAskMoment()
 
   // `isError` here means the environment's agent-engine predates the
@@ -203,6 +249,17 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
     setContext("")
   }
 
+  const moments = useMemo(() => feed?.moments ?? [], [feed])
+  // A selected Moment that no longer exists (asked again, feed refetched, the
+  // id fell off the end of the window) must not blank the section — fall back
+  // to showing everything rather than rendering an empty list under a picker
+  // that still names the missing one.
+  const shown = useMemo(() => {
+    if (selected === ALL) return moments
+    const one = moments.find((m) => m.id === selected)
+    return one ? [one] : moments
+  }, [moments, selected])
+
   const pickSaved = (p: SavedPrompt) => {
     setContext(p.text)
     // Ordering only — the ask itself must not wait on a counter, and a failed
@@ -216,8 +273,7 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Moments</h1>
           <p className="max-w-2xl text-muted-foreground">
-            Short, specific guidance for the thing you're about to walk into — grounded
-            in your own behavioral profile.
+            Short, specific guidance — grounded in your own behavioral profile.
           </p>
         </header>
       )}
@@ -295,20 +351,56 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Your Moments</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-muted-foreground">Your Moments</h2>
+          {/* Only worth a picker once there is something to pick between. */}
+          {moments.length > 1 && (
+            <Select value={selected} onValueChange={setSelected}>
+              <SelectTrigger
+                className="h-8 w-full max-w-xs text-sm sm:w-72"
+                aria-label="Choose a Moment from your history"
+              >
+                <SelectValue placeholder="All Moments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All Moments ({moments.length})</SelectItem>
+                {moments.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {momentLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="space-y-3" data-testid="moments-loading">
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
           </div>
-        ) : !feed || feed.moments.length === 0 ? (
+        ) : moments.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
               No Moments yet. Describe a situation above and you'll get your first one.
             </CardContent>
           </Card>
         ) : (
-          feed.moments.map((moment) => <MomentCard key={moment.id} moment={moment} />)
+          <>
+            {shown.map((moment) => (
+              <MomentCard key={moment.id} moment={moment} />
+            ))}
+            {selected !== ALL && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setSelected(ALL)}
+              >
+                Show all {moments.length} Moments
+              </Button>
+            )}
+          </>
         )}
       </section>
     </div>
