@@ -246,7 +246,16 @@ describe("EstablishPage", () => {
 /* ── Portrait ──────────────────────────────────────────────────────────── */
 
 const FULL_PORTRAIT: Portrait = {
-  prism: { dominant_quadrant: "Green", quadrants: { green: 80, blue: 20 } },
+  prism: {
+    dominant_quadrant: "Green",
+    quadrants: { green: 80, blue: 20 },
+    // The quadrant card is gone from this page (matched to Lumen), so the
+    // dimensions are what carry the PRISM read — a fixture without them would
+    // be asserting against a card that correctly renders nothing.
+    dimensions: { innovating: 90, initiating: 70, supporting: 30, coordinating: 10 },
+    orientation: { introversion: 40, extroversion: 60 },
+    score_type: "Underlying",
+  },
   corroborating: [
     { framework: "BigFive", confidence: 0.92, maps_to: "Green", agrees_with_prism: true },
     { framework: "DISC", confidence: 0.85, maps_to: "Blue", agrees_with_prism: false },
@@ -314,35 +323,46 @@ describe("PortraitPage", () => {
     })
     renderPage(<PortraitPage />)
     expect(screen.getByText("No PRISM yet")).toBeInTheDocument()
-    expect(screen.getByText(/rests on your résumé alone/)).toBeInTheDocument()
-    expect(screen.getByText(/1 of 4 sources on file/)).toBeInTheDocument()
+    // The coverage readout left with the source-coverage card.
+    expect(screen.queryByText(/rests on your résumé alone/)).not.toBeInTheDocument()
     expect(
       screen.getByRole("link", { name: "Request or upload PRISM" })
     ).toBeInTheDocument()
   })
 
-  test("populated: leads with the PRISM anchor and keeps the tensions visible", () => {
+  test("populated: leads with the dimensions under their quadrant", () => {
     setPortrait(FULL_PORTRAIT)
     renderPage(<PortraitPage />)
     expect(
       screen.getByRole("heading", { level: 1, name: "What you're actually like" })
     ).toBeInTheDocument()
-    expect(screen.getByText("Green leads")).toBeInTheDocument()
-    expect(screen.getByText("Where they pull apart")).toBeInTheDocument()
-    expect(
-      screen.getByText("DISC implies Blue but PRISM shows Green.")
-    ).toBeInTheDocument()
-    // A tension is framed as context-dependence, never as a flaw in the person.
-    expect(screen.getByText(/isn't a mistake in you/)).toBeInTheDocument()
+    expect(screen.getByText("What sits underneath that")).toBeInTheDocument()
+    expect(screen.getByText("Innovating")).toBeInTheDocument()
   })
 
-  test("states what the read is built from, absences included", () => {
+  test("matches Lumen's composition — the six removed sections stay removed", () => {
+    // These two pages read the same portrait engine. They diverged for two days
+    // when Lumen was trimmed first; that was sequencing, not a decision, and
+    // this asserts they don't silently drift apart again.
     setPortrait(FULL_PORTRAIT)
     renderPage(<PortraitPage />)
-    expect(screen.getByText("What this is built from")).toBeInTheDocument()
-    expect(screen.getByText(/2 of 4 sources on file/)).toBeInTheDocument()
-    expect(screen.getByText(/signal in its own right/)).toBeInTheDocument()
-    expect(screen.getByText("Composed from 2 sources.")).toBeInTheDocument()
+    expect(screen.queryByText("Ask your self-portrait")).not.toBeInTheDocument()
+    expect(screen.queryByText("What this is built from")).not.toBeInTheDocument()
+    expect(screen.queryByText("Green leads")).not.toBeInTheDocument()
+    expect(screen.queryByText("What your own words add")).not.toBeInTheDocument()
+    expect(screen.queryByText("What your instruments agree on")).not.toBeInTheDocument()
+    expect(screen.queryByText("Where they pull apart")).not.toBeInTheDocument()
+    expect(screen.queryByText("Confidence: moderate")).not.toBeInTheDocument()
+  })
+
+  test("keeps the journey's door back to Establish", () => {
+    // That link used to hang off the source-coverage card. Removing the card
+    // must not strand the user on a page whose whole job is to route onward.
+    setPortrait(FULL_PORTRAIT)
+    renderPage(<PortraitPage />)
+    expect(
+      screen.getByRole("link", { name: "Add what's missing" })
+    ).toHaveAttribute("href", "/vertical/direction-setting/establish")
   })
 
   test("a genuine load failure says so without blaming the user", () => {
