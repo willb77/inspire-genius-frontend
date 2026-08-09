@@ -61,6 +61,24 @@ const STAGE_ROUTE: Record<string, string> = {
   "12": ROUTES.DIRECTION_SETTING.REHEARSE,
 }
 
+/**
+ * The same needs, in one or two words, for the tile chip.
+ *
+ * A tile in a 7-column grid is about 165px wide, so "your PRISM results" wraps
+ * to three lines and the sentence around it to five. The long form is still
+ * what the tooltip says — this is only what fits on the face.
+ */
+const NEEDS_SHORT: Record<string, string> = {
+  prism: "PRISM",
+  goals: "goals",
+  careers: "careers",
+  blueprints: "benchmarks",
+  gaps: "gaps",
+  plan: "plan",
+  salary: "salary",
+  guide: "guide",
+}
+
 /** Plain-language reason a stage will be thin, keyed by the backend's `needs`. */
 const NEEDS_LABEL: Record<string, string> = {
   prism: "your PRISM results",
@@ -89,16 +107,23 @@ function StateIcon({ state }: { state: StageState }) {
 /**
  * One stage, as a tile in the map.
  *
- * This was a full-width row per stage — thirteen of them, so the map itself
- * needed scrolling before you could see the shape of the journey, which is the
- * one thing a map is for. As a tile the whole route fits in two rows.
+ * This was a full-width row per stage — thirteen of them, so the map needed
+ * scrolling before you could see the shape of the journey, which is the one
+ * thing a map is for.
  *
- * What a tile can't carry is the row's two lines of prose. The stage's
- * `outcome` moves to the tile's `title`, and the `question` is clamped to two
- * lines: both are orientation, and the reader already has the stage name. What
- * does NOT move is readiness — "thin without X" and "ready" are the difference
- * between a door you can open now and one that will disappoint you, and a
- * gap-shaped truth belongs on the face of the tile, not behind a hover.
+ * **Why the tile is this terse.** Thirteen stages in two rows fixes the grid at
+ * seven columns, and seven columns inside a 1280px container is ~165px per
+ * tile. At that width every sentence wraps to four or five lines and the tiles
+ * end up taller than the rows they replaced. So the face carries only what
+ * stays on one or two lines — number, name, and the state as a chip — and the
+ * prose moves into `title`.
+ *
+ * Nothing is *lost*: the tooltip carries the stage's question, its outcome and
+ * the full readiness sentence, and the readiness chip keeps the distinction
+ * visible on the face. That distinction is the reason to look at this page at
+ * all — "ready" and "thin without PRISM" are the difference between a door you
+ * can open now and one that will disappoint you — so it is a coloured chip
+ * rather than a hover, even though its wording had to shrink to fit.
  */
 function StageTile({
   stage,
@@ -114,24 +139,43 @@ function StageTile({
   // when the backend predates the field — `?? stage.needs` on an empty served
   // array would wrongly re-list satisfied requirements.
   const missing = stage.unmetNeeds ?? stage.needs
+  const thin = !done && missing.length > 0
+  const ready = !done && missing.length === 0 && stage.needs.length > 0
+
+  // Everything the face can't hold. Assembled here so the tile stays readable
+  // and so hovering any tile answers "what is this stage and can I open it?".
+  const tooltip = [
+    stage.question,
+    stage.outcome,
+    thin
+      ? `Thin without ${missing
+          .map((n) => NEEDS_LABEL[n] ?? n)
+          .join(" and ")} — you can still open it`
+      : ready
+        ? "Ready — everything it needs is on file"
+        : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+
   return (
     <li className="min-w-0">
       <button
         type="button"
         onClick={() => onOpen(stage.id)}
         aria-current={isNext ? "step" : undefined}
-        title={stage.outcome || undefined}
+        title={tooltip || undefined}
         className={cn(
-          "flex h-full w-full flex-col gap-1.5 rounded-lg border p-2.5 text-left transition-colors",
+          "flex h-full w-full flex-col gap-1 rounded-lg border p-2 text-left transition-colors",
           isNext
             ? "border-primary bg-primary/5"
             : "border-border bg-background hover:border-primary/50"
         )}
       >
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1">
           <span
             className={cn(
-              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium",
               done
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : isNext
@@ -143,48 +187,42 @@ function StageTile({
           </span>
           <StateIcon state={stage.state} />
           <ArrowRight
-            className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            className="ml-auto h-3 w-3 shrink-0 text-muted-foreground"
             aria-hidden
           />
         </span>
 
-        <span className="block text-sm font-medium leading-tight">{stage.name}</span>
-
-        <span className="line-clamp-2 block text-xs leading-snug text-muted-foreground">
-          {stage.question}
+        <span className="line-clamp-2 block text-xs font-medium leading-tight">
+          {stage.name}
         </span>
 
-        <span className="mt-auto flex flex-wrap items-center gap-1 pt-1">
+        <span className="mt-auto flex flex-wrap items-center gap-1">
           {isNext && (
-            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+            <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary">
               Next
             </span>
           )}
           {stage.optional && !done && (
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span className="rounded bg-muted px-1 py-px text-[10px] font-medium text-muted-foreground">
               Optional
             </span>
           )}
-        </span>
-
-        {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
-            `needs` keeps an older backend rendering something true-ish rather
-            than nothing, but on a current one a satisfied requirement stops
-            being mentioned at all. */}
-        {!done && missing.length > 0 && (
-          <span className="flex items-start gap-1 text-[11px] leading-snug text-muted-foreground">
-            <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-            <span>
-              Thin without {missing.map((n) => NEEDS_LABEL[n] ?? n).join(" and ")} —
-              you can still open it
+          {/* Only what is missing *now*. `unmetNeeds` is served; the fallback to
+              `needs` keeps an older backend rendering something true-ish rather
+              than nothing, but on a current one a satisfied requirement stops
+              being mentioned at all. */}
+          {thin && (
+            <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1 py-px text-[10px] font-medium text-muted-foreground">
+              <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden />
+              Thin: {missing.map((n) => NEEDS_SHORT[n] ?? n).join(", ")}
             </span>
-          </span>
-        )}
-        {!done && missing.length === 0 && stage.needs.length > 0 && (
-          <span className="block text-[11px] leading-snug text-emerald-700">
-            Ready — everything it needs is on file
-          </span>
-        )}
+          )}
+          {ready && (
+            <span className="rounded bg-emerald-50 px-1 py-px text-[10px] font-medium text-emerald-700">
+              Ready
+            </span>
+          )}
+        </span>
       </button>
     </li>
   )

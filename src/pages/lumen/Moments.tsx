@@ -41,6 +41,10 @@ import type { Moment, MomentState, SavedPrompt } from "@/types/lumen"
  * rather than by date or id, because that is what a user recognises. It filters
  * the list already on the page rather than fetching: the feed is the history,
  * and a second endpoint would be a second source of truth for the same rows.
+ *
+ * **Nothing is shown until something is picked.** Printing the whole history on
+ * load turned a page you came to for one piece of guidance into a wall of old
+ * ones. "All Moments" is still there, as a choice rather than as the default.
  */
 
 /** Situations common enough to be worth one tap instead of typing. */
@@ -73,8 +77,18 @@ const TRIGGER_LABEL: Record<Moment["trigger"], string> = {
  */
 const HISTORY_LIMIT = 50
 
-/** Sentinel for "don't filter". A real id can never collide with it. */
+/** Sentinel for "show everything". A real id can never collide with it. */
 const ALL = "__all__"
+
+/**
+ * Sentinel for "nothing chosen yet" — the default.
+ *
+ * The feed used to print every Moment on load, which turns a page you visit for
+ * one piece of guidance into a wall of old ones. Nothing is shown until you
+ * pick, and "All Moments" stays available as a deliberate choice rather than
+ * the thing that happens to you.
+ */
+const NONE = "__none__"
 
 /**
  * One line identifying a Moment in the picker.
@@ -221,7 +235,7 @@ export interface MomentsProps {
 
 export default function Moments({ embedded = false }: MomentsProps = {}) {
   const [context, setContext] = useState("")
-  const [selected, setSelected] = useState<string>(ALL)
+  const [selected, setSelected] = useState<string>(NONE)
   const { data: feed, isLoading } = useMoments(HISTORY_LIMIT)
   const { mutate: ask, data: fresh, isPending, isError } = useAskMoment()
 
@@ -251,13 +265,14 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
 
   const moments = useMemo(() => feed?.moments ?? [], [feed])
   // A selected Moment that no longer exists (asked again, feed refetched, the
-  // id fell off the end of the window) must not blank the section — fall back
-  // to showing everything rather than rendering an empty list under a picker
-  // that still names the missing one.
+  // id fell off the end of the window) falls back to the unselected state
+  // rather than to the whole list: silently printing everything in place of the
+  // one thing that was asked for is a worse answer than asking again.
   const shown = useMemo(() => {
+    if (selected === NONE) return []
     if (selected === ALL) return moments
     const one = moments.find((m) => m.id === selected)
-    return one ? [one] : moments
+    return one ? [one] : []
   }, [moments, selected])
 
   const pickSaved = (p: SavedPrompt) => {
@@ -353,22 +368,24 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">Your Moments</h2>
-          {/* Only worth a picker once there is something to pick between. */}
-          {moments.length > 1 && (
+          {/* Shown from the first Moment, not the second: nothing renders until
+              something is picked, so with one Moment the picker is the only way
+              to reach it. */}
+          {moments.length > 0 && (
             <Select value={selected} onValueChange={setSelected}>
               <SelectTrigger
                 className="h-8 w-full max-w-xs text-sm sm:w-72"
                 aria-label="Choose a Moment from your history"
               >
-                <SelectValue placeholder="All Moments" />
+                <SelectValue placeholder="Choose a Moment…" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL}>All Moments ({moments.length})</SelectItem>
                 {moments.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {momentLabel(m)}
                   </SelectItem>
                 ))}
+                <SelectItem value={ALL}>All Moments ({moments.length})</SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -383,6 +400,18 @@ export default function Moments({ embedded = false }: MomentsProps = {}) {
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
               No Moments yet. Describe a situation above and you'll get your first one.
+            </CardContent>
+          </Card>
+        ) : shown.length === 0 ? (
+          // Has Moments, none picked. Says what to do rather than sitting blank,
+          // and never claims there is nothing on file — that would be the "empty
+          // state hides the bug" mistake, telling a user with fifty Moments that
+          // they have none.
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground">
+              You have {moments.length}{" "}
+              {moments.length === 1 ? "Moment" : "Moments"} on file. Pick one above
+              to read it.
             </CardContent>
           </Card>
         ) : (
