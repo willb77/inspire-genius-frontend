@@ -115,4 +115,35 @@ describe("SelfPortraitNarrative", () => {
     expect(screen.getByRole("button", { name: /^pdf$/i })).toBeEnabled()
     expect(screen.getByRole("button", { name: /^word$/i })).toBeEnabled()
   })
+
+  describe("showAsk={false}", () => {
+    test("hides the question box", () => {
+      render(<SelfPortraitNarrative portrait={PORTRAIT} showAsk={false} />)
+      expect(screen.queryByText("Ask your self-portrait")).not.toBeInTheDocument()
+      expect(
+        screen.queryByLabelText("Ask a question about your self-portrait")
+      ).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /^ask$/i })).not.toBeInTheDocument()
+    })
+
+    test("keeps the disclaimer, which the question box used to carry", () => {
+      // The non-clinical caveat lived inside the card being hidden. Losing it
+      // silently would be a compliance-shaped regression that no assertion in
+      // this file would otherwise have caught.
+      render(<SelfPortraitNarrative portrait={PORTRAIT} showAsk={false} />)
+      expect(screen.getByText("A mirror, not a diagnosis.")).toBeInTheDocument()
+    })
+
+    test("keeps the description and both exports", () => {
+      render(<SelfPortraitNarrative portrait={PORTRAIT} showAsk={false} />)
+      expect(screen.getByText("In plain language")).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /^pdf$/i })).toBeEnabled()
+      expect(screen.getByRole("button", { name: /^word$/i })).toBeEnabled()
+    })
+
+    test("defaults to showing it, so Establish is unaffected", () => {
+      render(<SelfPortraitNarrative portrait={PORTRAIT} />)
+      expect(screen.getByText("Ask your self-portrait")).toBeInTheDocument()
+    })
+  })
 })
