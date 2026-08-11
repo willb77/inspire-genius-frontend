@@ -21,6 +21,16 @@ export interface KnowledgeDocument {
 export interface KnowledgeListResponse {
   documents: KnowledgeDocument[]
   total: number
+  /**
+   * Row count per domain, keyed by the same derived domain value the
+   * `domain` filter accepts (including the `uncategorised` sentinel).
+   * Not narrowed by the active domain filter — it is a facet, so every
+   * chip can show its own count while one of them is selected.
+   *
+   * Optional: an agent-engine older than 2026-08-11 omits it, and the
+   * page falls back to no counts rather than rendering zeroes.
+   */
+  domain_counts?: Record<string, number>
 }
 
 export interface KnowledgeListParams {
