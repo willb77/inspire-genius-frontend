@@ -14,7 +14,14 @@ import {
 import { downloadBlob } from "@/lib/exportTranscript"
 import { initiateUpload, uploadToS3 } from "@/services/documents/documentService"
 import type { InterviewExchange, InterviewFrame } from "@/services/interview/practice.service"
+import { normalizeSectionScores } from "@/services/interview/live.service"
 import type { FinalizeResult } from "@/services/interview/live.service"
+
+/** Format a score that may arrive as a number, numeric string, or null. */
+function fmtScore(v: number | string | null | undefined): string {
+  const n = typeof v === "string" ? Number(v) : v
+  return typeof n === "number" && Number.isFinite(n) ? n.toFixed(2) : "—"
+}
 
 export type InterviewSession = {
   frame: InterviewFrame
@@ -141,15 +148,15 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
   lines.push("## Recommendation")
   lines.push(`**${result.recommendation}**`)
   lines.push(
-    `Overall score: **${result.overall_score} / 5** · Overall mean: **${result.overall_mean.toFixed(2)}**`,
+    `Overall score: **${fmtScore(result.overall_score)} / 5** · Overall mean: **${fmtScore(result.overall_mean)}**`,
   )
   lines.push("")
 
   lines.push("## Rubric Summary")
   lines.push("| Section | Score | Questions |")
   lines.push("|---|---|---|")
-  for (const sec of result.section_scores) {
-    lines.push(`| ${sec.section} | ${sec.score.toFixed(2)} / 5 | ${sec.count ?? "—"} |`)
+  for (const sec of normalizeSectionScores(result.section_scores)) {
+    lines.push(`| ${sec.section} | ${fmtScore(sec.score)} / 5 | ${sec.count ?? "—"} |`)
   }
   lines.push("")
 
