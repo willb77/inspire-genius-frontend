@@ -63,20 +63,32 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
     return [
       { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
       ...bySection("Role Views"),
-      ...(launcherSection
-        ? [
-            {
-              label: launcherSection.label,
-              items: launcherSection.items,
-              // Same reasoning as UserLayout: take the section's own default so
-              // the roll-up is consistent across user, admin and vertical pages.
-              defaultCollapsed: launcherSection.defaultCollapsed ?? false,
-            },
-          ]
-        : []),
-      // Team Development Studio (and any future utility surfaces) in a
-      // collapsed "Tools" rollup, above the Administration plumbing.
-      ...(SUPER_ADMIN_TOOLS_SECTION ? [SUPER_ADMIN_TOOLS_SECTION] : []),
+      // ONE "Tools" rollup. The vertical catalogue (launcherSection) and the
+      // utility surfaces (Team Development, Interview Practice — from
+      // SUPER_ADMIN_TOOLS_SECTION) were previously two separate sections that
+      // BOTH carried the label "Tools". Duplicate section labels collide on
+      // SidebarScaffold's `key={section.label}`, and that reconciliation clash
+      // is what made the Team-Development "Tools" group surface only when the
+      // Administration section was toggled. Merging them into a single section
+      // gives one stable, correctly-keyed "Tools" rollup, above Administration.
+      ...(() => {
+        const toolsItems = [
+          ...(launcherSection?.items ?? []),
+          ...(SUPER_ADMIN_TOOLS_SECTION?.items ?? []),
+        ];
+        return toolsItems.length
+          ? [
+              {
+                label: "Tools",
+                items: toolsItems,
+                defaultCollapsed:
+                  launcherSection?.defaultCollapsed ??
+                  SUPER_ADMIN_TOOLS_SECTION?.defaultCollapsed ??
+                  true,
+              },
+            ]
+          : [];
+      })(),
       // Administration stays expanded — a super-admin on an admin page is mid-task.
       ...bySection("Administration").map((s) => ({ ...s, defaultCollapsed: false })),
     ];

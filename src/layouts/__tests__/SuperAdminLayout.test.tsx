@@ -126,8 +126,20 @@ jest.mock("@/constants/navigation", () => {
     OWNER_ONLY_NAV_ROUTES: new Set<string>(["/super-admin/dev-traffic-report"]),
     isPlatformOwner: (email: string | null | undefined) =>
       (email ?? "").trim().toLowerCase() === "willb77@3pp.com",
+    // SUPER_ADMIN_TOOLS_SECTION (Team Development, Interview Practice) is a
+    // module constant in production; expose it as a getter so individual tests
+    // can toggle it via `mockToolsSection` to exercise the merge.
+    get SUPER_ADMIN_TOOLS_SECTION() {
+      return mockToolsSection;
+    },
   };
 });
+
+// Controls the mocked SUPER_ADMIN_TOOLS_SECTION (see the navigation mock above).
+// null by default → no utility-tools section unless a test sets one.
+let mockToolsSection:
+  | { label: string; items: MockNavItem[]; defaultCollapsed?: boolean }
+  | null = null;
 
 // 🔹 Mock the agent-engine toggle hook used by the layout
 jest.mock("@/lib/agentApi", () => ({
@@ -185,6 +197,7 @@ describe("SuperAdminLayout", () => {
     mockLauncher.mockReturnValue(null); // no launcher vertical unless a test sets one
     mockWorkspaceNav.mockImplementation((items: unknown) => items); // no workspace vertical
     mockEmail = "admin@example.com"; // non-owner by default
+    mockToolsSection = null; // no utility-tools section unless a test sets one
   });
 
   test("renders children correctly", () => {
@@ -244,13 +257,14 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByText("Chat with Meridian")).toBeInTheDocument();
   });
 
-  test("Financial Aid is an entry INSIDE Verticals, not its own section", () => {
+  test("Financial Aid is an entry INSIDE the Tools catalogue, not its own section", () => {
     // GRANT lost its bespoke top-level section on 2026-07-28: it is one entry in
-    // the registry-driven Verticals catalogue, its nine aid pages reached
-    // through VerticalShell once you enter.
+    // the registry-driven catalogue (the launcher section, labelled "Tools"
+    // since 2026-07-31), its nine aid pages reached through VerticalShell once
+    // you enter.
     mockLauncher.mockReturnValue({
       id: "verticals-launcher",
-      label: "Verticals",
+      label: "Tools",
       roles: [],
       items: [
         { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid" },
@@ -265,8 +279,8 @@ describe("SuperAdminLayout", () => {
 
     const props = mockSidebarScaffold.mock.calls[0][0];
     expect(props.navSections.some((s: MockNavSection) => s.label === "Financial Aid")).toBe(false);
-    const verticals = props.navSections.find((s: MockNavSection) => s.label === "Verticals");
-    expect(verticals.items.map((i: MockNavItem) => i.label)).toEqual([
+    const tools = props.navSections.find((s: MockNavSection) => s.label === "Tools");
+    expect(tools.items.map((i: MockNavItem) => i.label)).toEqual([
       "Financial Aid",
       "Honor Foundation",
     ]);
@@ -274,10 +288,10 @@ describe("SuperAdminLayout", () => {
     expect(screen.getByTestId("grant-preview-toggle")).toBeInTheDocument();
   });
 
-  test("Verticals sits after Role Views and before Administration", () => {
+  test("Tools sits after Role Views and before Administration", () => {
     mockLauncher.mockReturnValue({
       id: "verticals-launcher",
-      label: "Verticals",
+      label: "Tools",
       roles: [],
       items: [{ to: "/vertical/honor/dashboard", icon: () => null, label: "Honor Foundation" }],
     });
@@ -291,7 +305,7 @@ describe("SuperAdminLayout", () => {
     expect(props.navSections.map((s: MockNavSection) => s.label)).toEqual([
       "My Workspace",
       "Role Views",
-      "Verticals",
+      "Tools",
       "Administration",
     ]);
     expect(props.navSections[2].items[0].label).toBe("Honor Foundation");
@@ -300,7 +314,7 @@ describe("SuperAdminLayout", () => {
   test("unentitled verticals are listed greyed, not omitted", () => {
     mockLauncher.mockReturnValue({
       id: "verticals-launcher",
-      label: "Verticals",
+      label: "Tools",
       roles: [],
       items: [
         { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid", disabled: true },
@@ -312,9 +326,74 @@ describe("SuperAdminLayout", () => {
       </SuperAdminLayout>,
     );
     const props = mockSidebarScaffold.mock.calls[0][0];
-    const verticals = props.navSections.find((s: MockNavSection) => s.label === "Verticals");
-    expect(verticals.items).toHaveLength(1);
-    expect(verticals.items[0].disabled).toBe(true);
+    const tools = props.navSections.find((s: MockNavSection) => s.label === "Tools");
+    expect(tools.items).toHaveLength(1);
+    expect(tools.items[0].disabled).toBe(true);
+  });
+
+  test("consolidates the vertical catalogue and utility tools into ONE 'Tools' section", () => {
+    // Regression: the launcher section (vertical catalogue) and
+    // SUPER_ADMIN_TOOLS_SECTION (Team Development, Interview Practice) both carry
+    // the label "Tools". Two same-labelled sections collided on
+    // SidebarScaffold's `key={section.label}`, which made the Team-Development
+    // group appear only when Administration was toggled. They must merge into a
+    // single "Tools" rollup, catalogue first then utility tools.
+    mockLauncher.mockReturnValue({
+      id: "verticals-launcher",
+      label: "Tools",
+      roles: [],
+      items: [
+        { to: "/vertical/lumen/dashboard", icon: () => null, label: "Lumen" },
+        { to: "/vertical/grant/dashboard", icon: () => null, label: "Financial Aid" },
+      ],
+    });
+    mockToolsSection = {
+      label: "Tools",
+      defaultCollapsed: true,
+      items: [
+        { to: "/manager/development", label: "Team Development" },
+        { to: "/interview-practice", label: "Interview Practice" },
+      ],
+    };
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const toolsSections = props.navSections.filter((s: MockNavSection) => s.label === "Tools");
+    // Exactly one "Tools" section — no duplicate label, no key collision.
+    expect(toolsSections).toHaveLength(1);
+    expect(toolsSections[0].items.map((i: MockNavItem) => i.label)).toEqual([
+      "Lumen",
+      "Financial Aid",
+      "Team Development",
+      "Interview Practice",
+    ]);
+    expect(toolsSections[0].defaultCollapsed).toBe(true);
+    // Team Development is present in the single rollup and no longer a stray
+    // second "Tools" that only shows on Administration toggle.
+    expect(screen.getByText("Team Development")).toBeInTheDocument();
+  });
+
+  test("still shows a single 'Tools' section when only utility tools exist (no verticals)", () => {
+    mockLauncher.mockReturnValue(null); // no vertical catalogue
+    mockToolsSection = {
+      label: "Tools",
+      defaultCollapsed: true,
+      items: [{ to: "/manager/development", label: "Team Development" }],
+    };
+    render(
+      <SuperAdminLayout>
+        <div />
+      </SuperAdminLayout>,
+    );
+
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    const toolsSections = props.navSections.filter((s: MockNavSection) => s.label === "Tools");
+    expect(toolsSections).toHaveLength(1);
+    expect(toolsSections[0].items.map((i: MockNavItem) => i.label)).toEqual(["Team Development"]);
   });
 
   test("hides the owner-only Dev Traffic Report item from non-owner super-admins", () => {
