@@ -47,6 +47,7 @@ import {
 } from "@/hooks/interview/useLiveInterview"
 import type { InterviewFrame } from "@/services/interview/practice.service"
 import type { StarCompetency } from "@/services/interview/interview.service"
+import { normalizeSectionScores } from "@/services/interview/live.service"
 import type {
   FinalizeResult,
   LiveAnswer,
@@ -55,6 +56,12 @@ import type {
   LivePlanQuestion,
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
+
+/** Format a score that may arrive as a number, a numeric string, or null. */
+function fmtScore(v: number | string | null | undefined): string {
+  const n = typeof v === "string" ? Number(v) : v
+  return typeof n === "number" && Number.isFinite(n) ? n.toFixed(2) : "—"
+}
 import { downloadScoredInterview, saveScoredInterviewToDocuments } from "@/services/interview/interviewExport"
 
 type Phase = "setup" | "interview" | "findings"
@@ -226,6 +233,24 @@ export default function LiveInterviewBody() {
     }
   }
 
+  /**
+   * Guarded end: the current question's answer + notes are only saved once the
+   * interviewer submits + rates it. Ending while that's unsaved silently loses
+   * it, so confirm first. (Only saved-to-server answers are ever in the record.)
+   */
+  const guardedFinish = () => {
+    const currentScored = current ? Boolean(answers[current.competency_id]?.scored) : true
+    if (
+      !currentScored &&
+      !window.confirm(
+        "The current question hasn't been submitted and rated yet — its answer and notes won't be saved. End the interview anyway?",
+      )
+    ) {
+      return
+    }
+    void finish()
+  }
+
   const restart = () => {
     setPhase("setup"); setSetupStep("consent")
     setConsent(null); setCandidate(null); setFrame(null)
@@ -316,8 +341,8 @@ export default function LiveInterviewBody() {
               <CardContent className="space-y-2">
                 <p className="text-lg font-semibold text-slate-900">{finalizeResult.recommendation}</p>
                 <p className="text-sm text-slate-600">
-                  Overall score: <span className="font-medium">{finalizeResult.overall_score}</span> / 5
-                  {" · "}Mean: <span className="font-medium">{finalizeResult.overall_mean.toFixed(2)}</span>
+                  Overall score: <span className="font-medium">{fmtScore(finalizeResult.overall_score)}</span> / 5
+                  {" · "}Mean: <span className="font-medium">{fmtScore(finalizeResult.overall_mean)}</span>
                 </p>
               </CardContent>
             </Card>
@@ -325,12 +350,15 @@ export default function LiveInterviewBody() {
             <Card>
               <CardHeader><CardTitle className="text-base">Section scores</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                {finalizeResult.section_scores.map((s) => (
+                {normalizeSectionScores(finalizeResult.section_scores).map((s) => (
                   <div key={s.section} className="flex items-center justify-between border-b border-slate-100 py-1 text-sm last:border-0">
                     <span className="text-slate-700">{s.section}</span>
-                    <span className="font-medium">{s.score.toFixed(2)} / 5</span>
+                    <span className="font-medium">{fmtScore(s.score)} / 5</span>
                   </div>
                 ))}
+                {normalizeSectionScores(finalizeResult.section_scores).length === 0 && (
+                  <p className="text-sm text-slate-500">No section scores were recorded.</p>
+                )}
               </CardContent>
             </Card>
 
@@ -367,7 +395,7 @@ export default function LiveInterviewBody() {
             {candidate?.display_name} · {frame?.roleTitle} · {frame?.company}
           </p>
         </div>
-        <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700" onClick={() => void finish()}>
+        <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700" onClick={guardedFinish}>
           <Flag className="mr-1 h-3.5 w-3.5" /> End interview
         </Button>
       </header>

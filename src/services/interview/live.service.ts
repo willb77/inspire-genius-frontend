@@ -82,13 +82,52 @@ export type SectionScore = {
   count?: number
 }
 
+/**
+ * The backend scorer returns `section_scores` as an OBJECT keyed by section —
+ * `{ vision: { mean, weight, weighted }, ... }` — not an array. Older/other
+ * shapes (a plain array of {section, score}) may also appear. Consumers must go
+ * through {@link normalizeSectionScores} rather than assuming a shape, or the
+ * findings screen white-screens (`section_scores.map is not a function`).
+ */
+export type SectionScoreDetail = {
+  mean?: number
+  score?: number
+  weighted?: number
+  weight?: number
+  count?: number
+}
+export type SectionScoresRaw =
+  | Record<string, SectionScoreDetail>
+  | SectionScore[]
+  | null
+  | undefined
+
 export type FinalizeResult = {
   session: LiveSession
   answers: LiveAnswer[]
-  section_scores: SectionScore[]
+  section_scores: SectionScoresRaw
   overall_score: number
   overall_mean: number
   recommendation: string
+}
+
+/** Coerce whatever the backend sent for `section_scores` into a display array. */
+export function normalizeSectionScores(raw: SectionScoresRaw): SectionScore[] {
+  if (!raw) return []
+  const pickScore = (v: SectionScoreDetail | number): number => {
+    if (typeof v === "number") return v
+    return v.score ?? v.mean ?? v.weighted ?? 0
+  }
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(Boolean)
+      .map((s) => ({ section: String(s.section ?? ""), score: pickScore(s), count: s.count }))
+  }
+  return Object.entries(raw).map(([section, v]) => ({
+    section,
+    score: pickScore(v as SectionScoreDetail),
+    count: (v as SectionScoreDetail)?.count,
+  }))
 }
 
 export type GetSessionResult = {
