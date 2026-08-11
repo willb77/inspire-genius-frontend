@@ -186,6 +186,94 @@ fallback, because a fallback would reinstate the card just removed.
 - **Not verified in a browser** — no authenticated render was performed. The
   evidence here is tests and build, not observed behaviour.
 
+## [2026-08-07] — Agent-engine: 180-test backlog cleared, CI gates armed for real
+
+The agent-engine suite was **180 failed / 4527 passed** on `development` and nobody
+could see it, because both of its CI gates were no-ops: `backend-ci.yml` appended
+`|| true` to pytest (job passes regardless), and `pr-validation.yml` narrowed
+agent-engine to three "Term E" files, exiting 0 when none were present. Two green
+ticks per PR, nothing verified. Now **4810 passed in CI** with both gates enforcing.
+
+### Fixed
+- **117 of the 180 failures were one fixture.** `ProviderFactory._providers` is CLASS
+  state and `conftest` registered the mock provider once at import. Any test calling
+  `ProviderFactory.reset()` without restoring it left the registry empty for everything
+  after — `test_rlhf_model_router` does exactly that, correctly, in teardown. Every later
+  agent then got `LLM provider 'mock' not registered. Available: []`, fell into its error
+  path, and returned the "having trouble processing your request" apology at confidence
+  0.3 instead of 0.9. Whole files looked broken yet passed in isolation. An autouse
+  fixture now re-registers per test, so tests exercising `reset()` stay free to.
+  - Files: `services/agent-engine/tests/conftest.py`
+- **Meridian keyword classifier was blind to punctuation** (production bug, found via the
+  routing tests). It tokenised with `lower.split()`, so any keyword ending a clause was
+  invisible: `"stuck in my growth, can you help me reflect"` tokenised `"growth,"` (matched
+  nothing) while `"help"` matched BUSINESS — sending a textbook coaching message to the
+  wrong domain. Same for any `"...my prism profile."`. Now word-boundary tokenised, matching
+  `_message_has_prism_term` in the same module which had always done it correctly. Also
+  added `client`/`clients` to the business set — they were in no set at all. Fallback path
+  only (the LLM classifier runs first), so bounded blast radius.
+  - Files: `services/agent-engine/app/agents/meridian.py`
+- **`_resolve_canonical_sub` ran an unbounded DB query inside `require_auth`** on every
+  authenticated request (production bug). A wedged connection there hangs the request, not
+  just the query; the surrounding except-and-continue shows it was always meant to be
+  best-effort, it simply had no time limit. Now `asyncio.wait_for`-bounded (2s under sqlite,
+  10s otherwise), logging and leaving the sub unchanged on timeout.
+  - Files: `services/agent-engine/app/auth_deps.py`
+- **WebSocket disconnect exited through the error handler** (production bug). The chat loop
+  uses low-level `websocket.receive()`, which RETURNS `{"type":"websocket.disconnect"}`
+  rather than raising. Nothing checked for it, so the loop came round and `receive()` raised
+  `RuntimeError: Cannot call "receive" once a disconnect message has been received`. The
+  `except WebSocketDisconnect` never covered that path — it belongs to the typed helpers.
+  Every disconnect produced a traceback and an untidy teardown, on the most routine event a
+  socket has.
+  - Files: `services/agent-engine/app/main.py`
+- **The suite HUNG in CI — three stacked causes, all required.** (1) `pyproject` pinned
+  `pytest-asyncio ^0.25` while local venvs had drifted to 1.x, so CI installed 0.25.3, which
+  creates a fresh event loop per test and deadlocks against the StaticPool sqlite connection
+  (worker in `tx.get()`, main thread in `selectors.poll`, killed by pytest-timeout). Bumped
+  to `^1.3`; `poetry.lock` churn was exactly one package. (2) `:memory:` forces StaticPool —
+  one shared connection bound to the loop that opened it — and starlette's `TestClient` runs
+  the app on its OWN loop in another thread, which loop scoping cannot reach; tests now use a
+  file-backed sqlite with `NullPool`. (3) the WS disconnect bug above.
+  - Files: `services/agent-engine/pyproject.toml`, `poetry.lock`,
+    `app/memory/database.py`, `tests/conftest.py`
+
+### Changed
+- **`pr-validation.yml`** runs agent-engine's FULL suite instead of three files.
+- **`backend-ci.yml`** drops `|| true` **for agent-engine only**. Other services keep it
+  deliberately — their suites are unaudited and trainer-service carries ~97 known failures,
+  so making them strict would turn CI red on untriaged work. Drop the mask per service as
+  each is cleaned.
+- **`backend-ci.yml` installs Poetry dev groups properly.** `pip install -e ".[dev]"` cannot
+  read `[tool.poetry.group.dev.dependencies]`, so this job had been missing respx /
+  weasyprint / python-docx **and** resolving its own pytest-asyncio rather than the pinned one.
+- ~20 test files corrected where they pinned the wrong thing rather than a real contract:
+  `test_orchestrators` had Echo and Nova **swapped** (SessionAgent is "Echo", FeedbackAgent is
+  "Nova" — routing was right all along); `test_coexistence_smoke` probed for
+  `agents`/`_agents`/`agent_registry`, none of which any orchestrator has ever had, so it could
+  only ever fail; `test_websocket` asserted *"any non-empty token should be accepted
+  (validation TODO)"* — the TODO was done, so implementing auth broke the test; `test_mcp_tools`
+  matched "Welcome" against an SES **error** string; `test_rag_retriever` mocked Gemini + Zilliz
+  when it is OpenAI + pgvector; several read `messages[0]` for the system prompt when the
+  interaction protocol is now prepended ahead of it.
+
+### Notes
+- **Two `org_id`-filter tests are skipped, honestly**, not relaxed: the route uses
+  `CAST(:org_id AS uuid)`, which on SQLite has NUMERIC affinity and evaluates to `3`, so only
+  globals return. Postgres-only; a weakened assertion would quietly stop testing the filter.
+- **Rejected:** `asyncio_default_test_loop_scope = "session"` would make the single-loop
+  guarantee explicit rather than inherited, but it breaks two tests that rely on per-test loop
+  isolation. Trading one breakage for another is not hardening. Noted in `pyproject.toml`.
+- **Reproduce CI from the PINNED dependency set** before trusting a local pass. The deadlock
+  was called "Linux-only" at first — wrong; it reproduces on macOS the moment 0.25.3 is
+  installed. It only looked platform-specific because CI and developers were running different
+  MAJOR versions of the test framework.
+- PRs **#825** (`5dc9d50f`) and **#838** (`74668857`), both merged to `development`; promoted
+  to staging-b as `release-stable-2026-08-07-test-backlog-and-gates`. Verified by ECS-exec on
+  both tiers (all four fixes present in the running containers) plus route liveness
+  (`/v1/agents/health` 200, auth-gated 401, CORS preflight 204).
+
+
 ## [2026-08-07] — HomeV2: productionised PRISM Brain Map + "Prism Data" dropdown
 
 Two HomeV2 changes (request). PR willb77/inspire-genius-frontend#384.
