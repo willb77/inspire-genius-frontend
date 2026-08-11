@@ -264,6 +264,9 @@ export default function LiveInterviewBody() {
         {setupStep === "candidate" && <CandidateIdentityForm onConfirm={handleCandidate} />}
         {setupStep === "frame" && (
           <InterviewFrameForm
+            title="Set up a live interview"
+            description="Confirm the seat you're interviewing for so the STAR questions and scoring fit the actual role, reporting line, and scope."
+            submitLabel="Confirm & start the live interview"
             onConfirm={(f) => void handleFrameConfirm(f)}
           />
         )}
