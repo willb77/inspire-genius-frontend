@@ -36,30 +36,57 @@ import {
 
 type DocRow = KnowledgeDocument & Record<string, unknown>
 
+/**
+ * Domain vocabulary. Mirrors `KNOWN_DOMAINS` in the agent-engine's
+ * `routes/ingestion.py`, plus the `uncategorised` sentinel the API returns for
+ * rows that carry no domain signal at all.
+ *
+ * `uncategorised` is not a stored value — server-side it is an IS NULL test.
+ * It is offered here because on staging-b it is where 121 of 147 rows live:
+ * without a way to select it, those rows were reachable only through "All",
+ * and every named domain looked broken rather than genuinely empty.
+ *
+ * One list drives the chips, the dropdown and the URL-param allowlist, so
+ * they cannot drift apart.
+ */
 const DOMAINS = [
-  { value: "all", label: "All Domains" },
-  { value: "coaching", label: "Coaching" },
-  { value: "business", label: "Business" },
-  { value: "system", label: "System" },
-  { value: "career", label: "Career & Talent" },
-  { value: "general", label: "General" },
-  { value: "prism_report", label: "PRISM Reports" },
-  { value: "cultural", label: "Cultural Context" },
-]
+  { value: "all", label: "All Domains", chip: "All" },
+  { value: "coaching", label: "Coaching", chip: "Coaching" },
+  { value: "business", label: "Business", chip: "Business" },
+  { value: "system", label: "System", chip: "System" },
+  { value: "career", label: "Career & Talent", chip: "Career" },
+  { value: "general", label: "General", chip: "General" },
+  { value: "prism_report", label: "PRISM Reports", chip: "PRISM" },
+  { value: "cultural", label: "Cultural Context", chip: "Cultural" },
+  { value: "uncategorised", label: "Uncategorised", chip: "Uncategorised" },
+] as const
 
-const FILTER_CHIPS: { value: string; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "cultural", label: "Cultural Only" },
-  { value: "coaching", label: "Coaching Only" },
-  { value: "business", label: "Business Only" },
-  { value: "system", label: "System Only" },
-  { value: "career", label: "Career Only" },
-  { value: "general", label: "General Only" },
-]
+// Set<string>, not the literal union `as const` would infer — this is
+// membership-tested against an arbitrary URL query param.
+const VALID_DOMAINS = new Set<string>(DOMAINS.map((d) => d.value))
 
-const VALID_DOMAINS = new Set(DOMAINS.map((d) => d.value))
+const DOMAIN_LABELS: Record<string, string> = Object.fromEntries(
+  DOMAINS.filter((d) => d.value !== "all").map((d) => [d.value, d.label]),
+)
 
 const PAGE_SIZE = 20
+
+/** MIME types are long and repetitive; the tail is the informative part. */
+function formatContentType(contentType: string | null) {
+  if (!contentType) return "—"
+  const known: Record<string, string> = {
+    "text/csv": "CSV",
+    "text/plain": "TXT",
+    "text/markdown": "MD",
+    "application/pdf": "PDF",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
+  }
+  if (known[contentType]) return known[contentType]
+  if (contentType.startsWith("image/")) return contentType.slice(6).toUpperCase()
+  return contentType
+}
 
 function statusBadge(status: string | null) {
   switch (status) {
@@ -134,6 +161,24 @@ export default function KnowledgeBase() {
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
+  // Per-domain row counts from the server, computed over the same expression
+  // the filter uses and NOT narrowed by the active domain. Shown on the chips
+  // so an empty table reads as "this domain holds nothing, and here is where
+  // the rows actually are" rather than as a filter that does not work — which
+  // is exactly how the old, genuinely-broken filter presented.
+  //
+  // Absent on an agent-engine older than this change. Distinguish "no counts
+  // available" from "counts are all zero" — rendering 0 on every chip would
+  // be a confident lie, and worse than rendering nothing.
+  const domainCounts = data?.domain_counts
+  const countFor = (value: string): number | null => {
+    if (!domainCounts) return null
+    if (value === "all") {
+      return Object.values(domainCounts).reduce((sum, n) => sum + n, 0)
+    }
+    return domainCounts[value] ?? 0
+  }
+
   const columns: Column<DocRow>[] = [
     {
       key: "filename",
@@ -151,12 +196,31 @@ export default function KnowledgeBase() {
       ),
     },
     {
-      key: "file_type",
+      // Was `row.file_type` — which the API populates from `content_type`, so
+      // this column rendered MIME types under a "Domain" header. `row.domain`
+      // is the real thing, derived server-side by the same expression the
+      // filter matches on.
+      key: "domain",
       header: "Domain",
+      render: (row) =>
+        row.domain ? (
+          <Badge variant="outline">
+            {DOMAIN_LABELS[row.domain] ?? row.domain}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground">
+            Uncategorised
+          </Badge>
+        ),
+    },
+    {
+      // The MIME type kept its place in the table, under an honest header.
+      key: "file_type",
+      header: "Type",
       render: (row) => (
-        <Badge variant="outline" className="capitalize">
-          {row.file_type ?? "general"}
-        </Badge>
+        <span className="text-sm text-muted-foreground">
+          {formatContentType(row.file_type)}
+        </span>
       ),
     },
     {
@@ -254,22 +318,28 @@ export default function KnowledgeBase() {
           role="group"
           aria-label="Domain filter presets"
         >
-          {FILTER_CHIPS.map((chip) => {
-            const active = domainFilter === chip.value
+          {DOMAINS.map((domain) => {
+            const active = domainFilter === domain.value
+            const count = countFor(domain.value)
             return (
               <button
-                key={chip.value}
+                key={domain.value}
                 type="button"
                 aria-pressed={active}
-                onClick={() => applyDomainFilter(chip.value)}
+                onClick={() => applyDomainFilter(domain.value)}
                 className={cn(
                   "rounded-full border px-3 py-1 text-sm transition-colors",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted",
+                    : count === 0
+                      ? "border-border bg-background text-muted-foreground/60 hover:bg-muted"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
                 )}
               >
-                {chip.label}
+                {domain.chip}
+                {count !== null && (
+                  <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
+                )}
               </button>
             )
           })}
@@ -342,7 +412,23 @@ export default function KnowledgeBase() {
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mb-4 opacity-50" />
                 <p className="text-lg font-medium">No documents found</p>
-                <p className="text-sm">Upload a knowledge document to get started.</p>
+                {/* Say where the rows ARE. A bare "no documents" on a table
+                    holding 147 of them is how the broken domain filter stayed
+                    unnoticed — it looked like an empty knowledge base. */}
+                {domainFilter !== "all" && (countFor("all") ?? 0) > 0 ? (
+                  <p className="text-sm">
+                    Nothing in {DOMAIN_LABELS[domainFilter] ?? domainFilter}.{" "}
+                    <button
+                      type="button"
+                      className="underline underline-offset-2 hover:text-foreground"
+                      onClick={() => applyDomainFilter("all")}
+                    >
+                      Show all {countFor("all")} documents
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-sm">Upload a knowledge document to get started.</p>
+                )}
               </div>
             ) : (
               <>
