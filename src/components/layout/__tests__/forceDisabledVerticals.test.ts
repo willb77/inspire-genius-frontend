@@ -59,10 +59,18 @@ describe("the three gating mechanisms stay distinct", () => {
     }
   })
 
-  it("job-fit stays a WORKSPACE vertical while switched off", () => {
-    // If it dropped out of WORKSPACE_VERTICALS it would fall through to the
-    // Tools rollup and reappear there — visible in a second place, and in the
-    // wrong one.
-    expect(WORKSPACE_VERTICALS.has("job-fit")).toBe(true)
+  it("a vertical is never in BOTH the workspace set and the hidden set", () => {
+    // The invariant that outlived the specific job-fit case. WORKSPACE_VERTICALS
+    // promotes a vertical to My Workspace and the launcher filters those out of
+    // Tools; HIDDEN_VERTICALS withholds it from Tools entirely. A key in both
+    // would be promoted and withheld at once — the entry would exist in the
+    // workspace menu while claiming to be hidden.
+    //
+    // Was "job-fit stays a WORKSPACE vertical while switched off" until
+    // 2026-08-12, when WORKSPACE_VERTICALS was emptied and Job Fit deliberately
+    // fell back into the Tools catalogue.
+    for (const key of WORKSPACE_VERTICALS) {
+      expect(HIDDEN_VERTICALS.has(key)).toBe(false)
+    }
   })
 })
