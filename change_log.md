@@ -1,3 +1,21 @@
+## [2026-08-12] — Interview Practice role pages wired into the FE
+
+Renders the backend role-page generator's output (app.role_pages, monorepo #870)
+as public per-occupation landing pages that funnel into the auth-gated Interview
+Practice coach. PR #403.
+
+### Added
+- `src/data/interviewRolePages.json` (44 generated pages, code-split lazy chunk) +
+  `src/types/interviewRolePage.ts` (typed accessor).
+- Public routes `/interview-practice/roles` (index) + `/interview-practice/:slug`
+  (outside ProtectedRoute; static `/roles` outranks `:slug`).
+- `src/pages/interview-practice/InterviewRolePage.tsx` (hero + copy blocks +
+  attributed pay/outlook cards + FAQs + Schema.org JSON-LD + CTA into the coach;
+  unknown slug → not-found) + `InterviewRolesIndex.tsx` (lists all roles).
+- `src/hooks/useSeo.ts` (title/description/canonical/JSON-LD, cleaned on unmount);
+  `src/components/interview/RolePageShell.tsx` (public chrome). Discovery link on
+  the coach setup page. 5 new tests; `npm run build` clean; 53 interview tests pass.
+
 ## [2026-08-12] — Interview Studio: upload a question-list file
 
 Third question source in `StudioQuestionBuilder` (alongside generate + manual):
