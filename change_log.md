@@ -1,3 +1,17 @@
+## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
+
+Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
+code (nothing renders it — the live menu is `SidebarScaffold`, per the two-header-
+layouts note). This wires the actual top-left `inspiresgenius` brand in
+`SidebarScaffold` to Home v2 and reverts the dead-code `AppHeader` edit + its test.
+
+### Fixed
+- `src/components/shared/layout/SidebarScaffold.tsx` — the brand (logo +
+  "inspiresgenius") is now a `<Link to={ROUTES.HOME}>` (Home v2) for all roles.
+- Reverted `src/components/layout/AppHeader.tsx` (unused) + removed its test.
+- The #404 role-prefill change was correct and is live (verified in the deployed
+  `InterviewPracticePage` chunk).
+
 ## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
 
 PR #404.

@@ -14,10 +14,10 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { STORAGE_KEYS } from "@/constants/routes";
+import { ROUTES, STORAGE_KEYS } from "@/constants/routes";
 import { useSidebar } from "@/context/sidebar-context";
 import { getUIFlag, setUIFlag } from "@/lib/storage";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, Lock, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -218,10 +218,14 @@ export default function SidebarScaffold({ navItems, navSections, children, class
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
         <SidebarOpenObserver skipFirstWrite={collapseOnMount} />
         <SidebarSectionHeader className="h-14 px-2 mt-2 flex items-center gap-2 justify-between">
-          <div className="flex items-center gap-2 min-w-0 mr-auto">
+          <Link
+            to={ROUTES.HOME}
+            aria-label="Go to home"
+            className="flex items-center gap-2 min-w-0 mr-auto hover:opacity-80 transition-opacity"
+          >
             <img src="/Icon-Dark.svg" alt="Inspire Genius" className="size-8" />
             <span className="font-semibold tracking-tight truncate group-data-[collapsible=icon]:hidden">inspiresgenius</span>
-          </div>
+          </Link>
           <SidebarTrigger className="shrink-0" />
         </SidebarSectionHeader>
         <SidebarContent>
