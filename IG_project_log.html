@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1469</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1470</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3055,6 +3055,17 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-11 &mdash; Prompt #1470 [Four surfaces opened to users + entitlement enforced server-side]</div>
+          <div class="prompt-text">what roles have access to self-portrait, moments, goals, job fit? / provide users access to self-portrait, moments, goals, and job fit. Gate these as well /full-go (both tiers, entitlement across all six roles)</div>
+          <div class="prompt-text"><b>Role was never the gate.</b> All four surfaces sit under <code>/vertical/*</code>, which <code>ProtectedRoute</code> does not role-check &mdash; it only enforces roles on the five role-prefixed path groups. Access is a per-user row in <code>public.user_entitlements</code>, and that table has no role column. What was actually blocking each one: Self-Portrait and Moments had no entitlement holders outside ~9 super-admins; Goals was unlocked for <code>willb77@3pp.com</code> alone; Job Fit was in <code>FORCE_DISABLED_VERTICALS</code>, greyed even for entitled users.</div>
+          <div class="prompt-text"><b>The gate was never enforced.</b> <code>require_vertical</code> had existed since the vertical model landed and was applied to <b>zero routes</b>. Entitlement decided what the UI offered; the API served any authenticated caller. Greyed buttons were standing in for an authorization boundary.</div>
+          <div class="prompt-text"><b>Both halves, in order.</b> Entitlements seeded FIRST (115 users on dev, 114 on staging-b, all six roles, merge semantics &mdash; <b>0 pre-existing keys lost</b>, diffed against a <code>user_entitlements_bak_20260811</code> snapshot), THEN the gate. Reversed, the gate 403s exactly the super-admins reaching these surfaces through the <code>*_dev_access</code> preview override.</div>
+          <div class="prompt-text"><b>Gate design:</b> <code>vertical_router(key, entitled=True)</code> attaches the dependency at the ROUTER level, so a route added later is gated by construction rather than by the author remembering. <code>/health</code> moved to a new <code>VerticalManifest.public_router</code> &mdash; it answers &ldquo;is this vertical wired?&rdquo;, not &ldquo;what does this user have?&rdquo;. blueprint-service serves <code>/v1/blueprint/fit/*</code> itself, so it got its own check on the same table; fails CLOSED on a DB error.</div>
+          <div class="prompt-text"><b>Deliberately not gated:</b> <code>/v1/agents/goals</code> (shared Summit store &mdash; growth-service's TDS dossier reads it for managers with no direction-setting entitlement) and <code>/v1/agents/blueprint/{explain-fit,write-resume}</code> (LLM formatters over fit data the caller already holds; the data surface feeding them is now gated).</div>
+          <div class="prompt-text"><b>A test that failed open.</b> The first blueprint route test walked <code>app.routes</code>, passed locally and found ZERO routes in CI on identical fastapi/starlette &mdash; verified by rebuilding a venv from the service's pinned requirements. I could not reproduce it, so rather than guess I rewrote it to read <code>app.openapi()["paths"]</code> and assert non-empty first: the original form treated &ldquo;no ungated routes&rdquo; and &ldquo;the walk stopped working&rdquo; as the same result.</div>
+          <div class="prompt-text"><b>Shipped:</b> FE PR <b>#396</b>, monorepo PR <b>#865</b>. Tests: agent-engine 4887 passed / 11 skipped, blueprint-service 228 passed, frontend build green + 305 nav/layout/Home tests.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-07 &mdash; Prompt #1469 [Agent-engine test backlog cleared + CI gates armed &mdash; MERGED, dev + staging-b]</div>
           <div class="prompt-text">restore Goals / what needs to be done to complete goals discovery based on prisom and additional information scores? / fix the 174 failing tests on development what is this? / fix the aiosqlite loop scoping and re-land the gate / promote the backend to staging-b</div>
