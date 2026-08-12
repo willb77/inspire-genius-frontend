@@ -1,7 +1,6 @@
 import { Search, Settings as SettingsIcon, Menu } from "lucide-react"
 import { useAuth } from "@/context/useAuth"
 import { useNavigate } from "react-router-dom"
-import { ROUTES } from "@/constants/routes"
 import NotificationBell from "@/components/layout/NotificationBell"
 
 type AppHeaderProps = {
@@ -14,18 +13,14 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
   const displayName = user?.fullName ?? user?.name ?? user?.email ?? "User"
   const displayRole = (user?.role ?? "user").replace("-", " ")
 
-  // The top-left brand logo always goes to the home surface (Home v2).
-  const handleHomeClick = () => navigate(ROUTES.HOME)
-
-  // The right-hand profile chip goes to the signed-in role's landing/dashboard.
-  const handleProfileClick = () => {
+  const handleLogoClick = () => {
     const role = user?.role ?? "user"
     if (role === "super-admin") navigate("/super-admin/dashboard")
     else if (role === "manager") navigate("/manager/dashboard")
     else if (role === "company-admin") navigate("/company-admin/dashboard")
     else if (role === "practitioner") navigate("/practitioner/dashboard")
     else if (role === "distributor") navigate("/distributor/dashboard")
-    else navigate(ROUTES.HOME)
+    else navigate("/home")
   }
 
   return (
@@ -35,7 +30,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
         <button onClick={onMenuToggle} className="md:hidden w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Menu">
           <Menu className="w-5 h-5 text-[#4b5563]" />
         </button>
-        <button onClick={handleHomeClick} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" aria-label="Go to home">
+        <button onClick={handleLogoClick} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" aria-label="Go to home">
           <img src="/images/logo-dark.png" alt="Inspire Genius" className="h-8 w-auto shrink-0" />
           <span className="font-bold text-[15px] text-[#111827] hidden sm:inline">Inspire Genius</span>
         </button>
@@ -59,7 +54,7 @@ export default function AppHeader({ onMenuToggle }: AppHeaderProps) {
         <button className="w-11 h-11 md:w-9 md:h-9 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6]" aria-label="Settings" onClick={() => navigate("/settings")}>
           <SettingsIcon className="w-[18px] h-[18px] text-[#4b5563]" />
         </button>
-        <button onClick={handleProfileClick} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-lg hover:bg-[#f3f4f6]" aria-label="Go to your dashboard">
+        <button onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-lg hover:bg-[#f3f4f6]" aria-label="Go to home">
           <img src="/images/logo-dark.png" alt="Inspire Genius" className="w-9 h-9 rounded-full object-contain shrink-0" />
           <div className="leading-tight hidden lg:block text-left">
             <div className="text-[13px] font-semibold text-[#1f2937]">{displayName}</div>
