@@ -20,7 +20,6 @@ import {
   Brain,
   Sparkles,
   BarChart3,
-  MessageCircle,
   GitBranch,
   UserPlus,
   Eye,
@@ -30,7 +29,6 @@ import {
   ShieldCheck,
   SearchCheck,
   Activity,
-  Target,
   ClipboardCheck,
 } from "lucide-react"
 
@@ -45,29 +43,77 @@ import {
  */
 export const WORKSPACE_ITEM_UNAVAILABLE_REASON = "Temporarily unavailable"
 
-/** Navigation items for the regular user role */
+/**
+ * The user role's menu, in order. **Exactly six entries** as of 2026-08-12
+ * (request: "for all User roles only show these menu items on the left side
+ * menu — Home, Chat with Meridian, Interview Practice, Document Library,
+ * Settings, Help & Support").
+ *
+ * Kept in step with {@link getUserNavItems}, which is the toggle-aware version
+ * the layouts actually call. Both must yield the same six labels, because which
+ * one renders depends on the layout: `UserLayout` and `SuperAdminLayout` call
+ * `getUserNavItems`, while `UnifiedLayout` reads this list through
+ * `NAV_ITEMS_BY_ROLE`. They drifted before — this one carried Request
+ * Assessment and Feedback long after the other had dropped them — and a menu
+ * that changes depending on which page you are on is the bug that creates.
+ *
+ * Nothing is spliced in any more either: `WORKSPACE_VERTICALS` and
+ * `WORKSPACE_VERTICAL_LINKS` (Job Fit, Resume Writer) were emptied in the same
+ * change, so this list is the whole menu rather than most of it.
+ */
 export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.HOME, icon: Home, label: "Home" },
   { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-  { to: ROUTES.PRISM_ASSESSMENT, icon: Brain, label: "Request Assessment" },
-  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
-  { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
-  // Analytics removed 2026-08-12 (request) — see getUserNavItems below.
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
 
 /**
- * Toggle-aware navigation items for the user role.
- * When Agent Engine is ON, shows "Chat with Meridian" instead of "Chat with Coaches".
+ * The user role's menu — the toggle-aware version the layouts call.
  *
- * Took a `{ viewerEmail }` options object between 2026-08-06 and 2026-08-11, for
- * the owner-only Goals row. Goals is live for everyone now, so the My Workspace
- * menu has no owner-conditional entry left and the parameter went with it. The
- * owner rule itself is unchanged and still lives here — see
- * {@link isPlatformOwner} and {@link OWNER_ONLY_NAV_ROUTES}, which the
- * super-admin chrome still uses for the Dev Traffic Report.
+ * **Exactly six entries** as of 2026-08-12 (request: "for all User roles only
+ * show these menu items on the left side menu"):
+ *
+ *   Home · Chat with Meridian · Interview Practice · Document Library ·
+ *   Settings · Help & Support
+ *
+ * The chat row is the only variation: it points at Meridian when the Agent
+ * Engine toggle is on (the default) and falls back to "Chat with Coaches"
+ * when it is off. Six items either way — the toggle changes the destination,
+ * not the shape of the menu.
+ *
+ * ## Nothing is spliced in
+ *
+ * `useWorkspaceNavItems` used to merge workspace verticals into this list, so
+ * the rendered menu was longer than what you read here. `WORKSPACE_VERTICALS`
+ * (Job Fit) and `WORKSPACE_VERTICAL_LINKS` (Resume Writer) were emptied in the
+ * same change, so this IS the menu now.
+ *
+ * ## What was removed, and why the pages are fine
+ *
+ * Everything dropped from this list still routes; see
+ * {@link HIDDEN_WORKSPACE_ROUTES} for the full accounting. This menu is a
+ * shortcut list, not the route table.
+ *
+ *   - **Goals** (2026-08-12) — reachable from the Direction Setting sub-nav
+ *     ("My goals" in constants/vertical-subnav.ts) and JourneyPage stage 5.
+ *     Access was never decided here anyway: it is the `direction-setting`
+ *     entitlement, enforced server-side by `require_vertical`.
+ *   - **Analytics** (2026-08-12) — had been greyed and non-navigating since
+ *     2026-08-04. A permanently disabled row is menu noise.
+ *   - **Request Assessment, Feedback, Onboarding Wizard** (2026-07-31).
+ *   - **Bio Capture** (2026-08-04) — moved into the Tools rollup, which is
+ *     super-admin only as of 2026-08-12.
+ *
+ * **Job Fit is the one to watch.** It was spliced in from `WORKSPACE_VERTICALS`,
+ * which is now empty — so it falls back into the Tools catalogue rather than
+ * disappearing. Tools is super-admin only, which means a super-admin still
+ * reaches Job Fit and the `user` role no longer can: nothing on Home or the
+ * Meridian header links to it either. The routes resolve, so it is reachable by
+ * URL and from the vertical's own pill row once inside, but it is effectively
+ * undiscoverable for this role until something links to it again.
  */
 export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   return [
@@ -82,73 +128,11 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
           state: { autoLoadPrism: true },
         }
       : { to: ROUTES.DASHBOARD, icon: Bot, label: "Chat with Coaches" },
-    // Bio Capture moved into the "Tools" rollup (see UserLayout) 2026-08-04 —
-    // it is a tool you go to, not a primary workspace shortcut. The route
-    // (ROUTES.BIO_CAPTURE) is unchanged; only the sidebar placement moved.
-    //
-    // Document Library moved DOWN to sit directly above Settings on 2026-08-06
-    // (request) — see the tail of this list. It is a reference surface you go to
-    // occasionally, not a daily shortcut, so it now sits with Settings/Help
-    // rather than among the primary actions. The route is unchanged.
-    //
-    // Interview Practice — candidate-side STAR rehearsal with Alex (voice-capable).
+    // Candidate-side STAR rehearsal with Alex (voice-capable).
     { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
-    // Wave 2 Lane 2.A (P7.1) — Diagnostic Chat removed from user nav; now an
-    // admin-only route at /super-admin/agent-trace-console.
-    //
-    // 2026-07-31 — My Workspace pared back. Request Assessment, Goal Setting,
-    // Feedback and the Onboarding Wizard are NOT deleted: their routes still
-    // resolve and each is reachable from the surface that owns it (history
-    // from the Meridian header rows, the rest from Home and the Tools
-    // section). The menu is a shortcut list, not the route table — see
-    // HIDDEN_WORKSPACE_ROUTES below for the full accounting so a future
-    // reader doesn't assume the pages were dropped.
-    //
-    // ── 2026-08-04, user request: menu order + three entries switched off ──
-    // Live order is Home → Chat with Meridian → Document Library → Interview
-    // Practice, then Analytics/Goals/Job Fit (the last spliced in below by
-    // useWorkspaceNavItems), then the Settings/Help tail.
-    //
-    // ── 2026-08-11, user request: Goals and Job Fit switched back ON ──
-    // Analytics is the only one of the trio still greyed. Goals is now a live
-    // row for every user (see below) and Job Fit's force-disable was lifted in
-    // useVerticalLauncher, so entitlement alone decides it. Order is unchanged:
-    // both keep the position they held while greyed, so turning them on did not
-    // reshuffle anyone's menu.
-    //
-    // ── 2026-08-12, user request: Analytics REMOVED from My Workspace ──
-    // It had been a greyed, lock-marked, non-navigating row since 2026-08-04.
-    // A permanently disabled entry is menu noise: it occupies a slot, invites a
-    // click, and explains nothing. Now absent, so it joins
-    // HIDDEN_WORKSPACE_ROUTES below — that constant means "absent from the
-    // menu", which is finally true of Analytics.
-    //
-    // The page and route (ROUTES.ANALYTICS) are UNTOUCHED and still resolve.
-    // Restoring it is one line here plus dropping it from that list.
-    // Goals — the "My Goals" interview (Direction Setting stage 5). Promoted to a
-    // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
-    // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
-    //
-    // Switched off 2026-08-04, unlocked for the platform owner only 2026-08-06,
-    // and live for EVERY user as of 2026-08-11 (user request). Position is
-    // unchanged across all three states, so turning it on did not reshuffle
-    // anyone's menu.
-    //
-    // This row was only ever a SHORTCUT gate, never an access gate: the route was
-    // never removed and Goals stayed reachable throughout from the Direction
-    // Setting sub-nav ("My goals" in constants/vertical-subnav.ts) and
-    // JourneyPage stage 5. What actually decides access is the
-    // `direction-setting` entitlement, now enforced server-side by
-    // `require_vertical` on the agent-engine vertical router — so this being a
-    // plain live link is correct, not a hole.
-    { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" },
-    // Document Library sits directly above Settings as of 2026-08-06 (request),
-    // moved down from its old position between Chat and Interview Practice.
-    //
-    // "Document Library" is in MENU_TAIL_LABELS (useVerticalLauncher) so the
-    // workspace-vertical splice lands ABOVE it. Without that, verticals were
-    // inserted before "Settings" — i.e. BETWEEN Document Library and Settings —
-    // and the two were no longer adjacent.
+    // Document Library sits directly above Settings (2026-08-06 request). It is
+    // a reference surface you go to occasionally, not a daily shortcut, so it
+    // sits with the Settings/Help tail rather than among the primary actions.
     { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
     { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
     { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
@@ -175,6 +159,14 @@ export const HIDDEN_WORKSPACE_ROUTES = [
   // Joined 2026-08-12, when the greyed row was removed rather than left as a
   // permanently-disabled entry. Page and route untouched, as with the rest.
   ROUTES.ANALYTICS,
+  // Joined 2026-08-12 when the menu was cut to six entries. Goals is still
+  // reachable from the Direction Setting sub-nav and JourneyPage stage 5.
+  ROUTES.DIRECTION_SETTING.GOALS,
+  // Job Fit stopped being spliced in on 2026-08-12 (WORKSPACE_VERTICALS was
+  // emptied). Listed here because this constant tracks what is ABSENT from the
+  // menu regardless of how it used to get there — but note it is the one entry
+  // with no remaining link from any user-facing surface. See getUserNavItems.
+  ROUTES.JOB_FIT.MATCHES,
 ] as const
 
 /**
