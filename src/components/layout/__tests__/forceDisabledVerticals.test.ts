@@ -6,6 +6,12 @@
  * Home and the Meridian header because those gate on entitlement alone. These
  * pin the helper those surfaces now share, so a future entry point has an
  * obvious thing to call instead of re-deriving the rule.
+ *
+ * 2026-08-11 — the set is EMPTY: Job Fit was switched back on and nothing else
+ * ever joined it. The helper is kept (it is the only lever that can override
+ * entitlement) and so are these tests, which now pin that it overrides nothing.
+ * A future addition to the set makes the "nothing is force-disabled" test fail
+ * loudly, which is the intended prompt to re-read the mechanism.
  */
 import {
   isVerticalForceDisabled,
@@ -15,8 +21,13 @@ import {
 } from "../useVerticalLauncher"
 
 describe("isVerticalForceDisabled", () => {
-  it("reports job-fit as switched off", () => {
-    expect(isVerticalForceDisabled("job-fit")).toBe(true)
+  it("reports nothing as switched off — the set is empty", () => {
+    expect(FORCE_DISABLED_VERTICALS.size).toBe(0)
+  })
+
+  it("no longer switches off job-fit", () => {
+    // Was `true` from 2026-08-04 to 2026-08-11. Entitlement decides it now.
+    expect(isVerticalForceDisabled("job-fit")).toBe(false)
   })
 
   it("does not touch other verticals", () => {

@@ -148,26 +148,28 @@ describe("useVerticalLauncherSection", () => {
 })
 
 // WORKSPACE_VERTICALS = {job-fit} as of 2026-08-04, so the workspace-splice
-// mechanism now promotes Job Fit into My Workspace (greyed when unentitled).
+// mechanism promotes Job Fit into My Workspace (greyed when unentitled).
 //
 // Later the same day Job Fit was ALSO switched off for everyone
-// (FORCE_DISABLED_VERTICALS), so it is now listed-but-greyed in every case. It
-// stays in WORKSPACE_VERTICALS so that it keeps its My Workspace placement and
-// does not reappear in the Tools rollup while switched off.
+// (FORCE_DISABLED_VERTICALS) and was listed-but-greyed in every case. That was
+// lifted on 2026-08-11 — entitlement decides it again, exactly like Lumen. It
+// stays in WORKSPACE_VERTICALS so it keeps its My Workspace placement and does
+// not reappear in the Tools rollup.
 describe("useWorkspaceVerticalItems (Job Fit promoted to My Workspace)", () => {
-  test("returns Job Fit greyed even for an ENTITLED user (force-disabled)", () => {
+  test("returns Job Fit LIVE for an entitled user", () => {
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceVerticalItems())
     expect(result.current.map((i) => i.label)).toEqual(["Job Fit"])
-    expect(result.current[0].disabled).toBe(true)
+    expect(result.current[0].disabled).toBe(false)
   })
 
-  test("tells an entitled user it is unavailable, NOT that their plan lacks it", () => {
-    // The default locked wording is an entitlement message. Showing it to a
-    // user who *is* entitled would be a plain falsehood about their account.
+  test("shows no disabled wording at all to an entitled user", () => {
+    // While force-disabled this said "Temporarily unavailable" — the entry was
+    // greyed but the plan wording would have been a falsehood. Now the entry is
+    // usable, so any reason string would be.
     setEnabled(["job-fit"])
     const { result } = renderHook(() => useWorkspaceVerticalItems())
-    expect(result.current[0].disabledReason).toBe("Temporarily unavailable")
+    expect(result.current[0].disabledReason).toBeUndefined()
   })
 
   test("keeps the entitlement wording for a user who genuinely lacks it", () => {

@@ -65,27 +65,17 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
 ]
 
 /**
- * Options for {@link getUserNavItems}.
- *
- * `viewerEmail` is the signed-in user's email, used for owner-only entries.
- * The EMAIL is passed rather than a pre-computed `isOwner` boolean so the
- * owner rule lives in exactly one place (this module, via
- * {@link isPlatformOwner}) and no chrome can apply it slightly differently.
- * Omitting it is fail-closed: the caller gets the non-owner menu.
- */
-export interface UserNavOptions {
-  viewerEmail?: string | null
-}
-
-/**
  * Toggle-aware navigation items for the user role.
  * When Agent Engine is ON, shows "Chat with Meridian" instead of "Chat with Coaches".
+ *
+ * Took a `{ viewerEmail }` options object between 2026-08-06 and 2026-08-11, for
+ * the owner-only Goals row. Goals is live for everyone now, so the My Workspace
+ * menu has no owner-conditional entry left and the parameter went with it. The
+ * owner rule itself is unchanged and still lives here — see
+ * {@link isPlatformOwner} and {@link OWNER_ONLY_NAV_ROUTES}, which the
+ * super-admin chrome still uses for the Dev Traffic Report.
  */
-export function getUserNavItems(
-  agentEngineEnabled: boolean,
-  options: UserNavOptions = {},
-): NavItemDef[] {
-  const ownerOnlyUnlocked = isPlatformOwner(options.viewerEmail)
+export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
   return [
     { to: ROUTES.HOME, icon: Home, label: "Home" },
     agentEngineEnabled
@@ -122,16 +112,21 @@ export function getUserNavItems(
     //
     // ── 2026-08-04, user request: menu order + three entries switched off ──
     // Live order is Home → Chat with Meridian → Document Library → Interview
-    // Practice, then the greyed trio (Analytics, Goals, and Job Fit — spliced
-    // in below by useWorkspaceNavItems), then the Settings/Help tail.
+    // Practice, then Analytics/Goals/Job Fit (the last spliced in below by
+    // useWorkspaceNavItems), then the Settings/Help tail.
     //
-    // Analytics, Goals and Job Fit are DISABLED, not removed: still listed, but
-    // greyed, lock-marked and non-navigating. Deliberately not deleted — the
-    // pages and routes are untouched, so re-enabling is dropping `disabled`
-    // here (and from FORCE_DISABLED_VERTICALS in useVerticalLauncher for Job
-    // Fit), with no route or layout work. They are NOT added to
-    // HIDDEN_WORKSPACE_ROUTES: that constant means "absent from the menu", and
-    // these are present — just not usable.
+    // ── 2026-08-11, user request: Goals and Job Fit switched back ON ──
+    // Analytics is the only one of the trio still greyed. Goals is now a live
+    // row for every user (see below) and Job Fit's force-disable was lifted in
+    // useVerticalLauncher, so entitlement alone decides it. Order is unchanged:
+    // both keep the position they held while greyed, so turning them on did not
+    // reshuffle anyone's menu.
+    //
+    // Analytics is DISABLED, not removed: still listed, but greyed, lock-marked
+    // and non-navigating. Deliberately not deleted — the page and route are
+    // untouched, so re-enabling is dropping `disabled` here, with no route or
+    // layout work. It is NOT added to HIDDEN_WORKSPACE_ROUTES: that constant
+    // means "absent from the menu", and this is present — just not usable.
     {
       to: ROUTES.ANALYTICS,
       icon: BarChart3,
@@ -143,26 +138,19 @@ export function getUserNavItems(
     // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
     // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
     //
-    // ── 2026-08-06, user request: switched back on FOR THE PLATFORM OWNER ONLY ──
-    // Everyone else's menu is byte-identical to 2026-08-04 — same position, same
-    // greying, same tooltip. Only willb77@3pp.com gets a live row. Position is
-    // deliberately unchanged rather than promoted up beside the usable
-    // shortcuts, so the owner-gate cannot reshuffle anyone else's menu.
+    // Switched off 2026-08-04, unlocked for the platform owner only 2026-08-06,
+    // and live for EVERY user as of 2026-08-11 (user request). Position is
+    // unchanged across all three states, so turning it on did not reshuffle
+    // anyone's menu.
     //
-    // This is a SHORTCUT gate, not an access gate. The route was never removed
-    // and Goals stayed reachable throughout from the Direction Setting sub-nav
-    // ("My goals" in constants/vertical-subnav.ts) and JourneyPage stage 5 — for
-    // every user, owner or not. If Goals ever needs to be genuinely unreachable
-    // for non-owners, that is a route/authz change and this line is not it.
-    ownerOnlyUnlocked
-      ? { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" }
-      : {
-          to: ROUTES.DIRECTION_SETTING.GOALS,
-          icon: Target,
-          label: "Goals",
-          disabled: true,
-          disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
-        },
+    // This row was only ever a SHORTCUT gate, never an access gate: the route was
+    // never removed and Goals stayed reachable throughout from the Direction
+    // Setting sub-nav ("My goals" in constants/vertical-subnav.ts) and
+    // JourneyPage stage 5. What actually decides access is the
+    // `direction-setting` entitlement, now enforced server-side by
+    // `require_vertical` on the agent-engine vertical router — so this being a
+    // plain live link is correct, not a hole.
+    { to: ROUTES.DIRECTION_SETTING.GOALS, icon: Target, label: "Goals" },
     // Document Library sits directly above Settings as of 2026-08-06 (request),
     // moved down from its old position between Chat and Interview Practice.
     //

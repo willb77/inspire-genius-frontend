@@ -269,21 +269,32 @@ describe("HomeV2", () => {
       );
     });
 
-    it("locks Goals even when Direction Setting is entitled", () => {
+    // 2026-08-11: Goals UN-locked. LOCKED_QUICK_ACTIONS is now empty, so every
+    // pill in the row is decided by entitlement alone.
+    it("links Goals when Direction Setting is entitled", () => {
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "direction-setting"],
       });
       wrap();
       const goals = screen.getByTestId("homev2-quick-goals");
+      expect(goals).toHaveAttribute("href", "/vertical/direction-setting/goals");
+      expect(goals).not.toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("still locks Goals for a user NOT entitled to Direction Setting", () => {
+      // Un-locking the pill must not bypass the entitlement gate underneath it.
+      mockEnabledVerticals.mockReturnValue({ data: ["lumen"] });
+      wrap();
+      const goals = screen.getByTestId("homev2-quick-goals");
       expect(goals).toHaveAttribute("aria-disabled", "true");
       expect(goals).not.toHaveAttribute("href");
-      // Its vertical IS in the plan, so the entitlement wording would lie.
-      expect(goals).toHaveAttribute("title", "Temporarily unavailable");
     });
 
     it("drops My Journey and Job Fit from the row entirely", () => {
-      // Removed, not greyed — and Job Fit stays switched off at the VERTICAL
-      // level, so dropping its pill does not re-expose it anywhere.
+      // Removed from QUICK_ACTIONS outright on 2026-08-06, not greyed. Job Fit
+      // was switched back on at the vertical level on 2026-08-11 and reaches
+      // users through the My Workspace menu; that did not restore this pill,
+      // which was a separate decision about the Home row.
       mockEnabledVerticals.mockReturnValue({
         data: ["lumen", "job-fit", "direction-setting"],
       });
