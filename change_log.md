@@ -1,3 +1,20 @@
+## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
+
+PR #404.
+
+### Changed
+- `src/components/layout/AppHeader.tsx` — the top-left Inspire Genius logo now
+  always navigates to Home v2 (`ROUTES.HOME` `/home`) for every role; the profile
+  chip keeps going to the role dashboard.
+- Role-page CTAs ("Practice a {role} interview" / "Start practicing") carry the
+  role into the coach via router state; `InterviewPracticePage` reads it and
+  pre-fills `InterviewFrameForm` with the role title + a job-description seed
+  (`buildRoleJobDescription` — honest role brief from the page's real title/SOC/
+  wage/outlook, no invented duties) + a "Prefilled for {role}" note.
+  - Files: `src/pages/interview-practice/InterviewRolePage.tsx`,
+    `src/pages/user/InterviewPracticePage.tsx`, `src/types/interviewRolePage.ts`
+- 10 new/updated tests; `npm run build` clean.
+
 ## [2026-08-12] — Interview Practice role pages wired into the FE
 
 Renders the backend role-page generator's output (app.role_pages, monorepo #870)
