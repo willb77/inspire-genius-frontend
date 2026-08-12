@@ -141,10 +141,9 @@ const QUICK_ACTIONS: {
     vertical: "lumen",
     icon: Sparkles,
   },
-  // Goals — added to the row on 2026-08-06 (request), switched off. The route
-  // is untouched and Goals stays reachable from the left menu (live for the
-  // platform owner) and from the Direction Setting sub-nav; this is a shortcut,
-  // not an access gate.
+  // Goals — added to the row on 2026-08-06 switched off, live from 2026-08-11.
+  // Renders only for a user entitled to `direction-setting`, like every other
+  // pill here.
   {
     key: "goals",
     labelKey: "homeV2.quickGoals",
@@ -159,16 +158,21 @@ const QUICK_ACTIONS: {
  * Quick actions switched off for everyone.
  *
  * Distinct from `isVerticalForceDisabled`, which turns off a whole vertical
- * everywhere it appears. Direction Setting is still a live product — only this
- * Home shortcut is withheld — so the lever is per quick-action key.
+ * everywhere it appears: this lever withholds one Home shortcut while leaving
+ * the vertical itself live.
  *
- * 2026-08-06 (request): Self-Portrait was UN-locked (it is now a live link),
- * Goals was added here in its place, and My Journey / Job Fit were removed from
- * the row entirely rather than greyed. Job Fit remains switched off at the
- * vertical level via `isVerticalForceDisabled`, so removing its Home pill does
- * not re-expose it anywhere.
+ * **Empty as of 2026-08-11** (user request: users get real access to
+ * Self-Portrait, Moments, Goals and Job Fit). Goals was the last member —
+ * locked 2026-08-06 — and every remaining pill is now decided by entitlement
+ * alone. Kept rather than deleted: it is the only per-pill lever, and it is
+ * checked alongside `isVerticalForceDisabled` in the render below.
+ *
+ * Note this does NOT restore the My Journey / Job Fit pills. Those were removed
+ * from `QUICK_ACTIONS` outright on 2026-08-06 rather than greyed, which was a
+ * separate decision about the Home row — Job Fit is reachable from the My
+ * Workspace menu, which is where it was switched back on.
  */
-const LOCKED_QUICK_ACTIONS = new Set(["goals"]);
+const LOCKED_QUICK_ACTIONS = new Set<string>([]);
 
 /**
  * How far back the "what you worked on" dropdown reaches, in days.
