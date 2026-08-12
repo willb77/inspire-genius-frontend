@@ -43,13 +43,20 @@ jest.mock("@/lib/agentApi", () => ({
 // `components/layout/__tests__/useVerticalLauncher.test.ts`; default to identity
 // here, and one test below overrides it to assert the layout passes them on.
 const mockWorkspaceNav = jest.fn((items: unknown) => items);
-// The Verticals catalogue section; null by default so the baseline assertions
-// (flat navItems, no navSections) hold. One test below supplies a section.
-type MockSection = { label: string; items: Array<{ to: string; label: string; disabled?: boolean }> } | null;
+// The consolidated Tools section; null by default so the baseline assertions
+// (flat navItems, no navSections) hold — which since 2026-08-12 is also the
+// real behaviour for a plain user, because useToolsSection is super-admin only.
+type MockSection = {
+  label: string;
+  defaultCollapsed?: boolean;
+  items: Array<{ to: string; label: string; disabled?: boolean }>;
+} | null;
 const mockLauncher = jest.fn((): MockSection => null);
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
-  useVerticalLauncherSection: () => mockLauncher(),
+}));
+jest.mock("@/hooks/nav/useToolsSection", () => ({
+  useToolsSection: () => mockLauncher(),
 }));
 
 const DummyIcon = () => null;
@@ -156,30 +163,47 @@ describe("UserLayout", () => {
     ]);
   });
 
-  test("renders the Tools section (Bio Capture + catalogue) for a plain user when the catalogue exists", () => {
+  test("gives a plain user NO Tools section — it is super-admin only", () => {
+    // Until 2026-08-12 a plain user got a Tools rollup here carrying Bio
+    // Capture and the whole vertical catalogue. The gate now lives in
+    // useToolsSection, which returns null for the user role, so the layout must
+    // fall back to the flat menu rather than rendering an empty group.
+    render(<UserLayout><div /></UserLayout>);
+    const props = mockSidebarScaffold.mock.calls[0][0];
+    expect(props.navSections).toBeUndefined();
+    expect(props.navItems.length).toBeGreaterThan(0);
+  });
+
+  test("renders the Tools section when the hook supplies one", () => {
+    // Drives the layout's placement, not the gate: the hook is mocked, so this
+    // asserts that whatever section it returns is rendered intact and expanded.
     mockLauncher.mockReturnValue({
-      label: "Verticals",
+      label: "Tools",
+      defaultCollapsed: false,
       items: [
+        { to: "/bio", label: "Bio Capture" },
         { to: "/vertical/grant/dashboard", label: "GRANT" },
         { to: "/vertical/honor/dashboard", label: "Honor Foundation", disabled: true },
       ],
     });
     render(<UserLayout><div /></UserLayout>);
     const props = mockSidebarScaffold.mock.calls[0][0];
-    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual(["", "Verticals"]);
+    expect(props.navSections.map((s: { label: string }) => s.label)).toEqual(["", "Tools"]);
     const tools = props.navSections[1].items as Array<{ label: string; disabled?: boolean }>;
-    // Bio Capture is injected at the top of the Tools rollup (moved out of the
-    // flat menu 2026-08-04).
     expect(tools[0].label).toBe("Bio Capture");
     // Unentitled catalogue entries are listed, not hidden — greyed via `disabled`.
-    const honor = tools.find((i) => i.label === "Honor Foundation");
-    expect(honor?.disabled).toBe(true);
+    expect(tools.find((i) => i.label === "Honor Foundation")?.disabled).toBe(true);
+    expect(props.navSections[1].defaultCollapsed).toBe(false);
   });
 
-  test("super-admin order is My Workspace → Role Views → Verticals → Administration", () => {
+  test("super-admin order is My Workspace → Role Views → Tools → Administration", () => {
+    // Same order as SuperAdminLayout, so the menu does not reshuffle as a
+    // super-admin moves between user pages and admin pages. "Verticals" became
+    // "Tools" on 2026-08-12 when the two groups were consolidated.
     mockUseAuth.mockReturnValue({ user: { role: "super-admin" } });
     mockLauncher.mockReturnValue({
-      label: "Verticals",
+      label: "Tools",
+      defaultCollapsed: false,
       items: [{ to: "/vertical/grant/dashboard", label: "GRANT" }],
     });
     render(<UserLayout><div /></UserLayout>);
@@ -187,7 +211,7 @@ describe("UserLayout", () => {
     expect(props.navSections.map((s: { label: string }) => s.label)).toEqual([
       "My Workspace",
       "Role Views",
-      "Verticals",
+      "Tools",
       "Administration",
     ]);
   });

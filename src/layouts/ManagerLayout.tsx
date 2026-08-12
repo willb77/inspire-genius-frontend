@@ -14,7 +14,7 @@ export type ManagerLayoutProps = {
  * UnifiedLayout) — the same "My Workspace / Administration" look, driven by
  * MANAGER_NAV_ITEMS with entitled verticals under a collapsed "Verticals"
  * section. Role/entitlement gating is unchanged (ProtectedRoute + the
- * role-agnostic useGatedNavItems/useEntitledVerticalItems hooks).
+ * role-agnostic useGatedNavItems/useToolsSection hooks).
  */
 export default function ManagerLayout({ children, className }: ManagerLayoutProps) {
   return (
