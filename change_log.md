@@ -1,3 +1,89 @@
+## [2026-08-12] — Sidebar: one super-admin "Tools" menu, Analytics out, Resume Writer in
+
+Three merged PRs on the frontend: #401, #402 (Lumen Personal coaching) and #408
+(the Tools consolidation). All live on dev AND staging-b — a frontend merge to
+`development` deploys to both tiers, unlike the backend, which moves only on a
+release tag.
+
+### Changed
+- **ONE consolidated "Tools" section, super-admin only.** Tool and vertical
+  entries had been assembled independently in four places, two of which rendered
+  *two* groups each (`UnifiedLayout`: "Tools" + "Verticals"; `UserLayout` and
+  `useVerticalPageSections`: the launcher section, also labelled "Tools";
+  `SuperAdminLayout`: launcher items + `SUPER_ADMIN_TOOLS_SECTION`).
+  Two sections sharing a label was not cosmetic — `SidebarScaffold` keys sections
+  by `key={section.label}`, so duplicates collided during reconciliation and the
+  second group appeared only once a neighbouring section was toggled. That is the
+  "have to click Administration to reveal the tools" symptom.
+  - New: `src/hooks/nav/useToolsSection.ts` — single source for the section
+  - Files: `src/layouts/{SuperAdminLayout,UserLayout,UnifiedLayout}.tsx`,
+    `src/hooks/nav/useVerticalPageSections.ts`
+- **Tools is now expanded by default**, so a super-admin sees and clicks every
+  tool without expanding anything first.
+- **Team Development Studio** renamed from "Team Development" and no longer gated
+  on `VITE_FEATURE_TEAM_DEVELOPMENT` for super-admin — that flag scopes the
+  *manager* pilot, and gating the platform owner on it is why the entry vanished
+  from builds with the flag unset. Manager keeps the flag.
+  - Files: `src/constants/navigation.ts`
+
+### Added
+- **Super-admin Live Interview** — the route did not exist (manager and
+  practitioner had theirs), so the Tools menu had nothing to link to.
+  - Files: `src/pages/super-admin/InterviewLivePage.tsx`,
+    `src/constants/routes.ts` (`SUPER_ADMIN.INTERVIEW_LIVE`), `src/routes.tsx`
+- **Resume Writer (Honor) in My Workspace.** Honor is in `HIDDEN_VERTICALS`, so
+  this deep link is the only sidebar path to it. Entitlement-aware: the honor
+  routes sit behind `VerticalShell`, which redirects an unentitled visitor to
+  `/home`, so a plain link would look live and silently bounce.
+  - Files: `src/components/layout/useVerticalLauncher.ts`
+    (`WORKSPACE_VERTICAL_LINKS`, `useWorkspaceVerticalLinks`)
+- **Lumen dashboard test** now asserts the *absence* of the removed card — the
+  regression risk there is a card quietly reappearing, which a "the two that
+  remain are present" test passes straight through.
+
+### Removed
+- **Analytics from My Workspace.** Greyed and non-navigating since 2026-08-04; a
+  permanently disabled row is menu noise. Route and page untouched — it joins
+  `HIDDEN_WORKSPACE_ROUTES`, which now finally tells the truth about it. Still
+  present in the manager / company-admin / distributor / practitioner role menus,
+  which were not in scope.
+- **Lumen "Personal coaching"** — card (#401), then the page, hook, question bank
+  and route (#402). `/vertical/lumen/coaching` now redirects to the Lumen
+  dashboard: `routes.tsx` ends in a global `"*"` catch-all to `/login`, so simply
+  deleting the route would bounce an old bookmark to a login screen, which reads
+  as "you have been logged out" rather than "this page is gone".
+  - Deleted: `CoachingPage.tsx`, `CoachingAnswers.tsx`, `coachingScope.ts`,
+    `hooks/lumen/useCoachAnswer.ts`, `constants/lumen/coachingQuestions.ts` + 3
+    test files
+- **`SUPER_ADMIN_TOOLS_SECTION` and `useEntitledVerticalItems`** — a second thing
+  that builds a "Tools" section is the bug, so both were deleted rather than left
+  as dead exports.
+
+### Not changed (deliberate)
+- **Vertical entries stay greyed for unentitled super-admins.**
+  `useVerticalAccess` grants super-admin no bypass — access is the server
+  entitlement list — so un-greying them would produce links that render, invite a
+  click, and bounce to `/home`. That is an entitlement decision, not a menu one.
+- **Non-super-admin roles lose the Tools/Verticals groups entirely.** Their own
+  role menus are untouched and every route still resolves; `TOOL_ITEMS_BY_ROLE`
+  keeps its manager/practitioner entries so restoring them is a one-line gate
+  change in one file.
+- `constants/lumen/coachingQuestions.ts` was safe to delete because Job Fit has
+  its **own** `constants/job-fit/coachingQuestions.ts` — same basename, different
+  file, no import between them. A filename-based grep says otherwise.
+
+### Verification
+- 564 suites / 4,474 tests pass; `npm run build` clean
+- **`tsc` caught six type errors that jest passed straight through** — updated
+  test mocks type-check only under the full build, not under jest
+- 0 dangling references to any removed symbol
+- Deployed bundle checked on both tiers: `"Tools"` appears once, `"Verticals"`
+  zero times, Resume Writer / Team Development Studio / the interview-live route
+  all present. `version.json` = `13b206f2` on dev and staging-b.
+- Trap worth remembering: a guessed asset path returns **HTTP 200 with
+  `index.html`** (CloudFront SPA fallback), and CI chunk hashes differ from local
+  ones — resolve real chunk names from `index.html` or S3 before grepping.
+
 ## [2026-08-12] — Job Fit: remove the cross-vertical switch row
 
 Per request, removed the row under the Job-Fit tool pills that held "Back to
