@@ -1,3 +1,52 @@
+## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
+
+A single session could emit refresh-token requests without bound — observed at
+roughly 2.5 per second, sustained, with no logout. Every refresh succeeded; the
+refresh was never the problem. The guard meant to stop the retry was.
+
+### Fixed
+- **The retry guard could never trip.** `src/lib/axios.ts` tracked already-retried
+  requests in a `WeakSet` keyed on the axios **config object**. The retry is
+  issued as `instance(original)`, and axios runs `mergeConfig` on the way in, so
+  the second failure arrives with a brand new config object the `WeakSet` has
+  never seen: 401 → refresh → retry → 401 → refresh, unbounded.
+  Verified against axios 1.11.0 rather than assumed — config identity is not
+  preserved across a retry, but a custom property does survive the merge. The
+  marker now rides on the config (`__igAuthRetried`).
+  - Files: `src/lib/axios.ts`
+- **`refreshPromise` could latch a rejected promise.** It was cleared after the
+  `await`, which never runs when the refresh rejects — leaving every subsequent
+  401 to reject instantly and force a logout. Now cleared in `.finally()`.
+
+### Changed
+- `/v1/notifications` added to `NON_CRITICAL_401_PATHS`. The notification bell
+  polls on every page, and a passive side panel must never be able to end a
+  session. The corresponding server-side 401 was fixed separately; this makes it
+  not matter if anything else ever 401s there. Joins the observability,
+  analytics and dashboard paths already listed for the same reason.
+
+### Added
+- `src/lib/__tests__/axiosRefreshLoop.test.ts` — 7 tests bounding the number of
+  **refresh calls**, not merely whether a request eventually fails. A test that
+  only asserts failure passes happily while an unbounded number of refreshes fly
+  past underneath it. Run against the pre-fix interceptor these do not simply
+  fail — they exhaust the Node heap (`FATAL ERROR: JavaScript heap out of
+  memory`), which is the loop reproduced.
+- `src/components/__tests__/ProtectedRoute.test.tsx` — pins that forced
+  onboarding stays off when `is_onboarded` is **absent**, as distinct from
+  explicitly `false`. A gate written `=== false` misses the absent case and
+  bounces the user into the wizard.
+
+### Verified — no change needed
+- Forced onboarding is already disabled (`ProtectedRoute`, 2026-07-21) and
+  `navigateAfterAuth` routes every authenticated user to their role home;
+  `/home` resolves to the HomeV2 workspace by default. Only the absent-flag test
+  case was missing.
+
+### Verification
+`npm run build` clean · eslint clean on all touched files · 220 tests passing
+across 28 suites in `src/lib` + `src/components/__tests__`.
+
 ## [2026-08-12] — User workspace menu cut to exactly six entries
 
 FE PR #410 (`626099da`), merged and live on dev AND staging-b.

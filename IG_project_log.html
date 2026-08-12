@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1477</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1478</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3055,6 +3055,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-12 &mdash; Prompt #1478 [401 refresh/retry loop bounded &mdash; a guard that could never trip]</div>
+          <div class="prompt-text">A single session emitted refresh-token requests without bound &mdash; ~2.5/sec, sustained, no logout. Every refresh returned 200; the refresh was never the problem.</div>
+          <div class="prompt-text"><b>The guard could never trip.</b> <code>src/lib/axios.ts</code> tracked retried requests in a <code>WeakSet</code> keyed on the axios <b>config object</b>. The retry is issued as <code>instance(original)</code>, and axios <code>mergeConfig</code>s that into a brand new object &mdash; so the second 401 arrived as a config the set had never seen. 401 &rarr; refresh &rarr; retry &rarr; 401, unbounded.</div>
+          <div class="prompt-text"><b>Measured, not assumed.</b> Against axios 1.11.0: config identity is <b>not</b> preserved across a retry, but a custom property <b>does</b> survive the merge. The marker now rides on the config. Running the new tests against the pre-fix interceptor does not merely fail &mdash; it exhausts the Node heap (<code>FATAL ERROR: JavaScript heap out of memory</code>), which is the loop reproduced.</div>
+          <div class="prompt-text"><b>Second, latent bug:</b> <code>refreshPromise</code> was cleared after the <code>await</code>, which never runs if the refresh rejects &mdash; latching a rejected promise so every later 401 would force a logout. Now cleared in <code>.finally()</code>.</div>
+          <div class="prompt-text"><b>Order mattered.</b> The 401 originated server-side; fixing the client guard alone would have converted an infinite loop into a <b>forced logout</b>, which is worse. Both shipped together, and <code>/v1/notifications</code> joined the non-critical 401 list &mdash; a passive notification bell must never be able to end a session.</div>
+          <div class="prompt-text"><b>Onboarding:</b> already disabled (<code>ProtectedRoute</code>, 2026-07-21); <code>navigateAfterAuth</code> routes every authenticated user to their role home, <code>/home</code> &rarr; HomeV2 workspace. Added the one missing test case &mdash; the <code>is_onboarded</code> flag <b>absent</b>, not just <code>false</code>.</div>
+          <div class="prompt-text"><b>Verification:</b> build clean &middot; eslint clean on touched files &middot; 220 tests across 28 suites. FE PR <b>#412</b>.</div>
+        </div>
         <div class="prompt-entry">
   <div class="timestamp">2026-08-12 — Prompt #1477 [FE #410]</div>
   <div class="prompt-text">for all User roles only show these menu items onthe left side menu; Home, Chat with Meridian, interview Practice, Document Library, Settings, Help &amp; Support</div>
