@@ -222,7 +222,6 @@ const KceCurriculumPage = React.lazy(() => import("@/pages/knowledge-continuity/
 const LumenLayout = React.lazy(() => import("@/pages/lumen/LumenLayout"));
 const LumenShell = React.lazy(() => import("@/pages/lumen/LumenNav"));
 const LumenDashboard = React.lazy(() => import("@/pages/lumen/LumenDashboard"));
-const LumenCoaching = React.lazy(() => import("@/pages/lumen/CoachingPage"));
 const LumenSelfPortrait = React.lazy(() => import("@/pages/lumen/SelfPortrait"));
 const LumenMoments = React.lazy(() => import("@/pages/lumen/Moments"));
 const LumenSettings = React.lazy(() => import("@/pages/lumen/LumenSettings"));
@@ -643,7 +642,15 @@ export const routes: RouteObject[] = [
               { path: "dashboard", element: withSuspense(<LumenDashboard />) },
               { path: "self-portrait", element: withSuspense(<LumenSelfPortrait />) },
               { path: "moments", element: withSuspense(<LumenMoments />) },
-              { path: "coaching", element: withSuspense(<LumenCoaching />) },
+              // Personal coaching was retired 2026-08-12; the page and hook are
+              // deleted. This redirect exists only so old links and bookmarks
+              // land on the dashboard — without it the global "*" catch-all
+              // below sends them to /login, which bounces a signed-in user to a
+              // login screen for a page that simply no longer exists.
+              {
+                path: "coaching",
+                element: <Navigate to="/vertical/lumen/dashboard" replace />,
+              },
               { path: "settings", element: withSuspense(<LumenSettings />) },
             ],
           },

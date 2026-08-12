@@ -54,11 +54,12 @@ export const LUMEN_TOOLS: NavItemDef[] = [
   { to: ROUTES.LUMEN.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.LUMEN.SELF_PORTRAIT, icon: UserRoundSearch, label: "My Self-Portrait" },
   { to: ROUTES.LUMEN.MOMENTS, icon: Sparkles, label: "Moments" },
-  // Coaching removed 2026-08-06 (request). Same treatment as Settings below:
-  // the page and route are untouched, and it is still reached from the Lumen
-  // Dashboard's own card — only the nav entry went. Because this list feeds
-  // BOTH the in-page pill row and the sidebar (see the header comment), one
-  // deletion covers both, which is the point of sharing it.
+  // Coaching is gone entirely, in three steps: the nav entry went 2026-08-06,
+  // the Lumen Dashboard card 2026-08-12, and the page, hook and question bank
+  // were deleted the same day. Unlike Settings below, nothing survives to link
+  // to — the path only redirects to the dashboard for old bookmarks. Because
+  // this list feeds BOTH the in-page pill row and the sidebar (see the header
+  // comment), the one deletion covered both, which is the point of sharing it.
   // Settings intentionally absent (2026-07-31): one Settings entry, in My
   // Workspace. The page still exists at ROUTES.LUMEN.SETTINGS and still routes;
   // only the duplicate sidebar entry was withdrawn, so a person is not choosing
