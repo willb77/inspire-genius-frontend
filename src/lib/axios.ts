@@ -3,7 +3,36 @@ import { getToken, getRefreshToken, setToken, clearAuth } from '@/lib/storage'
 
 // single-flight refresh and per-request retry guard
 let refreshPromise: Promise<string | null> | null = null
-const retriedRequests = new WeakSet<InternalAxiosRequestConfig>()
+
+/**
+ * Marker set on a request config once we have refreshed and retried it.
+ *
+ * It is a PROPERTY ON THE CONFIG, not an external Set keyed by object
+ * identity, and that distinction is the whole point.
+ *
+ * 2026-08-12: the guard here was `new WeakSet<InternalAxiosRequestConfig>()`
+ * holding the `err.config` object. But the retry is issued as
+ * `instance(original)`, and axios runs `mergeConfig` on the way in — so the
+ * second failure arrives with a BRAND NEW config object the WeakSet has never
+ * seen. The guard could never trip, and a persistently-401ing endpoint became
+ * an unbounded loop: 401 → refresh → retry → 401 → refresh → …
+ *
+ * Measured on staging-b: one user, 132 `/v1/refresh-token` calls in 7 minutes,
+ * ~2.5/second, and no logout — the loop just ran until the page changed.
+ * Verified against axios 1.11.0: config identity is NOT preserved across a
+ * retry, but a custom property IS carried through mergeConfig.
+ */
+const RETRY_FLAG = '__igAuthRetried' as const
+
+type RetryableConfig = InternalAxiosRequestConfig & { [RETRY_FLAG]?: boolean }
+
+function hasAlreadyRetried(config: RetryableConfig): boolean {
+  return config[RETRY_FLAG] === true
+}
+
+function markRetried(config: RetryableConfig): void {
+  config[RETRY_FLAG] = true
+}
 
 /**
  * Side-panel / read-only telemetry surfaces whose 401s must NOT cascade
@@ -20,11 +49,20 @@ const retriedRequests = new WeakSet<InternalAxiosRequestConfig>()
  *
  * Match by url substring (regex/prefix overkill here — axios `config.url`
  * is the path the caller passed, not the resolved absolute URL).
+ *
+ * 2026-08-12: broadcast-service `/v1/notifications` 401'd every password-login
+ * session (Cognito access tokens carry no `email` claim). The notification
+ * bell polls on every page, so this drove the refresh loop described above.
+ * The backend no longer 401s there, but the bell is exactly the class of
+ * passive side-panel that must never be able to end a session — so it is
+ * listed here too. Defence in depth: the backend fix stops it happening, this
+ * stops it mattering.
  */
 const NON_CRITICAL_401_PATHS = [
   '/v1/observability/',
   '/v1/analytics/',
   '/v1/dashboards/',
+  '/v1/notifications',
 ] as const
 
 function isNonCriticalPath(url: string | undefined): boolean {
@@ -50,7 +88,7 @@ export function attachInterceptors(instance: AxiosInstance) {
     (res: AxiosResponse) => res,
     async (err: AxiosError) => {
       const response = err.response
-      const original = err.config as InternalAxiosRequestConfig | undefined
+      const original = err.config as RetryableConfig | undefined
       if (!response || !original) return Promise.reject(err)
 
       if (response.status !== 401) return Promise.reject(err)
@@ -63,14 +101,15 @@ export function attachInterceptors(instance: AxiosInstance) {
         return Promise.reject(err)
       }
 
-      // prevent retry loops per request
-      if (!retriedRequests.has(original)) {
-        retriedRequests.add(original)
-      } else {
+      // Prevent retry loops per request. The flag rides ON the config so it
+      // survives the mergeConfig that `instance(original)` performs — an
+      // external Set keyed on object identity does not. See RETRY_FLAG.
+      if (hasAlreadyRetried(original)) {
         await clearAuth()
         window.location.href = '/login'
         return Promise.reject(err)
       }
+      markRetried(original)
 
       const rToken = await getRefreshToken()
       if (!rToken) {
@@ -81,6 +120,11 @@ export function attachInterceptors(instance: AxiosInstance) {
 
       try {
         if (!refreshPromise) {
+          // Cleared in a `finally` on the promise itself, not after the
+          // `await` below: if the refresh REJECTS, the awaiting branch jumps
+          // straight to catch/logout and a post-await assignment never runs,
+          // leaving a permanently-rejected promise latched here. Every later
+          // 401 would then reject instantly and force a logout.
           refreshPromise = axios
             .post<{ data?: { access_token?: string } }>(
               `${api.defaults.baseURL}/v1/refresh-token`,
@@ -91,10 +135,12 @@ export function attachInterceptors(instance: AxiosInstance) {
               const newAccess = r.data?.data?.access_token
               return newAccess ?? null
             })
+            .finally(() => {
+              refreshPromise = null
+            })
         }
 
         const newToken = await refreshPromise
-        refreshPromise = null
 
         if (newToken) {
           await setToken(newToken)
