@@ -13,10 +13,7 @@
 import { render, renderHook, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { getUserNavItems } from "../navigation"
-import {
-  withWorkspaceVerticals,
-  useWorkspaceVerticalItems,
-} from "@/components/layout/useVerticalLauncher"
+import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
 import { __resetRegistry, registerVertical } from "@/verticals/core"
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold"
 
@@ -71,8 +68,12 @@ function renderMenu(entitlements: string[] = ["job-fit"]) {
   })
   mockUseEnabledVerticals.mockReturnValue({ data: entitlements, isLoading: false })
 
-  const { result } = renderHook(() => useWorkspaceVerticalItems())
-  const menu = withWorkspaceVerticals(getUserNavItems(true), result.current)
+  // Composed through `useWorkspaceNavItems` — the hook the layouts actually
+  // call — rather than by hand from its two primitives. Building it by hand is
+  // how the Resume Writer splice went missing from this suite while shipping
+  // fine in the app: the test was asserting on a menu production never builds.
+  const { result } = renderHook(() => useWorkspaceNavItems(getUserNavItems(true)))
+  const menu = result.current
 
   render(
     <MemoryRouter initialEntries={["/home"]}>
@@ -95,9 +96,14 @@ describe("My Workspace — rendered menu", () => {
       "Home",
       "Chat with Meridian",
       "Interview Practice",
-      "Analytics",
+      // Analytics removed 2026-08-12 (request) — it sat between Interview
+      // Practice and Goals as a permanently greyed row.
       "Goals",
       "Job Fit",
+      // Resume Writer (Honor) joined My Workspace 2026-08-12. It rides the same
+      // splice as Job Fit, so it lands here — above the tail, below the
+      // primary shortcuts.
+      "Resume Writer",
       // Document Library moved down to sit DIRECTLY above Settings on
       // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
       // workspace-vertical splice (Job Fit) would otherwise land between the
@@ -108,11 +114,28 @@ describe("My Workspace — rendered menu", () => {
     ])
   })
 
-  it("draws Analytics greyed and non-interactive", () => {
+  it("does not render Analytics at all", () => {
+    // Removed 2026-08-12. Asserted on the rendered menu, not just the nav
+    // array: a row can be present in the data and still be drawn, and it is the
+    // drawn menu the request was about.
     renderMenu()
-    expect(row("Analytics")).toBeDisabled()
-    expect(row("Analytics")).toHaveAttribute("aria-disabled", "true")
-    expect(isGreyed("Analytics")).toBe(true)
+    expect(screen.queryByText("Analytics")).not.toBeInTheDocument()
+  })
+
+  it("draws Resume Writer greyed for a user without the Honor entitlement", () => {
+    // Honor sits behind VerticalShell, which sends an unentitled visitor to
+    // /home. A live-looking row that bounces is worse than a greyed one, so the
+    // item is entitlement-aware even though it is a deep link rather than a
+    // vertical home.
+    renderMenu(["job-fit"])
+    expect(row("Resume Writer")).toBeDisabled()
+    expect(isGreyed("Resume Writer")).toBe(true)
+  })
+
+  it("draws Resume Writer LIVE for a user who IS Honor-entitled", () => {
+    renderMenu(["honor"])
+    expect(row("Resume Writer")).toBeEnabled()
+    expect(isGreyed("Resume Writer")).toBe(false)
   })
 
   it("draws Job Fit LIVE for a user who is entitled to it", () => {
@@ -131,11 +154,6 @@ describe("My Workspace — rendered menu", () => {
     expect(isGreyed("Job Fit")).toBe(true)
   })
 
-  it("does not blame the user's plan for Analytics, which is off for everyone", () => {
-    renderMenu(["job-fit"])
-    expect(row("Analytics")).toHaveAttribute("title", "Temporarily unavailable")
-  })
-
   it("leaves the four usable shortcuts (and the tail) fully interactive", () => {
     renderMenu()
     for (const label of [
@@ -151,9 +169,15 @@ describe("My Workspace — rendered menu", () => {
     }
   })
 
-  it("still SHOWS the switched-off entry — greyed, not removed", () => {
-    renderMenu()
-    expect(screen.getByText("Analytics")).toBeInTheDocument()
+  it("has no permanently-greyed rows left in the menu", () => {
+    // Analytics was the last entry that was greyed for EVERYONE regardless of
+    // entitlement. Job Fit and Resume Writer grey per-entitlement, so with a
+    // fully-entitled user every row must be live — if a new always-off row
+    // appears, this fails rather than it quietly becoming normal.
+    const menu = renderMenu(["job-fit", "honor"])
+    for (const item of menu) {
+      expect(row(item.label)).toBeEnabled()
+    }
   })
 })
 
@@ -183,21 +207,20 @@ describe("My Workspace — Goals live for everyone", () => {
     expect(row("Goals")).toBeEnabled()
   })
 
-  it("still greys Analytics — only Goals and Job Fit were switched on", () => {
-    renderMenu()
-    expect(row("Analytics")).toBeDisabled()
-    expect(isGreyed("Analytics")).toBe(true)
-  })
-
   it("keeps the menu in the same order it had while greyed", () => {
     const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
       "Home",
       "Chat with Meridian",
       "Interview Practice",
-      "Analytics",
+      // Analytics removed 2026-08-12 (request) — it sat between Interview
+      // Practice and Goals as a permanently greyed row.
       "Goals",
       "Job Fit",
+      // Resume Writer (Honor) joined My Workspace 2026-08-12. It rides the same
+      // splice as Job Fit, so it lands here — above the tail, below the
+      // primary shortcuts.
+      "Resume Writer",
       // Document Library moved down to sit DIRECTLY above Settings on
       // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
       // workspace-vertical splice (Job Fit) would otherwise land between the

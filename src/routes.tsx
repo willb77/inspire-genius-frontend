@@ -142,6 +142,7 @@ const ManagerInterviewLive = React.lazy(() => import("@/pages/manager/InterviewL
 // Interview Studio — custom / topic-generated scored interview.
 const ManagerInterviewStudio = React.lazy(() => import("@/pages/manager/InterviewStudioPage"));
 const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
+const SuperAdminInterviewLive = React.lazy(() => import("@/pages/super-admin/InterviewLivePage"));
 const PractitionerInterviewStudio = React.lazy(() => import("@/pages/practitioner/InterviewStudioPage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
@@ -477,6 +478,8 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/dev-traffic-report", element: withSuspense(<DevTrafficReport />) },
       { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
       { path: "/super-admin/interview-studio", element: withSuspense(<SuperAdminInterviewStudio />) },
+      { path: "/super-admin/interview-live", element: withSuspense(<SuperAdminInterviewLive />) },
+      { path: "/super-admin/interview-live", element: withSuspense(<SuperAdminInterviewLive />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results

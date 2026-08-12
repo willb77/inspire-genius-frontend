@@ -78,6 +78,12 @@ export const ROUTES = {
     BROADCAST_ALERT: "/super-admin/broadcast-alert",
     /** Interview Studio — custom / topic-generated scored interview. */
     INTERVIEW_STUDIO: "/super-admin/interview-studio",
+    /**
+     * Live Interview — the fixed STAR-bank scored interview of a candidate.
+     * Added 2026-08-12; manager and practitioner already had one, super-admin
+     * did not, so the Tools menu had no super-admin target to link to.
+     */
+    INTERVIEW_LIVE: "/super-admin/interview-live",
   },
   MANAGER: {
     BASE: "/manager",

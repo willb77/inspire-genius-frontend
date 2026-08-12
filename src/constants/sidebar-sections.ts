@@ -38,8 +38,8 @@ export type SidebarNavItem = NavItemDef & { badge?: number | string }
 // and via `VerticalShell` for vertical pages. The legacy role-section catalogue
 // (`SIDEBAR_SECTIONS`) and its `getSectionsForRole` reader were removed with the
 // old `AppShell`/`AppSidebar` chrome (Phase 6.4). The entitlement-gated vertical
-// sections below remain — they are consumed by `useEntitledVerticalItems`
-// (role menus) and `VerticalShell` (in-vertical sub-nav).
+// sections below remain — they are consumed by `useToolsSection`
+// (the consolidated Tools menu) and `VerticalShell` (in-vertical sub-nav).
 
 /**
  * GRANT financial-aid vertical section.
@@ -47,8 +47,8 @@ export type SidebarNavItem = NavItemDef & { badge?: number | string }
  * Entitlement-gated (not role-gated): surfaced only when
  * `useVerticalAccess("grant").hasAccess` is true. Roles are set to all six so
  * the entitlement is the sole gate. `VerticalShell` renders it as the GRANT
- * pages' in-vertical sub-nav; `useEntitledVerticalItems` links to its first page
- * from the role menu's collapsed "Verticals" section.
+ * pages' in-vertical sub-nav; `useToolsSection` links to its first page from
+ * the consolidated "Tools" section.
  */
 export const GRANT_SIDEBAR_SECTION: SidebarSection = {
   id: "grant",
@@ -131,7 +131,7 @@ export const KCE_SIDEBAR_SECTION: SidebarSection = {
  * Access-gated (not merely role-gated): surfaced only when
  * `useBroadcastAccess().data?.authorized` is true (super-admin on the DB-backed
  * allowlist the owner controls). A super-admin not on the allowlist never sees
- * the link. Consumed by `useEntitledVerticalItems`.
+ * the link. Consumed by `useToolsSection`.
  */
 export const BROADCAST_SIDEBAR_SECTION: SidebarSection = {
   id: "broadcast",

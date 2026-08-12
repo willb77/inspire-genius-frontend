@@ -248,15 +248,39 @@ describe("useWorkspaceNavItems", () => {
     expect(result.current).toBe(first)
   })
 
-  test("splices Job Fit into My Workspace above the Settings/Help tail", () => {
+  test("splices Job Fit and Resume Writer above the Settings/Help tail", () => {
+    // Resume Writer (Honor) joined the splice 2026-08-12. It rides the same
+    // path as the workspace verticals, so the tail guarantee has to hold for
+    // both: everything spliced lands ABOVE Settings/Help, never between them.
     setEnabled(["grant", "honor", "job-fit", "lumen"])
     const { result } = renderHook(() => useWorkspaceNavItems(MENU))
     expect(result.current.map((i) => i.label)).toEqual([
       "Home",
       "My Documents",
       "Job Fit",
+      "Resume Writer",
       "Settings",
       "Help & Support",
     ])
+  })
+
+  test("greys Resume Writer when Honor is not entitled, but still lists it", () => {
+    // Honor is in HIDDEN_VERTICALS, so it never appears in the catalogue — this
+    // deep link is the only way to the Resume Writer from the sidebar, and
+    // hiding it when unentitled would make the feature invisible rather than
+    // merely locked.
+    setEnabled(["job-fit"])
+    const { result } = renderHook(() => useWorkspaceNavItems(MENU))
+    const resume = result.current.find((i) => i.label === "Resume Writer")
+    expect(resume).toBeDefined()
+    expect(resume!.disabled).toBe(true)
+  })
+
+  test("un-greys Resume Writer once Honor IS entitled", () => {
+    setEnabled(["honor"])
+    const { result } = renderHook(() => useWorkspaceNavItems(MENU))
+    expect(
+      result.current.find((i) => i.label === "Resume Writer")!.disabled,
+    ).toBe(false)
   })
 })

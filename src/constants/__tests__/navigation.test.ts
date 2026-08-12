@@ -3,10 +3,8 @@ import {
   HOME_ROUTE_BY_ROLE,
   DEFAULT_ROLE_CONFIGS,
   TOOL_ITEMS_BY_ROLE,
-  SUPER_ADMIN_TOOLS_SECTION,
   getUserNavItems,
   HIDDEN_WORKSPACE_ROUTES,
-  WORKSPACE_ITEM_UNAVAILABLE_REASON,
 } from "../navigation"
 import { ROUTES } from "@/constants/routes"
 import type { UserRole } from "@/types/roles"
@@ -49,14 +47,27 @@ describe("constants/navigation", () => {
       }
     })
 
-    it("super-admin Tools section is a collapsed 'Tools' rollup or null", () => {
-      if (SUPER_ADMIN_TOOLS_SECTION) {
-        expect(SUPER_ADMIN_TOOLS_SECTION.label).toBe("Tools")
-        expect(SUPER_ADMIN_TOOLS_SECTION.defaultCollapsed).toBe(true)
-        expect(SUPER_ADMIN_TOOLS_SECTION.items.length).toBeGreaterThan(0)
-      } else {
-        expect(SUPER_ADMIN_TOOLS_SECTION).toBeNull()
-      }
+    // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12 — the section is now
+    // assembled by useToolsSection, covered in hooks/nav/__tests__. What still
+    // belongs here is the DATA that hook consumes.
+    it("gives super-admin all four tools, none of them behind the pilot flag", () => {
+      // Team Development Studio is flag-gated for the manager pilot but must be
+      // unconditional for super-admin — gating the platform owner on a pilot
+      // flag is what made the entry vanish from builds with the flag unset.
+      const labels = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).map((i) => i.label)
+      expect(labels).toEqual([
+        "Team Development Studio",
+        "Interview Practice",
+        "Live Interview",
+        "Interview Studio",
+      ])
+    })
+
+    it("points super-admin Live Interview at its OWN route, not the manager one", () => {
+      const live = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).find(
+        (i) => i.label === "Live Interview",
+      )
+      expect(live?.to).toBe(ROUTES.SUPER_ADMIN.INTERVIEW_LIVE)
     })
   })
 
@@ -159,36 +170,30 @@ describe("My Workspace menu order + switched-off entries", () => {
     }
   })
 
-  it("greys out Analytics under BOTH agent-engine toggle states", () => {
+  // ── 2026-08-12, user request: Analytics REMOVED ─────────────────────────
+  it("no longer lists Analytics at all, under BOTH agent-engine toggle states", () => {
+    // It was a greyed, non-navigating row from 2026-08-04 until now. Asserting
+    // on the ROUTE as well as the label: a future entry pointing at
+    // ROUTES.ANALYTICS under a different name would still be the thing that was
+    // asked to be removed.
     for (const on of [true, false]) {
-      const item = getUserNavItems(on).find((i) => i.to === ROUTES.ANALYTICS)
-      expect(item).toBeDefined()
-      expect(item!.disabled).toBe(true)
+      const items = getUserNavItems(on)
+      expect(items.find((i) => i.to === ROUTES.ANALYTICS)).toBeUndefined()
+      expect(items.map((i) => i.label)).not.toContain("Analytics")
     }
   })
 
-  it("explains WHY Analytics is off instead of blaming the user's plan", () => {
-    // NavItemDef's default locked title is "not included in your plan".
-    // Analytics is off for everyone, so that default would be untrue — a menu
-    // that misinforms is worse than one that says nothing.
-    const items = getUserNavItems(true)
-    expect(items.find((i) => i.to === ROUTES.ANALYTICS)!.disabledReason).toBe(
-      WORKSPACE_ITEM_UNAVAILABLE_REASON,
-    )
-  })
-
-  it("leaves the switched-off entries VISIBLE — disabled is not deleted", () => {
-    const rendered = labels(true)
-    expect(rendered).toContain("Analytics")
-    expect(rendered).toContain("Goals")
-  })
-
-  it("does not list them as hidden — they are present, just not usable", () => {
-    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu". Adding a greyed
-    // entry to it would make the constant lie, and the invariant test above
-    // ("never contradicts the rendered menu") would fail.
-    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.ANALYTICS)
+  it("declares Analytics hidden, so the constant matches the menu", () => {
+    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu" — now true of
+    // Analytics, where before it would have been a lie. The invariant test
+    // above ("never contradicts the rendered menu") depends on this staying in
+    // step with getUserNavItems.
+    expect(HIDDEN_WORKSPACE_ROUTES).toContain(ROUTES.ANALYTICS)
     expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
+  })
+
+  it("keeps Goals VISIBLE — removing Analytics did not take its neighbour", () => {
+    expect(labels(true)).toContain("Goals")
   })
 
   // ── 2026-08-11, user request: Goals live for EVERY user ──────────────────
@@ -218,23 +223,19 @@ describe("My Workspace menu order + switched-off entries", () => {
       expect(getUserNavItems(true)).toEqual(getUserNavItems(true))
     })
 
-    it("keeps Goals in the position it held while greyed", () => {
-      // Switching it on must not reshuffle the menu: Goals still sits directly
-      // after Analytics, where it was placed on 2026-08-04.
+    it("sits between Interview Practice and Document Library", () => {
+      // Goals used to be pinned as "directly after Analytics". Analytics was
+      // removed on 2026-08-12, so that anchor is gone; this pins the position
+      // against the neighbours that remain rather than deleting the assertion
+      // and losing the guarantee that Goals keeps its slot.
       const l = labels(true)
-      expect(l.indexOf("Goals") - l.indexOf("Analytics")).toBe(1)
-    })
-
-    it("keeps Analytics greyed — only Goals was switched on", () => {
-      expect(getUserNavItems(true).find((i) => i.to === ROUTES.ANALYTICS)!.disabled).toBe(
-        true,
-      )
+      expect(l.indexOf("Interview Practice")).toBeLessThan(l.indexOf("Goals"))
+      expect(l.indexOf("Goals")).toBeLessThan(l.indexOf("Document Library"))
     })
   })
 
-  it("keeps every switched-off route resolvable so re-enabling is one line", () => {
+  it("keeps Goals pointing at its real route", () => {
     const items = getUserNavItems(true)
-    expect(items.find((i) => i.label === "Analytics")!.to).toBe(ROUTES.ANALYTICS)
     expect(items.find((i) => i.label === "Goals")!.to).toBe(
       ROUTES.DIRECTION_SETTING.GOALS,
     )
