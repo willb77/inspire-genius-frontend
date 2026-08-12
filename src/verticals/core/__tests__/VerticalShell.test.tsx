@@ -95,15 +95,17 @@ describe("VerticalShell chrome selection", () => {
   })
 
   test("the whole app menu stays present, in order, with the vertical between", () => {
-    // Entering a vertical used to REPLACE the menu; now My Workspace and the
-    // Tools catalogue stay reachable (rolled up) around the open sub-nav.
-    // "Verticals" was renamed to "Tools" on 2026-07-31 — the section id is
-    // unchanged, so stored collapse state survived the rename.
+    // Entering a vertical used to REPLACE the menu; My Workspace still stays
+    // reachable (rolled up) above the open sub-nav.
+    //
+    // The Tools catalogue used to sit below it here. It became super-admin only
+    // on 2026-08-12, and this suite mocks a plain `user` — so its absence is the
+    // gate working, not the menu regressing. My Workspace is what keeps the
+    // rest of the app reachable for this role.
     renderShell(<VerticalShell vertical="grant" />)
     expect(sectionLabels()).toEqual([
       "My Workspace",
       "Financial Aid",
-      "Tools",
     ])
   })
 

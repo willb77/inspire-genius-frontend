@@ -4,6 +4,7 @@ import {
   Briefcase,
   BookOpen,
   Compass,
+  FileSignature,
   Lightbulb,
   Wallet,
 } from "lucide-react"
@@ -15,6 +16,7 @@ import {
 import type { SidebarSection } from "@/constants/sidebar-sections"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
+import { ROUTES } from "@/constants/routes"
 
 /**
  * Registry-driven vertical launcher.
@@ -162,6 +164,58 @@ export function useVerticalLauncherSection(): SidebarSection | null {
 }
 
 /**
+ * Deep links into a vertical that belong in **My Workspace** on their own,
+ * without dragging the rest of the vertical along.
+ *
+ * Different from {@link WORKSPACE_VERTICALS}, which promotes a vertical's HOME
+ * page. These point at one page inside a vertical the user may not otherwise
+ * see listed at all — Honor is in {@link HIDDEN_VERTICALS}, so its Resume Writer
+ * would be unreachable from the sidebar without an entry like this.
+ *
+ * Each carries the vertical whose entitlement gates it. That matters: the honor
+ * routes sit behind `VerticalShell`, which redirects an unentitled user to
+ * /home. Shipping these as plain links would mean a menu row that looks live and
+ * silently bounces, so they are greyed exactly like an unentitled vertical.
+ */
+export const WORKSPACE_VERTICAL_LINKS: {
+  to: string
+  icon: NavItemDef["icon"]
+  label: string
+  vertical: VerticalKey
+}[] = [
+  // Added 2026-08-12 (request): "add Resume Writer from Honor to the My
+  // Workspace menu". The page is src/pages/honor/HonorResume.tsx.
+  {
+    to: ROUTES.HONOR.RESUME,
+    icon: FileSignature,
+    label: "Resume Writer",
+    vertical: "honor",
+  },
+]
+
+/**
+ * {@link WORKSPACE_VERTICAL_LINKS} as nav items, greyed when the gating
+ * vertical is not entitled (or is force-disabled for everyone).
+ */
+export function useWorkspaceVerticalLinks(): NavItemDef[] {
+  const { data: enabled } = useEnabledVerticals()
+  return useMemo(() => {
+    const entitlements = enabled ?? []
+    return WORKSPACE_VERTICAL_LINKS.map(({ vertical, ...item }) => {
+      const forcedOff = FORCE_DISABLED_VERTICALS.has(vertical)
+      const entitled = entitlements.includes(vertical)
+      return {
+        ...item,
+        disabled: forcedOff || !entitled,
+        ...(forcedOff && entitled
+          ? { disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON }
+          : {}),
+      }
+    })
+  }, [enabled])
+}
+
+/**
  * Workspace verticals (Job Fit, Lumen) as nav items, in registry order — shown
  * to everyone, `disabled` when the user has no entitlement. Consumers merge
  * these into the My Workspace menu — see {@link withWorkspaceVerticals}.
@@ -222,8 +276,13 @@ export function withWorkspaceVerticals(
  */
 export function useWorkspaceNavItems(items: NavItemDef[]): NavItemDef[] {
   const workspaceVerticals = useWorkspaceVerticalItems()
+  // Deep links (Resume Writer) ride the same splice as the vertical homes, so
+  // every layout that already called this hook gets them with no further wiring
+  // — and they land above the Settings/Help tail like everything else.
+  const workspaceLinks = useWorkspaceVerticalLinks()
   return useMemo(
-    () => withWorkspaceVerticals(items, workspaceVerticals),
-    [items, workspaceVerticals],
+    () =>
+      withWorkspaceVerticals(items, [...workspaceVerticals, ...workspaceLinks]),
+    [items, workspaceVerticals, workspaceLinks],
   )
 }

@@ -37,8 +37,15 @@ jest.mock("@/constants/vertical-subnav", () => ({
 const mockLauncher = jest.fn()
 const mockWorkspaceNav = jest.fn((items: unknown) => items)
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
-  useVerticalLauncherSection: () => mockLauncher(),
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
+}))
+
+// The Tools section is super-admin only as of 2026-08-12; `mockLauncher` stands
+// in for it. The role gate lives in the real hook (covered in
+// useToolsSection.test.ts), so tests that exercise the plain-user case set it to
+// null explicitly rather than relying on this mock to enforce the gate.
+jest.mock("@/hooks/nav/useToolsSection", () => ({
+  useToolsSection: () => mockLauncher(),
 }))
 
 let mockEmail: string | null = "someone@example.com"
@@ -53,7 +60,8 @@ jest.mock("@/verticals/core", () => ({
 import { useVerticalPageSections } from "../useVerticalPageSections"
 
 const LAUNCHER = {
-  label: "Verticals",
+  label: "Tools",
+  defaultCollapsed: true,
   items: [
     { to: "/vertical/grant/dashboard", icon: DummyIcon, label: "GRANT" },
     { to: "/vertical/lumen/dashboard", icon: DummyIcon, label: "Lumen" },
@@ -71,9 +79,18 @@ describe("useVerticalPageSections", () => {
     })
   })
 
-  it("orders the sections My Workspace → vertical → Verticals for a plain user", () => {
+  it("gives a plain user My Workspace → vertical only — no Tools section", () => {
+    // Tools is super-admin only since 2026-08-12, so a plain user inside a
+    // vertical keeps their workspace menu and that vertical's own sub-nav, and
+    // nothing else.
+    mockLauncher.mockReturnValue(null)
     const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "user"))
-    expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Lumen", "Verticals"])
+    expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Lumen"])
+  })
+
+  it("places Tools after the vertical when the role does get one", () => {
+    const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "user"))
+    expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Lumen", "Tools"])
   })
 
   it("rolls up everything EXCEPT the vertical you entered", () => {
@@ -82,7 +99,10 @@ describe("useVerticalPageSections", () => {
       result.current.map((s) => [s.label, { closed: s.defaultCollapsed, open: s.collapsible }]),
     )
     expect(byLabel["My Workspace"].closed).toBe(true)
-    expect(byLabel["Verticals"].closed).toBe(true)
+    // Tools carries its own collapse default rather than one forced here, so it
+    // does not expand and collapse as you move between vertical pages and the
+    // rest of the app.
+    expect(byLabel["Tools"].closed).toBe(true)
     // The vertical is collapsible but starts OPEN — the whole point.
     expect(byLabel["Lumen"].closed).toBeUndefined()
     expect(byLabel["Lumen"].open).toBe(true)
@@ -94,7 +114,7 @@ describe("useVerticalPageSections", () => {
       "My Workspace",
       "Role Views",
       "Lumen",
-      "Verticals",
+      "Tools",
       "Administration",
     ])
     expect(result.current.at(-1)?.defaultCollapsed).toBe(true)
@@ -117,7 +137,7 @@ describe("useVerticalPageSections", () => {
     // Without this the launcher entry stops looking active as soon as you move
     // off the vertical's home page — it links to homePath, not the current URL.
     const { result } = renderHook(() => useVerticalPageSections("lumen" as never, "user"))
-    const verticals = result.current.find((s) => s.label === "Verticals")
+    const verticals = result.current.find((s) => s.label === "Tools")
     const lumen = verticals?.items.find((i) => i.label === "Lumen")
     const grant = verticals?.items.find((i) => i.label === "GRANT")
     expect(lumen?.activePrefix).toBe("/vertical/lumen")
@@ -127,7 +147,7 @@ describe("useVerticalPageSections", () => {
   it("omits the vertical's section entirely when Core has no menu for it", () => {
     mockSubNav.mockReturnValue(null)
     const { result } = renderHook(() => useVerticalPageSections("honor" as never, "user"))
-    expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Verticals"])
+    expect(result.current.map((s) => s.label)).toEqual(["My Workspace", "Tools"])
   })
 
   it("prefers the vertical's own section label over the registry title", () => {
