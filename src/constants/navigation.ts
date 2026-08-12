@@ -234,6 +234,28 @@ const INTERVIEW_LIVE_ITEM_PRACTITIONER: NavItemDef = {
   label: "Live Interview",
 }
 
+// Interview Studio — a flexible, scored interview built from the interviewer's
+// OWN questions or generated from a topic (career discovery, values, onboarding
+// …), not the fixed STAR bank. Same server-side `live_interview_scoring` flag +
+// interviewer role gate as Live Interview; the backend 404s when the flag is
+// off (inert menu entry, not a broken link — same TODO as above re: FE flag
+// surfacing). One item per role since the page is a role-layout wrapper.
+const INTERVIEW_STUDIO_ITEM_MANAGER: NavItemDef = {
+  to: ROUTES.MANAGER.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+const INTERVIEW_STUDIO_ITEM_PRACTITIONER: NavItemDef = {
+  to: ROUTES.PRACTITIONER.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+const INTERVIEW_STUDIO_ITEM_SUPER_ADMIN: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.INTERVIEW_STUDIO,
+  icon: Sparkles,
+  label: "Interview Studio",
+}
+
 /**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
  * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
@@ -249,9 +271,18 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_MANAGER,
+    INTERVIEW_STUDIO_ITEM_MANAGER,
   ],
-  practitioner: [INTERVIEW_PRACTICE_ITEM, INTERVIEW_LIVE_ITEM_PRACTITIONER],
-  "super-admin": [...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []), INTERVIEW_PRACTICE_ITEM],
+  practitioner: [
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_PRACTITIONER,
+    INTERVIEW_STUDIO_ITEM_PRACTITIONER,
+  ],
+  "super-admin": [
+    ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
+  ],
 }
 
 /**

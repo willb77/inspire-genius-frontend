@@ -136,6 +136,10 @@ const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprin
 const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
 // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
 const ManagerInterviewLive = React.lazy(() => import("@/pages/manager/InterviewLivePage"));
+// Interview Studio — custom / topic-generated scored interview.
+const ManagerInterviewStudio = React.lazy(() => import("@/pages/manager/InterviewStudioPage"));
+const SuperAdminInterviewStudio = React.lazy(() => import("@/pages/super-admin/InterviewStudioPage"));
+const PractitionerInterviewStudio = React.lazy(() => import("@/pages/practitioner/InterviewStudioPage"));
 const ManagerTeamComposition = React.lazy(() => import("@/pages/manager/TeamCompositionPage"));
 const OnboardingWizard = React.lazy(() => import("@/pages/onboarding/OnboardingWizardPage"));
 const SuperAdminResearch = React.lazy(() => import("@/pages/super-admin/ResearchPage"));
@@ -466,6 +470,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       { path: "/super-admin/dev-traffic-report", element: withSuspense(<DevTrafficReport />) },
       { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
+      { path: "/super-admin/interview-studio", element: withSuspense(<SuperAdminInterviewStudio />) },
       // Combined Plan §A.E3.4 — document research (Sage)
       { path: "/super-admin/research", element: withSuspense(<SuperAdminResearch />) },
       // Saved-research workspace browser — Q + A pairs from POST /v1/tasks/results
@@ -522,6 +527,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/interview-prep", element: withSuspense(<ManagerInterviewPrep />) },
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/manager/interview-live", element: withSuspense(<ManagerInterviewLive />) },
+      { path: "/manager/interview-studio", element: withSuspense(<ManagerInterviewStudio />) },
       { path: "/manager/team-composition", element: withSuspense(<ManagerTeamComposition />) },
       // Team Development Studio (roster + per-member workspace)
       // Team Development Studio. The page resolves classic vs the HomeV2 look
@@ -569,6 +575,7 @@ export const routes: RouteObject[] = [
       { path: "/practitioner/interview-prep", element: withSuspense(<PractitionerInterviewPrep />) },
       // Live Scored Candidate Interview — Phase 3. Candidate is NOT the signed-in user.
       { path: "/practitioner/interview-live", element: withSuspense(<PractitionerInterviewLive />) },
+      { path: "/practitioner/interview-studio", element: withSuspense(<PractitionerInterviewStudio />) },
       { path: "/practitioner/team-composition", element: withSuspense(<PractitionerTeamComposition />) },
 
       // Distributor pages

@@ -145,12 +145,32 @@ export function buildScoredInterviewMarkdown(s: ScoredInterviewExport): string {
   lines.push(`**Questions scored:** ${result.answers.length}`)
   lines.push("")
 
-  lines.push("## Recommendation")
+  lines.push(frame?.kind === "hiring" || !frame?.mode ? "## Recommendation" : "## Overall Assessment")
   lines.push(`**${result.recommendation}**`)
   lines.push(
     `Overall score: **${fmtScore(result.overall_score)} / 5** · Overall mean: **${fmtScore(result.overall_mean)}**`,
   )
   lines.push("")
+
+  // Advisory narrative (Interview Studio + live) — present when synthesized.
+  const feedback = result.feedback
+  if (feedback?.generated) {
+    lines.push("## Feedback")
+    if (feedback.summary) {
+      lines.push(feedback.summary)
+      lines.push("")
+    }
+    if (feedback.strengths.length > 0) {
+      lines.push("**Strengths**")
+      feedback.strengths.forEach((x) => lines.push(`- ${x}`))
+      lines.push("")
+    }
+    if (feedback.development_areas.length > 0) {
+      lines.push("**Areas to develop**")
+      feedback.development_areas.forEach((x) => lines.push(`- ${x}`))
+      lines.push("")
+    }
+  }
 
   lines.push("## Rubric Summary")
   lines.push("| Section | Score | Questions |")

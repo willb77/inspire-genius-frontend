@@ -74,6 +74,8 @@ export const ROUTES = {
     AGENT_TRACE_CONSOLE: "/super-admin/agent-trace-console",
     /** Platform alert broadcasting — allowlist-gated (owner: willb77@3pp.com). */
     BROADCAST_ALERT: "/super-admin/broadcast-alert",
+    /** Interview Studio — custom / topic-generated scored interview. */
+    INTERVIEW_STUDIO: "/super-admin/interview-studio",
   },
   MANAGER: {
     BASE: "/manager",
@@ -95,6 +97,8 @@ export const ROUTES = {
     INTERVIEW_PREP: "/manager/interview-prep",
     /** Live Scored Candidate Interview — Phase 3. The candidate is NOT the signed-in user. */
     INTERVIEW_LIVE: "/manager/interview-live",
+    /** Interview Studio — custom / topic-generated scored interview (career discovery, values, etc.). */
+    INTERVIEW_STUDIO: "/manager/interview-studio",
     TEAM_COMPOSITION: "/manager/team-composition",
     // Team Development Studio (behind VITE_FEATURE_TEAM_DEVELOPMENT)
     DEVELOPMENT: "/manager/development",
@@ -135,6 +139,8 @@ export const ROUTES = {
     INTERVIEW_PREP: "/practitioner/interview-prep",
     /** Live Scored Candidate Interview — Phase 3. The candidate is NOT the signed-in user. */
     INTERVIEW_LIVE: "/practitioner/interview-live",
+    /** Interview Studio — custom / topic-generated scored interview. */
+    INTERVIEW_STUDIO: "/practitioner/interview-studio",
     TEAM_COMPOSITION: "/practitioner/team-composition",
   },
   DISTRIBUTOR: {
