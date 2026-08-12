@@ -1,3 +1,16 @@
+## [2026-08-12] — Interview Studio: upload a question-list file
+
+Third question source in `StudioQuestionBuilder` (alongside generate + manual):
+"Upload a file". Reuses `extractRoleText` (.txt/.md/.pdf/.docx, client-side) →
+new `src/lib/parseQuestionList.ts` (one question per line; strips numbering,
+bullets, and `Q:` prefixes; dedupes; caps at 50) → appends to the editable list.
+
+### Added
+- `src/lib/parseQuestionList.ts` + `src/lib/__tests__/parseQuestionList.test.ts` (6 tests).
+- Upload tab + handler in `src/components/interview/StudioQuestionBuilder.tsx`;
+  component test extended with the upload case. 11 studio-builder-area tests pass;
+  `npm run build` clean.
+
 ## [2026-08-11] — Interview Studio surface (manager / super-admin / practitioner)
 
 New flexible scored-interview surface (PR #398): build an interview from your own
