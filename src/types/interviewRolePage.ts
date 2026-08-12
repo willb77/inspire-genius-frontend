@@ -59,6 +59,39 @@ export function getRolePageBySlug(slug: string | undefined): InterviewRolePage |
   return slug ? BY_SLUG.get(slug) : undefined
 }
 
+/**
+ * A concise, honest role brief to seed the Interview Practice "Job description"
+ * field when a candidate starts practicing from a role page. Built ONLY from the
+ * page's real data (title, SOC code, and the attributed wage/outlook figures) —
+ * no invented duties — so it gives the coach role context without fabricating.
+ * The candidate can edit or expand it before starting.
+ */
+export function buildRoleJobDescription(page: InterviewRolePage): string {
+  const parts: string[] = [`${page.title} (SOC ${page.socCode}).`]
+  const s = page.market.salary
+  if (s) {
+    parts.push(
+      `Typical annual pay ranges from $${s.low.toLocaleString("en-US")} (entry) to ` +
+        `$${s.high.toLocaleString("en-US")} (experienced), with a median around ` +
+        `$${s.median.toLocaleString("en-US")}.`,
+    )
+  }
+  const o = page.market.outlook
+  if (o) {
+    const dir =
+      o.growthPct > 0
+        ? `grow about ${o.growthPct}%`
+        : o.growthPct < 0
+          ? `shrink about ${Math.abs(o.growthPct)}%`
+          : "hold roughly flat"
+    parts.push(`Employment is projected to ${dir} over about ${o.horizonYears} years.`)
+  }
+  return parts.join(" ")
+}
+
+/** Router-state shape passed from a role page into `/interview-practice`. */
+export type PracticeRoleSeed = { roleTitle: string; jobDescription: string }
+
 /** Compact index rows for the roles listing page. */
 export const ROLE_PAGE_INDEX = ROLE_PAGES.map((p) => ({
   slug: p.slug,
