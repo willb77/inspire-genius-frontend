@@ -4,7 +4,6 @@ import {
   Briefcase,
   BookOpen,
   Compass,
-  FileSignature,
   Lightbulb,
   Wallet,
 } from "lucide-react"
@@ -16,7 +15,6 @@ import {
 import type { SidebarSection } from "@/constants/sidebar-sections"
 import type { NavItemDef } from "@/components/shared/layout/SidebarScaffold"
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation"
-import { ROUTES } from "@/constants/routes"
 
 /**
  * Registry-driven vertical launcher.
@@ -50,10 +48,30 @@ import { ROUTES } from "@/constants/routes"
  * with no other wiring to redo.
  *
  * 2026-08-04 — Job Fit re-promoted to the workspace menu at the user's request:
- * it now shows as a top-level "Job Fit" shortcut (spliced above Settings/Help)
- * and drops out of the Tools rollup below, which filters `WORKSPACE_VERTICALS`.
+ * it showed as a top-level "Job Fit" shortcut (spliced above Settings/Help) and
+ * dropped out of the Tools rollup below, which filters `WORKSPACE_VERTICALS`.
+ *
+ * **Empty again as of 2026-08-12** (request: the user menu is exactly six
+ * entries — Home, Chat with Meridian, Interview Practice, Document Library,
+ * Settings, Help & Support — and Job Fit is not one of them).
+ *
+ * Where Job Fit went, precisely: `useVerticalLauncherSection` FILTERS OUT the
+ * keys in this set, so emptying it does not orphan the vertical — it falls back
+ * into the Tools catalogue alongside GRANT, Lumen and the rest. Since Tools
+ * became super-admin only earlier the same day, the net effect is:
+ *
+ *   - **super-admin** — Job Fit is in the Tools section, as it was before it
+ *     was ever promoted to My Workspace on 2026-08-04
+ *   - **every other role** — no sidebar path at all. Nothing on Home or the
+ *     Meridian header links to Job Fit either (checked: nothing outside the
+ *     vertical references `ROUTES.JOB_FIT.*`), so for a plain user it is
+ *     reachable only by URL, or by the vertical's own pill row once inside.
+ *
+ * Putting "job-fit" back in this set restores the My Workspace shortcut and
+ * removes it from the Tools catalogue again — the two are mutually exclusive by
+ * construction, which is the point of the filter.
  */
-export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
+export const WORKSPACE_VERTICALS = new Set<VerticalKey>([])
 
 /**
  * Verticals hidden from the Tools section entirely (2026-07-31).
@@ -90,11 +108,16 @@ export const FORCE_DISABLED_VERTICALS = new Set<VerticalKey>([])
  * Is this vertical switched off for everyone?
  *
  * Exported as a function rather than leaving callers to poke at the Set,
- * because the sidebar is NOT the only way into a vertical: Home's quick-action
- * row and the Meridian header's personal row link straight to Job Fit, and both
- * gate on entitlement alone. Greying the menu while those stayed live would look
- * like the feature was off when it was still one click away. Any surface that
- * decides whether a vertical is usable must consult this too.
+ * because the sidebar is not necessarily the only way into a vertical: any
+ * surface that links straight to one and gates on entitlement alone must
+ * consult this too, or greying the menu would look like the feature was off
+ * while it was still one click away.
+ *
+ * Corrected 2026-08-12: this used to claim Home's quick-action row and the
+ * Meridian header linked to Job Fit. Neither does on `development` — Home links
+ * to Lumen's Self-Portrait and Moments, and nothing outside the Job Fit vertical
+ * references `ROUTES.JOB_FIT.*` at all. The rule above still holds for Lumen;
+ * it just is not currently load-bearing for Job Fit.
  *
  * Takes a plain string: the callers above hold `vertical` as an untyped string
  * from their own link tables, and making each one cast to `VerticalKey` would
@@ -176,22 +199,21 @@ export function useVerticalLauncherSection(): SidebarSection | null {
  * routes sit behind `VerticalShell`, which redirects an unentitled user to
  * /home. Shipping these as plain links would mean a menu row that looks live and
  * silently bounces, so they are greyed exactly like an unentitled vertical.
+ *
+ * **Empty as of 2026-08-12.** Resume Writer (Honor) was added here that morning
+ * on request, then removed the same day when the user menu was fixed at six
+ * entries that do not include it. Unlike Job Fit above, nothing is orphaned:
+ * Honor's own shell still carries a "Résumé Writer" pill
+ * (`src/pages/honor/HonorShell.tsx`) and `HonorEvaluate` navigates to it
+ * directly, so Honor users reach it exactly as they did before it was ever
+ * promoted.
  */
 export const WORKSPACE_VERTICAL_LINKS: {
   to: string
   icon: NavItemDef["icon"]
   label: string
   vertical: VerticalKey
-}[] = [
-  // Added 2026-08-12 (request): "add Resume Writer from Honor to the My
-  // Workspace menu". The page is src/pages/honor/HonorResume.tsx.
-  {
-    to: ROUTES.HONOR.RESUME,
-    icon: FileSignature,
-    label: "Resume Writer",
-    vertical: "honor",
-  },
-]
+}[] = []
 
 /**
  * {@link WORKSPACE_VERTICAL_LINKS} as nav items, greyed when the gating

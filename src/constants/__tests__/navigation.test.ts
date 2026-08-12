@@ -1,5 +1,6 @@
 import {
   NAV_ITEMS_BY_ROLE,
+  USER_NAV_ITEMS,
   HOME_ROUTE_BY_ROLE,
   DEFAULT_ROLE_CONFIGS,
   TOOL_ITEMS_BY_ROLE,
@@ -183,62 +184,62 @@ describe("My Workspace menu order + switched-off entries", () => {
     }
   })
 
-  it("declares Analytics hidden, so the constant matches the menu", () => {
-    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu" — now true of
-    // Analytics, where before it would have been a lie. The invariant test
-    // above ("never contradicts the rendered menu") depends on this staying in
-    // step with getUserNavItems.
-    expect(HIDDEN_WORKSPACE_ROUTES).toContain(ROUTES.ANALYTICS)
-    expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
-  })
-
-  it("keeps Goals VISIBLE — removing Analytics did not take its neighbour", () => {
-    expect(labels(true)).toContain("Goals")
-  })
-
-  // ── 2026-08-11, user request: Goals live for EVERY user ──────────────────
-  //
-  // Was switched off 2026-08-04, then unlocked for the platform owner only on
-  // 2026-08-06 via a `{ viewerEmail }` option. Goals is now a plain live row and
-  // that option is gone — `getUserNavItems` takes the toggle and nothing else.
-  //
-  // Access is no longer decided here at all: it is the `direction-setting`
-  // entitlement, enforced server-side by `require_vertical`. A live menu row for
-  // an unentitled user is correct — they reach the route and VerticalShell sends
-  // them home, exactly like every other vertical.
-  describe("Goals — live for everyone", () => {
-    const goals = (on = true) =>
-      getUserNavItems(on).find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)!
-
-    it("is a live entry under BOTH agent-engine toggle states", () => {
-      for (const on of [true, false]) {
-        expect(goals(on).disabled).toBeFalsy()
-        expect(goals(on).disabledReason).toBeUndefined()
-      }
-    })
-
-    it("no longer varies by viewer — the menu is identical for everyone", () => {
-      // The owner gate is gone. Two calls must be byte-identical, because there
-      // is no per-viewer input left to make them differ.
-      expect(getUserNavItems(true)).toEqual(getUserNavItems(true))
-    })
-
-    it("sits between Interview Practice and Document Library", () => {
-      // Goals used to be pinned as "directly after Analytics". Analytics was
-      // removed on 2026-08-12, so that anchor is gone; this pins the position
-      // against the neighbours that remain rather than deleting the assertion
-      // and losing the guarantee that Goals keeps its slot.
-      const l = labels(true)
-      expect(l.indexOf("Interview Practice")).toBeLessThan(l.indexOf("Goals"))
-      expect(l.indexOf("Goals")).toBeLessThan(l.indexOf("Document Library"))
-    })
-  })
-
-  it("keeps Goals pointing at its real route", () => {
-    const items = getUserNavItems(true)
-    expect(items.find((i) => i.label === "Goals")!.to).toBe(
+  it("declares every removed route hidden, so the constant matches the menu", () => {
+    // HIDDEN_WORKSPACE_ROUTES means "absent from the menu". It has to stay in
+    // step with getUserNavItems or the invariant test above ("never contradicts
+    // the rendered menu") is asserting against a lie.
+    for (const route of [
+      ROUTES.ANALYTICS,
       ROUTES.DIRECTION_SETTING.GOALS,
-    )
+      ROUTES.JOB_FIT.MATCHES,
+    ]) {
+      expect(HIDDEN_WORKSPACE_ROUTES).toContain(route)
+    }
+  })
+
+  // ── 2026-08-12, user request: the menu is EXACTLY these six ──────────────
+  it("renders exactly six entries, in the specified order", () => {
+    // An exact-array assertion, deliberately: the request was a closed list, so
+    // anything ADDED here should fail, not just anything removed. A subsequence
+    // or arrayContaining check would let a seventh entry through silently.
+    expect(labels(true)).toEqual([
+      "Home",
+      "Chat with Meridian",
+      "Interview Practice",
+      "Document Library",
+      "Settings",
+      "Help & Support",
+    ])
+  })
+
+  it("is still six entries with the agent-engine toggle OFF", () => {
+    // The toggle swaps the chat row's destination and label, not the shape of
+    // the menu.
+    expect(labels(false)).toEqual([
+      "Home",
+      "Chat with Coaches",
+      "Interview Practice",
+      "Document Library",
+      "Settings",
+      "Help & Support",
+    ])
+  })
+
+  it("drops Goals and Job Fit from the menu", () => {
+    const items = getUserNavItems(true)
+    expect(items.find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)).toBeUndefined()
+    expect(labels(true)).not.toContain("Goals")
+    expect(labels(true)).not.toContain("Job Fit")
+  })
+
+  it("keeps USER_NAV_ITEMS in step with getUserNavItems", () => {
+    // The two drifted before — USER_NAV_ITEMS carried Request Assessment and
+    // Feedback long after getUserNavItems dropped them — and which one renders
+    // depends on the layout, so a drift means the menu changes as you move
+    // around the app. Compared by ROUTE, since only the chat row's label varies.
+    const staticRoutes = USER_NAV_ITEMS.map((i) => i.to)
+    const liveRoutes = getUserNavItems(false).map((i) => i.to)
+    expect(staticRoutes).toEqual(liveRoutes)
   })
 
   it("leaves the four usable entries usable", () => {
