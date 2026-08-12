@@ -12,7 +12,19 @@ import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/constants/routes"
 import { useSeo } from "@/hooks/useSeo"
 import RolePageShell from "@/components/interview/RolePageShell"
-import { getRolePageBySlug, type RoleOutlook, type SalaryRange } from "@/types/interviewRolePage"
+import {
+  buildRoleJobDescription,
+  getRolePageBySlug,
+  type InterviewRolePage as RolePageData,
+  type PracticeRoleSeed,
+  type RoleOutlook,
+  type SalaryRange,
+} from "@/types/interviewRolePage"
+
+/** Router state that pre-fills the practice form's role + job description. */
+function practiceSeed(page: RolePageData): PracticeRoleSeed {
+  return { roleTitle: page.title, jobDescription: buildRoleJobDescription(page) }
+}
 
 function money(v: number): string {
   return `$${Math.round(v).toLocaleString("en-US")}`
@@ -105,7 +117,7 @@ export default function InterviewRolePage() {
           <p className="mt-3 text-lg text-slate-600">{page.hero.subhead}</p>
           <div className="mt-5">
             <Button asChild size="lg">
-              <Link to={ROUTES.INTERVIEW_PRACTICE}>
+              <Link to={ROUTES.INTERVIEW_PRACTICE} state={practiceSeed(page)}>
                 Practice a {page.title} interview <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -147,7 +159,9 @@ export default function InterviewRolePage() {
           </p>
           <div className="mt-4">
             <Button asChild size="lg">
-              <Link to={ROUTES.INTERVIEW_PRACTICE}>Start practicing <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link to={ROUTES.INTERVIEW_PRACTICE} state={practiceSeed(page)}>
+                Start practicing <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </section>

@@ -27,10 +27,11 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import { useAuth } from "@/context/useAuth"
 import { ROUTES } from "@/constants/routes"
+import type { PracticeRoleSeed } from "@/types/interviewRolePage"
 import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
 import AudioControls from "@/components/interview/AudioControls"
 import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
@@ -70,6 +71,21 @@ export default function InterviewPracticePage() {
   const { data, isLoading, isError } = usePracticeQuestions()
   const { user } = useAuth()
   const [sessionId] = useState(newSessionId)
+
+  // A role page ("Practice a {role} interview") navigates here with the role
+  // title + a job-description seed; pre-fill the setup form from it.
+  const location = useLocation()
+  const roleSeed = (location.state as PracticeRoleSeed | null) ?? null
+  const initialFrame: InterviewFrame | null = roleSeed?.roleTitle
+    ? {
+        company: "",
+        industry: "",
+        roleTitle: roleSeed.roleTitle,
+        reportingLine: "",
+        scope: "",
+        jobDescription: roleSeed.jobDescription ?? "",
+      }
+    : null
 
   const [phase, setPhase] = useState<Phase>("setup")
   const [frame, setFrame] = useState<InterviewFrame | null>(null)
@@ -301,7 +317,13 @@ export default function InterviewPracticePage() {
                 </div>
                 <Switch id="personalize" checked={personalize} onCheckedChange={setPersonalize} />
               </div>
-              <InterviewFrameForm onConfirm={startInterview} />
+              {initialFrame && (
+                <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+                  Prefilled for <span className="font-semibold">{initialFrame.roleTitle}</span> — edit anything
+                  before you start, or clear the role to practise generally.
+                </div>
+              )}
+              <InterviewFrameForm initial={initialFrame} onConfirm={startInterview} />
             </>
           )}
         </div>
