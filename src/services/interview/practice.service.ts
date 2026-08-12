@@ -121,6 +121,18 @@ export type InterviewFrame = {
   numQuestions?: number
   /** Target length in minutes (default 50). */
   lengthMinutes?: number
+  // ── Interview Studio (custom mode) only ──────────────────────────────
+  // Absent/`"star"` = the shipped STAR live/practice interview (unchanged).
+  /** `"custom"` runs an interviewer-supplied / topic-generated question list. */
+  mode?: "star" | "custom"
+  /** Banding + narrative tone for a custom interview. Default `general`. */
+  kind?: "general" | "hiring"
+  /** The custom question list (custom mode). */
+  questions?: { text: string; theme?: string; id?: string; probes?: string[] }[]
+  /** Topic + purpose + audience metadata for a custom/generated interview. */
+  topic?: string
+  purpose?: string
+  audience?: string
 }
 
 export const DEFAULT_NUM_QUESTIONS = 12
