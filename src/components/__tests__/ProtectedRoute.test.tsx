@@ -114,6 +114,21 @@ describe("ProtectedRoute", () => {
     expect(screen.queryByTestId("onboarding-page")).not.toBeInTheDocument();
   });
 
+  test("does NOT force onboarding when the flag is ABSENT (magic-link / Cognito shape)", async () => {
+    // The `false` case above is not the same as this one. Sessions arriving
+    // from a magic link or a Cognito password login frequently carry no
+    // `is_onboarded` at all, so the stored flag is `undefined` rather than
+    // `false`. A gate written as `=== false` misses this; a truthiness gate
+    // catches it and bounces the user. Pin the behaviour for both shapes.
+    renderWithRoute("/home", {
+      user: { token: "tok", email: "a@b.com", role: "user" },
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("home-page")).toBeInTheDocument();
+    }, { timeout: 2000 });
+    expect(screen.queryByTestId("onboarding-page")).not.toBeInTheDocument();
+  });
+
   test("allows access to onboarding routes even if onboarding not completed", async () => {
     renderWithRoute("/onboarding/one", {
       user: { token: "tok", email: "a@b.com", role: "user", isOnboardingCompleted: false },
