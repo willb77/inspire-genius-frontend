@@ -1,3 +1,33 @@
+## [2026-08-11] — Interview Studio surface (manager / super-admin / practitioner)
+
+New flexible scored-interview surface (PR #398): build an interview from your own
+questions or generate a themed set from a topic (e.g. a career counselor's student
+discovery interview), then capture, score, and get feedback through the same pipeline
+as the Live Scored Interview. Pairs with backend inspire-genius#867.
+
+### Added
+- `src/components/interview/StudioQuestionBuilder.tsx` — topic/purpose/audience + style
+  (development vs hiring), "Generate from topic" / "Add manually" tabs, editable question
+  list with per-question themes.
+- `src/components/interview/StudioInterviewBody.tsx` — forked from `LiveInterviewBody`
+  (consent → participant → questions → capture/score → finalize → export), adds the
+  advisory Feedback card and bands per kind.
+- `src/services/interview/studio.service.ts` + `src/hooks/interview/useStudioInterview.ts`
+  (topic generation; reuses `liveInterviewService` for the run loop).
+- 3 role pages (`{manager,super-admin,practitioner}/InterviewStudioPage.tsx`), routes,
+  Tools-rollup nav items.
+
+### Changed
+- `InterviewFrame` widened with optional studio fields (mode/kind/questions/topic/
+  purpose/audience); `FinalizeResult` gains optional `feedback`; `interviewExport`
+  includes the Feedback section.
+- `npm run build` clean; 55 interview tests pass (7 new studio tests + 48 existing).
+
+### Notes
+- Gated by the same server `live_interview_scoring` flag (routes 404 when off) +
+  interviewer role. **Do not merge until backend #867 is on staging-b** — a development
+  merge deploys the FE to staging-b, where `/live/generate` would 404 without the backend.
+
 ## [2026-08-11] — Self-Portrait, Moments, Goals and Job Fit opened to users, and gated for real
 
 Four surfaces users could not reach, and a gate that was never enforced. Both halves in
