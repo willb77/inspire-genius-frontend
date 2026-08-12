@@ -44,6 +44,9 @@ const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
 const InterviewPractice = React.lazy(() => import("@/pages/user/InterviewPracticePage"));
+// Public per-occupation Interview Practice role guides (marketing/landing → coach).
+const InterviewRolesIndex = React.lazy(() => import("@/pages/interview-practice/InterviewRolesIndex"));
+const InterviewRolePage = React.lazy(() => import("@/pages/interview-practice/InterviewRolePage"));
 const Profile = React.lazy(() => import("@/pages/user/Profile"));
 const UserSettingsPage = React.lazy(() => import("@/pages/user/Settings"));
 const UserSettingsPrivacy = React.lazy(() => import("@/pages/user/SettingsPrivacy"));
@@ -369,6 +372,10 @@ export const routes: RouteObject[] = [
       { path: "/terms", element: withSuspense(<Terms />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
+      // Public Interview Practice role guides — landing pages that funnel into
+      // the (auth-gated) coach. Static `/roles` outranks the `:slug` param.
+      { path: "/interview-practice/roles", element: withSuspense(<InterviewRolesIndex />) },
+      { path: "/interview-practice/:slug", element: withSuspense(<InterviewRolePage />) },
       { path: "/dev/prism-test", element: withSuspense(<PrismTestHarness />) },
       { path: "/dev/job-blueprint-test", element: withSuspense(<JobBlueprintTestHarness />) },
       { path: "/dev/process-builder", element: withSuspense(<ProcessBuilderPage />) },

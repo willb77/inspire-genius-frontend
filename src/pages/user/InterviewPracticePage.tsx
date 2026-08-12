@@ -27,7 +27,10 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
+import { Link } from "react-router-dom"
+
 import { useAuth } from "@/context/useAuth"
+import { ROUTES } from "@/constants/routes"
 import InterviewFrameForm from "@/components/interview/InterviewFrameForm"
 import AudioControls from "@/components/interview/AudioControls"
 import { usePracticeQuestions } from "@/hooks/interview/usePracticeQuestions"
@@ -274,6 +277,11 @@ export default function InterviewPracticePage() {
             <p className="text-sm text-slate-600">
               A structured practice interview with supportive coaching — no scores,
               just tips to help your story land. You choose how many questions.
+            </p>
+            <p className="mt-1 text-sm">
+              <Link to={ROUTES.INTERVIEW_PRACTICE_ROLES} className="text-indigo-600 hover:underline">
+                Preparing for a specific role? Browse role guides →
+              </Link>
             </p>
           </header>
           {isLoading && <div className="flex items-center py-16 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading…</div>}
