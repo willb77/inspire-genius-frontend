@@ -576,4 +576,39 @@ describe("Route Integration Tests", () => {
       expect(await screen.findByTestId("UserHomeV2Page")).toBeInTheDocument();
     });
   });
+
+  describe("Retired routes", () => {
+    // Lumen's Personal coaching was deleted 2026-08-12 — page, hook and
+    // question bank. Asserted structurally rather than by rendering because
+    // Lumen is entitlement-gated: an unentitled render redirects to /home and
+    // would pass whether or not the route still existed.
+    function findRoute(path: string) {
+      const walk = (list: typeof routes): (typeof routes)[number] | undefined => {
+        for (const route of list) {
+          if (route.path === path) return route;
+          const hit = route.children && walk(route.children);
+          if (hit) return hit;
+        }
+        return undefined;
+      };
+      return walk(routes);
+    }
+
+    it("keeps /vertical/lumen/coaching resolvable, but only as a redirect", () => {
+      // The global "*" catch-all sends unmatched paths to /login. Without this
+      // redirect an old bookmark would bounce a signed-in user to a login
+      // screen, which reads as "you are logged out", not "this page is gone".
+      const coaching = findRoute("coaching");
+      expect(coaching).toBeDefined();
+
+      const element = coaching?.element as React.ReactElement<{ to: string }>;
+      expect(element?.props?.to).toBe("/vertical/lumen/dashboard");
+    });
+
+    it("no longer exposes a Lumen coaching page component", () => {
+      // A redirect has no children and no lazy element to load. If someone
+      // reinstates the page by hanging it back on this path, this fails.
+      expect(findRoute("coaching")?.children).toBeUndefined();
+    });
+  });
 });

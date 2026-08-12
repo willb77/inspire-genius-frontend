@@ -241,7 +241,9 @@ export const ROUTES = {
     DASHBOARD: "/vertical/lumen/dashboard",
     SELF_PORTRAIT: "/vertical/lumen/self-portrait",
     MOMENTS: "/vertical/lumen/moments",
-    COACHING: "/vertical/lumen/coaching",
+    // COACHING removed 2026-08-12 — page, hook and question bank deleted. The
+    // path itself still resolves in routes.tsx, but only as a redirect to the
+    // dashboard for old bookmarks, so there is nothing here to link to.
     SETTINGS: "/vertical/lumen/settings",
     ONBOARDING: "/vertical/lumen/onboarding",
   },
