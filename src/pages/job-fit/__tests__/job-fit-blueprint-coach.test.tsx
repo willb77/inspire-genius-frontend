@@ -33,10 +33,6 @@ jest.mock("@/verticals/core", () => ({
 const mockEnabled = useEnabledVerticals as jest.MockedFunction<typeof useEnabledVerticals>
 const mockListEntitled = listEntitledVerticals as jest.MockedFunction<typeof listEntitledVerticals>
 
-const VERTICALS = [
-  { key: "job-fit", title: "Job Fit", routePrefix: "/vertical/job-fit", homePath: "/vertical/job-fit/matches" },
-  { key: "lumen", title: "Lumen", routePrefix: "/vertical/lumen", homePath: "/vertical/lumen/dashboard" },
-] as unknown as ReturnType<typeof listEntitledVerticals>
 
 const MATCH: FitMatch = {
   jobId: "j1", roleTitle: "Director of Operations", department: null,
@@ -200,29 +196,19 @@ describe("FitNav", () => {
     }
   })
 
-  test("always offers a way out of the vertical", () => {
-    renderNav()
-    fireEvent.click(screen.getByRole("button", { name: /Back to Inspire Genius/ }))
-    expect(mockNavigate).toHaveBeenCalledWith("/home")
-  })
-
-  test("offers the other verticals this user is entitled to", () => {
+  test("no longer shows the cross-vertical row (removed per request)", () => {
+    // Even when the user is entitled to other verticals, the "Back to Inspire
+    // Genius" / "or switch to <vertical>" row is gone; the pills are all that
+    // remain.
     mockEnabled.mockReturnValue({
       data: ["job-fit", "lumen"],
     } as unknown as ReturnType<typeof useEnabledVerticals>)
-    mockListEntitled.mockReturnValue(VERTICALS)
+    mockListEntitled.mockReturnValue([
+      { key: "lumen", title: "Lumen", routePrefix: "/vertical/lumen", homePath: "/vertical/lumen/dashboard" },
+    ] as unknown as ReturnType<typeof listEntitledVerticals>)
     renderNav()
-    expect(screen.getByRole("button", { name: "Lumen" })).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "GRANT" })).not.toBeInTheDocument()
-  })
-
-  test("does not offer the vertical you are already in", () => {
-    mockEnabled.mockReturnValue({
-      data: ["job-fit"],
-    } as unknown as ReturnType<typeof useEnabledVerticals>)
-    mockListEntitled.mockReturnValue(VERTICALS)
-    renderNav()
-    expect(screen.queryByRole("button", { name: "Job Fit" })).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Lumen" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Back to Inspire Genius/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/or switch to/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Lumen" })).not.toBeInTheDocument()
   })
 })

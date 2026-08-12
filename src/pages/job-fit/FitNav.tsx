@@ -1,20 +1,13 @@
-import { NavLink, useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { listEntitledVerticals, useEnabledVerticals } from "@/verticals/core"
 import { JOB_FIT_TOOLS } from "@/constants/vertical-subnav"
 
 /**
- * In-vertical navigation for Job Fit, plus a way back out.
+ * In-vertical navigation for Job Fit — the tool pills.
  *
- * Two problems this solves. Inside the vertical there was no way to move between
- * the tools without the browser's back button. And once you were in, there was no
- * signposted exit — a vertical you can enter but not leave reads as a dead end.
- *
- * The "switch vertical" list is **registry-driven and entitlement-filtered**, so it
- * shows only what this user actually has and needs no edit when a vertical is
- * added or an entitlement changes.
+ * The cross-vertical row that used to sit under the pills ("Back to Inspire
+ * Genius" plus an "or switch to <vertical>" list) was removed per request. The
+ * left sidebar and the brand logo (→ Home v2) remain the way out of the vertical.
  */
 
 // The same list the sidebar renders inside Job Fit — see
@@ -23,12 +16,6 @@ import { JOB_FIT_TOOLS } from "@/constants/vertical-subnav"
 const TOOLS = JOB_FIT_TOOLS
 
 export default function FitNav() {
-  const navigate = useNavigate()
-  const { data: enabled } = useEnabledVerticals()
-  // Everything this user is entitled to, minus Job Fit itself — the point is
-  // getting *out*, so listing where you already are would be noise.
-  const others = listEntitledVerticals(enabled ?? []).filter((v) => v.key !== "job-fit")
-
   return (
     <div className="mb-6 space-y-3">
       <nav aria-label="Job Fit tools" className="flex flex-wrap gap-1.5">
@@ -50,29 +37,6 @@ export default function FitNav() {
           </NavLink>
         ))}
       </nav>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/home")}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden />
-          Back to Inspire Genius
-        </Button>
-        {others.length > 0 && (
-          <>
-            <span className="text-xs text-muted-foreground">or switch to</span>
-            {others.map((v) => (
-              <Button
-                key={v.key}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(v.homePath)}
-              >
-                {v.title}
-              </Button>
-            ))}
-          </>
-        )}
-      </div>
     </div>
   )
 }
