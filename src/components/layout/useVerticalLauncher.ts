@@ -64,21 +64,25 @@ export const WORKSPACE_VERTICALS = new Set<VerticalKey>(["job-fit"])
 export const HIDDEN_VERTICALS = new Set<VerticalKey>(["honor"])
 
 /**
- * Verticals switched off for EVERYONE, regardless of entitlement (2026-08-04,
- * user request).
+ * Verticals switched off for EVERYONE, regardless of entitlement.
  *
  * A third, independent mechanism, deliberately not folded into the other two:
  * `HIDDEN_VERTICALS` removes an entry from the list, entitlement decides whether
  * an entry you can see is usable, and this set overrides entitlement to force an
- * entry greyed even for a user who *is* entitled. Job Fit is here because it was
- * turned off alongside Analytics and Goals in the My Workspace menu — the other
- * two are plain nav items in `constants/navigation.ts`, but Job Fit reaches the
- * menu through this registry, so it needs its own lever.
+ * entry greyed even for a user who *is* entitled.
  *
- * The vertical, its routes and its pages are untouched — re-enabling is emptying
- * this set.
+ * **Empty as of 2026-08-11** (user request: give users real access to Job Fit
+ * alongside Self-Portrait, Moments and Goals). Job Fit was the only member —
+ * added 2026-08-04 when it was switched off beside Analytics and Goals — and
+ * entitlement now decides it, like every other vertical. Entitlement rows were
+ * seeded across all six roles in dev and staging-b in the same change, and the
+ * `job-fit` gate is enforced server-side by blueprint-service, so an un-greyed
+ * menu entry no longer implies an ungated backend.
+ *
+ * The mechanism is retained rather than deleted: it is the only lever that can
+ * override entitlement, and switching a vertical off again is one word here.
  */
-export const FORCE_DISABLED_VERTICALS = new Set<VerticalKey>(["job-fit"])
+export const FORCE_DISABLED_VERTICALS = new Set<VerticalKey>([])
 
 /**
  * Is this vertical switched off for everyone?

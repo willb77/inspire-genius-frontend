@@ -57,10 +57,10 @@ Object.defineProperty(window, "matchMedia", {
 
 /**
  * Render the menu for a user with the given entitlements. Job Fit is entitled
- * by default — the harder case, since a force-disabled entry must stay greyed
- * for someone whose plan *does* include it.
+ * by default, which since 2026-08-11 is the LIVE case — the force-disable that
+ * used to grey it for entitled users too was lifted.
  */
-function renderMenu(entitlements: string[] = ["job-fit"], viewerEmail?: string) {
+function renderMenu(entitlements: string[] = ["job-fit"]) {
   __resetRegistry()
   registerVertical({
     key: "job-fit",
@@ -72,10 +72,7 @@ function renderMenu(entitlements: string[] = ["job-fit"], viewerEmail?: string) 
   mockUseEnabledVerticals.mockReturnValue({ data: entitlements, isLoading: false })
 
   const { result } = renderHook(() => useWorkspaceVerticalItems())
-  const menu = withWorkspaceVerticals(
-    getUserNavItems(true, { viewerEmail }),
-    result.current,
-  )
+  const menu = withWorkspaceVerticals(getUserNavItems(true), result.current)
 
   render(
     <MemoryRouter initialEntries={["/home"]}>
@@ -111,28 +108,32 @@ describe("My Workspace — rendered menu", () => {
     ])
   })
 
-  it("draws Analytics, Goals and Job Fit greyed and non-interactive", () => {
+  it("draws Analytics greyed and non-interactive", () => {
     renderMenu()
-    for (const label of ["Analytics", "Goals", "Job Fit"]) {
-      expect(row(label)).toBeDisabled()
-      expect(row(label)).toHaveAttribute("aria-disabled", "true")
-      expect(isGreyed(label)).toBe(true)
-    }
+    expect(row("Analytics")).toBeDisabled()
+    expect(row("Analytics")).toHaveAttribute("aria-disabled", "true")
+    expect(isGreyed("Analytics")).toBe(true)
   })
 
-  it("greys Job Fit even for a user who IS entitled to it", () => {
-    // The entitlement path would render this one usable; the force-disable
-    // must win. If this ever regresses, the menu silently comes back to life
-    // for exactly the users most likely to click it.
+  it("draws Job Fit LIVE for a user who is entitled to it", () => {
+    // Was greyed-even-when-entitled from 2026-08-04 to 2026-08-11. Entitlement
+    // decides it now, so an entitled user must actually be able to click it.
     renderMenu(["job-fit"])
+    expect(row("Job Fit")).toBeEnabled()
+    expect(isGreyed("Job Fit")).toBe(false)
+  })
+
+  it("still greys Job Fit for a user who is NOT entitled", () => {
+    // Lifting the force-disable must not open the entry to everyone: the
+    // entitlement gate underneath it has to keep working on its own.
+    renderMenu(["grant"])
     expect(row("Job Fit")).toBeDisabled()
+    expect(isGreyed("Job Fit")).toBe(true)
   })
 
-  it("does not blame the user's plan for entries switched off for everyone", () => {
+  it("does not blame the user's plan for Analytics, which is off for everyone", () => {
     renderMenu(["job-fit"])
-    for (const label of ["Analytics", "Goals", "Job Fit"]) {
-      expect(row(label)).toHaveAttribute("title", "Temporarily unavailable")
-    }
+    expect(row("Analytics")).toHaveAttribute("title", "Temporarily unavailable")
   })
 
   it("leaves the four usable shortcuts (and the tail) fully interactive", () => {
@@ -150,41 +151,46 @@ describe("My Workspace — rendered menu", () => {
     }
   })
 
-  it("still SHOWS the switched-off entries — greyed, not removed", () => {
+  it("still SHOWS the switched-off entry — greyed, not removed", () => {
     renderMenu()
-    for (const label of ["Analytics", "Goals", "Job Fit"]) {
-      expect(screen.getByText(label)).toBeInTheDocument()
-    }
+    expect(screen.getByText("Analytics")).toBeInTheDocument()
   })
 })
 
-// ── 2026-08-06 — Goals restored for the platform owner only ───────────────
+// ── 2026-08-11 — Goals live for every user ────────────────────────────────
 // Rendered, not just asserted on the nav array: the greying lives in
-// SidebarScaffold's NavItem, so only a render proves the owner's row actually
-// clicks through rather than merely carrying the right flag.
-describe("My Workspace — Goals for the platform owner", () => {
-  const OWNER = "willb77@3pp.com"
-
-  it("draws Goals live for the owner", () => {
-    renderMenu(["job-fit"], OWNER)
+// SidebarScaffold's NavItem, so only a render proves the row actually clicks
+// through rather than merely carrying the right flag.
+//
+// Goals was owner-only between 2026-08-06 and 2026-08-11. The owner branch is
+// gone — there is no per-viewer input left — so these cases are about the one
+// menu everybody gets.
+describe("My Workspace — Goals live for everyone", () => {
+  it("draws Goals live", () => {
+    renderMenu()
     expect(row("Goals")).toBeEnabled()
     expect(row("Goals")).not.toHaveAttribute("aria-disabled", "true")
     expect(row("Goals")).not.toHaveAttribute("title", "Temporarily unavailable")
     expect(isGreyed("Goals")).toBe(false)
   })
 
-  it("still greys Analytics and Job Fit for the owner", () => {
-    // Only Goals was asked for. If the gate ever widens to the whole greyed
-    // block, the owner silently gets two features nobody switched back on.
-    renderMenu(["job-fit"], OWNER)
-    for (const label of ["Analytics", "Job Fit"]) {
-      expect(row(label)).toBeDisabled()
-      expect(isGreyed(label)).toBe(true)
-    }
+  it("draws Goals live even for a user with NO entitlements at all", () => {
+    // The row is deliberately not entitlement-aware: it is a plain link, and
+    // VerticalShell redirects an unentitled visitor once they arrive. A greyed
+    // row here would need `direction-setting` spliced into the workspace menu,
+    // which it is not.
+    renderMenu([])
+    expect(row("Goals")).toBeEnabled()
   })
 
-  it("keeps the menu in the same order for the owner", () => {
-    const menu = renderMenu(["job-fit"], OWNER)
+  it("still greys Analytics — only Goals and Job Fit were switched on", () => {
+    renderMenu()
+    expect(row("Analytics")).toBeDisabled()
+    expect(isGreyed("Analytics")).toBe(true)
+  })
+
+  it("keeps the menu in the same order it had while greyed", () => {
+    const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
       "Home",
       "Chat with Meridian",
@@ -200,11 +206,5 @@ describe("My Workspace — Goals for the platform owner", () => {
       "Settings",
       "Help & Support",
     ])
-  })
-
-  it("leaves Goals greyed for a non-owner", () => {
-    renderMenu(["job-fit"], "someone-else@3pp.com")
-    expect(row("Goals")).toBeDisabled()
-    expect(isGreyed("Goals")).toBe(true)
   })
 })

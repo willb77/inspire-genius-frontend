@@ -159,27 +159,22 @@ describe("My Workspace menu order + switched-off entries", () => {
     }
   })
 
-  it("greys out Analytics and Goals under BOTH agent-engine toggle states", () => {
+  it("greys out Analytics under BOTH agent-engine toggle states", () => {
     for (const on of [true, false]) {
-      const items = getUserNavItems(on)
-      for (const route of [ROUTES.ANALYTICS, ROUTES.DIRECTION_SETTING.GOALS]) {
-        const item = items.find((i) => i.to === route)
-        expect(item).toBeDefined()
-        expect(item!.disabled).toBe(true)
-      }
+      const item = getUserNavItems(on).find((i) => i.to === ROUTES.ANALYTICS)
+      expect(item).toBeDefined()
+      expect(item!.disabled).toBe(true)
     }
   })
 
-  it("explains WHY they are off instead of blaming the user's plan", () => {
-    // NavItemDef's default locked title is "not included in your plan". These
-    // three are off for everyone, so that default would be untrue — a menu
+  it("explains WHY Analytics is off instead of blaming the user's plan", () => {
+    // NavItemDef's default locked title is "not included in your plan".
+    // Analytics is off for everyone, so that default would be untrue — a menu
     // that misinforms is worse than one that says nothing.
     const items = getUserNavItems(true)
-    for (const route of [ROUTES.ANALYTICS, ROUTES.DIRECTION_SETTING.GOALS]) {
-      expect(items.find((i) => i.to === route)!.disabledReason).toBe(
-        WORKSPACE_ITEM_UNAVAILABLE_REASON,
-      )
-    }
+    expect(items.find((i) => i.to === ROUTES.ANALYTICS)!.disabledReason).toBe(
+      WORKSPACE_ITEM_UNAVAILABLE_REASON,
+    )
   })
 
   it("leaves the switched-off entries VISIBLE — disabled is not deleted", () => {
@@ -196,66 +191,44 @@ describe("My Workspace menu order + switched-off entries", () => {
     expect(HIDDEN_WORKSPACE_ROUTES).not.toContain(ROUTES.DIRECTION_SETTING.GOALS)
   })
 
-  // ── 2026-08-06, user request: Goals back on for the platform owner only ──
+  // ── 2026-08-11, user request: Goals live for EVERY user ──────────────────
   //
-  // Every assertion above calls getUserNavItems(on) with no options, which is
-  // the NON-owner path — so they keep passing unchanged, and that is the point:
-  // the gate must not alter anyone else's menu. These cases cover the owner.
-  describe("Goals — owner-only restore", () => {
-    const OWNER = "willb77@3pp.com"
-    const goalsFor = (email?: string | null) =>
-      getUserNavItems(true, { viewerEmail: email }).find(
-        (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
-      )!
+  // Was switched off 2026-08-04, then unlocked for the platform owner only on
+  // 2026-08-06 via a `{ viewerEmail }` option. Goals is now a plain live row and
+  // that option is gone — `getUserNavItems` takes the toggle and nothing else.
+  //
+  // Access is no longer decided here at all: it is the `direction-setting`
+  // entitlement, enforced server-side by `require_vertical`. A live menu row for
+  // an unentitled user is correct — they reach the route and VerticalShell sends
+  // them home, exactly like every other vertical.
+  describe("Goals — live for everyone", () => {
+    const goals = (on = true) =>
+      getUserNavItems(on).find((i) => i.to === ROUTES.DIRECTION_SETTING.GOALS)!
 
-    it("gives the platform owner a live Goals entry", () => {
+    it("is a live entry under BOTH agent-engine toggle states", () => {
       for (const on of [true, false]) {
-        const item = getUserNavItems(on, { viewerEmail: OWNER }).find(
-          (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
-        )!
-        expect(item.disabled).toBeFalsy()
-        expect(item.disabledReason).toBeUndefined()
+        expect(goals(on).disabled).toBeFalsy()
+        expect(goals(on).disabledReason).toBeUndefined()
       }
     })
 
-    it("matches the owner email case- and whitespace-insensitively", () => {
-      // The email arrives from the auth profile, not from a form; a stored
-      // "WillB77@3pp.com" must not silently lock the owner out of his own row.
-      for (const variant of [OWNER, "WillB77@3PP.com", "  willb77@3pp.com  "]) {
-        expect(goalsFor(variant).disabled).toBeFalsy()
-      }
+    it("no longer varies by viewer — the menu is identical for everyone", () => {
+      // The owner gate is gone. Two calls must be byte-identical, because there
+      // is no per-viewer input left to make them differ.
+      expect(getUserNavItems(true)).toEqual(getUserNavItems(true))
     })
 
-    it("leaves Goals greyed for everyone else", () => {
-      for (const email of ["someone@3pp.com", "willb77@example.com", "", null, undefined]) {
-        const item = goalsFor(email)
-        expect(item.disabled).toBe(true)
-        expect(item.disabledReason).toBe(WORKSPACE_ITEM_UNAVAILABLE_REASON)
-      }
+    it("keeps Goals in the position it held while greyed", () => {
+      // Switching it on must not reshuffle the menu: Goals still sits directly
+      // after Analytics, where it was placed on 2026-08-04.
+      const l = labels(true)
+      expect(l.indexOf("Goals") - l.indexOf("Analytics")).toBe(1)
     })
 
-    it("fails CLOSED when a caller forgets to pass the email", () => {
-      // Three chromes build this menu. A new one that omits viewerEmail should
-      // under-grant (owner sees the old greyed row) rather than over-grant.
-      expect(getUserNavItems(true).find(
-        (i) => i.to === ROUTES.DIRECTION_SETTING.GOALS,
-      )!.disabled).toBe(true)
-    })
-
-    it("does not move Goals or change anyone else's menu shape", () => {
-      // The owner gate flips one row's `disabled`; it must not reorder or
-      // add/remove entries, or the owner and everyone else drift apart.
-      const owner = getUserNavItems(true, { viewerEmail: OWNER })
-      const other = getUserNavItems(true, { viewerEmail: "someone@3pp.com" })
-      expect(owner.map((i) => i.label)).toEqual(other.map((i) => i.label))
-      expect(owner.map((i) => i.to)).toEqual(other.map((i) => i.to))
-    })
-
-    it("keeps Analytics greyed for the owner too — only Goals was restored", () => {
-      const analytics = getUserNavItems(true, { viewerEmail: OWNER }).find(
-        (i) => i.to === ROUTES.ANALYTICS,
-      )!
-      expect(analytics.disabled).toBe(true)
+    it("keeps Analytics greyed — only Goals was switched on", () => {
+      expect(getUserNavItems(true).find((i) => i.to === ROUTES.ANALYTICS)!.disabled).toBe(
+        true,
+      )
     })
   })
 
