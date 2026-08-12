@@ -34,11 +34,7 @@ export default function UserLayout({
   const agentEngineOn = useAgentEngine();
   // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
   // spliced in above Settings/Help — greyed when unentitled.
-  // viewerEmail unlocks the owner-only Goals entry; every other user gets the
-  // same greyed row they had before (see getUserNavItems).
-  const userNavItems = useWorkspaceNavItems(
-    getUserNavItems(agentEngineOn, { viewerEmail: user?.email }),
-  );
+  const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
   // Full vertical catalogue; unentitled entries render greyed + non-navigating.
   const launcherSection = useVerticalLauncherSection();
 
