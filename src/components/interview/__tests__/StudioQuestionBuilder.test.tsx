@@ -21,6 +21,12 @@ jest.mock("@/services/interview/studio.service", () => {
   }
 })
 
+const extractRoleText = jest.fn()
+jest.mock("@/lib/extractRoleText", () => {
+  const actual = jest.requireActual("@/lib/extractRoleText")
+  return { ...actual, extractRoleText: (...a: unknown[]) => extractRoleText(...a) }
+})
+
 function renderBuilder(onConfirm = jest.fn()) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -47,7 +53,10 @@ const GENERATED: GeneratedQuestionSet = {
 }
 
 describe("StudioQuestionBuilder", () => {
-  beforeEach(() => generateQuestions.mockReset())
+  beforeEach(() => {
+    generateQuestions.mockReset()
+    extractRoleText.mockReset()
+  })
 
   it("shows the empty state until a question is added", () => {
     renderBuilder()
@@ -88,6 +97,30 @@ describe("StudioQuestionBuilder", () => {
     expect(generateQuestions).toHaveBeenCalledWith(
       expect.objectContaining({ topic: "Student discovery" }),
     )
+  })
+
+  it("uploads a question-list file and appends parsed questions", async () => {
+    const user = userEvent.setup()
+    extractRoleText.mockResolvedValue({ text: "1. What excites you?\n2. Where next?", suggestedTitle: "q" })
+    const { onConfirm } = renderBuilder()
+
+    await user.click(screen.getByRole("tab", { name: /upload a file/i }))
+    const input = screen.getByLabelText(/upload a question list file/i)
+    await user.upload(input, new File(["1. What excites you?\n2. Where next?"], "questions.txt", { type: "text/plain" }))
+
+    await waitFor(() =>
+      expect(screen.getByDisplayValue("What excites you?")).toBeInTheDocument(),
+    )
+    expect(screen.getByDisplayValue("Where next?")).toBeInTheDocument()
+    expect(extractRoleText).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole("button", { name: /start the interview/i }))
+    const frame = onConfirm.mock.calls[0][0]
+    expect(frame.mode).toBe("custom")
+    expect(frame.questions.map((q: { text: string }) => q.text)).toEqual([
+      "What excites you?",
+      "Where next?",
+    ])
   })
 
   it("switches to the hiring style and carries roleTitle through", async () => {

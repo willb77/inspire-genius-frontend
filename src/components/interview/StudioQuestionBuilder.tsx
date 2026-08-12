@@ -12,8 +12,8 @@
  * with `mode: "custom"` + `kind` + `questions[]` that the live-interview
  * pipeline runs and the generic scorer bands.
  */
-import { useState } from "react"
-import { Loader2, Plus, Sparkles, Trash2, Wand2 } from "lucide-react"
+import { useRef, useState } from "react"
+import { Loader2, Plus, Sparkles, Trash2, Upload, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +32,12 @@ import {
   type StudioQuestion,
 } from "@/services/interview/studio.service"
 import { useGenerateStudioQuestions } from "@/hooks/interview/useStudioInterview"
+import {
+  extractRoleText,
+  ACCEPTED_ROLE_FILE_TYPES,
+  RoleExtractionError,
+} from "@/lib/extractRoleText"
+import { parseQuestionList } from "@/lib/parseQuestionList"
 
 type RowQuestion = { text: string; theme: string; probes?: string[] }
 
@@ -52,6 +58,9 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
   const [kind, setKind] = useState<InterviewKind>("general")
   const [count, setCount] = useState(8)
   const [rows, setRows] = useState<RowQuestion[]>([])
+
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const generate = useGenerateStudioQuestions()
 
@@ -86,6 +95,30 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
       }
     } catch {
       toast.error("Could not generate questions. Try again, or add them manually.")
+    }
+  }
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return
+    setUploading(true)
+    try {
+      const { text } = await extractRoleText(file)
+      const parsed = parseQuestionList(text)
+      if (parsed.length === 0) {
+        toast.error("No questions found in that file — it may be empty or unreadable.")
+        return
+      }
+      setRows((r) => [...r, ...parsed.map((q) => ({ text: q, theme: "" }))])
+      toast.success(`Loaded ${parsed.length} question${parsed.length === 1 ? "" : "s"} — review and edit below.`)
+    } catch (e) {
+      const msg =
+        e instanceof RoleExtractionError
+          ? e.message
+          : "Could not read that file. Try a .txt, .md, .pdf, or .docx list."
+      toast.error(msg)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
@@ -192,6 +225,7 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
             <TabsList>
               <TabsTrigger value="generate">Generate from topic</TabsTrigger>
               <TabsTrigger value="manual">Add manually</TabsTrigger>
+              <TabsTrigger value="upload">Upload a file</TabsTrigger>
             </TabsList>
             <TabsContent value="generate" className="space-y-3 pt-3">
               <div className="flex flex-wrap items-end gap-3">
@@ -224,6 +258,30 @@ export default function StudioQuestionBuilder({ onConfirm, submitting }: StudioQ
               <Button type="button" variant="outline" onClick={addRow}>
                 <Plus className="mr-2 h-4 w-4" /> Add a question
               </Button>
+            </TabsContent>
+            <TabsContent value="upload" className="space-y-3 pt-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_ROLE_FILE_TYPES}
+                className="hidden"
+                aria-label="Upload a question list file"
+                onChange={(e) => void handleFile(e.target.files?.[0] ?? undefined)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                Choose a file
+              </Button>
+              <p className="text-xs text-slate-500">
+                Upload a list of questions — one per line — as a .txt, .md, .pdf, or
+                .docx file. Numbering and bullets are stripped automatically; each
+                question is added to the list below to edit or remove.
+              </p>
             </TabsContent>
           </Tabs>
 
