@@ -1,3 +1,20 @@
+## [2026-08-12] — Job Fit: remove the cross-vertical switch row
+
+Per request, removed the row under the Job-Fit tool pills that held "Back to
+Inspire Genius" and an "or switch to <vertical>" list (Direction Setting, GRANT,
+Honor Foundation, Job DNA, Knowledge Continuity — whatever the user was entitled
+to). The Job-Fit tool pills remain; the sidebar + brand logo (→ Home v2) remain
+the way out of the vertical.
+
+### Removed
+- `src/pages/job-fit/FitNav.tsx` — dropped the "Back to Inspire Genius" button +
+  the entitlement-driven vertical-switch buttons + "or switch to" label (and the
+  now-unused `useNavigate`/`Button`/`ArrowLeft`/`listEntitledVerticals`/
+  `useEnabledVerticals` imports).
+- Updated `src/pages/job-fit/__tests__/job-fit-blueprint-coach.test.tsx` — the 3
+  FitNav tests asserting the switch row are replaced by one asserting it's gone.
+- Full suite (4460) + coverage gate pass; `npm run build` clean.
+
 ## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
 
 Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
