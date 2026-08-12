@@ -102,6 +102,19 @@ export type SectionScoresRaw =
   | null
   | undefined
 
+/**
+ * Advisory narrative write-up attached at finalize (Interview Studio + live).
+ * LLM-synthesized, fail-open — `generated: false` with empty fields when the
+ * synthesis was unavailable. NEVER part of the deterministic score.
+ */
+export type InterviewFeedback = {
+  generated: boolean
+  summary: string
+  strengths: string[]
+  development_areas: string[]
+  per_section: Record<string, string>
+}
+
 export type FinalizeResult = {
   session: LiveSession
   answers: LiveAnswer[]
@@ -109,6 +122,8 @@ export type FinalizeResult = {
   overall_score: number
   overall_mean: number
   recommendation: string
+  /** Advisory narrative — present on Studio + live finalize; may be absent. */
+  feedback?: InterviewFeedback
 }
 
 /** Coerce whatever the backend sent for `section_scores` into a display array. */
