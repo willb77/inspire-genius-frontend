@@ -1,3 +1,84 @@
+## [2026-08-11] — Self-Portrait, Moments, Goals and Job Fit opened to users, and gated for real
+
+Four surfaces users could not reach, and a gate that was never enforced. Both halves in
+one change, in that order, because doing either alone is wrong: lifting the frontend
+switches without the backend gate opens the data to everyone, and enabling the gate
+without seeding entitlements 403s the super-admins currently using the preview override.
+
+### The gap
+`require_vertical` had existed in `app/verticals/core/entitlements.py` since the vertical
+model landed and was applied to **zero routes**. Entitlement decided what the UI offered;
+the API served any authenticated caller. Self-Portrait, Moments, Goals and Job Fit were
+all in that state — greyed buttons standing in for an authorization boundary.
+
+### Changed — access
+- **`FORCE_DISABLED_VERTICALS` is empty** (`useVerticalLauncher.ts`). Job Fit had been
+  greyed for *everyone including entitled users* since 2026-08-04; entitlement decides it
+  again. The set is kept, not deleted — it is the only lever that can override entitlement.
+- **Goals is a live My Workspace row for every user** (`constants/navigation.ts`).
+  `getUserNavItems` loses its `{ viewerEmail }` option along with the owner branch: the
+  user menu has no owner-conditional entry left. `isPlatformOwner` / `OWNER_ONLY_NAV_ROUTES`
+  are untouched — the super-admin chrome still uses them for Dev Traffic Report.
+- **`LOCKED_QUICK_ACTIONS` is empty** (`pages/user/HomeV2.tsx`). The Home Goals pill follows
+  entitlement now. This did NOT restore the My Journey / Job Fit pills, removed from the row
+  outright on 2026-08-06 as a separate decision.
+- Self-Portrait and Moments needed no code change — already live links, invisible for want
+  of an entitlement.
+- Menu order is unchanged throughout: Goals and Job Fit keep the positions they held while
+  greyed, so switching them on reshuffled nobody's sidebar. Analytics stays greyed.
+
+### Added — the gate
+- **`vertical_router(key, entitled=True)`** attaches `require_vertical` at the ROUTER level,
+  so a route added later is gated by construction rather than by the author remembering.
+  Adopted by `lumen` and `direction-setting`. grant / honor / job-blueprint unchanged —
+  adoption is opt-in per vertical.
+- **`VerticalManifest.public_router`** — a second router at the same prefix for routes that
+  must stay reachable without the entitlement. `/health` moved there: it answers "is this
+  vertical wired?", not "what does this user have?", and an ops probe must not need an
+  entitlement.
+- **`services/blueprint-service/app/entitlements.py`** — `/v1/blueprint/fit/*` is served by
+  blueprint-service, not the agent-engine, so it reads the same `public.user_entitlements`
+  over the shared Aurora cluster rather than adding a cross-service call to the hot path.
+  **Fails closed** on a database error.
+- Tests: `agent-engine/tests/verticals/test_entitlement_gate.py` (11),
+  `blueprint-service/tests/test_fit_entitlement.py` (9).
+
+### Data — entitlements seeded, both tiers
+Across **all six roles**, active non-deleted accounts, merge semantics (existing keys
+preserved, never overwritten):
+
+| | dev | staging-b |
+|---|---|---|
+| users granted `lumen` / `direction-setting` / `job-fit` | 115 | 114 |
+| pre-existing entitlement keys lost | **0** | **0** |
+
+Snapshot taken first as `public.user_entitlements_bak_20260811` on both tiers; the
+zero-loss figure is a diff against it, not an assumption.
+
+### Deliberately NOT gated
+- **`/v1/agents/goals`** — the shared Summit goal store. growth-service's Team Development
+  Studio dossier reads it for managers who have no `direction-setting` entitlement.
+- **`/v1/agents/blueprint/{explain-fit,write-resume}`** — LLM formatters over fit data the
+  caller already holds, on the `job-blueprint` prefix; the data surface feeding them is now
+  gated.
+
+### Note — the SQLite exemption
+`public.user_entitlements` is provisioned by migration-runner and absent from the offline
+test database, so both services exempt SQLite explicitly; otherwise every gated route 403s
+and the suites assert the gate instead of the behaviour under it. Deployed environments are
+always Postgres. Each service has a test pinning the exemption so a future reader who
+removes it sees an explanation rather than a wall of unrelated 403s.
+
+### Fixed — in passing
+A first version of the blueprint route test walked `app.routes` and found zero routes in CI
+while passing locally on identical fastapi/starlette versions (checked by rebuilding a venv
+from the service's pinned requirements). Cause not reproduced; the test was rewritten to
+read `app.openapi()["paths"]` and to assert the set is non-empty before comparing — the
+original form failed OPEN, since "no ungated routes found" and "the walk stopped working"
+were the same result.
+
+- Frontend PR #396, monorepo PR #865.
+
 ## [2026-08-09] — Journey tiles shortened (192px → 78px, measured); Moments shows only what you pick
 
 Frontend PR [#389](https://github.com/willb77/inspire-genius-frontend/pull/389),
