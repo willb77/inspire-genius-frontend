@@ -92,6 +92,30 @@ zero-loss figure is a diff against it, not an assumption.
   caller already holds, on the `job-blueprint` prefix; the data surface feeding them is now
   gated.
 
+### Promoted to staging-b — 2026-08-11
+Tag `release-stable-2026-08-11-vertical-entitlement-gates` (`a7b37b99`). Baseline checked
+rather than assumed: the newest prior tag (`release-stable-2026-08-11-prism-retry-history-attr`,
+`62631438`) is an ancestor of `development` and the delta is exactly PRs #865 + #866. No
+migrations — the staging-b entitlement rows were seeded directly beforehand, and all 114 hold
+all three keys, so the gate could not lock anyone out.
+
+**Before/after probe of staging-b, which is what actually proves the roll:**
+
+| path | before | after |
+|---|---|---|
+| `/v1/agents/lumen/health` | 200 | 200 |
+| `/v1/agents/direction-setting/health` | 200 | 200 |
+| `/v1/agents/direction-setting/stages` | **200** | **401** |
+| `/v1/agents/lumen/self-portrait/me` | 401 | 401 |
+| `/v1/blueprint/fit/matches` | 401 | 401 |
+
+The `/stages` flip is the load-bearing observation: nothing else makes a previously
+unauthenticated route 401, so it proves the new agent-engine image is serving. The fit routes
+answered 401 both before and after — unauthenticated probing cannot distinguish an entitlement
+gate there — so blueprint-service was verified by downloading the deployed Lambda package and
+confirming `app/entitlements.py` is present and `app/routes.py` references `JobFitGate`. A green
+workflow was not treated as proof on its own.
+
 ### Note — the SQLite exemption
 `public.user_entitlements` is provisioned by migration-runner and absent from the offline
 test database, so both services exempt SQLite explicitly; otherwise every gated route 403s
