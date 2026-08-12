@@ -1,3 +1,61 @@
+## [2026-08-12] — User workspace menu cut to exactly six entries
+
+FE PR #410 (`626099da`), merged and live on dev AND staging-b.
+
+Request: for the user role show only Home, Chat with Meridian, Interview
+Practice, Document Library, Settings, Help & Support.
+
+### Changed
+- **The user menu is now exactly those six**, under BOTH agent-engine toggle
+  states — the toggle swaps the chat row's destination and label ("Chat with
+  Meridian" ↔ "Chat with Coaches"), not the shape of the menu.
+  - Files: `src/constants/navigation.ts`
+- **`USER_NAV_ITEMS` brought back into step with `getUserNavItems`.** The two had
+  drifted: the static list still carried Request Assessment and Feedback long
+  after the toggle-aware one dropped them. Which one renders depends on the
+  layout — `UserLayout`/`SuperAdminLayout` call `getUserNavItems`, while
+  `UnifiedLayout` reads `NAV_ITEMS_BY_ROLE` — so the menu changed depending on
+  what page you were on. A test now fails if they drift again.
+
+### Removed
+- **Goals** from the menu. Still reachable from the Direction Setting sub-nav and
+  JourneyPage stage 5; access was never decided by this row anyway — it is the
+  `direction-setting` entitlement, enforced server-side by `require_vertical`.
+- **The workspace splice.** `WORKSPACE_VERTICALS` (Job Fit) and
+  `WORKSPACE_VERTICAL_LINKS` (Resume Writer) are both empty, so nothing is merged
+  into the menu after the array is built. The rendered menu was never just the
+  list you read in `navigation.ts`; now it is.
+  - Files: `src/components/layout/useVerticalLauncher.ts`
+- **Resume Writer (Honor)** — added to My Workspace earlier the same day on
+  request, removed again here because the requested list does not include it.
+  Nothing orphaned: Honor's own shell still carries a "Résumé Writer" pill and
+  `HonorEvaluate` navigates to it directly.
+
+### ⚠️ Consequence — Job Fit has no user-facing entry point
+`useVerticalLauncherSection` **filters out** `WORKSPACE_VERTICALS`, so emptying
+that set did not delete Job Fit — it returned it to the Tools catalogue. Tools
+became super-admin only earlier the same day. Net effect:
+
+- **super-admin** — Job Fit is in the Tools section, as before it was promoted to
+  My Workspace on 2026-08-04
+- **every other role** — no sidebar path at all
+
+Nothing on Home or the Meridian header links to Job Fit either; verified by grep
+(nothing outside the vertical references `ROUTES.JOB_FIT.*`). A stale comment in
+`useVerticalLauncher.ts` claiming Home and the Meridian header did link to it was
+corrected in the same change. The routes resolve, so Job Fit is reachable by URL
+and from the vertical's own pill row once inside — but it is undiscoverable for
+the user role until something links to it again.
+
+### Testing
+- Pinned with an **exact-array** assertion, not a subsequence: the request was a
+  closed list, so an ADDED seventh entry has to fail too, not just a removal.
+- 564 suites / 4,465 tests pass; `npm run build` and `tsc` clean; 0 eslint errors
+  across all six changed files.
+- Live bundle checked on both tiers: `Resume Writer` 0 occurrences, `"Goals"` 0,
+  `"Job Fit"` 1 (the registry title, now in the super-admin Tools catalogue).
+  `version.json` = `626099da` on dev and staging-b.
+
 ## [2026-08-12] — Sidebar: one super-admin "Tools" menu, Analytics out, Resume Writer in
 
 Three merged PRs on the frontend: #401, #402 (Lumen Personal coaching) and #408
