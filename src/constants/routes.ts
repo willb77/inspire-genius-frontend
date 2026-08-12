@@ -10,6 +10,8 @@ export const ROUTES = {
   COACHES: "/coaches",
   DOCUMENTS: "/documents",
   INTERVIEW_PRACTICE: "/interview-practice",
+  /** Public per-occupation Interview Practice role guides (index + `/interview-practice/:slug`). */
+  INTERVIEW_PRACTICE_ROLES: "/interview-practice/roles",
   PROFILE: "/profile",
   USER: {
     PROFILE: "/profile",
