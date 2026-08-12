@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1470</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1476</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3056,6 +3056,30 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
         <div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1471 [FE #401]</div>
+  <div class="prompt-text">remove Personal Coaching from the Lumen dashboard</div>
+</div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1472 [FE #401 merged + deployed]</div>
+  <div class="prompt-text">push it and open the PR / merge it</div>
+</div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1473 [FE #402]</div>
+  <div class="prompt-text">remove the coaching route and page too</div>
+</div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1474 [FE #408]</div>
+  <div class="prompt-text">there are multiple tool and vertical menu item consolidate all of them under one menu item named 'Tools' gate it for only super admins. /full-go</div>
+</div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1475 [FE #408]</div>
+  <div class="prompt-text">on My WorkSpace remove Analytics. add 'Live Interview', 'Interview Studio', 'Team Development Studio' to super admin entitlement. Make them visible in the consolidate 'Tools' menu</div>
+</div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-12 — Prompt #1476 [FE #408]</div>
+  <div class="prompt-text">add more items to that task list. All tools should be displayed and clickable for a superadmin without having to click on an Administration item to reveal them. Add Resume writer from Honor to the My WorkSpace menu</div>
+</div>
+<div class="prompt-entry">
           <div class="timestamp">2026-08-11 &mdash; Prompt #1470 [Four surfaces opened to users + entitlement enforced server-side]</div>
           <div class="prompt-text">what roles have access to self-portrait, moments, goals, job fit? / provide users access to self-portrait, moments, goals, and job fit. Gate these as well /full-go (both tiers, entitlement across all six roles)</div>
           <div class="prompt-text"><b>Role was never the gate.</b> All four surfaces sit under <code>/vertical/*</code>, which <code>ProtectedRoute</code> does not role-check &mdash; it only enforces roles on the five role-prefixed path groups. Access is a per-user row in <code>public.user_entitlements</code>, and that table has no role column. What was actually blocking each one: Self-Portrait and Moments had no entitlement holders outside ~9 super-admins; Goals was unlocked for <code>willb77@3pp.com</code> alone; Job Fit was in <code>FORCE_DISABLED_VERTICALS</code>, greyed even for entitled users.</div>
