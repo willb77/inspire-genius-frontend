@@ -11,10 +11,8 @@ import {
 import { verticalSubNavItems } from "@/constants/vertical-subnav"
 import { useAgentEngine } from "@/lib/agentApi"
 import { useAuth } from "@/context/useAuth"
-import {
-  useVerticalLauncherSection,
-  useWorkspaceNavItems,
-} from "@/components/layout/useVerticalLauncher"
+import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
+import { useToolsSection } from "@/hooks/nav/useToolsSection"
 import { getVertical, type VerticalKey } from "@/verticals/core"
 
 /**
@@ -52,7 +50,7 @@ export function useVerticalPageSections(
     : NAV_ITEMS_BY_ROLE[role] ?? NAV_ITEMS_BY_ROLE.user
   const workspaceItems = useWorkspaceNavItems(baseItems)
 
-  const launcherSection = useVerticalLauncherSection()
+  const toolsSection = useToolsSection(role)
   const subNav = verticalSubNavItems(vertical, role)
   const definition = getVertical(vertical)
 
@@ -83,23 +81,27 @@ export function useVerticalPageSections(
       })
     }
 
-    if (launcherSection) {
+    // The consolidated Tools section — super-admin only as of 2026-08-12, so a
+    // manager inside a vertical now sees My Workspace + that vertical's own
+    // sub-nav and nothing more. Its own `defaultCollapsed` is honoured rather
+    // than forced here: the section must not expand and collapse as you move
+    // between vertical pages and the rest of the app.
+    if (toolsSection) {
       sections.push({
-        label: launcherSection.label,
+        ...toolsSection,
         // Mark the vertical you are in as active for every page under it, not
         // just its home page.
-        items: launcherSection.items.map((item) =>
+        items: toolsSection.items.map((item) =>
           item.to.startsWith(`/vertical/${vertical}`)
             ? { ...item, activePrefix: `/vertical/${vertical}` }
             : item,
         ),
-        defaultCollapsed: true,
       })
     }
 
     sections.push(...adminSection("Administration"))
     return sections
-  }, [workspaceItems, launcherSection, subNav, definition, vertical, isSuperAdmin, isOwner])
+  }, [workspaceItems, toolsSection, subNav, definition, vertical, isSuperAdmin, isOwner])
 }
 
 export default useVerticalPageSections

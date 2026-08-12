@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { renderHook } from "@testing-library/react"
-import { useGatedNavItems, useEntitledVerticalItems } from "../useGatedNavItems"
+import { useGatedNavItems } from "../useGatedNavItems"
 
 jest.mock("@/constants/navigation", () => ({
   NAV_ITEMS_BY_ROLE: {
@@ -24,20 +24,9 @@ jest.mock("@/constants/navigation", () => ({
 // `useWorkspaceNavItems` (the Job Fit / Lumen splice) is covered in
 // `components/layout/__tests__/useVerticalLauncher.test.ts` against the real
 // registry; here it is the identity so this suite tests role-menu wiring alone.
-const mockLauncher = jest.fn()
 const mockWorkspaceNav = jest.fn((items: unknown) => items)
 jest.mock("@/components/layout/useVerticalLauncher", () => ({
-  useVerticalLauncherSection: () => mockLauncher(),
   useWorkspaceNavItems: (items: unknown) => mockWorkspaceNav(items),
-}))
-
-const mockBroadcast = jest.fn()
-jest.mock("@/hooks/super-admin/useBroadcast", () => ({
-  useBroadcastAccess: () => mockBroadcast(),
-}))
-
-jest.mock("@/constants/sidebar-sections", () => ({
-  BROADCAST_SIDEBAR_SECTION: { items: [{ to: "/super-admin/broadcast-alert", icon: () => null, label: "Broadcast Alerts" }] },
 }))
 
 describe("useGatedNavItems", () => {
@@ -74,47 +63,6 @@ describe("useGatedNavItems", () => {
       "Settings",
       "Help & Support",
       "Lumen",
-    ])
-  })
-})
-
-describe("useEntitledVerticalItems", () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-    mockLauncher.mockReturnValue(null)
-    mockBroadcast.mockReturnValue({ data: { authorized: false } })
-  })
-
-  it("returns [] when the registry produced no section", () => {
-    const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
-    expect(result.current).toEqual([])
-  })
-
-  it("passes the launcher catalogue straight through, disabled flags intact", () => {
-    // GRANT + KCE are no longer synthesized here: they are ordinary registry
-    // entries in the launcher section, so this hook must not double-add them.
-    mockLauncher.mockReturnValue({
-      items: [
-        { to: "/vertical/grant/dashboard", icon: () => null, label: "GRANT", disabled: false },
-        { to: "/vertical/honor", icon: () => null, label: "Honor Foundation", disabled: true },
-      ],
-    })
-    const { result } = renderHook(() => useEntitledVerticalItems("practitioner"))
-    expect(result.current.map((i) => [i.label, i.disabled])).toEqual([
-      ["GRANT", false],
-      ["Honor Foundation", true],
-    ])
-  })
-
-  it("appends Platform Alerts only for an allow-listed super-admin", () => {
-    mockLauncher.mockReturnValue({
-      items: [{ to: "/vertical/honor", icon: () => null, label: "Honor Foundation" }],
-    })
-    mockBroadcast.mockReturnValue({ data: { authorized: true } })
-    const { result } = renderHook(() => useEntitledVerticalItems("super-admin"))
-    expect(result.current.map((i) => i.label)).toEqual([
-      "Honor Foundation",
-      "Broadcast Alerts",
     ])
   })
 })

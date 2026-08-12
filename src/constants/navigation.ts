@@ -53,13 +53,7 @@ export const USER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
   { to: ROUTES.INTERVIEW_PRACTICE, icon: MessagesSquare, label: "Interview Practice" },
   { to: ROUTES.FEEDBACK, icon: MessageCircle, label: "Feedback" },
-  {
-    to: ROUTES.ANALYTICS,
-    icon: BarChart3,
-    label: "Analytics",
-    disabled: true,
-    disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
-  },
+  // Analytics removed 2026-08-12 (request) — see getUserNavItems below.
   { to: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
   { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
@@ -122,18 +116,15 @@ export function getUserNavItems(agentEngineEnabled: boolean): NavItemDef[] {
     // both keep the position they held while greyed, so turning them on did not
     // reshuffle anyone's menu.
     //
-    // Analytics is DISABLED, not removed: still listed, but greyed, lock-marked
-    // and non-navigating. Deliberately not deleted — the page and route are
-    // untouched, so re-enabling is dropping `disabled` here, with no route or
-    // layout work. It is NOT added to HIDDEN_WORKSPACE_ROUTES: that constant
-    // means "absent from the menu", and this is present — just not usable.
-    {
-      to: ROUTES.ANALYTICS,
-      icon: BarChart3,
-      label: "Analytics",
-      disabled: true,
-      disabledReason: WORKSPACE_ITEM_UNAVAILABLE_REASON,
-    },
+    // ── 2026-08-12, user request: Analytics REMOVED from My Workspace ──
+    // It had been a greyed, lock-marked, non-navigating row since 2026-08-04.
+    // A permanently disabled entry is menu noise: it occupies a slot, invites a
+    // click, and explains nothing. Now absent, so it joins
+    // HIDDEN_WORKSPACE_ROUTES below — that constant means "absent from the
+    // menu", which is finally true of Analytics.
+    //
+    // The page and route (ROUTES.ANALYTICS) are UNTOUCHED and still resolve.
+    // Restoring it is one line here plus dropping it from that list.
     // Goals — the "My Goals" interview (Direction Setting stage 5). Promoted to a
     // top-level workspace shortcut 2026-08-04; Job Fit sits beside it, spliced in
     // from WORKSPACE_VERTICALS just below this by useWorkspaceNavItems.
@@ -181,6 +172,9 @@ export const HIDDEN_WORKSPACE_ROUTES = [
   ROUTES.SUMMIT.BASE,
   ROUTES.FEEDBACK,
   ROUTES.ONBOARDING.WIZARD,
+  // Joined 2026-08-12, when the greyed row was removed rather than left as a
+  // permanently-disabled entry. Page and route untouched, as with the rest.
+  ROUTES.ANALYTICS,
 ] as const
 
 /**
@@ -193,13 +187,17 @@ const TEAM_DEVELOPMENT_ENABLED =
 
 /**
  * The Team Development Studio nav entry. Shared by the manager "Tools" rollup
- * (via {@link TOOL_ITEMS_BY_ROLE} + UnifiedLayout) and the super-admin "Tools"
- * section, so the label/route/icon stay in one place.
+ * (via {@link TOOL_ITEMS_BY_ROLE}) and the super-admin "Tools" section, so the
+ * label/route/icon stay in one place.
+ *
+ * Labelled "Team Development Studio" as of 2026-08-12 (request) — that is the
+ * product's own name (TDS), and the truncated "Team Development" read as a
+ * category rather than a tool.
  */
 const TEAM_DEVELOPMENT_ITEM: NavItemDef = {
   to: ROUTES.MANAGER.DEVELOPMENT,
   icon: Sparkles,
-  label: "Team Development",
+  label: "Team Development Studio",
 }
 
 // Candidate-side interview rehearsal (Alex interview-coach). A universal,
@@ -255,6 +253,13 @@ const INTERVIEW_STUDIO_ITEM_SUPER_ADMIN: NavItemDef = {
   icon: Sparkles,
   label: "Interview Studio",
 }
+// Super-admin Live Interview — the route and page were added 2026-08-12; manager
+// and practitioner already had theirs. Same role-layout-wrapper pattern.
+const INTERVIEW_LIVE_ITEM_SUPER_ADMIN: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.INTERVIEW_LIVE,
+  icon: ClipboardCheck,
+  label: "Live Interview",
+}
 
 /**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
@@ -278,25 +283,27 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     INTERVIEW_LIVE_ITEM_PRACTITIONER,
     INTERVIEW_STUDIO_ITEM_PRACTITIONER,
   ],
+  // Super-admin is entitled to all four unconditionally (2026-08-12, request:
+  // "add Live Interview, Interview Studio, Team Development Studio to super
+  // admin entitlement"). Note Team Development Studio is NOT behind
+  // TEAM_DEVELOPMENT_ENABLED here, unlike the manager list above: that build
+  // flag scopes the manager PILOT cohort, and gating the platform owner on a
+  // pilot flag is what made the entry vanish from super-admin builds where the
+  // flag was unset. Manager keeps the flag; super-admin does not.
   "super-admin": [
-    ...(TEAM_DEVELOPMENT_ENABLED ? [TEAM_DEVELOPMENT_ITEM] : []),
+    TEAM_DEVELOPMENT_ITEM,
     INTERVIEW_PRACTICE_ITEM,
+    INTERVIEW_LIVE_ITEM_SUPER_ADMIN,
     INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
   ],
 }
 
-/**
- * The super-admin "Tools" rollup section (collapsed by default), or `null` when
- * there are no tool items. SuperAdminLayout splices it into its section list.
- */
-export const SUPER_ADMIN_TOOLS_SECTION: NavSectionDef | null =
-  (TOOL_ITEMS_BY_ROLE["super-admin"]?.length ?? 0) > 0
-    ? {
-        label: "Tools",
-        items: TOOL_ITEMS_BY_ROLE["super-admin"]!,
-        defaultCollapsed: true,
-      }
-    : null
+// SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12. It wrapped
+// TOOL_ITEMS_BY_ROLE["super-admin"] in a section labelled "Tools", which is now
+// assembled — together with the vertical catalogue, Bio Capture and Platform
+// Alerts — by `useToolsSection` (src/hooks/nav/useToolsSection.ts). Having a
+// second thing that built a "Tools" section is precisely what produced two
+// same-labelled sections and the reconciliation bug documented there.
 
 /** Navigation items for the super-admin role */
 export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
@@ -320,9 +327,8 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
-  // Team Development Studio now lives in a dedicated collapsible "Tools" rollup
-  // (super-admin: SUPER_ADMIN_TOOLS_SECTION; manager: TOOL_ITEMS_BY_ROLE via
-  // UnifiedLayout) rather than inline here.
+  // Team Development Studio lives in the consolidated "Tools" section
+  // (useToolsSection, fed by TOOL_ITEMS_BY_ROLE) rather than inline here.
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import {
   SUPER_ADMIN_NAV_SECTIONS,
-  SUPER_ADMIN_TOOLS_SECTION,
   getUserNavItems,
   OWNER_ONLY_NAV_ROUTES,
   isPlatformOwner,
@@ -9,10 +8,8 @@ import {
 import SidebarScaffold from "@/components/shared/layout/SidebarScaffold";
 import type { NavSectionDef } from "@/components/shared/layout/SidebarScaffold";
 import { useAgentEngine } from "@/lib/agentApi";
-import {
-  useVerticalLauncherSection,
-  useWorkspaceNavItems,
-} from "@/components/layout/useVerticalLauncher";
+import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher";
+import { useToolsSection } from "@/hooks/nav/useToolsSection";
 import GrantPreviewToggle from "@/components/grant/GrantPreviewToggle";
 import { useAuth } from "@/context/useAuth";
 
@@ -29,7 +26,8 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
   // My Workspace = the user menu plus the workspace verticals (Job Fit, Lumen),
   // spliced in above Settings/Help — greyed when unentitled.
   const userNavItems = useWorkspaceNavItems(getUserNavItems(agentEngineOn));
-  const launcherSection = useVerticalLauncherSection();
+  // The single consolidated Tools section — see hooks/nav/useToolsSection.
+  const toolsSection = useToolsSection("super-admin");
   // Owner-only nav routes (e.g. Dev Traffic Report) stay in their normal
   // section but are hidden from every super-admin except the platform owner.
   // The backend independently hard-403s any non-owner caller.
@@ -58,36 +56,18 @@ export default function SuperAdminLayout({ children, className }: SuperAdminLayo
     return [
       { label: "My Workspace", items: userNavItems, defaultCollapsed: true },
       ...bySection("Role Views"),
-      // ONE "Tools" rollup. The vertical catalogue (launcherSection) and the
-      // utility surfaces (Team Development, Interview Practice — from
-      // SUPER_ADMIN_TOOLS_SECTION) were previously two separate sections that
-      // BOTH carried the label "Tools". Duplicate section labels collide on
-      // SidebarScaffold's `key={section.label}`, and that reconciliation clash
-      // is what made the Team-Development "Tools" group surface only when the
-      // Administration section was toggled. Merging them into a single section
-      // gives one stable, correctly-keyed "Tools" rollup, above Administration.
-      ...(() => {
-        const toolsItems = [
-          ...(launcherSection?.items ?? []),
-          ...(SUPER_ADMIN_TOOLS_SECTION?.items ?? []),
-        ];
-        return toolsItems.length
-          ? [
-              {
-                label: "Tools",
-                items: toolsItems,
-                defaultCollapsed:
-                  launcherSection?.defaultCollapsed ??
-                  SUPER_ADMIN_TOOLS_SECTION?.defaultCollapsed ??
-                  true,
-              },
-            ]
-          : [];
-      })(),
+      // ONE "Tools" section, assembled in useToolsSection rather than here.
+      // Two groups both labelled "Tools" used to be built inline; duplicate
+      // labels collide on SidebarScaffold's `key={section.label}`, and that
+      // reconciliation clash is what made a Tools group surface only after the
+      // Administration section was toggled. Building the list in one shared
+      // hook is what stops that recurring in the next layout, rather than
+      // fixing it only in this one.
+      ...(toolsSection ? [toolsSection] : []),
       // Administration stays expanded — a super-admin on an admin page is mid-task.
       ...bySection("Administration").map((s) => ({ ...s, defaultCollapsed: false })),
     ];
-  }, [userNavItems, launcherSection, isOwner]);
+  }, [userNavItems, toolsSection, isOwner]);
 
   return (
     <SidebarScaffold
