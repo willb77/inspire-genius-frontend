@@ -10,7 +10,7 @@
  * `withWorkspaceVerticals` splices it in. This renders the real composition
  * through the real markup and asserts on the DOM.
  */
-import { render, renderHook, screen } from "@testing-library/react"
+import { cleanup, render, renderHook, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { getUserNavItems } from "../navigation"
 import { useWorkspaceNavItems } from "@/components/layout/useVerticalLauncher"
@@ -93,21 +93,13 @@ describe("My Workspace — rendered menu", () => {
   it("renders in the specified order", () => {
     const menu = renderMenu()
     expect(menu.map((i) => i.label)).toEqual([
+      // Exactly six as of 2026-08-12 (request). Nothing is spliced in any
+      // more — WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty
+      // — so the rendered menu is the nav array, with nothing added between
+      // building it and drawing it.
       "Home",
       "Chat with Meridian",
       "Interview Practice",
-      // Analytics removed 2026-08-12 (request) — it sat between Interview
-      // Practice and Goals as a permanently greyed row.
-      "Goals",
-      "Job Fit",
-      // Resume Writer (Honor) joined My Workspace 2026-08-12. It rides the same
-      // splice as Job Fit, so it lands here — above the tail, below the
-      // primary shortcuts.
-      "Resume Writer",
-      // Document Library moved down to sit DIRECTLY above Settings on
-      // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
-      // workspace-vertical splice (Job Fit) would otherwise land between the
-      // two and separate them.
       "Document Library",
       "Settings",
       "Help & Support",
@@ -120,38 +112,6 @@ describe("My Workspace — rendered menu", () => {
     // drawn menu the request was about.
     renderMenu()
     expect(screen.queryByText("Analytics")).not.toBeInTheDocument()
-  })
-
-  it("draws Resume Writer greyed for a user without the Honor entitlement", () => {
-    // Honor sits behind VerticalShell, which sends an unentitled visitor to
-    // /home. A live-looking row that bounces is worse than a greyed one, so the
-    // item is entitlement-aware even though it is a deep link rather than a
-    // vertical home.
-    renderMenu(["job-fit"])
-    expect(row("Resume Writer")).toBeDisabled()
-    expect(isGreyed("Resume Writer")).toBe(true)
-  })
-
-  it("draws Resume Writer LIVE for a user who IS Honor-entitled", () => {
-    renderMenu(["honor"])
-    expect(row("Resume Writer")).toBeEnabled()
-    expect(isGreyed("Resume Writer")).toBe(false)
-  })
-
-  it("draws Job Fit LIVE for a user who is entitled to it", () => {
-    // Was greyed-even-when-entitled from 2026-08-04 to 2026-08-11. Entitlement
-    // decides it now, so an entitled user must actually be able to click it.
-    renderMenu(["job-fit"])
-    expect(row("Job Fit")).toBeEnabled()
-    expect(isGreyed("Job Fit")).toBe(false)
-  })
-
-  it("still greys Job Fit for a user who is NOT entitled", () => {
-    // Lifting the force-disable must not open the entry to everyone: the
-    // entitlement gate underneath it has to keep working on its own.
-    renderMenu(["grant"])
-    expect(row("Job Fit")).toBeDisabled()
-    expect(isGreyed("Job Fit")).toBe(true)
   })
 
   it("leaves the four usable shortcuts (and the tail) fully interactive", () => {
@@ -169,6 +129,20 @@ describe("My Workspace — rendered menu", () => {
     }
   })
 
+  it("shows neither Job Fit nor Resume Writer, at ANY entitlement level", () => {
+    // Both were spliced into this menu earlier on 2026-08-12 and removed the
+    // same day when the list was fixed at six. Checked across entitlement
+    // states because the splice was entitlement-aware — an entry could have
+    // come back greyed rather than not at all, which the exact-order assertion
+    // above would catch but this names.
+    for (const ents of [[], ["job-fit"], ["honor"], ["job-fit", "honor"]]) {
+      renderMenu(ents)
+      expect(screen.queryByText("Job Fit")).not.toBeInTheDocument()
+      expect(screen.queryByText("Resume Writer")).not.toBeInTheDocument()
+      cleanup()
+    }
+  })
+
   it("has no permanently-greyed rows left in the menu", () => {
     // Analytics was the last entry that was greyed for EVERYONE regardless of
     // entitlement. Job Fit and Resume Writer grey per-entitlement, so with a
@@ -181,50 +155,21 @@ describe("My Workspace — rendered menu", () => {
   })
 })
 
-// ── 2026-08-11 — Goals live for every user ────────────────────────────────
+// ── 2026-08-12 — the menu is exactly six entries ─────────────────────────
 // Rendered, not just asserted on the nav array: the greying lives in
-// SidebarScaffold's NavItem, so only a render proves the row actually clicks
-// through rather than merely carrying the right flag.
-//
-// Goals was owner-only between 2026-08-06 and 2026-08-11. The owner branch is
-// gone — there is no per-viewer input left — so these cases are about the one
-// menu everybody gets.
-describe("My Workspace — Goals live for everyone", () => {
-  it("draws Goals live", () => {
-    renderMenu()
-    expect(row("Goals")).toBeEnabled()
-    expect(row("Goals")).not.toHaveAttribute("aria-disabled", "true")
-    expect(row("Goals")).not.toHaveAttribute("title", "Temporarily unavailable")
-    expect(isGreyed("Goals")).toBe(false)
-  })
-
-  it("draws Goals live even for a user with NO entitlements at all", () => {
-    // The row is deliberately not entitlement-aware: it is a plain link, and
-    // VerticalShell redirects an unentitled visitor once they arrive. A greyed
-    // row here would need `direction-setting` spliced into the workspace menu,
-    // which it is not.
-    renderMenu([])
-    expect(row("Goals")).toBeEnabled()
-  })
-
-  it("keeps the menu in the same order it had while greyed", () => {
-    const menu = renderMenu()
+// SidebarScaffold's NavItem, and entries used to be spliced in after the array
+// was built, so only a render proves what a user actually sees.
+describe("My Workspace — the six entries", () => {
+  it("renders the same six regardless of entitlements", () => {
+    const menu = renderMenu([])
     expect(menu.map((i) => i.label)).toEqual([
+      // Exactly six as of 2026-08-12 (request). Nothing is spliced in any
+      // more — WORKSPACE_VERTICALS and WORKSPACE_VERTICAL_LINKS are both empty
+      // — so the rendered menu is the nav array, with nothing added between
+      // building it and drawing it.
       "Home",
       "Chat with Meridian",
       "Interview Practice",
-      // Analytics removed 2026-08-12 (request) — it sat between Interview
-      // Practice and Goals as a permanently greyed row.
-      "Goals",
-      "Job Fit",
-      // Resume Writer (Honor) joined My Workspace 2026-08-12. It rides the same
-      // splice as Job Fit, so it lands here — above the tail, below the
-      // primary shortcuts.
-      "Resume Writer",
-      // Document Library moved down to sit DIRECTLY above Settings on
-      // 2026-08-06. "Directly" is why it also joined MENU_TAIL_LABELS — the
-      // workspace-vertical splice (Job Fit) would otherwise land between the
-      // two and separate them.
       "Document Library",
       "Settings",
       "Help & Support",
