@@ -1,3 +1,32 @@
+## [2026-08-13] — Surveys surface: build questionnaires + select one to take
+
+A new `/surveys` surface lets a user author surveys (add questions) and pick a
+survey to take. Frontend-first: surveys and responses persist in the browser
+(`surveyStore`, localStorage) so the whole surface ships without a backend; the
+CRUD shape mirrors what a future survey-service would expose.
+
+### Added
+- **Take tab** — a selector dropdown to choose a survey, then answer it. Four
+  question types: short/long text, single choice, multiple choice, and a 1–N
+  rating scale. Required questions are validated before submit; submitting
+  records a response and shows a thank-you state.
+- **Build tab** — author a new survey or edit/delete existing ones: title,
+  description, and an ordered list of questions with per-question type, choices,
+  rating scale, required toggle, and reorder/remove.
+  - Files: `src/pages/user/SurveysPage.tsx`,
+    `src/components/survey/{SurveyBuilder,SurveyTaker,SurveySelector}.tsx`,
+    `src/hooks/useSurveys.ts`, `src/lib/surveyStore.ts`, `src/types/survey.ts`
+- **Routing + nav** — `ROUTES.SURVEYS = "/surveys"` (shared, any authenticated
+  role; page adapts chrome via `UnifiedLayout`). A "Surveys" nav item was added
+  to the manager, company-admin, practitioner, and super-admin menus. The plain
+  `user` menu is intentionally left at its fixed six items (documented decision);
+  `/surveys` remains reachable by URL for that role.
+  - Files: `src/constants/routes.ts`, `src/routes.tsx`,
+    `src/constants/navigation.ts`
+- **Tests** — `src/lib/__tests__/surveyStore.test.ts` (seed/CRUD/responses) and
+  `src/components/survey/__tests__/survey.test.tsx` (builder save, taker required
+  validation + submit, selector, page render). Full suite green (4504 tests).
+
 ## [2026-08-13] — PRISM Add+ on Home imported nothing; it filed the CSV as a document
 
 The "upload your PRISM report and nothing happens" reports traced to this
