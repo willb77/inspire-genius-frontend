@@ -45,6 +45,9 @@ import {
 import PrismIngestDialog, {
   type PrismIngestTarget,
 } from "@/components/super-admin/user-management/PrismIngestDialog";
+import PrismPdfAdminDialog, {
+  type PrismPdfTarget,
+} from "@/components/super-admin/user-management/PrismPdfAdminDialog";
 
 export default function UserManagement() {
   const pageSize = 10;
@@ -138,6 +141,12 @@ export default function UserManagement() {
   const [bulkActivating, setBulkActivating] = useState(false);
 
   // PRISM CSV ingest (per-user via Action menu, or bulk via selection)
+  const [prismPdfOpen, setPrismPdfOpen] = useState(false);
+  const [prismPdfTarget, setPrismPdfTarget] = useState<PrismPdfTarget | null>(null);
+  const openPrismPdf = useCallback((target: PrismPdfTarget) => {
+    setPrismPdfTarget(target);
+    setPrismPdfOpen(true);
+  }, []);
   const [prismIngestOpen, setPrismIngestOpen] = useState(false);
   const [prismTargets, setPrismTargets] = useState<PrismIngestTarget[]>([]);
   const openPrismIngest = useCallback((targets: PrismIngestTarget[]) => {
@@ -531,6 +540,7 @@ export default function UserManagement() {
           showActivate={row.status === "Deactivated"}
           showDelete={true}
           showImportPrism={true}
+          showPrismPdf={true}
           onView={() => openView(row)}
           onEdit={() => openEdit(row)}
           onResend={() => handleResend(row)}
@@ -539,6 +549,9 @@ export default function UserManagement() {
           onDelete={() => openDelete(row)}
           onImportPrism={() =>
             openPrismIngest([{ id: row.id, email: row.email, name: row.name }])
+          }
+          onPrismPdf={() =>
+            openPrismPdf({ id: row.id, email: row.email, name: row.name })
           }
         />
       ),
@@ -695,6 +708,12 @@ export default function UserManagement() {
       </Dialog>
 
       {/* PRISM CSV ingest (per-user or bulk) */}
+      <PrismPdfAdminDialog
+        open={prismPdfOpen}
+        onOpenChange={setPrismPdfOpen}
+        target={prismPdfTarget}
+      />
+
       <PrismIngestDialog
         open={prismIngestOpen}
         onOpenChange={setPrismIngestOpen}

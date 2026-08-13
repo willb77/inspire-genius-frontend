@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Plus } from "lucide-react";
 
+import { ReplacePrismDataButton } from "@/components/prism/ReplacePrismDataButton";
 import { useCreateAssessment } from "@/hooks/profile/useProfile";
 import type {
   AssessmentScore,
@@ -437,7 +438,21 @@ export default function AssessmentsSettings() {
           Use these for reports you already have on hand.
         </p>
       </CardHeader>
-      <CardContent className="text-left">
+      <CardContent className="space-y-4 text-left">
+        <div
+          className="flex flex-col gap-2 rounded-md border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+          data-testid="prism-data-settings"
+        >
+          <div>
+            <p className="text-sm font-medium">Your PRISM data</p>
+            <p className="text-xs text-muted-foreground">
+              Replace your PRISM scores from a raw-data CSV, and optionally your
+              report PDF. This overwrites your current PRISM profile.
+            </p>
+          </div>
+          <ReplacePrismDataButton label="Replace PRISM data" variant="outline" size="sm" />
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
