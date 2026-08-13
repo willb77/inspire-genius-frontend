@@ -44,6 +44,7 @@ const Coaches = React.lazy(() => import("@/pages/user/Coaches"));
 const CoachChat = React.lazy(() => import("@/pages/user/CoachChat"));
 const Documents = React.lazy(() => import("@/pages/user/Documents"));
 const InterviewPractice = React.lazy(() => import("@/pages/user/InterviewPracticePage"));
+const SurveysPage = React.lazy(() => import("@/pages/user/SurveysPage"));
 // Public per-occupation Interview Practice role guides (marketing/landing → coach).
 const InterviewRolesIndex = React.lazy(() => import("@/pages/interview-practice/InterviewRolesIndex"));
 const InterviewRolePage = React.lazy(() => import("@/pages/interview-practice/InterviewRolePage"));
@@ -431,6 +432,9 @@ export const routes: RouteObject[] = [
       { path: "/documents", element: withSuspense(<DocumentsSurface />) },
       { path: "/documents/classic", element: withSuspense(<Documents />) },
       { path: "/interview-practice", element: withSuspense(<InterviewPractice />) },
+      // Surveys — build questionnaires + select one to take. Reachable by any
+      // authenticated role; the page adapts its chrome via UnifiedLayout.
+      { path: "/surveys", element: withSuspense(<SurveysPage />) },
       { path: "/profile", element: withSuspense(<ProfileSurface />) },
       { path: "/profile/classic", element: withSuspense(<Profile />) },
       { path: "/settings", element: withSuspense(<UserSettingsPage />) },
