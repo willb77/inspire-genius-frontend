@@ -179,6 +179,43 @@ describe("HomeV2", () => {
     ).toBeInTheDocument();
   });
 
+  // ── PRISM Add+ must IMPORT, not just file the document ──────────────
+  //
+  // 2026-08-13: this button opened the generic tagged-upload modal. The CSV was
+  // stored with doc_kind='prism', `latest-prism` fell through to it and
+  // answered 200, so the tile ticked to done — while the user's
+  // `assessment_scores` and `prism_results` stayed EMPTY. Five users reached
+  // that state. The distinguishing signal is WHICH dialog opens: the tagged
+  // upload files a document, the replace dialog parses scores server-side.
+  describe("PRISM Add+ opens the score-importing dialog", () => {
+    it("opens the PRISM replace dialog, not the tagged-upload modal", () => {
+      wrap();
+      fireEvent.click(screen.getByTestId(PERSONAL));
+      fireEvent.click(screen.getByRole("button", { name: "Add Prism Rpt .csv" }));
+
+      // The replace dialog — it posts to /v1/prism/report/me/replace.
+      expect(screen.getByTestId("prism-replace-csv")).toBeInTheDocument();
+      expect(screen.getByTestId("prism-replace-submit")).toBeInTheDocument();
+      // ...and NOT the generic tagged-upload modal, whose heading is "Add <name>".
+      expect(
+        screen.queryByRole("heading", { name: "Add Prism Rpt .csv" }),
+      ).toBeNull();
+    });
+
+    it("still uses the tagged-upload modal for Bio", () => {
+      wrap();
+      fireEvent.click(screen.getByTestId(PERSONAL));
+      fireEvent.click(screen.getByRole("button", { name: "Add Bio" }));
+
+      // Bio IS a document: the tagged-upload modal opens...
+      expect(
+        screen.getByRole("heading", { name: "Add Bio" }),
+      ).toBeInTheDocument();
+      // ...and it must NOT get the PRISM importer.
+      expect(screen.queryByTestId("prism-replace-csv")).toBeNull();
+    });
+  });
+
   describe("layout", () => {
     // The Chat-with-Meridian CARD led the page until 2026-08-05. Asserting its
     // absence, and that the tile which sat second now leads.
