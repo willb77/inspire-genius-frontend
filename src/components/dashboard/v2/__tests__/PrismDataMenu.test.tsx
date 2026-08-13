@@ -49,7 +49,7 @@ const useMyPrismReport = jest.fn()
 const mutateAsync = jest.fn()
 jest.mock("@/hooks/prism/usePrismReportDownload", () => ({
   useMyPrismReport: () => useMyPrismReport(),
-  usePrismReportDownloadUrl: () => ({ mutateAsync, isPending: false }),
+  useMyPrismReportDownloadUrl: () => ({ mutateAsync, isPending: false }),
 }))
 
 describe("PrismDataMenu", () => {
@@ -87,10 +87,31 @@ describe("PrismDataMenu", () => {
     render(<PrismDataMenu />)
     fireEvent.click(screen.getByTestId("homev2-prism-data-pdf"))
 
+    // Request-independent: the resolver serves the caller's best PDF; no request id.
     await waitFor(() =>
-      expect(mutateAsync).toHaveBeenCalledWith({ requestId: "req-1", kind: "pdf" }),
+      expect(mutateAsync).toHaveBeenCalledWith({ kind: "pdf" }),
     )
     await waitFor(() => expect(win.location.href).toBe("https://s3.example/report.pdf"))
+    openSpy.mockRestore()
+  })
+
+  it("enables the PDF item when pdf_available even with NO request_id (William case)", async () => {
+    // Scores on file / an uploaded report but no poll-ingest row → still openable.
+    useMyPrismReport.mockReturnValue({
+      data: { available: true, pdf_available: true, request_id: null },
+    })
+    mutateAsync.mockResolvedValue({ url: "https://s3.example/generated.pdf" })
+    const win = { location: { href: "" }, close: jest.fn() }
+    const openSpy = jest.spyOn(window, "open").mockReturnValue(win as unknown as Window)
+
+    render(<PrismDataMenu />)
+    const item = screen.getByTestId("homev2-prism-data-pdf")
+    expect(item).toHaveAttribute("aria-disabled", "false")
+    expect(screen.queryByText(/your pdf isn't ready yet/i)).not.toBeInTheDocument()
+
+    fireEvent.click(item)
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ kind: "pdf" }))
+    await waitFor(() => expect(win.location.href).toBe("https://s3.example/generated.pdf"))
     openSpy.mockRestore()
   })
 
