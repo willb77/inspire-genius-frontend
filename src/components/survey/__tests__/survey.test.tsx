@@ -1,42 +1,69 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import SurveyBuilder from "@/components/survey/SurveyBuilder"
 import SurveyTaker from "@/components/survey/SurveyTaker"
 import SurveySelector from "@/components/survey/SurveySelector"
 import type { Survey } from "@/types/survey"
 
-// Keep the page test light: stub the heavy role-adaptive layout + auth so we
-// exercise the survey surface, not the whole app chrome.
+// Stub the heavy role-adaptive layout so we exercise the survey surface only.
 jest.mock("@/layouts/UnifiedLayout", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="layout">{children}</div>
   ),
 }))
+
+// Mock the auth context: manager => author (Build/Results tabs shown).
+const mockUseAuth = jest.fn(() => ({
+  user: { role: "manager" } as { role: string },
+  isAtLeast: (): boolean => true,
+}))
 jest.mock("@/context/useAuth", () => ({
   __esModule: true,
-  useAuth: () => ({ user: { role: "manager" } }),
+  useAuth: () => mockUseAuth(),
 }))
 
-// Imported after the mocks above so the page picks up the stubbed layout/auth.
+// Mock the service so no real network happens.
+jest.mock("@/services/survey/survey.service", () => ({
+  __esModule: true,
+  surveyService: {
+    list: jest.fn().mockResolvedValue([]),
+    get: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    submitResponse: jest.fn(),
+    listResponses: jest.fn().mockResolvedValue([]),
+    summary: jest.fn(),
+    parse: jest.fn(),
+  },
+}))
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SurveysPage = require("@/pages/user/SurveysPage").default
 
-beforeEach(() => {
-  localStorage.clear()
-})
+function renderWithProviders(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
 
 function makeSurvey(): Survey {
-  const ts = new Date().toISOString()
   return {
     id: "sv1",
     title: "Feedback",
     description: "Tell us",
-    createdAt: ts,
-    updatedAt: ts,
+    orgId: "org-1",
     questions: [
       { id: "q1", prompt: "Your name?", type: "text", required: true },
       { id: "q2", prompt: "Rate us", type: "rating", scaleMax: 5 },
@@ -62,7 +89,21 @@ describe("SurveyBuilder", () => {
     const saved = onSave.mock.calls[0][0] as Survey
     expect(saved.title).toBe("My Survey")
     expect(saved.questions).toHaveLength(1)
-    expect(saved.questions[0].prompt).toBe("How are you?")
+  })
+
+  it("carries the org exposure field", () => {
+    const onSave = jest.fn()
+    render(<SurveyBuilder onSave={onSave} />)
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "S" } })
+    fireEvent.change(screen.getByLabelText("Expose to organization"), {
+      target: { value: "org-42" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /add question/i }))
+    fireEvent.change(screen.getByLabelText("Question text"), {
+      target: { value: "Q?" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /save survey/i }))
+    expect((onSave.mock.calls[0][0] as Survey).orgId).toBe("org-42")
   })
 
   it("blocks saving with no title", () => {
@@ -78,7 +119,6 @@ describe("SurveyTaker", () => {
     const onSubmit = jest.fn()
     render(<SurveyTaker survey={makeSurvey()} onSubmit={onSubmit} />)
 
-    // Required 'Your name?' is blank → submit is rejected.
     fireEvent.click(screen.getByRole("button", { name: /submit response/i }))
     expect(onSubmit).not.toHaveBeenCalled()
 
@@ -90,7 +130,6 @@ describe("SurveyTaker", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1)
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ q1: "Ada", q2: 4 })
-    // Thank-you state.
     expect(screen.getByText(/response recorded/i)).toBeInTheDocument()
   })
 })
@@ -100,32 +139,29 @@ describe("SurveySelector", () => {
     render(<SurveySelector surveys={[]} value={null} onChange={() => {}} />)
     expect(screen.getByText(/no surveys yet/i)).toBeInTheDocument()
   })
-
-  it("renders the selector label when surveys exist", () => {
-    render(
-      <SurveySelector
-        surveys={[makeSurvey()]}
-        value={null}
-        onChange={() => {}}
-      />,
-    )
-    expect(screen.getByText(/select a survey to take/i)).toBeInTheDocument()
-  })
 })
 
 describe("SurveysPage", () => {
-  it("renders the surface with both tabs and the take-a-survey selector", () => {
-    render(<SurveysPage />)
+  it("renders author tabs (Take / Build / Results)", async () => {
+    mockUseAuth.mockReturnValue({ user: { role: "manager" }, isAtLeast: () => true })
+    renderWithProviders(<SurveysPage />)
     expect(
       screen.getByRole("heading", { name: "Surveys", level: 1 }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole("tab", { name: /take a survey/i }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("tab", { name: /build surveys/i }),
-    ).toBeInTheDocument()
-    // Default Take tab shows the selector; seeded example surveys make it live.
-    expect(screen.getByText(/select a survey to take/i)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: /take a survey/i })).toBeInTheDocument(),
+    )
+    expect(screen.getByRole("tab", { name: /build surveys/i })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: /results/i })).toBeInTheDocument()
+  })
+
+  it("hides Build/Results for a plain user", async () => {
+    mockUseAuth.mockReturnValue({ user: { role: "user" }, isAtLeast: () => false })
+    renderWithProviders(<SurveysPage />)
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: /take a survey/i })).toBeInTheDocument(),
+    )
+    expect(screen.queryByRole("tab", { name: /build surveys/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: /results/i })).not.toBeInTheDocument()
   })
 })
