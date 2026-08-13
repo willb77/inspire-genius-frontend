@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1479</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1480</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3055,6 +3055,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-13 &mdash; Prompt #1480 [PRISM Add+ on Home imported nothing &mdash; it filed the CSV as a document]</div>
+          <div class="prompt-text">&ldquo;Uploaded my PRISM .csv and the system is not finding it.&rdquo; The file was always found. The <b>scores</b> were never created.</div>
+          <div class="prompt-text"><b>Cause.</b> <code>Personal Info &rarr; &ldquo;Prism Rpt .csv&rdquo;</code> Add+ opened the generic tagged-upload modal &mdash; <code>upload.mutate({file, docKind})</code>, which stores a document and nothing more. The report lookup falls back to any prism-tagged document, so it answered <b>200</b> and the tile ticked to <b>done</b> while the score tables stayed empty. Several users reached that state.</div>
+          <div class="prompt-text"><b>The copy promised what it did not do:</b> <i>&ldquo;so Meridian can read your brain map in every chat&rdquo;</i> &mdash; which needs scores that were never written. Removed.</div>
+          <div class="prompt-text"><b>Fix.</b> PRISM now opens the real self-service importer, which parses server-side and rejects a CSV yielding zero scores. R&eacute;sum&eacute; / Bio / Additional Info are unchanged &mdash; those genuinely are documents. <code>ReplacePrismDataDialog</code> was extracted so the surface reuses the flow rather than re-implementing it; every existing call site is untouched.</div>
+          <div class="prompt-text"><b>A second bug found while wiring it.</b> The replace hook never invalidated the <code>latest-prism</code> query &mdash; cached 5 minutes with <code>refetchOnWindowFocus:false</code> &mdash; so a <i>successful</i> import would have left the tile showing the old state until a hard reload, looking exactly like the bug being fixed.</div>
+          <div class="prompt-text"><b>Tests assert WHICH dialog opens</b>, since both present as &ldquo;a file picker&rdquo; and a weaker assertion passes either way. Confirmed against the pre-fix code: the PRISM case fails, the Bio control passes both ways. Build + eslint clean; 116 tests across Home and the prism components/hooks, 60 more across the other call sites.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-12 &mdash; Prompt #1479 [Entitlement gate promoted to staging-b + session stored]</div>
           <div class="prompt-text">promote the backend to staging-b / store-session</div>

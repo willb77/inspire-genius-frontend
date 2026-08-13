@@ -1,3 +1,46 @@
+## [2026-08-13] — PRISM Add+ on Home imported nothing; it filed the CSV as a document
+
+The "upload your PRISM report and nothing happens" reports traced to this
+button, not to the upload or the parser.
+
+### Fixed
+- **`Personal Info → "Prism Rpt .csv"` Add+ opened the generic tagged-upload
+  modal**, whose entire action is:
+  ```js
+  upload.mutate({ file, docKind: target.docKind })   // stores a document. That's all.
+  ```
+  The CSV was stored and tagged, and **no scores were written**. The report
+  lookup then falls back to any prism-tagged document, so it answered 200 and
+  the tile ticked to **done** — while the user's score tables stayed empty.
+  Several users reached that state. The microcopy promised the opposite —
+  *"so Meridian can read your brain map in every chat"* — which requires scores
+  that were never created.
+  - PRISM now opens the real self-service importer, which parses the CSV
+    server-side and rejects one that yields zero scores. Résumé / Bio /
+    Additional Info are unchanged — those genuinely ARE documents.
+  - Files: `src/pages/user/HomeV2.tsx`
+- **`ReplacePrismDataDialog` extracted** from `ReplacePrismDataButton` so a
+  surface with its own trigger reuses the flow instead of re-implementing it.
+  The button is now a thin wrapper; every existing call site is untouched.
+  - Files: `src/components/prism/ReplacePrismDataButton.tsx`
+- **`useReplaceMyPrismReport` now invalidates `['documents','latest-prism']`** —
+  the key the Home tile and the chat auto-attach read. It caches for 5 minutes
+  with `refetchOnWindowFocus: false`, so without this a *successful* import left
+  the tile showing the pre-import state until a hard reload — indistinguishable
+  from the bug being fixed.
+  - Files: `src/hooks/prism/usePrismReportDownload.ts`
+
+### Removed
+- The misleading `promptOverride` on the PRISM Personal Info entry.
+
+### Tests
+Both paths present as "a file picker", so asserting that a file input appeared
+would pass either way. The tests assert **which dialog opens**. Verified against
+the pre-fix code: the PRISM case fails, the Bio control passes both ways.
+
+`npm run build` clean · eslint clean on touched files · 116 tests across HomeV2
+and the prism components/hooks · 60 more across the other call sites.
+
 ## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
 
 A single session could emit refresh-token requests without bound — observed at
