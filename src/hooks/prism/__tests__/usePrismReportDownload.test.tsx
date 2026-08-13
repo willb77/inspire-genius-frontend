@@ -5,20 +5,30 @@ import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import React from "react"
 import {
+  useAdminDeletePrismPdf,
+  useAdminUploadPrismPdf,
   useMyPrismReport,
   useMyPrismReportDownloadUrl,
   usePrismReportDownloadUrl,
+  useReplaceMyPrismReport,
 } from "../usePrismReportDownload"
 import {
+  adminDeleteUserPrismPdf,
+  adminUploadUserPrismPdf,
   getMyPrismReport,
   getMyPrismReportDownloadUrl,
   getPrismReportDownloadUrl,
+  replaceMyPrismReport,
 } from "@/services/prism/prismReport.service"
 
+jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 jest.mock("@/services/prism/prismReport.service", () => ({
   getMyPrismReport: jest.fn(),
   getMyPrismReportDownloadUrl: jest.fn(),
   getPrismReportDownloadUrl: jest.fn(),
+  replaceMyPrismReport: jest.fn(),
+  adminUploadUserPrismPdf: jest.fn(),
+  adminDeleteUserPrismPdf: jest.fn(),
 }))
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -97,5 +107,41 @@ describe("usePrismReportDownload", () => {
       await result.current.mutateAsync()
     })
     expect(getMyPrismReportDownloadUrl).toHaveBeenCalledWith("pdf")
+  })
+it("useReplaceMyPrismReport calls the service with csv + pdf", async () => {
+    ;(replaceMyPrismReport as jest.Mock).mockResolvedValueOnce({
+      status: true, assessment_id: "a", scores_written: 10,
+      colours: {}, pdf_replaced: true,
+    })
+    const { result } = renderHook(() => useReplaceMyPrismReport(), { wrapper })
+    const csv = new File(["x"], "s.csv", { type: "text/csv" })
+    const pdf = new File(["%PDF-1.7 x"], "r.pdf", { type: "application/pdf" })
+    await act(async () => {
+      await result.current.mutateAsync({ csv, pdf })
+    })
+    expect(replaceMyPrismReport).toHaveBeenCalledWith(csv, pdf)
+  })
+
+  it("useAdminUploadPrismPdf calls the service with userId + pdf", async () => {
+    ;(adminUploadUserPrismPdf as jest.Mock).mockResolvedValueOnce({
+      status: true, s3_key: "k", file_size: 1,
+    })
+    const { result } = renderHook(() => useAdminUploadPrismPdf(), { wrapper })
+    const pdf = new File(["%PDF-1.7 x"], "r.pdf", { type: "application/pdf" })
+    await act(async () => {
+      await result.current.mutateAsync({ userId: "u1", pdf })
+    })
+    expect(adminUploadUserPrismPdf).toHaveBeenCalledWith("u1", pdf)
+  })
+
+  it("useAdminDeletePrismPdf calls the service with userId", async () => {
+    ;(adminDeleteUserPrismPdf as jest.Mock).mockResolvedValueOnce({
+      status: true, deleted_document_rows: 1,
+    })
+    const { result } = renderHook(() => useAdminDeletePrismPdf(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync({ userId: "u1" })
+    })
+    expect(adminDeleteUserPrismPdf).toHaveBeenCalledWith("u1")
   })
 })
