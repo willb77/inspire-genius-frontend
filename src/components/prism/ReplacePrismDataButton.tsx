@@ -22,19 +22,28 @@ interface ReplacePrismDataButtonProps {
   className?: string
 }
 
+interface ReplacePrismDataDialogProps {
+  open: boolean
+  onOpenChange: (next: boolean) => void
+}
+
 /**
- * Self-service: a user replaces their OWN PRISM scores from a raw-data CSV, and
- * optionally the report PDF, in a single step. Reused on the PRISM Assessment
- * page and in user Settings. Backed by `POST /v1/prism/report/me/replace`, which
- * is scoped to the caller — a user can only replace their own data.
+ * The replace dialog on its own, with open state supplied by the caller.
+ *
+ * Split out of {@link ReplacePrismDataButton} so a surface that already has its
+ * own trigger can reuse the real import flow instead of re-implementing it. The
+ * first caller is HomeV2's "Personal Info → Prism Rpt .csv" entry, whose Add+
+ * button previously opened a *plain document upload* — it tagged the file
+ * `doc_kind='prism'` and wrote no scores, while the tile ticked to done. See the
+ * note on that catalog entry.
+ *
+ * Backed by `POST /v1/prism/report/me/replace`, which parses the CSV server-side
+ * and rejects a file that yields zero scores.
  */
-export function ReplacePrismDataButton({
-  label = "Replace PRISM Data",
-  variant = "outline",
-  size = "sm",
-  className,
-}: ReplacePrismDataButtonProps): JSX.Element {
-  const [open, setOpen] = useState(false)
+export function ReplacePrismDataDialog({
+  open,
+  onOpenChange: setOpenExternal,
+}: ReplacePrismDataDialogProps): JSX.Element {
   const [csv, setCsv] = useState<File | null>(null)
   const [pdf, setPdf] = useState<File | null>(null)
   const csvRef = useRef<HTMLInputElement>(null)
@@ -49,17 +58,99 @@ export function ReplacePrismDataButton({
   }
 
   const onOpenChange = (next: boolean): void => {
-    setOpen(next)
+    setOpenExternal(next)
     if (!next) reset()
   }
 
   const submit = (): void => {
     if (!csv) return
-    replace.mutate(
-      { csv, pdf },
-      { onSuccess: () => onOpenChange(false) },
-    )
+    replace.mutate({ csv, pdf }, { onSuccess: () => onOpenChange(false) })
   }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Replace your PRISM data</DialogTitle>
+          <DialogDescription>
+            Upload your PRISM raw-data CSV to replace your current scores. This
+            overwrites your existing PRISM profile — it does not add a second
+            one. You can optionally attach a replacement report PDF.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="prism-csv">
+              PRISM scores CSV <span className="text-destructive">*</span>
+            </Label>
+            <input
+              id="prism-csv"
+              ref={csvRef}
+              type="file"
+              accept=".csv,text/csv"
+              data-testid="prism-replace-csv"
+              onChange={(e) => setCsv(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="prism-pdf">Replacement report PDF (optional)</Label>
+            <input
+              id="prism-pdf"
+              ref={pdfRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              data-testid="prism-replace-pdf"
+              onChange={(e) => setPdf(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              If omitted, your report PDF is regenerated from the new scores.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={replace.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            data-testid="prism-replace-submit"
+            onClick={submit}
+            disabled={!csv || replace.isPending}
+          >
+            {replace.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : null}
+            Replace
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
+ * Self-service: a user replaces their OWN PRISM scores from a raw-data CSV, and
+ * optionally the report PDF, in a single step. Reused on the PRISM Assessment
+ * page and in user Settings. Backed by `POST /v1/prism/report/me/replace`, which
+ * is scoped to the caller — a user can only replace their own data.
+ */
+export function ReplacePrismDataButton({
+  label = "Replace PRISM Data",
+  variant = "outline",
+  size = "sm",
+  className,
+}: ReplacePrismDataButtonProps): JSX.Element {
+  const [open, setOpen] = useState(false)
 
   return (
     <>
@@ -75,73 +166,7 @@ export function ReplacePrismDataButton({
         {label}
       </Button>
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Replace your PRISM data</DialogTitle>
-            <DialogDescription>
-              Upload your PRISM raw-data CSV to replace your current scores.
-              This overwrites your existing PRISM profile — it does not add a
-              second one. You can optionally attach a replacement report PDF.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="prism-csv">
-                PRISM scores CSV <span className="text-destructive">*</span>
-              </Label>
-              <input
-                id="prism-csv"
-                ref={csvRef}
-                type="file"
-                accept=".csv,text/csv"
-                data-testid="prism-replace-csv"
-                onChange={(e) => setCsv(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="prism-pdf">Replacement report PDF (optional)</Label>
-              <input
-                id="prism-pdf"
-                ref={pdfRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                data-testid="prism-replace-pdf"
-                onChange={(e) => setPdf(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                If omitted, your report PDF is regenerated from the new scores.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              disabled={replace.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              data-testid="prism-replace-submit"
-              onClick={submit}
-              disabled={!csv || replace.isPending}
-            >
-              {replace.isPending ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : null}
-              Replace
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ReplacePrismDataDialog open={open} onOpenChange={setOpen} />
     </>
   )
 }
