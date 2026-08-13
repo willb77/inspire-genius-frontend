@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1478</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1479</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3055,6 +3055,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-12 &mdash; Prompt #1479 [Entitlement gate promoted to staging-b + session stored]</div>
+          <div class="prompt-text">promote the backend to staging-b / store-session</div>
+          <div class="prompt-text"><b>Promoted the entitlement gate to staging-b.</b> Tag <code>release-stable-2026-08-11-vertical-entitlement-gates</code> (<code>a7b37b99</code>). Baseline checked rather than assumed: the newest prior tag was confirmed an ancestor of <code>development</code> and the delta was exactly #865 + #866, nothing riding along. No migrations — the staging-b entitlement rows were seeded directly beforehand, and all 114 held all three keys, so the gate could not lock anyone out.</div>
+          <div class="prompt-text"><b>The proof was a probe, not a green tick.</b> <code>/v1/agents/direction-setting/stages</code> went <b>200 → 401</b> on staging-b — nothing but the new agent-engine image turns a previously unauthenticated route into a 401, so that one flip is what establishes the roll. Both <code>/health</code> routes stayed 200, confirming the <code>public_router</code> split works in production (a gated health route would have made every uptime probe report the verticals down).</div>
+          <div class="prompt-text"><b>blueprint-service could not be proven the same way</b> — its <code>/fit/*</code> routes answer 401 with or without the gate, so unauthenticated probing cannot distinguish them. Verified instead by downloading the deployed Lambda package and confirming <code>app/entitlements.py</code> is present and <code>app/routes.py</code> wires <code>JobFitGate</code>. Dev and staging-b now return identical codes on every probed path.</div>
+          <div class="prompt-text"><b>Still not observed:</b> the authenticated 200-vs-403. Minting a token means touching secrets, so that distinction rests on 20 tests, the seeded rows and the promote's own smoke matrix. One browser pass as an unentitled account closes it.</div>
+          <div class="prompt-text"><b>Session stored</b> as <code>project_vertical_entitlement_gates_session_resume</code> (grep "entitlement-gates"), indexed in MEMORY.md and cross-linked to the persistent TODO. Gathering the state surfaced that <b>FE #410 has since cut the workspace menu to six entries</b>, so the Goals row and the Job Fit splice are gone from it — a later decision, not a regression: <code>FORCE_DISABLED_VERTICALS</code> is still empty, the backend gate is intact and the entitlement rows stand, so access survives and only the shortcut placement moved.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-12 &mdash; Prompt #1478 [401 refresh/retry loop bounded &mdash; a guard that could never trip]</div>
           <div class="prompt-text">A single session emitted refresh-token requests without bound &mdash; ~2.5/sec, sustained, no logout. Every refresh returned 200; the refresh was never the problem.</div>
