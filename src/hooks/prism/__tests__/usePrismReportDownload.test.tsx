@@ -6,15 +6,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import React from "react"
 import {
   useMyPrismReport,
+  useMyPrismReportDownloadUrl,
   usePrismReportDownloadUrl,
 } from "../usePrismReportDownload"
 import {
   getMyPrismReport,
+  getMyPrismReportDownloadUrl,
   getPrismReportDownloadUrl,
 } from "@/services/prism/prismReport.service"
 
 jest.mock("@/services/prism/prismReport.service", () => ({
   getMyPrismReport: jest.fn(),
+  getMyPrismReportDownloadUrl: jest.fn(),
   getPrismReportDownloadUrl: jest.fn(),
 }))
 
@@ -61,5 +64,38 @@ describe("usePrismReportDownload", () => {
     })
     expect(getPrismReportDownloadUrl).toHaveBeenCalledWith("r1", "pdf")
     expect(url).toBe("https://s3/x.pdf")
+  })
+
+  it("useMyPrismReportDownloadUrl fetches a request-independent presigned URL", async () => {
+    ;(getMyPrismReportDownloadUrl as jest.Mock).mockResolvedValueOnce({
+      status: true,
+      url: "https://s3/me.pdf",
+      kind: "pdf",
+      filename: "me.pdf",
+      expires_in: 300,
+    })
+    const { result } = renderHook(() => useMyPrismReportDownloadUrl(), { wrapper })
+    let url = ""
+    await act(async () => {
+      const res = await result.current.mutateAsync({ kind: "pdf" })
+      url = res.url
+    })
+    expect(getMyPrismReportDownloadUrl).toHaveBeenCalledWith("pdf")
+    expect(url).toBe("https://s3/me.pdf")
+  })
+
+  it("useMyPrismReportDownloadUrl defaults kind to pdf when called with no args", async () => {
+    ;(getMyPrismReportDownloadUrl as jest.Mock).mockResolvedValueOnce({
+      status: true,
+      url: "u",
+      kind: "pdf",
+      filename: "f",
+      expires_in: 300,
+    })
+    const { result } = renderHook(() => useMyPrismReportDownloadUrl(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync()
+    })
+    expect(getMyPrismReportDownloadUrl).toHaveBeenCalledWith("pdf")
   })
 })
