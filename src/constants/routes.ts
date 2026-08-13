@@ -12,6 +12,8 @@ export const ROUTES = {
   INTERVIEW_PRACTICE: "/interview-practice",
   /** Public per-occupation Interview Practice role guides (index + `/interview-practice/:slug`). */
   INTERVIEW_PRACTICE_ROLES: "/interview-practice/roles",
+  /** Surveys — build questionnaires and select one to take (browser-local). */
+  SURVEYS: "/surveys",
   PROFILE: "/profile",
   USER: {
     PROFILE: "/profile",
