@@ -75,6 +75,12 @@ export function useReplaceMyPrismReport() {
       qc.invalidateQueries({ queryKey: ['prism', 'report', 'me'] })
       qc.invalidateQueries({ queryKey: ['prism-history'] })
       qc.invalidateQueries({ queryKey: ['prism-report'] })
+      // The surface that shows "do you have a PRISM report?" — HomeV2's
+      // Personal Info tile and the chat auto-attach — reads THIS key, and it
+      // caches for 5 minutes with `refetchOnWindowFocus: false`. Without this
+      // line a successful replace leaves the tile showing the pre-import state
+      // until a hard reload, which reads as "it didn't work".
+      qc.invalidateQueries({ queryKey: ['documents', 'latest-prism'] })
       toast.success(
         `PRISM data replaced — ${data.scores_written} scores` +
           (data.pdf_replaced ? ' + PDF updated.' : '.'),

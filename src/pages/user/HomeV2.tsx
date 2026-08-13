@@ -35,6 +35,7 @@ import {
   type AddPersonalDocTarget,
 } from "@/components/dashboard/v2/AddPersonalDocModal";
 import { PrismDataMenu } from "@/components/dashboard/v2/PrismDataMenu";
+import { ReplacePrismDataDialog } from "@/components/prism/ReplacePrismDataButton";
 import { useAgentConversation } from "@/hooks/agents/useAgentConversation";
 import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
 
@@ -244,11 +245,13 @@ const PERSONAL_INFO_CATALOG: {
   promptOverride?: string;
 }[] = [
   {
+    // NOTE: this entry does NOT use the tagged-upload modal — see
+    // `openAddPersonalInfo`. It opens the PRISM import dialog, which parses the
+    // CSV into scores. `docKind` is retained because it is what identifies this
+    // row as the PRISM one; `accept`/`promptOverride` are unused for it.
     name: "Prism Rpt .csv",
     docKind: PRISM_DOC_KIND,
     accept: ".csv,text/csv",
-    promptOverride:
-      "Upload your PRISM report (.csv). We'll tag it as your PRISM result so Meridian can read your brain map in every chat.",
   },
   { name: "Resume", docKind: "resume", matches: ["resume", "cv"] },
   { name: "Bio", docKind: "bio", matches: ["bio"] },
@@ -261,6 +264,8 @@ export default function HomeV2() {
   const navigate = useNavigate();
   const [personalTarget, setPersonalTarget] =
     useState<AddPersonalDocTarget | null>(null);
+  // PRISM has its own dialog — it imports scores rather than filing a document.
+  const [prismReplaceOpen, setPrismReplaceOpen] = useState(false);
   // First name for the page greeting (restored 2026-08-06). Falls back through
   // fullName → name → "there" so the heading never renders "Welcome ,".
   const firstName =
@@ -387,18 +392,33 @@ export default function HomeV2() {
     navigate(ROUTES.PRISM_ASSESSMENT);
   };
 
-  // PRISM / Resume / Bio / Additional Info → open the tagged-upload modal,
-  // which uploads the file with the right doc_kind so the profile loader can
-  // inject it.
+  // Resume / Bio / Additional Info → the tagged-upload modal, which uploads the
+  // file with the right doc_kind so the profile loader can inject it.
+  //
+  // PRISM is NOT one of those. A PRISM CSV has to be PARSED into
+  // `assessment_scores` + `prism_results` before anything can read it, and a
+  // tagged upload does none of that. Until 2026-08-13 this entry went through
+  // the same upload path as the others, which meant:
+  //   * the file was stored and tagged `doc_kind='prism'`,
+  //   * `GET /v1/documents/latest-prism` fell through to that raw file and
+  //     answered 200, so this tile ticked to DONE,
+  //   * and the user's score tables stayed empty.
+  // Five users reached that state before anyone noticed. So PRISM routes to the
+  // real self-service import (`POST /v1/prism/report/me/replace`), which parses
+  // server-side and refuses a CSV that yields zero scores.
   const openAddPersonalInfo = (name: string): void => {
     const entry = PERSONAL_INFO_CATALOG.find((p) => p.name === name);
-    if (entry)
-      setPersonalTarget({
-        name: entry.name,
-        docKind: entry.docKind,
-        accept: entry.accept,
-        promptOverride: entry.promptOverride,
-      });
+    if (!entry) return;
+    if (entry.docKind === PRISM_DOC_KIND) {
+      setPrismReplaceOpen(true);
+      return;
+    }
+    setPersonalTarget({
+      name: entry.name,
+      docKind: entry.docKind,
+      accept: entry.accept,
+      promptOverride: entry.promptOverride,
+    });
   };
 
   return (
@@ -502,6 +522,13 @@ export default function HomeV2() {
             onOpenChange={(open) => {
               if (!open) setPersonalTarget(null);
             }}
+          />
+
+          {/* PRISM's own path: parses the CSV into scores server-side rather
+              than filing it as a document. */}
+          <ReplacePrismDataDialog
+            open={prismReplaceOpen}
+            onOpenChange={setPrismReplaceOpen}
           />
         </div>
       </div>
