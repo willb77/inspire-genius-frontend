@@ -4,6 +4,7 @@
 import { api } from "@/lib/axios"
 import {
   getMyPrismReport,
+  getMyPrismReportDownloadUrl,
   getPrismReportDownloadUrl,
 } from "../prismReport.service"
 
@@ -45,6 +46,29 @@ describe("prismReport.service", () => {
     await getPrismReportDownloadUrl("r2")
     expect(mockApi.get).toHaveBeenCalledWith(
       "/v1/prism/requests/r2/report/download",
+      { params: { kind: "pdf" } },
+    )
+  })
+
+  it("getMyPrismReportDownloadUrl GETs the request-independent route", async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: { status: true, url: "https://s3/me.pdf", kind: "pdf", filename: "me.pdf", expires_in: 300 },
+    })
+    const res = await getMyPrismReportDownloadUrl("pdf")
+    expect(mockApi.get).toHaveBeenCalledWith(
+      "/v1/prism/report/me/download",
+      { params: { kind: "pdf" } },
+    )
+    expect(res.url).toBe("https://s3/me.pdf")
+  })
+
+  it("getMyPrismReportDownloadUrl defaults kind to pdf", async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: { status: true, url: "u", kind: "pdf", filename: "f", expires_in: 300 },
+    })
+    await getMyPrismReportDownloadUrl()
+    expect(mockApi.get).toHaveBeenCalledWith(
+      "/v1/prism/report/me/download",
       { params: { kind: "pdf" } },
     )
   })

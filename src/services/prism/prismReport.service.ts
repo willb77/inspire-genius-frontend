@@ -48,3 +48,22 @@ export async function getPrismReportDownloadUrl(
   )
   return resp.data
 }
+
+/**
+ * Request-independent download of the caller's own PRISM report.
+ *
+ * Unlike {@link getPrismReportDownloadUrl}, this needs no `request_id`, so it
+ * works for candidates who have no poll-ingest row at all (e.g. a report that
+ * arrived via CSV import). The backend resolver serves the caller's best real
+ * PDF — an ingested artifact, a genuine uploaded PRISM PDF, or one rendered from
+ * their scores — so it never returns the header-only placeholder.
+ */
+export async function getMyPrismReportDownloadUrl(
+  kind: 'pdf' | 'csv' = 'pdf',
+): Promise<PrismReportDownload> {
+  const resp = await api.get<PrismReportDownload>(
+    `${BASE}/report/me/download`,
+    { params: { kind } },
+  )
+  return resp.data
+}
