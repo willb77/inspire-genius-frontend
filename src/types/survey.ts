@@ -5,9 +5,10 @@
  * description, and an ordered list of questions. A **SurveyResponse** is one
  * completed run of a survey — the answers keyed by question id.
  *
- * These are frontend-first (persisted in the browser via `surveyStore`), so the
- * shapes are deliberately serialisation-friendly (plain JSON, no Dates). When a
- * survey-service lands, this is the contract the API envelope will mirror.
+ * These mirror the survey-service API contract (camelCase JSON under the
+ * `BaseApiResponse.data` envelope). Surveys are stored centrally so responses
+ * aggregate across every respondent; each survey is exposed to an organization
+ * by `orgId`.
  */
 
 /** How a question is answered. */
@@ -34,9 +35,26 @@ export interface Survey {
   title: string
   description?: string
   questions: SurveyQuestion[]
+  /** The organization this survey is exposed to. */
+  orgId?: string | null
+  /** Author's id (JWT sub). */
+  createdBy?: string | null
   /** ISO timestamps. */
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
+  /** How many responses exist (server-computed). */
+  responseCount?: number
+  /** Whether the caller may view individual responses + the compilation. */
+  canViewResponses?: boolean
+}
+
+/** Create/update payload sent to the service. */
+export interface SurveyInput {
+  title: string
+  description?: string
+  questions: SurveyQuestion[]
+  /** Expose to this org. Omit to default to the author's org (server-resolved). */
+  orgId?: string | null
 }
 
 /** A single answer value — shape depends on the question type. */
@@ -47,7 +65,41 @@ export interface SurveyResponse {
   surveyId: string
   /** questionId -> answer value. */
   answers: Record<string, SurveyAnswerValue>
-  submittedAt: string
+  respondentSub?: string | null
+  submittedAt?: string
+}
+
+/** Per-question aggregate in a survey's compilation. */
+export interface QuestionSummary {
+  questionId: string
+  prompt: string
+  type: SurveyQuestionType
+  answered: number
+  /** single/multi: option -> count. */
+  optionCounts: Record<string, number>
+  /** rating: mean of submitted values. */
+  average?: number | null
+  /** rating: value -> count histogram. */
+  ratingCounts: Record<string, number>
+  /** text: every free-text answer. */
+  textAnswers: string[]
+}
+
+/** The compilation across every response to a survey. */
+export interface SurveySummary {
+  surveyId: string
+  title: string
+  responseCount: number
+  questions: QuestionSummary[]
+}
+
+/** Result of the AI-assisted upload/paste → draft parse. */
+export interface SurveyParseResult {
+  title: string
+  description?: string | null
+  questions: SurveyQuestion[]
+  /** "llm" when the model structured it, "heuristic" for the deterministic parser. */
+  source: string
 }
 
 /** Human labels for the question types (builder dropdown + take view). */
