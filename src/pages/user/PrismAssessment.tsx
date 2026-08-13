@@ -15,7 +15,7 @@ import { usePrismHistory } from '@/hooks/prism/usePrismHistory'
 import { usePrismImport } from '@/hooks/prism/usePrismImport'
 import {
   useMyPrismReport,
-  usePrismReportDownloadUrl,
+  useMyPrismReportDownloadUrl,
 } from '@/hooks/prism/usePrismReportDownload'
 import { ASSESSMENT_STATUS } from '@/constants/prism'
 
@@ -38,18 +38,15 @@ export default function PrismAssessment() {
   // Real PRISM report (the genuine PRISM Brain Mapping PDF from the poll-ingest
   // pipeline) — distinct from the docgen Self-Portrait.
   const { data: myReport } = useMyPrismReport(!!user?.id)
-  const downloadUrl = usePrismReportDownloadUrl()
+  const downloadUrl = useMyPrismReportDownloadUrl()
   const [pdfViewer, setPdfViewer] = useState<{ url: string; name: string } | null>(
     null,
   )
 
   async function handleViewPrismPdf() {
-    if (!myReport?.request_id) return
+    if (!myReport?.pdf_available) return
     try {
-      const res = await downloadUrl.mutateAsync({
-        requestId: myReport.request_id,
-        kind: 'pdf',
-      })
+      const res = await downloadUrl.mutateAsync({ kind: 'pdf' })
       setPdfViewer({ url: res.url, name: res.filename })
     } catch {
       toast.error('Could not open your PRISM report. Please try again.')
@@ -88,7 +85,7 @@ export default function PrismAssessment() {
           <div className="flex items-center gap-2">
             {/* Download the real PRISM report PDF (ingested from PRISM), when
                 one is available for this user. Distinct from the Self-Portrait. */}
-            {myReport?.available && myReport?.pdf_available && myReport.request_id && (
+            {myReport?.available && myReport?.pdf_available && (
               <Button
                 size="sm"
                 onClick={handleViewPrismPdf}

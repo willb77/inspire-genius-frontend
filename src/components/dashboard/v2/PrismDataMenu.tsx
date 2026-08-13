@@ -40,7 +40,7 @@ import {
 import { PrismSelfMapContent } from "@/components/prism/PrismSelfMapContent"
 import {
   useMyPrismReport,
-  usePrismReportDownloadUrl,
+  useMyPrismReportDownloadUrl,
 } from "@/hooks/prism/usePrismReportDownload"
 
 /**
@@ -50,17 +50,20 @@ import {
  */
 function PrismReportPdfItem(): JSX.Element {
   const { data: report, isLoading } = useMyPrismReport()
-  const download = usePrismReportDownloadUrl()
-  const pdfReady = Boolean(report?.pdf_available && report?.request_id)
+  const download = useMyPrismReportDownloadUrl()
+  // Availability no longer requires a poll-ingest row: the resolver serves the
+  // caller's best real PDF (uploaded document or rendered-from-scores) even when
+  // request_id is absent — the case that used to read "your PDF isn't ready".
+  const pdfReady = Boolean(report?.pdf_available)
 
   const openPdf = (): void => {
-    if (!pdfReady || !report?.request_id) return
+    if (!pdfReady) return
     // Open the tab synchronously inside the click gesture, then redirect it to
     // the presigned URL once it resolves — otherwise the async hop trips the
     // popup blocker and the report silently never appears.
     const win = window.open("", "_blank", "noopener,noreferrer")
     download
-      .mutateAsync({ requestId: report.request_id, kind: "pdf" })
+      .mutateAsync({ kind: "pdf" })
       .then(({ url }) => {
         if (win) win.location.href = url
         else window.location.href = url
