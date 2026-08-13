@@ -48,6 +48,8 @@ export type ActionMenuProps<Row = unknown> = {
   onCoaches?: (row?: Row) => void;
   showImportPrism?: boolean;
   onImportPrism?: (row?: Row) => void;
+  showPrismPdf?: boolean;
+  onPrismPdf?: (row?: Row) => void;
 };
 
 export default function ActionMenu<Row = unknown>({
@@ -72,6 +74,8 @@ export default function ActionMenu<Row = unknown>({
   onCoaches,
   showImportPrism = false,
   onImportPrism,
+  showPrismPdf = false,
+  onPrismPdf,
 }: ActionMenuProps<Row>) {
   return (
     <DropdownMenu>
@@ -155,6 +159,11 @@ export default function ActionMenu<Row = unknown>({
           </DropdownMenuItem>
         )}
 
+        {showPrismPdf && (
+          <DropdownMenuItem onClick={() => onPrismPdf?.(row)}>
+            <FileUp className="w-4 h-4 mr-2 text-teal-600" /> Upload / Delete PRISM PDF
+          </DropdownMenuItem>
+        )}
         {showImportPrism && (
           <DropdownMenuItem onClick={() => onImportPrism?.(row)}>
             <FileUp className="w-4 h-4 mr-2 text-indigo-500" /> Upload PRISM CSV
