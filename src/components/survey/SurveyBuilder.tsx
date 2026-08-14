@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createDraftQuestion, createDraftSurvey } from "@/lib/surveyStore"
+import { createDraftQuestion, createDraftSurvey } from "@/lib/surveyDraft"
 import type {
   Survey,
   SurveyQuestion,
@@ -145,6 +145,7 @@ export default function SurveyBuilder({
       ...draft,
       title: draft.title.trim(),
       description: draft.description?.trim() || undefined,
+      orgId: draft.orgId?.trim() || undefined,
       questions: draft.questions.map((q) => ({
         ...q,
         prompt: q.prompt.trim(),
@@ -192,6 +193,19 @@ export default function SurveyBuilder({
               placeholder="What is this survey for?"
               rows={2}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="survey-org">Expose to organization</Label>
+            <Input
+              id="survey-org"
+              value={draft.orgId ?? ""}
+              onChange={(e) => patch({ orgId: e.target.value })}
+              placeholder="Organization ID (leave blank to use your own)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Members of this organization will see the survey in their Settings →
+              My Workspace. Leave blank to expose it to your own organization.
+            </p>
           </div>
         </CardContent>
       </Card>

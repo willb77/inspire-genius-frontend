@@ -30,6 +30,38 @@ PR #391 (merged, `930798a`). A related stale-branch merge hazard —
 `feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
 nav evolution if merged without rebasing — is tracked as issue #399.
 
+## [2026-08-13] — Surveys: backend-backed, org exposure, results/compilation, upload-to-build
+
+The Survey surface now stores surveys + responses **centrally** (survey-service),
+so results aggregate across every respondent. Retires the browser-local store.
+
+### Added
+- **Results tab** (author/manager+): a per-question **compilation** across all
+  respondents (choice distributions, rating averages + histograms, all free-text
+  answers) plus each **individual response**.
+  - Files: `src/components/survey/SurveyResults.tsx`
+- **Upload / paste to build**: upload a file (txt/md/pdf/doc/docx) or paste
+  questions + answers + a freeform request; the survey-service parses it (AI-assisted,
+  fail-open) into a draft you review in the builder.
+  - Files: `src/components/survey/SurveyUploadDialog.tsx`
+- **Org exposure**: the builder gained an "Expose to organization" field; a user's
+  take-list shows only surveys exposed to their organization.
+- **Settings → My Workspace → Surveys**: the user-role entry point — lists surveys
+  shared with the user's organization, each linking into the take flow.
+  - Files: `src/components/settings/SurveysSettingsCard.tsx`,
+    `src/components/shared/settings/Settings.tsx`
+
+### Changed
+- Data layer swapped from browser localStorage to the survey-service via
+  `src/services/survey/survey.service.ts` + React Query hooks
+  `src/hooks/survey/useSurveys.ts`. `src/types/survey.ts` extended (orgId,
+  responseCount, canViewResponses, summary/response shapes). Build/Results tabs are
+  gated to authors (manager+); plain users see only Take.
+
+### Removed
+- `src/lib/surveyStore.ts` + `src/hooks/useSurveys.ts` (localStorage store), replaced
+  by the service + hooks above.
+
 ## [2026-08-13] — Surveys surface: build questionnaires + select one to take
 
 A new `/surveys` surface lets a user author surveys (add questions) and pick a
