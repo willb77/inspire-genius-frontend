@@ -1,16 +1,20 @@
 /**
- * /surveys — the Survey surface.
+ * /surveys — the Survey surface, backed by the survey-service.
  *
- * Two tabs:
- *   • Take  — a selector to pick a survey, then answer + submit it.
- *   • Build — author a new survey (add questions) or edit/delete existing ones.
+ * Tabs (Build/Results shown to authors — manager+ — only):
+ *   • Take    — pick a survey exposed to your org, answer + submit it.
+ *   • Build   — author a survey (manual, or upload/paste to auto-draft), expose
+ *               it to an organization, edit/delete existing ones.
+ *   • Results — pick a survey and see the compilation across all respondents
+ *               plus each individual response.
  *
- * Data is browser-local (see `surveyStore`), so the whole surface works without
- * a backend. The layout is role-adaptive (`UnifiedLayout role={…}`) so managers,
- * practitioners, admins and users each keep their own chrome.
+ * Data is server-side (React Query hooks). Plain users see only the Take tab;
+ * they also reach their org's surveys from Settings → My Workspace.
  */
-import { useMemo, useState } from "react"
-import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useLocation } from "react-router-dom"
+import { ClipboardList, Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 import UnifiedLayout from "@/layouts/UnifiedLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,36 +23,99 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
-import { useSurveys } from "@/hooks/useSurveys"
-import { countResponses } from "@/lib/surveyStore"
-import type { Survey } from "@/types/survey"
+import {
+  useCreateSurvey,
+  useDeleteSurvey,
+  useSubmitResponse,
+  useSurveys,
+  useUpdateSurvey,
+} from "@/hooks/survey/useSurveys"
+import type { Survey, SurveyInput } from "@/types/survey"
 import SurveySelector from "@/components/survey/SurveySelector"
 import SurveyTaker from "@/components/survey/SurveyTaker"
 import SurveyBuilder from "@/components/survey/SurveyBuilder"
+import SurveyResults from "@/components/survey/SurveyResults"
+import SurveyUploadDialog from "@/components/survey/SurveyUploadDialog"
 
 type BuilderState =
   | { mode: "list" }
-  | { mode: "new" }
+  | { mode: "new"; draft?: Survey }
   | { mode: "edit"; survey: Survey }
 
+function toInput(s: Survey): SurveyInput {
+  return {
+    title: s.title,
+    description: s.description,
+    questions: s.questions,
+    orgId: s.orgId ?? undefined,
+  }
+}
+
 export default function SurveysPage() {
-  const { user } = useAuth()
-  const role: UserRole = (user?.role as UserRole) ?? "user"
+  const auth = useAuth()
+  const role: UserRole = (auth.user?.role as UserRole) ?? "user"
+  const isAuthor =
+    typeof auth.isAtLeast === "function" ? auth.isAtLeast("manager") : false
 
-  const { surveys, upsertSurvey, removeSurvey, submitResponse } = useSurveys()
+  const [tab, setTab] = useState<"take" | "build" | "results">("take")
 
-  const [tab, setTab] = useState<"take" | "build">("take")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const takeQuery = useSurveys("take")
+  const manageQuery = useSurveys("manage")
+  const createSurvey = useCreateSurvey()
+  const updateSurvey = useUpdateSurvey()
+  const deleteSurvey = useDeleteSurvey()
+  const submitResponse = useSubmitResponse()
+
+  const takeSurveys = useMemo(() => takeQuery.data ?? [], [takeQuery.data])
+  const manageSurveys = useMemo(() => manageQuery.data ?? [], [manageQuery.data])
+
+  // Preselect a survey when arriving from Settings → My Workspace.
+  const location = useLocation()
+  const seededSurveyId = (location.state as { surveyId?: string } | null)?.surveyId ?? null
+  const [selectedTakeId, setSelectedTakeId] = useState<string | null>(seededSurveyId)
+  const [selectedResultsId, setSelectedResultsId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (seededSurveyId) {
+      setSelectedTakeId(seededSurveyId)
+      setTab("take")
+    }
+  }, [seededSurveyId])
   const [builder, setBuilder] = useState<BuilderState>({ mode: "list" })
+  const [uploadOpen, setUploadOpen] = useState(false)
 
-  const selectedSurvey = useMemo(
-    () => surveys.find((s) => s.id === selectedId) ?? null,
-    [surveys, selectedId],
+  const selectedTake = useMemo(
+    () => takeSurveys.find((s) => s.id === selectedTakeId) ?? null,
+    [takeSurveys, selectedTakeId],
+  )
+  const selectedResults = useMemo(
+    () => manageSurveys.find((s) => s.id === selectedResultsId) ?? null,
+    [manageSurveys, selectedResultsId],
   )
 
-  const handleSaveSurvey = (survey: Survey) => {
-    upsertSurvey(survey)
-    setBuilder({ mode: "list" })
+  const handleSaveSurvey = (s: Survey) => {
+    const input = toInput(s)
+    const isExisting = builder.mode === "edit"
+    const mut = isExisting
+      ? updateSurvey.mutateAsync({ id: (builder as { survey: Survey }).survey.id, input })
+      : createSurvey.mutateAsync(input)
+    mut
+      .then(() => {
+        toast.success(isExisting ? "Survey updated." : "Survey created.")
+        setBuilder({ mode: "list" })
+      })
+      .catch(() => toast.error("Could not save the survey."))
+  }
+
+  const handleDelete = (id: string) => {
+    deleteSurvey
+      .mutateAsync(id)
+      .then(() => toast.success("Survey deleted."))
+      .catch(() => toast.error("Could not delete the survey."))
+  }
+
+  const handleSubmitResponse = (surveyId: string, answers: Record<string, unknown>) => {
+    submitResponse.mutate({ surveyId, answers: answers as never })
   }
 
   return (
@@ -61,43 +128,47 @@ export default function SurveysPage() {
           <div>
             <h1 className="text-2xl font-semibold">Surveys</h1>
             <p className="text-sm text-muted-foreground">
-              Build a survey, then select one to take.
+              {isAuthor
+                ? "Build a survey, expose it to your organization, and see the results."
+                : "Take the surveys shared with your organization."}
             </p>
           </div>
         </header>
 
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as "take" | "build")}
-        >
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="mb-4">
             <TabsTrigger value="take">Take a survey</TabsTrigger>
-            <TabsTrigger value="build">Build surveys</TabsTrigger>
+            {isAuthor && <TabsTrigger value="build">Build surveys</TabsTrigger>}
+            {isAuthor && <TabsTrigger value="results">Results</TabsTrigger>}
           </TabsList>
 
           {/* -------------------------------------------------------- Take --- */}
           <TabsContent value="take" className="space-y-6">
             <Card>
               <CardContent className="pt-6">
-                <SurveySelector
-                  surveys={surveys}
-                  value={selectedId}
-                  onChange={setSelectedId}
-                />
+                {takeQuery.isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading surveys…
+                  </div>
+                ) : (
+                  <SurveySelector
+                    surveys={takeSurveys}
+                    value={selectedTakeId}
+                    onChange={setSelectedTakeId}
+                  />
+                )}
               </CardContent>
             </Card>
 
-            {selectedSurvey ? (
+            {selectedTake ? (
               <SurveyTaker
-                key={selectedSurvey.id}
-                survey={selectedSurvey}
-                onSubmit={(answers) =>
-                  submitResponse(selectedSurvey.id, answers)
-                }
-                onDone={() => setSelectedId(null)}
+                key={selectedTake.id}
+                survey={selectedTake}
+                onSubmit={(answers) => handleSubmitResponse(selectedTake.id, answers)}
+                onDone={() => setSelectedTakeId(null)}
               />
             ) : (
-              surveys.length > 0 && (
+              takeSurveys.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
                   Pick a survey above to begin.
                 </p>
@@ -106,94 +177,144 @@ export default function SurveysPage() {
           </TabsContent>
 
           {/* ------------------------------------------------------- Build --- */}
-          <TabsContent value="build" className="space-y-4">
-            {builder.mode === "list" && (
-              <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-medium">Your surveys</h2>
-                  <Button onClick={() => setBuilder({ mode: "new" })}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New survey
-                  </Button>
-                </div>
-
-                {surveys.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                      No surveys yet. Click <strong>New survey</strong> to add
-                      your questions.
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-3">
-                    {surveys.map((s) => (
-                      <Card key={s.id} data-testid={`survey-row-${s.id}`}>
-                        <CardHeader className="flex flex-row items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <CardTitle className="text-base">
-                              {s.title || "Untitled survey"}
-                            </CardTitle>
-                            {s.description && (
-                              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                                {s.description}
-                              </p>
-                            )}
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              <Badge variant="secondary">
-                                {s.questions.length}{" "}
-                                {s.questions.length === 1
-                                  ? "question"
-                                  : "questions"}
-                              </Badge>
-                              <Badge variant="outline">
-                                {countResponses(s.id)} responses
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setBuilder({ mode: "edit", survey: s })
-                              }
-                              aria-label={`Edit ${s.title || "survey"}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSurvey(s.id)}
-                              aria-label={`Delete ${s.title || "survey"}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
+          {isAuthor && (
+            <TabsContent value="build" className="space-y-4">
+              {builder.mode === "list" && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-medium">Your surveys</h2>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setUploadOpen(true)}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Upload / paste
+                      </Button>
+                      <Button onClick={() => setBuilder({ mode: "new" })}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        New survey
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
 
-            {builder.mode === "new" && (
-              <SurveyBuilder
-                onSave={handleSaveSurvey}
-                onCancel={() => setBuilder({ mode: "list" })}
-              />
-            )}
+                  {manageQuery.isLoading ? (
+                    <Card>
+                      <CardContent className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                      </CardContent>
+                    </Card>
+                  ) : manageSurveys.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                        No surveys yet. Click <strong>New survey</strong> to add your
+                        questions, or <strong>Upload / paste</strong> to build one from
+                        text.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {manageSurveys.map((s) => (
+                        <Card key={s.id} data-testid={`survey-row-${s.id}`}>
+                          <CardHeader className="flex flex-row items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <CardTitle className="text-base">
+                                {s.title || "Untitled survey"}
+                              </CardTitle>
+                              {s.description && (
+                                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                                  {s.description}
+                                </p>
+                              )}
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <Badge variant="secondary">
+                                  {s.questions.length}{" "}
+                                  {s.questions.length === 1 ? "question" : "questions"}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {s.responseCount ?? 0} responses
+                                </Badge>
+                                {s.orgId && (
+                                  <Badge variant="outline">org: {s.orgId}</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setBuilder({ mode: "edit", survey: s })}
+                                aria-label={`Edit ${s.title || "survey"}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(s.id)}
+                                aria-label={`Delete ${s.title || "survey"}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
 
-            {builder.mode === "edit" && (
-              <SurveyBuilder
-                initial={builder.survey}
-                onSave={handleSaveSurvey}
-                onCancel={() => setBuilder({ mode: "list" })}
-              />
-            )}
-          </TabsContent>
+              {builder.mode === "new" && (
+                <SurveyBuilder
+                  initial={builder.draft}
+                  onSave={handleSaveSurvey}
+                  onCancel={() => setBuilder({ mode: "list" })}
+                />
+              )}
+
+              {builder.mode === "edit" && (
+                <SurveyBuilder
+                  initial={builder.survey}
+                  onSave={handleSaveSurvey}
+                  onCancel={() => setBuilder({ mode: "list" })}
+                />
+              )}
+            </TabsContent>
+          )}
+
+          {/* ----------------------------------------------------- Results --- */}
+          {isAuthor && (
+            <TabsContent value="results" className="space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <SurveySelector
+                    surveys={manageSurveys}
+                    value={selectedResultsId}
+                    onChange={setSelectedResultsId}
+                    label="Select a survey to see results"
+                    id="results-selector"
+                  />
+                </CardContent>
+              </Card>
+              {selectedResults ? (
+                <SurveyResults key={selectedResults.id} survey={selectedResults} />
+              ) : (
+                manageSurveys.length > 0 && (
+                  <p className="text-center text-sm text-muted-foreground">
+                    Pick a survey above to see its results.
+                  </p>
+                )
+              )}
+            </TabsContent>
+          )}
         </Tabs>
+
+        <SurveyUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          onDraft={(draft) => {
+            setBuilder({ mode: "new", draft })
+            setTab("build")
+          }}
+        />
       </div>
     </UnifiedLayout>
   )
