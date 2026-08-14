@@ -383,6 +383,7 @@ export const DISTRIBUTOR_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.DISTRIBUTOR.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.DISTRIBUTOR.NETWORK, icon: Network, label: "Network" },
   { to: ROUTES.DISTRIBUTOR.ANALYTICS, icon: BarChart3, label: "Analytics" },
+  { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   { to: ROUTES.DISTRIBUTOR.SETTINGS, icon: Settings, label: "Settings" },
 ]
 

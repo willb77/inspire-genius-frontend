@@ -3,15 +3,14 @@
  *
  * Access is two role SETS, not a seniority rank (mirrored server-side in
  * survey-service `app/authz.py` — this file only decides what to RENDER):
- *   • author     = manager, company-admin, practitioner, super-admin → Build + Results
- *   • respondent = user, super-admin                                 → Take
- * Only `distributor` has neither, and the Surveys nav entry is absent for it;
- * reaching /surveys by URL shows a no-access card rather than an empty page
- * that looks broken.
+ *   • author     = every role EXCEPT plain `user`  → Build + Results
+ *   • respondent = every role                      → Take
+ * So a plain `user` sees only Take, and everyone else sees all three tabs and
+ * can answer their own survey.
  *
- * Note the asymmetry: an author who is not a super-admin sees Build + Results
- * but NOT Take — they cannot answer a survey, including their own. That is the
- * stated rule, not a bug.
+ * The no-access card below is consequently unreachable for the six known roles.
+ * It is kept as the fallback for an unrecognised role string rather than
+ * deleted, so a future role defaults to no access instead of full access.
  *
  * Tabs:
  *   • Take    — pick a survey exposed to your org, answer + submit it.
@@ -66,16 +65,20 @@ function toInput(s: Survey): SurveyInput {
 export default function SurveysPage() {
   const auth = useAuth()
   const role: UserRole = (auth.user?.role as UserRole) ?? "user"
-  // Exact-role sets, deliberately NOT `isAtLeast`. A seniority threshold cannot
-  // express either half of this rule: "users but not managers" for taking, and
-  // "not distributors" for authoring — ROLE_HIERARCHY ranks distributor ABOVE
-  // practitioner, so `isAtLeast("manager")` would hand them authoring too.
-  const isAuthor =
-    role === "manager" ||
-    role === "company-admin" ||
-    role === "practitioner" ||
-    role === "super-admin"
-  const canTake = role === "user" || role === "super-admin"
+  // Explicit sets rather than `isAtLeast`. The values currently coincide with a
+  // rank test, but membership here is a product decision that has changed three
+  // times in a day — a set states which roles are intended, where `>=` states
+  // only "senior enough" and silently absorbs any role added to the hierarchy.
+  const AUTHOR_ROLES: readonly string[] = [
+    "manager",
+    "company-admin",
+    "practitioner",
+    "distributor",
+    "super-admin",
+  ]
+  const RESPONDENT_ROLES: readonly string[] = ["user", ...AUTHOR_ROLES]
+  const isAuthor = AUTHOR_ROLES.includes(role)
+  const canTake = RESPONDENT_ROLES.includes(role)
   const hasAnyAccess = isAuthor || canTake
 
   // An author who cannot take (manager / company-admin / practitioner) has no
@@ -158,9 +161,8 @@ export default function SurveysPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Surveys are built by managers, company admins, practitioners and
-              super-admins, and answered by users. Your account has neither
-              role, so there is nothing to show here.
+              Your account&apos;s role is not recognised by the survey surface,
+              so there is nothing to show here.
             </CardContent>
           </Card>
         </div>

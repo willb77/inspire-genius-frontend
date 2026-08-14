@@ -1,13 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * Who sees what on /surveys. The rule is two role SETS, not a rank:
- *   author     = manager, company-admin, practitioner, super-admin → Build + Results
- *   respondent = user, super-admin                                 → Take
- * Only `distributor` has neither, and gets a no-access card.
- *
- * The interesting case is the ASYMMETRY: a non-super-admin author sees Build
- * and Results but no Take — it may build a survey it cannot answer.
+ * Who sees what on /surveys:
+ *   author     = every role EXCEPT plain `user` → Build + Results
+ *   respondent = every role                     → Take
+ * So `user` sees Take only; every other role sees all three tabs.
  *
  * These assert the RENDERED surface only. The authoritative check lives in
  * survey-service `app/authz.py`; hiding a tab is presentation, not security.
@@ -85,30 +82,19 @@ describe("SurveysPage role gating", () => {
     expect(screen.queryByRole("tab", { name: /results/i })).not.toBeInTheDocument()
   })
 
-  it.each(["manager", "company-admin", "practitioner"])(
-    "%s authors — Build and Results, but NOT Take",
+  it.each(["manager", "company-admin", "practitioner", "distributor"])(
+    "%s gets all three tabs — authors can answer their own survey",
     (role) => {
       renderAs(role)
+      expect(screen.getByRole("tab", { name: /take a survey/i })).toBeInTheDocument()
       expect(screen.getByRole("tab", { name: /build surveys/i })).toBeInTheDocument()
       expect(screen.getByRole("tab", { name: /results/i })).toBeInTheDocument()
-      expect(screen.queryByRole("tab", { name: /take a survey/i })).not.toBeInTheDocument()
     },
   )
 
-  it.each(["manager", "company-admin", "practitioner"])(
-    "%s opens on Build, not on a Take panel it has no tab for",
-    (role) => {
-      renderAs(role)
-      expect(screen.getByRole("tab", { name: /build surveys/i })).toHaveAttribute(
-        "aria-selected",
-        "true",
-      )
-    },
-  )
-
-  it("distributor is the only role with no access at all", () => {
-    renderAs("distributor")
-    expect(screen.getByText(/aren't available for your role/i)).toBeInTheDocument()
+  it("an unrecognised role still falls back to NO access, not full access", () => {
+    renderAs("some-future-role")
+    expect(screen.getByText(/not recognised/i)).toBeInTheDocument()
     expect(screen.queryByRole("tab")).not.toBeInTheDocument()
   })
 
@@ -118,14 +104,14 @@ describe("SurveysPage role gating", () => {
     expect(listSpy).toHaveBeenCalledWith("manage", false)
   })
 
-  it("queries manage but not take for a non-taking author", () => {
+  it("queries both scopes for an author", () => {
     renderAs("manager")
     expect(listSpy).toHaveBeenCalledWith("manage", true)
-    expect(listSpy).toHaveBeenCalledWith("take", false)
+    expect(listSpy).toHaveBeenCalledWith("take", true)
   })
 
-  it("queries nothing at all for distributor", () => {
-    renderAs("distributor")
+  it("queries nothing at all for an unrecognised role", () => {
+    renderAs("some-future-role")
     for (const call of listSpy.mock.calls) {
       expect(call[1]).toBe(false)
     }
