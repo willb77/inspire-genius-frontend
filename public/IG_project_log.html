@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1480</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1481</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3055,6 +3055,12 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-12 &mdash; Prompt #1481 [Knowledge Base: Domain column + domain filter; KB route auth; x-user-role header trust]</div>
+          <div class="prompt-text">Frontend half: the Knowledge Base Domain badge rendered <code>row.file_type</code>, which the API populates from the document&rsquo;s content type &mdash; so the column showed <code>text/csv</code> and <code>application/pdf</code> under a &ldquo;Domain&rdquo; header. It now renders <code>row.domain</code>, the value the filter actually matches; the MIME type keeps its place under an honest <b>Type</b> header, abbreviated. A null domain reads <b>Uncategorised</b> rather than falling back to the literal &ldquo;general&rdquo;, which was a claim about the document rather than an absence of one. Added an Uncategorised filter and per-chip counts from the new <code>domain_counts</code> facet &mdash; an explicit 0 is evidence the filter ran, which a blank table cannot say. (FE PR #395, merged, live on dev + staging-b.)</div>
+          <div class="prompt-text"><b>Test gap this exposed:</b> the DataTable mock rendered only the filename, so column cells were never exercised &mdash; which is why a Domain column displaying MIME types passed its tests for months. The mock now renders each column, and the new cases fail when the cell is reverted.</div>
+          <div class="prompt-text"><b>Backend counterparts</b> (monorepo #864/#868/#873): one SQL expression now drives the column, the filter and the facets; the four KB routes went from answering 200 to an unauthenticated curl to 401; and the <code>x-user-role</code> header is no longer accepted as identity anywhere. All live on dev and staging-b. Not verified: the <b>allow</b> path &mdash; every result demonstrates the gates deny; no super-admin token was minted.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-13 &mdash; Prompt #1480 [PRISM Add+ on Home imported nothing &mdash; it filed the CSV as a document]</div>
           <div class="prompt-text">&ldquo;Uploaded my PRISM .csv and the system is not finding it.&rdquo; The file was always found. The <b>scores</b> were never created.</div>

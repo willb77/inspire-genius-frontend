@@ -1,3 +1,57 @@
+## [2026-08-12] — Deploy record: Knowledge Base fixes + header-trust removal, both tiers
+
+The three changes below were logged individually as they landed; this records where they
+actually ended up, which is the part a code entry cannot state at write time.
+
+### Deployed
+| change | PR | merged | dev | staging-b |
+|---|---|---|---|---|
+| KB domain filter + Domain column | #864 / FE #395 | `a335d86f` / `d05dd3b` | ✅ | ✅ |
+| KB routes gated to super-admin | #868 | `ae653449` | ✅ | ✅ |
+| `x-user-role` header trust removed | #873 | `fd236efc` | ✅ | ✅ |
+
+**Promote tags.** #864 and #868 reached staging-b on tags cut by *other terminals*
+(`release-stable-2026-08-11-prism-retry-history-attr` and
+`release-stable-2026-08-12-interview-practice-role-pages`) — both times my earlier reading of
+"not promoted" was taken while their promote was mid-flight. #873 went up on
+`release-stable-2026-08-12-header-trust-removed`, cut here, carrying 8 commits from three
+work streams (this repo promotes ALL of development): #873, #876 broadcast inbox 401, and
+#872/#874 PRISM report PDF. No migrations in any range.
+
+### Verified against the live tiers, not by green ticks
+- **Domain filter** — facet counts and filtered totals agree exactly on both tiers, and the
+  partition is complete: dev `prism_report` 12 + `coaching` 19 + `uncategorised` 123 = 154
+  total; staging-b `prism_report` 27 + `uncategorised` 121 = 148. A row that used to render
+  `text/csv` under a "Domain" header now reads `prism_report`.
+- **KB auth** — all four routes `200 → 401` unauthenticated on both tiers.
+- **Header trust** — `GET /v1/admin/dashboard/summary -H 'x-user-role: super-admin'` went
+  `500` (past the gate) → `401` on dev, ~210s after the ECS roll; `401` on staging-b.
+  `POST /v1/users/me/roles/switch`, previously reachable with **no token at all**, now
+  `401 {"detail":"Missing access-token header"}` on both.
+- **Regression guard that mattered most** — `POST /v1/agents/documents/vectorize` returns
+  `422`, not `401/403`, on both tiers. It is the machine path document-service calls with no
+  JWT; a false positive there breaks embedding for every uploaded document.
+- Pre-flight before the staging-b promote: `/v1/agents/health` 200 with all four memory
+  tiers up, ECS 1/1 running with a single ACTIVE deployment. That tier had an outage earlier
+  in the evening (recorded by another terminal in `ef9f261e`); it was resolved first.
+
+### NOT verified — stated plainly
+Every result above demonstrates that the gates **deny**. That they **permit** the right
+people rests on tests, on the `public.user_profiles JOIN public.roles` fallback resolving
+(dev 14 super-admins, staging-b 12), and on `agentApi` already sending `access-token` — not
+on anyone having logged in. No super-admin token was minted for this work. Loading any
+super-admin page is the outstanding check; a 403 there would mean `resolve_role` is not
+finding the grant.
+
+### Still open
+- `POST /v1/agents/documents/vectorize` — unauthenticated by design; needs service-to-service
+  auth (shared secret or VPC-only path), which changes document-service's deploy.
+- Nothing writes `documents.domain` at upload time; the read-side derivation compensates.
+- The KB list endpoint has no `doc_kind` filter, so the page shows every user's personal
+  uploads rather than knowledge-base content — there are zero `knowledge_base` rows on
+  staging-b.
+- CDK still declares API Gateway routes for the admin paths.
+
 ## [2026-08-13] — Surveys surface: build questionnaires + select one to take
 
 A new `/surveys` surface lets a user author surveys (add questions) and pick a
