@@ -5,6 +5,7 @@ import {
   parseExcel,
   parseJSON,
   parseFile,
+  mapHeaders,
   trimCell,
   SUPPORTED_EXTENSIONS,
   MAX_FILE_SIZE,
@@ -286,6 +287,81 @@ describe("parsers", () => {
 
       expect(result.duplicates).toHaveLength(1)
       expect(result.duplicates[0]).toMatchObject({ row: 2, duplicateOf: 1 })
+    })
+  })
+
+  // A header the importer does not recognise used to be dropped in silence, and
+  // the operator was then told `email1` was missing — a field name that appears
+  // nowhere in their file. Every mapping decision is now reported.
+  describe("header mapping", () => {
+    it("maps exact aliases", () => {
+      const { resolved, mapping } = mapHeaders(["First Name", "Last Name", "Email", "Role"])
+      expect(resolved.get("First Name")).toBe("fname")
+      expect(resolved.get("Email")).toBe("email1")
+      expect(resolved.get("Role")).toBe("user_type")
+      expect(mapping.ignored).toEqual([])
+      expect(mapping.inferred).toEqual({})
+    })
+
+    it("infers an institution-named address column and REPORTS it", () => {
+      const { resolved, mapping } = mapHeaders(["Last Name", "First Name", "ECPS Gmail", "user_type"])
+      expect(resolved.get("ECPS Gmail")).toBe("email1")
+      expect(mapping.inferred).toEqual({ email1: "ECPS Gmail" })
+      expect(mapping.ignored).toEqual([])
+    })
+
+    it("prefers an exact alias over an inferable one", () => {
+      const { resolved, mapping } = mapHeaders(["Email", "ECPS Gmail"])
+      expect(resolved.get("Email")).toBe("email1")
+      // Already claimed, so the inferable column is reported rather than fought over.
+      expect(resolved.get("ECPS Gmail")).toBe("ECPS Gmail")
+      expect(mapping.ignored).toEqual(["ECPS Gmail"])
+    })
+
+    it("routes a secondary-marked address to email2", () => {
+      const { resolved, mapping } = mapHeaders(["Email", "Alternate Gmail"])
+      expect(resolved.get("Alternate Gmail")).toBe("email2")
+      expect(mapping.inferred).toEqual({ email2: "Alternate Gmail" })
+    })
+
+    it.each([
+      "Parent Email",
+      "Guardian Email",
+      "Counselor Email",
+      "Emergency Contact Email",
+    ])("never infers %s as the user's own address", (header) => {
+      const { resolved, mapping } = mapHeaders(["First Name", header])
+      expect(resolved.get(header)).toBe(header)
+      expect(mapping.ignored).toContain(header)
+      expect(mapping.inferred).toEqual({})
+    })
+
+    it("keeps unrecognised headers verbatim so the operator recognises them", () => {
+      const { mapping } = mapHeaders(["First Name", "Homeroom ", "Grade Level"])
+      expect(mapping.ignored).toEqual(["Homeroom", "Grade Level"])
+    })
+
+    it("surfaces the mapping through validateRecords", async () => {
+      const csv =
+        "Last Name,First Name,ECPS Gmail,Homeroom,user_type\n" +
+        "Archer,Jeremiah,jarch5598@students.ecps.us,204B,user"
+      const records = await parseCSV(createMockFile(csv, "roster.csv", "text/csv"))
+      const result = validateRecords(records, "super-admin")
+
+      expect(result.valid).toHaveLength(1)
+      expect(result.invalid).toHaveLength(0)
+      expect(result.inferredColumns).toEqual([{ field: "email1", header: "ECPS Gmail" }])
+      expect(result.ignoredColumns).toEqual(["Homeroom"])
+    })
+
+    it("does not leak the internal mapping key into a validated record", async () => {
+      const csv = "First Name,Last Name,Email,Role\nJane,Doe,jane@co.com,user"
+      const records = await parseCSV(createMockFile(csv, "u.csv", "text/csv"))
+      const result = validateRecords(records, "super-admin")
+
+      expect(Object.keys(result.valid[0].record).sort()).toEqual(
+        ["email1", "fname", "lname", "user_type"].sort(),
+      )
     })
   })
 })
