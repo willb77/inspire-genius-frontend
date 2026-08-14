@@ -17,10 +17,13 @@ const KEYS = {
   summary: (id: string) => ["surveys", "summary", id] as const,
 }
 
-export function useSurveys(scope: SurveyScope = "take") {
+export function useSurveys(scope: SurveyScope = "take", enabled = true) {
   return useQuery({
     queryKey: KEYS.list(scope),
     queryFn: () => surveyService.list(scope),
+    // The server 403s a caller outside the scope's role set. Firing anyway
+    // would put an expected, meaningless error in every manager's console.
+    enabled,
   })
 }
 
