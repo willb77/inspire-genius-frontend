@@ -1,3 +1,17 @@
+## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
+
+### Fixed
+- The "Build a survey from questions" dialog had no max-height, so a tall
+  viewport pushed it off-screen with no way to scroll — the "Build survey"
+  button was unreachable. The dialog now caps at 85dvh with a scrollable body
+  and a **pinned footer**, so the action is always visible.
+
+### Added
+- **Drag-and-drop** a file onto the text box (in addition to the Upload button),
+  with a drop-zone highlight, and clearer guidance that Word tables + checkbox
+  options come through.
+  - Files: `src/components/survey/SurveyUploadDialog.tsx`
+
 ## [2026-08-14] — Surveys card in Settings: also show it to super-admin
 
 ### Changed
