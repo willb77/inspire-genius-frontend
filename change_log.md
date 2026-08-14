@@ -1,3 +1,17 @@
+## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
+
+### Added
+- **Enable on/off toggle per survey.** The builder gained an "Available to
+  respondents" switch (new surveys default OFF), and the manage list shows an
+  Available/Off badge with an inline switch to flip availability without opening
+  the editor. Respondents only see enabled surveys (enforced server-side).
+- **Creator + responder identity.** The manage list shows "Created by {name} ·
+  {email}", and the Results view shows each responder's name + email above their
+  answers (server-resolved, not client-supplied).
+  - Files: `src/pages/user/SurveysPage.tsx`,
+    `src/components/survey/{SurveyBuilder,SurveyResults}.tsx`,
+    `src/types/survey.ts`
+
 ## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
 
 ### Fixed

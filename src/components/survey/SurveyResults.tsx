@@ -171,12 +171,22 @@ export default function SurveyResults({ survey }: SurveyResultsProps) {
               <div className="space-y-3">
                 {responses.data.map((r, idx) => (
                   <div key={r.id} className="rounded-lg border p-3">
-                    <p className="mb-2 text-xs text-muted-foreground">
-                      Response #{responses.data!.length - idx}
-                      {r.submittedAt
-                        ? ` · ${new Date(r.submittedAt).toLocaleString()}`
-                        : ""}
-                    </p>
+                    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                      <p className="text-sm font-medium">
+                        {r.respondentName || r.respondentEmail || "Anonymous"}
+                        {r.respondentName && r.respondentEmail ? (
+                          <span className="ml-1 font-normal text-muted-foreground">
+                            · {r.respondentEmail}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Response #{responses.data!.length - idx}
+                        {r.submittedAt
+                          ? ` · ${new Date(r.submittedAt).toLocaleString()}`
+                          : ""}
+                      </p>
+                    </div>
                     <dl className="space-y-1">
                       {survey.questions.map((q) => (
                         <div key={q.id} className="text-sm">

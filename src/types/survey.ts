@@ -37,8 +37,12 @@ export interface Survey {
   questions: SurveyQuestion[]
   /** The organization this survey is exposed to. */
   orgId?: string | null
-  /** Author's id (JWT sub). */
+  /** Author's id (JWT sub) + resolved name/email. */
   createdBy?: string | null
+  createdByName?: string | null
+  createdByEmail?: string | null
+  /** Availability gate — respondents only see enabled surveys. */
+  enabled?: boolean
   /** ISO timestamps. */
   createdAt?: string
   updatedAt?: string
@@ -55,6 +59,8 @@ export interface SurveyInput {
   questions: SurveyQuestion[]
   /** Expose to this org. Omit to default to the author's org (server-resolved). */
   orgId?: string | null
+  /** Availability toggle. Omit on update to leave unchanged. */
+  enabled?: boolean
 }
 
 /** A single answer value — shape depends on the question type. */
@@ -66,6 +72,9 @@ export interface SurveyResponse {
   /** questionId -> answer value. */
   answers: Record<string, SurveyAnswerValue>
   respondentSub?: string | null
+  /** Who answered (server-resolved). */
+  respondentName?: string | null
+  respondentEmail?: string | null
   submittedAt?: string
 }
 
