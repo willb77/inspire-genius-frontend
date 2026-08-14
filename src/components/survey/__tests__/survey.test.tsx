@@ -18,9 +18,9 @@ jest.mock("@/layouts/UnifiedLayout", () => ({
   ),
 }))
 
-// Mock the auth context: manager => author (Build/Results tabs shown).
+// Mock the auth context: super-admin => author (Build/Results tabs shown).
 const mockUseAuth = jest.fn(() => ({
-  user: { role: "manager" } as { role: string },
+  user: { role: "super-admin" } as { role: string },
   isAtLeast: (): boolean => true,
 }))
 jest.mock("@/context/useAuth", () => ({
@@ -142,8 +142,11 @@ describe("SurveySelector", () => {
 })
 
 describe("SurveysPage", () => {
-  it("renders author tabs (Take / Build / Results)", async () => {
-    mockUseAuth.mockReturnValue({ user: { role: "manager" }, isAtLeast: () => true })
+  // Authoring moved from "manager and above" to super-admin ONLY (2026-08-13);
+  // manager now sees the no-access card. Role-set coverage for every role lives
+  // in src/pages/user/__tests__/SurveysPage.roles.test.tsx.
+  it("renders author tabs (Take / Build / Results) for a super-admin", async () => {
+    mockUseAuth.mockReturnValue({ user: { role: "super-admin" }, isAtLeast: () => true })
     renderWithProviders(<SurveysPage />)
     expect(
       screen.getByRole("heading", { name: "Surveys", level: 1 }),

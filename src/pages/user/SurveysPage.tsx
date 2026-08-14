@@ -1,7 +1,15 @@
 /**
  * /surveys — the Survey surface, backed by the survey-service.
  *
- * Tabs (Build/Results shown to authors — manager+ — only):
+ * Access is two role SETS, not a seniority rank (mirrored server-side in
+ * survey-service `app/authz.py` — this file only decides what to RENDER):
+ *   • author     = super-admin            → Build + Results
+ *   • respondent = user, super-admin      → Take
+ * manager / company-admin / practitioner / distributor get neither, and the
+ * Surveys nav entry is absent for them; reaching /surveys by URL shows a
+ * no-access card rather than an empty page that looks broken.
+ *
+ * Tabs:
  *   • Take    — pick a survey exposed to your org, answer + submit it.
  *   • Build   — author a survey (manual, or upload/paste to auto-draft), expose
  *               it to an organization, edit/delete existing ones.
@@ -54,13 +62,17 @@ function toInput(s: Survey): SurveyInput {
 export default function SurveysPage() {
   const auth = useAuth()
   const role: UserRole = (auth.user?.role as UserRole) ?? "user"
-  const isAuthor =
-    typeof auth.isAtLeast === "function" ? auth.isAtLeast("manager") : false
+  // Exact-role tests, deliberately NOT `isAtLeast`. A seniority threshold
+  // cannot express "users but not managers", and `isAtLeast("manager")` is what
+  // previously let every manager+ role author surveys.
+  const isAuthor = role === "super-admin"
+  const canTake = role === "user" || role === "super-admin"
+  const hasAnyAccess = isAuthor || canTake
 
   const [tab, setTab] = useState<"take" | "build" | "results">("take")
 
-  const takeQuery = useSurveys("take")
-  const manageQuery = useSurveys("manage")
+  const takeQuery = useSurveys("take", canTake)
+  const manageQuery = useSurveys("manage", isAuthor)
   const createSurvey = useCreateSurvey()
   const updateSurvey = useUpdateSurvey()
   const deleteSurvey = useDeleteSurvey()
@@ -118,6 +130,27 @@ export default function SurveysPage() {
     submitResponse.mutate({ surveyId, answers: answers as never })
   }
 
+  if (!hasAnyAccess) {
+    return (
+      <UnifiedLayout role={role} expandOnPath="/surveys">
+        <div className="mx-auto w-full max-w-3xl px-4 py-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardList className="h-4 w-4" aria-hidden />
+                Surveys aren&apos;t available for your role
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Surveys are created by super-admins and answered by users. Your
+              account has neither role, so there is nothing to show here.
+            </CardContent>
+          </Card>
+        </div>
+      </UnifiedLayout>
+    )
+  }
+
   return (
     <UnifiedLayout role={role} expandOnPath="/surveys">
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
@@ -137,7 +170,7 @@ export default function SurveysPage() {
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="mb-4">
-            <TabsTrigger value="take">Take a survey</TabsTrigger>
+            {canTake && <TabsTrigger value="take">Take a survey</TabsTrigger>}
             {isAuthor && <TabsTrigger value="build">Build surveys</TabsTrigger>}
             {isAuthor && <TabsTrigger value="results">Results</TabsTrigger>}
           </TabsList>
