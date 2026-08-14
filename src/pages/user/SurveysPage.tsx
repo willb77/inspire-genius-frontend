@@ -3,11 +3,14 @@
  *
  * Access is two role SETS, not a seniority rank (mirrored server-side in
  * survey-service `app/authz.py` — this file only decides what to RENDER):
- *   • author     = super-admin            → Build + Results
- *   • respondent = user, super-admin      → Take
- * manager / company-admin / practitioner / distributor get neither, and the
- * Surveys nav entry is absent for them; reaching /surveys by URL shows a
- * no-access card rather than an empty page that looks broken.
+ *   • author     = every role EXCEPT plain `user`  → Build + Results
+ *   • respondent = every role                      → Take
+ * So a plain `user` sees only Take, and everyone else sees all three tabs and
+ * can answer their own survey.
+ *
+ * The no-access card below is consequently unreachable for the six known roles.
+ * It is kept as the fallback for an unrecognised role string rather than
+ * deleted, so a future role defaults to no access instead of full access.
  *
  * Tabs:
  *   • Take    — pick a survey exposed to your org, answer + submit it.
@@ -62,14 +65,28 @@ function toInput(s: Survey): SurveyInput {
 export default function SurveysPage() {
   const auth = useAuth()
   const role: UserRole = (auth.user?.role as UserRole) ?? "user"
-  // Exact-role tests, deliberately NOT `isAtLeast`. A seniority threshold
-  // cannot express "users but not managers", and `isAtLeast("manager")` is what
-  // previously let every manager+ role author surveys.
-  const isAuthor = role === "super-admin"
-  const canTake = role === "user" || role === "super-admin"
+  // Explicit sets rather than `isAtLeast`. The values currently coincide with a
+  // rank test, but membership here is a product decision that has changed three
+  // times in a day — a set states which roles are intended, where `>=` states
+  // only "senior enough" and silently absorbs any role added to the hierarchy.
+  const AUTHOR_ROLES: readonly string[] = [
+    "manager",
+    "company-admin",
+    "practitioner",
+    "distributor",
+    "super-admin",
+  ]
+  const RESPONDENT_ROLES: readonly string[] = ["user", ...AUTHOR_ROLES]
+  const isAuthor = AUTHOR_ROLES.includes(role)
+  const canTake = RESPONDENT_ROLES.includes(role)
   const hasAnyAccess = isAuthor || canTake
 
-  const [tab, setTab] = useState<"take" | "build" | "results">("take")
+  // An author who cannot take (manager / company-admin / practitioner) has no
+  // Take trigger, so defaulting to "take" would render the Take PANEL with no
+  // tab selected above it — content without a handle. Open on Build instead.
+  const [tab, setTab] = useState<"take" | "build" | "results">(
+    canTake ? "take" : "build",
+  )
 
   const takeQuery = useSurveys("take", canTake)
   const manageQuery = useSurveys("manage", isAuthor)
@@ -88,11 +105,13 @@ export default function SurveysPage() {
   const [selectedResultsId, setSelectedResultsId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (seededSurveyId) {
+    // A deep link to a survey to answer only makes sense for a respondent;
+    // for a non-taking author it would switch to a tab they do not have.
+    if (seededSurveyId && canTake) {
       setSelectedTakeId(seededSurveyId)
       setTab("take")
     }
-  }, [seededSurveyId])
+  }, [seededSurveyId, canTake])
   const [builder, setBuilder] = useState<BuilderState>({ mode: "list" })
   const [uploadOpen, setUploadOpen] = useState(false)
 
@@ -142,8 +161,8 @@ export default function SurveysPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Surveys are created by super-admins and answered by users. Your
-              account has neither role, so there is nothing to show here.
+              Your account&apos;s role is not recognised by the survey surface,
+              so there is nothing to show here.
             </CardContent>
           </Card>
         </div>
