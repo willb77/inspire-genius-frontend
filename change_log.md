@@ -172,6 +172,102 @@ the pre-fix code: the PRISM case fails, the Bio control passes both ways.
 `npm run build` clean · eslint clean on touched files · 116 tests across HomeV2
 and the prism components/hooks · 60 more across the other call sites.
 
+## [2026-08-12] — Employer & sector interview question packs + build plan
+
+Content and planning deliverable — **no application, service or infrastructure
+code was touched.** 16 employer packs, 7 sector packs, 138 questions, and a
+repo-native plan to serve them through the Interview Practice tailoring path
+that already exists.
+
+### Added
+- **`scripts/build_employer_interview_packs.py`** — reproducible `python-docx`
+  generator. Question content lives in the script as data (`COMPANIES`,
+  `SECTORS`), so the packs are diffable and reviewable in git rather than locked
+  in a binary.
+- **`docs/plans/Employer_Interview_Question_Packs.docx`** (18pp, `git add -f`).
+  Employer packs: Amazon/AWS, Google, Meta, Microsoft, IBM, Oracle, LinkedIn,
+  McKinsey, BCG, Bain, Deloitte, Accenture, Goldman Sachs, Citigroup,
+  Bridgewater, BlackRock. Sector packs: technology, consulting, financial
+  services, healthcare/life sciences, aerospace/defence/advanced manufacturing,
+  retail/consumer/CPG, public sector/education/workforce. Render-verified
+  LibreOffice → PDF → PNG.
+
+### Notes
+- **Every one of the 138 questions maps to a real competency id in
+  `star_interview_bank.py`** — verified programmatically against the module, not
+  by eye: 12/12 competencies used, zero ids absent from the bank. The packs
+  change what a question *sounds* like, never what is being assessed, so no new
+  rubric, scorer or evaluator change is implied.
+- **Provenance discipline, mirroring `app/role_pages`.** Every pack names the
+  employer's OWN publicly published values or hiring framework. These are
+  questions written by us *in the style of* that framework — explicitly not any
+  company's actual, internal or leaked questions, and no implication of
+  endorsement or affiliation. The document leads with that statement.
+- **Load-bearing discovery for the build plan:** `InterviewFrame` **already
+  carries `company` and `industry`** — collected by `InterviewFrameForm` since
+  the v2 frame, rendered in the header, folded into Alex's coaching context —
+  but never passed to tailoring. `getTailoredPracticeQuestions(jobTitle,
+  jobDescription, section)` takes no company, and `InterviewPracticePage.tsx`
+  branches on `roleTitle` alone. So this is an extension of a live path, not a
+  new one: two optional request fields, one curated dataset, one resolver.
+- **Curated-first, model-second** is the design rule: a resolved employer
+  question replaces the sampled base question deterministically, and the LLM is
+  left only contextualising to a role title. A model that has never seen a
+  company's question list must not be the thing asserting what is on it.
+- Fail-open contract preserved throughout — unknown company or resolver error
+  returns precisely today's behaviour with `employer: null`.
+- **Phase 0 is legal, and it gates go-live rather than build**: nominative-use
+  review, standing disclaimer wording, and SME sign-off on all 138 questions.
+  Recommendation in the doc is to run it in parallel with Phases 1–3.
+
+---
+
+## [2026-08-12] — Interview Practice B2C go-to-market brief
+
+Strategy deliverable only — **no application, service, or infrastructure code was
+touched.** A point-of-view on whether the candidate-side Interview Coach can carry a
+consumer business, written up as a branded 9-page brief.
+
+### Added
+- **`scripts/build_interview_practice_b2c_gtm.py`** — reproducible `python-docx`
+  generator. IG STANDARD palette (NAVY `#1B2A4A` / ORANGE `#E8792B` / SLATE
+  `#36415A`, PANEL `#F3F5FA`), Cambria headings + Calibri body, `Logo-Dark.png`
+  cover lockup, `contact@inspiresgenius.com` footer with page numbers.
+  - `w:cantSplit` on every table row and callout, `w:tblHeader` on header rows,
+    `keep_with_next` on the heading rule — headings stop orphaning, callouts stop
+    splitting mid-sentence, long tables repeat their header across page breaks. All
+    three faults were present in the first render and invisible in the source.
+- **`docs/plans/Interview_Practice_B2C_GTM_Brief.docx`** (9pp, `git add -f` — the
+  root `.gitignore` blanket-ignores `*.docx`, matching the precedent set by
+  `docs/plans/Honor_Foundation_Coach_Workbench_Wiring_Plan.docx`). Covers the
+  shipped-capability audit, market assessment, defensibility, product gaps,
+  positioning, target segments, channel plan, packaging/pricing, risks, proof plan
+  and a 90-day sequence. Render-verified LibreOffice → PDF → PNG, all nine pages
+  read for overflow.
+
+### Notes
+- **`/interview-practice` is deliberately scoreless** — page copy: "no scores". The
+  deterministic scorer (`star_scorer.py`) lives on the *evaluator* side only (Live
+  Scored Interview, Interview Studio; manager / practitioner / company-admin /
+  super-admin). A candidate-visible progress score is raised in the brief as an
+  owner decision, not an assumed build.
+- **Corrected mid-flight against #870/#403.** The first cut listed "public marketing
+  site + programmatic role pages" as *not built* and made programmatic SEO the
+  top future channel. The role-page generator landed on `development` the same day
+  (#870 back end, #403 front end): 44 public pages at `/interview-practice/roles`
+  and `/interview-practice/:slug`, Schema.org JSON-LD. §2, §4.2 and §7 were rewritten
+  so the brief states shipped reality — what remains is coverage, the marketing site
+  around the pages, and indexation, not the engine.
+- Added a **wage-provenance risk row**: the 44 pages carry salary figures while the
+  BLS OEWS provider is built but **dormant** (OEWS is absent from the BLS API and
+  bls.gov blocks scripted download), so the default source is curated. The generator
+  already carries source + as-of per page and shows no figure when it cannot price a
+  role — do not attribute a number to BLS unless an OEWS file is genuinely present.
+- **No market-size or win-rate statistics appear anywhere in the document, by
+  design** — nothing sourced and defensible was to hand.
+
+---
+
 ## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
 
 A single session could emit refresh-token requests without bound — observed at
