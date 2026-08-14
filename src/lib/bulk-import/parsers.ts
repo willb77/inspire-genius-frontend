@@ -27,8 +27,41 @@ const FIELD_ALIASES: Record<string, keyof RawUserRecord> = {
   type: "user_type",
 }
 
+// Invisible characters that `String.prototype.trim()` does NOT remove, because
+// they are not in the spec's WhiteSpace set. Spreadsheet data pasted out of a
+// web page or Word routinely carries them, and because they render as nothing
+// the cell looks clean while validation rejects it — "a@b.com" fails the email
+// rule with no visible cause. `trim()` DOES already handle space, tab, newline,
+// NBSP (U+00A0), BOM (U+FEFF) and the ideographic space (U+3000); those are
+// deliberately absent here.
+//
+// Written as escapes, never as literal characters: these are invisible, so a
+// literal would be unreviewable in a diff and deletable by accident.
+const INVISIBLE_EDGE_CHARS = [
+  "\\u200B", // zero-width space
+  "\\u200C", // zero-width non-joiner
+  "\\u200D", // zero-width joiner
+  "\\u2060", // word joiner
+  "\\u00AD", // soft hyphen
+  "\\u180E", // Mongolian vowel separator
+]
+// Alternation rather than a character class: a class containing the zero-width
+// JOINER trips eslint's no-misleading-character-class, because it can fuse with
+// the neighbouring members into a single grapheme.
+const EDGE_ATOM = `(?:\\s|${INVISIBLE_EDGE_CHARS.join("|")})`
+const EDGE_JUNK = new RegExp(`^${EDGE_ATOM}+|${EDGE_ATOM}+$`, "g")
+
+/**
+ * Strip leading/trailing whitespace INCLUDING the invisible characters
+ * `trim()` misses. Interior characters are left alone — this trims the ends,
+ * it does not rewrite the value.
+ */
+export function trimCell(value: string): string {
+  return value.replace(EDGE_JUNK, "")
+}
+
 function normalizeFieldName(name: string): string {
-  const key = name.trim().toLowerCase().replace(/[\s-]+/g, "_")
+  const key = trimCell(name).toLowerCase().replace(/[\s-]+/g, "_")
   return (FIELD_ALIASES[key] as string) ?? key
 }
 
@@ -36,7 +69,10 @@ function normalizeRecord(raw: Record<string, unknown>): RawUserRecord {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(raw)) {
     const normalized = normalizeFieldName(key)
-    result[normalized] = typeof value === "string" ? value.trim() : value
+    // Excel hands back numbers and Dates for non-text cells. Coercing those to
+    // strings here would change the parsed shape for every downstream consumer,
+    // so only strings are trimmed — a number cannot carry edge whitespace.
+    result[normalized] = typeof value === "string" ? trimCell(value) : value
   }
   return result as RawUserRecord
 }
