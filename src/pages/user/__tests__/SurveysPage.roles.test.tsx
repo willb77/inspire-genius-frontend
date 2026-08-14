@@ -1,10 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * Who sees what on /surveys. The rule is two role SETS, not a rank:
- *   author     = super-admin        → Build + Results tabs
- *   respondent = user, super-admin  → Take tab
- * Everyone else gets a no-access card.
+ * Who sees what on /surveys:
+ *   author     = every role EXCEPT plain `user` → Build + Results
+ *   respondent = every role                     → Take
+ * So `user` sees Take only; every other role sees all three tabs.
  *
  * These assert the RENDERED surface only. The authoritative check lives in
  * survey-service `app/authz.py`; hiding a tab is presentation, not security.
@@ -83,13 +83,20 @@ describe("SurveysPage role gating", () => {
   })
 
   it.each(["manager", "company-admin", "practitioner", "distributor"])(
-    "%s gets no tabs at all, just the no-access card",
+    "%s gets all three tabs — authors can answer their own survey",
     (role) => {
       renderAs(role)
-      expect(screen.getByText(/aren't available for your role/i)).toBeInTheDocument()
-      expect(screen.queryByRole("tab")).not.toBeInTheDocument()
+      expect(screen.getByRole("tab", { name: /take a survey/i })).toBeInTheDocument()
+      expect(screen.getByRole("tab", { name: /build surveys/i })).toBeInTheDocument()
+      expect(screen.getByRole("tab", { name: /results/i })).toBeInTheDocument()
     },
   )
+
+  it("an unrecognised role still falls back to NO access, not full access", () => {
+    renderAs("some-future-role")
+    expect(screen.getByText(/not recognised/i)).toBeInTheDocument()
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument()
+  })
 
   it("does not query a scope the role cannot use", () => {
     renderAs("user")
@@ -97,8 +104,14 @@ describe("SurveysPage role gating", () => {
     expect(listSpy).toHaveBeenCalledWith("manage", false)
   })
 
-  it("queries nothing for an excluded role", () => {
+  it("queries both scopes for an author", () => {
     renderAs("manager")
+    expect(listSpy).toHaveBeenCalledWith("manage", true)
+    expect(listSpy).toHaveBeenCalledWith("take", true)
+  })
+
+  it("queries nothing at all for an unrecognised role", () => {
+    renderAs("some-future-role")
     for (const call of listSpy.mock.calls) {
       expect(call[1]).toBe(false)
     }
