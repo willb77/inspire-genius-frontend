@@ -1,3 +1,13 @@
+## [2026-08-14] — Surveys card in Settings: also show it to super-admin
+
+### Changed
+- The "Surveys" card in Settings (Settings → My Workspace) was gated to the
+  `user` role only, so the owner (super-admin) couldn't see it while testing.
+  Now shown to `user` **and** `super-admin`. All role Settings pages render the
+  same shared `Settings` component, so this covers the super-admin's user-
+  settings and administration-settings views.
+  - Files: `src/components/shared/settings/Settings.tsx`
+
 ## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
 
 The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
