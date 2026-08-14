@@ -1,3 +1,35 @@
+## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
+
+The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
+catalogue (`useVerticalLauncherSection`, renamed *Verticals → Tools* on 2026-07-31) and
+the utility rollup (`SUPER_ADMIN_TOOLS_SECTION` — Team Development + Interview Practice).
+`SidebarScaffold` keys collapsible sections by `key={section.label}`, so the two "Tools"
+sections shared a React key — the reconciliation clash made the Team-Development "Tools"
+group surface only when the Administration section was toggled.
+
+### Fixed
+- **One "Tools" rollup for super-admin.** `SuperAdminLayout` now merges the catalogue
+  items and the utility-tool items into a single `{ label: "Tools" }` section (catalogue
+  first, then utilities), collapsed by default, above Administration. One section, one
+  key, no flicker. The merge is label-agnostic (it combines by `.items`), so it is robust
+  to future launcher-label changes. `UnifiedLayout` (managers) was never affected — it
+  labels its catalogue "Verticals" and its rollup "Tools", so there was no collision there.
+  - Files: `src/layouts/SuperAdminLayout.tsx`
+- Verified live on **dev + staging-b** at the deployed-artifact level (staging-b magic-auth
+  is off → no headless DOM render): the shipped `SuperAdminLayout-*.js` chunk emits exactly
+  one `label:"Tools"` section merging `[...launcher?.items, ...tools?.items]`.
+
+### Changed
+- **Test corrected + regression coverage.** `SuperAdminLayout.test.tsx` mocked the launcher
+  with the stale label "Verticals" and omitted `SUPER_ADMIN_TOOLS_SECTION`, so it never
+  exercised the duplicate. Updated to production's "Tools" label and added tests asserting
+  exactly one "Tools" section containing catalogue + utility items.
+  - Files: `src/layouts/__tests__/SuperAdminLayout.test.tsx`
+
+PR #391 (merged, `930798a`). A related stale-branch merge hazard —
+`feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
+nav evolution if merged without rebasing — is tracked as issue #399.
+
 ## [2026-08-13] — Surveys: backend-backed, org exposure, results/compilation, upload-to-build
 
 The Survey surface now stores surveys + responses **centrally** (survey-service),
