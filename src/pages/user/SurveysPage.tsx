@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/context/useAuth"
 import type { UserRole } from "@/types/roles"
 import {
@@ -59,6 +60,7 @@ function toInput(s: Survey): SurveyInput {
     description: s.description,
     questions: s.questions,
     orgId: s.orgId ?? undefined,
+    enabled: s.enabled,
   }
 }
 
@@ -143,6 +145,14 @@ export default function SurveysPage() {
       .mutateAsync(id)
       .then(() => toast.success("Survey deleted."))
       .catch(() => toast.error("Could not delete the survey."))
+  }
+
+  const handleToggleEnabled = (s: Survey) => {
+    const next = !s.enabled
+    updateSurvey
+      .mutateAsync({ id: s.id, input: { ...toInput(s), enabled: next } })
+      .then(() => toast.success(next ? "Survey is now available." : "Survey hidden."))
+      .catch(() => toast.error("Could not change availability."))
   }
 
   const handleSubmitResponse = (surveyId: string, answers: Record<string, unknown>) => {
@@ -275,7 +285,10 @@ export default function SurveysPage() {
                                   {s.description}
                                 </p>
                               )}
-                              <div className="mt-2 flex flex-wrap gap-2">
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <Badge variant={s.enabled ? "default" : "outline"}>
+                                  {s.enabled ? "Available" : "Off"}
+                                </Badge>
                                 <Badge variant="secondary">
                                   {s.questions.length}{" "}
                                   {s.questions.length === 1 ? "question" : "questions"}
@@ -287,8 +300,19 @@ export default function SurveysPage() {
                                   <Badge variant="outline">org: {s.orgId}</Badge>
                                 )}
                               </div>
+                              {(s.createdByName || s.createdByEmail) && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Created by {s.createdByName || "—"}
+                                  {s.createdByEmail ? ` · ${s.createdByEmail}` : ""}
+                                </p>
+                              )}
                             </div>
-                            <div className="flex shrink-0 gap-1">
+                            <div className="flex shrink-0 items-center gap-1">
+                              <Switch
+                                checked={!!s.enabled}
+                                onCheckedChange={() => handleToggleEnabled(s)}
+                                aria-label={`Toggle availability for ${s.title || "survey"}`}
+                              />
                               <Button
                                 variant="ghost"
                                 size="sm"

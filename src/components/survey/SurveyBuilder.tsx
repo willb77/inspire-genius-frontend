@@ -207,6 +207,20 @@ export default function SurveyBuilder({
               My Workspace. Leave blank to expose it to your own organization.
             </p>
           </div>
+          <label className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <span className="space-y-0.5">
+              <span className="text-sm font-medium">Available to respondents</span>
+              <span className="block text-xs text-muted-foreground">
+                Off keeps it hidden until you're ready. Turn on to make it
+                available to your organization.
+              </span>
+            </span>
+            <Switch
+              checked={!!draft.enabled}
+              onCheckedChange={(v) => patch({ enabled: v })}
+              aria-label="Available to respondents"
+            />
+          </label>
         </CardContent>
       </Card>
 
