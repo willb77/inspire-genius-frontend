@@ -235,9 +235,10 @@ export default function Settings() {
           </div>
         )}
 
-        {/* My Workspace — Surveys shared with the user's organization. This is
-            the user-role entry point (the left nav is frozen for that role). */}
-        {role === ROLES.USER && (
+        {/* My Workspace — Surveys shared with the user's organization. The
+            user-role entry point (the left nav is frozen for that role); also
+            shown to super-admin so the owner can see it while testing. */}
+        {(role === ROLES.USER || role === ROLES.SUPER_ADMIN) && (
           <div data-tour="settings-surveys">
             <SurveysSettingsCard />
           </div>
