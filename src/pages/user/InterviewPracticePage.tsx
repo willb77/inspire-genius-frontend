@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from "react"
 import {
   Loader2, RefreshCw, ArrowRight, MessageSquareText, Mic, MicOff,
   Volume2, Pencil, Printer, Flag, CheckCircle2, FileText, FileDown, Save, Sparkles,
+  Building2,
 } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
@@ -51,6 +52,7 @@ import {
   type InterviewFrame,
   type PlannedQuestion,
   type PracticeQuestions,
+  type EmployerPackMatch,
 } from "@/services/interview/practice.service"
 import {
   downloadInterview,
@@ -109,6 +111,9 @@ export default function InterviewPracticePage() {
   // Job-aware tailoring: when the frame has a role/job title, questions are
   // fetched from the LLM-backed tailored endpoint instead of the static bank.
   const [tailoredApplied, setTailoredApplied] = useState(false)
+  // The curated employer/sector pack the backend matched from the frame, or
+  // null when the company/industry are ones we do not cover.
+  const [employerPack, setEmployerPack] = useState<EmployerPackMatch | null>(null)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
 
@@ -170,14 +175,28 @@ export default function InterviewPracticePage() {
     // the static 12-competency bank. Falls back to the static bank server-side
     // (and again client-side via getTailoredPracticeQuestions) on any failure,
     // so the interview never breaks.
+    // The frame already collects company + industry; passing them lets the
+    // backend swap in a curated employer/sector pack for the competencies it
+    // covers (verbatim, never model-rewritten) and tailor only the rest. An
+    // employer we do not cover returns exactly the previous behaviour.
     const jobTitle = f.roleTitle?.trim()
+    const company = f.company?.trim()
+    const industry = f.industry?.trim()
     let bank: PracticeQuestions = data
     let tailored = false
-    if (jobTitle) {
-      bank = await getTailoredPracticeQuestions(jobTitle, f.jobDescription?.trim() || undefined)
+    let pack: EmployerPackMatch | null = null
+    if (jobTitle || company || industry) {
+      bank = await getTailoredPracticeQuestions(
+        jobTitle || "",
+        f.jobDescription?.trim() || undefined,
+        undefined,
+        { company, industry },
+      )
       tailored = Boolean(bank.tailored)
+      pack = bank.employer ?? null
     }
     setTailoredApplied(tailored)
+    setEmployerPack(pack)
 
     // ONE-TIME personalization fetch (cheap SQL, no pgvector). The result is
     // replayed into every turn's job context, so the per-turn path never pays a
@@ -412,6 +431,14 @@ export default function InterviewPracticePage() {
                   <Sparkles className="h-3 w-3" /> Tailored to {frame?.roleTitle}
                 </p>
               )}
+              {employerPack && (
+                <p className="flex items-center gap-1 text-xs text-amber-700">
+                  <Building2 className="h-3 w-3" />
+                  {employerPack.kind === "employer"
+                    ? `${employerPack.questionCount} questions in ${employerPack.name}'s style`
+                    : `${employerPack.questionCount} sector-style questions`}
+                </p>
+              )}
               {personalizedApplied && (
                 <p className="flex items-center gap-1 text-xs text-indigo-600">
                   <Sparkles className="h-3 w-3" /> Personalized to your profile
@@ -444,12 +471,54 @@ export default function InterviewPracticePage() {
           </div>
         )}
 
+        {employerPack && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardContent className="space-y-2 py-4 text-xs text-amber-900">
+              <p className="flex items-center gap-1.5 text-sm font-semibold">
+                <Building2 className="h-4 w-4" />
+                {employerPack.kind === "employer"
+                  ? `Practising in ${employerPack.name}'s style`
+                  : employerPack.name}
+              </p>
+              {employerPack.framework && (
+                <p><span className="font-semibold">Their framework: </span>{employerPack.framework}</p>
+              )}
+              {employerPack.howTheyInterview && (
+                <p><span className="font-semibold">How they interview: </span>{employerPack.howTheyInterview}</p>
+              )}
+              {employerPack.optimizesFor && (
+                <p><span className="font-semibold">What it rewards: </span>{employerPack.optimizesFor}</p>
+              )}
+              {employerPack.typicalEmployers && (
+                <p><span className="font-semibold">Typically: </span>{employerPack.typicalEmployers}</p>
+              )}
+              <p><span className="font-semibold">Watch out for: </span>{employerPack.coachingNote}</p>
+              {/* The disclaimer travels with the content, by contract. */}
+              <p className="border-t border-amber-200 pt-2 italic text-amber-800">
+                {employerPack.provenance}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {current && (
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <Badge variant="secondary" className="mb-1 w-fit">{current.competency}</Badge>
+                  <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="secondary" className="w-fit">{current.competency}</Badge>
+                    {current.source === "employer" && employerPack && (
+                      <Badge variant="outline" className="w-fit border-amber-300 text-amber-700">
+                        {employerPack.name} style
+                      </Badge>
+                    )}
+                    {current.source === "sector" && (
+                      <Badge variant="outline" className="w-fit border-slate-300 text-slate-600">
+                        Sector style
+                      </Badge>
+                    )}
+                  </div>
                   <CardTitle className="text-base font-medium leading-snug">{current.question}</CardTitle>
                 </div>
                 {voiceMode && (
@@ -465,6 +534,13 @@ export default function InterviewPracticePage() {
                 <ul className="space-y-1">
                   {current.starProbes.map((p, i) => <li key={i} className="flex gap-2 text-xs text-slate-500"><span aria-hidden>↳</span><span>{p}</span></li>)}
                 </ul>
+              )}
+
+              {current.strongAnswerCovers && (
+                <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  <span className="font-semibold">What a strong answer covers: </span>
+                  {current.strongAnswerCovers}
+                </p>
               )}
 
               <Textarea rows={6} placeholder="Tell your story — Situation, Task, Action, Result…"
