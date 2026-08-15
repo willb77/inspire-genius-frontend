@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1486</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1487</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3384,6 +3384,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-15 &mdash; Prompt #1487 [session log: survey roles, permanent delete, PRISM PDF tab]</div>
+  <div class="prompt-text">/log-session &mdash; summary of this session's frontend work.
+  <br><br><strong>Shipped:</strong> survey access as role SETS; permanent user delete with corrected confirmation copy; HomeV2 PRISM Report opens a new tab; bulk-import whitespace + header-mapping fixes and a downloadable CSV template.
+  <br><br><strong>Three bugs whose tests were green because the test lied:</strong> <code>window.open(&hellip;,"noopener")</code> returns <strong>null</strong> by spec &mdash; the tests mocked it to return a fake window, so the blank-tab-then-redirect pattern silently navigated the CURRENT tab. <code>.trim()</code> does not strip zero-width characters, so a cell reading <code>a@b.com</code> failed with no visible cause. And a soft-deleted user permanently blocked its own email because the lookup never filtered deleted rows.
+  <br><br><strong>Delete is now irreversible, so the UI had to change with it:</strong> it previously told operators the record was "retained for audit" and could be purged later. Every delete now routes to typed confirmation and the copy states what actually happens.
+  <br><br><strong>Verification discipline:</strong> frontend deploys confirmed by fetching the SERVED bundle on each tier and grepping for the new code, never by a green job.</div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-15 &mdash; Prompt #1482 [publish Meet_the_Team.mp4 to S3]</div>
   <div class="prompt-text">/full-go: add this video to S3 and provide a durable url &mdash; <code>IG Movies, Decks/Meet_the_Team.mp4</code>.

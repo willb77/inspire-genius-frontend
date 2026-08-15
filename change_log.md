@@ -1,3 +1,40 @@
+## [2026-08-15] — Session: survey roles, permanent delete, PRISM PDF tab, CDK asset-hash incident
+
+### Added
+- **Bulk-import CSV template** (`src/lib/bulk-import/template.ts`) + a "Download
+  CSV template" button. The uploader described required columns in prose while
+  the parser accepted a different alias set; prose cannot be uploaded, so people
+  invented their own headers.
+
+### Fixed
+- **Survey access is role SETS, not a rank.** Landed at: author = every role
+  EXCEPT plain `user`; respondent = every role. Kept as explicit sets rather
+  than a seniority threshold because membership changed three times in one day
+  and a rank silently absorbs any role added to the hierarchy. Taking is now
+  enforced server-side, and the authz guard runs BEFORE the row load.
+- **Deleting a user is permanent.** It used to soft-delete, and the email
+  lookup did not filter deleted rows, so the address stayed permanently taken.
+  UI copy no longer promises reversibility and every delete now requires typed
+  confirmation. The delete cascade was also incomplete: an assessments foreign
+  key with ON DELETE NO ACTION made the pre-existing hard-delete path fail for
+  any user who had completed a behavioural assessment.
+- **HomeV2 `Prism Data → PRISM Report (PDF)` opens a new tab.**
+  `window.open(..., "noopener")` returns **null** by spec, so the
+  blank-tab-then-redirect pattern fell through and replaced the current page.
+  Measured in Chrome 150 inside a real user gesture. The tests had mocked
+  `window.open` to return a fake window, which is exactly what hid it.
+- **Bulk import: invisible edge whitespace.** `.trim()` does not strip
+  zero-width space/non-joiner, word joiner or soft hyphen, so a cell reading
+  `a@b.com` failed validation with no visible cause.
+- **Bulk import: unrecognised columns are reported, not silently dropped.** A
+  33-row roster failed every row with a missing-field error because its address
+  column carried an institution-specific header. Header mapping now reports
+  inferred and ignored columns by their ORIGINAL spelling.
+
+### Verification notes
+- Frontend deploys verified by fetching the SERVED bundle on each tier and
+  grepping for the new code — never by a green deploy job alone.
+
 ## [2026-08-15] — Demo asset published: Meet_the_Team.mp4
 
 ### Added
