@@ -25,6 +25,7 @@ import UserTopHeader from "@/components/shared/UserTopHeader";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { useAuth } from "@/context/useAuth";
 import VoiceDeskWidget from "@/components/shared/VoiceDeskWidget";
+import { SupportAgentProvider } from "@/context/SupportAgentProvider";
 import { BroadcastAlertBanner } from "@/components/shared/BroadcastAlertBanner";
 import { useNotificationToasts } from "@/hooks/useNotificationInbox";
 
@@ -215,6 +216,7 @@ export default function SidebarScaffold({ navItems, navSections, children, class
   // Toast on newly-arrived broadcast alerts (mounted once, app-wide).
   useNotificationToasts();
   return (
+    <SupportAgentProvider userLabel={user?.name || undefined}>
     <SidebarProvider defaultOpen={initialSidebarOpen}>
       <Sidebar collapsible="icon" variant="sidebar" side="left" data-tour="nav">
         <SidebarOpenObserver skipFirstWrite={collapseOnMount} />
@@ -320,5 +322,6 @@ export default function SidebarScaffold({ navItems, navSections, children, class
         <VoiceDeskWidget userId={user?.id} role={user?.role as string | undefined} />
       </SidebarInset>
     </SidebarProvider>
+    </SupportAgentProvider>
   );
 }
