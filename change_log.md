@@ -1,3 +1,21 @@
+## [2026-08-15] — Demo asset published: Meet_the_Team.mp4
+
+### Added
+- **`Meet_the_Team.mp4` published to the public demo asset bucket**, alongside
+  the existing demo videos. 12,761,538 bytes · `video/mp4` · H.264 1920x1080 +
+  AAC · 6 min 41 s. Verified live: HTTP 200, `accept-ranges: bytes`, range
+  request returns 206 (scrubbing works), `cache-control: public, max-age=86400`.
+
+### Fixed
+- **Remuxed for progressive playback before upload.** The source had its `moov`
+  atom after `mdat`, so a browser had to download the whole file before playback
+  could start. Remuxed with `ffmpeg -c copy -movflags +faststart` — stream copy,
+  so no re-encode and no quality loss; codecs and duration unchanged. Confirmed
+  on the served object that the fix survived the upload.
+  - Worth knowing: the publish helper only transcodes non-web formats and
+    uploads `.mp4` as-is, so publishing the original directly would have shipped
+    the non-streaming atom order. The remux has to happen first.
+
 ## [2026-08-14] — 'Meet the Team' executive deck built from the bio documents
 
 Deliverable, not app code. Branch `feat/content-builder-video-cover-toggle-voice-preview`.
