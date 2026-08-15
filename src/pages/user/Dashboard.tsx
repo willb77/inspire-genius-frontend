@@ -11,6 +11,7 @@ import { useAgents } from "@/hooks/coaches/useAgents";
 import { useAgentEngine } from "@/lib/agentApi";
 import { ROUTES } from "@/constants/routes";
 import { MultiAgentIndicator } from "@/components/shared/MultiAgentIndicator";
+import AskMeridianButton from "@/components/support/AskMeridianButton";
 
 type Agent = {
   id: string;
@@ -107,14 +108,18 @@ export default function Dashboard() {
                 {t("dashboard:coachDescription")}
               </p>
             </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                placeholder={t("dashboard:search")}
-                className="!bg-white pl-9"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("dashboard:search")}
+                  className="!bg-white pl-9"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              {/* Answers a question without making the user pick a coach first. */}
+              <AskMeridianButton className="!bg-white" />
             </div>
           </div>
 
