@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1482</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1483</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,16 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+                <h3>[2026-08-14 EDT] &mdash; Interview Practice: employer-style questions and their provenance</h3>
+        <p>The frame already collected <b>company</b> and <b>industry</b> and then threw them away before tailoring. It now passes them, so the backend can swap in curated employer/sector questions for the competencies a pack covers. <strong>Built and tested, NOT deployed.</strong></p>
+        <ul>
+          <li><strong><code>practice.service.ts</code></strong> &mdash; <code>getTailoredPracticeQuestions()</code> takes an optional <code>{ company, industry }</code> (blank values omitted, not sent as empty strings). <code>PracticeCompetency</code> gains <code>source</code> (<code>employer</code>/<code>sector</code>/<code>bank</code>) and <code>strongAnswerCovers</code>; <code>PracticeQuestions</code> gains <code>employer</code>. <code>buildInterviewPlan()</code> carries both onto <code>PlannedQuestion</code>. New <code>getEmployerPackCatalogue()</code> degrades to empty lists rather than throwing.</li>
+          <li><strong><code>InterviewPracticePage.tsx</code></strong> &mdash; header badge (&ldquo;N questions in Amazon / AWS&rsquo;s style&rdquo;), a per-question provenance badge, a &ldquo;What a strong answer covers&rdquo; coaching line on curated questions, and a context card carrying the employer&rsquo;s published framework, how they interview, what it rewards, and what to watch out for.</li>
+          <li><strong>The disclaimer travels with the content.</strong> The backend puts the provenance notice on every payload and the page renders it in the same card as the employer context rather than as a footnote elsewhere: questions written <em>in the style of</em> a published framework, not that employer&rsquo;s actual questions, no affiliation implied.</li>
+          <li><strong>Nothing regresses without a company.</strong> Blank or unrecognized company/industry &rarr; <code>employer: null</code> and every question <code>source: "bank"</code> &mdash; the previous behaviour exactly. <code>strongAnswerCovers</code> is candidate-facing coaching, never the evaluator&rsquo;s rubric or exemplars.</li>
+          <li><strong>Verified:</strong> <code>npm run build</code> clean (tsc + vite); 39 interview tests pass incl. 10 new in <code>practice.employerPacks.test.ts</code>; ESLint clean on all three changed files.</li>
+        </ul>
 
         <h3>[2026-08-12 EDT] &mdash; Employer &amp; sector interview question packs + build plan</h3>
         <p>Content and planning deliverable &mdash; <strong>no application, service or infrastructure code was touched.</strong> 16 employer packs, 7 sector packs, <strong>138 questions</strong>, and a repo-native plan to serve them through the Interview Practice tailoring path that already exists.</p>
@@ -3077,6 +3087,12 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-14 &mdash; Prompt #1483 [implement the employer question packs in practice interview]</div>
+          <div class="prompt-text">&ldquo;now implement the employer question packs in practice interview&rdquo;</div>
+          <div class="prompt-text"><b>Front-end half.</b> The frame&rsquo;s company/industry now reach the tailoring call, and the page surfaces which questions are curated, what a strong answer covers, and the employer context &mdash; with the provenance disclaimer rendered alongside the questions rather than hidden in a footnote.</div>
+          <div class="prompt-text"><b>Not deployed</b> &mdash; paired with the backend PR on the monorepo; no dev or staging-b rollout.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-12 &mdash; Prompt #1482 [employer-specific practice interviews &rarr; question packs + build plan] <code>/full-go</code></div>
           <div class="prompt-text">&ldquo;I want to offer practice interviews with questions for roles at AWS, Google, Meta, Microsoft, IBM, Oracle, LinkedIn, and other top technology and business consulting companies, Financial institutions (goldman sachs, citigroup, bridgewater, Black Rock), and other sector leading companies. Create a word document with a set of questions for each company, and sector and a plan to implement them in practice interview.&rdquo;</div>

@@ -14,6 +14,57 @@ export type PracticeCompetency = {
   competency: string
   question: string
   starProbes: string[]
+  /** Where this question came from. `employer`/`sector` = a curated pack
+   * question, served verbatim and never rewritten by the model; `bank` = the
+   * shared STAR bank (optionally role-tailored). Absent on older responses. */
+  source?: "employer" | "sector" | "bank"
+  /** Candidate-facing coaching for curated questions — what a strong answer
+   * covers. Never the evaluator's 1-5 rubric or its 5/3/1 exemplars. */
+  strongAnswerCovers?: string
+}
+
+/**
+ * The curated pack the backend matched from the frame's company/industry.
+ *
+ * Provenance matters here: these questions are written by Inspire Genius in the
+ * style of each employer's OWN publicly published values or hiring framework —
+ * they are not that company's actual questions, and no affiliation is implied.
+ * `provenance` carries that statement with the payload so the disclaimer
+ * travels with the content rather than living only in the UI.
+ */
+export type EmployerPackMatch = {
+  kind: "employer" | "sector"
+  slug: string
+  name: string
+  coachingNote: string
+  questionCount: number
+  provenance: string
+  // employer packs only
+  sector?: string
+  sectorSlug?: string
+  framework?: string
+  howTheyInterview?: string
+  optimizesFor?: string
+  // sector packs only
+  typicalEmployers?: string
+}
+
+export type EmployerPackCatalogue = {
+  provenance: string
+  employers: {
+    slug: string
+    name: string
+    sector: string
+    sectorSlug: string
+    framework: string
+    questionCount: number
+  }[]
+  sectors: {
+    slug: string
+    name: string
+    typicalEmployers: string
+    questionCount: number
+  }[]
 }
 
 export type PracticeSection = {
@@ -30,6 +81,9 @@ export type PracticeQuestions = {
   /** True when the backend generated these questions from a specific job
    * title/description rather than serving the static 12-competency bank. */
   tailored?: boolean
+  /** The curated employer/sector pack that matched, or null when the company
+   * and industry are ones we do not cover (in which case nothing changes). */
+  employer?: EmployerPackMatch | null
 }
 
 /**
@@ -84,6 +138,7 @@ export async function getTailoredPracticeQuestions(
   jobTitle: string,
   jobDescription?: string,
   section?: PracticeSection["key"],
+  employer?: { company?: string; industry?: string },
 ): Promise<PracticeQuestions> {
   try {
     const { data } = await agentApi.post<PracticeQuestions>(
@@ -92,11 +147,33 @@ export async function getTailoredPracticeQuestions(
         job_title: jobTitle,
         job_description: jobDescription,
         section,
+        // Both optional and fail-open server-side: an employer we do not cover
+        // returns exactly the previous behaviour with `employer: null`.
+        company: employer?.company?.trim() || undefined,
+        industry: employer?.industry?.trim() || undefined,
       },
     )
     return data
   } catch {
     return practiceService.getPracticeQuestions({ section })
+  }
+}
+
+/**
+ * The catalogue of employers and sectors we have curated packs for. Metadata
+ * only — names, sectors, published frameworks and counts, never question text.
+ * Used to tell the candidate up-front that naming their target employer will
+ * change the questions. Returns empty lists on any failure (never throws) so a
+ * dead catalogue degrades to "no hint shown" rather than a broken form.
+ */
+export async function getEmployerPackCatalogue(): Promise<EmployerPackCatalogue> {
+  try {
+    const { data } = await agentApi.get<EmployerPackCatalogue>(
+      "/v1/agents/interview/employer-packs",
+    )
+    return data
+  } catch {
+    return { provenance: "", employers: [], sectors: [] }
   }
 }
 
@@ -174,6 +251,9 @@ export type PlannedQuestion = {
   sectionKey: PracticeSection["key"]
   sectionTitle: string
   number: number // 1-based position in the interview
+  /** Carried through from the bank so the question card can show provenance. */
+  source?: PracticeCompetency["source"]
+  strongAnswerCovers?: string
 }
 
 /**
@@ -207,6 +287,8 @@ export function buildInterviewPlan(bank: PracticeQuestions, frame: InterviewFram
         sectionKey: sec.key,
         sectionTitle: sec.title,
         number: 0, // assigned below
+        source: c.source,
+        strongAnswerCovers: c.strongAnswerCovers,
       })
     }
   })
@@ -220,6 +302,7 @@ export function buildInterviewPlan(bank: PracticeQuestions, frame: InterviewFram
         plan.push({
           id: c.id, competency: c.competency, question: c.question,
           starProbes: c.starProbes, sectionKey: sec.key, sectionTitle: sec.title, number: 0,
+          source: c.source, strongAnswerCovers: c.strongAnswerCovers,
         })
         used.add(c.id)
       }
