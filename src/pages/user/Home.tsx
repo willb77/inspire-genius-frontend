@@ -1,5 +1,6 @@
 import UserLayout from "@/layouts/UserLayout";
 import { useAuth } from "@/context/useAuth";
+import { useSupportAgent } from "@/context/useSupportAgent";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/constants/routes";
@@ -27,6 +28,7 @@ import {
   CalendarDays,
   Star,
   Brain,
+  Sparkles,
 } from "lucide-react";
 
 const ACTIVE_STATUSES = new Set([
@@ -52,6 +54,7 @@ function getReportStatus(status: string | undefined, t: (key: string) => string)
 
 export default function Home() {
   const { user } = useAuth();
+  const { open: openSupportAgent } = useSupportAgent();
   const navigate = useNavigate();
   const { t } = useTranslation(["common", "dashboard", "coaching"]);
   const firstName = user?.fullName?.split(" ")[0] ?? user?.name?.split(" ")[0] ?? "there";
@@ -79,6 +82,9 @@ export default function Home() {
     { label: t("coaching:quickActions.markAsMyPrism", { defaultValue: "Mark as My PRISM Rpt" }), icon: Star, to: ROUTES.DOCUMENTS, bg: "bg-rose-100", iconColor: "text-rose-600" },
     { label: t("coaching:quickActions.setNewGoal", { defaultValue: "Set a Goal" }), icon: Flag, to: ROUTES.SUMMIT.BASE, bg: "bg-amber-100", iconColor: "text-amber-600" },
     { label: t("coaching:quickActions.goalSetting", { defaultValue: "Goal Setting" }), icon: Target, to: ROUTES.SUMMIT.BASE, bg: "bg-teal-100", iconColor: "text-teal-600" },
+    // Opens the assistant popup in place rather than routing — a quick
+    // question shouldn't cost the user their place on the dashboard.
+    { label: t("coaching:quickActions.askMeridian", { defaultValue: "Ask Meridian" }), icon: Sparkles, onClick: openSupportAgent, bg: "bg-indigo-100", iconColor: "text-indigo-600" },
   ];
 
   const STATS = [
