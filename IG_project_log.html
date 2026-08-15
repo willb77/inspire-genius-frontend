@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1485</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1486</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3384,6 +3384,15 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-15 &mdash; Prompt #1482 [publish Meet_the_Team.mp4 to S3]</div>
+  <div class="prompt-text">/full-go: add this video to S3 and provide a durable url &mdash; <code>IG Movies, Decks/Meet_the_Team.mp4</code>.
+  <br><br><strong>Published:</strong> the public demo asset bucket. 12,761,538 bytes, <code>video/mp4</code>, H.264 1920x1080 + AAC, 6&nbsp;min&nbsp;41&nbsp;s. Verified HTTP 200, <code>accept-ranges: bytes</code>, range request &rarr; 206 (scrubbing works), <code>cache-control: public, max-age=86400</code>.
+  <br><br><strong>Caught before upload:</strong> the source had its <code>moov</code> atom AFTER <code>mdat</code> (<code>ftyp, free, mdat, moov</code>), so a browser would have had to download all 12&nbsp;MB before playback started. Remuxed with <code>ffmpeg -c copy -movflags +faststart</code> &mdash; stream copy, no re-encode, no quality loss; codecs and the 400.9&nbsp;s duration unchanged. Confirmed on the SERVED object that bytes 32-47 are the <code>moov</code> header, so the fix survived the upload.
+  <br><br><strong>Why that mattered:</strong> the publish helper only transcodes non-web formats and uploads <code>.mp4</code> as-is &mdash; publishing the original directly would have shipped the non-streaming atom order.
+  <br><br><strong>No ACL change:</strong> public read comes from the bucket policy, not object ACLs, so a plain <code>s3 cp</code> sufficed. No CloudFront in front of this bucket, so the S3 REST URL is the durable address and the key was live immediately with no invalidation.</div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-14 &mdash; Prompt #1483 [&lsquo;Meet the Team&rsquo; executive deck]</div>
   <div class="prompt-text">/full-go: Create a powerpoint deck &lsquo;Meet the Team&rsquo; use the team bios for the team
