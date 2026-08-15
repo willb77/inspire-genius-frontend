@@ -1,3 +1,45 @@
+## [2026-08-14] — Interview Practice: employer-style questions and their provenance
+
+The frame already collected **company** and **industry** and then threw them away
+before tailoring. It now passes them, so the backend can swap in curated
+employer/sector questions for the competencies a pack covers. **Built and tested,
+NOT deployed.**
+
+### Changed
+- **`src/services/interview/practice.service.ts`**
+  - `getTailoredPracticeQuestions()` takes an optional `{ company, industry }`.
+    Blank/whitespace values are omitted rather than sent as empty strings.
+  - `PracticeCompetency` gains `source` (`employer` | `sector` | `bank`) and
+    `strongAnswerCovers`; `PracticeQuestions` gains `employer`. New types
+    `EmployerPackMatch` and `EmployerPackCatalogue`.
+  - `buildInterviewPlan()` carries `source` + `strongAnswerCovers` onto
+    `PlannedQuestion`, so the question card can show provenance per question.
+  - New `getEmployerPackCatalogue()` — metadata only; degrades to empty lists on
+    failure rather than throwing.
+- **`src/pages/user/InterviewPracticePage.tsx`**
+  - Passes the frame's company/industry into tailoring; tracks the matched pack.
+  - Header badge ("N questions in Amazon / AWS's style"), a per-question badge,
+    and a "What a strong answer covers" coaching line on curated questions.
+  - A context card with the employer's published framework, how they interview,
+    what it rewards, and what to watch out for — ending with the provenance
+    disclaimer.
+
+### Notes
+- **The disclaimer travels with the content.** The backend puts the provenance
+  notice on every payload and the page renders it in the same card as the
+  employer context, rather than relying on a footnote somewhere else: these are
+  questions written *in the style of* an employer's published framework, not
+  that employer's actual questions, and no affiliation is implied.
+- **Nothing regresses without a company.** When company/industry are blank or
+  unrecognized the backend returns `employer: null` and every question is
+  `source: "bank"` — the previous behaviour exactly.
+- `strongAnswerCovers` is candidate-facing coaching, NOT the evaluator's 1-5
+  rubric or its 5/3/1 exemplars. The candidate-safe contract is unchanged.
+- Verified: `npm run build` clean (tsc + vite); 39 interview tests pass including
+  10 new ones in `practice.employerPacks.test.ts`; ESLint clean on all three
+  changed files.
+
+---
 ## [2026-08-14] — HomeV2 "PRISM Report (PDF)" replaced Home instead of opening a tab
 
 The report link navigated the current tab, so the dashboard was lost.
