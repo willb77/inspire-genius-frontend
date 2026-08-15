@@ -79,7 +79,7 @@ describe("PrismDataMenu", () => {
       data: { available: true, pdf_available: true, request_id: "req-1" },
     })
     mutateAsync.mockResolvedValue({ url: "https://s3.example/report.pdf" })
-    const win = { location: { href: "" }, close: jest.fn() }
+    const win = { location: { href: "" }, close: jest.fn(), opener: {} as unknown }
     const openSpy = jest
       .spyOn(window, "open")
       .mockReturnValue(win as unknown as Window)
@@ -92,6 +92,40 @@ describe("PrismDataMenu", () => {
       expect(mutateAsync).toHaveBeenCalledWith({ kind: "pdf" }),
     )
     await waitFor(() => expect(win.location.href).toBe("https://s3.example/report.pdf"))
+
+    // The features argument is the whole bug: passing "noopener"/"noreferrer"
+    // makes a real browser return null, so there is no handle to redirect and
+    // the old code navigated the current tab instead. Verified in Chrome 150.
+    // Mocking window.open cannot reproduce that, so pin the CALL SHAPE.
+    expect(openSpy).toHaveBeenCalledWith("", "_blank")
+    const feats = openSpy.mock.calls[0][2]
+    expect(feats ?? "").not.toMatch(/noopener|noreferrer/)
+    // opener must still be severed — same protection, without losing the handle.
+    expect(win.opener).toBeNull()
+    openSpy.mockRestore()
+  })
+
+  it("never navigates the current tab away from Home", async () => {
+    // The regression that prompted this: a null handle fell through to
+    // `window.location.href = url`, replacing HomeV2 with the PDF.
+    useMyPrismReport.mockReturnValue({
+      data: { available: true, pdf_available: true, request_id: "req-1" },
+    })
+    mutateAsync.mockResolvedValue({ url: "https://s3.example/report.pdf" })
+    const openSpy = jest.spyOn(window, "open").mockReturnValue(null)
+    const before = window.location.href
+
+    render(<PrismDataMenu />)
+    fireEvent.click(screen.getByTestId("homev2-prism-data-pdf"))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ kind: "pdf" }))
+    expect(window.location.href).toBe(before)
+    // ...and the user is offered a way through rather than left stuck.
+    await waitFor(() => expect(toastError).toHaveBeenCalled())
+    const opts = toastError.mock.calls.at(-1)?.[1] as
+      | { action?: { label?: string } }
+      | undefined
+    expect(opts?.action?.label).toBe("Open report")
     openSpy.mockRestore()
   })
 
@@ -101,7 +135,7 @@ describe("PrismDataMenu", () => {
       data: { available: true, pdf_available: true, request_id: null },
     })
     mutateAsync.mockResolvedValue({ url: "https://s3.example/generated.pdf" })
-    const win = { location: { href: "" }, close: jest.fn() }
+    const win = { location: { href: "" }, close: jest.fn(), opener: {} as unknown }
     const openSpy = jest.spyOn(window, "open").mockReturnValue(win as unknown as Window)
 
     render(<PrismDataMenu />)
@@ -112,6 +146,7 @@ describe("PrismDataMenu", () => {
     fireEvent.click(item)
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ kind: "pdf" }))
     await waitFor(() => expect(win.location.href).toBe("https://s3.example/generated.pdf"))
+    expect(openSpy).toHaveBeenCalledWith("", "_blank")
     openSpy.mockRestore()
   })
 
