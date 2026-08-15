@@ -10,6 +10,11 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { SupportAgentProvider } from "../SupportAgentProvider";
 import { useSupportAgent } from "../useSupportAgent";
 
+jest.mock("@/components/support/SupportAgentLauncher", () => ({
+  __esModule: true,
+  default: () => <div data-testid="launcher" />,
+}));
+
 jest.mock("@/components/support/SupportAgentPopup", () => ({
   __esModule: true,
   default: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
@@ -106,5 +111,48 @@ describe("useSupportAgent outside a provider", () => {
     render(<Consumer />);
     expect(screen.getByTestId("state")).toHaveTextContent("closed");
     expect(() => fireEvent.click(screen.getByText("open-it"))).not.toThrow();
+  });
+});
+
+describe("SupportAgentProvider — global launcher", () => {
+  it("renders a launcher so every page has a way in", () => {
+    renderWithProvider();
+    expect(screen.getByTestId("launcher")).toBeInTheDocument();
+  });
+
+  it("can be mounted without the launcher", () => {
+    render(
+      <SupportAgentProvider showLauncher={false}>
+        <Consumer />
+      </SupportAgentProvider>,
+    );
+    expect(screen.queryByTestId("launcher")).not.toBeInTheDocument();
+  });
+});
+
+describe("SupportAgentProvider — nested mounts", () => {
+  it("renders only ONE popup and ONE launcher when nested", () => {
+    render(
+      <SupportAgentProvider>
+        <SupportAgentProvider>
+          <Consumer />
+        </SupportAgentProvider>
+      </SupportAgentProvider>,
+    );
+    expect(screen.getAllByTestId("launcher")).toHaveLength(1);
+    fireEvent.click(screen.getByText("open-it"));
+    expect(screen.getAllByTestId("popup")).toHaveLength(1);
+  });
+
+  it("the inner provider defers to the outer one's state", () => {
+    render(
+      <SupportAgentProvider>
+        <SupportAgentProvider>
+          <Consumer />
+        </SupportAgentProvider>
+      </SupportAgentProvider>,
+    );
+    fireEvent.click(screen.getByText("open-it"));
+    expect(screen.getByTestId("state")).toHaveTextContent("open");
   });
 });
