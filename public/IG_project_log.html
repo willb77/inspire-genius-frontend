@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1483</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1484</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3088,11 +3088,21 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
         <div class="prompt-entry">
-          <div class="timestamp">2026-08-14 &mdash; Prompt #1483 [implement the employer question packs in practice interview]</div>
+          <div class="timestamp">2026-08-14 &mdash; Prompt #1484 [implement the employer question packs in practice interview]</div>
           <div class="prompt-text">&ldquo;now implement the employer question packs in practice interview&rdquo;</div>
           <div class="prompt-text"><b>Front-end half.</b> The frame&rsquo;s company/industry now reach the tailoring call, and the page surfaces which questions are curated, what a strong answer covers, and the employer context &mdash; with the provenance disclaimer rendered alongside the questions rather than hidden in a footnote.</div>
           <div class="prompt-text"><b>Not deployed</b> &mdash; paired with the backend PR on the monorepo; no dev or staging-b rollout.</div>
         </div>
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-14 &mdash; Prompt #1481 [HomeV2 PRISM Report opens a new tab]</div>
+  <div class="prompt-text">/full-go: on HomeV2 on Prism Data-&gt; Prism Report(PDF). This should open in a popup window or a seperate tab.
+  <br><br><strong>Root cause:</strong> <code>window.open("", "_blank", "noopener,noreferrer")</code> returns <strong>null by spec</strong>. The handler already opened a tab synchronously inside the click gesture and redirected it once the presigned URL resolved &mdash; but with <code>noopener</code> (or <code>noreferrer</code>, which implies it) there is no handle to redirect, so it fell through to <code>window.location.href = url</code> and replaced Home with the PDF.
+  <br><br><strong>Measured, not assumed:</strong> Chrome 150, inside a <em>real</em> user gesture (a synthetic click is nulled by the popup blocker either way) &mdash; with those features &rarr; NULL, without them &rarr; a usable handle.
+  <br><br><strong>Fix:</strong> open with no features so the handle survives, then sever the opener by assignment (<code>win.opener = null</code>) &mdash; the same protection the flag was there for. The blocked-popup fallback no longer navigates the current tab; it raises a toast with an &ldquo;Open report&rdquo; action, and clicking that is itself a user gesture so opening with the URL up front is not blocked.
+  <br><br><strong>Why the tests were green:</strong> they mocked <code>window.open</code> to return a fake window, which a real browser refuses to do here &mdash; a mock cannot reproduce a null return. Tests now pin the call SHAPE and assert the opener is severed. 6 tests (was 4); both halves verified to gate.
+  <br><br><strong>Left alone:</strong> the other <code>window.open</code> call sites pass the URL directly, so a null return costs them nothing.</div>
+</div>
+
         <div class="prompt-entry">
           <div class="timestamp">2026-08-12 &mdash; Prompt #1482 [employer-specific practice interviews &rarr; question packs + build plan] <code>/full-go</code></div>
           <div class="prompt-text">&ldquo;I want to offer practice interviews with questions for roles at AWS, Google, Meta, Microsoft, IBM, Oracle, LinkedIn, and other top technology and business consulting companies, Financial institutions (goldman sachs, citigroup, bridgewater, Black Rock), and other sector leading companies. Create a word document with a set of questions for each company, and sector and a plan to implement them in practice interview.&rdquo;</div>

@@ -40,6 +40,34 @@ NOT deployed.**
   changed files.
 
 ---
+## [2026-08-14] — HomeV2 "PRISM Report (PDF)" replaced Home instead of opening a tab
+
+The report link navigated the current tab, so the dashboard was lost.
+
+### Fixed
+- **`window.open("", "_blank", "noopener,noreferrer")` returns `null` by spec.**
+  The handler already opened a tab synchronously inside the click gesture and
+  redirected it once the download URL resolved — but with `noopener` (or
+  `noreferrer`, which implies it) in the features there is no handle to
+  redirect, so it fell through to `window.location.href` and replaced the page.
+  - Measured in Chrome 150 inside a real user gesture: with those features →
+    `null`, without them → a usable handle.
+  - Fix: open with no features, then sever the opener by assignment
+    (`win.opener = null`) — the same protection the flag was there for.
+  - Files: `src/components/dashboard/v2/PrismDataMenu.tsx`
+- **Blocked-popup fallback no longer navigates the current tab.** It raises a
+  toast with an "Open report" action; clicking that is itself a user gesture, so
+  opening with the URL up front is not blocked.
+
+### Notes
+- Other `window.open` call sites pass the URL directly, so a null return costs
+  them nothing — the tab still opens. Left untouched.
+- **Why the tests were green:** they mocked `window.open` to return a fake
+  window, which a real browser refuses to do here. Tests now pin the call shape
+  and assert the opener is severed.
+
+### Tests
+6 (was 4), both halves verified to gate. Build clean · eslint clean · 4509 green.
 
 ## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
 

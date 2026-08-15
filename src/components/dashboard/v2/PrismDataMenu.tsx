@@ -61,12 +61,33 @@ function PrismReportPdfItem(): JSX.Element {
     // Open the tab synchronously inside the click gesture, then redirect it to
     // the presigned URL once it resolves — otherwise the async hop trips the
     // popup blocker and the report silently never appears.
-    const win = window.open("", "_blank", "noopener,noreferrer")
+    //
+    // Features are omitted DELIBERATELY. Passing "noopener" (or "noreferrer",
+    // which implies it) makes window.open return **null** by spec — verified in
+    // Chrome 150 inside a real user gesture — so there is no handle to redirect
+    // and the code below falls through to navigating the CURRENT tab, replacing
+    // Home with the PDF. That was the bug: the tab was never opened at all.
+    // Severing `opener` by assignment gives the same protection as the flag
+    // while keeping the handle.
+    const win = window.open("", "_blank")
+    if (win) win.opener = null
     download
       .mutateAsync({ kind: "pdf" })
       .then(({ url }) => {
-        if (win) win.location.href = url
-        else window.location.href = url
+        if (win) {
+          win.location.href = url
+        } else {
+          // Only reachable if the browser blocked the popup outright. Navigating
+          // the current tab would lose Home — the very thing being fixed — so
+          // offer the link instead. Clicking the toast action is itself a user
+          // gesture, so opening with the URL up front is not blocked.
+          toast.error("Your browser blocked the report window.", {
+            action: {
+              label: "Open report",
+              onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
+            },
+          })
+        }
       })
       .catch(() => {
         win?.close()
