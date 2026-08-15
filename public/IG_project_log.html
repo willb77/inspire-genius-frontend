@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1485</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1486</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,17 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+                <h3>[2026-08-14 EDT] &mdash; Surveys: new survey-service (build / take / results) + org exposure, AI parse, identity &amp; enable toggle</h3>
+        <p>A full Survey feature, built end to end this session and <strong>live on dev + staging-b</strong>: author surveys, expose them to an organization, collect responses centrally, and read a compilation &mdash; plus AI-assisted upload-to-build, a per-survey enable toggle, and creator/responder identity capture.</p>
+        <ul>
+          <li><strong>New microservice <code>services/survey-service/</code></strong> (FastAPI + Mangum Lambda). Schema-isolated <code>survey</code> Postgres schema via RDS Proxy; <code>surveys</code> + <code>survey_responses</code> (JSONB). Endpoints under <code>/v1/surveys</code>: list (<code>?scope=take|manage</code>), CRUD, submit response, individual responses, summary/compilation, and <code>POST /parse</code>.</li>
+          <li><strong>Org exposure</strong> &mdash; a survey's org gates its take-list; no-org callers see unscoped surveys so zero-org environments aren't silently empty. Surfaced to the user role in Settings &rarr; My Workspace.</li>
+          <li><strong>AI-assisted upload-to-build</strong> &mdash; upload/paste questions + answers + freeform text &rarr; a structured draft, fail-open to a deterministic heuristic that handles checkbox options and 1&ndash;5 Likert rows.</li>
+          <li><strong>Per-survey enable on/off toggle</strong> &mdash; respondents only see enabled surveys; new surveys default OFF, existing stay ON. Builder switch + inline toggle in the manage list.</li>
+          <li><strong>Creator + responder identity</strong> &mdash; name + email captured server-side from the verified identity (never client-supplied), shown in the manage list and per-response in Results.</li>
+          <li><strong>Two bugs caught by verifying, not assuming:</strong> the API gateway proxy route did not match the bare collection path (list/create 404'd); and strict org scoping made the take-list silently empty in a zero-org environment. Both fixed and re-verified. Deployed + verified on dev and staging-b.</li>
+        </ul>
 
                 <h3>[2026-08-14 EDT] &mdash; Deploy record: employer-style practice questions LIVE on dev + staging-b</h3>
         <p>FE <strong>#430</strong> (merge <code>f2675831</code>) merged after its paired agent-engine PR <strong>#901</strong> (merge <code>68e3275c</code>, monorepo) had already rolled to dev &mdash; so the UI never sat in front of a route that did not exist. <strong>Deploy to Dev + Deploy to Staging-B both success.</strong></p>
@@ -3097,6 +3108,11 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-14 &mdash; Survey feature session [surface &rarr; service &rarr; parse &rarr; identity &rarr; toggle]</div>
+          <div class="prompt-text">&ldquo;add a survey surface&rdquo; &rarr; &ldquo;how do I see results&rdquo; &rarr; &ldquo;upload a set of questions&hellip;&rdquo; &rarr; &ldquo;expose each survey to an organization&hellip; in My Workspace in settings&rdquo; &rarr; upload-dialog fixes + a seeded Baseline Survey &rarr; &ldquo;track the creator and responders name and email&rdquo; + &ldquo;enable on/off toggle for each survey&rdquo;.</div>
+          <div class="prompt-text"><b>Delivered end to end, live on dev + staging-b:</b> a new <code>survey-service</code> (build / take / results, org exposure, AI parse) + the FE surface, then the enable toggle and creator/responder identity capture &mdash; across ~11 merged PRs (both repos), verified at each step against the deployed state.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-14 &mdash; Prompt #1485 [merge both, backend first &rarr; log the session]</div>
           <div class="prompt-text">&ldquo;merge both, backend first&rdquo; &rarr; &ldquo;log the session&rdquo;</div>
