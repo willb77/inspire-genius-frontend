@@ -5,10 +5,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, Trash2, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle2, Info, Trash2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { validateRecords } from "@/lib/bulk-import/validation"
+
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
+
+/** Field keys as the operator sees them in the preview table. */
+const FIELD_LABELS: Record<string, string> = {
+  fname: "First Name",
+  lname: "Last Name",
+  email1: "Email 1",
+  email2: "Email 2",
+  user_type: "User Type",
+}
 
 type DataPreviewTableProps = {
   records: RawUserRecord[]
@@ -39,7 +49,13 @@ export function DataPreviewTable({
   onProceed,
   callerRole = "company-admin",
 }: DataPreviewTableProps) {
-  const [validation, setValidation] = useState<ValidationResult>({ valid: [], invalid: [], duplicates: [] })
+  const [validation, setValidation] = useState<ValidationResult>({
+    valid: [],
+    invalid: [],
+    duplicates: [],
+    ignoredColumns: [],
+    inferredColumns: [],
+  })
   const [editingCell, setEditingCell] = useState<EditingCell>(null)
   const [currentPage, setCurrentPage] = useState(0)
 
@@ -172,6 +188,40 @@ export function DataPreviewTable({
       <p className="text-sm text-muted-foreground mb-4">
         Review the imported data below. Fix any errors, then click 'Proceed to Import' when ready.
       </p>
+      {/* Column-mapping notice. An importer that silently discards a column it
+          did not recognise, then reports a missing field the operator never
+          typed, is unusable — this names the actual column. */}
+      {(validation.ignoredColumns.length > 0 || validation.inferredColumns.length > 0) && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <div className="flex gap-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
+            <div className="space-y-1 text-sm">
+              {validation.inferredColumns.map(({ field, header }) => (
+                <p key={field}>
+                  Using column <span className="font-mono font-medium">{header}</span> as{" "}
+                  <span className="font-medium">{FIELD_LABELS[field] ?? field}</span>.
+                </p>
+              ))}
+              {validation.ignoredColumns.length > 0 && (
+                <p>
+                  {validation.ignoredColumns.length === 1 ? "Column" : "Columns"}{" "}
+                  {validation.ignoredColumns.map((c, i) => (
+                    <span key={c}>
+                      {i > 0 && ", "}
+                      <span className="font-mono font-medium">{c}</span>
+                    </span>
+                  ))}{" "}
+                  {validation.ignoredColumns.length === 1 ? "was" : "were"} not recognised and{" "}
+                  {validation.ignoredColumns.length === 1 ? "is" : "are"} being ignored. If one holds
+                  the primary address, rename its header to{" "}
+                  <span className="font-mono font-medium">Email</span> and upload again.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary bar */}
       <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-4">

@@ -1,5 +1,13 @@
 import { bulkUserSchema } from "@/types/bulk-import"
 import type { RawUserRecord, ValidationResult, ValidationError, BulkUserRecord } from "@/types/bulk-import"
+import { HEADER_MAPPING_KEY, type HeaderMapping } from "@/lib/bulk-import/parsers"
+
+/** Pull the parser's header report off the batch. Absent when records were
+ *  hand-built rather than parsed from a file, so every field is optional. */
+function readHeaderMapping(records: RawUserRecord[]): HeaderMapping {
+  const raw = records[0]?.[HEADER_MAPPING_KEY] as Partial<HeaderMapping> | undefined
+  return { inferred: raw?.inferred ?? {}, ignored: raw?.ignored ?? [] }
+}
 
 type CallerRole = "manager" | "company-admin" | "super-admin"
 
@@ -14,7 +22,17 @@ export function validateRecords(
   records: RawUserRecord[],
   callerRole: CallerRole = "super-admin",
 ): ValidationResult {
-  const result: ValidationResult = { valid: [], invalid: [], duplicates: [] }
+  const headerMapping = readHeaderMapping(records)
+  const result: ValidationResult = {
+    valid: [],
+    invalid: [],
+    duplicates: [],
+    ignoredColumns: headerMapping.ignored,
+    inferredColumns: Object.entries(headerMapping.inferred).map(([field, header]) => ({
+      field,
+      header,
+    })),
+  }
   const emailIndex = new Map<string, number>()
 
   for (let i = 0; i < records.length; i++) {

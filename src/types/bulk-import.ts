@@ -34,6 +34,16 @@ export type ValidationResult = {
   valid: { row: number; record: BulkUserRecord }[]
   invalid: { row: number; record: RawUserRecord; errors: ValidationError[] }[]
   duplicates: { row: number; email: string; duplicateOf: number }[]
+  /**
+   * Columns in the uploaded file that matched no known field, verbatim as the
+   * operator spelled them. Silently dropping these is what turns "my email
+   * column is called ECPS Gmail" into 33 rows of "email1: expected string,
+   * received undefined" — an error naming a field they never typed.
+   */
+  ignoredColumns: string[]
+  /** Columns matched by inference rather than an exact alias, so the operator
+   *  can see and correct a wrong guess. */
+  inferredColumns: { field: string; header: string }[]
 }
 
 // ── Import types ──
