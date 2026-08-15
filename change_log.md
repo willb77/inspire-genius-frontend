@@ -1,9 +1,42 @@
+## [2026-08-14] — Deploy record: employer-style practice questions LIVE on dev + staging-b
+
+FE **#430** (merge `f2675831`) merged after its paired agent-engine PR **#901**
+(merge `68e3275c`, monorepo) had already rolled to dev — so the UI never sat in
+front of a route that did not exist. **Deploy to Dev + Deploy to Staging-B both
+success.**
+
+### Verified (probe, not pipeline)
+- The deployed **code-split chunk** carries the change on both environments:
+  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
+  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
+- The **entry bundle does not** — a false negative worth recording, because the
+  practice page is lazy-loaded and the entry chunk was never going to prove
+  anything. Checking it first is the mistake to avoid next time.
+- Backend side: `GET /v1/agents/interview/employer-packs` → **401, not 404** on
+  the dev gateway.
+
+### Fixed
+- The entry below said "**Built and tested, NOT deployed**" — true when written,
+  false within the hour. Corrected in place rather than left standing.
+
+### Notes
+- **`getEmployerPackCatalogue()` is unconsumed**, so the bundler tree-shakes it
+  out of the page chunk. That is why `interview/employer-packs` is absent from
+  the deployed JavaScript — correct behaviour, not a failed deploy. It stays
+  until an employer picker exists.
+- **Phase 0 (legal / nominative-use review of the 138 questions) is outstanding
+  and this is live on staging-b ahead of it.** The provenance notice ships on
+  every payload and renders in the UI; the review has not happened.
+
+---
+
 ## [2026-08-14] — Interview Practice: employer-style questions and their provenance
 
 The frame already collected **company** and **industry** and then threw them away
 before tailoring. It now passes them, so the backend can swap in curated
-employer/sector questions for the competencies a pack covers. **Built and tested,
-NOT deployed.**
+employer/sector questions for the competencies a pack covers. (Status at time of
+writing: built and tested, not deployed. **Superseded — merged and deployed the
+same day; see the deploy record entry above.**)
 
 ### Changed
 - **`src/services/interview/practice.service.ts`**

@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1484</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1485</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -103,6 +103,16 @@
     <div class="panel active" id="changelog">
       <div class="card" id="section-change-log">
         <h2>Change Log <span class="path-badge">root/change_log.md</span></h2>
+
+                <h3>[2026-08-14 EDT] &mdash; Deploy record: employer-style practice questions LIVE on dev + staging-b</h3>
+        <p>FE <strong>#430</strong> (merge <code>f2675831</code>) merged after its paired agent-engine PR <strong>#901</strong> (merge <code>68e3275c</code>, monorepo) had already rolled to dev &mdash; so the UI never sat in front of a route that did not exist. <strong>Deploy to Dev + Deploy to Staging-B both success.</strong></p>
+        <ul>
+          <li><strong>Verified by probe, not pipeline.</strong> The deployed <em>code-split</em> chunk carries the change on both environments: <code>InterviewPracticePage-Cv6vPsMz.js</code> (dev) and <code>InterviewPracticePage-B-eOV00s.js</code> (staging-b) both contain <code>strongAnswerCovers</code> and the company/industry fields. Backend side, <code>GET /v1/agents/interview/employer-packs</code> answers <strong>401, not 404</strong>.</li>
+          <li><strong>The entry bundle does NOT contain it</strong> &mdash; a false negative worth recording. The practice page is lazy-loaded, so the entry chunk was never going to prove anything; checking it first is the mistake to avoid next time.</li>
+          <li>&#9888; <strong>Corrected a stale claim.</strong> The entry below said &ldquo;Built and tested, NOT deployed&rdquo; &mdash; true when written, false within the hour. Fixed in place rather than left to mislead.</li>
+          <li><strong><code>getEmployerPackCatalogue()</code> is unconsumed</strong>, so the bundler tree-shakes it out of the page chunk. That is why <code>interview/employer-packs</code> is absent from the deployed JavaScript &mdash; correct behaviour, not a failed deploy. It stays until an employer picker exists.</li>
+          <li>&#9888; <strong>Phase 0 (legal / nominative-use review of the 138 questions) is outstanding and this is live on staging-b ahead of it.</strong> The provenance notice ships on every payload and renders in the UI; the review has not happened.</li>
+        </ul>
 
                 <h3>[2026-08-14 EDT] &mdash; Interview Practice: employer-style questions and their provenance</h3>
         <p>The frame already collected <b>company</b> and <b>industry</b> and then threw them away before tailoring. It now passes them, so the backend can swap in curated employer/sector questions for the competencies a pack covers. <strong>Built and tested, NOT deployed.</strong></p>
@@ -3087,6 +3097,12 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+        <div class="prompt-entry">
+          <div class="timestamp">2026-08-14 &mdash; Prompt #1485 [merge both, backend first &rarr; log the session]</div>
+          <div class="prompt-text">&ldquo;merge both, backend first&rdquo; &rarr; &ldquo;log the session&rdquo;</div>
+          <div class="prompt-text"><b>Front-end half deployed.</b> Merged after the agent-engine ECS roll completed, then verified the deployed <em>code-split</em> practice chunk on both dev and staging-b rather than trusting the green pipeline. The entry bundle showed nothing &mdash; a false negative, since the page is lazy-loaded.</div>
+          <div class="prompt-text"><b>Logging caught a wrong claim of my own:</b> the entry written an hour earlier said &ldquo;NOT deployed&rdquo;. Corrected in place.</div>
+        </div>
         <div class="prompt-entry">
           <div class="timestamp">2026-08-14 &mdash; Prompt #1484 [implement the employer question packs in practice interview]</div>
           <div class="prompt-text">&ldquo;now implement the employer question packs in practice interview&rdquo;</div>
