@@ -85,6 +85,22 @@ jest.mock(
     props.open ? <button onClick={props.onConfirm}>Confirm</button> : null
 );
 
+// Delete is permanent for EVERY status as of 2026-08-14, so it always routes
+// through the typed-confirmation modal. Stubbed to a single button; the real
+// component's type-the-email gate is covered by its own test.
+jest.mock(
+  "@/components/shared/forms/DestructiveConfirmModal",
+  () =>
+    (props: {
+      open: boolean;
+      onConfirm: () => void;
+      confirmLabel: string;
+    }) =>
+      props.open ? (
+        <button onClick={props.onConfirm}>{props.confirmLabel}</button>
+      ) : null
+);
+
 /* -------------------------------------------------
  MOCK BADGE
 ------------------------------------------------- */
@@ -593,17 +609,20 @@ describe("UserManagement Page", () => {
     expect(resendMutate).not.toHaveBeenCalled();
   });
 
-  it("deletes user", async () => {
+  it("deletes user permanently, via the typed-confirmation modal", async () => {
+    // Previously this asserted force:false — a SOFT delete that left the row
+    // and the Cognito user in place, permanently blocking the email address.
     deleteMutate.mockResolvedValueOnce({});
-    
+
     renderPage();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Delete"));
     });
 
+    // An Active row now gets the destructive modal, not the light one.
     await act(async () => {
-      fireEvent.click(screen.getByText("Confirm"));
+      fireEvent.click(screen.getByText("Permanently delete"));
     });
 
     await act(async () => {
@@ -612,7 +631,7 @@ describe("UserManagement Page", () => {
 
     expect(deleteMutate).toHaveBeenCalledWith({
       email: "test@test.com",
-      force: false,
+      force: true,
     });
   });
 
