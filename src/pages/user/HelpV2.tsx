@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { V2Panel, V2Card } from "@/components/v2";
+import { useSupportAgent } from "@/context/useSupportAgent";
 
 /**
  * HelpV2 — the new-design variant of Help. Flag-gated (new_user_surfaces)
@@ -31,6 +32,7 @@ const getPriorityVariant = (priority: string) => {
 };
 
 export default function HelpV2() {
+  const { open: openSupportAgent } = useSupportAgent();
   const [showSubmitted, setShowSubmitted] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -119,15 +121,15 @@ export default function HelpV2() {
             <Phone className="size-6" />
           </div>
           <div className="flex-1">
-            <h2 className="font-serif text-base tracking-tight text-ink">Voice Help</h2>
+            <h2 className="font-serif text-base tracking-tight text-ink">Talk to Meridian</h2>
             <p className="text-sm text-body-slate mt-0.5">
-              Prefer to talk? Connect with our AI voice support agent for real-time assistance.
+              Ask a question by voice or text and get an answer right away. Need a person? Submit a request above.
             </p>
           </div>
           <Button
             variant="default"
             className="shrink-0 bg-ink text-white hover:bg-ink/90"
-            onClick={() => window.dispatchEvent(new CustomEvent("voicedesk:open"))}
+            onClick={openSupportAgent}
           >
             Speak with Support
           </Button>
