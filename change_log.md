@@ -1,61 +1,222 @@
-## [2026-08-15] — #908 dev rollout completed, user-sync stub incident, staging-b promoted
+## [2026-08-15] — Session rollup: semiprod plan → tenancy shipped (A.1.1 → A.1.3 → A.1.4) + $93/mo recovered
 
-### Incident (caused by #908, caught by the gate, repaired same session)
-- **`ig-dev-user-sync` shipped a 187-byte stub** and failed every invoke with
-  `Runtime.HandlerNotFound`. The stub-zip gate failed the run, so nothing rotted
-  silently. Repaired by mono #912: 187 B → 954,467 B, invoke now returns HTTP
-  200 with a live Aurora result.
-- **Root cause — a bespoke env var nobody sets in CI.** This stack's `tryBundle`
-  guard checked ONLY `DISABLE_LOCAL_BUNDLE_STUB`. Every other bundled stack, and
-  `cdk-deploy.yml` itself, uses `CDK_DOCKER_BUNDLING`. All ten were checked;
-  `user-sync` is the sole outlier. So in CI the guard never fired and `tryBundle`
-  wrote its stub. Fix accepts either spelling.
-- **SOURCE hashing had been hiding this defect, and OUTPUT exposed it.** Under
-  SOURCE, CDK reused the previously published good asset and discarded the stub,
-  so a broken guard stayed invisible — possibly for months. Under OUTPUT the stub
-  earns its own hash and SHIPS. OUTPUT remains correct, but it removes an
-  accidental safety net: **every `tryBundle` guard now has to actually be right.**
-  This is the inverse of the failure #906/#908 set out to fix.
-- Impact was nil but is not the point: dev is cut over
-  (`MAGIC_AUTH_USE_MAIN_DB=true`), so the handler is already a no-op, and 24h
-  invocations were 2 — both diagnostic. `UserSyncStack` is instantiated only when
-  `envName === 'dev'`, so staging-b never had this stack. Third stub incident for
-  this Lambda (see also 2026-06-17).
+Index entry for one session's arc. Detailed entries for each step are logged
+separately below — see "A.1.4: org reads scoped…", "A.1.3 orgs seeded…",
+"A.1.1 shipped…". Consolidated here because each was written **before** its PR
+merged, so none of them records the merge SHA.
 
-### Changed
-- **#908 dev rollout completed** — all seven stacks deployed green
-  (blueprint, broadcast, growth, invitation, survey, trainer, user-sync).
-- **staging-b promoted** via tag
-  `release-stable-2026-08-15-cdk-asset-hash-seven-stacks`. All six promote jobs
-  green including the authenticated smoke matrix.
-- The tag necessarily carries another terminal's #903, and that is **required,
-  not incidental**: #903 flips `createSharedCache` to `false` in the promote
-  workflow, so tagging any earlier commit would have RECREATED the ElastiCache
-  that terminal had just deleted. Its `provision_org.py` refuses `--apply` on
-  staging-b, so no data mutation rode along.
+### Merged (the part the individual entries predate)
+| Task | PR | Merge SHA |
+|------|----|-----------|
+| A.1.1 — `org_id` in the verified identity | #889 | `bdc83721` |
+| A.1.3 + B.1/B.2 — orgs seeded, orphan cache removed | #903 | `9dd7966f` |
+| A.1.4 — org reads scoped to the token, 4 services | #910 | `d49557cc` |
 
-### Corrections to the previous entry
-- "**staging-b was never damaged — the promote was deliberately held**" is now
-  superseded: dev was proven clean first, then the promote ran and staging-b was
-  verified against a pre-promote baseline (zero stubs before and after, every
-  service rebundled, six services confirmed by invoke).
-- "**The tell is zero `Bundling asset` lines**" **does not generalise.** That
-  grep returns zero for the per-service stacks even when bundling ran correctly,
-  so it reads as a false positive. The reliable check is **behavioural**: invoke
-  the function. A real FastAPI+Mangum service returns *"unable to infer a
-  handler"* (module imported, app constructed); a stub raises at import.
+Doc/log commits on `feat/content-builder-video-cover-toggle-voice-preview`:
+`5eb59480`, `af7ed7d6`, `808be90f`, `e880f391`, `910db534`, `71a41390`,
+`ff40cc2c`.
 
-### Verification notes
-- Dev verified by behaviour, not size: all seven services invoked; zero
-  stub-sized Lambdas dev-wide; every remaining small function is an allowlisted
-  CDK helper.
-- staging-b verified by hand against a pre-promote size baseline **because the
-  promote workflow has no stub-zip detector** — the very gate that caught this
-  regression on dev. That is an open gap in a client-facing deploy path.
-- `retention-stack` and `agent-engine-stack` still use conditional hashing that
-  keeps SOURCE on dev, so dev retains the same blind spot for them. Deliberately
-  left alone — tonight demonstrated that changing hashing has non-obvious
-  consequences.
+### Added
+- **`docs/plans/Semiprod_Two_Client_Environment_Plan.docx`** (26 pp) via
+  `scripts/build_semiprod_two_client_plan.py` — measured baseline, 3 costed
+  options, 73-engineer-day breakdown, 8-week schedule, **Appendix A** (14
+  copy-pasteable implementation prompts + standing preamble) and **Appendix B**
+  (4 prompts for the Redis spend).
+- The tenancy chain itself: `AuthUser.org_id` → `scripts/provision_org.py` →
+  `ig_auth.scope` (`OrgScope` / `apply_org_scope`) consumed by dashboard,
+  growth, document and support services.
+
+### The through-line
+The plan's headline held up: **infrastructure was never the blocker.**
+Duplicating staging-b's edge costs ~$30/mo; ~48 of the 73 days are tenancy and
+authorisation work that no infrastructure option removes. Everything shipped
+this session was that work, and none of it needed a new environment.
+
+### Fixed / Removed
+- **~$93/month** — `ig-staging-b-shared-cache` deleted (0 bytes, 0 hits, 0 of
+  36 Lambdas referencing it, all 4 CFN exports with zero importers).
+- **Cross-tenant reads** closed in 4 services; the `if org_id:` pattern on
+  client-supplied values is gone.
+- **`-c createSharedCache=false` was a no-op** — CDK passes the string
+  `"false"`, which is truthy. Parser fixed.
+
+### Decided (Bill, 2026-08-12)
+**Option 2.** "The two clients share infrastructure, they do not require
+physical separation. They require separation through a key identifier."
+Option 3 (one environment per client) closed.
+
+### Corrections made to my own earlier claims this session
+Recorded because each was stated confidently before being checked:
+1. **"Deleting both caches saves $186/mo"** — wrong. Generalised dev's
+   CloudWatch to staging-b's. The session cache is live (466 hits/7d); only
+   ~$93 was safely recoverable.
+2. **"Three broken practitioner nav links"** — stale-tree artifact. The local
+   monorepo was 580 commits behind, and a nested-repo `git diff` on
+   `inspire-genius-frontend/` returns empty *trivially* because the monorepo
+   tracks 0 files there.
+3. **"`ig-dev-soak` is draining API credits"** — inert orphan, zero
+   EventBridge rules.
+4. **The plan's A.1.3 source-of-truth assumption** — `org_service.*` cannot be
+   canonical; `user_profiles.org_id` is FK-constrained to
+   `public.organization(id)` and that column is what the token mint reads.
+5. **A merge-verification grep** counting `user["sub"])` returned 12 and proved
+   nothing — that string appears legitimately across manager/practitioner
+   routes. The real check is `get("org_id"`.
+
+### Open — nothing here is deployed beyond dev's own pipeline
+- **A.2.1 / A.2.2** (~4 d) — the most serious item left. Any logged-in user can
+  `PATCH /v1/users/{id}/role` to become super-admin; all 11 org-service routes
+  have no authorisation at all.
+- **A.2.3** — role rank still means *global*: a company-admin of one client can
+  read another's roster and documents. A.1.4 closed the any-user hole, not the
+  senior-user one.
+- **Cognito pre-token trigger** still behind `-c cognitoPreTokenTrigger=true`,
+  undeployed — so the Cognito login path carries no org claim yet.
+- **Nothing on staging-b.** Needs a `release-stable-*` tag.
+- **Boolean context-flag trap unswept** — the same
+  `(tryGetContext(...) ?? false) as boolean` pattern is on `createRdsProxy`,
+  `honorResume`, `honorReportEmail`.
+- **A.1.4 changes read semantics on live endpoints.** On dev, 138 of 150
+  profiles have no org, so their dashboards will now correctly show empty.
+  Expected, but it will read as a regression to anyone testing.
+
+## [2026-08-15] — A.1.4: org reads scoped to the verified token across 4 services (BE PR #910)
+
+Branch `feat/org-scoped-reads` off `origin/development` (`9dd7966f`), commit
+`4d15127a`. A.1.1 put `org_id` in the token, A.1.3 populated it; this makes
+the services use it and stops them accepting an org from the caller.
+**NOT deployed** — changes read semantics on live endpoints.
+
+### Added
+- **`packages/ig-auth/ig_auth/scope.py`** — `OrgScope` + `apply_org_scope`.
+  Makes the scope an explicit object so "no org" is a state the query planner
+  must handle, not a branch it falls through. **No path leaves a statement
+  unfiltered by accident**; the only unfiltered outcome requires
+  `cross_org=True`, which must be asked for by name. Placed in `ig_auth`
+  rather than copied 4× — divergent copies of a security primitive is how
+  drift starts (`ig_auth/database.py`'s docstring records that happening).
+- **`assert_roster_access`** in growth-service authz.
+- **35 tests**: +17 scope, +11 dashboard cross-tenant, +7 growth roster authz.
+
+### Fixed — the shape of the bug
+Every org filter was optional in the worst way: `if org_id:` on a
+**client-supplied** value, so **omitting it skipped the filter and returned
+every organisation's rows**. A second variant was worse —
+`org_id = user.get("org_id", user["sub"])` always resolved to the caller's own
+sub, matching nothing while looking like enforcement. Same root: "no org"
+represented as a falsy value a conditional then skips.
+
+| Service | What leaked |
+|---|---|
+| dashboard | `org_id` query param on summary/activity; sub-fallback at 4 `/api/company/*` sites; ingest POSTs honoured a body `org_id` |
+| growth | `GET /roster` took an unvalidated `manager_id` and was the ONLY route in the module that never called `assert_member_access` |
+| document | admin branch set `filter_user_id=None` + client-supplied `company_id`; omitted (the default) → **every document in the deployment** |
+| support | `org_id` client-supplied on list AND on create |
+
+### Two subtleties worth keeping
+- **`org_id=None` must render `false()`, NOT `col == None`.** SQLAlchemy
+  compiles the latter to `IS NULL`, matching every row whose org is unset —
+  a different leak with the same shape.
+- Blank/whitespace org ids normalise to `None` so a blank claim cannot read
+  as "the empty organisation".
+
+### Found while doing it
+- **The dashboard test suite had been written around the bug**: it seeded
+  company data under `COMPANY_SUB` — the admin's own user id — because the old
+  code fell back to `user["sub"]`. Re-seeding under an org was most of the fix.
+- `get_company_analytics` had a **5th** org reference I missed on the first
+  pass (the training-completion average). Caught by tests, not by reading.
+- `assert_roster_access` is deliberately **not** fail-open on a missing caller
+  when `manager_id` is supplied — the sibling helpers return early for the
+  test path, and copying that here would leave the exact bypass being closed.
+
+### Verified
+dashboard **126**, growth **86**, document **203**, support **78**, auth
+**171**, org **55**, user **61**, ig-auth **113 passed / 1 failed**. The one
+failure is the pre-existing `test_decorator_integration_super_admin_group`
+event-loop flake — fails identically on pristine `origin/development`.
+Every cross-tenant test asserts **both directions** and includes the
+**parameter-omission** case; a suite that only ever passes the parameter never
+exercises the branch that leaked.
+
+### Explicitly NOT fixed (named, not left implicit)
+- **Role rank still grants cross-org reach** for company-admin+ (growth authz,
+  document listing). That "senior == global" conflation is **A.2.3**. The
+  growth test documents current behaviour so A.2.3 lands as a visible edit.
+- **Within-org `user_id` filtering** — dashboard summary/activity still accept
+  a `user_id` param, so a colleague's metrics stay readable inside an org.
+
+## [2026-08-15] — Business Support cancellation path: the SKU is not a stock AWS plan
+
+Follow-on to the 2026-08-14 cost-reduction entry below. No AWS mutation in this
+slice — verification and billing-provenance work only.
+
+### Verified — the 2026-08-14 changes are all still in place
+Re-checked after another terminal committed over the branch (`f284df44` confirmed
+still an ancestor of HEAD):
+- App Runner: `content-builder-dev`, `presentation-creator-dev`, `video-creator`,
+  `velvet-groove` all still **PAUSED**; `content-builder-staging-b` still **RUNNING**.
+- CloudWatch dashboards: mgmt still at 3. `schoolonline*` snapshots still absent.
+- Log retention: **0 of 217** groups without a retention policy across both accounts
+  (159 mgmt + 58 staging-b).
+- `voice-agent-api-waf-dev` still present — correctly never deleted.
+- Health: inspiresgenius.com, dev, stable, voicedeskai.co all **HTTP 200**.
+
+### Found — the support plan may not be cancellable in the console
+The billing SKU is **`AWS Business Support+`**, not the stock `AWS Business Support`,
+and it charges a **flat $29.00 × 8 accounts** rather than AWS's standard
+greater-of-$100-or-10%-of-spend. Both signals point to a **partner/reseller-led
+plan**, in which case the AWS console will not offer a downgrade and cancellation
+has to go through the billing provider instead.
+- Payer/management account: `[aws-account]` ([email redacted]), org FeatureSet `ALL`.
+  Support plans are payer-level and org-wide — member accounts cannot change them.
+- Console path (management account only):
+  `https://console.aws.amazon.com/support/plans/home`
+  (fallback `https://console.aws.amazon.com/billing/home#/support`).
+- **Verification handle**: the Support API only answers on a paid plan. It currently
+  returns all five severity levels (`low normal high urgent critical`). After a
+  successful downgrade, `aws support describe-severity-levels` should fail with
+  `SubscriptionRequiredException`. That is a faster check than the bill, which will
+  not reflect it until the 1 September charge — August's $232 posted on 1 August.
+
+### Still open
+- **AWS Business Support+ — $232.00/mo.** Blocked on Bill in the console, subject to
+  the reseller caveat above. Largest single remaining item.
+- **`ig-staging-b-rds-proxy` — ~$87.55/mo, zero consumers.** Confirmed still
+  `available`. Not removed: it is CDK-managed (a console delete would drift and be
+  recreated on the next deploy) and Semi Prod will want pooling under real client
+  load. Awaiting a decision on removing it via the stack vs. leaving it staged.
+
+
+## [2026-08-15] — Demo asset published: Meet_the_Team.mp4
+
+### Added
+- **`Meet_the_Team.mp4` published to the public demo bucket**, alongside the
+  existing demo videos.
+  - Source: `Inspire-X/IG Movies, Decks/Meet_the_Team.mp4`
+  - Key: `s3://ig-demo-public-videos/Meet_the_Team.mp4`
+  - URL: `https://[aws-host]/Meet_the_Team.mp4`
+  - 12,761,538 bytes · `video/mp4` · H.264 1920x1080 + AAC · 6 min 41 s
+  - Verified: HTTP 200, `accept-ranges: bytes`, a range request returns 206
+    (scrubbing works), `cache-control: public, max-age=86400`.
+
+### Fixed
+- **Remuxed for progressive playback before upload.** The source had its `moov`
+  atom AFTER `mdat` (`ftyp, free, mdat, moov`), so a browser had to download all
+  12 MB before playback could start. Remuxed with
+  `ffmpeg -c copy -movflags +faststart` — stream copy, so no re-encode and no
+  quality loss; codecs and the 400.9 s duration are byte-for-byte unchanged.
+  Confirmed on the SERVED object: bytes 32-47 are the `moov` header, so the
+  fix survived the upload.
+  - Worth knowing: `scripts/publish_demo_asset.sh` only transcodes non-web
+    formats and uploads `.mp4` AS-IS, so publishing the original directly would
+    have shipped the non-streaming atom order. The remux has to happen first.
+
+### Notes
+- Public read comes from the bucket policy, not object ACLs — a plain `s3 cp`
+  is sufficient and no ACL change was made. No CloudFront in front of this
+  bucket, so the S3 REST URL is the durable address and the key was live
+  immediately with no invalidation.
 
 ## [2026-08-15] — Session: survey roles, permanent delete, PRISM PDF tab, CDK asset-hash incident
 
@@ -140,35 +301,299 @@
   `CodeSize` movement, served frontend bundle greps on both tiers, and live
   route probes (401/403/422 vs a 404 control).
 
-## [2026-08-15] — Demo asset published: Meet_the_Team.mp4
+## [2026-08-15] — #908 dev rollout completed, user-sync stub incident, staging-b promoted
+
+### Incident (caused by #908, caught by the gate, repaired same session)
+- **`ig-dev-user-sync` shipped a 187-byte stub** and failed every invoke with
+  `Runtime.HandlerNotFound`. The stub-zip gate failed the run, so nothing rotted
+  silently. Repaired by mono #912: 187 B → 954,467 B, invoke now returns HTTP
+  200 with a live Aurora result.
+- **Root cause — a bespoke env var nobody sets in CI.** This stack's `tryBundle`
+  guard checked ONLY `DISABLE_LOCAL_BUNDLE_STUB`. Every other bundled stack, and
+  `cdk-deploy.yml` itself, uses `CDK_DOCKER_BUNDLING`. All ten were checked;
+  `user-sync` is the sole outlier. So in CI the guard never fired and `tryBundle`
+  wrote its stub. Fix accepts either spelling.
+- **SOURCE hashing had been hiding this defect, and OUTPUT exposed it.** Under
+  SOURCE, CDK reused the previously published good asset and discarded the stub,
+  so a broken guard stayed invisible — possibly for months. Under OUTPUT the stub
+  earns its own hash and SHIPS. OUTPUT remains correct, but it removes an
+  accidental safety net: **every `tryBundle` guard now has to actually be right.**
+  This is the inverse of the failure #906/#908 set out to fix.
+- Impact was nil but is not the point: dev is cut over
+  (`MAGIC_AUTH_USE_MAIN_DB=true`), so the handler is already a no-op, and 24h
+  invocations were 2 — both diagnostic. `UserSyncStack` is instantiated only when
+  `envName === 'dev'`, so staging-b never had this stack. Third stub incident for
+  this Lambda (see also 2026-06-17).
+
+### Changed
+- **#908 dev rollout completed** — all seven stacks deployed green
+  (blueprint, broadcast, growth, invitation, survey, trainer, user-sync).
+- **staging-b promoted** via tag
+  `release-stable-2026-08-15-cdk-asset-hash-seven-stacks`. All six promote jobs
+  green including the authenticated smoke matrix.
+- The tag necessarily carries another terminal's #903, and that is **required,
+  not incidental**: #903 flips `createSharedCache` to `false` in the promote
+  workflow, so tagging any earlier commit would have RECREATED the ElastiCache
+  that terminal had just deleted. Its `provision_org.py` refuses `--apply` on
+  staging-b, so no data mutation rode along.
+
+### Corrections to the previous entry
+- "**staging-b was never damaged — the promote was deliberately held**" is now
+  superseded: dev was proven clean first, then the promote ran and staging-b was
+  verified against a pre-promote baseline (zero stubs before and after, every
+  service rebundled, six services confirmed by invoke).
+- "**The tell is zero `Bundling asset` lines**" **does not generalise.** That
+  grep returns zero for the per-service stacks even when bundling ran correctly,
+  so it reads as a false positive. The reliable check is **behavioural**: invoke
+  the function. A real FastAPI+Mangum service returns *"unable to infer a
+  handler"* (module imported, app constructed); a stub raises at import.
+
+### Verification notes
+- Dev verified by behaviour, not size: all seven services invoked; zero
+  stub-sized Lambdas dev-wide; every remaining small function is an allowlisted
+  CDK helper.
+- staging-b verified by hand against a pre-promote size baseline **because the
+  promote workflow has no stub-zip detector** — the very gate that caught this
+  regression on dev. That is an open gap in a client-facing deploy path.
+- `retention-stack` and `agent-engine-stack` still use conditional hashing that
+  keeps SOURCE on dev, so dev retains the same blind spot for them. Deliberately
+  left alone — tonight demonstrated that changing hashing has non-obvious
+  consequences.
+
+## [2026-08-14] — Team bio + brand-asset audit (findings only; no code change)
+
+Research turn behind the two 'Meet the Team' builds. Recorded because these findings
+live nowhere else and are expensive to rediscover.
+
+### Found — bios exist for only 4 of the 8 named team members
+| Person | Bio on disk? | Best available source |
+|---|---|---|
+| William A. Brown | **Yes** | `AES Material/W.A. (Bill) Brown Bio 06.16.25.docx` (+ .pdf) |
+| [user G.B.] | **Yes** | `AES Material/[user G.B.] Bio 06.16.25.docx` |
+| Robert Reuss | **Yes** | `AES Material/Robert Reuss Bio 06.16.25.docx` + `Inspire-X/Bob Reuss Bio Sketch.docx` |
+| Jim Cobb | **Yes** | `AES Material/Jim Cobb Bio 06.16.25.docx` (+ .pdf) |
+| [user M.T.] | **No** | `Inspire-X/Demo Material/[user M.T.] Linkedin Profile.pdf` — his own 4-page export, reads better than a bio |
+| John C. Boyd | **No** | `spectrumgrp.com/john-boyd/` — his LinkedIn is unfetchable (below) |
+| Timothy Wilson | **No** | `Inspire-X/Tim_Wilson_Notes.docx` — an internal equity proposal, not a bio |
+| [user D.R.] | **No** | LinkedIn + `IG_Meeting_Agenda.docx` (board candidate) |
+
+The four existing bios are headed **"Athlumin Executive Bios — 6/16/25"** and cover three
+people who are NOT on the current roster (Kovacic, Immanuel, Thimmadasaiah).
+
+### Found — `linkedin.com/in/jcboyd001` returns HTTP 999
+LinkedIn's block for non-browser clients. Any future attempt to scrape a profile will hit
+the same wall. Use published bios (`spectrumgrp.com`) or ask the person. Other profiles
+(`mark-tully-7a72105`, `timjwilson8`, `donna-rhode-261556a`) did fetch.
+
+### Found — titles are unstable across documents; settle before anything ships externally
+- **Burnette**: President (bio) · Board of Directors (`IG_Investor_Pitch_5Min`) · Advisory
+  Board (`IG_Executive_Pitch_Deck_v3`) · Chief Go-To-Market Officer (`IG_Folwell_Deck_v5`).
+- **Brown**: Founder/Chairman/CEO · CEO & CIO (`PINSP.01 Board Consent`) · CTO
+  (NC 90-day plan).
+- **Reuss**: business card says *Founder, CFO, Board of Directors*; decks say Co-Founder & CFO.
+- **Rhode**: no recorded title at all — `Wake_Tech_Outreach_Note_and_Reference.docx` says
+  *"We hold no record of either [title or affiliation]. Do not infer them."*
+- **Wilson**: advisory seat **proposed**, not seated (1.5% + 1.5% + revenue share, per the notes).
+
+### Found — a mislabelled brand asset
+`Inspire-X/Logos/Bus Cards/Tim Wilson IG Bus Card copy.png` is **Robert Reuss's** card, not
+Tim Wilson's. There is no Tim Wilson business card. Rename or replace before anyone uses it.
+
+### Found — headshot inventory, `Inspire-X/Logos/Founders Photos/`
+Present: **Reuss, Burnette, Cobb, Tully** (plus two IG founders-dinner group shots).
+Missing: **Brown, Boyd, Rhode, Wilson** — which is why both deck builds use uniform initials
+monograms rather than a mixed photo/no-photo bench.
+
+## [2026-08-14] — 'Meet the Team' deck recreated: v2 roster, eight people
+
+### Changed
+- **`scripts/build_meet_the_team_deck.py`** rebuilt for the v2 roster, in Bill's order:
+  **Brown · Tully · Boyd · Burnette · Rhode · Reuss · Wilson · Cobb**. Kovacic, Immanuel
+  and Thimmadasaiah (the v1 "Athlumin Executive Bios" set) are out. 13 slides.
+- Output now written to **three** locations from the one script, so two files with the
+  same name can never carry different decks:
+  - `Dropbox/AES Material/Inspire-X/IG Movies, Decks/IG_Meet_the_Team.pptx` (primary, requested)
+  - `<repo root>/IG_Meet_the_Team.pptx` (tracked copy)
+  - `Dropbox/AES Material/Inspire-X/IG Team/IG_Meet_the_Team.pptx`
+
+### Sourcing for the four new profiles
+- **Tully** — his own LinkedIn profile export (`Demo Material/[user M.T.] Linkedin Profile.pdf`)
+  plus `linkedin.com/in/mark-tully-7a72105` (Henley 2000–02; PRISM Brain-map Practitioner,
+  PRISM UK, May 2011).
+- **Boyd** — `linkedin.com/in/jcboyd001` returns **HTTP 999** to any non-browser client, so the
+  biography comes from his published bio at `spectrumgrp.com/john-boyd/` and The SPECTRUM
+  Group's appointment announcement. Title from his IG business card + pitch deck v3.
+- **Wilson** — `linkedin.com/in/timjwilson8` + `Inspire-X/Tim_Wilson_Notes.docx`.
+- **Rhode** — `linkedin.com/in/donna-rhode-261556a` + `IG_Meeting_Agenda.docx`.
+
+### Two restraints deliberately encoded in the generator
+1. **[user D.R.] is given no officer title.** `Wake_Tech_Outreach_Note_and_Reference.docx`
+   states: *"We hold no record of either [title or affiliation]. Do not infer them — a
+   misattributed title is worse than no title at all."* Her slide reads **Board Candidate**
+   and carries a footnote requiring her confirmation before external use.
+2. **Wilson's advisory seat is marked PROPOSED** — the notes have him as a candidate
+   ("when we form the Advisory board"), not seated.
+
+### Fixed before shipping
+- The title and close slides initially claimed **Procter & Gamble** among the team's
+  employers. That association appears only in `IG_Meeting_Agenda.docx`, which spells the
+  name **"Rhodes"**, while her own profile says Designed For Joy — an unverified claim on
+  the most-read slide. Removed, with a comment in the generator so it does not come back.
+
+### Verified
+Rendered PPTX → PDF → PNG and read all 13 slides. No overflow; the two longest role
+titles (Co-Founder & Chief Operating Officer, Advisory Board (Proposed)) fit the panel.
+
+## [2026-08-14] — Demo asset published: Exec-Overview-V2.mp4
 
 ### Added
-- **`Meet_the_Team.mp4` published to the public demo bucket**, alongside the
-  existing demo videos.
-  - Source: `Inspire-X/IG Movies, Decks/Meet_the_Team.mp4`
-  - Key: `s3://ig-demo-public-videos/Meet_the_Team.mp4`
-  - URL: `https://[aws-host]/Meet_the_Team.mp4`
-  - 12,761,538 bytes · `video/mp4` · H.264 1920x1080 + AAC · 6 min 41 s
-  - Verified: HTTP 200, `accept-ranges: bytes`, a range request returns 206
-    (scrubbing works), `cache-control: public, max-age=86400`.
+- **`Exec-Overview-V2.mp4`** published to the public demo bucket.
+  - Local source: `Dropbox/AES Material/Inspire-X/IG Movies, Decks/Exec-Overview-V2.mp4`
+  - S3 key: `s3://ig-demo-public-videos/Exec-Overview-V2.mp4`
+  - Public URL: `https://[aws-host]/Exec-Overview-V2.mp4`
+  - 9,045,438 bytes · `video/mp4` · `Cache-Control: public, max-age=86400`
+  - Already H.264/AAC `.mp4`, so uploaded as-is — no transcode.
+  - Verified `HTTP 200` with `Accept-Ranges: bytes` (scrubbing works, plays inline).
+  - Published via `scripts/publish_demo_asset.sh`, `AWS_PROFILE=dev`. Public read comes
+    from the bucket policy, not an object ACL. No CloudFront in front, so the key was
+    live immediately with no invalidation.
+
+## [2026-08-14] — Log lineages reconciled: four diverged histories unioned onto canonical
 
 ### Fixed
-- **Remuxed for progressive playback before upload.** The source had its `moov`
-  atom AFTER `mdat` (`ftyp, free, mdat, moov`), so a browser had to download all
-  12 MB before playback could start. Remuxed with
-  `ffmpeg -c copy -movflags +faststart` — stream copy, so no re-encode and no
-  quality loss; codecs and the 400.9 s duration are byte-for-byte unchanged.
-  Confirmed on the SERVED object: bytes 32-47 are the `moov` header, so the
-  fix survived the upload.
-  - Worth knowing: `scripts/publish_demo_asset.sh` only transcodes non-web
-    formats and uploads `.mp4` AS-IS, so publishing the original directly would
-    have shipped the non-streaming atom order. The remux has to happen first.
+- **All four project-log lineages reconciled and landed on `development`** — monorepo PR
+  **#907** (`286da6b0`) and frontend PR **#435** (`6f5b40f8`). None of the four was a superset
+  of any other, so whichever branch merged last would silently have won.
 
-### Notes
-- Public read comes from the bucket policy, not object ACLs — a plain `s3 cp`
-  is sufficient and no ACL change was made. No CloudFront in front of this
-  bucket, so the S3 REST URL is the durable address and the key was live
-  immediately with no invalidation.
+  | | before | after |
+  |---|---|---|
+  | monorepo `change_log.md` | 719 | **1,090** headings |
+  | monorepo `IG_project_log.html` | 4,582 | **4,809** entries |
+  | frontend `change_log.md` (PUBLIC) | 698 | **1,132** headings |
+  | frontend `IG_project_log.html` ×2 (PUBLIC) | 4,564 | **4,862** entries |
+  | embedded Change Log panel | 143 | **170** `<h3>` blocks |
+
+- **Recovered onto `development`**, which had never held it: survey-service
+  (author/expose/compile, AI parse, identity toggle), the "PRISM upload does nothing" root
+  cause and recovery run, self-service PRISM replace + admin PDF endpoints, the staging-b
+  promote, and the employer/sector interview question packs — 169 change-log headings and
+  227 prompt entries in total.
+- **Preserved from the frontend**, which the monorepo had never held: Surveys, Interview
+  Studio, Job Fit, the super-admin sidebar consolidation and more — 122 headings that any
+  regenerate-from-root approach would have deleted.
+
+### Changed
+- `scripts/sync_project_log.py` gained **`merge_panel()`**. The HTML carries **three
+  independent bodies of entries** — the `prompt-entry` divs, the embedded Change Log `<h3>`
+  panel in `#section-change-log`, and `change_log.md` — and a merge that handles only the
+  first leaves the other two behind. Found by spot-checking recovered work in the rendered
+  page and getting `false`.
+- The sync now no-ops in worktrees with no `inspire-genius-frontend/` checkout, instead of
+  creating stray 2MB mirror copies in every terminal's workspace.
+
+### Notes — how this was verified, and what it cost to get right
+- **Every claim of "nothing lost" is entry multiplicity against every parent**, never a read
+  of the diff. The diffs show ~4,500 deletions each; all of it is block reordering, because
+  the union is emitted in the spine's order.
+- **The HTML is not purely newest-first** — it flips to oldest-first at the 2026-03-11 tail.
+  The date-merge handles that boundary rather than assuming a sort; all 227 recovered entries
+  landed within 3 days of a date neighbour.
+- **The inputs moved three times mid-operation.** Other terminals kept logging, so
+  `development` advanced under two separate snapshots and #907 went `DIRTY`. Each time the
+  answer was to re-run the union against the new head rather than pick a side, and finally to
+  compute the frontend superset *inside the worktree from live content* so the snapshot could
+  not go stale between capture and write.
+- **`git commit` in a pipeline lies about its exit code.** The pre-commit hook refreshes
+  `.secrets.baseline` and aborts the commit; twice the commit silently did not happen while
+  the surrounding command reported success, and one of those still pushed. Now verified by
+  comparing HEAD before and after.
+
+### Residual — unchanged, still Bill's call
+- The public mirror now carries ~1,100 change-log entries of internal engineering detail:
+  unreleased codenames, infrastructure topology, incident narratives. **Redaction removes
+  identifiers; it does not make internal work confidential.** Narrowing what the mirror
+  carries is a scope decision, not a redaction one.
+
+## [2026-08-14] — AWS cost reduction: Tier 1 executed, $676 tranche analysed, two premises withdrawn
+
+Infrastructure only — no application code changed. All mutations listed below were
+made against the management account (`[aws-account]`) except the velvet-groove pause
+(Staging-B `[aws-account]`). Health verified green before and after.
+
+### Changed — executed
+- **Paused 4 App Runner services** (billing is provisioned-memory, $0 while paused):
+  - mgmt: `content-builder-dev`, `presentation-creator-dev`, `video-creator` → **-$51.10/mo**
+  - staging-b: `velvet-groove` → **-$61.32/mo**
+- **Deleted 4 stale CloudWatch dashboards** (mgmt 7 → 3) → **~-$9.30/mo**.
+  JSON bodies backed up to `docs/aws-audit/2026-08-14/backups/` first — restore with
+  `aws cloudwatch put-dashboard`.
+- **Deleted 3 `schoolonline*` RDS snapshots** (May 2022; both source DBs confirmed
+  `DBInstanceNotFound`) → **~-$1.00/mo**.
+- **Set 30-day retention on all 87 log groups that had none** (71 mgmt + 16 staging-b).
+  Both accounts now report 0 groups without retention. → -$0.02/mo.
+
+**Realised: ~$122.74/mo.**
+
+### Withdrawn — the earlier report was wrong
+- **`voice-agent-api-waf-dev` is NOT unattached. Not deleted.** The first pass used
+  `wafv2 list-resources-for-web-acl` without `--resource-type`, which **defaults to
+  `APPLICATION_LOAD_BALANCER` only** and returned `[]`. Querying every resource type
+  shows it protects `arn:aws:apigateway:.../restapis/c3u9i8wnk7/stages/dev`
+  (`voice-agent-api-dev`), which served **450 requests in 7 days**. Deleting it would
+  have stripped WAF from a live VoiceDesk API. Tier 1 reduced by $9.00.
+  **Rule: always pass `--resource-type` explicitly when auditing WAF associations.**
+- **`content-builder-staging-b` NOT paused** — 18,147 requests/30d. Actively used.
+  It was in the (unapproved) Tier 2 anyway; pausing it would have degraded Staging-B.
+
+### Blocked — needs Bill in the console
+- **AWS Business Support ($232.00/mo)** cannot be cancelled by API; there is no
+  `supportplans` command in the installed CLI and AWS exposes no public downgrade API.
+  Billing Console → Support plans → Change plan → Basic (free). Currently billing a
+  flat **$29.00 × 8 accounts**, posted as a single charge on the 1st.
+
+### Findings — the $676/mo tranche not on the original list
+- **ElastiCache**: `ig-staging-b-shared-cache` was **deleted by another terminal at
+  20:33 today** (CloudFormation, commit `84e7545c` "remove the orphan cache B.1/B.2")
+  — **-$93/mo already banked, not by this session**. The two survivors are both
+  load-bearing: `ig-dev-session-cache-v2` and `ig-staging-b-session-cache-v2` are each
+  wired to their agent-engine ECS task via `AGENT_ENGINE_REDIS_URL` with
+  `AGENT_ENGINE_ENABLE_RESPONSE_CACHE=true`. 7-day: dev 98 hits / 507 B, staging-b
+  320 hits / 3,124 B. Lightly used but live. **KEEP both.**
+- **RDS Proxy — `ig-staging-b-rds-proxy` has ZERO consumers (~$87.55/mo).**
+  0 of 20 staging-b Lambdas carry a proxy endpoint, and the staging-b agent-engine task
+  connects to `inspires-genius-staging-b-aurora.cluster-ced4aym6qpyz...` — the **cluster
+  endpoint directly**, bypassing the proxy. The dev proxy is the opposite: 20 Lambdas
+  **plus** the dev agent-engine task route through it. **Dev proxy is load-bearing;
+  staging-b proxy is dead weight.** Not removed — it is CDK-managed, so it belongs in a
+  stack edit rather than a console delete, and Semi Prod will want pooling once real
+  client load arrives. Decision deferred to Bill.
+- **NAT gateways — nothing safely removable.** `voice-agent-nat-dev` shows
+  **0.000 GB out over 7 days**, but its VPC hosts **48 VoiceDesk Lambdas** with live
+  ENIs (`voice-agent-auth-dev`, `voice-agent-agent-svc-dev`, `voice-agent-db-init-dev`)
+  and voicedeskai.co returns 200. Zero NAT bytes means no outbound calls *right now*,
+  not that none happen on invocation. Classic looks-idle-is-load-bearing. The other two
+  carry real traffic (dev 0.388 GB/7d, staging-b 0.931 GB/7d). **Leave all three.**
+- **VPC endpoints — nothing safely removable.** Billed usage is 6 endpoint-AZ
+  attachments ($44.64/mo); the Gateway endpoints (S3, DynamoDB) are free and the
+  ElastiCache-managed interface endpoints appear unbilled. The billed ones are
+  Secrets Manager and SSM interface endpoints that in-VPC Lambdas depend on to read
+  secrets without egressing through NAT. Removing them breaks secret reads.
+
+### Noted — pre-existing, not caused by this work
+- **`feedback.inspiresgenius.com` does not resolve.** No Route53 record exists for it;
+  the CloudFront distribution `[cf-distribution]` is Deployed/Enabled with the alias
+  configured and serves HTTP 200 on `[cdn-host]`. Verified zero
+  `ChangeResourceRecordSets` events in the account today. So `ig-feedback-waf` ($7/mo)
+  guards a surface whose vanity hostname was never wired up.
+
+### Verified
+- Post-change health: inspiresgenius.com, dev.inspiresgenius.com,
+  stable.inspiresgenius.com, voicedeskai.co, hibiscusandoak.com all **HTTP 200**.
+- Agent-engine ECS: dev 1/1 running, staging-b 1/1 running.
+- No CloudFormation stack was in progress in either account at execution time.
+- `video-creator` carries the custom domain **`video-creator.inspiresgenius.com`** —
+  that hostname is down while paused. Resume: `aws apprunner resume-service`.
+
 
 ## [2026-08-14] — 'Meet the Team' executive deck built from the bio documents
 
@@ -458,39 +883,173 @@ Which 2–3 **unlike** frameworks Phase 0 runs the Intake against (one framework
 the second customer); the legal position on retention + discoverability; pricing; and whether Ledger
 is Team-Development-only or IG-wide. See §25.
 
-## [2026-08-14] — survey-service parse: handle checkbox/Likert; enable LLM via secret
+## [2026-08-14] — Surveys card in Settings: also show it to super-admin
 
-### Added / Changed
-- **Heuristic parser** (`app/llm.py`) now recognizes real-survey shapes: `☐`
-  checkbox options (incl. several inline on one line → single/multi choice),
-  1–5 Likert statements (trailing `1 2 3 4 5` or a bare scale row → rating),
-  and skips response-scale legends + table headers instead of making junk
-  questions. +test (`test_parse_checkbox_and_likert`).
-- **LLM parse now runs in-env**: the survey Lambda resolves `ANTHROPIC_API_KEY`
-  at runtime from `voice-agent-secrets-<env>` (the same secret agent-engine
-  reads) via a new `ANTHROPIC_SECRET_ARN` env + `_resolve_anthropic_key()`
-  (cached, fail-open). CDK grants the Lambda read on that secret. Parse still
-  falls back to the heuristic if the key is absent or the model errors.
-  - Files: `services/survey-service/app/{llm,config}.py`,
-    `infrastructure/cdk/lib/survey-service-stack.ts`
+### Changed
+- The "Surveys" card in Settings (Settings → My Workspace) was gated to the
+  `user` role only, so the owner (super-admin) couldn't see it while testing.
+  Now shown to `user` **and** `super-admin`. All role Settings pages render the
+  same shared `Settings` component, so this covers the super-admin's user-
+  settings and administration-settings views.
+  - Files: `src/components/shared/settings/Settings.tsx`
 
-## [2026-08-14] — survey-service: creator/responder identity + per-survey enable toggle
+## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
+
+### Fixed
+- The "Build a survey from questions" dialog had no max-height, so a tall
+  viewport pushed it off-screen with no way to scroll — the "Build survey"
+  button was unreachable. The dialog now caps at 85dvh with a scrollable body
+  and a **pinned footer**, so the action is always visible.
 
 ### Added
-- **Creator + responder name & email** captured server-side from the verified
-  identity (`resolve_identity` — email from the JWT claim, name from a
-  name/full_name claim else `public.users.full_name`; never client-supplied).
-  Stored on `surveys.created_by_{name,email}` and `survey_responses.respondent_{name,email}`,
-  and returned in the manage list + individual responses.
-- **Per-survey enable toggle** (`surveys.enabled`). Respondents only see enabled
-  surveys (`list_for_org` filters `enabled=true`); authors see all in manage with
-  the flag. **New surveys default OFF** ("available when needed, not before");
-  existing surveys migrated to `enabled=true`. `PUT` with `enabled` flips it;
-  `enabled: null` leaves it unchanged.
-- Migration `services/migration-runner/migrations/survey_identity_toggle.sql`
-  (idempotent ADD COLUMNs) — applied to dev + staging-b. Baseline updated for
-  fresh envs. 26 tests pass.
-  - Files: `services/survey-service/app/{models,schemas,authz,service,routes}.py`
+- **Drag-and-drop** a file onto the text box (in addition to the Upload button),
+  with a drop-zone highlight, and clearer guidance that Word tables + checkbox
+  options come through.
+  - Files: `src/components/survey/SurveyUploadDialog.tsx`
+
+## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
+
+### Added
+- **Enable on/off toggle per survey.** The builder gained an "Available to
+  respondents" switch (new surveys default OFF), and the manage list shows an
+  Available/Off badge with an inline switch to flip availability without opening
+  the editor. Respondents only see enabled surveys (enforced server-side).
+- **Creator + responder identity.** The manage list shows "Created by {name} ·
+  {email}", and the Results view shows each responder's name + email above their
+  answers (server-resolved, not client-supplied).
+  - Files: `src/pages/user/SurveysPage.tsx`,
+    `src/components/survey/{SurveyBuilder,SurveyResults}.tsx`,
+    `src/types/survey.ts`
+
+## [2026-08-14] — Interview Practice: employer-style questions and their provenance
+
+The frame already collected **company** and **industry** and then threw them away
+before tailoring. It now passes them, so the backend can swap in curated
+employer/sector questions for the competencies a pack covers. (Status at time of
+writing: built and tested, not deployed. **Superseded — merged and deployed the
+same day; see the deploy record entry above.**)
+
+### Changed
+- **`src/services/interview/practice.service.ts`**
+  - `getTailoredPracticeQuestions()` takes an optional `{ company, industry }`.
+    Blank/whitespace values are omitted rather than sent as empty strings.
+  - `PracticeCompetency` gains `source` (`employer` | `sector` | `bank`) and
+    `strongAnswerCovers`; `PracticeQuestions` gains `employer`. New types
+    `EmployerPackMatch` and `EmployerPackCatalogue`.
+  - `buildInterviewPlan()` carries `source` + `strongAnswerCovers` onto
+    `PlannedQuestion`, so the question card can show provenance per question.
+  - New `getEmployerPackCatalogue()` — metadata only; degrades to empty lists on
+    failure rather than throwing.
+- **`src/pages/user/InterviewPracticePage.tsx`**
+  - Passes the frame's company/industry into tailoring; tracks the matched pack.
+  - Header badge ("N questions in Amazon / AWS's style"), a per-question badge,
+    and a "What a strong answer covers" coaching line on curated questions.
+  - A context card with the employer's published framework, how they interview,
+    what it rewards, and what to watch out for — ending with the provenance
+    disclaimer.
+
+### Notes
+- **The disclaimer travels with the content.** The backend puts the provenance
+  notice on every payload and the page renders it in the same card as the
+  employer context, rather than relying on a footnote somewhere else: these are
+  questions written *in the style of* an employer's published framework, not
+  that employer's actual questions, and no affiliation is implied.
+- **Nothing regresses without a company.** When company/industry are blank or
+  unrecognized the backend returns `employer: null` and every question is
+  `source: "bank"` — the previous behaviour exactly.
+- `strongAnswerCovers` is candidate-facing coaching, NOT the evaluator's 1-5
+  rubric or its 5/3/1 exemplars. The candidate-safe contract is unchanged.
+- Verified: `npm run build` clean (tsc + vite); 39 interview tests pass including
+  10 new ones in `practice.employerPacks.test.ts`; ESLint clean on all three
+  changed files.
+
+---
+## [2026-08-14] — Deploy record: employer-style practice questions LIVE on dev + staging-b
+
+FE **#430** (merge `f2675831`) merged after its paired agent-engine PR **#901**
+(merge `68e3275c`, monorepo) had already rolled to dev — so the UI never sat in
+front of a route that did not exist. **Deploy to Dev + Deploy to Staging-B both
+success.**
+
+### Verified (probe, not pipeline)
+- The deployed **code-split chunk** carries the change on both environments:
+  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
+  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
+- The **entry bundle does not** — a false negative worth recording, because the
+  practice page is lazy-loaded and the entry chunk was never going to prove
+  anything. Checking it first is the mistake to avoid next time.
+- Backend side: `GET /v1/agents/interview/employer-packs` → **401, not 404** on
+  the dev gateway.
+
+### Fixed
+- The entry below said "**Built and tested, NOT deployed**" — true when written,
+  false within the hour. Corrected in place rather than left standing.
+
+### Notes
+- **`getEmployerPackCatalogue()` is unconsumed**, so the bundler tree-shakes it
+  out of the page chunk. That is why `interview/employer-packs` is absent from
+  the deployed JavaScript — correct behaviour, not a failed deploy. It stays
+  until an employer picker exists.
+- **Phase 0 (legal / nominative-use review of the 138 questions) is outstanding
+  and this is live on staging-b ahead of it.** The provenance notice ships on
+  every payload and renders in the UI; the review has not happened.
+
+---
+
+## [2026-08-14] — Deploy record: employer question packs LIVE on dev + staging-b
+
+Session close-out for the Interview Practice employer packs. Four PRs landed
+today across two repos; the packs are now serving real traffic on **dev and
+staging-b**, verified by probe rather than by a green pipeline.
+
+### Deployed
+- **BE #901** (merge `68e3275c`) — `app/employers/` + the two optional request
+  fields + `GET /v1/agents/interview/employer-packs`. Agent-engine image built
+  and pushed; **`Roll ig-dev-agent-engine ECS service` completed success**.
+- **FE #430** (merge `f2675831`, frontend repo) — company/industry now reach the
+  tailoring call; provenance badges, coaching line, employer-context card.
+  **Deploy to Dev + Deploy to Staging-B both success.**
+- Merged **backend first**, and waited for the ECS roll to finish before merging
+  the frontend, so the UI never sat in front of a route that did not exist yet.
+
+### Verified (probe, not pipeline)
+- `GET /v1/agents/interview/employer-packs` → **401**, not 404 — the new route
+  exists on the dev gateway and is auth-gated.
+  `POST`-only `/practice-questions/tailored` → **405** on GET, so the pre-existing
+  route is intact.
+- The deployed **code-split chunk** carries the change on both environments —
+  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
+  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
+  The entry bundle does NOT, which is a false negative: the practice page is
+  lazy-loaded, so the entry chunk was never going to prove anything.
+
+### Also landed earlier in the session
+- **#895** (merge `da0c76e7`) — the B2C GTM brief + employer/sector question packs
+  documents and their generators.
+- **#427** (frontend repo, merge `3b6db9b`) — those two entries mirrored into this
+  repo's public frontend log copies, prepended into their own lineage (badge
+  1480 → 1482) rather than copied wholesale.
+
+### Fixed
+- The 2026-08-14 employer-packs entry below said "**Built and tested, NOT
+  deployed**", which was true when written and false within the hour. Corrected
+  in place to point at this record rather than left standing as a wrong claim.
+
+### Notes
+- **`getEmployerPackCatalogue()` is live server-side but unconsumed** — no
+  employer picker exists yet, so the bundler tree-shakes it out of the page
+  chunk. That is why `interview/employer-packs` does not appear in the deployed
+  JavaScript: correct behaviour, not a failed deploy.
+- **Phase 0 — legal / nominative-use review of all 138 questions — is now the
+  outstanding item, and this is live on staging-b ahead of it.** The provenance
+  notice ships on every payload and renders in the UI, but the review itself has
+  not happened. Flagged before the merge; the merge was an explicit owner call.
+- Both session worktrees and all four feature branches cleaned up. The two main
+  working directories were never touched — they remain on other terminals'
+  branches (`feat/content-builder-video-cover-toggle-voice-preview` and
+  `feature/prism-g10b-e2e-chat-preload`).
+
+---
 
 ## [2026-08-14] — Employer & sector question packs wired into the practice interview
 
@@ -549,254 +1108,39 @@ not cover are role-tailored.
 - Verified: 5121 passed / 11 skipped across the full agent-engine suite.
 
 ---
-## [2026-08-14] — Deploy record: employer question packs LIVE on dev + staging-b
-
-Session close-out for the Interview Practice employer packs. Four PRs landed
-today across two repos; the packs are now serving real traffic on **dev and
-staging-b**, verified by probe rather than by a green pipeline.
-
-### Deployed
-- **BE #901** (merge `68e3275c`) — `app/employers/` + the two optional request
-  fields + `GET /v1/agents/interview/employer-packs`. Agent-engine image built
-  and pushed; **`Roll ig-dev-agent-engine ECS service` completed success**.
-- **FE #430** (merge `f2675831`, frontend repo) — company/industry now reach the
-  tailoring call; provenance badges, coaching line, employer-context card.
-  **Deploy to Dev + Deploy to Staging-B both success.**
-- Merged **backend first**, and waited for the ECS roll to finish before merging
-  the frontend, so the UI never sat in front of a route that did not exist yet.
-
-### Verified (probe, not pipeline)
-- `GET /v1/agents/interview/employer-packs` → **401**, not 404 — the new route
-  exists on the dev gateway and is auth-gated.
-  `POST`-only `/practice-questions/tailored` → **405** on GET, so the pre-existing
-  route is intact.
-- The deployed **code-split chunk** carries the change on both environments —
-  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
-  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
-  The entry bundle does NOT, which is a false negative: the practice page is
-  lazy-loaded, so the entry chunk was never going to prove anything.
-
-### Also landed earlier in the session
-- **#895** (merge `da0c76e7`) — the B2C GTM brief + employer/sector question packs
-  documents and their generators.
-- **#427** (frontend repo, merge `3b6db9b`) — those two entries mirrored into this
-  repo's public frontend log copies, prepended into their own lineage (badge
-  1480 → 1482) rather than copied wholesale.
-
-### Fixed
-- The 2026-08-14 employer-packs entry below said "**Built and tested, NOT
-  deployed**", which was true when written and false within the hour. Corrected
-  in place to point at this record rather than left standing as a wrong claim.
-
-### Notes
-- **`getEmployerPackCatalogue()` is live server-side but unconsumed** — no
-  employer picker exists yet, so the bundler tree-shakes it out of the page
-  chunk. That is why `interview/employer-packs` does not appear in the deployed
-  JavaScript: correct behaviour, not a failed deploy.
-- **Phase 0 — legal / nominative-use review of all 138 questions — is now the
-  outstanding item, and this is live on staging-b ahead of it.** The provenance
-  notice ships on every payload and renders in the UI, but the review itself has
-  not happened. Flagged before the merge; the merge was an explicit owner call.
-- Both session worktrees and all four feature branches cleaned up. The two main
-  working directories were never touched — they remain on other terminals'
-  branches (`feat/content-builder-video-cover-toggle-voice-preview` and
-  `feature/prism-g10b-e2e-chat-preload`).
-
----
-
-## [2026-08-14] — Deploy record: employer-style practice questions LIVE on dev + staging-b
-
-FE **#430** (merge `f2675831`) merged after its paired agent-engine PR **#901**
-(merge `68e3275c`, monorepo) had already rolled to dev — so the UI never sat in
-front of a route that did not exist. **Deploy to Dev + Deploy to Staging-B both
-success.**
-
-### Verified (probe, not pipeline)
-- The deployed **code-split chunk** carries the change on both environments:
-  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
-  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
-- The **entry bundle does not** — a false negative worth recording, because the
-  practice page is lazy-loaded and the entry chunk was never going to prove
-  anything. Checking it first is the mistake to avoid next time.
-- Backend side: `GET /v1/agents/interview/employer-packs` → **401, not 404** on
-  the dev gateway.
-
-### Fixed
-- The entry below said "**Built and tested, NOT deployed**" — true when written,
-  false within the hour. Corrected in place rather than left standing.
-
-### Notes
-- **`getEmployerPackCatalogue()` is unconsumed**, so the bundler tree-shakes it
-  out of the page chunk. That is why `interview/employer-packs` is absent from
-  the deployed JavaScript — correct behaviour, not a failed deploy. It stays
-  until an employer picker exists.
-- **Phase 0 (legal / nominative-use review of the 138 questions) is outstanding
-  and this is live on staging-b ahead of it.** The provenance notice ships on
-  every payload and renders in the UI; the review has not happened.
-
----
-
-## [2026-08-14] — Interview Practice: employer-style questions and their provenance
-
-The frame already collected **company** and **industry** and then threw them away
-before tailoring. It now passes them, so the backend can swap in curated
-employer/sector questions for the competencies a pack covers. (Status at time of
-writing: built and tested, not deployed. **Superseded — merged and deployed the
-same day; see the deploy record entry above.**)
-
-### Changed
-- **`src/services/interview/practice.service.ts`**
-  - `getTailoredPracticeQuestions()` takes an optional `{ company, industry }`.
-    Blank/whitespace values are omitted rather than sent as empty strings.
-  - `PracticeCompetency` gains `source` (`employer` | `sector` | `bank`) and
-    `strongAnswerCovers`; `PracticeQuestions` gains `employer`. New types
-    `EmployerPackMatch` and `EmployerPackCatalogue`.
-  - `buildInterviewPlan()` carries `source` + `strongAnswerCovers` onto
-    `PlannedQuestion`, so the question card can show provenance per question.
-  - New `getEmployerPackCatalogue()` — metadata only; degrades to empty lists on
-    failure rather than throwing.
-- **`src/pages/user/InterviewPracticePage.tsx`**
-  - Passes the frame's company/industry into tailoring; tracks the matched pack.
-  - Header badge ("N questions in Amazon / AWS's style"), a per-question badge,
-    and a "What a strong answer covers" coaching line on curated questions.
-  - A context card with the employer's published framework, how they interview,
-    what it rewards, and what to watch out for — ending with the provenance
-    disclaimer.
-
-### Notes
-- **The disclaimer travels with the content.** The backend puts the provenance
-  notice on every payload and the page renders it in the same card as the
-  employer context, rather than relying on a footnote somewhere else: these are
-  questions written *in the style of* an employer's published framework, not
-  that employer's actual questions, and no affiliation is implied.
-- **Nothing regresses without a company.** When company/industry are blank or
-  unrecognized the backend returns `employer: null` and every question is
-  `source: "bank"` — the previous behaviour exactly.
-- `strongAnswerCovers` is candidate-facing coaching, NOT the evaluator's 1-5
-  rubric or its 5/3/1 exemplars. The candidate-safe contract is unchanged.
-- Verified: `npm run build` clean (tsc + vite); 39 interview tests pass including
-  10 new ones in `practice.employerPacks.test.ts`; ESLint clean on all three
-  changed files.
-
----
-## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
+## [2026-08-14] — survey-service: creator/responder identity + per-survey enable toggle
 
 ### Added
-- **Enable on/off toggle per survey.** The builder gained an "Available to
-  respondents" switch (new surveys default OFF), and the manage list shows an
-  Available/Off badge with an inline switch to flip availability without opening
-  the editor. Respondents only see enabled surveys (enforced server-side).
-- **Creator + responder identity.** The manage list shows "Created by {name} ·
-  {email}", and the Results view shows each responder's name + email above their
-  answers (server-resolved, not client-supplied).
-  - Files: `src/pages/user/SurveysPage.tsx`,
-    `src/components/survey/{SurveyBuilder,SurveyResults}.tsx`,
-    `src/types/survey.ts`
+- **Creator + responder name & email** captured server-side from the verified
+  identity (`resolve_identity` — email from the JWT claim, name from a
+  name/full_name claim else `public.users.full_name`; never client-supplied).
+  Stored on `surveys.created_by_{name,email}` and `survey_responses.respondent_{name,email}`,
+  and returned in the manage list + individual responses.
+- **Per-survey enable toggle** (`surveys.enabled`). Respondents only see enabled
+  surveys (`list_for_org` filters `enabled=true`); authors see all in manage with
+  the flag. **New surveys default OFF** ("available when needed, not before");
+  existing surveys migrated to `enabled=true`. `PUT` with `enabled` flips it;
+  `enabled: null` leaves it unchanged.
+- Migration `services/migration-runner/migrations/survey_identity_toggle.sql`
+  (idempotent ADD COLUMNs) — applied to dev + staging-b. Baseline updated for
+  fresh envs. 26 tests pass.
+  - Files: `services/survey-service/app/{models,schemas,authz,service,routes}.py`
 
-## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
+## [2026-08-14] — survey-service parse: handle checkbox/Likert; enable LLM via secret
 
-### Fixed
-- The "Build a survey from questions" dialog had no max-height, so a tall
-  viewport pushed it off-screen with no way to scroll — the "Build survey"
-  button was unreachable. The dialog now caps at 85dvh with a scrollable body
-  and a **pinned footer**, so the action is always visible.
-
-### Added
-- **Drag-and-drop** a file onto the text box (in addition to the Upload button),
-  with a drop-zone highlight, and clearer guidance that Word tables + checkbox
-  options come through.
-  - Files: `src/components/survey/SurveyUploadDialog.tsx`
-
-## [2026-08-14] — Surveys card in Settings: also show it to super-admin
-
-### Changed
-- The "Surveys" card in Settings (Settings → My Workspace) was gated to the
-  `user` role only, so the owner (super-admin) couldn't see it while testing.
-  Now shown to `user` **and** `super-admin`. All role Settings pages render the
-  same shared `Settings` component, so this covers the super-admin's user-
-  settings and administration-settings views.
-  - Files: `src/components/shared/settings/Settings.tsx`
-
-## [2026-08-14] — AWS cost reduction: Tier 1 executed, $676 tranche analysed, two premises withdrawn
-
-Infrastructure only — no application code changed. All mutations listed below were
-made against the management account (`[aws-account]`) except the velvet-groove pause
-(Staging-B `[aws-account]`). Health verified green before and after.
-
-### Changed — executed
-- **Paused 4 App Runner services** (billing is provisioned-memory, $0 while paused):
-  - mgmt: `content-builder-dev`, `presentation-creator-dev`, `video-creator` → **-$51.10/mo**
-  - staging-b: `velvet-groove` → **-$61.32/mo**
-- **Deleted 4 stale CloudWatch dashboards** (mgmt 7 → 3) → **~-$9.30/mo**.
-  JSON bodies backed up to `docs/aws-audit/2026-08-14/backups/` first — restore with
-  `aws cloudwatch put-dashboard`.
-- **Deleted 3 `schoolonline*` RDS snapshots** (May 2022; both source DBs confirmed
-  `DBInstanceNotFound`) → **~-$1.00/mo**.
-- **Set 30-day retention on all 87 log groups that had none** (71 mgmt + 16 staging-b).
-  Both accounts now report 0 groups without retention. → -$0.02/mo.
-
-**Realised: ~$122.74/mo.**
-
-### Withdrawn — the earlier report was wrong
-- **`voice-agent-api-waf-dev` is NOT unattached. Not deleted.** The first pass used
-  `wafv2 list-resources-for-web-acl` without `--resource-type`, which **defaults to
-  `APPLICATION_LOAD_BALANCER` only** and returned `[]`. Querying every resource type
-  shows it protects `arn:aws:apigateway:.../restapis/c3u9i8wnk7/stages/dev`
-  (`voice-agent-api-dev`), which served **450 requests in 7 days**. Deleting it would
-  have stripped WAF from a live VoiceDesk API. Tier 1 reduced by $9.00.
-  **Rule: always pass `--resource-type` explicitly when auditing WAF associations.**
-- **`content-builder-staging-b` NOT paused** — 18,147 requests/30d. Actively used.
-  It was in the (unapproved) Tier 2 anyway; pausing it would have degraded Staging-B.
-
-### Blocked — needs Bill in the console
-- **AWS Business Support ($232.00/mo)** cannot be cancelled by API; there is no
-  `supportplans` command in the installed CLI and AWS exposes no public downgrade API.
-  Billing Console → Support plans → Change plan → Basic (free). Currently billing a
-  flat **$29.00 × 8 accounts**, posted as a single charge on the 1st.
-
-### Findings — the $676/mo tranche not on the original list
-- **ElastiCache**: `ig-staging-b-shared-cache` was **deleted by another terminal at
-  20:33 today** (CloudFormation, commit `84e7545c` "remove the orphan cache B.1/B.2")
-  — **-$93/mo already banked, not by this session**. The two survivors are both
-  load-bearing: `ig-dev-session-cache-v2` and `ig-staging-b-session-cache-v2` are each
-  wired to their agent-engine ECS task via `AGENT_ENGINE_REDIS_URL` with
-  `AGENT_ENGINE_ENABLE_RESPONSE_CACHE=true`. 7-day: dev 98 hits / 507 B, staging-b
-  320 hits / 3,124 B. Lightly used but live. **KEEP both.**
-- **RDS Proxy — `ig-staging-b-rds-proxy` has ZERO consumers (~$87.55/mo).**
-  0 of 20 staging-b Lambdas carry a proxy endpoint, and the staging-b agent-engine task
-  connects to `inspires-genius-staging-b-aurora.cluster-ced4aym6qpyz...` — the **cluster
-  endpoint directly**, bypassing the proxy. The dev proxy is the opposite: 20 Lambdas
-  **plus** the dev agent-engine task route through it. **Dev proxy is load-bearing;
-  staging-b proxy is dead weight.** Not removed — it is CDK-managed, so it belongs in a
-  stack edit rather than a console delete, and Semi Prod will want pooling once real
-  client load arrives. Decision deferred to Bill.
-- **NAT gateways — nothing safely removable.** `voice-agent-nat-dev` shows
-  **0.000 GB out over 7 days**, but its VPC hosts **48 VoiceDesk Lambdas** with live
-  ENIs (`voice-agent-auth-dev`, `voice-agent-agent-svc-dev`, `voice-agent-db-init-dev`)
-  and voicedeskai.co returns 200. Zero NAT bytes means no outbound calls *right now*,
-  not that none happen on invocation. Classic looks-idle-is-load-bearing. The other two
-  carry real traffic (dev 0.388 GB/7d, staging-b 0.931 GB/7d). **Leave all three.**
-- **VPC endpoints — nothing safely removable.** Billed usage is 6 endpoint-AZ
-  attachments ($44.64/mo); the Gateway endpoints (S3, DynamoDB) are free and the
-  ElastiCache-managed interface endpoints appear unbilled. The billed ones are
-  Secrets Manager and SSM interface endpoints that in-VPC Lambdas depend on to read
-  secrets without egressing through NAT. Removing them breaks secret reads.
-
-### Noted — pre-existing, not caused by this work
-- **`feedback.inspiresgenius.com` does not resolve.** No Route53 record exists for it;
-  the CloudFront distribution `[cf-distribution]` is Deployed/Enabled with the alias
-  configured and serves HTTP 200 on `[cdn-host]`. Verified zero
-  `ChangeResourceRecordSets` events in the account today. So `ig-feedback-waf` ($7/mo)
-  guards a surface whose vanity hostname was never wired up.
-
-### Verified
-- Post-change health: inspiresgenius.com, dev.inspiresgenius.com,
-  stable.inspiresgenius.com, voicedeskai.co, hibiscusandoak.com all **HTTP 200**.
-- Agent-engine ECS: dev 1/1 running, staging-b 1/1 running.
-- No CloudFormation stack was in progress in either account at execution time.
-- `video-creator` carries the custom domain **`video-creator.inspiresgenius.com`** —
-  that hostname is down while paused. Resume: `aws apprunner resume-service`.
-
+### Added / Changed
+- **Heuristic parser** (`app/llm.py`) now recognizes real-survey shapes: `☐`
+  checkbox options (incl. several inline on one line → single/multi choice),
+  1–5 Likert statements (trailing `1 2 3 4 5` or a bare scale row → rating),
+  and skips response-scale legends + table headers instead of making junk
+  questions. +test (`test_parse_checkbox_and_likert`).
+- **LLM parse now runs in-env**: the survey Lambda resolves `ANTHROPIC_API_KEY`
+  at runtime from `voice-agent-secrets-<env>` (the same secret agent-engine
+  reads) via a new `ANTHROPIC_SECRET_ARN` env + `_resolve_anthropic_key()`
+  (cached, fail-open). CDK grants the Lambda read on that secret. Parse still
+  falls back to the heuristic if the key is absent or the model errors.
+  - Files: `services/survey-service/app/{llm,config}.py`,
+    `infrastructure/cdk/lib/survey-service-stack.ts`
 
 ## [2026-08-13] — A.1.1 shipped: org_id (tenant key) in the verified identity — BE PR #889
 
@@ -883,209 +1227,195 @@ a real tenant key to the code consuming it. Consumers must treat `None` as
   provisioning owns that (A.1.3), not the trigger, which deliberately does no
   lookup so it adds no latency or failure mode to every login.
 
-## [2026-08-13] — Deployed: notification-inbox 401 fix (dev + staging-b) · self-inflicted 3-minute staging-b outage
+## [2026-08-13] — PRISM Add+ on Home imported nothing; it filed the CSV as a document
 
-Deployment record for the 401/refresh-loop fix (#876, FE #412), and an honest
-note on an outage I caused while deploying it.
-
-### Deployed
-- **Frontend** — merged (#412) and auto-deployed to **dev + staging-b**. Verified
-  against the deployed bundles, not the green check: `__igAuthRetried` present and
-  `/v1/notifications` in the non-critical 401 list in both
-  `ig-dev-frontend-assets` and `ig-staging-b-frontend-assets`.
-- **broadcast-service dev** — via the `cdk-deploy` workflow (stub-detector job
-  passed). Artifact verified: `resolve_caller_email` 0 → 4 occurrences,
-  `"No caller email"` 1 → 0.
-- **broadcast-service staging-b** — deployed the single stack (`--exclusively`),
-  diff was one line: the Lambda code asset. No IAM, env-var or infra change.
-
-### Incident — staging-b broadcast down 01:20:39 → 01:23:54 UTC (~3m15s)
-**Cause: mine.** I ran `cdk deploy` **locally on Apple Silicon without
-`DOCKER_DEFAULT_PLATFORM=linux/amd64`.** The bundling container therefore ran
-arm64 and installed aarch64 wheels, so the Lambda could not import a native
-extension:
-
-```
-Runtime.ImportModuleError: Unable to import module 'app.main':
-No module named 'pydantic_core._pydantic_core'
-```
-
-`/v1/notifications*` returned **500** for the duration. The stack file says
-exactly this in a comment above the bundling command — the requirement was
-documented and I did not set it.
-
-**Two things made it worse than a normal bad deploy:**
-1. `assetHashType: SOURCE` means the asset hash is computed from the source
-   files, not the built output. Redeploying with the platform corrected produced
-   **"no changes"** — CDK saw identical source and refused to republish, so the
-   broken arm64 zip stayed live. A platform bug is invisible to a source hash.
-2. The CI path (`cdk-deploy.yml`) sets the platform correctly and has a
-   stub-zip detector. Deploying staging-b by hand skipped both.
-
-**Recovery:** rebuilt with `DOCKER_DEFAULT_PLATFORM=linux/amd64`, confirmed the
-artifact (`_pydantic_core.cpython-312-x86_64-linux-gnu.so`, `ELF 64-bit x86-64`),
-then **overwrote the S3 asset at the same key** and issued
-`update-function-code`. Overwriting the existing key rather than publishing a new
-one matters: the CFN template still references that key, so a later `cdk deploy`
-now gets the correct build. `cdk diff` afterwards reports **no differences** —
-template and running function agree.
-
-**Rule for next time:** never `cdk deploy` a Lambda stack from this machine
-without `DOCKER_DEFAULT_PLATFORM=linux/amd64`. Prefer the CI workflow, which sets
-it and runs the stub check.
-
-### Verified after recovery
-- staging-b artifact: `resolve_caller_email` present (8 in `routes.py`), the 401
-  line gone, x86-64 `.so`.
-- `GET /v1/notifications` and `/unread-count` both answer **401 unauthenticated**
-  (auth middleware) rather than 500 — module imports cleanly.
-- Zero `ImportModuleError` after 01:24; dev never had any (CI builds on Linux).
-
-## [2026-08-13] — PRISM report-link resolver: serve a real PDF, generate only as last resort (#878)
-
-The PRISM report link presigned only `prism_requests.pdf_s3_key`, so it broke two
-ways: Kevin McCoy's key pointed at the 136-byte placeholder (Adobe opens it, then
-fails), and William Brown — whose report exists as an uploaded document / who has
-only CSV-derived scores, with no `prism_requests` row — was told "your PRISM
-report isn't ready" even though real PDFs sit in S3. Distinct from #851/#854/#872.
-
-### Added
-- `services/agent-engine/app/prism/report_pdf.py` — shared PRISM report renderer
-  (`render_prism_report_pdf` + `PDF_PLACEHOLDER` + `is_real_pdf`); the ingestor
-  now delegates to it so the ingested and on-demand documents can never drift.
-- `GET /v1/prism/report/me/download` — request-independent; resolves the caller's
-  best real PDF even when no `prism_requests` row exists.
+The "upload your PRISM report and nothing happens" reports traced to this
+button, not to the upload or the parser.
 
 ### Fixed
-- `services/agent-engine/app/routes/prism_report_download.py` — resolver serves a
-  real PDF in order: (1) the request's own `pdf_s3_key` if the object is real
-  (HEAD > placeholder); (2) newest real PRISM PDF **document** owned by or about
-  the subject (`documents.user_id` OR `subject_user_id`), served as-is with no
-  regeneration; (3) a cached generated report; (4) render-from-scores as a last
-  resort. `/report/me` availability is resolver-aware (recorded key OR real
-  document OR renderable scores) with no S3 round-trips — closes the false "not
-  ready". `/requests/{id}/report/download` now routed through the resolver so a
-  placeholder key is never served. Resolver sources degrade to nothing on error
-  (not 500); documents query is dialect-portable (`CAST(... AS TEXT)`).
+- **`Personal Info → "Prism Rpt .csv"` Add+ opened the generic tagged-upload
+  modal**, whose entire action is:
+  ```js
+  upload.mutate({ file, docKind: target.docKind })   // stores a document. That's all.
+  ```
+  The CSV was stored and tagged, and **no scores were written**. The report
+  lookup then falls back to any prism-tagged document, so it answered 200 and
+  the tile ticked to **done** — while the user's score tables stayed empty.
+  Several users reached that state. The microcopy promised the opposite —
+  *"so Meridian can read your brain map in every chat"* — which requires scores
+  that were never created.
+  - PRISM now opens the real self-service importer, which parses the CSV
+    server-side and rejects one that yields zero scores. Résumé / Bio /
+    Additional Info are unchanged — those genuinely ARE documents.
+  - Files: `src/pages/user/HomeV2.tsx`
+- **`ReplacePrismDataDialog` extracted** from `ReplacePrismDataButton` so a
+  surface with its own trigger reuses the flow instead of re-implementing it.
+  The button is now a thin wrapper; every existing call site is untouched.
+  - Files: `src/components/prism/ReplacePrismDataButton.tsx`
+- **`useReplaceMyPrismReport` now invalidates `['documents','latest-prism']`** —
+  the key the Home tile and the chat auto-attach read. It caches for 5 minutes
+  with `refetchOnWindowFocus: false`, so without this a *successful* import left
+  the tile showing the pre-import state until a hard reload — indistinguishable
+  from the bug being fixed.
+  - Files: `src/hooks/prism/usePrismReportDownload.ts`
 
-### Verified
-- 87 PRISM tests pass (9 report-download incl. 4 new resolver cases); full
-  agent-engine suite (4989) collects clean. Live on staging-b Postgres: Holly
-  Sagraves → resolver serves her genuine 866 KB uploaded PDF (no regen); Kevin →
-  no real PDF → generation. Merged to `development` (squash `13028a18`); dev
-  staged-deploy rolling. staging-b promote pending; FE download for the
-  no-ingest-row case must call `/report/me/download` (separate FE PR).
+### Removed
+- The misleading `promptOverride` on the PRISM Personal Info entry.
 
-## [2026-08-13] — Data op (staging-b): replaced [user M.T.]'s PRISM scores with the operator CSV
+### Tests
+Both paths present as "a file picker", so asserting that a file input appeared
+would pass either way. The tests assert **which dialog opens**. Verified against
+the pre-fix code: the PRISM case fails, the Bio control passes both ways.
 
-Operator-requested data correction on staging-b. [user M.T.]'s PRISM profile came
-from an api_ingest that derived different Underlying behaviours than the
-operator's authoritative "Raw data - [user M.T.] Tully_Personal Report.csv". Replaced
-the api-pulled rows with the CSV's scores.
+`npm run build` clean · eslint clean on touched files · 116 tests across HomeV2
+and the prism components/hooks · 60 more across the other call sites.
 
-### Changed (staging-b Aurora — data only, no code)
-- Deleted the api_ingest assessment `8a750ee2` (+ its 16 assessment_scores /
-  typing) and the stale `prism_results` row for `d4783428…`
-  ([email redacted] — the only one of his 4 accounts holding PRISM
-  data).
-- Imported the CSV via the sanctioned parser + projection
-  (`parse_prism_csv` → `project_assessment_to_prism_results`): new
-  `admin_csv_upload` assessment `3df329dc` (source_ref `csv-upload:07a567…`,
-  is_authoritative), 76 assessment_scores, and a fresh `prism_results` row.
-- Result: `prism_results` gold 75.5→**65.5**, green 55.5→**52.0**,
-  blue 65.5→**81.0**, orange 43.5→**59.5** (derived from CSV Underlying
-  behaviours: Innovating 88 / Initiating 16 / Supporting 67 / Coordinating 95 /
-  Focusing 32 / Delivering 87 / Finishing 43 / Evaluating 88).
-- Verified: 0 orphan rows on the old assessment, exactly 1 `prism_results` row,
-  no stale cached PDF (the report-link resolver renders fresh from the new
-  scores on next download). dev/prod unaffected — staging-b only.
+## [2026-08-13] — Surveys surface: build questionnaires + select one to take
 
-## [2026-08-13] — Self-service PRISM replace + super-admin PDF upload/delete (BE #881, FE #415)
-
-A proper user-facing "replace my PRISM data" flow (CSV scores + optional PDF, scoped
-to the caller) and a super-admin per-user PRISM-PDF action.
+A new `/surveys` surface lets a user author surveys (add questions) and pick a
+survey to take. Frontend-first: surveys and responses persist in the browser
+(`surveyStore`, localStorage) so the whole surface ships without a backend; the
+CRUD shape mirrors what a future survey-service would expose.
 
 ### Added
-- **`app/prism/pdf_store.py`** — `store_prism_pdf` / `delete_prism_pdfs`: register a
-  `doc_kind='prism'` documents row (the report-link resolver serves it), point any
-  `prism_requests` row at it, clear the generated-report cache; delete hard-removes the
-  prism PDF docs + nulls the row key so the report reverts to render-from-scores. UUID
-  binds are dialect-aware.
-- **`POST /v1/prism/report/me/replace`** (user-scoped, subject=self) — parse the
-  uploaded CSV with the same sanctioned parser, REPLACE the caller's prior PRISM
-  assessment + `prism_results`, optional replacement PDF in the same request.
-- **`POST` / `DELETE /v1/profile/admin/users/{user_id}/prism-pdf`** (super-admin).
-- FE: `ReplacePrismDataButton` (reused on PRISM Assessment V1+V2 and Settings →
-  Other Assessments) + `PrismPdfAdminDialog` (User Management 3-dots "Upload / Delete
-  PRISM PDF" via `ActionMenu`); `prismReport.service.ts` + `usePrismReportDownload.ts`
-  additions.
+- **Take tab** — a selector dropdown to choose a survey, then answer it. Four
+  question types: short/long text, single choice, multiple choice, and a 1–N
+  rating scale. Required questions are validated before submit; submitting
+  records a response and shows a thank-you state.
+- **Build tab** — author a new survey or edit/delete existing ones: title,
+  description, and an ordered list of questions with per-question type, choices,
+  rating scale, required toggle, and reorder/remove.
+  - Files: `src/pages/user/SurveysPage.tsx`,
+    `src/components/survey/{SurveyBuilder,SurveyTaker,SurveySelector}.tsx`,
+    `src/hooks/useSurveys.ts`, `src/lib/surveyStore.ts`, `src/types/survey.ts`
+- **Routing + nav** — `ROUTES.SURVEYS = "/surveys"` (shared, any authenticated
+  role; page adapts chrome via `UnifiedLayout`). A "Surveys" nav item was added
+  to the manager, company-admin, practitioner, and super-admin menus. The plain
+  `user` menu is intentionally left at its fixed six items (documented decision);
+  `/surveys` remains reachable by URL for that role.
+  - Files: `src/constants/routes.ts`, `src/routes.tsx`,
+    `src/constants/navigation.ts`
+- **Tests** — `src/lib/__tests__/surveyStore.test.ts` (seed/CRUD/responses) and
+  `src/components/survey/__tests__/survey.test.tsx` (builder save, taker required
+  validation + submit, selector, page render). Full suite green (4504 tests).
+
+## [2026-08-13] — Surveys: backend-backed, org exposure, results/compilation, upload-to-build
+
+The Survey surface now stores surveys + responses **centrally** (survey-service),
+so results aggregate across every respondent. Retires the browser-local store.
+
+### Added
+- **Results tab** (author/manager+): a per-question **compilation** across all
+  respondents (choice distributions, rating averages + histograms, all free-text
+  answers) plus each **individual response**.
+  - Files: `src/components/survey/SurveyResults.tsx`
+- **Upload / paste to build**: upload a file (txt/md/pdf/doc/docx) or paste
+  questions + answers + a freeform request; the survey-service parses it (AI-assisted,
+  fail-open) into a draft you review in the builder.
+  - Files: `src/components/survey/SurveyUploadDialog.tsx`
+- **Org exposure**: the builder gained an "Expose to organization" field; a user's
+  take-list shows only surveys exposed to their organization.
+- **Settings → My Workspace → Surveys**: the user-role entry point — lists surveys
+  shared with the user's organization, each linking into the take flow.
+  - Files: `src/components/settings/SurveysSettingsCard.tsx`,
+    `src/components/shared/settings/Settings.tsx`
 
 ### Changed
-- The user "Import" button on the PRISM Assessment page (V1 + V2) now uses the
-  user-scoped **replace** endpoint instead of the super-admin `import-csv` append path.
+- Data layer swapped from browser localStorage to the survey-service via
+  `src/services/survey/survey.service.ts` + React Query hooks
+  `src/hooks/survey/useSurveys.ts`. `src/types/survey.ts` extended (orgId,
+  responseCount, canViewResponses, summary/response shapes). Build/Results tabs are
+  gated to authors (manager+); plain users see only Take.
 
-### Verified
-- 64 backend tests (replace + admin PDF + pdf_store unit); 21 new FE tests; existing
-  PrismAssessment/ActionMenu/UserManagement/AssessmentsSettings suites green; `tsc -b`
-  + eslint clean; full agent-engine suite collects (5019). Merged to `development`
-  (BE `eb6dc0f8`, FE `57019151`); dev deploy rolling. staging-b promote pending.
+### Removed
+- `src/lib/surveyStore.ts` + `src/hooks/useSurveys.ts` (localStorage store), replaced
+  by the service + hooks above.
 
-## [2026-08-13] — PRISM recovery run: 4 of 5 CSV imports landed, WAB report PDF live, Kevin's placeholder cleared
+## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
 
-Operator data run on staging-b using the surfaces #881/#415 shipped, driven
-through the real super-admin UI (no minted tokens, no hand-written SQL).
+The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
+catalogue (`useVerticalLauncherSection`, renamed *Verticals → Tools* on 2026-07-31) and
+the utility rollup (`SUPER_ADMIN_TOOLS_SECTION` — Team Development + Interview Practice).
+`SidebarScaffold` keys collapsible sections by `key={section.label}`, so the two "Tools"
+sections shared a React key — the reconciliation clash made the Team-Development "Tools"
+group surface only when the Administration section was toggled.
 
 ### Fixed
-- **Four users who had a PRISM CSV on file but no scores** now have them.
-  Their CSVs had been uploaded as *documents* (tagged `doc_kind='prism'`) but
-  never parsed — `GET /v1/documents/latest-prism` fell through to the raw file
-  and reported 200, so the platform looked healthy while `prism_results` was
-  empty. Imported via **User Management → Upload PRISM CSV**:
+- **One "Tools" rollup for super-admin.** `SuperAdminLayout` now merges the catalogue
+  items and the utility-tool items into a single `{ label: "Tools" }` section (catalogue
+  first, then utilities), collapsed by default, above Administration. One section, one
+  key, no flicker. The merge is label-agnostic (it combines by `.items`), so it is robust
+  to future launcher-label changes. `UnifiedLayout` (managers) was never affected — it
+  labels its catalogue "Verticals" and its rollup "Tools", so there was no collision there.
+  - Files: `src/layouts/SuperAdminLayout.tsx`
+- Verified live on **dev + staging-b** at the deployed-artifact level (staging-b magic-auth
+  is off → no headless DOM render): the shipped `SuperAdminLayout-*.js` chunk emits exactly
+  one `label:"Tools"` section merging `[...launcher?.items, ...tools?.items]`.
 
-  | user | assessments | score rows | prism_results |
-  |---|---|---|---|
-  | [email redacted] | 1 | **107** | 1 |
-  | [email redacted] | 1 | **107** | 1 |
-  | [email redacted] | 1 | **107** | 1 |
-  | [email redacted] | 1 | **107** | 1 |
+### Changed
+- **Test corrected + regression coverage.** `SuperAdminLayout.test.tsx` mocked the launcher
+  with the stale label "Verticals" and omitted `SUPER_ADMIN_TOOLS_SECTION`, so it never
+  exercised the duplicate. Updated to production's "Tools" label and added tests asserting
+  exactly one "Tools" section containing catalogue + utility items.
+  - Files: `src/layouts/__tests__/SuperAdminLayout.test.tsx`
 
-- **William A Brown's report PDF** stored via **Upload / Delete PRISM PDF** →
-  `users/{uid}/prism/uploaded/PRISM-Report.pdf`, **851,250 bytes — byte-exact
-  match with the source file**. Verified live: `/home` shows the **Prism Data**
-  control with **PRISM Report (PDF)** + **Brain Map**, and
-  `GET /v1/prism/report/me/download?kind=pdf` returned **200**.
+PR #391 (merged, `930798a`). A related stale-branch merge hazard —
+`feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
+nav evolution if merged without rebasing — is tracked as issue #399.
 
-- **Kevin McCoy's 136-byte placeholder** cleared. The document row is gone and
-  `prism_requests.pdf_s3_key` is now NULL, so the resolver falls through to
-  rendering from his scores (16 score rows + a `prism_results` row).
+## [2026-08-13] — survey-service: author surveys, org exposure, responses + compilation, AI parse
 
-### Known issue — the importer reports success while writing zero scores
-`[email redacted]` **failed silently**. The UI showed *"Ingested 1 PRISM
-report"* and an `assessments` row was created with `is_authoritative=true`, but
-**0 `assessment_scores` and 0 `prism_results`**.
+### Added
+- **New microservice `services/survey-service/`** (FastAPI + Mangum Lambda,
+  mirrors growth-service). Schema-isolated `survey` Postgres schema via RDS Proxy
+  `search_path`. Two tables (`surveys`, `survey_responses`, JSONB) + Alembic
+  baseline `001_baseline_survey_service` + `migration-runner/migrations/survey_baseline.sql`.
+  - Endpoints under `/v1/surveys`: list (`?scope=take|manage`), create, get, update,
+    delete, `POST /{id}/responses` (any authenticated user), `GET /{id}/responses`
+    (author/manager+ only — individual results), `GET /{id}/summary` (the
+    compilation/aggregate), `POST /parse` (AI-assisted upload→draft).
+  - **Org exposure**: `surveys.org_id`; a user's take-list is filtered to surveys
+    exposed to their resolved org (JWT `org_id`/`organization_id` claim →
+    `public.user_profiles.org_id` fallback). Authoring gated to manager+ (magic-auth
+    `user` tokens upgraded via DB-role lookup, growth-service trick).
+  - **AI parse** (`app/llm.py`): Anthropic SDK direct (no Bedrock, model
+    `claude-haiku-4-5`), fail-open to a deterministic heuristic parser when the key
+    is absent or the model errors. Turns pasted/uploaded questions+answers+freeform
+    into a structured survey draft.
+  - EventBridge `inspiresgenius.survey` (SurveyCreated/Updated/Deleted/ResponseSubmitted).
+  - Async ORM-safe: no `onupdate=` (MissingGreenlet); best-effort `public.*` lookups
+    roll back on failure to keep the request session usable. 10 offline tests
+    (sqlite + HS256), all green.
+- **CDK `infrastructure/cdk/lib/survey-service-stack.ts`** (+ `bin/cdk.ts` wiring):
+  VPC Lambda (reserved concurrency 50), per-method `/v1/surveys/{proxy+}` routes on
+  the shared HTTP API (avoids the ANY-swallows-OPTIONS trap), 3 CloudWatch alarms +
+  DLQ depth, scoped IAM, `--platform linux/amd64` bundling + ig-auth volume mount +
+  tryBundle stub. `ANTHROPIC_API_KEY` optional (parse is fail-open). Added `survey`
+  to the staging-b promote diff-gate list (deploy is `--all`).
 
-Cause: his `PRISM GB.csv` has a **stray unclosed `"` at the start of the
-dimension-name row**, so the CSV reader swallows that whole line as a single
-field. The score rows (`Adapted` / `Underlying`) parse fine at 97 columns —
-it's the row carrying the column labels that collapses, leaving nothing to map
-scores onto.
+## [2026-08-13] — staging-b promote: self-service PRISM replace + admin PDF endpoints (verified live)
 
-This is the **same failure class as the 2026-08-10 API-ingest incident**: a
-terminal "success" recorded alongside empty data. That path was fixed (zero
-scores now raises); **the CSV-import path has no equivalent guard**. Worth
-adding — the fix is the same shape: refuse to record an assessment with no
-scores, and surface the parse result to the caller.
+### Changed
+- Promoted the self-service PRISM replace + super-admin PDF endpoints (#881) to
+  **staging-b** via tag `release-stable-2026-08-13-prism-self-service`
+  (commit `c3430973`) — promote run completed/success (19:15 UTC). Verified live
+  in the running staging-b agent-engine task: `POST /v1/prism/report/me/replace`
+  and `POST` / `DELETE /v1/profile/admin/users/{id}/prism-pdf` are registered,
+  `app.prism.pdf_store` loaded. (A later, unrelated promote for #884
+  csv-import-zero-score-guard was cancelled — a different change from another
+  terminal.)
 
-Deliberately **not** hand-repaired: reconstructing the quoting means guessing
-where field boundaries belong, and a wrong guess silently mis-assigns a real
-person's psychometric scores. Needs a clean re-export from PRISM.
-
-### Also noticed
-`[email redacted]` now holds **two byte-identical copies** of the same report:
-`WAB_Prism_report.pdf` (`doc_kind='prism'`, correct) and
-`WAB Prism report_20250513_222713.pdf` (**`doc_kind='resume'`**, uploaded
-13:07). The résumé-tagged one means the profile loader can inject a PRISM
-report as his CV. Left in place — retag or remove is a judgement call.
+### Notes (no code)
+- Answered a capability question on the **bulk user importer**: it is an
+  invitation flow — `POST /api/v1/users/bulk-import` (user-service, super-admin;
+  stages fname/lname/email/user_type/**org_id**) → `POST
+  /api/v1/invitations/send-bulk` (invitation-service) emails an
+  `/accept-invitation` link. **org_id is supported** (per-user + request default).
+  It does **NOT** use magic-link and does **NOT** skip onboarding — new users are
+  created `custom:is_onboarded="false"` and go through onboarding. Onboarding is
+  skipped only on the `/magic-link/verify` path (sets `is_onboarded=true`), which
+  the importer never emails; the separate `/magic-auth` dev endpoint is gated
+  (404) on staging-b.
 
 ## [2026-08-13] — Root cause of the "PRISM upload does nothing" reports: the Home Add+ never imported
 
@@ -1164,195 +1494,209 @@ PRISM write paths now exist and all are guarded: admin import (#884),
 self-service replace (already had it), and the Home Add+, which now routes INTO
 the guarded path rather than around it.
 
-## [2026-08-13] — staging-b promote: self-service PRISM replace + admin PDF endpoints (verified live)
+## [2026-08-13] — PRISM recovery run: 4 of 5 CSV imports landed, WAB report PDF live, Kevin's placeholder cleared
 
-### Changed
-- Promoted the self-service PRISM replace + super-admin PDF endpoints (#881) to
-  **staging-b** via tag `release-stable-2026-08-13-prism-self-service`
-  (commit `c3430973`) — promote run completed/success (19:15 UTC). Verified live
-  in the running staging-b agent-engine task: `POST /v1/prism/report/me/replace`
-  and `POST` / `DELETE /v1/profile/admin/users/{id}/prism-pdf` are registered,
-  `app.prism.pdf_store` loaded. (A later, unrelated promote for #884
-  csv-import-zero-score-guard was cancelled — a different change from another
-  terminal.)
-
-### Notes (no code)
-- Answered a capability question on the **bulk user importer**: it is an
-  invitation flow — `POST /api/v1/users/bulk-import` (user-service, super-admin;
-  stages fname/lname/email/user_type/**org_id**) → `POST
-  /api/v1/invitations/send-bulk` (invitation-service) emails an
-  `/accept-invitation` link. **org_id is supported** (per-user + request default).
-  It does **NOT** use magic-link and does **NOT** skip onboarding — new users are
-  created `custom:is_onboarded="false"` and go through onboarding. Onboarding is
-  skipped only on the `/magic-link/verify` path (sets `is_onboarded=true`), which
-  the importer never emails; the separate `/magic-auth` dev endpoint is gated
-  (404) on staging-b.
-
-## [2026-08-13] — survey-service: author surveys, org exposure, responses + compilation, AI parse
-
-### Added
-- **New microservice `services/survey-service/`** (FastAPI + Mangum Lambda,
-  mirrors growth-service). Schema-isolated `survey` Postgres schema via RDS Proxy
-  `search_path`. Two tables (`surveys`, `survey_responses`, JSONB) + Alembic
-  baseline `001_baseline_survey_service` + `migration-runner/migrations/survey_baseline.sql`.
-  - Endpoints under `/v1/surveys`: list (`?scope=take|manage`), create, get, update,
-    delete, `POST /{id}/responses` (any authenticated user), `GET /{id}/responses`
-    (author/manager+ only — individual results), `GET /{id}/summary` (the
-    compilation/aggregate), `POST /parse` (AI-assisted upload→draft).
-  - **Org exposure**: `surveys.org_id`; a user's take-list is filtered to surveys
-    exposed to their resolved org (JWT `org_id`/`organization_id` claim →
-    `public.user_profiles.org_id` fallback). Authoring gated to manager+ (magic-auth
-    `user` tokens upgraded via DB-role lookup, growth-service trick).
-  - **AI parse** (`app/llm.py`): Anthropic SDK direct (no Bedrock, model
-    `claude-haiku-4-5`), fail-open to a deterministic heuristic parser when the key
-    is absent or the model errors. Turns pasted/uploaded questions+answers+freeform
-    into a structured survey draft.
-  - EventBridge `inspiresgenius.survey` (SurveyCreated/Updated/Deleted/ResponseSubmitted).
-  - Async ORM-safe: no `onupdate=` (MissingGreenlet); best-effort `public.*` lookups
-    roll back on failure to keep the request session usable. 10 offline tests
-    (sqlite + HS256), all green.
-- **CDK `infrastructure/cdk/lib/survey-service-stack.ts`** (+ `bin/cdk.ts` wiring):
-  VPC Lambda (reserved concurrency 50), per-method `/v1/surveys/{proxy+}` routes on
-  the shared HTTP API (avoids the ANY-swallows-OPTIONS trap), 3 CloudWatch alarms +
-  DLQ depth, scoped IAM, `--platform linux/amd64` bundling + ig-auth volume mount +
-  tryBundle stub. `ANTHROPIC_API_KEY` optional (parse is fail-open). Added `survey`
-  to the staging-b promote diff-gate list (deploy is `--all`).
-
-## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
-
-The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
-catalogue (`useVerticalLauncherSection`, renamed *Verticals → Tools* on 2026-07-31) and
-the utility rollup (`SUPER_ADMIN_TOOLS_SECTION` — Team Development + Interview Practice).
-`SidebarScaffold` keys collapsible sections by `key={section.label}`, so the two "Tools"
-sections shared a React key — the reconciliation clash made the Team-Development "Tools"
-group surface only when the Administration section was toggled.
+Operator data run on staging-b using the surfaces #881/#415 shipped, driven
+through the real super-admin UI (no minted tokens, no hand-written SQL).
 
 ### Fixed
-- **One "Tools" rollup for super-admin.** `SuperAdminLayout` now merges the catalogue
-  items and the utility-tool items into a single `{ label: "Tools" }` section (catalogue
-  first, then utilities), collapsed by default, above Administration. One section, one
-  key, no flicker. The merge is label-agnostic (it combines by `.items`), so it is robust
-  to future launcher-label changes. `UnifiedLayout` (managers) was never affected — it
-  labels its catalogue "Verticals" and its rollup "Tools", so there was no collision there.
-  - Files: `src/layouts/SuperAdminLayout.tsx`
-- Verified live on **dev + staging-b** at the deployed-artifact level (staging-b magic-auth
-  is off → no headless DOM render): the shipped `SuperAdminLayout-*.js` chunk emits exactly
-  one `label:"Tools"` section merging `[...launcher?.items, ...tools?.items]`.
+- **Four users who had a PRISM CSV on file but no scores** now have them.
+  Their CSVs had been uploaded as *documents* (tagged `doc_kind='prism'`) but
+  never parsed — `GET /v1/documents/latest-prism` fell through to the raw file
+  and reported 200, so the platform looked healthy while `prism_results` was
+  empty. Imported via **User Management → Upload PRISM CSV**:
 
-### Changed
-- **Test corrected + regression coverage.** `SuperAdminLayout.test.tsx` mocked the launcher
-  with the stale label "Verticals" and omitted `SUPER_ADMIN_TOOLS_SECTION`, so it never
-  exercised the duplicate. Updated to production's "Tools" label and added tests asserting
-  exactly one "Tools" section containing catalogue + utility items.
-  - Files: `src/layouts/__tests__/SuperAdminLayout.test.tsx`
+  | user | assessments | score rows | prism_results |
+  |---|---|---|---|
+  | [email redacted] | 1 | **107** | 1 |
+  | [email redacted] | 1 | **107** | 1 |
+  | [email redacted] | 1 | **107** | 1 |
+  | [email redacted] | 1 | **107** | 1 |
 
-PR #391 (merged, `930798a`). A related stale-branch merge hazard —
-`feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
-nav evolution if merged without rebasing — is tracked as issue #399.
+- **William A Brown's report PDF** stored via **Upload / Delete PRISM PDF** →
+  `users/{uid}/prism/uploaded/PRISM-Report.pdf`, **851,250 bytes — byte-exact
+  match with the source file**. Verified live: `/home` shows the **Prism Data**
+  control with **PRISM Report (PDF)** + **Brain Map**, and
+  `GET /v1/prism/report/me/download?kind=pdf` returned **200**.
 
-## [2026-08-13] — Surveys: backend-backed, org exposure, results/compilation, upload-to-build
+- **Kevin McCoy's 136-byte placeholder** cleared. The document row is gone and
+  `prism_requests.pdf_s3_key` is now NULL, so the resolver falls through to
+  rendering from his scores (16 score rows + a `prism_results` row).
 
-The Survey surface now stores surveys + responses **centrally** (survey-service),
-so results aggregate across every respondent. Retires the browser-local store.
+### Known issue — the importer reports success while writing zero scores
+`[email redacted]` **failed silently**. The UI showed *"Ingested 1 PRISM
+report"* and an `assessments` row was created with `is_authoritative=true`, but
+**0 `assessment_scores` and 0 `prism_results`**.
 
-### Added
-- **Results tab** (author/manager+): a per-question **compilation** across all
-  respondents (choice distributions, rating averages + histograms, all free-text
-  answers) plus each **individual response**.
-  - Files: `src/components/survey/SurveyResults.tsx`
-- **Upload / paste to build**: upload a file (txt/md/pdf/doc/docx) or paste
-  questions + answers + a freeform request; the survey-service parses it (AI-assisted,
-  fail-open) into a draft you review in the builder.
-  - Files: `src/components/survey/SurveyUploadDialog.tsx`
-- **Org exposure**: the builder gained an "Expose to organization" field; a user's
-  take-list shows only surveys exposed to their organization.
-- **Settings → My Workspace → Surveys**: the user-role entry point — lists surveys
-  shared with the user's organization, each linking into the take flow.
-  - Files: `src/components/settings/SurveysSettingsCard.tsx`,
-    `src/components/shared/settings/Settings.tsx`
+Cause: his `PRISM GB.csv` has a **stray unclosed `"` at the start of the
+dimension-name row**, so the CSV reader swallows that whole line as a single
+field. The score rows (`Adapted` / `Underlying`) parse fine at 97 columns —
+it's the row carrying the column labels that collapses, leaving nothing to map
+scores onto.
 
-### Changed
-- Data layer swapped from browser localStorage to the survey-service via
-  `src/services/survey/survey.service.ts` + React Query hooks
-  `src/hooks/survey/useSurveys.ts`. `src/types/survey.ts` extended (orgId,
-  responseCount, canViewResponses, summary/response shapes). Build/Results tabs are
-  gated to authors (manager+); plain users see only Take.
+This is the **same failure class as the 2026-08-10 API-ingest incident**: a
+terminal "success" recorded alongside empty data. That path was fixed (zero
+scores now raises); **the CSV-import path has no equivalent guard**. Worth
+adding — the fix is the same shape: refuse to record an assessment with no
+scores, and surface the parse result to the caller.
 
-### Removed
-- `src/lib/surveyStore.ts` + `src/hooks/useSurveys.ts` (localStorage store), replaced
-  by the service + hooks above.
+Deliberately **not** hand-repaired: reconstructing the quoting means guessing
+where field boundaries belong, and a wrong guess silently mis-assigns a real
+person's psychometric scores. Needs a clean re-export from PRISM.
 
-## [2026-08-13] — Surveys surface: build questionnaires + select one to take
+### Also noticed
+`[email redacted]` now holds **two byte-identical copies** of the same report:
+`WAB_Prism_report.pdf` (`doc_kind='prism'`, correct) and
+`WAB Prism report_20250513_222713.pdf` (**`doc_kind='resume'`**, uploaded
+13:07). The résumé-tagged one means the profile loader can inject a PRISM
+report as his CV. Left in place — retag or remove is a judgement call.
 
-A new `/surveys` surface lets a user author surveys (add questions) and pick a
-survey to take. Frontend-first: surveys and responses persist in the browser
-(`surveyStore`, localStorage) so the whole surface ships without a backend; the
-CRUD shape mirrors what a future survey-service would expose.
+## [2026-08-13] — Self-service PRISM replace + super-admin PDF upload/delete (BE #881, FE #415)
+
+A proper user-facing "replace my PRISM data" flow (CSV scores + optional PDF, scoped
+to the caller) and a super-admin per-user PRISM-PDF action.
 
 ### Added
-- **Take tab** — a selector dropdown to choose a survey, then answer it. Four
-  question types: short/long text, single choice, multiple choice, and a 1–N
-  rating scale. Required questions are validated before submit; submitting
-  records a response and shows a thank-you state.
-- **Build tab** — author a new survey or edit/delete existing ones: title,
-  description, and an ordered list of questions with per-question type, choices,
-  rating scale, required toggle, and reorder/remove.
-  - Files: `src/pages/user/SurveysPage.tsx`,
-    `src/components/survey/{SurveyBuilder,SurveyTaker,SurveySelector}.tsx`,
-    `src/hooks/useSurveys.ts`, `src/lib/surveyStore.ts`, `src/types/survey.ts`
-- **Routing + nav** — `ROUTES.SURVEYS = "/surveys"` (shared, any authenticated
-  role; page adapts chrome via `UnifiedLayout`). A "Surveys" nav item was added
-  to the manager, company-admin, practitioner, and super-admin menus. The plain
-  `user` menu is intentionally left at its fixed six items (documented decision);
-  `/surveys` remains reachable by URL for that role.
-  - Files: `src/constants/routes.ts`, `src/routes.tsx`,
-    `src/constants/navigation.ts`
-- **Tests** — `src/lib/__tests__/surveyStore.test.ts` (seed/CRUD/responses) and
-  `src/components/survey/__tests__/survey.test.tsx` (builder save, taker required
-  validation + submit, selector, page render). Full suite green (4504 tests).
+- **`app/prism/pdf_store.py`** — `store_prism_pdf` / `delete_prism_pdfs`: register a
+  `doc_kind='prism'` documents row (the report-link resolver serves it), point any
+  `prism_requests` row at it, clear the generated-report cache; delete hard-removes the
+  prism PDF docs + nulls the row key so the report reverts to render-from-scores. UUID
+  binds are dialect-aware.
+- **`POST /v1/prism/report/me/replace`** (user-scoped, subject=self) — parse the
+  uploaded CSV with the same sanctioned parser, REPLACE the caller's prior PRISM
+  assessment + `prism_results`, optional replacement PDF in the same request.
+- **`POST` / `DELETE /v1/profile/admin/users/{user_id}/prism-pdf`** (super-admin).
+- FE: `ReplacePrismDataButton` (reused on PRISM Assessment V1+V2 and Settings →
+  Other Assessments) + `PrismPdfAdminDialog` (User Management 3-dots "Upload / Delete
+  PRISM PDF" via `ActionMenu`); `prismReport.service.ts` + `usePrismReportDownload.ts`
+  additions.
 
-## [2026-08-13] — PRISM Add+ on Home imported nothing; it filed the CSV as a document
+### Changed
+- The user "Import" button on the PRISM Assessment page (V1 + V2) now uses the
+  user-scoped **replace** endpoint instead of the super-admin `import-csv` append path.
 
-The "upload your PRISM report and nothing happens" reports traced to this
-button, not to the upload or the parser.
+### Verified
+- 64 backend tests (replace + admin PDF + pdf_store unit); 21 new FE tests; existing
+  PrismAssessment/ActionMenu/UserManagement/AssessmentsSettings suites green; `tsc -b`
+  + eslint clean; full agent-engine suite collects (5019). Merged to `development`
+  (BE `eb6dc0f8`, FE `57019151`); dev deploy rolling. staging-b promote pending.
+
+## [2026-08-13] — Data op (staging-b): replaced [user M.T.]'s PRISM scores with the operator CSV
+
+Operator-requested data correction on staging-b. [user M.T.]'s PRISM profile came
+from an api_ingest that derived different Underlying behaviours than the
+operator's authoritative "Raw data - [user M.T.] Tully_Personal Report.csv". Replaced
+the api-pulled rows with the CSV's scores.
+
+### Changed (staging-b Aurora — data only, no code)
+- Deleted the api_ingest assessment `8a750ee2` (+ its 16 assessment_scores /
+  typing) and the stale `prism_results` row for `d4783428…`
+  ([email redacted] — the only one of his 4 accounts holding PRISM
+  data).
+- Imported the CSV via the sanctioned parser + projection
+  (`parse_prism_csv` → `project_assessment_to_prism_results`): new
+  `admin_csv_upload` assessment `3df329dc` (source_ref `csv-upload:07a567…`,
+  is_authoritative), 76 assessment_scores, and a fresh `prism_results` row.
+- Result: `prism_results` gold 75.5→**65.5**, green 55.5→**52.0**,
+  blue 65.5→**81.0**, orange 43.5→**59.5** (derived from CSV Underlying
+  behaviours: Innovating 88 / Initiating 16 / Supporting 67 / Coordinating 95 /
+  Focusing 32 / Delivering 87 / Finishing 43 / Evaluating 88).
+- Verified: 0 orphan rows on the old assessment, exactly 1 `prism_results` row,
+  no stale cached PDF (the report-link resolver renders fresh from the new
+  scores on next download). dev/prod unaffected — staging-b only.
+
+## [2026-08-13] — PRISM report-link resolver: serve a real PDF, generate only as last resort (#878)
+
+The PRISM report link presigned only `prism_requests.pdf_s3_key`, so it broke two
+ways: Kevin McCoy's key pointed at the 136-byte placeholder (Adobe opens it, then
+fails), and William Brown — whose report exists as an uploaded document / who has
+only CSV-derived scores, with no `prism_requests` row — was told "your PRISM
+report isn't ready" even though real PDFs sit in S3. Distinct from #851/#854/#872.
+
+### Added
+- `services/agent-engine/app/prism/report_pdf.py` — shared PRISM report renderer
+  (`render_prism_report_pdf` + `PDF_PLACEHOLDER` + `is_real_pdf`); the ingestor
+  now delegates to it so the ingested and on-demand documents can never drift.
+- `GET /v1/prism/report/me/download` — request-independent; resolves the caller's
+  best real PDF even when no `prism_requests` row exists.
 
 ### Fixed
-- **`Personal Info → "Prism Rpt .csv"` Add+ opened the generic tagged-upload
-  modal**, whose entire action is:
-  ```js
-  upload.mutate({ file, docKind: target.docKind })   // stores a document. That's all.
-  ```
-  The CSV was stored and tagged, and **no scores were written**. The report
-  lookup then falls back to any prism-tagged document, so it answered 200 and
-  the tile ticked to **done** — while the user's score tables stayed empty.
-  Several users reached that state. The microcopy promised the opposite —
-  *"so Meridian can read your brain map in every chat"* — which requires scores
-  that were never created.
-  - PRISM now opens the real self-service importer, which parses the CSV
-    server-side and rejects one that yields zero scores. Résumé / Bio /
-    Additional Info are unchanged — those genuinely ARE documents.
-  - Files: `src/pages/user/HomeV2.tsx`
-- **`ReplacePrismDataDialog` extracted** from `ReplacePrismDataButton` so a
-  surface with its own trigger reuses the flow instead of re-implementing it.
-  The button is now a thin wrapper; every existing call site is untouched.
-  - Files: `src/components/prism/ReplacePrismDataButton.tsx`
-- **`useReplaceMyPrismReport` now invalidates `['documents','latest-prism']`** —
-  the key the Home tile and the chat auto-attach read. It caches for 5 minutes
-  with `refetchOnWindowFocus: false`, so without this a *successful* import left
-  the tile showing the pre-import state until a hard reload — indistinguishable
-  from the bug being fixed.
-  - Files: `src/hooks/prism/usePrismReportDownload.ts`
+- `services/agent-engine/app/routes/prism_report_download.py` — resolver serves a
+  real PDF in order: (1) the request's own `pdf_s3_key` if the object is real
+  (HEAD > placeholder); (2) newest real PRISM PDF **document** owned by or about
+  the subject (`documents.user_id` OR `subject_user_id`), served as-is with no
+  regeneration; (3) a cached generated report; (4) render-from-scores as a last
+  resort. `/report/me` availability is resolver-aware (recorded key OR real
+  document OR renderable scores) with no S3 round-trips — closes the false "not
+  ready". `/requests/{id}/report/download` now routed through the resolver so a
+  placeholder key is never served. Resolver sources degrade to nothing on error
+  (not 500); documents query is dialect-portable (`CAST(... AS TEXT)`).
 
-### Removed
-- The misleading `promptOverride` on the PRISM Personal Info entry.
+### Verified
+- 87 PRISM tests pass (9 report-download incl. 4 new resolver cases); full
+  agent-engine suite (4989) collects clean. Live on staging-b Postgres: Holly
+  Sagraves → resolver serves her genuine 866 KB uploaded PDF (no regen); Kevin →
+  no real PDF → generation. Merged to `development` (squash `13028a18`); dev
+  staged-deploy rolling. staging-b promote pending; FE download for the
+  no-ingest-row case must call `/report/me/download` (separate FE PR).
 
-### Tests
-Both paths present as "a file picker", so asserting that a file input appeared
-would pass either way. The tests assert **which dialog opens**. Verified against
-the pre-fix code: the PRISM case fails, the Bio control passes both ways.
+## [2026-08-13] — Deployed: notification-inbox 401 fix (dev + staging-b) · self-inflicted 3-minute staging-b outage
 
-`npm run build` clean · eslint clean on touched files · 116 tests across HomeV2
-and the prism components/hooks · 60 more across the other call sites.
+Deployment record for the 401/refresh-loop fix (#876, FE #412), and an honest
+note on an outage I caused while deploying it.
+
+### Deployed
+- **Frontend** — merged (#412) and auto-deployed to **dev + staging-b**. Verified
+  against the deployed bundles, not the green check: `__igAuthRetried` present and
+  `/v1/notifications` in the non-critical 401 list in both
+  `ig-dev-frontend-assets` and `ig-staging-b-frontend-assets`.
+- **broadcast-service dev** — via the `cdk-deploy` workflow (stub-detector job
+  passed). Artifact verified: `resolve_caller_email` 0 → 4 occurrences,
+  `"No caller email"` 1 → 0.
+- **broadcast-service staging-b** — deployed the single stack (`--exclusively`),
+  diff was one line: the Lambda code asset. No IAM, env-var or infra change.
+
+### Incident — staging-b broadcast down 01:20:39 → 01:23:54 UTC (~3m15s)
+**Cause: mine.** I ran `cdk deploy` **locally on Apple Silicon without
+`DOCKER_DEFAULT_PLATFORM=linux/amd64`.** The bundling container therefore ran
+arm64 and installed aarch64 wheels, so the Lambda could not import a native
+extension:
+
+```
+Runtime.ImportModuleError: Unable to import module 'app.main':
+No module named 'pydantic_core._pydantic_core'
+```
+
+`/v1/notifications*` returned **500** for the duration. The stack file says
+exactly this in a comment above the bundling command — the requirement was
+documented and I did not set it.
+
+**Two things made it worse than a normal bad deploy:**
+1. `assetHashType: SOURCE` means the asset hash is computed from the source
+   files, not the built output. Redeploying with the platform corrected produced
+   **"no changes"** — CDK saw identical source and refused to republish, so the
+   broken arm64 zip stayed live. A platform bug is invisible to a source hash.
+2. The CI path (`cdk-deploy.yml`) sets the platform correctly and has a
+   stub-zip detector. Deploying staging-b by hand skipped both.
+
+**Recovery:** rebuilt with `DOCKER_DEFAULT_PLATFORM=linux/amd64`, confirmed the
+artifact (`_pydantic_core.cpython-312-x86_64-linux-gnu.so`, `ELF 64-bit x86-64`),
+then **overwrote the S3 asset at the same key** and issued
+`update-function-code`. Overwriting the existing key rather than publishing a new
+one matters: the CFN template still references that key, so a later `cdk deploy`
+now gets the correct build. `cdk diff` afterwards reports **no differences** —
+template and running function agree.
+
+**Rule for next time:** never `cdk deploy` a Lambda stack from this machine
+without `DOCKER_DEFAULT_PLATFORM=linux/amd64`. Prefer the CI workflow, which sets
+it and runs the stub check.
+
+### Verified after recovery
+- staging-b artifact: `resolve_caller_email` present (8 in `routes.py`), the 401
+  line gone, x86-64 `.so`.
+- `GET /v1/notifications` and `/unread-count` both answer **401 unauthenticated**
+  (auth middleware) rather than 500 — module imports cleanly.
+- Zero `ImportModuleError` after 01:24; dev never had any (CI builds on Linux).
 
 ## [2026-08-12] — Semiprod-for-two-clients investigation: LOE, cost, timeline and options
 
@@ -1611,71 +1955,293 @@ release tag.
   `index.html`** (CloudFront SPA fallback), and CI chunk hashes differ from local
   ones — resolve real chunk names from `index.html` or S3 before grepping.
 
-## [2026-08-12] — Interview Practice role-page generator + BLS OEWS provider
+## [2026-08-12] — Interview Studio: upload a question-list file
 
-A programmatic role-page template for `/interview-practice` — one landing page per
-occupation, built by a Python generator that runs off the Occupational Reference
-tables (`app.market.dataset`). PR #870. Three deliverables: **schema**, **copy
-blocks**, and the **OEWS pull**.
+Third question source in `StudioQuestionBuilder` (alongside generate + manual):
+"Upload a file". Reuses `extractRoleText` (.txt/.md/.pdf/.docx, client-side) →
+new `src/lib/parseQuestionList.ts` (one question per line; strips numbering,
+bullets, and `Q:` prefixes; dedupes; caps at 50) → appends to the editable list.
 
 ### Added
-- **OEWS pull** — `services/agent-engine/app/market/oews.py`: `OewsProvider`
-  implementing the existing `LabourMarketProvider` Protocol (the "BLS OEWS client"
-  `app.market` was designed to accept). Wages = A_PCT10/A_MEDIAN/A_PCT90; outlook
-  honestly `None` (OEWS has no projection). `normalize_oews_national` parses the
-  real BLS national-file columns (`*`/`#`/comma handling, detailed-only);
-  `fetch_oews_national` is best-effort (BLS 403s automation — documented). Wired
-  into `adapter._PROVIDERS` as `MARKET_DATA_PROVIDER=oews` — **dormant; default
-  stays `static`.**
-- **Schema** — `app/role_pages/schema.py`: `RolePage` + `to_dict`, publishable
-  JSON Schema (`role_page_json_schema`), dependency-free validator, Schema.org
-  JSON-LD (`Occupation` + `FAQPage`).
-- **Copy blocks** — `app/role_pages/copy_blocks.py`: deterministic no-LLM copy;
-  no dollar figure without a market payload, none without its source.
-- **Generator** — `app/role_pages/generator.py` + `scripts/build_role_pages.py`:
-  runs off `OCCUPATIONS`, blends OEWS wages over curated (visible provenance),
-  writes `{slug}.json` + `index.json` + `role-page.schema.json`.
-- 15 new tests (`test_oews_provider.py`, `test_role_pages.py`); existing market
-  suite green. Verified: 44 pages; OEWS file → software-developer median $132,270
-  (BLS-attributed) while others stay curated; unpriced occupation → `salary:null`,
-  no dollar figure.
+- `src/lib/parseQuestionList.ts` + `src/lib/__tests__/parseQuestionList.test.ts` (6 tests).
+- Upload tab + handler in `src/components/interview/StudioQuestionBuilder.tsx`;
+  component test extended with the upload case. 11 studio-builder-area tests pass;
+  `npm run build` clean.
 
-### Notes
-- OEWS is not served by the BLS timeseries API (v1+v2 verified "No Data") and
-  bls.gov 403s scripted downloads (verified) — the parse/price path is the real,
-  tested mechanism; live fetch degrades to a manual-drop file, then to curated.
-- FE wiring of the pages at `/interview-practice/<slug>` (route + data host) is a
-  separate follow-up.
+## [2026-08-12] — Interview Practice role pages wired into the FE
 
-## [2026-08-12] — PRISM report PDF: generate from scores, never store the placeholder (#872)
+Renders the backend role-page generator's output (app.role_pages, monorepo #870)
+as public per-occupation landing pages that funnel into the auth-gated Interview
+Practice coach. PR #403.
 
-Kevin McCoy's downloaded PRISM PDF "failed to open." Root cause: PRISM returns no
-direct-download PDF URL — the completed-history `SubActionURL1` is an auth-flow
-token or the literal string `"User not found"` (confirmed live on staging-b for
-Kevin **and** [user M.T.]), so the ingestor's `_download_pdf` failed and stored a
-136-byte header-only placeholder (a `%PDF` header with no page tree — every viewer
-rejects it). The only real URL PRISM hands back (`UnlockReport.action_url_1`) is an
-HTML candidate-portal page, not PDF bytes. Scores were never affected (those come
-from `FetchReportData`/EntityTypeID, #854). Distinct from site-orphaning (#851).
+### Added
+- `src/data/interviewRolePages.json` (44 generated pages, code-split lazy chunk) +
+  `src/types/interviewRolePage.ts` (typed accessor).
+- Public routes `/interview-practice/roles` (index) + `/interview-practice/:slug`
+  (outside ProtectedRoute; static `/roles` outranks `:slug`).
+- `src/pages/interview-practice/InterviewRolePage.tsx` (hero + copy blocks +
+  attributed pay/outlook cards + FAQs + Schema.org JSON-LD + CTA into the coach;
+  unknown slug → not-found) + `InterviewRolesIndex.tsx` (lists all roles).
+- `src/hooks/useSeo.ts` (title/description/canonical/JSON-LD, cleaned on unmount);
+  `src/components/interview/RolePageShell.tsx` (public chrome). Discovery link on
+  the coach setup page. 5 new tests; `npm run build` clean; 53 interview tests pass.
+
+## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
+
+PR #404.
+
+### Changed
+- `src/components/layout/AppHeader.tsx` — the top-left Inspire Genius logo now
+  always navigates to Home v2 (`ROUTES.HOME` `/home`) for every role; the profile
+  chip keeps going to the role dashboard.
+- Role-page CTAs ("Practice a {role} interview" / "Start practicing") carry the
+  role into the coach via router state; `InterviewPracticePage` reads it and
+  pre-fills `InterviewFrameForm` with the role title + a job-description seed
+  (`buildRoleJobDescription` — honest role brief from the page's real title/SOC/
+  wage/outlook, no invented duties) + a "Prefilled for {role}" note.
+  - Files: `src/pages/interview-practice/InterviewRolePage.tsx`,
+    `src/pages/user/InterviewPracticePage.tsx`, `src/types/interviewRolePage.ts`
+- 10 new/updated tests; `npm run build` clean.
+
+## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
+
+Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
+code (nothing renders it — the live menu is `SidebarScaffold`, per the two-header-
+layouts note). This wires the actual top-left `inspiresgenius` brand in
+`SidebarScaffold` to Home v2 and reverts the dead-code `AppHeader` edit + its test.
 
 ### Fixed
-- The ingestor now renders the downloadable PDF **from the committed scores**, via
-  the same `compose_self_portrait → build_prism_report_payload → docgen` path the
-  in-app "View Inventory PDF" button uses — so the stored file and the on-screen
-  read can never disagree. A placeholder is written only if rendering itself raises
-  (scores are already durable). If PRISM ever returns a real PDF URL it is honoured.
-  - Files: `services/agent-engine/app/prism/ingestor.py` (new `_looks_like_real_pdf`
-    guard + async `_generate_report_pdf`; PDF resolution moved after the scores
-    commit), `services/agent-engine/tests/test_prism_ingestor.py` (T_PDF_GEN).
+- `src/components/shared/layout/SidebarScaffold.tsx` — the brand (logo +
+  "inspiresgenius") is now a `<Link to={ROUTES.HOME}>` (Home v2) for all roles.
+- Reverted `src/components/layout/AppHeader.tsx` (unused) + removed its test.
+- The #404 role-prefill change was correct and is live (verified in the deployed
+  `InterviewPracticePage` chunk).
+
+## [2026-08-12] — Job Fit: remove the cross-vertical switch row
+
+Per request, removed the row under the Job-Fit tool pills that held "Back to
+Inspire Genius" and an "or switch to <vertical>" list (Direction Setting, GRANT,
+Honor Foundation, Job DNA, Knowledge Continuity — whatever the user was entitled
+to). The Job-Fit tool pills remain; the sidebar + brand logo (→ Home v2) remain
+the way out of the vertical.
+
+### Removed
+- `src/pages/job-fit/FitNav.tsx` — dropped the "Back to Inspire Genius" button +
+  the entitlement-driven vertical-switch buttons + "or switch to" label (and the
+  now-unused `useNavigate`/`Button`/`ArrowLeft`/`listEntitledVerticals`/
+  `useEnabledVerticals` imports).
+- Updated `src/pages/job-fit/__tests__/job-fit-blueprint-coach.test.tsx` — the 3
+  FitNav tests asserting the switch row are replaced by one asserting it's gone.
+- Full suite (4460) + coverage gate pass; `npm run build` clean.
+
+## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
+
+A single session could emit refresh-token requests without bound — observed at
+roughly 2.5 per second, sustained, with no logout. Every refresh succeeded; the
+refresh was never the problem. The guard meant to stop the retry was.
+
+### Fixed
+- **The retry guard could never trip.** `src/lib/axios.ts` tracked already-retried
+  requests in a `WeakSet` keyed on the axios **config object**. The retry is
+  issued as `instance(original)`, and axios runs `mergeConfig` on the way in, so
+  the second failure arrives with a brand new config object the `WeakSet` has
+  never seen: 401 → refresh → retry → 401 → refresh, unbounded.
+  Verified against axios 1.11.0 rather than assumed — config identity is not
+  preserved across a retry, but a custom property does survive the merge. The
+  marker now rides on the config (`__igAuthRetried`).
+  - Files: `src/lib/axios.ts`
+- **`refreshPromise` could latch a rejected promise.** It was cleared after the
+  `await`, which never runs when the refresh rejects — leaving every subsequent
+  401 to reject instantly and force a logout. Now cleared in `.finally()`.
+
+### Changed
+- `/v1/notifications` added to `NON_CRITICAL_401_PATHS`. The notification bell
+  polls on every page, and a passive side panel must never be able to end a
+  session. The corresponding server-side 401 was fixed separately; this makes it
+  not matter if anything else ever 401s there. Joins the observability,
+  analytics and dashboard paths already listed for the same reason.
+
+### Added
+- `src/lib/__tests__/axiosRefreshLoop.test.ts` — 7 tests bounding the number of
+  **refresh calls**, not merely whether a request eventually fails. A test that
+  only asserts failure passes happily while an unbounded number of refreshes fly
+  past underneath it. Run against the pre-fix interceptor these do not simply
+  fail — they exhaust the Node heap (`FATAL ERROR: JavaScript heap out of
+  memory`), which is the loop reproduced.
+- `src/components/__tests__/ProtectedRoute.test.tsx` — pins that forced
+  onboarding stays off when `is_onboarded` is **absent**, as distinct from
+  explicitly `false`. A gate written `=== false` misses the absent case and
+  bounces the user into the wizard.
+
+### Verified — no change needed
+- Forced onboarding is already disabled (`ProtectedRoute`, 2026-07-21) and
+  `navigateAfterAuth` routes every authenticated user to their role home;
+  `/home` resolves to the HomeV2 workspace by default. Only the absent-flag test
+  case was missing.
+
+### Verification
+`npm run build` clean · eslint clean on all touched files · 220 tests passing
+across 28 suites in `src/lib` + `src/components/__tests__`.
+
+## [2026-08-12] — Employer & sector interview question packs + build plan
+
+Content and planning deliverable — **no application, service or infrastructure
+code was touched.** 16 employer packs, 7 sector packs, 138 questions, and a
+repo-native plan to serve them through the Interview Practice tailoring path
+that already exists.
+
+### Added
+- **`scripts/build_employer_interview_packs.py`** — reproducible `python-docx`
+  generator. Question content lives in the script as data (`COMPANIES`,
+  `SECTORS`), so the packs are diffable and reviewable in git rather than locked
+  in a binary.
+- **`docs/plans/Employer_Interview_Question_Packs.docx`** (18pp, `git add -f`).
+  Employer packs: Amazon/AWS, Google, Meta, Microsoft, IBM, Oracle, LinkedIn,
+  McKinsey, BCG, Bain, Deloitte, Accenture, Goldman Sachs, Citigroup,
+  Bridgewater, BlackRock. Sector packs: technology, consulting, financial
+  services, healthcare/life sciences, aerospace/defence/advanced manufacturing,
+  retail/consumer/CPG, public sector/education/workforce. Render-verified
+  LibreOffice → PDF → PNG.
+
+### Notes
+- **Every one of the 138 questions maps to a real competency id in
+  `star_interview_bank.py`** — verified programmatically against the module, not
+  by eye: 12/12 competencies used, zero ids absent from the bank. The packs
+  change what a question *sounds* like, never what is being assessed, so no new
+  rubric, scorer or evaluator change is implied.
+- **Provenance discipline, mirroring `app/role_pages`.** Every pack names the
+  employer's OWN publicly published values or hiring framework. These are
+  questions written by us *in the style of* that framework — explicitly not any
+  company's actual, internal or leaked questions, and no implication of
+  endorsement or affiliation. The document leads with that statement.
+- **Load-bearing discovery for the build plan:** `InterviewFrame` **already
+  carries `company` and `industry`** — collected by `InterviewFrameForm` since
+  the v2 frame, rendered in the header, folded into Alex's coaching context —
+  but never passed to tailoring. `getTailoredPracticeQuestions(jobTitle,
+  jobDescription, section)` takes no company, and `InterviewPracticePage.tsx`
+  branches on `roleTitle` alone. So this is an extension of a live path, not a
+  new one: two optional request fields, one curated dataset, one resolver.
+- **Curated-first, model-second** is the design rule: a resolved employer
+  question replaces the sampled base question deterministically, and the LLM is
+  left only contextualising to a role title. A model that has never seen a
+  company's question list must not be the thing asserting what is on it.
+- Fail-open contract preserved throughout — unknown company or resolver error
+  returns precisely today's behaviour with `employer: null`.
+- **Phase 0 is legal, and it gates go-live rather than build**: nominative-use
+  review, standing disclaimer wording, and SME sign-off on all 138 questions.
+  Recommendation in the doc is to run it in parallel with Phases 1–3.
+
+---
+
+## [2026-08-12] — Interview Practice B2C go-to-market brief
+
+Strategy deliverable only — **no application, service, or infrastructure code was
+touched.** A point-of-view on whether the candidate-side Interview Coach can carry a
+consumer business, written up as a branded 9-page brief.
+
+### Added
+- **`scripts/build_interview_practice_b2c_gtm.py`** — reproducible `python-docx`
+  generator. IG STANDARD palette (NAVY `#1B2A4A` / ORANGE `#E8792B` / SLATE
+  `#36415A`, PANEL `#F3F5FA`), Cambria headings + Calibri body, `Logo-Dark.png`
+  cover lockup, `contact@inspiresgenius.com` footer with page numbers.
+  - `w:cantSplit` on every table row and callout, `w:tblHeader` on header rows,
+    `keep_with_next` on the heading rule — headings stop orphaning, callouts stop
+    splitting mid-sentence, long tables repeat their header across page breaks. All
+    three faults were present in the first render and invisible in the source.
+- **`docs/plans/Interview_Practice_B2C_GTM_Brief.docx`** (9pp, `git add -f` — the
+  root `.gitignore` blanket-ignores `*.docx`, matching the precedent set by
+  `docs/plans/Honor_Foundation_Coach_Workbench_Wiring_Plan.docx`). Covers the
+  shipped-capability audit, market assessment, defensibility, product gaps,
+  positioning, target segments, channel plan, packaging/pricing, risks, proof plan
+  and a 90-day sequence. Render-verified LibreOffice → PDF → PNG, all nine pages
+  read for overflow.
+
+### Notes
+- **`/interview-practice` is deliberately scoreless** — page copy: "no scores". The
+  deterministic scorer (`star_scorer.py`) lives on the *evaluator* side only (Live
+  Scored Interview, Interview Studio; manager / practitioner / company-admin /
+  super-admin). A candidate-visible progress score is raised in the brief as an
+  owner decision, not an assumed build.
+- **Corrected mid-flight against #870/#403.** The first cut listed "public marketing
+  site + programmatic role pages" as *not built* and made programmatic SEO the
+  top future channel. The role-page generator landed on `development` the same day
+  (#870 back end, #403 front end): 44 public pages at `/interview-practice/roles`
+  and `/interview-practice/:slug`, Schema.org JSON-LD. §2, §4.2 and §7 were rewritten
+  so the brief states shipped reality — what remains is coverage, the marketing site
+  around the pages, and indexation, not the engine.
+- Added a **wage-provenance risk row**: the 44 pages carry salary figures while the
+  BLS OEWS provider is built but **dormant** (OEWS is absent from the BLS API and
+  bls.gov blocks scripted download), so the default source is curated. The generator
+  already carries source + as-of per page and shows no figure when it cannot price a
+  role — do not attribute a number to BLS unless an OEWS file is genuinely present.
+- **No market-size or win-rate statistics appear anywhere in the document, by
+  design** — nothing sourced and defensible was to hand.
+
+---
+
+## [2026-08-12] — `x-user-role` header trust removed: HTTP headers were being used as proof of identity
+
+Several agent-engine routers decided *who you are* from headers the caller types.
+A header is unsigned text; nothing verifies it. So `curl -H 'x-user-role: super-admin'`
+**was** the credential. Worse than a missing check, because the code looked defended —
+role hierarchy, rank comparisons, tidy 403s — and read like security while trusting the
+wrong input, which is how it survived audits grepping for `Depends(...)`.
+
+**Confirmed against dev before the fix.** `GET /v1/admin/dashboard/summary`:
+403 with no header, **past the gate** with `x-user-role: super-admin`.
+
+### Fixed — three shapes, worst first
+- **`routes/admin_dashboard.py`, `routes/templates.py`, `routes/rules.py`** — role header
+  with **no token required at all**, and `GET /v1/admin/dashboard/{proxy+}` is wired at the
+  API Gateway, so it was reachable from the open internet. These routes read platform-wide
+  stats and **any user's stored memory**; one deletes memory entries.
+- **`routes/roles.py`** — `POST /v1/users/me/roles/switch` had **no auth dependency**, took
+  identity from `x-user-id`, and folded the `x-user-role` header into the caller's "held
+  roles" *before* checking whether they held the target. An anonymous caller could flip
+  another user's active role to super-admin using only values they supplied. `GET` let an
+  authenticated caller read **anyone else's** roles by passing their id — on an endpoint
+  named "list MY roles".
+- **`routes/agents_settings.py`** (+ its undeployed Lambda twin) — required a valid token,
+  then granted on `max(claim_rank, header_rank)`. Escalation for any logged-in user.
+
+### Added
+- **`auth_deps.require_role_at_least(minimum)`** — one shared JWT-derived dependency
+  factory replacing three copy-pasted local gates. The old comment in `rules.py` literally
+  read "(mirrors templates.py)" — three identical copies of one broken gate, so a local fix
+  would have left the other two. A bad threshold now raises `KeyError` at import rather
+  than becoming rank `-1` (allow-all) at request time.
+- **`tests/routes/test_header_trust.py`** — 18 tests, behavioural not structural: the spoof
+  headers are sent at the real routers and the response asserted, so reintroducing the
+  pattern under a new name still fails.
+- **`tests/_role_header_shim.py`** — test-only harness letting older suites keep selecting a
+  role by header. Deliberately NOT in `conftest.py`: global application would silently
+  re-enable header auth for every suite, including tests meant to prove rejection.
+
+### Also closed
+- `/v1/admin/templates` and `/v1/admin/rules` **GET** routes were fully public — no token,
+  no role — on an `/v1/admin/*` path, with an `org_id` filter making it a cross-org read of
+  platform configuration. Now `company-admin`, matching their sibling writes.
+- `templates.py` recorded `created_by` from the client's `x-user-id`, so authorship was
+  forgeable. Now the verified `sub`.
+
+### Notable
+- **Nothing legitimately sent these headers** — not the frontend, not the API Gateway
+  (both grepped). The `templates.py` comment claiming the header was "injected by the API
+  Gateway / auth service" described an arrangement that was never built. So these routes
+  were simultaneously spoofable by anyone **and 403 for every real admin**: gating them
+  properly makes them work for the first time, and cannot break a caller that worked.
+- **A test asserted the vulnerability.** `test_list_agents_super_admin_via_header_returns_200`
+  — "Only the header says super-admin; JWT role is empty → still 200" — passed. Any fix
+  would have surfaced as a failing test and looked like the regression. Inverted to expect 403.
 
 ### Verified
-- 41 PRISM tests pass; full agent-engine suite (4985 tests) collects clean.
-- Live in the staging-b runtime: Kevin renders to a real 17,399-byte `%PDF-1.7`
-  (Red 95 dominant / Gold 91 / Green 31.5 / Blue 30.5, all 8 dimensions). Working
-  PDF delivered to the operator. Merged to `development` (squash `dc676b2b`);
-  dev staged-deploy rolls the agent-engine. NOT yet on staging-b (promote pending).
-  The two already-stored placeholders (Kevin, [user M.T.]) self-heal on re-ingest
-  after the staging-b promote.
+- Full agent-engine suite **4990 passed / 11 skipped**, twice consecutively.
+- **Not deployed** at time of writing.
+
+### Still open
+- `POST /v1/agents/documents/vectorize` remains unauthenticated by design (machine path;
+  needs service-to-service auth, not a user token).
+- CDK still declares API Gateway routes for these admin paths; unchanged here.
 
 ## [2026-08-12] — 401 refresh loop root-caused: the notification inbox, and a retry guard that never tripped
 
@@ -1749,293 +2315,71 @@ required. PRs: monorepo #876, frontend #412.
   login — an earlier hold on removing the ECPS passwords was based on a wrong
   premise.
 
-## [2026-08-12] — `x-user-role` header trust removed: HTTP headers were being used as proof of identity
+## [2026-08-12] — PRISM report PDF: generate from scores, never store the placeholder (#872)
 
-Several agent-engine routers decided *who you are* from headers the caller types.
-A header is unsigned text; nothing verifies it. So `curl -H 'x-user-role: super-admin'`
-**was** the credential. Worse than a missing check, because the code looked defended —
-role hierarchy, rank comparisons, tidy 403s — and read like security while trusting the
-wrong input, which is how it survived audits grepping for `Depends(...)`.
+Kevin McCoy's downloaded PRISM PDF "failed to open." Root cause: PRISM returns no
+direct-download PDF URL — the completed-history `SubActionURL1` is an auth-flow
+token or the literal string `"User not found"` (confirmed live on staging-b for
+Kevin **and** [user M.T.]), so the ingestor's `_download_pdf` failed and stored a
+136-byte header-only placeholder (a `%PDF` header with no page tree — every viewer
+rejects it). The only real URL PRISM hands back (`UnlockReport.action_url_1`) is an
+HTML candidate-portal page, not PDF bytes. Scores were never affected (those come
+from `FetchReportData`/EntityTypeID, #854). Distinct from site-orphaning (#851).
 
-**Confirmed against dev before the fix.** `GET /v1/admin/dashboard/summary`:
-403 with no header, **past the gate** with `x-user-role: super-admin`.
-
-### Fixed — three shapes, worst first
-- **`routes/admin_dashboard.py`, `routes/templates.py`, `routes/rules.py`** — role header
-  with **no token required at all**, and `GET /v1/admin/dashboard/{proxy+}` is wired at the
-  API Gateway, so it was reachable from the open internet. These routes read platform-wide
-  stats and **any user's stored memory**; one deletes memory entries.
-- **`routes/roles.py`** — `POST /v1/users/me/roles/switch` had **no auth dependency**, took
-  identity from `x-user-id`, and folded the `x-user-role` header into the caller's "held
-  roles" *before* checking whether they held the target. An anonymous caller could flip
-  another user's active role to super-admin using only values they supplied. `GET` let an
-  authenticated caller read **anyone else's** roles by passing their id — on an endpoint
-  named "list MY roles".
-- **`routes/agents_settings.py`** (+ its undeployed Lambda twin) — required a valid token,
-  then granted on `max(claim_rank, header_rank)`. Escalation for any logged-in user.
-
-### Added
-- **`auth_deps.require_role_at_least(minimum)`** — one shared JWT-derived dependency
-  factory replacing three copy-pasted local gates. The old comment in `rules.py` literally
-  read "(mirrors templates.py)" — three identical copies of one broken gate, so a local fix
-  would have left the other two. A bad threshold now raises `KeyError` at import rather
-  than becoming rank `-1` (allow-all) at request time.
-- **`tests/routes/test_header_trust.py`** — 18 tests, behavioural not structural: the spoof
-  headers are sent at the real routers and the response asserted, so reintroducing the
-  pattern under a new name still fails.
-- **`tests/_role_header_shim.py`** — test-only harness letting older suites keep selecting a
-  role by header. Deliberately NOT in `conftest.py`: global application would silently
-  re-enable header auth for every suite, including tests meant to prove rejection.
-
-### Also closed
-- `/v1/admin/templates` and `/v1/admin/rules` **GET** routes were fully public — no token,
-  no role — on an `/v1/admin/*` path, with an `org_id` filter making it a cross-org read of
-  platform configuration. Now `company-admin`, matching their sibling writes.
-- `templates.py` recorded `created_by` from the client's `x-user-id`, so authorship was
-  forgeable. Now the verified `sub`.
-
-### Notable
-- **Nothing legitimately sent these headers** — not the frontend, not the API Gateway
-  (both grepped). The `templates.py` comment claiming the header was "injected by the API
-  Gateway / auth service" described an arrangement that was never built. So these routes
-  were simultaneously spoofable by anyone **and 403 for every real admin**: gating them
-  properly makes them work for the first time, and cannot break a caller that worked.
-- **A test asserted the vulnerability.** `test_list_agents_super_admin_via_header_returns_200`
-  — "Only the header says super-admin; JWT role is empty → still 200" — passed. Any fix
-  would have surfaced as a failing test and looked like the regression. Inverted to expect 403.
+### Fixed
+- The ingestor now renders the downloadable PDF **from the committed scores**, via
+  the same `compose_self_portrait → build_prism_report_payload → docgen` path the
+  in-app "View Inventory PDF" button uses — so the stored file and the on-screen
+  read can never disagree. A placeholder is written only if rendering itself raises
+  (scores are already durable). If PRISM ever returns a real PDF URL it is honoured.
+  - Files: `services/agent-engine/app/prism/ingestor.py` (new `_looks_like_real_pdf`
+    guard + async `_generate_report_pdf`; PDF resolution moved after the scores
+    commit), `services/agent-engine/tests/test_prism_ingestor.py` (T_PDF_GEN).
 
 ### Verified
-- Full agent-engine suite **4990 passed / 11 skipped**, twice consecutively.
-- **Not deployed** at time of writing.
+- 41 PRISM tests pass; full agent-engine suite (4985 tests) collects clean.
+- Live in the staging-b runtime: Kevin renders to a real 17,399-byte `%PDF-1.7`
+  (Red 95 dominant / Gold 91 / Green 31.5 / Blue 30.5, all 8 dimensions). Working
+  PDF delivered to the operator. Merged to `development` (squash `dc676b2b`);
+  dev staged-deploy rolls the agent-engine. NOT yet on staging-b (promote pending).
+  The two already-stored placeholders (Kevin, [user M.T.]) self-heal on re-ingest
+  after the staging-b promote.
 
-### Still open
-- `POST /v1/agents/documents/vectorize` remains unauthenticated by design (machine path;
-  needs service-to-service auth, not a user token).
-- CDK still declares API Gateway routes for these admin paths; unchanged here.
+## [2026-08-12] — Interview Practice role-page generator + BLS OEWS provider
 
-## [2026-08-12] — Interview Practice B2C go-to-market brief
-
-Strategy deliverable only — **no application, service, or infrastructure code was
-touched.** A point-of-view on whether the candidate-side Interview Coach can carry a
-consumer business, written up as a branded 9-page brief.
+A programmatic role-page template for `/interview-practice` — one landing page per
+occupation, built by a Python generator that runs off the Occupational Reference
+tables (`app.market.dataset`). PR #870. Three deliverables: **schema**, **copy
+blocks**, and the **OEWS pull**.
 
 ### Added
-- **`scripts/build_interview_practice_b2c_gtm.py`** — reproducible `python-docx`
-  generator. IG STANDARD palette (NAVY `#1B2A4A` / ORANGE `#E8792B` / SLATE
-  `#36415A`, PANEL `#F3F5FA`), Cambria headings + Calibri body, `Logo-Dark.png`
-  cover lockup, `contact@inspiresgenius.com` footer with page numbers.
-  - `w:cantSplit` on every table row and callout, `w:tblHeader` on header rows,
-    `keep_with_next` on the heading rule — headings stop orphaning, callouts stop
-    splitting mid-sentence, long tables repeat their header across page breaks. All
-    three faults were present in the first render and invisible in the source.
-- **`docs/plans/Interview_Practice_B2C_GTM_Brief.docx`** (9pp, `git add -f` — the
-  root `.gitignore` blanket-ignores `*.docx`, matching the precedent set by
-  `docs/plans/Honor_Foundation_Coach_Workbench_Wiring_Plan.docx`). Covers the
-  shipped-capability audit, market assessment, defensibility, product gaps,
-  positioning, target segments, channel plan, packaging/pricing, risks, proof plan
-  and a 90-day sequence. Render-verified LibreOffice → PDF → PNG, all nine pages
-  read for overflow.
+- **OEWS pull** — `services/agent-engine/app/market/oews.py`: `OewsProvider`
+  implementing the existing `LabourMarketProvider` Protocol (the "BLS OEWS client"
+  `app.market` was designed to accept). Wages = A_PCT10/A_MEDIAN/A_PCT90; outlook
+  honestly `None` (OEWS has no projection). `normalize_oews_national` parses the
+  real BLS national-file columns (`*`/`#`/comma handling, detailed-only);
+  `fetch_oews_national` is best-effort (BLS 403s automation — documented). Wired
+  into `adapter._PROVIDERS` as `MARKET_DATA_PROVIDER=oews` — **dormant; default
+  stays `static`.**
+- **Schema** — `app/role_pages/schema.py`: `RolePage` + `to_dict`, publishable
+  JSON Schema (`role_page_json_schema`), dependency-free validator, Schema.org
+  JSON-LD (`Occupation` + `FAQPage`).
+- **Copy blocks** — `app/role_pages/copy_blocks.py`: deterministic no-LLM copy;
+  no dollar figure without a market payload, none without its source.
+- **Generator** — `app/role_pages/generator.py` + `scripts/build_role_pages.py`:
+  runs off `OCCUPATIONS`, blends OEWS wages over curated (visible provenance),
+  writes `{slug}.json` + `index.json` + `role-page.schema.json`.
+- 15 new tests (`test_oews_provider.py`, `test_role_pages.py`); existing market
+  suite green. Verified: 44 pages; OEWS file → software-developer median $132,270
+  (BLS-attributed) while others stay curated; unpriced occupation → `salary:null`,
+  no dollar figure.
 
 ### Notes
-- **`/interview-practice` is deliberately scoreless** — page copy: "no scores". The
-  deterministic scorer (`star_scorer.py`) lives on the *evaluator* side only (Live
-  Scored Interview, Interview Studio; manager / practitioner / company-admin /
-  super-admin). A candidate-visible progress score is raised in the brief as an
-  owner decision, not an assumed build.
-- **Corrected mid-flight against #870/#403.** The first cut listed "public marketing
-  site + programmatic role pages" as *not built* and made programmatic SEO the
-  top future channel. The role-page generator landed on `development` the same day
-  (#870 back end, #403 front end): 44 public pages at `/interview-practice/roles`
-  and `/interview-practice/:slug`, Schema.org JSON-LD. §2, §4.2 and §7 were rewritten
-  so the brief states shipped reality — what remains is coverage, the marketing site
-  around the pages, and indexation, not the engine.
-- Added a **wage-provenance risk row**: the 44 pages carry salary figures while the
-  BLS OEWS provider is built but **dormant** (OEWS is absent from the BLS API and
-  bls.gov blocks scripted download), so the default source is curated. The generator
-  already carries source + as-of per page and shows no figure when it cannot price a
-  role — do not attribute a number to BLS unless an OEWS file is genuinely present.
-- **No market-size or win-rate statistics appear anywhere in the document, by
-  design** — nothing sourced and defensible was to hand.
-
----
-
-## [2026-08-12] — Employer & sector interview question packs + build plan
-
-Content and planning deliverable — **no application, service or infrastructure
-code was touched.** 16 employer packs, 7 sector packs, 138 questions, and a
-repo-native plan to serve them through the Interview Practice tailoring path
-that already exists.
-
-### Added
-- **`scripts/build_employer_interview_packs.py`** — reproducible `python-docx`
-  generator. Question content lives in the script as data (`COMPANIES`,
-  `SECTORS`), so the packs are diffable and reviewable in git rather than locked
-  in a binary.
-- **`docs/plans/Employer_Interview_Question_Packs.docx`** (18pp, `git add -f`).
-  Employer packs: Amazon/AWS, Google, Meta, Microsoft, IBM, Oracle, LinkedIn,
-  McKinsey, BCG, Bain, Deloitte, Accenture, Goldman Sachs, Citigroup,
-  Bridgewater, BlackRock. Sector packs: technology, consulting, financial
-  services, healthcare/life sciences, aerospace/defence/advanced manufacturing,
-  retail/consumer/CPG, public sector/education/workforce. Render-verified
-  LibreOffice → PDF → PNG.
-
-### Notes
-- **Every one of the 138 questions maps to a real competency id in
-  `star_interview_bank.py`** — verified programmatically against the module, not
-  by eye: 12/12 competencies used, zero ids absent from the bank. The packs
-  change what a question *sounds* like, never what is being assessed, so no new
-  rubric, scorer or evaluator change is implied.
-- **Provenance discipline, mirroring `app/role_pages`.** Every pack names the
-  employer's OWN publicly published values or hiring framework. These are
-  questions written by us *in the style of* that framework — explicitly not any
-  company's actual, internal or leaked questions, and no implication of
-  endorsement or affiliation. The document leads with that statement.
-- **Load-bearing discovery for the build plan:** `InterviewFrame` **already
-  carries `company` and `industry`** — collected by `InterviewFrameForm` since
-  the v2 frame, rendered in the header, folded into Alex's coaching context —
-  but never passed to tailoring. `getTailoredPracticeQuestions(jobTitle,
-  jobDescription, section)` takes no company, and `InterviewPracticePage.tsx`
-  branches on `roleTitle` alone. So this is an extension of a live path, not a
-  new one: two optional request fields, one curated dataset, one resolver.
-- **Curated-first, model-second** is the design rule: a resolved employer
-  question replaces the sampled base question deterministically, and the LLM is
-  left only contextualising to a role title. A model that has never seen a
-  company's question list must not be the thing asserting what is on it.
-- Fail-open contract preserved throughout — unknown company or resolver error
-  returns precisely today's behaviour with `employer: null`.
-- **Phase 0 is legal, and it gates go-live rather than build**: nominative-use
-  review, standing disclaimer wording, and SME sign-off on all 138 questions.
-  Recommendation in the doc is to run it in parallel with Phases 1–3.
-
----
-
-## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
-
-A single session could emit refresh-token requests without bound — observed at
-roughly 2.5 per second, sustained, with no logout. Every refresh succeeded; the
-refresh was never the problem. The guard meant to stop the retry was.
-
-### Fixed
-- **The retry guard could never trip.** `src/lib/axios.ts` tracked already-retried
-  requests in a `WeakSet` keyed on the axios **config object**. The retry is
-  issued as `instance(original)`, and axios runs `mergeConfig` on the way in, so
-  the second failure arrives with a brand new config object the `WeakSet` has
-  never seen: 401 → refresh → retry → 401 → refresh, unbounded.
-  Verified against axios 1.11.0 rather than assumed — config identity is not
-  preserved across a retry, but a custom property does survive the merge. The
-  marker now rides on the config (`__igAuthRetried`).
-  - Files: `src/lib/axios.ts`
-- **`refreshPromise` could latch a rejected promise.** It was cleared after the
-  `await`, which never runs when the refresh rejects — leaving every subsequent
-  401 to reject instantly and force a logout. Now cleared in `.finally()`.
-
-### Changed
-- `/v1/notifications` added to `NON_CRITICAL_401_PATHS`. The notification bell
-  polls on every page, and a passive side panel must never be able to end a
-  session. The corresponding server-side 401 was fixed separately; this makes it
-  not matter if anything else ever 401s there. Joins the observability,
-  analytics and dashboard paths already listed for the same reason.
-
-### Added
-- `src/lib/__tests__/axiosRefreshLoop.test.ts` — 7 tests bounding the number of
-  **refresh calls**, not merely whether a request eventually fails. A test that
-  only asserts failure passes happily while an unbounded number of refreshes fly
-  past underneath it. Run against the pre-fix interceptor these do not simply
-  fail — they exhaust the Node heap (`FATAL ERROR: JavaScript heap out of
-  memory`), which is the loop reproduced.
-- `src/components/__tests__/ProtectedRoute.test.tsx` — pins that forced
-  onboarding stays off when `is_onboarded` is **absent**, as distinct from
-  explicitly `false`. A gate written `=== false` misses the absent case and
-  bounces the user into the wizard.
-
-### Verified — no change needed
-- Forced onboarding is already disabled (`ProtectedRoute`, 2026-07-21) and
-  `navigateAfterAuth` routes every authenticated user to their role home;
-  `/home` resolves to the HomeV2 workspace by default. Only the absent-flag test
-  case was missing.
-
-### Verification
-`npm run build` clean · eslint clean on all touched files · 220 tests passing
-across 28 suites in `src/lib` + `src/components/__tests__`.
-
-## [2026-08-12] — Job Fit: remove the cross-vertical switch row
-
-Per request, removed the row under the Job-Fit tool pills that held "Back to
-Inspire Genius" and an "or switch to <vertical>" list (Direction Setting, GRANT,
-Honor Foundation, Job DNA, Knowledge Continuity — whatever the user was entitled
-to). The Job-Fit tool pills remain; the sidebar + brand logo (→ Home v2) remain
-the way out of the vertical.
-
-### Removed
-- `src/pages/job-fit/FitNav.tsx` — dropped the "Back to Inspire Genius" button +
-  the entitlement-driven vertical-switch buttons + "or switch to" label (and the
-  now-unused `useNavigate`/`Button`/`ArrowLeft`/`listEntitledVerticals`/
-  `useEnabledVerticals` imports).
-- Updated `src/pages/job-fit/__tests__/job-fit-blueprint-coach.test.tsx` — the 3
-  FitNav tests asserting the switch row are replaced by one asserting it's gone.
-- Full suite (4460) + coverage gate pass; `npm run build` clean.
-
-## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
-
-Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
-code (nothing renders it — the live menu is `SidebarScaffold`, per the two-header-
-layouts note). This wires the actual top-left `inspiresgenius` brand in
-`SidebarScaffold` to Home v2 and reverts the dead-code `AppHeader` edit + its test.
-
-### Fixed
-- `src/components/shared/layout/SidebarScaffold.tsx` — the brand (logo +
-  "inspiresgenius") is now a `<Link to={ROUTES.HOME}>` (Home v2) for all roles.
-- Reverted `src/components/layout/AppHeader.tsx` (unused) + removed its test.
-- The #404 role-prefill change was correct and is live (verified in the deployed
-  `InterviewPracticePage` chunk).
-
-## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
-
-PR #404.
-
-### Changed
-- `src/components/layout/AppHeader.tsx` — the top-left Inspire Genius logo now
-  always navigates to Home v2 (`ROUTES.HOME` `/home`) for every role; the profile
-  chip keeps going to the role dashboard.
-- Role-page CTAs ("Practice a {role} interview" / "Start practicing") carry the
-  role into the coach via router state; `InterviewPracticePage` reads it and
-  pre-fills `InterviewFrameForm` with the role title + a job-description seed
-  (`buildRoleJobDescription` — honest role brief from the page's real title/SOC/
-  wage/outlook, no invented duties) + a "Prefilled for {role}" note.
-  - Files: `src/pages/interview-practice/InterviewRolePage.tsx`,
-    `src/pages/user/InterviewPracticePage.tsx`, `src/types/interviewRolePage.ts`
-- 10 new/updated tests; `npm run build` clean.
-
-## [2026-08-12] — Interview Practice role pages wired into the FE
-
-Renders the backend role-page generator's output (app.role_pages, monorepo #870)
-as public per-occupation landing pages that funnel into the auth-gated Interview
-Practice coach. PR #403.
-
-### Added
-- `src/data/interviewRolePages.json` (44 generated pages, code-split lazy chunk) +
-  `src/types/interviewRolePage.ts` (typed accessor).
-- Public routes `/interview-practice/roles` (index) + `/interview-practice/:slug`
-  (outside ProtectedRoute; static `/roles` outranks `:slug`).
-- `src/pages/interview-practice/InterviewRolePage.tsx` (hero + copy blocks +
-  attributed pay/outlook cards + FAQs + Schema.org JSON-LD + CTA into the coach;
-  unknown slug → not-found) + `InterviewRolesIndex.tsx` (lists all roles).
-- `src/hooks/useSeo.ts` (title/description/canonical/JSON-LD, cleaned on unmount);
-  `src/components/interview/RolePageShell.tsx` (public chrome). Discovery link on
-  the coach setup page. 5 new tests; `npm run build` clean; 53 interview tests pass.
-
-## [2026-08-12] — Interview Studio: upload a question-list file
-
-Third question source in `StudioQuestionBuilder` (alongside generate + manual):
-"Upload a file". Reuses `extractRoleText` (.txt/.md/.pdf/.docx, client-side) →
-new `src/lib/parseQuestionList.ts` (one question per line; strips numbering,
-bullets, and `Q:` prefixes; dedupes; caps at 50) → appends to the editable list.
-
-### Added
-- `src/lib/parseQuestionList.ts` + `src/lib/__tests__/parseQuestionList.test.ts` (6 tests).
-- Upload tab + handler in `src/components/interview/StudioQuestionBuilder.tsx`;
-  component test extended with the upload case. 11 studio-builder-area tests pass;
-  `npm run build` clean.
+- OEWS is not served by the BLS timeseries API (v1+v2 verified "No Data") and
+  bls.gov 403s scripted downloads (verified) — the parse/price path is the real,
+  tested mechanism; live fetch degrades to a manual-drop file, then to curated.
+- FE wiring of the pages at `/interview-practice/<slug>` (route + data host) is a
+  separate follow-up.
 
 ## [2026-08-11] — Read-only support sandbox + user-PII cleanup in service source
 
@@ -2127,200 +2471,135 @@ The seven files above were the tip. Counts of **third-party** addresses
 - `inspire-genius-frontend` is a **separate, already-public repo**, so for most
   user-facing support questions it can be shared with no work and no exposure.
 
-## [2026-08-11] — Live interview: heading + upload-JD dialog; "won't submit" root-caused
+## [2026-08-11] — Interview Studio surface (manager / super-admin / practitioner)
 
-Reported errors on `stable.inspiresgenius.com/manager/interview-live` ("form won't submit").
-
-### Root cause (form won't submit)
-`POST /v1/agents/interview/live/session` → **404** on staging-b because
-`AGENT_ENGINE_LIVE_INTERVIEW_SCORING=false` there (the deliberate Phase-0-gated dark-promote —
-the `/live/*` routes 404 when the flag is off). Not a code bug. Dev (flag on) → 401 = works.
-The rest of the console (Grammarly/`chrome-extension` errors, `unload` permissions-policy,
-`runtime.lastError` message-channel, CSP `upgrade-insecure-requests` report-only, `/v1/notifications`
-401→refresh-token) is benign browser-extension / token-refresh noise, unrelated.
-
-### Added / Changed (FE #392, merged → dev + staging-b)
-- **Heading:** Live interview setup now reads **"Set up a live interview"** (was the forked
-  "Set up your practice interview"). `InterviewFrameForm` gained `title`/`description`/`submitLabel`
-  props; `LiveInterviewBody` passes the live copy; the candidate practice page is unchanged.
-- **Upload job description dialog:** an Upload button by the JD field opens a dialog importing
-  `.txt/.md/.pdf/.doc/.docx` via the existing client-side `extractRoleText` (read in-browser,
-  no server upload) → fills the JD field (+ role title when blank).
-  - Files: `src/components/interview/{InterviewFrameForm,LiveInterviewBody}.tsx`
-- Build clean; 6 frame-form + 203 interview-suite tests pass. FE-only.
-
-### Note
-- The FE changes ship, but the live-interview form **still 404s on staging-b until the backend
-  flag is enabled** — that flip is a separate, Phase-0-gated decision (pending).
-
-## [2026-08-11] — auth: grant the auth service its Magic-Auth signing key (silent fallback)
-
-### Fixed
-- **`infrastructure/cdk/lib/services-stack.ts`** — `authLambdaRole` never had
-  `secretsmanager:GetSecretValue` on `inspires-genius-{env}/magic-auth/jwt-secret`.
-  Every cold start logged:
-  `AccessDeniedException ... not authorized ... Falling back to SECRET_KEY env var`
-  — **30 occurrences in 24h on staging-b.**
-- The trainer, invitation and growth stacks all read this same secret and were granted it
-  (`trainer-stack.ts:70`, `invitation-stack.ts:298`, `growth-service-stack.ts:179`); the auth
-  service was the one consumer that never was.
-
-### Why it matters more than it looks
-It is a **silent** degradation, not an outage: the fallback works only while every component
-signs AND verifies with the same `SECRET_KEY`. The moment this grant lands — or `SECRET_KEY`
-is rotated — tokens minted under the other key stop verifying. Magic link is the passwordless
-sign-in path, so for any user whose ONLY way in is a magic link, a key mismatch is a lockout
-with no fallback. That is exactly the configuration requested for the ECPS users, which is why
-this was fixed **before** removing any passwords.
-
-### Verified
-- `tsc --noEmit` clean.
-- `cdk synth ig-dev-services` exit 0, and the grant is present in the synthesized template:
-  `AuthLambdaRoleDefaultPolicy` → role `AuthLambdaRole` → resource
-  `...secret:inspires-genius-dev/magic-auth/jwt-secret*`.
-- **Not yet deployed.** dev picks it up on the next `cdk deploy`; staging-b needs a promote.
-
-### Finding — ECPS magic-link enablement needed almost no change
-`services/auth-service/app/routes/magic_link.py` contains **zero** references to `auth_provider`.
-Eligibility is only `user exists AND u.is_active`. So magic link already worked for 4 of the 5
-`@ecps.us` users regardless of provider (`cognito` or `google`), and `users.password` was already
-NULL for all five — "no password" was already true at the application layer.
-- `[email redacted]` (the reported login failure) is `is_active=true` and **could already sign in by
-  magic link today**, with no change at all.
-- `[email redacted]` is the only one blocked — `is_active=false` in BOTH `users` and `user_profiles`.
-  Re-enabling was **blocked by the permission classifier** and was NOT performed.
-
-## [2026-08-11] — Live interview: findings crash on End fixed (section_scores.map)
-
-Reported: ending a live interview (staging-b) white-screened and "lost" the notes.
-
-### Root cause
-Findings screen threw `TypeError: c.section_scores.map is not a function`. The backend
-returns `section_scores` as an **object** (`{ vision: { mean, weight, weighted }, ... }`), but
-the FE typed it as an array and `.map()`'d it — same mismatch broke the scored export and any
-session re-fetch. **No data was lost** — every answer is persisted server-side as it's
-submitted, and `/finalize` had already written the section/overall scores; only the render
-crashed. (Recovered the reported session from `interview_session`/`interview_answer` — candidate
-Tony Brown, 3 answers, overall 3.33 → hire-with-plan.)
-
-### Fixed (FE #393, merged → dev + staging-b)
-- `normalizeSectionScores()` (tolerant of object OR array) + corrected `FinalizeResult` type;
-  used in the findings render and `interviewExport`. `fmtScore()` guards the Decimal-string
-  `overall_score`. Already-finalized sessions now render correctly on re-open.
-- `End interview` confirms before ending if the current question isn't submitted+rated yet —
-  prevents silently losing an in-progress answer (the reported "4th answer" was never submitted
-  to the server, so only 3 rows existed; this guard stops that recurring).
-  - Files: `src/services/interview/{live.service,interviewExport}.ts`, `src/components/interview/LiveInterviewBody.tsx`
-- 4 normalizer tests; build clean; 40 interview tests pass.
-
-### Known follow-up
-- The live-interview finalize path had never been smoke-tested with a real manager session on
-  staging-b (magic-auth gated there) — which is why this shipped. Consider a synthetic-account
-  authed smoke for the scored flow.
-
-## [2026-08-11] — PRISM API ingest fixed: FetchReportData needs EntityTypeID, not QTypeID
-
-Root cause of PRISM having **zero** successful automated API score-ingests (every real
-assessment had come from CSV import). PR `willb77/inspire-genius#854`, merged to
-`development`, deployed to **dev + staging-b** (tag `release-stable-2026-08-11-prism-entitytypeid`).
-
-### Fixed
-- **`app/prism/client.py`** — `fetch_report_data` + `fetch_report_ei_data` now send
-  **`EntityTypeID`** (the key PRISM's Service Library actually uses for the report lookup);
-  `QTypeID` kept for back-compat. Sending only `QTypeID` returned `IsAuthorised=true` +
-  "Error: Could not get Questionnaire data" with empty item lists for every completed
-  candidate — the whole outage. PRISM support confirmed the parameter name; verified live.
-- **`app/prism/ingestor.py`** (`_build_synthetic_payload`) — the `EntityTypeID` payload returns
-  behaviours in a compact `{"key": <score>, "value": "<Behaviour>|<desc>"}` shape (not
-  `Dimension`/`Score`). Parser now reads it (dimension = text before `|`, score = `key`,
-  0-scores preserved) plus `dtWAData`'s `apt_title`/`score`.
-
-### Notes
-- Tests: +1 unit test asserting all 8 Underlying behaviours parse from the real shape;
-  27 PRISM tests pass. No migration / CDK / flag.
-- **Ops (staging-b, PII-free):** two stranded candidates re-ingested via the fixed pipeline —
-  they now carry real quadrant + 8-behaviour scores with `source="api_ingest"` (the first-ever
-  successful API ingests) + PDF/CSV in S3. New completions auto-ingest going forward.
-- Investigation also produced a PRISM-support write-up (local, uncommitted — candidate PII).
-
-## [2026-08-11] — Live interview: questions now tailored to the role/JD (were static)
-
-Reported: the live scored interview served the same generic STAR questions in a different
-order, not role-specific ones.
-
-### Root cause
-The job-tailoring shipped in #846 only wired into the candidate **practice** routes. The
-**live scored session** (`POST /live/session`) still built its plan from the static
-`STAR_QUESTION_BANK` via `build_plan()`, so interviewers always saw the 12 primary questions.
-
-### Fixed (agent-engine #859, merged → dev; promoted to staging-b)
-- New `build_tailored_plan()` (`app/routes/interview_live_repo.py`): builds the base plan, then
-  rewrites each question to `frame.roleTitle` + `frame.jobDescription` via the same
-  `tailor_practice_questions` LLM path the practice surface uses, mapped back **by
-  competency_id** so scoring is unaffected. Falls back to the base plan when there's no role
-  title or the LLM call fails (never blocks the interview). `numQuestions` truncation preserved.
-- `create_live_session` now `await`s `build_tailored_plan` instead of `build_plan`.
-  - Files: `app/routes/{interview_live_repo,interview}.py`; 4 new tests.
-- Backend-only. No migration, no flag, no FE change.
-
-### Verification
-- Dev: new image rolled; `/live/session` gate live (403 w/ user token); `tailor_practice_questions`
-  confirmed live returning role-specific questions ("Registered Nurse (ICU)"). Unit tests pin the
-  by-competency_id mapping + fallbacks.
-- **Not self-runnable:** a full authed live session needs a manager browser login — dev magic-auth
-  hardcodes `role:user` (`magic_auth.py`), so it can't mint an interviewer token. Owner to confirm
-  in-browser on staging-b.
-
-## [2026-08-11] — Knowledge Base: the Domain column and the domain filter read the same thing
-
-Reported from `/super-admin/knowledge-base?domain=general`, which showed an empty table.
-It was not empty: staging-b holds 147 documents. Two separate faults in one endpoint.
-
-### Fixed
-- **`services/agent-engine/app/routes/ingestion.py`** — `GET /v1/agents/documents`:
-  - The row's "domain" was selected as `d.content_type`, so the admin UI's Domain badge
-    rendered MIME types (`text/csv`, `application/pdf`).
-  - The `domain` FILTER matched `d.domain`, a different column — and one that only the
-    paste-ingest path ever writes. Every file arriving through the document-service
-    presigned-upload pipeline lands with `domain` NULL, and the Upload modal puts the
-    admin's chosen domain in `tags` instead. `domain` was NULL on all 147 staging-b rows,
-    so **every** domain value matched zero rows.
-  - Both now resolve through a single `_EFFECTIVE_DOMAIN_SQL` expression interpolated into
-    the SELECT, the WHERE and the new facet query alike. The column and the filter cannot
-    disagree again, because there is only one of them.
-  - Domain is derived, most-explicit-first: `documents.domain` → a domain-vocabulary member
-    in `tags` → `prism_report` → `cultural` → `coaching`. Read-side only; RAG retrieval
-    still reads the real `d.domain` column and is untouched.
+New flexible scored-interview surface (PR #398): build an interview from your own
+questions or generate a themed set from a topic (e.g. a career counselor's student
+discovery interview), then capture, score, and get feedback through the same pipeline
+as the Live Scored Interview. Pairs with backend inspire-genius#867.
 
 ### Added
-- `uncategorised` — a first-class filter value (server-side an IS NULL test, not an
-  equality one). On staging-b that is where 121 of the 147 rows live; previously they were
-  reachable only via "All".
-- `domain_counts` on the list response — per-domain row counts computed over the same
-  expression and NOT narrowed by the active domain. The UI puts them on the filter chips so
-  an empty result reads as "this domain holds nothing" instead of "the filter is broken".
-- `tests/routes/test_knowledge_list_domain.py` — 12 tests. The load-bearing one asserts the
-  same expression appears in all three queries; reverting the SELECT to the old form fails it.
+- `src/components/interview/StudioQuestionBuilder.tsx` — topic/purpose/audience + style
+  (development vs hiring), "Generate from topic" / "Add manually" tabs, editable question
+  list with per-question themes.
+- `src/components/interview/StudioInterviewBody.tsx` — forked from `LiveInterviewBody`
+  (consent → participant → questions → capture/score → finalize → export), adds the
+  advisory Feedback card and bands per kind.
+- `src/services/interview/studio.service.ts` + `src/hooks/interview/useStudioInterview.ts`
+  (topic generation; reuses `liveInterviewService` for the run loop).
+- 3 role pages (`{manager,super-admin,practitioner}/InterviewStudioPage.tsx`), routes,
+  Tools-rollup nav items.
+
+### Changed
+- `InterviewFrame` widened with optional studio fields (mode/kind/questions/topic/
+  purpose/audience); `FinalizeResult` gains optional `feedback`; `interviewExport`
+  includes the Feedback section.
+- `npm run build` clean; 55 interview tests pass (7 new studio tests + 48 existing).
+
+### Notes
+- Gated by the same server `live_interview_scoring` flag (routes 404 when off) +
+  interviewer role. **Do not merge until backend #867 is on staging-b** — a development
+  merge deploys the FE to staging-b, where `/live/generate` would 404 without the backend.
+
+## [2026-08-11] — Knowledge Base routes were open to the internet; now super-admin only
+
+`GET /v1/agents/documents` returned 200 to an unauthenticated `curl` and listed
+filenames containing real people's names. `DELETE /{doc_id}` and
+`POST /{doc_id}/revectorize` were equally open. No `require_auth` on any of them, and
+the API Gateway route `ANY /v1/agents/{proxy+}` carries no authorizer — a route
+dependency was the only enforcement point available, and there wasn't one.
+
+### Fixed
+- **`services/agent-engine/app/routes/ingestion.py`** — split into two routers:
+  - `admin_router` — list / ingest / delete / revectorize. Super-admin, enforced at the
+    ROUTER level via `dependencies=[Depends(require_kb_admin)]`, so a Knowledge Base
+    route added later is gated by construction rather than by the author remembering
+    (same reasoning as `vertical_router(entitled=True)` from #865).
+  - `router` — unchanged, keeps the machine path and the 410 deprecations.
+- **`app/main.py`** — registers `admin_router` AFTER `router`, so the open literal
+  routes match before the gated `DELETE /{doc_id}` catch-all.
+
+### Deliberately NOT gated
+- **`POST /vectorize`** — its callers are machines with no user JWT:
+  `services/document-service/app/eventbridge.py` (stdlib urllib, Content-Type only) and
+  `scripts/backfill_embeddings.py`. A user-token gate would break embedding for **every
+  uploaded document**. It still needs service-to-service auth — a shared secret or
+  VPC-only path — which is a document-service change and is NOT bundled here. Documented
+  in place, and a test asserts it stays open so a future "gate the whole file" change
+  fails loudly instead of silently breaking uploads.
+- The two 410 deprecations — the status is a fact about the route, not the caller.
+
+### Notable
+- `require_kb_admin` does **not** reuse `agents_settings.require_super_admin`, which
+  grants on `max(claim_rank, header_rank)` where the header is the client-supplied
+  `x-user-role`. Any authenticated user can send `x-user-role: super-admin` and clear
+  that gate — the header-trust vector from the 2026-05-16 audit, still live in that file.
+  This gate uses `resolve_role` only: JWT claim, then a DB lookup keyed on the *signed*
+  `sub`. The DB fallback is load-bearing, not belt-and-braces — Cognito AccessTokens
+  carry no role claim and Magic-Auth tokens stamp `role="user"` regardless of the real
+  grant, so a claims-only check would 403 genuine super-admins.
+- `resolve_role` never raises and degrades to `"user"`, so a DB outage fails **closed**.
+
+### Added
+- `tests/routes/test_knowledge_auth.py` — 42 tests: 401 unauthenticated, 403 for all five
+  non-super-admin roles across all four routes, `x-user-role` (both casings) does not
+  escalate, DB-outage fails closed, super-admin reaches the handler, `/vectorize` stays
+  open. Mutation-checked: copying the header-trust shape fails 8; removing the gate fails 39.
+- Note in `scripts/ingest_cultural_context.py` — `ACCESS_TOKEN` must now be a super-admin's.
 
 ### Verified
-- The derived-domain SQL run against the live staging-b `documents` table: `prism_report` 26,
-  `uncategorised` 121, `coaching` 0 — totalling its 147 rows. The equality and IS NULL filter
-  forms return the same counts, and the tags-array derivation resolves.
-- agent-engine suite 4871 passed / 11 skipped. Frontend 561 suites / 4469 tests under the real
-  CI command (`--coverage` + thresholds, which `npm run test:ci` omits). Build and lint clean.
-- **Not deployed.** No dev or staging-b rollout; the fix is on a branch only.
+- The role join `public.user_profiles JOIN public.roles` resolves on both tiers, so the
+  DB fallback works for real admins: **dev 14 super-admins, staging-b 12**.
+- Frontend needs no change — `agentApi` already sets the `access-token` header.
+- Full agent-engine suite 4929 passed / 11 skipped.
+- **Not deployed** at time of writing.
 
-### Known, not fixed (out of the reported scope)
-- Nothing writes `documents.domain` on the file-upload path — the derivation compensates at
-  read time but the column stays NULL. Persisting it at write time is the durable fix.
-- This endpoint lists the whole `documents` table with no `doc_kind` filter, so the page shows
-  every user's personal uploads, not knowledge-base content. There are zero `knowledge_base`
-  rows on staging-b.
-- All four `/v1/agents/documents` routes are unauthenticated — no `require_auth`, no API Gateway
-  authorizer. `GET` returns filenames containing individuals' names to any unauthenticated caller.
-- `embedding_status` disagrees with reality (85 "pending" rows, but 129 rows have chunks), and the
-  "Embedded"/"Total Chunks" stat cards count the current page while "Total Documents" counts all.
+### Still open
+- `POST /vectorize` remains an unauthenticated write endpoint (above).
+- `agents_settings.require_super_admin` still trusts `x-user-role`; every route using it
+  is escalatable by any authenticated user. Separate fix.
 
+## [2026-08-11] — Interview Studio: custom + topic-generated scored interviews
+
+A flexible scored-interview surface for **manager / super-admin** (and the existing
+practitioner/company-admin roster), generalizing the shipped Live Scored Candidate
+Interview so the questions are no longer limited to the fixed STAR competency bank.
+Answers the request: add your own question list · generate questions for a topic (e.g.
+a career counselor's student discovery interview) · capture/transcribe · score + feedback
+as done for live and practice interviews.
+
+### Added
+- **Backend (agent-engine)** — PR #867 (`feat/interview-studio`):
+  - `app/llm/interview_generate.py` — topic → themed question set (TIER_3_FAST, fail-open
+    static discovery fallback). `POST /v1/agents/interview/live/generate`.
+  - `app/llm/interview_feedback.py` — advisory narrative at finalize (summary / strengths /
+    development areas / per-section), tone-matched to `kind`; fail-open.
+  - `app/routes/interview_live_repo.py` — `build_custom_plan`, `build_studio_plan` dispatch,
+    `plan_section_map` / `resolve_section` (section resolved from the stored plan).
+  - `app/scoring/star_scorer.py` — `build_generic_config` (Result-cap disabled, equal-weight
+    themes) + `GENERAL_BANDS` (excellent…needs-support) vs hiring bands per `frame.kind`.
+  - `app/models/interview.py` + `alembic/versions/029_add_interview_feedback.py` —
+    `interview_session.feedback` (nullable JSONB; additive). **Migration 029 applied to dev.**
+  - 28 new tests (generate / feedback / generic scorer / custom plan / studio routes); 82
+    interview tests pass total. `Test agent-engine` CI green on #867.
+  - Files: `services/agent-engine/app/{llm/interview_generate.py,llm/interview_feedback.py,
+    scoring/star_scorer.py,routes/interview_live_repo.py,routes/interview.py,models/interview.py}`,
+    `services/agent-engine/alembic/versions/029_add_interview_feedback.py`
+- **Frontend** — PR inspire-genius-frontend#398 (`feat/interview-studio-fe`):
+  - `StudioQuestionBuilder` (topic/purpose/audience + style + generate/manual tabs + editable
+    list), `StudioInterviewBody` (forked from `LiveInterviewBody`, adds the Feedback card),
+    `studio.service` + `useStudioInterview`, 3 role pages, routes, Tools-rollup nav items.
+  - `InterviewFrame` widened (mode/kind/questions/topic/purpose/audience); `FinalizeResult`
+    gains optional `feedback`; `interviewExport` includes the Feedback section.
+  - `npm run build` clean; 55 interview tests pass (7 new studio tests + 48 existing).
+
+### Notes
+- STAR/live path is byte-identical (mode defaults to `star`). Gated behind the same
+  `live_interview_scoring` flag + interviewer role as `/live/*` (routes 404 when off).
+- **Deploy hand-off (user-gated):** merge #867 → dev ECS roll (dev-only). Merging the FE PR
+  auto-deploys the FE to dev **and** staging-b, so pair the FE merge with a backend staging-b
+  tag; otherwise staging-b would surface the page while `/live/generate` 404s there. Manual FE
+  dev deploy was NOT done (the CI build needs crypto secrets — a mismatched bundle breaks auth).
 ## [2026-08-11] — Self-Portrait, Moments, Goals and Job Fit opened to users, and gated for real
 
 Four surfaces users could not reach, and a gate that was never enforced. Both halves in
@@ -2438,186 +2717,199 @@ were the same result.
 
 - Frontend PR #396, monorepo PR #865.
 
-## [2026-08-11] — Interview Studio: custom + topic-generated scored interviews
+## [2026-08-11] — Knowledge Base: the Domain column and the domain filter read the same thing
 
-A flexible scored-interview surface for **manager / super-admin** (and the existing
-practitioner/company-admin roster), generalizing the shipped Live Scored Candidate
-Interview so the questions are no longer limited to the fixed STAR competency bank.
-Answers the request: add your own question list · generate questions for a topic (e.g.
-a career counselor's student discovery interview) · capture/transcribe · score + feedback
-as done for live and practice interviews.
-
-### Added
-- **Backend (agent-engine)** — PR #867 (`feat/interview-studio`):
-  - `app/llm/interview_generate.py` — topic → themed question set (TIER_3_FAST, fail-open
-    static discovery fallback). `POST /v1/agents/interview/live/generate`.
-  - `app/llm/interview_feedback.py` — advisory narrative at finalize (summary / strengths /
-    development areas / per-section), tone-matched to `kind`; fail-open.
-  - `app/routes/interview_live_repo.py` — `build_custom_plan`, `build_studio_plan` dispatch,
-    `plan_section_map` / `resolve_section` (section resolved from the stored plan).
-  - `app/scoring/star_scorer.py` — `build_generic_config` (Result-cap disabled, equal-weight
-    themes) + `GENERAL_BANDS` (excellent…needs-support) vs hiring bands per `frame.kind`.
-  - `app/models/interview.py` + `alembic/versions/029_add_interview_feedback.py` —
-    `interview_session.feedback` (nullable JSONB; additive). **Migration 029 applied to dev.**
-  - 28 new tests (generate / feedback / generic scorer / custom plan / studio routes); 82
-    interview tests pass total. `Test agent-engine` CI green on #867.
-  - Files: `services/agent-engine/app/{llm/interview_generate.py,llm/interview_feedback.py,
-    scoring/star_scorer.py,routes/interview_live_repo.py,routes/interview.py,models/interview.py}`,
-    `services/agent-engine/alembic/versions/029_add_interview_feedback.py`
-- **Frontend** — PR inspire-genius-frontend#398 (`feat/interview-studio-fe`):
-  - `StudioQuestionBuilder` (topic/purpose/audience + style + generate/manual tabs + editable
-    list), `StudioInterviewBody` (forked from `LiveInterviewBody`, adds the Feedback card),
-    `studio.service` + `useStudioInterview`, 3 role pages, routes, Tools-rollup nav items.
-  - `InterviewFrame` widened (mode/kind/questions/topic/purpose/audience); `FinalizeResult`
-    gains optional `feedback`; `interviewExport` includes the Feedback section.
-  - `npm run build` clean; 55 interview tests pass (7 new studio tests + 48 existing).
-
-### Notes
-- STAR/live path is byte-identical (mode defaults to `star`). Gated behind the same
-  `live_interview_scoring` flag + interviewer role as `/live/*` (routes 404 when off).
-- **Deploy hand-off (user-gated):** merge #867 → dev ECS roll (dev-only). Merging the FE PR
-  auto-deploys the FE to dev **and** staging-b, so pair the FE merge with a backend staging-b
-  tag; otherwise staging-b would surface the page while `/live/generate` 404s there. Manual FE
-  dev deploy was NOT done (the CI build needs crypto secrets — a mismatched bundle breaks auth).
-## [2026-08-11] — Knowledge Base routes were open to the internet; now super-admin only
-
-`GET /v1/agents/documents` returned 200 to an unauthenticated `curl` and listed
-filenames containing real people's names. `DELETE /{doc_id}` and
-`POST /{doc_id}/revectorize` were equally open. No `require_auth` on any of them, and
-the API Gateway route `ANY /v1/agents/{proxy+}` carries no authorizer — a route
-dependency was the only enforcement point available, and there wasn't one.
+Reported from `/super-admin/knowledge-base?domain=general`, which showed an empty table.
+It was not empty: staging-b holds 147 documents. Two separate faults in one endpoint.
 
 ### Fixed
-- **`services/agent-engine/app/routes/ingestion.py`** — split into two routers:
-  - `admin_router` — list / ingest / delete / revectorize. Super-admin, enforced at the
-    ROUTER level via `dependencies=[Depends(require_kb_admin)]`, so a Knowledge Base
-    route added later is gated by construction rather than by the author remembering
-    (same reasoning as `vertical_router(entitled=True)` from #865).
-  - `router` — unchanged, keeps the machine path and the 410 deprecations.
-- **`app/main.py`** — registers `admin_router` AFTER `router`, so the open literal
-  routes match before the gated `DELETE /{doc_id}` catch-all.
-
-### Deliberately NOT gated
-- **`POST /vectorize`** — its callers are machines with no user JWT:
-  `services/document-service/app/eventbridge.py` (stdlib urllib, Content-Type only) and
-  `scripts/backfill_embeddings.py`. A user-token gate would break embedding for **every
-  uploaded document**. It still needs service-to-service auth — a shared secret or
-  VPC-only path — which is a document-service change and is NOT bundled here. Documented
-  in place, and a test asserts it stays open so a future "gate the whole file" change
-  fails loudly instead of silently breaking uploads.
-- The two 410 deprecations — the status is a fact about the route, not the caller.
-
-### Notable
-- `require_kb_admin` does **not** reuse `agents_settings.require_super_admin`, which
-  grants on `max(claim_rank, header_rank)` where the header is the client-supplied
-  `x-user-role`. Any authenticated user can send `x-user-role: super-admin` and clear
-  that gate — the header-trust vector from the 2026-05-16 audit, still live in that file.
-  This gate uses `resolve_role` only: JWT claim, then a DB lookup keyed on the *signed*
-  `sub`. The DB fallback is load-bearing, not belt-and-braces — Cognito AccessTokens
-  carry no role claim and Magic-Auth tokens stamp `role="user"` regardless of the real
-  grant, so a claims-only check would 403 genuine super-admins.
-- `resolve_role` never raises and degrades to `"user"`, so a DB outage fails **closed**.
+- **`services/agent-engine/app/routes/ingestion.py`** — `GET /v1/agents/documents`:
+  - The row's "domain" was selected as `d.content_type`, so the admin UI's Domain badge
+    rendered MIME types (`text/csv`, `application/pdf`).
+  - The `domain` FILTER matched `d.domain`, a different column — and one that only the
+    paste-ingest path ever writes. Every file arriving through the document-service
+    presigned-upload pipeline lands with `domain` NULL, and the Upload modal puts the
+    admin's chosen domain in `tags` instead. `domain` was NULL on all 147 staging-b rows,
+    so **every** domain value matched zero rows.
+  - Both now resolve through a single `_EFFECTIVE_DOMAIN_SQL` expression interpolated into
+    the SELECT, the WHERE and the new facet query alike. The column and the filter cannot
+    disagree again, because there is only one of them.
+  - Domain is derived, most-explicit-first: `documents.domain` → a domain-vocabulary member
+    in `tags` → `prism_report` → `cultural` → `coaching`. Read-side only; RAG retrieval
+    still reads the real `d.domain` column and is untouched.
 
 ### Added
-- `tests/routes/test_knowledge_auth.py` — 42 tests: 401 unauthenticated, 403 for all five
-  non-super-admin roles across all four routes, `x-user-role` (both casings) does not
-  escalate, DB-outage fails closed, super-admin reaches the handler, `/vectorize` stays
-  open. Mutation-checked: copying the header-trust shape fails 8; removing the gate fails 39.
-- Note in `scripts/ingest_cultural_context.py` — `ACCESS_TOKEN` must now be a super-admin's.
+- `uncategorised` — a first-class filter value (server-side an IS NULL test, not an
+  equality one). On staging-b that is where 121 of the 147 rows live; previously they were
+  reachable only via "All".
+- `domain_counts` on the list response — per-domain row counts computed over the same
+  expression and NOT narrowed by the active domain. The UI puts them on the filter chips so
+  an empty result reads as "this domain holds nothing" instead of "the filter is broken".
+- `tests/routes/test_knowledge_list_domain.py` — 12 tests. The load-bearing one asserts the
+  same expression appears in all three queries; reverting the SELECT to the old form fails it.
 
 ### Verified
-- The role join `public.user_profiles JOIN public.roles` resolves on both tiers, so the
-  DB fallback works for real admins: **dev 14 super-admins, staging-b 12**.
-- Frontend needs no change — `agentApi` already sets the `access-token` header.
-- Full agent-engine suite 4929 passed / 11 skipped.
-- **Not deployed** at time of writing.
+- The derived-domain SQL run against the live staging-b `documents` table: `prism_report` 26,
+  `uncategorised` 121, `coaching` 0 — totalling its 147 rows. The equality and IS NULL filter
+  forms return the same counts, and the tags-array derivation resolves.
+- agent-engine suite 4871 passed / 11 skipped. Frontend 561 suites / 4469 tests under the real
+  CI command (`--coverage` + thresholds, which `npm run test:ci` omits). Build and lint clean.
+- **Not deployed.** No dev or staging-b rollout; the fix is on a branch only.
 
-### Still open
-- `POST /vectorize` remains an unauthenticated write endpoint (above).
-- `agents_settings.require_super_admin` still trusts `x-user-role`; every route using it
-  is escalatable by any authenticated user. Separate fix.
+### Known, not fixed (out of the reported scope)
+- Nothing writes `documents.domain` on the file-upload path — the derivation compensates at
+  read time but the column stays NULL. Persisting it at write time is the durable fix.
+- This endpoint lists the whole `documents` table with no `doc_kind` filter, so the page shows
+  every user's personal uploads, not knowledge-base content. There are zero `knowledge_base`
+  rows on staging-b.
+- All four `/v1/agents/documents` routes are unauthenticated — no `require_auth`, no API Gateway
+  authorizer. `GET` returns filenames containing individuals' names to any unauthenticated caller.
+- `embedding_status` disagrees with reality (85 "pending" rows, but 129 rows have chunks), and the
+  "Embedded"/"Total Chunks" stat cards count the current page while "Total Documents" counts all.
 
-## [2026-08-11] — Interview Studio surface (manager / super-admin / practitioner)
+## [2026-08-11] — Live interview: questions now tailored to the role/JD (were static)
 
-New flexible scored-interview surface (PR #398): build an interview from your own
-questions or generate a themed set from a topic (e.g. a career counselor's student
-discovery interview), then capture, score, and get feedback through the same pipeline
-as the Live Scored Interview. Pairs with backend inspire-genius#867.
+Reported: the live scored interview served the same generic STAR questions in a different
+order, not role-specific ones.
 
-### Added
-- `src/components/interview/StudioQuestionBuilder.tsx` — topic/purpose/audience + style
-  (development vs hiring), "Generate from topic" / "Add manually" tabs, editable question
-  list with per-question themes.
-- `src/components/interview/StudioInterviewBody.tsx` — forked from `LiveInterviewBody`
-  (consent → participant → questions → capture/score → finalize → export), adds the
-  advisory Feedback card and bands per kind.
-- `src/services/interview/studio.service.ts` + `src/hooks/interview/useStudioInterview.ts`
-  (topic generation; reuses `liveInterviewService` for the run loop).
-- 3 role pages (`{manager,super-admin,practitioner}/InterviewStudioPage.tsx`), routes,
-  Tools-rollup nav items.
+### Root cause
+The job-tailoring shipped in #846 only wired into the candidate **practice** routes. The
+**live scored session** (`POST /live/session`) still built its plan from the static
+`STAR_QUESTION_BANK` via `build_plan()`, so interviewers always saw the 12 primary questions.
 
-### Changed
-- `InterviewFrame` widened with optional studio fields (mode/kind/questions/topic/
-  purpose/audience); `FinalizeResult` gains optional `feedback`; `interviewExport`
-  includes the Feedback section.
-- `npm run build` clean; 55 interview tests pass (7 new studio tests + 48 existing).
-
-### Notes
-- Gated by the same server `live_interview_scoring` flag (routes 404 when off) +
-  interviewer role. **Do not merge until backend #867 is on staging-b** — a development
-  merge deploys the FE to staging-b, where `/live/generate` would 404 without the backend.
-
-## [2026-08-10] — PRISM: a completed survey recorded `done` with an empty assessment
-
-### The incident
-`[email redacted]` completed a PRISM survey on staging-b. The poller
-detected it correctly at 22:49:56Z, one cycle after the request. The ingest then
-recorded **`ingest_status='done'` and emitted `prism.report.ingested` while writing
-no scores at all** — `assessments`, `assessment_scores` and `prism_results` were all
-empty for the user. Artifacts in S3: a **68-byte header-only CSV** and a **136-byte
-placeholder PDF the ingestor generated for itself**.
-
-Upstream, PRISM answered `UnlockReport` with `ActionURL1="User not found"` — a message
-where a URL belongs — and returned item-less report payloads that were **not** flagged
-`IsAuthorised=false`, so #851's authorisation guard never fired.
-
-### Fixed
-- **`_write_assessment_rows` now RAISES on zero scores** instead of `return None`.
-  The old skip let the caller continue to the S3 PUT, the `done` bump and the
-  `prism.report.ingested` emit. Raising routes into the existing failure handler:
-  `ingest_status='failed'`, the reason in `error`, and `prism.report.ingest_failed`
-  emitted — visible and retryable instead of silently green.
-- **`_describe_empty_payload`** puts PRISM's own reason (`status`, `ResponseMessage`,
-  and crucially `authorised=True`) into the row's error, so "authorised but empty" is
-  distinguishable from "not authorised" at a glance.
-
-### Added
-- **`scripts/verify_prism_pipeline.py`** — read-only live checker. Asserts status and
-  data **together** at every stage (request → assessments+scores → prism_results →
-  CSV size → documents row). Single-value checks are exactly what let this through:
-  the row said `done` and nobody asked whether anything landed. Run against [user M.T.]'s
-  record it correctly reports 3 failures.
-- **9 tests** across `test_prism_empty_ingest_is_fatal.py` and
-  `test_prism_pipeline_e2e.py`, including an explicit `done`+zero-scores
-  unreachable-state assertion.
-
-### Also found, NOT fixed here
-- **No notification exists anywhere.** All `prism.*` events are `DetailType="AuditEvent"`
-  with **no EventBridge consumer**; `broadcast-service` has zero PRISM awareness; there is
-  no email path. A user learns their report arrived only by reloading `/home` — and
-  `useLatestPrism` has `refetchOnWindowFocus:false` and no `refetchInterval`, so an open
-  tab never updates.
-- **One stranded row on the old PRISM site.** `[email redacted]` (2026-07-22)
-  was created on site `621028c4-…` while credentials are for `A344DBC1-…`; PRISM refuses
-  cross-site fetches and no credential for that site is configured. Unfixable without
-  re-creating the candidate.
+### Fixed (agent-engine #859, merged → dev; promoted to staging-b)
+- New `build_tailored_plan()` (`app/routes/interview_live_repo.py`): builds the base plan, then
+  rewrites each question to `frame.roleTitle` + `frame.jobDescription` via the same
+  `tailor_practice_questions` LLM path the practice surface uses, mapped back **by
+  competency_id** so scoring is unaffected. Falls back to the base plan when there's no role
+  title or the LLM call fails (never blocks the interview). `numQuestions` truncation preserved.
+- `create_live_session` now `await`s `build_tailored_plan` instead of `build_plan`.
+  - Files: `app/routes/{interview_live_repo,interview}.py`; 4 new tests.
+- Backend-only. No migration, no flag, no FE change.
 
 ### Verification
-- **4,845 agent-engine tests pass**, 11 skipped, 0 failures.
-- Mutation-tested: restoring `return None` turns the two regression tests red.
-- The live checker was itself found wrong on first run — it matched only one of the two
-  empty-result shapes the migration-runner returns and so passed the two checks that
-  mattered most. Fixed, then re-run: 3 failures correctly reported.
+- Dev: new image rolled; `/live/session` gate live (403 w/ user token); `tailor_practice_questions`
+  confirmed live returning role-specific questions ("Registered Nurse (ICU)"). Unit tests pin the
+  by-competency_id mapping + fallbacks.
+- **Not self-runnable:** a full authed live session needs a manager browser login — dev magic-auth
+  hardcodes `role:user` (`magic_auth.py`), so it can't mint an interviewer token. Owner to confirm
+  in-browser on staging-b.
+
+## [2026-08-11] — PRISM API ingest fixed: FetchReportData needs EntityTypeID, not QTypeID
+
+Root cause of PRISM having **zero** successful automated API score-ingests (every real
+assessment had come from CSV import). PR `willb77/inspire-genius#854`, merged to
+`development`, deployed to **dev + staging-b** (tag `release-stable-2026-08-11-prism-entitytypeid`).
+
+### Fixed
+- **`app/prism/client.py`** — `fetch_report_data` + `fetch_report_ei_data` now send
+  **`EntityTypeID`** (the key PRISM's Service Library actually uses for the report lookup);
+  `QTypeID` kept for back-compat. Sending only `QTypeID` returned `IsAuthorised=true` +
+  "Error: Could not get Questionnaire data" with empty item lists for every completed
+  candidate — the whole outage. PRISM support confirmed the parameter name; verified live.
+- **`app/prism/ingestor.py`** (`_build_synthetic_payload`) — the `EntityTypeID` payload returns
+  behaviours in a compact `{"key": <score>, "value": "<Behaviour>|<desc>"}` shape (not
+  `Dimension`/`Score`). Parser now reads it (dimension = text before `|`, score = `key`,
+  0-scores preserved) plus `dtWAData`'s `apt_title`/`score`.
+
+### Notes
+- Tests: +1 unit test asserting all 8 Underlying behaviours parse from the real shape;
+  27 PRISM tests pass. No migration / CDK / flag.
+- **Ops (staging-b, PII-free):** two stranded candidates re-ingested via the fixed pipeline —
+  they now carry real quadrant + 8-behaviour scores with `source="api_ingest"` (the first-ever
+  successful API ingests) + PDF/CSV in S3. New completions auto-ingest going forward.
+- Investigation also produced a PRISM-support write-up (local, uncommitted — candidate PII).
+
+## [2026-08-11] — Live interview: findings crash on End fixed (section_scores.map)
+
+Reported: ending a live interview (staging-b) white-screened and "lost" the notes.
+
+### Root cause
+Findings screen threw `TypeError: c.section_scores.map is not a function`. The backend
+returns `section_scores` as an **object** (`{ vision: { mean, weight, weighted }, ... }`), but
+the FE typed it as an array and `.map()`'d it — same mismatch broke the scored export and any
+session re-fetch. **No data was lost** — every answer is persisted server-side as it's
+submitted, and `/finalize` had already written the section/overall scores; only the render
+crashed. (Recovered the reported session from `interview_session`/`interview_answer` — candidate
+Tony Brown, 3 answers, overall 3.33 → hire-with-plan.)
+
+### Fixed (FE #393, merged → dev + staging-b)
+- `normalizeSectionScores()` (tolerant of object OR array) + corrected `FinalizeResult` type;
+  used in the findings render and `interviewExport`. `fmtScore()` guards the Decimal-string
+  `overall_score`. Already-finalized sessions now render correctly on re-open.
+- `End interview` confirms before ending if the current question isn't submitted+rated yet —
+  prevents silently losing an in-progress answer (the reported "4th answer" was never submitted
+  to the server, so only 3 rows existed; this guard stops that recurring).
+  - Files: `src/services/interview/{live.service,interviewExport}.ts`, `src/components/interview/LiveInterviewBody.tsx`
+- 4 normalizer tests; build clean; 40 interview tests pass.
+
+### Known follow-up
+- The live-interview finalize path had never been smoke-tested with a real manager session on
+  staging-b (magic-auth gated there) — which is why this shipped. Consider a synthetic-account
+  authed smoke for the scored flow.
+
+## [2026-08-11] — auth: grant the auth service its Magic-Auth signing key (silent fallback)
+
+### Fixed
+- **`infrastructure/cdk/lib/services-stack.ts`** — `authLambdaRole` never had
+  `secretsmanager:GetSecretValue` on `inspires-genius-{env}/magic-auth/jwt-secret`.
+  Every cold start logged:
+  `AccessDeniedException ... not authorized ... Falling back to SECRET_KEY env var`
+  — **30 occurrences in 24h on staging-b.**
+- The trainer, invitation and growth stacks all read this same secret and were granted it
+  (`trainer-stack.ts:70`, `invitation-stack.ts:298`, `growth-service-stack.ts:179`); the auth
+  service was the one consumer that never was.
+
+### Why it matters more than it looks
+It is a **silent** degradation, not an outage: the fallback works only while every component
+signs AND verifies with the same `SECRET_KEY`. The moment this grant lands — or `SECRET_KEY`
+is rotated — tokens minted under the other key stop verifying. Magic link is the passwordless
+sign-in path, so for any user whose ONLY way in is a magic link, a key mismatch is a lockout
+with no fallback. That is exactly the configuration requested for the ECPS users, which is why
+this was fixed **before** removing any passwords.
+
+### Verified
+- `tsc --noEmit` clean.
+- `cdk synth ig-dev-services` exit 0, and the grant is present in the synthesized template:
+  `AuthLambdaRoleDefaultPolicy` → role `AuthLambdaRole` → resource
+  `...secret:inspires-genius-dev/magic-auth/jwt-secret*`.
+- **Not yet deployed.** dev picks it up on the next `cdk deploy`; staging-b needs a promote.
+
+### Finding — ECPS magic-link enablement needed almost no change
+`services/auth-service/app/routes/magic_link.py` contains **zero** references to `auth_provider`.
+Eligibility is only `user exists AND u.is_active`. So magic link already worked for 4 of the 5
+`@ecps.us` users regardless of provider (`cognito` or `google`), and `users.password` was already
+NULL for all five — "no password" was already true at the application layer.
+- `[email redacted]` (the reported login failure) is `is_active=true` and **could already sign in by
+  magic link today**, with no change at all.
+- `[email redacted]` is the only one blocked — `is_active=false` in BOTH `users` and `user_profiles`.
+  Re-enabling was **blocked by the permission classifier** and was NOT performed.
+
+## [2026-08-11] — Live interview: heading + upload-JD dialog; "won't submit" root-caused
+
+Reported errors on `stable.inspiresgenius.com/manager/interview-live` ("form won't submit").
+
+### Root cause (form won't submit)
+`POST /v1/agents/interview/live/session` → **404** on staging-b because
+`AGENT_ENGINE_LIVE_INTERVIEW_SCORING=false` there (the deliberate Phase-0-gated dark-promote —
+the `/live/*` routes 404 when the flag is off). Not a code bug. Dev (flag on) → 401 = works.
+The rest of the console (Grammarly/`chrome-extension` errors, `unload` permissions-policy,
+`runtime.lastError` message-channel, CSP `upgrade-insecure-requests` report-only, `/v1/notifications`
+401→refresh-token) is benign browser-extension / token-refresh noise, unrelated.
+
+### Added / Changed (FE #392, merged → dev + staging-b)
+- **Heading:** Live interview setup now reads **"Set up a live interview"** (was the forked
+  "Set up your practice interview"). `InterviewFrameForm` gained `title`/`description`/`submitLabel`
+  props; `LiveInterviewBody` passes the live copy; the candidate practice page is unchanged.
+- **Upload job description dialog:** an Upload button by the JD field opens a dialog importing
+  `.txt/.md/.pdf/.doc/.docx` via the existing client-side `extractRoleText` (read in-browser,
+  no server upload) → fills the JD field (+ role title when blank).
+  - Files: `src/components/interview/{InterviewFrameForm,LiveInterviewBody}.tsx`
+- Build clean; 6 frame-form + 203 interview-suite tests pass. FE-only.
+
+### Note
+- The FE changes ship, but the live-interview form **still 404s on staging-b until the backend
+  flag is enabled** — that flip is a separate, Phase-0-gated decision (pending).
 
 ## [2026-08-10] — PRISM: retry pass, report email, and the fix plan
 
@@ -2675,6 +2967,58 @@ is **asynchronous report generation**, not a missing candidate. PRISM's error te
   poller tests unchanged and green.
 - The placeholder-rejection test pins the **byte-exact** incident artifact (68 bytes,
   CRLF-terminated) — a first draft used `\n` and was 67 bytes, which the test caught.
+
+## [2026-08-10] — PRISM: a completed survey recorded `done` with an empty assessment
+
+### The incident
+`[email redacted]` completed a PRISM survey on staging-b. The poller
+detected it correctly at 22:49:56Z, one cycle after the request. The ingest then
+recorded **`ingest_status='done'` and emitted `prism.report.ingested` while writing
+no scores at all** — `assessments`, `assessment_scores` and `prism_results` were all
+empty for the user. Artifacts in S3: a **68-byte header-only CSV** and a **136-byte
+placeholder PDF the ingestor generated for itself**.
+
+Upstream, PRISM answered `UnlockReport` with `ActionURL1="User not found"` — a message
+where a URL belongs — and returned item-less report payloads that were **not** flagged
+`IsAuthorised=false`, so #851's authorisation guard never fired.
+
+### Fixed
+- **`_write_assessment_rows` now RAISES on zero scores** instead of `return None`.
+  The old skip let the caller continue to the S3 PUT, the `done` bump and the
+  `prism.report.ingested` emit. Raising routes into the existing failure handler:
+  `ingest_status='failed'`, the reason in `error`, and `prism.report.ingest_failed`
+  emitted — visible and retryable instead of silently green.
+- **`_describe_empty_payload`** puts PRISM's own reason (`status`, `ResponseMessage`,
+  and crucially `authorised=True`) into the row's error, so "authorised but empty" is
+  distinguishable from "not authorised" at a glance.
+
+### Added
+- **`scripts/verify_prism_pipeline.py`** — read-only live checker. Asserts status and
+  data **together** at every stage (request → assessments+scores → prism_results →
+  CSV size → documents row). Single-value checks are exactly what let this through:
+  the row said `done` and nobody asked whether anything landed. Run against [user M.T.]'s
+  record it correctly reports 3 failures.
+- **9 tests** across `test_prism_empty_ingest_is_fatal.py` and
+  `test_prism_pipeline_e2e.py`, including an explicit `done`+zero-scores
+  unreachable-state assertion.
+
+### Also found, NOT fixed here
+- **No notification exists anywhere.** All `prism.*` events are `DetailType="AuditEvent"`
+  with **no EventBridge consumer**; `broadcast-service` has zero PRISM awareness; there is
+  no email path. A user learns their report arrived only by reloading `/home` — and
+  `useLatestPrism` has `refetchOnWindowFocus:false` and no `refetchInterval`, so an open
+  tab never updates.
+- **One stranded row on the old PRISM site.** `[email redacted]` (2026-07-22)
+  was created on site `621028c4-…` while credentials are for `A344DBC1-…`; PRISM refuses
+  cross-site fetches and no credential for that site is configured. Unfixable without
+  re-creating the candidate.
+
+### Verification
+- **4,845 agent-engine tests pass**, 11 skipped, 0 failures.
+- Mutation-tested: restoring `return None` turns the two regression tests red.
+- The live checker was itself found wrong on first run — it matched only one of the two
+  empty-result shapes the migration-runner returns and so passed the two checks that
+  mattered most. Fixed, then re-run: 3 failures correctly reported.
 
 ## [2026-08-09] — Journey tiles shortened (192px → 78px, measured); Moments shows only what you pick
 
@@ -2992,237 +3336,44 @@ Bill Brown's IBM tenure is **25 years** in the v3 deck and **35 years** in his o
 bio PDF. The new deck states neither — it uses "IBM Distinguished Engineer
 Emeritus" and "90+ patents" instead. Needs a decision before wider use.
 
-## [2026-08-07] — Live In-Room Scored Candidate Interview — built, live dev, dark staging-b
+## [2026-08-07] — HomeV2: productionised PRISM Brain Map + "Prism Data" dropdown
 
-Evaluator-side counterpart to the scoreless Interview Practice surface: an interviewer
-(manager/practitioner) runs a REAL scored interview of a candidate. Built via the
-8-section build plan (Phases 0–5), by composition over IG Core. PRs: agent-engine
-willb77/inspire-genius#831 + FE willb77/inspire-genius-frontend#381, both merged to
-`development`. **Live on dev (flag on), dark on staging-b (flag off, code shipped).**
+Two HomeV2 changes (request). PR willb77/inspire-genius-frontend#384.
 
 ### Added
-- **Backend (agent-engine):** `interview_session` + `interview_answer` models + Alembic
-  `028`; deterministic `star_scorer.py` (`score_interview`, mean-of-12 banding, Result-
-  missing cap-at-3, config-driven — **no model in the math path**); `/v1/agents/interview/live/*`
-  routes (session/answer/PATCH-answer/finalize/GET), role-gated + flag-gated
-  (`AGENT_ENGINE_LIVE_INTERVIEW_SCORING`, 404 before auth when off); advisory
-  `suggest_answer_score` (never authoritative — finalize scores the human `final_score`);
-  3 `emit_interview_*` audit events (candidate hash + scores only, never answer text/name).
-  - Files: `services/agent-engine/app/{models/interview.py,scoring/star_scorer.py,routes/interview.py,routes/interview_live_repo.py,llm/interview_suggest.py,events/eventbridge.py,config.py}`, `alembic/versions/028_create_interview_tables.py`
-- **Frontend:** `InterviewLivePage` (manager + practitioner, under the **Tools** menu) forked
-  from the practice page — `ConsentGate` (default no_audio), candidate-identity capture,
-  `AnswerScorePanel` (advisory AI 1–5 + STAR evidence + interviewer-authoritative override),
-  scored findings; `live.service.ts` + `useLiveInterview`; scored export in
-  `interviewExport.ts` (`doc_kind: interview-scorecard`).
-- **Infra:** CDK flag dev-on / staging-b·prod-off (dark-promote until Phase 0 legal gate).
-- **Phase 0 gate drafts:** `docs/plans/live-interview/` (recording-consent, retention/erasure,
-  rubric-for-hiring — all values TUNABLE PENDING SME; block go-live, not build).
-
-### Notes
-- Candidate is NOT a platform user — candidate record + sha256 identity hash; audit by hash.
-- Migration 028 applied manually via migration-runner inline SQL on dev + staging-b (both
-  tables verified). Dev live-verified: `/live/session` unauth → 401. staging-b dark-verified:
-  flag `false` on the `agent-engine` container, `/live/session` → 404.
-- Scoring/verticals math authored per the build plan; bands TUNABLE PENDING SME.
-
-## [2026-08-07] — PRISM Brain Map: radial "wheel" renderer + docs reference
-
-Productionised the PRISM Brain Map on HomeV2 (frontend PR
-willb77/inspire-genius-frontend#384) and added the reference generator here.
-
-### Added
-- `docs/prism/brain-map/` — parametric PRISM 8-Dimensional "wheel" SVG generator
-  (`prism_radial_map.py`) + rendered sample (`.svg`/`.png`) + README. Four colour
-  quadrants (Gold TL / Green TR / Blue BR / Red BL), eight behaviour spokes, grid
-  rings 35/65/75/100, with Underlying / Adapted / Consistent / Blueprint layers
-  overlaid. Traced from the PRISM 'Professional' report map.
-  - Files: `docs/prism/brain-map/{prism_radial_map.py,prism_radial_map_sample.svg,prism_radial_map_sample.png,README.md}`
-
-### Notes
-- Only the Underlying score set is persisted today (`app.prism_canon.SCORE_TYPE = "Underlying"`),
-  so one polygon renders; Adapted/Consistent overlay automatically once captured
-  (PRISM Service Library API v2.5 §5.10 FetchBasicMap / §5.11 FetchFullMap, or CSV
-  import which already carries all three for BehaviorPreferences).
-- Monorepo PR: willb77/inspire-genius#842.
-
----
-
-## [2026-08-07] — Team Development Studio: member-grounded Meridian chat, real dossier actions, demo data
-
-Made the TDS member dossier real end-to-end and fixed the Meridian assistant to brief a
-manager on the SELECTED member. Spans growth-service, the frontend, and the agent-engine;
-deployed dev + staging-b.
-
-### Added
-- **Meridian chat persistence** — growth-owned `growth.dossier_chat_messages` table (per
-  `manager_sub` + `member_id`) + `GET`/`POST /v1/growth/members/{id}/chat`. The panel loads
-  history on mount and saves each turn, so a manager can leave and resume. Migration
-  `growth_dossier_chat.sql` applied on dev + staging-b. (growth PR #833)
-- **`app/profile/member_prism.build_member_prism_block`** (agent-engine) — renders a
-  `<USER_PROFILE>` for a team member from `public.prism_results` (via `get_latest_prism`, the
-  only reader of Studio-seeded PRISM), grouped by quadrant colour with an explicit
-  `<DOMINANT_QUADRANT>` + colour↔behaviour map. (#837/#839/#841)
-- **Client-side dossier PDF export** (`src/lib/dossierPdf.ts`, jsPDF) — a real downloadable PDF
-  (name / PRISM / goals / gaps / matches / roadmap). (FE #382)
-- **Demo cohort** — 7 members ([user M.T.], [user J.B.], [user G.B.], William Brown, Paula
-  Averico, [user B.B.], [user Li.B.]) seeded with distinct PRISM + member-specific goals on dev +
-  staging-b (data, via the migration-runner). Separate demo identities; no real accounts touched.
-
-### Fixed
-- **Dossier showed the member's UUID, not their name** — `assemble_member_dossier` now resolves
-  the name from `roster_members` / `team_members`. (growth #833)
-- **Meridian briefed the manager, not the member** — the TDS chat grounded in the caller's PRISM.
-  Now injects the member's PRISM in meridian's pre-DAG RAG block (the WS→ws-proxy→REST path that
-  actually runs — the Lambda handler was the wrong file). (#837/#839)
-- **Meridian mislabelled the quadrant** (named a Gold peak "Red") — the member block now names the
-  dominant quadrant by colour explicitly. (#841)
-- **"Share" / "Export PDF" were inert** — Share confirms via a toast; Export downloads a PDF. (FE #382)
-- **"Resume session" ambiguity** — it continues a Summit discovery session (not a CV); relabelled
-  "Continue session" and moved into the Meridian panel header. (FE #382)
-- **Goals were generic** (one template across all members) — re-seeded member-specific, role-aligned goals.
+- `PrismRadialMap` — self-contained inline-SVG PRISM 8-Dimensional "wheel":
+  four colour quadrants (Gold TL / Green TR / Blue BR / Red BL), eight behaviour
+  spokes, grid rings 35/65/75/100, with profile layers overlaid (Underlying red
+  solid, Adapted purple dashed, Consistent blue solid, Blueprint green). Accepts
+  optional adapted/consistent/blueprint layers — only Underlying is persisted
+  today, so one polygon renders; the rest light up automatically once captured.
+  - Files: `src/components/prism/PrismRadialMap.tsx`
+- `PrismSelfMapContent` — shared lazy fetch (`useMyPrism`) + loading/error/empty
+  states, used by both the "Behavioral map" pill and the new dropdown.
+  - Files: `src/components/prism/PrismSelfMapContent.tsx`
+- `PrismDataMenu` — the "Prism Data" header dropdown: the real PRISM PDF fetched
+  from S3 as a presigned URL (`useMyPrismReport` → `usePrismReportDownloadUrl`)
+  plus the Brain Map. Report query is lazy (fires only when the menu opens).
+  - Files: `src/components/dashboard/v2/PrismDataMenu.tsx`
+- Tests: `PrismRadialMap`, `PrismSelfMapContent`, `PrismDataMenu` (10).
 
 ### Changed
-- Documented the required staging-b CDK context in `infrastructure/cdk/STAGING_B_DEPLOY_GUIDE.md` —
-  `-c env=staging-b` alone falls back to the dev VPC; the full network CTX from
-  `staging-b-promote.yml` is required. (#818)
+- `BehavioralMapDialog` — the "Behavioral map" pill now opens the radial
+  `PrismRadialMap` (via `PrismSelfMapContent`) instead of the recharts spider.
+  - Files: `src/components/dashboard/v2/BehavioralMapDialog.tsx`
+- `HomeV2` — the header centre "View PRISM Report" button became `<PrismDataMenu/>`
+  (still gated on `hasReport`); removed the now-dead `openPrismReport` /
+  `ProfileDocViewerDialog` / `generatePrismReport` path. Self-Portrait stays on
+  the tile's Self-Portrait quick action.
+  - Files: `src/pages/user/HomeV2.tsx`
 
 ### Notes
-- PRs (all merged to `development`): growth `willb77/inspire-genius#833`, FE
-  `willb77/inspire-genius-frontend#382`, agent-engine `willb77/inspire-genius#837/#839/#841`,
-  docs `#818`.
-- Deployed: growth-service + agent-engine (ECS) + FE on dev AND staging-b. The staging-b
-  agent-engine was rolled by copying the CI-built dev image into staging-b ECR +
-  `force-new-deployment` (image is env-agnostic).
-- Verified live on dev (WebSocket): Meridian cites the member's real scores — *"[user M.T.]'s Gold
-  dominance (Focusing 92, Delivering 88)"*. staging-b live WS is browser-only (magic-auth off).
+- `PrismBehavioralMap` (the old spider) is unchanged — still used by the Team
+  Development Studio member card.
+- Reference generator + rendered sample live in the monorepo `docs/prism/brain-map/`
+  (PR willb77/inspire-genius#842).
 
 ---
-
-## [2026-08-07] — PRISM "Import Existing Report" 500 fixed + live-PRISM PDF check
-
-The "Import Existing Report" button on `/prism-assessment` (staging-b) returned
-**500** (reported as "503"). Root cause + fix, plus a read-only check of whether
-live PRISM holds a report PDF for the owner.
-
-### Fixed
-- **Import 500 (agent-engine, PR #843).** `admin_import_csv_assessment` received
-  `user_id="me"` (the HomeV2 client's `user.id` fallback) and dropped it into a
-  UUID-typed SQL bind → `asyncpg DataError: invalid UUID 'me'` → unhandled 500.
-  Now resolves the subject (`resolve_subject_id`: `"me"` → caller's canonical id),
-  validates the UUID (malformed → clean 400), and authorizes self-vs-admin (a user
-  may import their OWN report; importing for another still requires super-admin).
-  Kept on the CSV path that mirrors to `prism_results` (#794 visibility), not the
-  self endpoint (which does not mirror). +3 tests (17 pass).
-  - Files: `services/agent-engine/app/routes/profile_admin.py`, `tests/test_profile_admin_routes.py`
-- **Import UX (frontend, PR #385).** Restricted the picker to CSV (the endpoint
-  parses CSV only; PDF/doc/xls were offered but never parseable) — label
-  "Import Existing Report (CSV)". Fixed the success toast, which read
-  `data.parsed_scores` (never returned) and always showed "Gold: 0, Green: 0…";
-  now reports `score_count`.
-
-### Notes
-- **Deployed:** FE → dev + staging-b (live). Agent-engine → dev (Staged Deploy)
-  + staging-b (`release-stable-2026-08-07-prism-import-fix` promote, smoke-gated).
-  Migration-safe: 028 is the highest migration and is already applied on
-  staging-b; the fix carries no migration.
-- **Live-PRISM PDF check (read-only, dev):** live creds active
-  (`api.prismbrainmapping.com/service_library/v2/api.svc`). Owner
-  `[email redacted]` has one `prism_requests` row (qtype 4) that is
-  `ingest_status=pending`, `completed_at=null`, `pdf_s3_key=null`; live
-  `FetchCandidateHistory` returns `is_authorised=false` + empty history. **No
-  completed report → no PDF to pull.** The candidate appears to have been created
-  against PRISM *staging* pre-go-live; a live PDF requires completing a
-  questionnaire on the live site.
-- **Follow-up:** true PDF import (LLM extraction + `prism_results` projection).
-
-## [2026-08-07] — Interview Practice: job-tailored questions (fix "same questions every time")
-
-Investigated a report that Interview Practice reuses the same questions. Root cause: the
-practice bank is a **static 12-question** `STAR_QUESTION_BANK` and the FE plan builder picks
-deterministically (first-N per section, fixed order) — so every session shows the same set;
-a default 12-question interview is the entire bank. The LLM only wrote the coaching, never the
-questions. Fix: make the questions **job-aware**. PRs: agent-engine `willb77/inspire-genius#846`
-+ FE `willb77/inspire-genius-frontend#386`, merged to `development`. **Live on dev**, dev-smoked
-end to end.
-
-### Added
-- **Backend:** `POST /v1/agents/interview/practice-questions/tailored` (`app/llm/interview_tailor.py`,
-  `app/routes/interview.py`) — one ProviderFactory LLM call (TIER_3_FAST) rewrites each of the 12
-  STAR competency questions to a given `job_title`/`job_description`, **grounded on the fixed
-  competency bank** (same competencies + rubric framework; only wording changes — no new
-  methodology). Candidate-safe (rubric/exemplars never serialized). Per-competency + total
-  fallback to the static question (`tailored:false`); always returns 12. 9 tests.
-- **Frontend:** optional **Job description** field on `InterviewFrameForm`;
-  `getTailoredPracticeQuestions` in `practice.service.ts`; `InterviewPracticePage.startInterview`
-  fetches tailored questions when a role title is set (else static), with a **double** (client +
-  server) fallback so the interview never breaks; "Tailored to <role>" badge.
-
-### Notes
-- No migration, no CDK/flag change. Dev-verified with a real token: 12/12 questions tailored for
-  "Registered Nurse (ICU)" and "Enterprise Sales Manager"; empty title → static bank.
-- **staging-b:** FE deployed, but the BE tailored route is not promoted there yet → FE falls back
-  to the static bank on staging-b until a `release-stable` promote.
-
-## [2026-08-07] — Troy Smith PRISM retrieval investigation + PRISM Support write-up
-
-Read-only investigation (no platform code change) of retrieving a candidate's PRISM
-.csv/.pdf from live PRISM, plus confirmation that the import 500 fix deployed.
-
-### Verified (deploys)
-- Agent-engine PRISM import 500 fix (#843) — **live on dev + staging-b** (staging-b
-  promote `release-stable-2026-08-07-prism-import-fix` completed/success; dev Staged
-  Deploy success). FE #385 (CSV-only picker + toast) live on both tiers.
-
-### Investigated (Troy Smith — read-only)
-- Troy Smith's PRISM candidate is on the **OLD staging PRISM site** (`621028c4…`,
-  client `InspireGenius`, `staging.prismbrainmapping.com`), created 2026-08-04 —
-  **before** today's go-live to the live site. The live InspiresGenius site returns
-  "Could not get Questionnaire data" for his ExternalIdent (he isn't there).
-- On staging he **completed** a Professional Questionnaire (2026-08-07 19:43 UTC),
-  but the report is **unretrievable via the API**: `FetchReportData` → "Could not get
-  Questionnaire data" (0 rows, EntityTypeID 1/2/3/4/21, before AND after
-  `UnlockReport`); `FetchCandidateHistory.SubActionURL1` → **"User not found"**.
-  Authorized `UnlockReport` on staging (free test transactions) — still no data; only
-  an HTML "candidate/loading" viewer URL is returned.
-- **Root cause (analysis):** the candidate has no associated PRISM **user** record
-  ("User not found") — so the auto-signin/PDF link can't generate and report data
-  can't be read, despite `IsCompleted=true`. Ruled out transport/auth, locking,
-  qtype mismatch, and generation lag.
-- **Go-live orphaning:** ALL `prism_requests` (5 on staging-b, 1 on dev) point at the
-  old staging site `621028c4`; NONE on the live site. Candidates completing after the
-  creds cutover are orphaned (IG now polls live). List: Derwood Spencer (done, via
-  manual back-fill), Troy Smith (this issue), Luke Vinciguerra (qtype 42, pending),
-  Alex Brown (qtype 4, pending), + 2 test accounts.
-
-### Added (local artifacts — NOT committed; contain candidate PII/PRISM identifiers)
-- `PRISM_Support_Troy_Smith_Report_Retrieval.docx` — support write-up: summary,
-  go-live context, environment, candidate, observed API responses, **raw request
-  bodies**, client code + failure point, root-cause analysis, other affected
-  candidates, and the asks for PRISM Support. Render-verified.
-- `scripts/build_prism_support_troy.py` — the doc generator.
-
-## [2026-08-07] — Interview Practice: expanded question bank (36) + per-session sampling
-
-Follow-up to the job-tailored questions. Gives real variety so different sessions (and two
-people in the same role) get different questions. PR `willb77/inspire-genius#849`, merged to
-`development`, **live on dev** (dev-verified: 5 fetches surfaced 32/36 pool questions).
-
-### Added / Changed
-- **Backend (`app/llm/star_interview_bank.py`):** each of the 12 STAR competencies now has a
-  **pool** — 1 primary + 2 new variants = **36 questions** (`question_variants`). Variants are
-  AI-drafted, **PENDING SME REVIEW** — same competency + rubric/exemplars as the primary.
-- `get_question_bank(vary=True)` samples one question per competency; the candidate practice
-  routes (`/practice-questions` + `/practice-questions/tailored`, `app/llm/interview_tailor.py`)
-  use it → **each session draws a varied set** (tailored mode rewrites the sampled question to
-  the job).
-- **Evaluator side unchanged:** `/question-bank`, Maven/James prompt renderers, and the
-  interview tools stay on the PRIMARY question (`vary=False`) — the scored contract + 5/3/1
-  exemplars are untouched.
-
-### Notes
-- Backend-only — no FE change, no migration, no CDK/flag. 36 tests pass; evaluator path proven
-  unchanged; sampling proven to surface all pool variants.
-- **staging-b:** not yet promoted (dev only at time of writing).
 
 ## [2026-08-07] — Agent-engine: 180-test backlog cleared, CI gates armed for real
 
@@ -3312,44 +3463,237 @@ ticks per PR, nothing verified. Now **4810 passed in CI** with both gates enforc
   (`/v1/agents/health` 200, auth-gated 401, CORS preflight 204).
 
 
-## [2026-08-07] — HomeV2: productionised PRISM Brain Map + "Prism Data" dropdown
+## [2026-08-07] — Interview Practice: expanded question bank (36) + per-session sampling
 
-Two HomeV2 changes (request). PR willb77/inspire-genius-frontend#384.
+Follow-up to the job-tailored questions. Gives real variety so different sessions (and two
+people in the same role) get different questions. PR `willb77/inspire-genius#849`, merged to
+`development`, **live on dev** (dev-verified: 5 fetches surfaced 32/36 pool questions).
 
-### Added
-- `PrismRadialMap` — self-contained inline-SVG PRISM 8-Dimensional "wheel":
-  four colour quadrants (Gold TL / Green TR / Blue BR / Red BL), eight behaviour
-  spokes, grid rings 35/65/75/100, with profile layers overlaid (Underlying red
-  solid, Adapted purple dashed, Consistent blue solid, Blueprint green). Accepts
-  optional adapted/consistent/blueprint layers — only Underlying is persisted
-  today, so one polygon renders; the rest light up automatically once captured.
-  - Files: `src/components/prism/PrismRadialMap.tsx`
-- `PrismSelfMapContent` — shared lazy fetch (`useMyPrism`) + loading/error/empty
-  states, used by both the "Behavioral map" pill and the new dropdown.
-  - Files: `src/components/prism/PrismSelfMapContent.tsx`
-- `PrismDataMenu` — the "Prism Data" header dropdown: the real PRISM PDF fetched
-  from S3 as a presigned URL (`useMyPrismReport` → `usePrismReportDownloadUrl`)
-  plus the Brain Map. Report query is lazy (fires only when the menu opens).
-  - Files: `src/components/dashboard/v2/PrismDataMenu.tsx`
-- Tests: `PrismRadialMap`, `PrismSelfMapContent`, `PrismDataMenu` (10).
-
-### Changed
-- `BehavioralMapDialog` — the "Behavioral map" pill now opens the radial
-  `PrismRadialMap` (via `PrismSelfMapContent`) instead of the recharts spider.
-  - Files: `src/components/dashboard/v2/BehavioralMapDialog.tsx`
-- `HomeV2` — the header centre "View PRISM Report" button became `<PrismDataMenu/>`
-  (still gated on `hasReport`); removed the now-dead `openPrismReport` /
-  `ProfileDocViewerDialog` / `generatePrismReport` path. Self-Portrait stays on
-  the tile's Self-Portrait quick action.
-  - Files: `src/pages/user/HomeV2.tsx`
+### Added / Changed
+- **Backend (`app/llm/star_interview_bank.py`):** each of the 12 STAR competencies now has a
+  **pool** — 1 primary + 2 new variants = **36 questions** (`question_variants`). Variants are
+  AI-drafted, **PENDING SME REVIEW** — same competency + rubric/exemplars as the primary.
+- `get_question_bank(vary=True)` samples one question per competency; the candidate practice
+  routes (`/practice-questions` + `/practice-questions/tailored`, `app/llm/interview_tailor.py`)
+  use it → **each session draws a varied set** (tailored mode rewrites the sampled question to
+  the job).
+- **Evaluator side unchanged:** `/question-bank`, Maven/James prompt renderers, and the
+  interview tools stay on the PRIMARY question (`vary=False`) — the scored contract + 5/3/1
+  exemplars are untouched.
 
 ### Notes
-- `PrismBehavioralMap` (the old spider) is unchanged — still used by the Team
-  Development Studio member card.
-- Reference generator + rendered sample live in the monorepo `docs/prism/brain-map/`
-  (PR willb77/inspire-genius#842).
+- Backend-only — no FE change, no migration, no CDK/flag. 36 tests pass; evaluator path proven
+  unchanged; sampling proven to surface all pool variants.
+- **staging-b:** not yet promoted (dev only at time of writing).
+
+## [2026-08-07] — Troy Smith PRISM retrieval investigation + PRISM Support write-up
+
+Read-only investigation (no platform code change) of retrieving a candidate's PRISM
+.csv/.pdf from live PRISM, plus confirmation that the import 500 fix deployed.
+
+### Verified (deploys)
+- Agent-engine PRISM import 500 fix (#843) — **live on dev + staging-b** (staging-b
+  promote `release-stable-2026-08-07-prism-import-fix` completed/success; dev Staged
+  Deploy success). FE #385 (CSV-only picker + toast) live on both tiers.
+
+### Investigated (Troy Smith — read-only)
+- Troy Smith's PRISM candidate is on the **OLD staging PRISM site** (`621028c4…`,
+  client `InspireGenius`, `staging.prismbrainmapping.com`), created 2026-08-04 —
+  **before** today's go-live to the live site. The live InspiresGenius site returns
+  "Could not get Questionnaire data" for his ExternalIdent (he isn't there).
+- On staging he **completed** a Professional Questionnaire (2026-08-07 19:43 UTC),
+  but the report is **unretrievable via the API**: `FetchReportData` → "Could not get
+  Questionnaire data" (0 rows, EntityTypeID 1/2/3/4/21, before AND after
+  `UnlockReport`); `FetchCandidateHistory.SubActionURL1` → **"User not found"**.
+  Authorized `UnlockReport` on staging (free test transactions) — still no data; only
+  an HTML "candidate/loading" viewer URL is returned.
+- **Root cause (analysis):** the candidate has no associated PRISM **user** record
+  ("User not found") — so the auto-signin/PDF link can't generate and report data
+  can't be read, despite `IsCompleted=true`. Ruled out transport/auth, locking,
+  qtype mismatch, and generation lag.
+- **Go-live orphaning:** ALL `prism_requests` (5 on staging-b, 1 on dev) point at the
+  old staging site `621028c4`; NONE on the live site. Candidates completing after the
+  creds cutover are orphaned (IG now polls live). List: Derwood Spencer (done, via
+  manual back-fill), Troy Smith (this issue), Luke Vinciguerra (qtype 42, pending),
+  Alex Brown (qtype 4, pending), + 2 test accounts.
+
+### Added (local artifacts — NOT committed; contain candidate PII/PRISM identifiers)
+- `PRISM_Support_Troy_Smith_Report_Retrieval.docx` — support write-up: summary,
+  go-live context, environment, candidate, observed API responses, **raw request
+  bodies**, client code + failure point, root-cause analysis, other affected
+  candidates, and the asks for PRISM Support. Render-verified.
+- `scripts/build_prism_support_troy.py` — the doc generator.
+
+## [2026-08-07] — Interview Practice: job-tailored questions (fix "same questions every time")
+
+Investigated a report that Interview Practice reuses the same questions. Root cause: the
+practice bank is a **static 12-question** `STAR_QUESTION_BANK` and the FE plan builder picks
+deterministically (first-N per section, fixed order) — so every session shows the same set;
+a default 12-question interview is the entire bank. The LLM only wrote the coaching, never the
+questions. Fix: make the questions **job-aware**. PRs: agent-engine `willb77/inspire-genius#846`
++ FE `willb77/inspire-genius-frontend#386`, merged to `development`. **Live on dev**, dev-smoked
+end to end.
+
+### Added
+- **Backend:** `POST /v1/agents/interview/practice-questions/tailored` (`app/llm/interview_tailor.py`,
+  `app/routes/interview.py`) — one ProviderFactory LLM call (TIER_3_FAST) rewrites each of the 12
+  STAR competency questions to a given `job_title`/`job_description`, **grounded on the fixed
+  competency bank** (same competencies + rubric framework; only wording changes — no new
+  methodology). Candidate-safe (rubric/exemplars never serialized). Per-competency + total
+  fallback to the static question (`tailored:false`); always returns 12. 9 tests.
+- **Frontend:** optional **Job description** field on `InterviewFrameForm`;
+  `getTailoredPracticeQuestions` in `practice.service.ts`; `InterviewPracticePage.startInterview`
+  fetches tailored questions when a role title is set (else static), with a **double** (client +
+  server) fallback so the interview never breaks; "Tailored to <role>" badge.
+
+### Notes
+- No migration, no CDK/flag change. Dev-verified with a real token: 12/12 questions tailored for
+  "Registered Nurse (ICU)" and "Enterprise Sales Manager"; empty title → static bank.
+- **staging-b:** FE deployed, but the BE tailored route is not promoted there yet → FE falls back
+  to the static bank on staging-b until a `release-stable` promote.
+
+## [2026-08-07] — PRISM "Import Existing Report" 500 fixed + live-PRISM PDF check
+
+The "Import Existing Report" button on `/prism-assessment` (staging-b) returned
+**500** (reported as "503"). Root cause + fix, plus a read-only check of whether
+live PRISM holds a report PDF for the owner.
+
+### Fixed
+- **Import 500 (agent-engine, PR #843).** `admin_import_csv_assessment` received
+  `user_id="me"` (the HomeV2 client's `user.id` fallback) and dropped it into a
+  UUID-typed SQL bind → `asyncpg DataError: invalid UUID 'me'` → unhandled 500.
+  Now resolves the subject (`resolve_subject_id`: `"me"` → caller's canonical id),
+  validates the UUID (malformed → clean 400), and authorizes self-vs-admin (a user
+  may import their OWN report; importing for another still requires super-admin).
+  Kept on the CSV path that mirrors to `prism_results` (#794 visibility), not the
+  self endpoint (which does not mirror). +3 tests (17 pass).
+  - Files: `services/agent-engine/app/routes/profile_admin.py`, `tests/test_profile_admin_routes.py`
+- **Import UX (frontend, PR #385).** Restricted the picker to CSV (the endpoint
+  parses CSV only; PDF/doc/xls were offered but never parseable) — label
+  "Import Existing Report (CSV)". Fixed the success toast, which read
+  `data.parsed_scores` (never returned) and always showed "Gold: 0, Green: 0…";
+  now reports `score_count`.
+
+### Notes
+- **Deployed:** FE → dev + staging-b (live). Agent-engine → dev (Staged Deploy)
+  + staging-b (`release-stable-2026-08-07-prism-import-fix` promote, smoke-gated).
+  Migration-safe: 028 is the highest migration and is already applied on
+  staging-b; the fix carries no migration.
+- **Live-PRISM PDF check (read-only, dev):** live creds active
+  (`api.prismbrainmapping.com/service_library/v2/api.svc`). Owner
+  `[email redacted]` has one `prism_requests` row (qtype 4) that is
+  `ingest_status=pending`, `completed_at=null`, `pdf_s3_key=null`; live
+  `FetchCandidateHistory` returns `is_authorised=false` + empty history. **No
+  completed report → no PDF to pull.** The candidate appears to have been created
+  against PRISM *staging* pre-go-live; a live PDF requires completing a
+  questionnaire on the live site.
+- **Follow-up:** true PDF import (LLM extraction + `prism_results` projection).
+
+## [2026-08-07] — Team Development Studio: member-grounded Meridian chat, real dossier actions, demo data
+
+Made the TDS member dossier real end-to-end and fixed the Meridian assistant to brief a
+manager on the SELECTED member. Spans growth-service, the frontend, and the agent-engine;
+deployed dev + staging-b.
+
+### Added
+- **Meridian chat persistence** — growth-owned `growth.dossier_chat_messages` table (per
+  `manager_sub` + `member_id`) + `GET`/`POST /v1/growth/members/{id}/chat`. The panel loads
+  history on mount and saves each turn, so a manager can leave and resume. Migration
+  `growth_dossier_chat.sql` applied on dev + staging-b. (growth PR #833)
+- **`app/profile/member_prism.build_member_prism_block`** (agent-engine) — renders a
+  `<USER_PROFILE>` for a team member from `public.prism_results` (via `get_latest_prism`, the
+  only reader of Studio-seeded PRISM), grouped by quadrant colour with an explicit
+  `<DOMINANT_QUADRANT>` + colour↔behaviour map. (#837/#839/#841)
+- **Client-side dossier PDF export** (`src/lib/dossierPdf.ts`, jsPDF) — a real downloadable PDF
+  (name / PRISM / goals / gaps / matches / roadmap). (FE #382)
+- **Demo cohort** — 7 members ([user M.T.], [user J.B.], [user G.B.], William Brown, Paula
+  Averico, [user B.B.], [user Li.B.]) seeded with distinct PRISM + member-specific goals on dev +
+  staging-b (data, via the migration-runner). Separate demo identities; no real accounts touched.
+
+### Fixed
+- **Dossier showed the member's UUID, not their name** — `assemble_member_dossier` now resolves
+  the name from `roster_members` / `team_members`. (growth #833)
+- **Meridian briefed the manager, not the member** — the TDS chat grounded in the caller's PRISM.
+  Now injects the member's PRISM in meridian's pre-DAG RAG block (the WS→ws-proxy→REST path that
+  actually runs — the Lambda handler was the wrong file). (#837/#839)
+- **Meridian mislabelled the quadrant** (named a Gold peak "Red") — the member block now names the
+  dominant quadrant by colour explicitly. (#841)
+- **"Share" / "Export PDF" were inert** — Share confirms via a toast; Export downloads a PDF. (FE #382)
+- **"Resume session" ambiguity** — it continues a Summit discovery session (not a CV); relabelled
+  "Continue session" and moved into the Meridian panel header. (FE #382)
+- **Goals were generic** (one template across all members) — re-seeded member-specific, role-aligned goals.
+
+### Changed
+- Documented the required staging-b CDK context in `infrastructure/cdk/STAGING_B_DEPLOY_GUIDE.md` —
+  `-c env=staging-b` alone falls back to the dev VPC; the full network CTX from
+  `staging-b-promote.yml` is required. (#818)
+
+### Notes
+- PRs (all merged to `development`): growth `willb77/inspire-genius#833`, FE
+  `willb77/inspire-genius-frontend#382`, agent-engine `willb77/inspire-genius#837/#839/#841`,
+  docs `#818`.
+- Deployed: growth-service + agent-engine (ECS) + FE on dev AND staging-b. The staging-b
+  agent-engine was rolled by copying the CI-built dev image into staging-b ECR +
+  `force-new-deployment` (image is env-agnostic).
+- Verified live on dev (WebSocket): Meridian cites the member's real scores — *"[user M.T.]'s Gold
+  dominance (Focusing 92, Delivering 88)"*. staging-b live WS is browser-only (magic-auth off).
 
 ---
+
+## [2026-08-07] — PRISM Brain Map: radial "wheel" renderer + docs reference
+
+Productionised the PRISM Brain Map on HomeV2 (frontend PR
+willb77/inspire-genius-frontend#384) and added the reference generator here.
+
+### Added
+- `docs/prism/brain-map/` — parametric PRISM 8-Dimensional "wheel" SVG generator
+  (`prism_radial_map.py`) + rendered sample (`.svg`/`.png`) + README. Four colour
+  quadrants (Gold TL / Green TR / Blue BR / Red BL), eight behaviour spokes, grid
+  rings 35/65/75/100, with Underlying / Adapted / Consistent / Blueprint layers
+  overlaid. Traced from the PRISM 'Professional' report map.
+  - Files: `docs/prism/brain-map/{prism_radial_map.py,prism_radial_map_sample.svg,prism_radial_map_sample.png,README.md}`
+
+### Notes
+- Only the Underlying score set is persisted today (`app.prism_canon.SCORE_TYPE = "Underlying"`),
+  so one polygon renders; Adapted/Consistent overlay automatically once captured
+  (PRISM Service Library API v2.5 §5.10 FetchBasicMap / §5.11 FetchFullMap, or CSV
+  import which already carries all three for BehaviorPreferences).
+- Monorepo PR: willb77/inspire-genius#842.
+
+---
+
+## [2026-08-07] — Live In-Room Scored Candidate Interview — built, live dev, dark staging-b
+
+Evaluator-side counterpart to the scoreless Interview Practice surface: an interviewer
+(manager/practitioner) runs a REAL scored interview of a candidate. Built via the
+8-section build plan (Phases 0–5), by composition over IG Core. PRs: agent-engine
+willb77/inspire-genius#831 + FE willb77/inspire-genius-frontend#381, both merged to
+`development`. **Live on dev (flag on), dark on staging-b (flag off, code shipped).**
+
+### Added
+- **Backend (agent-engine):** `interview_session` + `interview_answer` models + Alembic
+  `028`; deterministic `star_scorer.py` (`score_interview`, mean-of-12 banding, Result-
+  missing cap-at-3, config-driven — **no model in the math path**); `/v1/agents/interview/live/*`
+  routes (session/answer/PATCH-answer/finalize/GET), role-gated + flag-gated
+  (`AGENT_ENGINE_LIVE_INTERVIEW_SCORING`, 404 before auth when off); advisory
+  `suggest_answer_score` (never authoritative — finalize scores the human `final_score`);
+  3 `emit_interview_*` audit events (candidate hash + scores only, never answer text/name).
+  - Files: `services/agent-engine/app/{models/interview.py,scoring/star_scorer.py,routes/interview.py,routes/interview_live_repo.py,llm/interview_suggest.py,events/eventbridge.py,config.py}`, `alembic/versions/028_create_interview_tables.py`
+- **Frontend:** `InterviewLivePage` (manager + practitioner, under the **Tools** menu) forked
+  from the practice page — `ConsentGate` (default no_audio), candidate-identity capture,
+  `AnswerScorePanel` (advisory AI 1–5 + STAR evidence + interviewer-authoritative override),
+  scored findings; `live.service.ts` + `useLiveInterview`; scored export in
+  `interviewExport.ts` (`doc_kind: interview-scorecard`).
+- **Infra:** CDK flag dev-on / staging-b·prod-off (dark-promote until Phase 0 legal gate).
+- **Phase 0 gate drafts:** `docs/plans/live-interview/` (recording-consent, retention/erasure,
+  rubric-for-hiring — all values TUNABLE PENDING SME; block go-live, not build).
+
+### Notes
+- Candidate is NOT a platform user — candidate record + sha256 identity hash; audit by hash.
+- Migration 028 applied manually via migration-runner inline SQL on dev + staging-b (both
+  tables verified). Dev live-verified: `/live/session` unauth → 401. staging-b dark-verified:
+  flag `false` on the `agent-engine` container, `/live/session` → 404.
+- Scoring/verticals math authored per the build plan; bands TUNABLE PENDING SME.
 
 ## [2026-08-06] — Moments-in-history promoted to staging-b, tagged deliberately short
 
@@ -3586,134 +3930,150 @@ flag default compiles to `i===null?!0`; HomeV2 chunk has `whatToday` /
 `homev2-header-actions` and zero hits for `homev2-todays-prep`, `my-journey`,
 `job-fit`, `videosBlurb`; all three new keys served in en/es/ja/tr on both tiers.
 
-## [2026-08-06] — Summit goal discovery grounded in real PRISM; Goals menu restored for the owner
+## [2026-08-06] — CI guard: agent/tool documentation drift now fails the build
 
-Two related pieces of work: the Goals shortcut came back for one account, and the goal-discovery
-flow behind it was found to have never been PRISM-based at all.
+### Added
+- **`scripts/check_agent_doc_drift.py`** — stdlib-only guard that treats the code as the source
+  of truth for the agent roster and the tool registry. Three checks:
+  1. `app/tools/registry.py`'s module docstring count == `len(BUILTIN_TOOLS)`.
+  2. Every `"N specialist agents"` claim in `.claude/rules/agents.md` == the number of specialist
+     agents in code.
+  3. Every specialist's display name actually appears in `agents.md` — a count alone would pass if
+     someone added an agent and bumped the number without adding the roster row.
+- **`agent-doc-drift` job in `.github/workflows/pr-validation.yml`**, wired into the `summary`
+  job's `needs` + aggregation loop so a failure actually blocks the merge. A guard that reports
+  but does not gate is theatre.
 
-### Fixed
-- **Summit goal discovery was not grounded in PRISM in either deployed environment** — despite the
-  module documenting that it was. `_prism_context` read through `retrieve_personal_context`, which
-  returns `""` outright when `deterministic_personalization` is on. That flag is `true` on dev, so
-  every `ask`/`synthesize` call ran with `(none on file)`. On staging-b the flag is `false`, so the
-  same call fell through to the legacy uploader-keyed document search — the 2026-07-12
-  cross-subject contamination vector, capped at 500 tokens of arbitrary chunks, and not a source of
-  structured scores in any case. Neither tier ever saw a dimension score.
-  - Reads now go through the structured profile platform (`load_user_profile_block_for_chat`) — the
-    same path `routes/interview.py` uses: plain SQL over `assessments`/`assessment_scores` plus the
-    user's own doc_kind-tagged résumé and bio, no embeddings, and unaffected by
-    `deterministic_personalization` by design. It also picks up facts, any non-PRISM instrument the
-    user has taken, and the `chat_excluded_frameworks` privacy filter the pgvector path ignored.
-  - The WHY ladder now gets the profile too — its root becomes each goal's motivation.
-  - Note the chat path was never affected: `GoalAgent` extends `BaseAgent`, which injects the real
-    `<USER_PROFILE>`. Only the structured UI calls were blind, because they hit `provider.chat` directly.
-  - Files: `services/agent-engine/app/goals/agent_calls.py`
-- **Synthesis was fabricating PRISM alignment for every goal.** With no profile in the prompt, the
-  model was still asked for a `prism_alignment` — and produced a quadrant, a dimension list and an
-  execution style, invented whole. Goals were shown to users as PRISM-aligned when the alignment was
-  imaginary, which is worse than no alignment: it is wrong in a way the reader cannot check.
-  - New `_sanitise_alignment` drops any behavioural claim the loaded profile does not support: no
-    profile → no alignment and no execution style; unknown dimensions dropped; if none survive the
-    whole alignment goes (a bare quadrant is still an unsupported claim); enum values outside the
-    documented sets dropped rather than passed through.
-  - The synthesis prompt is now conditional — with no profile it explicitly instructs `null` and
-    forbids inferring traits — so the sanitiser is a backstop, not the only defence.
-  - `POST /v1/agents/goals/synthesize` now returns `hasPrism` so the surface can say which case it is in.
-  - Files: `services/agent-engine/app/goals/agent_calls.py`, `services/agent-engine/app/routes/goals.py`
+### Why
+The 2026-08-06 inventory found three drifts that had accumulated silently — the registry docstring
+said "6 MCP tools" against 9 registered, and `agents.md` said "17 specialist agents" against 19,
+with **Summit and Chronicle both** missing from the roster. Every one was a one-line edit somebody
+forgot. Nothing failed, so nothing surfaced them.
+
+The job is deliberately **ungated** — no `if:`, no path filter. It is pure stdlib and runs in ~1s,
+and gating on "did you touch agents/ or tools/" is exactly how the drift got in: the roster rots
+when somebody edits an orchestrator, not only when they edit the doc. Always-run also sidesteps
+the trap already called out in `detect-changes` — a PR that only edits a guard must still exercise
+the guard it ships.
+
+### Fixed — the inventory document was not actually reproducible
+`scripts/build_ig_agent_tool_inventory.py` is a *renderer*: it consumes `--agents` / `--tools`
+JSON. The AST extractor that produced that JSON was never committed, so the changelog claim that
+the document "regenerates in one command" was false — from a clean checkout it could not be
+regenerated at all. The same extraction the guard needs now lives in the committed script, so:
+
+```
+python3 scripts/check_agent_doc_drift.py --emit-agents /tmp/a.json --emit-tools /tmp/t.json
+python3 scripts/build_ig_agent_tool_inventory.py --agents /tmp/a.json --tools /tmp/t.json \
+    --out IG_Agent_and_Tool_Inventory.docx --logo Logo-Dark.png
+```
+Verified the committed extractor reproduces the exact JSON behind the shipped document (22 agent
+classes, 9 built-in tools, 50 pack modules — identical), and the round trip rebuilds the .docx.
 
 ### Changed
-- **PRISM score type pinned to `Underlying`** (the disposition) for goal setting. Dev stores three
-  variants of every `BehaviorPreferences` dimension — Underlying 150 rows, Adapted 124, Consistent
-  124 — and they disagree by design; an unfiltered read mixed all three and took whichever row
-  sorted first. `Underlying` is what `prism_canon.SCORE_TYPE` already declared authoritative.
-  - Legacy `NULL`-typed rows are accepted only when the user has no Underlying rows at all. Adapted
-    is never substituted for a missing Underlying.
-- **`ScoreView` now projects `score_type`** — an optional, additive field. The loader never selected
-  the column, so Underlying and Adapted were indistinguishable to every consumer; anything needing
-  one specific variant had to guess or pretend (see the `score_type` synthesis in
-  `app/tools/direction_setting/alignment.py`, which is candid about doing exactly that). Rows
-  predating the column and instruments without variants load as `None`; existing consumers unaffected.
-  - Files: `services/agent-engine/app/profile/loader.py`
-- **Quadrant mapping pinned to `app/prism_canon.py`.** Every quadrant and dimension fact now comes
-  from the canon module rather than model output. The PRISM brief is rendered deterministically
-  under the licensed-manual grouping (Blue = Supporting + Co-Ordinating, Gold = Finishing +
-  Evaluating), and a goal's quadrant is *derived* from its surviving dimensions rather than accepted
-  from the model — so Summit cannot reintroduce the rotation that made Supporting/Co-Ordinating
-  render as the wrong colour in three other places. Output runs through `normalise_colour_names`:
-  PRISM has four colours and Orange is not one of them.
-- **Goals restored to the My Workspace menu for the platform owner only** (`[email redacted]`).
-  #365 had greyed Analytics, Goals and Job Fit together. Every other user's menu is byte-identical
-  to 2026-08-04 — same position, same greying, same "Temporarily unavailable" tooltip.
-  - `getUserNavItems` takes the viewer's *email* rather than a pre-computed `isOwner` flag, so the
-    owner rule lives in one place (`isPlatformOwner`, already used for the Dev Traffic Report gate)
-    and no chrome can apply it differently. Omitting it is fail-closed. All three chromes pass it:
-    `UserLayout`, `SuperAdminLayout`, `useVerticalPageSections`.
-  - Deliberately NOT added to `OWNER_ONLY_NAV_ROUTES` — that set *removes* routes for non-owners,
-    and Goals was already a visible greyed row for everyone; removing it would change what other
-    users see. Goals also keeps its position rather than being promoted, so the gate cannot reshuffle
-    anyone's menu.
-  - This is a shortcut gate, not an access gate: the route was never removed, and Goals stayed
-    reachable for all users via the Direction Setting sub-nav and JourneyPage stage 5.
-  - Files: `src/constants/navigation.ts`, `src/layouts/UserLayout.tsx`,
-    `src/layouts/SuperAdminLayout.tsx`, `src/hooks/nav/useVerticalPageSections.ts`
+- **`.claude/rules/agents.md`** — note under the roster stating the counts are CI-enforced and
+  what to run locally. Phrased to avoid introducing a new `"N specialist agents"` claim the guard
+  would then have to police.
 
 ### Verification
-- Backend: 37 tests in the goals suites (24 new in `test_goals_prism_grounding.py`). Full
-  agent-engine suite **4535 passed vs 4511 on the base commit**, with a **byte-identical set of 174
-  pre-existing failures** (`test_websocket`, `test_ws_handler`, `test_history_token_budget`) —
-  verified by diffing failure lists with the change stashed. No regressions. Those 174 are
-  pre-existing on `development` and were left alone.
-- Frontend: 135 tests green across `constants` / `components/layout` / `layouts` / `hooks/nav`;
-  `npm run build` clean; eslint clean on all changed files. The pre-existing greyed-Goals assertions
-  pass **unchanged** — they use the no-email (non-owner) path, which is the evidence that nobody
-  else's menu moved.
-- PRs: frontend #374 (`3e429aa4`), backend #819 (`d19cdacc`), both merged to `development`.
+- Passes on `development` (19 specialists, 9 built-in tools).
+- **Five negative tests, each confirmed to fail the guard:** stale docstring count; a 10th tool
+  added without bumping the docstring; a new agent with `agents.md` untouched; the subtle case
+  where the count is bumped but the roster row is still missing; and — the real regression proof —
+  running the guard against `development` as it stood *before* the fix (`751891a9`), where it
+  correctly reports all three historical drifts including both missing agents.
+- Workflow YAML parsed and asserted: job present, ungated, in `summary.needs`, in the env block,
+  and in the aggregation loop. A typo in any of those would make a failing guard silently pass.
+- Observed drift in the wild: three functions (`behaviour_scores`, `extract_evidence`,
+  `prism_dimension_detail`) landed in `lumen/self_portrait.py` between the document being
+  generated and this entry — one day.
 
-## [2026-08-06] — User Management fixes: PRISM CSV mirror (abbreviated dims) + invitation Accepted on magic-link
+## [2026-08-06] — PRISM Brain Mapping: live production credentials + API-surface doc
 
-Backend PRs #823 (User Management fixes) + #822 (PRISM poller EntityType). Deployed
-dev + staging-b. **Note:** deployed MANUALLY (local Docker → ECR + ECS force-roll for
-agent-engine; Docker-bundled Lambda zip → `aws lambda update-function-code` for
-auth-service) because a GitHub Actions **runner outage** stalled all CI/CD that day;
-PRs merged with `--admin` after the code checks (agent-engine/auth tests, Gitleaks,
-Bandit) passed and only the runner "Set up job" infra checks were red.
+Ops go-live (no code/CDK deploy — Secrets Manager rotation + ECS reload) plus a doc generator.
 
-### Fixed
-- **Admin PRISM-score CSV upload didn't light the HomeV2 PRISM indicator.**
-  `POST /v1/profile/admin/assessments/import-csv` wrote the `assessments` row but the
-  `prism_results` mirror **silently skipped**, so the scores were invisible to every
-  runtime reader (chat / dashboard / RAG / the `latest-prism` indicator fallback).
-  Root cause: the uploaded CSV labelled the 8 behaviours with **abbreviations**
-  (`Co/Del/Eval/Fin/Foc/Init/Inn/Sup`) but `prism_canon.derive_colours` only knew the
-  full names → returned `None` → `project_assessment_to_prism_results` wrote nothing
-  (`prism_results.projection_skipped`). Confirmed on Derwood Spencer's live staging-b
-  row (assessment present, `prism_results=0`, dims stored as `Inn/Init/…`). Fix:
-  `derive_colours` normalises dimension labels (full / abbreviated / hyphenated) before
-  deriving the 4 colours — one central fix covering the CSV-import and poll-ingest
-  paths. Derwood's `prism_results` backfilled (colours gold 79 / green 57.5 / blue 93.5
-  / orange 33, correct).
-  - Files: `services/agent-engine/app/prism_canon.py` (+ `test_prism_canon.py`)
-- **Invitation column stuck on "Sent" after a magic-link login.** The demo/magic-link
-  invite creates the user `is_active=true` (Status=Active works) + a `user_invitations`
-  row `status=PENDING`, but `verify_magic_link` never marked it accepted — only the
-  token-based accept endpoint did, which a magic-link user never hits. Fix:
-  `verify_magic_link` flips the user's PENDING invitation → `ACCEPTED` on a successful
-  sign-in (best-effort, idempotent, never blocks login) → User Management shows
-  **Accepted**.
-  - Files: `services/auth-service/app/routes/magic_link.py` (+ `test_magic_link.py`)
-- **`FetchCandidateHistory` crashed on the live PRISM v2.5 response (PR #822).** PRISM
-  returns `EntityType` as a questionnaire-name string (not the `int` the model expected)
-  and the completion time as `DateCompleted` (not `CompletedDate`), so `model_validate`
-  raised and the poller never detected completion. `HistoryEntry.entity_type` → `str`
-  (coerced), `completed_date` accepts either alias, and the poller matches string types
-  by numeric/name alias with a single-completed fallback. Verified live: history now
-  parses (`entity_type='Professional Questionnaire'`, `is_completed=True`).
-  - Files: `services/agent-engine/app/prism/client.py`, `.../poller.py`
+### Changed
+- **PRISM integration switched to the LIVE PRISM site on dev + staging-b.** Rotated the
+  ops-managed `inspires-genius-{dev,staging-b}/prism-api/credentials` Secrets Manager entry to the
+  live `siteId` / `clientId` / `reference` (values held only in Secrets Manager, not in git), and
+  repointed `baseUrlDev` from `staging.prismbrainmapping.com` → `api.prismbrainmapping.com` (IG has
+  no prod env, so the non-prod envs must target live PRISM directly). Forced an agent-engine ECS
+  redeploy on both envs to drop the per-process `PrismClient` singleton and reload the secret. No
+  git/CDK change — the secret is ops-managed via `put-secret-value` by design.
+  - Verified in the running ECS tasks (both envs): `base_url=https://api.prismbrainmapping.com/...`
+    with the live `siteId`/`clientId`/`reference` resolving.
 
-Both User-Management fixes are backend-only (the FE already renders
-`invitation_status='accepted'` and the PRISM indicator reads `latest-prism`).
+### Added
+- **`scripts/build_prism_api_surface.py`** — generates `PRISM_API_Surface.docx`: the six PRISM
+  operations (capability layer), the authenticated HTTP endpoints (request / existing-customer /
+  poll+ingest / retrieve / audit CRUD), the data retrieved (`prism_results` colours, `assessments`,
+  PDF+CSV), the end-to-end lifecycle, live status & caveats, and config. Extracted from
+  `services/agent-engine/app/prism/*` + `routes/prism*.py`; brand palette + `Logo-Dark.png` cover.
 
----
+### Notes (PRISM-side, not code)
+- **Live credentials are valid** — a read-only `FetchCandidateHistory` smoke test authorised
+  ("Details found").
+- **`CheckEntityExists` is NOT entitled on the live site** ("Your site is not authorised to use
+  this service method") — a PRISM-side, method-level gap; only affects the optional
+  `/v1/prism/check-customer` flow, which degrades gracefully to `exists=false`. Fix: ask PRISM
+  Support to enable the method for site `InspiresGenius`.
+- **`CreateCandidate` was not smoke-tested on live** — it creates a real candidate + consumes a
+  credit; deferred pending explicit go-ahead.
+
+## [2026-08-06] — Agent & Tool Inventory document (generated from source)
+
+### Added
+- **`scripts/build_ig_agent_tool_inventory.py`** — generates `IG_Agent_and_Tool_Inventory.docx`:
+  the full agent roster (Agent / Class / Domain / Access / Role), the built-in MCP tool registry,
+  the vertical tool packs, a per-module/per-function appendix, and a documentation-drift section.
+  Landscape Letter, brand palette, `Logo-Dark.png` on the cover.
+- Every row is **extracted programmatically from `services/agent-engine/app/`**, not transcribed
+  from `.claude/rules/agents.md`. Agents are parsed from each class's constructor plus its
+  module-level `_ALLOWED_ROLES` gate; tools from the declarative `BUILTIN_TOOLS` registry and the
+  public callables of each pack. Shared plumbing under `app/tools/_shared/` is excluded — it is not
+  agent-callable.
+
+### Findings — documentation drift (recorded in the document, NOT yet fixed at source)
+- **`.claude/rules/agents.md` says 18 specialist agents; the code has 19.** `ChronicleAgent`
+  (Chronicle, coaching) is wired into the Coaching orchestrator but missing from the rules roster.
+- The rules roster also has **no entry for `AnalyzerAgent`** (`app/agents/explainability/`).
+- **`app/tools/registry.py` docstring says "all 6 MCP tools"; `BUILTIN_TOOLS` registers 9** —
+  `document_generator`, `interview_bank` and `practice_questions` were added later.
+- **Only 5 of 19 agents enforce a role gate in code** (`_ALLOWED_ROLES` on Maven, Ascend, Sentinel,
+  Anchor, Nexus). The other 14 have no in-agent gate; access is governed upstream by which surface
+  is exposed to which role. The document states this explicitly so "All roles" is not misread as
+  "deliberately public".
+- **Three of the five tool packs are not agent-callable.** `honor/`, `lumen/` and
+  `direction_setting/` are reached through REST routes; only `grant/` (Grant) and `docgen/`
+  (Meridian) are invoked by an agent. The Agent/s column reports this rather than inventing owners.
+
+### Fixed at source (same day, follow-up)
+- **`.claude/rules/agents.md`** — Coaching Domain was "(5 agents)"; it was missing **two**, not one:
+  **Summit (`GoalAgent`)** as well as **Chronicle (`ChronicleAgent`)**. Both are `BaseAgent`
+  subclasses wired into the Coaching orchestrator. Now "(7 agents)"; the orchestrator table had the
+  same gap and was corrected too. Specialist count **17 → 19** in both places.
+  (The original drift note said the file claimed 18 — it claimed 17.)
+- **`AnalyzerAgent` documented as deliberately NON-roster**, not added to a domain table. Its source
+  says it sits outside `app/agents/{coaching,business,system,career}` *specifically so Meridian's
+  intent classifier never routes to it*, and it is intentionally not a `BaseAgent` subclass — so
+  "missing from the roster" was the wrong diagnosis.
+- **Access column note added.** Only **5 of 19** agents enforce their documented access in code via
+  `_ALLOWED_ROLES` (Maven, Ascend, Sentinel, Anchor, Nexus); the other 14 have no in-agent gate.
+- **`app/tools/registry.py`** docstring "all 6 MCP tools" → **9**, with a reminder to update it when
+  `BUILTIN_TOOLS` gains an entry. Docstring only, no runtime change; `py_compile` clean.
+
+### Open — flagged, deliberately NOT auto-fixed
+- ⚠️ **James (`AdminAgent`) is documented "admin+" but enforces nothing in code.** Either the gate is
+  missing or the label is wrong. That is a product decision, not a documentation edit, so it is
+  marked unresolved in the rules file rather than normalised in either direction.
+
+### Verification
+- Render-verified: `.docx` → PDF → PNG, pages inspected (16 pages, landscape Letter). Agent table,
+  built-in tool table, pack table and drift table all confirmed to lay out correctly.
+- Counts: 19 specialists · 3 non-specialist components (Meridian, DynamicAgent, AnalyzerAgent) ·
+  4 orchestrators · 9 built-in tools · 5 packs / 50 modules / 219 public functions.
+- The `.docx` is **gitignored** (`.gitignore:61 *.docx`) so only the generator is committed; the
+  document regenerates in one command.
 
 ## [2026-08-06] — Lumen Self-Portrait: the whole PRISM read, and a résumé that actually counts
 
@@ -3844,150 +4204,134 @@ promote window.
   (`test_websocket.py`, `test_ws_handler.py`). Net **+45 passing, zero new failures**
 - Frontend **4415 passed, 551 suites, 0 failures**; `npm run build` clean; ESLint
   clean on every changed file
-## [2026-08-06] — Agent & Tool Inventory document (generated from source)
+## [2026-08-06] — User Management fixes: PRISM CSV mirror (abbreviated dims) + invitation Accepted on magic-link
 
-### Added
-- **`scripts/build_ig_agent_tool_inventory.py`** — generates `IG_Agent_and_Tool_Inventory.docx`:
-  the full agent roster (Agent / Class / Domain / Access / Role), the built-in MCP tool registry,
-  the vertical tool packs, a per-module/per-function appendix, and a documentation-drift section.
-  Landscape Letter, brand palette, `Logo-Dark.png` on the cover.
-- Every row is **extracted programmatically from `services/agent-engine/app/`**, not transcribed
-  from `.claude/rules/agents.md`. Agents are parsed from each class's constructor plus its
-  module-level `_ALLOWED_ROLES` gate; tools from the declarative `BUILTIN_TOOLS` registry and the
-  public callables of each pack. Shared plumbing under `app/tools/_shared/` is excluded — it is not
-  agent-callable.
+Backend PRs #823 (User Management fixes) + #822 (PRISM poller EntityType). Deployed
+dev + staging-b. **Note:** deployed MANUALLY (local Docker → ECR + ECS force-roll for
+agent-engine; Docker-bundled Lambda zip → `aws lambda update-function-code` for
+auth-service) because a GitHub Actions **runner outage** stalled all CI/CD that day;
+PRs merged with `--admin` after the code checks (agent-engine/auth tests, Gitleaks,
+Bandit) passed and only the runner "Set up job" infra checks were red.
 
-### Findings — documentation drift (recorded in the document, NOT yet fixed at source)
-- **`.claude/rules/agents.md` says 18 specialist agents; the code has 19.** `ChronicleAgent`
-  (Chronicle, coaching) is wired into the Coaching orchestrator but missing from the rules roster.
-- The rules roster also has **no entry for `AnalyzerAgent`** (`app/agents/explainability/`).
-- **`app/tools/registry.py` docstring says "all 6 MCP tools"; `BUILTIN_TOOLS` registers 9** —
-  `document_generator`, `interview_bank` and `practice_questions` were added later.
-- **Only 5 of 19 agents enforce a role gate in code** (`_ALLOWED_ROLES` on Maven, Ascend, Sentinel,
-  Anchor, Nexus). The other 14 have no in-agent gate; access is governed upstream by which surface
-  is exposed to which role. The document states this explicitly so "All roles" is not misread as
-  "deliberately public".
-- **Three of the five tool packs are not agent-callable.** `honor/`, `lumen/` and
-  `direction_setting/` are reached through REST routes; only `grant/` (Grant) and `docgen/`
-  (Meridian) are invoked by an agent. The Agent/s column reports this rather than inventing owners.
+### Fixed
+- **Admin PRISM-score CSV upload didn't light the HomeV2 PRISM indicator.**
+  `POST /v1/profile/admin/assessments/import-csv` wrote the `assessments` row but the
+  `prism_results` mirror **silently skipped**, so the scores were invisible to every
+  runtime reader (chat / dashboard / RAG / the `latest-prism` indicator fallback).
+  Root cause: the uploaded CSV labelled the 8 behaviours with **abbreviations**
+  (`Co/Del/Eval/Fin/Foc/Init/Inn/Sup`) but `prism_canon.derive_colours` only knew the
+  full names → returned `None` → `project_assessment_to_prism_results` wrote nothing
+  (`prism_results.projection_skipped`). Confirmed on Derwood Spencer's live staging-b
+  row (assessment present, `prism_results=0`, dims stored as `Inn/Init/…`). Fix:
+  `derive_colours` normalises dimension labels (full / abbreviated / hyphenated) before
+  deriving the 4 colours — one central fix covering the CSV-import and poll-ingest
+  paths. Derwood's `prism_results` backfilled (colours gold 79 / green 57.5 / blue 93.5
+  / orange 33, correct).
+  - Files: `services/agent-engine/app/prism_canon.py` (+ `test_prism_canon.py`)
+- **Invitation column stuck on "Sent" after a magic-link login.** The demo/magic-link
+  invite creates the user `is_active=true` (Status=Active works) + a `user_invitations`
+  row `status=PENDING`, but `verify_magic_link` never marked it accepted — only the
+  token-based accept endpoint did, which a magic-link user never hits. Fix:
+  `verify_magic_link` flips the user's PENDING invitation → `ACCEPTED` on a successful
+  sign-in (best-effort, idempotent, never blocks login) → User Management shows
+  **Accepted**.
+  - Files: `services/auth-service/app/routes/magic_link.py` (+ `test_magic_link.py`)
+- **`FetchCandidateHistory` crashed on the live PRISM v2.5 response (PR #822).** PRISM
+  returns `EntityType` as a questionnaire-name string (not the `int` the model expected)
+  and the completion time as `DateCompleted` (not `CompletedDate`), so `model_validate`
+  raised and the poller never detected completion. `HistoryEntry.entity_type` → `str`
+  (coerced), `completed_date` accepts either alias, and the poller matches string types
+  by numeric/name alias with a single-completed fallback. Verified live: history now
+  parses (`entity_type='Professional Questionnaire'`, `is_completed=True`).
+  - Files: `services/agent-engine/app/prism/client.py`, `.../poller.py`
 
-### Fixed at source (same day, follow-up)
-- **`.claude/rules/agents.md`** — Coaching Domain was "(5 agents)"; it was missing **two**, not one:
-  **Summit (`GoalAgent`)** as well as **Chronicle (`ChronicleAgent`)**. Both are `BaseAgent`
-  subclasses wired into the Coaching orchestrator. Now "(7 agents)"; the orchestrator table had the
-  same gap and was corrected too. Specialist count **17 → 19** in both places.
-  (The original drift note said the file claimed 18 — it claimed 17.)
-- **`AnalyzerAgent` documented as deliberately NON-roster**, not added to a domain table. Its source
-  says it sits outside `app/agents/{coaching,business,system,career}` *specifically so Meridian's
-  intent classifier never routes to it*, and it is intentionally not a `BaseAgent` subclass — so
-  "missing from the roster" was the wrong diagnosis.
-- **Access column note added.** Only **5 of 19** agents enforce their documented access in code via
-  `_ALLOWED_ROLES` (Maven, Ascend, Sentinel, Anchor, Nexus); the other 14 have no in-agent gate.
-- **`app/tools/registry.py`** docstring "all 6 MCP tools" → **9**, with a reminder to update it when
-  `BUILTIN_TOOLS` gains an entry. Docstring only, no runtime change; `py_compile` clean.
+Both User-Management fixes are backend-only (the FE already renders
+`invitation_status='accepted'` and the PRISM indicator reads `latest-prism`).
 
-### Open — flagged, deliberately NOT auto-fixed
-- ⚠️ **James (`AdminAgent`) is documented "admin+" but enforces nothing in code.** Either the gate is
-  missing or the label is wrong. That is a product decision, not a documentation edit, so it is
-  marked unresolved in the rules file rather than normalised in either direction.
+---
 
-### Verification
-- Render-verified: `.docx` → PDF → PNG, pages inspected (16 pages, landscape Letter). Agent table,
-  built-in tool table, pack table and drift table all confirmed to lay out correctly.
-- Counts: 19 specialists · 3 non-specialist components (Meridian, DynamicAgent, AnalyzerAgent) ·
-  4 orchestrators · 9 built-in tools · 5 packs / 50 modules / 219 public functions.
-- The `.docx` is **gitignored** (`.gitignore:61 *.docx`) so only the generator is committed; the
-  document regenerates in one command.
+## [2026-08-06] — Summit goal discovery grounded in real PRISM; Goals menu restored for the owner
 
-## [2026-08-06] — PRISM Brain Mapping: live production credentials + API-surface doc
+Two related pieces of work: the Goals shortcut came back for one account, and the goal-discovery
+flow behind it was found to have never been PRISM-based at all.
 
-Ops go-live (no code/CDK deploy — Secrets Manager rotation + ECS reload) plus a doc generator.
-
-### Changed
-- **PRISM integration switched to the LIVE PRISM site on dev + staging-b.** Rotated the
-  ops-managed `inspires-genius-{dev,staging-b}/prism-api/credentials` Secrets Manager entry to the
-  live `siteId` / `clientId` / `reference` (values held only in Secrets Manager, not in git), and
-  repointed `baseUrlDev` from `staging.prismbrainmapping.com` → `api.prismbrainmapping.com` (IG has
-  no prod env, so the non-prod envs must target live PRISM directly). Forced an agent-engine ECS
-  redeploy on both envs to drop the per-process `PrismClient` singleton and reload the secret. No
-  git/CDK change — the secret is ops-managed via `put-secret-value` by design.
-  - Verified in the running ECS tasks (both envs): `base_url=https://api.prismbrainmapping.com/...`
-    with the live `siteId`/`clientId`/`reference` resolving.
-
-### Added
-- **`scripts/build_prism_api_surface.py`** — generates `PRISM_API_Surface.docx`: the six PRISM
-  operations (capability layer), the authenticated HTTP endpoints (request / existing-customer /
-  poll+ingest / retrieve / audit CRUD), the data retrieved (`prism_results` colours, `assessments`,
-  PDF+CSV), the end-to-end lifecycle, live status & caveats, and config. Extracted from
-  `services/agent-engine/app/prism/*` + `routes/prism*.py`; brand palette + `Logo-Dark.png` cover.
-
-### Notes (PRISM-side, not code)
-- **Live credentials are valid** — a read-only `FetchCandidateHistory` smoke test authorised
-  ("Details found").
-- **`CheckEntityExists` is NOT entitled on the live site** ("Your site is not authorised to use
-  this service method") — a PRISM-side, method-level gap; only affects the optional
-  `/v1/prism/check-customer` flow, which degrades gracefully to `exists=false`. Fix: ask PRISM
-  Support to enable the method for site `InspiresGenius`.
-- **`CreateCandidate` was not smoke-tested on live** — it creates a real candidate + consumes a
-  credit; deferred pending explicit go-ahead.
-
-## [2026-08-06] — CI guard: agent/tool documentation drift now fails the build
-
-### Added
-- **`scripts/check_agent_doc_drift.py`** — stdlib-only guard that treats the code as the source
-  of truth for the agent roster and the tool registry. Three checks:
-  1. `app/tools/registry.py`'s module docstring count == `len(BUILTIN_TOOLS)`.
-  2. Every `"N specialist agents"` claim in `.claude/rules/agents.md` == the number of specialist
-     agents in code.
-  3. Every specialist's display name actually appears in `agents.md` — a count alone would pass if
-     someone added an agent and bumped the number without adding the roster row.
-- **`agent-doc-drift` job in `.github/workflows/pr-validation.yml`**, wired into the `summary`
-  job's `needs` + aggregation loop so a failure actually blocks the merge. A guard that reports
-  but does not gate is theatre.
-
-### Why
-The 2026-08-06 inventory found three drifts that had accumulated silently — the registry docstring
-said "6 MCP tools" against 9 registered, and `agents.md` said "17 specialist agents" against 19,
-with **Summit and Chronicle both** missing from the roster. Every one was a one-line edit somebody
-forgot. Nothing failed, so nothing surfaced them.
-
-The job is deliberately **ungated** — no `if:`, no path filter. It is pure stdlib and runs in ~1s,
-and gating on "did you touch agents/ or tools/" is exactly how the drift got in: the roster rots
-when somebody edits an orchestrator, not only when they edit the doc. Always-run also sidesteps
-the trap already called out in `detect-changes` — a PR that only edits a guard must still exercise
-the guard it ships.
-
-### Fixed — the inventory document was not actually reproducible
-`scripts/build_ig_agent_tool_inventory.py` is a *renderer*: it consumes `--agents` / `--tools`
-JSON. The AST extractor that produced that JSON was never committed, so the changelog claim that
-the document "regenerates in one command" was false — from a clean checkout it could not be
-regenerated at all. The same extraction the guard needs now lives in the committed script, so:
-
-```
-python3 scripts/check_agent_doc_drift.py --emit-agents /tmp/a.json --emit-tools /tmp/t.json
-python3 scripts/build_ig_agent_tool_inventory.py --agents /tmp/a.json --tools /tmp/t.json \
-    --out IG_Agent_and_Tool_Inventory.docx --logo Logo-Dark.png
-```
-Verified the committed extractor reproduces the exact JSON behind the shipped document (22 agent
-classes, 9 built-in tools, 50 pack modules — identical), and the round trip rebuilds the .docx.
+### Fixed
+- **Summit goal discovery was not grounded in PRISM in either deployed environment** — despite the
+  module documenting that it was. `_prism_context` read through `retrieve_personal_context`, which
+  returns `""` outright when `deterministic_personalization` is on. That flag is `true` on dev, so
+  every `ask`/`synthesize` call ran with `(none on file)`. On staging-b the flag is `false`, so the
+  same call fell through to the legacy uploader-keyed document search — the 2026-07-12
+  cross-subject contamination vector, capped at 500 tokens of arbitrary chunks, and not a source of
+  structured scores in any case. Neither tier ever saw a dimension score.
+  - Reads now go through the structured profile platform (`load_user_profile_block_for_chat`) — the
+    same path `routes/interview.py` uses: plain SQL over `assessments`/`assessment_scores` plus the
+    user's own doc_kind-tagged résumé and bio, no embeddings, and unaffected by
+    `deterministic_personalization` by design. It also picks up facts, any non-PRISM instrument the
+    user has taken, and the `chat_excluded_frameworks` privacy filter the pgvector path ignored.
+  - The WHY ladder now gets the profile too — its root becomes each goal's motivation.
+  - Note the chat path was never affected: `GoalAgent` extends `BaseAgent`, which injects the real
+    `<USER_PROFILE>`. Only the structured UI calls were blind, because they hit `provider.chat` directly.
+  - Files: `services/agent-engine/app/goals/agent_calls.py`
+- **Synthesis was fabricating PRISM alignment for every goal.** With no profile in the prompt, the
+  model was still asked for a `prism_alignment` — and produced a quadrant, a dimension list and an
+  execution style, invented whole. Goals were shown to users as PRISM-aligned when the alignment was
+  imaginary, which is worse than no alignment: it is wrong in a way the reader cannot check.
+  - New `_sanitise_alignment` drops any behavioural claim the loaded profile does not support: no
+    profile → no alignment and no execution style; unknown dimensions dropped; if none survive the
+    whole alignment goes (a bare quadrant is still an unsupported claim); enum values outside the
+    documented sets dropped rather than passed through.
+  - The synthesis prompt is now conditional — with no profile it explicitly instructs `null` and
+    forbids inferring traits — so the sanitiser is a backstop, not the only defence.
+  - `POST /v1/agents/goals/synthesize` now returns `hasPrism` so the surface can say which case it is in.
+  - Files: `services/agent-engine/app/goals/agent_calls.py`, `services/agent-engine/app/routes/goals.py`
 
 ### Changed
-- **`.claude/rules/agents.md`** — note under the roster stating the counts are CI-enforced and
-  what to run locally. Phrased to avoid introducing a new `"N specialist agents"` claim the guard
-  would then have to police.
+- **PRISM score type pinned to `Underlying`** (the disposition) for goal setting. Dev stores three
+  variants of every `BehaviorPreferences` dimension — Underlying 150 rows, Adapted 124, Consistent
+  124 — and they disagree by design; an unfiltered read mixed all three and took whichever row
+  sorted first. `Underlying` is what `prism_canon.SCORE_TYPE` already declared authoritative.
+  - Legacy `NULL`-typed rows are accepted only when the user has no Underlying rows at all. Adapted
+    is never substituted for a missing Underlying.
+- **`ScoreView` now projects `score_type`** — an optional, additive field. The loader never selected
+  the column, so Underlying and Adapted were indistinguishable to every consumer; anything needing
+  one specific variant had to guess or pretend (see the `score_type` synthesis in
+  `app/tools/direction_setting/alignment.py`, which is candid about doing exactly that). Rows
+  predating the column and instruments without variants load as `None`; existing consumers unaffected.
+  - Files: `services/agent-engine/app/profile/loader.py`
+- **Quadrant mapping pinned to `app/prism_canon.py`.** Every quadrant and dimension fact now comes
+  from the canon module rather than model output. The PRISM brief is rendered deterministically
+  under the licensed-manual grouping (Blue = Supporting + Co-Ordinating, Gold = Finishing +
+  Evaluating), and a goal's quadrant is *derived* from its surviving dimensions rather than accepted
+  from the model — so Summit cannot reintroduce the rotation that made Supporting/Co-Ordinating
+  render as the wrong colour in three other places. Output runs through `normalise_colour_names`:
+  PRISM has four colours and Orange is not one of them.
+- **Goals restored to the My Workspace menu for the platform owner only** (`[email redacted]`).
+  #365 had greyed Analytics, Goals and Job Fit together. Every other user's menu is byte-identical
+  to 2026-08-04 — same position, same greying, same "Temporarily unavailable" tooltip.
+  - `getUserNavItems` takes the viewer's *email* rather than a pre-computed `isOwner` flag, so the
+    owner rule lives in one place (`isPlatformOwner`, already used for the Dev Traffic Report gate)
+    and no chrome can apply it differently. Omitting it is fail-closed. All three chromes pass it:
+    `UserLayout`, `SuperAdminLayout`, `useVerticalPageSections`.
+  - Deliberately NOT added to `OWNER_ONLY_NAV_ROUTES` — that set *removes* routes for non-owners,
+    and Goals was already a visible greyed row for everyone; removing it would change what other
+    users see. Goals also keeps its position rather than being promoted, so the gate cannot reshuffle
+    anyone's menu.
+  - This is a shortcut gate, not an access gate: the route was never removed, and Goals stayed
+    reachable for all users via the Direction Setting sub-nav and JourneyPage stage 5.
+  - Files: `src/constants/navigation.ts`, `src/layouts/UserLayout.tsx`,
+    `src/layouts/SuperAdminLayout.tsx`, `src/hooks/nav/useVerticalPageSections.ts`
 
 ### Verification
-- Passes on `development` (19 specialists, 9 built-in tools).
-- **Five negative tests, each confirmed to fail the guard:** stale docstring count; a 10th tool
-  added without bumping the docstring; a new agent with `agents.md` untouched; the subtle case
-  where the count is bumped but the roster row is still missing; and — the real regression proof —
-  running the guard against `development` as it stood *before* the fix (`751891a9`), where it
-  correctly reports all three historical drifts including both missing agents.
-- Workflow YAML parsed and asserted: job present, ungated, in `summary.needs`, in the env block,
-  and in the aggregation loop. A typo in any of those would make a failing guard silently pass.
-- Observed drift in the wild: three functions (`behaviour_scores`, `extract_evidence`,
-  `prism_dimension_detail`) landed in `lumen/self_portrait.py` between the document being
-  generated and this entry — one day.
+- Backend: 37 tests in the goals suites (24 new in `test_goals_prism_grounding.py`). Full
+  agent-engine suite **4535 passed vs 4511 on the base commit**, with a **byte-identical set of 174
+  pre-existing failures** (`test_websocket`, `test_ws_handler`, `test_history_token_budget`) —
+  verified by diffing failure lists with the change stashed. No regressions. Those 174 are
+  pre-existing on `development` and were left alone.
+- Frontend: 135 tests green across `constants` / `components/layout` / `layouts` / `hooks/nav`;
+  `npm run build` clean; eslint clean on all changed files. The pre-existing greyed-Goals assertions
+  pass **unchanged** — they use the no-email (non-owner) path, which is the evidence that nobody
+  else's menu moved.
+- PRs: frontend #374 (`3e429aa4`), backend #819 (`d19cdacc`), both merged to `development`.
 
 ## [2026-08-05] — ts-jest was failing to emit a test file, blocking deploys
 
@@ -4178,146 +4522,114 @@ assertions failed. Third occurrence across unrelated branches (#365's first run,
 identical command; the file is untouched by any of them. Environmental, but now
 frequent enough to deserve its own fix.
 
-## [2026-08-05] — Magic-link refresh fix PROMOTED to staging-b (verified)
+## [2026-08-05] — HomeV2 recent-topics dropdown, chat deep-link, history delete, collapsed Today's Prep
 
-Promoted the magic-link refresh fix (#810) to **staging-b** via tag
-`release-stable-2026-08-05-magic-refresh` (= `development` HEAD `76b8d137`; carries #810 +
-flag-gated/dev-only #811/#812). Promote green on all jobs incl. the authenticated smoke gate.
-
-Verified on `api-stable.inspiresgenius.com`: auth Lambda `ig-staging-b-auth-service`
-LastModified `2026-08-05T02:08:26Z` (new code live); `POST /v1/refresh-token` route present
-(garbage→400 Cognito path, empty→422); `/v1/agents/health` 200. Magic (HS256) refresh tokens
-now mint a new access token locally instead of `invalid_grant` → the ~30-min forced logout is
-resolved (magic sessions renew for the life of the 30-day refresh token). A residual Cognito-path
-`400 invalid_grant` post-deploy is a genuine expired **Cognito** refresh token — untouched by the
-fix, as intended.
-
-**IAM note (investigated, no change needed):** the auth Lambda role's grant to read the
-magic-auth secret already exists in CDK (#313) and IAM policy simulation confirms
-`secretsmanager:GetSecretValue` is **allowed** for the role. The residual runtime
-"AccessDenied → fall back to SECRET_KEY" is a Secrets-Manager partial-ARN nuance (simulation
-allows it; runtime still falls back) and is **non-blocking** — the fallback works, logins succeed,
-and it is unrelated to the logout. No redundant grant added; flagged for a separate deeper look
-(e.g. fetch the secret by name so IAM authorizes the full ARN).
-
-## [2026-08-05] — SESSION SUMMARY: Bio Capture UI + nav/chat/goals UX + magic-link refresh fix
-
-Index of one session's shipped work (each item has its own detailed entry below). All LIVE on
-**dev AND staging-b**, each verified (routes, ECS/Lambda health, promote smoke gates).
+Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
 
 ### Added
-- **Bio Capture resumable sessions** — `bio_sessions` table (migration 027) + `BioSessionStore` +
-  `GET/POST /v1/agents/bio/{id}/sessions` (+`/{session_id}`); the "save / retrieve / continue"
-  backend behind the reworked `/bio` surface. Mono **#803**, FE **#360**.
-- **Bio Capture interview surface** — thin suggested-next bar + compact 2×3 chapters strip;
-  Chronicle tile becomes an interactive, two-axis-scroll interview (audio on/off, inline results +
-  live "Session insight" rail, End-&-recap, Save + Sessions dropdown). FE **#360**.
-- **Left-nav additions** — "Goals" + "Job Fit" as top-level workspace shortcuts; Bio Capture moved
-  into the "Tools" rollup. FE **#363**.
-- **Meridian Chat resizable Conversation tile** (persisted drag height) + full-width response
-  bubbles with a ~5px buffer (`useResizableHeight`, `responseBubbleFullWidth`). FE **#363**.
-- **Goal-setting progress** — bounded panel height (fixed header, scrolling body), header
-  question-count badge, per-question "Question N" numbers. FE **#363**.
+- **Recent-topics dropdown over a 5-day window** replaces the flat top-3 inline list on the
+  last-visit tile. Entries group under day headers (Today / Yesterday / short date), compared on
+  **calendar day** rather than elapsed hours so 23:50 last night reads as "Yesterday". Rows with an
+  unusable timestamp are dropped rather than silently widening the range; an empty window falls
+  through to the existing "Nothing yet" state.
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `src/pages/user/HomeV2.tsx`
+- **Deep-link into a conversation from HomeV2.** Picking a topic now opens THAT transcript in the
+  Conversation tile. This required a new capability: the chat page had no deep-link entry point,
+  which is why `onResumeConversation` deliberately took no id. The id arrives via navigation state
+  and routes through `handleSelectConversation` — the path that also tears down the socket, resets
+  audio and clears the previous transcript.
+  - Files: `src/pages/user/MeridianChat.tsx`, `src/pages/user/HomeV2.tsx`
+- **Delete conversations from the chat History dropdown.** Two-step (arm, then confirm), never one
+  click: deleting is irreversible and the control sits beside the one that merely opens the
+  conversation. A deleted id is dropped from the review selection, and deleting the ACTIVE
+  conversation notifies the host so the chat starts a fresh one.
+  - Files: `src/components/meridian/HistoryDropdown.tsx`
+
+- **"Chat with Meridian" button** in the behavioral row, to the LEFT of the request button.
+  Reuses `onResumeConversation` with no id — the same callback the topics dropdown uses — so it
+  opens the chat on the user's current conversation rather than deep-linking. Outline rather than
+  filled, so the row keeps a single primary action.
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`
+### Fixed
+- **Auto-created conversation clobbered a deep link.** With no stored conversation the chat page
+  auto-creates one; that network round trip lands AFTER the deep-link effect, replacing the
+  conversation the user asked for with a fresh empty one — and burning a conversation server-side
+  on every deep link. The mount-hydrate effect now stands down when a deep link is present.
+  Verified red without the guard (`Expected "conv-deep", Received "conv-new"`).
+  - Files: `src/pages/user/MeridianChat.tsx`
 
 ### Changed
-- Goal-interview voice: **fixed** the "only the first question is spoken" bug — the speaking-queue
-  effect depended on `useTTS`'s unstable `speak`; now read via ref so every question is voiced
-  unless toggled off. FE **#363**.
-- Removed the on-page "Back to Inspire Genius / or switch to <verticals>" switcher from the
-  Direction-Setting nav; page reflows up. FE **#363**.
+- **"Here's what you worked on last visit." is explicitly left-justified** (`text-left`) rather
+  than relying on the default, so no future wrapper can centre it by inherited alignment.
+- **Today's Prep starts collapsed on HomeV2** and is deliberately UNMOUNTED rather than hidden with
+  CSS, so `Moments`' data fetching no longer runs on every Home load for a surface most visits
+  never open. A button click mounts it.
+  - Files: `src/pages/user/HomeV2.tsx`
 
-### Fixed
-- **~30-min forced logout on staging-b** (root-caused from live logs): magic-link (HS256) sessions
-  couldn't refresh because `/v1/refresh-token` was Cognito-only (HS256 → `invalid_grant` →
-  frontend logout). Now mints a new HS256 access token locally for magic refresh tokens; Cognito
-  path unchanged. Mono **#810**, promoted `release-stable-2026-08-05-magic-refresh`.
+- **Renamed two buttons:** "Request PRISM Inventory" → **"Request PRISM Survey"**, and
+  "View Inventory PDF" → **"View PRISM Report"**. Applied to the component defaultValues,
+  `public/locales/en/dashboard.json`, and the four comments elsewhere that name these buttons.
+  **The i18n KEYS are deliberately unchanged** (`requestPrismInventory`, `viewInventoryPdf`):
+  renaming them would drop all 20 non-English locales to the English fallback. Those locales keep
+  rendering, but now say "Inventory" in their own language where English says "Survey" —
+  **outstanding translation debt, not fixed here.**
+  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `public/locales/en/dashboard.json`,
+    `src/components/v2/AccentButton.tsx`, `src/hooks/documents/useProfileMaterial.ts`,
+    `src/pages/user/HomeV2.tsx`, `src/services/documents/prismReport.service.ts`
+### Verification
+- `npm run build` (tsc + vite) clean; **550 suites / 4388 tests passing**; ESLint clean on every
+  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
+- New coverage: 5-day boundary in and out, day grouping, unusable timestamps, deep-link precedence
+  over both the stored and the auto-created conversation, the delete two-step (arm / confirm /
+  cancel / active-deleted / selection cleanup), and Today's Prep mount behaviour.
+- `HistoryDropdown`'s test harness gained a `QueryClientProvider` now that the component runs a
+  real mutation; only the network call underneath is stubbed, so cache invalidation stays covered.
+- PR: frontend #373.
+
+## [2026-08-05] — Meridian Chat: one header row, Starter Questions, composer below the transcript
+
+Four changes to the Chat with Meridian page (V2 surface only; the classic layout is untouched).
+
+### Added
+- **Starter Questions dropdown in the Meridian chat header** — the same persona-grouped library
+  HomeV2 shows on its "Chat with Meridian" tile, now available inside the conversation, after
+  Moments. Selecting a question injects AND submits it in one step. On HomeV2 a starter question
+  is how you *open* a chat, so the prompts were gone exactly when a stuck mid-conversation user
+  needs them.
+  - Files: `src/components/meridian/StarterQuestionsDropdown.tsx`,
+    `src/components/meridian/__tests__/StarterQuestionsDropdown.test.tsx`
+- **Expandable prompt box** — a drag strip sets a persisted composer height (double-click resets
+  to auto-grow), reusing `useResizableHeight`: the same hook and interaction as the Conversation
+  card above it. Auto-grow stands down while a manual height is set so the two do not fight over
+  the same style property.
+  - Files: `src/components/user/chat/ChatWindowInputBar.tsx`
+
+### Changed
+- **Header reduced to a single row.** Moments promoted to row 1 after History, keeping its
+  entitlement gate (visible-but-locked when Lumen is not entitled — sight vs. use).
+- **Compose Prompt card moved below the Conversation card** and slimmed: tighter padding, section
+  label inline with the status banner, `shrink-0` so it holds its height as the transcript grows.
+  Reads like every other chat surface — transcript on top, the box you type in at the bottom edge.
+  - Files: `src/components/user/chat/ChatWindow.tsx`
+- **`onSendText` lifted verbatim out of the ChatWindow JSX into `handleSendText`** so the dropdown
+  dispatches through the same async-jobs path as the composer — one dispatch implementation, so
+  the two entry points cannot drift. Kept a plain function, not `useCallback`: the inline arrow it
+  replaced was re-created every render, so identity semantics are unchanged and no dependency
+  array can go stale.
+  - Files: `src/pages/user/MeridianChat.tsx`
 
 ### Removed
-- Dead `NarrativeViewer` (superseded by the chapters strip + in-tile insight/recap). FE **#360**.
+- **Four header links** — Projects (last tile of an already-removed rail), My Self-Portrait,
+  Coaching and Job Fit. The latter three are destinations already reachable from the sidebar, so a
+  permanent row of chrome was duplicating navigation. The second row is now empty and gone.
 
-_IG_project_log.html is left to its auto-logging hook; the `inspire-genius-frontend/` change_log +
-HTML copies live in the separate PUBLIC FE repo and are NOT blind-synced from here (the root copy is
-a superset — blind `cp` would drop entries; prepend-only per standing rule)._
-
-## [2026-08-05] — Interview Coach: one-time PRISM + ambient-résumé personalization (LIVE dev + staging-b)
-
-The candidate Interview Coach can now ground STAR feedback in the user's OWN profile — their
-PRISM summary + an ambient résumé excerpt — with **no per-turn retrieval cost**. Fetched ONCE at
-interview start (cheap deterministic SQL loader, no pgvector) and replayed into each coaching
-turn. Also completes the #787 latency fix. Flag-gated; the user's own data, candidate-safe (the
-coach stays scoreless — the D3 contract is unchanged). LIVE + enabled on dev and staging-b.
-
-### Added
-- **`GET /v1/agents/interview/practice-context`** — returns the caller's own `<USER_PROFILE>`
-  block (PRISM summary + AMBIENT résumé) via `load_user_profile_block_for_chat` (plain SQL, no
-  embedding/pgvector). Any-auth; fail-open (empty context when no profile). Mono **#811**.
-  - Files: `services/agent-engine/app/routes/interview.py`
-- **Feature flag** `AGENT_ENGINE_INTERVIEW_PRACTICE_PERSONALIZATION` (default False).
-  - Files: `services/agent-engine/app/config.py`
-- **FE one-time fetch + privacy toggle** — `practiceService.getPracticeContext`, `PracticeContext`
-  type, `practiceJobContext(frame, personalContext)` (`personal_context` job-context key), a
-  "Personalize coaching to my profile" toggle (default on, opt-out) + "Personalized" indicator,
-  fetched once in `startInterview` and replayed each turn. FE **#364**.
-  - Files: `src/services/interview/practice.service.ts`, `src/pages/user/InterviewPracticePage.tsx`
-- **Tests** — `+test_interview_practice_context.py` (disabled-default / auth / own-profile /
-  fail-open), +5 `test_alex_interview_coach.py` cases, +3 FE `practice.service.test.ts` cases.
-
-### Changed
-- **Alex interview-coach mode** folds `personal_context` into the system-prompt override under a
-  grounding (never-a-score) header and sets `skip_rag=True` — **completing #787** (that fix only
-  skipped the orchestrator SharedContext backfill; `base_agent._build_messages_with_rag` still ran
-  a per-turn `retrieve_personal_context` embedding+pgvector on the interview path). Interview
-  latency now genuinely matches Meridian.
-  - Files: `services/agent-engine/app/agents/coaching/alex_agent.py`, `app/llm/prompts.py`
-- **CDK** enables the flag ON for dev (**#812**) and staging-b (**#813**) — codified defaults
-  (`dev || staging-b`), overridable via `-c interviewPracticePersonalization=false`.
-  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
-
-### Verified
-- **dev:** `practice-context` 200 `enabled:true`; agent-engine ECS rolled + smoke ✓; FE deployed.
-- **staging-b:** promoted via tag `release-stable-2026-08-05-interview-personalization` (→
-  `28248245`); task-def `ig-staging-b-agent-engine:24` env flag `= "true"`; ECS 1/1 COMPLETED;
-  routes 401 unauth on gw `[api-id]`; no migration needed.
-- **Honor audit:** Honor product surfaces (Evaluate/Résumé/doc-assess) use the cheap Path-B loader
-  via dedicated routes — no per-turn pgvector, NOT affected by the #787-class issue.
-
-## [2026-08-05] — Audit: PRISM survey request → completion → return pipeline
-
-Investigation only (no code change). Confirmed the end-to-end PRISM
-request/return pipeline against `origin/development` code + live dev/staging-b
-probes (ECS task defs, `prism-poll-trigger` Lambda config/logs, Aurora via
-`migration-runner`). Full write-up: `docs/prism/prism_request_pipeline_audit_2026-08-04.md`.
-
-### Findings
-- **Pipeline is fully built in code** (`app/prism/{client,poller,ingestor,csv_builder}.py`,
-  `routes/prism_request.py`, `services/prism-poll-trigger/`) but has **never run
-  end-to-end** on either env. Live DB: dev 1 / staging-b 4 `prism_requests`, ALL
-  `pending`, 0 completed, **0 `api_ingest` assessments**.
-- **Poller dead (both envs):** `prism-poll-trigger` fires every 30 min but errors
-  every time — `AGENT_ENGINE_BASE_URL and SECRET_KEY ... required`; deployed code
-  frozen 2026-06-22, stale vs development. Never calls `/v1/prism/poll/run`.
-- **S3 not wired:** ingestor targets `AGENT_ENGINE_PRISM_DOCUMENTS_BUCKET` (unset
-  on both agent-engines) → PDF/CSV PUT would raise → row `failed`. No PDF stored.
-- **document-service registration not wired** (`DOCUMENT_SERVICE_URL`/`PRISM_ADMIN_TOKEN` unset).
-- **Read-store gap:** ingestor §16 writes ONLY `assessments`/`assessment_scores`,
-  never `prism_results` — but the runtime READS `prism_results` (#794). Ingested
-  scores would be authoritative-but-invisible. #794 mirror runs only on admin paths.
-- **PDF popup:** dedicated `PrismReportViewer` (`GET /v1/prism/report/{id}`) is dead
-  code (404). The live HomeV2 "View Inventory PDF" popup shows a docgen Self-Portrait
-  from `prism_results`, NOT the real PRISM PDF; no route serves `pdf_s3_key`.
-- **PRISM UK portal retrieval:** `CreateUser=true` creates a PRISM-side record;
-  `UnlockReport` client exists but is never called; portal-side download is a
-  PRISM-UK capability we don't expose or broker.
-
-### Answers
-1. CSV is **synthesized** by us (not a literal PRISM file); scores WOULD link to the
-   user in `assessments`/`assessment_scores` but (a) nothing triggers ingest, (b) S3
-   unconfigured, (c) scores would be invisible. Net: not happening today.
-2. **No** — user cannot view the actual PRISM PDF in a popup (dedicated viewer 404s;
-   working popup shows a different, platform-generated doc).
-3. Not through our platform; PRISM-portal retrieval is PRISM-UK-side and unexposed.
-
-- Files: `docs/prism/prism_request_pipeline_audit_2026-08-04.md`
+### Verification
+- `npm run build` (tsc + vite) clean; **547 suites / 4340 tests passing**; ESLint clean on every
+  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
+- New coverage: dropdown rendering/selection, the page's send wiring, card order asserted by DOM
+  position rather than a class, and the expandable box's precedence over auto-grow.
+- **Not verified:** rendered appearance — no browser check was run.
+- PR: frontend #368.
 
 ## [2026-08-05] — Activate the PRISM request → completion → return pipeline (G9 gaps #1–4 + Q3)
 
@@ -4382,114 +4694,146 @@ FE PR #367. **Deployed + verified on dev + staging-b** (tag
 
 ---
 
-## [2026-08-05] — Meridian Chat: one header row, Starter Questions, composer below the transcript
+## [2026-08-05] — Audit: PRISM survey request → completion → return pipeline
 
-Four changes to the Chat with Meridian page (V2 surface only; the classic layout is untouched).
+Investigation only (no code change). Confirmed the end-to-end PRISM
+request/return pipeline against `origin/development` code + live dev/staging-b
+probes (ECS task defs, `prism-poll-trigger` Lambda config/logs, Aurora via
+`migration-runner`). Full write-up: `docs/prism/prism_request_pipeline_audit_2026-08-04.md`.
+
+### Findings
+- **Pipeline is fully built in code** (`app/prism/{client,poller,ingestor,csv_builder}.py`,
+  `routes/prism_request.py`, `services/prism-poll-trigger/`) but has **never run
+  end-to-end** on either env. Live DB: dev 1 / staging-b 4 `prism_requests`, ALL
+  `pending`, 0 completed, **0 `api_ingest` assessments**.
+- **Poller dead (both envs):** `prism-poll-trigger` fires every 30 min but errors
+  every time — `AGENT_ENGINE_BASE_URL and SECRET_KEY ... required`; deployed code
+  frozen 2026-06-22, stale vs development. Never calls `/v1/prism/poll/run`.
+- **S3 not wired:** ingestor targets `AGENT_ENGINE_PRISM_DOCUMENTS_BUCKET` (unset
+  on both agent-engines) → PDF/CSV PUT would raise → row `failed`. No PDF stored.
+- **document-service registration not wired** (`DOCUMENT_SERVICE_URL`/`PRISM_ADMIN_TOKEN` unset).
+- **Read-store gap:** ingestor §16 writes ONLY `assessments`/`assessment_scores`,
+  never `prism_results` — but the runtime READS `prism_results` (#794). Ingested
+  scores would be authoritative-but-invisible. #794 mirror runs only on admin paths.
+- **PDF popup:** dedicated `PrismReportViewer` (`GET /v1/prism/report/{id}`) is dead
+  code (404). The live HomeV2 "View Inventory PDF" popup shows a docgen Self-Portrait
+  from `prism_results`, NOT the real PRISM PDF; no route serves `pdf_s3_key`.
+- **PRISM UK portal retrieval:** `CreateUser=true` creates a PRISM-side record;
+  `UnlockReport` client exists but is never called; portal-side download is a
+  PRISM-UK capability we don't expose or broker.
+
+### Answers
+1. CSV is **synthesized** by us (not a literal PRISM file); scores WOULD link to the
+   user in `assessments`/`assessment_scores` but (a) nothing triggers ingest, (b) S3
+   unconfigured, (c) scores would be invisible. Net: not happening today.
+2. **No** — user cannot view the actual PRISM PDF in a popup (dedicated viewer 404s;
+   working popup shows a different, platform-generated doc).
+3. Not through our platform; PRISM-portal retrieval is PRISM-UK-side and unexposed.
+
+- Files: `docs/prism/prism_request_pipeline_audit_2026-08-04.md`
+
+## [2026-08-05] — Interview Coach: one-time PRISM + ambient-résumé personalization (LIVE dev + staging-b)
+
+The candidate Interview Coach can now ground STAR feedback in the user's OWN profile — their
+PRISM summary + an ambient résumé excerpt — with **no per-turn retrieval cost**. Fetched ONCE at
+interview start (cheap deterministic SQL loader, no pgvector) and replayed into each coaching
+turn. Also completes the #787 latency fix. Flag-gated; the user's own data, candidate-safe (the
+coach stays scoreless — the D3 contract is unchanged). LIVE + enabled on dev and staging-b.
 
 ### Added
-- **Starter Questions dropdown in the Meridian chat header** — the same persona-grouped library
-  HomeV2 shows on its "Chat with Meridian" tile, now available inside the conversation, after
-  Moments. Selecting a question injects AND submits it in one step. On HomeV2 a starter question
-  is how you *open* a chat, so the prompts were gone exactly when a stuck mid-conversation user
-  needs them.
-  - Files: `src/components/meridian/StarterQuestionsDropdown.tsx`,
-    `src/components/meridian/__tests__/StarterQuestionsDropdown.test.tsx`
-- **Expandable prompt box** — a drag strip sets a persisted composer height (double-click resets
-  to auto-grow), reusing `useResizableHeight`: the same hook and interaction as the Conversation
-  card above it. Auto-grow stands down while a manual height is set so the two do not fight over
-  the same style property.
-  - Files: `src/components/user/chat/ChatWindowInputBar.tsx`
+- **`GET /v1/agents/interview/practice-context`** — returns the caller's own `<USER_PROFILE>`
+  block (PRISM summary + AMBIENT résumé) via `load_user_profile_block_for_chat` (plain SQL, no
+  embedding/pgvector). Any-auth; fail-open (empty context when no profile). Mono **#811**.
+  - Files: `services/agent-engine/app/routes/interview.py`
+- **Feature flag** `AGENT_ENGINE_INTERVIEW_PRACTICE_PERSONALIZATION` (default False).
+  - Files: `services/agent-engine/app/config.py`
+- **FE one-time fetch + privacy toggle** — `practiceService.getPracticeContext`, `PracticeContext`
+  type, `practiceJobContext(frame, personalContext)` (`personal_context` job-context key), a
+  "Personalize coaching to my profile" toggle (default on, opt-out) + "Personalized" indicator,
+  fetched once in `startInterview` and replayed each turn. FE **#364**.
+  - Files: `src/services/interview/practice.service.ts`, `src/pages/user/InterviewPracticePage.tsx`
+- **Tests** — `+test_interview_practice_context.py` (disabled-default / auth / own-profile /
+  fail-open), +5 `test_alex_interview_coach.py` cases, +3 FE `practice.service.test.ts` cases.
 
 ### Changed
-- **Header reduced to a single row.** Moments promoted to row 1 after History, keeping its
-  entitlement gate (visible-but-locked when Lumen is not entitled — sight vs. use).
-- **Compose Prompt card moved below the Conversation card** and slimmed: tighter padding, section
-  label inline with the status banner, `shrink-0` so it holds its height as the transcript grows.
-  Reads like every other chat surface — transcript on top, the box you type in at the bottom edge.
-  - Files: `src/components/user/chat/ChatWindow.tsx`
-- **`onSendText` lifted verbatim out of the ChatWindow JSX into `handleSendText`** so the dropdown
-  dispatches through the same async-jobs path as the composer — one dispatch implementation, so
-  the two entry points cannot drift. Kept a plain function, not `useCallback`: the inline arrow it
-  replaced was re-created every render, so identity semantics are unchanged and no dependency
-  array can go stale.
-  - Files: `src/pages/user/MeridianChat.tsx`
+- **Alex interview-coach mode** folds `personal_context` into the system-prompt override under a
+  grounding (never-a-score) header and sets `skip_rag=True` — **completing #787** (that fix only
+  skipped the orchestrator SharedContext backfill; `base_agent._build_messages_with_rag` still ran
+  a per-turn `retrieve_personal_context` embedding+pgvector on the interview path). Interview
+  latency now genuinely matches Meridian.
+  - Files: `services/agent-engine/app/agents/coaching/alex_agent.py`, `app/llm/prompts.py`
+- **CDK** enables the flag ON for dev (**#812**) and staging-b (**#813**) — codified defaults
+  (`dev || staging-b`), overridable via `-c interviewPracticePersonalization=false`.
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
+
+### Verified
+- **dev:** `practice-context` 200 `enabled:true`; agent-engine ECS rolled + smoke ✓; FE deployed.
+- **staging-b:** promoted via tag `release-stable-2026-08-05-interview-personalization` (→
+  `28248245`); task-def `ig-staging-b-agent-engine:24` env flag `= "true"`; ECS 1/1 COMPLETED;
+  routes 401 unauth on gw `[api-id]`; no migration needed.
+- **Honor audit:** Honor product surfaces (Evaluate/Résumé/doc-assess) use the cheap Path-B loader
+  via dedicated routes — no per-turn pgvector, NOT affected by the #787-class issue.
+
+## [2026-08-05] — SESSION SUMMARY: Bio Capture UI + nav/chat/goals UX + magic-link refresh fix
+
+Index of one session's shipped work (each item has its own detailed entry below). All LIVE on
+**dev AND staging-b**, each verified (routes, ECS/Lambda health, promote smoke gates).
+
+### Added
+- **Bio Capture resumable sessions** — `bio_sessions` table (migration 027) + `BioSessionStore` +
+  `GET/POST /v1/agents/bio/{id}/sessions` (+`/{session_id}`); the "save / retrieve / continue"
+  backend behind the reworked `/bio` surface. Mono **#803**, FE **#360**.
+- **Bio Capture interview surface** — thin suggested-next bar + compact 2×3 chapters strip;
+  Chronicle tile becomes an interactive, two-axis-scroll interview (audio on/off, inline results +
+  live "Session insight" rail, End-&-recap, Save + Sessions dropdown). FE **#360**.
+- **Left-nav additions** — "Goals" + "Job Fit" as top-level workspace shortcuts; Bio Capture moved
+  into the "Tools" rollup. FE **#363**.
+- **Meridian Chat resizable Conversation tile** (persisted drag height) + full-width response
+  bubbles with a ~5px buffer (`useResizableHeight`, `responseBubbleFullWidth`). FE **#363**.
+- **Goal-setting progress** — bounded panel height (fixed header, scrolling body), header
+  question-count badge, per-question "Question N" numbers. FE **#363**.
+
+### Changed
+- Goal-interview voice: **fixed** the "only the first question is spoken" bug — the speaking-queue
+  effect depended on `useTTS`'s unstable `speak`; now read via ref so every question is voiced
+  unless toggled off. FE **#363**.
+- Removed the on-page "Back to Inspire Genius / or switch to <verticals>" switcher from the
+  Direction-Setting nav; page reflows up. FE **#363**.
+
+### Fixed
+- **~30-min forced logout on staging-b** (root-caused from live logs): magic-link (HS256) sessions
+  couldn't refresh because `/v1/refresh-token` was Cognito-only (HS256 → `invalid_grant` →
+  frontend logout). Now mints a new HS256 access token locally for magic refresh tokens; Cognito
+  path unchanged. Mono **#810**, promoted `release-stable-2026-08-05-magic-refresh`.
 
 ### Removed
-- **Four header links** — Projects (last tile of an already-removed rail), My Self-Portrait,
-  Coaching and Job Fit. The latter three are destinations already reachable from the sidebar, so a
-  permanent row of chrome was duplicating navigation. The second row is now empty and gone.
+- Dead `NarrativeViewer` (superseded by the chapters strip + in-tile insight/recap). FE **#360**.
 
-### Verification
-- `npm run build` (tsc + vite) clean; **547 suites / 4340 tests passing**; ESLint clean on every
-  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
-- New coverage: dropdown rendering/selection, the page's send wiring, card order asserted by DOM
-  position rather than a class, and the expandable box's precedence over auto-grow.
-- **Not verified:** rendered appearance — no browser check was run.
-- PR: frontend #368.
+_IG_project_log.html is left to its auto-logging hook; the `inspire-genius-frontend/` change_log +
+HTML copies live in the separate PUBLIC FE repo and are NOT blind-synced from here (the root copy is
+a superset — blind `cp` would drop entries; prepend-only per standing rule)._
 
-## [2026-08-05] — HomeV2 recent-topics dropdown, chat deep-link, history delete, collapsed Today's Prep
+## [2026-08-05] — Magic-link refresh fix PROMOTED to staging-b (verified)
 
-Five adjustments to HomeV2 and the Meridian chat (V2 surfaces).
+Promoted the magic-link refresh fix (#810) to **staging-b** via tag
+`release-stable-2026-08-05-magic-refresh` (= `development` HEAD `76b8d137`; carries #810 +
+flag-gated/dev-only #811/#812). Promote green on all jobs incl. the authenticated smoke gate.
 
-### Added
-- **Recent-topics dropdown over a 5-day window** replaces the flat top-3 inline list on the
-  last-visit tile. Entries group under day headers (Today / Yesterday / short date), compared on
-  **calendar day** rather than elapsed hours so 23:50 last night reads as "Yesterday". Rows with an
-  unusable timestamp are dropped rather than silently widening the range; an empty window falls
-  through to the existing "Nothing yet" state.
-  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `src/pages/user/HomeV2.tsx`
-- **Deep-link into a conversation from HomeV2.** Picking a topic now opens THAT transcript in the
-  Conversation tile. This required a new capability: the chat page had no deep-link entry point,
-  which is why `onResumeConversation` deliberately took no id. The id arrives via navigation state
-  and routes through `handleSelectConversation` — the path that also tears down the socket, resets
-  audio and clears the previous transcript.
-  - Files: `src/pages/user/MeridianChat.tsx`, `src/pages/user/HomeV2.tsx`
-- **Delete conversations from the chat History dropdown.** Two-step (arm, then confirm), never one
-  click: deleting is irreversible and the control sits beside the one that merely opens the
-  conversation. A deleted id is dropped from the review selection, and deleting the ACTIVE
-  conversation notifies the host so the chat starts a fresh one.
-  - Files: `src/components/meridian/HistoryDropdown.tsx`
+Verified on `api-stable.inspiresgenius.com`: auth Lambda `ig-staging-b-auth-service`
+LastModified `2026-08-05T02:08:26Z` (new code live); `POST /v1/refresh-token` route present
+(garbage→400 Cognito path, empty→422); `/v1/agents/health` 200. Magic (HS256) refresh tokens
+now mint a new access token locally instead of `invalid_grant` → the ~30-min forced logout is
+resolved (magic sessions renew for the life of the 30-day refresh token). A residual Cognito-path
+`400 invalid_grant` post-deploy is a genuine expired **Cognito** refresh token — untouched by the
+fix, as intended.
 
-- **"Chat with Meridian" button** in the behavioral row, to the LEFT of the request button.
-  Reuses `onResumeConversation` with no id — the same callback the topics dropdown uses — so it
-  opens the chat on the user's current conversation rather than deep-linking. Outline rather than
-  filled, so the row keeps a single primary action.
-  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`
-### Fixed
-- **Auto-created conversation clobbered a deep link.** With no stored conversation the chat page
-  auto-creates one; that network round trip lands AFTER the deep-link effect, replacing the
-  conversation the user asked for with a fresh empty one — and burning a conversation server-side
-  on every deep link. The mount-hydrate effect now stands down when a deep link is present.
-  Verified red without the guard (`Expected "conv-deep", Received "conv-new"`).
-  - Files: `src/pages/user/MeridianChat.tsx`
-
-### Changed
-- **"Here's what you worked on last visit." is explicitly left-justified** (`text-left`) rather
-  than relying on the default, so no future wrapper can centre it by inherited alignment.
-- **Today's Prep starts collapsed on HomeV2** and is deliberately UNMOUNTED rather than hidden with
-  CSS, so `Moments`' data fetching no longer runs on every Home load for a surface most visits
-  never open. A button click mounts it.
-  - Files: `src/pages/user/HomeV2.tsx`
-
-- **Renamed two buttons:** "Request PRISM Inventory" → **"Request PRISM Survey"**, and
-  "View Inventory PDF" → **"View PRISM Report"**. Applied to the component defaultValues,
-  `public/locales/en/dashboard.json`, and the four comments elsewhere that name these buttons.
-  **The i18n KEYS are deliberately unchanged** (`requestPrismInventory`, `viewInventoryPdf`):
-  renaming them would drop all 20 non-English locales to the English fallback. Those locales keep
-  rendering, but now say "Inventory" in their own language where English says "Survey" —
-  **outstanding translation debt, not fixed here.**
-  - Files: `src/components/dashboard/v2/WelcomeBackTile.tsx`, `public/locales/en/dashboard.json`,
-    `src/components/v2/AccentButton.tsx`, `src/hooks/documents/useProfileMaterial.ts`,
-    `src/pages/user/HomeV2.tsx`, `src/services/documents/prismReport.service.ts`
-### Verification
-- `npm run build` (tsc + vite) clean; **550 suites / 4388 tests passing**; ESLint clean on every
-  touched file (`MeridianChat.tsx` holds at its pre-existing 7 warnings, none introduced).
-- New coverage: 5-day boundary in and out, day grouping, unusable timestamps, deep-link precedence
-  over both the stored and the auto-created conversation, the delete two-step (arm / confirm /
-  cancel / active-deleted / selection cleanup), and Today's Prep mount behaviour.
-- `HistoryDropdown`'s test harness gained a `QueryClientProvider` now that the component runs a
-  real mutation; only the network call underneath is stubbed, so cache invalidation stays covered.
-- PR: frontend #373.
+**IAM note (investigated, no change needed):** the auth Lambda role's grant to read the
+magic-auth secret already exists in CDK (#313) and IAM policy simulation confirms
+`secretsmanager:GetSecretValue` is **allowed** for the role. The residual runtime
+"AccessDenied → fall back to SECRET_KEY" is a Secrets-Manager partial-ARN nuance (simulation
+allows it; runtime still falls back) and is **non-blocking** — the fallback works, logins succeed,
+and it is unrelated to the logout. No redundant grant added; flagged for a separate deeper look
+(e.g. fetch the secret by name so IAM authorizes the full ARN).
 
 ## [2026-08-04] — My Workspace menu: fixed order, three entries switched off
 
@@ -4915,6 +5259,183 @@ There is **no "shared with" relation anywhere in the schema**. That blunt filter
 Written while the shared working directories sit on other terminals' feature branches, so the spec states that caveat on its own first page. **Not committed** — see the session entry.
   - Files: `IG_Practitioner_Workbench_Design_Spec.docx`, `scripts/build_practitioner_workbench_design.py`
 
+## [2026-08-04] — Fix: Honor coach assessment import 500/503 (assessments FK vs self-subject fellow)
+
+Diagnosed and fixed a coach ([user P.G.]) getting a **503** importing a fellow's
+PRISM / DISC / CliftonStrengths on the Honor Coach Workbench. Backend PR #809,
+merge `74d0bebd`; shipped + ECS-exec-verified on **dev** (task def :54) AND
+**staging-b** (tag `release-stable-2026-08-04-honor-import-fk` → staging-b-promote,
+all jobs green incl. authenticated smoke, task def :22, `desiredCount=1`). No
+migration in the delta.
+
+### Fixed
+- **Coach assessment import 500 → 503 for any coach-managed/invited fellow.**
+  `honor.py:post_coach_assessment_import_route` → `profile.py:_write_assessment_rows`
+  wrote `assessments.user_id = <fellow_id>`, but an Honor fellow is a *self-subject*
+  (`linked_user_sub == fellow_id`) with **no `public.users` row**, and
+  `assessments.user_id` has a hard FK → `users(user_id)`. So every import hit
+  `assessments_user_id_fkey` → 500 (surfaced as 503); retries spawned duplicate
+  fellow rows. It only ever "worked" for `fellow_kind='linked'` fellows (id == a
+  real user) — all 6 prior successful `honor_coach_import` rows had `user_id ∈ users`.
+
+### Added
+- `coach.ensure_subject_user()` — idempotent, **non-login** shadow `public.users`
+  row (`is_active=false`, synthetic unique `honor-fellow+{id}@fellows.honor.invalid`
+  email, default `auth_provider`, `ON CONFLICT (user_id) DO NOTHING`) keyed to the
+  fellow's own id. Satisfies the FK; can never authenticate.
+  - Files: `services/agent-engine/app/tools/honor/coach.py`
+- `_ensure_import_subject_user()` on the coach import **write path only** (never on
+  `/preview`, so preview stays side-effect-free), with a defensive re-check that
+  degrades an unprovisionable subject to a clean **409** instead of an FK 500.
+  - Files: `services/agent-engine/app/routes/honor.py`
+
+### Changed
+- `convert_fellow` (managed→invited) now also provisions the non-login shadow user
+  when it sets the self-subject link — so future invited fellows are import-safe at
+  the source. Docstrings updated (invite no longer claims "no `public.users` row").
+- **staging-b data unblock:** provisioned the backing user for [user P.G.]'s active fellow
+  `26457944` (`linked_in_users=true`) and removed the orphan duplicate `17a4fd3e`
+  (profile + coach link; 0 assessments existed). [user P.G.] must **re-run** the three
+  imports (earlier attempts rolled back — 0 rows persisted); his résumé/CareerLeader
+  documents did persist.
+
+### Tests
+- 6 new (write-path provisions before write; preview does not; 409 fallback;
+  `ensure_subject_user` unit incl. bad-uuid) + updated invite-flow test for the new
+  shadow-user INSERT. **378 passed / 3 skipped** across the honor + profile suites.
+  - Files: `services/agent-engine/tests/honor/test_honor_assessment_import.py`,
+    `services/agent-engine/tests/honor/test_honor_invite_flow.py`
+
+## [2026-08-04] — Fix: magic-link sessions couldn't refresh → ~30-min forced logout (staging-b)
+
+Diagnosed and fixed the "staging-b logs me out after ~30 min whether active or not" report.
+
+### Root cause (confirmed against live staging-b auth-service logs)
+Users sign into staging-b via **magic-link** (`POST /v1/magic-link/verify 200`), which issues an
+**HS256 refresh token the auth-service signed itself**. But `/v1/refresh-token` only ever exchanged
+tokens with **Cognito** — so it sent the HS256 token to Cognito, got `invalid_grant` (400), and the
+frontend interceptor treated the failed refresh as "session over" (`clearAuth()` → `/login`). Magic-link
+sessions therefore could never be renewed and died at the access token's lifetime (~30 min on the
+deployed staging-b) — idle or active, since any background request 401s at expiry and triggers the
+doomed refresh. Log evidence: a stream of `POST /v1/refresh-token 400` + `Cognito token refresh failed:
+{"error":"invalid_grant"}`; a magic-link login at 20:25:06 → first refresh-fail at 20:55:19 (~30 min).
+
+### Fixed
+- `services/auth-service/app/routes/refresh_token.py` — `/v1/refresh-token` now recognises our own HS256
+  refresh tokens (`token_use == "refresh"`, signed with `settings.secret_key`) and **mints a fresh HS256
+  access token locally**, so a magic-link session lasts for the life of its 30-day refresh token. Opaque
+  Cognito refresh tokens fail that decode and fall through to the **unchanged** Cognito path.
+- Mono **PR #810** (`5fe902f4`). 3 new tests (`tests/test_token.py`); existing refresh/magic/login/jwt
+  suites (51 tests) green.
+
+### Deploy
+- **dev**: merge #810 → Staged-Deploy-on-merge (auth-service Lambda). **staging-b**: pending a
+  `release-stable-*` tag promote (backend reaches staging-b only by tag) — awaiting go.
+
+### Latent follow-up (not this bug)
+The `ig-staging-b-auth-service` Lambda role lacks `secretsmanager:GetSecretValue` on the magic-auth JWT
+secret and falls back to the `SECRET_KEY` env var (works today because they match). Worth granting the
+role read on the secret in CDK.
+
+## [2026-08-04] — Left-nav reshuffle + resizable Meridian tile + goal-interview voice/progress
+
+Frontend-only UX pass across the left sidebar, the Meridian Chat page, and the
+Direction-Setting "My Goals" interview. FE **PR #363** (`159c36f2`), merged to
+`development` → auto-deploys dev + staging-b.
+
+### Changed — left side menu (user workspace)
+- **Bio Capture** moved out of the flat menu into the collapsible **"Tools" rollup**
+  (`UserLayout` injects it at the top of the Tools section; route unchanged).
+- **"Goals"** added as a top-level shortcut → the Direction-Setting My-Goals interview
+  (`ROUTES.DIRECTION_SETTING.GOALS`).
+- **"Job Fit"** promoted into My Workspace via `WORKSPACE_VERTICALS` (`useVerticalLauncher`)
+  — now a flat item, removed from the Tools rollup. Launcher + UserLayout tests updated.
+
+### Changed — Meridian Chat page (V2 stacked)
+- The **Conversation tile is user-resizable** — a drag strip at its bottom sets a
+  **persisted** height (double-click / "Reset size" restores the auto fill).
+  New `src/hooks/useResizableHeight.ts`.
+- **Response (assistant) bubbles fill the tile with a ~5px buffer** on all sides
+  (scroll body inset to 5px; new `responseBubbleFullWidth` prop on `ChatWindowChatTab`,
+  off by default so the classic layout is unchanged).
+
+### Fixed / Changed — Goal Setting ("My Goals", Direction Setting)
+- **Removed** the on-page "Back to Inspire Genius / or switch to <verticals>" switcher
+  from `DirectionSettingNav`; page content reflows up (in-vertical pill nav kept).
+- **Voice bug fixed**: only the first question was spoken. The speaking-queue effect
+  depended on `useTTS`'s unstable `speak`, so TTS state churn re-ran it and cancelled the
+  queue after the first turn. `speak` is now read through a ref and dropped from the deps
+  → every question is voiced unless Voice is toggled off.
+- **Progress**: bounded the panel height so the progress strip + header stay fixed while
+  only the conversation scrolls; added a persistent **question-count badge** in the header
+  and a running **"Question N"** number on each question turn.
+
+### Verification
+`tsc` + `npm run build` + eslint clean; whole-repo jest suite green in CI (nav/launcher,
+UserLayout, goal-interview, chat-tab, job-fit, lumen). FE-only — no backend/promote.
+
+## [2026-08-04] — Bio session store promoted to staging-b
+
+Promoted the bio session store (#803) to **staging-b** via tag
+`release-stable-2026-08-04-bio-sessions` (= `development` HEAD `b00e4ad7`; carries #803
++ the #805 cors-load CDK fix + the doc commit). Promote workflow **green on all jobs
+incl. the authenticated smoke gate**.
+
+- **Migration 027 applied** to staging-b Aurora (`ig-staging-b-migration-runner`, 5/5 OK;
+  `bio_sessions` selectable).
+- Verified staging-b (`api-stable.inspiresgenius.com`): `GET /v1/agents/bio/{id}/sessions`
+  → **401 (present, was 404)**, capture → 401, health → 200; ECS `ig-staging-b-agent-engine`
+  desired 1 / running 1 / rollout COMPLETED (no zero-scale regression).
+
+The full Bio Capture interview — including **Save + resume sessions** — now works end-to-end
+on **both dev and staging-b** (FE already deployed to both on the #360 merge).
+
+## [2026-08-04] — Bio Capture reworked into a guided interview surface (+ resumable sessions)
+
+Reworked the `/bio` (Bio Capture) surface per the UI redesign and added a backend
+**session store** so interviews can be saved and resumed. Backend LIVE + verified on
+**dev**; frontend merged + auto-deploying dev + staging-b. Backend NOT yet promoted to
+staging-b (needs a `release-stable-*` tag — Save/Sessions degrade gracefully there
+meanwhile).
+
+### Added
+- **Bio session store** (agent-engine) — resumable Chronicle interview transcripts,
+  separate from the distilled narrative:
+  - `BioSession` model + `bio_sessions` table (**migration 027** + idempotent SQL mirror
+    `services/migration-runner/migrations/bio_sessions.sql`).
+  - `BioSessionStore` (upsert by id, partial updates preserve transcript, member-scoped
+    reads, sanitised/capped transcript).
+  - Routes under `/v1/agents/bio` (auth-gated): `GET`/`POST /{member_id}/sessions`,
+    `GET /{member_id}/sessions/{session_id}`. Monorepo **PR #803** (`9d9f92e2`).
+    13 new tests; existing bio suites (36) still green.
+  - Files: `services/agent-engine/app/memory/{models.py,bio_session_store.py}`,
+    `app/routes/bio_sessions.py`, `app/main.py`,
+    `alembic/versions/027_create_bio_sessions.py`, `tests/test_bio_sessions.py`.
+- **Frontend interview surface** (FE **PR #360**, `8d4295b4`):
+  - Thin "Suggested next" bar (label + Continue) + compact **2×3 chapters grid**
+    (`BioChaptersStrip`).
+  - Chronicle tile moved **below** the chapters, now an interactive interview: single
+    **Audio on/off** switch (TTS + speech dictation), tile **scrolls both axes**, results
+    & insight inline (captured cards + live "Session insight" rail), **End & recap**
+    (`SessionRecapCard`), **Save** button + **Sessions** dropdown (resume/continue).
+  - `useBioSessions` / `useSaveBioSession` / `useLoadBioSession`; session types + service
+    functions; 404/absent-backend degrades to unsaved-but-working.
+  - Files: `src/pages/user/BioCapture.tsx`,
+    `src/components/user/bio/{ChronicleChatPanel,BioChaptersStrip,SessionRecapCard}.tsx`,
+    `src/hooks/useBioSessions.ts`, `src/services/bio/bioService.ts`, `src/types/bio.ts`.
+
+### Changed
+- `ChronicleChatPanel` became the full-width scroll interview tile (was a narrow aside).
+
+### Removed
+- Dead `NarrativeViewer` (chapters/timeline superseded by the strip + in-tile insight/recap).
+
+### Deployed
+| Env | Mechanism | Verification |
+|---|---|---|
+| **dev (backend)** | merge #803 → `development` Staged-Deploy-on-merge | ECS `ig-dev-agent-engine` PRIMARY rollout COMPLETED 1/1 (no zero-scale); `GET /v1/agents/bio/{id}/sessions` → 401 (present), capture → 401, health → 200; **migration 027 applied** to dev Aurora (`ig-dev-migration-runner`, 5/5 OK; `bio_sessions` selectable) |
+| **dev + staging-b (frontend)** | FE #360 merge → CI/CD Build/Test/Deploy | merged green; deploy pipeline running post-merge (auto to both) |
+| **staging-b (backend)** | _pending_ | not promoted — awaits a `release-stable-*` tag; sessions Save/dropdown degrade gracefully until then |
 ## [2026-08-04] — cors-options was declared BELOW its measured load (25 → 250); staging-b now covered
 
 Closes the top item of #798 — the only finding there with an active outage path.
@@ -4971,183 +5492,6 @@ than a Lambda concurrency cap.
   real load passed review. Unchanged here.
 - 18 declared-but-unset functions, `audit-service` throttling, and the shared-account topology
   question all remain.
-
-## [2026-08-04] — Bio Capture reworked into a guided interview surface (+ resumable sessions)
-
-Reworked the `/bio` (Bio Capture) surface per the UI redesign and added a backend
-**session store** so interviews can be saved and resumed. Backend LIVE + verified on
-**dev**; frontend merged + auto-deploying dev + staging-b. Backend NOT yet promoted to
-staging-b (needs a `release-stable-*` tag — Save/Sessions degrade gracefully there
-meanwhile).
-
-### Added
-- **Bio session store** (agent-engine) — resumable Chronicle interview transcripts,
-  separate from the distilled narrative:
-  - `BioSession` model + `bio_sessions` table (**migration 027** + idempotent SQL mirror
-    `services/migration-runner/migrations/bio_sessions.sql`).
-  - `BioSessionStore` (upsert by id, partial updates preserve transcript, member-scoped
-    reads, sanitised/capped transcript).
-  - Routes under `/v1/agents/bio` (auth-gated): `GET`/`POST /{member_id}/sessions`,
-    `GET /{member_id}/sessions/{session_id}`. Monorepo **PR #803** (`9d9f92e2`).
-    13 new tests; existing bio suites (36) still green.
-  - Files: `services/agent-engine/app/memory/{models.py,bio_session_store.py}`,
-    `app/routes/bio_sessions.py`, `app/main.py`,
-    `alembic/versions/027_create_bio_sessions.py`, `tests/test_bio_sessions.py`.
-- **Frontend interview surface** (FE **PR #360**, `8d4295b4`):
-  - Thin "Suggested next" bar (label + Continue) + compact **2×3 chapters grid**
-    (`BioChaptersStrip`).
-  - Chronicle tile moved **below** the chapters, now an interactive interview: single
-    **Audio on/off** switch (TTS + speech dictation), tile **scrolls both axes**, results
-    & insight inline (captured cards + live "Session insight" rail), **End & recap**
-    (`SessionRecapCard`), **Save** button + **Sessions** dropdown (resume/continue).
-  - `useBioSessions` / `useSaveBioSession` / `useLoadBioSession`; session types + service
-    functions; 404/absent-backend degrades to unsaved-but-working.
-  - Files: `src/pages/user/BioCapture.tsx`,
-    `src/components/user/bio/{ChronicleChatPanel,BioChaptersStrip,SessionRecapCard}.tsx`,
-    `src/hooks/useBioSessions.ts`, `src/services/bio/bioService.ts`, `src/types/bio.ts`.
-
-### Changed
-- `ChronicleChatPanel` became the full-width scroll interview tile (was a narrow aside).
-
-### Removed
-- Dead `NarrativeViewer` (chapters/timeline superseded by the strip + in-tile insight/recap).
-
-### Deployed
-| Env | Mechanism | Verification |
-|---|---|---|
-| **dev (backend)** | merge #803 → `development` Staged-Deploy-on-merge | ECS `ig-dev-agent-engine` PRIMARY rollout COMPLETED 1/1 (no zero-scale); `GET /v1/agents/bio/{id}/sessions` → 401 (present), capture → 401, health → 200; **migration 027 applied** to dev Aurora (`ig-dev-migration-runner`, 5/5 OK; `bio_sessions` selectable) |
-| **dev + staging-b (frontend)** | FE #360 merge → CI/CD Build/Test/Deploy | merged green; deploy pipeline running post-merge (auto to both) |
-| **staging-b (backend)** | _pending_ | not promoted — awaits a `release-stable-*` tag; sessions Save/dropdown degrade gracefully until then |
-## [2026-08-04] — Bio session store promoted to staging-b
-
-Promoted the bio session store (#803) to **staging-b** via tag
-`release-stable-2026-08-04-bio-sessions` (= `development` HEAD `b00e4ad7`; carries #803
-+ the #805 cors-load CDK fix + the doc commit). Promote workflow **green on all jobs
-incl. the authenticated smoke gate**.
-
-- **Migration 027 applied** to staging-b Aurora (`ig-staging-b-migration-runner`, 5/5 OK;
-  `bio_sessions` selectable).
-- Verified staging-b (`api-stable.inspiresgenius.com`): `GET /v1/agents/bio/{id}/sessions`
-  → **401 (present, was 404)**, capture → 401, health → 200; ECS `ig-staging-b-agent-engine`
-  desired 1 / running 1 / rollout COMPLETED (no zero-scale regression).
-
-The full Bio Capture interview — including **Save + resume sessions** — now works end-to-end
-on **both dev and staging-b** (FE already deployed to both on the #360 merge).
-
-## [2026-08-04] — Left-nav reshuffle + resizable Meridian tile + goal-interview voice/progress
-
-Frontend-only UX pass across the left sidebar, the Meridian Chat page, and the
-Direction-Setting "My Goals" interview. FE **PR #363** (`159c36f2`), merged to
-`development` → auto-deploys dev + staging-b.
-
-### Changed — left side menu (user workspace)
-- **Bio Capture** moved out of the flat menu into the collapsible **"Tools" rollup**
-  (`UserLayout` injects it at the top of the Tools section; route unchanged).
-- **"Goals"** added as a top-level shortcut → the Direction-Setting My-Goals interview
-  (`ROUTES.DIRECTION_SETTING.GOALS`).
-- **"Job Fit"** promoted into My Workspace via `WORKSPACE_VERTICALS` (`useVerticalLauncher`)
-  — now a flat item, removed from the Tools rollup. Launcher + UserLayout tests updated.
-
-### Changed — Meridian Chat page (V2 stacked)
-- The **Conversation tile is user-resizable** — a drag strip at its bottom sets a
-  **persisted** height (double-click / "Reset size" restores the auto fill).
-  New `src/hooks/useResizableHeight.ts`.
-- **Response (assistant) bubbles fill the tile with a ~5px buffer** on all sides
-  (scroll body inset to 5px; new `responseBubbleFullWidth` prop on `ChatWindowChatTab`,
-  off by default so the classic layout is unchanged).
-
-### Fixed / Changed — Goal Setting ("My Goals", Direction Setting)
-- **Removed** the on-page "Back to Inspire Genius / or switch to <verticals>" switcher
-  from `DirectionSettingNav`; page content reflows up (in-vertical pill nav kept).
-- **Voice bug fixed**: only the first question was spoken. The speaking-queue effect
-  depended on `useTTS`'s unstable `speak`, so TTS state churn re-ran it and cancelled the
-  queue after the first turn. `speak` is now read through a ref and dropped from the deps
-  → every question is voiced unless Voice is toggled off.
-- **Progress**: bounded the panel height so the progress strip + header stay fixed while
-  only the conversation scrolls; added a persistent **question-count badge** in the header
-  and a running **"Question N"** number on each question turn.
-
-### Verification
-`tsc` + `npm run build` + eslint clean; whole-repo jest suite green in CI (nav/launcher,
-UserLayout, goal-interview, chat-tab, job-fit, lumen). FE-only — no backend/promote.
-
-## [2026-08-04] — Fix: magic-link sessions couldn't refresh → ~30-min forced logout (staging-b)
-
-Diagnosed and fixed the "staging-b logs me out after ~30 min whether active or not" report.
-
-### Root cause (confirmed against live staging-b auth-service logs)
-Users sign into staging-b via **magic-link** (`POST /v1/magic-link/verify 200`), which issues an
-**HS256 refresh token the auth-service signed itself**. But `/v1/refresh-token` only ever exchanged
-tokens with **Cognito** — so it sent the HS256 token to Cognito, got `invalid_grant` (400), and the
-frontend interceptor treated the failed refresh as "session over" (`clearAuth()` → `/login`). Magic-link
-sessions therefore could never be renewed and died at the access token's lifetime (~30 min on the
-deployed staging-b) — idle or active, since any background request 401s at expiry and triggers the
-doomed refresh. Log evidence: a stream of `POST /v1/refresh-token 400` + `Cognito token refresh failed:
-{"error":"invalid_grant"}`; a magic-link login at 20:25:06 → first refresh-fail at 20:55:19 (~30 min).
-
-### Fixed
-- `services/auth-service/app/routes/refresh_token.py` — `/v1/refresh-token` now recognises our own HS256
-  refresh tokens (`token_use == "refresh"`, signed with `settings.secret_key`) and **mints a fresh HS256
-  access token locally**, so a magic-link session lasts for the life of its 30-day refresh token. Opaque
-  Cognito refresh tokens fail that decode and fall through to the **unchanged** Cognito path.
-- Mono **PR #810** (`5fe902f4`). 3 new tests (`tests/test_token.py`); existing refresh/magic/login/jwt
-  suites (51 tests) green.
-
-### Deploy
-- **dev**: merge #810 → Staged-Deploy-on-merge (auth-service Lambda). **staging-b**: pending a
-  `release-stable-*` tag promote (backend reaches staging-b only by tag) — awaiting go.
-
-### Latent follow-up (not this bug)
-The `ig-staging-b-auth-service` Lambda role lacks `secretsmanager:GetSecretValue` on the magic-auth JWT
-secret and falls back to the `SECRET_KEY` env var (works today because they match). Worth granting the
-role read on the secret in CDK.
-
-## [2026-08-04] — Fix: Honor coach assessment import 500/503 (assessments FK vs self-subject fellow)
-
-Diagnosed and fixed a coach ([user P.G.]) getting a **503** importing a fellow's
-PRISM / DISC / CliftonStrengths on the Honor Coach Workbench. Backend PR #809,
-merge `74d0bebd`; shipped + ECS-exec-verified on **dev** (task def :54) AND
-**staging-b** (tag `release-stable-2026-08-04-honor-import-fk` → staging-b-promote,
-all jobs green incl. authenticated smoke, task def :22, `desiredCount=1`). No
-migration in the delta.
-
-### Fixed
-- **Coach assessment import 500 → 503 for any coach-managed/invited fellow.**
-  `honor.py:post_coach_assessment_import_route` → `profile.py:_write_assessment_rows`
-  wrote `assessments.user_id = <fellow_id>`, but an Honor fellow is a *self-subject*
-  (`linked_user_sub == fellow_id`) with **no `public.users` row**, and
-  `assessments.user_id` has a hard FK → `users(user_id)`. So every import hit
-  `assessments_user_id_fkey` → 500 (surfaced as 503); retries spawned duplicate
-  fellow rows. It only ever "worked" for `fellow_kind='linked'` fellows (id == a
-  real user) — all 6 prior successful `honor_coach_import` rows had `user_id ∈ users`.
-
-### Added
-- `coach.ensure_subject_user()` — idempotent, **non-login** shadow `public.users`
-  row (`is_active=false`, synthetic unique `honor-fellow+{id}@fellows.honor.invalid`
-  email, default `auth_provider`, `ON CONFLICT (user_id) DO NOTHING`) keyed to the
-  fellow's own id. Satisfies the FK; can never authenticate.
-  - Files: `services/agent-engine/app/tools/honor/coach.py`
-- `_ensure_import_subject_user()` on the coach import **write path only** (never on
-  `/preview`, so preview stays side-effect-free), with a defensive re-check that
-  degrades an unprovisionable subject to a clean **409** instead of an FK 500.
-  - Files: `services/agent-engine/app/routes/honor.py`
-
-### Changed
-- `convert_fellow` (managed→invited) now also provisions the non-login shadow user
-  when it sets the self-subject link — so future invited fellows are import-safe at
-  the source. Docstrings updated (invite no longer claims "no `public.users` row").
-- **staging-b data unblock:** provisioned the backing user for [user P.G.]'s active fellow
-  `26457944` (`linked_in_users=true`) and removed the orphan duplicate `17a4fd3e`
-  (profile + coach link; 0 assessments existed). [user P.G.] must **re-run** the three
-  imports (earlier attempts rolled back — 0 rows persisted); his résumé/CareerLeader
-  documents did persist.
-
-### Tests
-- 6 new (write-path provisions before write; preview does not; 409 fallback;
-  `ensure_subject_user` unit incl. bad-uuid) + updated invite-flow test for the new
-  shadow-user INSERT. **378 passed / 3 skipped** across the honor + profile suites.
-  - Files: `services/agent-engine/tests/honor/test_honor_assessment_import.py`,
-    `services/agent-engine/tests/honor/test_honor_invite_flow.py`
 
 ## [2026-08-03] — W1 + W7 shipped to dev and staging-b; a near-miss rollback caught in the queue
 
@@ -5903,150 +6247,150 @@ non-existent address produced
 - The Gmail-vs-3pp.com comparison is now the useful measurement: it will show whether moving
   off the same-domain send actually shortened real-world arrival.
 
-## [2026-08-03] — SESSION SUMMARY: Interview Practice — evaluator bank → candidate coach → structured interview, end to end
-
-One session, one feature area (STAR interview), built up in increments and merged
-across the monorepo + frontend. Per-increment change_log entries already landed
-(#770/#775/#782/#785/#788); this consolidates the arc. All LIVE on dev; FE also on
-staging-b (backend agent-engine follows the tag-release cadence).
+## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
 
 ### Added
-- **Evaluator STAR bank (mono #750 + FE #330).** Single source of truth
-  `star_interview_bank.py` (12 competencies × STAR question + probes + 5/3/1
-  exemplars + 1–5 rubric); wired into Maven (evaluation) + James (candidate guides);
-  MANAGER-tier `interview_bank` tool; `GET /v1/agents/interview/question-bank`
-  (roster-gated); FE "Question bank" browser tab.
-- **Candidate Interview Coach build plan (#757)** + branded-.docx generator (#763).
-- **Candidate Coach Phases 1–4 (mono #767 + FE #335).** Candidate-safe read
-  `GET /v1/agents/interview/practice-questions` (rubric + exemplars STRIPPED) +
-  PUBLIC `practice_questions` tool; `Alex_InterviewCoach` mode (`alex_mode` swap,
-  hard no-score/no-exemplar); FE `/interview-practice`; phrase-gated orchestrator
-  routing to Alex-coach. Verified live (200, candidate-safe).
-- **v2 (mono #774 + FE #338).** Tools-rollup link (mgr/prac/super-admin);
-  interview-frame setup step (company/industry/role/reporting/scope + optional);
-  first voice mode (useTTS + Web Speech dictation).
-- **My Workspace link (FE #342)** — via `getUserNavItems()`.
-- **v3 structured interview (mono #783 + FE #343).** Bounded N-question interview
-  (`buildInterviewPlan`, "Question X of N", progress, End button, no loop);
-  Findings phase (developmental read-out, no score, via Alex END-OF-INTERVIEW
-  FINDINGS block) + Print.
-- **v4 (mono #787 + FE #344).** Full audio transport (play/pause/stop/seek);
-  Word + PDF export + Save-to-My-Documents (reuses `src/lib/exportTranscript` +
-  document-service presigned upload).
+- **Add team members** on the Development Studio roster — an "Add member" dialog with a **Single** form (name / title / department / email) and a **Bulk upload** tab (paste or upload a `name,email,title,department` CSV). New members create roster cards immediately (`growthService.addTeamMember` / `bulkAddTeamMembers` → `POST /v1/growth/members[/bulk]`); the roster refetches on success. Also replaces the empty-state CTA.
+- **HomeV2 behavioral-map popup** — a "Behavioral map" link next to the PRISM CSV filename in `WelcomeBackTile` (My Workspace) opens a modal with the PRISM radar + 8-dimension scores — the same map the manager sees on a member card, extracted into a standalone `PrismBehavioralMap`. Fed by the user's own PRISM (`useMyPrism` → `GET /v1/growth/me/prism`), fetched lazily on open.
+- Files: `components/manager/development/AddMemberDialog.tsx`, `components/prism/PrismBehavioralMap.tsx`, `components/dashboard/v2/BehavioralMapDialog.tsx`, `hooks/manager/development/useAddTeamMember.ts`, `hooks/prism/useMyPrism.ts`, updates to `growthService.ts`, `types/development.ts`, `DevelopmentStudio.tsx`, `WelcomeBackTile.tsx`. Tests: `parseMemberCsv`, `PrismBehavioralMap`.
+
+## [2026-08-03] — HomeV2: My Journey, uploaded material links, and a PDF viewer
+
+### Removed
+- **The "Complete profile" gauge** — headline percentage and progress bar. The Personal Info and Other Assessments dropdowns still show "n of m" per group, so completeness remains legible without a single score dominating the tile.
+- **The standalone Direction Setting card** that sat at the bottom of Home.
+
+### Added
+- **"My Journey" quick action**, between *Today's Prep* and *Job Fit*, opening the Direction Setting journey. Same destination as the card it replaces, but in the row people actually scan. It follows the platform rule that **entitlement gates use, not sight** — unentitled users still see it, greyed and locked, rather than having it vanish.
+- **Links to your uploaded profile material** under the latest PRISM line — resume, bio and additional info — each opening in a viewer modal. These were previously write-only: you could upload them but never reopen one from Home.
+  - New `useProfileMaterial` hook. `useMyProfile().personal_docs` reports only which *kinds* exist and carries no document IDs, so it could never produce a link; this lists the real documents.
+- **`ProfileDocViewerDialog`** — opens a document in a modal. PDFs render in a frame and images inline; anything else (CSV, XLSX, DOCX) gets an explicit "open in a new tab" action rather than an iframe that would silently download or show a blank frame. The presigned URL is minted when the dialog opens, not up front, because those URLs expire and a page left open would otherwise hand out a dead link.
+
+### Changed
+- **"View Inventory PDF" now opens the stored report in the viewer.** It previously navigated to the assessment request page, which never showed the report at all.
 
 ### Fixed
-- **Poor voice.** `useTTS` posted to `/v1/audio/tts` (404) → robotic browser
-  fallback. New `useMeridianVoice` uses the real `POST /v1/agents/voice/synthesize`
-  (verified 200 audio/mpeg).
-- **Coaching latency (~1 min).** Coaching orchestrator skipped the personal-RAG
-  backfill (embedding + pgvector) for interview turns; FE poll tightened to 700ms.
-  (SSE `/v1/agents/chat/stream` is 404 on dev — Meridian uses the async-job path.)
-- Length/question-count now honored (bounded plan); `useSpeechDictation` `supported`
-  bug (`undefined !== null`); a broken `UnifiedLayout` test from the tools-rollup add.
+- **Uploading a non-PRISM assessment failed with a 422.** The extraction normalizer required every parsed row to carry a number or a text label, so a **ranked** instrument — Clifton Strengths reports ordered themes with neither — had every row discarded as noise, leaving nothing to save. Rank is now treated as a real result. Fixed in the agent-engine alongside two related faults: numeric coercion rejecting the forms reports actually use (`"85%"`, `"72 / 100"`, `"1,234"`), and a token ceiling that truncated long ranked reports.
 
-### Note
-`IG_project_log.html` + its 5-copy sync were NOT updated this session — the main
-working dir sat on another terminal's branch (`feat/content-builder-video-…`) with
-a diverged `change_log.md`, so writing/cp there would clobber it. The
-deterministic UserPromptSubmit hooks logged prompts throughout regardless; the
-canonical change_log lives here on `development`.
+### Tests
+- 38 tests across the HomeV2 and WelcomeBackTile suites, including assertions that the gauge is **absent** and that My Journey sits between Today's Prep and Job Fit — a percentage or a re-ordered row silently returning is exactly the regression these guard.
+- 227 tests across 32 suites in the dashboard, user-page and documents areas all pass. Build and targeted lint clean.
 
-## [2026-08-03] — Team Development Studio: add members (single + bulk) + self PRISM map (growth-service, PR #789)
-
-### Added
-- **Add team members** — `POST /v1/growth/members` (single), `POST /v1/growth/members/bulk` (CSV), `DELETE /v1/growth/members/{id}`. Members are owned by growth-service (new `growth.roster_members` table, scoped by the caller's JWT sub); `list_roster` unions them alongside the canonical `public.employee_profiles` reports so cards appear immediately. Optional 8-dim PRISM on add → best-effort `public.prism_results` write so the member's behavioral map is populated on create.
-- **Self behavioral map** — `GET /v1/growth/me/prism` returns the caller's own 8 PRISM behaviours (from `prism_results.raw_data.dimensions`) for the HomeV2 popup; any authenticated user gets only their own data.
-- Files: `services/growth-service/app/{service,routes,schemas,models}.py`, `scripts/setup_growth_database.py`, `tests/test_routes.py`; assessment `docs/plans/TDS_make_it_real_assessment.md`.
-- Verified live on dev: single + bulk add appear on the roster; `/me/prism` returns real dimensions. 77 growth tests green.
-
-### Note — "is the Studio fake?"
-A full frontend audit found the Studio is **real wiring, no mock data**. It reads as "not working" because roster members without PRISM/goals correctly show empty / "invite to add" states. See `docs/plans/TDS_make_it_real_assessment.md`.
-
-## [2026-08-03] — ws-proxy ran uncapped on staging-b (Lambda blast-radius cap)
+## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
 
 ### Fixed
-- **`ws-proxy` had no reserved concurrency on staging-b**, so nothing bounded how much of the
-  account's Lambda pool the WebSocket path could consume. Every inbound WS message becomes one
-  ws-proxy invocation held open for the whole agent turn (~20s typical, 120s timeout) — it calls
-  agent-engine synchronously over the ALB. The only other bound was the API Gateway stage throttle
-  of 25 msg/s, and **25/s × ~20s ≈ 500 concurrent — most of the ~800 unreserved pool.** A WS flood
-  would have starved every other Lambda in the account (auth, documents, invitations): a chat
-  problem presenting as a platform outage, in services unrelated to chat.
-  - Cause: the allowlist read `['dev', 'staging', 'prod'].includes(envName)`. staging-b's `envName`
-    is `'staging-b'`, so it fell to `undefined` — **the same omission shape as #764's throttle tier**,
-    where `envName === 'staging'` never matched `'staging-b'`.
-  - Headroom checked before changing it: staging-b had 793 of 1000 unreserved, so +25 leaves 768,
-    far above the 100 floor AWS enforces. That floor is not theoretical here — the 2026-05-24
-    staging-b bootstrap failed with `ig-staging-b-services` unable to deploy because reservations
-    pushed the account under it.
-  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
+- **The first deploy attempt failed and shipped nothing.** The HomeV2 change added seven `homeV2` keys to `en/dashboard.json` only. CI enforces locale parity (`src/__tests__/i18n.test.ts`): every English key must exist in the other locales, and `zh-CN` must match exactly. The gate failed with **10 failures out of 4,272**, and both `Deploy to Dev` and `Deploy to Staging-B` were skipped.
+  - Root of the mistake: relying on i18next's `defaultValue` fallback. It keeps the UI correct at runtime but does **not** satisfy the parity test — and the local test run only covered the suites that were touched, so the i18n suite was never exercised.
+  - Real translations added for all seven keys (`quickMyJourney`, `yourMaterial`, `prismReport`, `openingDocument`, `docOpenFailed`, `noInlinePreview`, `openInNewTab`) across **all 20** non-English locales, not just the 9 the test currently checks, so extending the test later cannot reopen this. Additions only — 8 lines plus a trailing comma per file, no reformatting.
 
-### Added
-- `infrastructure/cdk/test/ws-proxy-concurrency.test.ts` — 9 assertions across all four envs, plus
-  a check that the cap stays below what the WS throttle could actually drive, and that ws-proxy's
-  120s timeout (the thing that makes the cap necessary) is still there. **Verified the test fails
-  against the old code**: reverting the allowlist fails exactly the four staging-b assertions and
-  leaves dev/staging/prod green — which is also the evidence the change didn't move those three.
+### Deployed
+- Live on **dev** and **staging-b**. Verified at the code level rather than by the workflow's status: the deployed `HomeV2` chunk on staging-b contains `My Journey`, `Your material`, `PRISM Report`, `Open in a new tab`, and **zero** occurrences of `Complete profile`, `completeProfile`, `progressbar` or `QuickDirection`. The served `locales/en/dashboard.json` carries all seven new keys. The entry bundle hash and ETag both changed.
+- Browser check: `/home` correctly redirects an unauthenticated session to `/login`; the app boots with **no console errors**. The logged-in tile itself was not visually confirmed — that needs a real session.
 
-### Known — NOT fixed, needs a decision
-- **dev's ws-proxy has live drift and the removal looks deliberate.** CloudFormation drift detection
-  on `WsProxyFunction8B8A7A15` reports `/ReservedConcurrentExecutions` **expected 25, actual null,
-  REMOVE** — the deployed template sets 25 but the live function has none. Alongside it, an
-  out-of-band tag: `Audit: dormant-review-20260704`. Something classified ws-proxy as dormant on
-  2026-07-04 and stripped its reservation, presumably to reclaim pool. ws-proxy is **not** dormant —
-  it measured 16 messages/hour on dev the day before this entry. Re-asserting it is a separate call
-  from this CDK change, because CFN will not correct the drift on its own: dev's synthesised value
-  is unchanged by this edit (dev was already in the allowlist), so no changeset touches that
-  resource. Restoring it needs an explicit `put-function-concurrency` or a forced update.
-- **22 other Lambdas still omit `staging-b`** from their reserved-concurrency allowlist (23 of 27
-  total; 14 of them in `services-stack.ts`). Deliberately left alone: fixing them all at once could
-  re-hit the 100-unreserved floor that already broke the 2026-05-24 bootstrap, so it needs a costed
-  pass rather than a sweep.
-- **CI does not run the CDK jest tests at all.** `pr-validation.yml` runs `cdk synth --all --context
-  env=dev` and nothing else — no job invokes jest under `infrastructure/cdk/`. So this test file and
-  `api-gateway-throttle.test.ts` (#764) are useful locally but gate nothing in CI. Worth wiring up;
-  note the suite needs `CDK_DOCKER_BUNDLING=1` because synthesising staging-b/staging/prod trips the
-  secret-rotation-bouncer's deliberate anti-stub guard.
-## [2026-08-03] — Staging-B promote: ws-proxy concurrency cap + PRISM admin-write fix
+### Note on a neighbouring red run
+PR #356 (user roster generators) merged during the window where `en` had keys the other locales lacked, so its CI run inherited the failure and shows red. It is harmless — that commit is an ancestor of the green run that deployed — but the red mark is not that PR's fault.
 
-Tag `release-stable-2026-08-03-ws-proxy-cap` → run `30811300048`, **all 6 jobs green**
-(pre-flight, ECR image, cdk deploy, ECS force-new-deployment, authenticated smoke matrix, notify).
+### Verified
+- Full CI-equivalent suite run locally against the same content: **541 suites, 4,272 tests, all passing**; coverage clear of every threshold (statements 71.67 vs 55, branches 58.56 vs 54, functions 59.73 vs 55, lines 74.23 vs 55).
+  - Files: `public/locales/*/dashboard.json` (20 locales)
 
-### Promoted
-- **#793 — ws-proxy reserved concurrency now covers staging-b.** The reason for the promote.
-  Verified live *after* the deploy: `get-function` now returns
-  `ReservedConcurrentExecutions: 25` where it previously returned `null`. Account headroom moved
-  793 → **768 unreserved**, exactly the predicted 793 − 25, and far above the 100 floor.
-- **#794 — admin PRISM writes now mirror into `prism_results`** (another terminal's work). Code-only;
-  it changes future writes and does not touch existing rows.
-- **#792 — docs.**
+## [2026-08-03] — Deployed the assessment-import fix to dev and staging-b
 
-### Verified before tagging
-- **No migrations in the delta** — the usual way a staging-b promote half-lands, since migrations
-  there are manual.
-- **#794's schema dependency was already satisfied.** It relies on `prism_results.created_at` /
-  `updated_at` from `r29_prism_results_audit_columns.sql`. Probed staging-b Aurora through the
-  migration runner: `[created_at, raw_data, updated_at]` all present. Had r29 been missing, the new
-  write path would have 500'd on first admin import.
-- **No in-flight staging-b promote** — another terminal had promoted twice earlier today
-  (`interview-coach`, `auth-sender`), so this checked the workflow was idle rather than assuming.
+### Deployed
+| Env | Mechanism | Verification |
+|---|---|---|
+| **dev** | merge #801 → `development` triggered `agent-engine-image.yml` (path filter `services/agent-engine/**`) | ECR `:latest` = `sha256:e2115c28…` tagged `dev-ea8e151`; **running task digest identical**; rollout COMPLETED 1/1 |
+| **staging-b** | tag `release-stable-2026-08-03-assessment-import` on `ea8e1511` | all 6 jobs green incl. authenticated smoke; ECR `:latest` = `sha256:48995d9c…` tagged `sha-ea8e1511`; **running task digest identical**; rollout COMPLETED 1/1 |
 
-### Post-promote state
-- Agent-engine ECS `ACTIVE`, 1/1. `GET /v1/agents/health` → 200 in 0.16s.
-- WS stage returns 426 to plain HTTP — alive and correctly demanding an upgrade.
-- ws-proxy: 0 throttles, 0 errors since deploy.
-- #764's HTTP throttle still reads 250/500 — the earlier fix survived this deploy.
+In both cases the running task's image digest was compared against the digest CI
+had just pushed, rather than trusting the workflow's own green tick. On staging-b
+`desiredCount` was checked explicitly too — a previous promote passed its smoke
+gate while CloudFormation had re-asserted the service to 0.
 
-### Honest limits of this verification
-- **The cap is verified as configured, not as exercised.** ws-proxy logged **0 invocations** in the
-  window after deploy (early morning, no traffic), so nothing has yet tested the 25-cap under load.
-  What is proven is that the reservation exists and the account arithmetic is right.
+### Why the deploy went through a merge rather than a manual image push
+`agent-engine-image.yml` deliberately locks the `:latest` tag to CI on
+`development`. Its own header records why: on 2026-05-11 a hand-pushed
+feature-branch `:latest` came from a checkout predating a merge, and the next ECS
+roll **silently dropped the privacy router**. A `workflow_dispatch` from a feature
+branch only produces a `manual-<sha>` tag and deploys nothing. There is a
+`tag_latest_override` input for forcing it, flagged `[DANGEROUS]`; it was not used.
 
-### NOT done — belongs to the terminal that owns #794
-- #794 ships `scripts/backfill_prism_results_from_assessments.py` to repair rows written before the
-  fix. **It was not run.** The two named staging-b users ([user G.B.] + [user B.B.]) still have imports the
-  application cannot see; the code fix only prevents *new* occurrences. Running it is a user-data
-  mutation on staging-b and is that terminal's call, not this promote's.
+### Promoted alongside — worth knowing
+The staging-b tag carried 4 commits, not just the fix: `#801` (import fix),
+**`#800` (Summit W1 funnel + W7 WHY-ladder root)**, and two `docs(log)` commits.
+A promote takes everything on `development`. **No migrations in the delta** —
+verified by diffing the file list against the previous tag, which matters because
+staging-b migrations are manual and code expecting an unapplied schema change
+fails at runtime rather than at deploy.
+
+### Verified
+Four live product URLs health-checked before and after every step; never left 200.
+  - Files: (deploy only — no source changes in this entry)
+
+## [2026-08-03] — Assessment import: ranked reports 422'd; three faults fixed
+
+### Fixed — `services/agent-engine/app/profile/report_import.py`
+- **A ranked instrument could never be imported.** `_normalize` required every parsed row to carry a number or a text label:
+  ```python
+  if num is None and not text:
+      continue   # "noise"
+  ```
+  A **Clifton Strengths** report ranks themes with *neither* — no numeric score, no label. Every row was discarded, `scores` came back empty, and `/v1/profile/me/assessments/import/preview` raised **422 "No scores or typing could be parsed"**. Rank is now treated as a real result.
+- **Numeric coercion rejected the forms reports actually use.** `_coerce_number` was a bare `float()`, which fails on `"85%"`, `"72 / 100"` and `"1,234"` — and because a failed coercion left the row with no number *and* no text, the whole row was then dropped as noise. Now parses those forms, while still refusing `bool` (an `int` subclass, so `True` would otherwise have become a score of `1.0`).
+- **`max_tokens=4096` truncated long ranked reports** mid-JSON, surfacing as an opaque "invalid extraction". Raised to 8192 — a 34-theme Clifton report emits far more rows than a 4-dimension DISC report.
+
+### Added — the diagnosability gap that hid all of the above
+The empty-result path logged **nothing**. CloudWatch showed the Anthropic call returning `200 OK` followed by a bare `422`, with nothing in between to say why. It now logs the response **shape** — top-level keys, `scores` type and length, first-row keys, `typing` type — and deliberately **never the content**, since these are users' personal assessment reports.
+
+### How it was found
+`/ecs/ig-staging-b-agent-engine`, 72h window: two `POST /v1/profile/me/assessments/import/preview` → **422**, each preceded by `Extracted 25851 characters from PDF (19 pages)` and `POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"`. Text extraction and the model call both succeeded, so the failure had to be in normalization. Dev showed only `OPTIONS` preflights for `/v1/profile/*` and no real calls — dev simply has no traffic — which is why the CORS preflight was checked and cleared first (it allows POST, `content-type`, `access-token` and credentials correctly).
+
+### Ruled out during diagnosis
+- **The stale frontend comment.** `src/services/profile/profile.ts` claims these routes are gated by `AGENT_ENGINE_USER_PROFILE_PLATFORM_ENABLED`, default OFF. No such flag exists anywhere in the agent-engine, and the routes are unconditional on `development`. The comment is wrong and misleading.
+- **Framework support.** All five frameworks HomeV2 offers (DISC, MBTI, CLIFTON, HOGAN, BIG_FIVE) are present in both `ADAPTERS` and `SUPPORTED_IMPORT_FRAMEWORKS`.
+- **Routing/CORS.** `ANY /v1/profile/{proxy+}` is present on the dev API Gateway and the preflight response is correct.
+- **The manual `Content-Type: multipart/form-data` header** in the service call — used identically by the working PRISM upload path, so not the differentiator.
+
+### Tests
+4 new regression tests in `tests/test_report_import.py`: rank-only rows survive; a row with no number, text *or* rank is still dropped; `"85%"` / `"72 / 100"` / `"1,234"` / `"Percentile 61"` all coerce; `bool` is refused. 9 pass.
+  - Files: `services/agent-engine/app/profile/report_import.py`, `services/agent-engine/tests/test_report_import.py`
+
+## [2026-08-03] — dev auth-service capped at 25; cors-options deliberately NOT capped (issue #798)
+
+Targeted follow-up to the ws-proxy restore. The plan was to restore reservations on the two
+externally-driven functions — `auth-service` and `cors-options` — at 25 each. **Measurement changed
+that to one of them.**
+
+### Fixed
+- **`ig-dev-auth-service` reserved concurrency set to 25.** It is the public, unauthenticated login
+  surface: the classic runaway, and the one worth capping. 14-day peak concurrency is **2**, so 25 is
+  ~12× headroom while still bounding blast radius. Account unreserved 777 → **752**. Post-change:
+  1 invocation, 0 errors, 0 throttles.
+  - Note the CDK declaration is **100**, not 25. Set to 25 deliberately — 100 against a peak of 2
+    holds 10% of the whole account idle. Reconciling the declaration is part of #798.
+
+### NOT done, and why — this would have caused an outage
+- **`ig-dev-cors-options` was left with no reservation.** The plan was 25, matching
+  `api-gateway-stack.ts:803`. Measured hourly peaks over 14 days: **90, 53, 40, 29, 23, 20, 16, 16**.
+  A 25-cap would throttle CORS preflight, which surfaces in the browser as the app failing to talk to
+  the API at all. It currently runs unreserved with **0 throttles across 1046 invocations**, so doing
+  nothing is strictly better than following the plan.
+  - This also means the existing CDK declaration is **a latent trap**: it is armed, and fires
+    whenever something re-asserts that property on `ig-dev-api-gateway`. Filed as the top item of
+    #798 — the only finding in that issue with an active outage path.
+
+### Method note
+Both decisions came from `ConcurrentExecutions` **Maximum** per function, not from the CDK source.
+Reading the declaration and assuming it reflects reality is what would have shipped the cors-options
+throttle — the declaration and the measured load disagree by ~4×, in the dangerous direction.
+(First attempt at that query returned `InvalidParameterCombination`: 5-minute periods over 14 days
+exceeds CloudWatch's 1440-datapoint cap. Re-ran hourly.)
+
+### Opened
+- **Issue #798** — right-size Lambda reserved concurrency on dev. Covers the cors-options trap, the
+  18 declared-but-unset functions (640 concurrency; restoring all would leave **12** above the AWS
+  floor and make the "always reserve" CDK rule unsatisfiable), `audit-service` as the only function
+  actually throttling, and the shared-account topology question.
 
 ## [2026-08-03] — dev ws-proxy drift restored — and what CloudTrail says actually caused it
 
@@ -6101,150 +6445,150 @@ unambiguously correct rather than a reversal of somebody's judgement.
   synthesised properties changed, so drift on an otherwise-unchanged Lambda persists indefinitely —
   the same mechanism that let this sit from 2026-07-06 to today.
 
-## [2026-08-03] — dev auth-service capped at 25; cors-options deliberately NOT capped (issue #798)
+## [2026-08-03] — Staging-B promote: ws-proxy concurrency cap + PRISM admin-write fix
 
-Targeted follow-up to the ws-proxy restore. The plan was to restore reservations on the two
-externally-driven functions — `auth-service` and `cors-options` — at 25 each. **Measurement changed
-that to one of them.**
+Tag `release-stable-2026-08-03-ws-proxy-cap` → run `30811300048`, **all 6 jobs green**
+(pre-flight, ECR image, cdk deploy, ECS force-new-deployment, authenticated smoke matrix, notify).
 
-### Fixed
-- **`ig-dev-auth-service` reserved concurrency set to 25.** It is the public, unauthenticated login
-  surface: the classic runaway, and the one worth capping. 14-day peak concurrency is **2**, so 25 is
-  ~12× headroom while still bounding blast radius. Account unreserved 777 → **752**. Post-change:
-  1 invocation, 0 errors, 0 throttles.
-  - Note the CDK declaration is **100**, not 25. Set to 25 deliberately — 100 against a peak of 2
-    holds 10% of the whole account idle. Reconciling the declaration is part of #798.
+### Promoted
+- **#793 — ws-proxy reserved concurrency now covers staging-b.** The reason for the promote.
+  Verified live *after* the deploy: `get-function` now returns
+  `ReservedConcurrentExecutions: 25` where it previously returned `null`. Account headroom moved
+  793 → **768 unreserved**, exactly the predicted 793 − 25, and far above the 100 floor.
+- **#794 — admin PRISM writes now mirror into `prism_results`** (another terminal's work). Code-only;
+  it changes future writes and does not touch existing rows.
+- **#792 — docs.**
 
-### NOT done, and why — this would have caused an outage
-- **`ig-dev-cors-options` was left with no reservation.** The plan was 25, matching
-  `api-gateway-stack.ts:803`. Measured hourly peaks over 14 days: **90, 53, 40, 29, 23, 20, 16, 16**.
-  A 25-cap would throttle CORS preflight, which surfaces in the browser as the app failing to talk to
-  the API at all. It currently runs unreserved with **0 throttles across 1046 invocations**, so doing
-  nothing is strictly better than following the plan.
-  - This also means the existing CDK declaration is **a latent trap**: it is armed, and fires
-    whenever something re-asserts that property on `ig-dev-api-gateway`. Filed as the top item of
-    #798 — the only finding in that issue with an active outage path.
+### Verified before tagging
+- **No migrations in the delta** — the usual way a staging-b promote half-lands, since migrations
+  there are manual.
+- **#794's schema dependency was already satisfied.** It relies on `prism_results.created_at` /
+  `updated_at` from `r29_prism_results_audit_columns.sql`. Probed staging-b Aurora through the
+  migration runner: `[created_at, raw_data, updated_at]` all present. Had r29 been missing, the new
+  write path would have 500'd on first admin import.
+- **No in-flight staging-b promote** — another terminal had promoted twice earlier today
+  (`interview-coach`, `auth-sender`), so this checked the workflow was idle rather than assuming.
 
-### Method note
-Both decisions came from `ConcurrentExecutions` **Maximum** per function, not from the CDK source.
-Reading the declaration and assuming it reflects reality is what would have shipped the cors-options
-throttle — the declaration and the measured load disagree by ~4×, in the dangerous direction.
-(First attempt at that query returned `InvalidParameterCombination`: 5-minute periods over 14 days
-exceeds CloudWatch's 1440-datapoint cap. Re-ran hourly.)
+### Post-promote state
+- Agent-engine ECS `ACTIVE`, 1/1. `GET /v1/agents/health` → 200 in 0.16s.
+- WS stage returns 426 to plain HTTP — alive and correctly demanding an upgrade.
+- ws-proxy: 0 throttles, 0 errors since deploy.
+- #764's HTTP throttle still reads 250/500 — the earlier fix survived this deploy.
 
-### Opened
-- **Issue #798** — right-size Lambda reserved concurrency on dev. Covers the cors-options trap, the
-  18 declared-but-unset functions (640 concurrency; restoring all would leave **12** above the AWS
-  floor and make the "always reserve" CDK rule unsatisfiable), `audit-service` as the only function
-  actually throttling, and the shared-account topology question.
+### Honest limits of this verification
+- **The cap is verified as configured, not as exercised.** ws-proxy logged **0 invocations** in the
+  window after deploy (early morning, no traffic), so nothing has yet tested the 25-cap under load.
+  What is proven is that the reservation exists and the account arithmetic is right.
 
-## [2026-08-03] — Assessment import: ranked reports 422'd; three faults fixed
+### NOT done — belongs to the terminal that owns #794
+- #794 ships `scripts/backfill_prism_results_from_assessments.py` to repair rows written before the
+  fix. **It was not run.** The two named staging-b users ([user G.B.] + [user B.B.]) still have imports the
+  application cannot see; the code fix only prevents *new* occurrences. Running it is a user-data
+  mutation on staging-b and is that terminal's call, not this promote's.
 
-### Fixed — `services/agent-engine/app/profile/report_import.py`
-- **A ranked instrument could never be imported.** `_normalize` required every parsed row to carry a number or a text label:
-  ```python
-  if num is None and not text:
-      continue   # "noise"
-  ```
-  A **Clifton Strengths** report ranks themes with *neither* — no numeric score, no label. Every row was discarded, `scores` came back empty, and `/v1/profile/me/assessments/import/preview` raised **422 "No scores or typing could be parsed"**. Rank is now treated as a real result.
-- **Numeric coercion rejected the forms reports actually use.** `_coerce_number` was a bare `float()`, which fails on `"85%"`, `"72 / 100"` and `"1,234"` — and because a failed coercion left the row with no number *and* no text, the whole row was then dropped as noise. Now parses those forms, while still refusing `bool` (an `int` subclass, so `True` would otherwise have become a score of `1.0`).
-- **`max_tokens=4096` truncated long ranked reports** mid-JSON, surfacing as an opaque "invalid extraction". Raised to 8192 — a 34-theme Clifton report emits far more rows than a 4-dimension DISC report.
-
-### Added — the diagnosability gap that hid all of the above
-The empty-result path logged **nothing**. CloudWatch showed the Anthropic call returning `200 OK` followed by a bare `422`, with nothing in between to say why. It now logs the response **shape** — top-level keys, `scores` type and length, first-row keys, `typing` type — and deliberately **never the content**, since these are users' personal assessment reports.
-
-### How it was found
-`/ecs/ig-staging-b-agent-engine`, 72h window: two `POST /v1/profile/me/assessments/import/preview` → **422**, each preceded by `Extracted 25851 characters from PDF (19 pages)` and `POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"`. Text extraction and the model call both succeeded, so the failure had to be in normalization. Dev showed only `OPTIONS` preflights for `/v1/profile/*` and no real calls — dev simply has no traffic — which is why the CORS preflight was checked and cleared first (it allows POST, `content-type`, `access-token` and credentials correctly).
-
-### Ruled out during diagnosis
-- **The stale frontend comment.** `src/services/profile/profile.ts` claims these routes are gated by `AGENT_ENGINE_USER_PROFILE_PLATFORM_ENABLED`, default OFF. No such flag exists anywhere in the agent-engine, and the routes are unconditional on `development`. The comment is wrong and misleading.
-- **Framework support.** All five frameworks HomeV2 offers (DISC, MBTI, CLIFTON, HOGAN, BIG_FIVE) are present in both `ADAPTERS` and `SUPPORTED_IMPORT_FRAMEWORKS`.
-- **Routing/CORS.** `ANY /v1/profile/{proxy+}` is present on the dev API Gateway and the preflight response is correct.
-- **The manual `Content-Type: multipart/form-data` header** in the service call — used identically by the working PRISM upload path, so not the differentiator.
-
-### Tests
-4 new regression tests in `tests/test_report_import.py`: rank-only rows survive; a row with no number, text *or* rank is still dropped; `"85%"` / `"72 / 100"` / `"1,234"` / `"Percentile 61"` all coerce; `bool` is refused. 9 pass.
-  - Files: `services/agent-engine/app/profile/report_import.py`, `services/agent-engine/tests/test_report_import.py`
-
-## [2026-08-03] — Deployed the assessment-import fix to dev and staging-b
-
-### Deployed
-| Env | Mechanism | Verification |
-|---|---|---|
-| **dev** | merge #801 → `development` triggered `agent-engine-image.yml` (path filter `services/agent-engine/**`) | ECR `:latest` = `sha256:e2115c28…` tagged `dev-ea8e151`; **running task digest identical**; rollout COMPLETED 1/1 |
-| **staging-b** | tag `release-stable-2026-08-03-assessment-import` on `ea8e1511` | all 6 jobs green incl. authenticated smoke; ECR `:latest` = `sha256:48995d9c…` tagged `sha-ea8e1511`; **running task digest identical**; rollout COMPLETED 1/1 |
-
-In both cases the running task's image digest was compared against the digest CI
-had just pushed, rather than trusting the workflow's own green tick. On staging-b
-`desiredCount` was checked explicitly too — a previous promote passed its smoke
-gate while CloudFormation had re-asserted the service to 0.
-
-### Why the deploy went through a merge rather than a manual image push
-`agent-engine-image.yml` deliberately locks the `:latest` tag to CI on
-`development`. Its own header records why: on 2026-05-11 a hand-pushed
-feature-branch `:latest` came from a checkout predating a merge, and the next ECS
-roll **silently dropped the privacy router**. A `workflow_dispatch` from a feature
-branch only produces a `manual-<sha>` tag and deploys nothing. There is a
-`tag_latest_override` input for forcing it, flagged `[DANGEROUS]`; it was not used.
-
-### Promoted alongside — worth knowing
-The staging-b tag carried 4 commits, not just the fix: `#801` (import fix),
-**`#800` (Summit W1 funnel + W7 WHY-ladder root)**, and two `docs(log)` commits.
-A promote takes everything on `development`. **No migrations in the delta** —
-verified by diffing the file list against the previous tag, which matters because
-staging-b migrations are manual and code expecting an unapplied schema change
-fails at runtime rather than at deploy.
-
-### Verified
-Four live product URLs health-checked before and after every step; never left 200.
-  - Files: (deploy only — no source changes in this entry)
-
-## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
+## [2026-08-03] — ws-proxy ran uncapped on staging-b (Lambda blast-radius cap)
 
 ### Fixed
-- **The first deploy attempt failed and shipped nothing.** The HomeV2 change added seven `homeV2` keys to `en/dashboard.json` only. CI enforces locale parity (`src/__tests__/i18n.test.ts`): every English key must exist in the other locales, and `zh-CN` must match exactly. The gate failed with **10 failures out of 4,272**, and both `Deploy to Dev` and `Deploy to Staging-B` were skipped.
-  - Root of the mistake: relying on i18next's `defaultValue` fallback. It keeps the UI correct at runtime but does **not** satisfy the parity test — and the local test run only covered the suites that were touched, so the i18n suite was never exercised.
-  - Real translations added for all seven keys (`quickMyJourney`, `yourMaterial`, `prismReport`, `openingDocument`, `docOpenFailed`, `noInlinePreview`, `openInNewTab`) across **all 20** non-English locales, not just the 9 the test currently checks, so extending the test later cannot reopen this. Additions only — 8 lines plus a trailing comma per file, no reformatting.
-
-### Deployed
-- Live on **dev** and **staging-b**. Verified at the code level rather than by the workflow's status: the deployed `HomeV2` chunk on staging-b contains `My Journey`, `Your material`, `PRISM Report`, `Open in a new tab`, and **zero** occurrences of `Complete profile`, `completeProfile`, `progressbar` or `QuickDirection`. The served `locales/en/dashboard.json` carries all seven new keys. The entry bundle hash and ETag both changed.
-- Browser check: `/home` correctly redirects an unauthenticated session to `/login`; the app boots with **no console errors**. The logged-in tile itself was not visually confirmed — that needs a real session.
-
-### Note on a neighbouring red run
-PR #356 (user roster generators) merged during the window where `en` had keys the other locales lacked, so its CI run inherited the failure and shows red. It is harmless — that commit is an ancestor of the green run that deployed — but the red mark is not that PR's fault.
-
-### Verified
-- Full CI-equivalent suite run locally against the same content: **541 suites, 4,272 tests, all passing**; coverage clear of every threshold (statements 71.67 vs 55, branches 58.56 vs 54, functions 59.73 vs 55, lines 74.23 vs 55).
-  - Files: `public/locales/*/dashboard.json` (20 locales)
-
-## [2026-08-03] — HomeV2: My Journey, uploaded material links, and a PDF viewer
-
-### Removed
-- **The "Complete profile" gauge** — headline percentage and progress bar. The Personal Info and Other Assessments dropdowns still show "n of m" per group, so completeness remains legible without a single score dominating the tile.
-- **The standalone Direction Setting card** that sat at the bottom of Home.
+- **`ws-proxy` had no reserved concurrency on staging-b**, so nothing bounded how much of the
+  account's Lambda pool the WebSocket path could consume. Every inbound WS message becomes one
+  ws-proxy invocation held open for the whole agent turn (~20s typical, 120s timeout) — it calls
+  agent-engine synchronously over the ALB. The only other bound was the API Gateway stage throttle
+  of 25 msg/s, and **25/s × ~20s ≈ 500 concurrent — most of the ~800 unreserved pool.** A WS flood
+  would have starved every other Lambda in the account (auth, documents, invitations): a chat
+  problem presenting as a platform outage, in services unrelated to chat.
+  - Cause: the allowlist read `['dev', 'staging', 'prod'].includes(envName)`. staging-b's `envName`
+    is `'staging-b'`, so it fell to `undefined` — **the same omission shape as #764's throttle tier**,
+    where `envName === 'staging'` never matched `'staging-b'`.
+  - Headroom checked before changing it: staging-b had 793 of 1000 unreserved, so +25 leaves 768,
+    far above the 100 floor AWS enforces. That floor is not theoretical here — the 2026-05-24
+    staging-b bootstrap failed with `ig-staging-b-services` unable to deploy because reservations
+    pushed the account under it.
+  - Files: `infrastructure/cdk/lib/agent-engine-stack.ts`
 
 ### Added
-- **"My Journey" quick action**, between *Today's Prep* and *Job Fit*, opening the Direction Setting journey. Same destination as the card it replaces, but in the row people actually scan. It follows the platform rule that **entitlement gates use, not sight** — unentitled users still see it, greyed and locked, rather than having it vanish.
-- **Links to your uploaded profile material** under the latest PRISM line — resume, bio and additional info — each opening in a viewer modal. These were previously write-only: you could upload them but never reopen one from Home.
-  - New `useProfileMaterial` hook. `useMyProfile().personal_docs` reports only which *kinds* exist and carries no document IDs, so it could never produce a link; this lists the real documents.
-- **`ProfileDocViewerDialog`** — opens a document in a modal. PDFs render in a frame and images inline; anything else (CSV, XLSX, DOCX) gets an explicit "open in a new tab" action rather than an iframe that would silently download or show a blank frame. The presigned URL is minted when the dialog opens, not up front, because those URLs expire and a page left open would otherwise hand out a dead link.
+- `infrastructure/cdk/test/ws-proxy-concurrency.test.ts` — 9 assertions across all four envs, plus
+  a check that the cap stays below what the WS throttle could actually drive, and that ws-proxy's
+  120s timeout (the thing that makes the cap necessary) is still there. **Verified the test fails
+  against the old code**: reverting the allowlist fails exactly the four staging-b assertions and
+  leaves dev/staging/prod green — which is also the evidence the change didn't move those three.
 
-### Changed
-- **"View Inventory PDF" now opens the stored report in the viewer.** It previously navigated to the assessment request page, which never showed the report at all.
-
-### Fixed
-- **Uploading a non-PRISM assessment failed with a 422.** The extraction normalizer required every parsed row to carry a number or a text label, so a **ranked** instrument — Clifton Strengths reports ordered themes with neither — had every row discarded as noise, leaving nothing to save. Rank is now treated as a real result. Fixed in the agent-engine alongside two related faults: numeric coercion rejecting the forms reports actually use (`"85%"`, `"72 / 100"`, `"1,234"`), and a token ceiling that truncated long ranked reports.
-
-### Tests
-- 38 tests across the HomeV2 and WelcomeBackTile suites, including assertions that the gauge is **absent** and that My Journey sits between Today's Prep and Job Fit — a percentage or a re-ordered row silently returning is exactly the regression these guard.
-- 227 tests across 32 suites in the dashboard, user-page and documents areas all pass. Build and targeted lint clean.
-
-## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
+### Known — NOT fixed, needs a decision
+- **dev's ws-proxy has live drift and the removal looks deliberate.** CloudFormation drift detection
+  on `WsProxyFunction8B8A7A15` reports `/ReservedConcurrentExecutions` **expected 25, actual null,
+  REMOVE** — the deployed template sets 25 but the live function has none. Alongside it, an
+  out-of-band tag: `Audit: dormant-review-20260704`. Something classified ws-proxy as dormant on
+  2026-07-04 and stripped its reservation, presumably to reclaim pool. ws-proxy is **not** dormant —
+  it measured 16 messages/hour on dev the day before this entry. Re-asserting it is a separate call
+  from this CDK change, because CFN will not correct the drift on its own: dev's synthesised value
+  is unchanged by this edit (dev was already in the allowlist), so no changeset touches that
+  resource. Restoring it needs an explicit `put-function-concurrency` or a forced update.
+- **22 other Lambdas still omit `staging-b`** from their reserved-concurrency allowlist (23 of 27
+  total; 14 of them in `services-stack.ts`). Deliberately left alone: fixing them all at once could
+  re-hit the 100-unreserved floor that already broke the 2026-05-24 bootstrap, so it needs a costed
+  pass rather than a sweep.
+- **CI does not run the CDK jest tests at all.** `pr-validation.yml` runs `cdk synth --all --context
+  env=dev` and nothing else — no job invokes jest under `infrastructure/cdk/`. So this test file and
+  `api-gateway-throttle.test.ts` (#764) are useful locally but gate nothing in CI. Worth wiring up;
+  note the suite needs `CDK_DOCKER_BUNDLING=1` because synthesising staging-b/staging/prod trips the
+  secret-rotation-bouncer's deliberate anti-stub guard.
+## [2026-08-03] — Team Development Studio: add members (single + bulk) + self PRISM map (growth-service, PR #789)
 
 ### Added
-- **Add team members** on the Development Studio roster — an "Add member" dialog with a **Single** form (name / title / department / email) and a **Bulk upload** tab (paste or upload a `name,email,title,department` CSV). New members create roster cards immediately (`growthService.addTeamMember` / `bulkAddTeamMembers` → `POST /v1/growth/members[/bulk]`); the roster refetches on success. Also replaces the empty-state CTA.
-- **HomeV2 behavioral-map popup** — a "Behavioral map" link next to the PRISM CSV filename in `WelcomeBackTile` (My Workspace) opens a modal with the PRISM radar + 8-dimension scores — the same map the manager sees on a member card, extracted into a standalone `PrismBehavioralMap`. Fed by the user's own PRISM (`useMyPrism` → `GET /v1/growth/me/prism`), fetched lazily on open.
-- Files: `components/manager/development/AddMemberDialog.tsx`, `components/prism/PrismBehavioralMap.tsx`, `components/dashboard/v2/BehavioralMapDialog.tsx`, `hooks/manager/development/useAddTeamMember.ts`, `hooks/prism/useMyPrism.ts`, updates to `growthService.ts`, `types/development.ts`, `DevelopmentStudio.tsx`, `WelcomeBackTile.tsx`. Tests: `parseMemberCsv`, `PrismBehavioralMap`.
+- **Add team members** — `POST /v1/growth/members` (single), `POST /v1/growth/members/bulk` (CSV), `DELETE /v1/growth/members/{id}`. Members are owned by growth-service (new `growth.roster_members` table, scoped by the caller's JWT sub); `list_roster` unions them alongside the canonical `public.employee_profiles` reports so cards appear immediately. Optional 8-dim PRISM on add → best-effort `public.prism_results` write so the member's behavioral map is populated on create.
+- **Self behavioral map** — `GET /v1/growth/me/prism` returns the caller's own 8 PRISM behaviours (from `prism_results.raw_data.dimensions`) for the HomeV2 popup; any authenticated user gets only their own data.
+- Files: `services/growth-service/app/{service,routes,schemas,models}.py`, `scripts/setup_growth_database.py`, `tests/test_routes.py`; assessment `docs/plans/TDS_make_it_real_assessment.md`.
+- Verified live on dev: single + bulk add appear on the roster; `/me/prism` returns real dimensions. 77 growth tests green.
+
+### Note — "is the Studio fake?"
+A full frontend audit found the Studio is **real wiring, no mock data**. It reads as "not working" because roster members without PRISM/goals correctly show empty / "invite to add" states. See `docs/plans/TDS_make_it_real_assessment.md`.
+
+## [2026-08-03] — SESSION SUMMARY: Interview Practice — evaluator bank → candidate coach → structured interview, end to end
+
+One session, one feature area (STAR interview), built up in increments and merged
+across the monorepo + frontend. Per-increment change_log entries already landed
+(#770/#775/#782/#785/#788); this consolidates the arc. All LIVE on dev; FE also on
+staging-b (backend agent-engine follows the tag-release cadence).
+
+### Added
+- **Evaluator STAR bank (mono #750 + FE #330).** Single source of truth
+  `star_interview_bank.py` (12 competencies × STAR question + probes + 5/3/1
+  exemplars + 1–5 rubric); wired into Maven (evaluation) + James (candidate guides);
+  MANAGER-tier `interview_bank` tool; `GET /v1/agents/interview/question-bank`
+  (roster-gated); FE "Question bank" browser tab.
+- **Candidate Interview Coach build plan (#757)** + branded-.docx generator (#763).
+- **Candidate Coach Phases 1–4 (mono #767 + FE #335).** Candidate-safe read
+  `GET /v1/agents/interview/practice-questions` (rubric + exemplars STRIPPED) +
+  PUBLIC `practice_questions` tool; `Alex_InterviewCoach` mode (`alex_mode` swap,
+  hard no-score/no-exemplar); FE `/interview-practice`; phrase-gated orchestrator
+  routing to Alex-coach. Verified live (200, candidate-safe).
+- **v2 (mono #774 + FE #338).** Tools-rollup link (mgr/prac/super-admin);
+  interview-frame setup step (company/industry/role/reporting/scope + optional);
+  first voice mode (useTTS + Web Speech dictation).
+- **My Workspace link (FE #342)** — via `getUserNavItems()`.
+- **v3 structured interview (mono #783 + FE #343).** Bounded N-question interview
+  (`buildInterviewPlan`, "Question X of N", progress, End button, no loop);
+  Findings phase (developmental read-out, no score, via Alex END-OF-INTERVIEW
+  FINDINGS block) + Print.
+- **v4 (mono #787 + FE #344).** Full audio transport (play/pause/stop/seek);
+  Word + PDF export + Save-to-My-Documents (reuses `src/lib/exportTranscript` +
+  document-service presigned upload).
+
+### Fixed
+- **Poor voice.** `useTTS` posted to `/v1/audio/tts` (404) → robotic browser
+  fallback. New `useMeridianVoice` uses the real `POST /v1/agents/voice/synthesize`
+  (verified 200 audio/mpeg).
+- **Coaching latency (~1 min).** Coaching orchestrator skipped the personal-RAG
+  backfill (embedding + pgvector) for interview turns; FE poll tightened to 700ms.
+  (SSE `/v1/agents/chat/stream` is 404 on dev — Meridian uses the async-job path.)
+- Length/question-count now honored (bounded plan); `useSpeechDictation` `supported`
+  bug (`undefined !== null`); a broken `UnifiedLayout` test from the tools-rollup add.
+
+### Note
+`IG_project_log.html` + its 5-copy sync were NOT updated this session — the main
+working dir sat on another terminal's branch (`feat/content-builder-video-…`) with
+a diverged `change_log.md`, so writing/cp there would clobber it. The
+deterministic UserPromptSubmit hooks logged prompts throughout regardless; the
+canonical change_log lives here on `development`.
 
 ## [2026-08-02] — Login sender moved to `noreply@inspiresgenius.com`, and dev finally has SES visibility
 
@@ -6587,6 +6931,502 @@ full 22-dimension profile — which is the common case, and the wrong thing to s
 of work. Methodology-Manual + adverse-impact territory, so deliberately unchanged; documented
 in `services/blueprint-service/global_seed/README.md`.
 
+## [2026-08-02] — Backend infrastructure hardening + staging-B verification tooling
+
+> Backend/infrastructure only — no frontend code changed. Details are recorded in the
+> private infrastructure repository; this entry exists to keep the project log continuous.
+
+### Fixed
+- An environment-conditional flag in the CDK service stack was expressed as a denylist
+  (naming the environments to exclude) rather than an allowlist (naming the one environment
+  permitted). A configured-but-undeployed environment therefore matched no branch and
+  inherited the permissive value. Reworked to an allowlist so an unrecognised environment
+  resolves to the restrictive value — it now fails closed rather than open.
+  - Never reachable: the environment in question has never been deployed.
+  - No deploy required — the synthesised value is unchanged for every deployed environment.
+  - Same class of `envName` string-comparison bug as the API Gateway throttle fix in the
+    previous entry; that made this the fourth occurrence, so it is now pinned by tests
+    rather than fixed case-by-case.
+
+### Added
+- CDK tests pinning that flag for every configured environment, including a set-equality
+  assertion so a future environment added to the permitted side fails CI. Confirmed failing
+  against the previous expression before being committed.
+- Tooling and documentation for running an **authenticated** verification pass against
+  staging-B through the ordinary login path, so staging-B behaviour can be checked directly
+  instead of inferred from deployed-code inspection.
+
+### Changed
+- Corrected a standing note that had recorded a deliberate security control as a defect
+  "blocking staging-B verification". It was the control working as designed; the real gap was
+  the absence of verification tooling, which the entry above addresses.
+
+## [2026-08-02] — SESSION SUMMARY: Bio Capture / Chronicle vertical, end to end (dev + staging-b)
+
+Consolidated summary of a single session that took the **Bio Capture** feature (the Chronicle
+life/career-narrative interviewer) from design through repeated ship + promote cycles. Every item
+below already has its own detailed entry in this log — this is the index/arc. All LIVE on **dev AND
+staging-b**, each step verified (route presence, health, ECS no-zero-scale, promote smoke gates).
+
+### Added
+- **Chronicle agent** merged (#752) + deployed; migration 026 (`bio_modules`/`bio_episodes`/`bio_coverage`)
+  applied to dev **and** staging-b Aurora.
+- **Cross-agent life-narrative injection** — ambient `<LIFE_NARRATIVE>` digest into the five sibling
+  coaching agents (Alex/Nova/Echo/Ascend/Summit), degrade-safe, cache-aware (#769).
+- **Memoir export** — `POST /v1/agents/bio/{id}/memoir` (structured / LLM-prose, degrade-safe) (#769).
+- **Bio Capture FE surface** at `/bio` — narrative viewer, Chronicle chat, memoir export with client-side
+  fallback (FE #336).
+- **Voice option** on the Bio Capture panel — `useTTS` read-aloud + `useSpeechDictation` review-then-send,
+  graceful fallback (FE #339).
+- **Capture/persist endpoint** — `POST /v1/agents/bio/{id}/capture` + `bio_extractor.py`: the **first and
+  only writer to the bio store** (module + episodes + coverage; people/places → episode `prism_tags`) (#780).
+- **"Captured to your profile" reflection card** + content-derived follow-up chips (FE #341).
+- Design deliverable: **Bio Capture Interview design & build-plan** Word doc + generator (#744).
+
+### Changed
+- **Chronicle system prompt** — rewritten to the professional life-story elicitation method (#776), then
+  reworked after user feedback to the flow the user demonstrated: acknowledge → reflect-back →
+  **What stands out** synthesis → one content-specific deepening question (#780).
+
+### Fixed
+- **Core defect**: the bio store had zero writers, so nothing a member said was persisted → the panel was
+  always empty ("no feedback from what I added"). The capture endpoint (#780) now persists every turn.
+- **Off-topic prompts**: the static rotating "go deeper" chips replaced by content-derived follow-ups from
+  the member's actual input (#341).
+
+### Deployed / promoted
+- Backend to staging-b via release-stable tags `…-chronicle-elicitation` and `…-bio-capture-reflect`
+  (+ earlier carries `…-maillink-loglevel`); FE auto-deployed dev + staging-b on each merge. Doc/log
+  corrections: #760, #771, #773, #778, #779, #781, #786.
+
+_Note: `IG_project_log.html` (generated dashboard) is left to its update hook per standing practice; the
+`inspire-genius-frontend/` log copies live in the separate public FE repo and are not blind-synced from here._
+
+## [2026-08-02] — Interview Practice v4: faster coaching, audio controls, Word/PDF/save (mono #787 + FE #344)
+
+### Fixed / Added
+- **Latency (~1 min → Meridian-speed).** Root cause: the coaching orchestrator ran
+  the personal-RAG backfill (`_ensure_shared_context_populated` — an embedding +
+  pgvector round-trip) on every interview turn, before the Alex short-circuit.
+  Now **skipped** for interview-practice turns (they don't use PRISM/personal
+  context); normal coaching still backfills. FE tightens the async-job poll to
+  700ms. (SSE `/v1/agents/chat/stream` is 404 on dev — Meridian uses the async-job
+  path here too.)
+  - Files: `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- **Full audio controls.** `useMeridianVoice` is now a real player — play, pause,
+  stop/cancel, seek ±10s (fast-forward / rewind) — over the Meridian synthesize
+  audio; new `AudioControls` transport bar on question / coaching / findings.
+  - Files: `src/hooks/interview/useMeridianVoice.ts`, `src/components/interview/AudioControls.tsx`
+- **Transcript → Word + PDF + saved for retrieval.** New `interviewExport` reuses
+  the branded transcript exporter (`src/lib/exportTranscript`) for Word (.doc) +
+  PDF of the findings + full Q&A, and saves the transcript to the user's documents
+  (document-service presigned upload, `doc_kind: interview-transcript`) →
+  retrievable from My Documents. Findings page: Word / PDF / Save / Print buttons.
+  - Files: `src/services/interview/interviewExport.ts`, `src/pages/user/InterviewPracticePage.tsx`
+
+## [2026-08-02] — Bio Capture capture+reflect now LIVE on staging-b (promote)
+
+Promoted the capture/persist endpoint + reworked Chronicle prompt (#780) to staging-b via tag
+`release-stable-2026-08-02-bio-capture-reflect` (= dev HEAD `a88a37de`; #780 was the only agent-engine
+change since the prior promote). Promote workflow green on all six jobs incl. the authenticated smoke
+matrix. No migration (prompt + route only).
+
+Verified on staging-b (`api-stable.inspiresgenius.com`): `POST /v1/agents/bio/{id}/capture` -> 401
+(route present, not 404); `/v1/agents/health` -> 200; agent-engine ECS desired 1 / running 1 / rollout
+COMPLETED (no `desiredCount -> 0` regression). Supersedes the earlier entry's "NOT on staging-b" note.
+The full Bio Capture capture+reflect loop (extraction, persisted episodes, content-derived followups)
+now works on staging-b as well as dev.
+
+## [2026-08-02] — Interview Practice v3: structured interview, real Meridian voice, findings/print (mono #783 + FE #343)
+
+Rebuilds `/interview-practice` from a free "pick a competency forever" loop into a
+bounded structured interview, fixing five reported problems.
+
+### Fixed
+- **Poor voice → real Meridian voice.** Root cause: `useTTS` posted to
+  `/v1/audio/tts`, which does not exist (404) → it silently fell back to the
+  browser's robotic SpeechSynthesis. New `useMeridianVoice` hook calls the working
+  `POST /v1/agents/voice/synthesize` (same endpoint MeridianChat uses; verified
+  live 200 `audio/mpeg`, 38 KB) with a warm OpenAI voice; browser fallback only if
+  the server is unreachable.
+  - Files: `src/hooks/interview/useMeridianVoice.ts` (NEW)
+- **Length / question count ignored → honored.** Setup form takes number of
+  questions (1–12) + length (minutes); `buildInterviewPlan()` builds a bounded,
+  ordered plan of exactly N questions split across the 3 sections.
+- **Questions repeated forever → bounded.** Fixed list, "Question X of N" +
+  progress bar, no wrap/loop.
+- **No way to end → "End interview" button** ends any time → findings.
+- **No findings/print → Findings phase.** Developmental read-out (Key Strengths,
+  Areas to Improve, Recommended Actions, Coverage, Confidence — no score, via the
+  new `Alex_InterviewCoach` END-OF-INTERVIEW FINDINGS block), full Q&A transcript,
+  and a Print / Save-PDF button.
+
+### Files
+- `services/agent-engine/app/llm/prompts.py` — findings block (mono #783).
+- FE (#343): `services/interview/practice.service.ts` (plan + findings + count/length),
+  `components/interview/InterviewFrameForm.tsx`, `pages/user/InterviewPracticePage.tsx`,
+  `hooks/interview/useMeridianVoice.ts`.
+
+## [2026-08-02] — Interview Practice in the My Workspace menu (FE #342)
+
+### Fixed
+- Interview Practice was reachable only from the Tools rollup, not **My Workspace**.
+  The My Workspace menu is `getUserNavItems()` (a pared-back shortcut list), not the
+  static `USER_NAV_ITEMS`, so the entry never appeared there. Added it to
+  `getUserNavItems()` (after Bio Capture) → shows in My Workspace for plain users and
+  for super-admins viewing user pages. Layout/nav tests + `npm run build` green.
+  - Files: `src/constants/navigation.ts`
+
+## [2026-08-02] — Bio Capture: capture + reflect the member's input (core fix, mono #780 + FE #341)
+
+Fixes the two defects the user reported ("no feedback from what I added"; "prompts don't drive the
+topic"). Root cause: the bio store's write methods had **zero callers** — Chronicle talked but never
+persisted anything, so the panel was always empty and follow-ups were a static generic rotating list.
+
+### Added — extraction + persist endpoint (agent-engine, #780 `798f68e8`)
+- `POST /v1/agents/bio/{member_id}/capture` (`routes/bio_capture.py` + `agents/coaching/bio_extractor.py`):
+  a structured extraction pass over the member's message → best-fit module, one or more episodes
+  (title/facts/people/places/era/feeling/meaning), a **what-stands-out** synthesis, and 2–3
+  **content-specific** follow-up questions. Persists module + episodes + coverage to the bio store
+  (people/places → episode `prism_tags` JSON). Empty message / LLM error → `captured=false`, never 500;
+  persistence best-effort. **This is the first and only writer to the bio store.**
+  - Files: `services/agent-engine/app/routes/bio_capture.py`, `.../agents/coaching/bio_extractor.py`,
+    `.../app/main.py`, `.../tests/conftest.py`
+
+### Changed — Chronicle conversational prompt (agent-engine, #780)
+- Reworked `AGENT_PROMPTS["Chronicle"]` to the flow the user demonstrated (background-feedback.pdf):
+  warm acknowledgement → brief reflect-back → one **What stands out** synthesis → one content-specific
+  deepening question. Dropped the over-austere "reflect to confirm, never interpret / no approval"
+  stance from the prior rewrite; kept concrete-scene/one-question/right-to-pass instincts, the six
+  modules, `You are Chronicle`, and the verbatim Meridian synthesis directive. Will-Brown exchange
+  embedded as the worked example.
+  - Files: `services/agent-engine/app/llm/prompts.py`
+
+### Added — reflect the capture in the UI (frontend, #341 `98006427`)
+- On each user send, the panel also `POST`s the capture endpoint (non-blocking, best-effort). A new
+  **`CapturedTurnCard`** ("Captured to your profile") renders beneath each turn: module + episode
+  title/facts (+ people/places/era) + the what-stands-out line. The static rotating "go deeper" probes
+  are **replaced by the capture's content-specific `suggestedFollowups`** (tapping one sends + re-captures);
+  minimal starter set before the first turn. Intro/instructions, voice mode, dictation, TTS, and the
+  narrative-panel refetch untouched.
+  - Files: `src/components/user/bio/ChronicleChatPanel.tsx`, `.../CapturedTurnCard.tsx`,
+    `src/hooks/useCaptureBioTurn.ts`, `src/services/bio/bioService.ts`, `src/types/bio.ts`
+
+### Tests / deploy
+- Backend: `test_bio_capture` 9 + 53 regression = 62 passed; `import app.main` OK. FE: bio tests 9/9;
+  build + lint clean. No new tables/migration.
+- Backend **LIVE dev** (Staged-Deploy-on-merge; capture route present). **NOT on staging-b** (needs a
+  release-stable tag). FE auto-deploys **dev + staging-b**; where the backend capture route isn't
+  present yet the capture call fails silently (best-effort) and the surface still works.
+
+## [2026-08-02] — Chronicle elicitation prompt now LIVE on staging-b (promote)
+
+Promoted the Chronicle life-story elicitation prompt (#776) to staging-b via tag
+`release-stable-2026-08-02-chronicle-elicitation` (= dev HEAD `308fc5f9`; also carried #774's
+interview-frame under the Promote-ALL model). Promote workflow green on all six jobs incl. the
+authenticated smoke matrix. No migration (prompt-only).
+
+Verified on staging-b (`api-stable.inspiresgenius.com`): `/v1/agents/health` -> 200;
+`GET /v1/agents/bio/{id}` -> 401 (present); `POST .../memoir` -> 401 (present); agent-engine ECS
+desired 1 / running 1 / rollout COMPLETED (no `desiredCount -> 0` regression). Supersedes the
+earlier entry's "NOT on staging-b" note for the elicitation prompt. FE voice option was already on
+staging-b (FE auto-deploys dev+stg-b).
+
+## [2026-08-02] — Bio Capture: voice option + life-story elicitation method (mono #776 + FE #339)
+
+Reworks the Chronicle Bio Capture interview so it genuinely draws people deeper, and adds a Meridian
+voice option. Guided by `IG_Life_Story_Elicitation_and_Maven_Legacy_Mode.docx`.
+
+### Changed — Chronicle elicitation prompt (agent-engine, #776 `059e4a08`)
+- Rewrote `AGENT_PROMPTS["Chronicle"]` to run a professional life-story elicitation session instead of
+  generic Q&A: preserve-not-evaluate (no evaluative signal, even approval); **episodic anchoring**
+  (generalization → one bounded scene → anchor place/people/time → perception before interpretation →
+  the unspoken → only then widen); sensory detail as the depth tell with a stop-rule (move on when
+  detail runs out; never push confabulation); one question at a time; reflect-to-confirm-never-interpret;
+  chapters + scene menu (high/turning/earliest/vivid/wisdom/reckoning) with the **low point gated
+  behind established trust**; within-session arc (open safe → deep → return light, **never end inside
+  the hardest material**); **right-to-pass** + distress protocol. Six modules, `You are Chronicle`, and
+  the verbatim Meridian synthesis directive preserved.
+  - Files: `services/agent-engine/app/llm/prompts.py`
+
+### Added — voice option on the Bio Capture surface (frontend, #339 `cc6b2d61`)
+- Voice/Text toggle on the Chronicle panel (mirrors the Interview Practice voice mode): `useTTS` reads
+  each Chronicle question aloud (+ per-message Listen/Stop); `useSpeechDictation` transcribes the spoken
+  answer into the input for **review-then-send**; listening indicator + `aria-live` status. Graceful mic
+  fallback (disabled + tooltip when `SpeechRecognition` unsupported); TTS degrades silently; text mode
+  unchanged. Introduction/instructions kept. Added tappable **"go deeper" episodic probes** (guide
+  Appendix B) + a sensory-detail encouragement line.
+  - Files: `src/components/user/bio/ChronicleChatPanel.tsx` (+ `__tests__`)
+
+### Scope note
+- Implemented the guide's elicitation **method** (Sections 1–4, Appendix B/C). The larger **Maven Legacy
+  Mode** backend proposal (Section 5 — capture_mode, redaction cascade, multimodal artifacts, archive
+  render) is a documented future initiative, NOT built here.
+
+### Tests / deploy
+- Backend: 53/53 chronicle/bio tests; `import app.main` OK. FE: `ChronicleChatPanel` 4/4 + dictation 2/2;
+  `npm run build` + lint clean.
+- Backend prompt **LIVE dev** (Staged-Deploy-on-merge; `/v1/agents/health` 200). **NOT on staging-b**
+  (agent-engine backend needs a `release-stable-*` tag — not pushed). FE voice option auto-deploys
+  **dev + staging-b**.
+
+## [2026-08-02] — Interview Practice v2: Tools link, interview-frame setup, voice mode (mono #774 + FE #338)
+
+Follow-up to the Candidate Interview Coach (#767/#335), addressing feedback: no
+Tools link, and a request for voice + an interview-frame setup step.
+
+### Added
+- **Tools-rollup link** — Interview Practice now appears in the collapsible
+  "Tools" section for manager / practitioner / super-admin (`TOOL_ITEMS_BY_ROLE`),
+  so it's discoverable when testing as those roles (users keep the flat sidebar
+  link). Files: `src/constants/navigation.ts`.
+- **Interview-frame setup** — a first step where the candidate confirms the seat
+  (company, industry, role title, reporting line, scope — required; external-vs-
+  internal, weighted competencies/risks, interview length — optional; default
+  45–60 min / 12 questions). Passed into coaching so Alex tailors questions +
+  feedback to that role and weights the flagged risks.
+  Files: `src/components/interview/InterviewFrameForm.tsx` (NEW),
+  `services/interview/practice.service.ts` (InterviewFrame + buildCoachMessage +
+  practiceJobContext), `services/agent-engine/app/llm/prompts.py`
+  (`AGENT_PROMPTS["Alex_InterviewCoach"]` INTERVIEW FRAME block).
+- **Voice mode (Meridian interface)** — `useTTS` speaks the question and the
+  coaching aloud; `useSpeechDictation` (Web Speech API, same engine as
+  MeridianChat) captures the spoken answer, with a "type instead" fallback.
+  Files: `src/hooks/interview/useSpeechDictation.ts` (NEW),
+  `src/pages/user/InterviewPracticePage.tsx` (frame step + voice toggle).
+
+### Fixed
+- `useSpeechDictation` reported `supported=true` in browsers without
+  SpeechRecognition (`undefined !== null`) — caught by its own test.
+- Removed `user` from `TOOL_ITEMS_BY_ROLE` (it gave the user role a UnifiedLayout
+  Tools section it never uses and broke 3 UnifiedLayout tests).
+
+### Tests
+- Frame-in-message/context (practice.service), dictation supported/dictate,
+  Alex frame prompt. Full `npm run build` + backend pytest green.
+
+## [2026-08-02] — Chronicle backend follow-ons now LIVE on staging-b (correction)
+
+Correcting the earlier follow-on entry, which said the cross-agent injection + memoir backend was
+"NOT on staging-b": it in fact rode the completed, successful `release-stable-2026-08-02-maillink-loglevel`
+promote (that tag = the #771 doc commit `b8c362bf`, and backend #769 `d9a390aa` is an ancestor — verified
+with `git merge-base --is-ancestor`). No separate tag was pushed from this session; the promote had
+already carried it (the "Promote ALL" model).
+
+Verified on staging-b (`api-stable.inspiresgenius.com`): `POST /v1/agents/bio/{id}/memoir` -> 401
+(route present, not 404); `GET /v1/agents/bio/{id}` -> 401; `/v1/agents/health` -> 200; agent-engine ECS
+desired 1 / running 1 / rollout COMPLETED (no `desiredCount -> 0` regression). The FE Bio Capture surface
+was already on staging-b (FE auto-deploys dev+stg-b), so its memoir export there now hits the real backend
+endpoint rather than the client-side fallback.
+
+## [2026-08-02] — Chronicle bio-capture follow-ons: cross-agent injection + memoir export + Bio Capture FE
+
+Delivers the three follow-ups the #752 Chronicle build had listed as deferred. Backend mono
+PR #769 (`d9a390aa`), FE PR #336 (`a545b727`).
+
+### Added — cross-agent life-narrative injection (agent-engine)
+- The five sibling coaching agents (Alex, Nova, Echo, Ascend, Summit) now receive an ambient
+  `<LIFE_NARRATIVE>` digest (from `BioStore.build_digest`) in their system prompt, via the shared
+  `_build_messages_with_rag` seam, gated to an explicit `COACHING_BIO_AGENTS` set. Chronicle is
+  excluded (it injects its own block). Degrade-safe: None manager / missing `.bio` / empty digest /
+  any error → no block, no raise. Appended AFTER the prompt-cache breakpoint so it never invalidates
+  the cache prefix.
+  - Files: `services/agent-engine/app/agents/base_agent.py`
+
+### Added — memoir export (agent-engine)
+- `POST /v1/agents/bio/{member_id}/memoir` (under `/v1/agents/*`, auth-gated). `memoir_composer`
+  groups episodes by module in `BIO_MODULES` order; `structured` = deterministic LLM-free markdown,
+  `prose` = per-module first-person weaving via the Chronicle provider with structured fallback on
+  any LLM error. Empty narrative → `generated=false`. Never 500s.
+  - Files: `services/agent-engine/app/routes/bio_memoir.py`,
+    `services/agent-engine/app/agents/coaching/memoir_composer.py`, `services/agent-engine/app/main.py`
+
+### Added — Bio Capture FE surface (frontend, PR #336)
+- New `/bio` user surface (strict Service→Hook→Component, all on the agent-engine via `agentApi`):
+  `types/bio.ts`, `services/bio/bioService.ts`, `hooks/useBioNarrative.ts` + `useGenerateMemoir.ts`,
+  `pages/user/BioCapture.tsx`, `components/user/bio/{NarrativeViewer,ChronicleChatPanel,MemoirExportMenu}.tsx`,
+  `lib/bio/clientMemoir.ts`, plus route + user-nav entry. NarrativeViewer = six chapter cards
+  (status + coverage) + episode timeline + next-module CTA + empty state. ChronicleChatPanel reuses
+  `useMeridianWebSocket` and seeds bio context so Meridian routes to Chronicle. Memoir export
+  (Copy/Print/Word/PDF) via the shared `exportTurn`/`printTurn` util; prefers the backend memoir
+  markdown, falls back to a client-side memoir assembled from the narrative JSON on 404 — so it
+  degrades gracefully where the backend memoir route isn't deployed yet.
+
+### Tests
+- Backend: `test_crossagent_bio_injection.py` (13) + `test_bio_memoir.py` (12); 53/53 across new +
+  adjacent (chronicle/bio_store); zero regressions vs baseline (172 pre-existing test-isolation
+  failures unchanged). FE: `clientMemoir` fallback 7/7; `npm run build` (tsc+vite) + lint clean.
+
+### Deployed
+- Backend **LIVE on dev** (Staged-Deploy-on-merge, verified): `POST /v1/agents/bio/{id}/memoir` →
+  401 (route present, not 404); `/v1/agents/health` → 200. Cross-agent injection is internal to
+  agent prompts (not externally probeable) — covered by the 13 injection tests.
+- **NOT on staging-b**: the agent-engine backend needs a `release-stable-*` tag (not pushed —
+  protected env, out of this task's scope). FE auto-deploys to dev **and** staging-b on merge; on
+  staging-b the memoir endpoint is absent until a backend promote, so the FE memoir export uses its
+  client-side fallback there.
+
+## [2026-08-02] — Candidate Interview Coach: Phases 1–4 built + live on dev (mono #767 + FE #335)
+
+Candidate-SIDE counterpart to the evaluator Maven STAR bank — self-practice with
+supportive coaching, **never a score or an exemplar**. Composes on the deployed
+bank; no new service/table/vector store.
+
+### Added
+- **Candidate-safe read** `GET /v1/agents/interview/practice-questions` — any
+  authenticated user; `include_exemplars=False` + `rubric` stripped. Evaluator
+  `/question-bank` untouched.
+  - Files: `services/agent-engine/app/routes/interview.py`
+- **PUBLIC tool** `practice_questions` (exemplars/rubric stripped). Tool count 8→9.
+  - Files: `services/agent-engine/app/tools/interview_practice.py`, `.../tools/registry.py`
+- **Alex interview-coach mode** — `AGENT_PROMPTS["Alex_InterviewCoach"]` (STAR
+  feedback: one strongest + one weakest + one nudge; hard no-score/no-exemplar
+  rules) + `alex_mode` prompt-swap in Alex (mirrors Maven's `maven_mode`).
+  - Files: `services/agent-engine/app/llm/prompts.py`, `.../agents/coaching/alex_agent.py`
+- **Routing** — phrase-gated interview-practice short-circuit → Alex-coach; real
+  hiring/career "interview" turns unaffected.
+  - Files: `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
+- **FE `/interview-practice`** — candidate practice loop (pick competency →
+  question+probes → answer → coaching inline → try again / next) over the
+  async-job chat path + user nav item.
+  - Files (FE #335): `src/pages/user/InterviewPracticePage.tsx`,
+    `src/services/interview/practice.service.ts`,
+    `src/hooks/interview/usePracticeQuestions.ts`, `src/routes.tsx`,
+    `src/constants/{routes,navigation}.ts`
+
+### Verified
+- 85 agent-engine tests + 5 FE tests + `npm run build` green; 12 pre-existing
+  dev-HEAD failures unrelated (proved via stash). **Live on dev:**
+  `/practice-questions` 404→401→**200** with a real `user` token → 12
+  competencies, keys `[guidance,sections,totalCompetencies]`, **no rubric, no
+  exemplars** (candidate-safe confirmed live).
+
+## [2026-08-02] — magic-auth gate was a denylist; staging-B authenticated verification path
+
+### Fixed
+- **`MAGIC_AUTH_ENABLED` was a denylist, so the undeployed `staging` env would have shipped an
+  email-only auth bypass ENABLED.** `POST /v1/magic-auth` mints a valid HS256 session token from an
+  **email address alone** — no password, no emailed link, no one-time-use. PR #717 gated it off the
+  non-dev tiers, but as:
+  `MAGIC_AUTH_ENABLED: (isProd || envName === 'staging-b') ? 'false' : 'true'`.
+  That names the environments to *protect*. `config.ts` defines **four** — dev, staging, prod,
+  staging-b — and `staging` matches neither arm, so it resolved to `'true'`.
+  - **Not exploited.** `staging` has never been deployed; only `ig-dev-auth-service` and
+    `ig-staging-b-auth-service` exist. This was latent, not a live breach.
+  - Now an **allowlist** — `envName === 'dev' ? 'true' : 'false'` — so an unrecognised environment
+    fails **closed**. For a security gate, forgetting an entry must not mean "wide open".
+  - **Fourth instance of the `envName === '...'` shape** (after #738, #745, and the API Gateway
+    throttle bug in the entry above). Those were performance bugs; this one was an auth bypass.
+  - **No deploy required:** for both deployed environments the synthesised value is unchanged
+    (dev `'true'`, staging-B `'false'`). Only the undeployed `staging` env changes.
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+
+### Added
+- `infrastructure/cdk/test/magic-auth-gate.test.ts` — 6 assertions pinning the flag for all four
+  environments, plus a set-equality check (`enabledEnvs === ['dev']`) so a future env added to the
+  permitted side fails CI. **Confirmed red against the old expression before being committed** — 2
+  failures naming `staging` exactly; a test never seen failing proves nothing.
+- `scripts/stagingb_verify/` + `docs/stagingb-authenticated-verification.md` — a supported
+  authenticated verification path for staging-B, built because the *reason* given for not having one
+  was wrong (below).
+  - `provision_account.py` — one-shot: creates a synthetic `[email redacted]` via
+    admin-tools, stores a generated password in Secrets Manager, sets it permanent in Cognito.
+    Idempotent. **Pending owner approval** — it creates an account and sets a password, both
+    correctly refused without an explicit go-ahead.
+  - `verify_auth.py` — repeatable: asserts the magic-auth 404 still holds, logs in through the
+    ordinary `/v1/login` Cognito path, hits `/v1/me`, and with `--chat` runs a live Meridian turn
+    asserting PRISM behaviour (no bare "Orange" outside a negation, all four colours present).
+    Password is read from Secrets Manager at runtime and never printed, logged, or committed.
+
+### Changed
+- **Corrected a standing mischaracterisation: staging-B's `/v1/magic-auth` → 404 is not a defect.**
+  It had been carried as "blocks live authenticated verification on staging-B" and was queued as
+  something to fix. It is the gate working as designed; "fixing" it would re-open an authentication
+  bypass on a shared environment. Deployed config re-verified (`MAGIC_AUTH_ENABLED=false` on
+  `ig-staging-b-auth-service`), and the 22 auth-service magic-auth/magic-link tests pass on current
+  `development`.
+- Two related traps documented so they stop costing time:
+  - `POST /v1/magic-link/request` **always** returns 200 (anti-enumeration by design), so a 200
+    there does not prove an account exists — it is not an existence check.
+  - Every identity in the staging-B Cognito pool is a **real person** (wilkescc.edu / robeson.edu
+    students, PRISM staff, Honor Foundation). Verification uses a synthetic account rather than
+    minting a session as one of them.
+## [2026-08-02] — Staging-B promote: API Gateway throttle tier + 3 riders
+
+Tag `release-stable-2026-08-02-api-throttle-tier` → run `30733761365`, **all 6 jobs green**
+(pre-flight, ECR image, cdk deploy, ECS force-new-deployment, authenticated smoke matrix, notify).
+
+### Promoted
+- **#764 — staging-b API Gateway throttle 50 rps/100 burst → 250/500.** The reason for the promote.
+  Verified live *after* the deploy, not inferred from a green pipeline:
+  `get-stage --api-id [api-id]` now returns `ThrottlingRateLimit: 250.0, ThrottlingBurstLimit: 500`
+  (it returned `50.0 / 100` before).
+- **#759 — growth-service per-method `/v1/growth` routes.** Confirmed the Gateway now owns the
+  preflight: routes are `GET|POST|PUT|PATCH|DELETE /v1/growth/{proxy+}` with no `ANY` (an `ANY`
+  route swallows `OPTIONS`), and an actual preflight against
+  `https://api-stable.inspiresgenius.com/v1/growth/roster` returns **204** with
+  `access-control-allow-origin: https://stable.inspiresgenius.com` and credentials allowed.
+- **#756 — blueprint-service global (org-agnostic) seed library.** Code only; no seed run performed
+  on staging-b, and none needed while matching is gated off there.
+- **#757 / #760 / #761 — docs.**
+
+### Verified before tagging, and again after
+- **#762 does NOT widen blueprint matching beyond dev.** Its gate is
+  `BLUEPRINT_MATCHING_ENABLED: envName === 'dev' ? 'true' : 'false'`, so staging-b takes the `false`
+  arm. Re-checked on the deployed Lambda after the promote: `ig-staging-b-blueprint` reports
+  `matching=false, signoff=false`. Worth noting the irony — the same `envName ===` string comparison
+  that caused #764 fails *closed* here, which is why it was safe.
+- **No migrations in the delta** (`git diff --name-only` over the tag range: no `migration`/`alembic`/
+  `.sql`). Migrations on staging-b are manual, so an unnoticed one is the usual way a promote half-lands.
+- **No `services/agent-engine/` changes in the delta** — the image rebuild was a no-op re-push.
+- **No new stacks** — `ig-staging-b-growth` and `ig-staging-b-blueprint` were already
+  `UPDATE_COMPLETE`, so both were updates. (A prior note claiming growth-service was not on staging-b
+  was stale; it has since been promoted.)
+
+### Post-promote state
+- Agent-engine ECS `ACTIVE`, 1/1 running.
+- `GET /v1/agents/health` → 200 in 0.11s. `GET /v1/growth/health` → 401 (auth-gated, route live).
+
+### Unchanged, deliberately
+- **The WebSocket stage throttle is still 25 rps / 50 burst** on staging-b (`lc77fxll95`) — and on
+  every other environment, prod included, because it is hardcoded rather than env-derived. It carries
+  chat streaming, so it needs its own decision rather than riding along with an HTTP-tier fix.
+
+## [2026-08-02] — staging-b API Gateway was on the dev throttle tier (third `envName === 'staging'` miss)
+
+### Fixed
+- **staging-b's HTTP API throttled at the dev floor — 50 rps / 100 burst — while serving promote
+  traffic.** The stage throttle was an inline ternary in `api-gateway-stack.ts`:
+  `envName === 'prod' ? 1000 : envName === 'staging' ? 500 : 100`. staging-b's `envName` is the
+  string `'staging-b'`, which matches neither arm, so it fell through to the `else`. Confirmed
+  against the running system, not just the source — `apigatewayv2 get-stage` on `[api-id]`
+  returned `ThrottlingRateLimit: 50.0, ThrottlingBurstLimit: 100`. Now **250 rps / 500 burst**,
+  matching the staging tier.
+  - Nothing failed loudly: over-limit requests return Gateway 429s, which read as an application
+    fault rather than a config one.
+  - This is the **third** instance of this exact string-comparison bug (after #738 and #745), so the
+    fix removes the pattern rather than the instance: throttle values now live per-environment in
+    `config.ts` as `apiThrottle: { rateLimit, burstLimit }`, and the stack reads
+    `envConfig.apiThrottle` instead of testing `envName`. dev/staging/prod values are carried over
+    byte-for-byte — staging-b is the only behaviour change.
+  - Files: `infrastructure/cdk/lib/config.ts`, `infrastructure/cdk/lib/api-gateway-stack.ts`
+
+### Added
+- `infrastructure/cdk/test/api-gateway-throttle.test.ts` — 7 assertions pinning the throttle for all
+  four environments, plus a check that every env declares one explicitly (the `?? 50` fallback in the
+  stack is a safety net, not a default to lean on). **Verified the test fails against the old code**:
+  restoring the ternary fails exactly the two staging-b assertions and leaves dev/staging/prod green,
+  which is also the evidence that the refactor did not move those three.
+
+### Known / not addressed
+- **The WebSocket stage throttle is hardcoded at 25 rps / 50 burst for every environment**, prod
+  included (`api-gateway-stack.ts`, WS `defaultRouteSettings`). Confirmed live on staging-b
+  (`lc77fxll95`). Left alone deliberately — it is a separate behaviour change from the one requested,
+  and the WS path carries chat streaming, so the value deserves its own decision rather than being
+  swept into this PR.
+- `services-stack.ts` has the same `envName === 'staging'` shape for an alarm threshold (6 instead of
+  12 on staging-b). Cosmetic by comparison — an alarm tuned tighter than intended, not a request cap.
+
 ## [2026-08-02] — Session wrap: concurrency ceiling → autoscaling signal → 429 visibility (agent-engine)
 
 One thread, five PRs. It began as "how many concurrent users can the architecture support" and the
@@ -6668,502 +7508,6 @@ Three claims of mine were wrong and were corrected in place rather than left sta
   routed around. Functional evidence there is the promote's own authenticated smoke matrix.
 - Next binding constraints, in order: Anthropic org quota (now observable), the per-worker DB pool
   (`db.py` 10+20, `memory/database.py` 5+10), then Aurora ACU (staging-b caps at 2.0).
-## [2026-08-02] — staging-b API Gateway was on the dev throttle tier (third `envName === 'staging'` miss)
-
-### Fixed
-- **staging-b's HTTP API throttled at the dev floor — 50 rps / 100 burst — while serving promote
-  traffic.** The stage throttle was an inline ternary in `api-gateway-stack.ts`:
-  `envName === 'prod' ? 1000 : envName === 'staging' ? 500 : 100`. staging-b's `envName` is the
-  string `'staging-b'`, which matches neither arm, so it fell through to the `else`. Confirmed
-  against the running system, not just the source — `apigatewayv2 get-stage` on `[api-id]`
-  returned `ThrottlingRateLimit: 50.0, ThrottlingBurstLimit: 100`. Now **250 rps / 500 burst**,
-  matching the staging tier.
-  - Nothing failed loudly: over-limit requests return Gateway 429s, which read as an application
-    fault rather than a config one.
-  - This is the **third** instance of this exact string-comparison bug (after #738 and #745), so the
-    fix removes the pattern rather than the instance: throttle values now live per-environment in
-    `config.ts` as `apiThrottle: { rateLimit, burstLimit }`, and the stack reads
-    `envConfig.apiThrottle` instead of testing `envName`. dev/staging/prod values are carried over
-    byte-for-byte — staging-b is the only behaviour change.
-  - Files: `infrastructure/cdk/lib/config.ts`, `infrastructure/cdk/lib/api-gateway-stack.ts`
-
-### Added
-- `infrastructure/cdk/test/api-gateway-throttle.test.ts` — 7 assertions pinning the throttle for all
-  four environments, plus a check that every env declares one explicitly (the `?? 50` fallback in the
-  stack is a safety net, not a default to lean on). **Verified the test fails against the old code**:
-  restoring the ternary fails exactly the two staging-b assertions and leaves dev/staging/prod green,
-  which is also the evidence that the refactor did not move those three.
-
-### Known / not addressed
-- **The WebSocket stage throttle is hardcoded at 25 rps / 50 burst for every environment**, prod
-  included (`api-gateway-stack.ts`, WS `defaultRouteSettings`). Confirmed live on staging-b
-  (`lc77fxll95`). Left alone deliberately — it is a separate behaviour change from the one requested,
-  and the WS path carries chat streaming, so the value deserves its own decision rather than being
-  swept into this PR.
-- `services-stack.ts` has the same `envName === 'staging'` shape for an alarm threshold (6 instead of
-  12 on staging-b). Cosmetic by comparison — an alarm tuned tighter than intended, not a request cap.
-
-## [2026-08-02] — Staging-B promote: API Gateway throttle tier + 3 riders
-
-Tag `release-stable-2026-08-02-api-throttle-tier` → run `30733761365`, **all 6 jobs green**
-(pre-flight, ECR image, cdk deploy, ECS force-new-deployment, authenticated smoke matrix, notify).
-
-### Promoted
-- **#764 — staging-b API Gateway throttle 50 rps/100 burst → 250/500.** The reason for the promote.
-  Verified live *after* the deploy, not inferred from a green pipeline:
-  `get-stage --api-id [api-id]` now returns `ThrottlingRateLimit: 250.0, ThrottlingBurstLimit: 500`
-  (it returned `50.0 / 100` before).
-- **#759 — growth-service per-method `/v1/growth` routes.** Confirmed the Gateway now owns the
-  preflight: routes are `GET|POST|PUT|PATCH|DELETE /v1/growth/{proxy+}` with no `ANY` (an `ANY`
-  route swallows `OPTIONS`), and an actual preflight against
-  `https://api-stable.inspiresgenius.com/v1/growth/roster` returns **204** with
-  `access-control-allow-origin: https://stable.inspiresgenius.com` and credentials allowed.
-- **#756 — blueprint-service global (org-agnostic) seed library.** Code only; no seed run performed
-  on staging-b, and none needed while matching is gated off there.
-- **#757 / #760 / #761 — docs.**
-
-### Verified before tagging, and again after
-- **#762 does NOT widen blueprint matching beyond dev.** Its gate is
-  `BLUEPRINT_MATCHING_ENABLED: envName === 'dev' ? 'true' : 'false'`, so staging-b takes the `false`
-  arm. Re-checked on the deployed Lambda after the promote: `ig-staging-b-blueprint` reports
-  `matching=false, signoff=false`. Worth noting the irony — the same `envName ===` string comparison
-  that caused #764 fails *closed* here, which is why it was safe.
-- **No migrations in the delta** (`git diff --name-only` over the tag range: no `migration`/`alembic`/
-  `.sql`). Migrations on staging-b are manual, so an unnoticed one is the usual way a promote half-lands.
-- **No `services/agent-engine/` changes in the delta** — the image rebuild was a no-op re-push.
-- **No new stacks** — `ig-staging-b-growth` and `ig-staging-b-blueprint` were already
-  `UPDATE_COMPLETE`, so both were updates. (A prior note claiming growth-service was not on staging-b
-  was stale; it has since been promoted.)
-
-### Post-promote state
-- Agent-engine ECS `ACTIVE`, 1/1 running.
-- `GET /v1/agents/health` → 200 in 0.11s. `GET /v1/growth/health` → 401 (auth-gated, route live).
-
-### Unchanged, deliberately
-- **The WebSocket stage throttle is still 25 rps / 50 burst** on staging-b (`lc77fxll95`) — and on
-  every other environment, prod included, because it is hardcoded rather than env-derived. It carries
-  chat streaming, so it needs its own decision rather than riding along with an HTTP-tier fix.
-
-## [2026-08-02] — magic-auth gate was a denylist; staging-B authenticated verification path
-
-### Fixed
-- **`MAGIC_AUTH_ENABLED` was a denylist, so the undeployed `staging` env would have shipped an
-  email-only auth bypass ENABLED.** `POST /v1/magic-auth` mints a valid HS256 session token from an
-  **email address alone** — no password, no emailed link, no one-time-use. PR #717 gated it off the
-  non-dev tiers, but as:
-  `MAGIC_AUTH_ENABLED: (isProd || envName === 'staging-b') ? 'false' : 'true'`.
-  That names the environments to *protect*. `config.ts` defines **four** — dev, staging, prod,
-  staging-b — and `staging` matches neither arm, so it resolved to `'true'`.
-  - **Not exploited.** `staging` has never been deployed; only `ig-dev-auth-service` and
-    `ig-staging-b-auth-service` exist. This was latent, not a live breach.
-  - Now an **allowlist** — `envName === 'dev' ? 'true' : 'false'` — so an unrecognised environment
-    fails **closed**. For a security gate, forgetting an entry must not mean "wide open".
-  - **Fourth instance of the `envName === '...'` shape** (after #738, #745, and the API Gateway
-    throttle bug in the entry above). Those were performance bugs; this one was an auth bypass.
-  - **No deploy required:** for both deployed environments the synthesised value is unchanged
-    (dev `'true'`, staging-B `'false'`). Only the undeployed `staging` env changes.
-  - Files: `infrastructure/cdk/lib/services-stack.ts`
-
-### Added
-- `infrastructure/cdk/test/magic-auth-gate.test.ts` — 6 assertions pinning the flag for all four
-  environments, plus a set-equality check (`enabledEnvs === ['dev']`) so a future env added to the
-  permitted side fails CI. **Confirmed red against the old expression before being committed** — 2
-  failures naming `staging` exactly; a test never seen failing proves nothing.
-- `scripts/stagingb_verify/` + `docs/stagingb-authenticated-verification.md` — a supported
-  authenticated verification path for staging-B, built because the *reason* given for not having one
-  was wrong (below).
-  - `provision_account.py` — one-shot: creates a synthetic `[email redacted]` via
-    admin-tools, stores a generated password in Secrets Manager, sets it permanent in Cognito.
-    Idempotent. **Pending owner approval** — it creates an account and sets a password, both
-    correctly refused without an explicit go-ahead.
-  - `verify_auth.py` — repeatable: asserts the magic-auth 404 still holds, logs in through the
-    ordinary `/v1/login` Cognito path, hits `/v1/me`, and with `--chat` runs a live Meridian turn
-    asserting PRISM behaviour (no bare "Orange" outside a negation, all four colours present).
-    Password is read from Secrets Manager at runtime and never printed, logged, or committed.
-
-### Changed
-- **Corrected a standing mischaracterisation: staging-B's `/v1/magic-auth` → 404 is not a defect.**
-  It had been carried as "blocks live authenticated verification on staging-B" and was queued as
-  something to fix. It is the gate working as designed; "fixing" it would re-open an authentication
-  bypass on a shared environment. Deployed config re-verified (`MAGIC_AUTH_ENABLED=false` on
-  `ig-staging-b-auth-service`), and the 22 auth-service magic-auth/magic-link tests pass on current
-  `development`.
-- Two related traps documented so they stop costing time:
-  - `POST /v1/magic-link/request` **always** returns 200 (anti-enumeration by design), so a 200
-    there does not prove an account exists — it is not an existence check.
-  - Every identity in the staging-B Cognito pool is a **real person** (wilkescc.edu / robeson.edu
-    students, PRISM staff, Honor Foundation). Verification uses a synthetic account rather than
-    minting a session as one of them.
-## [2026-08-02] — Candidate Interview Coach: Phases 1–4 built + live on dev (mono #767 + FE #335)
-
-Candidate-SIDE counterpart to the evaluator Maven STAR bank — self-practice with
-supportive coaching, **never a score or an exemplar**. Composes on the deployed
-bank; no new service/table/vector store.
-
-### Added
-- **Candidate-safe read** `GET /v1/agents/interview/practice-questions` — any
-  authenticated user; `include_exemplars=False` + `rubric` stripped. Evaluator
-  `/question-bank` untouched.
-  - Files: `services/agent-engine/app/routes/interview.py`
-- **PUBLIC tool** `practice_questions` (exemplars/rubric stripped). Tool count 8→9.
-  - Files: `services/agent-engine/app/tools/interview_practice.py`, `.../tools/registry.py`
-- **Alex interview-coach mode** — `AGENT_PROMPTS["Alex_InterviewCoach"]` (STAR
-  feedback: one strongest + one weakest + one nudge; hard no-score/no-exemplar
-  rules) + `alex_mode` prompt-swap in Alex (mirrors Maven's `maven_mode`).
-  - Files: `services/agent-engine/app/llm/prompts.py`, `.../agents/coaching/alex_agent.py`
-- **Routing** — phrase-gated interview-practice short-circuit → Alex-coach; real
-  hiring/career "interview" turns unaffected.
-  - Files: `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
-- **FE `/interview-practice`** — candidate practice loop (pick competency →
-  question+probes → answer → coaching inline → try again / next) over the
-  async-job chat path + user nav item.
-  - Files (FE #335): `src/pages/user/InterviewPracticePage.tsx`,
-    `src/services/interview/practice.service.ts`,
-    `src/hooks/interview/usePracticeQuestions.ts`, `src/routes.tsx`,
-    `src/constants/{routes,navigation}.ts`
-
-### Verified
-- 85 agent-engine tests + 5 FE tests + `npm run build` green; 12 pre-existing
-  dev-HEAD failures unrelated (proved via stash). **Live on dev:**
-  `/practice-questions` 404→401→**200** with a real `user` token → 12
-  competencies, keys `[guidance,sections,totalCompetencies]`, **no rubric, no
-  exemplars** (candidate-safe confirmed live).
-
-## [2026-08-02] — Chronicle bio-capture follow-ons: cross-agent injection + memoir export + Bio Capture FE
-
-Delivers the three follow-ups the #752 Chronicle build had listed as deferred. Backend mono
-PR #769 (`d9a390aa`), FE PR #336 (`a545b727`).
-
-### Added — cross-agent life-narrative injection (agent-engine)
-- The five sibling coaching agents (Alex, Nova, Echo, Ascend, Summit) now receive an ambient
-  `<LIFE_NARRATIVE>` digest (from `BioStore.build_digest`) in their system prompt, via the shared
-  `_build_messages_with_rag` seam, gated to an explicit `COACHING_BIO_AGENTS` set. Chronicle is
-  excluded (it injects its own block). Degrade-safe: None manager / missing `.bio` / empty digest /
-  any error → no block, no raise. Appended AFTER the prompt-cache breakpoint so it never invalidates
-  the cache prefix.
-  - Files: `services/agent-engine/app/agents/base_agent.py`
-
-### Added — memoir export (agent-engine)
-- `POST /v1/agents/bio/{member_id}/memoir` (under `/v1/agents/*`, auth-gated). `memoir_composer`
-  groups episodes by module in `BIO_MODULES` order; `structured` = deterministic LLM-free markdown,
-  `prose` = per-module first-person weaving via the Chronicle provider with structured fallback on
-  any LLM error. Empty narrative → `generated=false`. Never 500s.
-  - Files: `services/agent-engine/app/routes/bio_memoir.py`,
-    `services/agent-engine/app/agents/coaching/memoir_composer.py`, `services/agent-engine/app/main.py`
-
-### Added — Bio Capture FE surface (frontend, PR #336)
-- New `/bio` user surface (strict Service→Hook→Component, all on the agent-engine via `agentApi`):
-  `types/bio.ts`, `services/bio/bioService.ts`, `hooks/useBioNarrative.ts` + `useGenerateMemoir.ts`,
-  `pages/user/BioCapture.tsx`, `components/user/bio/{NarrativeViewer,ChronicleChatPanel,MemoirExportMenu}.tsx`,
-  `lib/bio/clientMemoir.ts`, plus route + user-nav entry. NarrativeViewer = six chapter cards
-  (status + coverage) + episode timeline + next-module CTA + empty state. ChronicleChatPanel reuses
-  `useMeridianWebSocket` and seeds bio context so Meridian routes to Chronicle. Memoir export
-  (Copy/Print/Word/PDF) via the shared `exportTurn`/`printTurn` util; prefers the backend memoir
-  markdown, falls back to a client-side memoir assembled from the narrative JSON on 404 — so it
-  degrades gracefully where the backend memoir route isn't deployed yet.
-
-### Tests
-- Backend: `test_crossagent_bio_injection.py` (13) + `test_bio_memoir.py` (12); 53/53 across new +
-  adjacent (chronicle/bio_store); zero regressions vs baseline (172 pre-existing test-isolation
-  failures unchanged). FE: `clientMemoir` fallback 7/7; `npm run build` (tsc+vite) + lint clean.
-
-### Deployed
-- Backend **LIVE on dev** (Staged-Deploy-on-merge, verified): `POST /v1/agents/bio/{id}/memoir` →
-  401 (route present, not 404); `/v1/agents/health` → 200. Cross-agent injection is internal to
-  agent prompts (not externally probeable) — covered by the 13 injection tests.
-- **NOT on staging-b**: the agent-engine backend needs a `release-stable-*` tag (not pushed —
-  protected env, out of this task's scope). FE auto-deploys to dev **and** staging-b on merge; on
-  staging-b the memoir endpoint is absent until a backend promote, so the FE memoir export uses its
-  client-side fallback there.
-
-## [2026-08-02] — Chronicle backend follow-ons now LIVE on staging-b (correction)
-
-Correcting the earlier follow-on entry, which said the cross-agent injection + memoir backend was
-"NOT on staging-b": it in fact rode the completed, successful `release-stable-2026-08-02-maillink-loglevel`
-promote (that tag = the #771 doc commit `b8c362bf`, and backend #769 `d9a390aa` is an ancestor — verified
-with `git merge-base --is-ancestor`). No separate tag was pushed from this session; the promote had
-already carried it (the "Promote ALL" model).
-
-Verified on staging-b (`api-stable.inspiresgenius.com`): `POST /v1/agents/bio/{id}/memoir` -> 401
-(route present, not 404); `GET /v1/agents/bio/{id}` -> 401; `/v1/agents/health` -> 200; agent-engine ECS
-desired 1 / running 1 / rollout COMPLETED (no `desiredCount -> 0` regression). The FE Bio Capture surface
-was already on staging-b (FE auto-deploys dev+stg-b), so its memoir export there now hits the real backend
-endpoint rather than the client-side fallback.
-
-## [2026-08-02] — Interview Practice v2: Tools link, interview-frame setup, voice mode (mono #774 + FE #338)
-
-Follow-up to the Candidate Interview Coach (#767/#335), addressing feedback: no
-Tools link, and a request for voice + an interview-frame setup step.
-
-### Added
-- **Tools-rollup link** — Interview Practice now appears in the collapsible
-  "Tools" section for manager / practitioner / super-admin (`TOOL_ITEMS_BY_ROLE`),
-  so it's discoverable when testing as those roles (users keep the flat sidebar
-  link). Files: `src/constants/navigation.ts`.
-- **Interview-frame setup** — a first step where the candidate confirms the seat
-  (company, industry, role title, reporting line, scope — required; external-vs-
-  internal, weighted competencies/risks, interview length — optional; default
-  45–60 min / 12 questions). Passed into coaching so Alex tailors questions +
-  feedback to that role and weights the flagged risks.
-  Files: `src/components/interview/InterviewFrameForm.tsx` (NEW),
-  `services/interview/practice.service.ts` (InterviewFrame + buildCoachMessage +
-  practiceJobContext), `services/agent-engine/app/llm/prompts.py`
-  (`AGENT_PROMPTS["Alex_InterviewCoach"]` INTERVIEW FRAME block).
-- **Voice mode (Meridian interface)** — `useTTS` speaks the question and the
-  coaching aloud; `useSpeechDictation` (Web Speech API, same engine as
-  MeridianChat) captures the spoken answer, with a "type instead" fallback.
-  Files: `src/hooks/interview/useSpeechDictation.ts` (NEW),
-  `src/pages/user/InterviewPracticePage.tsx` (frame step + voice toggle).
-
-### Fixed
-- `useSpeechDictation` reported `supported=true` in browsers without
-  SpeechRecognition (`undefined !== null`) — caught by its own test.
-- Removed `user` from `TOOL_ITEMS_BY_ROLE` (it gave the user role a UnifiedLayout
-  Tools section it never uses and broke 3 UnifiedLayout tests).
-
-### Tests
-- Frame-in-message/context (practice.service), dictation supported/dictate,
-  Alex frame prompt. Full `npm run build` + backend pytest green.
-
-## [2026-08-02] — Bio Capture: voice option + life-story elicitation method (mono #776 + FE #339)
-
-Reworks the Chronicle Bio Capture interview so it genuinely draws people deeper, and adds a Meridian
-voice option. Guided by `IG_Life_Story_Elicitation_and_Maven_Legacy_Mode.docx`.
-
-### Changed — Chronicle elicitation prompt (agent-engine, #776 `059e4a08`)
-- Rewrote `AGENT_PROMPTS["Chronicle"]` to run a professional life-story elicitation session instead of
-  generic Q&A: preserve-not-evaluate (no evaluative signal, even approval); **episodic anchoring**
-  (generalization → one bounded scene → anchor place/people/time → perception before interpretation →
-  the unspoken → only then widen); sensory detail as the depth tell with a stop-rule (move on when
-  detail runs out; never push confabulation); one question at a time; reflect-to-confirm-never-interpret;
-  chapters + scene menu (high/turning/earliest/vivid/wisdom/reckoning) with the **low point gated
-  behind established trust**; within-session arc (open safe → deep → return light, **never end inside
-  the hardest material**); **right-to-pass** + distress protocol. Six modules, `You are Chronicle`, and
-  the verbatim Meridian synthesis directive preserved.
-  - Files: `services/agent-engine/app/llm/prompts.py`
-
-### Added — voice option on the Bio Capture surface (frontend, #339 `cc6b2d61`)
-- Voice/Text toggle on the Chronicle panel (mirrors the Interview Practice voice mode): `useTTS` reads
-  each Chronicle question aloud (+ per-message Listen/Stop); `useSpeechDictation` transcribes the spoken
-  answer into the input for **review-then-send**; listening indicator + `aria-live` status. Graceful mic
-  fallback (disabled + tooltip when `SpeechRecognition` unsupported); TTS degrades silently; text mode
-  unchanged. Introduction/instructions kept. Added tappable **"go deeper" episodic probes** (guide
-  Appendix B) + a sensory-detail encouragement line.
-  - Files: `src/components/user/bio/ChronicleChatPanel.tsx` (+ `__tests__`)
-
-### Scope note
-- Implemented the guide's elicitation **method** (Sections 1–4, Appendix B/C). The larger **Maven Legacy
-  Mode** backend proposal (Section 5 — capture_mode, redaction cascade, multimodal artifacts, archive
-  render) is a documented future initiative, NOT built here.
-
-### Tests / deploy
-- Backend: 53/53 chronicle/bio tests; `import app.main` OK. FE: `ChronicleChatPanel` 4/4 + dictation 2/2;
-  `npm run build` + lint clean.
-- Backend prompt **LIVE dev** (Staged-Deploy-on-merge; `/v1/agents/health` 200). **NOT on staging-b**
-  (agent-engine backend needs a `release-stable-*` tag — not pushed). FE voice option auto-deploys
-  **dev + staging-b**.
-
-## [2026-08-02] — Chronicle elicitation prompt now LIVE on staging-b (promote)
-
-Promoted the Chronicle life-story elicitation prompt (#776) to staging-b via tag
-`release-stable-2026-08-02-chronicle-elicitation` (= dev HEAD `308fc5f9`; also carried #774's
-interview-frame under the Promote-ALL model). Promote workflow green on all six jobs incl. the
-authenticated smoke matrix. No migration (prompt-only).
-
-Verified on staging-b (`api-stable.inspiresgenius.com`): `/v1/agents/health` -> 200;
-`GET /v1/agents/bio/{id}` -> 401 (present); `POST .../memoir` -> 401 (present); agent-engine ECS
-desired 1 / running 1 / rollout COMPLETED (no `desiredCount -> 0` regression). Supersedes the
-earlier entry's "NOT on staging-b" note for the elicitation prompt. FE voice option was already on
-staging-b (FE auto-deploys dev+stg-b).
-
-## [2026-08-02] — Bio Capture: capture + reflect the member's input (core fix, mono #780 + FE #341)
-
-Fixes the two defects the user reported ("no feedback from what I added"; "prompts don't drive the
-topic"). Root cause: the bio store's write methods had **zero callers** — Chronicle talked but never
-persisted anything, so the panel was always empty and follow-ups were a static generic rotating list.
-
-### Added — extraction + persist endpoint (agent-engine, #780 `798f68e8`)
-- `POST /v1/agents/bio/{member_id}/capture` (`routes/bio_capture.py` + `agents/coaching/bio_extractor.py`):
-  a structured extraction pass over the member's message → best-fit module, one or more episodes
-  (title/facts/people/places/era/feeling/meaning), a **what-stands-out** synthesis, and 2–3
-  **content-specific** follow-up questions. Persists module + episodes + coverage to the bio store
-  (people/places → episode `prism_tags` JSON). Empty message / LLM error → `captured=false`, never 500;
-  persistence best-effort. **This is the first and only writer to the bio store.**
-  - Files: `services/agent-engine/app/routes/bio_capture.py`, `.../agents/coaching/bio_extractor.py`,
-    `.../app/main.py`, `.../tests/conftest.py`
-
-### Changed — Chronicle conversational prompt (agent-engine, #780)
-- Reworked `AGENT_PROMPTS["Chronicle"]` to the flow the user demonstrated (background-feedback.pdf):
-  warm acknowledgement → brief reflect-back → one **What stands out** synthesis → one content-specific
-  deepening question. Dropped the over-austere "reflect to confirm, never interpret / no approval"
-  stance from the prior rewrite; kept concrete-scene/one-question/right-to-pass instincts, the six
-  modules, `You are Chronicle`, and the verbatim Meridian synthesis directive. Will-Brown exchange
-  embedded as the worked example.
-  - Files: `services/agent-engine/app/llm/prompts.py`
-
-### Added — reflect the capture in the UI (frontend, #341 `98006427`)
-- On each user send, the panel also `POST`s the capture endpoint (non-blocking, best-effort). A new
-  **`CapturedTurnCard`** ("Captured to your profile") renders beneath each turn: module + episode
-  title/facts (+ people/places/era) + the what-stands-out line. The static rotating "go deeper" probes
-  are **replaced by the capture's content-specific `suggestedFollowups`** (tapping one sends + re-captures);
-  minimal starter set before the first turn. Intro/instructions, voice mode, dictation, TTS, and the
-  narrative-panel refetch untouched.
-  - Files: `src/components/user/bio/ChronicleChatPanel.tsx`, `.../CapturedTurnCard.tsx`,
-    `src/hooks/useCaptureBioTurn.ts`, `src/services/bio/bioService.ts`, `src/types/bio.ts`
-
-### Tests / deploy
-- Backend: `test_bio_capture` 9 + 53 regression = 62 passed; `import app.main` OK. FE: bio tests 9/9;
-  build + lint clean. No new tables/migration.
-- Backend **LIVE dev** (Staged-Deploy-on-merge; capture route present). **NOT on staging-b** (needs a
-  release-stable tag). FE auto-deploys **dev + staging-b**; where the backend capture route isn't
-  present yet the capture call fails silently (best-effort) and the surface still works.
-
-## [2026-08-02] — Interview Practice in the My Workspace menu (FE #342)
-
-### Fixed
-- Interview Practice was reachable only from the Tools rollup, not **My Workspace**.
-  The My Workspace menu is `getUserNavItems()` (a pared-back shortcut list), not the
-  static `USER_NAV_ITEMS`, so the entry never appeared there. Added it to
-  `getUserNavItems()` (after Bio Capture) → shows in My Workspace for plain users and
-  for super-admins viewing user pages. Layout/nav tests + `npm run build` green.
-  - Files: `src/constants/navigation.ts`
-
-## [2026-08-02] — Interview Practice v3: structured interview, real Meridian voice, findings/print (mono #783 + FE #343)
-
-Rebuilds `/interview-practice` from a free "pick a competency forever" loop into a
-bounded structured interview, fixing five reported problems.
-
-### Fixed
-- **Poor voice → real Meridian voice.** Root cause: `useTTS` posted to
-  `/v1/audio/tts`, which does not exist (404) → it silently fell back to the
-  browser's robotic SpeechSynthesis. New `useMeridianVoice` hook calls the working
-  `POST /v1/agents/voice/synthesize` (same endpoint MeridianChat uses; verified
-  live 200 `audio/mpeg`, 38 KB) with a warm OpenAI voice; browser fallback only if
-  the server is unreachable.
-  - Files: `src/hooks/interview/useMeridianVoice.ts` (NEW)
-- **Length / question count ignored → honored.** Setup form takes number of
-  questions (1–12) + length (minutes); `buildInterviewPlan()` builds a bounded,
-  ordered plan of exactly N questions split across the 3 sections.
-- **Questions repeated forever → bounded.** Fixed list, "Question X of N" +
-  progress bar, no wrap/loop.
-- **No way to end → "End interview" button** ends any time → findings.
-- **No findings/print → Findings phase.** Developmental read-out (Key Strengths,
-  Areas to Improve, Recommended Actions, Coverage, Confidence — no score, via the
-  new `Alex_InterviewCoach` END-OF-INTERVIEW FINDINGS block), full Q&A transcript,
-  and a Print / Save-PDF button.
-
-### Files
-- `services/agent-engine/app/llm/prompts.py` — findings block (mono #783).
-- FE (#343): `services/interview/practice.service.ts` (plan + findings + count/length),
-  `components/interview/InterviewFrameForm.tsx`, `pages/user/InterviewPracticePage.tsx`,
-  `hooks/interview/useMeridianVoice.ts`.
-
-## [2026-08-02] — Bio Capture capture+reflect now LIVE on staging-b (promote)
-
-Promoted the capture/persist endpoint + reworked Chronicle prompt (#780) to staging-b via tag
-`release-stable-2026-08-02-bio-capture-reflect` (= dev HEAD `a88a37de`; #780 was the only agent-engine
-change since the prior promote). Promote workflow green on all six jobs incl. the authenticated smoke
-matrix. No migration (prompt + route only).
-
-Verified on staging-b (`api-stable.inspiresgenius.com`): `POST /v1/agents/bio/{id}/capture` -> 401
-(route present, not 404); `/v1/agents/health` -> 200; agent-engine ECS desired 1 / running 1 / rollout
-COMPLETED (no `desiredCount -> 0` regression). Supersedes the earlier entry's "NOT on staging-b" note.
-The full Bio Capture capture+reflect loop (extraction, persisted episodes, content-derived followups)
-now works on staging-b as well as dev.
-
-## [2026-08-02] — Interview Practice v4: faster coaching, audio controls, Word/PDF/save (mono #787 + FE #344)
-
-### Fixed / Added
-- **Latency (~1 min → Meridian-speed).** Root cause: the coaching orchestrator ran
-  the personal-RAG backfill (`_ensure_shared_context_populated` — an embedding +
-  pgvector round-trip) on every interview turn, before the Alex short-circuit.
-  Now **skipped** for interview-practice turns (they don't use PRISM/personal
-  context); normal coaching still backfills. FE tightens the async-job poll to
-  700ms. (SSE `/v1/agents/chat/stream` is 404 on dev — Meridian uses the async-job
-  path here too.)
-  - Files: `services/agent-engine/app/agents/orchestrators/coaching_orchestrator.py`
-- **Full audio controls.** `useMeridianVoice` is now a real player — play, pause,
-  stop/cancel, seek ±10s (fast-forward / rewind) — over the Meridian synthesize
-  audio; new `AudioControls` transport bar on question / coaching / findings.
-  - Files: `src/hooks/interview/useMeridianVoice.ts`, `src/components/interview/AudioControls.tsx`
-- **Transcript → Word + PDF + saved for retrieval.** New `interviewExport` reuses
-  the branded transcript exporter (`src/lib/exportTranscript`) for Word (.doc) +
-  PDF of the findings + full Q&A, and saves the transcript to the user's documents
-  (document-service presigned upload, `doc_kind: interview-transcript`) →
-  retrievable from My Documents. Findings page: Word / PDF / Save / Print buttons.
-  - Files: `src/services/interview/interviewExport.ts`, `src/pages/user/InterviewPracticePage.tsx`
-
-## [2026-08-02] — SESSION SUMMARY: Bio Capture / Chronicle vertical, end to end (dev + staging-b)
-
-Consolidated summary of a single session that took the **Bio Capture** feature (the Chronicle
-life/career-narrative interviewer) from design through repeated ship + promote cycles. Every item
-below already has its own detailed entry in this log — this is the index/arc. All LIVE on **dev AND
-staging-b**, each step verified (route presence, health, ECS no-zero-scale, promote smoke gates).
-
-### Added
-- **Chronicle agent** merged (#752) + deployed; migration 026 (`bio_modules`/`bio_episodes`/`bio_coverage`)
-  applied to dev **and** staging-b Aurora.
-- **Cross-agent life-narrative injection** — ambient `<LIFE_NARRATIVE>` digest into the five sibling
-  coaching agents (Alex/Nova/Echo/Ascend/Summit), degrade-safe, cache-aware (#769).
-- **Memoir export** — `POST /v1/agents/bio/{id}/memoir` (structured / LLM-prose, degrade-safe) (#769).
-- **Bio Capture FE surface** at `/bio` — narrative viewer, Chronicle chat, memoir export with client-side
-  fallback (FE #336).
-- **Voice option** on the Bio Capture panel — `useTTS` read-aloud + `useSpeechDictation` review-then-send,
-  graceful fallback (FE #339).
-- **Capture/persist endpoint** — `POST /v1/agents/bio/{id}/capture` + `bio_extractor.py`: the **first and
-  only writer to the bio store** (module + episodes + coverage; people/places → episode `prism_tags`) (#780).
-- **"Captured to your profile" reflection card** + content-derived follow-up chips (FE #341).
-- Design deliverable: **Bio Capture Interview design & build-plan** Word doc + generator (#744).
-
-### Changed
-- **Chronicle system prompt** — rewritten to the professional life-story elicitation method (#776), then
-  reworked after user feedback to the flow the user demonstrated: acknowledge → reflect-back →
-  **What stands out** synthesis → one content-specific deepening question (#780).
-
-### Fixed
-- **Core defect**: the bio store had zero writers, so nothing a member said was persisted → the panel was
-  always empty ("no feedback from what I added"). The capture endpoint (#780) now persists every turn.
-- **Off-topic prompts**: the static rotating "go deeper" chips replaced by content-derived follow-ups from
-  the member's actual input (#341).
-
-### Deployed / promoted
-- Backend to staging-b via release-stable tags `…-chronicle-elicitation` and `…-bio-capture-reflect`
-  (+ earlier carries `…-maillink-loglevel`); FE auto-deployed dev + staging-b on each merge. Doc/log
-  corrections: #760, #771, #773, #778, #779, #781, #786.
-
-_Note: `IG_project_log.html` (generated dashboard) is left to its update hook per standing practice; the
-`inspire-genius-frontend/` log copies live in the separate public FE repo and are not blind-synced from here._
-
-## [2026-08-02] — Backend infrastructure hardening + staging-B verification tooling
-
-> Backend/infrastructure only — no frontend code changed. Details are recorded in the
-> private infrastructure repository; this entry exists to keep the project log continuous.
-
-### Fixed
-- An environment-conditional flag in the CDK service stack was expressed as a denylist
-  (naming the environments to exclude) rather than an allowlist (naming the one environment
-  permitted). A configured-but-undeployed environment therefore matched no branch and
-  inherited the permissive value. Reworked to an allowlist so an unrecognised environment
-  resolves to the restrictive value — it now fails closed rather than open.
-  - Never reachable: the environment in question has never been deployed.
-  - No deploy required — the synthesised value is unchanged for every deployed environment.
-  - Same class of `envName` string-comparison bug as the API Gateway throttle fix in the
-    previous entry; that made this the fourth occurrence, so it is now pinned by tests
-    rather than fixed case-by-case.
-
-### Added
-- CDK tests pinning that flag for every configured environment, including a set-equality
-  assertion so a future environment added to the permitted side fails CI. Confirmed failing
-  against the previous expression before being committed.
-- Tooling and documentation for running an **authenticated** verification pass against
-  staging-B through the ordinary login path, so staging-B behaviour can be checked directly
-  instead of inferred from deployed-code inspection.
-
-### Changed
-- Corrected a standing note that had recorded a deliberate security control as a defect
-  "blocking staging-B verification". It was the control working as designed; the real gap was
-  the absence of verification tooling, which the entry above addresses.
-
 ## [2026-08-01] — Global blueprint library seeded (the Plan/Interview blocker)
 
 `_visible_active_blueprints` narrows to `org_id IS NULL` for a caller with no employer —
@@ -7794,6 +8138,512 @@ Branches pushed: `feat/direction-setting` (monorepo) and `feat/direction-setting
 - **Frontend: 4091 tests / 522 suites**, CI coverage gate met, `npm run build` green.
 - **Not verified:** nothing deployed, no browser check, migrations `002` / `024` / `025` unapplied, and no path exercised against real user data.
 
+## [2026-08-01] — Team Development moved into a collapsible "Tools" rollup (PR #326)
+
+### Changed
+- Team Development Studio was a flat top-level sidebar item for managers and super-admins. It now lives in a dedicated, collapsed-by-default **"Tools"** rollup, so utility surfaces are grouped rather than crowding the primary role menu.
+  - `constants/navigation.ts`: added `TOOL_ITEMS_BY_ROLE` (per-role Tools items) and `SUPER_ADMIN_TOOLS_SECTION`; removed the inline "Team Development" entries from `MANAGER_NAV_ITEMS` / `SUPER_ADMIN_NAV_ITEMS`.
+  - `layouts/UnifiedLayout.tsx`: renders a collapsed `Tools` section (above `Verticals`) for any role with tool items (managers today).
+  - `layouts/SuperAdminLayout.tsx`: splices the Tools rollup in above `Administration`.
+  - Still gated by `VITE_FEATURE_TEAM_DEVELOPMENT`; the section collapses away entirely when the flag is off.
+  - Files: `src/constants/navigation.ts`, `src/layouts/UnifiedLayout.tsx`, `src/layouts/SuperAdminLayout.tsx`, `src/layouts/__tests__/UnifiedLayout.tools.test.tsx`, `src/constants/__tests__/navigation.test.ts`
+- Pure navigation reorganization — the route (`/manager/development`) and the Studio pages are unchanged. Merged to `development`; auto-deployed to dev + staging-b. Pairs with the backend roster fix (monorepo PR #741) that resolves the manager's direct reports from the canonical `employee_profiles.manager_id → user_profiles` relation.
+
+## [2026-08-01] — Interview Prep: STAR question bank browser (PR #330)
+
+### Added
+- Reviewer-facing **Question Bank** tab in Maven's Interview Prep surface
+  (manager + practitioner) — surfaces the shared STAR bank with scoring anchors.
+  - `src/services/interview/interview.service.ts` — `getQuestionBank()` → agent-engine
+    `GET /v1/agents/interview/question-bank` (via `agentApi`).
+  - `src/hooks/interview/useQuestionBank.ts` — React Query wrapper (constant → generous staleTime).
+  - `src/components/task-agents/QuestionBankPanel.tsx` — 3-section tabs
+    (Vision / Behavioral / Productivity), each competency's STAR question + probes, and a
+    collapsible "what to listen for" with strong/baseline/weak exemplars.
+
+### Changed
+- `src/components/task-agents/InterviewPrepBody.tsx` — wrap the existing prep form + the
+  new panel in Generate / Bank tabs (non-breaking).
+
+### Tests
+- `src/services/interview/__tests__/interview.service.test.ts` (2). Full `npm run build` (tsc+vite) green.
+
+## [2026-08-01] — Candidate Interview Coach: build plan (candidate-side counterpart)
+
+### Added
+- **Build plan** for the candidate-SIDE interview practice offering — the mirror of the
+  merged evaluator-side Maven STAR bank. Composes entirely from IG Core: reuses the deployed
+  `star_interview_bank.py` (12 competencies) + Alex (coaching, All roles) + the async-chat
+  loop; net-new is one Alex coaching prompt-mode, one candidate-safe read
+  (`/v1/agents/interview/practice-questions`, exemplars + rubric stripped), and one
+  `/interview-practice` FE surface. No new service/table/vector store/event. 4 phases,
+  ~3–4 h human + ~3.25–3.75 CC sessions (~1 focused day). Prime constraint: the candidate
+  path must NEVER surface a score or the evaluator's strong/baseline/weak exemplars.
+  - Files: `docs/plans/Candidate_Interview_Coach_Build_Plan.md`
+
+## [2026-08-01] — Chronicle: dev Aurora migration 026 applied (bio store)
+
+Completes the piece #752 explicitly held ("migration apply held — shared env"): applied
+`services/migration-runner/migrations/bio_store.sql` to **dev** Aurora via
+`ig-dev-migration-runner` — 15 statements, all OK, 0 failed. Verified via
+`information_schema`: `bio_modules`, `bio_episodes`, `bio_coverage` all present. Chronicle's
+`BioStore` now has its backing tables on dev, matching the staging-B apply logged below.
+Idempotent (`CREATE TABLE IF NOT EXISTS`, guarded triggers) — no data touched.
+
+Dev agent-engine ECS was already serving Chronicle via the Staged-Deploy-on-merge; this
+entry records only the manual dev DB migration (the deploy pipeline has no migration step).
+The staging-B side of this same work is logged in the promote entry below (by the doc-owner
+terminal), which already covers #752 Chronicle end-to-end on staging-B.
+
+## [2026-08-01] — Staging-B promote: PRISM brain map, Orange-guard fix, Chronicle, direction-setting, STAR bank
+
+Tag **`release-stable-2026-08-01-prism-brain-map`** → `4cac5809`. Promote workflow green on all six jobs (pre-flight, build+push image, cdk deploy, ECS rollout, authenticated smoke matrix, notify).
+
+### Promoted (backend only — the frontend was already there)
+`d2c5964` was already serving on **both** dev and staging-B, because frontend merges auto-deploy to both environments. Only the agent-engine needed a tag. Contents since `release-stable-2026-08-01-env-identity`:
+
+| PR | Change |
+|---|---|
+| **#755** | PRISM Brain Map emitted on turns that report the user's own scores |
+| **#746** | Colour guard no longer rewrites "Orange" when the model is correctly saying it isn't a PRISM colour |
+| #752 | Chronicle — Bio Capture interview agent |
+| #754 | direction-setting: repair the PRISM read blocking Career Areas |
+| #750 | Maven — shared STAR interview bank (questions, exemplars, tool + API) |
+
+**Three of the five are other terminals' work.** That is the documented "Promote ALL" strategy rather than cherry-picking, and it was explicitly approved — but it is worth naming, because a promote labelled for one change carried four others.
+
+### Schema — applied manually, before the tag
+The promote workflow has **no migration step** (verified by reading `staging-b-promote.yml`, not by trusting the note): its jobs are pre-flight → build → cdk-deploy → ecs-rollout → smoke → notify. #752's `bio_store` migration was therefore **not** going to be applied by the deploy, and tagging without it would have put Chronicle's routes live against three non-existent tables.
+
+Applied `services/migration-runner/migrations/bio_store.sql` to staging-B first — 15 statements, all OK — and verified the result: `bio_modules` (9 cols), `bio_episodes` (18), `bio_coverage` (6). Purely additive: `CREATE TABLE IF NOT EXISTS` + indexes, with `DROP TRIGGER IF EXISTS` guards only on the tables the same migration creates. No data touched. It was the only migration in the promoted range.
+
+### A moving target, caught before the push
+Between scoping the promote and creating the tag, another terminal merged **#750**, so the first tag silently contained a feature that had not been assessed. Caught before pushing: checked #750 (pure agent-engine Python — no migration, no new `packages/ig-*`, no CDK change), then **recreated the tag** so its release notes list what is actually in it rather than understating the contents.
+
+### Verified on staging-B after the rollout
+- ECS: **desired 1 / running 1 / COMPLETED**, deployment 22:40:06. The `desiredCount → 0` trap that has bitten this service before did **not** fire.
+- Inside the running container (`fd925ae2`), all timestamped from this build: `prism_canon.py` with the corrected `"blue": ("Supporting", …)` pairing, `prism_map.py`, `_NEGATION_BEFORE` (the Orange-guard negation fix), `_attach_prism_map` wired into `meridian.py`, and Chronicle's `bio_store.py`.
+- `GET /v1/agents/health` → 200 with all four memory tiers up; `POST /v1/agents/chat/async` → 401 (route present, wants auth).
+
+### Not verified on staging-B — stated rather than implied
+`POST /v1/magic-auth` returns **404** there (unchanged since #717), so no live authenticated conversation could be run. What was verified on staging-B is **deployed code and route existence**, not an executed turn. The workflow's own authenticated smoke matrix passed, which is independent evidence, but it is not the same thing.
+
+The functional proof of both PRISM fixes stands on **dev**, where live conversations were run earlier: Blue correctly 92.0 as the mean of Supporting + Coordinating, "Orange" appearing only inside a negation, and the brain map returned with correct scores and the canonical quadrant layout.
+
+## [2026-08-01] — Maven STAR interview bank: shared questions, exemplars, tool + API (PR #750)
+
+### Added
+- **Single source of truth** for structured-interview content:
+  `services/agent-engine/app/llm/star_interview_bank.py` — 3 sections × 4 competencies
+  (12 total), each a STAR primary question + probes, score-anchored (5/3/1) exemplars,
+  the 1–5 rubric, and prompt-block + JSON renderers (constant content → stays in the
+  Anthropic cache prefix).
+  - Files: `services/agent-engine/app/llm/star_interview_bank.py`
+- **MCP tool** `interview_bank` (MANAGER tier) — fetch the bank filtered by
+  section/competency, exemplars optional. Registry tool count 7 → 8.
+  - Files: `services/agent-engine/app/tools/interview_bank.py`, `.../tools/registry.py`
+- **Read API** `GET /v1/agents/interview/question-bank` — gated to Maven's roster
+  (manager / practitioner / company-admin / super-admin); feeds the FE Question Bank browser.
+  - Files: `services/agent-engine/app/routes/interview.py`, `.../app/main.py`
+
+### Changed
+- `AGENT_PROMPTS["Maven"]` now appends the full bank (+ STAR elicitation guidance +
+  exemplars); `AGENT_PROMPTS["James"]` appends a shared-bank reference so candidate
+  guides draw from the SAME bank (no drift). `Maven_Elicitation` deliberately untouched
+  (KCE tacit-knowledge path stays unscored).
+  - Files: `services/agent-engine/app/llm/prompts.py`
+
+### Tests
+- `tests/test_star_interview_bank.py` (15) — bank integrity, serialization, prompt
+  injection, tool filters, elicitation-not-polluted. Updated `test_mcp_tools.py` count 7→8.
+  All green.
+
+## [2026-08-01] — PRISM Brain Map diagram, and the Underlying-vs-Consistent score-type comparison
+
+Two pieces: a diagram emitted whenever a turn reports the user's own scores, and a read-only comparison of the two PRISM score maps for every dev user.
+
+### Added — PRISM Brain Map, emitted with any turn that reports the user's scores
+The four colour scores were only ever delivered as prose. They now arrive as the canonical map, with labels and scores.
+
+**The layout is not a free choice** — it comes from the licensed reference text in `prism_knowledge` (`AXES_DISCERNING_DYNAMIC`): *"The top left of the PRISM map is the Gold quadrant … the bottom right is Blue … The top right … is Green … the bottom left is Red."*
+
+Two things a naive 2×2 gets wrong, both now encoded **and asserted against the rendered SVG geometry** so a future edit cannot quietly rotate it the way the score pairing was:
+- **The axes are DIAGONALS**, not the grid lines. Gold + Blue share "less powerful" (Discerning); Green + Red share "more powerful" (Dynamic).
+- **Opposites mirror HORIZONTALLY**, not through the centre — they *"apply across the Gold/Green colour quadrants and the Red/Blue colour quadrants"*. Evaluating faces Initiating, Finishing faces Innovating, Focusing faces Supporting, Delivering faces Co-Ordinating; each panel's rows are ordered to put them literally opposite one another.
+
+**Delivered in `metadata["prism_map"]`, never in the response text.** TTS synthesises `content`; an inline SVG there would be read aloud as markup — the exact failure mode removed earlier the same day. A markdown table and a one-line description carry identical numbers for TTS, screen readers and plain-text export.
+
+**When it fires:** "each time scores are requested" is deliberately *not* every PRISM turn — a map on *"what does high Focusing mean?"* is clutter. Primary signal is that the answer **actually quotes at least two of the user's four colour scores** (self-correcting, no keyword vocabulary to maintain); an explicit *"show me my profile"* is a second trigger. Number matching is boundary-guarded so `52` does not match `1952`.
+
+**A bug this nearly shipped with:** the first implementation read `context.metadata["prism_scores"]` — as several existing call sites do. **That key is never populated** on the REST or WS chat paths (metadata carries only `file_ids` / `system_prompt_override` / `user_profile_block`), so the map would have silently never rendered. Scores now come from the memory manager, behind a cheap no-DB pre-check so an ordinary turn adds no query.
+
+**Frontend:** rendered through a **data-URI `<img>`, not `dangerouslySetInnerHTML`** — the markup is server-generated and asserted script-free, but an `<img>` cannot execute script under any circumstance. `encodeURIComponent` not `btoa` (the map contains `↔` and `·`). `alt` is the full numeric read-out so screen readers get data, not "image", with a "Show the numbers" toggle. `buildTurnHtml` gained an optional `figure` field rather than smuggling markup through the escaped markdown `body`; a test asserts the body is still escaped when a figure is present.
+
+- Files: `services/agent-engine/app/prism_map.py`, `app/agents/meridian.py`, `inspire-genius-frontend/src/components/prism/PrismMapFigure.tsx`, `src/components/user/chat/ChatWindowChatTab.tsx`, `src/lib/exportTranscript/exportTurn.ts`, `src/pages/user/MeridianChat.tsx`, `src/types/chat/data-types.ts`, `src/hooks/agents/useMeridianWebSocket.ts`
+- PRs: mono **#755**, FE **#332**
+
+**Render-verified, not just unit-tested.** The SVG was rasterised and inspected: the first version placed the axis captions on top of the panel borders, illegible — completely invisible in the source. Moved to a footer legend and re-checked.
+
+### Reported (no change made) — Underlying vs Consistent, all 14 dev users
+PRISM measures each behaviour three times: **Underlying** (instinctive), **Adapted** (environment-modified), **Consistent** (the manual's "likely overall behaviour" / "normal" preferences). The platform derives every colour score from **`Underlying`** only — a pre-existing choice, hardcoded as `SCORE_TYPE = "Underlying"`.
+
+Read-only comparison across all 14 dev users with an authoritative PRISM assessment:
+- **52 of 56 colour scores would change** under `Consistent`
+- mean shift **8.5** points, max **22.0**
+- **25 intensity-band changes**
+- movement is almost entirely **downward**
+
+**The consequence that matters:** many scores drop out of the **≥75 overdone-strength band**, which drives specific coaching language. User `3468e498` shows Green 91.5 / Blue 92 under `Underlying` (both flagged overdone) versus 74 / 72.5 under `Consistent` — just below threshold, so those warnings would disappear entirely.
+
+**Nothing was changed.** Switching the score type would silently move every number for every user; that is a product decision for Bill or a PRISM-accredited practitioner, not an inference. Tooling: `scratchpad/compare_score_types.py` (SELECT only).
+
+**Incidental finding:** six dev users share byte-identical scores (78 / 50.5 / 86 / 39) — almost certainly duplicated test data, worth a look independently of this decision.
+
+**Also learned:** the migration-runner Lambda truncates result sets at **10 rows**. Earlier queries in this session looked complete but were silently cut off. Aggregate into a single `json_agg` row when pulling anything larger.
+
+### Verification
+- Agent engine: **+31 tests**; full suite 4305 passed; failure set **byte-identical** to `origin/development` (167 pre-existing, no API keys locally) → zero regressions. One run showed 168 — a flaky test; two re-runs and a clean-baseline diff agree at 167.
+- Frontend: **+12 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **529 suites / 4171 tests, exit 0**; `npm run build` clean.
+
+## [2026-08-01] — Chronicle: Bio Capture interview agent (agent-engine) — PR #752
+
+### Added
+- **Chronicle** — a new coaching-domain specialist agent that runs a multi-session, reflective
+  life & career narrative interview (the Bio Capture feature designed in PR #744). Built end-to-end
+  from the plan's P0–P10 prompts via a coordinator + **4 file-partitioned sub-agents** (zero file
+  collisions), then integration-tested and adversarially checked by the coordinator.
+  - **Agent:** `services/agent-engine/app/agents/coaching/chronicle_agent.py` — mirrors Summit's
+    thin-agent model; `_inject_bio_context` appends a `<LIFE_NARRATIVE>` digest to the system prompt.
+  - **Prompt:** `AGENT_PROMPTS['Chronicle']` (`app/llm/prompts.py`) — 6 modules, 8 capture
+    dimensions, the 12-technique no-BS methodology, the depth gate (facts+impact+meaning+≥1 quote),
+    a safety block, ending with the verbatim Meridian synthesis directive; tier `TIER_1_COMPLEX`.
+  - **Store:** `app/memory/bio_store.py` `BioStore` + 3 ORM tables (`bio_modules`, `bio_episodes`,
+    `bio_coverage` in `app/memory/models.py`) mounted as `MemoryManager.bio`; emits
+    `inspiresgenius.bio` events (`bio.episode.captured`, `bio.module.completed`) via `eventbridge.py`.
+  - **Migration:** `alembic/versions/026_create_bio_store.py` (down_revision 025) + idempotent
+    `services/migration-runner/migrations/bio_store.sql` mirror.
+  - **Read API:** `GET /v1/agents/bio/{member_id}` (`app/routes/chronicle.py`, under `/v1/agents/*`
+    for ALB reach; registered in `main.py`).
+  - **Wiring:** registered across `coaching_orchestrator.py` (keywords, short-circuit, planner list,
+    DAG registry, select_agent) + `meridian.py` (`_AGENT_TO_DOMAIN`, `_COACHING_KEYWORDS`).
+  - **Tests:** 28 new (`test_bio_store.py` 15, `test_chronicle_agent.py`/`test_chronicle_route.py`
+    13) all green; goal siblings 39/39 and Meridian/orchestration 173 pass with **no new failures**
+    (the 5 `test_orchestrators` failures are pre-existing on `origin/development` — verified against
+    a pristine worktree; stale Nova/Echo assertions unrelated to bio).
+  - **Scope deltas vs the plan (honest):** the context-slot registry (plan §11/§12) does not exist
+    in the tree, so narrative injection uses the Summit `_inject_*` pattern; cross-agent injection,
+    the FE surface, and the memoir export are deferred follow-ups. Not yet deployed to dev (ECS roll
+    + migration apply held — shared env). PR #752, branch `feat/chronicle-bio-capture-agent`.
+
+## [2026-08-01] — Second staging-b promote: environment identity now correct (tag `release-stable-2026-08-01-env-identity`)
+
+### Promoted
+- Tag at `c48e5780` — **3 commits**, **no migrations** (checked migration-runner + every alembic
+  versions dir before tagging): #742 (CDK: stop *dev* deploys dropping agent-engine to zero — the dev
+  counterpart of #738), #743 (PRISM: correct quadrant↔behaviour pairing, stop calling Red "Orange"),
+  #745 (set `AGENT_ENGINE_ENVIRONMENT`).
+- **Promote workflow: ALL GREEN** — preflight cdk-diff, image build, `cdk deploy` (all staging-b
+  stacks), forced ECS rollout, authenticated smoke matrix, notify. Second consecutive clean promote.
+
+### The point of this promote — staging-b's scaling policy was inert, now it isn't
+- **Before** (recorded pre-tag): task def rev 21 had **no** `AGENT_ENGINE_ENVIRONMENT`, and the only
+  dimension value ever published in the staging-b account was `Environment=dev`. The
+  `InFlightLlmCallsScaling` policy watches `Environment=staging-b` → zero datapoints → could never
+  scale, and its alarm sat OK purely because missing data is treated as non-breaching.
+- **After**: task def rev **22** has `AGENT_ENGINE_ENVIRONMENT = staging-b`; CloudWatch now lists
+  **both** dimension values (`dev` historical, `staging-b` live); datapoints flow under
+  `Environment=staging-b` at `SampleCount 4`/min (2 uvicorn workers × 2 publishes; one minute showed 8
+  during the rollout overlap). The policy is fed and the alarm evaluates on real data instead of on
+  absence.
+- ECS 1/1, `desiredCount=1` held through the deploy, health 200 on `api-stable.inspiresgenius.com`.
+
+### Still open
+- **No functional concurrency probe against staging-b.** `POST /v1/magic-auth` is deliberately disabled
+  there (`settings.magic_auth_enabled=False`) because it hands out a session from an email alone; a
+  token needs the real Cognito login or the emailed magic-LINK flow. Not routed around by design.
+  Functional evidence remains the promote's own authenticated smoke matrix.
+
+## [2026-08-01] — Bio Capture Interview: design & build plan (Word doc)
+
+### Changed
+- **Expanded the plan to 23 pages** on owner request — added §10 Multi-Agent Build Approach
+  (coordinator + 7 worktree-isolated Claude Code sub-agents, a scout→build→verify→synthesize
+  dependency DAG, risk-scaled adversarial verification), §11 Claude Code Build Prompts (P0 scout →
+  P10 deploy, copy-pasteable, each mapped to its sub-agent), and §12 Level of Effort (per-workstream
+  man-hours vs Claude Code hours: **≈160 man-hrs vs ≈33.5 CC-hrs, ~4.8× speed-up, ~1 week
+  supervised vs ~4–5 weeks solo**, with human-gated work — stakeholder/PRISM/privacy/legal review —
+  called out as excluded). Trailing sections renumbered 13–17. Render re-verified (23pp).
+
+### Added
+- **Bio Capture Interview — Design & Build Plan** (17-page .docx): an interview-driven,
+  reflective-diary capture experience for the coaching domain. Deliverable produced from a
+  `/full-go` request. Covers (A) interview design — the 6 selectable capture "types" (Life Story,
+  Career Story, Background, Culture, Major Life Events, Major Life Shapers), 17 suggested
+  additional categories/lenses, the 8 cross-cutting capture dimensions (facts/feeling/impact/
+  meaning/quotes/charge + PRISM tags), the 12-technique "no-BS" probing methodology (WHY-ladder,
+  specificity forcing, anti-platitude guardrail, contradiction mirror, the 5% more, then-vs-now,
+  counterfactual, etc.), and full seed question banks per module; and (B) implementation plan on
+  IG's **standard approach** — a new coaching specialist agent (working name **Chronicle**)
+  following Summit's durable-store + Maven's phase-machine models, a `BioStore` + 3 tables with a
+  tracked alembic migration **and** migration-runner SQL mirror (explicitly not repeating the
+  goals-tables migration gap), a `life_narrative` context slot for coaching injection, FE
+  Service→Hook→Component + chat interview UI, a 6-phase dev→staging-B roadmap, privacy/ethics
+  gates, success metrics, and a file-by-file backend wiring checklist.
+  - Files: `scripts/build_bio_capture_interview_plan.py` (python-docx generator, brand palette +
+    logo), `docs/bio-capture/Bio_Capture_Interview_Design_and_Build_Plan.docx`
+  - Design grounded in the live tree (Summit `goal_agent.py`/`goal_store.py`, Maven
+    `interview_agent.py`, context slot registry, migration 007 pattern, job-blueprint FE trio);
+    render-verified (docx→PDF→PNG, 17pp, tables/cover clean).
+
+## [2026-08-01] — PRISM colour guard: don't rewrite "Orange" when the model is saying it isn't a colour
+
+Follow-up to the same-day PRISM fix (#743). **Found by an adversarial probe against deployed dev, not by a test.**
+
+### Fixed
+Asked *"Am I an Orange? What does my Orange score mean?"* — the case most likely to defeat the fix — Meridian correctly replied:
+
+> "Your quadrant is called **Red** in PRISM — there is no **Orange** colour in the framework."
+
+The `normalise_colour_names` output guard then rewrote that second "Orange" (it was followed by "colour", one of the quadrant-noun contexts) and what actually reached the user was:
+
+> "…there is no **Red** colour in the framework."
+
+Self-contradicting nonsense, in precisely the situation the guard exists to serve: the user uses the wrong term and the model explains that it isn't real.
+
+The guard now skips a match preceded within 60 characters by a negation cue (`no` / `not` / `never` / `isn't` / `rather than` / `instead of`). The window is deliberately bounded so a negation in an earlier clause cannot disable a legitimate rewrite later in the same response — there is a test for exactly that.
+
+- **+9 tests**, including the verbatim sentence from production.
+- Files: `services/agent-engine/app/prism_canon.py`, `tests/test_prism_canon.py`
+- PR **#746**, merged `7af79c3e`.
+
+### Everything else in that probe was correct
+Red 34 (Focusing 7 / Delivering 61), Blue 92, Green 91.5, Gold 52 — all matching the corrected derivation — and the word "Orange" appeared nowhere else despite the user using it four times.
+
+### Standing lesson
+Any regex that rewrites LLM output will eventually corrupt a *correct* sentence. Probe the adversarial case (user uses the wrong term, model explains why it's wrong), not just the happy path. The prompts and the injected `<prism_profile>` block are what actually stop the model saying "Orange"; this guard is only drift insurance and must never damage good output while doing its job.
+
+## [2026-08-01] — TDS roster resolves from the canonical manager→reports relation (growth-service, PR #741)
+
+### Fixed — Team Development Studio roster was empty
+`list_roster` sourced team membership from dashboard-service's `public.team_members`, but nothing in the repo ever writes that table (no INSERT anywhere), and the older `client.get_team()` HTTP path pointed at the agent-engine ALB, which does not serve dashboard's `/api/manager/team`. Live-verified on dev: `GET /v1/growth/roster` → `{"data":[]}`.
+- Added a canonical fallback in `_fetch_team_members`: when `public.team_members` is empty, resolve the manager's direct reports from the relation the app actually maintains — `public.employee_profiles.manager_id → user_profiles.id` — the same lookup the monolith's `_get_direct_report_ids` uses. `member_id` is the report's `user_id` (the key the dossier/PRISM/goal endpoints already expect).
+- **Additive**: `team_members` still wins where populated. **Session-safe**: a failed `public.*` read (e.g. the sqlite unit suite) rolls back and returns `[]`, so the persisted-dossier fallback still runs.
+- Cross-schema read over the shared RDS-Proxy connection (the sanctioned pattern in `.claude/rules/services.md`); no new env var / HTTP hop / auth-forwarding.
+  - Files: `services/growth-service/app/service.py` (`_fetch_direct_reports`, `_DIRECT_REPORTS_SQL`), `services/growth-service/tests/test_routes.py`
+- Tests: +1 roster fallback test; full growth suite green (72 passed). Deployed via `cdk deploy` to **dev** (`ig-dev-growth`) and **staging-b** (`ig-staging-b-growth`); deployed-code verified on both Lambdas. Pairs with frontend PR #326 (Team Development moved into a "Tools" rollup).
+
+## [2026-08-01] — PRISM: wrong colour scores + "Orange", duplicated TTS read-back, slow prompt injection
+
+Five reported defects. Every diagnosis below was confirmed against real dev data or a failing test — none inferred.
+
+### Fixed — Red was being reported as "Orange" (there is no Orange in PRISM)
+PRISM has four colours: **Gold, Green, Blue, Red**. "Orange" survives only as the name of the legacy `prism_results.orange` DB column. That name was leaking into the model's own context two ways: the injected `<prism_profile>` block emitted `<orange>`, and Aura's system prompt said verbatim *"Treat Red and Orange as synonyms; mirror the user's wording."* The model was doing what it was told.
+- Inject block now emits `<red>`; the DB column keeps its name (no migration, no benefit to renaming).
+- Aura's **and** Meridian's prompts now forbid the word as a colour name outright, and instruct answering in "Red" even when the user says "Orange".
+- Reference text no longer offers it as an alias: `prism_knowledge`, `disc_knowledge`, `enneagram_knowledge`, `reconciliation`, `prism_parser`, `report_import`.
+- `prism_canon.normalise_colour_names()` is a last-resort guard applied to Meridian's response. Scoped deliberately narrowly — it rewrites "Orange" only in PRISM contexts (adjacent to a quadrant noun, to Focusing/Delivering, or in a colour list) so ordinary prose ("orange juice", "an orange dress") is untouched. It also fixes the article, since "an Orange quadrant" would otherwise become "an Red quadrant".
+  - Files: `services/agent-engine/app/prism_canon.py`, `app/llm/prompts.py`, `app/memory/integration.py`, `app/agents/meridian.py`, `app/agents/coaching/prism_knowledge.py`
+
+### Fixed — the Blue score was wrong, and so were Gold and Red
+Each colour is the mean of the two behaviours in its quadrant, but the pairing was **rotated** against the licensed PRISM manual. Confirmed arithmetically against dev assessment `4f1066ba` (Innovating 88, Initiating 13, Supporting 92, Coordinating 80, Focusing 32, Delivering 46, Finishing 60, Evaluating 96):
+
+| Colour | Stored | Correct | |
+|---|---|---|---|
+| Green | 50.5 | (88+13)/2 = **50.5** | correct |
+| **Blue** | **78.0** | (92+80)/2 = **86.0** | was Gold's pair |
+| Gold | 39.0 | (60+96)/2 = **78.0** | was Red's pair |
+| Red | 86.0 | (32+46)/2 = **39.0** | was Blue's pair |
+
+Only Green was right — its pair is identical under both groupings, which is why the error survived. The row's own `raw_data.color_derivation` recorded the wrong pairing in plain text. **The user reported Blue; three of the four colours were affected.**
+
+The rotation lived in four places (storage, Aura's radar, the frontend colours, and a one-time backfill) and was documented in-code as *"a pre-existing, deliberately-unfixed quadrant-mapping inconsistency."* All now derive from one dependency-free source of truth.
+  - Files: `services/agent-engine/app/prism_canon.py`, `app/memory/long_term.py`, `app/agents/coaching/prism_agent.py`, `app/agents/coaching/frameworks/reconciliation.py`, `inspire-genius-frontend/src/constants/prism.ts`
+
+### Fixed — stored rows corrected with no data migration
+`get_latest_prism` derives colours at **read time** from the authoritative `assessment_scores` rows, so fixing the mapping corrected every user with an assessment immediately (all 10 on dev). Legacy `prism_results` rows are repaired on read from `raw_data.dimensions` when present, and log when they are. No `UPDATE` was run against user data.
+
+### Fixed — "scores get misrepresented at times"
+The read was already per-turn and uncached, and `SharedContext` is per-request, so staleness was not the mechanism. The real hazard was **absence**: memory sections render in priority order (corrections → goals → PRISM → …), each gated on remaining token budget, so enough corrections or goals silently pushed the entire `<prism_profile>` block out of context. With no scores present the model falls back to numbers from earlier in the conversation — indistinguishable, to the user, from a stale score. The block's cost is now reserved before the variable-length sections.
+  - Files: `services/agent-engine/app/memory/integration.py`
+
+### Fixed — Meridian read responses back twice
+Reported as *"once completely from start to finish, other times repeating paragraphs and sentences."* Both symptoms are the same bug. `speakText` had no re-entrancy protection: it replaced `ttsAbortRef` with a fresh controller **without aborting the previous one** and reset the cancelled flag, so a second call for the same turn left the first run's in-flight sentence requests resolving into the audio queue — a plain FIFO with no dedupe. Two clean runs read the whole answer twice; two overlapping runs interleave and repeat fragments. A settled turn can reach TTS from more than one delivery path (async-job settlement and the WS `complete` frame), which is what triggered it.
+- Dedupe on content, so one turn is spoken at most once.
+- Genuinely abort a previous run when different text arrives.
+- The streaming-TTS path records what it spoke — gated on whether it *actually ran*, since muting creates no controller and suppressing the fallback would have produced silence instead of a duplicate.
+
+Verified non-vacuous: with the guard removed the test fails with both sentences synthesized twice, in order.
+  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
+
+### Fixed — injected questions were slow and displayed raw scaffolding
+The warm-up `GET /v1/agents/health` and the auto-send fired in the **same tick**, so a question injected from another surface got zero warm-up window and hit a cold ECS task — paying API Gateway's 30s cap and then `startJob`'s 3s/6s retry backoff before the job was even accepted. A typed question never pays this, because the user's typing time *is* the warm-up window. That is the entire gap between "typed here" and "arrived from elsewhere". The dispatch now waits for the health ping (sub-second when warm, capped at 8s so a hung ping can never strand a question); bubbles still render immediately, so there is no blank screen.
+
+Separately, Lumen sends `question + scope line` as the prompt and the whole composed string was rendered as the user's own message. `prefillDisplay` / `autoSendDisplayText` lets the full prompt reach the model while the bubble shows only what the person asked.
+  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`, `src/components/user/chat/ChatWindow.tsx`, `src/types/chat/component-types.ts`, `src/pages/lumen/CoachingPage.tsx`
+
+### Verification
+- Agent engine: **+29 tests**; full suite 4264 passed. The 167 failures are pre-existing (no OpenAI key / AWS credentials locally) — failure sets diffed against `origin/development` and found **byte-identical**, so zero regressions.
+- Frontend: **+8 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **520 suites / 3986 tests, exit 0**. `npm run build` (tsc + vite) clean.
+- The token-budget test asserts the budget was genuinely exhausted first, so it cannot pass vacuously.
+- PRs: monorepo **#743**, frontend **#327**.
+## [2026-08-01] — Promoted to staging-b: async client + in-flight autoscaling (tag `release-stable-2026-08-01-async-llm-autoscale`)
+
+### Promoted
+- Tag cut at `de0ec6db` — **13 commits** since `release-stable-2026-08-01-ws-push`: #736 (async client +
+  scale on `PeakInFlightLLMCalls`), #737 (CI roll job no longer pins the autoscaling floor to 0),
+  #738 (ECS `desiredCount` bootstrap 0 no longer drops dev/staging-b to zero), #739 (direction-setting
+  vertical, phases 1–6), #740, #741, plus docs.
+  - The tag message under-lists by one: `development` advanced to #741 between the delta check and the
+    tag. #741 is code-only (growth-service roster resolution), no migrations.
+- **Promote workflow: ALL GREEN** — preflight cdk-diff, image build, `cdk deploy` (all staging-b stacks),
+  forced ECS rollout, **authenticated smoke matrix**, notify. The immediately-previous promote
+  (`ws-push`) FAILED; #738 shipping in this one is what let the ECS-rollout gate pass unaided.
+
+### Manual migrations applied to staging-b BEFORE tagging
+- Promotes do not run migrations. #739 shipped three, and staging-b was missing all four of their tables
+  while dev had them — verified by probe on both sides before and after:
+  - before → `MISSING TABLES: direction_journey, direction_jobs, direction_rehearsal, blueprint_interview_guide`
+  - after  → `ALL FOUR TABLES PRESENT`
+  - Applied: `blueprint_interview_guide.sql` (2 stmts), `direction_rehearsal.sql` (3), `direction_setting.sql` (3).
+    All `CREATE TABLE/INDEX IF NOT EXISTS`, **zero** destructive statements (re-checked programmatically
+    immediately before sending). No existing data touched.
+  - Without this, #739's vertical would have shipped to beta with no tables behind it. It is
+    entitlement-gated (`public.user_entitlements.verticals`, key `direction-setting`), so the blast
+    radius would have been limited to entitled users — but it would still have been half-shipped.
+
+### Defect found by the promote — the new policy was inert on staging-b
+- Post-promote verification showed staging-b publishing its CloudWatch dimension as **`Environment=dev`**.
+  Cause: **nothing has ever set `AGENT_ENGINE_ENVIRONMENT`**, in any environment, so
+  `settings.environment` falls back to its pydantic default `"dev"`. Dev only ever looked right because
+  its name equals the default.
+- Consequence: `InFlightLlmCallsScaling` on staging-b watches `Environment=staging-b`, which nothing
+  publishes → no datapoints → never scales out, and its alarm (`treatMissingData: NOT_BREACHING`) sits
+  permanently OK. An inert policy that reports healthy.
+- Fixed in **PR #745** (behaviour-neutral: every other consumer of `settings.environment` branches only on
+  `prod`/`production` or `staging`/`production`, and neither `dev` nor `staging-b` matches). Two tests
+  added, one asserting the published env string **equals** the dimension the policy watches.
+
+### Verified on staging-b
+- ECS 1/1 running, `desiredCount=1` (**not** 0 — #738 working), scalable target `min=1 max=2`.
+- 4 scaling policies live: `PeakInFlightLLMCalls` **target 12**, `ALBRequestCountPerTarget` 400,
+  CPU 70, Memory 70. Alarm `ig-staging-b-agent-engine-saturated` present, state OK.
+- Health 200 on `api-stable.inspiresgenius.com` and `[api-id]`.
+- **NOT verified:** a functional concurrency probe against staging-b — see the correction below for why.
+  The functional evidence is the promote's own authenticated smoke matrix, which passed.
+
+### CORRECTION — why the staging-b concurrency probe could not run
+- This entry originally said `[email redacted]` "does not exist in staging-b's user table". **That was
+  wrong**, and it was inferred from an API error message rather than checked. The account is present and
+  healthy: `user_id=[uuid]`, `is_active=t`, `is_deleted=f`,
+  `is_email_verified=t`, `auth_provider=cognito`, with a `user_entitlements` row.
+- The real reason: **`POST /v1/magic-auth` is deliberately DISABLED on staging-b**
+  (`settings.magic_auth_enabled=False`) because it "hands out a valid session from an email alone", and
+  when disabled it returns `message="Not found"` specifically to hide the endpoint. The handler
+  distinguishes the two cases precisely — disabled endpoint → `"Not found"`, missing user →
+  `"User not found"` — and the first was misread as the second
+  (`services/auth-service/app/routes/magic_auth.py`).
+- So a staging-b token needs the real Cognito login, or the emailed magic-LINK flow
+  (`/v1/magic-link/request` → `/verify`, which is independent of that gate and enabled). Neither is
+  something to route around: the gate exists precisely to stop sessions being minted from an email.
+- **Inert until #745 deploys:** the staging-b in-flight policy. CPU/memory/ALB scaling there is unchanged
+  from before, and `maxCapacity` is 2, so practical exposure is small.
+
+## [2026-08-01] — Job-Fit D7 target consumer + FE change_log reconcile: both PRs MERGED + deployed green
+
+### Merged / Deployed
+- **FE PR #319** (`feat/job-fit-target-preview`, Job-Fit "Fit a job description" — first consumer
+  of the neutral D7 `/v1/targets/extract`) — squash-**merged to development** and **deployed
+  green to dev + staging-B** (CI/CD run `30679088695`: Build/Unit Tests/Trivy/Dependency Audit +
+  **Deploy to Dev** + **Deploy to Staging-B** all success). The "Fit a JD" nav pill is live on
+  both. Backend already verified: live `/v1/targets/extract` 401-routed; `test_targets.py` 7/7.
+- **FE PR #318** (`docs/fe-mirror-sync-rolefit`, additive change_log reconcile, 0 deletions) —
+  squash-merged to development, CI green.
+- Both PRs opened only after explicit owner go (`gh pr create`/`merge` were classifier-gated in
+  auto mode). All work done in worktrees off `origin/development`; shared dirs (on other
+  terminals' branches) never touched.
+
+## [2026-08-01] — Lumen "Answer it here": staging-B confirmed, plus two findings the feature shipped with
+
+Follow-up to the 2026-07-30 entry. **No product code changed** — this records three things learned after that work merged, two of which are actionable.
+
+### staging-B needed no promote — confirmed, not assumed
+Asked to promote the coaching feature to staging-B; checked first and there was **nothing to promote**. It is frontend-only, and FE merges deploy to dev *and* staging-B automatically, so it went out at 04:50 UTC alongside the dev deploy.
+
+- staging-B frontend at `3d3d179`, and the deployed coaching chunk there carries every UI string plus the print internals (`afterprint`, `srcdoc`) and the `lumen-coaching-` session marker.
+- staging-B backend already served the path: `/v1/agents/chat/async` → **401** (exists, wants auth), jobs route → **405** on a POST to a GET route (also proof it exists); `/v1/agents/health` → 200.
+- **0 unpromoted backend commits** — `release-stable-2026-07-31-lumen-portrait-qa` was cut at 00:12 that night by another terminal and `development` had nothing after it. A tag would have produced an empty promote.
+- Re-checked a day later, after other terminals' deploys moved both envs to `97965c8`: the feature is **still live on both**.
+
+### Finding 1 — `development` has no required-check gate (actionable)
+`gh pr merge --auto` on FE #313 **merged immediately** rather than waiting for tests, because no check is marked required on `development`. It came out fine — CI's Unit Tests subsequently passed on that exact commit, and a local run with CI's exact coverage threshold (`54/55/55/55`, 515 suites / 3922 tests) passed independently — but the gate genuinely is not there, and **any future `--auto` will behave the same way**. Fix: mark **Unit Tests** as a required check on `development`.
+
+### Finding 2 — a premise in the shipped code is now wrong on dev (actionable)
+`useCoachAnswer.ts` documents, as its reason for opening no WebSocket, that the `job_complete` push is unreachable through the ws-proxy. **PR #733 fixed that and it is live on dev** (verified there by a real WS frame, `delivered=1`); it is **not** on staging-B.
+
+The feature is **functionally unaffected** — the poll still delivers and still stops the moment a job settles, and on staging-B the poll remains the only path. But the comment now asserts something false on dev and should be corrected before someone reads it as current fact. Consuming the push (poll retained as fallback) would additionally make inline answers land faster.
+
+### Finding 3 — staging-B can no longer be functionally probed
+`POST /v1/magic-auth` returns **404** on staging-B since #717 gated it off. What was verified there is the deployed bundle and route existence — **not** an executed conversation. The equivalent live round-trip was run on dev (`chat/async` → 202 → complete in ~9s, `contributing_agents: ['Summit']`, answer quoting the user's own dimension scores). Future staging-B verification needs a real login or an admin-tools path.
+
+### Still outstanding on this feature
+The authenticated click-path has **never been exercised in a browser** — dev redirected to login, seeding a session token was declined, and passwords are off-limits. **Print is the priority** there: it is the only path with no automated end-to-end coverage. Session pointer: `project_lumen_answer_here_session_resume` (grep "lumen-answer-here").
+
+## [2026-08-01] — CI: agent-engine roll must restore the floor it found, not a hardcoded 0
+
+### Fixed
+- **Every merge to `development` permanently dropped dev's ECS autoscaling floor to 0.** The
+  `roll-ecs-dev` job in `.github/workflows/agent-engine-image.yml` lifted `min-capacity` to 1 for
+  the deploy window, then restored it to a **hardcoded 0**. That job is the last writer —
+  CloudFormation only reasserts `MinCapacity` on a stack *update* — so dev was left unable to
+  recover from a scale-to-zero after every deploy. This is what left dev chat 503'ing on
+  2026-07-31 23:23 EDT when a CFN update took `desiredCount` to 0 during #733's deploy.
+  - The step's own comments justified the 0 with two claims that **stopped being true on
+    2026-07-19**, when dev moved to always-on (`scheduledScalingEnabled: false`, `staticMin: 1`):
+    *"off-hours scheduled scaling sets min=0 on dev"* (there are now **zero** scheduled actions on
+    the target) and *"schedule cron will reassert its own min on next firing"* (there is no cron).
+  - **The job can no longer author a permanent change:** capture current min/max; skip the lift
+    entirely when the floor is already ≥ 1 (the normal case now, so nothing to restore); when a
+    lift IS needed restore exactly the captured bounds, so a deliberate `--min-capacity 0`
+    (e.g. `/agent-stop`) still survives a deploy; stop hardcoding `--max-capacity 4`; skip cleanly
+    when no scalable target exists instead of aborting on a non-numeric `MinCapacity`.
+  - PR **#737**.
+
+### Correction to the 2026-08-01 scaling entry
+- That entry (and the #736 PR body) first attributed the `MinCapacity` mismatch to *"the deployed
+  CDK is stale relative to config"*. **That was wrong.** The deployed CFN template says
+  `MinCapacity: 1`; the live target read `0`. The cause was the CI roll job above, not stale
+  infrastructure. Diagnosed by reading the deployed template, confirming zero scheduled actions,
+  and then CloudTrail: **10 consecutive deploys** since 2026-07-27, each a `min=1` lift followed
+  ~3 minutes later by a `min=0` restore, all from `gha-agent-engine-roll-*`.
+
+### Refinement from PR #738 (landed same day, another terminal)
+- #738 found the **other half** of the 2026-07-31 outage and it is the more direct cause: the ECS
+  service declared `desiredCount: isProd ? 5 : isStaging ? 3 : 0`, and since `isStaging` is
+  `envName === 'staging'`, **both dev and staging-b inherited that bootstrap `0`** — which
+  CloudFormation re-asserts on *every* service update, making each deploy a ~6-minute outage.
+- That means **#737 alone would not have prevented the 503.** As #738 notes, a `MinCapacity=1`
+  scalable target does not rescue a service at 0 tasks: target tracking reacts to utilization
+  alarms, and 0 tasks emit no utilization. #737 stops the floor being left at 0 permanently
+  (config drift, and it misrepresents the env's declared intent); #738 stops the outage at source.
+  Both were needed; neither is sufficient alone. Earlier wording here that implied #737 fixed the
+  outage overstated it.
+
+### Verified
+- Live dev scalable target corrected to `min=1, max=4` (matches the deployed CFN template).
+- Workflow bash exercised against a mocked AWS CLI across `min=0` / `min=1` / `min=2` / `None` /
+  empty — **only** the `min=0` case lifts; every other case is a no-op.
+- **NOT verified end-to-end:** the workflow runs from `development`, so the new logic can only be
+  exercised once #737 merges. The next roll should log
+  `Floor already >= 1 — no lift needed, nothing to restore.`
+
+### Housekeeping
+- PR **#735 closed** as superseded by **#736** (#735 rebased onto #733 + the autoscaling work;
+  the async-client commits are content-identical).
+- Note for future sessions: the roll workflow's own header documents that PR builds **never** push
+  `:latest`, citing a 2026-05-11 regression where a pre-merge feature-branch image took the tag.
+  A manual `docker push :latest` bypasses that guard — which is exactly what happened during the
+  #736 work and required a rebase + rebuild to undo.
+
 ## [2026-08-01] — Agent Engine: scale on in-flight LLM calls, not CPU
 
 ### Fixed
@@ -7860,512 +8710,6 @@ Both invalidated the obvious implementation:
   `development`. Root-caused and fixed in **PR #737**; see the 2026-08-01 entry.
 - This branch was rebased onto `development` (43104e5d, #733) mid-session after discovering
   that pushing `:latest` from an unmerged branch had overwritten CI's `dev-43104e5` image.
-
-## [2026-08-01] — CI: agent-engine roll must restore the floor it found, not a hardcoded 0
-
-### Fixed
-- **Every merge to `development` permanently dropped dev's ECS autoscaling floor to 0.** The
-  `roll-ecs-dev` job in `.github/workflows/agent-engine-image.yml` lifted `min-capacity` to 1 for
-  the deploy window, then restored it to a **hardcoded 0**. That job is the last writer —
-  CloudFormation only reasserts `MinCapacity` on a stack *update* — so dev was left unable to
-  recover from a scale-to-zero after every deploy. This is what left dev chat 503'ing on
-  2026-07-31 23:23 EDT when a CFN update took `desiredCount` to 0 during #733's deploy.
-  - The step's own comments justified the 0 with two claims that **stopped being true on
-    2026-07-19**, when dev moved to always-on (`scheduledScalingEnabled: false`, `staticMin: 1`):
-    *"off-hours scheduled scaling sets min=0 on dev"* (there are now **zero** scheduled actions on
-    the target) and *"schedule cron will reassert its own min on next firing"* (there is no cron).
-  - **The job can no longer author a permanent change:** capture current min/max; skip the lift
-    entirely when the floor is already ≥ 1 (the normal case now, so nothing to restore); when a
-    lift IS needed restore exactly the captured bounds, so a deliberate `--min-capacity 0`
-    (e.g. `/agent-stop`) still survives a deploy; stop hardcoding `--max-capacity 4`; skip cleanly
-    when no scalable target exists instead of aborting on a non-numeric `MinCapacity`.
-  - PR **#737**.
-
-### Correction to the 2026-08-01 scaling entry
-- That entry (and the #736 PR body) first attributed the `MinCapacity` mismatch to *"the deployed
-  CDK is stale relative to config"*. **That was wrong.** The deployed CFN template says
-  `MinCapacity: 1`; the live target read `0`. The cause was the CI roll job above, not stale
-  infrastructure. Diagnosed by reading the deployed template, confirming zero scheduled actions,
-  and then CloudTrail: **10 consecutive deploys** since 2026-07-27, each a `min=1` lift followed
-  ~3 minutes later by a `min=0` restore, all from `gha-agent-engine-roll-*`.
-
-### Refinement from PR #738 (landed same day, another terminal)
-- #738 found the **other half** of the 2026-07-31 outage and it is the more direct cause: the ECS
-  service declared `desiredCount: isProd ? 5 : isStaging ? 3 : 0`, and since `isStaging` is
-  `envName === 'staging'`, **both dev and staging-b inherited that bootstrap `0`** — which
-  CloudFormation re-asserts on *every* service update, making each deploy a ~6-minute outage.
-- That means **#737 alone would not have prevented the 503.** As #738 notes, a `MinCapacity=1`
-  scalable target does not rescue a service at 0 tasks: target tracking reacts to utilization
-  alarms, and 0 tasks emit no utilization. #737 stops the floor being left at 0 permanently
-  (config drift, and it misrepresents the env's declared intent); #738 stops the outage at source.
-  Both were needed; neither is sufficient alone. Earlier wording here that implied #737 fixed the
-  outage overstated it.
-
-### Verified
-- Live dev scalable target corrected to `min=1, max=4` (matches the deployed CFN template).
-- Workflow bash exercised against a mocked AWS CLI across `min=0` / `min=1` / `min=2` / `None` /
-  empty — **only** the `min=0` case lifts; every other case is a no-op.
-- **NOT verified end-to-end:** the workflow runs from `development`, so the new logic can only be
-  exercised once #737 merges. The next roll should log
-  `Floor already >= 1 — no lift needed, nothing to restore.`
-
-### Housekeeping
-- PR **#735 closed** as superseded by **#736** (#735 rebased onto #733 + the autoscaling work;
-  the async-client commits are content-identical).
-- Note for future sessions: the roll workflow's own header documents that PR builds **never** push
-  `:latest`, citing a 2026-05-11 regression where a pre-merge feature-branch image took the tag.
-  A manual `docker push :latest` bypasses that guard — which is exactly what happened during the
-  #736 work and required a rebase + rebuild to undo.
-
-## [2026-08-01] — Lumen "Answer it here": staging-B confirmed, plus two findings the feature shipped with
-
-Follow-up to the 2026-07-30 entry. **No product code changed** — this records three things learned after that work merged, two of which are actionable.
-
-### staging-B needed no promote — confirmed, not assumed
-Asked to promote the coaching feature to staging-B; checked first and there was **nothing to promote**. It is frontend-only, and FE merges deploy to dev *and* staging-B automatically, so it went out at 04:50 UTC alongside the dev deploy.
-
-- staging-B frontend at `3d3d179`, and the deployed coaching chunk there carries every UI string plus the print internals (`afterprint`, `srcdoc`) and the `lumen-coaching-` session marker.
-- staging-B backend already served the path: `/v1/agents/chat/async` → **401** (exists, wants auth), jobs route → **405** on a POST to a GET route (also proof it exists); `/v1/agents/health` → 200.
-- **0 unpromoted backend commits** — `release-stable-2026-07-31-lumen-portrait-qa` was cut at 00:12 that night by another terminal and `development` had nothing after it. A tag would have produced an empty promote.
-- Re-checked a day later, after other terminals' deploys moved both envs to `97965c8`: the feature is **still live on both**.
-
-### Finding 1 — `development` has no required-check gate (actionable)
-`gh pr merge --auto` on FE #313 **merged immediately** rather than waiting for tests, because no check is marked required on `development`. It came out fine — CI's Unit Tests subsequently passed on that exact commit, and a local run with CI's exact coverage threshold (`54/55/55/55`, 515 suites / 3922 tests) passed independently — but the gate genuinely is not there, and **any future `--auto` will behave the same way**. Fix: mark **Unit Tests** as a required check on `development`.
-
-### Finding 2 — a premise in the shipped code is now wrong on dev (actionable)
-`useCoachAnswer.ts` documents, as its reason for opening no WebSocket, that the `job_complete` push is unreachable through the ws-proxy. **PR #733 fixed that and it is live on dev** (verified there by a real WS frame, `delivered=1`); it is **not** on staging-B.
-
-The feature is **functionally unaffected** — the poll still delivers and still stops the moment a job settles, and on staging-B the poll remains the only path. But the comment now asserts something false on dev and should be corrected before someone reads it as current fact. Consuming the push (poll retained as fallback) would additionally make inline answers land faster.
-
-### Finding 3 — staging-B can no longer be functionally probed
-`POST /v1/magic-auth` returns **404** on staging-B since #717 gated it off. What was verified there is the deployed bundle and route existence — **not** an executed conversation. The equivalent live round-trip was run on dev (`chat/async` → 202 → complete in ~9s, `contributing_agents: ['Summit']`, answer quoting the user's own dimension scores). Future staging-B verification needs a real login or an admin-tools path.
-
-### Still outstanding on this feature
-The authenticated click-path has **never been exercised in a browser** — dev redirected to login, seeding a session token was declined, and passwords are off-limits. **Print is the priority** there: it is the only path with no automated end-to-end coverage. Session pointer: `project_lumen_answer_here_session_resume` (grep "lumen-answer-here").
-
-## [2026-08-01] — Job-Fit D7 target consumer + FE change_log reconcile: both PRs MERGED + deployed green
-
-### Merged / Deployed
-- **FE PR #319** (`feat/job-fit-target-preview`, Job-Fit "Fit a job description" — first consumer
-  of the neutral D7 `/v1/targets/extract`) — squash-**merged to development** and **deployed
-  green to dev + staging-B** (CI/CD run `30679088695`: Build/Unit Tests/Trivy/Dependency Audit +
-  **Deploy to Dev** + **Deploy to Staging-B** all success). The "Fit a JD" nav pill is live on
-  both. Backend already verified: live `/v1/targets/extract` 401-routed; `test_targets.py` 7/7.
-- **FE PR #318** (`docs/fe-mirror-sync-rolefit`, additive change_log reconcile, 0 deletions) —
-  squash-merged to development, CI green.
-- Both PRs opened only after explicit owner go (`gh pr create`/`merge` were classifier-gated in
-  auto mode). All work done in worktrees off `origin/development`; shared dirs (on other
-  terminals' branches) never touched.
-
-## [2026-08-01] — Promoted to staging-b: async client + in-flight autoscaling (tag `release-stable-2026-08-01-async-llm-autoscale`)
-
-### Promoted
-- Tag cut at `de0ec6db` — **13 commits** since `release-stable-2026-08-01-ws-push`: #736 (async client +
-  scale on `PeakInFlightLLMCalls`), #737 (CI roll job no longer pins the autoscaling floor to 0),
-  #738 (ECS `desiredCount` bootstrap 0 no longer drops dev/staging-b to zero), #739 (direction-setting
-  vertical, phases 1–6), #740, #741, plus docs.
-  - The tag message under-lists by one: `development` advanced to #741 between the delta check and the
-    tag. #741 is code-only (growth-service roster resolution), no migrations.
-- **Promote workflow: ALL GREEN** — preflight cdk-diff, image build, `cdk deploy` (all staging-b stacks),
-  forced ECS rollout, **authenticated smoke matrix**, notify. The immediately-previous promote
-  (`ws-push`) FAILED; #738 shipping in this one is what let the ECS-rollout gate pass unaided.
-
-### Manual migrations applied to staging-b BEFORE tagging
-- Promotes do not run migrations. #739 shipped three, and staging-b was missing all four of their tables
-  while dev had them — verified by probe on both sides before and after:
-  - before → `MISSING TABLES: direction_journey, direction_jobs, direction_rehearsal, blueprint_interview_guide`
-  - after  → `ALL FOUR TABLES PRESENT`
-  - Applied: `blueprint_interview_guide.sql` (2 stmts), `direction_rehearsal.sql` (3), `direction_setting.sql` (3).
-    All `CREATE TABLE/INDEX IF NOT EXISTS`, **zero** destructive statements (re-checked programmatically
-    immediately before sending). No existing data touched.
-  - Without this, #739's vertical would have shipped to beta with no tables behind it. It is
-    entitlement-gated (`public.user_entitlements.verticals`, key `direction-setting`), so the blast
-    radius would have been limited to entitled users — but it would still have been half-shipped.
-
-### Defect found by the promote — the new policy was inert on staging-b
-- Post-promote verification showed staging-b publishing its CloudWatch dimension as **`Environment=dev`**.
-  Cause: **nothing has ever set `AGENT_ENGINE_ENVIRONMENT`**, in any environment, so
-  `settings.environment` falls back to its pydantic default `"dev"`. Dev only ever looked right because
-  its name equals the default.
-- Consequence: `InFlightLlmCallsScaling` on staging-b watches `Environment=staging-b`, which nothing
-  publishes → no datapoints → never scales out, and its alarm (`treatMissingData: NOT_BREACHING`) sits
-  permanently OK. An inert policy that reports healthy.
-- Fixed in **PR #745** (behaviour-neutral: every other consumer of `settings.environment` branches only on
-  `prod`/`production` or `staging`/`production`, and neither `dev` nor `staging-b` matches). Two tests
-  added, one asserting the published env string **equals** the dimension the policy watches.
-
-### Verified on staging-b
-- ECS 1/1 running, `desiredCount=1` (**not** 0 — #738 working), scalable target `min=1 max=2`.
-- 4 scaling policies live: `PeakInFlightLLMCalls` **target 12**, `ALBRequestCountPerTarget` 400,
-  CPU 70, Memory 70. Alarm `ig-staging-b-agent-engine-saturated` present, state OK.
-- Health 200 on `api-stable.inspiresgenius.com` and `[api-id]`.
-- **NOT verified:** a functional concurrency probe against staging-b — see the correction below for why.
-  The functional evidence is the promote's own authenticated smoke matrix, which passed.
-
-### CORRECTION — why the staging-b concurrency probe could not run
-- This entry originally said `[email redacted]` "does not exist in staging-b's user table". **That was
-  wrong**, and it was inferred from an API error message rather than checked. The account is present and
-  healthy: `user_id=[uuid]`, `is_active=t`, `is_deleted=f`,
-  `is_email_verified=t`, `auth_provider=cognito`, with a `user_entitlements` row.
-- The real reason: **`POST /v1/magic-auth` is deliberately DISABLED on staging-b**
-  (`settings.magic_auth_enabled=False`) because it "hands out a valid session from an email alone", and
-  when disabled it returns `message="Not found"` specifically to hide the endpoint. The handler
-  distinguishes the two cases precisely — disabled endpoint → `"Not found"`, missing user →
-  `"User not found"` — and the first was misread as the second
-  (`services/auth-service/app/routes/magic_auth.py`).
-- So a staging-b token needs the real Cognito login, or the emailed magic-LINK flow
-  (`/v1/magic-link/request` → `/verify`, which is independent of that gate and enabled). Neither is
-  something to route around: the gate exists precisely to stop sessions being minted from an email.
-- **Inert until #745 deploys:** the staging-b in-flight policy. CPU/memory/ALB scaling there is unchanged
-  from before, and `maxCapacity` is 2, so practical exposure is small.
-
-## [2026-08-01] — PRISM: wrong colour scores + "Orange", duplicated TTS read-back, slow prompt injection
-
-Five reported defects. Every diagnosis below was confirmed against real dev data or a failing test — none inferred.
-
-### Fixed — Red was being reported as "Orange" (there is no Orange in PRISM)
-PRISM has four colours: **Gold, Green, Blue, Red**. "Orange" survives only as the name of the legacy `prism_results.orange` DB column. That name was leaking into the model's own context two ways: the injected `<prism_profile>` block emitted `<orange>`, and Aura's system prompt said verbatim *"Treat Red and Orange as synonyms; mirror the user's wording."* The model was doing what it was told.
-- Inject block now emits `<red>`; the DB column keeps its name (no migration, no benefit to renaming).
-- Aura's **and** Meridian's prompts now forbid the word as a colour name outright, and instruct answering in "Red" even when the user says "Orange".
-- Reference text no longer offers it as an alias: `prism_knowledge`, `disc_knowledge`, `enneagram_knowledge`, `reconciliation`, `prism_parser`, `report_import`.
-- `prism_canon.normalise_colour_names()` is a last-resort guard applied to Meridian's response. Scoped deliberately narrowly — it rewrites "Orange" only in PRISM contexts (adjacent to a quadrant noun, to Focusing/Delivering, or in a colour list) so ordinary prose ("orange juice", "an orange dress") is untouched. It also fixes the article, since "an Orange quadrant" would otherwise become "an Red quadrant".
-  - Files: `services/agent-engine/app/prism_canon.py`, `app/llm/prompts.py`, `app/memory/integration.py`, `app/agents/meridian.py`, `app/agents/coaching/prism_knowledge.py`
-
-### Fixed — the Blue score was wrong, and so were Gold and Red
-Each colour is the mean of the two behaviours in its quadrant, but the pairing was **rotated** against the licensed PRISM manual. Confirmed arithmetically against dev assessment `4f1066ba` (Innovating 88, Initiating 13, Supporting 92, Coordinating 80, Focusing 32, Delivering 46, Finishing 60, Evaluating 96):
-
-| Colour | Stored | Correct | |
-|---|---|---|---|
-| Green | 50.5 | (88+13)/2 = **50.5** | correct |
-| **Blue** | **78.0** | (92+80)/2 = **86.0** | was Gold's pair |
-| Gold | 39.0 | (60+96)/2 = **78.0** | was Red's pair |
-| Red | 86.0 | (32+46)/2 = **39.0** | was Blue's pair |
-
-Only Green was right — its pair is identical under both groupings, which is why the error survived. The row's own `raw_data.color_derivation` recorded the wrong pairing in plain text. **The user reported Blue; three of the four colours were affected.**
-
-The rotation lived in four places (storage, Aura's radar, the frontend colours, and a one-time backfill) and was documented in-code as *"a pre-existing, deliberately-unfixed quadrant-mapping inconsistency."* All now derive from one dependency-free source of truth.
-  - Files: `services/agent-engine/app/prism_canon.py`, `app/memory/long_term.py`, `app/agents/coaching/prism_agent.py`, `app/agents/coaching/frameworks/reconciliation.py`, `inspire-genius-frontend/src/constants/prism.ts`
-
-### Fixed — stored rows corrected with no data migration
-`get_latest_prism` derives colours at **read time** from the authoritative `assessment_scores` rows, so fixing the mapping corrected every user with an assessment immediately (all 10 on dev). Legacy `prism_results` rows are repaired on read from `raw_data.dimensions` when present, and log when they are. No `UPDATE` was run against user data.
-
-### Fixed — "scores get misrepresented at times"
-The read was already per-turn and uncached, and `SharedContext` is per-request, so staleness was not the mechanism. The real hazard was **absence**: memory sections render in priority order (corrections → goals → PRISM → …), each gated on remaining token budget, so enough corrections or goals silently pushed the entire `<prism_profile>` block out of context. With no scores present the model falls back to numbers from earlier in the conversation — indistinguishable, to the user, from a stale score. The block's cost is now reserved before the variable-length sections.
-  - Files: `services/agent-engine/app/memory/integration.py`
-
-### Fixed — Meridian read responses back twice
-Reported as *"once completely from start to finish, other times repeating paragraphs and sentences."* Both symptoms are the same bug. `speakText` had no re-entrancy protection: it replaced `ttsAbortRef` with a fresh controller **without aborting the previous one** and reset the cancelled flag, so a second call for the same turn left the first run's in-flight sentence requests resolving into the audio queue — a plain FIFO with no dedupe. Two clean runs read the whole answer twice; two overlapping runs interleave and repeat fragments. A settled turn can reach TTS from more than one delivery path (async-job settlement and the WS `complete` frame), which is what triggered it.
-- Dedupe on content, so one turn is spoken at most once.
-- Genuinely abort a previous run when different text arrives.
-- The streaming-TTS path records what it spoke — gated on whether it *actually ran*, since muting creates no controller and suppressing the fallback would have produced silence instead of a duplicate.
-
-Verified non-vacuous: with the guard removed the test fails with both sentences synthesized twice, in order.
-  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`
-
-### Fixed — injected questions were slow and displayed raw scaffolding
-The warm-up `GET /v1/agents/health` and the auto-send fired in the **same tick**, so a question injected from another surface got zero warm-up window and hit a cold ECS task — paying API Gateway's 30s cap and then `startJob`'s 3s/6s retry backoff before the job was even accepted. A typed question never pays this, because the user's typing time *is* the warm-up window. That is the entire gap between "typed here" and "arrived from elsewhere". The dispatch now waits for the health ping (sub-second when warm, capped at 8s so a hung ping can never strand a question); bubbles still render immediately, so there is no blank screen.
-
-Separately, Lumen sends `question + scope line` as the prompt and the whole composed string was rendered as the user's own message. `prefillDisplay` / `autoSendDisplayText` lets the full prompt reach the model while the bubble shows only what the person asked.
-  - Files: `inspire-genius-frontend/src/pages/user/MeridianChat.tsx`, `src/components/user/chat/ChatWindow.tsx`, `src/types/chat/component-types.ts`, `src/pages/lumen/CoachingPage.tsx`
-
-### Verification
-- Agent engine: **+29 tests**; full suite 4264 passed. The 167 failures are pre-existing (no OpenAI key / AWS credentials locally) — failure sets diffed against `origin/development` and found **byte-identical**, so zero regressions.
-- Frontend: **+8 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **520 suites / 3986 tests, exit 0**. `npm run build` (tsc + vite) clean.
-- The token-budget test asserts the budget was genuinely exhausted first, so it cannot pass vacuously.
-- PRs: monorepo **#743**, frontend **#327**.
-## [2026-08-01] — TDS roster resolves from the canonical manager→reports relation (growth-service, PR #741)
-
-### Fixed — Team Development Studio roster was empty
-`list_roster` sourced team membership from dashboard-service's `public.team_members`, but nothing in the repo ever writes that table (no INSERT anywhere), and the older `client.get_team()` HTTP path pointed at the agent-engine ALB, which does not serve dashboard's `/api/manager/team`. Live-verified on dev: `GET /v1/growth/roster` → `{"data":[]}`.
-- Added a canonical fallback in `_fetch_team_members`: when `public.team_members` is empty, resolve the manager's direct reports from the relation the app actually maintains — `public.employee_profiles.manager_id → user_profiles.id` — the same lookup the monolith's `_get_direct_report_ids` uses. `member_id` is the report's `user_id` (the key the dossier/PRISM/goal endpoints already expect).
-- **Additive**: `team_members` still wins where populated. **Session-safe**: a failed `public.*` read (e.g. the sqlite unit suite) rolls back and returns `[]`, so the persisted-dossier fallback still runs.
-- Cross-schema read over the shared RDS-Proxy connection (the sanctioned pattern in `.claude/rules/services.md`); no new env var / HTTP hop / auth-forwarding.
-  - Files: `services/growth-service/app/service.py` (`_fetch_direct_reports`, `_DIRECT_REPORTS_SQL`), `services/growth-service/tests/test_routes.py`
-- Tests: +1 roster fallback test; full growth suite green (72 passed). Deployed via `cdk deploy` to **dev** (`ig-dev-growth`) and **staging-b** (`ig-staging-b-growth`); deployed-code verified on both Lambdas. Pairs with frontend PR #326 (Team Development moved into a "Tools" rollup).
-
-## [2026-08-01] — PRISM colour guard: don't rewrite "Orange" when the model is saying it isn't a colour
-
-Follow-up to the same-day PRISM fix (#743). **Found by an adversarial probe against deployed dev, not by a test.**
-
-### Fixed
-Asked *"Am I an Orange? What does my Orange score mean?"* — the case most likely to defeat the fix — Meridian correctly replied:
-
-> "Your quadrant is called **Red** in PRISM — there is no **Orange** colour in the framework."
-
-The `normalise_colour_names` output guard then rewrote that second "Orange" (it was followed by "colour", one of the quadrant-noun contexts) and what actually reached the user was:
-
-> "…there is no **Red** colour in the framework."
-
-Self-contradicting nonsense, in precisely the situation the guard exists to serve: the user uses the wrong term and the model explains that it isn't real.
-
-The guard now skips a match preceded within 60 characters by a negation cue (`no` / `not` / `never` / `isn't` / `rather than` / `instead of`). The window is deliberately bounded so a negation in an earlier clause cannot disable a legitimate rewrite later in the same response — there is a test for exactly that.
-
-- **+9 tests**, including the verbatim sentence from production.
-- Files: `services/agent-engine/app/prism_canon.py`, `tests/test_prism_canon.py`
-- PR **#746**, merged `7af79c3e`.
-
-### Everything else in that probe was correct
-Red 34 (Focusing 7 / Delivering 61), Blue 92, Green 91.5, Gold 52 — all matching the corrected derivation — and the word "Orange" appeared nowhere else despite the user using it four times.
-
-### Standing lesson
-Any regex that rewrites LLM output will eventually corrupt a *correct* sentence. Probe the adversarial case (user uses the wrong term, model explains why it's wrong), not just the happy path. The prompts and the injected `<prism_profile>` block are what actually stop the model saying "Orange"; this guard is only drift insurance and must never damage good output while doing its job.
-
-## [2026-08-01] — Bio Capture Interview: design & build plan (Word doc)
-
-### Changed
-- **Expanded the plan to 23 pages** on owner request — added §10 Multi-Agent Build Approach
-  (coordinator + 7 worktree-isolated Claude Code sub-agents, a scout→build→verify→synthesize
-  dependency DAG, risk-scaled adversarial verification), §11 Claude Code Build Prompts (P0 scout →
-  P10 deploy, copy-pasteable, each mapped to its sub-agent), and §12 Level of Effort (per-workstream
-  man-hours vs Claude Code hours: **≈160 man-hrs vs ≈33.5 CC-hrs, ~4.8× speed-up, ~1 week
-  supervised vs ~4–5 weeks solo**, with human-gated work — stakeholder/PRISM/privacy/legal review —
-  called out as excluded). Trailing sections renumbered 13–17. Render re-verified (23pp).
-
-### Added
-- **Bio Capture Interview — Design & Build Plan** (17-page .docx): an interview-driven,
-  reflective-diary capture experience for the coaching domain. Deliverable produced from a
-  `/full-go` request. Covers (A) interview design — the 6 selectable capture "types" (Life Story,
-  Career Story, Background, Culture, Major Life Events, Major Life Shapers), 17 suggested
-  additional categories/lenses, the 8 cross-cutting capture dimensions (facts/feeling/impact/
-  meaning/quotes/charge + PRISM tags), the 12-technique "no-BS" probing methodology (WHY-ladder,
-  specificity forcing, anti-platitude guardrail, contradiction mirror, the 5% more, then-vs-now,
-  counterfactual, etc.), and full seed question banks per module; and (B) implementation plan on
-  IG's **standard approach** — a new coaching specialist agent (working name **Chronicle**)
-  following Summit's durable-store + Maven's phase-machine models, a `BioStore` + 3 tables with a
-  tracked alembic migration **and** migration-runner SQL mirror (explicitly not repeating the
-  goals-tables migration gap), a `life_narrative` context slot for coaching injection, FE
-  Service→Hook→Component + chat interview UI, a 6-phase dev→staging-B roadmap, privacy/ethics
-  gates, success metrics, and a file-by-file backend wiring checklist.
-  - Files: `scripts/build_bio_capture_interview_plan.py` (python-docx generator, brand palette +
-    logo), `docs/bio-capture/Bio_Capture_Interview_Design_and_Build_Plan.docx`
-  - Design grounded in the live tree (Summit `goal_agent.py`/`goal_store.py`, Maven
-    `interview_agent.py`, context slot registry, migration 007 pattern, job-blueprint FE trio);
-    render-verified (docx→PDF→PNG, 17pp, tables/cover clean).
-
-## [2026-08-01] — Second staging-b promote: environment identity now correct (tag `release-stable-2026-08-01-env-identity`)
-
-### Promoted
-- Tag at `c48e5780` — **3 commits**, **no migrations** (checked migration-runner + every alembic
-  versions dir before tagging): #742 (CDK: stop *dev* deploys dropping agent-engine to zero — the dev
-  counterpart of #738), #743 (PRISM: correct quadrant↔behaviour pairing, stop calling Red "Orange"),
-  #745 (set `AGENT_ENGINE_ENVIRONMENT`).
-- **Promote workflow: ALL GREEN** — preflight cdk-diff, image build, `cdk deploy` (all staging-b
-  stacks), forced ECS rollout, authenticated smoke matrix, notify. Second consecutive clean promote.
-
-### The point of this promote — staging-b's scaling policy was inert, now it isn't
-- **Before** (recorded pre-tag): task def rev 21 had **no** `AGENT_ENGINE_ENVIRONMENT`, and the only
-  dimension value ever published in the staging-b account was `Environment=dev`. The
-  `InFlightLlmCallsScaling` policy watches `Environment=staging-b` → zero datapoints → could never
-  scale, and its alarm sat OK purely because missing data is treated as non-breaching.
-- **After**: task def rev **22** has `AGENT_ENGINE_ENVIRONMENT = staging-b`; CloudWatch now lists
-  **both** dimension values (`dev` historical, `staging-b` live); datapoints flow under
-  `Environment=staging-b` at `SampleCount 4`/min (2 uvicorn workers × 2 publishes; one minute showed 8
-  during the rollout overlap). The policy is fed and the alarm evaluates on real data instead of on
-  absence.
-- ECS 1/1, `desiredCount=1` held through the deploy, health 200 on `api-stable.inspiresgenius.com`.
-
-### Still open
-- **No functional concurrency probe against staging-b.** `POST /v1/magic-auth` is deliberately disabled
-  there (`settings.magic_auth_enabled=False`) because it hands out a session from an email alone; a
-  token needs the real Cognito login or the emailed magic-LINK flow. Not routed around by design.
-  Functional evidence remains the promote's own authenticated smoke matrix.
-
-## [2026-08-01] — Chronicle: Bio Capture interview agent (agent-engine) — PR #752
-
-### Added
-- **Chronicle** — a new coaching-domain specialist agent that runs a multi-session, reflective
-  life & career narrative interview (the Bio Capture feature designed in PR #744). Built end-to-end
-  from the plan's P0–P10 prompts via a coordinator + **4 file-partitioned sub-agents** (zero file
-  collisions), then integration-tested and adversarially checked by the coordinator.
-  - **Agent:** `services/agent-engine/app/agents/coaching/chronicle_agent.py` — mirrors Summit's
-    thin-agent model; `_inject_bio_context` appends a `<LIFE_NARRATIVE>` digest to the system prompt.
-  - **Prompt:** `AGENT_PROMPTS['Chronicle']` (`app/llm/prompts.py`) — 6 modules, 8 capture
-    dimensions, the 12-technique no-BS methodology, the depth gate (facts+impact+meaning+≥1 quote),
-    a safety block, ending with the verbatim Meridian synthesis directive; tier `TIER_1_COMPLEX`.
-  - **Store:** `app/memory/bio_store.py` `BioStore` + 3 ORM tables (`bio_modules`, `bio_episodes`,
-    `bio_coverage` in `app/memory/models.py`) mounted as `MemoryManager.bio`; emits
-    `inspiresgenius.bio` events (`bio.episode.captured`, `bio.module.completed`) via `eventbridge.py`.
-  - **Migration:** `alembic/versions/026_create_bio_store.py` (down_revision 025) + idempotent
-    `services/migration-runner/migrations/bio_store.sql` mirror.
-  - **Read API:** `GET /v1/agents/bio/{member_id}` (`app/routes/chronicle.py`, under `/v1/agents/*`
-    for ALB reach; registered in `main.py`).
-  - **Wiring:** registered across `coaching_orchestrator.py` (keywords, short-circuit, planner list,
-    DAG registry, select_agent) + `meridian.py` (`_AGENT_TO_DOMAIN`, `_COACHING_KEYWORDS`).
-  - **Tests:** 28 new (`test_bio_store.py` 15, `test_chronicle_agent.py`/`test_chronicle_route.py`
-    13) all green; goal siblings 39/39 and Meridian/orchestration 173 pass with **no new failures**
-    (the 5 `test_orchestrators` failures are pre-existing on `origin/development` — verified against
-    a pristine worktree; stale Nova/Echo assertions unrelated to bio).
-  - **Scope deltas vs the plan (honest):** the context-slot registry (plan §11/§12) does not exist
-    in the tree, so narrative injection uses the Summit `_inject_*` pattern; cross-agent injection,
-    the FE surface, and the memoir export are deferred follow-ups. Not yet deployed to dev (ECS roll
-    + migration apply held — shared env). PR #752, branch `feat/chronicle-bio-capture-agent`.
-
-## [2026-08-01] — PRISM Brain Map diagram, and the Underlying-vs-Consistent score-type comparison
-
-Two pieces: a diagram emitted whenever a turn reports the user's own scores, and a read-only comparison of the two PRISM score maps for every dev user.
-
-### Added — PRISM Brain Map, emitted with any turn that reports the user's scores
-The four colour scores were only ever delivered as prose. They now arrive as the canonical map, with labels and scores.
-
-**The layout is not a free choice** — it comes from the licensed reference text in `prism_knowledge` (`AXES_DISCERNING_DYNAMIC`): *"The top left of the PRISM map is the Gold quadrant … the bottom right is Blue … The top right … is Green … the bottom left is Red."*
-
-Two things a naive 2×2 gets wrong, both now encoded **and asserted against the rendered SVG geometry** so a future edit cannot quietly rotate it the way the score pairing was:
-- **The axes are DIAGONALS**, not the grid lines. Gold + Blue share "less powerful" (Discerning); Green + Red share "more powerful" (Dynamic).
-- **Opposites mirror HORIZONTALLY**, not through the centre — they *"apply across the Gold/Green colour quadrants and the Red/Blue colour quadrants"*. Evaluating faces Initiating, Finishing faces Innovating, Focusing faces Supporting, Delivering faces Co-Ordinating; each panel's rows are ordered to put them literally opposite one another.
-
-**Delivered in `metadata["prism_map"]`, never in the response text.** TTS synthesises `content`; an inline SVG there would be read aloud as markup — the exact failure mode removed earlier the same day. A markdown table and a one-line description carry identical numbers for TTS, screen readers and plain-text export.
-
-**When it fires:** "each time scores are requested" is deliberately *not* every PRISM turn — a map on *"what does high Focusing mean?"* is clutter. Primary signal is that the answer **actually quotes at least two of the user's four colour scores** (self-correcting, no keyword vocabulary to maintain); an explicit *"show me my profile"* is a second trigger. Number matching is boundary-guarded so `52` does not match `1952`.
-
-**A bug this nearly shipped with:** the first implementation read `context.metadata["prism_scores"]` — as several existing call sites do. **That key is never populated** on the REST or WS chat paths (metadata carries only `file_ids` / `system_prompt_override` / `user_profile_block`), so the map would have silently never rendered. Scores now come from the memory manager, behind a cheap no-DB pre-check so an ordinary turn adds no query.
-
-**Frontend:** rendered through a **data-URI `<img>`, not `dangerouslySetInnerHTML`** — the markup is server-generated and asserted script-free, but an `<img>` cannot execute script under any circumstance. `encodeURIComponent` not `btoa` (the map contains `↔` and `·`). `alt` is the full numeric read-out so screen readers get data, not "image", with a "Show the numbers" toggle. `buildTurnHtml` gained an optional `figure` field rather than smuggling markup through the escaped markdown `body`; a test asserts the body is still escaped when a figure is present.
-
-- Files: `services/agent-engine/app/prism_map.py`, `app/agents/meridian.py`, `inspire-genius-frontend/src/components/prism/PrismMapFigure.tsx`, `src/components/user/chat/ChatWindowChatTab.tsx`, `src/lib/exportTranscript/exportTurn.ts`, `src/pages/user/MeridianChat.tsx`, `src/types/chat/data-types.ts`, `src/hooks/agents/useMeridianWebSocket.ts`
-- PRs: mono **#755**, FE **#332**
-
-**Render-verified, not just unit-tested.** The SVG was rasterised and inspected: the first version placed the axis captions on top of the panel borders, illegible — completely invisible in the source. Moved to a footer legend and re-checked.
-
-### Reported (no change made) — Underlying vs Consistent, all 14 dev users
-PRISM measures each behaviour three times: **Underlying** (instinctive), **Adapted** (environment-modified), **Consistent** (the manual's "likely overall behaviour" / "normal" preferences). The platform derives every colour score from **`Underlying`** only — a pre-existing choice, hardcoded as `SCORE_TYPE = "Underlying"`.
-
-Read-only comparison across all 14 dev users with an authoritative PRISM assessment:
-- **52 of 56 colour scores would change** under `Consistent`
-- mean shift **8.5** points, max **22.0**
-- **25 intensity-band changes**
-- movement is almost entirely **downward**
-
-**The consequence that matters:** many scores drop out of the **≥75 overdone-strength band**, which drives specific coaching language. User `3468e498` shows Green 91.5 / Blue 92 under `Underlying` (both flagged overdone) versus 74 / 72.5 under `Consistent` — just below threshold, so those warnings would disappear entirely.
-
-**Nothing was changed.** Switching the score type would silently move every number for every user; that is a product decision for Bill or a PRISM-accredited practitioner, not an inference. Tooling: `scratchpad/compare_score_types.py` (SELECT only).
-
-**Incidental finding:** six dev users share byte-identical scores (78 / 50.5 / 86 / 39) — almost certainly duplicated test data, worth a look independently of this decision.
-
-**Also learned:** the migration-runner Lambda truncates result sets at **10 rows**. Earlier queries in this session looked complete but were silently cut off. Aggregate into a single `json_agg` row when pulling anything larger.
-
-### Verification
-- Agent engine: **+31 tests**; full suite 4305 passed; failure set **byte-identical** to `origin/development` (167 pre-existing, no API keys locally) → zero regressions. One run showed 168 — a flaky test; two re-runs and a clean-baseline diff agree at 167.
-- Frontend: **+12 tests**; full suite under CI's exact coverage gate (`54/55/55/55`) — **529 suites / 4171 tests, exit 0**; `npm run build` clean.
-
-## [2026-08-01] — Maven STAR interview bank: shared questions, exemplars, tool + API (PR #750)
-
-### Added
-- **Single source of truth** for structured-interview content:
-  `services/agent-engine/app/llm/star_interview_bank.py` — 3 sections × 4 competencies
-  (12 total), each a STAR primary question + probes, score-anchored (5/3/1) exemplars,
-  the 1–5 rubric, and prompt-block + JSON renderers (constant content → stays in the
-  Anthropic cache prefix).
-  - Files: `services/agent-engine/app/llm/star_interview_bank.py`
-- **MCP tool** `interview_bank` (MANAGER tier) — fetch the bank filtered by
-  section/competency, exemplars optional. Registry tool count 7 → 8.
-  - Files: `services/agent-engine/app/tools/interview_bank.py`, `.../tools/registry.py`
-- **Read API** `GET /v1/agents/interview/question-bank` — gated to Maven's roster
-  (manager / practitioner / company-admin / super-admin); feeds the FE Question Bank browser.
-  - Files: `services/agent-engine/app/routes/interview.py`, `.../app/main.py`
-
-### Changed
-- `AGENT_PROMPTS["Maven"]` now appends the full bank (+ STAR elicitation guidance +
-  exemplars); `AGENT_PROMPTS["James"]` appends a shared-bank reference so candidate
-  guides draw from the SAME bank (no drift). `Maven_Elicitation` deliberately untouched
-  (KCE tacit-knowledge path stays unscored).
-  - Files: `services/agent-engine/app/llm/prompts.py`
-
-### Tests
-- `tests/test_star_interview_bank.py` (15) — bank integrity, serialization, prompt
-  injection, tool filters, elicitation-not-polluted. Updated `test_mcp_tools.py` count 7→8.
-  All green.
-
-## [2026-08-01] — Staging-B promote: PRISM brain map, Orange-guard fix, Chronicle, direction-setting, STAR bank
-
-Tag **`release-stable-2026-08-01-prism-brain-map`** → `4cac5809`. Promote workflow green on all six jobs (pre-flight, build+push image, cdk deploy, ECS rollout, authenticated smoke matrix, notify).
-
-### Promoted (backend only — the frontend was already there)
-`d2c5964` was already serving on **both** dev and staging-B, because frontend merges auto-deploy to both environments. Only the agent-engine needed a tag. Contents since `release-stable-2026-08-01-env-identity`:
-
-| PR | Change |
-|---|---|
-| **#755** | PRISM Brain Map emitted on turns that report the user's own scores |
-| **#746** | Colour guard no longer rewrites "Orange" when the model is correctly saying it isn't a PRISM colour |
-| #752 | Chronicle — Bio Capture interview agent |
-| #754 | direction-setting: repair the PRISM read blocking Career Areas |
-| #750 | Maven — shared STAR interview bank (questions, exemplars, tool + API) |
-
-**Three of the five are other terminals' work.** That is the documented "Promote ALL" strategy rather than cherry-picking, and it was explicitly approved — but it is worth naming, because a promote labelled for one change carried four others.
-
-### Schema — applied manually, before the tag
-The promote workflow has **no migration step** (verified by reading `staging-b-promote.yml`, not by trusting the note): its jobs are pre-flight → build → cdk-deploy → ecs-rollout → smoke → notify. #752's `bio_store` migration was therefore **not** going to be applied by the deploy, and tagging without it would have put Chronicle's routes live against three non-existent tables.
-
-Applied `services/migration-runner/migrations/bio_store.sql` to staging-B first — 15 statements, all OK — and verified the result: `bio_modules` (9 cols), `bio_episodes` (18), `bio_coverage` (6). Purely additive: `CREATE TABLE IF NOT EXISTS` + indexes, with `DROP TRIGGER IF EXISTS` guards only on the tables the same migration creates. No data touched. It was the only migration in the promoted range.
-
-### A moving target, caught before the push
-Between scoping the promote and creating the tag, another terminal merged **#750**, so the first tag silently contained a feature that had not been assessed. Caught before pushing: checked #750 (pure agent-engine Python — no migration, no new `packages/ig-*`, no CDK change), then **recreated the tag** so its release notes list what is actually in it rather than understating the contents.
-
-### Verified on staging-B after the rollout
-- ECS: **desired 1 / running 1 / COMPLETED**, deployment 22:40:06. The `desiredCount → 0` trap that has bitten this service before did **not** fire.
-- Inside the running container (`fd925ae2`), all timestamped from this build: `prism_canon.py` with the corrected `"blue": ("Supporting", …)` pairing, `prism_map.py`, `_NEGATION_BEFORE` (the Orange-guard negation fix), `_attach_prism_map` wired into `meridian.py`, and Chronicle's `bio_store.py`.
-- `GET /v1/agents/health` → 200 with all four memory tiers up; `POST /v1/agents/chat/async` → 401 (route present, wants auth).
-
-### Not verified on staging-B — stated rather than implied
-`POST /v1/magic-auth` returns **404** there (unchanged since #717), so no live authenticated conversation could be run. What was verified on staging-B is **deployed code and route existence**, not an executed turn. The workflow's own authenticated smoke matrix passed, which is independent evidence, but it is not the same thing.
-
-The functional proof of both PRISM fixes stands on **dev**, where live conversations were run earlier: Blue correctly 92.0 as the mean of Supporting + Coordinating, "Orange" appearing only inside a negation, and the brain map returned with correct scores and the canonical quadrant layout.
-
-## [2026-08-01] — Chronicle: dev Aurora migration 026 applied (bio store)
-
-Completes the piece #752 explicitly held ("migration apply held — shared env"): applied
-`services/migration-runner/migrations/bio_store.sql` to **dev** Aurora via
-`ig-dev-migration-runner` — 15 statements, all OK, 0 failed. Verified via
-`information_schema`: `bio_modules`, `bio_episodes`, `bio_coverage` all present. Chronicle's
-`BioStore` now has its backing tables on dev, matching the staging-B apply logged below.
-Idempotent (`CREATE TABLE IF NOT EXISTS`, guarded triggers) — no data touched.
-
-Dev agent-engine ECS was already serving Chronicle via the Staged-Deploy-on-merge; this
-entry records only the manual dev DB migration (the deploy pipeline has no migration step).
-The staging-B side of this same work is logged in the promote entry below (by the doc-owner
-terminal), which already covers #752 Chronicle end-to-end on staging-B.
-
-## [2026-08-01] — Candidate Interview Coach: build plan (candidate-side counterpart)
-
-### Added
-- **Build plan** for the candidate-SIDE interview practice offering — the mirror of the
-  merged evaluator-side Maven STAR bank. Composes entirely from IG Core: reuses the deployed
-  `star_interview_bank.py` (12 competencies) + Alex (coaching, All roles) + the async-chat
-  loop; net-new is one Alex coaching prompt-mode, one candidate-safe read
-  (`/v1/agents/interview/practice-questions`, exemplars + rubric stripped), and one
-  `/interview-practice` FE surface. No new service/table/vector store/event. 4 phases,
-  ~3–4 h human + ~3.25–3.75 CC sessions (~1 focused day). Prime constraint: the candidate
-  path must NEVER surface a score or the evaluator's strong/baseline/weak exemplars.
-  - Files: `docs/plans/Candidate_Interview_Coach_Build_Plan.md`
-
-## [2026-08-01] — Interview Prep: STAR question bank browser (PR #330)
-
-### Added
-- Reviewer-facing **Question Bank** tab in Maven's Interview Prep surface
-  (manager + practitioner) — surfaces the shared STAR bank with scoring anchors.
-  - `src/services/interview/interview.service.ts` — `getQuestionBank()` → agent-engine
-    `GET /v1/agents/interview/question-bank` (via `agentApi`).
-  - `src/hooks/interview/useQuestionBank.ts` — React Query wrapper (constant → generous staleTime).
-  - `src/components/task-agents/QuestionBankPanel.tsx` — 3-section tabs
-    (Vision / Behavioral / Productivity), each competency's STAR question + probes, and a
-    collapsible "what to listen for" with strong/baseline/weak exemplars.
-
-### Changed
-- `src/components/task-agents/InterviewPrepBody.tsx` — wrap the existing prep form + the
-  new panel in Generate / Bank tabs (non-breaking).
-
-### Tests
-- `src/services/interview/__tests__/interview.service.test.ts` (2). Full `npm run build` (tsc+vite) green.
-
-## [2026-08-01] — Team Development moved into a collapsible "Tools" rollup (PR #326)
-
-### Changed
-- Team Development Studio was a flat top-level sidebar item for managers and super-admins. It now lives in a dedicated, collapsed-by-default **"Tools"** rollup, so utility surfaces are grouped rather than crowding the primary role menu.
-  - `constants/navigation.ts`: added `TOOL_ITEMS_BY_ROLE` (per-role Tools items) and `SUPER_ADMIN_TOOLS_SECTION`; removed the inline "Team Development" entries from `MANAGER_NAV_ITEMS` / `SUPER_ADMIN_NAV_ITEMS`.
-  - `layouts/UnifiedLayout.tsx`: renders a collapsed `Tools` section (above `Verticals`) for any role with tool items (managers today).
-  - `layouts/SuperAdminLayout.tsx`: splices the Tools rollup in above `Administration`.
-  - Still gated by `VITE_FEATURE_TEAM_DEVELOPMENT`; the section collapses away entirely when the flag is off.
-  - Files: `src/constants/navigation.ts`, `src/layouts/UnifiedLayout.tsx`, `src/layouts/SuperAdminLayout.tsx`, `src/layouts/__tests__/UnifiedLayout.tools.test.tsx`, `src/constants/__tests__/navigation.test.ts`
-- Pure navigation reorganization — the route (`/manager/development`) and the Studio pages are unchanged. Merged to `development`; auto-deployed to dev + staging-b. Pairs with the backend roster fix (monorepo PR #741) that resolves the manager's direct reports from the canonical `employee_profiles.manager_id → user_profiles` relation.
 
 ## [2026-07-31] — Left menu pared to five, Verticals→Tools, Meridian header rows
 
@@ -8528,52 +8872,100 @@ Implements the fix for the defect diagnosed in the entry below. **Code complete,
 ### Separate bug found, NOT fixed
 - `services/ws-proxy/handler.py` hardcodes `FunctionName="ig-dev-ws-forwarder"`. **That Lambda does not exist on staging-b** and is in the CDK on neither env — undocumented drift. The WS *chat* path is therefore dead on staging-b (chat works there only because the UI uses the async-jobs REST path). Reported, not fixed; out of scope for this PR.
 
-## [2026-07-31] — Honor Coach Workbench User Guide refreshed + PowerPoint deck (PR #734)
+## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
 
-Updated the coach-facing **Honor Coach Workbench User Guide** with this cycle's new functions and added a matching **PowerPoint deck**. Docs-tooling only — no product code, no infra. `docs/*.docx` is gitignored, so the generator scripts are the tracked source of truth; the `.docx`/`.pptx` are produced locally on demand.
-
-### Added
-- `scripts/build_honor_coach_user_guide_pptx.py` — 13-slide, THF-branded (`#1B2A4A`/`#E8792B`) deck mirroring the guide: title, What's new, workbench-at-a-glance, 12-step workflow overview, five step slides, branded-document, privacy, live-vs-coming, close.
-- Guide: new **Step 5 — Request a PRISM report** (First/Last/Email; Role fixed `user`, Organization fixed `The Honor Foundation`; 24h idempotency note).
-- Guide: **Target position description** on the Résumé Writer — paste **or** *Upload a job description* (pasted text wins).
-- Guide: **What's new** callout + glossary entries (PRISM request, Cohort, Target position description).
-- `scripts/build_honor_coach_user_guide_html.py` — emits the **clickable HTML** version of the guide (sticky table of contents, scroll-spy, in-page Download buttons for the `.pptx`/`.docx`). The rendered HTML ships as a frontend static asset under `public/docs/guides/` and is wired to the app's new **Help / Support** sidebar menu (frontend repo). The `.docx`/`.pptx`/`.html` are also uploaded to the dev frontend S3 bucket (`ig-dev-frontend-assets/docs/guides/`, served via CloudFront) — verified live at `https://dev.inspiresgenius.com/docs/guides/`.
-
-### Changed
-- `scripts/build_honor_coach_user_guide.py` — renumbered the workflow to **12 steps**; **Import a Cohort** label (Onboarding step + nav + glossary); new **How your report reads** callout (left-justified responses + step-by-step plans); refreshed the *live vs. coming soon* table.
-  - Files: `scripts/build_honor_coach_user_guide.py`, `scripts/build_honor_coach_user_guide_pptx.py`
-  - Output (local, gitignored): `docs/Honor_Coach_Workbench_User_Guide.docx`, `docs/guides/Honor_Coach_Workbench_User_Guide.docx`, `docs/Honor_Coach_Workbench_User_Guide.pptx`
-
-## [2026-07-31] — Job-Fit "Fit a job description" (D7 target-service consumer) + FE change_log mirror reconcile
+Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
 
 ### Added
-- **Job-Fit "Fit a job description" tool** — the first consumer of the neutral shared
-  **target service (Decision D7, `POST /v1/targets/extract`** on blueprint-service). The rest
-  of Job Fit scores the user against roles already published as Job DNAs; this fills the gap:
-  paste or upload ANY job description and preview the **governed target** it implies — a
-  per-dimension benchmark over the 22 dimensions with **provenance** (from the JD vs imputed)
-  and extractor **confidence**. It is a DRAFT and says so (advisory-only, not a hiring decision).
-  - FE repo, branch `feat/job-fit-target-preview` (PR pending): `src/types/targets.ts`
-    (`TargetDraft`/`ExtractedDimension`, mirroring `ExtractDraftOut`), `src/services/targets/`
-    (`targetsService.extract()` via the API-Gateway `api` instance → blueprint-service, sends
-    `{ jdText }` — NOT the Agent Engine), `src/hooks/job-fit/useTargetExtract.ts`,
-    `src/pages/job-fit/TargetPreviewPage.tsx` (reuses `extractRoleText` for upload), plus wiring
-    (`ROUTES.JOB_FIT.TARGET`, `routes.tsx` lazy route, `JOB_FIT_TOOLS` nav pill "Fit a JD").
-  - Tests: service contract + page (7 new) green; 48 existing job-fit tests still green;
-    `npm run build` (tsc + vite) green; lint-clean (my files).
-  - Verified: live dev `/v1/targets/extract` routed + auth-gated (**401**); blueprint-service
-    `test_targets.py` **7/7 pass** on dev HEAD (exact `{jdText}` → grouped
-    `behaviors/aptitudes/coreTraits` camelCase contract, empty-JD → 400). Context: D7 was
-    deployed but had **zero consumers** — this instantiates the "abstraction shipped, no second
-    consumer" gap the target service was built to fill.
+- `src/components/shared/layout/HelpSupportMenu.tsx` — the dropdown, rendered as a sidebar-footer button (opens above **Logout**).
+- `src/components/shared/layout/helpSupportLinks.ts` — the three asset URLs, app-relative under `/docs/guides/` so they resolve on whichever host the app runs on.
+- `src/components/shared/layout/__tests__/HelpSupportMenu.test.tsx` — trigger renders, links correct, menu opens with all three assets each `target=_blank`.
+- `public/docs/guides/honor-coach-workbench-user-guide.html` — the clickable HTML guide (sticky TOC, scroll-spy, in-page Download buttons), plus the `.pptx` and `.docx` next to it. Ship in `public/` so they deploy to the frontend's own S3/CloudFront origin.
 
 ### Changed
-- **FE-repo `change_log.md` mirror reconciled with the monorepo canonical** — additive-only:
-  inserted **67 monorepo-only entries** (2026-06-01 → 2026-07-31, backend/full-stack work never
-  mirrored to the FE repo, incl. the Unified Role-Fit D1–D7 entry) interleaved by date. Verified
-  **0 deletions** (every pre-existing FE line preserved as an ordered subsequence). FE repo,
-  branch `docs/fe-mirror-sync-rolefit` (PR pending). The `IG_project_log.html` dashboard mirror
-  was **deliberately not** hand-merged (diverged both ways; regenerable via the logging hook).
+- `src/components/shared/layout/SidebarScaffold.tsx` — footer wires in `HelpSupportMenu` above the Logout item.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
+
+## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
+
+Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
+
+### Added
+- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
+- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
+
+### Changed
+- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
+
+## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
+
+Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.
+
+### Removed
+- `src/components/shared/layout/HelpSupportMenu.tsx` and its test — deleted.
+- `src/components/shared/layout/SidebarScaffold.tsx` — no longer imports/renders `HelpSupportMenu`; the footer is back to just Logout.
+
+### Kept
+- `src/components/shared/layout/helpSupportLinks.ts` (`GUIDE_LINKS`) — still the shared source of truth, now consumed only by `src/pages/honor/HonorHelpMenu.tsx`.
+- The `/docs/guides/` assets and the Honor Help / Support menu are unchanged.
+
+### Verified
+- `npm run build` (tsc + vite) clean (no dangling import of the deleted component); Jest SidebarScaffold 11/11 + honor-help-menu 2/2; eslint clean.
+
+## [2026-07-31] — Team Development Studio → standard IG (HomeV2) theme + real app chrome (Wave 2)
+
+The Team Development Studio (`/manager/development`, `/manager/development/:memberId`) was
+rendering as **bare content with no app chrome** — both pages returned a plain `<div>` and,
+unlike every other manager page, never wrapped `ManagerLayout` (no sidebar, no header) — and
+its content still used the pre-migration slate/blue palette. This lands the Wave-2 reskin: the
+pages now sit in the standard `ManagerLayout`, and when the `new_user_surfaces` flag is on they
+adopt the HomeV2 editorial look (cream `bg-panel` frame, navy `text-ink`, orange `accent-orange`,
+serif headings, `rounded-2xl` hairline cards). Classic stays byte-identical and is always
+reachable at `…/classic`. Pure presentation change — no logic, hooks, data, props, testids, or
+copy changed.
+
+### Added
+- `src/components/manager/development/skin.tsx` — the Studio skin. `useDevSkin()` context hook
+  returns a `sk` object of PRE-RESOLVED class strings built from two flat literals
+  (`CLASSIC`/`V2`) selected by one function; plus `resolveDevV2()`, `DevSkinProvider`, and
+  `DevPageFrame` (cream `V2Panel` on v2, bare column on classic). All classic/v2 branching lives
+  here so leaf components add zero new branches — keeps the tight CI branch-coverage gate safe.
+- `src/components/manager/development/__tests__/skin.test.tsx` — 7 tests: both token maps,
+  `resolveDevV2` precedence, default-classic context, provider flow, and the `DevPageFrame` switch
+  (skin.tsx = 100% coverage).
+- `/manager/development/classic` + `/manager/development/:memberId/classic` routes — permanent
+  escape hatch to the original look.
+
+### Changed
+- `src/pages/manager/development/DevelopmentStudio.tsx` + `MemberDevelopmentWorkspace.tsx` —
+  wrapped in `ManagerLayout` (the missing chrome) + `DevSkinProvider`/`DevPageFrame`; accept an
+  optional `variant` prop that defaults to the flag; serif-ink headings; every shell / empty /
+  error / computing state tokenized and given the chrome.
+- 11 Studio components reskinned via `sk.*` tokens — `MemberCard`, `CoverageChips`,
+  `ConfidenceDot`, `ProgressRing`, and the 6 tab panels (`BehavioralProfilePanel`, `GoalsPanel`,
+  `GapAnalysisPanel`, `LearningPlanPanel`, `CareerMatchPanel`, `RoadmapTimeline`) +
+  `MeridianDevelopmentPanel`. Slate text/borders/backgrounds, the `#3B5BFF`/`#2DD4BF` brand
+  accents (avatar gradient, active tab, selected card, PRISM radar stroke/fill, gap progress bars,
+  Meridian chat bubbles/send affordances) and card radii all now resolve from the skin.
+  `PlanStatusBadge` unchanged (purely semantic badge). Semantic colours (emerald/amber/red,
+  PRISM quadrant colours) stay hardcoded on both looks.
+- `src/routes.tsx` — Studio pages self-resolve classic vs HomeV2 from `new_user_surfaces`; added
+  the two `/classic` routes (static segment out-ranks `:memberId`).
+
+### Verified
+- `npm run build` (tsc + vite) clean; the new token utilities (`bg-panel`, `text-ink`, `text-mute`,
+  `border-hairline`, `bg-accent-orange` incl. the `/10`·`/5`·`/40` opacity + hover/focus variants,
+  `from-ink`/`to-accent-orange`) are all emitted into the production CSS bundle.
+- `tsc -p tsconfig.app.json --noEmit` → 0 errors.
+- Full `jest --ci --coverage` → 3931 tests / 517 suites pass; global coverage above the CI gate
+  (branches 56.26 ≥ 54, functions 58.83 ≥ 55, lines 73.33 ≥ 55, statements 70.78 ≥ 55).
+- No new i18n keys (Studio copy already routes through `useDevelopmentText`), so 21-locale
+  key-parity is untouched.
 
 ## [2026-07-31] — Agent Engine: async Anthropic client (per-worker turn ceiling removed)
 
@@ -8636,100 +9028,52 @@ Updated the coach-facing **Honor Coach Workbench User Guide** with this cycle's 
   (~450 connections), dev at 0.5–8.0.
 - **No retry/backoff on Anthropic 429s**, which higher real concurrency now makes reachable.
 
-## [2026-07-31] — Team Development Studio → standard IG (HomeV2) theme + real app chrome (Wave 2)
-
-The Team Development Studio (`/manager/development`, `/manager/development/:memberId`) was
-rendering as **bare content with no app chrome** — both pages returned a plain `<div>` and,
-unlike every other manager page, never wrapped `ManagerLayout` (no sidebar, no header) — and
-its content still used the pre-migration slate/blue palette. This lands the Wave-2 reskin: the
-pages now sit in the standard `ManagerLayout`, and when the `new_user_surfaces` flag is on they
-adopt the HomeV2 editorial look (cream `bg-panel` frame, navy `text-ink`, orange `accent-orange`,
-serif headings, `rounded-2xl` hairline cards). Classic stays byte-identical and is always
-reachable at `…/classic`. Pure presentation change — no logic, hooks, data, props, testids, or
-copy changed.
+## [2026-07-31] — Job-Fit "Fit a job description" (D7 target-service consumer) + FE change_log mirror reconcile
 
 ### Added
-- `src/components/manager/development/skin.tsx` — the Studio skin. `useDevSkin()` context hook
-  returns a `sk` object of PRE-RESOLVED class strings built from two flat literals
-  (`CLASSIC`/`V2`) selected by one function; plus `resolveDevV2()`, `DevSkinProvider`, and
-  `DevPageFrame` (cream `V2Panel` on v2, bare column on classic). All classic/v2 branching lives
-  here so leaf components add zero new branches — keeps the tight CI branch-coverage gate safe.
-- `src/components/manager/development/__tests__/skin.test.tsx` — 7 tests: both token maps,
-  `resolveDevV2` precedence, default-classic context, provider flow, and the `DevPageFrame` switch
-  (skin.tsx = 100% coverage).
-- `/manager/development/classic` + `/manager/development/:memberId/classic` routes — permanent
-  escape hatch to the original look.
+- **Job-Fit "Fit a job description" tool** — the first consumer of the neutral shared
+  **target service (Decision D7, `POST /v1/targets/extract`** on blueprint-service). The rest
+  of Job Fit scores the user against roles already published as Job DNAs; this fills the gap:
+  paste or upload ANY job description and preview the **governed target** it implies — a
+  per-dimension benchmark over the 22 dimensions with **provenance** (from the JD vs imputed)
+  and extractor **confidence**. It is a DRAFT and says so (advisory-only, not a hiring decision).
+  - FE repo, branch `feat/job-fit-target-preview` (PR pending): `src/types/targets.ts`
+    (`TargetDraft`/`ExtractedDimension`, mirroring `ExtractDraftOut`), `src/services/targets/`
+    (`targetsService.extract()` via the API-Gateway `api` instance → blueprint-service, sends
+    `{ jdText }` — NOT the Agent Engine), `src/hooks/job-fit/useTargetExtract.ts`,
+    `src/pages/job-fit/TargetPreviewPage.tsx` (reuses `extractRoleText` for upload), plus wiring
+    (`ROUTES.JOB_FIT.TARGET`, `routes.tsx` lazy route, `JOB_FIT_TOOLS` nav pill "Fit a JD").
+  - Tests: service contract + page (7 new) green; 48 existing job-fit tests still green;
+    `npm run build` (tsc + vite) green; lint-clean (my files).
+  - Verified: live dev `/v1/targets/extract` routed + auth-gated (**401**); blueprint-service
+    `test_targets.py` **7/7 pass** on dev HEAD (exact `{jdText}` → grouped
+    `behaviors/aptitudes/coreTraits` camelCase contract, empty-JD → 400). Context: D7 was
+    deployed but had **zero consumers** — this instantiates the "abstraction shipped, no second
+    consumer" gap the target service was built to fill.
 
 ### Changed
-- `src/pages/manager/development/DevelopmentStudio.tsx` + `MemberDevelopmentWorkspace.tsx` —
-  wrapped in `ManagerLayout` (the missing chrome) + `DevSkinProvider`/`DevPageFrame`; accept an
-  optional `variant` prop that defaults to the flag; serif-ink headings; every shell / empty /
-  error / computing state tokenized and given the chrome.
-- 11 Studio components reskinned via `sk.*` tokens — `MemberCard`, `CoverageChips`,
-  `ConfidenceDot`, `ProgressRing`, and the 6 tab panels (`BehavioralProfilePanel`, `GoalsPanel`,
-  `GapAnalysisPanel`, `LearningPlanPanel`, `CareerMatchPanel`, `RoadmapTimeline`) +
-  `MeridianDevelopmentPanel`. Slate text/borders/backgrounds, the `#3B5BFF`/`#2DD4BF` brand
-  accents (avatar gradient, active tab, selected card, PRISM radar stroke/fill, gap progress bars,
-  Meridian chat bubbles/send affordances) and card radii all now resolve from the skin.
-  `PlanStatusBadge` unchanged (purely semantic badge). Semantic colours (emerald/amber/red,
-  PRISM quadrant colours) stay hardcoded on both looks.
-- `src/routes.tsx` — Studio pages self-resolve classic vs HomeV2 from `new_user_surfaces`; added
-  the two `/classic` routes (static segment out-ranks `:memberId`).
+- **FE-repo `change_log.md` mirror reconciled with the monorepo canonical** — additive-only:
+  inserted **67 monorepo-only entries** (2026-06-01 → 2026-07-31, backend/full-stack work never
+  mirrored to the FE repo, incl. the Unified Role-Fit D1–D7 entry) interleaved by date. Verified
+  **0 deletions** (every pre-existing FE line preserved as an ordered subsequence). FE repo,
+  branch `docs/fe-mirror-sync-rolefit` (PR pending). The `IG_project_log.html` dashboard mirror
+  was **deliberately not** hand-merged (diverged both ways; regenerable via the logging hook).
 
-### Verified
-- `npm run build` (tsc + vite) clean; the new token utilities (`bg-panel`, `text-ink`, `text-mute`,
-  `border-hairline`, `bg-accent-orange` incl. the `/10`·`/5`·`/40` opacity + hover/focus variants,
-  `from-ink`/`to-accent-orange`) are all emitted into the production CSS bundle.
-- `tsc -p tsconfig.app.json --noEmit` → 0 errors.
-- Full `jest --ci --coverage` → 3931 tests / 517 suites pass; global coverage above the CI gate
-  (branches 56.26 ≥ 54, functions 58.83 ≥ 55, lines 73.33 ≥ 55, statements 70.78 ≥ 55).
-- No new i18n keys (Studio copy already routes through `useDevelopmentText`), so 21-locale
-  key-parity is untouched.
+## [2026-07-31] — Honor Coach Workbench User Guide refreshed + PowerPoint deck (PR #734)
 
-## [2026-07-31] — Remove Help / Support from the shared app sidebar (Honor keeps its own)
-
-Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench chrome. The shared app-sidebar entry (added earlier the same day) is removed, so the rest of the IG app no longer shows it.
-
-### Removed
-- `src/components/shared/layout/HelpSupportMenu.tsx` and its test — deleted.
-- `src/components/shared/layout/SidebarScaffold.tsx` — no longer imports/renders `HelpSupportMenu`; the footer is back to just Logout.
-
-### Kept
-- `src/components/shared/layout/helpSupportLinks.ts` (`GUIDE_LINKS`) — still the shared source of truth, now consumed only by `src/pages/honor/HonorHelpMenu.tsx`.
-- The `/docs/guides/` assets and the Honor Help / Support menu are unchanged.
-
-### Verified
-- `npm run build` (tsc + vite) clean (no dangling import of the deleted component); Jest SidebarScaffold 11/11 + honor-help-menu 2/2; eslint clean.
-
-## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
-
-Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
+Updated the coach-facing **Honor Coach Workbench User Guide** with this cycle's new functions and added a matching **PowerPoint deck**. Docs-tooling only — no product code, no infra. `docs/*.docx` is gitignored, so the generator scripts are the tracked source of truth; the `.docx`/`.pptx` are produced locally on demand.
 
 ### Added
-- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
-- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
+- `scripts/build_honor_coach_user_guide_pptx.py` — 13-slide, THF-branded (`#1B2A4A`/`#E8792B`) deck mirroring the guide: title, What's new, workbench-at-a-glance, 12-step workflow overview, five step slides, branded-document, privacy, live-vs-coming, close.
+- Guide: new **Step 5 — Request a PRISM report** (First/Last/Email; Role fixed `user`, Organization fixed `The Honor Foundation`; 24h idempotency note).
+- Guide: **Target position description** on the Résumé Writer — paste **or** *Upload a job description* (pasted text wins).
+- Guide: **What's new** callout + glossary entries (PRISM request, Cohort, Target position description).
+- `scripts/build_honor_coach_user_guide_html.py` — emits the **clickable HTML** version of the guide (sticky table of contents, scroll-spy, in-page Download buttons for the `.pptx`/`.docx`). The rendered HTML ships as a frontend static asset under `public/docs/guides/` and is wired to the app's new **Help / Support** sidebar menu (frontend repo). The `.docx`/`.pptx`/`.html` are also uploaded to the dev frontend S3 bucket (`ig-dev-frontend-assets/docs/guides/`, served via CloudFront) — verified live at `https://dev.inspiresgenius.com/docs/guides/`.
 
 ### Changed
-- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
-
-### Verified
-- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
-
-## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
-
-Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
-
-### Added
-- `src/components/shared/layout/HelpSupportMenu.tsx` — the dropdown, rendered as a sidebar-footer button (opens above **Logout**).
-- `src/components/shared/layout/helpSupportLinks.ts` — the three asset URLs, app-relative under `/docs/guides/` so they resolve on whichever host the app runs on.
-- `src/components/shared/layout/__tests__/HelpSupportMenu.test.tsx` — trigger renders, links correct, menu opens with all three assets each `target=_blank`.
-- `public/docs/guides/honor-coach-workbench-user-guide.html` — the clickable HTML guide (sticky TOC, scroll-spy, in-page Download buttons), plus the `.pptx` and `.docx` next to it. Ship in `public/` so they deploy to the frontend's own S3/CloudFront origin.
-
-### Changed
-- `src/components/shared/layout/SidebarScaffold.tsx` — footer wires in `HelpSupportMenu` above the Logout item.
-
-### Verified
-- `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
+- `scripts/build_honor_coach_user_guide.py` — renumbered the workflow to **12 steps**; **Import a Cohort** label (Onboarding step + nav + glossary); new **How your report reads** callout (left-justified responses + step-by-step plans); refreshed the *live vs. coming soon* table.
+  - Files: `scripts/build_honor_coach_user_guide.py`, `scripts/build_honor_coach_user_guide_pptx.py`
+  - Output (local, gitignored): `docs/Honor_Coach_Workbench_User_Guide.docx`, `docs/guides/Honor_Coach_Workbench_User_Guide.docx`, `docs/Honor_Coach_Workbench_User_Guide.pptx`
 
 ## [2026-07-30] — Meridian latency: OUTCOME ~60s → ~20s (browser-confirmed) + the dead WebSocket push
 
@@ -9078,91 +9422,6 @@ Monorepo PR #724 · Frontend PR #309. Both OPEN, not merged.
 ### Noted (not fixed — shared code, no ask)
 - `ig_brand.circle_icon()` draws solid-orange (`#E8792B`) icon PNGs, so `ig_brand.section_slide()`'s `circle_color=ORANGE` badge renders its glyph effectively invisible. Worked around locally in the new script (white badge on the navy closing slide); `ig_brand.py` itself was left untouched.
 
-## [2026-07-30] — Team Development Studio enabled on staging-b frontend (FE PR #305, LIVE)
-
-The manager-facing Team Development Studio was serving the OLD interface on staging-b: the whole surface (nav item + `/manager/development` routes) is gated behind the build-time flag `VITE_FEATURE_TEAM_DEVELOPMENT`, which was set ON in the dev build only. The staging-b build (rebuilt against `.env.staging-b`) never set it, so the Studio was dark there even though the backend (growth-service + agent-engine dossier + PRISM read-model) is promoted and demo data is seeded on staging-b.
-
-### Changed (frontend repo `inspire-genius-frontend`, PR #305)
-- `.env.staging-b`: `VITE_FEATURE_TEAM_DEVELOPMENT=true` (the staging-b build uses this as its base `.env`), alongside the other staging-b feature flags.
-- `.github/workflows/ci-deploy.yml`: updated the dev build-step comment (flag no longer dev-only).
-
-### Diagnosis (definitive, from live bundles)
-- Both dev + staging-b were on the same git build but different bundles (different `.env`). Grepping the deployed JS: the **dev** bundle contained the "Team Development" nav (flag on → Studio live); the **staging-b** bundle did NOT (flag off → old interface). The Studio surfaces already consume the real `growthService` (`/v1/growth`) — no mock data — so the only gap was the build flag.
-
-### Verified (live)
-- FE PR #305 merged → ci-deploy rebuilt + deployed both envs. staging-b now serves version `8c6e7cb` with the "Team Development" nav present in the bundle (was absent); dev unchanged (no regression). Backend confirmed earlier: staging-b roster query returns the 6 seeded members by name; member dossier computes real PRISM (assessment-derived) + seeded goals. So the Studio is live + wired to real data on staging-b (browser access via magic-link/Cognito — email-only magic-auth is off there per #717).
-
-## [2026-07-30] — Job Fit / JobDNA UI fixes: charts, disclaimer, tier labels, % consistency
-
-Four reported UI issues across the JobDNA and Job Fit surfaces. FE PR
-willb77/inspire-genius-frontend#311, backend PR willb77/inspire-genius#727.
-
-### Fixed
-- **Job DNA blueprint detail — bar charts under the radar were invisible.** An
-  oversized `left: 120` chart margin plus a 110px YAxis exceeded the width of the
-  narrow `md:grid-cols-3` columns, collapsing the plot area to ≤0 so no bars drew.
-  Reduced the margin (the YAxis width already reserves label room), added
-  `min-w-0` so the chart can shrink inside grid cells, and set
-  `ResponsiveContainer minWidth={0}`.
-  - Files: `src/components/job-blueprint/job-dna/BenchmarkBarChart.tsx`,
-    `src/pages/job-blueprint/JobBlueprintDnaDetailPage.tsx`
-- **My Fit percentages were inconsistent with the detail page.** The row derived
-  `100 − total/22` (hardcoded dimension count) while the detail page uses the
-  authoritative `fit_score = _fit_percent(total, len(benchmark))`. `fit_matches`
-  now returns `fit_score` (same formula), and the FE `FitMatch.fitScore` is
-  preferred on the row (graceful fallback on older backends).
-  - Files: `services/blueprint-service/app/{schemas.py,service.py,tests/test_fit_matches.py}`,
-    `src/types/job-fit/index.ts`, `src/pages/job-fit/MatchesPage.tsx`
-
-### Removed
-- **The amber "Decision support only — not a validated selection instrument"
-  disclaimer banner** from all Job Fit surfaces (Matches, Detail, Gaps);
-  `MatchingValidationBanner` component + test deleted.
-- **The miscalibrated "Poor fit" / misalignment band pill and the
-  "A stretch — several areas to develop" descriptor** from My Fit. The backend
-  `_fit_band` cut-points (100/200/300) sit on a different scale than the real
-  ~22-dimension `total_variation`, so nearly every saved role read as Poor while
-  the row still showed a high %. Removed both (and the `variationDescriptor`
-  helper); the detail header and summary fallback no longer use it.
-  - Files: `src/pages/job-fit/{MatchesPage,FitDetailPage,GapsPage,FitSummaryCard,_fit}.{tsx,ts}`,
-    deleted `src/components/job-fit/MatchingValidationBanner.tsx`
-
-### Verified
-- FE: `tsc -b` clean · 54 job-fit + job-blueprint jest tests pass · production
-  `vite build` green. Backend: 24 blueprint-service fit tests pass.
-
-## [2026-07-30] — Lumen Self-Portrait: description, ask-your-portrait, PDF/Word export
-
-On `/vertical/lumen/self-portrait`. FE PR willb77/inspire-genius-frontend#312,
-backend PR willb77/inspire-genius#729.
-
-### Added
-- **A formatted plain-language description of the portrait**, above "What this
-  is built from" — a markdown-rendered read of who the portrait says you are,
-  fetched once and cached like the portrait itself.
-- **"Ask your self-portrait"** — a free-text prompt box plus suggestion chips
-  that answers inline, grounded in the same composed portrait, accumulating a
-  Q&A thread on the page (no navigation away).
-- **Export to PDF and Word** — the description + Q&A, one click each. PDF via the
-  shared html2canvas/jsPDF renderer; Word as an HTML `.doc` (no `docx`
-  dependency, matching the repo convention).
-- **Backend:** `POST /v1/agents/lumen/self-portrait/{id}/ask` — one self-only
-  endpoint powering both the description (no question) and the query (a
-  question). Meridian-voiced via `ProviderFactory.get_for_agent("Meridian")`;
-  never raises — falls back to a deterministic, portrait-derived text when the
-  provider is unavailable, so the surface always renders. No Bedrock.
-  - Files: `services/agent-engine/app/tools/lumen/portrait_qa.py`,
-    `services/agent-engine/app/routes/lumen.py`,
-    FE `src/pages/lumen/SelfPortraitNarrative.tsx`,
-    `src/lib/lumen/portraitReport.ts`,
-    `src/hooks/lumen/useSelfPortrait.ts`,
-    `src/services/lumen/selfPortrait.service.ts`, `src/types/lumen.ts`
-
-### Verified
-- Backend: full lumen suite 151 tests pass (8 new). FE: tsc clean, 75 lumen jest
-  tests pass (incl. new narrative + report-serializer tests), production build
-  green. Non-clinical throughout — a mirror, not a diagnosis.
-
 ## [2026-07-30] — Lumen coaching answers on the page, with print + Word/PDF export
 
 Lumen **Personal coaching** now answers **on the page** instead of navigating away to the Meridian chat surface. Answers accumulate, so a run of questions reads as one session, and each answer can be **copied, printed, or exported to Word or PDF** — the same per-turn controls Meridian chat has.
@@ -9205,6 +9464,91 @@ FE #312 landed `src/lib/lumen/portraitReport.ts` (Self-Portrait report) at almos
 So the duplication is limited to two small markdown converters, and is **accepted for now** rather than resolved by refactoring another terminal's freshly-merged code. Per the standing rule, extract on the **third** occurrence or the first behavioural drift between them.
 
 **PR:** FE #313. Frontend-only, so it reaches **dev and staging-B** on merge without a backend promote.
+
+## [2026-07-30] — Lumen Self-Portrait: description, ask-your-portrait, PDF/Word export
+
+On `/vertical/lumen/self-portrait`. FE PR willb77/inspire-genius-frontend#312,
+backend PR willb77/inspire-genius#729.
+
+### Added
+- **A formatted plain-language description of the portrait**, above "What this
+  is built from" — a markdown-rendered read of who the portrait says you are,
+  fetched once and cached like the portrait itself.
+- **"Ask your self-portrait"** — a free-text prompt box plus suggestion chips
+  that answers inline, grounded in the same composed portrait, accumulating a
+  Q&A thread on the page (no navigation away).
+- **Export to PDF and Word** — the description + Q&A, one click each. PDF via the
+  shared html2canvas/jsPDF renderer; Word as an HTML `.doc` (no `docx`
+  dependency, matching the repo convention).
+- **Backend:** `POST /v1/agents/lumen/self-portrait/{id}/ask` — one self-only
+  endpoint powering both the description (no question) and the query (a
+  question). Meridian-voiced via `ProviderFactory.get_for_agent("Meridian")`;
+  never raises — falls back to a deterministic, portrait-derived text when the
+  provider is unavailable, so the surface always renders. No Bedrock.
+  - Files: `services/agent-engine/app/tools/lumen/portrait_qa.py`,
+    `services/agent-engine/app/routes/lumen.py`,
+    FE `src/pages/lumen/SelfPortraitNarrative.tsx`,
+    `src/lib/lumen/portraitReport.ts`,
+    `src/hooks/lumen/useSelfPortrait.ts`,
+    `src/services/lumen/selfPortrait.service.ts`, `src/types/lumen.ts`
+
+### Verified
+- Backend: full lumen suite 151 tests pass (8 new). FE: tsc clean, 75 lumen jest
+  tests pass (incl. new narrative + report-serializer tests), production build
+  green. Non-clinical throughout — a mirror, not a diagnosis.
+
+## [2026-07-30] — Job Fit / JobDNA UI fixes: charts, disclaimer, tier labels, % consistency
+
+Four reported UI issues across the JobDNA and Job Fit surfaces. FE PR
+willb77/inspire-genius-frontend#311, backend PR willb77/inspire-genius#727.
+
+### Fixed
+- **Job DNA blueprint detail — bar charts under the radar were invisible.** An
+  oversized `left: 120` chart margin plus a 110px YAxis exceeded the width of the
+  narrow `md:grid-cols-3` columns, collapsing the plot area to ≤0 so no bars drew.
+  Reduced the margin (the YAxis width already reserves label room), added
+  `min-w-0` so the chart can shrink inside grid cells, and set
+  `ResponsiveContainer minWidth={0}`.
+  - Files: `src/components/job-blueprint/job-dna/BenchmarkBarChart.tsx`,
+    `src/pages/job-blueprint/JobBlueprintDnaDetailPage.tsx`
+- **My Fit percentages were inconsistent with the detail page.** The row derived
+  `100 − total/22` (hardcoded dimension count) while the detail page uses the
+  authoritative `fit_score = _fit_percent(total, len(benchmark))`. `fit_matches`
+  now returns `fit_score` (same formula), and the FE `FitMatch.fitScore` is
+  preferred on the row (graceful fallback on older backends).
+  - Files: `services/blueprint-service/app/{schemas.py,service.py,tests/test_fit_matches.py}`,
+    `src/types/job-fit/index.ts`, `src/pages/job-fit/MatchesPage.tsx`
+
+### Removed
+- **The amber "Decision support only — not a validated selection instrument"
+  disclaimer banner** from all Job Fit surfaces (Matches, Detail, Gaps);
+  `MatchingValidationBanner` component + test deleted.
+- **The miscalibrated "Poor fit" / misalignment band pill and the
+  "A stretch — several areas to develop" descriptor** from My Fit. The backend
+  `_fit_band` cut-points (100/200/300) sit on a different scale than the real
+  ~22-dimension `total_variation`, so nearly every saved role read as Poor while
+  the row still showed a high %. Removed both (and the `variationDescriptor`
+  helper); the detail header and summary fallback no longer use it.
+  - Files: `src/pages/job-fit/{MatchesPage,FitDetailPage,GapsPage,FitSummaryCard,_fit}.{tsx,ts}`,
+    deleted `src/components/job-fit/MatchingValidationBanner.tsx`
+
+### Verified
+- FE: `tsc -b` clean · 54 job-fit + job-blueprint jest tests pass · production
+  `vite build` green. Backend: 24 blueprint-service fit tests pass.
+
+## [2026-07-30] — Team Development Studio enabled on staging-b frontend (FE PR #305, LIVE)
+
+The manager-facing Team Development Studio was serving the OLD interface on staging-b: the whole surface (nav item + `/manager/development` routes) is gated behind the build-time flag `VITE_FEATURE_TEAM_DEVELOPMENT`, which was set ON in the dev build only. The staging-b build (rebuilt against `.env.staging-b`) never set it, so the Studio was dark there even though the backend (growth-service + agent-engine dossier + PRISM read-model) is promoted and demo data is seeded on staging-b.
+
+### Changed (frontend repo `inspire-genius-frontend`, PR #305)
+- `.env.staging-b`: `VITE_FEATURE_TEAM_DEVELOPMENT=true` (the staging-b build uses this as its base `.env`), alongside the other staging-b feature flags.
+- `.github/workflows/ci-deploy.yml`: updated the dev build-step comment (flag no longer dev-only).
+
+### Diagnosis (definitive, from live bundles)
+- Both dev + staging-b were on the same git build but different bundles (different `.env`). Grepping the deployed JS: the **dev** bundle contained the "Team Development" nav (flag on → Studio live); the **staging-b** bundle did NOT (flag off → old interface). The Studio surfaces already consume the real `growthService` (`/v1/growth`) — no mock data — so the only gap was the build flag.
+
+### Verified (live)
+- FE PR #305 merged → ci-deploy rebuilt + deployed both envs. staging-b now serves version `8c6e7cb` with the "Team Development" nav present in the bundle (was absent); dev unchanged (no regression). Backend confirmed earlier: staging-b roster query returns the 6 seeded members by name; member dossier computes real PRISM (assessment-derived) + seeded goals. So the Studio is live + wired to real data on staging-b (browser access via magic-link/Cognito — email-only magic-auth is off there per #717).
 
 ## [2026-07-29] — LOE assessment: Meridian "Projects" tile persistence (no code change)
 
@@ -9283,18 +9627,22 @@ So the duplication is limited to two small markdown converters, and is **accepte
 - **Dev Aurora migration not applied.** `ig-dev-migration-runner` invoke was refused by the safety classifier (DDL). Probe confirmed dev still carries `uq_prism_requests_user_external_ident UNIQUE (user_id, external_ident)`.
 - **staging-b untouched** — its migration + agent-engine promote remain always-confirm.
 
-## [2026-07-29] — Growth roster resolves member NAMES via direct public.team_members read (PR #719, LIVE dev + staging-b)
+## [2026-07-29] — Job Fit fixes: /fit/pathway 500, fit % on My Fit, self-describing Pathway, inline Coaching (LIVE dev + staging-b)
 
-Fixed the Team Development roster showing member IDs instead of names (surfaced by the staging-b Summit seed).
+Follow-up fixing reported Job Fit issues (backend #722, FE #306).
 
 ### Fixed
-- `growth-service list_roster` sourced its team from `client.get_team()`, which calls `settings.agent_engine_url + /api/manager/team` — but `/api/manager/team` is a **dashboard-service** route the agent-engine doesn't serve, so it 404'd, the exception was swallowed, and the roster fell back to persisted dossiers whose `member.name` is the raw `member_id`. (Even reaching dashboard, it gates on role `manager`; magic-auth mints `role:user`.)
-  - Now reads dashboard-service's `public.team_members` **directly** over the shared Aurora/RDS-Proxy connection (sanctioned cross-schema read) — it carries the real name/email/prism_color, no HTTP hop, no manager-role token. New `_fetch_team_members()`; schema-qualified so `search_path`-independent; any error → `[]` so the persisted-dossier + legacy `get_team` fallbacks still run.
-  - Files: `services/growth-service/app/service.py`, tests `services/growth-service/tests/test_team_members_read.py` (48 growth tests pass).
+- **`/fit/pathway` 500** — blueprint-service never had the route; the FE's `getPathway()` fell through to `/fit/{job_id}` with `job_id='pathway'` → UUID cast → asyncpg DataError → 500. Added `GET /fit/pathway` **declared before** `/fit/{job_id}`; `service.fit_pathway` returns real growth-target roles (potential/moderate-fit, excludes strong-fit + misalignment) + skill ladders, and never 500s (explanatory note when empty). New schemas `FitPathway/PathwaySuggestion/SkillLadder`. Files: `services/blueprint-service/app/{routes,service,schemas}.py`, `tests/test_fit_pathway.py`.
 
-### Verified
-- **Dev E2E** (magic-auth on `[api-id]`): seeded one dev `team_members` row (willb77→[user D.R.]) → `GET /v1/growth/roster` returns **`name":"[user D.R.]"`** (team-backed member resolves the real name; dossier-only members correctly still show IDs). Dev verify row removed after.
-- **staging-b** (promoted via tag `release-stable-2026-07-28-roster-names`, delta = #719 only, no migrations; growth Lambda redeployed 04:06 UTC): the exact query the fix runs returns all 6 seeded names ([user J.B.], [user J.B.]., [user Li.B.], Naomi Boyer, [user R.K.B.], Rebekah Hartberger) — all 6 are `team_members`-backed so the roster resolves them by name. (magic-auth is now off on staging-b per #717, so the full API E2E was done on dev; the deployed code + data path are confirmed on staging-b.)
+### Added / Changed (frontend `inspire-genius-frontend`, PR #306)
+- **Fit % on "My Fit" rows** — each Matches row shows an explicit 1–100 fit % (closeness score under the closeness method; else the same derived % as the detail). Surfaces the fit on the page the user lands on (the narrative cards live on the detail page). Files: `src/pages/job-fit/MatchesPage.tsx`.
+- **Pathway self-describing** — always-visible "What this is" block (Career Pathways / adjacent roles / skill ladders) so the page explains itself even when empty. `PathwayPage.tsx`.
+- **Coaching answers INLINE** — was a fragile `location.state` handoff to Meridian (lost on refresh/remount, disconnected). Now sources roles from the user's fit **matches** and answers inline via `explain-fit`, grounded in the selected role's numbers; "Open in Meridian" kept as a secondary path. `CoachPage.tsx`.
+- **Cross-page data** — Coaching reuses the matches + detail React Query caches; fit % is one formula across Matches and detail.
+
+### Notes
+- "Only one role on My Fit" is not a FE cap — `fit_matches` returns all visible published blueprints (own-org OR org-agnostic); only one is published/visible to that org (content/data). "Can't see the built cards" = they render on the *detail* page (click a role); the transient `/fit/{id}` 503 (during the earlier promote) blocked them momentarily. dev willb77 has no PRISM (matches empty there).
+- Deployed: backend #722 → dev + staging-b (`release-stable-2026-07-29-jobfit-pathway`, no migration). FE #306 → dev + staging-b. blueprint-service + agent-engine + FE CI green; 44 job-fit jest + 10 blueprint-service fit/pathway tests pass.
 
 ## [2026-07-29] — Job Fit: fit % + overlay narrative + inline follow-up + action toolbar + Write Résumé (LIVE dev + staging-b)
 
@@ -9315,22 +9663,18 @@ On the Job Fit detail surface (`/vertical/job-fit/fit/:jobId`) the job↔person 
 ### Notes
 - No scoring/tier/guardrail/gating changes; `MatchingValidationBanner` intact. Built in-thread (background build agents kept dying on API 529s during the session).
 
-## [2026-07-29] — Job Fit fixes: /fit/pathway 500, fit % on My Fit, self-describing Pathway, inline Coaching (LIVE dev + staging-b)
+## [2026-07-29] — Growth roster resolves member NAMES via direct public.team_members read (PR #719, LIVE dev + staging-b)
 
-Follow-up fixing reported Job Fit issues (backend #722, FE #306).
+Fixed the Team Development roster showing member IDs instead of names (surfaced by the staging-b Summit seed).
 
 ### Fixed
-- **`/fit/pathway` 500** — blueprint-service never had the route; the FE's `getPathway()` fell through to `/fit/{job_id}` with `job_id='pathway'` → UUID cast → asyncpg DataError → 500. Added `GET /fit/pathway` **declared before** `/fit/{job_id}`; `service.fit_pathway` returns real growth-target roles (potential/moderate-fit, excludes strong-fit + misalignment) + skill ladders, and never 500s (explanatory note when empty). New schemas `FitPathway/PathwaySuggestion/SkillLadder`. Files: `services/blueprint-service/app/{routes,service,schemas}.py`, `tests/test_fit_pathway.py`.
+- `growth-service list_roster` sourced its team from `client.get_team()`, which calls `settings.agent_engine_url + /api/manager/team` — but `/api/manager/team` is a **dashboard-service** route the agent-engine doesn't serve, so it 404'd, the exception was swallowed, and the roster fell back to persisted dossiers whose `member.name` is the raw `member_id`. (Even reaching dashboard, it gates on role `manager`; magic-auth mints `role:user`.)
+  - Now reads dashboard-service's `public.team_members` **directly** over the shared Aurora/RDS-Proxy connection (sanctioned cross-schema read) — it carries the real name/email/prism_color, no HTTP hop, no manager-role token. New `_fetch_team_members()`; schema-qualified so `search_path`-independent; any error → `[]` so the persisted-dossier + legacy `get_team` fallbacks still run.
+  - Files: `services/growth-service/app/service.py`, tests `services/growth-service/tests/test_team_members_read.py` (48 growth tests pass).
 
-### Added / Changed (frontend `inspire-genius-frontend`, PR #306)
-- **Fit % on "My Fit" rows** — each Matches row shows an explicit 1–100 fit % (closeness score under the closeness method; else the same derived % as the detail). Surfaces the fit on the page the user lands on (the narrative cards live on the detail page). Files: `src/pages/job-fit/MatchesPage.tsx`.
-- **Pathway self-describing** — always-visible "What this is" block (Career Pathways / adjacent roles / skill ladders) so the page explains itself even when empty. `PathwayPage.tsx`.
-- **Coaching answers INLINE** — was a fragile `location.state` handoff to Meridian (lost on refresh/remount, disconnected). Now sources roles from the user's fit **matches** and answers inline via `explain-fit`, grounded in the selected role's numbers; "Open in Meridian" kept as a secondary path. `CoachPage.tsx`.
-- **Cross-page data** — Coaching reuses the matches + detail React Query caches; fit % is one formula across Matches and detail.
-
-### Notes
-- "Only one role on My Fit" is not a FE cap — `fit_matches` returns all visible published blueprints (own-org OR org-agnostic); only one is published/visible to that org (content/data). "Can't see the built cards" = they render on the *detail* page (click a role); the transient `/fit/{id}` 503 (during the earlier promote) blocked them momentarily. dev willb77 has no PRISM (matches empty there).
-- Deployed: backend #722 → dev + staging-b (`release-stable-2026-07-29-jobfit-pathway`, no migration). FE #306 → dev + staging-b. blueprint-service + agent-engine + FE CI green; 44 job-fit jest + 10 blueprint-service fit/pathway tests pass.
+### Verified
+- **Dev E2E** (magic-auth on `[api-id]`): seeded one dev `team_members` row (willb77→[user D.R.]) → `GET /v1/growth/roster` returns **`name":"[user D.R.]"`** (team-backed member resolves the real name; dossier-only members correctly still show IDs). Dev verify row removed after.
+- **staging-b** (promoted via tag `release-stable-2026-07-28-roster-names`, delta = #719 only, no migrations; growth Lambda redeployed 04:06 UTC): the exact query the fix runs returns all 6 seeded names ([user J.B.], [user J.B.]., [user Li.B.], Naomi Boyer, [user R.K.B.], Rebekah Hartberger) — all 6 are `team_members`-backed so the roster resolves them by name. (magic-auth is now off on staging-b per #717, so the full API E2E was done on dev; the deployed code + data path are confirmed on staging-b.)
 
 ## [2026-07-28] — PRISM request surface LIVE on staging-b (#300 merged) + consolidated to one path (#302)
 
@@ -9455,80 +9799,36 @@ Follow-up fixing reported Job Fit issues (backend #722, FE #306).
 ### Verified
 - Rendered to PDF, rasterised all 17 pages, and measured both ink coverage and **margin-bleed** per page. Four layout defects caught and fixed that a clean script exit did not reveal: (1) column widths silently ignored — `python-docx` cell widths are advisory, so the prose column collapsed into a tall narrow one; fixed with fixed `tblLayout` + explicit `tblGrid`; (2) after that fix the tables ran off the left margin because **`add_table()` already emits a `tblGrid` and inserting a second left both**, with the renderer picking the stale auto-sized one — fixed by replacing rather than inserting, plus normalising every width list to the usable text width so a table can never overflow again; (3) Lane E rendered gold-on-gold and was unreadable; (4) two stale "57 CC sessions" references left over from an earlier arithmetic pass, against a corrected total of 72. Phase totals re-checked by hand against the item rows.
 
-## [2026-07-28] — PRISM read-model from authoritative assessments + 8-dim inject (agent-engine, LIVE dev + staging-b)
+## [2026-07-28] — Honor: Request-a-PRISM-report modal + résumé JD upload + Cohort label (FE PR #299)
 
-Closed the P1 chat-accuracy half left open after the 2026-07-27 `prism_results` backfill (#702): future PRISM uploads write to `assessments`/`assessment_scores` (the §16 ingestor source of truth) but not to `prism_results`, so the dossier + chat memory-inject would silently re-degrade to `prismNeeded` for every newly-assessed user. Fixed without a projection that can drift and without touching the §16 ingestor (T5 enforces it never writes `prism_results`). PR #712 merged; agent-engine auto-rolled to dev (ECS task def :52).
-
-### Added
-- `LongTermMemory.get_latest_prism` now derives the live profile from the **authoritative assessments** (latest PRISM `assessments` + `assessment_scores`, `is_authoritative`), computing the 4 colour means **and** surfacing the true 8 per-dimension scores; falls back to the legacy `prism_results` table only for users without an authoritative assessment. Both the dossier (`_load_prism`) and the chat memory-inject read through this one function, so every completed report is reflected immediately — nothing to keep in sync, can't go stale.
-  - Files: `services/agent-engine/app/memory/long_term.py` (`_derive_prism_colours`, `_load_prism_from_assessments`, `_PRISM_QUADRANT_DIMS`)
-- The `<prism_profile>` memory-inject block now carries the 8 dimensions (`<dimensions><dimension name=…>`), with the 4 colour means retained for backward compatibility.
-  - Files: `services/agent-engine/app/memory/integration.py`
-- New tests: `services/agent-engine/tests/test_prism_assessment_derived.py` (derivation means, assessments-first, precedence over stale `prism_results`, fallback, non-authoritative ignored, incomplete-dims fallback, latest-wins, radar true-dims + fallback, inject 8-dim + omit).
-
-### Changed
-- `PrismAgent.prism_radar` renders the true per-dimension spread when present (Innovating ≠ Initiating) instead of collapsing each pair to its quadrant mean; falls back to the quadrant score for 4-colour-only rows.
-  - Files: `services/agent-engine/app/agents/coaching/prism_agent.py`
-- Colour derivation pinned to the dossier radar-tuple grouping (identical to `migrations/prism_results_backfill_from_assessments.sql`) so all `prism_results` — backfilled AND assessment-derived — agree. Does NOT resolve the separate, deliberately-unfixed manual-vs-radar quadrant-mapping conflict.
-
-### Fixed
-- `PrismAgent._publish_behavioral_context` no longer clobbers the well-known PRISM slot (`set_prism_profile`) with its raw 500-char LLM reply. That slot carries the structured profile the CoachingOrchestrator / `unified_behavioral_context` publish before the turn; downstream agents read it via `get_prism_profile()` expecting PRISM data. Aura's behavioral read now lands under a dedicated per-user key only. Updated the maven clobber test to assert the corrected contract.
-
-### Verified
-- 246 tests green across memory/dossier/prism/meridian suites (local + CI); the one pre-existing unrelated failure (`test_prism_knowledge` COLOUR_GREEN) also fails on clean `origin/development` and passes in CI (env-only).
-- **Live dev proof (ECS-exec against running task + live Aurora):** deployed code physically present in the `agent-engine` container; `get_latest_prism("3468e498-…")` returned `version="assessment-derived"` with the 8 true per-dim scores — Focusing=7.0/Delivering=61.0 and Finishing=13.0/Evaluating=91.0 (distinct pairs the old quadrant-inherit code collapsed to 34/52) — and colour means gold=34.0, green=91.5, blue=52.0, orange=92.0.
-- **Promoted to staging-b (2026-07-28, tag `release-stable-2026-07-28-prism-readmodel`):** delta since the last promote was #712 only — no other terminals' work, no migrations. All 6 promote jobs green (agent-engine build, cdk deploy all stacks, ECS roll, authenticated smoke matrix). **staging-b had 28 authoritative PRISM assessments but an empty `prism_results` — the exact scenario #712 fixes — so the read-model derivation unlocks real PRISM there with NO backfill needed** (unlike dev, which needed #702). Live-verified via ECS-exec on `ig-staging-b-agent-engine`: `get_latest_prism("a4f81418-…")` → `version="assessment-derived"`, 8 true dims (Focusing=7/Delivering=46, Finishing=70/Evaluating=96), colours gold=26.5/green=75.0/blue=83.0/orange=73.0.
-
-## [2026-07-28] — Unified Role-Fit Engine (D1–D7) — merged, deployed dev + staging-b, verified
-
-The full Unified Role-Fit Engine memo (D1–D7) built this session was merged to `development` in order and is now LIVE on both dev and staging-b. Backend-only, additive, all gated; no migrations (D1–D7 are stateless).
-
-### Merged (in order)
-- **#684** (D1–D3): JD→vector **extractor** (`ig_blueprint_scoring/extractor.py`, injected LLM, provenance), **PRISM vocab bridge** (`app/honor/prism_bridge.py`), **Honor consumer** path (`app/honor/rolefit.py`, gated OFF).
-- **#709** (D4, replaced auto-closed #688): **both scorers as a choice** — weighted-closeness moved into `ig_blueprint_scoring/closeness.py` (agent-engine `app/evaluation/scorer.py` now a re-export); unified `score_fit(method∈{gap,closeness})`; blueprint-service `/fit/*` gained a `method` query param (default gap, non-breaking).
-- **FE #283**: scoring-method **toggle** on the Job-Fit self-fit view (`MatchesPage`), `method` threaded through service+hooks. Merged with a hand-union against development's new `FitPurpose` panel.
-- **#703** (D5–D7): `governance.py` (`enforce_advisory` — "informs, doesn't decide" enforced at runtime; `AdverseImpactMonitor` four-fifths rule; retired the IO-psych SME gate framing), `isolation.py` (`assert_vector_only` — vector-only, rejects PII/rosters), and the neutral **shared target service** `/v1/targets/{extract,score,adverse-impact}`.
-
-### Fixed
-- **#710** — D7's `/v1/targets/*` was deployed in the Lambda but **unreachable** (post-deploy dev check: `/v1/blueprint/fit/matches`→401 but `/v1/targets/score`→404). API Gateway only had `ANY /v1/blueprint/{proxy+}`; added a second `CfnRoute` `ANY /v1/targets/{proxy+}` → same blueprint-service integration (`infrastructure/cdk/lib/blueprint-service-stack.ts`). Re-verified dev: `/v1/targets/*`→401.
-
-### Deployed + verified
-- **Dev:** staged-deploy succeeded; `/v1/targets/*` + `/v1/blueprint/fit/*` → 401 (reachable, auth-gated).
-- **Staging-b:** already promoted via `release-stable-2026-07-27-lumen-ux` (tag = #710 commit `5933e24c`), promote completed success 2026-07-28 00:35; curl-verified `/v1/targets/*` + `/v1/blueprint/fit/*` → 401. (Also carried forward in the later `release-stable-2026-07-28-prism-readmodel` tag.)
-- Tests at merge: `ig-blueprint-scoring` 106, `blueprint-service` 175, agent-engine evaluation+Honor 341/6 (unchanged — re-export behavior-preserving).
-
-### Notes
-- No re-promote performed for role-fit — another terminal's promote already carried it to staging-b (collision avoided).
-- `blueprint_matching_enabled` default unchanged (recruiter rollout is a product call; D5 guardrails always apply regardless).
-
-## [2026-07-28] — Job DNA buildout: "Draft a blueprint" front-door + shadow-validation + entitlements
-
-Full Job DNA / Job Blueprint buildout landed this session (all merged to `development`, live dev + stable). See resume memory `job-dna-buildout` for the complete pointer.
+Frontend additions to the Honor Coach Workbench. `npm run build` (tsc + vite) and ESLint clean; honor FE suite (85) + new (5) green. Requires the paired agent-engine endpoint `POST /v1/agents/honor/coach/prism-request` and the `positionFileIds` résumé field.
 
 ### Added
-- **"Draft a blueprint" front-door (KCE-mirrored).** Backend `POST /v1/agents/blueprint/draft-benchmark` (agent-engine, monorepo **#701** `ced619aa`) — LLM drafts the 22-dim benchmark from role text; **§3 tier-shape 3/2/3·3/0/5·3/0/3 guaranteed via deterministic Python repair**; Haiku tier; 14 tests. Returns a FLAT object (no `{status,data}` envelope). FE **#291** `4cfc23ad` — `JobDnaDraftFlow` + `useAllRoles` (cross-vertical: Job DNA blueprints + KCE saved roles) + `useDraftBenchmark`/`draft.service` (via `getApi()`/agent-engine) + method chooser on the authoring page (keeps manual `JobDnaWizard`). Upload role (Word/PDF/text, client-side `extractRoleText`) → staged progress bar + toast → editable results → save → cross-vertical Role dropdown. Live dev + stable.
-- **§10 shadow-validation.** Harness `services/blueprint-service/app/shadow_validation/` (**#677**) + runbook `docs/runbooks/blueprint_shadow_validation.md` + seed cohort `services/blueprint-service/shadow_seed/` (**#687**) — applied to dev (96 candidate×blueprint pairs, real `ig-blueprint-scoring` engine, tagged `org_id='SHADOW-VAL-2026'`, reversible).
-- **Sign-off packets + as-built guide** (`.docx` at root; generators in `scripts/`).
+- **"Request a PRISM report"** button on **My Fellows** (Caseload) header → a modal collecting **first name, last name, email**, with **Role ("user")** and **Organization ("The Honor Foundation")** shown read-only. Fixed fields are injected in the service layer and enforced server-side.
+  - Files: `src/pages/honor/RequestPrismModal.tsx` (new), `src/pages/honor/HonorCaseload.tsx`, `src/hooks/honor/useHonorEvaluate.ts` (`useRequestPrismReport`), `src/services/honor/coach.service.ts` (`requestPrismReport`), `src/types/honor/index.ts`
+- **Résumé Writer "Upload a job description"** — a file drop under the *Target position description* textarea uploads the JD (`uploadJobDescription` → `document_id`) and passes `positionFileIds` on generate; the server extracts its text into the target. Pasted text still wins; a chip shows the attached filename with a remove control.
+  - Files: `src/pages/honor/HonorResume.tsx`, `src/hooks/honor/useHonorResume.ts` (`useUploadJobDescription`), `src/services/honor/artifact.service.ts` (`uploadJobDescription`), `src/types/honor/index.ts`
 
 ### Changed
-- Job DNA / Job Fit **entitlements** — granted `{grant,honor,job-blueprint,job-fit,knowledge-continuity,lumen}` to willb77 + [user J.B.] (×2) + [user M.T.] + [user G.B.] on dev + stable (`public.user_entitlements`).
+- Capitalized the **"Import a Cohort"** section title on the Onboard page (`src/pages/honor/HonorOnboard.tsx`).
 
-### Fixed
-- FE draft service/hook read `res.data.data` (envelope) but the endpoint returns a flat object → `res.data` (`a269da7`).
+### Tests
+- `src/pages/honor/__tests__/honor-prism-request.test.tsx`, `src/services/honor/__tests__/coach-prism-request.test.ts`.
 
 ---
 
-## [2026-07-28] — Honor: PRISM-report request + résumé JD upload + grounding formatting (agent-engine, PR #714)
+## [2026-07-28] — Security: gate /v1/magic-auth off on staging-b + prod (auth-service, PR #717)
 
-Backend additions to the Honor Coach Workbench (merged to `development` via #714; pairs with FE #299). Full honor suite 333 passed / 6 skipped.
+`POST /v1/magic-auth` mints an HS256 session token from an **email alone** (no password, no emailed link, no one-time-use) — a dev convenience that was live on staging-b (de-facto prod), letting anyone who knows an active user's email mint a valid session. Found while verifying the Honor staging-b promote.
 
-### Added
-- **THF grounding / system prompt** (`app/honor/grounding.py`): two formatting instructions in `THF_GROUNDING` — **left-justify every response** (never center/right-align) and, **when asked for a plan, respond with a numbered step-by-step plan**. Content-only (SME-tunable); flows into Meridian chat + the résumé prompt automatically. Grounding substring tests extended.
-- **"Request a PRISM report" for a new person** — `POST /v1/agents/honor/coach/prism-request` (`require_coach`). New `app/tools/honor/prism_report.py` provisions a platform `user` login (magic-link + honor entitlement) and submits a PRISM candidate under the fixed organisation **"The Honor Foundation"**, reusing `PrismClient.create_candidate` + a `prism_requests` row (poller/ingestor attach the report later). `role="user"`/org fixed server-side; the body cannot override. 24h idempotency per subject.
-  - Files: `services/agent-engine/app/tools/honor/prism_report.py`, `services/agent-engine/app/routes/honor.py` (`CoachPrismReportRequest`, `post_coach_prism_report_route`)
-- **Résumé "Upload a job description"** — `CoachResumeRequest.positionFileIds`: the route extracts the uploaded JD's text server-side (`fetch_attached_document_texts`) into the Target position description (`position_text`) when no text is pasted; kept separate from `attachments` (fellow evidence). Pasted text wins.
-  - Files: `services/agent-engine/app/routes/honor.py`
-- New tests: `tests/honor/test_honor_prism_report_route.py`, `tests/honor/test_honor_resume_route.py`; extended `tests/honor/test_honor_grounding.py`.
+### Fixed
+- `settings.magic_auth_enabled: bool = True` (env `MAGIC_AUTH_ENABLED`); the `magic_auth()` route returns **404** (endpoint hidden) when disabled, short-circuiting **before any DB lookup**.
+  - Files: `services/auth-service/app/config.py`, `services/auth-service/app/routes/magic_auth.py`
+- CDK sets `MAGIC_AUTH_ENABLED='false'` on the auth Lambda for **staging-b + prod**, `'true'` for **dev** (dev test-token convenience preserved).
+  - Files: `infrastructure/cdk/lib/services-stack.ts`
+- **Does NOT affect the emailed magic-LINK login** (`/v1/magic-link/request` + `/verify`), which mints its own single-use tokens via `_build_session_response`. All 16 magic-link tests pass alongside 2 new magic-auth gate tests (22 passed).
+  - Files: `services/auth-service/tests/test_magic_auth.py`
+- Promoted to staging-b via tag `release-stable-2026-07-28-magic-auth-gate`.
 
 ---
 
@@ -9552,38 +9852,82 @@ Seeded the Team Development Studio on staging-b so the manager-facing Summit dos
 ### Reversal (staging-b)
 `DELETE FROM public.goals WHERE provenance_quotes @> '["seed:staging-b-demo-2026-07-28"]'`; `DELETE FROM public.team_members WHERE manager_id='[uuid]'`; `DELETE FROM public.prism_results WHERE version='2.5-backfill'`; `DROP SCHEMA growth CASCADE` (also drops the computed dossiers).
 
-## [2026-07-28] — Security: gate /v1/magic-auth off on staging-b + prod (auth-service, PR #717)
+## [2026-07-28] — Honor: PRISM-report request + résumé JD upload + grounding formatting (agent-engine, PR #714)
 
-`POST /v1/magic-auth` mints an HS256 session token from an **email alone** (no password, no emailed link, no one-time-use) — a dev convenience that was live on staging-b (de-facto prod), letting anyone who knows an active user's email mint a valid session. Found while verifying the Honor staging-b promote.
-
-### Fixed
-- `settings.magic_auth_enabled: bool = True` (env `MAGIC_AUTH_ENABLED`); the `magic_auth()` route returns **404** (endpoint hidden) when disabled, short-circuiting **before any DB lookup**.
-  - Files: `services/auth-service/app/config.py`, `services/auth-service/app/routes/magic_auth.py`
-- CDK sets `MAGIC_AUTH_ENABLED='false'` on the auth Lambda for **staging-b + prod**, `'true'` for **dev** (dev test-token convenience preserved).
-  - Files: `infrastructure/cdk/lib/services-stack.ts`
-- **Does NOT affect the emailed magic-LINK login** (`/v1/magic-link/request` + `/verify`), which mints its own single-use tokens via `_build_session_response`. All 16 magic-link tests pass alongside 2 new magic-auth gate tests (22 passed).
-  - Files: `services/auth-service/tests/test_magic_auth.py`
-- Promoted to staging-b via tag `release-stable-2026-07-28-magic-auth-gate`.
-
----
-
-## [2026-07-28] — Honor: Request-a-PRISM-report modal + résumé JD upload + Cohort label (FE PR #299)
-
-Frontend additions to the Honor Coach Workbench. `npm run build` (tsc + vite) and ESLint clean; honor FE suite (85) + new (5) green. Requires the paired agent-engine endpoint `POST /v1/agents/honor/coach/prism-request` and the `positionFileIds` résumé field.
+Backend additions to the Honor Coach Workbench (merged to `development` via #714; pairs with FE #299). Full honor suite 333 passed / 6 skipped.
 
 ### Added
-- **"Request a PRISM report"** button on **My Fellows** (Caseload) header → a modal collecting **first name, last name, email**, with **Role ("user")** and **Organization ("The Honor Foundation")** shown read-only. Fixed fields are injected in the service layer and enforced server-side.
-  - Files: `src/pages/honor/RequestPrismModal.tsx` (new), `src/pages/honor/HonorCaseload.tsx`, `src/hooks/honor/useHonorEvaluate.ts` (`useRequestPrismReport`), `src/services/honor/coach.service.ts` (`requestPrismReport`), `src/types/honor/index.ts`
-- **Résumé Writer "Upload a job description"** — a file drop under the *Target position description* textarea uploads the JD (`uploadJobDescription` → `document_id`) and passes `positionFileIds` on generate; the server extracts its text into the target. Pasted text still wins; a chip shows the attached filename with a remove control.
-  - Files: `src/pages/honor/HonorResume.tsx`, `src/hooks/honor/useHonorResume.ts` (`useUploadJobDescription`), `src/services/honor/artifact.service.ts` (`uploadJobDescription`), `src/types/honor/index.ts`
-
-### Changed
-- Capitalized the **"Import a Cohort"** section title on the Onboard page (`src/pages/honor/HonorOnboard.tsx`).
-
-### Tests
-- `src/pages/honor/__tests__/honor-prism-request.test.tsx`, `src/services/honor/__tests__/coach-prism-request.test.ts`.
+- **THF grounding / system prompt** (`app/honor/grounding.py`): two formatting instructions in `THF_GROUNDING` — **left-justify every response** (never center/right-align) and, **when asked for a plan, respond with a numbered step-by-step plan**. Content-only (SME-tunable); flows into Meridian chat + the résumé prompt automatically. Grounding substring tests extended.
+- **"Request a PRISM report" for a new person** — `POST /v1/agents/honor/coach/prism-request` (`require_coach`). New `app/tools/honor/prism_report.py` provisions a platform `user` login (magic-link + honor entitlement) and submits a PRISM candidate under the fixed organisation **"The Honor Foundation"**, reusing `PrismClient.create_candidate` + a `prism_requests` row (poller/ingestor attach the report later). `role="user"`/org fixed server-side; the body cannot override. 24h idempotency per subject.
+  - Files: `services/agent-engine/app/tools/honor/prism_report.py`, `services/agent-engine/app/routes/honor.py` (`CoachPrismReportRequest`, `post_coach_prism_report_route`)
+- **Résumé "Upload a job description"** — `CoachResumeRequest.positionFileIds`: the route extracts the uploaded JD's text server-side (`fetch_attached_document_texts`) into the Target position description (`position_text`) when no text is pasted; kept separate from `attachments` (fellow evidence). Pasted text wins.
+  - Files: `services/agent-engine/app/routes/honor.py`
+- New tests: `tests/honor/test_honor_prism_report_route.py`, `tests/honor/test_honor_resume_route.py`; extended `tests/honor/test_honor_grounding.py`.
 
 ---
+
+## [2026-07-28] — Job DNA buildout: "Draft a blueprint" front-door + shadow-validation + entitlements
+
+Full Job DNA / Job Blueprint buildout landed this session (all merged to `development`, live dev + stable). See resume memory `job-dna-buildout` for the complete pointer.
+
+### Added
+- **"Draft a blueprint" front-door (KCE-mirrored).** Backend `POST /v1/agents/blueprint/draft-benchmark` (agent-engine, monorepo **#701** `ced619aa`) — LLM drafts the 22-dim benchmark from role text; **§3 tier-shape 3/2/3·3/0/5·3/0/3 guaranteed via deterministic Python repair**; Haiku tier; 14 tests. Returns a FLAT object (no `{status,data}` envelope). FE **#291** `4cfc23ad` — `JobDnaDraftFlow` + `useAllRoles` (cross-vertical: Job DNA blueprints + KCE saved roles) + `useDraftBenchmark`/`draft.service` (via `getApi()`/agent-engine) + method chooser on the authoring page (keeps manual `JobDnaWizard`). Upload role (Word/PDF/text, client-side `extractRoleText`) → staged progress bar + toast → editable results → save → cross-vertical Role dropdown. Live dev + stable.
+- **§10 shadow-validation.** Harness `services/blueprint-service/app/shadow_validation/` (**#677**) + runbook `docs/runbooks/blueprint_shadow_validation.md` + seed cohort `services/blueprint-service/shadow_seed/` (**#687**) — applied to dev (96 candidate×blueprint pairs, real `ig-blueprint-scoring` engine, tagged `org_id='SHADOW-VAL-2026'`, reversible).
+- **Sign-off packets + as-built guide** (`.docx` at root; generators in `scripts/`).
+
+### Changed
+- Job DNA / Job Fit **entitlements** — granted `{grant,honor,job-blueprint,job-fit,knowledge-continuity,lumen}` to willb77 + [user J.B.] (×2) + [user M.T.] + [user G.B.] on dev + stable (`public.user_entitlements`).
+
+### Fixed
+- FE draft service/hook read `res.data.data` (envelope) but the endpoint returns a flat object → `res.data` (`a269da7`).
+
+---
+
+## [2026-07-28] — Unified Role-Fit Engine (D1–D7) — merged, deployed dev + staging-b, verified
+
+The full Unified Role-Fit Engine memo (D1–D7) built this session was merged to `development` in order and is now LIVE on both dev and staging-b. Backend-only, additive, all gated; no migrations (D1–D7 are stateless).
+
+### Merged (in order)
+- **#684** (D1–D3): JD→vector **extractor** (`ig_blueprint_scoring/extractor.py`, injected LLM, provenance), **PRISM vocab bridge** (`app/honor/prism_bridge.py`), **Honor consumer** path (`app/honor/rolefit.py`, gated OFF).
+- **#709** (D4, replaced auto-closed #688): **both scorers as a choice** — weighted-closeness moved into `ig_blueprint_scoring/closeness.py` (agent-engine `app/evaluation/scorer.py` now a re-export); unified `score_fit(method∈{gap,closeness})`; blueprint-service `/fit/*` gained a `method` query param (default gap, non-breaking).
+- **FE #283**: scoring-method **toggle** on the Job-Fit self-fit view (`MatchesPage`), `method` threaded through service+hooks. Merged with a hand-union against development's new `FitPurpose` panel.
+- **#703** (D5–D7): `governance.py` (`enforce_advisory` — "informs, doesn't decide" enforced at runtime; `AdverseImpactMonitor` four-fifths rule; retired the IO-psych SME gate framing), `isolation.py` (`assert_vector_only` — vector-only, rejects PII/rosters), and the neutral **shared target service** `/v1/targets/{extract,score,adverse-impact}`.
+
+### Fixed
+- **#710** — D7's `/v1/targets/*` was deployed in the Lambda but **unreachable** (post-deploy dev check: `/v1/blueprint/fit/matches`→401 but `/v1/targets/score`→404). API Gateway only had `ANY /v1/blueprint/{proxy+}`; added a second `CfnRoute` `ANY /v1/targets/{proxy+}` → same blueprint-service integration (`infrastructure/cdk/lib/blueprint-service-stack.ts`). Re-verified dev: `/v1/targets/*`→401.
+
+### Deployed + verified
+- **Dev:** staged-deploy succeeded; `/v1/targets/*` + `/v1/blueprint/fit/*` → 401 (reachable, auth-gated).
+- **Staging-b:** already promoted via `release-stable-2026-07-27-lumen-ux` (tag = #710 commit `5933e24c`), promote completed success 2026-07-28 00:35; curl-verified `/v1/targets/*` + `/v1/blueprint/fit/*` → 401. (Also carried forward in the later `release-stable-2026-07-28-prism-readmodel` tag.)
+- Tests at merge: `ig-blueprint-scoring` 106, `blueprint-service` 175, agent-engine evaluation+Honor 341/6 (unchanged — re-export behavior-preserving).
+
+### Notes
+- No re-promote performed for role-fit — another terminal's promote already carried it to staging-b (collision avoided).
+- `blueprint_matching_enabled` default unchanged (recruiter rollout is a product call; D5 guardrails always apply regardless).
+
+## [2026-07-28] — PRISM read-model from authoritative assessments + 8-dim inject (agent-engine, LIVE dev + staging-b)
+
+Closed the P1 chat-accuracy half left open after the 2026-07-27 `prism_results` backfill (#702): future PRISM uploads write to `assessments`/`assessment_scores` (the §16 ingestor source of truth) but not to `prism_results`, so the dossier + chat memory-inject would silently re-degrade to `prismNeeded` for every newly-assessed user. Fixed without a projection that can drift and without touching the §16 ingestor (T5 enforces it never writes `prism_results`). PR #712 merged; agent-engine auto-rolled to dev (ECS task def :52).
+
+### Added
+- `LongTermMemory.get_latest_prism` now derives the live profile from the **authoritative assessments** (latest PRISM `assessments` + `assessment_scores`, `is_authoritative`), computing the 4 colour means **and** surfacing the true 8 per-dimension scores; falls back to the legacy `prism_results` table only for users without an authoritative assessment. Both the dossier (`_load_prism`) and the chat memory-inject read through this one function, so every completed report is reflected immediately — nothing to keep in sync, can't go stale.
+  - Files: `services/agent-engine/app/memory/long_term.py` (`_derive_prism_colours`, `_load_prism_from_assessments`, `_PRISM_QUADRANT_DIMS`)
+- The `<prism_profile>` memory-inject block now carries the 8 dimensions (`<dimensions><dimension name=…>`), with the 4 colour means retained for backward compatibility.
+  - Files: `services/agent-engine/app/memory/integration.py`
+- New tests: `services/agent-engine/tests/test_prism_assessment_derived.py` (derivation means, assessments-first, precedence over stale `prism_results`, fallback, non-authoritative ignored, incomplete-dims fallback, latest-wins, radar true-dims + fallback, inject 8-dim + omit).
+
+### Changed
+- `PrismAgent.prism_radar` renders the true per-dimension spread when present (Innovating ≠ Initiating) instead of collapsing each pair to its quadrant mean; falls back to the quadrant score for 4-colour-only rows.
+  - Files: `services/agent-engine/app/agents/coaching/prism_agent.py`
+- Colour derivation pinned to the dossier radar-tuple grouping (identical to `migrations/prism_results_backfill_from_assessments.sql`) so all `prism_results` — backfilled AND assessment-derived — agree. Does NOT resolve the separate, deliberately-unfixed manual-vs-radar quadrant-mapping conflict.
+
+### Fixed
+- `PrismAgent._publish_behavioral_context` no longer clobbers the well-known PRISM slot (`set_prism_profile`) with its raw 500-char LLM reply. That slot carries the structured profile the CoachingOrchestrator / `unified_behavioral_context` publish before the turn; downstream agents read it via `get_prism_profile()` expecting PRISM data. Aura's behavioral read now lands under a dedicated per-user key only. Updated the maven clobber test to assert the corrected contract.
+
+### Verified
+- 246 tests green across memory/dossier/prism/meridian suites (local + CI); the one pre-existing unrelated failure (`test_prism_knowledge` COLOUR_GREEN) also fails on clean `origin/development` and passes in CI (env-only).
+- **Live dev proof (ECS-exec against running task + live Aurora):** deployed code physically present in the `agent-engine` container; `get_latest_prism("3468e498-…")` returned `version="assessment-derived"` with the 8 true per-dim scores — Focusing=7.0/Delivering=61.0 and Finishing=13.0/Evaluating=91.0 (distinct pairs the old quadrant-inherit code collapsed to 34/52) — and colour means gold=34.0, green=91.5, blue=52.0, orange=92.0.
+- **Promoted to staging-b (2026-07-28, tag `release-stable-2026-07-28-prism-readmodel`):** delta since the last promote was #712 only — no other terminals' work, no migrations. All 6 promote jobs green (agent-engine build, cdk deploy all stacks, ECS roll, authenticated smoke matrix). **staging-b had 28 authoritative PRISM assessments but an empty `prism_results` — the exact scenario #712 fixes — so the read-model derivation unlocks real PRISM there with NO backfill needed** (unlike dev, which needed #702). Live-verified via ECS-exec on `ig-staging-b-agent-engine`: `get_latest_prism("a4f81418-…")` → `version="assessment-derived"`, 8 true dims (Focusing=7/Delivering=46, Finishing=70/Evaluating=96), colours gold=26.5/green=75.0/blue=83.0/orange=73.0.
 
 ## [2026-07-27] — "Quick Direction Setting" build plan — the jobless-to-employed journey
 
@@ -9616,89 +9960,31 @@ Frontend additions to the Honor Coach Workbench. `npm run build` (tsc + vite) an
 ### Verified
 - Rendered to PDF, rasterised all 20 pages and measured ink coverage per page. Two layout defects caught and fixed: a `stage_card` badge map missing the `PARTIAL` status (KeyError at build), and a blank page stranded between sections — `callout()`/`make_table()` each append a trailing spacer paragraph, and a standalone `add_page_break()` after one pushes content a full page on. `page_break()` now drops the trailing spacer and defers to `page-break-before` on the next `h1`. Cover stage-count corrected from 11 to 13 to match the table.
 
-## [2026-07-27] — KCE capture flow wired end-to-end: blueprint → guided capture → outcome
+## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
 
-The KCE backend capture engine (Phases 0–6) was complete, but the frontend for it was deferred — "Start a capture" was a dead end (no blueprint context, re-typed the role, minted a throwaway node, no process). Wired the blueprint→capture handoff and made capture blueprint-driven, live on dev + staging-b.
+Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend both current on staging-B.
 
-### Added — trainer-service capture-session reads (monorepo PR #697, merged; deploys with trainer-service)
-- **`GET /v1/trainer/continuity/sessions?org_id=[&role_title=]`** → capture sessions newest-first, each with `unit_count`.
-- **`GET /v1/trainer/continuity/sessions/{id}`** → session + its captured knowledge units (kvi + validity_band each) — the capture-outcome / validated role-history view.
-- Repo: `list_sessions`, `list_units_by_session`, `count_units_by_session`. +3 route tests (18/18 continuity-route tests green). Read-only, no LLM.
+### Migrations applied first, and verified by reading schema back
+A promote deploys code, not schema, so both agent-engine tables in the window went in **before** the tag, then were confirmed from `information_schema` rather than trusted from the runner's exit code:
 
-### Changed — frontend (FE PRs #287 + #288, `willb77/inspire-genius-frontend`, merged; deployed dev + staging-b)
-- **`src/pages/knowledge-continuity/KceBlueprintPage.tsx`** — both "Start a capture" CTAs now pass `?role=<title>` (SavedRoleView + DoneStep), carrying the just-built/saved role into capture.
-- **`src/pages/knowledge-continuity/KceCapturePage.tsx`** — rewritten as a blueprint-driven guided capture: reads `?role=`, loads the saved blueprint, and shows a capture plan (a "how a capture works" explainer, the role's knowledge areas as a checklist with a progress bar, a one-time "who are we capturing" step + consent gate). Captures **area by area** — Maven interviews, then on save extracts + synthesizes each area's units against **that area's real taxonomy node** (a saved blueprint node carries the real id in `ref`), accumulating in ONE session. Outcome screen lists captured units and points to the next steps (Review & validate → Build the successor's training). No role → a saved-role picker (no blank page).
-- Rewrote `KceCapturePage.test.tsx` (4 tests) for the new flow; fixed `KceBlueprintPage.test.tsx`'s 2 CTA assertions to expect the `?role=` URL (#288 — the first dev deploy's Unit Tests gate caught the stale assertions before anything shipped). `tsc -b`, ESLint, `npm run build` green.
-- **Verified live:** deployed dev bundle's `KceCapturePage` chunk contains "How a capture works", "capture plan", "Who are we capturing", "see the outcome", "Build the successor"; dev + staging-b deploys green.
+- `lumen_saved_prompts` (022) — 8 columns
+- `dossier_jobs` (021) — 9 columns. Not part of this feature, but the promoted agent-engine image serves `/agent/development/dossier/jobs`, so a missing table would have been a 500 waiting to happen.
 
-## [2026-07-27] — Lumen + Job Fit UX build (PAUSED mid-flight for compaction)
+**Deliberately not applied:** `growth_*.sql` (growth-service is not deployed on staging-B) and `prism_results_backfill_from_assessments.sql` (a data mutation on another surface, not a prerequisite of this promote).
 
-A `/full-go` covering five UX asks across two verticals. **Job Fit is done; Lumen is part-done and one branch does not build.** Nothing is deployed. Recorded here honestly so the next session can pick it up — see the `lumen-jobfit-ux` resume pointer.
+### Scope — a promote is not per-feature
+The tag carried **39 commits** since `release-stable-2026-07-26-lumen`: all of `development`, not just Lumen. Riding along were role-fit D1–D7, KCE capture / curriculum / provenance, foldersync, support requests, growth dossier async compute, blueprint shadow-validation, and the `/v1/targets` gateway fix. There is no Lumen-only promote — the tag is the mechanism, and that blast radius should be stated before tagging, not after. (Another terminal subsequently recorded its own `/v1/targets` work as having reached staging-B "via `release-stable-2026-07-27-lumen-ux`" — the same effect, observed from the other side.)
 
-### Added — Job Fit (frontend PR #292, `feat/jobfit-blueprint-studio`)
-- **Blueprint Studio** (`BlueprintStudioPage`) — a deliberate duplicate of `KceBlueprintPage`'s UI per the owner's call ("duplicate the UI and call the same routes"). Everything requested already existed in the KCE page's hooks, so this reuses them rather than rebuilding: role dropdown (`useSavedRoles`/`useSavedRoleBlueprint`), roles from other surfaces (`useJobDnaList`/`useJobDnaSeed`, already cross-surface), upload-a-posting **or** describe-in-text (`extractRoleText` + textarea), draft status bar + completion toast (`Progress` + sonner), and save-role-back-into-the-dropdown (`usePersistBlueprint`). Job Fit saves under its own org key so neither surface disturbs the other's roles.
-- **Coaching** (`CoachPage`) — five categories × ten questions, every one anchored to a selected role via a `{role}` placeholder (test-pinned; a question without it drifts into generic coaching). Selecting one navigates to Meridian with `{ prefillPrompt, autoSubmit }` — the existing one-shot mechanism HomeV2's starter questions already use. Meridian is never bypassed: this seeds a question, it does not call an agent.
-- **Navigation** (`FitNav` + `FitShell`) — tool links plus a signposted way out; the switcher is registry-driven and entitlement-filtered.
-- Routes `/vertical/job-fit/{blueprint,coach}`. Build green, 34 tests, eslint clean, **KCE suites all still green**.
+Pre-checked the known failure mode first: agent-engine ECS was `desired=1, running=1`, so the "promote goes red because the service is scaled to zero" trap was not in play.
 
-### Changed — Lumen Self-Portrait, all four sources (backend, pushed as `feat/lumen-portrait-sources`, **no PR yet**)
-- `compose_portrait` now draws on **PRISM, other assessments, résumé, and bio**, and produces a useful read from any **one** of them. Adds `sources` flags (always all four, so the UI can render a breakdown) and a `coverage` line stating the basis and what would sharpen it next.
-- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now downgrades the read instead of cancelling it, while still leading where it exists (it remains the anchor the reconciliation engine resolves against, so convergences/tensions are only claimed when there is something to reconcile against).
-- Single-source reads name their own limits — a résumé is strong on evidence and silent on working preference; PRISM is the reverse. 157 tests pass. One existing test asserted the old blank-page behaviour and was rewritten to express the new intent rather than reverted.
+### Verified live on staging-B
+- `saved-prompts` went **404 → 401**. The 401 is the proof — the route exists and merely wants auth.
+- Authenticated round-trip: created a situation, re-saved it, got the **same row id with `use_count` 0→1**, so the whitespace-normalised dedupe promotes rather than duplicating, exactly as on dev. Probe row deleted afterwards, both times.
+- Self-Portrait composed from **three** sources there (PRISM + résumé + bio) versus two on dev — the four-source composer is demonstrably reading real per-environment data rather than returning a fixed shape.
+- **Frontend bundle checked directly**, not taken from CI: pulled the live entry chunk from `stable.inspiresgenius.com` and confirmed `vertical/lumen/coaching` is present alongside dashboard / self-portrait / moments / settings. The deployed bundle is current, not stale.
 
-### Fixed — a self-inflicted regression, caught before it shipped
-- Putting `FitNav` inside the shared `FitPageHeader` **broke all eleven existing Job-Fit page tests**: a pure presentational header suddenly required auth + entitlement context. Reverted; the nav now renders from a **pathless layout route** inside the provider tree, leaving pages and their tests untouched and `FitPageHeader` pure. The same pattern is used for Lumen.
-
-### Known broken — `feat/lumen-clarity-coaching` (frontend, checkpoint `5522671`)
-Committed deliberately so the work survives compaction. **Does not build.** Complete: the Lumen coaching question library (5 × 10 — Goals, Education, Career, Jobs, Relationships) and `LumenNav`/`LumenShell`. Missing: `ROUTES.LUMEN.COACHING` (referenced but never added), a `CoachingPage` element, and the `LumenShell` route nesting.
-
-### Not started
-Lumen purpose copy; Job Fit purpose copy; rendering `sources`/`coverage` on the Self-Portrait page; the Blueprint Studio embedded in Lumen; the per-source **checkboxes** for coaching sessions; saved "what are you walking into" prompts + recall (needs migration 021); and all deployment (dev and staging-B both pending).
-
-### Recorded as debt
-The blueprint UI duplication is tracked with an explicit extract-when trigger — a third consumer, or the first observed drift between the two copies. Only the JSX is duplicated; the logic stays single-sourced in shared hooks.
-
-## [2026-07-27] — Team Development dossier: async compute + prism_results backfill for all users
-
-Two pieces that make **any** member's dossier render real behavioral data in-browser on dev (previously only Bill's pre-warmed cache worked; the ~60s compute exceeded both the API-Gateway 30s cap and the agent-engine ALB 60s idle timeout).
-
-### Added — async dossier compute (kick-off + poll; clones the Meridian `/v1/agents/chat/async` pattern)
-- **agent-engine (PR #695, `9040f2fa`, ECS-rolled):** `public.dossier_jobs` table (DB-backed — dev autoscales to 4 tasks) + `dossier_job_repository`; `POST /agent/development/dossier/jobs` (202, fast) / `GET …/jobs/{id}`; the compute runs in an `asyncio` background task (strong-ref set). Alembic `021` + migration-runner SQL. Files: `services/agent-engine/app/routes/development.py`, `app/repositories/dossier_job_repository.py`.
-- **growth-service (#695):** `GET /members/{id}/dossier` is now a poll-driver — warm→200; job in flight→poll agent-engine + persist on completion (200) else **202 `{status:"computing"}`**; cold/stale/refresh→kick off + 202. New `POST …/dossier/recompute`. `_persist_computed` extracted (shared). +`compute_job_id`/`compute_status` columns. Files: `app/routes.py`, `app/service.py`, `app/agent_client.py`, `app/models.py`.
-- **FE (PR #285, `8471c2ec`, deployed):** `useMemberDossier` models "computing" as `null` and polls every 3s; `recomputeDossier`; a "Generating…" state in `MemberDevelopmentWorkspace`.
-
-### Fixed — three latent Postgres-only bugs the async path exposed (PR #699; sync compute never completed before, sqlite hides them)
-- Native-enum columns compared to varchar → `cast(col, String)`.
-- ORM maps child `id` + all enum columns as `String` but the DB is native `UUID`/`enum` → INSERT `DatatypeMismatch` → migrations convert **all** growth child-table `id` PKs + enum columns to `TEXT` (drop/recreate 2 views + the `learning_plans` FK).
-- Stale asyncpg prepared-statement cache after the type migration (`cannot decode UUID, expected 16 bytes, got 36`) → `statement_cache_size=0` (also RDS-Proxy-safe). File: `services/growth-service/app/database.py`.
-
-### Added — prism_results backfill for all users (PR #702; the P1 structured-PRISM item)
-- Backfilled `public.prism_results` for all **14 authoritative-PRISM users** from `assessments`/`assessment_scores` (framework=PRISM, `is_authoritative`, keyed by `user_id` — **not** the `documents` table, avoiding the coachee→coach attribution trap). Colors = mean per radar-tuple quadrant. Idempotent (latest authoritative assessment/user; skips already-present; reversible via `version='2.5-backfill'`). File: `services/migration-runner/migrations/prism_results_backfill_from_assessments.sql`. Applied to dev.
-
-### Verified (dev)
-- Async E2E: cold no-PRISM member → 202 → poll → 200 (fast); **Bill (PRISM) recompute → 202 → 7×202 (~56s full 6-agent pipeline) → 200 fully populated**. A backfilled non-Bill user → dossier `prismNeeded:false` with a real radar/headline. 45 growth tests green.
-- Coord-clean: data-only + migrations, no `prism_agent.py`/agent-engine code change; announced in `COORD_DRIFT_TRACKER.md`. Dev-only (staging-b PRISM is separate — #496).
-
-## [2026-07-27] — KCE reviewer/curriculum/dashboard surfaces + replay-the-utterance provenance (LIVE dev + staging-b)
-
-Completed the three deferred KCE Phase-7 frontend surfaces plus per-turn interview provenance. All live on dev + staging-b.
-
-### Added — trainer-service (continuity) [monorepo PR #704, merged; staged-deploy → dev]
-- **`knowledge_capture_turns` table (migration 006, applied to dev Aurora)** + model + repo. `POST /sessions/{id}/turns` now **persists** each question→answer (was coverage-only). `GET /sessions/{id}/turns` + `GET /units/{id}/turns` serve provenance (a unit's turns share its `session_id` + `taxonomy_node_id`).
-- **`POST /units/relations/{id}/resolve`** — reviewer adjudication of a candidate contradiction: `dismiss | keep_both | supersede` (supersede deprecates the loser + records a `supersedes` edge). New event `knowledge.capture.contradiction_resolved`.
-- **`GET /review-queue`** now carries both units' summaries per contradiction (`from_unit`/`to_unit`).
-- **`GET /continuity/units?taxonomy_id=&bands=`** — a role's citable units (across sessions) — the curriculum build source.
-
-### Added — agent-engine [same PR; agent-engine-image → dev ECS]
-- **`POST /v1/agents/kce/curriculum/build`** — exposes Echo's deterministic `build_curriculum` (session_agent) over HTTP; caller passes band-filtered units, gets back modules mapping 1:1 onto trainer `POST /curricula` (which re-enforces the citation gate). No LLM.
-
-### Changed — frontend [FE PR #294, merged; deployed dev + staging-b]
-- **`KceReviewConsolePage.tsx`** — contradictions are now **resolvable**: each renders both units side by side (title/body/band/KVI); reviewer keeps a winner (supersede), marks both true, or dismisses. Every unit has **Replay the interview** — lazily loads the captured Q→A exchanges behind it (provenance).
-- **`KceCurriculumPage.tsx`** — new **Build a curriculum** panel: pick a role → fetch validated/provisional units → Echo assembles → publish (citation gate) → open it. Consume/feedback flow unchanged.
-- **`KceDashboardPage.tsx`** — real recharts: validity-band distribution (colored bars) + capture-pipeline funnel (was in the data, unrendered). Existing cards + risk table kept.
-- New services/hooks/types: `resolveContradiction`, `getUnitTurns`, `listCitableUnits`, `publishCurriculum` (trainer); `buildCurriculum` (agent-engine); `useResolveContradiction`, `useUnitTurns`, `useCitableUnits`, `useBuildCurriculum`, `usePublishCurriculum`; contradiction `from_unit`/`to_unit`, `CaptureTurn`/`UnitTurns`, curriculum build/publish types.
-- **Tests:** +12 trainer + 3 agent-engine backend tests (103 continuity + 14 kce_capture green); FE 65 KCE tests green; tsc + eslint + build clean.
-- **Verified live:** deployed dev chunks contain the new strings (Review: "Replay the interview"/"Not a contradiction"/"retire the other"; Curriculum: "Build a curriculum"/"Build & publish"; Dashboard: "Capture pipeline"/"Validity of captured"); agent-engine container has the `curriculum/build` route (ECS exec).
+### Note for future staging-B verification
+The probe above used `POST /v1/magic-auth` for a token. **#717 has since gated `/v1/magic-auth` off on staging-B and prod** (email-only token bypass). The verification stands — it was run before that landed — but the same probe will no longer work there, and future staging-B checks need a real login or an admin-tools path instead.
 
 ## [2026-07-27] — Lumen + Job Fit UX build (COMPLETE, merged + live on dev)
 
@@ -9742,31 +10028,89 @@ The runner takes SQL **inline** as `{"sql": "..."}`; `{"sql_file": "..."}` retur
 ### PRs
 Merged: BE #705, FE #292, FE #293. Open: BE #707 (doc fix), FE #295 (back-compat).
 
-## [2026-07-27] — Lumen + Job Fit UX promoted to staging-B (re-verified 2026-07-28)
+## [2026-07-27] — KCE reviewer/curriculum/dashboard surfaces + replay-the-utterance provenance (LIVE dev + staging-b)
 
-Tag `release-stable-2026-07-27-lumen-ux` → `staging-b promote` **green end to end** (pre-flight, ECR build, cdk deploy all stacks, ECS force-new-deployment, authenticated smoke matrix). Frontend and backend both current on staging-B.
+Completed the three deferred KCE Phase-7 frontend surfaces plus per-turn interview provenance. All live on dev + staging-b.
 
-### Migrations applied first, and verified by reading schema back
-A promote deploys code, not schema, so both agent-engine tables in the window went in **before** the tag, then were confirmed from `information_schema` rather than trusted from the runner's exit code:
+### Added — trainer-service (continuity) [monorepo PR #704, merged; staged-deploy → dev]
+- **`knowledge_capture_turns` table (migration 006, applied to dev Aurora)** + model + repo. `POST /sessions/{id}/turns` now **persists** each question→answer (was coverage-only). `GET /sessions/{id}/turns` + `GET /units/{id}/turns` serve provenance (a unit's turns share its `session_id` + `taxonomy_node_id`).
+- **`POST /units/relations/{id}/resolve`** — reviewer adjudication of a candidate contradiction: `dismiss | keep_both | supersede` (supersede deprecates the loser + records a `supersedes` edge). New event `knowledge.capture.contradiction_resolved`.
+- **`GET /review-queue`** now carries both units' summaries per contradiction (`from_unit`/`to_unit`).
+- **`GET /continuity/units?taxonomy_id=&bands=`** — a role's citable units (across sessions) — the curriculum build source.
 
-- `lumen_saved_prompts` (022) — 8 columns
-- `dossier_jobs` (021) — 9 columns. Not part of this feature, but the promoted agent-engine image serves `/agent/development/dossier/jobs`, so a missing table would have been a 500 waiting to happen.
+### Added — agent-engine [same PR; agent-engine-image → dev ECS]
+- **`POST /v1/agents/kce/curriculum/build`** — exposes Echo's deterministic `build_curriculum` (session_agent) over HTTP; caller passes band-filtered units, gets back modules mapping 1:1 onto trainer `POST /curricula` (which re-enforces the citation gate). No LLM.
 
-**Deliberately not applied:** `growth_*.sql` (growth-service is not deployed on staging-B) and `prism_results_backfill_from_assessments.sql` (a data mutation on another surface, not a prerequisite of this promote).
+### Changed — frontend [FE PR #294, merged; deployed dev + staging-b]
+- **`KceReviewConsolePage.tsx`** — contradictions are now **resolvable**: each renders both units side by side (title/body/band/KVI); reviewer keeps a winner (supersede), marks both true, or dismisses. Every unit has **Replay the interview** — lazily loads the captured Q→A exchanges behind it (provenance).
+- **`KceCurriculumPage.tsx`** — new **Build a curriculum** panel: pick a role → fetch validated/provisional units → Echo assembles → publish (citation gate) → open it. Consume/feedback flow unchanged.
+- **`KceDashboardPage.tsx`** — real recharts: validity-band distribution (colored bars) + capture-pipeline funnel (was in the data, unrendered). Existing cards + risk table kept.
+- New services/hooks/types: `resolveContradiction`, `getUnitTurns`, `listCitableUnits`, `publishCurriculum` (trainer); `buildCurriculum` (agent-engine); `useResolveContradiction`, `useUnitTurns`, `useCitableUnits`, `useBuildCurriculum`, `usePublishCurriculum`; contradiction `from_unit`/`to_unit`, `CaptureTurn`/`UnitTurns`, curriculum build/publish types.
+- **Tests:** +12 trainer + 3 agent-engine backend tests (103 continuity + 14 kce_capture green); FE 65 KCE tests green; tsc + eslint + build clean.
+- **Verified live:** deployed dev chunks contain the new strings (Review: "Replay the interview"/"Not a contradiction"/"retire the other"; Curriculum: "Build a curriculum"/"Build & publish"; Dashboard: "Capture pipeline"/"Validity of captured"); agent-engine container has the `curriculum/build` route (ECS exec).
 
-### Scope — a promote is not per-feature
-The tag carried **39 commits** since `release-stable-2026-07-26-lumen`: all of `development`, not just Lumen. Riding along were role-fit D1–D7, KCE capture / curriculum / provenance, foldersync, support requests, growth dossier async compute, blueprint shadow-validation, and the `/v1/targets` gateway fix. There is no Lumen-only promote — the tag is the mechanism, and that blast radius should be stated before tagging, not after. (Another terminal subsequently recorded its own `/v1/targets` work as having reached staging-B "via `release-stable-2026-07-27-lumen-ux`" — the same effect, observed from the other side.)
+## [2026-07-27] — Team Development dossier: async compute + prism_results backfill for all users
 
-Pre-checked the known failure mode first: agent-engine ECS was `desired=1, running=1`, so the "promote goes red because the service is scaled to zero" trap was not in play.
+Two pieces that make **any** member's dossier render real behavioral data in-browser on dev (previously only Bill's pre-warmed cache worked; the ~60s compute exceeded both the API-Gateway 30s cap and the agent-engine ALB 60s idle timeout).
 
-### Verified live on staging-B
-- `saved-prompts` went **404 → 401**. The 401 is the proof — the route exists and merely wants auth.
-- Authenticated round-trip: created a situation, re-saved it, got the **same row id with `use_count` 0→1**, so the whitespace-normalised dedupe promotes rather than duplicating, exactly as on dev. Probe row deleted afterwards, both times.
-- Self-Portrait composed from **three** sources there (PRISM + résumé + bio) versus two on dev — the four-source composer is demonstrably reading real per-environment data rather than returning a fixed shape.
-- **Frontend bundle checked directly**, not taken from CI: pulled the live entry chunk from `stable.inspiresgenius.com` and confirmed `vertical/lumen/coaching` is present alongside dashboard / self-portrait / moments / settings. The deployed bundle is current, not stale.
+### Added — async dossier compute (kick-off + poll; clones the Meridian `/v1/agents/chat/async` pattern)
+- **agent-engine (PR #695, `9040f2fa`, ECS-rolled):** `public.dossier_jobs` table (DB-backed — dev autoscales to 4 tasks) + `dossier_job_repository`; `POST /agent/development/dossier/jobs` (202, fast) / `GET …/jobs/{id}`; the compute runs in an `asyncio` background task (strong-ref set). Alembic `021` + migration-runner SQL. Files: `services/agent-engine/app/routes/development.py`, `app/repositories/dossier_job_repository.py`.
+- **growth-service (#695):** `GET /members/{id}/dossier` is now a poll-driver — warm→200; job in flight→poll agent-engine + persist on completion (200) else **202 `{status:"computing"}`**; cold/stale/refresh→kick off + 202. New `POST …/dossier/recompute`. `_persist_computed` extracted (shared). +`compute_job_id`/`compute_status` columns. Files: `app/routes.py`, `app/service.py`, `app/agent_client.py`, `app/models.py`.
+- **FE (PR #285, `8471c2ec`, deployed):** `useMemberDossier` models "computing" as `null` and polls every 3s; `recomputeDossier`; a "Generating…" state in `MemberDevelopmentWorkspace`.
 
-### Note for future staging-B verification
-The probe above used `POST /v1/magic-auth` for a token. **#717 has since gated `/v1/magic-auth` off on staging-B and prod** (email-only token bypass). The verification stands — it was run before that landed — but the same probe will no longer work there, and future staging-B checks need a real login or an admin-tools path instead.
+### Fixed — three latent Postgres-only bugs the async path exposed (PR #699; sync compute never completed before, sqlite hides them)
+- Native-enum columns compared to varchar → `cast(col, String)`.
+- ORM maps child `id` + all enum columns as `String` but the DB is native `UUID`/`enum` → INSERT `DatatypeMismatch` → migrations convert **all** growth child-table `id` PKs + enum columns to `TEXT` (drop/recreate 2 views + the `learning_plans` FK).
+- Stale asyncpg prepared-statement cache after the type migration (`cannot decode UUID, expected 16 bytes, got 36`) → `statement_cache_size=0` (also RDS-Proxy-safe). File: `services/growth-service/app/database.py`.
+
+### Added — prism_results backfill for all users (PR #702; the P1 structured-PRISM item)
+- Backfilled `public.prism_results` for all **14 authoritative-PRISM users** from `assessments`/`assessment_scores` (framework=PRISM, `is_authoritative`, keyed by `user_id` — **not** the `documents` table, avoiding the coachee→coach attribution trap). Colors = mean per radar-tuple quadrant. Idempotent (latest authoritative assessment/user; skips already-present; reversible via `version='2.5-backfill'`). File: `services/migration-runner/migrations/prism_results_backfill_from_assessments.sql`. Applied to dev.
+
+### Verified (dev)
+- Async E2E: cold no-PRISM member → 202 → poll → 200 (fast); **Bill (PRISM) recompute → 202 → 7×202 (~56s full 6-agent pipeline) → 200 fully populated**. A backfilled non-Bill user → dossier `prismNeeded:false` with a real radar/headline. 45 growth tests green.
+- Coord-clean: data-only + migrations, no `prism_agent.py`/agent-engine code change; announced in `COORD_DRIFT_TRACKER.md`. Dev-only (staging-b PRISM is separate — #496).
+
+## [2026-07-27] — Lumen + Job Fit UX build (PAUSED mid-flight for compaction)
+
+A `/full-go` covering five UX asks across two verticals. **Job Fit is done; Lumen is part-done and one branch does not build.** Nothing is deployed. Recorded here honestly so the next session can pick it up — see the `lumen-jobfit-ux` resume pointer.
+
+### Added — Job Fit (frontend PR #292, `feat/jobfit-blueprint-studio`)
+- **Blueprint Studio** (`BlueprintStudioPage`) — a deliberate duplicate of `KceBlueprintPage`'s UI per the owner's call ("duplicate the UI and call the same routes"). Everything requested already existed in the KCE page's hooks, so this reuses them rather than rebuilding: role dropdown (`useSavedRoles`/`useSavedRoleBlueprint`), roles from other surfaces (`useJobDnaList`/`useJobDnaSeed`, already cross-surface), upload-a-posting **or** describe-in-text (`extractRoleText` + textarea), draft status bar + completion toast (`Progress` + sonner), and save-role-back-into-the-dropdown (`usePersistBlueprint`). Job Fit saves under its own org key so neither surface disturbs the other's roles.
+- **Coaching** (`CoachPage`) — five categories × ten questions, every one anchored to a selected role via a `{role}` placeholder (test-pinned; a question without it drifts into generic coaching). Selecting one navigates to Meridian with `{ prefillPrompt, autoSubmit }` — the existing one-shot mechanism HomeV2's starter questions already use. Meridian is never bypassed: this seeds a question, it does not call an agent.
+- **Navigation** (`FitNav` + `FitShell`) — tool links plus a signposted way out; the switcher is registry-driven and entitlement-filtered.
+- Routes `/vertical/job-fit/{blueprint,coach}`. Build green, 34 tests, eslint clean, **KCE suites all still green**.
+
+### Changed — Lumen Self-Portrait, all four sources (backend, pushed as `feat/lumen-portrait-sources`, **no PR yet**)
+- `compose_portrait` now draws on **PRISM, other assessments, résumé, and bio**, and produces a useful read from any **one** of them. Adds `sources` flags (always all four, so the UI can render a breakdown) and a `coverage` line stating the basis and what would sharpen it next.
+- **The bug this fixes:** without PRISM the composer returned an all-but-empty payload — someone with a résumé and a bio saw a blank page and would reasonably conclude the product was broken. PRISM's absence now downgrades the read instead of cancelling it, while still leading where it exists (it remains the anchor the reconciliation engine resolves against, so convergences/tensions are only claimed when there is something to reconcile against).
+- Single-source reads name their own limits — a résumé is strong on evidence and silent on working preference; PRISM is the reverse. 157 tests pass. One existing test asserted the old blank-page behaviour and was rewritten to express the new intent rather than reverted.
+
+### Fixed — a self-inflicted regression, caught before it shipped
+- Putting `FitNav` inside the shared `FitPageHeader` **broke all eleven existing Job-Fit page tests**: a pure presentational header suddenly required auth + entitlement context. Reverted; the nav now renders from a **pathless layout route** inside the provider tree, leaving pages and their tests untouched and `FitPageHeader` pure. The same pattern is used for Lumen.
+
+### Known broken — `feat/lumen-clarity-coaching` (frontend, checkpoint `5522671`)
+Committed deliberately so the work survives compaction. **Does not build.** Complete: the Lumen coaching question library (5 × 10 — Goals, Education, Career, Jobs, Relationships) and `LumenNav`/`LumenShell`. Missing: `ROUTES.LUMEN.COACHING` (referenced but never added), a `CoachingPage` element, and the `LumenShell` route nesting.
+
+### Not started
+Lumen purpose copy; Job Fit purpose copy; rendering `sources`/`coverage` on the Self-Portrait page; the Blueprint Studio embedded in Lumen; the per-source **checkboxes** for coaching sessions; saved "what are you walking into" prompts + recall (needs migration 021); and all deployment (dev and staging-B both pending).
+
+### Recorded as debt
+The blueprint UI duplication is tracked with an explicit extract-when trigger — a third consumer, or the first observed drift between the two copies. Only the JSX is duplicated; the logic stays single-sourced in shared hooks.
+
+## [2026-07-27] — KCE capture flow wired end-to-end: blueprint → guided capture → outcome
+
+The KCE backend capture engine (Phases 0–6) was complete, but the frontend for it was deferred — "Start a capture" was a dead end (no blueprint context, re-typed the role, minted a throwaway node, no process). Wired the blueprint→capture handoff and made capture blueprint-driven, live on dev + staging-b.
+
+### Added — trainer-service capture-session reads (monorepo PR #697, merged; deploys with trainer-service)
+- **`GET /v1/trainer/continuity/sessions?org_id=[&role_title=]`** → capture sessions newest-first, each with `unit_count`.
+- **`GET /v1/trainer/continuity/sessions/{id}`** → session + its captured knowledge units (kvi + validity_band each) — the capture-outcome / validated role-history view.
+- Repo: `list_sessions`, `list_units_by_session`, `count_units_by_session`. +3 route tests (18/18 continuity-route tests green). Read-only, no LLM.
+
+### Changed — frontend (FE PRs #287 + #288, `willb77/inspire-genius-frontend`, merged; deployed dev + staging-b)
+- **`src/pages/knowledge-continuity/KceBlueprintPage.tsx`** — both "Start a capture" CTAs now pass `?role=<title>` (SavedRoleView + DoneStep), carrying the just-built/saved role into capture.
+- **`src/pages/knowledge-continuity/KceCapturePage.tsx`** — rewritten as a blueprint-driven guided capture: reads `?role=`, loads the saved blueprint, and shows a capture plan (a "how a capture works" explainer, the role's knowledge areas as a checklist with a progress bar, a one-time "who are we capturing" step + consent gate). Captures **area by area** — Maven interviews, then on save extracts + synthesizes each area's units against **that area's real taxonomy node** (a saved blueprint node carries the real id in `ref`), accumulating in ONE session. Outcome screen lists captured units and points to the next steps (Review & validate → Build the successor's training). No role → a saved-role picker (no blank page).
+- Rewrote `KceCapturePage.test.tsx` (4 tests) for the new flow; fixed `KceBlueprintPage.test.tsx`'s 2 CTA assertions to expect the `?role=` URL (#288 — the first dev deploy's Unit Tests gate caught the stale assertions before anything shipped). `tsc -b`, ESLint, `npm run build` green.
+- **Verified live:** deployed dev bundle's `KceCapturePage` chunk contains "How a capture works", "capture plan", "Who are we capturing", "see the outcome", "Build the successor"; dev + staging-b deploys green.
 
 ## [2026-07-26] — Student journey deck REWRITTEN for an external audience (10 slides)
 
@@ -9855,137 +10199,6 @@ Every frame eyeballed, which caught dead-space problems a clean script exit did 
 ### Note
 Neither card film is published. Both are local pending review.
 
-## [2026-07-26] — Lumen activated on dev: migrations applied, cohort entitled, scheduler wired
-
-Lumen went from "merged but inert" to running end to end on dev. Three asks plus the two open design questions from #664/#665.
-
-### Applied — migrations 019 + 020 (dev Aurora)
-Both applied via `ig-dev-migration-runner` (inline SQL — the deployed bundle predates the files). `lumen_moments` then `lumen_consent`.
-
-**Finding: the tables already existed, created by the ORM.** `app/memory/database.py:69` runs `Base.metadata.create_all` on startup, so the dev deploy created them from the models before the migration ran and `CREATE TABLE IF NOT EXISTS` no-op'd. Verified columns report as `character varying(64)/(16)/(128)` — the ORM's `String(n)` — not the migration's `TEXT`. Harmless (subs are 36-char UUIDs; the code reads through the same ORM), but worth knowing: **for ORM-modelled tables in the agent-engine, migrations are belt-and-braces, not the source of truth.** All four indexes verified present, including `ux_lumen_moments_source_ref` (the idempotency guarantee) and `ix_lumen_moments_user_created` (the feed query).
-
-### Entitled — the staging-B super-admin roster, on dev
-Seven SYSTEM-role accounts read from staging-B (`user_profiles.role → roles.role_level='SYSTEM'`): [email redacted], [email redacted], [email redacted], [email redacted], [email redacted], [email redacted], [email redacted].
-
-Written on **dev**, where Lumen actually runs — staging-B has no Lumen code (promotion needs a release tag) and neither migration. Keyed on **email**, not user_id: the two planes are separate databases and magic-auth remaps `sub`, so email is the identifier that survives; `load_verticals` treats an email match as first-class. Additive and idempotent — existing verticals preserved (`honor`, `grant`, `knowledge-continuity` all intact).
-
-### Wired — the proactive scheduler (PR #679)
-`app/cli/lumen_sweep.py` + an EventBridge rule → **one-off ECS RunTask** (`python -m app.cli lumen-sweep`, daily 11:00 UTC ≈ 07:00 EDT). Live on dev as `ig-dev-lumen-proactive-sweep`.
-
-Chosen because it needs **no credential**: the task inherits the same task role and DB access the service has. A scheduled Lambda calling the super-admin-gated route would need a standing privileged credential plus reserved concurrency and three alarms; a synthetic super-admin JWT is a permanent liability for one daily job; an in-process scheduler needs a distributed lock. Reuses the existing task definition so the sweep can't drift from the service's env wiring — `agent-engine` is the only essential container, so the task stops when the CLI exits.
-
-### Resolved — Moments now inherit the live Interaction Protocol (PR #679)
-Moments come from a direct Meridian-persona provider call (one LLM call, fixed JSON shape), which bypasses `BaseAgent` — and `BaseAgent` is what injects the **runtime-configurable** protocol. Without this, editing the protocol in MentorManagement would have applied to every agent *except the one surface delivering unprompted guidance*. `_system_prompt()` now prepends it, gated by `should_apply_to_agent("Meridian")`, non-fatal on config-store failure.
-
-### Fixed — two bugs found by running it, not by testing it
-- **Sweep cohort was wrong (PR #681).** The dry-run enumerated **9 subs for 7 people**: entitlement rows are keyed by sub *or* email, and dev carries both shapes for the same person. Two super-admins would have received a weekly Moment against a sub nobody logs in as. `list_entitled_users` now joins `public.users` and returns DISTINCT real subs. Fixed in the query rather than by deleting rows — the sweep should be correct regardless of table hygiene.
-- **Every Moment would have been filler, forever (PR #682).** `ProviderFactory` is populated by `init_llm_providers()`, which only runs from the FastAPI startup hook. A CLI process never executes it, so the registry was empty and every model call raised `LLM provider 'None' not registered`. The sweep's graceful degradation then wrote its fallback body. **The result was the worst kind of green** — exit 0, `cadence_created: 1`, and filler in the feed. Invisible to unit tests by construction, since the fallback is *supposed* to work; caught only by reading the persisted row.
-
-### Verified end to end on dev
-Three one-off ECS RunTasks with the rule's exact network config. Dry-run enumerated 9 → **7** after the cohort fix. A real scoped run wrote a Moment with `trigger=cadence`, `source_ref=week:2026-W30`, `delivered=true`, `calendar_created=0` (correctly skipped — not consented), `emails_pending_delivery=0` (correctly not attempted). Final persisted body is real PRISM-grounded guidance: *"Your instinct to keep harmony and support others is genuinely powerful — but this week, tr…"* — not the fallback.
-
-### Deploy trap avoided
-`cdk diff` initially showed an ECS **task-definition replacement unrelated to this work**: `AGENT_ENGINE_HONOR_RESUME` is `true` on the deployed dev service but defaults to `false` in code — a hot-patch applied via `-c honorResume=true`. Deploying without the flag would have silently disabled a live Honor feature. Deployed with `--context honorResume=true`, reducing the diff to exactly three additive resources. **The stale default is still in the code and will trap the next person to deploy this stack.**
-
-### Still open
-- Lumen is **not on staging-B** — no code (needs a `release-stable-*` tag), no migrations, no entitlements there.
-- Two duplicate `user_entitlements` rows (jcboyd001, willb77) keyed by email-as-user_id; harmless now the sweep resolves through `public.users`, but worth cleaning.
-- Codify `honorResume` so the next deploy of the agent-engine stack doesn't flip it off.
-## [2026-07-26] — Lumen promoted to staging-B
-
-Tag `release-stable-2026-07-26-lumen` on `development` → `staging-b-promote.yml` **all six jobs green** (pre-flight, agent-engine image, `cdk deploy --all`, ECS rollout, authenticated smoke matrix, notify).
-
-### Live on staging-B
-- **Code**: `GET /v1/agents/lumen/health` → `200 {"status":true,"data":{"vertical":"lumen"}}`.
-- **Frontend**: Lumen chunks deployed to `ig-staging-b-frontend-assets` (`LumenDashboard`, `LumenLayout`, `LumenOnboarding`, `LumenSettings`) — the automatic `ci-deploy` staging-B job had already shipped them.
-- **Migrations 019 + 020 applied** via `ig-staging-b-migration-runner`. All four indexes verified, including `ux_lumen_moments_source_ref`.
-- **Entitlements**: the same seven super-admins entitled, existing verticals preserved (`honor`, `grant`, `knowledge-continuity` intact).
-- **Scheduler**: `ig-staging-b-lumen-proactive-sweep` ENABLED, `cron(0 11 * * ? *)`, FARGATE RunTask target — created automatically by the promote's `cdk deploy --all`, no manual infra step.
-
-### Verified by running it, not by reading the workflow's exit code
-- Dry-run RunTask on staging-B: exit 0, **`would_sweep: 7`** — the cohort fix (#681) is in; `jcboyd001` has duplicate entitlement rows here too and still resolves to one sub.
-- Real scoped RunTask: `swept 1 / cadence_created 1 / calendar_created 0 (correctly skipped — not consented) / emails_pending_delivery 0 / errors 0`.
-- Persisted row: `cadence | week:2026-W30 | delivered=true` with **genuine PRISM-grounded guidance** — *"Your natural pull toward harmony and connection is a genuine asset — but this week, try us…"* — not the degraded fallback. That is the #682 provider-init fix confirmed in a second environment.
-
-### A blocker I called and then disproved
-Reading the promote workflow's `cdk-deploy` CTX, `-c honorResume=true` appeared to be missing, which would have meant `cdk deploy` flipping `AGENT_ENGINE_HONOR_RESUME` from `true` → `false` on staging-B and silently disabling the live Honor résumé feature. The deployed CFN template did hold `'true'`, so the risk looked real.
-
-**It was a false alarm from a truncated read** — the flag is passed on lines 158 and 261 of `staging-b-promote.yml`, just past where the slice ended. Confirmed empirically after the promote: task definition `:20`, `AGENT_ENGINE_HONOR_RESUME=true`, unchanged. No workflow edit was made or needed.
-
-The dev-side trap remains real and separate: `agent-engine-stack.ts` still defaults `honorResume` to `false`, so a **manual** `cdk deploy` of the dev stack without `-c honorResume=true` will still flip it. Worth codifying.
-
-### State
-Lumen is now live on **dev and staging-B**: code, schema, entitlements, and a daily proactive sweep proven to generate real Moments in both. No prod tier exists.
-
-## [2026-07-26] — foldersync tests now run in CI; inert gitleaks ignore removed
-
-### Added
-- **`Test foldersync` job in `.github/workflows/pr-validation.yml`** — `tools/foldersync/` sits outside `services/`, so the `test-services` matrix could never see it and PR #678 merged ~6k lines whose 71 tests had never run in CI once. New `detect-changes` output `foldersync` fires the job on `tools/foldersync/**` (and on `pr-validation.yml` itself, mirroring `cdk_touched`, so a PR editing the gate exercises the gate). Wired into the `summary` job's `needs` + FAIL loop + table, so it actually gates branch protection rather than running decoratively.
-  - Verified green on `linux/amd64` in Docker before the job was written — the suite includes a real watchdog end-to-end test, and inotify behaves differently from macOS FSEvents.
-  - Files: `.github/workflows/pr-validation.yml`
-
-### Removed
-- **`.gitleaksignore`** — added in #678 to suppress a false-positive `dropbox-api-token` hit on a realistic-looking placeholder in the foldersync README, pinned to commit `53939519`. #678 was squash-merged, so that commit is not in `development`'s history and the fingerprint now matches nothing. The README already uses an obviously-fake placeholder, so the suppression is unnecessary as well as inert.
-  - Files: `.gitleaksignore`
-
-## [2026-07-26] — Team Development Studio: dossier renders in-browser + exposed to super-admins
-
-Closed the gap so a super-admin (Bill) can open a member's development dossier in the browser on dev, and made the surface available to super-admins as well as managers.
-
-### Fixed / Changed — growth-service (PR #689, merged `b64d118c`; deployed dev)
-- **`app/authz.py`** — `assert_member_access` now resolves the caller's real role from the monolith roster (`public.users`/`user_profiles`/`roles`) by the signed JWT `sub`+email when the JWT role is below company-admin. Magic-auth tokens hardcode `role:user`, so DB super-admins/managers were 403'd on every member-scoped route; this upgrades them (mirrors agent-engine `resolve_role` #578). +3 test assertions.
-- **`app/service.py`** — coerce `str(row.id)` in `_gap_out`/`_learning_out`/`_milestone_out`/`_match_out`. The ORM types `id` as `String(36)` but the Postgres PK columns are native `UUID`, so asyncpg returns `uuid.UUID`; the `str` schema fields made pydantic 500 on **every** dossier with children (latent — the compute path always timed out first). +2 unit tests.
-- **`app/agent_client.py`** — dedicated 150s timeout for the ~60s dossier recompute (fast roster/goals calls keep 20s).
-- **`infrastructure/cdk/lib/growth-service-stack.ts`** — growth Lambda timeout 30s→180s (headroom for the out-of-band recompute; API Gateway still caps browser calls at 30s).
-
-### Changed — frontend (PR #284 `willb77/inspire-genius-frontend`, merged `c242b249`; auto-deploys dev)
-- **`src/constants/navigation.ts`** — added the flag-gated "Team Development" item to `SUPER_ADMIN_NAV_ITEMS` (hoisted `TEAM_DEVELOPMENT_ENABLED`). Route guards already permitted super-admin on `/manager/*`, so no route change.
-
-### Data (dev)
-- Seeded a `growth.development_dossiers` roster row (manager=member=Bill's sub) and **pre-warmed** his dossier cache (`development_dossiers` + `member_assessments` + `development_gaps`) from his real computed PRISM, so the browser GET returns it cached (200 in ~0.5s) instead of triggering a 65s recompute.
-
-### Known limitation (follow-up)
-- The dossier compute (~65s, 6 agents) exceeds the API Gateway 30s cap and the agent-engine ALB 60s idle timeout, so any member whose cache is cold (or a manual "refresh") 504s. General fix = **async dossier compute** (kick-off + poll) or raising the shared ALB idle timeout (owner sign-off). The shared ALB was intentionally NOT modified here.
-
-## [2026-07-26] — foldersync: add and edit folder pairs from the dashboard
-
-### Added
-- **Folder-pair management in the UI** — the dashboard was read-only; adding a folder meant hand-editing YAML. Now `+ Add folder` / `Edit` / `Remove`, with Browse pickers for the local filesystem, Dropbox and Google Drive (cloud pickers read live from the account; they degrade to manual entry with an explanation when unauthenticated).
-  - `foldersync/configstore.py` — comment-preserving read/modify/write via ruamel round-trip, atomic replace (temp + rename) with a `.bak`, mode 600 preserved. A plain PyYAML round-trip would have deleted every explanatory comment in the starter config on first save.
-  - API: `GET/POST /api/pairs`, `PUT|DELETE /api/pairs/{name}`, `POST /api/pairs/validate`, `GET /api/browse/local`, `GET /api/browse/{dropbox|gdrive}`. Validation returns **all** problems at once. A pasted Drive folder URL is reduced to its ID (people copy the address bar; a URL stored as an ID fails much later with an opaque 404).
-  - `FolderWatcher.resync_watches()` — a folder added in the UI is watched immediately rather than at the next daemon restart.
-  - Files: `foldersync/configstore.py`, `foldersync/server/app.py`, `foldersync/server/static/{index.html,app.js,styles.css}`, `foldersync/watcher.py`, `foldersync/providers/{base,dropbox_provider,gdrive_provider}.py`
-
-### Fixed
-- **Dashboard served a stale app shell.** No `Cache-Control` was sent, and the service worker intercepted navigations, so a new UI could not displace a cached one — after upgrading foldersync you would get the previous UI talking to the current API with no visible clue. Now: `no-cache, must-revalidate` on the shell, the service worker no longer touches HTML at all, and asset URLs carry `?v=<package version>`.
-  - Files: `foldersync/server/app.py`, `foldersync/server/static/sw.js`, `foldersync/server/static/index.html`
-- **Watcher regression caught in review** — the `resync_watches` refactor initially left the debounce/periodic thread startup inside the new method instead of `start()`, so no filesystem event was ever processed. Five existing tests failed; fixed before commit.
-  - Files: `foldersync/watcher.py`
-
-### Changed
-- Added `ruamel.yaml>=0.18` — required for comment-preserving config writes.
-- Tests: 71 → 99.
-
-## [2026-07-26] — KCE Blueprint "Could not draft the content" (503) fixed — Haiku tier beats API GW 30s timeout
-
-The KCE **Draft the Blueprint** action returned a **503** in the browser every time ("Could not draft the content"). Root-caused and fixed.
-
-### Fixed — agent-engine (PR #691, merged to `development`; built + rolled to dev ECS)
-- **`app/routes/kce_blueprint.py`** — blueprint drafting moved from the Sonnet tier (`TIER_1_COMPLEX`) to **Haiku 4.5** (`TIER_2_MODERATE`). The Sonnet call ran **~41s** for a full 2500-token taxonomy (`llm_call … claude-sonnet-4-6 latency_ms:40932 output_tokens:2500`). API Gateway (HTTP API) caps integration at a hard **30s**, so the browser got a 503 at 30s while the ECS task finished at ~41s and logged its 200 — the blueprint was generated but never reached the client. Latency is generation-bound (input was only ~2100 tokens), and `max_tokens=2500` is fully consumed so it can't be lowered without truncation → faster model is the only clean lever. Haiku drafts the same structured taxonomy at ~2x the token rate, comfortably under the cap. Output is SME-reviewed at the FE review step regardless (Opus 400s on `temperature`, so it is not an option).
-  - Verified deployed via ECS exec: running container's `kce_blueprint.py:153` reads `ModelTier.TIER_2_MODERATE`. 15/15 `ig-knowledge-taxonomy` pure-logic tests pass; full agent-engine CI green.
-  - Durable follow-up (not needed for current role sizes): move this call to an async job path (return id + poll) so arbitrarily large roles can run on Sonnet/Opus and the FE progress bar becomes real.
-## [2026-07-26] — KCE Blueprint drafted 0 nodes — salvage truncated draft + rebuild-on-package-change
-
-After the 503/timeout fix, **Draft the Blueprint** ran (Haiku, 21.3s) but returned **0 knowledge areas / 0 sections** (Save disabled). Fixed.
-
-### Fixed — shared `ig-knowledge-taxonomy` (PR #693, merged to `development`; agent-engine image rebuilt + rolled to dev ECS)
-- **`ig_knowledge_taxonomy/generate.py`** — the draft hits `max_tokens` (dev logs: `output_tokens: 2500` == the exact cap) and is cut off **mid-array**, so the reply has no closing `]`. `extract_node_list` then failed strict `json.loads` **and** the `[...]` regex → returned `[]`, discarding an otherwise-good draft over its truncated tail. (Latent under Sonnet too; the 503 hid it.) New **`_salvage_objects`** scans (string/escape aware) for balanced brace objects after the first `[`, parses each complete node, drops the incomplete trailing one — handles a bare array and a `{"nodes":[...]}` wrapper. Verified live via ECS exec: `extract_node_list('[{"name":"a"},{"name":"b"},{"na')` → 2 nodes.
-- **Prompt tightened** — 12–24 nodes, `name` <8 words, `rationale` <12 words, explicit "never truncate the array" — so the array closes within budget more often; salvage is the safety net.
-- Shared package → fixes both KCE (agent-engine) and Job DNA (blueprint-service). +3 tests (18/18 pass).
-
-### Fixed — CI (same PR)
-- **`.github/workflows/agent-engine-image.yml`** — added `packages/ig-knowledge-taxonomy/**` to both push + pull_request path filters. The agent-engine image vendors this package (Dockerfile:18-19, since Build C) but the workflow only watched `ig-auth`, so a package-only change would have shipped a **stale image**. Now a taxonomy-package change rebuilds + rolls the image.
-
 ## [2026-07-26] — Support request system: post an issue, notify contact@inspiresgenius.com
 
 New authenticated surface where anyone on the platform can post a help/issue request. Every submission emails the support inbox with the poster's contact block and their full description, so support can reply without a lookup.
@@ -10023,6 +10236,137 @@ Built on the **already-deployed but orphaned** `support-service` (`/v1/support/t
 ### Known gaps (not introduced here)
 - `ig-dev-support-lambda-role` lacks `secretsmanager:GetSecretValue` on the magic-auth secret, so `ig_auth` logs an AccessDenied and falls back to the `SECRET_KEY` env var. Pre-existing; auth works. The CDK already calls `grantMagicAuthSecretRead` — it lands on the next full `ServicesStack` deploy.
 - Not deployed to staging-b. The support Lambda there has no reserved concurrency until the CDK change deploys, and per `services-stack.ts` the staging-b SES account's production-access status should be confirmed before enabling notifications.
+## [2026-07-26] — KCE Blueprint drafted 0 nodes — salvage truncated draft + rebuild-on-package-change
+
+After the 503/timeout fix, **Draft the Blueprint** ran (Haiku, 21.3s) but returned **0 knowledge areas / 0 sections** (Save disabled). Fixed.
+
+### Fixed — shared `ig-knowledge-taxonomy` (PR #693, merged to `development`; agent-engine image rebuilt + rolled to dev ECS)
+- **`ig_knowledge_taxonomy/generate.py`** — the draft hits `max_tokens` (dev logs: `output_tokens: 2500` == the exact cap) and is cut off **mid-array**, so the reply has no closing `]`. `extract_node_list` then failed strict `json.loads` **and** the `[...]` regex → returned `[]`, discarding an otherwise-good draft over its truncated tail. (Latent under Sonnet too; the 503 hid it.) New **`_salvage_objects`** scans (string/escape aware) for balanced brace objects after the first `[`, parses each complete node, drops the incomplete trailing one — handles a bare array and a `{"nodes":[...]}` wrapper. Verified live via ECS exec: `extract_node_list('[{"name":"a"},{"name":"b"},{"na')` → 2 nodes.
+- **Prompt tightened** — 12–24 nodes, `name` <8 words, `rationale` <12 words, explicit "never truncate the array" — so the array closes within budget more often; salvage is the safety net.
+- Shared package → fixes both KCE (agent-engine) and Job DNA (blueprint-service). +3 tests (18/18 pass).
+
+### Fixed — CI (same PR)
+- **`.github/workflows/agent-engine-image.yml`** — added `packages/ig-knowledge-taxonomy/**` to both push + pull_request path filters. The agent-engine image vendors this package (Dockerfile:18-19, since Build C) but the workflow only watched `ig-auth`, so a package-only change would have shipped a **stale image**. Now a taxonomy-package change rebuilds + rolls the image.
+
+## [2026-07-26] — KCE Blueprint "Could not draft the content" (503) fixed — Haiku tier beats API GW 30s timeout
+
+The KCE **Draft the Blueprint** action returned a **503** in the browser every time ("Could not draft the content"). Root-caused and fixed.
+
+### Fixed — agent-engine (PR #691, merged to `development`; built + rolled to dev ECS)
+- **`app/routes/kce_blueprint.py`** — blueprint drafting moved from the Sonnet tier (`TIER_1_COMPLEX`) to **Haiku 4.5** (`TIER_2_MODERATE`). The Sonnet call ran **~41s** for a full 2500-token taxonomy (`llm_call … claude-sonnet-4-6 latency_ms:40932 output_tokens:2500`). API Gateway (HTTP API) caps integration at a hard **30s**, so the browser got a 503 at 30s while the ECS task finished at ~41s and logged its 200 — the blueprint was generated but never reached the client. Latency is generation-bound (input was only ~2100 tokens), and `max_tokens=2500` is fully consumed so it can't be lowered without truncation → faster model is the only clean lever. Haiku drafts the same structured taxonomy at ~2x the token rate, comfortably under the cap. Output is SME-reviewed at the FE review step regardless (Opus 400s on `temperature`, so it is not an option).
+  - Verified deployed via ECS exec: running container's `kce_blueprint.py:153` reads `ModelTier.TIER_2_MODERATE`. 15/15 `ig-knowledge-taxonomy` pure-logic tests pass; full agent-engine CI green.
+  - Durable follow-up (not needed for current role sizes): move this call to an async job path (return id + poll) so arbitrarily large roles can run on Sonnet/Opus and the FE progress bar becomes real.
+## [2026-07-26] — foldersync: add and edit folder pairs from the dashboard
+
+### Added
+- **Folder-pair management in the UI** — the dashboard was read-only; adding a folder meant hand-editing YAML. Now `+ Add folder` / `Edit` / `Remove`, with Browse pickers for the local filesystem, Dropbox and Google Drive (cloud pickers read live from the account; they degrade to manual entry with an explanation when unauthenticated).
+  - `foldersync/configstore.py` — comment-preserving read/modify/write via ruamel round-trip, atomic replace (temp + rename) with a `.bak`, mode 600 preserved. A plain PyYAML round-trip would have deleted every explanatory comment in the starter config on first save.
+  - API: `GET/POST /api/pairs`, `PUT|DELETE /api/pairs/{name}`, `POST /api/pairs/validate`, `GET /api/browse/local`, `GET /api/browse/{dropbox|gdrive}`. Validation returns **all** problems at once. A pasted Drive folder URL is reduced to its ID (people copy the address bar; a URL stored as an ID fails much later with an opaque 404).
+  - `FolderWatcher.resync_watches()` — a folder added in the UI is watched immediately rather than at the next daemon restart.
+  - Files: `foldersync/configstore.py`, `foldersync/server/app.py`, `foldersync/server/static/{index.html,app.js,styles.css}`, `foldersync/watcher.py`, `foldersync/providers/{base,dropbox_provider,gdrive_provider}.py`
+
+### Fixed
+- **Dashboard served a stale app shell.** No `Cache-Control` was sent, and the service worker intercepted navigations, so a new UI could not displace a cached one — after upgrading foldersync you would get the previous UI talking to the current API with no visible clue. Now: `no-cache, must-revalidate` on the shell, the service worker no longer touches HTML at all, and asset URLs carry `?v=<package version>`.
+  - Files: `foldersync/server/app.py`, `foldersync/server/static/sw.js`, `foldersync/server/static/index.html`
+- **Watcher regression caught in review** — the `resync_watches` refactor initially left the debounce/periodic thread startup inside the new method instead of `start()`, so no filesystem event was ever processed. Five existing tests failed; fixed before commit.
+  - Files: `foldersync/watcher.py`
+
+### Changed
+- Added `ruamel.yaml>=0.18` — required for comment-preserving config writes.
+- Tests: 71 → 99.
+
+## [2026-07-26] — Team Development Studio: dossier renders in-browser + exposed to super-admins
+
+Closed the gap so a super-admin (Bill) can open a member's development dossier in the browser on dev, and made the surface available to super-admins as well as managers.
+
+### Fixed / Changed — growth-service (PR #689, merged `b64d118c`; deployed dev)
+- **`app/authz.py`** — `assert_member_access` now resolves the caller's real role from the monolith roster (`public.users`/`user_profiles`/`roles`) by the signed JWT `sub`+email when the JWT role is below company-admin. Magic-auth tokens hardcode `role:user`, so DB super-admins/managers were 403'd on every member-scoped route; this upgrades them (mirrors agent-engine `resolve_role` #578). +3 test assertions.
+- **`app/service.py`** — coerce `str(row.id)` in `_gap_out`/`_learning_out`/`_milestone_out`/`_match_out`. The ORM types `id` as `String(36)` but the Postgres PK columns are native `UUID`, so asyncpg returns `uuid.UUID`; the `str` schema fields made pydantic 500 on **every** dossier with children (latent — the compute path always timed out first). +2 unit tests.
+- **`app/agent_client.py`** — dedicated 150s timeout for the ~60s dossier recompute (fast roster/goals calls keep 20s).
+- **`infrastructure/cdk/lib/growth-service-stack.ts`** — growth Lambda timeout 30s→180s (headroom for the out-of-band recompute; API Gateway still caps browser calls at 30s).
+
+### Changed — frontend (PR #284 `willb77/inspire-genius-frontend`, merged `c242b249`; auto-deploys dev)
+- **`src/constants/navigation.ts`** — added the flag-gated "Team Development" item to `SUPER_ADMIN_NAV_ITEMS` (hoisted `TEAM_DEVELOPMENT_ENABLED`). Route guards already permitted super-admin on `/manager/*`, so no route change.
+
+### Data (dev)
+- Seeded a `growth.development_dossiers` roster row (manager=member=Bill's sub) and **pre-warmed** his dossier cache (`development_dossiers` + `member_assessments` + `development_gaps`) from his real computed PRISM, so the browser GET returns it cached (200 in ~0.5s) instead of triggering a 65s recompute.
+
+### Known limitation (follow-up)
+- The dossier compute (~65s, 6 agents) exceeds the API Gateway 30s cap and the agent-engine ALB 60s idle timeout, so any member whose cache is cold (or a manual "refresh") 504s. General fix = **async dossier compute** (kick-off + poll) or raising the shared ALB idle timeout (owner sign-off). The shared ALB was intentionally NOT modified here.
+
+## [2026-07-26] — foldersync tests now run in CI; inert gitleaks ignore removed
+
+### Added
+- **`Test foldersync` job in `.github/workflows/pr-validation.yml`** — `tools/foldersync/` sits outside `services/`, so the `test-services` matrix could never see it and PR #678 merged ~6k lines whose 71 tests had never run in CI once. New `detect-changes` output `foldersync` fires the job on `tools/foldersync/**` (and on `pr-validation.yml` itself, mirroring `cdk_touched`, so a PR editing the gate exercises the gate). Wired into the `summary` job's `needs` + FAIL loop + table, so it actually gates branch protection rather than running decoratively.
+  - Verified green on `linux/amd64` in Docker before the job was written — the suite includes a real watchdog end-to-end test, and inotify behaves differently from macOS FSEvents.
+  - Files: `.github/workflows/pr-validation.yml`
+
+### Removed
+- **`.gitleaksignore`** — added in #678 to suppress a false-positive `dropbox-api-token` hit on a realistic-looking placeholder in the foldersync README, pinned to commit `53939519`. #678 was squash-merged, so that commit is not in `development`'s history and the fingerprint now matches nothing. The README already uses an obviously-fake placeholder, so the suppression is unnecessary as well as inert.
+  - Files: `.gitleaksignore`
+
+## [2026-07-26] — Lumen promoted to staging-B
+
+Tag `release-stable-2026-07-26-lumen` on `development` → `staging-b-promote.yml` **all six jobs green** (pre-flight, agent-engine image, `cdk deploy --all`, ECS rollout, authenticated smoke matrix, notify).
+
+### Live on staging-B
+- **Code**: `GET /v1/agents/lumen/health` → `200 {"status":true,"data":{"vertical":"lumen"}}`.
+- **Frontend**: Lumen chunks deployed to `ig-staging-b-frontend-assets` (`LumenDashboard`, `LumenLayout`, `LumenOnboarding`, `LumenSettings`) — the automatic `ci-deploy` staging-B job had already shipped them.
+- **Migrations 019 + 020 applied** via `ig-staging-b-migration-runner`. All four indexes verified, including `ux_lumen_moments_source_ref`.
+- **Entitlements**: the same seven super-admins entitled, existing verticals preserved (`honor`, `grant`, `knowledge-continuity` intact).
+- **Scheduler**: `ig-staging-b-lumen-proactive-sweep` ENABLED, `cron(0 11 * * ? *)`, FARGATE RunTask target — created automatically by the promote's `cdk deploy --all`, no manual infra step.
+
+### Verified by running it, not by reading the workflow's exit code
+- Dry-run RunTask on staging-B: exit 0, **`would_sweep: 7`** — the cohort fix (#681) is in; `jcboyd001` has duplicate entitlement rows here too and still resolves to one sub.
+- Real scoped RunTask: `swept 1 / cadence_created 1 / calendar_created 0 (correctly skipped — not consented) / emails_pending_delivery 0 / errors 0`.
+- Persisted row: `cadence | week:2026-W30 | delivered=true` with **genuine PRISM-grounded guidance** — *"Your natural pull toward harmony and connection is a genuine asset — but this week, try us…"* — not the degraded fallback. That is the #682 provider-init fix confirmed in a second environment.
+
+### A blocker I called and then disproved
+Reading the promote workflow's `cdk-deploy` CTX, `-c honorResume=true` appeared to be missing, which would have meant `cdk deploy` flipping `AGENT_ENGINE_HONOR_RESUME` from `true` → `false` on staging-B and silently disabling the live Honor résumé feature. The deployed CFN template did hold `'true'`, so the risk looked real.
+
+**It was a false alarm from a truncated read** — the flag is passed on lines 158 and 261 of `staging-b-promote.yml`, just past where the slice ended. Confirmed empirically after the promote: task definition `:20`, `AGENT_ENGINE_HONOR_RESUME=true`, unchanged. No workflow edit was made or needed.
+
+The dev-side trap remains real and separate: `agent-engine-stack.ts` still defaults `honorResume` to `false`, so a **manual** `cdk deploy` of the dev stack without `-c honorResume=true` will still flip it. Worth codifying.
+
+### State
+Lumen is now live on **dev and staging-B**: code, schema, entitlements, and a daily proactive sweep proven to generate real Moments in both. No prod tier exists.
+
+## [2026-07-26] — Lumen activated on dev: migrations applied, cohort entitled, scheduler wired
+
+Lumen went from "merged but inert" to running end to end on dev. Three asks plus the two open design questions from #664/#665.
+
+### Applied — migrations 019 + 020 (dev Aurora)
+Both applied via `ig-dev-migration-runner` (inline SQL — the deployed bundle predates the files). `lumen_moments` then `lumen_consent`.
+
+**Finding: the tables already existed, created by the ORM.** `app/memory/database.py:69` runs `Base.metadata.create_all` on startup, so the dev deploy created them from the models before the migration ran and `CREATE TABLE IF NOT EXISTS` no-op'd. Verified columns report as `character varying(64)/(16)/(128)` — the ORM's `String(n)` — not the migration's `TEXT`. Harmless (subs are 36-char UUIDs; the code reads through the same ORM), but worth knowing: **for ORM-modelled tables in the agent-engine, migrations are belt-and-braces, not the source of truth.** All four indexes verified present, including `ux_lumen_moments_source_ref` (the idempotency guarantee) and `ix_lumen_moments_user_created` (the feed query).
+
+### Entitled — the staging-B super-admin roster, on dev
+Seven SYSTEM-role accounts read from staging-B (`user_profiles.role → roles.role_level='SYSTEM'`): [email redacted], [email redacted], [email redacted], [email redacted], [email redacted], [email redacted], [email redacted].
+
+Written on **dev**, where Lumen actually runs — staging-B has no Lumen code (promotion needs a release tag) and neither migration. Keyed on **email**, not user_id: the two planes are separate databases and magic-auth remaps `sub`, so email is the identifier that survives; `load_verticals` treats an email match as first-class. Additive and idempotent — existing verticals preserved (`honor`, `grant`, `knowledge-continuity` all intact).
+
+### Wired — the proactive scheduler (PR #679)
+`app/cli/lumen_sweep.py` + an EventBridge rule → **one-off ECS RunTask** (`python -m app.cli lumen-sweep`, daily 11:00 UTC ≈ 07:00 EDT). Live on dev as `ig-dev-lumen-proactive-sweep`.
+
+Chosen because it needs **no credential**: the task inherits the same task role and DB access the service has. A scheduled Lambda calling the super-admin-gated route would need a standing privileged credential plus reserved concurrency and three alarms; a synthetic super-admin JWT is a permanent liability for one daily job; an in-process scheduler needs a distributed lock. Reuses the existing task definition so the sweep can't drift from the service's env wiring — `agent-engine` is the only essential container, so the task stops when the CLI exits.
+
+### Resolved — Moments now inherit the live Interaction Protocol (PR #679)
+Moments come from a direct Meridian-persona provider call (one LLM call, fixed JSON shape), which bypasses `BaseAgent` — and `BaseAgent` is what injects the **runtime-configurable** protocol. Without this, editing the protocol in MentorManagement would have applied to every agent *except the one surface delivering unprompted guidance*. `_system_prompt()` now prepends it, gated by `should_apply_to_agent("Meridian")`, non-fatal on config-store failure.
+
+### Fixed — two bugs found by running it, not by testing it
+- **Sweep cohort was wrong (PR #681).** The dry-run enumerated **9 subs for 7 people**: entitlement rows are keyed by sub *or* email, and dev carries both shapes for the same person. Two super-admins would have received a weekly Moment against a sub nobody logs in as. `list_entitled_users` now joins `public.users` and returns DISTINCT real subs. Fixed in the query rather than by deleting rows — the sweep should be correct regardless of table hygiene.
+- **Every Moment would have been filler, forever (PR #682).** `ProviderFactory` is populated by `init_llm_providers()`, which only runs from the FastAPI startup hook. A CLI process never executes it, so the registry was empty and every model call raised `LLM provider 'None' not registered`. The sweep's graceful degradation then wrote its fallback body. **The result was the worst kind of green** — exit 0, `cadence_created: 1`, and filler in the feed. Invisible to unit tests by construction, since the fallback is *supposed* to work; caught only by reading the persisted row.
+
+### Verified end to end on dev
+Three one-off ECS RunTasks with the rule's exact network config. Dry-run enumerated 9 → **7** after the cohort fix. A real scoped run wrote a Moment with `trigger=cadence`, `source_ref=week:2026-W30`, `delivered=true`, `calendar_created=0` (correctly skipped — not consented), `emails_pending_delivery=0` (correctly not attempted). Final persisted body is real PRISM-grounded guidance: *"Your instinct to keep harmony and support others is genuinely powerful — but this week, tr…"* — not the fallback.
+
+### Deploy trap avoided
+`cdk diff` initially showed an ECS **task-definition replacement unrelated to this work**: `AGENT_ENGINE_HONOR_RESUME` is `true` on the deployed dev service but defaults to `false` in code — a hot-patch applied via `-c honorResume=true`. Deploying without the flag would have silently disabled a live Honor feature. Deployed with `--context honorResume=true`, reducing the diff to exactly three additive resources. **The stale default is still in the code and will trap the next person to deploy this stack.**
+
+### Still open
+- Lumen is **not on staging-B** — no code (needs a `release-stable-*` tag), no migrations, no entitlements there.
+- Two duplicate `user_entitlements` rows (jcboyd001, willb77) keyed by email-as-user_id; harmless now the sweep resolves through `public.users`, but worth cleaning.
+- Codify `honorResume` so the next deploy of the agent-engine stack doesn't flip it off.
 ## [2026-07-25] — Demo asset: "Why We Go Deeper On Goals" film published to public bucket
 
 ### Added
@@ -10139,30 +10483,25 @@ Built on the **already-deployed but orphaned** `support-service` (`/v1/support/t
   - S3 key: `s3://ig-demo-public-videos/IG_Pitch_5.mp4` · Public URL: `https://[aws-host]/IG_Pitch_5.mp4`
   - `video/mp4`, 13,619,864 bytes, `Cache-Control: public, max-age=86400`, `Accept-Ranges: bytes`. Verified HTTP 200. No CloudFront → live immediately.
 
-## [2026-07-25] — Honor: add platform super-admins from the Admin console (+ provision [user G.B.])
+## [2026-07-25] — New utility: `tools/foldersync` (local → Dropbox + Google Drive, with subscriber alerts)
 
 ### Added
-- **Backend super-admin provisioning** (Agent Engine #671): `app/tools/honor/admin.py` — `create_super_admin` (link-or-JIT a `public.users` magic-link login, grant the `honor` entitlement, grant the TOP `super-admin` platform role + reactivate the account so magic-auth lets them in; **not** written to the coach registry), `_grant_super_admin_role` (unconditional promote — case-insensitive `public.roles` match), `list_super_admins`, `remove_super_admin` (demote to `user`; **self-removal guarded**). Routes `GET/POST/DELETE /v1/agents/honor/admin/super-admins` (`require_super_admin`; the request `role` field is ignored — privilege is never taken from the body). Emits `honor.admin.super_admin_created/removed`. 11 tests; full honor suite 317 passed.
-- **Admin "Super-Admins" tab** (Frontend #279): a tab on the Honor Administration console (super-admin only) with an add form — **first name, last name, email; role = Super Admin (fixed)** — plus a list + remove (demote). `AdminSuperAdmin` types, `list/create/deleteSuperAdmin` service, `useAdminSuperAdmins`/`useCreateSuperAdmin`/`useDeleteSuperAdmin` hooks, `SuperAdminsTab`. `npm run build` green; honor-admin 9/9.
-- **Provisioned [user G.B.]** (`[email redacted]`) as a platform super-admin **on dev** (idempotent seed via `ig-dev-migration-runner`, mirrors `create_super_admin`). **Verified on dev:** `POST /v1/magic-auth` mints a token; `/admin/whoami` → `{role: "super-admin", isHonorAdmin: true}`; the new endpoint E2E round-trip (list → add throwaway → resolves super-admin → self-removal 422 → cleanup) all green.
+- **`tools/foldersync/`** — standalone Python utility (unrelated to the IG app; own venv, own tests, not wired into IG CI). Watches local folders, syncs them to Dropbox and Google Drive, and emails the Drive folder's subscribers when new files land.
+  - **Trigger + reconcile**: `watchdog` filesystem watcher with a debounce so a bulk drop is one sync, plus a periodic full sync (default 15 min) that reconciles the whole tree. The second exists because every OS watch API drops events (sleep/wake, network volumes, save-by-rename).
+  - **Existence check without downloads**: each file is read once and hashed three ways — SHA-256, MD5 (Drive's `md5Checksum`), and Dropbox's block-based `content_hash`. Both providers expose their hash in metadata, so "is this already up there?" costs one listing call. Hashes cached in SQLite on `(size, mtime)`.
+  - **Subscriber alerts**: audience read live from the Drive folder's permission list (needs the full `drive` scope — `drive.file` cannot see a pre-existing shared folder). Announced once per content hash; batches below `min_files` are queued and carried forward rather than lost.
+  - **Mobile**: the sync engine is desktop-only by OS constraint (iOS/Android permit neither arbitrary local-drive access nor a long-lived background watcher; Apple bars a Python runtime outright). Phones get an installable FastAPI-served PWA — status, live SSE activity feed, Sync-now — plus optional ntfy/Pushover push. Token auth is mandatory when bound off-loopback.
+  - **Safety**: `mirror` (remote deletion) is off by default, full-sync-only, and refuses to run when the local scan comes back empty or would delete far more than exists locally — the signature of an unmounted volume. Drive deletions go to trash. Google-native Docs/Sheets/Slides are never overwritten.
+  - Files: `tools/foldersync/foldersync/{config,hashing,scanner,state,engine,watcher,service,cli}.py`, `providers/{base,dropbox_provider,gdrive_provider}.py`, `notify/{dispatcher,email_sender,push}.py`, `server/app.py` + `server/static/*`
+  - Tests: 71 passing (`pytest -q`, ~8s) — engine against an in-memory provider, alert logic, config parsing, dashboard API, and a real end-to-end watcher run. No test touches a network or sends mail.
 
-### Deploy
-- Merged #671 (BE) + #279 (FE) to `development`; agent-engine rolled on dev (endpoint live), FE auto-deployed dev + staging-b.
-- **Now LIVE on staging-b too** (owner-confirmed 2026-07-25): [user G.B.] provisioned on staging-b Aurora (seed 5/5 OK) — **magic-link login verified** (`/admin/whoami` → super-admin on `stable.inspiresgenius.com`); agent-engine promoted via tag `release-stable-2026-07-25-honor-superadmin` (all promote jobs green, no park-at-0, ECS 1/1) so `/admin/super-admins` backs the tab there (GET lists [user G.B.] among 7 super-admins). Add-super-admin console + [user G.B.]'s account are live on **dev + staging-b**.
-## [2026-07-25] — growth-service calls the LIVE agent-engine orchestrator (dossier wiring)
+## [2026-07-25] — Honor super-admin close-out: emailed [user G.B.] his sign-in link + verified the magic-auth IAM grant (no fix needed)
 
-Follow-on to the RDS Proxy fix below. growth-service was serving the deterministic **StubAgentClient** dossier (canned "Jordan Rivera") because `AGENT_ENGINE_URL` was empty; and even wired, its `HttpAgentClient` forwarded **no auth**, so the `require_auth`-gated agent-engine routes would 401. Both fixed so growth composes a real per-member dossier from the live orchestrator (Aura + Summit + Meridian).
+### Changed / Verified
+- **Emailed [user G.B.] his magic sign-in link** on staging-b via the platform's own flow (`POST /v1/magic-link/request` → SES one-click "Your Inspire Genius sign-in link"). **Confirmed sent** by CloudWatch `AWS/SES Send`=1 at 20:46 UTC, 0 bounces/complaints/rejects.
+- **Investigated the reported magic-auth-secret IAM "gap" → NOT a gap.** The staging-b `ig-staging-b-auth-lambda-role` **already grants** `secretsmanager:GetSecretValue` on `…/magic-auth/jwt-secret*` (codified in CDK `services-stack.ts` `grantMagicAuthSecretRead(authLambdaRole)`); `iam simulate-principal-policy` = **allowed** for both the full and the partial ARN the code passes. The `AccessDenied` log at 20:47 was a **stale warm Lambda container** that cold-started before today's promote deployed the grant and cached the (functionally-identical) `SECRET_KEY` env-var fallback — self-heals on the next cold-start; zero functional impact. Forcing an immediate cold-start (Lambda config touch) was declined by the auto-mode classifier — offered to the owner.
+- **Generated a branded `.docx`** of `Honor_Production_Hardening_Build_Plan.md` (python-docx, logo cover + THF navy/gold, 10 Word tables) via `scripts/build_honor_hardening_plan_docx.py`.
 
-### Changed — growth-service (agent-engine wiring)
-- **`app/agent_client.py`** — `HttpAgentClient._post/_get` now send an `access-token` header. Added `_mint_service_token()`: a short-lived (120s) HS256 token signed with the shared `SECRET_KEY` (the same secret growth uses to VALIDATE inbound tokens, so the agent-engine accepts it — verified by transitivity: a magic-auth token validates at both growth and the agent-engine). Falls back to no header when no secret (stub path).
-- **`infrastructure/cdk/lib/growth-service-stack.ts`** — `AGENT_ENGINE_URL` now imports the agent-engine ALB DNS (`Fn.importValue('ig-{env}-agent-engine-alb-dns')` → `http://…`); a `-c agentEngineUrl=` context override still wins. Added a `:80` egress rule (VPC CIDR) on the growth Lambda SG — the internal ALB listener is HTTP :80 and `allowAllOutbound` is false, so without it the call silently fell back to the stub.
-- **`tests/test_agent_client_adapter.py`** — +2 tests (service token is valid HS256 with the shared secret; `_headers()` sends `access-token`). 41 growth tests green.
-
-### Verified (dev)
-- `cdk diff` = exactly 3 changes (SG :80 egress, Lambda code, `AGENT_ENGINE_URL`); deployed via `CDK_DOCKER_BUNDLING=1 --exclusively`.
-- `AGENT_ENGINE_URL=http://internal-ig-dev-agent-engine-alb-v2-….elb.amazonaws.com` on the Lambda → `get_agent_client()` returns `HttpAgentClient` (live, not stub).
-- **Network path proven**: a `/v1/growth/roster` call fired growth's `get_team` → the agent-engine ALB; agent-engine log shows `GET /api/manager/team … 404` sourced from the growth Lambda ENI (10.0.16.195) — request reaches the engine.
-- **Not fully E2E-verified through the front door**: the member-scoped dossier route is `manager+`-gated and magic-auth only mints `role:user` (the signing secret is access-guarded), so a live populated dossier through `/v1/growth/members/{id}/dossier` still needs a real manager JWT (separate documented blocker). Also unrelated: `get_team` targets the agent-engine base but `/api/manager/team` is a dashboard-service path (pre-existing; non-fatal, roster falls back to persisted dossiers).
 ## [2026-07-25] — Lumen: the full 5-PR stack merged to development
 
 All ten Lumen PRs merged (monorepo #656/#657/#664/#665/#668, frontend #271/#272/#273/#275/#278) as true merge commits. `development` now carries the whole vertical: Core wiring, the Self-Portrait composer, the Moments engine, the proactive consent + sweep, and B2C onboarding — plus alembic **019** and **020** and their `migration-runner` `.sql` mirrors.
@@ -10185,25 +10524,30 @@ All ten Lumen PRs merged (monorepo #656/#657/#664/#665/#668, frontend #271/#272/
 - **No user is entitled to `lumen`**, so the vertical is invisible in the UI until `user_entitlements.verticals` is seeded.
 - **PR-4's scheduling is still unwired** — the sweep is super-admin-triggered only, pending a service-identity decision.
 
-## [2026-07-25] — Honor super-admin close-out: emailed [user G.B.] his sign-in link + verified the magic-auth IAM grant (no fix needed)
+## [2026-07-25] — growth-service calls the LIVE agent-engine orchestrator (dossier wiring)
 
-### Changed / Verified
-- **Emailed [user G.B.] his magic sign-in link** on staging-b via the platform's own flow (`POST /v1/magic-link/request` → SES one-click "Your Inspire Genius sign-in link"). **Confirmed sent** by CloudWatch `AWS/SES Send`=1 at 20:46 UTC, 0 bounces/complaints/rejects.
-- **Investigated the reported magic-auth-secret IAM "gap" → NOT a gap.** The staging-b `ig-staging-b-auth-lambda-role` **already grants** `secretsmanager:GetSecretValue` on `…/magic-auth/jwt-secret*` (codified in CDK `services-stack.ts` `grantMagicAuthSecretRead(authLambdaRole)`); `iam simulate-principal-policy` = **allowed** for both the full and the partial ARN the code passes. The `AccessDenied` log at 20:47 was a **stale warm Lambda container** that cold-started before today's promote deployed the grant and cached the (functionally-identical) `SECRET_KEY` env-var fallback — self-heals on the next cold-start; zero functional impact. Forcing an immediate cold-start (Lambda config touch) was declined by the auto-mode classifier — offered to the owner.
-- **Generated a branded `.docx`** of `Honor_Production_Hardening_Build_Plan.md` (python-docx, logo cover + THF navy/gold, 10 Word tables) via `scripts/build_honor_hardening_plan_docx.py`.
+Follow-on to the RDS Proxy fix below. growth-service was serving the deterministic **StubAgentClient** dossier (canned "Jordan Rivera") because `AGENT_ENGINE_URL` was empty; and even wired, its `HttpAgentClient` forwarded **no auth**, so the `require_auth`-gated agent-engine routes would 401. Both fixed so growth composes a real per-member dossier from the live orchestrator (Aura + Summit + Meridian).
 
-## [2026-07-25] — New utility: `tools/foldersync` (local → Dropbox + Google Drive, with subscriber alerts)
+### Changed — growth-service (agent-engine wiring)
+- **`app/agent_client.py`** — `HttpAgentClient._post/_get` now send an `access-token` header. Added `_mint_service_token()`: a short-lived (120s) HS256 token signed with the shared `SECRET_KEY` (the same secret growth uses to VALIDATE inbound tokens, so the agent-engine accepts it — verified by transitivity: a magic-auth token validates at both growth and the agent-engine). Falls back to no header when no secret (stub path).
+- **`infrastructure/cdk/lib/growth-service-stack.ts`** — `AGENT_ENGINE_URL` now imports the agent-engine ALB DNS (`Fn.importValue('ig-{env}-agent-engine-alb-dns')` → `http://…`); a `-c agentEngineUrl=` context override still wins. Added a `:80` egress rule (VPC CIDR) on the growth Lambda SG — the internal ALB listener is HTTP :80 and `allowAllOutbound` is false, so without it the call silently fell back to the stub.
+- **`tests/test_agent_client_adapter.py`** — +2 tests (service token is valid HS256 with the shared secret; `_headers()` sends `access-token`). 41 growth tests green.
+
+### Verified (dev)
+- `cdk diff` = exactly 3 changes (SG :80 egress, Lambda code, `AGENT_ENGINE_URL`); deployed via `CDK_DOCKER_BUNDLING=1 --exclusively`.
+- `AGENT_ENGINE_URL=http://internal-ig-dev-agent-engine-alb-v2-….elb.amazonaws.com` on the Lambda → `get_agent_client()` returns `HttpAgentClient` (live, not stub).
+- **Network path proven**: a `/v1/growth/roster` call fired growth's `get_team` → the agent-engine ALB; agent-engine log shows `GET /api/manager/team … 404` sourced from the growth Lambda ENI (10.0.16.195) — request reaches the engine.
+- **Not fully E2E-verified through the front door**: the member-scoped dossier route is `manager+`-gated and magic-auth only mints `role:user` (the signing secret is access-guarded), so a live populated dossier through `/v1/growth/members/{id}/dossier` still needs a real manager JWT (separate documented blocker). Also unrelated: `get_team` targets the agent-engine base but `/api/manager/team` is a dashboard-service path (pre-existing; non-fatal, roster falls back to persisted dossiers).
+## [2026-07-25] — Honor: add platform super-admins from the Admin console (+ provision [user G.B.])
 
 ### Added
-- **`tools/foldersync/`** — standalone Python utility (unrelated to the IG app; own venv, own tests, not wired into IG CI). Watches local folders, syncs them to Dropbox and Google Drive, and emails the Drive folder's subscribers when new files land.
-  - **Trigger + reconcile**: `watchdog` filesystem watcher with a debounce so a bulk drop is one sync, plus a periodic full sync (default 15 min) that reconciles the whole tree. The second exists because every OS watch API drops events (sleep/wake, network volumes, save-by-rename).
-  - **Existence check without downloads**: each file is read once and hashed three ways — SHA-256, MD5 (Drive's `md5Checksum`), and Dropbox's block-based `content_hash`. Both providers expose their hash in metadata, so "is this already up there?" costs one listing call. Hashes cached in SQLite on `(size, mtime)`.
-  - **Subscriber alerts**: audience read live from the Drive folder's permission list (needs the full `drive` scope — `drive.file` cannot see a pre-existing shared folder). Announced once per content hash; batches below `min_files` are queued and carried forward rather than lost.
-  - **Mobile**: the sync engine is desktop-only by OS constraint (iOS/Android permit neither arbitrary local-drive access nor a long-lived background watcher; Apple bars a Python runtime outright). Phones get an installable FastAPI-served PWA — status, live SSE activity feed, Sync-now — plus optional ntfy/Pushover push. Token auth is mandatory when bound off-loopback.
-  - **Safety**: `mirror` (remote deletion) is off by default, full-sync-only, and refuses to run when the local scan comes back empty or would delete far more than exists locally — the signature of an unmounted volume. Drive deletions go to trash. Google-native Docs/Sheets/Slides are never overwritten.
-  - Files: `tools/foldersync/foldersync/{config,hashing,scanner,state,engine,watcher,service,cli}.py`, `providers/{base,dropbox_provider,gdrive_provider}.py`, `notify/{dispatcher,email_sender,push}.py`, `server/app.py` + `server/static/*`
-  - Tests: 71 passing (`pytest -q`, ~8s) — engine against an in-memory provider, alert logic, config parsing, dashboard API, and a real end-to-end watcher run. No test touches a network or sends mail.
+- **Backend super-admin provisioning** (Agent Engine #671): `app/tools/honor/admin.py` — `create_super_admin` (link-or-JIT a `public.users` magic-link login, grant the `honor` entitlement, grant the TOP `super-admin` platform role + reactivate the account so magic-auth lets them in; **not** written to the coach registry), `_grant_super_admin_role` (unconditional promote — case-insensitive `public.roles` match), `list_super_admins`, `remove_super_admin` (demote to `user`; **self-removal guarded**). Routes `GET/POST/DELETE /v1/agents/honor/admin/super-admins` (`require_super_admin`; the request `role` field is ignored — privilege is never taken from the body). Emits `honor.admin.super_admin_created/removed`. 11 tests; full honor suite 317 passed.
+- **Admin "Super-Admins" tab** (Frontend #279): a tab on the Honor Administration console (super-admin only) with an add form — **first name, last name, email; role = Super Admin (fixed)** — plus a list + remove (demote). `AdminSuperAdmin` types, `list/create/deleteSuperAdmin` service, `useAdminSuperAdmins`/`useCreateSuperAdmin`/`useDeleteSuperAdmin` hooks, `SuperAdminsTab`. `npm run build` green; honor-admin 9/9.
+- **Provisioned [user G.B.]** (`[email redacted]`) as a platform super-admin **on dev** (idempotent seed via `ig-dev-migration-runner`, mirrors `create_super_admin`). **Verified on dev:** `POST /v1/magic-auth` mints a token; `/admin/whoami` → `{role: "super-admin", isHonorAdmin: true}`; the new endpoint E2E round-trip (list → add throwaway → resolves super-admin → self-removal 422 → cleanup) all green.
 
+### Deploy
+- Merged #671 (BE) + #279 (FE) to `development`; agent-engine rolled on dev (endpoint live), FE auto-deployed dev + staging-b.
+- **Now LIVE on staging-b too** (owner-confirmed 2026-07-25): [user G.B.] provisioned on staging-b Aurora (seed 5/5 OK) — **magic-link login verified** (`/admin/whoami` → super-admin on `stable.inspiresgenius.com`); agent-engine promoted via tag `release-stable-2026-07-25-honor-superadmin` (all promote jobs green, no park-at-0, ECS 1/1) so `/admin/super-admins` backs the tab there (GET lists [user G.B.] among 7 super-admins). Add-super-admin console + [user G.B.]'s account are live on **dev + staging-b**.
 ## [2026-07-24] — Content Builder Video: brand footer no longer overlaps slide content
 
 ### Fixed
@@ -10244,28 +10588,53 @@ All ten Lumen PRs merged (monorepo #656/#657/#664/#665/#668, frontend #271/#272/
 - **Backend — agent-engine blueprint generator (BE #650, merged + deployed to dev).** New `POST /v1/agents/kce/blueprint/generate` (`services/agent-engine/app/routes/kce_blueprint.py`) drafts a role-knowledge `job_task_taxonomy` for human review instead of hand-authoring nodes. **Deterministic archetype classifier** (operational/managerial/executive, keyword heuristic — no model call) seeds an archetype-aware generator prompt built on the **§1.1 8-section knowledge frame**; the LLM proposes *structure only* (never scores/persists). **Deterministic parser** (mirrors `parse_extracted_units`) assigns its own refs, repairs parent links, recomputes depth from the resolved tree, guards cycles, drops nameless nodes, caps at 80. Sonnet tier (Opus 400s on `temperature`). Role-gated to practitioner/manager/company-admin/super-admin. `seed_nodes` readies Build C (Job DNA tree drop-in). **No schema change** — `node_type` is a free string; §1.2 vocab + §1.3 archetype maps are config, marked TUNABLE / pending SME sign-off. 25 tests; registered in `app/main.py`. Merged `#650`; dev agent-engine image built + `ig-dev-agent-engine` ECS rolled; live-probe confirms the route (401 auth-required, not 404).
 - **Frontend — "Blueprint a role" review surface (FE #268, PR open).** New page `/vertical/knowledge-continuity/blueprint` (`KceBlueprintPage.tsx`): draft (role + optional context/shape → generate) → review/edit the drafted tree (rename inline, prune a parent + its descendants) → approve → persists the tree via the existing trainer taxonomy endpoint (shallowest-first so `parent_id` resolves) and routes to Start a capture. Service→hook→component: `capture.service.generateBlueprint`, `useGenerateBlueprint`, `usePersistBlueprint`; `CreateTaxonomyRequest` gains optional `parent_id`; sidebar item "Blueprint a role" (first). 4 page tests; `tsc -b` + lint clean; 39/39 KCE FE suites green. **FE PR open** — merging deploys FE to dev + staging-b (coupled ci-deploy); KCE is entitlement-dark on staging-b.
 
-## [2026-07-24] — Résumé assessment / document-generation / routing fix (staging-b [user J.B.] repro) + forward fix + backfill
+## [2026-07-24] — growth-service RDS Proxy connectivity fix (Team Development Studio dossier E2E)
 
-Deep-dive on staging-b "trouble assessing résumés / creating documents / routing to wrong agents" ([user J.B.] sessions 2026-07-23 ~3–5pm ET). Three independent root causes, each verified against fresh CloudWatch logs, the actual S3 documents the user received, and live Aurora. Fixed from three directions; zero agent-engine regression proven (diffed against pristine `development` HEAD).
+Investigating the Team Development Studio / Summit "authenticated E2E dossier render" on dev surfaced that **growth-service's DB layer had never functioned on dev** — every `/v1/growth/*` endpoint 500'd on `asyncpg InvalidAuthorizationSpecificationError: This RDS Proxy requires TLS connections`. (#587's 2026-07-19 "verified" was Lambda/stack-level only — the `obs_rds_proxy_role` "deploy≠endpoint-works" trap.)
 
-### Fixed — Agent Engine (PR #647, merged `8cdb62c1`; dev + staging-b, tag `release-stable-2026-07-23-resume-docgen-routing`)
-- **Docgen truncation → degraded documents.** `app/tools/docgen/spec_builder.py` capped Haiku at `max_tokens=3000`; long/detailed specs (a full résumé, "include all sections", "title page + TOC + tables") truncated mid-object → `_extract_json` failed → pipeline echoed the raw request as a one-paragraph doc (2 of Boyd's 3 docs). Fix: `_MAX_TOKENS` 3000→8000 + `_repair_truncated_json` (balances the open string/objects/arrays at the last complete member).
-- **Uploaded résumés invisible.** `documents.doc_kind` defaults to `'general'`; the profile loader only injects `doc_kind IN ('resume','cv','bio','personal')`, so Boyd's résumés (all `'general'`, text extracted — 5,830 chars) were excluded → `[Company Name]` placeholders. Fix: `app/profile/loader.py::_select_personal_docs_by_filename` recovers untagged résumés/bios by filename (precision-first, subject-scoped, read-only); docgen chat_gate requests the full résumé (`_RESUME_DOC_MAX_CHARS=12000`) on résumé-building turns.
-- **Résumé routing.** "resume"/"cv" were in no keyword set → fell to the domain default (Aura) instead of Nova. Fix: résumé/CV keywords added to Nova in `orchestration/planner.py` + `agents/meridian.py` `_COACHING_KEYWORDS`. Also corrected a stale `test_keyword_select_session`.
-- E2E on live staging-b: generated a résumé for a 9,458-char-résumé user → complete 111-paragraph résumé with real content, zero placeholders.
+### Fixed — growth-service (PR #666, branch `fix/growth-service-rds-proxy-tls`)
+- **`services/growth-service/app/database.py`** — the async engine was created with no `connect_args` for Postgres, missing three things the RDS Proxy path requires:
+  1. **TLS** — permissive SSL context handed to asyncpg (mirrors `broadcast-service`).
+  2. **Password injection** — the Lambda ships `DATABASE_URL` without a password (RDS Proxy master creds live in Secrets Manager via `DB_SECRET_ARN`; the support/audit/broadcast pattern); the code never injected it. Now resolved at import via `make_url(...).set(password=...).render_as_string(hide_password=False)`.
+  3. **search_path** — growth models carry no schema qualifier + the service issues unqualified table names, so the connection now defaults `search_path` to `growth,public`.
+- Verified live (hotpatched dev Lambda zip): `GET /v1/growth/roster` **500→200** `{"data":[]}`; `GET /v1/growth/members/{id}/dossier` **500→403** (authz gate reached, no longer crashing). 39 growth unit tests green (sqlite path unchanged).
 
-### Added — document-service forward fix (PR #648, merged `b016f13c`; dev + staging-b, tag `release-stable-2026-07-24-resume-autoclassify`)
-- **`app/classifier.py`** — deterministic, zero-latency auto-classification of `doc_kind` at the source. `classify_by_filename` (unambiguous résumé/CV/bio markers, word-boundaried), `classify_by_content` (conservative multi-signal: ≥3 résumé section headers, or contact header + ≥2 sections, or an explicit "Curriculum Vitae"/"Résumé" title; CSV/spreadsheet bodies never match → PRISM CSVs stay out), `autoclassify` (only acts when the kind is the default `''`/`None`/`'general'`; explicit kinds respected).
-- Wired into `initiate_upload` (filename-classify at row creation, skipped for shared corpus docs) and `process_document` (content-classify a still-'general' doc once text is extracted).
-- 33 new tests (26 pure + 7 upload/extraction integration); full document-service suite 191 passed. Zero agent-engine files changed; agent-engine consumer suites re-run green (176 passed). Live e2e both envs: résumé filename → `resume`, generic → `general`.
+### Added — dev Aurora
+- Applied the never-run growth baseline migration `001_baseline_growth_service` via migration-runner (created the `growth` schema + 8 tables + 2 views + enums/triggers), stamped `growth.alembic_version`.
 
-### Changed — one-time `doc_kind` backfill (dev + staging-b Aurora, owner-approved)
-- Reclassified existing `doc_kind='general'` non-shared documents with unambiguous résumé/CV filenames → `'resume'` via `ig-{env}-migration-runner` (filename-based, previewed row-by-row first, zero false positives). **Dev: 6 rows. Staging-b: 8 rows** (incl. Boyd's résumés). Verified `remaining_general_resumes = 0` in both. Now served by the loader's primary query, not just the #647 read-time fallback. No other tables/rows touched; explicit kinds and shared docs left alone.
+### Notes
+- Populated browser dossier render still blocked (separate items): `prism_results`=0 (P1 backfill) → dossiers degrade `prismNeeded:true`; growth `AGENT_ENGINE_URL=""` → stub dossier + no auth-forward; magic-auth hardcodes `role:user` → no manager JWT. Core orchestrator itself proven LIVE via ECS-exec (Aura+Summit+Meridian fire).
+- `cdk deploy ig-dev-growth` will supersede the transient hotpatch with the committed code.
 
-### Verified / Released
-- **[user J.B.] end-to-end (staging-b):** generated a résumé as his own account → a complete **90-paragraph** document built from his real uploaded résumés (contact header, executive summary, full NATO/EUCOM/National Guard experience with detailed bullets) — **zero placeholders, not the raw-request fallback**. The exact opposite of the reported symptom. Verification artifact removed afterward.
-- **Consolidated release tag `release-stable-2026-07-24-resume-fix-complete`** (dev HEAD `cdc2f52c`) — promote **completed success** (smoke gate green). Re-confirmed both fixes live on the running staging-b tasks: agent-engine has all four #647 markers (`_repair_truncated_json`, `_select_personal_docs_by_filename`, `_MAX_TOKENS = 8000`, Nova résumé keywords); document-service live upload → résumé filename `resume`, generic `general`. (This tag's only delta over the two prior per-fix promotes was docs-only #649, so CDK deployed no new code — the smoke gate validated the already-live #647+#648.)
+## [2026-07-24] — Honor production-hardening build plan (5-dimension survey → 8-phase plan)
 
+### Added
+- **`docs/plans/Honor_Production_Hardening_Build_Plan.md`** — a production-hardening build plan for the live THF Coach Workbench vertical, authored in the multi-agent/one-terminal orchestration model. Grounded in a 5-agent parallel survey of `origin/development` (security/authz, reliability, observability/scale, data/DR, tests/CI) + live AWS probes; every P0 anchor spot-verified against live code.
+- **8 phases** (each = one clean compaction stop, with ready-to-paste CC prompts + sub-agent roster + DoD + LOE + gate): 0 go-live gates + ground-truth reconciliation · 1 trust boundary (RS256 JWKS verify + un-neuter the CI gate + ownership-SQL test) · 2 safe-translation enforcement + bearer-token hardening · 3 backend reliability (async I/O + timeouts + error-handling + input caps) · 4 long-generation async (beat the 30s API-GW ceiling) · 5 edge WAF + observability + scale · 6 data safety/DR + right-to-delete + migration ledger + token encryption · 7 coverage lift + CI gates. ~14.5–18.5h human / ~14.5 CC sessions.
+- **Headline P0s (verified):** agent-engine `_decode_token` accepts RS256 **unverified** (`get_unverified_claims`); Honor résumé/eval **504 at the 30 000 ms API-GW ceiling**; public confirm/invite endpoints have **no WAF/IP rate-limit**; staging-b Aurora `deletionProtection=false`+`DESTROY` and documents bucket `autoDeleteObjects`; `remove_fellow` never purges Fellow PII/PRISM/docs/evals (no right-to-delete); `coach_owns_fellow` SQL mocked in 100% of tests + backend coverage gate neutered (`|| true`).
+- **Ground-truth corrections folded in** (supersede memory): SES production access is now ENABLED in **both** accounts (`3pp.com` verified); staging-b `honor_report_email=true` (email path live); dev agent-engine autoscale floor drifted to min=0.
+- Plan documents what is **already solid and must NOT be refactored**: the ownership model (no `x-user-role` trust in any Honor route), SAVEPOINT batch isolation, constant-time token verify, dark-flag shipping, audit DLQ+retry, deterministic zero-model-call evaluator.
+- Registered in auto-memory (`project_honor_hardening_plan`). **Plan only — no hardening code executed.**
+
+## [2026-07-24] — Tool-calling document-generation gate (staging-b [user J.B.] real-estate résumé follow-on)
+
+Follow-on to the résumé/docgen fix below. New staging-b incident (session `95b79a8c`): "assess my resume for a career change as a real estate agent, put your findings in a word document" never produced a document, and a specialist (Bridge) improvised a persona-breaking refusal ("I'm a specialist backend system… I provide content to Meridian"). Root-caused from fresh CloudWatch logs: the regex/keyword docgen gate returned `is_doc=False` on every turn ("put … in" is not a creation verb; the LLM fallback was a stateless, precision-biased classifier), so the request fell through to `career_talent` → **Bridge**, which sticky-routed the whole session. User asked for a non-regex solution.
+
+### Changed — Agent Engine (PR #658, merged `16cd564e`; live on dev, taskdef :52)
+- **New `app/tools/docgen/tool_gate.py`** — replaces the regex gate with a context-aware **tool-calling** decision. The fastest model is shown the recent conversation and a `generate_document` tool, and emits the same `{"tool","parameters"}` block `base_agent.extract_tool_call` parses everywhere (IG-native text-emitted MCP protocol — no provider-layer change). Meridian-owned + runs before routing, so a firing gate also neutralizes the Bridge misroute and the persona break for any doc request.
+- `meridian._maybe_generate_document` now dispatches to the tool gate (default) or the preserved `_legacy_maybe_generate_document` behind `docgen_tool_calling_enabled`; a cheap document-cue cost guard keeps the router off ordinary chat unless `docgen_tool_gate_always`.
+- Config: `docgen_tool_calling_enabled` (default True), `docgen_tool_gate_always` (default False).
+
+### Fixed — history source (PR #660, merged `87311dd7`; live on dev, taskdef :52)
+- The REST `/v1/agents/chat` handler routes the request `context` into working memory, leaving `context.conversation_history` empty — so the router could not resolve confirmations/follow-ups. Found via live dev test (a follow-up misrouted to Sage: "which previous response?"). Fix: `tool_gate` pulls recent turns from `memory_manager.short_term.get_history` (where REST/WS turns persist — the source sticky-routing uses), falling back to any in-request history.
+
+### Verified / Released — live on dev (Boyd's real account `[email redacted]`)
+- **Turn-1** "…put your findings and recommendation in a word document" → gate fires `fmt=docx` → **44 KB** `resume-assessment-for-real-estate-career-transition.docx`; **no Bridge** (routing bypassed).
+- **2-turn confirmation** "then proceed with the Word document export" → turn 1 routed to **Nova** (résumé owner); turn 2 gate fires reading turn 1 from short-term memory → grounded instruction ("Create a … resume for [user J.B.] transitioning from a 25+ year defense…") → **39.5 KB** `john-boyd.docx`. This is the exact phrase that returned `is_doc=False` on staging-b.
+- Tests: +12 (`tests/test_docgen_tool_gate.py`); honor bypass updated for the tool path; 3 legacy-gate tests pinned to `docgen_tool_calling_enabled=False`. Full agent-engine suite failure set **identical to pristine dev (70), +12 passing, zero new regressions**.
+- **NOT yet on staging-b** — promote pending owner confirmation.
+
+---
 ## [2026-07-24] — Lumen vertical PR-1: Vertical Core wiring (backend + frontend shell)
 
 Resumed the Lumen build (B2C personal behavioral diagnostics + just-in-time "Moments" coaching). The blocker recorded in the resume pointer is cleared: Vertical Core landed 2026-07-16 (monorepo #573, frontend #200), so PR-1 built directly on `origin/development`. Branch `feat/lumen-core-wiring` in both repos. **Not deployed** — per the build plan's PR-1 exit criteria.
@@ -10325,52 +10694,27 @@ Resumed the Lumen build (B2C personal behavioral diagnostics + just-in-time "Mom
 - **`prism_results` is legacy read-only audit** (`app/routes/prism.py`), so the PRISM quadrant anchor must be derived from `assessment_scores`, not read from that table.
 - **PRISM dimension→quadrant mapping disagrees in two places, on 6 of 8 dimensions.** `app/agents/coaching/prism_knowledge.py` carries the licensed manual text verbatim ("Blue Behaviour (Supporting + Co-Ordinating quadrant)", "Dimension — Supporting (Blue Quadrant)"): Green = Innovating+Initiating, Blue = Supporting+Co-Ordinating, Red = Focusing+Delivering, Gold = Finishing+Evaluating. But the frontend `BEHAVIOUR_CONFIG` (`src/constants/prism.ts`) colours Supporting/Coordinating red, Focusing/Delivering gold, Finishing/Evaluating blue — a 3-cycle rotation — and `prism_agent._DIMENSIONS` faithfully mirrors that frontend config. The manual text is authoritative, so the frontend radar and `unified_behavioral_context` (consumed by the Team Development Studio dossier) are assigning 6 of 8 dimensions to the wrong quadrant. Pre-existing and outside Lumen's scope — flagged, not changed.
 
-## [2026-07-24] — Tool-calling document-generation gate (staging-b [user J.B.] real-estate résumé follow-on)
+## [2026-07-24] — Résumé assessment / document-generation / routing fix (staging-b [user J.B.] repro) + forward fix + backfill
 
-Follow-on to the résumé/docgen fix below. New staging-b incident (session `95b79a8c`): "assess my resume for a career change as a real estate agent, put your findings in a word document" never produced a document, and a specialist (Bridge) improvised a persona-breaking refusal ("I'm a specialist backend system… I provide content to Meridian"). Root-caused from fresh CloudWatch logs: the regex/keyword docgen gate returned `is_doc=False` on every turn ("put … in" is not a creation verb; the LLM fallback was a stateless, precision-biased classifier), so the request fell through to `career_talent` → **Bridge**, which sticky-routed the whole session. User asked for a non-regex solution.
+Deep-dive on staging-b "trouble assessing résumés / creating documents / routing to wrong agents" ([user J.B.] sessions 2026-07-23 ~3–5pm ET). Three independent root causes, each verified against fresh CloudWatch logs, the actual S3 documents the user received, and live Aurora. Fixed from three directions; zero agent-engine regression proven (diffed against pristine `development` HEAD).
 
-### Changed — Agent Engine (PR #658, merged `16cd564e`; live on dev, taskdef :52)
-- **New `app/tools/docgen/tool_gate.py`** — replaces the regex gate with a context-aware **tool-calling** decision. The fastest model is shown the recent conversation and a `generate_document` tool, and emits the same `{"tool","parameters"}` block `base_agent.extract_tool_call` parses everywhere (IG-native text-emitted MCP protocol — no provider-layer change). Meridian-owned + runs before routing, so a firing gate also neutralizes the Bridge misroute and the persona break for any doc request.
-- `meridian._maybe_generate_document` now dispatches to the tool gate (default) or the preserved `_legacy_maybe_generate_document` behind `docgen_tool_calling_enabled`; a cheap document-cue cost guard keeps the router off ordinary chat unless `docgen_tool_gate_always`.
-- Config: `docgen_tool_calling_enabled` (default True), `docgen_tool_gate_always` (default False).
+### Fixed — Agent Engine (PR #647, merged `8cdb62c1`; dev + staging-b, tag `release-stable-2026-07-23-resume-docgen-routing`)
+- **Docgen truncation → degraded documents.** `app/tools/docgen/spec_builder.py` capped Haiku at `max_tokens=3000`; long/detailed specs (a full résumé, "include all sections", "title page + TOC + tables") truncated mid-object → `_extract_json` failed → pipeline echoed the raw request as a one-paragraph doc (2 of Boyd's 3 docs). Fix: `_MAX_TOKENS` 3000→8000 + `_repair_truncated_json` (balances the open string/objects/arrays at the last complete member).
+- **Uploaded résumés invisible.** `documents.doc_kind` defaults to `'general'`; the profile loader only injects `doc_kind IN ('resume','cv','bio','personal')`, so Boyd's résumés (all `'general'`, text extracted — 5,830 chars) were excluded → `[Company Name]` placeholders. Fix: `app/profile/loader.py::_select_personal_docs_by_filename` recovers untagged résumés/bios by filename (precision-first, subject-scoped, read-only); docgen chat_gate requests the full résumé (`_RESUME_DOC_MAX_CHARS=12000`) on résumé-building turns.
+- **Résumé routing.** "resume"/"cv" were in no keyword set → fell to the domain default (Aura) instead of Nova. Fix: résumé/CV keywords added to Nova in `orchestration/planner.py` + `agents/meridian.py` `_COACHING_KEYWORDS`. Also corrected a stale `test_keyword_select_session`.
+- E2E on live staging-b: generated a résumé for a 9,458-char-résumé user → complete 111-paragraph résumé with real content, zero placeholders.
 
-### Fixed — history source (PR #660, merged `87311dd7`; live on dev, taskdef :52)
-- The REST `/v1/agents/chat` handler routes the request `context` into working memory, leaving `context.conversation_history` empty — so the router could not resolve confirmations/follow-ups. Found via live dev test (a follow-up misrouted to Sage: "which previous response?"). Fix: `tool_gate` pulls recent turns from `memory_manager.short_term.get_history` (where REST/WS turns persist — the source sticky-routing uses), falling back to any in-request history.
+### Added — document-service forward fix (PR #648, merged `b016f13c`; dev + staging-b, tag `release-stable-2026-07-24-resume-autoclassify`)
+- **`app/classifier.py`** — deterministic, zero-latency auto-classification of `doc_kind` at the source. `classify_by_filename` (unambiguous résumé/CV/bio markers, word-boundaried), `classify_by_content` (conservative multi-signal: ≥3 résumé section headers, or contact header + ≥2 sections, or an explicit "Curriculum Vitae"/"Résumé" title; CSV/spreadsheet bodies never match → PRISM CSVs stay out), `autoclassify` (only acts when the kind is the default `''`/`None`/`'general'`; explicit kinds respected).
+- Wired into `initiate_upload` (filename-classify at row creation, skipped for shared corpus docs) and `process_document` (content-classify a still-'general' doc once text is extracted).
+- 33 new tests (26 pure + 7 upload/extraction integration); full document-service suite 191 passed. Zero agent-engine files changed; agent-engine consumer suites re-run green (176 passed). Live e2e both envs: résumé filename → `resume`, generic → `general`.
 
-### Verified / Released — live on dev (Boyd's real account `[email redacted]`)
-- **Turn-1** "…put your findings and recommendation in a word document" → gate fires `fmt=docx` → **44 KB** `resume-assessment-for-real-estate-career-transition.docx`; **no Bridge** (routing bypassed).
-- **2-turn confirmation** "then proceed with the Word document export" → turn 1 routed to **Nova** (résumé owner); turn 2 gate fires reading turn 1 from short-term memory → grounded instruction ("Create a … resume for [user J.B.] transitioning from a 25+ year defense…") → **39.5 KB** `john-boyd.docx`. This is the exact phrase that returned `is_doc=False` on staging-b.
-- Tests: +12 (`tests/test_docgen_tool_gate.py`); honor bypass updated for the tool path; 3 legacy-gate tests pinned to `docgen_tool_calling_enabled=False`. Full agent-engine suite failure set **identical to pristine dev (70), +12 passing, zero new regressions**.
-- **NOT yet on staging-b** — promote pending owner confirmation.
+### Changed — one-time `doc_kind` backfill (dev + staging-b Aurora, owner-approved)
+- Reclassified existing `doc_kind='general'` non-shared documents with unambiguous résumé/CV filenames → `'resume'` via `ig-{env}-migration-runner` (filename-based, previewed row-by-row first, zero false positives). **Dev: 6 rows. Staging-b: 8 rows** (incl. Boyd's résumés). Verified `remaining_general_resumes = 0` in both. Now served by the loader's primary query, not just the #647 read-time fallback. No other tables/rows touched; explicit kinds and shared docs left alone.
 
----
-## [2026-07-24] — Honor production-hardening build plan (5-dimension survey → 8-phase plan)
-
-### Added
-- **`docs/plans/Honor_Production_Hardening_Build_Plan.md`** — a production-hardening build plan for the live THF Coach Workbench vertical, authored in the multi-agent/one-terminal orchestration model. Grounded in a 5-agent parallel survey of `origin/development` (security/authz, reliability, observability/scale, data/DR, tests/CI) + live AWS probes; every P0 anchor spot-verified against live code.
-- **8 phases** (each = one clean compaction stop, with ready-to-paste CC prompts + sub-agent roster + DoD + LOE + gate): 0 go-live gates + ground-truth reconciliation · 1 trust boundary (RS256 JWKS verify + un-neuter the CI gate + ownership-SQL test) · 2 safe-translation enforcement + bearer-token hardening · 3 backend reliability (async I/O + timeouts + error-handling + input caps) · 4 long-generation async (beat the 30s API-GW ceiling) · 5 edge WAF + observability + scale · 6 data safety/DR + right-to-delete + migration ledger + token encryption · 7 coverage lift + CI gates. ~14.5–18.5h human / ~14.5 CC sessions.
-- **Headline P0s (verified):** agent-engine `_decode_token` accepts RS256 **unverified** (`get_unverified_claims`); Honor résumé/eval **504 at the 30 000 ms API-GW ceiling**; public confirm/invite endpoints have **no WAF/IP rate-limit**; staging-b Aurora `deletionProtection=false`+`DESTROY` and documents bucket `autoDeleteObjects`; `remove_fellow` never purges Fellow PII/PRISM/docs/evals (no right-to-delete); `coach_owns_fellow` SQL mocked in 100% of tests + backend coverage gate neutered (`|| true`).
-- **Ground-truth corrections folded in** (supersede memory): SES production access is now ENABLED in **both** accounts (`3pp.com` verified); staging-b `honor_report_email=true` (email path live); dev agent-engine autoscale floor drifted to min=0.
-- Plan documents what is **already solid and must NOT be refactored**: the ownership model (no `x-user-role` trust in any Honor route), SAVEPOINT batch isolation, constant-time token verify, dark-flag shipping, audit DLQ+retry, deterministic zero-model-call evaluator.
-- Registered in auto-memory (`project_honor_hardening_plan`). **Plan only — no hardening code executed.**
-
-## [2026-07-24] — growth-service RDS Proxy connectivity fix (Team Development Studio dossier E2E)
-
-Investigating the Team Development Studio / Summit "authenticated E2E dossier render" on dev surfaced that **growth-service's DB layer had never functioned on dev** — every `/v1/growth/*` endpoint 500'd on `asyncpg InvalidAuthorizationSpecificationError: This RDS Proxy requires TLS connections`. (#587's 2026-07-19 "verified" was Lambda/stack-level only — the `obs_rds_proxy_role` "deploy≠endpoint-works" trap.)
-
-### Fixed — growth-service (PR #666, branch `fix/growth-service-rds-proxy-tls`)
-- **`services/growth-service/app/database.py`** — the async engine was created with no `connect_args` for Postgres, missing three things the RDS Proxy path requires:
-  1. **TLS** — permissive SSL context handed to asyncpg (mirrors `broadcast-service`).
-  2. **Password injection** — the Lambda ships `DATABASE_URL` without a password (RDS Proxy master creds live in Secrets Manager via `DB_SECRET_ARN`; the support/audit/broadcast pattern); the code never injected it. Now resolved at import via `make_url(...).set(password=...).render_as_string(hide_password=False)`.
-  3. **search_path** — growth models carry no schema qualifier + the service issues unqualified table names, so the connection now defaults `search_path` to `growth,public`.
-- Verified live (hotpatched dev Lambda zip): `GET /v1/growth/roster` **500→200** `{"data":[]}`; `GET /v1/growth/members/{id}/dossier` **500→403** (authz gate reached, no longer crashing). 39 growth unit tests green (sqlite path unchanged).
-
-### Added — dev Aurora
-- Applied the never-run growth baseline migration `001_baseline_growth_service` via migration-runner (created the `growth` schema + 8 tables + 2 views + enums/triggers), stamped `growth.alembic_version`.
-
-### Notes
-- Populated browser dossier render still blocked (separate items): `prism_results`=0 (P1 backfill) → dossiers degrade `prismNeeded:true`; growth `AGENT_ENGINE_URL=""` → stub dossier + no auth-forward; magic-auth hardcodes `role:user` → no manager JWT. Core orchestrator itself proven LIVE via ECS-exec (Aura+Summit+Meridian fire).
-- `cdk deploy ig-dev-growth` will supersede the transient hotpatch with the committed code.
+### Verified / Released
+- **[user J.B.] end-to-end (staging-b):** generated a résumé as his own account → a complete **90-paragraph** document built from his real uploaded résumés (contact header, executive summary, full NATO/EUCOM/National Guard experience with detailed bullets) — **zero placeholders, not the raw-request fallback**. The exact opposite of the reported symptom. Verification artifact removed afterward.
+- **Consolidated release tag `release-stable-2026-07-24-resume-fix-complete`** (dev HEAD `cdc2f52c`) — promote **completed success** (smoke gate green). Re-confirmed both fixes live on the running staging-b tasks: agent-engine has all four #647 markers (`_repair_truncated_json`, `_select_personal_docs_by_filename`, `_MAX_TOKENS = 8000`, Nova résumé keywords); document-service live upload → résumé filename `resume`, generic `general`. (This tag's only delta over the two prior per-fix promotes was docs-only #649, so CDK deployed no new code — the smoke gate validated the already-live #647+#648.)
 
 ## [2026-07-23] — Practitioner Phase 6.2 BUILT: /v1/agents/coach/* routes, self-scoped + role-gated (BE #652)
 
@@ -10455,33 +10799,6 @@ Investigating the Team Development Studio / Summit "authenticated E2E dossier re
   - **D1b — coach module self-scopes now.** `/v1/agents/coach/*` enforces `(vertical, owner_coach_sub)` in its own WHERE clauses; registry is read-only (Phase 1) with no committed Phase 2 date, so waiting would block indefinitely. Registry Phase 2 later layers on as defense-in-depth ("both" reached incrementally at no upfront cost).
   - Status header → LOCKED; §4.3, §5, §6, §7 updated. D1c (client tables) + D3 (credit writes) remain open.
 
-## [2026-07-23] — Honor: fix — coach-uploaded fellow documents never appeared in the fellow's profile
-
-### Fixed (Agent Engine — PR #636, merged to development, deployed Dev + Staging-B, live-verified)
-- **Root cause: WRITE/READ key mismatch.** A coach uploading a document *for a fellow* stores it in `documents` with `subject_user_id = <fellow>` and `user_id = <coach>` (the uploader). The agent-engine read path `_select_personal_docs` (`app/profile/loader.py` — feeds the honor `/sources` endpoint, the `<USER_PROFILE>` résumé/bio injection, AND the résumé-based Evaluate gate) filtered on `documents.user_id = <fellow>` and never looked at `subject_user_id` → `WHERE user_id = fellow` never matched a coach upload. The doc showed absent everywhere and Evaluate 422'd ("no résumé on file") even with the row present + text extracted. Only self-uploads worked. (Assessments were unaffected — their import keys the fellow as `user_id`.)
-- **Fix:** `_select_personal_docs` is now subject-aware — `WHERE (subject_user_id = :uid OR (COALESCE(subject_user_id,'') = '' AND user_id = :uid))` — matching coach-uploaded fellow docs, self-uploads, and legacy rows (subject NULL → user_id fallback). Also swapped Postgres-only `LEFT(x,n)` → portable `substr(x,1,n)` (identical) so the query is exercisable under SQLite.
-- **Verified against real staging-b data:** 4 coach-uploaded personal docs for fellow `afd5182b` (Marcus Ellison) existed with `subject_user_id ≠ user_id` + `extracted_text` populated; the new query returns all 4. **Live E2E on staging-b (coach token):** Marcus `/sources` → `resume/bio/additionalInfo = true` (was all false); Evaluate → **200** (was 422).
-- Tests: 2 new subject-aware cases in `test_profile_loader.py`; incidental stale-assertion fix in `test_documents_latest_prism.py` (the `LIKE '%prism%.csv'` clause was removed in #546).
-- **Follow-ups (noted, not done):** FE onboarding uploads "Additional info" file as `doc_kind=bio` / goals-file as `personal` (post-fix they show but under the wrong row — cosmetic); RAG chunk retrieval is still uploader-scoped (profile injection already carries the résumé text, so Evaluate is unaffected).
-
-## [2026-07-23] — Honor Evaluate/Résumé: Nova routing, clean Word/PDF résumé export, PRISM-optional doc assessment (combined promote #639+#641+#642)
-
-### Fixed (Agent Engine — PR #639, merged, deployed Dev + Staging-B, live-verified)
-- **Evaluation was returning a downloadable `.md` file instead of an inline evaluation.** The narration prompt's *"format in Markdown … with a table"* tripped Meridian's document-generation gate (`_maybe_generate_document`), so the turn routed to the docgen tool and returned *"Here's your Markdown file — [Download …md]"* — the "raw .md dump" a coach reported. **Fix:** an honor turn with `context.surface=="honor"` + `context.intent=="member_evaluation"` now **skips the docgen gate** (`app/agents/meridian.py`) → normal inline synthesis. Scoped to the evaluation intent; ordinary "create a Word doc" chat still reaches docgen. Verified on dev + staging-b (no `.md` link).
-
-### Changed / Added (Agent Engine — PR #641 + Frontend #262/#263, merged, deployed Dev + Staging-B, live-verified)
-- **Evaluation → Nova.** Honor `member_evaluation` chat turns dispatch deterministically to **Nova** (FeedbackAgent — career strategy + feedback) via `Meridian._maybe_honor_evaluation()`, bypassing intent-classification which misrouted "evaluate/assessment/scoring" → Maven. Nova reads the fellow's injected `<USER_PROFILE>` (résumé/bio + any PRISM) and assesses the attached document(s) **with or without PRISM**. Evaluation prompt now asks Nova to assess the document, add a **"Suggestions for Improvement"** section, and (no-PRISM) assess from the attached document(s) alone.
-- **Résumé → Nova.** Résumé route uses `get_for_agent("Nova")` instead of the generic Meridian provider.
-- **Clean, hiring-manager-ready résumé export (Word + PDF).** New `build_resume_document_payload()` (`app/honor/report_document.py`) + unbranded `plain` docgen theme (`branding.py`) render the résumé with **no Inspire Genius/THF cover page, brand line, or confidential footer** — just name, contact/headline, standard sections. Renderers skip the brand line when `theme.name` is empty; `normalize_spec` respects an explicit empty `author` (no default-"Inspire Genius" leak). Backend WeasyPrint/docx renderers reserve proper page margins → **no header/footer overlap** (fixes the old client-PDF slice-and-stamp overlap). `/report/generate` gains a `kind="resume"` branch + `resume` field. FE Résumé Writer replaces the branded client PDF with **Download Word (.docx) + Download PDF** (clean backend); the branded PDF path is dropped.
-- **Live E2E on staging-b (real fellow, Marcus Ellison):** evaluation `agent=Nova`, inline, assessing his bio+résumé; résumé generation live (honor_resume enabled); Word/Markdown export contain **no "Honor Foundation" / "Inspire Genius" / "Confidential Data"**, valid `.docx`.
-
-### Added (Agent Engine — PR #642, parallel session, complementary)
-- **Chat-attachment PRISM-optional assessment.** Documents attached via the chat "document checkbox" (`file_ids`) are threaded into a separate `<ATTACHED_DOCUMENTS>` block and feed the same Nova assess/suggest/rewrite path, PRISM-optional (`base_agent.py`, `rag/personal_data.py`, `honor/evaluation.py`, `honor/resume.py`, `profile/loader.py`, SharedContext DAG-carry in `meridian.py`/`coaching_orchestrator.py`). Complementary to #641 (profile-doc grounding); no file conflicts.
-
-### Deployed
-- **Combined staging-b promote** (tag `release-stable-2026-07-23-honor-nova-resume-attach`, #639+#641+#642) — all jobs green (no park-at-0; ECS 1/1; smoke matrix passed), E2E verified on staging-b.
-- **Cross-session coordination** ran through coord PR #640 (scope declaration, stable-base handoff `653f69ea`, serialized shared agent-engine ECS, mutual diff verification). One self-inflicted `--amend` slip (dropped 2 FE files → brief FE-CI red) fixed forward in #263.
-
 ## [2026-07-23] — Honor post-evaluation feature set: persist evaluations, rewrite-from-eval, export polish (Features 1–3)
 
 Three clean-stop features on the Coach Workbench Evaluate + Résumé surfaces. All merged to `development`, deployed to dev, E2E-verified on a real fellow. **Not yet on staging-b** (always-confirm promote pending owner go).
@@ -10510,6 +10827,33 @@ Three clean-stop features on the Coach Workbench Evaluate + Résumé surfaces. A
 
 ### Coordination
 Ran through coord PR #640 with the parallel IG Core session (scope declaration, ping-before + confirm-after each `resume.py` edit and each agent-engine ECS roll). No file conflicts; the parallel session's attachment-grounding path in `resume.py` preserved verbatim.
+
+## [2026-07-23] — Honor Evaluate/Résumé: Nova routing, clean Word/PDF résumé export, PRISM-optional doc assessment (combined promote #639+#641+#642)
+
+### Fixed (Agent Engine — PR #639, merged, deployed Dev + Staging-B, live-verified)
+- **Evaluation was returning a downloadable `.md` file instead of an inline evaluation.** The narration prompt's *"format in Markdown … with a table"* tripped Meridian's document-generation gate (`_maybe_generate_document`), so the turn routed to the docgen tool and returned *"Here's your Markdown file — [Download …md]"* — the "raw .md dump" a coach reported. **Fix:** an honor turn with `context.surface=="honor"` + `context.intent=="member_evaluation"` now **skips the docgen gate** (`app/agents/meridian.py`) → normal inline synthesis. Scoped to the evaluation intent; ordinary "create a Word doc" chat still reaches docgen. Verified on dev + staging-b (no `.md` link).
+
+### Changed / Added (Agent Engine — PR #641 + Frontend #262/#263, merged, deployed Dev + Staging-B, live-verified)
+- **Evaluation → Nova.** Honor `member_evaluation` chat turns dispatch deterministically to **Nova** (FeedbackAgent — career strategy + feedback) via `Meridian._maybe_honor_evaluation()`, bypassing intent-classification which misrouted "evaluate/assessment/scoring" → Maven. Nova reads the fellow's injected `<USER_PROFILE>` (résumé/bio + any PRISM) and assesses the attached document(s) **with or without PRISM**. Evaluation prompt now asks Nova to assess the document, add a **"Suggestions for Improvement"** section, and (no-PRISM) assess from the attached document(s) alone.
+- **Résumé → Nova.** Résumé route uses `get_for_agent("Nova")` instead of the generic Meridian provider.
+- **Clean, hiring-manager-ready résumé export (Word + PDF).** New `build_resume_document_payload()` (`app/honor/report_document.py`) + unbranded `plain` docgen theme (`branding.py`) render the résumé with **no Inspire Genius/THF cover page, brand line, or confidential footer** — just name, contact/headline, standard sections. Renderers skip the brand line when `theme.name` is empty; `normalize_spec` respects an explicit empty `author` (no default-"Inspire Genius" leak). Backend WeasyPrint/docx renderers reserve proper page margins → **no header/footer overlap** (fixes the old client-PDF slice-and-stamp overlap). `/report/generate` gains a `kind="resume"` branch + `resume` field. FE Résumé Writer replaces the branded client PDF with **Download Word (.docx) + Download PDF** (clean backend); the branded PDF path is dropped.
+- **Live E2E on staging-b (real fellow, Marcus Ellison):** evaluation `agent=Nova`, inline, assessing his bio+résumé; résumé generation live (honor_resume enabled); Word/Markdown export contain **no "Honor Foundation" / "Inspire Genius" / "Confidential Data"**, valid `.docx`.
+
+### Added (Agent Engine — PR #642, parallel session, complementary)
+- **Chat-attachment PRISM-optional assessment.** Documents attached via the chat "document checkbox" (`file_ids`) are threaded into a separate `<ATTACHED_DOCUMENTS>` block and feed the same Nova assess/suggest/rewrite path, PRISM-optional (`base_agent.py`, `rag/personal_data.py`, `honor/evaluation.py`, `honor/resume.py`, `profile/loader.py`, SharedContext DAG-carry in `meridian.py`/`coaching_orchestrator.py`). Complementary to #641 (profile-doc grounding); no file conflicts.
+
+### Deployed
+- **Combined staging-b promote** (tag `release-stable-2026-07-23-honor-nova-resume-attach`, #639+#641+#642) — all jobs green (no park-at-0; ECS 1/1; smoke matrix passed), E2E verified on staging-b.
+- **Cross-session coordination** ran through coord PR #640 (scope declaration, stable-base handoff `653f69ea`, serialized shared agent-engine ECS, mutual diff verification). One self-inflicted `--amend` slip (dropped 2 FE files → brief FE-CI red) fixed forward in #263.
+
+## [2026-07-23] — Honor: fix — coach-uploaded fellow documents never appeared in the fellow's profile
+
+### Fixed (Agent Engine — PR #636, merged to development, deployed Dev + Staging-B, live-verified)
+- **Root cause: WRITE/READ key mismatch.** A coach uploading a document *for a fellow* stores it in `documents` with `subject_user_id = <fellow>` and `user_id = <coach>` (the uploader). The agent-engine read path `_select_personal_docs` (`app/profile/loader.py` — feeds the honor `/sources` endpoint, the `<USER_PROFILE>` résumé/bio injection, AND the résumé-based Evaluate gate) filtered on `documents.user_id = <fellow>` and never looked at `subject_user_id` → `WHERE user_id = fellow` never matched a coach upload. The doc showed absent everywhere and Evaluate 422'd ("no résumé on file") even with the row present + text extracted. Only self-uploads worked. (Assessments were unaffected — their import keys the fellow as `user_id`.)
+- **Fix:** `_select_personal_docs` is now subject-aware — `WHERE (subject_user_id = :uid OR (COALESCE(subject_user_id,'') = '' AND user_id = :uid))` — matching coach-uploaded fellow docs, self-uploads, and legacy rows (subject NULL → user_id fallback). Also swapped Postgres-only `LEFT(x,n)` → portable `substr(x,1,n)` (identical) so the query is exercisable under SQLite.
+- **Verified against real staging-b data:** 4 coach-uploaded personal docs for fellow `afd5182b` (Marcus Ellison) existed with `subject_user_id ≠ user_id` + `extracted_text` populated; the new query returns all 4. **Live E2E on staging-b (coach token):** Marcus `/sources` → `resume/bio/additionalInfo = true` (was all false); Evaluate → **200** (was 422).
+- Tests: 2 new subject-aware cases in `test_profile_loader.py`; incidental stale-assertion fix in `test_documents_latest_prism.py` (the `LIKE '%prism%.csv'` clause was removed in #546).
+- **Follow-ups (noted, not done):** FE onboarding uploads "Additional info" file as `doc_kind=bio` / goals-file as `personal` (post-fix they show but under the wrong row — cosmetic); RAG chunk retrieval is still uploader-scoped (profile injection already carries the résumé text, so Evaluate is unaffected).
 
 ## [2026-07-22] — Practitioner D1 client-isolation decision memo + Phase 1 role-layout unification (FE #260)
 
@@ -10885,32 +11229,30 @@ Ran through coord PR #640 with the parallel IG Core session (scope declaration, 
 - **staging-b promote of the Google OAuth (tag `release-stable-2026-07-20-honor-gcal`, dev HEAD `e8dfe320`)**: `cdk deploy (all staging-b stacks)` success (task def `ig-staging-b-agent-engine:14` carries `AGENT_ENGINE_HONOR_GOOGLE_CLIENT_ID/_SECRET`); the workflow's "Force ECS" step red is the known park-at-0 quirk (cdk deploy reset desired→0) — recovered manually (`update-service --desired-count 1 --force-new-deployment` + `wait services-stable`).
 - **Live stable verification:** `/schedule/google/connect` → `available:true` + real consent URL; schedule create / list / activity / google-status all 200 (no regression).
 
-## [2026-07-20] — Agent Engine: résumé intent-gated profile injection (fixes "Meridian only reads 1 page")
+## [2026-07-20] — Document generation: frontend download button + user guide
 
-### Fixed
-- **Root cause:** the live Option C profile injector (`app/profile/loader.py`) hard-capped every personal doc at `_PERSONAL_DOC_MAX_CHARS = 1500` via `LEFT(extracted_text, 1500)`, truncating a 3-page résumé to ~1 page **before** the 8 KB block cap ever applied. Verified against a real Dev session (`profile.loaded … frameworks=1 block_chars=2689`; Meridian replied "I can only see a partial excerpt").
+### Added (Frontend — public repo PR #237, `feat/docgen-download-button` → development)
+- **Download button for Meridian-generated documents.** When Meridian returns a generated file, the chat response's typed `attachments` array now renders a branded Download control beneath the assistant bubble (in addition to the link already embedded in the reply markdown).
+  - `ChatAttachment` type + `attachments?` on the text `ChatMessage`; mapped through `MeridianChat.renderAssistantComplete` (WS `complete` + async `job_complete`); typed on the WS + async-job metadata; new `MessageAttachments` component wired into `ChatWindowChatTab`; `MessageAttachments.test.tsx`.
+  - Verified: `npm run build` (tsc+vite) ✓, eslint 0 errors, jest MessageAttachments 6/6 + chat suite 37/37.
 
-### Changed
-- **Intent-gated résumé injection.** Ordinary turns keep a small always-on excerpt (`resume_ambient_max_chars=1800`); when the message is about the résumé (`app/profile/resume_intent.py::is_resume_review`), the injector swaps in the FULL résumé (`resume_full_max_chars=12000`) and widens the whole-block cap (`profile_block_max_chars_full=16000`) so a multi-page résumé isn't crowded out by assessments. This keeps the per-agent/every-turn context footprint flat for normal turns and only pays the big injection on résumé-review turns.
-- **Single chokepoint** = `app/tools/honor/injection.py::build_injection_block` (handles Honor *and* non-Honor, since `resolve_injection_subjects` returns `[caller_sub]` off-Honor). Wired at both live sites — REST `/v1/agents/chat` and async `/v1/agents/chat/async` (the path browser chat actually uses).
-- **Honor covered by the same change.** A coach reviewing a Fellow's résumé hits the identical caps. Honor **team** turns are bounded by `honor_multi_subject_total_chars=14000` split across Fellows so a big team can't balloon the prompt.
-- Flag `AGENT_ENGINE_RESUME_INTENT_INJECTION` (default ON) reverts to the always-on excerpt.
-- Files: `app/profile/{loader.py,system_prompt.py,__init__.py,resume_intent.py}`, `app/tools/honor/injection.py`, `app/config.py`, `app/main.py`; tests `tests/test_resume_intent_injection.py` (17) + honor mock signature fix. 271 profile+honor tests green.
+### Added (Docs — IG Core)
+- **Document & File Generation User Guide** (`IG_Core_DocumentGeneration_UserGuide.docx`): complete users guide (chat triggers, all 8 formats, themes, download, tips) + "how to use it from the verticals" (per-vertical patterns + builder levers + programmatic use). Added to `Architecture/IG Core/`, linked from the master index (now 32 links), published to the `ig-core` CDN prefix (CloudFront 200).
 
-## [2026-07-20] — Agent Engine: raise structured-profile load timeout 200 → 400ms
+## [2026-07-20] — Document & File Generation skill: PROMOTED to staging-b + E2E-verified — PR #613
 
-### Fixed
-- **`profile_load_timeout_ms` 200 → 400** (`services/agent-engine/app/config.py`). Dev logs after the résumé-injection ship showed structured-profile loads landing at **215–221 ms** — just over the 200 ms fail-open budget — returning an **empty** `UserProfile` (`block_chars=0`), which zeroed out PRISM + résumé on those turns. p50 is ~80 ms; 400 ms clears the observed spikes with ~2x headroom while staying imperceptible at connect. Updated the pin test `tests/test_profile_loader.py::test_profile_load_timeout_default_preserved` (200 → 400).
+### Deployed / Fixed (Agent Engine — staging-b, targeted promotion, live-verified)
+- **Promoted the doc-generation skill to staging-b** (`stable.inspiresgenius.com`) and verified E2E: chatting "create a branded Word document with a summary of my PRISM strengths" on `api-stable` returned a presigned link on **`ig-staging-b-documents`** → downloaded a valid 39 KB .docx grounded in willb77's PRISM (assessed 2026-06-24).
+- **Targeted (agent-engine-only) promotion, NOT a full `cdk deploy --all`** — the last `release-stable-*` tag was 40 days stale, so a full promote would have carried 40 days of unrelated dev changes to staging-b. Instead: the agent-engine image is env-agnostic, so copied dev `:latest` (= development HEAD, docgen included) → staging-b ECR `:latest` + `docgen-2026-07-20`; registered staging-b task-def **rev 15** = rev 14 + `DOCUMENTS_BUCKET=ig-staging-b-documents`; `force-new-deployment`; ECS stable + edge health 200. Rollback preserved via immutable tag `sha-962ab874`.
+- **Fix #613 — `DOCUMENTS_BUCKET` per-env.** `documents.py` + `document_generator.py` default it to `ig-dev-documents`; it was unset on the ECS task, so staging-b would write to the dev-account bucket. Set `DOCUMENTS_BUCKET=ig-${env}-documents` in `agent-engine-stack.ts` so a future staging-b CDK deploy stays converged with the task-def rev 15 hot-set. staging-b task role already had PutObject on `ig-staging-b-documents/users/*`.
 
-## [2026-07-20] — Session rollup: résumé injection fix (shipped) + IG Core documentation set
+## [2026-07-20] — Document & File Generation skill: DEPLOYED to dev + E2E-verified — PR #611, #612
 
-Consolidated record for this session (details in the per-item entries below + on other branches):
-
-### Fixed / Changed (Agent Engine — merged to development, deployed Dev + staging-b, live-verified)
-- **Résumé "Meridian only reads 1 page" — root-caused and fixed.** Traced the live path to the always-on Option C structured injector (`app/profile/`), whose per-doc cap `_PERSONAL_DOC_MAX_CHARS=1500` truncated a 3-page résumé to ~1 page (verified on a real Dev session: `block_chars=2689`, Meridian "I can only see a partial excerpt"). Fix = **intent-gated injection** (PR #603): ordinary turns keep an 1800-char excerpt, résumé-review turns inject the full résumé (12000) with a widened block cap (16000); single chokepoint `honor/injection.build_injection_block` covers Honor + non-Honor; Honor team turns bounded. Then **timeout bump 200→400 ms** (PR #604) after logs showed 215–221 ms loads failing open to empty. Live-verified: Dev `block_chars 2689→11689` (incl. a 236 ms load that previously timed out), staging-b `→12962`.
-
-### Added (IG Core documentation — on feat/content-builder-ai-models + Dropbox/Architecture + CDN)
-- **IG Core Reusable Services documentation set:** catalog + mermaid connection diagram + **27 per-service AS-BUILT specs** (code-introspected) + master index (30 links), published to the review CDN at `https://[cdn-host]/ig-core/index.html`. Generators under `scripts/ig_core_*` / `build_ig_core_*`. growth-service documented as registry #17 (Summit vertical manager module).
+### Deployed / Fixed (Agent Engine — merged to development, ECS-rolled on dev, live-verified)
+- **Deployed the doc-generation skill to dev** and **verified end-to-end from a real chat turn.** Merging #608/#611/#612 to `development` auto-built the agent-engine image (`:latest`) and rolled `ig-dev-agent-engine`. E2E: `POST /v1/agents/chat/async` "create a branded Word document with a summary of my PRISM strengths…" → Meridian replied with a presigned link → downloaded a **valid 39 KB .docx grounded in real PRISM scores** (Orderly & Efficient = 100, Self-Awareness = 76).
+- **Fix #611 — profile tuple.** `_best_effort_profile` returned the whole `(profile, block)` tuple from `load_user_profile_block_for_chat`; `spec_builder`'s join choked → the gate's `except` swallowed it and the turn fell through to a raw specialist "I cannot generate a .docx" response. Now unpacks the tuple; `spec_builder` join made `str()`-defensive. +2 regression tests.
+- **Fix #612 — S3 prefix.** `PutObject` to `ig-dev-documents/generated/*` was `AccessDenied`; the task role only has PutObject on `ig-dev-documents/users/*` (+ bucket-wide GetObject). Moved the key to `users/{uid}/generated/…` — lands in the existing grant, no IAM/CDK change.
+- **Deploy prereq:** adding `python-pptx` to pyproject required `poetry lock` too (Dockerfile does `poetry export` from the lock) — else the image build fast-fails.
 
 ## [2026-07-20] — IG Core: Document & File Generation skill (chat-triggered) — PR #608
 
@@ -10925,30 +11267,32 @@ Consolidated record for this session (details in the per-item entries below + on
   - Plan doc: `scripts/build_ig_core_docgen_plan.py` → `IG_Core_DocumentGeneration_Spec.docx` (built generation + planned email-attachments + curated-URL phases).
   - Files: `services/agent-engine/app/tools/docgen/*`, `.../document_generator.py`, `.../registry.py`, `.../config.py`, `.../agents/meridian.py`, `.../main.py`, `.../pyproject.toml`, tests, `scripts/build_ig_core_docgen_plan.py`.
 
-## [2026-07-20] — Document & File Generation skill: DEPLOYED to dev + E2E-verified — PR #611, #612
+## [2026-07-20] — Session rollup: résumé injection fix (shipped) + IG Core documentation set
 
-### Deployed / Fixed (Agent Engine — merged to development, ECS-rolled on dev, live-verified)
-- **Deployed the doc-generation skill to dev** and **verified end-to-end from a real chat turn.** Merging #608/#611/#612 to `development` auto-built the agent-engine image (`:latest`) and rolled `ig-dev-agent-engine`. E2E: `POST /v1/agents/chat/async` "create a branded Word document with a summary of my PRISM strengths…" → Meridian replied with a presigned link → downloaded a **valid 39 KB .docx grounded in real PRISM scores** (Orderly & Efficient = 100, Self-Awareness = 76).
-- **Fix #611 — profile tuple.** `_best_effort_profile` returned the whole `(profile, block)` tuple from `load_user_profile_block_for_chat`; `spec_builder`'s join choked → the gate's `except` swallowed it and the turn fell through to a raw specialist "I cannot generate a .docx" response. Now unpacks the tuple; `spec_builder` join made `str()`-defensive. +2 regression tests.
-- **Fix #612 — S3 prefix.** `PutObject` to `ig-dev-documents/generated/*` was `AccessDenied`; the task role only has PutObject on `ig-dev-documents/users/*` (+ bucket-wide GetObject). Moved the key to `users/{uid}/generated/…` — lands in the existing grant, no IAM/CDK change.
-- **Deploy prereq:** adding `python-pptx` to pyproject required `poetry lock` too (Dockerfile does `poetry export` from the lock) — else the image build fast-fails.
+Consolidated record for this session (details in the per-item entries below + on other branches):
 
-## [2026-07-20] — Document & File Generation skill: PROMOTED to staging-b + E2E-verified — PR #613
+### Fixed / Changed (Agent Engine — merged to development, deployed Dev + staging-b, live-verified)
+- **Résumé "Meridian only reads 1 page" — root-caused and fixed.** Traced the live path to the always-on Option C structured injector (`app/profile/`), whose per-doc cap `_PERSONAL_DOC_MAX_CHARS=1500` truncated a 3-page résumé to ~1 page (verified on a real Dev session: `block_chars=2689`, Meridian "I can only see a partial excerpt"). Fix = **intent-gated injection** (PR #603): ordinary turns keep an 1800-char excerpt, résumé-review turns inject the full résumé (12000) with a widened block cap (16000); single chokepoint `honor/injection.build_injection_block` covers Honor + non-Honor; Honor team turns bounded. Then **timeout bump 200→400 ms** (PR #604) after logs showed 215–221 ms loads failing open to empty. Live-verified: Dev `block_chars 2689→11689` (incl. a 236 ms load that previously timed out), staging-b `→12962`.
 
-### Deployed / Fixed (Agent Engine — staging-b, targeted promotion, live-verified)
-- **Promoted the doc-generation skill to staging-b** (`stable.inspiresgenius.com`) and verified E2E: chatting "create a branded Word document with a summary of my PRISM strengths" on `api-stable` returned a presigned link on **`ig-staging-b-documents`** → downloaded a valid 39 KB .docx grounded in willb77's PRISM (assessed 2026-06-24).
-- **Targeted (agent-engine-only) promotion, NOT a full `cdk deploy --all`** — the last `release-stable-*` tag was 40 days stale, so a full promote would have carried 40 days of unrelated dev changes to staging-b. Instead: the agent-engine image is env-agnostic, so copied dev `:latest` (= development HEAD, docgen included) → staging-b ECR `:latest` + `docgen-2026-07-20`; registered staging-b task-def **rev 15** = rev 14 + `DOCUMENTS_BUCKET=ig-staging-b-documents`; `force-new-deployment`; ECS stable + edge health 200. Rollback preserved via immutable tag `sha-962ab874`.
-- **Fix #613 — `DOCUMENTS_BUCKET` per-env.** `documents.py` + `document_generator.py` default it to `ig-dev-documents`; it was unset on the ECS task, so staging-b would write to the dev-account bucket. Set `DOCUMENTS_BUCKET=ig-${env}-documents` in `agent-engine-stack.ts` so a future staging-b CDK deploy stays converged with the task-def rev 15 hot-set. staging-b task role already had PutObject on `ig-staging-b-documents/users/*`.
+### Added (IG Core documentation — on feat/content-builder-ai-models + Dropbox/Architecture + CDN)
+- **IG Core Reusable Services documentation set:** catalog + mermaid connection diagram + **27 per-service AS-BUILT specs** (code-introspected) + master index (30 links), published to the review CDN at `https://[cdn-host]/ig-core/index.html`. Generators under `scripts/ig_core_*` / `build_ig_core_*`. growth-service documented as registry #17 (Summit vertical manager module).
 
-## [2026-07-20] — Document generation: frontend download button + user guide
+## [2026-07-20] — Agent Engine: raise structured-profile load timeout 200 → 400ms
 
-### Added (Frontend — public repo PR #237, `feat/docgen-download-button` → development)
-- **Download button for Meridian-generated documents.** When Meridian returns a generated file, the chat response's typed `attachments` array now renders a branded Download control beneath the assistant bubble (in addition to the link already embedded in the reply markdown).
-  - `ChatAttachment` type + `attachments?` on the text `ChatMessage`; mapped through `MeridianChat.renderAssistantComplete` (WS `complete` + async `job_complete`); typed on the WS + async-job metadata; new `MessageAttachments` component wired into `ChatWindowChatTab`; `MessageAttachments.test.tsx`.
-  - Verified: `npm run build` (tsc+vite) ✓, eslint 0 errors, jest MessageAttachments 6/6 + chat suite 37/37.
+### Fixed
+- **`profile_load_timeout_ms` 200 → 400** (`services/agent-engine/app/config.py`). Dev logs after the résumé-injection ship showed structured-profile loads landing at **215–221 ms** — just over the 200 ms fail-open budget — returning an **empty** `UserProfile` (`block_chars=0`), which zeroed out PRISM + résumé on those turns. p50 is ~80 ms; 400 ms clears the observed spikes with ~2x headroom while staying imperceptible at connect. Updated the pin test `tests/test_profile_loader.py::test_profile_load_timeout_default_preserved` (200 → 400).
 
-### Added (Docs — IG Core)
-- **Document & File Generation User Guide** (`IG_Core_DocumentGeneration_UserGuide.docx`): complete users guide (chat triggers, all 8 formats, themes, download, tips) + "how to use it from the verticals" (per-vertical patterns + builder levers + programmatic use). Added to `Architecture/IG Core/`, linked from the master index (now 32 links), published to the `ig-core` CDN prefix (CloudFront 200).
+## [2026-07-20] — Agent Engine: résumé intent-gated profile injection (fixes "Meridian only reads 1 page")
+
+### Fixed
+- **Root cause:** the live Option C profile injector (`app/profile/loader.py`) hard-capped every personal doc at `_PERSONAL_DOC_MAX_CHARS = 1500` via `LEFT(extracted_text, 1500)`, truncating a 3-page résumé to ~1 page **before** the 8 KB block cap ever applied. Verified against a real Dev session (`profile.loaded … frameworks=1 block_chars=2689`; Meridian replied "I can only see a partial excerpt").
+
+### Changed
+- **Intent-gated résumé injection.** Ordinary turns keep a small always-on excerpt (`resume_ambient_max_chars=1800`); when the message is about the résumé (`app/profile/resume_intent.py::is_resume_review`), the injector swaps in the FULL résumé (`resume_full_max_chars=12000`) and widens the whole-block cap (`profile_block_max_chars_full=16000`) so a multi-page résumé isn't crowded out by assessments. This keeps the per-agent/every-turn context footprint flat for normal turns and only pays the big injection on résumé-review turns.
+- **Single chokepoint** = `app/tools/honor/injection.py::build_injection_block` (handles Honor *and* non-Honor, since `resolve_injection_subjects` returns `[caller_sub]` off-Honor). Wired at both live sites — REST `/v1/agents/chat` and async `/v1/agents/chat/async` (the path browser chat actually uses).
+- **Honor covered by the same change.** A coach reviewing a Fellow's résumé hits the identical caps. Honor **team** turns are bounded by `honor_multi_subject_total_chars=14000` split across Fellows so a big team can't balloon the prompt.
+- Flag `AGENT_ENGINE_RESUME_INTENT_INJECTION` (default ON) reverts to the always-on excerpt.
+- Files: `app/profile/{loader.py,system_prompt.py,__init__.py,resume_intent.py}`, `app/tools/honor/injection.py`, `app/config.py`, `app/main.py`; tests `tests/test_resume_intent_injection.py` (17) + honor mock signature fix. 271 profile+honor tests green.
 
 ## [2026-07-19] — IG Live Meetings: dual-provider (LiveKit + Chime) build plan + decision memo
 
@@ -11047,27 +11391,6 @@ Consolidated record for this session (details in the per-item entries below + on
 - Live email requires: flip both flags + verify the SES sender identity in the target env + deploy the agent-engine-stack SES IAM + the Phase-0 confidential-email authorization + explicit confirm per send. PDF export/print/download are fully live and flag-independent.
 - **Next: Phase 5** — résumé writer (reuse the Career Document Writer path) + staged rollout; then Phase 0 SME gate (fit weights/archetypes PENDING SME).
 
-## [2026-07-19] — Honor Coach Workbench: coach user guide (.docx)
-
-### Added
-- **`docs/Honor_Coach_Workbench_User_Guide.docx`** — a coach-facing, step-by-step user guide for the Honor (THF) Coach Workbench: sign in → build caseload → invite → import assessments → evaluate (cited, deterministic report) → compare a pod / team read → attach a position description → narrate with Meridian → export branded PDF → write a résumé. Includes the workbench-at-a-glance nav map, "understanding the branded document", a privacy/safe-translation section, a live-vs-coming-soon table (email + live résumé generation flagged as activating), tips/troubleshooting, and a glossary. THF-branded (navy/orange), `Logo-Dark.png` on the cover; accurate to the current live/dark state (eval + PDF live; email + live résumé generation dark).
-- **`scripts/build_honor_coach_user_guide.py`** — the `python-docx` generator (source of truth for the guide).
-
-## [2026-07-19] — Honor go-live: SME safe-translation sign-off + flag-flip runbook
-
-### Added
-- **`docs/plans/Honor_Go_Live_SME_Signoff_and_Flag_Flip_Runbook.md`** — the canonical, engineer-facing runbook to take Honor's two dark surfaces (résumé generation `honor_resume`, confidential-report email `honor_report_email`) live. Part A = the exact SME safe-translation sign-off checklist (S1–S10) grounded in the actual controls (`app/honor/grounding.py` HARD SAFETY RULE + `app/honor/resume.py` `_RESUME_RULES`), with empirical-review gates (≥10 résumés/evals) and a signature block. Part B = the per-env flag-flip runbook (dev → staging-b) with exact deploy commands, verification probes, and rollback. **Records a verified gap:** `AGENT_ENGINE_HONOR_RESUME` is *not* wired into the ECS task env in `agent-engine-stack.ts` (only `HONOR_REPORT_EMAIL/SENDER` are, lines 593-594), so the résumé flip needs a one-line CDK change (§2a) — not just a `-c` context flag. Notes the dev SES IAM delta is code-only (deploys with the email flip) and the staging-b SES sandbox constraint. Appendix pins every flag/route/frame to a `file:line` anchor verified against `origin/development` @ `f3582984`.
-- **`scripts/build_honor_sme_signoff.py`** — `python-docx` generator (source of truth) producing the branded, **signable** one-document sign-off sheet `docs/Honor_SME_SafeTranslation_SignOff.docx` (THF navy/orange, `Logo-Dark.png` cover): the HARD SAFETY RULE verbatim, the 10-row S1–S10 checklist with Pass/Fail + initials columns, the S8 residual-risk decision box, and a 3-role signature table (THF SME · program authority · IG engineering).
-
-## [2026-07-19] — Honor go-live prep: résumé flag CDK wiring + SES precondition verified
-
-### Changed
-- **`infrastructure/cdk/lib/agent-engine-stack.ts`** — wired `AGENT_ENGINE_HONOR_RESUME` into the agent-engine ECS task environment (`String(this.node.tryGetContext('honorResume') ?? 'false')`), mirroring the existing `AGENT_ENGINE_HONOR_REPORT_EMAIL` pattern. **Defaults OFF — no behavior change on merge.** Closes the gap the flag-flip runbook flagged: résumé generation (`honor_resume`) was the only Honor flag not reachable from CDK context, so flipping it had required a code change; it is now a single `-c honorResume=true` at deploy, gated (as designed) on the SME safe-translation sign-off (S1–S8). `tsc` clean; wiring confirmed in the compiled `lib/agent-engine-stack.js`. **Not deployed** — merges dark; deploys with the eventual signed flip (or the next agent-engine deploy) to respect the KCE #586 CFN window.
-
-### Verified (no code change)
-- **SES sender identities** for Honor report email are already verified in both envs, so SES is **not** the email blocker — the only remaining email blocker is the **S9 confidential-email authorization**: dev domain `3pp.com` = `Success` (sender `noreply@3pp.com`); staging-b domain `inspiresgenius.com` = `Success` (sender **must** be `noreply@inspiresgenius.com`; `3pp.com` is not verified in staging-b). staging-b SES remains **sandboxed** (recipients must also be verified). Runbook §3a updated with the verified state + exact per-env sender.
-- **Both `honor_resume` and `honor_report_email` remain DARK in every env** (no flip performed): flipping `honor_resume` is gated on the unsigned SME sign-off (S1–S8); flipping `honor_report_email` is gated on the S9 authorization. These are the safety / confidential-distribution gates and are not self-grantable.
-
 ## [2026-07-19] — Honor go-live: résumé + email flipped ON for staging-b (owner-authorized)
 
 ### Deployed (staging-b, account [aws-account])
@@ -11079,6 +11402,27 @@ Consolidated record for this session (details in the per-item entries below + on
 - Local staging-b synth also requires `CDK_DOCKER_BUNDLING=1` (else `ig-auth` bundling hard-fails: `cffi>=2.0.0 not found`) **and** the full staging-b context set (VPC/SG/RDS-proxy/Cognito/`createRdsProxy`/`createSharedCache`) — not just `-c env=staging-b`. Both are what `staging-b-promote.yml` passes.
 - **Email needed the CDK deploy, not an ECS env override**: the SES grant is IAM-conditioned on `ses:FromAddress`, so the sender change had to update the IAM policy too.
 - **dev remains dark** (both flags off) — this flip was scoped to stable only, per the request.
+
+## [2026-07-19] — Honor go-live prep: résumé flag CDK wiring + SES precondition verified
+
+### Changed
+- **`infrastructure/cdk/lib/agent-engine-stack.ts`** — wired `AGENT_ENGINE_HONOR_RESUME` into the agent-engine ECS task environment (`String(this.node.tryGetContext('honorResume') ?? 'false')`), mirroring the existing `AGENT_ENGINE_HONOR_REPORT_EMAIL` pattern. **Defaults OFF — no behavior change on merge.** Closes the gap the flag-flip runbook flagged: résumé generation (`honor_resume`) was the only Honor flag not reachable from CDK context, so flipping it had required a code change; it is now a single `-c honorResume=true` at deploy, gated (as designed) on the SME safe-translation sign-off (S1–S8). `tsc` clean; wiring confirmed in the compiled `lib/agent-engine-stack.js`. **Not deployed** — merges dark; deploys with the eventual signed flip (or the next agent-engine deploy) to respect the KCE #586 CFN window.
+
+### Verified (no code change)
+- **SES sender identities** for Honor report email are already verified in both envs, so SES is **not** the email blocker — the only remaining email blocker is the **S9 confidential-email authorization**: dev domain `3pp.com` = `Success` (sender `noreply@3pp.com`); staging-b domain `inspiresgenius.com` = `Success` (sender **must** be `noreply@inspiresgenius.com`; `3pp.com` is not verified in staging-b). staging-b SES remains **sandboxed** (recipients must also be verified). Runbook §3a updated with the verified state + exact per-env sender.
+- **Both `honor_resume` and `honor_report_email` remain DARK in every env** (no flip performed): flipping `honor_resume` is gated on the unsigned SME sign-off (S1–S8); flipping `honor_report_email` is gated on the S9 authorization. These are the safety / confidential-distribution gates and are not self-grantable.
+
+## [2026-07-19] — Honor go-live: SME safe-translation sign-off + flag-flip runbook
+
+### Added
+- **`docs/plans/Honor_Go_Live_SME_Signoff_and_Flag_Flip_Runbook.md`** — the canonical, engineer-facing runbook to take Honor's two dark surfaces (résumé generation `honor_resume`, confidential-report email `honor_report_email`) live. Part A = the exact SME safe-translation sign-off checklist (S1–S10) grounded in the actual controls (`app/honor/grounding.py` HARD SAFETY RULE + `app/honor/resume.py` `_RESUME_RULES`), with empirical-review gates (≥10 résumés/evals) and a signature block. Part B = the per-env flag-flip runbook (dev → staging-b) with exact deploy commands, verification probes, and rollback. **Records a verified gap:** `AGENT_ENGINE_HONOR_RESUME` is *not* wired into the ECS task env in `agent-engine-stack.ts` (only `HONOR_REPORT_EMAIL/SENDER` are, lines 593-594), so the résumé flip needs a one-line CDK change (§2a) — not just a `-c` context flag. Notes the dev SES IAM delta is code-only (deploys with the email flip) and the staging-b SES sandbox constraint. Appendix pins every flag/route/frame to a `file:line` anchor verified against `origin/development` @ `f3582984`.
+- **`scripts/build_honor_sme_signoff.py`** — `python-docx` generator (source of truth) producing the branded, **signable** one-document sign-off sheet `docs/Honor_SME_SafeTranslation_SignOff.docx` (THF navy/orange, `Logo-Dark.png` cover): the HARD SAFETY RULE verbatim, the 10-row S1–S10 checklist with Pass/Fail + initials columns, the S8 residual-risk decision box, and a 3-role signature table (THF SME · program authority · IG engineering).
+
+## [2026-07-19] — Honor Coach Workbench: coach user guide (.docx)
+
+### Added
+- **`docs/Honor_Coach_Workbench_User_Guide.docx`** — a coach-facing, step-by-step user guide for the Honor (THF) Coach Workbench: sign in → build caseload → invite → import assessments → evaluate (cited, deterministic report) → compare a pod / team read → attach a position description → narrate with Meridian → export branded PDF → write a résumé. Includes the workbench-at-a-glance nav map, "understanding the branded document", a privacy/safe-translation section, a live-vs-coming-soon table (email + live résumé generation flagged as activating), tips/troubleshooting, and a glossary. THF-branded (navy/orange), `Logo-Dark.png` on the cover; accurate to the current live/dark state (eval + PDF live; email + live résumé generation dark).
+- **`scripts/build_honor_coach_user_guide.py`** — the `python-docx` generator (source of truth for the guide).
 
 ## [2026-07-18] — Honor Eval Phase 3: frontend Evaluate surface (FE #217)
 
@@ -11690,28 +12034,6 @@ Single-session arc that produced two cross-referenced deliverables. Detailed ent
   log copies updated here and left uncommitted (shared checkout is on a
   concurrent terminal's branch).
 
-## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
-
-The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white
-background (`#FBF7F0` / `bg-panel`): its custom full-height chat grid bypassed the
-`<V2Panel>` cream frame that every other reskinned page uses, so it read as a plain
-white/neutral page next to HomeV2's warm panel.
-
-### Changed
-- `MeridianChat.tsx` — added `rounded-2xl bg-panel p-4 md:p-6` to the V2 canvas grid so the
-  tile rail + Compose/Conversation white cards sit on the cream panel, matching HomeV2.
-  Applied to the grid element itself (border-box preserves `h-[calc(100vh-8rem)]`, no height
-  math, no page overflow). Classic layout and the white sticky header are untouched
-  ("keep the top like it is").
-
-### Notes
-- Audited all `*V2` pages: every other reskinned page already carries the cream frame via
-  `<V2Panel>` (`bg-panel`); HomeV2 uses inline `bg-[#FBF7F0]` (same color). Meridian was the
-  only gap.
-- Going-forward convention recorded: every reskinned page must sit on the cream `bg-panel`
-  frame — standard pages via `<V2Panel>`, custom full-height layouts via
-  `rounded-2xl bg-panel p-4 md:p-6` on the layout container.
-
 ## [2026-07-16] — Chat tree internationalized (i18n retrofit, 21 locales)
 
 The Meridian / Coach / Diagnostic chat surface and its shared component tree shipped with
@@ -11743,6 +12065,28 @@ react-i18next under a new `chat` namespace.
 - `DiagnosticChat`'s developer trace-log debug strings (~50) intentionally left in English —
   internal traceability output, not user-facing chrome.
 - All strings carry `defaultValue`, so English renders even if a locale file fails to load.
+
+## [2026-07-16] — Off-white (cream) page frame on Meridian Chat V2 + convention
+
+The Meridian Chat V2 surface was the one reskinned page missing the HomeV2 off-white
+background (`#FBF7F0` / `bg-panel`): its custom full-height chat grid bypassed the
+`<V2Panel>` cream frame that every other reskinned page uses, so it read as a plain
+white/neutral page next to HomeV2's warm panel.
+
+### Changed
+- `MeridianChat.tsx` — added `rounded-2xl bg-panel p-4 md:p-6` to the V2 canvas grid so the
+  tile rail + Compose/Conversation white cards sit on the cream panel, matching HomeV2.
+  Applied to the grid element itself (border-box preserves `h-[calc(100vh-8rem)]`, no height
+  math, no page overflow). Classic layout and the white sticky header are untouched
+  ("keep the top like it is").
+
+### Notes
+- Audited all `*V2` pages: every other reskinned page already carries the cream frame via
+  `<V2Panel>` (`bg-panel`); HomeV2 uses inline `bg-[#FBF7F0]` (same color). Meridian was the
+  only gap.
+- Going-forward convention recorded: every reskinned page must sit on the cream `bg-panel`
+  frame — standard pages via `<V2Panel>`, custom full-height layouts via
+  `rounded-2xl bg-panel p-4 md:p-6` on the layout container.
 
 ## [2026-07-15] — Executive investor pitch deck built from the Solution & Willingness-to-Pay memo
 
@@ -11981,6 +12325,56 @@ here.
   - Firmed Honor delta = **ONE migration + ONE thin route/tool cloned from GRANT, inside the existing agent-engine (no new service)**: `honor_coach_fellows` (edge clone) + `honor_fellow_profiles` (same lifecycle + fellow fields + `behavioral` JSONB) + an `honor` router at `/v1/agents/honor/coach/students*`. Recommend **clone, not generalize** (GRANT is LIVE — renaming its tables would break it); fold into a shared `coach_members(vertical,…)` only once a 3rd coach-vertical appears. Roadmap P2 updated. Corrected an earlier stale-branch misread that claimed GRANT had no coach roster.
 - Added **§12 "Claude Code Implementation Prompts"** to the plan (monorepo PR #565 @ 071fd4b1): paste-ready coordinator prompts in the `IG_Vertical_Simplified_Prompts.docx` format — **PR A** (agent-engine: the §7 roster delta cloned from GRANT — migration + `app/tools/honor/coach.py` + `app/routes/honor.py`, SA-1..4, DO-NOT-TOUCH Core list, exit criteria) and **PR B** (frontend: flip `USE_HONOR_MOCKS` onto the live Core — Evaluate→Meridian async-jobs `context.surface='honor'`, caseload/onboard→honor coach roster, PRISM/docs reuse, entitlement + `/home` launcher). Grounded in the verified GRANT source. Doc now 12 sections.
 
+## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
+
+### Changed
+- The "Dev Traffic Report" item already sits on the super-admin **Administration**
+  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
+  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
+  anyone but the platform owner (`[email redacted]`). This adds matching
+  **link-visibility gating**: the item stays in Administration but is filtered
+  out of the sidebar for every super-admin except the owner — so no one else
+  even sees it. Defence-in-depth alongside the backend allow-list.
+  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
+    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
+  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
+    every super-admin nav section unless `isPlatformOwner(user.email)`.
+  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
+    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
+  - No backend change: the report endpoint already uses native DB datetimes and
+    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
+    fix has no equivalent code path server-side.
+
+## [2026-07-15] — Meridian Chat V2 (tile rail + stacked Compose/Conversation)
+
+### Added
+- **Meridian Chat V2** — flag-gated new user-surface look for `/meridian/chat`
+  (classic stays at `/meridian/chat/classic`; in-page classic/new toggle like
+  `/home`). Reskins the page to the HomeV2 design system.
+  - `src/components/meridian/MeridianTileRail.tsx` — five collapsible tiles to
+    the right of the nav: Active Sessions / History / Last 5 Chats (real
+    conversations), Projects (client-side localStorage list; no backend yet),
+    Knowledge (real documents). Open/closed state persisted; HomeV2 tokens.
+  - `src/routes.tsx` — `MeridianChatSurface` resolver (in-page toggle) +
+    `/meridian/chat/classic`.
+
+### Changed
+- `src/pages/user/MeridianChat.tsx` — added a `variant?: "classic" | "v2"` prop
+  (default `"classic"`). One component, one source of truth for the streaming
+  logic (WS + SSE + async-jobs + audio, all shared/untouched); only the render
+  branches. `variant="v2"` renders the tile rail + stacked two-card layout and
+  moves Export next to History. This replaced an initial forked `MeridianChatV2`
+  page, which duplicated ~100 handler functions and dropped global function
+  coverage below the 60% CI gate — the single-component approach keeps coverage
+  and avoids a divergent copy.
+- `src/components/user/chat/ChatWindow.tsx` — additive `stacked` prop (default
+  off → classic layout byte-for-byte unchanged for all other consumers, incl.
+  CoachChat/DiagnosticChat) that renders the two-card layout: a Compose Prompt
+  card on top and a full-height, scrollable Conversation card below, reusing
+  ChatWindow's existing state/handlers.
+  - `src/types/chat/component-types.ts` — `stacked?: boolean` on `ChatWindowProps`.
+  - Tests: `MeridianTileRail.test.tsx` + V2-variant cases in `MeridianChat.test.tsx`.
+
 ## [2026-07-15] — IG Vertical Core: a standardized interface verticals plug into
 
 Codified the Simplified Vertical Model from a one-time decision memo into a real, typed
@@ -12069,56 +12463,6 @@ semantics changed.
   content, since most GRANT pages are still stubs. Vertical #2's UI phase may surface gaps.
 - `require_vertical()` is written but deliberately unused: GRANT's preview override forces the
   vertical on for users with no entitlement row, so enforcing server-side would 403 the demo path.
-
-## [2026-07-15] — Meridian Chat V2 (tile rail + stacked Compose/Conversation)
-
-### Added
-- **Meridian Chat V2** — flag-gated new user-surface look for `/meridian/chat`
-  (classic stays at `/meridian/chat/classic`; in-page classic/new toggle like
-  `/home`). Reskins the page to the HomeV2 design system.
-  - `src/components/meridian/MeridianTileRail.tsx` — five collapsible tiles to
-    the right of the nav: Active Sessions / History / Last 5 Chats (real
-    conversations), Projects (client-side localStorage list; no backend yet),
-    Knowledge (real documents). Open/closed state persisted; HomeV2 tokens.
-  - `src/routes.tsx` — `MeridianChatSurface` resolver (in-page toggle) +
-    `/meridian/chat/classic`.
-
-### Changed
-- `src/pages/user/MeridianChat.tsx` — added a `variant?: "classic" | "v2"` prop
-  (default `"classic"`). One component, one source of truth for the streaming
-  logic (WS + SSE + async-jobs + audio, all shared/untouched); only the render
-  branches. `variant="v2"` renders the tile rail + stacked two-card layout and
-  moves Export next to History. This replaced an initial forked `MeridianChatV2`
-  page, which duplicated ~100 handler functions and dropped global function
-  coverage below the 60% CI gate — the single-component approach keeps coverage
-  and avoids a divergent copy.
-- `src/components/user/chat/ChatWindow.tsx` — additive `stacked` prop (default
-  off → classic layout byte-for-byte unchanged for all other consumers, incl.
-  CoachChat/DiagnosticChat) that renders the two-card layout: a Compose Prompt
-  card on top and a full-height, scrollable Conversation card below, reusing
-  ChatWindow's existing state/handlers.
-  - `src/types/chat/component-types.ts` — `stacked?: boolean` on `ChatWindowProps`.
-  - Tests: `MeridianTileRail.test.tsx` + V2-variant cases in `MeridianChat.test.tsx`.
-
-## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
-
-### Changed
-- The "Dev Traffic Report" item already sits on the super-admin **Administration**
-  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
-  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
-  anyone but the platform owner (`[email redacted]`). This adds matching
-  **link-visibility gating**: the item stays in Administration but is filtered
-  out of the sidebar for every super-admin except the owner — so no one else
-  even sees it. Defence-in-depth alongside the backend allow-list.
-  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
-    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
-  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
-    every super-admin nav section unless `isPlatformOwner(user.email)`.
-  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
-    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
-  - No backend change: the report endpoint already uses native DB datetimes and
-    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
-    fix has no equivalent code path server-side.
 
 ## [2026-07-14] — Meridian/Aura prompts doc: added diagnosis (§7) + Claude Code build prompts (§8) + standalone diagnosis doc
 
@@ -12878,104 +13222,126 @@ org selector; deployed to Dev + Staging-B App Runner; merged clean to `feat/gran
   staging-b = no activity in window (last msg 20:33 UTC); prod not reachable
   (no local creds).
 
-## [2026-07-13 EDT] — PRISM-only build: close the Path A leak (deterministic_personalization)
+## [2026-07-13 EDT] — Financial Aid nav: move Financial Profile to top
 
-Implemented the durable subject≠uploader fix for PRISM (scope: PR #547). **Key discovery:** the structured subject-scoped injection was ALREADY built + deployed + populated — `assessments`/`assessment_scores` (dev 10/1,121, staging-b 20/2,019 rows), keyed on the SUBJECT `user_id`, with the **3 PRISM variants kept distinct** as `score_type` (Underlying/Adapted/Consistent), loaded by `app.profile.loader.load_user_profile` and prepended by `base_agent` as `<USER_PROFILE>` in both REST + WS chat. willb77's own scores verified correct (Orderly 100, Innovating Underlying=95/Consistent=94/Adapted=93). So no new store was needed — the remaining gap was the **residual Path A leak**.
+`src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
 
-### Added / Changed
-- **`deterministic_personalization` flag** (`config.py`, default OFF) — when ON, `retrieve_personal_context()` skips the legacy general personal-document similarity search that filtered `documents.user_id = uploader` (the vector that surfaced a coachee's uploaded report as "your profile"). The user's own verified scores already come from the structured `<USER_PROFILE>` platform, so this retrieval was redundant AND the contamination source. OFF = byte-identical.
-- **Path C subject caution** (`personal_data.py: retrieve_attached_documents`) — when the flag is ON, attached documents are wrapped with an explicit "may describe a person OTHER than the current user" caution so a coach attaching a coachee's report can't have it read as the user's own profile.
-- **`documents.subject_user_id`** migration (migration-runner SQL + document-service Alembic 002, additive/idempotent) — provenance for future precise labelling; not required by the core fix.
-- Tests: `test_personal_data_retrieval.py` — flag ON short-circuits (no embed/DB, no leak), flag OFF byte-identical, attach caution present. 10/10 pass.
+## [2026-07-13] — Broadcast Alert system (frontend): composer, notification center, banner
 
-### Activation
-Flag defaults OFF (byte-identical). Activation = agent-engine deploy + `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION=true` per-env. The operational containment (embeddings rolled back, coachees quarantined) already prevents the leak at runtime today.
+Frontend for the platform Broadcast Alert system. Super-admins on a DB-backed
+allowlist (owner `[email redacted]`) compose a branded, severity-tiered HTML alert,
+target recipients by role group and/or named individuals (include + exclude), and
+send it; every targeted user gets an in-app alert. Backend is the separate
+`broadcast-service` microservice (monorepo).
 
-## [2026-07-13 EDT] — Codify deterministic_personalization (dev ON) in agent-engine CDK
-
-Codified the PR #549 flag so it survives redeploys and activates on dev through the normal pipeline.
+### Added
+- **Composer page** `src/pages/super-admin/BroadcastAlert.tsx` (SuperAdminLayout):
+  title, severity picker (info/success/warning/critical), rich-text editor, audience
+  builder (role include/exclude + individual email include/exclude with a live
+  resolved-count preview), branded live preview in a sandboxed iframe, send confirm
+  dialog, sent-history, and an owner-only Manage Access panel.
+- **`RichHtmlEditor`** (`src/components/super-admin/broadcast/RichHtmlEditor.tsx`) —
+  dependency-free contentEditable toolbar (bold/italic/underline/headings/lists/link/
+  color) + raw-HTML toggle; output DOMPurify-sanitized.
+- **`NotificationBell`** (`src/components/layout/NotificationBell.tsx`) replaces the
+  static header bell: unread badge + dropdown notification center + full-message dialog.
+- **`BroadcastAlertBanner`** (`src/components/shared/BroadcastAlertBanner.tsx`) — mounted
+  in AppShell; shows the top unread warning/critical alert, dismissible. Sonner toast on
+  arrival. Inbox polled every 45s (mirrors `useSystemStatus`).
+- Branded template `src/lib/broadcastTemplate.ts` + `src/lib/sanitizeHtml.ts` (DOMPurify).
+- Services + hooks (Service→Hook→Component): `src/services/{super-admin/broadcast,
+  notifications/inbox}.service.ts`, `src/hooks/{super-admin/useBroadcast,
+  useNotificationInbox}.ts`. Types in `src/types/broadcast.ts`.
+- New dep: `dompurify`. 12 Jest tests (sanitization, branded template, bell badge).
 
 ### Changed
-- `infrastructure/cdk/lib/agent-engine-stack.ts` — added `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION` to the ECS task env: **dev defaults 'true'** (activates the Path A subject-leak fix for validation); staging/prod/staging-b default 'false', flippable via `-c deterministicPersonalization=true`. Synth-verified: dev template renders `Value: "true"`. Deployed to dev via `ig-dev-agent-engine` (agent-engine references :latest ECR — CFN task-def update + ECS roll, no image rebuild).
+- Nav item is access-gated: `BROADCAST_SIDEBAR_SECTION` appended in `AppSidebar` only
+  when `useBroadcastAccess().authorized` (super-admin on the allowlist) — hidden otherwise.
+- Wired `routes.tsx`, `constants/{routes,sidebar-sections}.ts`,
+  `layout/{AppHeader,AppSidebar}.tsx`, `layouts/AppShell.tsx`.
 
-## [2026-07-13 EDT] — Codify GRANT tool API-key Secrets Manager read in agent-engine CDK
+---
 
-Codifies the hot-patch that made GRANT's scholarship_search (Tavily) and net_price_calculator (College Scorecard) return live data on dev. The two secrets (`ig/grant/tavily`, `ig/grant/college_scorecard`, each `{"api_key": "..."}`) were provisioned out-of-band, and the `ig-dev-agent-engine-task-role` was granted read via an inline policy directly — which a future `cdk deploy` of the agent-engine stack would have dropped.
+## [2026-07-13] — GRANT Coach roster UI (P3 + P4): student list, CSV import, per-student intake, invite-to-IG
 
-### Added
-- `lib/agent-engine-stack.ts` — new `GrantToolApiKeys` task-role policy statement granting `secretsmanager:GetSecretValue` + `DescribeSecret` on `arn:…:secret:ig/grant/*` (mirrors the existing `McpToolSecrets` pattern). Env-agnostic path `ig/grant/*` matches `SECRET_PATHS` in `app/tools/_shared/secrets.py` (literal `ig`, not the stack prefix).
-- **Secret values stay out-of-code** (API keys are never committed). This only codifies the read grant; provisioning the secret values remains a per-env ops step. Where a secret is absent, `get_api_key()` degrades the tool to empty results, so the grant is safe to apply in every environment. `npm run build` (tsc) clean; PR CI runs the authoritative `cdk synth`/`diff`.
-
-## [2026-07-13 EDT] — GRANT Coach build-plan doc + dev test profiles
-
-### Added
-- `scripts/build_grant_coach_plan.py` — generates `GRANT_Coach_Profiles_Build_Plan.docx` (in gitignored `Verticals/grant/build/`, mirrored to Dropbox `Grant-Docs/`). An implementation plan for the "aid profiles for others" coaching tool: CSV student-roster import, per-student intake reusing the existing `GrantIntakeFlow` (studentId prop; the hooks already take a studentId), and `require_student_access` ownership/role authorization on the `/students/{id}` routes (which today only check `require_auth` — a gap the plan closes as P0). Data model (`grant_coach_students` link + `owner_coach_sub`/`student_kind`), coach routes, frontend roster/CSV-import/per-student pages, phased LoE, and Claude Code build prompts.
-  - **Update:** added a first-class **managed → IG-user conversion** process (§3.1) — "Invite to IG" reuses the existing invitation/magic-link flow to mint the account, re-keys the profile to the new canonical sub (financial_intake transfers intact), grants the entitlement, and flips `student_kind` managed→linked while keeping coach co-access (with an `auth.user.signup` event-driven re-key variant). Added `linked_user_sub`/`linked_at` columns, the `POST /coach/students/{id}/invite` route, the roster "Invite to IG" action + status badge, a P4 conversion phase, and its build prompt.
-
-### Ops (dev, no code)
-- Seeded two test rows into dev `grant_student_profiles` (keyed to [email redacted] + [email redacted] subs) with a complete branching `financial_intake` (first-gen veteran nursing student, submitted FAFSA, GI-Bill + field modules, SAI 3800) so the save/retrieve path is visible end-to-end — proving persistence now works post go-live (the table was empty; anything built pre-flip under mock mode never persisted).
-
-## [2026-07-13 EDT] — Context-health guardrail (auto-invoke skill + deterministic hook)
-
-Cherry-picked onto `development` from `feat/broadcast-alerts` (the raw branch merge was
-declined — it was 155 stale commits, mostly Content Builder/GRANT already in development).
+Frontend for the GRANT "Coach — Aid Profiles for Others" surface
+(`GRANT_Coach_Profiles_Build_Plan.docx`). Companion to backend PR
+`inspire-genius#557`; frontend PR `inspire-genius-frontend#176` → `development`.
+A coach imports a roster of managed students, opens each into the EXISTING aid
+questionnaire bound to that student, and can convert a managed student into a
+real IG user.
 
 ### Added
-- `.claude/skills/context-health/SKILL.md` — auto-invoke skill: reports context-window
-  health the first time usage crosses ~60% of the 1M window (also on demand). Debounced
-  once per band (60/70/85%), resets after `/compact-doc`; report-and-recommend only.
-- `.claude/hooks/context_health_check.py` — deterministic companion hook. Reads the
-  session transcript's latest token `usage`, computes occupancy vs the 1M window, and on
-  the first band crossing emits a `systemMessage` warning + an `additionalContext` nudge
-  to invoke the skill. Debounced per session; fails safe (silent below 60% / on error,
-  always exits 0). Wired into `.claude/settings.json` on `UserPromptSubmit` + `PostToolUse`.
-  - Files: `.claude/skills/context-health/SKILL.md`, `.claude/hooks/context_health_check.py`,
-    `.claude/settings.json`
+- `types/grant/coach.ts` — CoachStudent, CoachStudentCreate, CoachStudentImportRow,
+  ImportRowResult, CoachImportResult, InviteStudentResult, RemoveStudentResult.
+- `services/grant/coach.service.ts` — list/create/import/remove/invite via
+  `agentApi` + `GrantApiResponse` envelope (paths match backend #557 exactly).
+- `hooks/grant/useCoachRoster.ts` — `useCoachRoster` + create/import/remove/invite
+  mutations; `USE_GRANT_MOCKS`-aware (local mock roster); optimistic invite.
+- `pages/grant/coach/` — `RosterPage` (status badge, completeness meter,
+  ready-to-search, search, Add-student, Import CSV, per-row Open/Invite/Remove),
+  `CsvImportModal` (dependency-free RFC-4180 parser + preview + template +
+  per-row result report), `StudentIntakePage` (reuses `<GrantIntakeFlow studentId>`),
+  `csv.ts` parser + tests.
 
-## [2026-07-13 EDT] — GRANT Coach roster tool (P0–P4): backend + frontend
+### Changed
+- `pages/grant/intake/GrantIntakeFlow.tsx` — optional `studentId` prop (default
+  `"me"`); coach-mode copy/navigation. Self-serve behavior unchanged.
+- `constants/routes.ts`, `routes.tsx` — `/vertical/grant/coach/students` +
+  `/coach/students/:studentId` routes.
+- `constants/sidebar-sections.ts`, `components/layout/AppSidebar.tsx` — "My Students"
+  nav item gated to coach roles (practitioner/manager/company-admin/super-admin)
+  that are also GRANT-entitled.
 
-Built the GRANT vertical "Coach — Aid Profiles for Others" surface from
-`GRANT_Coach_Profiles_Build_Plan.docx`. A coach (practitioner / manager /
-company-admin / super-admin) imports a roster of managed students, fills each
-student's aid intake through the SAME questionnaire, and can convert a managed
-student into a real IG user. Backend PR `inspire-genius#557`, frontend PR
-`inspire-genius-frontend#176` (both → `development`).
+### Verified
+- `tsc --noEmit` clean; `eslint` clean; jest **12 suites / 58 tests pass**
+  (4 new coach tests; no self-serve intake regression). No new dependencies.
+
+## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
+
+Follow-up to the coach roster UI, adding the two enhancements chosen after the
+backend E2E smoke (companion to backend `inspire-genius#559`/`#560`). Merged to
+`development`; deployed to dev + staging-b buckets.
 
 ### Added
-- **P0 — authorization** (security fix): `require_student_access` on
-  `/students/{id}`, `/students/{id}/aid-intake` (GET+PATCH), `/award-letters`,
-  and per-student `/deadlines`. Self / coach-with-live-link / super-admin allow;
-  else 403. Closes the prior gap where `require_auth` alone let any authenticated
-  user read/patch any profile by id.
-  - Files: `services/agent-engine/app/routes/grant.py`
-- **P1 — data model**: `grant_coach_students` ownership table (soft-deletable)
-  + `owner_coach_sub` / `student_kind` / `linked_user_sub` / `linked_at` columns
-  on `grant_student_profiles`. Idempotent migration-runner SQL + alembic 011.
-  **Applied + verified on dev and staging-b** (`[[1,4]]`).
-  - Files: `services/agent-engine/app/tools/grant/models.py`,
-    `services/migration-runner/migrations/grant_coach_students.sql`,
-    `services/agent-engine/alembic/versions/011_create_grant_coach_students.py`
-- **P2 — coach routes**: `GET/POST/DELETE /coach/students` +
-  `POST /coach/students/import` (CSV rows → validate → dedupe by email within-file
-  and against roster → per-row report). Managed students carry identity + a
-  prefilled `financial_intake`. PII-free audit event.
-  - Files: `services/agent-engine/app/tools/grant/coach.py`,
-    `services/agent-engine/app/routes/grant.py`,
-    `services/agent-engine/app/events/eventbridge.py`
-- **P4 — managed→IG conversion**: `POST /coach/students/{id}/invite` — link-or-
-  create the account, re-key the profile `student_id` to the new canonical sub
-  (carry full `financial_intake`; merge on a pre-existing self-serve row), grant
-  the `grant` entitlement, flip `student_kind` managed→invited/linked while
-  retaining `owner_coach_sub`. Idempotent + edge-safe.
-- **P3 — frontend**: `pages/grant/coach/` RosterPage + CsvImportModal (in-repo
-  RFC-4180 parser, no papaparse) + StudentIntakePage; `services/grant/coach.service.ts`,
-  `hooks/grant/useCoachRoster.ts`, `types/grant/coach.ts`; `GrantIntakeFlow` gains
-  an optional `studentId` prop (self-serve default `"me"` unchanged); "My Students"
-  nav gated to coach roles + GRANT entitlement; routes wired.
+- **Co-access toggle** — the Invite-to-IG confirm dialog gains a "Keep co-access
+  after they claim their account" switch (default ON). ON = coach stays on the
+  roster; OFF = full hand-off. Threaded through
+  `inviteCoachStudent(id, keepCoachAccess)` → `POST /coach/students/{id}/invite`.
+- **Bulk invite** — per-row selection checkboxes + header select-all (linked rows
+  non-selectable); "Invite selected to IG (N)" toolbar button (email-gated); a
+  bulk confirm dialog reusing the co-access toggle → `inviteCoachStudentsBulk` →
+  `POST /coach/students/invite-bulk`; a per-row result report (converted/skipped/
+  errors). New `useBulkInviteStudents` hook + `BulkInviteResult`/`BulkInviteRowResult`
+  types.
+  - Files: `src/pages/grant/coach/RosterPage.tsx`, `src/services/grant/coach.service.ts`,
+    `src/hooks/grant/useCoachRoster.ts`, `src/types/grant/coach.ts`
 
-### Tests
-- Backend: +20 (auth matrix, coach routes, pure helpers); full GRANT suite **275 passed**; `app.main` imports clean; ruff clean.
-- Frontend: `tsc` clean, `eslint` clean, jest **12 suites / 58 tests pass** (4 new coach tests; no self-serve intake regression).
+### Verified
+`tsc` clean · `eslint` clean · jest **13 suites / 62 tests** (4 new invite/bulk tests; no regression). Full authed E2E of the underlying backend verified live on dev + staging-b.
+
+## [2026-07-13 EDT] — Plan: migrate all frontend pages to the new HomeV2 CSS
+
+Produced a prioritized, execution-ready plan to re-skin every frontend surface
+(~104 routed pages across 6 roles + auth/onboarding/legal/grant) to the new
+design system introduced by the redesigned `/home` (HomeV2, PRs #181–#186).
+
+### Added
+- `scripts/build_home_css_migration_plan.py` — python-docx generator (Logo-Dark
+  header, navy/orange redesign palette, 8 sections, 16 tables).
+- `IG_Home_CSS_Migration_Plan.docx` — the plan itself. Contents:
+  - Characterizes the "new CSS": cream panel `#FBF7F0`, navy ink `#0B1B33`,
+    orange accent `#E8932B`, serif headings, `rounded-2xl` hairline cards —
+    currently hardcoded inline hex (NOT tokenized), same shell (content-level only).
+  - Core recommendation: Wave 0 promotes the palette/type/card idiom into real
+    `@theme` tokens + extracted `src/components/v2` primitives before per-page work.
+  - Rollout reuses the existing `new_user_surfaces` flag + additive `PageV2` swap
+    + permanent `/x/classic` rollback.
+  - Execution model: one Controller session (owns tokens/primitives/shell re-skin
+    + serialized merges) + N parallel sub-agents on isolated worktrees.
+  - 5 waves, 7 copy-paste Claude Code prompts, per-page Definition of Done, risk
+    register, and a full surface inventory by wave.
+- Note: this is a planning artifact; no application code was changed.
 
 ## [2026-07-13 EDT] — GRANT Coach: E2E smoke → persistence fix + co-access toggle + bulk invite
 
@@ -13023,126 +13389,104 @@ Backend +7 (commit contract, toggle passthrough, bulk allow-all/coach); full GRA
 ### Security note (flagged, not fixed here)
 The smoke revealed the deployed agent-engine accepts **unverified JWTs** (python-jose falls back to `get_unverified_claims` when HS256 verify fails and JWKS isn't fetched). Pre-existing, unrelated — logged for a separate security follow-up.
 
-## [2026-07-13 EDT] — Plan: migrate all frontend pages to the new HomeV2 CSS
+## [2026-07-13 EDT] — GRANT Coach roster tool (P0–P4): backend + frontend
 
-Produced a prioritized, execution-ready plan to re-skin every frontend surface
-(~104 routed pages across 6 roles + auth/onboarding/legal/grant) to the new
-design system introduced by the redesigned `/home` (HomeV2, PRs #181–#186).
-
-### Added
-- `scripts/build_home_css_migration_plan.py` — python-docx generator (Logo-Dark
-  header, navy/orange redesign palette, 8 sections, 16 tables).
-- `IG_Home_CSS_Migration_Plan.docx` — the plan itself. Contents:
-  - Characterizes the "new CSS": cream panel `#FBF7F0`, navy ink `#0B1B33`,
-    orange accent `#E8932B`, serif headings, `rounded-2xl` hairline cards —
-    currently hardcoded inline hex (NOT tokenized), same shell (content-level only).
-  - Core recommendation: Wave 0 promotes the palette/type/card idiom into real
-    `@theme` tokens + extracted `src/components/v2` primitives before per-page work.
-  - Rollout reuses the existing `new_user_surfaces` flag + additive `PageV2` swap
-    + permanent `/x/classic` rollback.
-  - Execution model: one Controller session (owns tokens/primitives/shell re-skin
-    + serialized merges) + N parallel sub-agents on isolated worktrees.
-  - 5 waves, 7 copy-paste Claude Code prompts, per-page Definition of Done, risk
-    register, and a full surface inventory by wave.
-- Note: this is a planning artifact; no application code was changed.
-
-## [2026-07-13] — GRANT Coach roster UI: co-access toggle + bulk invite (#179)
-
-Follow-up to the coach roster UI, adding the two enhancements chosen after the
-backend E2E smoke (companion to backend `inspire-genius#559`/`#560`). Merged to
-`development`; deployed to dev + staging-b buckets.
+Built the GRANT vertical "Coach — Aid Profiles for Others" surface from
+`GRANT_Coach_Profiles_Build_Plan.docx`. A coach (practitioner / manager /
+company-admin / super-admin) imports a roster of managed students, fills each
+student's aid intake through the SAME questionnaire, and can convert a managed
+student into a real IG user. Backend PR `inspire-genius#557`, frontend PR
+`inspire-genius-frontend#176` (both → `development`).
 
 ### Added
-- **Co-access toggle** — the Invite-to-IG confirm dialog gains a "Keep co-access
-  after they claim their account" switch (default ON). ON = coach stays on the
-  roster; OFF = full hand-off. Threaded through
-  `inviteCoachStudent(id, keepCoachAccess)` → `POST /coach/students/{id}/invite`.
-- **Bulk invite** — per-row selection checkboxes + header select-all (linked rows
-  non-selectable); "Invite selected to IG (N)" toolbar button (email-gated); a
-  bulk confirm dialog reusing the co-access toggle → `inviteCoachStudentsBulk` →
-  `POST /coach/students/invite-bulk`; a per-row result report (converted/skipped/
-  errors). New `useBulkInviteStudents` hook + `BulkInviteResult`/`BulkInviteRowResult`
-  types.
-  - Files: `src/pages/grant/coach/RosterPage.tsx`, `src/services/grant/coach.service.ts`,
-    `src/hooks/grant/useCoachRoster.ts`, `src/types/grant/coach.ts`
+- **P0 — authorization** (security fix): `require_student_access` on
+  `/students/{id}`, `/students/{id}/aid-intake` (GET+PATCH), `/award-letters`,
+  and per-student `/deadlines`. Self / coach-with-live-link / super-admin allow;
+  else 403. Closes the prior gap where `require_auth` alone let any authenticated
+  user read/patch any profile by id.
+  - Files: `services/agent-engine/app/routes/grant.py`
+- **P1 — data model**: `grant_coach_students` ownership table (soft-deletable)
+  + `owner_coach_sub` / `student_kind` / `linked_user_sub` / `linked_at` columns
+  on `grant_student_profiles`. Idempotent migration-runner SQL + alembic 011.
+  **Applied + verified on dev and staging-b** (`[[1,4]]`).
+  - Files: `services/agent-engine/app/tools/grant/models.py`,
+    `services/migration-runner/migrations/grant_coach_students.sql`,
+    `services/agent-engine/alembic/versions/011_create_grant_coach_students.py`
+- **P2 — coach routes**: `GET/POST/DELETE /coach/students` +
+  `POST /coach/students/import` (CSV rows → validate → dedupe by email within-file
+  and against roster → per-row report). Managed students carry identity + a
+  prefilled `financial_intake`. PII-free audit event.
+  - Files: `services/agent-engine/app/tools/grant/coach.py`,
+    `services/agent-engine/app/routes/grant.py`,
+    `services/agent-engine/app/events/eventbridge.py`
+- **P4 — managed→IG conversion**: `POST /coach/students/{id}/invite` — link-or-
+  create the account, re-key the profile `student_id` to the new canonical sub
+  (carry full `financial_intake`; merge on a pre-existing self-serve row), grant
+  the `grant` entitlement, flip `student_kind` managed→invited/linked while
+  retaining `owner_coach_sub`. Idempotent + edge-safe.
+- **P3 — frontend**: `pages/grant/coach/` RosterPage + CsvImportModal (in-repo
+  RFC-4180 parser, no papaparse) + StudentIntakePage; `services/grant/coach.service.ts`,
+  `hooks/grant/useCoachRoster.ts`, `types/grant/coach.ts`; `GrantIntakeFlow` gains
+  an optional `studentId` prop (self-serve default `"me"` unchanged); "My Students"
+  nav gated to coach roles + GRANT entitlement; routes wired.
 
-### Verified
-`tsc` clean · `eslint` clean · jest **13 suites / 62 tests** (4 new invite/bulk tests; no regression). Full authed E2E of the underlying backend verified live on dev + staging-b.
+### Tests
+- Backend: +20 (auth matrix, coach routes, pure helpers); full GRANT suite **275 passed**; `app.main` imports clean; ruff clean.
+- Frontend: `tsc` clean, `eslint` clean, jest **12 suites / 58 tests pass** (4 new coach tests; no self-serve intake regression).
 
-## [2026-07-13] — GRANT Coach roster UI (P3 + P4): student list, CSV import, per-student intake, invite-to-IG
+## [2026-07-13 EDT] — Context-health guardrail (auto-invoke skill + deterministic hook)
 
-Frontend for the GRANT "Coach — Aid Profiles for Others" surface
-(`GRANT_Coach_Profiles_Build_Plan.docx`). Companion to backend PR
-`inspire-genius#557`; frontend PR `inspire-genius-frontend#176` → `development`.
-A coach imports a roster of managed students, opens each into the EXISTING aid
-questionnaire bound to that student, and can convert a managed student into a
-real IG user.
+Cherry-picked onto `development` from `feat/broadcast-alerts` (the raw branch merge was
+declined — it was 155 stale commits, mostly Content Builder/GRANT already in development).
 
 ### Added
-- `types/grant/coach.ts` — CoachStudent, CoachStudentCreate, CoachStudentImportRow,
-  ImportRowResult, CoachImportResult, InviteStudentResult, RemoveStudentResult.
-- `services/grant/coach.service.ts` — list/create/import/remove/invite via
-  `agentApi` + `GrantApiResponse` envelope (paths match backend #557 exactly).
-- `hooks/grant/useCoachRoster.ts` — `useCoachRoster` + create/import/remove/invite
-  mutations; `USE_GRANT_MOCKS`-aware (local mock roster); optimistic invite.
-- `pages/grant/coach/` — `RosterPage` (status badge, completeness meter,
-  ready-to-search, search, Add-student, Import CSV, per-row Open/Invite/Remove),
-  `CsvImportModal` (dependency-free RFC-4180 parser + preview + template +
-  per-row result report), `StudentIntakePage` (reuses `<GrantIntakeFlow studentId>`),
-  `csv.ts` parser + tests.
+- `.claude/skills/context-health/SKILL.md` — auto-invoke skill: reports context-window
+  health the first time usage crosses ~60% of the 1M window (also on demand). Debounced
+  once per band (60/70/85%), resets after `/compact-doc`; report-and-recommend only.
+- `.claude/hooks/context_health_check.py` — deterministic companion hook. Reads the
+  session transcript's latest token `usage`, computes occupancy vs the 1M window, and on
+  the first band crossing emits a `systemMessage` warning + an `additionalContext` nudge
+  to invoke the skill. Debounced per session; fails safe (silent below 60% / on error,
+  always exits 0). Wired into `.claude/settings.json` on `UserPromptSubmit` + `PostToolUse`.
+  - Files: `.claude/skills/context-health/SKILL.md`, `.claude/hooks/context_health_check.py`,
+    `.claude/settings.json`
+
+## [2026-07-13 EDT] — GRANT Coach build-plan doc + dev test profiles
+
+### Added
+- `scripts/build_grant_coach_plan.py` — generates `GRANT_Coach_Profiles_Build_Plan.docx` (in gitignored `Verticals/grant/build/`, mirrored to Dropbox `Grant-Docs/`). An implementation plan for the "aid profiles for others" coaching tool: CSV student-roster import, per-student intake reusing the existing `GrantIntakeFlow` (studentId prop; the hooks already take a studentId), and `require_student_access` ownership/role authorization on the `/students/{id}` routes (which today only check `require_auth` — a gap the plan closes as P0). Data model (`grant_coach_students` link + `owner_coach_sub`/`student_kind`), coach routes, frontend roster/CSV-import/per-student pages, phased LoE, and Claude Code build prompts.
+  - **Update:** added a first-class **managed → IG-user conversion** process (§3.1) — "Invite to IG" reuses the existing invitation/magic-link flow to mint the account, re-keys the profile to the new canonical sub (financial_intake transfers intact), grants the entitlement, and flips `student_kind` managed→linked while keeping coach co-access (with an `auth.user.signup` event-driven re-key variant). Added `linked_user_sub`/`linked_at` columns, the `POST /coach/students/{id}/invite` route, the roster "Invite to IG" action + status badge, a P4 conversion phase, and its build prompt.
+
+### Ops (dev, no code)
+- Seeded two test rows into dev `grant_student_profiles` (keyed to [email redacted] + [email redacted] subs) with a complete branching `financial_intake` (first-gen veteran nursing student, submitted FAFSA, GI-Bill + field modules, SAI 3800) so the save/retrieve path is visible end-to-end — proving persistence now works post go-live (the table was empty; anything built pre-flip under mock mode never persisted).
+
+## [2026-07-13 EDT] — Codify GRANT tool API-key Secrets Manager read in agent-engine CDK
+
+Codifies the hot-patch that made GRANT's scholarship_search (Tavily) and net_price_calculator (College Scorecard) return live data on dev. The two secrets (`ig/grant/tavily`, `ig/grant/college_scorecard`, each `{"api_key": "..."}`) were provisioned out-of-band, and the `ig-dev-agent-engine-task-role` was granted read via an inline policy directly — which a future `cdk deploy` of the agent-engine stack would have dropped.
+
+### Added
+- `lib/agent-engine-stack.ts` — new `GrantToolApiKeys` task-role policy statement granting `secretsmanager:GetSecretValue` + `DescribeSecret` on `arn:…:secret:ig/grant/*` (mirrors the existing `McpToolSecrets` pattern). Env-agnostic path `ig/grant/*` matches `SECRET_PATHS` in `app/tools/_shared/secrets.py` (literal `ig`, not the stack prefix).
+- **Secret values stay out-of-code** (API keys are never committed). This only codifies the read grant; provisioning the secret values remains a per-env ops step. Where a secret is absent, `get_api_key()` degrades the tool to empty results, so the grant is safe to apply in every environment. `npm run build` (tsc) clean; PR CI runs the authoritative `cdk synth`/`diff`.
+
+## [2026-07-13 EDT] — Codify deterministic_personalization (dev ON) in agent-engine CDK
+
+Codified the PR #549 flag so it survives redeploys and activates on dev through the normal pipeline.
 
 ### Changed
-- `pages/grant/intake/GrantIntakeFlow.tsx` — optional `studentId` prop (default
-  `"me"`); coach-mode copy/navigation. Self-serve behavior unchanged.
-- `constants/routes.ts`, `routes.tsx` — `/vertical/grant/coach/students` +
-  `/coach/students/:studentId` routes.
-- `constants/sidebar-sections.ts`, `components/layout/AppSidebar.tsx` — "My Students"
-  nav item gated to coach roles (practitioner/manager/company-admin/super-admin)
-  that are also GRANT-entitled.
+- `infrastructure/cdk/lib/agent-engine-stack.ts` — added `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION` to the ECS task env: **dev defaults 'true'** (activates the Path A subject-leak fix for validation); staging/prod/staging-b default 'false', flippable via `-c deterministicPersonalization=true`. Synth-verified: dev template renders `Value: "true"`. Deployed to dev via `ig-dev-agent-engine` (agent-engine references :latest ECR — CFN task-def update + ECS roll, no image rebuild).
 
-### Verified
-- `tsc --noEmit` clean; `eslint` clean; jest **12 suites / 58 tests pass**
-  (4 new coach tests; no self-serve intake regression). No new dependencies.
+## [2026-07-13 EDT] — PRISM-only build: close the Path A leak (deterministic_personalization)
 
-## [2026-07-13] — Broadcast Alert system (frontend): composer, notification center, banner
+Implemented the durable subject≠uploader fix for PRISM (scope: PR #547). **Key discovery:** the structured subject-scoped injection was ALREADY built + deployed + populated — `assessments`/`assessment_scores` (dev 10/1,121, staging-b 20/2,019 rows), keyed on the SUBJECT `user_id`, with the **3 PRISM variants kept distinct** as `score_type` (Underlying/Adapted/Consistent), loaded by `app.profile.loader.load_user_profile` and prepended by `base_agent` as `<USER_PROFILE>` in both REST + WS chat. willb77's own scores verified correct (Orderly 100, Innovating Underlying=95/Consistent=94/Adapted=93). So no new store was needed — the remaining gap was the **residual Path A leak**.
 
-Frontend for the platform Broadcast Alert system. Super-admins on a DB-backed
-allowlist (owner `[email redacted]`) compose a branded, severity-tiered HTML alert,
-target recipients by role group and/or named individuals (include + exclude), and
-send it; every targeted user gets an in-app alert. Backend is the separate
-`broadcast-service` microservice (monorepo).
+### Added / Changed
+- **`deterministic_personalization` flag** (`config.py`, default OFF) — when ON, `retrieve_personal_context()` skips the legacy general personal-document similarity search that filtered `documents.user_id = uploader` (the vector that surfaced a coachee's uploaded report as "your profile"). The user's own verified scores already come from the structured `<USER_PROFILE>` platform, so this retrieval was redundant AND the contamination source. OFF = byte-identical.
+- **Path C subject caution** (`personal_data.py: retrieve_attached_documents`) — when the flag is ON, attached documents are wrapped with an explicit "may describe a person OTHER than the current user" caution so a coach attaching a coachee's report can't have it read as the user's own profile.
+- **`documents.subject_user_id`** migration (migration-runner SQL + document-service Alembic 002, additive/idempotent) — provenance for future precise labelling; not required by the core fix.
+- Tests: `test_personal_data_retrieval.py` — flag ON short-circuits (no embed/DB, no leak), flag OFF byte-identical, attach caution present. 10/10 pass.
 
-### Added
-- **Composer page** `src/pages/super-admin/BroadcastAlert.tsx` (SuperAdminLayout):
-  title, severity picker (info/success/warning/critical), rich-text editor, audience
-  builder (role include/exclude + individual email include/exclude with a live
-  resolved-count preview), branded live preview in a sandboxed iframe, send confirm
-  dialog, sent-history, and an owner-only Manage Access panel.
-- **`RichHtmlEditor`** (`src/components/super-admin/broadcast/RichHtmlEditor.tsx`) —
-  dependency-free contentEditable toolbar (bold/italic/underline/headings/lists/link/
-  color) + raw-HTML toggle; output DOMPurify-sanitized.
-- **`NotificationBell`** (`src/components/layout/NotificationBell.tsx`) replaces the
-  static header bell: unread badge + dropdown notification center + full-message dialog.
-- **`BroadcastAlertBanner`** (`src/components/shared/BroadcastAlertBanner.tsx`) — mounted
-  in AppShell; shows the top unread warning/critical alert, dismissible. Sonner toast on
-  arrival. Inbox polled every 45s (mirrors `useSystemStatus`).
-- Branded template `src/lib/broadcastTemplate.ts` + `src/lib/sanitizeHtml.ts` (DOMPurify).
-- Services + hooks (Service→Hook→Component): `src/services/{super-admin/broadcast,
-  notifications/inbox}.service.ts`, `src/hooks/{super-admin/useBroadcast,
-  useNotificationInbox}.ts`. Types in `src/types/broadcast.ts`.
-- New dep: `dompurify`. 12 Jest tests (sanitization, branded template, bell badge).
-
-### Changed
-- Nav item is access-gated: `BROADCAST_SIDEBAR_SECTION` appended in `AppSidebar` only
-  when `useBroadcastAccess().authorized` (super-admin on the allowlist) — hidden otherwise.
-- Wired `routes.tsx`, `constants/{routes,sidebar-sections}.ts`,
-  `layout/{AppHeader,AppSidebar}.tsx`, `layouts/AppShell.tsx`.
-
----
-
-## [2026-07-13 EDT] — Financial Aid nav: move Financial Profile to top
-
-`src/constants/sidebar-sections.ts` — reordered `GRANT_SIDEBAR_SECTION` so **Financial Profile** (`/vertical/grant/profile`) is the first item in the left sidebar (was second, after Aid Dashboard). Pure reorder; no item added/removed.
+### Activation
+Flag defaults OFF (byte-identical). Activation = agent-engine deploy + `AGENT_ENGINE_DETERMINISTIC_PERSONALIZATION=true` per-env. The operational containment (embeddings rolled back, coachees quarantined) already prevents the leak at runtime today.
 
 ## [2026-07-12 EDT] — Trainer ig_auth fix deployed to Staging-B + verified 200
 
@@ -13242,72 +13586,38 @@ brand auto-application. Frontend-only; deployed to Dev App Runner (digest
   was undefined → org_id never reached the server) with a portal fallback.
 - `app/static/portal.js` — org picker label clarified to "Organization".
 
-## [2026-07-12 EDT] — GRANT intake expansion: branching interview contract (backend, P0–P3)
+## [2026-07-12 EDT] — GRANT intake: branching interview flow (P1-A + P2-A frontend)
 
-Implemented the backend of the **GRANT Financial-Aid Interview Guide** (`Verticals/grant/build/GRANT_Financial_Aid_Interview_Guide.docx`, Sec 7 build plan). Turns GRANT's thin 11-field "Build your aid profile" intake into the full branching interview from the guide (universal core + population/cross-cutting modules), wires the new fields into scholarship search, externalizes the question bank as config, and adds the FAFSA bridge + tool prefill + analytics. Branch `feat/grant-intake-expansion` off `origin/development`; 255 GRANT tests green (224 baseline + 31 new); ruff clean.
-
-**Design note (deviation from P0-A's literal "add typed columns"):** GRANT's write-allowlist security model keeps identity/academic columns read-only — GRANT only writes the `financial_intake` JSONB blob. So the expansion is a **typed, validated contract over that blob (schema-on-read)**, not new physical identity columns GRANT is forbidden to write. This ships via the code-only agent-engine image build — no migration / Cognito / AWS dependency.
+Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field flow (5 triggers + 6 enrichment) into the full branching interview from the GRANT Financial-Aid Interview Guide (Sec 1–3), wired to the expanded backend `IntakeProfile` contract (monorepo PR #545, merged + deployed to dev). Light IG theme kept (the wireframe re-skin decision). Built on `feat/grant-intake-branching` off frontend `origin/development`; **61 grant tests pass** (51 existing + 10 new); tsc + eslint clean.
 
 ### Added
-- **`IntakeProfile` branching contract** (`app/tools/grant/intake.py`, P0-B) — 54-field Pydantic model: universal core (Sec 1.1–1.7) + `ScreenerFlags` (Sec 1.8) + 13 typed population/cross-cutting module sub-objects (Sec 2–3) + `ToolInputs` (Sec 6). Backward-compatible: the legacy flat 11 fields keep their names/types; `use_enum_values` keeps enums JSON-serializable. `INTAKE_FIELD_NAMES` drives the GET projection.
-- **Interview question-bank config** (`app/tools/grant/interview_config.py`, P2-A) — 22 modules / questions as typed data (text, answer type/options, why-it-matters, unlock tags, `app_field` map, screener routing), self-validating on import; `active_module_ids()` + `SCREENER_ROUTING` encode the Sec 5 routing. Single source of truth the frontend intake flow will read.
-- **New enums** (`app/tools/grant/models.py`, P0-A) — `DependencyStatus`, `DisabilityCategory`, `CredentialSought`, `EnrollmentIntensity`, `MilitaryAffiliation`, `JusticeStatus`; extended `CitizenshipStatus` (refugee_asylee, undocumented) + `GradeLevel` (ged_adult_ed).
-- Tests: `tests/grant/test_intake_expansion.py` (23) + `tests/grant/test_interview_config.py` (8).
+- **Screener + population modules** — the flow now asks the Sec 1.8 screener (11 yes/no questions) and, for each "Yes", reveals that population module's questions (military GI Bill/VR&E, disability + state VR, adults/WIOA/employer, justice/Second Chance Pell, first-time, foster/Chafee, undocumented/DACA, homeless, caregiver, field-specific, tribal). Module steps are gated — they appear only when their screener flag is Yes (`GrantIntakeFlow` computes `visibleSteps` dynamically).
+- **Externalized question bank (P2-A-fe)** — all questions/options/labels live as typed config in `steps.ts` + enums in `types/grant/intake.ts` (single source of truth; adding a question is a config edit). New multiselect input kind (disability categories).
+- **Flat⇄nested mappers** — `toIntakePayload` reshapes the flat form into the backend's nested `{ screener, modules, tool_inputs }` + top-level search-driving mirrors; `fromIntakePayload` reverses it so an existing profile repopulates on reload. New enums mirror the Python contract (citizenship, dependency, credential, military affiliation, GI Bill, justice status, disability category).
+- Tests: `src/types/grant/__tests__/intake-branching.test.ts` (10) — mapper round-trip, Sec 5 `activeModuleIds` routing, and step-config integrity.
 
 ### Changed
-- **`StudentAidProfile` + `build_search_filters`** (`app/tools/_shared/aid_profile.py`, P0-A/P1-B) — expanded with the full Sec 1–3 enrichment field set (lenient types so a stored blob always parses) and new population filters (citizenship, military, disability, dependency, justice/foster/workforce/tribal categories, union-sponsored). Every previously-asserted filter key preserved.
-- **Route wiring** (`app/routes/grant.py`, P0-B/P1-B/P3-A) — `AidIntakePatch` → `IntakeProfile` (nested round-trip; `exclude_unset` partial-PATCH semantics); GET projection recognizes the full intake; the scholarships route now derives citizenship/military/disability/first-gen/gpa/field/state params from the profile and passes them to `scholarship_search` (it accepted them; the route never forwarded them). Justice/immigration-detail fields deliberately excluded from the outbound query (sensitive).
-- **P3-A** — `bridge_fafsa_status()` normalizes the free-text `fafsa_status` → typed `fafsa_completed` in-blob (single source of truth); `extract_tool_prefill()` pulls net-price/repayment prefill inputs; PATCH emits a PII-free intake-analytics log line (completeness + activated modules).
+- `useAidIntake`/`intake.service` do the flat⇄nested mapping at the boundary (component + form stay flat). PATCH now sends the nested payload; GET maps back. Mock-guarded (`USE_GRANT_MOCKS`) until the flip. `readyToSearch`/`triggerProgress`/`TRIGGER_FIELDS` unchanged — the 5 triggers still gate the first search.
 
-### Deferred (frontend — separate round)
-- P1-A (branching intake UI flow), P1-C (map GRANT pages to the `grant-financial-aid` wireframe — needs the light-IG-vs-dark-Pathfinder **theme decision** the guide flags), and the P2-A frontend half. These live in the separately-versioned frontend repo (currently mid-flight on another branch) and depend on this backend contract; building them unattended on a concurrently-dirty repo would be unsafe.
+### Deferred (next)
+- **P1-C** — enrich the 9 GRANT pages toward the `grant-financial-aid` wireframe (**light IG theme**, per the decision). Separable follow-up.
 
-## [2026-07-12 EDT] — Fix ingestion→embedding pipeline (Dev + Staging-B): backfill + fix-forward
+## [2026-07-12 EDT] — GRANT pages: wireframe enrichment (P1-C, light IG theme)
 
-Acted on `PRISM_Personalization_Investigation_and_Remediation.docx` §9. Diagnosed the real root cause (falsifying the doc's own hypothesis), backfilled every un-embedded document in both envs, and shipped a fix-forward so new uploads embed automatically.
-
-### Fixed
-- **Root cause of dead Path A similarity injection** — `document-service.process_document()` inserts `document_chunks` with **no embedding** and emits a `DocumentProcessed` event "for agent-engine vectorization", but the `ig-{env}-document-events` EventBridge rule routes that event **back to document-service** (which only acts on `document.uploaded`) instead of to agent-engine. Agent-engine's embedding consumer never runs → chunks stay `embedding=NULL` → `<USER_PROFILE>` injection is dead. staging-b had **0/2,333** chunks embedded; dev **1,581/4,362**.
-  - The doc's §9.1 hypothesis (missing `OPENAI_API_KEY`) is **falsified** — the key is present + identical (len=164) in both env secrets.
-- **Backfill (both envs, already run):** `scripts/backfill_embeddings.py` re-embeds every NULL-embedding doc via agent-engine `POST /v1/agents/documents/vectorize` (idempotent, resumable, rate-limited). Result: **dev 84 docs / 1,820 chunks; staging-b 63 docs / 1,538 chunks; both 0 failures → 3,407/3,407 (dev) and 1,538/1,538 (staging-b) embedded.**
-  - Verified inject side with the exact `retrieve_personal_context` similarity SQL: **dev 37 hits, staging-b 348 hits** above the 0.25 threshold for a real user (was structurally **0** before). The traced §7 staging-b PRISM report is now embedded 6/6.
-
-### Added / Changed
-- **Fix-forward** (`document-service`): after chunking, `process_document()` calls agent-engine `/vectorize` directly (stdlib `urllib`, best-effort, threaded). Works uniformly (staging-b has no agent-engine Lambda). Gated by `DOC_SERVICE_AGENT_ENGINE_URL` (set in `services-stack` to the env HTTP API). Rollback = set it to `''` → emit-only, byte-identical to prior behavior.
-  - Files: `services/document-service/app/{config,eventbridge,service}.py`, `infrastructure/cdk/lib/services-stack.ts`, `scripts/backfill_embeddings.py`
-- **PR #544** (`feat/embedding-pipeline-fix` → `development`) carries the fix-forward. It activates on the next `services-stack` deploy (dev via `cdk-deploy.yml`; staging-b via `staging-b-promote.yml`). Existing-data injection is already fixed by the backfill.
-- **Regression alarm (Prompt A3):** `document-service` now emits `VectorizeTriggerFailure` (namespace `InspireGenius/DocumentService`) when the `/vectorize` call errors OR returns `chunks_stored==0` — the exact silent no-op that went unnoticed for months. `services-stack` adds a non-paging CloudWatch alarm `${stackPrefix}-vectorize-trigger-failures` (Sum≥3 / 15min, NOT_BREACHING). CDK-synth validated (`ig-dev-services` template contains the alarm + env var + metric).
-  - Files: `services/document-service/app/eventbridge.py` (`_emit_vectorize_metric`), `infrastructure/cdk/lib/services-stack.ts` (`VectorizeTriggerFailuresAlarm`).
-
-### Deploy status (2026-07-12)
-- The **dev deploy is blocked pending a human merge of #544**, by design: (1) merging agent-authored code to `development` needs review; (2) the `gha-cdk-deploy` OIDC role trust rejects feature-branch refs (only `development`/environments), so CI can't deploy from the branch; (3) local `cdk deploy` bundling for services-stack is unreliable (`cdk_local_bundling`) — the staged asset was source-only. A surgical hotpatch was therefore **not** forced. **Next step:** merge #544 → `gh workflow run cdk-deploy.yml --ref development -f environment=dev -f stack=ig-dev-services -f dry_run=false`, then verify a fresh upload embeds. CDK diff confirmed the dev deploy is code-only (15 lambda code updates + my alarm/env var; no IAM/DB/SG/replacement changes).
-## [2026-07-12 EDT] — PRISM account contamination: auto-attach hardening + reversible account cleanup
-
-Cross-subject PRISM data was surfacing in chat (a user asked for "my scores" and got a coachee's). Root cause: personal-context retrieval keys off *who uploaded* a document (`documents.user_id`), not *who the assessment is about* — coach/test accounts hold many other people's reports. Full write-up: `docs/incidents/2026-07-12-prism-account-contamination/README.md`.
-
-### Fixed
-- **Auto-attach hardened** (`services/agent-engine/app/routes/documents.py`): `/latest-prism` now requires `doc_kind='prism'` (drops the `filename LIKE '%prism%.csv'` heuristic that returned coachees; matches the already-fixed document-service copy) + a hard kill-switch `AGENT_ENGINE_DISABLE_PRISM_AUTOATTACH` (`config.py`).
-- **Embedding backfill rolled back** — nulled the same-day backfilled embeddings (dev + staging-b) that had lit up similarity retrieval (Path A) across contaminated accounts.
-
-### Changed
-- **Reversible account cleanup** — quarantined every mis-filed (other-person) assessment report: `documents.user_id → 'QUARANTINE:'||user_id` + embeddings nulled, keeping each holder's OWN report + the shared `prism_canonical` library. **dev 30 docs / staging-b 27 docs** across 4 coach/test accounts. Fully reversible; per-doc manifest + reversal SQL git-ignored (contain user PII; retained via Dropbox).
-
-### Still open (design)
-- Path A retrieval must resolve the holder's OWN verified assessment (subject ≠ uploader) — structured per-user score record is the durable fix. Existing chat threads remain poisoned with prior wrong answers (start a NEW chat).
-
-## [2026-07-12 EDT] — Scoping doc: the proper fix for PRISM personal-context (subject ≠ uploader)
-
-Scoped the durable fix for the account-contamination root cause: every personal-context path keys off *who uploaded* a document, not *who the assessment is about*. Grounded in real schema facts (`prism_results` empty + keyed on user_id; `user_assessments` doesn't exist; `documents` has no subject field).
+Enriched all 9 GRANT tool pages toward the `grant-financial-aid` reference wireframe's component richness — mapping structure/components only, keeping the **light IG theme** (Bill's decision; not the dark Pathfinder aesthetic). Built on `feat/grant-p1c` off frontend `origin/development` via 4 parallel sub-agents over disjoint page files, integrated + verified by the controller. **61 grant tests pass**; tsc + eslint clean.
 
 ### Added
-- `docs/plans/PRISM_Personal_Context_Scoping.docx` (+ `.md` mirror) via `scripts/build_prism_context_scoping.py` — scopes: new `subject_user_id` + `user_assessments` structured record; **Path A** `<USER_PROFILE>` sourced from the structured record (subject=viewer, deterministic, not document-similarity); **Path B** `<PRISM_REFERENCE>` unchanged (generic, no PII); **Path C** `<ATTACHED_DOCUMENTS>` subject-labelled + structured-over-raw; subject attribution/backfill; flags/rollout/rollback (`deterministic_personalization` OFF = byte-identical); LOE ~21 dev-days; acceptance criteria.
-
-## [2026-07-12 EDT] — Codify fix-forward DISABLE (default-off, flag-gated)
-
-Closed the config drift flagged in the env status: the live dev document-service had `DOC_SERVICE_AGENT_ENGINE_URL=''` (incident hot-patch), but CDK (#544) codified the HTTP-API URL — so a stray `ig-dev-services` redeploy would have silently re-enabled auto-embedding of new uploads, re-lighting Path A similarity retrieval before the subject-scoping fix (docs/plans/PRISM_Personal_Context_Scoping) ships.
+- **Shared primitives** (`_shared.tsx`): `GrantMeter` (labeled progress bar), `GrantStat` (metric tile), `GrantSectionTitle` — reused across the pages.
+- **Scholarships** — pipeline funnel strip (Identified→In Progress→Submitted→Awarded) + richer match cards (difficulty pill, match-strength meter, relative deadline, "Why this fits you").
+- **Federal & State** — FAFSA/SAI hero (status + next-step cue), federal-program tiles (Pell, Sub/Unsub Stafford, Work-Study), state-programs grouping.
+- **Institutions** — fit-band pill (Safety/Match/Reach), "% of need met" meter, need-blind/need-aware + auto-merit + SAP flags.
+- **Compare** — side-by-side award-letter cards with true-net-cost, gapping + "loans labeled as aid" caution flags, collapsible appeal-letter draft.
+- **Loans** — RAP/Standard/Graduated plan-comparison cards, debt-to-income meter (1× ceiling), SAVE-closed→RAP policy callout.
+- **Applications (Concierge)** — per-item auto-fill % meter, status pill (Submitted/Ready/Needs review), PII flag, human-review note, recommended-order hint.
+- **Dashboard / Plan / Profile** — aid-journey step strip (Profile→FAFSA→Search→Apply→Compare→Plan), completeness meter, population chips (first-gen + `activeModuleIds`), next-actions lists; Profile gains a "profile at a glance" summary above the (unchanged) intake flow.
 
 ### Changed
-- `infrastructure/cdk/lib/services-stack.ts` — `DOC_SERVICE_AGENT_ENGINE_URL` now **defaults to `''` (disabled)**, gated behind a new CDK context flag `enablePrismAutoEmbed`. Re-enable per-env with `-c enablePrismAutoEmbed=true`. Synth-verified: default → empty; `-c enablePrismAutoEmbed=true` → HTTP-API URL. Now matches the live dev Lambda; no deploy required (a future deploy renders `''`, staying disabled).
+- All enrichment additive; existing search/estimate/toggle/filter behaviors and the `grant-pages.test.tsx` anchors preserved (two anchors adjusted for the richer UI: Compare "State University" → `getAllByText` like City College; Loans plan-card hint reworded so it doesn't shadow the salary "Look up" button).
 
 ## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
 
@@ -13328,38 +13638,72 @@ Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/
 ### Blast radius
 Tiny + gated: only entitled users (willb7/willb77/aes) + super-admins via the preview toggle see GRANT. On staging-b (same frontend build) the agent-engine GRANT routes aren't deployed, so the entitlement read 404s → GRANT stays hidden there.
 
-## [2026-07-12 EDT] — GRANT pages: wireframe enrichment (P1-C, light IG theme)
+## [2026-07-12 EDT] — Codify fix-forward DISABLE (default-off, flag-gated)
 
-Enriched all 9 GRANT tool pages toward the `grant-financial-aid` reference wireframe's component richness — mapping structure/components only, keeping the **light IG theme** (Bill's decision; not the dark Pathfinder aesthetic). Built on `feat/grant-p1c` off frontend `origin/development` via 4 parallel sub-agents over disjoint page files, integrated + verified by the controller. **61 grant tests pass**; tsc + eslint clean.
-
-### Added
-- **Shared primitives** (`_shared.tsx`): `GrantMeter` (labeled progress bar), `GrantStat` (metric tile), `GrantSectionTitle` — reused across the pages.
-- **Scholarships** — pipeline funnel strip (Identified→In Progress→Submitted→Awarded) + richer match cards (difficulty pill, match-strength meter, relative deadline, "Why this fits you").
-- **Federal & State** — FAFSA/SAI hero (status + next-step cue), federal-program tiles (Pell, Sub/Unsub Stafford, Work-Study), state-programs grouping.
-- **Institutions** — fit-band pill (Safety/Match/Reach), "% of need met" meter, need-blind/need-aware + auto-merit + SAP flags.
-- **Compare** — side-by-side award-letter cards with true-net-cost, gapping + "loans labeled as aid" caution flags, collapsible appeal-letter draft.
-- **Loans** — RAP/Standard/Graduated plan-comparison cards, debt-to-income meter (1× ceiling), SAVE-closed→RAP policy callout.
-- **Applications (Concierge)** — per-item auto-fill % meter, status pill (Submitted/Ready/Needs review), PII flag, human-review note, recommended-order hint.
-- **Dashboard / Plan / Profile** — aid-journey step strip (Profile→FAFSA→Search→Apply→Compare→Plan), completeness meter, population chips (first-gen + `activeModuleIds`), next-actions lists; Profile gains a "profile at a glance" summary above the (unchanged) intake flow.
+Closed the config drift flagged in the env status: the live dev document-service had `DOC_SERVICE_AGENT_ENGINE_URL=''` (incident hot-patch), but CDK (#544) codified the HTTP-API URL — so a stray `ig-dev-services` redeploy would have silently re-enabled auto-embedding of new uploads, re-lighting Path A similarity retrieval before the subject-scoping fix (docs/plans/PRISM_Personal_Context_Scoping) ships.
 
 ### Changed
-- All enrichment additive; existing search/estimate/toggle/filter behaviors and the `grant-pages.test.tsx` anchors preserved (two anchors adjusted for the richer UI: Compare "State University" → `getAllByText` like City College; Loans plan-card hint reworded so it doesn't shadow the salary "Look up" button).
+- `infrastructure/cdk/lib/services-stack.ts` — `DOC_SERVICE_AGENT_ENGINE_URL` now **defaults to `''` (disabled)**, gated behind a new CDK context flag `enablePrismAutoEmbed`. Re-enable per-env with `-c enablePrismAutoEmbed=true`. Synth-verified: default → empty; `-c enablePrismAutoEmbed=true` → HTTP-API URL. Now matches the live dev Lambda; no deploy required (a future deploy renders `''`, staying disabled).
 
-## [2026-07-12 EDT] — GRANT intake: branching interview flow (P1-A + P2-A frontend)
+## [2026-07-12 EDT] — Scoping doc: the proper fix for PRISM personal-context (subject ≠ uploader)
 
-Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field flow (5 triggers + 6 enrichment) into the full branching interview from the GRANT Financial-Aid Interview Guide (Sec 1–3), wired to the expanded backend `IntakeProfile` contract (monorepo PR #545, merged + deployed to dev). Light IG theme kept (the wireframe re-skin decision). Built on `feat/grant-intake-branching` off frontend `origin/development`; **61 grant tests pass** (51 existing + 10 new); tsc + eslint clean.
+Scoped the durable fix for the account-contamination root cause: every personal-context path keys off *who uploaded* a document, not *who the assessment is about*. Grounded in real schema facts (`prism_results` empty + keyed on user_id; `user_assessments` doesn't exist; `documents` has no subject field).
 
 ### Added
-- **Screener + population modules** — the flow now asks the Sec 1.8 screener (11 yes/no questions) and, for each "Yes", reveals that population module's questions (military GI Bill/VR&E, disability + state VR, adults/WIOA/employer, justice/Second Chance Pell, first-time, foster/Chafee, undocumented/DACA, homeless, caregiver, field-specific, tribal). Module steps are gated — they appear only when their screener flag is Yes (`GrantIntakeFlow` computes `visibleSteps` dynamically).
-- **Externalized question bank (P2-A-fe)** — all questions/options/labels live as typed config in `steps.ts` + enums in `types/grant/intake.ts` (single source of truth; adding a question is a config edit). New multiselect input kind (disability categories).
-- **Flat⇄nested mappers** — `toIntakePayload` reshapes the flat form into the backend's nested `{ screener, modules, tool_inputs }` + top-level search-driving mirrors; `fromIntakePayload` reverses it so an existing profile repopulates on reload. New enums mirror the Python contract (citizenship, dependency, credential, military affiliation, GI Bill, justice status, disability category).
-- Tests: `src/types/grant/__tests__/intake-branching.test.ts` (10) — mapper round-trip, Sec 5 `activeModuleIds` routing, and step-config integrity.
+- `docs/plans/PRISM_Personal_Context_Scoping.docx` (+ `.md` mirror) via `scripts/build_prism_context_scoping.py` — scopes: new `subject_user_id` + `user_assessments` structured record; **Path A** `<USER_PROFILE>` sourced from the structured record (subject=viewer, deterministic, not document-similarity); **Path B** `<PRISM_REFERENCE>` unchanged (generic, no PII); **Path C** `<ATTACHED_DOCUMENTS>` subject-labelled + structured-over-raw; subject attribution/backfill; flags/rollout/rollback (`deterministic_personalization` OFF = byte-identical); LOE ~21 dev-days; acceptance criteria.
+
+## [2026-07-12 EDT] — PRISM account contamination: auto-attach hardening + reversible account cleanup
+
+Cross-subject PRISM data was surfacing in chat (a user asked for "my scores" and got a coachee's). Root cause: personal-context retrieval keys off *who uploaded* a document (`documents.user_id`), not *who the assessment is about* — coach/test accounts hold many other people's reports. Full write-up: `docs/incidents/2026-07-12-prism-account-contamination/README.md`.
+
+### Fixed
+- **Auto-attach hardened** (`services/agent-engine/app/routes/documents.py`): `/latest-prism` now requires `doc_kind='prism'` (drops the `filename LIKE '%prism%.csv'` heuristic that returned coachees; matches the already-fixed document-service copy) + a hard kill-switch `AGENT_ENGINE_DISABLE_PRISM_AUTOATTACH` (`config.py`).
+- **Embedding backfill rolled back** — nulled the same-day backfilled embeddings (dev + staging-b) that had lit up similarity retrieval (Path A) across contaminated accounts.
 
 ### Changed
-- `useAidIntake`/`intake.service` do the flat⇄nested mapping at the boundary (component + form stay flat). PATCH now sends the nested payload; GET maps back. Mock-guarded (`USE_GRANT_MOCKS`) until the flip. `readyToSearch`/`triggerProgress`/`TRIGGER_FIELDS` unchanged — the 5 triggers still gate the first search.
+- **Reversible account cleanup** — quarantined every mis-filed (other-person) assessment report: `documents.user_id → 'QUARANTINE:'||user_id` + embeddings nulled, keeping each holder's OWN report + the shared `prism_canonical` library. **dev 30 docs / staging-b 27 docs** across 4 coach/test accounts. Fully reversible; per-doc manifest + reversal SQL git-ignored (contain user PII; retained via Dropbox).
 
-### Deferred (next)
-- **P1-C** — enrich the 9 GRANT pages toward the `grant-financial-aid` wireframe (**light IG theme**, per the decision). Separable follow-up.
+### Still open (design)
+- Path A retrieval must resolve the holder's OWN verified assessment (subject ≠ uploader) — structured per-user score record is the durable fix. Existing chat threads remain poisoned with prior wrong answers (start a NEW chat).
+
+## [2026-07-12 EDT] — Fix ingestion→embedding pipeline (Dev + Staging-B): backfill + fix-forward
+
+Acted on `PRISM_Personalization_Investigation_and_Remediation.docx` §9. Diagnosed the real root cause (falsifying the doc's own hypothesis), backfilled every un-embedded document in both envs, and shipped a fix-forward so new uploads embed automatically.
+
+### Fixed
+- **Root cause of dead Path A similarity injection** — `document-service.process_document()` inserts `document_chunks` with **no embedding** and emits a `DocumentProcessed` event "for agent-engine vectorization", but the `ig-{env}-document-events` EventBridge rule routes that event **back to document-service** (which only acts on `document.uploaded`) instead of to agent-engine. Agent-engine's embedding consumer never runs → chunks stay `embedding=NULL` → `<USER_PROFILE>` injection is dead. staging-b had **0/2,333** chunks embedded; dev **1,581/4,362**.
+  - The doc's §9.1 hypothesis (missing `OPENAI_API_KEY`) is **falsified** — the key is present + identical (len=164) in both env secrets.
+- **Backfill (both envs, already run):** `scripts/backfill_embeddings.py` re-embeds every NULL-embedding doc via agent-engine `POST /v1/agents/documents/vectorize` (idempotent, resumable, rate-limited). Result: **dev 84 docs / 1,820 chunks; staging-b 63 docs / 1,538 chunks; both 0 failures → 3,407/3,407 (dev) and 1,538/1,538 (staging-b) embedded.**
+  - Verified inject side with the exact `retrieve_personal_context` similarity SQL: **dev 37 hits, staging-b 348 hits** above the 0.25 threshold for a real user (was structurally **0** before). The traced §7 staging-b PRISM report is now embedded 6/6.
+
+### Added / Changed
+- **Fix-forward** (`document-service`): after chunking, `process_document()` calls agent-engine `/vectorize` directly (stdlib `urllib`, best-effort, threaded). Works uniformly (staging-b has no agent-engine Lambda). Gated by `DOC_SERVICE_AGENT_ENGINE_URL` (set in `services-stack` to the env HTTP API). Rollback = set it to `''` → emit-only, byte-identical to prior behavior.
+  - Files: `services/document-service/app/{config,eventbridge,service}.py`, `infrastructure/cdk/lib/services-stack.ts`, `scripts/backfill_embeddings.py`
+- **PR #544** (`feat/embedding-pipeline-fix` → `development`) carries the fix-forward. It activates on the next `services-stack` deploy (dev via `cdk-deploy.yml`; staging-b via `staging-b-promote.yml`). Existing-data injection is already fixed by the backfill.
+- **Regression alarm (Prompt A3):** `document-service` now emits `VectorizeTriggerFailure` (namespace `InspireGenius/DocumentService`) when the `/vectorize` call errors OR returns `chunks_stored==0` — the exact silent no-op that went unnoticed for months. `services-stack` adds a non-paging CloudWatch alarm `${stackPrefix}-vectorize-trigger-failures` (Sum≥3 / 15min, NOT_BREACHING). CDK-synth validated (`ig-dev-services` template contains the alarm + env var + metric).
+  - Files: `services/document-service/app/eventbridge.py` (`_emit_vectorize_metric`), `infrastructure/cdk/lib/services-stack.ts` (`VectorizeTriggerFailuresAlarm`).
+
+### Deploy status (2026-07-12)
+- The **dev deploy is blocked pending a human merge of #544**, by design: (1) merging agent-authored code to `development` needs review; (2) the `gha-cdk-deploy` OIDC role trust rejects feature-branch refs (only `development`/environments), so CI can't deploy from the branch; (3) local `cdk deploy` bundling for services-stack is unreliable (`cdk_local_bundling`) — the staged asset was source-only. A surgical hotpatch was therefore **not** forced. **Next step:** merge #544 → `gh workflow run cdk-deploy.yml --ref development -f environment=dev -f stack=ig-dev-services -f dry_run=false`, then verify a fresh upload embeds. CDK diff confirmed the dev deploy is code-only (15 lambda code updates + my alarm/env var; no IAM/DB/SG/replacement changes).
+## [2026-07-12 EDT] — GRANT intake expansion: branching interview contract (backend, P0–P3)
+
+Implemented the backend of the **GRANT Financial-Aid Interview Guide** (`Verticals/grant/build/GRANT_Financial_Aid_Interview_Guide.docx`, Sec 7 build plan). Turns GRANT's thin 11-field "Build your aid profile" intake into the full branching interview from the guide (universal core + population/cross-cutting modules), wires the new fields into scholarship search, externalizes the question bank as config, and adds the FAFSA bridge + tool prefill + analytics. Branch `feat/grant-intake-expansion` off `origin/development`; 255 GRANT tests green (224 baseline + 31 new); ruff clean.
+
+**Design note (deviation from P0-A's literal "add typed columns"):** GRANT's write-allowlist security model keeps identity/academic columns read-only — GRANT only writes the `financial_intake` JSONB blob. So the expansion is a **typed, validated contract over that blob (schema-on-read)**, not new physical identity columns GRANT is forbidden to write. This ships via the code-only agent-engine image build — no migration / Cognito / AWS dependency.
+
+### Added
+- **`IntakeProfile` branching contract** (`app/tools/grant/intake.py`, P0-B) — 54-field Pydantic model: universal core (Sec 1.1–1.7) + `ScreenerFlags` (Sec 1.8) + 13 typed population/cross-cutting module sub-objects (Sec 2–3) + `ToolInputs` (Sec 6). Backward-compatible: the legacy flat 11 fields keep their names/types; `use_enum_values` keeps enums JSON-serializable. `INTAKE_FIELD_NAMES` drives the GET projection.
+- **Interview question-bank config** (`app/tools/grant/interview_config.py`, P2-A) — 22 modules / questions as typed data (text, answer type/options, why-it-matters, unlock tags, `app_field` map, screener routing), self-validating on import; `active_module_ids()` + `SCREENER_ROUTING` encode the Sec 5 routing. Single source of truth the frontend intake flow will read.
+- **New enums** (`app/tools/grant/models.py`, P0-A) — `DependencyStatus`, `DisabilityCategory`, `CredentialSought`, `EnrollmentIntensity`, `MilitaryAffiliation`, `JusticeStatus`; extended `CitizenshipStatus` (refugee_asylee, undocumented) + `GradeLevel` (ged_adult_ed).
+- Tests: `tests/grant/test_intake_expansion.py` (23) + `tests/grant/test_interview_config.py` (8).
+
+### Changed
+- **`StudentAidProfile` + `build_search_filters`** (`app/tools/_shared/aid_profile.py`, P0-A/P1-B) — expanded with the full Sec 1–3 enrichment field set (lenient types so a stored blob always parses) and new population filters (citizenship, military, disability, dependency, justice/foster/workforce/tribal categories, union-sponsored). Every previously-asserted filter key preserved.
+- **Route wiring** (`app/routes/grant.py`, P0-B/P1-B/P3-A) — `AidIntakePatch` → `IntakeProfile` (nested round-trip; `exclude_unset` partial-PATCH semantics); GET projection recognizes the full intake; the scholarships route now derives citizenship/military/disability/first-gen/gpa/field/state params from the profile and passes them to `scholarship_search` (it accepted them; the route never forwarded them). Justice/immigration-detail fields deliberately excluded from the outbound query (sensitive).
+- **P3-A** — `bridge_fafsa_status()` normalizes the free-text `fafsa_status` → typed `fafsa_completed` in-blob (single source of truth); `extract_tool_prefill()` pulls net-price/repayment prefill inputs; PATCH emits a PII-free intake-analytics log line (completeness + activated modules).
+
+### Deferred (frontend — separate round)
+- P1-A (branching intake UI flow), P1-C (map GRANT pages to the `grant-financial-aid` wireframe — needs the light-IG-vs-dark-Pathfinder **theme decision** the guide flags), and the P2-A frontend half. These live in the separately-versioned frontend repo (currently mid-flight on another branch) and depend on this backend contract; building them unattended on a concurrently-dirty repo would be unsafe.
 
 ## [2026-07-11 EDT] — Content Builder AI feature PROMOTED to Staging-B
 
@@ -14412,6 +14756,17 @@ Fixed both gaps found in live testing and deployed to both environments.
   call is present in the shipped `SummitLayout` chunk on dev AND staging-b.
 
 Live: dev.inspiresgenius.com/summit · stable.inspiresgenius.com/summit.
+## [2026-07-09 EDT] — "Skip onboarding" toggle — merged + deployed (Dev + Staging-B)
+
+Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environments, and the backend fix that unblocked it.
+
+### Changed
+- **PR #161 merged** to `development` → CI auto-deployed to **Dev** (`ig-dev-frontend-assets`) and **Staging-B** (`ig-staging-b-frontend-assets`). Verified the live lazy chunks (`UserFormModal-*.js`, `BulkImport-*.js`) in both S3 buckets carry the "Skip onboarding" UI.
+- **Bulk importer verified end-to-end** (via the auth-service bulk endpoint the checkbox drives): a real 2-row demo invite returned 200 / 2 successful / magic links sent, and a magic-link sign-in round-trip landed on the dashboard already onboarded.
+
+### Fixed
+- **Add User checkbox 400 crash on Staging-B** — root cause was backend (auth-service PR #536): the `demo_account` path set a Cognito `custom:is_onboarded` attribute the staging-b pool doesn't define. Fixed backend-side (attribute dropped); the checkbox now provisions the user + sends the magic link on Staging-B. No frontend change was needed.
+
 ## [2026-07-09 EDT] — Demo auto-provision: staging-b crash fix + full ship (Dev + Staging-B), bulk verified
 
 Completed the "skip onboarding + magic-link" demo-account work: fixed a staging-b invite crash, merged all three PRs, deployed to both environments, verified bulk end-to-end, and ran down the magic-auth secret log noise (not an IAM gap).
@@ -14432,17 +14787,6 @@ Completed the "skip onboarding + magic-link" demo-account work: fixed a staging-
 
 ### Added (earlier same session)
 - **Summit goal-setting wireframe** deployed to the dev CloudFront preview: `https://[cdn-host]/verticals/goal-setting/summit.html` (HTTP 200, verified).
-
-## [2026-07-09 EDT] — "Skip onboarding" toggle — merged + deployed (Dev + Staging-B)
-
-Follow-up to the 2026-07-08 checkbox work: merged and shipped to both environments, and the backend fix that unblocked it.
-
-### Changed
-- **PR #161 merged** to `development` → CI auto-deployed to **Dev** (`ig-dev-frontend-assets`) and **Staging-B** (`ig-staging-b-frontend-assets`). Verified the live lazy chunks (`UserFormModal-*.js`, `BulkImport-*.js`) in both S3 buckets carry the "Skip onboarding" UI.
-- **Bulk importer verified end-to-end** (via the auth-service bulk endpoint the checkbox drives): a real 2-row demo invite returned 200 / 2 successful / magic links sent, and a magic-link sign-in round-trip landed on the dashboard already onboarded.
-
-### Fixed
-- **Add User checkbox 400 crash on Staging-B** — root cause was backend (auth-service PR #536): the `demo_account` path set a Cognito `custom:is_onboarded` attribute the staging-b pool doesn't define. Fixed backend-side (attribute dropped); the checkbox now provisions the user + sends the magic link on Staging-B. No frontend change was needed.
 
 ## [2026-07-08 EDT] — Content Builder: hosted-site publish fixed (PASS 2b-1)
 
@@ -14611,6 +14955,19 @@ The `ci-deploy.yml` pipeline ran on the `development` push and deployed to **bot
 - Verified: both apps 200; Summit routes present in each entry bundle; code-split chunks
   (`SummitLayout`, `SummitDashboard`, `SummitDiscovery`, `SummitPrism`, `SummitGoals`…) load 200
   on both. Reach it at `/summit` or the sidebar "Goal Setting" / home "Set a Goal" entry.
+## [2026-07-08 EDT] — "Skip onboarding" toggle on Add User + bulk importer (frontend)
+
+Added a checkbox to opt a new user in/out of the onboarding process, wired to the auth-service `demo_account` flag (skip onboarding + one-click magic sign-in link; honored on Dev/Staging-B, rejected in prod). PR frontend#161, pairs with backend PR inspire-genius#531.
+
+### Added
+- **Add User form** — `UserFormValues.skip_onboarding` (default false); "Skip onboarding process" checkbox in `UserFormModal` (add-mode only); `UserManagement.handleAdd` maps it to `demo_account`; `InviteUserPayload.demo_account?`.
+  - Files: `src/components/shared/forms/userForm.constants.ts`, `UserFormModal.tsx`, `src/pages/super-admin/UserManagement.tsx`, `src/services/super-admin/user-management/user-management.service.ts`
+- **Bulk importer (super-admin, manager, company-admin)** — "Skip onboarding for this batch" checkbox on the upload step. When checked, validated rows go to the already-deployed auth-service bulk endpoint (`/v1/user-management/invite/bulk`, `demo_account=true` per row) via new `useBulkDemoInvite` hook + `bulkInviteUsers` service; results shown in new shared `DemoImportResult` (compose/send/track skipped). Unchecked = existing user-service/invitation-service staging flow.
+  - Files: `src/hooks/useBulkImport.ts`, `src/components/bulk-import/DemoImportResult.tsx`, `src/pages/{super-admin,manager,company-admin}/BulkImport.tsx`
+
+### Verified
+- `tsc -b` clean, `eslint` clean, `vite build` succeeds, 163 tests pass (updated form/bulk suites + 2 new tests).
+
 ## [2026-07-08 EDT] — Demo auto-provision: skip onboarding + one-click magic-link invite (Dev + Staging-B)
 
 Deliberate change (Bill /full-go): admins can now provision **demo accounts** that skip onboarding and receive a one-click magic sign-in link instead of the set-your-password invitation. Opt-in per request; hard-blocked in production.
@@ -14633,19 +14990,6 @@ Deliberate change (Bill /full-go): admins can now provision **demo accounts** th
 - **Dev** `ig-dev-auth-service` (acct [aws-account]) — CodeSha256 `YfHpj0WkCO88…`, `/v1/auth/health` 200. Surgical Lambda code hot-patch (0-drift overlay of 5 files onto the deployed package; no stale `.pyc`; 1160/1160 `.py` parity).
 - **Staging-B** `ig-staging-b-auth-service` (acct [aws-account]) — CodeSha256 `RgCoxq67…`, `/v1/auth/health` 200. Magic links build on `https://stable.inspiresgenius.com/magic-verify`.
 - Codified in **PR #531** (`feat/demo-magic-invite` → `development`) so the next CDK deploy retains the hot-patch.
-
-## [2026-07-08 EDT] — "Skip onboarding" toggle on Add User + bulk importer (frontend)
-
-Added a checkbox to opt a new user in/out of the onboarding process, wired to the auth-service `demo_account` flag (skip onboarding + one-click magic sign-in link; honored on Dev/Staging-B, rejected in prod). PR frontend#161, pairs with backend PR inspire-genius#531.
-
-### Added
-- **Add User form** — `UserFormValues.skip_onboarding` (default false); "Skip onboarding process" checkbox in `UserFormModal` (add-mode only); `UserManagement.handleAdd` maps it to `demo_account`; `InviteUserPayload.demo_account?`.
-  - Files: `src/components/shared/forms/userForm.constants.ts`, `UserFormModal.tsx`, `src/pages/super-admin/UserManagement.tsx`, `src/services/super-admin/user-management/user-management.service.ts`
-- **Bulk importer (super-admin, manager, company-admin)** — "Skip onboarding for this batch" checkbox on the upload step. When checked, validated rows go to the already-deployed auth-service bulk endpoint (`/v1/user-management/invite/bulk`, `demo_account=true` per row) via new `useBulkDemoInvite` hook + `bulkInviteUsers` service; results shown in new shared `DemoImportResult` (compose/send/track skipped). Unchecked = existing user-service/invitation-service staging flow.
-  - Files: `src/hooks/useBulkImport.ts`, `src/components/bulk-import/DemoImportResult.tsx`, `src/pages/{super-admin,manager,company-admin}/BulkImport.tsx`
-
-### Verified
-- `tsc -b` clean, `eslint` clean, `vite build` succeeds, 163 tests pass (updated form/bulk suites + 2 new tests).
 
 ## [2026-07-07 EDT] — Summit frontend surface built + wired to the Agent Engine + user home
 
