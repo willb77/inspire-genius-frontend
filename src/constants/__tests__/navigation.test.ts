@@ -32,6 +32,65 @@ describe("constants/navigation", () => {
     })
   })
 
+  // ── The manager menu, as specified 2026-08-16 ──────────────────────
+  //
+  // Order is part of the requirement, not incidental, so it is asserted as a
+  // sequence rather than as a set of "contains" checks.
+  describe("MANAGER_NAV_ITEMS", () => {
+    const labels = () => NAV_ITEMS_BY_ROLE.manager.map((i) => i.label)
+
+    it("is in the specified order", () => {
+      expect(labels()).toEqual([
+        "Dashboard",
+        "Team Roster (Client)",
+        "Schedule",
+        "Chat with Meridian",
+        "Document Library",
+        "Team Import",
+        "Surveys",
+        "Settings",
+        "Help & Support",
+      ])
+    })
+
+    it("points the four shared surfaces at their unprefixed routes", () => {
+      // These carry no `/manager/` prefix, which is exactly why a manager can
+      // already reach them — ProtectedRoute gates by path prefix only. Pointing
+      // any of them at a /manager/* clone would create a second copy of a
+      // surface that already ships.
+      const byLabel = Object.fromEntries(NAV_ITEMS_BY_ROLE.manager.map((i) => [i.label, i.to]))
+      expect(byLabel["Chat with Meridian"]).toBe(ROUTES.MERIDIAN_CHAT)
+      expect(byLabel["Document Library"]).toBe(ROUTES.DOCUMENTS)
+      expect(byLabel["Surveys"]).toBe(ROUTES.SURVEYS)
+      expect(byLabel["Help & Support"]).toBe(ROUTES.HELP)
+    })
+
+    it("keeps Team Import on the existing manager bulk-import route", () => {
+      const item = NAV_ITEMS_BY_ROLE.manager.find((i) => i.label === "Team Import")
+      expect(item?.to).toBe(ROUTES.MANAGER.BULK_IMPORT)
+    })
+
+    it("gives Schedule its own manager route", () => {
+      const item = NAV_ITEMS_BY_ROLE.manager.find((i) => i.label === "Schedule")
+      expect(item?.to).toBe(ROUTES.MANAGER.SCHEDULE)
+      // NOT the practitioner one — same scheduler backend, different roster.
+      expect(item?.to).not.toBe(ROUTES.PRACTITIONER.SCHEDULE)
+    })
+
+    it("no longer lists the five surfaces removed on request", () => {
+      // The PAGES still route; this is a shortcut list, not the route table.
+      for (const gone of [
+        "PRISM Team",
+        "Job Blueprint",
+        "Interview Prep",
+        "Team Composition",
+        "Analytics",
+      ]) {
+        expect(labels()).not.toContain(gone)
+      }
+    })
+  })
+
   describe("Tools rollup", () => {
     it("defines tool-item arrays for manager and super-admin", () => {
       expect(Array.isArray(TOOL_ITEMS_BY_ROLE.manager)).toBe(true)

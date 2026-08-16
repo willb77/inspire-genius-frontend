@@ -102,6 +102,10 @@ export const ROUTES = {
     PRISM_TEAM: "/manager/prism-team",
     ANALYTICS: "/manager/analytics",
     BULK_IMPORT: "/manager/bulk-import",
+    /** Batch session scheduler over the manager's direct reports. Reuses the
+     *  coach schedule endpoints (/v1/agents/coach/schedule*) — one scheduler,
+     *  two rosters. */
+    SCHEDULE: "/manager/schedule",
     SETTINGS: "/manager/settings",
     JOB_BLUEPRINT: "/manager/job-blueprint",
     INTERVIEW_PREP: "/manager/interview-prep",

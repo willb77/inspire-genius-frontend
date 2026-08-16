@@ -327,21 +327,53 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
-/** Navigation items for the manager role */
+/**
+ * Navigation items for the manager role.
+ *
+ * Rewritten 2026-08-16 to the order Bill specified: Dashboard, Team Roster
+ * (Client), Schedule, Chat with Meridian, Document Library, Team Import,
+ * Surveys — then Settings and Help & Support at the foot.
+ *
+ * ## Four of these are not new pages
+ *
+ * `ProtectedRoute` role-gates by PATH PREFIX only (`/manager/*`,
+ * `/super-admin/*`, …). `/meridian/chat`, `/documents`, `/surveys` and `/help`
+ * carry no prefix, so a manager has always been able to open them — they were
+ * simply absent from this list. Adding the rows exposes surfaces that already
+ * shipped and are already live on staging-b; it does not widen access.
+ *
+ * ## What was removed, and why the pages are fine
+ *
+ * PRISM Team, Job Blueprint, Interview Prep, Team Composition and Analytics
+ * were dropped from the menu on request. Every one still routes — this is a
+ * shortcut list, not the route table, the same convention the user nav follows
+ * (see {@link getUserNavItems}). PRISM data has not gone anywhere either: the
+ * roster carries each member's PRISM colour, and the full behavioural profile
+ * is the first tab of the member workspace under Team Development Studio.
+ */
 export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.MANAGER.DASHBOARD, icon: LayoutDashboard, label: "Dashboard" },
-  { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Management" },
-  { to: ROUTES.MANAGER.PRISM_TEAM, icon: Brain, label: "PRISM Team" },
-  // Team Development Studio moved into the collapsible "Tools" rollup
-  // (TOOL_ITEMS_BY_ROLE, rendered by UnifiedLayout) — no longer a flat item.
-  // Combined Plan §A.E3.4 — task agents (Maven/James/Atlas)
-  { to: ROUTES.MANAGER.JOB_BLUEPRINT, icon: Briefcase, label: "Job Blueprint" },
-  { to: ROUTES.MANAGER.INTERVIEW_PREP, icon: UserCheck, label: "Interview Prep" },
-  { to: ROUTES.MANAGER.TEAM_COMPOSITION, icon: UsersRound, label: "Team Composition" },
-  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Bulk Import" },
+  // "Team Roster (Client)" rather than "Team Management": for a manager these
+  // are the people they coach, and the page is now a roster of real direct
+  // reports (employee_profiles.manager_id) rather than a management console.
+  { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Roster (Client)" },
+  { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
+  {
+    to: ROUTES.MERIDIAN_CHAT,
+    icon: Sparkles,
+    label: "Chat with Meridian",
+    // Same auto-attach as the user nav — entering via the sidebar loads the
+    // signed-in manager's most recent PRISM result into the conversation.
+    state: { autoLoadPrism: true },
+  },
+  { to: ROUTES.DOCUMENTS, icon: FileText, label: "Document Library" },
+  // Same page as before at /manager/bulk-import, relabelled: what a manager
+  // does here is bring their team in, and the file now carries the Manager
+  // column that puts those people on this manager's roster.
+  { to: ROUTES.MANAGER.BULK_IMPORT, icon: UserPlus, label: "Team Import" },
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
-  { to: ROUTES.MANAGER.ANALYTICS, icon: BarChart3, label: "Analytics" },
   { to: ROUTES.MANAGER.SETTINGS, icon: Settings, label: "Settings" },
+  { to: ROUTES.HELP, icon: HelpCircle, label: "Help & Support" },
 ]
 
 /** Navigation items for the company-admin role */
