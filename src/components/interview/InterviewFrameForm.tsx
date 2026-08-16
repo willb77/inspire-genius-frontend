@@ -10,7 +10,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Upload } from "lucide-react"
+import { BadgeCheck, Upload } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { type InterviewFrame } from "@/services/interview/practice.service"
+import { useEmployerPackCatalogue } from "@/hooks/interview/useEmployerPackCatalogue"
 import {
   ACCEPTED_ROLE_FILE_TYPES,
   extractRoleText,
@@ -88,6 +89,22 @@ export default function InterviewFrameForm({
       <p className="mt-1 text-xs text-red-600">{form.formState.errors[k]?.message as string}</p>
     ) : null
 
+  // Which employers/sectors have a curated question set. Metadata only, and the
+  // service fails open to an empty catalogue — no suggestions is a degraded
+  // form, not a broken one.
+  const { data: catalogue } = useEmployerPackCatalogue()
+  const packCount = (catalogue?.employers.length ?? 0) + (catalogue?.sectors.length ?? 0)
+
+  const companyTyped = form.watch("company")?.trim().toLowerCase() ?? ""
+  const industryTyped = form.watch("industry")?.trim().toLowerCase() ?? ""
+
+  // Confirm a hit, never predict a miss. The backend resolver matches aliases
+  // ("AWS" → Amazon) and strips corporate suffixes; the catalogue carries only
+  // canonical names, so a name we don't recognise here may still resolve there.
+  // Claiming "not covered" from this list would be a lie the form can't back up.
+  const companyMatch = catalogue?.employers.find((e) => e.name.toLowerCase() === companyTyped)
+  const sectorMatch = catalogue?.sectors.find((s) => s.name.toLowerCase() === industryTyped)
+
   async function handleJdFile(file: File | undefined) {
     if (!file) return
     setJdBusy(true)
@@ -121,16 +138,55 @@ export default function InterviewFrameForm({
       <CardContent>
         <form onSubmit={form.handleSubmit((v) => onConfirm(v as InterviewFrame))} className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Please confirm five things</p>
+          {packCount > 0 && (
+            <p className="text-xs text-slate-500">
+              {catalogue?.employers.length} employers and {catalogue?.sectors.length} sectors have a
+              curated question set — start typing in either field to see them. Any other company
+              still gets a full interview from the standard bank.
+            </p>
+          )}
+          {/* The picker names real employers, so the provenance disclaimer travels
+              with it rather than appearing only after the interview starts. */}
+          {packCount > 0 && catalogue?.provenance && (
+            <p className="text-xs italic text-slate-400">{catalogue.provenance}</p>
+          )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="company">Company (the hiring organization)</Label>
-              <Input id="company" {...form.register("company")} />
+              <Input id="company" list="employer-pack-options" {...form.register("company")} />
+              <datalist id="employer-pack-options">
+                {catalogue?.employers.map((e) => (
+                  <option key={e.slug} value={e.name}>
+                    {e.framework}
+                  </option>
+                ))}
+              </datalist>
               {err("company")}
+              {companyMatch && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Curated set available — {companyMatch.questionCount} questions in{" "}
+                  {companyMatch.name}&rsquo;s style
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="industry">Industry / sector</Label>
-              <Input id="industry" {...form.register("industry")} />
+              <Input id="industry" list="sector-pack-options" {...form.register("industry")} />
+              <datalist id="sector-pack-options">
+                {catalogue?.sectors.map((s) => (
+                  <option key={s.slug} value={s.name}>
+                    {s.typicalEmployers}
+                  </option>
+                ))}
+              </datalist>
               {err("industry")}
+              {!companyMatch && sectorMatch && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Curated set available — {sectorMatch.questionCount} sector-style questions
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="roleTitle">Role title being interviewed for</Label>
