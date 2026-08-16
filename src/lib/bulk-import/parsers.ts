@@ -36,10 +36,44 @@ const FIELD_ALIASES: Record<string, KnownField> = {
   usertype: "user_type",
   role: "user_type",
   type: "user_type",
+  // ── Reporting line ──
+  // The VALUE here is a manager's email address, and it is the only reason a
+  // manager's roster is ever non-empty: it becomes
+  // employee_profiles.manager_id. Note the deliberate overlap with
+  // NOT_THE_USERS_OWN below — "Manager Email" must resolve to THIS field and
+  // must never be inferred as the user's own login. Exact aliases are claimed
+  // before inference runs, so listing it here is what makes that safe.
+  manager: "manager_email",
+  manager_email: "manager_email",
+  manageremail: "manager_email",
+  managers_email: "manager_email",
+  reports_to: "manager_email",
+  reportsto: "manager_email",
+  reporting_to: "manager_email",
+  supervisor: "manager_email",
+  supervisor_email: "manager_email",
+  line_manager: "manager_email",
+  department: "department",
+  dept: "department",
+  team: "department",
+  division: "department",
+  position: "position",
+  job_title: "position",
+  jobtitle: "position",
+  title: "position",
 }
 
 /** Fields the importer actually consumes. Anything else is surplus. */
-export const KNOWN_FIELDS = ["fname", "lname", "email1", "email2", "user_type"] as const
+export const KNOWN_FIELDS = [
+  "fname",
+  "lname",
+  "email1",
+  "email2",
+  "user_type",
+  "manager_email",
+  "department",
+  "position",
+] as const
 export type KnownField = (typeof KNOWN_FIELDS)[number]
 
 // ── Header inference ──
@@ -58,6 +92,12 @@ const EMAIL_TOKENS = new Set(["email", "emails", "mail", "gmail", "emailaddress"
 // Someone else's address must never become a student's login, so a header
 // naming another party is reported as ignored rather than inferred — even
 // though it plainly contains "email".
+//
+// "manager" and "supervisor" stay on this list even though `manager_email` is
+// now a real field: the exact-alias pass claims those headers first, and this
+// list is the backstop for the ones it does not — "Manager Contact Email",
+// "Supervising Teacher Email". Removing them would let a supervisor's address
+// become a student's login, which is the exact failure this list exists for.
 const NOT_THE_USERS_OWN = new Set([
   "parent", "parents", "guardian", "guardians", "mother", "father", "mom", "dad",
   "counselor", "counsellor", "advisor", "adviser", "teacher", "instructor",

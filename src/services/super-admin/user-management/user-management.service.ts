@@ -87,6 +87,13 @@ export type InviteUserPayload = {
   // hard-rejects this with 400 in production). Wired to the "Skip onboarding"
   // checkbox in the Add User form.
   demo_account?: boolean
+  // Reporting line + employment detail. auth-service resolves manager_email to
+  // that manager's user_profiles.id and writes employee_profiles — the relation
+  // a manager's roster and Team Development dossier read. Optional; an unknown
+  // manager email is reported, and the user is still created unattached.
+  manager_email?: string
+  department?: string
+  position?: string
 }
 
 export type InviteUserData = {
