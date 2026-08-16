@@ -18,6 +18,9 @@ const FIELD_LABELS: Record<string, string> = {
   email1: "Email 1",
   email2: "Email 2",
   user_type: "User Type",
+  manager_email: "Manager",
+  department: "Department",
+  position: "Position",
 }
 
 type DataPreviewTableProps = {
@@ -29,7 +32,15 @@ type DataPreviewTableProps = {
 
 const PAGE_SIZE = 50
 
-type EditableField = "fname" | "lname" | "email1" | "email2" | "user_type"
+type EditableField =
+  | "fname"
+  | "lname"
+  | "email1"
+  | "email2"
+  | "user_type"
+  | "manager_email"
+  | "department"
+  | "position"
 
 type EditingCell = {
   row: number
@@ -258,6 +269,13 @@ export function DataPreviewTable({
               <TableHead>Email 1</TableHead>
               <TableHead>Email 2</TableHead>
               <TableHead className="w-36">User Type</TableHead>
+              {/* Manager is the reporting line. It is editable in the preview
+                  for the same reason every other cell is: a wrong manager
+                  imports cleanly and shows up as an empty roster, and this is
+                  the last screen where anyone can see the value at all. */}
+              <TableHead>Manager</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Position</TableHead>
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -281,6 +299,9 @@ export function DataPreviewTable({
                   <TableCell>{renderCell(rowIndex, "email1", record.email1)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "email2", record.email2)}</TableCell>
                   <TableCell>{renderCell(rowIndex, "user_type", record.user_type)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "manager_email", record.manager_email)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "department", record.department)}</TableCell>
+                  <TableCell>{renderCell(rowIndex, "position", record.position)}</TableCell>
                   <TableCell>
                     {isInvalid ? (
                       <TooltipProvider>
@@ -328,7 +349,7 @@ export function DataPreviewTable({
             })}
             {records.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
                   No records to display. Upload a file to get started.
                 </TableCell>
               </TableRow>

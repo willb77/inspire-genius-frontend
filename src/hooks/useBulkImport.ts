@@ -52,6 +52,13 @@ export function useBulkDemoInvite() {
         last_name: r.lname,
         role: r.user_type,
         demo_account: true,
+        // Carry the reporting line through the demo path too. Without this the
+        // "Skip onboarding" route provisions working accounts that belong to
+        // no manager — which is exactly the state the Manager column exists to
+        // fix, reached by a different door.
+        manager_email: r.manager_email || undefined,
+        department: r.department || undefined,
+        position: r.position || undefined,
       }))
       const resp = await bulkInviteUsers(users)
       return (

@@ -135,6 +135,7 @@ const PrismTeam = React.lazy(() => import("@/pages/manager/PrismTeam"));
 const ManagerSettings = React.lazy(() => import("@/pages/manager/Settings"));
 const ManagerAnalytics = React.lazy(() => import("@/pages/manager/Analytics"));
 const ManagerBulkImport = React.lazy(() => import("@/pages/manager/BulkImport"));
+const ManagerSchedule = React.lazy(() => import("@/pages/manager/Schedule"));
 // Combined Plan §A.E3.4 — task-agent pages
 const ManagerJobBlueprint = React.lazy(() => import("@/pages/manager/JobBlueprintPage"));
 const ManagerInterviewPrep = React.lazy(() => import("@/pages/manager/InterviewPrepPage"));
@@ -559,6 +560,7 @@ export const routes: RouteObject[] = [
       { path: "/manager/settings", element: withSuspense(<ManagerSettings />) },
       { path: "/manager/analytics", element: withSuspense(<ManagerAnalytics />) },
       { path: "/manager/bulk-import", element: withSuspense(<ManagerBulkImport />) },
+      { path: "/manager/schedule", element: withSuspense(<ManagerSchedule />) },
 
       // Company Admin pages
       { path: "/company-admin/dashboard", element: withSuspense(<CompanyAdminDashboard />) },

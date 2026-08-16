@@ -64,6 +64,19 @@ export function validateRecords(
       })
     }
 
+    // Reporting line — a cycle of length one. Postgres accepts it (manager_id
+    // is just an FK to a profile), the roster then lists the person under
+    // themselves, and nothing anywhere reports an error. Caught here because
+    // this is the only layer that can point at the offending row.
+    const managerEmail = (record.manager_email ?? "").toLowerCase().trim()
+    if (managerEmail && managerEmail === (record.email1 ?? "").toLowerCase().trim()) {
+      errors.push({
+        row,
+        field: "manager_email",
+        message: "A user cannot report to themselves",
+      })
+    }
+
     // Duplicate email detection
     const email = (record.email1 ?? "").toLowerCase().trim()
     if (email) {
@@ -107,6 +120,11 @@ export function revalidateRecord(
   if (disallowed.includes(record.user_type as string)) {
     const roleLabel = callerRole === "manager" ? "Managers" : "Company admins"
     errors.push({ row: 0, field: "user_type", message: `${roleLabel} cannot create ${record.user_type} users` })
+  }
+
+  const managerEmail = (record.manager_email ?? "").toLowerCase().trim()
+  if (managerEmail && managerEmail === (record.email1 ?? "").toLowerCase().trim()) {
+    errors.push({ row: 0, field: "manager_email", message: "A user cannot report to themselves" })
   }
 
   return errors
