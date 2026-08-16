@@ -230,7 +230,16 @@ export function FileUploader({ onParsed, disabled = false }: FileUploaderProps) 
             <div className="mt-3 rounded-md bg-muted/50 p-3 text-left w-full max-w-md">
               <p className="text-xs font-medium mb-1">Required columns:</p>
               <p className="text-xs text-muted-foreground font-mono">First Name, Last Name, Email</p>
-              <p className="text-xs text-muted-foreground mt-1">Optional: Email 2, Role (user/manager/company-admin)</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional: Email 2, Role (user/manager/company-admin), Manager, Department, Position
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="font-mono">Manager</span> takes the manager&apos;s{" "}
+                <span className="font-medium">email address</span> — it is what puts this person on
+                that manager&apos;s roster. Leave it blank and the user is imported reporting to
+                nobody. <span className="font-mono">Reports To</span> and{" "}
+                <span className="font-mono">Supervisor</span> work as header names too.
+              </p>
               <p className="text-xs text-muted-foreground mt-2">
                 Header names are matched loosely — <span className="font-mono">Email</span>,{" "}
                 <span className="font-mono">E-mail</span> and{" "}
