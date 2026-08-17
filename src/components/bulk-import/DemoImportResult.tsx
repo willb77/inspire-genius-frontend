@@ -7,6 +7,8 @@ import type { BulkInviteData } from "@/services/super-admin/user-management/user
 
 type DemoImportResultProps = {
   isLoading: boolean
+  /** Chunked-upload progress. Absent for callers that send a single request. */
+  progress?: { done: number; total: number } | null
   data: BulkInviteData | undefined
   onReset: () => void
 }
@@ -17,7 +19,7 @@ type DemoImportResultProps = {
  * emailed a one-click magic sign-in link, so there are no separate
  * compose/send/track steps — this just reports per-row success/failure.
  */
-export function DemoImportResult({ isLoading, data, onReset }: DemoImportResultProps) {
+export function DemoImportResult({ isLoading, data, onReset, progress }: DemoImportResultProps) {
   const total = data?.summary.total ?? 0
   const succeeded = data?.summary.successful ?? 0
   const failed = data?.summary.failed ?? 0
@@ -56,7 +58,14 @@ export function DemoImportResult({ isLoading, data, onReset }: DemoImportResultP
         {isLoading && !data ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Provisioning demo accounts…
+            {progress && progress.total > 0 ? (
+              <span>
+                Provisioning demo accounts… {Math.min(progress.done, progress.total)} of{" "}
+                {progress.total}. This runs in batches — please keep this tab open.
+              </span>
+            ) : (
+              <span>Provisioning demo accounts…</span>
+            )}
           </div>
         ) : (
           <>
