@@ -1,3 +1,146 @@
+## [2026-08-17] — Invitation staging path fixed: a 33-student import reported "0 emails sent"
+
+### Incident
+- A bulk import into staging-b reported **0 emails sent** and flooded the console
+  with 500s on `GET /api/v1/invitations/status/{batch_id}`. Not the school
+  network — the `ERR_NETWORK_CHANGED` lines were incidental wifi; the 500s were
+  server-side `ValidationException`s.
+- **FOUR independent faults, each on its own sufficient to produce that symptom.
+  The invitation staging path had never worked end to end in any deployed
+  environment.**
+
+  1. **Key schema mismatch.** CDK provisioned `pk=invitation_id` (HASH only, no
+     sort key) + `EmailStatusIndex`/`OrgIndex`. `invitation-service/app/models.py`
+     is a `PK`/`SK` single-table design and reads with
+     `PK = :pk AND begins_with(SK, :prefix)` → DynamoDB rejects it:
+     *"The number of query conditions (2) exceeds the number of key attributes
+     defined in the schema (1)"*. `send-bulk` resolved ZERO recipients.
+  2. **`INVITATION_DYNAMODB_TABLE` was never set** on any environment, so
+     `bulk_import.py` used its literal fallback `"ig-invitations"` — a table
+     that exists in no account.
+  3. **user-service had zero DynamoDB IAM permissions** — only
+     `AWSLambdaVPCAccessExecutionRole` + `AWSLambdaBasicExecutionRole`.
+  4. **Every failure was swallowed** by a best-effort `except` at WARNING.
+
+- `ig-staging-b-invitations` held **0 items**, confirmed by a live
+  `scan --select COUNT` (the `ItemCount` metric alone lags up to 6h). Nothing
+  had ever been written to it.
+
+### Why tests never caught it
+`services/invitation-service/tests/conftest.py` stands up its **own** moto table
+with the CORRECT `PK`/`SK` + `GSI1` schema. The service's tests therefore passed
+against a table shape production did not have, and nothing in the repo compared
+the fixture to the infrastructure. Dev had no invitations table at all
+(`ResourceNotFoundException`), so dev testing could not surface it either.
+
+### Fixed (mono #924, #925)
+- Table is now `PK`/`SK` + the `GSI1` the code actually writes. The two GSIs no
+  code ever queried (zero `IndexName=` in the whole service) are gone.
+- Renamed to `${stackPrefix}-invitations-v2`. Required: a key-schema change
+  REPLACES the table and CloudFormation cannot replace a table whose name it
+  must reuse, and the first attempt hit DynamoDB's hard limit of one GSI
+  create-or-delete per update.
+- `INVITATION_DYNAMODB_TABLE` now set on user-service, and the role granted
+  `dynamodb:PutItem` scoped to that one table ARN.
+- Staging-write failures log at ERROR with a per-batch summary instead of a
+  silent WARNING.
+- `infrastructure/cdk/test/invitations-table-schema.test.ts` — 24 tests pinning
+  the SYNTHESIZED schema AND the wiring across environments. Verified they gate:
+  restoring the old key schema fails 8; removing the env var fails 2. They also
+  caught an error of my own (a finder matching `-invitations`, missing the
+  renamed `-invitations-v2`).
+
+### Verification (both tiers, end to end — not config-deep)
+- dev + staging-b: table ACTIVE with `PK`/`SK` + `GSI1`; old table removed.
+- `INVITATION_DYNAMODB_TABLE` reads `ig-{env}-invitations-v2`; IAM grants
+  `dynamodb:PutItem` on that exact ARN.
+- **The literal 2-condition query that used to raise `ValidationException` now
+  returns `Count=1`** after a real PUT. Probe rows deleted; both tables back to 0.
+- staging-b promote: all six jobs green including the authenticated smoke matrix.
+
+### Unaffected
+- The 33 EECHS students imported earlier are fine — 33 accounts, all active and
+  email-verified, created via the **"Skip onboarding"** path, which goes
+  auth-service → `invite/bulk` → `create_user` and bypasses invitation-service
+  entirely. Manager rosters populated (bwhite 17, klong 16).
+
+### Still open
+- The default (non-"Skip onboarding") import path still creates **no platform
+  account** — it writes `user_service.user_profiles`, which nothing reads. Even
+  with invitations working it cannot onboard a real cohort. Scope in
+  `docs/plans/Bulk_Import_Org_Assignment_Scope.md`.
+- The failed run left **37 orphan rows** in `user_service.user_profiles`.
+
+## [2026-08-15] — A.2.1/A.2.2: org-service + user-service bound to the verified token
+
+### Added
+- **`ig_auth.authz`** — shared tenancy/identity checks so the two services cannot
+  drift apart: `assert_org_match`, `assert_self_or_platform`,
+  `assert_platform_operator`, plus `PLATFORM_ROLES` and `TenantAccessError`.
+  Files: `packages/ig-auth/ig_auth/authz.py`, `ig_auth/__init__.py` (v0.4.0 → 0.5.0)
+- 57 tenancy tests across the two services (org 30, user 27) + 37 for the primitive.
+  Files: `services/{org,user}-service/tests/test_tenancy.py`,
+  `packages/ig-auth/tests/test_authz.py`
+
+### Fixed
+- **org-service: all eleven routes took the tenant key from the PATH and never
+  compared it to the token.** Any authenticated user could read another
+  customer's settings, rename their organisation, add or strip their members, or
+  DELETE the organisation. A.1.4's query scoping cannot reach this shape — the
+  caller *names* the row — so the fix is an explicit path-vs-token comparison.
+  Reads require membership; writes require membership **and** company-admin;
+  creating or deleting a tenant is platform-only.
+  Files: `services/org-service/app/routes.py`, `app/main.py` (had **no** 403
+  handler at all — a raised check would have surfaced as a 500)
+- **user-service: every route accepted any `user_id`.** Read, overwrite or delete
+  any other user's profile row. `user_service.user_profiles` has no org column,
+  so there is nothing to scope; the boundary is identity instead — your own
+  record, or a platform role. "Self" is necessarily inside your own tenant, so
+  this closes the cross-customer path with **no migration**.
+  Files: `services/user-service/app/routes.py`, `app/main.py`
+- **Pre-existing test pollution in user-service.** `test_bulk_import` and
+  `test_acceptance_csv` swap the shared app's JWT verifier and never restore it,
+  so every later test inherited `user_role: manager` regardless of its token.
+  Invisible while no route read a role; it surfaced the instant these gates did
+  (`POST /v1/users` → 403 for the *super-admin* fixture, full-suite order only).
+  `conftest` now snapshots and restores.
+  Files: `services/user-service/tests/conftest.py`
+
+### Corrected
+- **This is not a privilege-escalation fix, and I said it was.** `PATCH
+  /v1/users/{id}/role` writes *user-service's own* `role` column. The platform
+  authorises against `public.user_profiles JOIN public.roles`, minted by
+  auth-service, whose authoritative write path
+  (`PUT /v1/user-management/users/{id}/role`) is already super-admin-gated —
+  different table, different schema, and nothing reads the user-service one to
+  make an authz decision. What was exposed is cross-tenant data disclosure,
+  modification and deletion. Latent in a single-client environment; the product
+  itself in a two-client one.
+
+### Notes
+- **Inline checks, not decorators.** `functools.wraps` on `@require_role`
+  collides with `from __future__ import annotations` and made deployed FastAPI
+  read `body:` as a query param, 422-ing every call — which is why the decorator
+  was already stripped from `bulk_import`.
+- **Role SETS, not `require_at_least`.** `ROLE_HIERARCHY` ranks practitioner and
+  distributor *above* company-admin, so a rank test would hand org administration
+  to a coach. Asserted by test.
+- **Checks run before the row lookup**, so 403-vs-404 cannot enumerate which orgs
+  or users exist. Denial bodies are a flat `Not permitted`; actor/role/target go
+  to CloudWatch only.
+- No CDK change needed — `pip install /packages/ig-auth -t` installs the whole
+  package, so the new module ships without a stack edit.
+- **Verification:** 324 tests in the touched packages, 493 in the other ig-auth
+  consumers (dashboard, growth, support, document). The 57 new tenancy tests (org 30,
+  user 27) were run against the pre-gate code first — **39 fail there**, so they
+  catch the bug rather than describe the fix. (The commit message on 7c2df459
+  says 62; 57 is the correct count.)
+- **Not deployed.** PR #914 targets `development`; staging-b still moves only on
+  a `release-stable-*` tag.
+- **A.2.3 still open:** role rank is global — `company-admin` means "admin of
+  *something*", not "admin of *your* org". That is why role writes and profile
+  creation here are super-admin-only rather than delegated.
+
 ## [2026-08-15] — #908 dev rollout completed, user-sync stub incident, staging-b promoted
 
 ### Incident (caused by #908, caught by the gate, repaired same session)
@@ -604,37 +747,43 @@ staging-b**, verified by probe rather than by a green pipeline.
 
 ---
 
-## [2026-08-14] — Deploy record: employer-style practice questions LIVE on dev + staging-b
+## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
 
-FE **#430** (merge `f2675831`) merged after its paired agent-engine PR **#901**
-(merge `68e3275c`, monorepo) had already rolled to dev — so the UI never sat in
-front of a route that did not exist. **Deploy to Dev + Deploy to Staging-B both
-success.**
+### Added
+- **Enable on/off toggle per survey.** The builder gained an "Available to
+  respondents" switch (new surveys default OFF), and the manage list shows an
+  Available/Off badge with an inline switch to flip availability without opening
+  the editor. Respondents only see enabled surveys (enforced server-side).
+- **Creator + responder identity.** The manage list shows "Created by {name} ·
+  {email}", and the Results view shows each responder's name + email above their
+  answers (server-resolved, not client-supplied).
+  - Files: `src/pages/user/SurveysPage.tsx`,
+    `src/components/survey/{SurveyBuilder,SurveyResults}.tsx`,
+    `src/types/survey.ts`
 
-### Verified (probe, not pipeline)
-- The deployed **code-split chunk** carries the change on both environments:
-  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
-  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
-- The **entry bundle does not** — a false negative worth recording, because the
-  practice page is lazy-loaded and the entry chunk was never going to prove
-  anything. Checking it first is the mistake to avoid next time.
-- Backend side: `GET /v1/agents/interview/employer-packs` → **401, not 404** on
-  the dev gateway.
+## [2026-08-14] — Surveys card in Settings: also show it to super-admin
+
+### Changed
+- The "Surveys" card in Settings (Settings → My Workspace) was gated to the
+  `user` role only, so the owner (super-admin) couldn't see it while testing.
+  Now shown to `user` **and** `super-admin`. All role Settings pages render the
+  same shared `Settings` component, so this covers the super-admin's user-
+  settings and administration-settings views.
+  - Files: `src/components/shared/settings/Settings.tsx`
+
+## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
 
 ### Fixed
-- The entry below said "**Built and tested, NOT deployed**" — true when written,
-  false within the hour. Corrected in place rather than left standing.
+- The "Build a survey from questions" dialog had no max-height, so a tall
+  viewport pushed it off-screen with no way to scroll — the "Build survey"
+  button was unreachable. The dialog now caps at 85dvh with a scrollable body
+  and a **pinned footer**, so the action is always visible.
 
-### Notes
-- **`getEmployerPackCatalogue()` is unconsumed**, so the bundler tree-shakes it
-  out of the page chunk. That is why `interview/employer-packs` is absent from
-  the deployed JavaScript — correct behaviour, not a failed deploy. It stays
-  until an employer picker exists.
-- **Phase 0 (legal / nominative-use review of the 138 questions) is outstanding
-  and this is live on staging-b ahead of it.** The provenance notice ships on
-  every payload and renders in the UI; the review has not happened.
-
----
+### Added
+- **Drag-and-drop** a file onto the text box (in addition to the Upload button),
+  with a drop-zone highlight, and clearer guidance that Word tables + checkbox
+  options come through.
+  - Files: `src/components/survey/SurveyUploadDialog.tsx`
 
 ## [2026-08-14] — Interview Practice: employer-style questions and their provenance
 
@@ -679,43 +828,37 @@ same day; see the deploy record entry above.**)
   changed files.
 
 ---
-## [2026-08-14] — Surveys: enable on/off toggle + creator/responder identity
+## [2026-08-14] — Deploy record: employer-style practice questions LIVE on dev + staging-b
 
-### Added
-- **Enable on/off toggle per survey.** The builder gained an "Available to
-  respondents" switch (new surveys default OFF), and the manage list shows an
-  Available/Off badge with an inline switch to flip availability without opening
-  the editor. Respondents only see enabled surveys (enforced server-side).
-- **Creator + responder identity.** The manage list shows "Created by {name} ·
-  {email}", and the Results view shows each responder's name + email above their
-  answers (server-resolved, not client-supplied).
-  - Files: `src/pages/user/SurveysPage.tsx`,
-    `src/components/survey/{SurveyBuilder,SurveyResults}.tsx`,
-    `src/types/survey.ts`
+FE **#430** (merge `f2675831`) merged after its paired agent-engine PR **#901**
+(merge `68e3275c`, monorepo) had already rolled to dev — so the UI never sat in
+front of a route that did not exist. **Deploy to Dev + Deploy to Staging-B both
+success.**
 
-## [2026-08-14] — Survey upload dialog: scrollable + sticky action + drag-and-drop
+### Verified (probe, not pipeline)
+- The deployed **code-split chunk** carries the change on both environments:
+  `InterviewPracticePage-Cv6vPsMz.js` (dev) and `InterviewPracticePage-B-eOV00s.js`
+  (staging-b) both contain `strongAnswerCovers` and the company/industry fields.
+- The **entry bundle does not** — a false negative worth recording, because the
+  practice page is lazy-loaded and the entry chunk was never going to prove
+  anything. Checking it first is the mistake to avoid next time.
+- Backend side: `GET /v1/agents/interview/employer-packs` → **401, not 404** on
+  the dev gateway.
 
 ### Fixed
-- The "Build a survey from questions" dialog had no max-height, so a tall
-  viewport pushed it off-screen with no way to scroll — the "Build survey"
-  button was unreachable. The dialog now caps at 85dvh with a scrollable body
-  and a **pinned footer**, so the action is always visible.
+- The entry below said "**Built and tested, NOT deployed**" — true when written,
+  false within the hour. Corrected in place rather than left standing.
 
-### Added
-- **Drag-and-drop** a file onto the text box (in addition to the Upload button),
-  with a drop-zone highlight, and clearer guidance that Word tables + checkbox
-  options come through.
-  - Files: `src/components/survey/SurveyUploadDialog.tsx`
+### Notes
+- **`getEmployerPackCatalogue()` is unconsumed**, so the bundler tree-shakes it
+  out of the page chunk. That is why `interview/employer-packs` is absent from
+  the deployed JavaScript — correct behaviour, not a failed deploy. It stays
+  until an employer picker exists.
+- **Phase 0 (legal / nominative-use review of the 138 questions) is outstanding
+  and this is live on staging-b ahead of it.** The provenance notice ships on
+  every payload and renders in the UI; the review has not happened.
 
-## [2026-08-14] — Surveys card in Settings: also show it to super-admin
-
-### Changed
-- The "Surveys" card in Settings (Settings → My Workspace) was gated to the
-  `user` role only, so the owner (super-admin) couldn't see it while testing.
-  Now shown to `user` **and** `super-admin`. All role Settings pages render the
-  same shared `Settings` component, so this covers the super-admin's user-
-  settings and administration-settings views.
-  - Files: `src/components/shared/settings/Settings.tsx`
+---
 
 ## [2026-08-14] — AWS cost reduction: Tier 1 executed, $676 tranche analysed, two premises withdrawn
 
@@ -1218,38 +1361,6 @@ the guarded path rather than around it.
   tryBundle stub. `ANTHROPIC_API_KEY` optional (parse is fail-open). Added `survey`
   to the staging-b promote diff-gate list (deploy is `--all`).
 
-## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
-
-The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
-catalogue (`useVerticalLauncherSection`, renamed *Verticals → Tools* on 2026-07-31) and
-the utility rollup (`SUPER_ADMIN_TOOLS_SECTION` — Team Development + Interview Practice).
-`SidebarScaffold` keys collapsible sections by `key={section.label}`, so the two "Tools"
-sections shared a React key — the reconciliation clash made the Team-Development "Tools"
-group surface only when the Administration section was toggled.
-
-### Fixed
-- **One "Tools" rollup for super-admin.** `SuperAdminLayout` now merges the catalogue
-  items and the utility-tool items into a single `{ label: "Tools" }` section (catalogue
-  first, then utilities), collapsed by default, above Administration. One section, one
-  key, no flicker. The merge is label-agnostic (it combines by `.items`), so it is robust
-  to future launcher-label changes. `UnifiedLayout` (managers) was never affected — it
-  labels its catalogue "Verticals" and its rollup "Tools", so there was no collision there.
-  - Files: `src/layouts/SuperAdminLayout.tsx`
-- Verified live on **dev + staging-b** at the deployed-artifact level (staging-b magic-auth
-  is off → no headless DOM render): the shipped `SuperAdminLayout-*.js` chunk emits exactly
-  one `label:"Tools"` section merging `[...launcher?.items, ...tools?.items]`.
-
-### Changed
-- **Test corrected + regression coverage.** `SuperAdminLayout.test.tsx` mocked the launcher
-  with the stale label "Verticals" and omitted `SUPER_ADMIN_TOOLS_SECTION`, so it never
-  exercised the duplicate. Updated to production's "Tools" label and added tests asserting
-  exactly one "Tools" section containing catalogue + utility items.
-  - Files: `src/layouts/__tests__/SuperAdminLayout.test.tsx`
-
-PR #391 (merged, `930798a`). A related stale-branch merge hazard —
-`feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
-nav evolution if merged without rebasing — is tracked as issue #399.
-
 ## [2026-08-13] — Surveys: backend-backed, org exposure, results/compilation, upload-to-build
 
 The Survey surface now stores surveys + responses **centrally** (survey-service),
@@ -1310,6 +1421,38 @@ CRUD shape mirrors what a future survey-service would expose.
 - **Tests** — `src/lib/__tests__/surveyStore.test.ts` (seed/CRUD/responses) and
   `src/components/survey/__tests__/survey.test.tsx` (builder save, taker required
   validation + submit, selector, page render). Full suite green (4504 tests).
+
+## [2026-08-13] — Super-admin sidebar: consolidate the two duplicate "Tools" sections into one
+
+The super-admin sidebar rendered **two sections both labelled "Tools"**: the vertical
+catalogue (`useVerticalLauncherSection`, renamed *Verticals → Tools* on 2026-07-31) and
+the utility rollup (`SUPER_ADMIN_TOOLS_SECTION` — Team Development + Interview Practice).
+`SidebarScaffold` keys collapsible sections by `key={section.label}`, so the two "Tools"
+sections shared a React key — the reconciliation clash made the Team-Development "Tools"
+group surface only when the Administration section was toggled.
+
+### Fixed
+- **One "Tools" rollup for super-admin.** `SuperAdminLayout` now merges the catalogue
+  items and the utility-tool items into a single `{ label: "Tools" }` section (catalogue
+  first, then utilities), collapsed by default, above Administration. One section, one
+  key, no flicker. The merge is label-agnostic (it combines by `.items`), so it is robust
+  to future launcher-label changes. `UnifiedLayout` (managers) was never affected — it
+  labels its catalogue "Verticals" and its rollup "Tools", so there was no collision there.
+  - Files: `src/layouts/SuperAdminLayout.tsx`
+- Verified live on **dev + staging-b** at the deployed-artifact level (staging-b magic-auth
+  is off → no headless DOM render): the shipped `SuperAdminLayout-*.js` chunk emits exactly
+  one `label:"Tools"` section merging `[...launcher?.items, ...tools?.items]`.
+
+### Changed
+- **Test corrected + regression coverage.** `SuperAdminLayout.test.tsx` mocked the launcher
+  with the stale label "Verticals" and omitted `SUPER_ADMIN_TOOLS_SECTION`, so it never
+  exercised the duplicate. Updated to production's "Tools" label and added tests asserting
+  exactly one "Tools" section containing catalogue + utility items.
+  - Files: `src/layouts/__tests__/SuperAdminLayout.test.tsx`
+
+PR #391 (merged, `930798a`). A related stale-branch merge hazard —
+`feature/prism-g10b-e2e-chat-preload` (~2 months behind `development`) could clobber this
+nav evolution if merged without rebasing — is tracked as issue #399.
 
 ## [2026-08-13] — PRISM Add+ on Home imported nothing; it filed the CSV as a document
 
@@ -1909,6 +2052,85 @@ that already exists.
 
 ---
 
+## [2026-08-12] — Job Fit: remove the cross-vertical switch row
+
+Per request, removed the row under the Job-Fit tool pills that held "Back to
+Inspire Genius" and an "or switch to <vertical>" list (Direction Setting, GRANT,
+Honor Foundation, Job DNA, Knowledge Continuity — whatever the user was entitled
+to). The Job-Fit tool pills remain; the sidebar + brand logo (→ Home v2) remain
+the way out of the vertical.
+
+### Removed
+- `src/pages/job-fit/FitNav.tsx` — dropped the "Back to Inspire Genius" button +
+  the entitlement-driven vertical-switch buttons + "or switch to" label (and the
+  now-unused `useNavigate`/`Button`/`ArrowLeft`/`listEntitledVerticals`/
+  `useEnabledVerticals` imports).
+- Updated `src/pages/job-fit/__tests__/job-fit-blueprint-coach.test.tsx` — the 3
+  FitNav tests asserting the switch row are replaced by one asserting it's gone.
+- Full suite (4460) + coverage gate pass; `npm run build` clean.
+
+## [2026-08-12] — Interview Studio: upload a question-list file
+
+Third question source in `StudioQuestionBuilder` (alongside generate + manual):
+"Upload a file". Reuses `extractRoleText` (.txt/.md/.pdf/.docx, client-side) →
+new `src/lib/parseQuestionList.ts` (one question per line; strips numbering,
+bullets, and `Q:` prefixes; dedupes; caps at 50) → appends to the editable list.
+
+### Added
+- `src/lib/parseQuestionList.ts` + `src/lib/__tests__/parseQuestionList.test.ts` (6 tests).
+- Upload tab + handler in `src/components/interview/StudioQuestionBuilder.tsx`;
+  component test extended with the upload case. 11 studio-builder-area tests pass;
+  `npm run build` clean.
+
+## [2026-08-12] — Interview Practice role pages wired into the FE
+
+Renders the backend role-page generator's output (app.role_pages, monorepo #870)
+as public per-occupation landing pages that funnel into the auth-gated Interview
+Practice coach. PR #403.
+
+### Added
+- `src/data/interviewRolePages.json` (44 generated pages, code-split lazy chunk) +
+  `src/types/interviewRolePage.ts` (typed accessor).
+- Public routes `/interview-practice/roles` (index) + `/interview-practice/:slug`
+  (outside ProtectedRoute; static `/roles` outranks `:slug`).
+- `src/pages/interview-practice/InterviewRolePage.tsx` (hero + copy blocks +
+  attributed pay/outlook cards + FAQs + Schema.org JSON-LD + CTA into the coach;
+  unknown slug → not-found) + `InterviewRolesIndex.tsx` (lists all roles).
+- `src/hooks/useSeo.ts` (title/description/canonical/JSON-LD, cleaned on unmount);
+  `src/components/interview/RolePageShell.tsx` (public chrome). Discovery link on
+  the coach setup page. 5 new tests; `npm run build` clean; 53 interview tests pass.
+
+## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
+
+Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
+code (nothing renders it — the live menu is `SidebarScaffold`, per the two-header-
+layouts note). This wires the actual top-left `inspiresgenius` brand in
+`SidebarScaffold` to Home v2 and reverts the dead-code `AppHeader` edit + its test.
+
+### Fixed
+- `src/components/shared/layout/SidebarScaffold.tsx` — the brand (logo +
+  "inspiresgenius") is now a `<Link to={ROUTES.HOME}>` (Home v2) for all roles.
+- Reverted `src/components/layout/AppHeader.tsx` (unused) + removed its test.
+- The #404 role-prefill change was correct and is live (verified in the deployed
+  `InterviewPracticePage` chunk).
+
+## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
+
+PR #404.
+
+### Changed
+- `src/components/layout/AppHeader.tsx` — the top-left Inspire Genius logo now
+  always navigates to Home v2 (`ROUTES.HOME` `/home`) for every role; the profile
+  chip keeps going to the role dashboard.
+- Role-page CTAs ("Practice a {role} interview" / "Start practicing") carry the
+  role into the coach via router state; `InterviewPracticePage` reads it and
+  pre-fills `InterviewFrameForm` with the role title + a job-description seed
+  (`buildRoleJobDescription` — honest role brief from the page's real title/SOC/
+  wage/outlook, no invented duties) + a "Prefilled for {role}" note.
+  - Files: `src/pages/interview-practice/InterviewRolePage.tsx`,
+    `src/pages/user/InterviewPracticePage.tsx`, `src/types/interviewRolePage.ts`
+- 10 new/updated tests; `npm run build` clean.
+
 ## [2026-08-12] — 401 refresh/retry loop bounded; notification bell made passive
 
 A single session could emit refresh-token requests without bound — observed at
@@ -1957,85 +2179,6 @@ refresh was never the problem. The guard meant to stop the retry was.
 ### Verification
 `npm run build` clean · eslint clean on all touched files · 220 tests passing
 across 28 suites in `src/lib` + `src/components/__tests__`.
-
-## [2026-08-12] — Job Fit: remove the cross-vertical switch row
-
-Per request, removed the row under the Job-Fit tool pills that held "Back to
-Inspire Genius" and an "or switch to <vertical>" list (Direction Setting, GRANT,
-Honor Foundation, Job DNA, Knowledge Continuity — whatever the user was entitled
-to). The Job-Fit tool pills remain; the sidebar + brand logo (→ Home v2) remain
-the way out of the vertical.
-
-### Removed
-- `src/pages/job-fit/FitNav.tsx` — dropped the "Back to Inspire Genius" button +
-  the entitlement-driven vertical-switch buttons + "or switch to" label (and the
-  now-unused `useNavigate`/`Button`/`ArrowLeft`/`listEntitledVerticals`/
-  `useEnabledVerticals` imports).
-- Updated `src/pages/job-fit/__tests__/job-fit-blueprint-coach.test.tsx` — the 3
-  FitNav tests asserting the switch row are replaced by one asserting it's gone.
-- Full suite (4460) + coverage gate pass; `npm run build` clean.
-
-## [2026-08-12] — Fix: brand logo → Home v2 in the REAL header (SidebarScaffold)
-
-Follow-up to #404: the logo change there landed in `AppHeader.tsx`, which is dead
-code (nothing renders it — the live menu is `SidebarScaffold`, per the two-header-
-layouts note). This wires the actual top-left `inspiresgenius` brand in
-`SidebarScaffold` to Home v2 and reverts the dead-code `AppHeader` edit + its test.
-
-### Fixed
-- `src/components/shared/layout/SidebarScaffold.tsx` — the brand (logo +
-  "inspiresgenius") is now a `<Link to={ROUTES.HOME}>` (Home v2) for all roles.
-- Reverted `src/components/layout/AppHeader.tsx` (unused) + removed its test.
-- The #404 role-prefill change was correct and is live (verified in the deployed
-  `InterviewPracticePage` chunk).
-
-## [2026-08-12] — Brand logo → Home v2; role pages prefill the practice form
-
-PR #404.
-
-### Changed
-- `src/components/layout/AppHeader.tsx` — the top-left Inspire Genius logo now
-  always navigates to Home v2 (`ROUTES.HOME` `/home`) for every role; the profile
-  chip keeps going to the role dashboard.
-- Role-page CTAs ("Practice a {role} interview" / "Start practicing") carry the
-  role into the coach via router state; `InterviewPracticePage` reads it and
-  pre-fills `InterviewFrameForm` with the role title + a job-description seed
-  (`buildRoleJobDescription` — honest role brief from the page's real title/SOC/
-  wage/outlook, no invented duties) + a "Prefilled for {role}" note.
-  - Files: `src/pages/interview-practice/InterviewRolePage.tsx`,
-    `src/pages/user/InterviewPracticePage.tsx`, `src/types/interviewRolePage.ts`
-- 10 new/updated tests; `npm run build` clean.
-
-## [2026-08-12] — Interview Practice role pages wired into the FE
-
-Renders the backend role-page generator's output (app.role_pages, monorepo #870)
-as public per-occupation landing pages that funnel into the auth-gated Interview
-Practice coach. PR #403.
-
-### Added
-- `src/data/interviewRolePages.json` (44 generated pages, code-split lazy chunk) +
-  `src/types/interviewRolePage.ts` (typed accessor).
-- Public routes `/interview-practice/roles` (index) + `/interview-practice/:slug`
-  (outside ProtectedRoute; static `/roles` outranks `:slug`).
-- `src/pages/interview-practice/InterviewRolePage.tsx` (hero + copy blocks +
-  attributed pay/outlook cards + FAQs + Schema.org JSON-LD + CTA into the coach;
-  unknown slug → not-found) + `InterviewRolesIndex.tsx` (lists all roles).
-- `src/hooks/useSeo.ts` (title/description/canonical/JSON-LD, cleaned on unmount);
-  `src/components/interview/RolePageShell.tsx` (public chrome). Discovery link on
-  the coach setup page. 5 new tests; `npm run build` clean; 53 interview tests pass.
-
-## [2026-08-12] — Interview Studio: upload a question-list file
-
-Third question source in `StudioQuestionBuilder` (alongside generate + manual):
-"Upload a file". Reuses `extractRoleText` (.txt/.md/.pdf/.docx, client-side) →
-new `src/lib/parseQuestionList.ts` (one question per line; strips numbering,
-bullets, and `Q:` prefixes; dedupes; caps at 50) → appends to the editable list.
-
-### Added
-- `src/lib/parseQuestionList.ts` + `src/lib/__tests__/parseQuestionList.test.ts` (6 tests).
-- Upload tab + handler in `src/components/interview/StudioQuestionBuilder.tsx`;
-  component test extended with the upload case. 11 studio-builder-area tests pass;
-  `npm run build` clean.
 
 ## [2026-08-11] — Read-only support sandbox + user-PII cleanup in service source
 
@@ -6199,23 +6342,12 @@ fails at runtime rather than at deploy.
 Four live product URLs health-checked before and after every step; never left 200.
   - Files: (deploy only — no source changes in this entry)
 
-## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
+## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
 
-### Fixed
-- **The first deploy attempt failed and shipped nothing.** The HomeV2 change added seven `homeV2` keys to `en/dashboard.json` only. CI enforces locale parity (`src/__tests__/i18n.test.ts`): every English key must exist in the other locales, and `zh-CN` must match exactly. The gate failed with **10 failures out of 4,272**, and both `Deploy to Dev` and `Deploy to Staging-B` were skipped.
-  - Root of the mistake: relying on i18next's `defaultValue` fallback. It keeps the UI correct at runtime but does **not** satisfy the parity test — and the local test run only covered the suites that were touched, so the i18n suite was never exercised.
-  - Real translations added for all seven keys (`quickMyJourney`, `yourMaterial`, `prismReport`, `openingDocument`, `docOpenFailed`, `noInlinePreview`, `openInNewTab`) across **all 20** non-English locales, not just the 9 the test currently checks, so extending the test later cannot reopen this. Additions only — 8 lines plus a trailing comma per file, no reformatting.
-
-### Deployed
-- Live on **dev** and **staging-b**. Verified at the code level rather than by the workflow's status: the deployed `HomeV2` chunk on staging-b contains `My Journey`, `Your material`, `PRISM Report`, `Open in a new tab`, and **zero** occurrences of `Complete profile`, `completeProfile`, `progressbar` or `QuickDirection`. The served `locales/en/dashboard.json` carries all seven new keys. The entry bundle hash and ETag both changed.
-- Browser check: `/home` correctly redirects an unauthenticated session to `/login`; the app boots with **no console errors**. The logged-in tile itself was not visually confirmed — that needs a real session.
-
-### Note on a neighbouring red run
-PR #356 (user roster generators) merged during the window where `en` had keys the other locales lacked, so its CI run inherited the failure and shows red. It is harmless — that commit is an ancestor of the green run that deployed — but the red mark is not that PR's fault.
-
-### Verified
-- Full CI-equivalent suite run locally against the same content: **541 suites, 4,272 tests, all passing**; coverage clear of every threshold (statements 71.67 vs 55, branches 58.56 vs 54, functions 59.73 vs 55, lines 74.23 vs 55).
-  - Files: `public/locales/*/dashboard.json` (20 locales)
+### Added
+- **Add team members** on the Development Studio roster — an "Add member" dialog with a **Single** form (name / title / department / email) and a **Bulk upload** tab (paste or upload a `name,email,title,department` CSV). New members create roster cards immediately (`growthService.addTeamMember` / `bulkAddTeamMembers` → `POST /v1/growth/members[/bulk]`); the roster refetches on success. Also replaces the empty-state CTA.
+- **HomeV2 behavioral-map popup** — a "Behavioral map" link next to the PRISM CSV filename in `WelcomeBackTile` (My Workspace) opens a modal with the PRISM radar + 8-dimension scores — the same map the manager sees on a member card, extracted into a standalone `PrismBehavioralMap`. Fed by the user's own PRISM (`useMyPrism` → `GET /v1/growth/me/prism`), fetched lazily on open.
+- Files: `components/manager/development/AddMemberDialog.tsx`, `components/prism/PrismBehavioralMap.tsx`, `components/dashboard/v2/BehavioralMapDialog.tsx`, `hooks/manager/development/useAddTeamMember.ts`, `hooks/prism/useMyPrism.ts`, updates to `growthService.ts`, `types/development.ts`, `DevelopmentStudio.tsx`, `WelcomeBackTile.tsx`. Tests: `parseMemberCsv`, `PrismBehavioralMap`.
 
 ## [2026-08-03] — HomeV2: My Journey, uploaded material links, and a PDF viewer
 
@@ -6239,12 +6371,23 @@ PR #356 (user roster generators) merged during the window where `en` had keys th
 - 38 tests across the HomeV2 and WelcomeBackTile suites, including assertions that the gauge is **absent** and that My Journey sits between Today's Prep and Job Fit — a percentage or a re-ordered row silently returning is exactly the regression these guard.
 - 227 tests across 32 suites in the dashboard, user-page and documents areas all pass. Build and targeted lint clean.
 
-## [2026-08-03] — Team Development Studio: add members + HomeV2 behavioral-map popup (PR #345)
+## [2026-08-03] — HomeV2 shipped to dev and staging-b; locale-parity gate caught a real defect
 
-### Added
-- **Add team members** on the Development Studio roster — an "Add member" dialog with a **Single** form (name / title / department / email) and a **Bulk upload** tab (paste or upload a `name,email,title,department` CSV). New members create roster cards immediately (`growthService.addTeamMember` / `bulkAddTeamMembers` → `POST /v1/growth/members[/bulk]`); the roster refetches on success. Also replaces the empty-state CTA.
-- **HomeV2 behavioral-map popup** — a "Behavioral map" link next to the PRISM CSV filename in `WelcomeBackTile` (My Workspace) opens a modal with the PRISM radar + 8-dimension scores — the same map the manager sees on a member card, extracted into a standalone `PrismBehavioralMap`. Fed by the user's own PRISM (`useMyPrism` → `GET /v1/growth/me/prism`), fetched lazily on open.
-- Files: `components/manager/development/AddMemberDialog.tsx`, `components/prism/PrismBehavioralMap.tsx`, `components/dashboard/v2/BehavioralMapDialog.tsx`, `hooks/manager/development/useAddTeamMember.ts`, `hooks/prism/useMyPrism.ts`, updates to `growthService.ts`, `types/development.ts`, `DevelopmentStudio.tsx`, `WelcomeBackTile.tsx`. Tests: `parseMemberCsv`, `PrismBehavioralMap`.
+### Fixed
+- **The first deploy attempt failed and shipped nothing.** The HomeV2 change added seven `homeV2` keys to `en/dashboard.json` only. CI enforces locale parity (`src/__tests__/i18n.test.ts`): every English key must exist in the other locales, and `zh-CN` must match exactly. The gate failed with **10 failures out of 4,272**, and both `Deploy to Dev` and `Deploy to Staging-B` were skipped.
+  - Root of the mistake: relying on i18next's `defaultValue` fallback. It keeps the UI correct at runtime but does **not** satisfy the parity test — and the local test run only covered the suites that were touched, so the i18n suite was never exercised.
+  - Real translations added for all seven keys (`quickMyJourney`, `yourMaterial`, `prismReport`, `openingDocument`, `docOpenFailed`, `noInlinePreview`, `openInNewTab`) across **all 20** non-English locales, not just the 9 the test currently checks, so extending the test later cannot reopen this. Additions only — 8 lines plus a trailing comma per file, no reformatting.
+
+### Deployed
+- Live on **dev** and **staging-b**. Verified at the code level rather than by the workflow's status: the deployed `HomeV2` chunk on staging-b contains `My Journey`, `Your material`, `PRISM Report`, `Open in a new tab`, and **zero** occurrences of `Complete profile`, `completeProfile`, `progressbar` or `QuickDirection`. The served `locales/en/dashboard.json` carries all seven new keys. The entry bundle hash and ETag both changed.
+- Browser check: `/home` correctly redirects an unauthenticated session to `/login`; the app boots with **no console errors**. The logged-in tile itself was not visually confirmed — that needs a real session.
+
+### Note on a neighbouring red run
+PR #356 (user roster generators) merged during the window where `en` had keys the other locales lacked, so its CI run inherited the failure and shows red. It is harmless — that commit is an ancestor of the green run that deployed — but the red mark is not that PR's fault.
+
+### Verified
+- Full CI-equivalent suite run locally against the same content: **541 suites, 4,272 tests, all passing**; coverage clear of every threshold (statements 71.67 vs 55, branches 58.56 vs 54, functions 59.73 vs 55, lines 74.23 vs 55).
+  - Files: `public/locales/*/dashboard.json` (20 locales)
 
 ## [2026-08-02] — Login sender moved to `noreply@inspiresgenius.com`, and dev finally has SES visibility
 
@@ -8337,6 +8480,17 @@ terminal), which already covers #752 Chronicle end-to-end on staging-B.
   path must NEVER surface a score or the evaluator's strong/baseline/weak exemplars.
   - Files: `docs/plans/Candidate_Interview_Coach_Build_Plan.md`
 
+## [2026-08-01] — Team Development moved into a collapsible "Tools" rollup (PR #326)
+
+### Changed
+- Team Development Studio was a flat top-level sidebar item for managers and super-admins. It now lives in a dedicated, collapsed-by-default **"Tools"** rollup, so utility surfaces are grouped rather than crowding the primary role menu.
+  - `constants/navigation.ts`: added `TOOL_ITEMS_BY_ROLE` (per-role Tools items) and `SUPER_ADMIN_TOOLS_SECTION`; removed the inline "Team Development" entries from `MANAGER_NAV_ITEMS` / `SUPER_ADMIN_NAV_ITEMS`.
+  - `layouts/UnifiedLayout.tsx`: renders a collapsed `Tools` section (above `Verticals`) for any role with tool items (managers today).
+  - `layouts/SuperAdminLayout.tsx`: splices the Tools rollup in above `Administration`.
+  - Still gated by `VITE_FEATURE_TEAM_DEVELOPMENT`; the section collapses away entirely when the flag is off.
+  - Files: `src/constants/navigation.ts`, `src/layouts/UnifiedLayout.tsx`, `src/layouts/SuperAdminLayout.tsx`, `src/layouts/__tests__/UnifiedLayout.tools.test.tsx`, `src/constants/__tests__/navigation.test.ts`
+- Pure navigation reorganization — the route (`/manager/development`) and the Studio pages are unchanged. Merged to `development`; auto-deployed to dev + staging-b. Pairs with the backend roster fix (monorepo PR #741) that resolves the manager's direct reports from the canonical `employee_profiles.manager_id → user_profiles` relation.
+
 ## [2026-08-01] — Interview Prep: STAR question bank browser (PR #330)
 
 ### Added
@@ -8355,17 +8509,6 @@ terminal), which already covers #752 Chronicle end-to-end on staging-B.
 
 ### Tests
 - `src/services/interview/__tests__/interview.service.test.ts` (2). Full `npm run build` (tsc+vite) green.
-
-## [2026-08-01] — Team Development moved into a collapsible "Tools" rollup (PR #326)
-
-### Changed
-- Team Development Studio was a flat top-level sidebar item for managers and super-admins. It now lives in a dedicated, collapsed-by-default **"Tools"** rollup, so utility surfaces are grouped rather than crowding the primary role menu.
-  - `constants/navigation.ts`: added `TOOL_ITEMS_BY_ROLE` (per-role Tools items) and `SUPER_ADMIN_TOOLS_SECTION`; removed the inline "Team Development" entries from `MANAGER_NAV_ITEMS` / `SUPER_ADMIN_NAV_ITEMS`.
-  - `layouts/UnifiedLayout.tsx`: renders a collapsed `Tools` section (above `Verticals`) for any role with tool items (managers today).
-  - `layouts/SuperAdminLayout.tsx`: splices the Tools rollup in above `Administration`.
-  - Still gated by `VITE_FEATURE_TEAM_DEVELOPMENT`; the section collapses away entirely when the flag is off.
-  - Files: `src/constants/navigation.ts`, `src/layouts/UnifiedLayout.tsx`, `src/layouts/SuperAdminLayout.tsx`, `src/layouts/__tests__/UnifiedLayout.tools.test.tsx`, `src/constants/__tests__/navigation.test.ts`
-- Pure navigation reorganization — the route (`/manager/development`) and the Studio pages are unchanged. Merged to `development`; auto-deployed to dev + staging-b. Pairs with the backend roster fix (monorepo PR #741) that resolves the manager's direct reports from the canonical `employee_profiles.manager_id → user_profiles` relation.
 
 ## [2026-07-31] — Left menu pared to five, Verticals→Tools, Meridian header rows
 
@@ -8701,20 +8844,6 @@ Per request, Help / Support is now **only** in the Honor (THF) Coach Workbench c
 ### Verified
 - `npm run build` (tsc + vite) clean (no dangling import of the deleted component); Jest SidebarScaffold 11/11 + honor-help-menu 2/2; eslint clean.
 
-## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
-
-Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
-
-### Added
-- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
-- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
-
-### Changed
-- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
-
-### Verified
-- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
-
 ## [2026-07-31] — Help / Support menu in the sidebar → Coach Workbench guide (web + PPTX + Word)
 
 Added a **Help / Support** entry at the bottom of the left sidebar (shared app chrome, visible for every role). It opens a small menu linking to the Honor Coach Workbench user guide in three forms, each in a new tab: a clickable **web** version, the **PowerPoint** deck, and the **Word** (.docx) version.
@@ -8730,6 +8859,20 @@ Added a **Help / Support** entry at the bottom of the left sidebar (shared app c
 
 ### Verified
 - `npm run build` (tsc + vite) clean; Jest HelpSupportMenu 3/3 + SidebarScaffold 11/11; eslint clean. Assets confirmed live (HTTP 200) on the dev CDN.
+
+## [2026-07-31] — Help / Support in the Honor (THF) Coach Workbench sidebar
+
+Added the **Help / Support** control to the Honor Foundation chrome itself (`/honor`). The earlier menu lived in the shared app sidebar, which the Honor vertical does not use — Honor renders its own self-contained navy `HonorShell`, so the button did not appear there. This is the THF-styled twin, in the Honor sidebar footer above **Back to Inspire Genius**, opening a menu that links to the Coach Workbench guide (clickable web version), the slide deck (PowerPoint), and the Word document.
+
+### Added
+- `src/pages/honor/HonorHelpMenu.tsx` — THF-styled Help / Support dropdown for the Honor sidebar footer. Reuses the shared `GUIDE_LINKS` source of truth (`@/components/shared/layout/helpSupportLinks`), so both surfaces point at the same `/docs/guides/` assets. Links open in a new tab.
+- `src/pages/honor/__tests__/honor-help-menu.test.tsx` — trigger renders; menu opens with all three assets, each `target=_blank`.
+
+### Changed
+- `src/pages/honor/HonorShell.tsx` — sidebar footer renders `HonorHelpMenu` above the "Back to Inspire Genius" button.
+
+### Verified
+- `npm run build` (tsc + vite) clean; Jest honor-help-menu 2/2 + honor-crash-guards 3/3; eslint clean.
 
 ## [2026-07-30] — Meridian latency: OUTCOME ~60s → ~20s (browser-confirmed) + the dead WebSocket push
 
@@ -12070,6 +12213,26 @@ semantics changed.
 - `require_vertical()` is written but deliberately unused: GRANT's preview override forces the
   vertical on for users with no entitlement row, so enforcing server-side would 403 the demo path.
 
+## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
+
+### Changed
+- The "Dev Traffic Report" item already sits on the super-admin **Administration**
+  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
+  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
+  anyone but the platform owner (`[email redacted]`). This adds matching
+  **link-visibility gating**: the item stays in Administration but is filtered
+  out of the sidebar for every super-admin except the owner — so no one else
+  even sees it. Defence-in-depth alongside the backend allow-list.
+  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
+    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
+  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
+    every super-admin nav section unless `isPlatformOwner(user.email)`.
+  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
+    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
+  - No backend change: the report endpoint already uses native DB datetimes and
+    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
+    fix has no equivalent code path server-side.
+
 ## [2026-07-15] — Meridian Chat V2 (tile rail + stacked Compose/Conversation)
 
 ### Added
@@ -12099,26 +12262,6 @@ semantics changed.
   ChatWindow's existing state/handlers.
   - `src/types/chat/component-types.ts` — `stacked?: boolean` on `ChatWindowProps`.
   - Tests: `MeridianTileRail.test.tsx` + V2-variant cases in `MeridianChat.test.tsx`.
-
-## [2026-07-15] — Owner-gate the Dev Traffic Report Administration menu item
-
-### Changed
-- The "Dev Traffic Report" item already sits on the super-admin **Administration**
-  menu (`SUPER_ADMIN_NAV_ITEMS`), and its backend endpoint
-  (`services/agent-engine/app/routes/super_admin_traffic.py`) already hard-403s
-  anyone but the platform owner (`[email redacted]`). This adds matching
-  **link-visibility gating**: the item stays in Administration but is filtered
-  out of the sidebar for every super-admin except the owner — so no one else
-  even sees it. Defence-in-depth alongside the backend allow-list.
-  - `src/constants/navigation.ts` — `PLATFORM_OWNER_EMAIL`, `isPlatformOwner()`,
-    `OWNER_ONLY_NAV_ROUTES` (set containing the Dev Traffic Report route).
-  - `src/layouts/SuperAdminLayout.tsx` — filters `OWNER_ONLY_NAV_ROUTES` out of
-    every super-admin nav section unless `isPlatformOwner(user.email)`.
-  - Tests: `src/layouts/__tests__/SuperAdminLayout.test.tsx` — owner-visible /
-    non-owner-hidden / case-insensitive; 9/9 pass. `npm run build` clean.
-  - No backend change: the report endpoint already uses native DB datetimes and
-    numeric CloudWatch timestamps, so this session's CLI `_parse_ts` microsecond
-    fix has no equivalent code path server-side.
 
 ## [2026-07-14] — Meridian/Aura prompts doc: added diagnosis (§7) + Claude Code build prompts (§8) + standalone diagnosis doc
 
@@ -13309,25 +13452,6 @@ Closed the config drift flagged in the env status: the live dev document-service
 ### Changed
 - `infrastructure/cdk/lib/services-stack.ts` — `DOC_SERVICE_AGENT_ENGINE_URL` now **defaults to `''` (disabled)**, gated behind a new CDK context flag `enablePrismAutoEmbed`. Re-enable per-env with `-c enablePrismAutoEmbed=true`. Synth-verified: default → empty; `-c enablePrismAutoEmbed=true` → HTTP-API URL. Now matches the live dev Lambda; no deploy required (a future deploy renders `''`, staying disabled).
 
-## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
-
-Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/agents/grant/*` endpoints on dev. Verified first: the routes are reachable (`/v1/agents/grant/students/me/aid-intake` → 401 on both dev hosts = reaches agent-engine), and `user_entitlements` is seeded (willb7 / willb77 / aes = `["grant"]`).
-
-### Changed
-- `src/hooks/grant/mocks.ts` — `USE_GRANT_MOCKS = false`. MOCK_* fixtures retained for tests/local; set back to `true` to restore the fixture demo (fully reversible).
-- Decoupled the flag-dependent jest suites from the production flag: `grant-pages`, `grant-scaffold`, and `grant-intake` tests now `jest.mock("@/hooks/grant/mocks", … USE_GRANT_MOCKS: true)` so they always exercise the fixture layer. 61 grant tests pass with the flag off; tsc + eslint clean.
-
-### Live after this flip (real dev data)
-- Aid-intake questionnaire round-trip (writes/reads `grant_student_profiles.financial_intake` via the agent-engine), student profile/dashboard, FAFSA/state/institutional **deadlines** (served from the tool's seeded in-memory repo — 5 records, no DynamoDB table needed), loan **repayment** (pure calc), **salary** lookup (reference table).
-
-### Still empty until their API-key secrets are provisioned (external keys, not code)
-- **Scholarship search** — needs Secrets Manager `ig/grant/tavily` (Tavily API key).
-- **Net-price / Institutions** — needs `ig/grant/college_scorecard` (College Scorecard API key).
-  Both degrade to graceful empty states, not errors. Adding the two secrets (or the `IG_GRANT_TAVILY_API_KEY` / `IG_GRANT_COLLEGE_SCORECARD_API_KEY` env vars) + a task restart lights them up — no code change.
-
-### Blast radius
-Tiny + gated: only entitled users (willb7/willb77/aes) + super-admins via the preview toggle see GRANT. On staging-b (same frontend build) the agent-engine GRANT routes aren't deployed, so the entitlement read 404s → GRANT stays hidden there.
-
 ## [2026-07-12 EDT] — GRANT pages: wireframe enrichment (P1-C, light IG theme)
 
 Enriched all 9 GRANT tool pages toward the `grant-financial-aid` reference wireframe's component richness — mapping structure/components only, keeping the **light IG theme** (Bill's decision; not the dark Pathfinder aesthetic). Built on `feat/grant-p1c` off frontend `origin/development` via 4 parallel sub-agents over disjoint page files, integrated + verified by the controller. **61 grant tests pass**; tsc + eslint clean.
@@ -13360,6 +13484,25 @@ Expanded GRANT's "Build your aid profile" questionnaire from the flat 11-field f
 
 ### Deferred (next)
 - **P1-C** — enrich the 9 GRANT pages toward the `grant-financial-aid` wireframe (**light IG theme**, per the decision). Separable follow-up.
+
+## [2026-07-12 EDT] — GRANT dev go-live: flip USE_GRANT_MOCKS=false (reads live dev endpoints)
+
+Flipped the GRANT frontend off the mock fixture layer so it reads the live `/v1/agents/grant/*` endpoints on dev. Verified first: the routes are reachable (`/v1/agents/grant/students/me/aid-intake` → 401 on both dev hosts = reaches agent-engine), and `user_entitlements` is seeded (willb7 / willb77 / aes = `["grant"]`).
+
+### Changed
+- `src/hooks/grant/mocks.ts` — `USE_GRANT_MOCKS = false`. MOCK_* fixtures retained for tests/local; set back to `true` to restore the fixture demo (fully reversible).
+- Decoupled the flag-dependent jest suites from the production flag: `grant-pages`, `grant-scaffold`, and `grant-intake` tests now `jest.mock("@/hooks/grant/mocks", … USE_GRANT_MOCKS: true)` so they always exercise the fixture layer. 61 grant tests pass with the flag off; tsc + eslint clean.
+
+### Live after this flip (real dev data)
+- Aid-intake questionnaire round-trip (writes/reads `grant_student_profiles.financial_intake` via the agent-engine), student profile/dashboard, FAFSA/state/institutional **deadlines** (served from the tool's seeded in-memory repo — 5 records, no DynamoDB table needed), loan **repayment** (pure calc), **salary** lookup (reference table).
+
+### Still empty until their API-key secrets are provisioned (external keys, not code)
+- **Scholarship search** — needs Secrets Manager `ig/grant/tavily` (Tavily API key).
+- **Net-price / Institutions** — needs `ig/grant/college_scorecard` (College Scorecard API key).
+  Both degrade to graceful empty states, not errors. Adding the two secrets (or the `IG_GRANT_TAVILY_API_KEY` / `IG_GRANT_COLLEGE_SCORECARD_API_KEY` env vars) + a task restart lights them up — no code change.
+
+### Blast radius
+Tiny + gated: only entitled users (willb7/willb77/aes) + super-admins via the preview toggle see GRANT. On staging-b (same frontend build) the agent-engine GRANT routes aren't deployed, so the entitlement read 404s → GRANT stays hidden there.
 
 ## [2026-07-11 EDT] — Content Builder AI feature PROMOTED to Staging-B
 
