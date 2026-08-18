@@ -59,7 +59,7 @@ beforeEach(() => {
 
 describe("employer picker — what it offers", () => {
   it("offers every catalogued employer as a company suggestion", () => {
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     const list = document.getElementById("employer-pack-options")
     expect(list).not.toBeNull()
@@ -68,7 +68,7 @@ describe("employer picker — what it offers", () => {
   })
 
   it("offers catalogued sectors on the industry field", () => {
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     const list = document.getElementById("sector-pack-options")
     const values = Array.from(list!.querySelectorAll("option")).map((o) => o.getAttribute("value"))
@@ -76,14 +76,14 @@ describe("employer picker — what it offers", () => {
   })
 
   it("wires the datalists to the company and industry inputs", () => {
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     expect(screen.getByLabelText(/^company/i)).toHaveAttribute("list", "employer-pack-options")
     expect(screen.getByLabelText(/industry/i)).toHaveAttribute("list", "sector-pack-options")
   })
 
   it("states how many packs exist and that other companies still work", () => {
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     expect(screen.getByText(/2 employers and 1 sectors have a curated question set/i))
       .toBeInTheDocument()
@@ -91,7 +91,7 @@ describe("employer picker — what it offers", () => {
   })
 
   it("shows the provenance disclaimer alongside the named employers", () => {
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
     expect(screen.getByText(/not affiliated with or endorsed by these employers/i))
       .toBeInTheDocument()
   })
@@ -100,7 +100,7 @@ describe("employer picker — what it offers", () => {
 describe("employer picker — confirms hits, never predicts misses", () => {
   it("confirms a curated set once a catalogued employer is typed", async () => {
     const user = userEvent.setup()
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     await user.type(screen.getByLabelText(/^company/i), "Amazon")
 
@@ -109,7 +109,7 @@ describe("employer picker — confirms hits, never predicts misses", () => {
 
   it("matches case-insensitively and ignores surrounding whitespace", async () => {
     const user = userEvent.setup()
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     await user.type(screen.getByLabelText(/^company/i), "  mckinsey  ")
 
@@ -118,7 +118,7 @@ describe("employer picker — confirms hits, never predicts misses", () => {
 
   it("says NOTHING when the company is not in the catalogue", async () => {
     const user = userEvent.setup()
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     // "AWS" resolves to the Amazon pack server-side via an alias the catalogue
     // does not carry. Rendering "not covered" here would be a false negative.
@@ -130,7 +130,7 @@ describe("employer picker — confirms hits, never predicts misses", () => {
 
   it("falls back to the sector when the company is uncatalogued", async () => {
     const user = userEvent.setup()
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     await user.type(screen.getByLabelText(/^company/i), "Some Startup")
     await user.type(screen.getByLabelText(/industry/i), "Technology")
@@ -140,7 +140,7 @@ describe("employer picker — confirms hits, never predicts misses", () => {
 
   it("prefers the employer pack over the sector pack, matching the resolver", async () => {
     const user = userEvent.setup()
-    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} showEmployerPacks />)
 
     await user.type(screen.getByLabelText(/^company/i), "Amazon")
     await user.type(screen.getByLabelText(/industry/i), "Technology")
@@ -155,7 +155,7 @@ describe("employer picker — degrades quietly", () => {
     catalogue = undefined
     const user = userEvent.setup()
     const onConfirm = jest.fn()
-    renderForm(<InterviewFrameForm onConfirm={onConfirm} />)
+    renderForm(<InterviewFrameForm onConfirm={onConfirm} showEmployerPacks />)
 
     expect(screen.queryByText(/curated question set/i)).not.toBeInTheDocument()
     expect(document.getElementById("employer-pack-options")?.querySelectorAll("option").length ?? 0)
@@ -176,7 +176,7 @@ describe("employer picker — degrades quietly", () => {
   it("keeps company free-text — an uncatalogued employer still submits", async () => {
     const user = userEvent.setup()
     const onConfirm = jest.fn()
-    renderForm(<InterviewFrameForm onConfirm={onConfirm} />)
+    renderForm(<InterviewFrameForm onConfirm={onConfirm} showEmployerPacks />)
 
     await user.type(screen.getByLabelText(/^company/i), "Blackstone")
     await user.type(screen.getByLabelText(/industry/i), "Private Equity")
@@ -188,5 +188,31 @@ describe("employer picker — degrades quietly", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1)
     expect(onConfirm.mock.calls[0][0].company).toBe("Blackstone")
     expect(onConfirm.mock.calls[0][0].industry).toBe("Private Equity")
+  })
+})
+
+describe("employer picker — off by default (the live scored interview)", () => {
+  // Only the practice path resolves a pack; the live interview builds its plan
+  // through interview_live_repo, which never does. Advertising curated sets on
+  // that surface would promise questions it will not ask.
+  it("renders no picker, no suggestions and no provenance when not opted in", () => {
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+
+    expect(document.getElementById("employer-pack-options")).toBeNull()
+    expect(document.getElementById("sector-pack-options")).toBeNull()
+    expect(screen.queryByText(/curated question set/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/not affiliated with or endorsed/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/^company/i)).not.toHaveAttribute("list")
+    expect(screen.getByLabelText(/industry/i)).not.toHaveAttribute("list")
+  })
+
+  it("stays silent even when a catalogued employer is typed", async () => {
+    const user = userEvent.setup()
+    renderForm(<InterviewFrameForm onConfirm={jest.fn()} />)
+
+    await user.type(screen.getByLabelText(/^company/i), "Amazon")
+
+    expect(screen.queryByText(/curated set available/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Amazon.s style/i)).not.toBeInTheDocument()
   })
 })

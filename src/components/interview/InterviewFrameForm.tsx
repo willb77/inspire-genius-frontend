@@ -53,6 +53,7 @@ export default function InterviewFrameForm({
   title = "Set up your practice interview",
   description = "Before we begin, please confirm a few things so the questions and coaching fit the actual seat you're preparing for.",
   submitLabel = "Confirm & start the interview",
+  showEmployerPacks = false,
 }: {
   initial?: InterviewFrame | null
   onConfirm: (frame: InterviewFrame) => void
@@ -62,6 +63,16 @@ export default function InterviewFrameForm({
   description?: string
   /** Submit button label. */
   submitLabel?: string
+  /**
+   * Surface the curated employer/sector packs on the company/industry fields.
+   *
+   * OFF by default, and deliberately so: only the practice path applies a pack
+   * (`interview_tailor.tailor_practice_questions`). The live scored interview
+   * builds its plan through `interview_live_repo`, which never resolves one —
+   * so advertising curated sets there would promise something that surface
+   * does not deliver. Turn this on only where the pack is actually applied.
+   */
+  showEmployerPacks?: boolean
 }) {
   const [jdOpen, setJdOpen] = useState(false)
   const [jdBusy, setJdBusy] = useState(false)
@@ -92,8 +103,10 @@ export default function InterviewFrameForm({
   // Which employers/sectors have a curated question set. Metadata only, and the
   // service fails open to an empty catalogue — no suggestions is a degraded
   // form, not a broken one.
-  const { data: catalogue } = useEmployerPackCatalogue()
-  const packCount = (catalogue?.employers.length ?? 0) + (catalogue?.sectors.length ?? 0)
+  const { data: catalogue } = useEmployerPackCatalogue({ enabled: showEmployerPacks })
+  const packCount = showEmployerPacks
+    ? (catalogue?.employers.length ?? 0) + (catalogue?.sectors.length ?? 0)
+    : 0
 
   const companyTyped = form.watch("company")?.trim().toLowerCase() ?? ""
   const industryTyped = form.watch("industry")?.trim().toLowerCase() ?? ""
@@ -102,8 +115,12 @@ export default function InterviewFrameForm({
   // ("AWS" → Amazon) and strips corporate suffixes; the catalogue carries only
   // canonical names, so a name we don't recognise here may still resolve there.
   // Claiming "not covered" from this list would be a lie the form can't back up.
-  const companyMatch = catalogue?.employers.find((e) => e.name.toLowerCase() === companyTyped)
-  const sectorMatch = catalogue?.sectors.find((s) => s.name.toLowerCase() === industryTyped)
+  const companyMatch = showEmployerPacks
+    ? catalogue?.employers.find((e) => e.name.toLowerCase() === companyTyped)
+    : undefined
+  const sectorMatch = showEmployerPacks
+    ? catalogue?.sectors.find((s) => s.name.toLowerCase() === industryTyped)
+    : undefined
 
   async function handleJdFile(file: File | undefined) {
     if (!file) return
@@ -153,7 +170,12 @@ export default function InterviewFrameForm({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="company">Company (the hiring organization)</Label>
-              <Input id="company" list="employer-pack-options" {...form.register("company")} />
+              <Input
+                id="company"
+                list={showEmployerPacks ? "employer-pack-options" : undefined}
+                {...form.register("company")}
+              />
+              {showEmployerPacks && (
               <datalist id="employer-pack-options">
                 {catalogue?.employers.map((e) => (
                   <option key={e.slug} value={e.name}>
@@ -161,6 +183,7 @@ export default function InterviewFrameForm({
                   </option>
                 ))}
               </datalist>
+              )}
               {err("company")}
               {companyMatch && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700">
@@ -172,7 +195,12 @@ export default function InterviewFrameForm({
             </div>
             <div>
               <Label htmlFor="industry">Industry / sector</Label>
-              <Input id="industry" list="sector-pack-options" {...form.register("industry")} />
+              <Input
+                id="industry"
+                list={showEmployerPacks ? "sector-pack-options" : undefined}
+                {...form.register("industry")}
+              />
+              {showEmployerPacks && (
               <datalist id="sector-pack-options">
                 {catalogue?.sectors.map((s) => (
                   <option key={s.slug} value={s.name}>
@@ -180,6 +208,7 @@ export default function InterviewFrameForm({
                   </option>
                 ))}
               </datalist>
+              )}
               {err("industry")}
               {!companyMatch && sectorMatch && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700">
