@@ -342,7 +342,7 @@ export default function InterviewPracticePage() {
                   before you start, or clear the role to practise generally.
                 </div>
               )}
-              <InterviewFrameForm initial={initialFrame} onConfirm={startInterview} />
+              <InterviewFrameForm initial={initialFrame} onConfirm={startInterview} showEmployerPacks />
             </>
           )}
         </div>
