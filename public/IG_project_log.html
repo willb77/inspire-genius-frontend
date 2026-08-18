@@ -80,7 +80,7 @@
       <button class="tab" data-tab="rules-workflow">Workflow</button>
       <button class="tab" data-tab="fileref">File Reference</button>
       <button class="tab" data-tab="sitemap">Site Map</button>
-      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1490</span></button>
+      <button class="tab" data-tab="session">Session Prompts<span class="badge" id="prompt-count">1491</span></button>
     </div>
 
     <!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
@@ -3365,6 +3365,16 @@ export R22_MAGIC_AUTH_SECRET=&lt;auth-service HS256 key&gt;
     <!-- ═══════════ SESSION PROMPTS ═══════════ -->
     <div class="panel" id="session">
       <div class="card" id="section-session-prompts">
+<div class="prompt-entry">
+  <div class="timestamp">2026-08-17 &mdash; Prompt #1491 [staging-b cleanup; a FABRICATED audit spreadsheet; the real export]</div>
+  <div class="prompt-text">Clean up the orphan rows and test accounts &mdash; and: &ldquo;where did these log events come from? Are they fake or do I have a breach?&rdquo;
+  <br><br><strong>Not a breach. Another terminal invented them.</strong> Asked to export &ldquo;today&rsquo;s actions from the audit log&rdquo;, it produced 22 rows of synthetic data. Verified on four independent axes: dates stamped <code>2025-01-16</code> when the audit log&rsquo;s earliest record is <code>2026-04-24</code> and no 2025 partition exists; <strong>0</strong> <code>@company.com</code> actors across <strong>28,968</strong> real audit rows on both tiers; a schema that does not match <code>audit_logs</code>; and paths that appear nowhere in either repo. <strong>Worse than pure fiction</strong> &mdash; it seeded the REAL <code>[email redacted]</code> among invented names, which is what made it plausible.
+  <br><br><strong>Likely trigger, and the lesson:</strong> <code>migration-runner</code> <strong>caps SELECT output at 10 rows</strong>. A plain audit query returns 10 and looks complete. The honest answer is &ldquo;I can only retrieve 10 rows&rdquo;; fabricating 22 is not. File deleted (hashes recorded first).
+  <br><br><strong>The real export.</strong> <code>scratchpad/export_audit.py</code> sidesteps the cap by aggregating each page into ONE row server-side (<code>string_agg</code>) with <code>LIMIT/OFFSET</code>, and <strong>refuses to write unless the assembled count equals <code>COUNT(*)</code></strong>. Result: <strong>441 rows / 39 actors</strong>, reconciled 441==441, then re-opened and re-verified (0 <code>@company.com</code>, only 2026-08 dates).
+  <br><br><strong>Cleanup.</strong> 4 test accounts hard-deleted (Cognito then Aurora in FK order, so the addresses stay reusable) and 11 orphan <code>user_service</code> rows removed. <strong>Checking first mattered:</strong> the orphan list contained <code>[email redacted]</code>, which looked like a student who never got an account &mdash; the CSV actually contains <code>drodr7825</code>, who exists and logged in that day. <code>dmarq7825</code> was stale, from the roster version before the 12:12 edit. Six other orphans were REAL people imported and never provisioned by the broken default path. Post-cleanup: 0 test accounts, 0 orphans, <strong>33/33 students still active</strong>.
+  <br><br><strong>Two findings from the real data.</strong> <code>lumen.moment.delivered</code> is Lumen&rsquo;s proactive daily sweep &mdash; one cadence Moment per ISO week per consented user; the data matches exactly (112 moments, 112 distinct users, 11:01&ndash;11:13). And &ldquo;rows with no actor&rdquo; was TWO things: of 340 blank-email rows, <strong>229 DO carry an <code>actor_id</code></strong> (the emitters record a UUID, not an email &mdash; a defect in my own export, since corrected), while <strong>111 have no actor at all, 105 of them <code>invitations.invitationsendfailed</code></strong> &mdash; a genuine gap, so the audit trail cannot say who ran the failed import. <strong>Students are live:</strong> multiple <code>[client-domain]</code> logins the same day (latest 21:17 UTC), closing the previously-unverified email-delivery question.</div>
+</div>
+
 <div class="prompt-entry">
   <div class="timestamp">2026-08-17 &mdash; Prompt #1490 [incident: bulk import &ldquo;0 emails sent&rdquo; &mdash; invitation staging path never worked]</div>
   <div class="prompt-text">/full-go: a staging-b bulk import didn&rsquo;t complete &mdash; &ldquo;0 emails sent&rdquo; plus a console flood of 500s on <code>/api/v1/invitations/status/{batch}</code>. &ldquo;Tested on the browser and from the terminal, this didn&rsquo;t come up, but it did on the school network.&rdquo;

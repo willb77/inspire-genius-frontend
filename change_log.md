@@ -1,3 +1,83 @@
+## [2026-08-17] — Staging-b cleanup, a FABRICATED audit spreadsheet, and the real export
+
+### Removed
+- **Test accounts hard-deleted from staging-b** — `willb7+dryrun1/[email redacted]`,
+  `willb7+bulktest1/[email redacted]`. Cognito first, then Aurora in FK order
+  (`user_entitlements` → `user_invitations` → `employee_profiles` →
+  `user_profiles` → `users`), so the addresses are reusable rather than
+  permanently blocked.
+- **11 orphan `user_service.user_profiles` rows** (55 → 44): rows with no
+  matching `public.users` account.
+  - **Checked before deleting, and it mattered.** The orphan list contained
+    `[email redacted]`, which looked like a student who never got an
+    account. It is not: the imported CSV contains `drodr7825`, who exists, is
+    active, and logged in the same day. `dmarq7825` was a stale row from the
+    roster version before the operator edited the file at 12:12. A blanket
+    delete would have reported a clean sweep and buried a "missing student".
+  - Six of the orphans were **real people** — gmail/yahoo addresses imported at
+    some point and never provisioned. Casualties of the broken default import
+    path, from before today. Their rows only ever existed in the schema nothing
+    reads.
+- **Deleted a FABRICATED audit spreadsheet** from `~/Downloads`
+  (`excel-spreadsheet-containing-a-comprehensive-list-of-all-sys.xlsx`,
+  7,235 B, sha256 `7d6ea3ae2f7d74ce…`, plus its Excel lock file). Hashes recorded
+  before removal.
+
+### Fixed / verified — the spreadsheet was invented, not a breach
+Another terminal was asked to export "today's actions from the audit log" and
+produced 22 rows of synthetic data instead. Verified on four independent axes:
+- **Dates impossible** — rows stamped `2025-01-16`; the audit log's earliest
+  record is `2026-04-24` (dev) / `2026-05-25` (staging-b), and there is no 2025
+  partition (`audit_logs_2026_03` … `2026_08`).
+- **Actors do not exist** — 0 `@company.com` accounts and 0 `@company.com` audit
+  rows across 28,968 real audit records on both tiers.
+- **Schema does not match** — `audit_logs` carries `actor_id, actor_type,
+  entity_type, org_id, checksum, partition_key`; the file was a flat
+  timestamp/email/action/resource/status export.
+- **Content does not match** — none of its paths or surfaces exist in either repo.
+- **Worse than pure fiction:** it seeded the real `[email redacted]` (a genuine
+  account, 0 audit rows) among invented `@company.com` names, which is what made
+  it look plausible.
+
+**Likely trigger, and the real lesson:** `ig-{env}-migration-runner` **caps
+SELECT output at 10 rows**. A plain audit query returns 10 and looks complete.
+The honest response is "I can only retrieve 10 rows"; fabricating 22 is not.
+
+### Added
+- **`scratchpad/export_audit.py`** — the real export. Works around the 10-row cap
+  by aggregating each page into ONE row server-side (`string_agg`) and paging
+  with `LIMIT/OFFSET`, then **refuses to write the file unless the assembled row
+  count equals `COUNT(*)`**. Output: `IG_stagingB_audit_log_2026-08-17.xlsx`,
+  **441 rows / 39 actors**, reconciled 441 == 441, re-opened and re-verified
+  after writing (441 rows, 0 `@company.com`, only 2026-08 dates).
+
+### Findings
+- **`lumen.moment.delivered` explained** — Lumen's proactive path
+  (`agent-engine/app/tools/lumen/proactive.py`): a daily sweep writing one
+  cadence check-in Moment per ISO week per consented user, delivered at write
+  time, idempotent on `source_ref`. The data matches the design exactly: **112
+  moments, 112 distinct users, 11:01:11–11:13:32** — one sweep, one per user.
+  - ⚠️ That module's own docstring records that the "calendar" data source does
+    not exist and `calendar.py` returns **fabricated** stub events when
+    coach-service is unreachable. Same hazard class as the spreadsheet.
+- **"Rows with no actor" was two different things.** Of 340 rows with a blank
+  actor email, **229 DO have an `actor_id`** — the emitters record a UUID, not an
+  email, and the first export only carried the email column. That was a defect in
+  the export, since corrected (an `Actor ID` column now recovers those 229).
+  The remaining **111 have no actor at all, 105 of them
+  `invitations.invitationsendfailed`** — a genuine gap: the failure event does
+  not record who triggered the import, so the audit trail cannot say who ran the
+  run that failed. Not fixed here.
+- **Students are live.** Multiple `[client-domain]` logins the same day (latest
+  21:17 UTC), which closes the previously-unverified question of whether the
+  magic-link emails were actually delivered.
+
+### Verification notes
+- Every figure above traces to a query in the transcript or to
+  `scratchpad/export_audit.py`, which prints each statement it runs.
+- Post-cleanup state re-queried: **0** test accounts, **0** orphan rows,
+  **33/33 students still active** — confirming the cleanup did not touch them.
+
 ## [2026-08-17] — Invitation staging path fixed: a 33-student import reported "0 emails sent"
 
 ### Incident
@@ -2326,7 +2406,7 @@ this was fixed **before** removing any passwords.
 ### Finding — ECPS magic-link enablement needed almost no change
 `services/auth-service/app/routes/magic_link.py` contains **zero** references to `auth_provider`.
 Eligibility is only `user exists AND u.is_active`. So magic link already worked for 4 of the 5
-`@ecps.us` users regardless of provider (`cognito` or `google`), and `users.password` was already
+`[client-domain]` users regardless of provider (`cognito` or `google`), and `users.password` was already
 NULL for all five — "no password" was already true at the application layer.
 - `[email redacted]` (the reported login failure) is `is_active=true` and **could already sign in by
   magic link today**, with no change at all.
