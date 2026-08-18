@@ -7,6 +7,15 @@ import './index.css'
 // Registers every vertical with Vertical Core (side-effect import).
 import './verticals'
 import App from './App'
+import { applyFlagOverridesFromUrl } from './lib/flagEscapeHatch'
+
+// Apply any ?flags=/?surfaces=/?agent_engine= override BEFORE the first route
+// resolves — the route resolver itself reads these flags, so applying them
+// later would need a reload to take effect. See lib/flagEscapeHatch.ts for why
+// a URL hatch exists at all: both flags are per-browser localStorage with no
+// in-app switch left, so a stale "false" pins a user to the old app with no way
+// back they can reach.
+try { applyFlagOverridesFromUrl() } catch { /* never block boot on a flag */ }
 
 // Initialize error tracking before rendering
 try { initSentry() } catch { /* ignore */ }
