@@ -67,9 +67,104 @@
     }
   }
 
+  function hardReload() {
+    // Cache-busting query so the reload cannot be answered from the HTTP
+    // cache by the same broken document.
+    var u = new URL(window.location.href);
+    u.searchParams.set("__ig_r", String(Date.now()));
+    window.location.replace(u.toString());
+  }
+
+  /**
+   * Last resort: recovery has already run once this session and a build asset
+   * STILL failed. Reloading again would loop, so surface a real error instead.
+   *
+   * Before this existed the page simply stayed white — which is exactly how
+   * the 2026-08-17 outage presented to a room of students: no message, no
+   * error, nothing to act on. A blank screen is the worst failure mode there
+   * is, because it is indistinguishable from "still loading".
+   */
+  function showFailure() {
+    if (document.getElementById("ig-asset-failure")) return;
+
+    var panel = document.createElement("div");
+    panel.id = "ig-asset-failure";
+    panel.setAttribute("role", "alert");
+    panel.style.cssText = [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "display:flex", "align-items:center", "justify-content:center",
+      "padding:24px", "background:#f8fafc",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "color:#0B1F3A"
+    ].join(";");
+
+    var card = document.createElement("div");
+    card.style.cssText = [
+      "max-width:520px", "width:100%", "background:#fff", "border-radius:12px",
+      "border:1px solid #e2e8f0", "box-shadow:0 4px 24px rgba(11,31,58,.08)",
+      "padding:28px 30px", "text-align:left"
+    ].join(";");
+
+    var h = document.createElement("h1");
+    h.textContent = "We couldn't finish loading Inspire Genius";
+    h.style.cssText = "margin:0 0 10px;font-size:20px;font-weight:700;line-height:1.3";
+
+    var p1 = document.createElement("p");
+    p1.textContent =
+      "Part of the app failed to download, so the page could not start. " +
+      "This is a problem on our side, not with your device or your account.";
+    p1.style.cssText = "margin:0 0 14px;font-size:15px;line-height:1.55;color:#334155";
+
+    var p2 = document.createElement("p");
+    p2.textContent =
+      "Try the button below. If it happens again, tell your teacher and show them this screen.";
+    p2.style.cssText = "margin:0 0 18px;font-size:15px;line-height:1.55;color:#334155";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "Try again";
+    btn.style.cssText = [
+      "appearance:none", "border:0", "cursor:pointer", "background:#127A8A",
+      "color:#fff", "font-size:15px", "font-weight:600", "padding:11px 20px",
+      "border-radius:8px"
+    ].join(";");
+    btn.onclick = function () {
+      // Clear the one-shot guard so the full teardown runs again.
+      try {
+        sessionStorage.removeItem(GUARD);
+      } catch (e) {}
+      hardReload();
+    };
+
+    var detail = document.createElement("p");
+    detail.textContent = "Reference: asset-load-failure";
+    detail.style.cssText = "margin:18px 0 0;font-size:12px;color:#94a3b8";
+
+    card.appendChild(h);
+    card.appendChild(p1);
+    card.appendChild(p2);
+    card.appendChild(btn);
+    card.appendChild(detail);
+    panel.appendChild(card);
+
+    var mount = function () {
+      document.body.appendChild(panel);
+    };
+    if (document.body) mount();
+    else document.addEventListener("DOMContentLoaded", mount);
+  }
+
   function recover(reason) {
-    if (alreadyTried()) return;
-    if (!markTried()) return;
+    // Already tried once this session, or storage is unavailable so we cannot
+    // guard against a loop. Either way: do not reload again — show the error.
+    if (alreadyTried()) {
+      showFailure();
+      return;
+    }
+    if (!markTried()) {
+      showFailure();
+      return;
+    }
 
     if (window.console && console.warn) {
       console.warn("[ig-recovery] build asset failed to load (" + reason + "). " +
@@ -100,13 +195,7 @@
       );
     }
 
-    var reload = function () {
-      // Cache-busting query so the reload cannot be answered from the HTTP
-      // cache by the same broken document.
-      var u = new URL(window.location.href);
-      u.searchParams.set("__ig_r", String(Date.now()));
-      window.location.replace(u.toString());
-    };
+    var reload = hardReload;
 
     // Never hang: reload even if the teardown promises stall.
     var done = false;
