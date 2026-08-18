@@ -20,10 +20,20 @@ describe("ProjectLog", () => {
     expect(screen.getByText(/Documentation, change log/)).toBeInTheDocument()
   })
 
-  it("renders an iframe pointing to IG_project_log.html", () => {
+  it("does not embed the log — it was a public CDN asset, so it is no longer published", () => {
+    const { container } = render(<ProjectLog />)
+    expect(screen.queryByTitle("IG Project Log")).not.toBeInTheDocument()
+    // Guards the actual regression: anything re-pointing at the static asset.
+    const embedded = Array.from(container.querySelectorAll("iframe, embed, object")).filter((el) =>
+      (el.getAttribute("src") ?? el.getAttribute("data") ?? "").includes("IG_project_log"),
+    )
+    expect(embedded).toHaveLength(0)
+  })
+
+  it("explains where the log lives now", () => {
     render(<ProjectLog />)
-    const iframe = screen.getByTitle("IG Project Log")
-    expect(iframe).toBeInTheDocument()
+    expect(screen.getByText(/no longer published here/i)).toBeInTheDocument()
+    expect(screen.getByText(/private monorepo/i)).toBeInTheDocument()
   })
 
   it("renders tab triggers for Project Log and Site Map", () => {
