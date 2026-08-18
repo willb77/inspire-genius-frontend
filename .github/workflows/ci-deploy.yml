@@ -328,8 +328,32 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      # INCIDENT 2026-08-17 — this used to be a single `sync --delete`, which
+      # removed EVERY previous build's hashed assets the instant a new build
+      # landed. Any device still running the old bundle (a stale service
+      # worker, a tab left open, a Chromebook resuming a session) then
+      # requested chunks that no longer existed and hard-failed.
+      #
+      # Assets are content-hashed and therefore immutable, so the previous
+      # build can safely coexist with the current one. They are uploaded with
+      # `cp --recursive` rather than `sync` DELIBERATELY: cp always re-uploads,
+      # which refreshes LastModified on everything the current build
+      # references. The bucket lifecycle rule (see domain-stack.ts) then
+      # expires only objects under assets/ that no deploy has touched in 90
+      # days — i.e. genuinely orphaned chunks.
+      #
+      # DO NOT switch this back to `sync`: sync skips unchanged files, their
+      # LastModified would go stale while still being live, and the lifecycle
+      # rule would eventually delete assets the running site depends on.
+      - name: Deploy build assets, retaining the previous build (dev)
+        run: |
+          aws s3 cp dist/assets/ "s3://${{ env.S3_BUCKET }}/assets/" --recursive \
+            --cache-control "public, max-age=31536000, immutable"
+
+      # Everything else syncs with --delete so removed files really go away.
+      # assets/ is excluded so the previous build's chunks survive.
       - name: Deploy to S3 (dev)
-        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
+        run: aws s3 sync dist/ "s3://${{ env.S3_BUCKET }}" --delete --exclude "assets/*"
 
       # index.html + version.json drive the stale-bundle detector. Synced
       # objects inherit S3's default Cache-Control; rewrite the metadata so
@@ -351,8 +375,32 @@ jobs:
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
-      - name: Deploy to S3 (legacy d1nxsns258du4y mirror)
-        run: aws s3 sync dist/ s3://${{ env.LEGACY_S3_BUCKET }} --delete
+      # INCIDENT 2026-08-17 — this used to be a single `sync --delete`, which
+      # removed EVERY previous build's hashed assets the instant a new build
+      # landed. Any device still running the old bundle (a stale service
+      # worker, a tab left open, a Chromebook resuming a session) then
+      # requested chunks that no longer existed and hard-failed.
+      #
+      # Assets are content-hashed and therefore immutable, so the previous
+      # build can safely coexist with the current one. They are uploaded with
+      # `cp --recursive` rather than `sync` DELIBERATELY: cp always re-uploads,
+      # which refreshes LastModified on everything the current build
+      # references. The bucket lifecycle rule (see domain-stack.ts) then
+      # expires only objects under assets/ that no deploy has touched in 90
+      # days — i.e. genuinely orphaned chunks.
+      #
+      # DO NOT switch this back to `sync`: sync skips unchanged files, their
+      # LastModified would go stale while still being live, and the lifecycle
+      # rule would eventually delete assets the running site depends on.
+      - name: Deploy build assets, retaining the previous build (legacy mirror)
+        run: |
+          aws s3 cp dist/assets/ "s3://${{ env.LEGACY_S3_BUCKET }}/assets/" --recursive \
+            --cache-control "public, max-age=31536000, immutable"
+
+      # Everything else syncs with --delete so removed files really go away.
+      # assets/ is excluded so the previous build's chunks survive.
+      - name: Deploy to S3 (legacy mirror)
+        run: aws s3 sync dist/ "s3://${{ env.LEGACY_S3_BUCKET }}" --delete --exclude "assets/*"
 
       - name: Set no-cache headers on index.html + version.json (legacy)
         run: |
@@ -459,10 +507,36 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      # INCIDENT 2026-08-17 — this used to be a single `sync --delete`, which
+      # removed EVERY previous build's hashed assets the instant a new build
+      # landed. Any device still running the old bundle (a stale service
+      # worker, a tab left open, a Chromebook resuming a session) then
+      # requested chunks that no longer existed and hard-failed.
+      #
+      # Assets are content-hashed and therefore immutable, so the previous
+      # build can safely coexist with the current one. They are uploaded with
+      # `cp --recursive` rather than `sync` DELIBERATELY: cp always re-uploads,
+      # which refreshes LastModified on everything the current build
+      # references. The bucket lifecycle rule (see domain-stack.ts) then
+      # expires only objects under assets/ that no deploy has touched in 90
+      # days — i.e. genuinely orphaned chunks.
+      #
+      # DO NOT switch this back to `sync`: sync skips unchanged files, their
+      # LastModified would go stale while still being live, and the lifecycle
+      # rule would eventually delete assets the running site depends on.
+      - name: Deploy build assets, retaining the previous build (staging-b)
+        env:
+          BUCKET: ${{ vars.STAGING_B_FRONTEND_BUCKET || 'ig-staging-b-frontend-assets' }}
+        run: |
+          aws s3 cp dist/assets/ "s3://$BUCKET/assets/" --recursive \
+            --cache-control "public, max-age=31536000, immutable"
+
+      # Everything else syncs with --delete so removed files really go away.
+      # assets/ is excluded so the previous build's chunks survive.
       - name: Deploy to S3 (staging-b)
         env:
           BUCKET: ${{ vars.STAGING_B_FRONTEND_BUCKET || 'ig-staging-b-frontend-assets' }}
-        run: aws s3 sync dist/ "s3://$BUCKET" --delete
+        run: aws s3 sync dist/ "s3://$BUCKET" --delete --exclude "assets/*"
 
       - name: Set no-cache headers on index.html + version.json (staging-b)
         env:
