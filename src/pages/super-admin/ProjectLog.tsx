@@ -1,10 +1,9 @@
 import { useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, ArrowUpDown, FileText, Map } from "lucide-react"
+import ProjectLogMoved from "@/components/super-admin/ProjectLogMoved"
+import { FileText, Map } from "lucide-react"
 
 const SITEMAP_MERMAID = `graph TD
   A["/login"] --> B["/home"]
@@ -60,8 +59,6 @@ const SITEMAP_MERMAID = `graph TD
 
 export default function ProjectLog() {
   const [activeTab, setActiveTab] = useState("log")
-  const [searchDate, setSearchDate] = useState("")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
   return (
     <SuperAdminLayout>
@@ -91,38 +88,7 @@ export default function ProjectLog() {
           </TabsList>
 
           <TabsContent value="log" className="flex-1 flex flex-col mt-4">
-            {/* Search & Sort controls */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  className="pl-9 w-[200px]"
-                  placeholder="Search by date..."
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                className="gap-2"
-              >
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                {sortOrder === "desc" ? "Newest first" : "Oldest first"}
-              </Button>
-              {searchDate && (
-                <Button variant="ghost" size="sm" onClick={() => setSearchDate("")}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            <iframe
-              src={`/IG_project_log.html${searchDate ? `#date-${searchDate}` : ""}${sortOrder === "asc" ? "#sort-asc" : ""}`}
-              title="IG Project Log"
-              className="w-full flex-1 border-0 rounded-lg border"
-            />
+            <ProjectLogMoved />
           </TabsContent>
 
           <TabsContent value="sitemap" className="flex-1 mt-4">
