@@ -179,12 +179,28 @@ export function useBulkDemoInvite(options?: {
   })
 }
 
+/** Hard ceiling on import-status polls — 300 x 2s = 10 minutes. */
+export const IMPORT_POLL_MAX_POLLS = 300
+
+/** Consecutive failed fetches after which import-status polling gives up. */
+export const IMPORT_POLL_MAX_CONSECUTIVE_ERRORS = 3
+
 export function useBulkImportStatus(batchId: string | null) {
   return useQuery<BulkImportStatusResponse, AxiosError>({
     queryKey: ["bulk-import-status", batchId],
     queryFn: () => getBulkImportStatus(batchId!),
     enabled: !!batchId,
+    retry: 1,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => {
+      // Same failure modes as the invitation poller below: this already
+      // stopped on a terminal status, but a batch stuck on "processing" —
+      // or an endpoint returning 500 — polled every 2s indefinitely.
+      if (query.state.fetchFailureCount >= IMPORT_POLL_MAX_CONSECUTIVE_ERRORS) {
+        return false
+      }
+      const polls = query.state.dataUpdateCount + query.state.errorUpdateCount
+      if (polls >= IMPORT_POLL_MAX_POLLS) return false
       const status = query.state.data?.status
       return status === "completed" || status === "failed" ? false : 2000
     },
@@ -203,12 +219,97 @@ export function useSendInvitations() {
   })
 }
 
+/** Base gap between two invitation-status polls, in ms. */
+export const INVITATION_POLL_INTERVAL_MS = 5000
+
+/**
+ * Consecutive failed fetches after which polling gives up.
+ *
+ * React Query resets `fetchFailureCount` to 0 on the next success, so this
+ * counts a genuine run of failures rather than a lifetime total.
+ */
+export const INVITATION_POLL_MAX_CONSECUTIVE_ERRORS = 3
+
+/** Hard ceiling on polls for one batch — 120 x 5s = 10 minutes. */
+export const INVITATION_POLL_MAX_POLLS = 120
+
+/**
+ * How many polls a batch may report `total: 0` before we treat it as "there
+ * is nothing here" and stop. A short grace covers the race where the tracker
+ * mounts before invitation-service has written the batch rows.
+ */
+export const INVITATION_POLL_EMPTY_GRACE_POLLS = 3
+
+/**
+ * Decide whether to poll invitation status again, and after how long.
+ *
+ * Extracted from the hook so the stop conditions are unit-testable without a
+ * QueryClient, in the same shape as `runChunkedBulkInvite` above.
+ *
+ * This exists because the previous implementation was an unconditional
+ * `refetchInterval: 5000` with no terminal state and no error handling. On
+ * 2026-08-16 a bulk import failed upstream and every poll returned 500; the
+ * tracker kept firing every 5s for as long as the tab stayed open, producing
+ * hundreds of console errors and burying the one message that mattered. The
+ * underlying 500 is fixed, but a poller with no stop condition would do the
+ * same thing on the next failure, so the stop conditions belong here.
+ *
+ * Returns `false` to stop polling, or a delay in ms.
+ */
+export function nextInvitationPollDelay(state: {
+  data?: InvitationStatusResponse
+  /** Consecutive failed fetches (React Query `fetchFailureCount`). */
+  consecutiveErrors: number
+  /** Completed fetches, successful or failed. */
+  pollCount: number
+}): number | false {
+  // 1. The endpoint is failing. Stop rather than hammer it — this is the
+  //    case that produced the 500 flood.
+  if (state.consecutiveErrors >= INVITATION_POLL_MAX_CONSECUTIVE_ERRORS) {
+    return false
+  }
+
+  // 2. Absolute ceiling, so a batch that never reaches a terminal state
+  //    (e.g. SES notifications never arrive) cannot poll forever.
+  if (state.pollCount >= INVITATION_POLL_MAX_POLLS) return false
+
+  const summary = state.data?.summary
+  if (summary) {
+    // 3. Nothing was ever staged for this batch. Allow a few polls first:
+    //    send-bulk and the tracker mount race, and an early empty read is
+    //    not proof the batch is empty.
+    if (summary.total === 0) {
+      return state.pollCount >= INVITATION_POLL_EMPTY_GRACE_POLLS
+        ? false
+        : INVITATION_POLL_INTERVAL_MS
+    }
+
+    // 4. Every recipient has reached a terminal state (delivered / opened /
+    //    failed). `queued` and `sent` are the only in-flight buckets.
+    const pending = (summary.queued ?? 0) + (summary.sent ?? 0)
+    if (pending === 0) return false
+  }
+
+  return INVITATION_POLL_INTERVAL_MS
+}
+
 export function useInvitationStatus(batchId: string | null) {
   return useQuery<InvitationStatusResponse, AxiosError>({
     queryKey: ["invitation-status", batchId],
     queryFn: () => getInvitationStatus(batchId!),
     enabled: !!batchId,
-    refetchInterval: 5000,
+    // One retry per poll, not React Query's default of 3. With a 5s interval
+    // the default turned each failing tick into 4 requests.
+    retry: 1,
+    // Refocusing the tab must not add an unscheduled burst on top of the
+    // interval.
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) =>
+      nextInvitationPollDelay({
+        data: query.state.data,
+        consecutiveErrors: query.state.fetchFailureCount,
+        pollCount: query.state.dataUpdateCount + query.state.errorUpdateCount,
+      }),
   })
 }
 
