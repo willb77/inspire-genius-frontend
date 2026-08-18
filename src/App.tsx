@@ -29,6 +29,16 @@ function RoleSelectorWrapper() {
 function AppInner() {
   useDirection()
   useEffect(() => {
+    // Reaching here means the bundle parsed and React mounted, so whatever
+    // asset failure `public/ig-recovery.js` recovered from is resolved. Release
+    // its one-shot guard, otherwise a genuine failure later in this same tab
+    // session would find the guard set and refuse to self-heal.
+    try {
+      sessionStorage.removeItem('__ig_asset_recovery_attempted')
+    } catch {
+      // Storage unavailable (private mode) — the guard could not have been set.
+    }
+
     // Catches stale long-lived tabs: if the bundle was deployed after this
     // tab loaded, the next time the user activates the page the check
     // triggers a clean reload.
