@@ -49,6 +49,10 @@ function load(opts: { storageThrows?: boolean } = {}): Harness {
       if (opts.storageThrows) throw new Error("storage disabled")
       store[k] = v
     },
+    removeItem: (k: string) => {
+      if (opts.storageThrows) throw new Error("storage disabled")
+      delete store[k]
+    },
   }
 
   const win = {
@@ -87,6 +91,12 @@ function resourceError(tag: "SCRIPT" | "LINK", url: string) {
 const flush = () => new Promise((r) => setTimeout(r, 0))
 
 describe("ig-recovery", () => {
+  beforeEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  const panel = () => document.getElementById("ig-asset-failure")
+
   it("tears down the service worker and caches when a build asset fails", async () => {
     const h = load()
     h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
@@ -182,6 +192,82 @@ describe("ig-recovery", () => {
     const h = load({ storageThrows: true })
     h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
     await flush()
+    expect(h.replace).not.toHaveBeenCalled()
+  })
+
+  // ── Visible failure UI ──────────────────────────────────────────────────
+  //
+  // The whole point of the 2026-08-17 fix: a failure the user can SEE and act
+  // on, instead of a white screen indistinguishable from "still loading".
+
+  it("does NOT show an error on the first failure — it recovers silently", async () => {
+    const h = load()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
+    await flush()
+
+    expect(h.replace).toHaveBeenCalledTimes(1)
+    expect(panel()).toBeNull()
+  })
+
+  it("shows a visible, actionable error when a second failure follows recovery", async () => {
+    const h = load()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
+    await flush()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/vendor-def456.js`))
+    await flush()
+
+    const el = panel()
+    expect(el).not.toBeNull()
+    expect(el!.getAttribute("role")).toBe("alert")
+    expect(el!.textContent).toContain("couldn't finish loading")
+    // Tells the user it is not their fault, and what to do next.
+    expect(el!.textContent).toContain("not with your device")
+    expect(el!.textContent).toContain("tell your teacher")
+    expect(el!.querySelector("button")!.textContent).toBe("Try again")
+    // and it must NOT have reloaded a second time
+    expect(h.replace).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the error instead of looping when sessionStorage is unavailable", async () => {
+    const h = load({ storageThrows: true })
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
+    await flush()
+
+    expect(h.replace).not.toHaveBeenCalled()
+    expect(panel()).not.toBeNull()
+  })
+
+  it("Try again clears the guard and reloads", async () => {
+    const h = load()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/index-abc123.js`))
+    await flush()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/vendor-def456.js`))
+    await flush()
+    expect(h.store[GUARD]).toBe("1")
+
+    panel()!.querySelector("button")!.click()
+
+    expect(h.store[GUARD]).toBeUndefined()
+    expect(h.replace).toHaveBeenCalledTimes(2)
+  })
+
+  it("renders the error panel only once", async () => {
+    const h = load()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/a.js`))
+    await flush()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/b.js`))
+    await flush()
+    h.fire("error", resourceError("SCRIPT", `${ORIGIN}/assets/c.js`))
+    await flush()
+
+    expect(document.querySelectorAll("#ig-asset-failure")).toHaveLength(1)
+  })
+
+  it("still ignores unrelated failures entirely — no error panel", async () => {
+    const h = load()
+    h.fire("error", resourceError("SCRIPT", "https://cdn.example.com/tracker.js"))
+    await flush()
+    expect(panel()).toBeNull()
     expect(h.replace).not.toHaveBeenCalled()
   })
 })
