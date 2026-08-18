@@ -35,8 +35,8 @@ import { useFeedbackStats } from "@/hooks/feedback/useFeedback"
 import { useOrganizationManagement } from "@/hooks/super-admin/organization-management/useOrganizationManagement"
 import {
   BarChart3, Shield, Activity, Users, FileText, Map,
-  Search, ArrowUpDown,
 } from "lucide-react"
+import ProjectLogMoved from "@/components/super-admin/ProjectLogMoved"
 import type { AuditLogEntry } from "@/types/audit"
 
 type AuditRow = AuditLogEntry & Record<string, unknown>
@@ -440,8 +440,6 @@ function MermaidDiagram({ chart }: { chart: string }) {
 
 // ─── Project Log Tab ──────────────────────────────────────────────
 function ProjectLogTab() {
-  const [searchDate, setSearchDate] = useState("")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [subTab, setSubTab] = useState("log")
 
   return (
@@ -458,37 +456,7 @@ function ProjectLogTab() {
       </TabsList>
 
       <TabsContent value="log" className="flex-1 flex flex-col mt-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="date"
-              value={searchDate}
-              onChange={(e) => setSearchDate(e.target.value)}
-              className="pl-9 w-[200px]"
-              placeholder="Search by date..."
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="gap-2"
-          >
-            <ArrowUpDown className="h-3.5 w-3.5" />
-            {sortOrder === "desc" ? "Newest first" : "Oldest first"}
-          </Button>
-          {searchDate && (
-            <Button variant="ghost" size="sm" onClick={() => setSearchDate("")}>
-              Clear
-            </Button>
-          )}
-        </div>
-        <iframe
-          src={`/IG_project_log.html${searchDate ? `#date-${searchDate}` : ""}${sortOrder === "asc" ? "#sort-asc" : ""}`}
-          title="IG Project Log"
-          className="w-full flex-1 border-0 rounded-lg border min-h-[calc(100vh-20rem)]"
-        />
+        <ProjectLogMoved />
       </TabsContent>
 
       <TabsContent value="sitemap" className="flex-1 mt-4">
