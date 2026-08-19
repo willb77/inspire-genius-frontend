@@ -235,6 +235,30 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────
+  # 4b. NO PUBLISHED LOGS
+  # ─────────────────────────────────────────────
+  # This repo is public and `public/` ships verbatim onto CloudFront, so a file
+  # placed there is served to anyone with the URL — the super-admin gate is on the
+  # *page* that displays it, never on the file. The project logs were mirrored here
+  # until 2026-08-17, which left IG_project_log.html returning 200 and 2.75 MB
+  # unauthenticated on stable. and dev.
+  #
+  # They were removed, but ~266 branches predate that removal and still carry them,
+  # so any old branch merged or rebased forward brings the file back and the next
+  # deploy republishes it — silently, because nothing else would fail. Hence a gate
+  # rather than a convention. Deploy depends on this job, so a resurrection cannot
+  # reach S3 even if the PR check is bypassed.
+  no-published-logs:
+    name: No published logs (deploy gate)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the project logs have not been re-added
+        run: ./scripts/check-no-published-logs.sh
+
+  # ─────────────────────────────────────────────
   # 5. E2E SMOKE TESTS (per role)
   # ─────────────────────────────────────────────
   e2e:
@@ -304,7 +328,7 @@ jobs:
   # introduce a separate `deploy-staging` job + `staging` GitHub environment.
   deploy-dev:
     name: Deploy to Dev
-    needs: [build, test-unit, dependency-audit, trivy-scan]
+    needs: [build, test-unit, dependency-audit, trivy-scan, no-published-logs]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
@@ -449,7 +473,7 @@ jobs:
   # cleanly — no failures, no false negatives.
   deploy-staging-b:
     name: Deploy to Staging-B
-    needs: [build, test-unit, dependency-audit, trivy-scan]
+    needs: [build, test-unit, dependency-audit, trivy-scan, no-published-logs]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/development' && github.event_name == 'push' && vars.STAGING_B_DEPLOY_ROLE_ARN != ''
     environment:
