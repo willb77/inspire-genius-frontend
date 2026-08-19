@@ -35,6 +35,10 @@ export type LivePlanQuestion = {
   /** Human-readable competency label, when the backend provides one. */
   competency_label?: string
   star_probes?: string[]
+  /** Where this question came from: the curated pack, or the base bank. */
+  source?: "employer" | "sector" | "bank"
+  /** Coaching guidance for a curated question (interviewer-side only). */
+  strongAnswerCovers?: string
 }
 
 export type LiveSession = {
@@ -156,9 +160,41 @@ export type CreateLiveSessionPayload = {
   consent: LiveConsent
 }
 
+/**
+ * Why the plan looks the way it does.
+ *
+ * `applied: false` with a `reason` is the important case: a failed role rewrite
+ * used to fall back to the base questions silently, which reads exactly like a
+ * role that simply is not very specific.
+ */
+export type LiveTailoringMeta = {
+  requested: boolean
+  applied: boolean
+  reason:
+    | "no_role_title"
+    | "tailoring_unavailable"
+    | "tailoring_error"
+    | "custom_mode_not_tailored"
+    | null
+}
+
+/** Curated employer/sector pack provenance, when one applied. */
+export type LiveEmployerMeta = {
+  kind: "employer" | "sector"
+  slug: string
+  name: string
+  sector?: string
+  framework?: string
+  coachingNote?: string
+  provenance: string
+}
+
 export type CreateLiveSessionResult = {
   session_id: string
   plan: LivePlanQuestion[]
+  /** Present since the employer-pack wiring; absent on older backends. */
+  employer?: LiveEmployerMeta | null
+  tailoring?: LiveTailoringMeta | null
 }
 
 export type SubmitAnswerPayload = {

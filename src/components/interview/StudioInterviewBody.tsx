@@ -51,7 +51,9 @@ import type {
   LiveAnswer,
   LiveCandidate,
   LiveConsent,
+  LiveEmployerMeta,
   LivePlanQuestion,
+  LiveTailoringMeta,
   SubmitAnswerResult,
 } from "@/services/interview/live.service"
 import { downloadScoredInterview, saveScoredInterviewToDocuments } from "@/services/interview/interviewExport"
@@ -130,6 +132,10 @@ export default function StudioInterviewBody() {
   const [frame, setFrame] = useState<InterviewFrame | null>(null)
 
   const [sessionId, setSessionId] = useState<string | null>(null)
+  // Provenance for THIS run: which curated pack applied, and whether the role
+  // rewrite actually happened. Surfaced so a silent fallback is visible.
+  const [employer, setEmployer] = useState<LiveEmployerMeta | null>(null)
+  const [tailoring, setTailoring] = useState<LiveTailoringMeta | null>(null)
   const [plan, setPlan] = useState<LivePlanQuestion[]>([])
   const [idx, setIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({})
@@ -164,6 +170,48 @@ export default function StudioInterviewBody() {
     setSetupStep("questions")
   }
 
+
+  /**
+   * Provenance + tailoring notice.
+   *
+   * Two independent things a run should never hide: which curated framework the
+   * questions came from (with its disclaimer), and the fact that a requested
+   * role rewrite did not happen.
+   */
+  const ProvenanceNotice = () => {
+    const rewriteMissed =
+      tailoring?.requested && !tailoring.applied &&
+      (tailoring.reason === "tailoring_unavailable" || tailoring.reason === "tailoring_error")
+    if (!employer && !rewriteMissed) return null
+    return (
+      <div className="space-y-2">
+        {employer ? (
+          <div
+            className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600"
+            data-testid="studio-employer-provenance"
+          >
+            <span className="font-semibold text-slate-800">
+              Framed on {employer.name}
+              {employer.framework ? ` — ${employer.framework}` : ""}
+            </span>
+            <p className="mt-1 leading-snug">{employer.provenance}</p>
+          </div>
+        ) : null}
+        {rewriteMissed ? (
+          <div
+            className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800"
+            role="status"
+            data-testid="studio-tailoring-notice"
+          >
+            These questions were <span className="font-semibold">not</span> rewritten for the
+            role — the tailoring step was unavailable, so the standard wording is
+            being used. The interview and its scoring are unaffected.
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   const handleFrameConfirm = async (f: InterviewFrame) => {
     if (!participant || !consent) return
     setFrame(f)
@@ -171,6 +219,8 @@ export default function StudioInterviewBody() {
       const result = await createSession.mutateAsync({ frame: f, candidate: participant, consent })
       setSessionId(result.session_id)
       setPlan(result.plan)
+      setEmployer(result.employer ?? null)
+      setTailoring(result.tailoring ?? null)
       setIdx(0)
       setAnswers({})
       setFinalizeResult(null)
@@ -242,6 +292,7 @@ export default function StudioInterviewBody() {
     setPhase("setup"); setSetupStep("consent")
     setConsent(null); setParticipant(null); setFrame(null)
     setSessionId(null); setPlan([]); setIdx(0); setAnswers({}); setFinalizeResult(null)
+    setEmployer(null); setTailoring(null)
   }
 
   const doExport = async (kind: "word" | "pdf" | "save") => {
@@ -298,6 +349,7 @@ export default function StudioInterviewBody() {
           <div>
             <h1 className="text-2xl font-semibold">Interview Results</h1>
             <p className="text-sm text-slate-600">{subtitle}</p>
+            <div className="mt-2"><ProvenanceNotice /></div>
           </div>
           <div className="flex flex-wrap gap-2">
             {finalizeResult && (
@@ -419,6 +471,8 @@ export default function StudioInterviewBody() {
           <Flag className="mr-1 h-3.5 w-3.5" /> End interview
         </Button>
       </header>
+
+      <ProvenanceNotice />
 
       {total > 0 && (
         <div className="space-y-1">
