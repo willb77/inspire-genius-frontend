@@ -249,7 +249,7 @@ jobs:
   # rather than a convention. Deploy depends on this job, so a resurrection cannot
   # reach S3 even if the PR check is bypassed.
   no-published-logs:
-    name: No published logs
+    name: No published logs (deploy gate)
     runs-on: ubuntu-latest
 
     steps:

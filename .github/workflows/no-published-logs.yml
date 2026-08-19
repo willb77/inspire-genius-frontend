@@ -14,6 +14,11 @@
 #
 # So this is the backstop: it is not enough to delete the file once, something has
 # to refuse to accept it back.
+#
+# The rules live in scripts/check-no-published-logs.sh so this workflow, the
+# deploy gate in ci-deploy.yml, and a developer running it locally all apply the
+# same check. This workflow gives fast PR feedback; it cannot block a deploy,
+# because GitHub has no cross-workflow job dependency — hence the second caller.
 name: No published logs
 
 on:
@@ -28,31 +33,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fail if a project-log file is present
-        run: |
-          # Tracked files only — a local, uncommitted copy is a working-tree
-          # concern, not something that can reach CloudFront.
-          # git pathspec: a leading '*' matches across directory separators,
-          # so these catch the file at the repo root or nested anywhere.
-          FOUND=$(git ls-files -- \
-            '*IG_project_log.html' \
-            '*change_log.md')
-
-          if [ -n "$FOUND" ]; then
-            echo "::error title=Project log must not be republished::These files are served publicly from this repo and were removed in #453."
-            echo ""
-            echo "The following tracked file(s) would republish the project log:"
-            echo "$FOUND" | sed 's/^/  - /'
-            echo ""
-            echo "This repo is PUBLIC, and public/ is copied verbatim into dist/ and"
-            echo "deployed to CloudFront, so committing any of these serves the whole"
-            echo "project log at https://<host>/IG_project_log.html to anyone."
-            echo ""
-            echo "To fix:  git rm --cached <path> && git commit"
-            echo ""
-            echo "If you got these from the monorepo's scripts/sync_project_log.py,"
-            echo "that script's mirror targets are retired — do not commit its output."
-            exit 1
-          fi
-
-          echo "OK — no project-log files tracked in this repo."
+      - name: Fail if a project-log file is tracked
+        run: ./scripts/check-no-published-logs.sh
