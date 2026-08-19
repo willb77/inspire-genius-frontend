@@ -122,6 +122,10 @@
     "todaysPrep": "Today's Prep",
     "welcomePrefix": "Welcome",
     "whatToday": "What are we working on today?",
-    "quickGoals": "Goals"
+    "quickGoals": "Goals",
+    "checkFailed": "— couldn't check",
+    "retry": "Retry",
+    "retryItem": "Retry checking {{name}}",
+    "someChecksFailed": "{{count}} item could not be checked"
   }
 }

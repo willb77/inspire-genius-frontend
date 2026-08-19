@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback} from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,6 +22,7 @@ import { ROUTES } from "@/constants/routes";
 import { useEnabledVerticals } from "@/verticals/core";
 import { isVerticalForceDisabled } from "@/components/layout/useVerticalLauncher";
 import { WORKSPACE_ITEM_UNAVAILABLE_REASON } from "@/constants/navigation";
+import type { AxiosError } from "axios";
 import { useLatestPrism } from "@/hooks/documents/useLatestPrism";
 import { useMyProfile } from "@/hooks/profile/useProfile";
 import {
@@ -275,7 +276,12 @@ export default function HomeV2() {
     data: latestPrism,
     isLoading: prismLoading,
     isError: prismError,
+    error: prismErrorObj,
+    refetch: refetchPrism,
   } = useLatestPrism();
+  // 404 = "no PRISM CSV yet", a real answer the hook deliberately does not
+  // retry. Anything else (500, network, CORS) means we do not know.
+  const prismErrorStatus = (prismErrorObj as AxiosError | null)?.response?.status;
   const hasReport = !prismError && !!latestPrism?.file_name;
 
   // Entitlement gates USE, not SIGHT: an unentitled quick action still renders
@@ -354,21 +360,69 @@ export default function HomeV2() {
       }));
   }, [convData, t]);
 
-  const { data: profileMe } = useMyProfile();
+  const {
+    data: profileMe,
+    isError: profileError,
+    refetch: refetchProfile,
+  } = useMyProfile();
   const personalSet = useMemo(
     () => new Set((profileMe?.personal_docs ?? []).map((k) => k.toLowerCase())),
     [profileMe],
   );
+
+  /**
+   * A failed check is NOT an empty checklist item.
+   *
+   * `useLatestPrism` reports a 404 (genuinely no PRISM) and a 500/network
+   * failure the same way to `hasReport`, and `personal_docs` is simply absent
+   * when GET /me fails. Both used to render as an unticked row offering "Add",
+   * which on 2026-08-19 told a user with a PRISM report on file that he had
+   * none and invited him to upload it again.
+   *
+   * A 404 from `useLatestPrism` is a real answer and must stay "missing" — the
+   * hook does not retry it, and treating it as unknown would put a permanent
+   * warning on every new user's first visit. Only a non-404 error is unknown.
+   */
+  const prismUnknown =
+    prismError &&
+    (prismErrorStatus === undefined || prismErrorStatus !== 404);
+
   const personalInfo: WelcomeBackPersonalInfo[] = useMemo(
     () =>
-      PERSONAL_INFO_CATALOG.map((p) => ({
-        name: p.name,
-        done: p.matches
-          ? p.matches.some((k) => personalSet.has(k))
-          : hasReport || personalSet.has(PRISM_DOC_KIND),
-      })),
-    [personalSet, hasReport],
+      PERSONAL_INFO_CATALOG.map((p) => {
+        if (p.matches) {
+          // These read only from `personal_docs`, so /me failing is the only
+          // thing that can make them unknowable.
+          return {
+            name: p.name,
+            done: p.matches.some((k) => personalSet.has(k)),
+            status: profileError
+              ? ("unknown" as const)
+              : p.matches.some((k) => personalSet.has(k))
+                ? ("done" as const)
+                : ("missing" as const),
+          };
+        }
+        // The PRISM row has two independent sources; it is only unknowable
+        // when BOTH failed. Either one answering "yes" still ticks it.
+        const done = hasReport || personalSet.has(PRISM_DOC_KIND);
+        return {
+          name: p.name,
+          done,
+          status: done
+            ? ("done" as const)
+            : prismUnknown || profileError
+              ? ("unknown" as const)
+              : ("missing" as const),
+        };
+      }),
+    [personalSet, hasReport, prismUnknown, profileError],
   );
+
+  const retryPersonalInfo = useCallback(() => {
+    void refetchPrism();
+    void refetchProfile();
+  }, [refetchPrism, refetchProfile]);
 
   /**
    * Open the Meridian chat.
@@ -506,6 +560,7 @@ export default function HomeV2() {
             prismLoading={prismLoading}
             personalInfo={personalInfo}
             onAddPersonalInfo={openAddPersonalInfo}
+            onRetryPersonalInfo={retryPersonalInfo}
             quickActions={quickActions}
             videos={VIDEOS}
           />
