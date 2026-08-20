@@ -15,9 +15,10 @@ export type PracticeCompetency = {
   question: string
   starProbes: string[]
   /** Where this question came from. `employer`/`sector` = a curated pack
-   * question, served verbatim and never rewritten by the model; `bank` = the
-   * shared STAR bank (optionally role-tailored). Absent on older responses. */
-  source?: "employer" | "sector" | "bank"
+   * question, served verbatim and never rewritten by the model; `role` = a
+   * curated role+level pack, likewise verbatim; `bank` = the shared STAR bank
+   * (optionally role-tailored). Absent on older responses. */
+  source?: "employer" | "sector" | "role" | "bank"
   /** Candidate-facing coaching for curated questions — what a strong answer
    * covers. Never the evaluator's 1-5 rubric or its 5/3/1 exemplars. */
   strongAnswerCovers?: string
@@ -67,6 +68,44 @@ export type EmployerPackCatalogue = {
   }[]
 }
 
+/**
+ * A curated role+level question set the candidate can pick instead of
+ * describing the seat in free text. Metadata only — the catalogue never
+ * carries question text, so the picker cannot surface a set the candidate has
+ * not chosen.
+ */
+export type RolePackSummary = {
+  slug: string
+  title: string
+  /** "Entry level" | "Individual contributor" | "Manager / team lead" | ... */
+  level: string
+  /** 1..n up the ladder. The picker lists by this, NOT alphabetically. */
+  levelOrder: number
+  seniority: string
+  /** The discipline the ladder belongs to; used to group the picker. */
+  family: string
+  competencyCount: number
+  questionCount: number
+}
+
+export type RolePackCatalogue = {
+  provenance: string
+  roles: RolePackSummary[]
+}
+
+/** The matched role pack, echoed back with the questions it produced. */
+export type RolePackMatch = {
+  slug: string
+  title: string
+  level: string
+  family: string
+  seniority: string
+  competencyCount: number
+  questionCount: number
+  coachingNote: string
+  provenance: string
+}
+
 export type PracticeSection = {
   key: "vision" | "behavioral" | "productivity"
   section: string
@@ -84,6 +123,9 @@ export type PracticeQuestions = {
   /** The curated employer/sector pack that matched, or null when the company
    * and industry are ones we do not cover (in which case nothing changes). */
   employer?: EmployerPackMatch | null
+  /** The curated role+level pack these questions came from, when the candidate
+   * picked one. Absent on every other path. */
+  role?: RolePackMatch | null
 }
 
 /**
@@ -178,6 +220,44 @@ export async function getEmployerPackCatalogue(): Promise<EmployerPackCatalogue>
 }
 
 /**
+ * The catalogue of curated role+level packs. Metadata only — titles, levels
+ * and counts, never question text.
+ *
+ * **Fails open to an empty list, deliberately.** The frontend deploys to dev
+ * and staging-b on merge; the agent-engine reaches dev on merge and staging-b
+ * only on a release tag. So this route WILL be absent on at least one tier for
+ * a window. An empty list means the picker does not render and the setup form
+ * is byte-identical to what it was before role packs existed — a missing
+ * backend degrades to "no picker", never to a broken form.
+ */
+export async function getRolePackCatalogue(): Promise<RolePackCatalogue> {
+  try {
+    const { data } = await agentApi.get<RolePackCatalogue>(
+      "/v1/agents/interview/role-packs",
+    )
+    return data
+  } catch {
+    return { provenance: "", roles: [] }
+  }
+}
+
+/**
+ * Fetch one curated role pack's questions.
+ *
+ * Returns the SAME envelope as `/practice-questions` (guidance + the three
+ * sections), so `buildInterviewPlan` consumes it unchanged. Throws on failure
+ * rather than swallowing: the caller decides whether to fall back to the
+ * ordinary bank, and silently substituting a generic interview for the role
+ * the candidate explicitly picked would be a dishonest success.
+ */
+export async function getRolePackQuestions(slug: string): Promise<PracticeQuestions> {
+  const { data } = await agentApi.get<PracticeQuestions>(
+    `/v1/agents/interview/role-packs/${encodeURIComponent(slug)}`,
+  )
+  return data
+}
+
+/**
  * The interview seat the candidate is practising for. Collected up-front by the
  * frame form and passed into coaching so Alex tailors questions + feedback to
  * the specific role, reporting line, and scope (and weights flagged risks).
@@ -194,6 +274,13 @@ export type InterviewFrame = {
    * interview questions are tailored to it (via getTailoredPracticeQuestions)
    * instead of using the static 12-competency bank. */
   jobDescription?: string
+  /** The curated role pack the candidate picked, if any. When set, the
+   * interview serves that pack verbatim instead of tailoring the STAR bank —
+   * see `startInterview` in InterviewPracticePage. */
+  rolePackSlug?: string
+  /** The picked pack's display title, kept so the setup summary can show it
+   * without a second fetch. */
+  rolePackTitle?: string
   /** How many questions the interview should run (default 12). */
   numQuestions?: number
   /** Target length in minutes (default 50). */
