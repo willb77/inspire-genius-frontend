@@ -95,6 +95,7 @@ const OrganizationView = React.lazy(() => import("@/pages/super-admin/Organizati
 const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
 const AssetLibrary = React.lazy(() => import("@/pages/super-admin/AssetLibrary"));
+const AssetOpen = React.lazy(() => import("@/pages/super-admin/AssetOpen"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
 const DevTrafficReport = React.lazy(() => import("@/pages/super-admin/DevTrafficReport"));
 const BroadcastAlert = React.lazy(() => import("@/pages/super-admin/BroadcastAlert"));
@@ -373,6 +374,12 @@ export const routes: RouteObject[] = [
       // The Honor Foundation — standalone Coach Workbench front door. Reuses the
       // platform magic-link auth; authed visitors are forwarded into the vertical.
       { path: "/honor", element: withSuspense(<HonorLanding />) },
+      // Durable-link broker for confidential assets. Intentionally OUTSIDE the
+      // role-gated /super-admin/* prefix: the page performs its own server-side
+      // authorization and must be able to tell a non-super-admin plainly that
+      // they lack access. Redirecting them to their own dashboard would read as
+      // a broken link. The page reveals nothing without a verified session.
+      { path: "/asset-open", element: withSuspense(<AssetOpen />) },
       { path: "/terms", element: withSuspense(<Terms />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
