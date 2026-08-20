@@ -63,6 +63,61 @@ export type GenerateQuestionsPayload = {
 }
 
 const GENERATE = "/v1/agents/interview/live/generate"
+/** Catalogue is the pre-existing practice-side endpoint (any authed user). */
+const PACK_CATALOGUE = "/v1/agents/interview/employer-packs"
+/** Questions for one pack — interviewer-gated, behind the live-interview flag. */
+const PACK_QUESTIONS = "/v1/agents/interview/live/employer-packs"
+
+/**
+ * A curated employer or sector pack, as the catalogue lists it.
+ *
+ * These questions are written by Inspires Genius in the STYLE of an employer's
+ * OWN publicly published hiring framework. They are not that company's actual
+ * questions — `provenance` carries the notice that must travel with them.
+ */
+export type EmployerPackSummary = {
+  slug: string
+  name: string
+  sector?: string
+  sectorSlug?: string
+  framework?: string
+  questionCount: number
+  /** Sector packs only. */
+  typicalEmployers?: string[]
+}
+
+export type EmployerPackCatalogue = {
+  provenance: string
+  employers: EmployerPackSummary[]
+  sectors: EmployerPackSummary[]
+}
+
+/** One curated question, shaped for the Studio editor. */
+export type EmployerPackQuestion = {
+  id: string
+  text: string
+  /** The competency label — becomes the question's theme. */
+  theme: string
+  probes: string[]
+  strongAnswerCovers: string
+}
+
+export type EmployerPackDetail = {
+  pack: {
+    kind: "employer" | "sector"
+    slug: string
+    name: string
+    sector?: string
+    framework?: string
+    howTheyInterview?: string
+    optimizesFor?: string
+    coachingNote: string
+    provenance: string
+    questionCount: number
+  }
+  questions: EmployerPackQuestion[]
+  provenance: string
+}
 
 export const studioInterviewService = {
   /**
@@ -72,6 +127,18 @@ export const studioInterviewService = {
    */
   async generateQuestions(payload: GenerateQuestionsPayload): Promise<GeneratedQuestionSet> {
     const { data } = await agentApi.post<GeneratedQuestionSet>(GENERATE, payload)
+    return data
+  },
+
+  /** Which employers and sectors we hold curated packs for. */
+  async getEmployerPacks(): Promise<EmployerPackCatalogue> {
+    const { data } = await agentApi.get<EmployerPackCatalogue>(PACK_CATALOGUE)
+    return data
+  },
+
+  /** The curated questions for one pack, ready to seed the editor. */
+  async getEmployerPack(slug: string): Promise<EmployerPackDetail> {
+    const { data } = await agentApi.get<EmployerPackDetail>(`${PACK_QUESTIONS}/${slug}`)
     return data
   },
 }
@@ -85,4 +152,19 @@ export function generatedSetToQuestions(set: GeneratedQuestionSet): StudioQuesti
       probes: c.starProbes,
     })),
   )
+}
+
+/**
+ * Seed the editable studio list from a curated pack.
+ *
+ * The competency becomes the theme, so the scored write-up groups the way the
+ * employer's own framework does. The interviewer can edit every line before the
+ * interview starts — nothing here is locked.
+ */
+export function employerPackToQuestions(detail: EmployerPackDetail): StudioQuestion[] {
+  return detail.questions.map((q) => ({
+    text: q.text,
+    theme: q.theme,
+    probes: q.probes,
+  }))
 }
