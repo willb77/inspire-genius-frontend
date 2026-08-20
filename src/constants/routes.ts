@@ -78,6 +78,12 @@ export const ROUTES = {
     AGENT_TRACE_CONSOLE: "/super-admin/agent-trace-console",
     /** Platform alert broadcasting — allowlist-gated (owner: willb77@3pp.com). */
     BROADCAST_ALERT: "/super-admin/broadcast-alert",
+    /**
+     * Launcher for the standalone Asset Library tool (hosted on S3 at a durable
+     * URL). This route is the launcher page, not the library itself — it hands
+     * the tool a verified super-admin session so the confidential tier unlocks.
+     */
+    ASSET_LIBRARY: "/super-admin/asset-library",
     /** Interview Studio — custom / topic-generated scored interview. */
     INTERVIEW_STUDIO: "/super-admin/interview-studio",
     /**
