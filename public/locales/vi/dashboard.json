@@ -124,6 +124,10 @@
     "todaysPrep": "Chuẩn bị hôm nay",
     "welcomePrefix": "Chào mừng",
     "whatToday": "Hôm nay chúng ta làm gì?",
-    "quickGoals": "Mục tiêu"
+    "quickGoals": "Mục tiêu",
+    "checkFailed": "— không thể kiểm tra",
+    "retry": "Thử lại",
+    "retryItem": "Thử kiểm tra lại {{name}}",
+    "someChecksFailed": "Không thể kiểm tra {{count}} mục"
   }
 }

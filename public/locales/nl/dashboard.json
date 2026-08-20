@@ -124,6 +124,10 @@
     "todaysPrep": "Voorbereiding van vandaag",
     "welcomePrefix": "Welkom",
     "whatToday": "Waar werken we vandaag aan?",
-    "quickGoals": "Doelen"
+    "quickGoals": "Doelen",
+    "checkFailed": "— kon niet worden gecontroleerd",
+    "retry": "Opnieuw proberen",
+    "retryItem": "{{name}} opnieuw controleren",
+    "someChecksFailed": "{{count}} item kon niet worden gecontroleerd"
   }
 }

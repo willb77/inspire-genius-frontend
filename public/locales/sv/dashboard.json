@@ -124,6 +124,10 @@
     "todaysPrep": "Dagens förberedelse",
     "welcomePrefix": "Välkommen",
     "whatToday": "Vad arbetar vi med i dag?",
-    "quickGoals": "Mål"
+    "quickGoals": "Mål",
+    "checkFailed": "— kunde inte kontrolleras",
+    "retry": "Försök igen",
+    "retryItem": "Kontrollera {{name}} igen",
+    "someChecksFailed": "{{count}} objekt kunde inte kontrolleras"
   }
 }
