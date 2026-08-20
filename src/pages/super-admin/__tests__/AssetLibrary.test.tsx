@@ -14,6 +14,10 @@ jest.mock("@/lib/secureStorage", () => ({
 describe("AssetLibrary launcher", () => {
   beforeEach(() => {
     secureGetItem.mockReset()
+    // The launcher probes /health to learn whether this tier has a public tier.
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true, json: async () => ({ ok: true, publicTier: true }),
+    })
   })
 
   it("renders a real anchor to the durable tool URL, opening in a new tab", async () => {
@@ -77,6 +81,51 @@ describe("AssetLibrary launcher", () => {
     render(<AssetLibrary />)
 
     expect(await screen.findByText(/separate private bucket/i)).toBeInTheDocument()
-    expect(screen.getByText(/expire after 15 minutes/i)).toBeInTheDocument()
+    // Was "expire after 15 minutes" — true only before confidential assets got
+    // durable links. The link is now permanent; what expires is the download
+    // URL it resolves to, which the user never sees.
+    expect(screen.getByText(/only to verified IG super\s+admins/i)).toBeInTheDocument()
+  })
+})
+
+
+describe("AssetLibrary launcher — per-tier behaviour", () => {
+  beforeEach(() => {
+    secureGetItem.mockReset()
+    secureGetItem.mockResolvedValue("tok-123")
+  })
+
+  it("does not promise permanent public links on a tier that has no public store", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true, json: async () => ({ ok: true, publicTier: false }),
+    })
+    render(<AssetLibrary />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/confidential-only here/i)).toBeInTheDocument()
+    })
+    // staging-b has no public tier; claiming otherwise would teach someone
+    // something untrue about where their file ends up.
+    expect(screen.queryByText(/safe to send to anyone/i)).not.toBeInTheDocument()
+  })
+
+  it("shows the public-tier copy where a public tier exists", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true, json: async () => ({ ok: true, publicTier: true }),
+    })
+    render(<AssetLibrary />)
+
+    expect(await screen.findByText(/safe to send to anyone/i)).toBeInTheDocument()
+    expect(screen.queryByText(/confidential-only here/i)).not.toBeInTheDocument()
+  })
+
+  it("stays neutral rather than guessing when /health is unreachable", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error("offline"))
+    render(<AssetLibrary />)
+
+    // Unknown must not render as "no public tier" — that would be a confident
+    // claim derived from a failed request.
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled())
+    expect(screen.queryByText(/confidential-only here/i)).not.toBeInTheDocument()
   })
 })

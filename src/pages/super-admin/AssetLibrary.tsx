@@ -7,12 +7,27 @@ import { secureGetItem } from "@/lib/secureStorage"
 import { STORAGE_KEYS } from "@/constants/routes"
 
 /**
+ * Where the tool is hosted, per tier. On dev it sits in the public demo bucket;
+ * on staging-b that account has no public buckets at all (everything is
+ * block-all-public behind CloudFront OAC), so it is served through the existing
+ * admin-tools distribution. Hard-coding dev's URL would have sent staging-b
+ * super admins to dev's library, where their token is rejected — each tier's
+ * Asset Library verifies against its OWN platform.
+ */
+export const ASSET_LIBRARY_URL =
+  import.meta.env.VITE_ASSET_LIBRARY_TOOL_URL ??
+  "https://ig-demo-public-videos.s3.amazonaws.com/library/index.html"
+
+export const ASSET_LIBRARY_API =
+  import.meta.env.VITE_ASSET_LIBRARY_API ?? "https://assets-dev.inspiresgenius.com"
+
+/**
  * Asset Library launcher.
  *
- * The library itself is a standalone tool hosted on S3 at a durable URL, not a
- * React route — that is what lets a link to it keep working outside the app.
- * This page exists to do the one thing the standalone tool cannot do for
- * itself: prove the person opening it is an IG super-admin, which unlocks the
+ * The library itself is a standalone tool hosted at a durable URL, not a React
+ * route — that is what lets a link to it keep working outside the app. This
+ * page exists to do the one thing the standalone tool cannot do for itself:
+ * prove the person opening it is an IG super-admin, which unlocks the
  * confidential tier.
  *
  * The handoff puts the access token in the URL **fragment**. A fragment is
@@ -20,17 +35,29 @@ import { STORAGE_KEYS } from "@/constants/routes"
  * logs — unlike a query string, which would be recorded in both. The tool
  * strips it from its address bar on load.
  */
-export const ASSET_LIBRARY_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/library/index.html"
-
 export default function AssetLibrary() {
   const [token, setToken] = useState<string | null>(null)
+  // Whether THIS tier has a public tier at all. staging-b does not, so the copy
+  // below must not promise permanent shareable links that cannot exist there —
+  // that is how a UI teaches people something untrue about their own data.
+  // null = not yet known; the copy stays neutral until it is.
+  const [hasPublicTier, setHasPublicTier] = useState<boolean | null>(null)
 
   useEffect(() => {
     let cancelled = false
     secureGetItem<string>(STORAGE_KEYS.USER_TOKEN).then((value) => {
       if (!cancelled) setToken(value ?? null)
     })
+    // /health is unauthenticated and cheap; it also proves the endpoint this
+    // build points at is actually reachable from this tier.
+    fetch(`${ASSET_LIBRARY_API}/health`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled) setHasPublicTier(!!j?.publicTier)
+      })
+      .catch(() => {
+        if (!cancelled) setHasPublicTier(null)
+      })
     return () => {
       cancelled = true
     }
@@ -65,19 +92,22 @@ export default function AssetLibrary() {
                 Search every asset by name, title, description or tag, filtered by type.
               </span>
             </li>
-            <li className="flex gap-3">
-              <Share2 className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-              <span>
-                Public assets get a <strong>permanent</strong> link to view or download —
-                safe to send to anyone.
-              </span>
-            </li>
+            {hasPublicTier !== false && (
+              <li className="flex gap-3">
+                <Share2 className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <span>
+                  Public assets get a <strong>permanent</strong> link to view or download —
+                  safe to send to anyone.
+                </span>
+              </li>
+            )}
             <li className="flex gap-3">
               <Lock className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
               <span>
                 Files marked <strong>confidential</strong> are stored in a separate private
-                bucket, never get a public link, and are visible, searchable and shareable
-                only to verified IG super admins. Their share links expire after 15 minutes.
+                bucket and are visible, searchable and shareable only to verified IG super
+                admins. Their links are permanent but carry no credential — every open
+                re-checks your access, so a forwarded link is useless to anyone else.
               </span>
             </li>
           </ul>
@@ -118,7 +148,9 @@ export default function AssetLibrary() {
             Durable link:{" "}
             <code className="break-all">{ASSET_LIBRARY_URL}</code>
             <br />
-            Opened directly, it asks for the shared passcode and shows public assets only.
+            {hasPublicTier === false
+              ? "This environment has no public tier — the library is confidential-only here."
+              : "Opened directly, it asks for the shared passcode and shows public assets only."}
           </p>
         </CardContent>
       </Card>
