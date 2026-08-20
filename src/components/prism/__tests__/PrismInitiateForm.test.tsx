@@ -103,6 +103,13 @@ describe("PrismInitiateForm", () => {
     expect(screen.getByDisplayValue("alice@test.com")).toBeInTheDocument();
   });
 
+  /* Guard against the field coming back: it was mandatory until
+     2026-08-20 and blocked submission on a value PRISM ignores. */
+  it("does not render a gender control", () => {
+    render(<PrismInitiateForm />);
+    expect(screen.queryByText(/gender/i)).not.toBeInTheDocument();
+  });
+
   it("renders section headings", () => {
     render(<PrismInitiateForm />);
     expect(screen.getByText("Candidate Details")).toBeInTheDocument();
@@ -123,7 +130,6 @@ describe("PrismInitiateForm", () => {
       surname: "Smith",
       email: "jane.smith@company.com",
       organisation: "Acme Corp",
-      gender: "male",
       questionnaireTypeId: 4,
       languageId: 25,
     };
@@ -153,10 +159,31 @@ describe("PrismInitiateForm", () => {
           organisation: "Acme Corp",
           qtype_id: 4,
           lang_id: 25,
-          gender: true, // PRISM convention: true = male
           isGift: false,
         })
       );
+    });
+
+    /* PRISM Service Library API v2.5 §5.1.2.10 defines Gender as a
+       report-text switch for gendered languages, not a scoring input, and
+       IG runs English. The form no longer collects it, so the payload must
+       not carry it either — omitting the key lets the backend default
+       (`CreateRequestBody.gender = False`) apply. objectContaining above
+       would happily pass with a stray `gender`, so assert its absence. */
+    it("does not send gender in the payload", async () => {
+      mockRequestSurvey.mockResolvedValue({
+        request_id: "req-1",
+        action_url_1: "https://prism.example/q/abc",
+        quest_status_desc: "sent",
+      });
+
+      render(<PrismInitiateForm defaultValues={validDefaults} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /request assessment/i })
+      );
+
+      await waitFor(() => expect(mockRequestSurvey).toHaveBeenCalledTimes(1));
+      expect(mockRequestSurvey.mock.calls[0][0]).not.toHaveProperty("gender");
     });
 
     it("shows the returned questionnaire link on success", async () => {
