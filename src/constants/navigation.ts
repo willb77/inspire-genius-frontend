@@ -31,6 +31,7 @@ import {
   Activity,
   ClipboardCheck,
   ClipboardList,
+  FolderOpen,
 } from "lucide-react"
 
 /**
@@ -324,6 +325,11 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SURVEYS, icon: ClipboardList, label: "Surveys" },
   // Team Development Studio lives in the consolidated "Tools" section
   // (useToolsSection, fed by TOOL_ITEMS_BY_ROLE) rather than inline here.
+  // Asset Library: a standalone S3-hosted tool. This entry points at the in-app
+  // launcher, which hands the tool a verified super-admin session so its
+  // confidential tier unlocks. Label must stay unique — SidebarScaffold keys
+  // nav items by label, so a duplicate collides.
+  { to: ROUTES.SUPER_ADMIN.ASSET_LIBRARY, icon: FolderOpen, label: "Asset Library" },
   { to: ROUTES.SUPER_ADMIN.SETTINGS, icon: Settings, label: "Settings" },
 ]
 
