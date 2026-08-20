@@ -10,7 +10,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { BadgeCheck, Upload } from "lucide-react"
+import { BadgeCheck, ListChecks, Upload } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { type InterviewFrame } from "@/services/interview/practice.service"
 import { useEmployerPackCatalogue } from "@/hooks/interview/useEmployerPackCatalogue"
+import { useRolePackCatalogue } from "@/hooks/interview/useRolePackCatalogue"
 import {
   ACCEPTED_ROLE_FILE_TYPES,
   extractRoleText,
@@ -40,6 +41,8 @@ const schema = z.object({
   scope: z.string().min(1, "Scope of responsibility is required").max(600),
   candidateType: z.enum(["", "external", "internal"]).optional(),
   weightedFocus: z.string().max(600).optional(),
+  rolePackSlug: z.string().max(120).optional(),
+  rolePackTitle: z.string().max(200).optional(),
   jobDescription: z.string().max(8000).optional(),
   numQuestions: z.number().int().min(1, "At least 1").max(12, "Max 12 (the STAR bank size)"),
   lengthMinutes: z.number().int().min(1, "At least 1 minute").max(180),
@@ -54,6 +57,7 @@ export default function InterviewFrameForm({
   description = "Before we begin, please confirm a few things so the questions and coaching fit the actual seat you're preparing for.",
   submitLabel = "Confirm & start the interview",
   showEmployerPacks = false,
+  showRolePacks = false,
 }: {
   initial?: InterviewFrame | null
   onConfirm: (frame: InterviewFrame) => void
@@ -73,6 +77,16 @@ export default function InterviewFrameForm({
    * does not deliver. Turn this on only where the pack is actually applied.
    */
   showEmployerPacks?: boolean
+  /**
+   * Surface the curated role+level packs as a picker.
+   *
+   * OFF by default for the same reason as `showEmployerPacks`: only the
+   * practice path serves a role pack. The live scored interview builds its
+   * plan through `interview_live_repo`, which does not resolve one, so
+   * offering the picker there would promise questions that surface never
+   * delivers.
+   */
+  showRolePacks?: boolean
 }) {
   const [jdOpen, setJdOpen] = useState(false)
   const [jdBusy, setJdBusy] = useState(false)
@@ -89,6 +103,8 @@ export default function InterviewFrameForm({
       scope: initial?.scope ?? "",
       candidateType: initial?.candidateType ?? "",
       weightedFocus: initial?.weightedFocus ?? "",
+      rolePackSlug: initial?.rolePackSlug ?? "",
+      rolePackTitle: initial?.rolePackTitle ?? "",
       jobDescription: initial?.jobDescription ?? "",
       numQuestions: initial?.numQuestions ?? 12,
       lengthMinutes: initial?.lengthMinutes ?? 50,
@@ -107,6 +123,33 @@ export default function InterviewFrameForm({
   const packCount = showEmployerPacks
     ? (catalogue?.employers.length ?? 0) + (catalogue?.sectors.length ?? 0)
     : 0
+
+  // Curated role+level packs. Same fail-open contract as the employer
+  // catalogue: an empty list renders no picker at all rather than an empty one.
+  const { data: roleCatalogue } = useRolePackCatalogue({ enabled: showRolePacks })
+  const rolePacks = showRolePacks ? (roleCatalogue?.roles ?? []) : []
+  const pickedSlug = form.watch("rolePackSlug") ?? ""
+  const pickedPack = rolePacks.find((r) => r.slug === pickedSlug)
+
+  // Group by discipline, each group in ladder order. The backend already sorts
+  // by (family, levelOrder); preserve that rather than re-sorting alphabetically,
+  // which would put "Entry level" after "Individual contributor".
+  const packsByFamily = rolePacks.reduce<Record<string, typeof rolePacks>>((acc, r) => {
+    ;(acc[r.family] ??= []).push(r)
+    return acc
+  }, {})
+
+  const pickRolePack = (slug: string) => {
+    form.setValue("rolePackSlug", slug, { shouldDirty: true })
+    const pack = rolePacks.find((r) => r.slug === slug)
+    form.setValue("rolePackTitle", pack?.title ?? "", { shouldDirty: true })
+    // Fill the role title so the rest of the form and the coaching prompt know
+    // the seat — but only when it is empty, so a candidate who has already
+    // typed their own title does not silently lose it.
+    if (pack && !form.getValues("roleTitle")?.trim()) {
+      form.setValue("roleTitle", pack.title, { shouldDirty: true })
+    }
+  }
 
   const companyTyped = form.watch("company")?.trim().toLowerCase() ?? ""
   const industryTyped = form.watch("industry")?.trim().toLowerCase() ?? ""
@@ -154,6 +197,52 @@ export default function InterviewFrameForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit((v) => onConfirm(v as InterviewFrame))} className="space-y-4">
+          {/* Curated role picker. Rendered ONLY when the catalogue returned
+              packs — an unreachable backend leaves the form exactly as it was
+              before role packs existed, rather than showing a dead control. */}
+          {rolePacks.length > 0 && (
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-indigo-600" />
+                <Label htmlFor="rolePackSlug" className="text-sm font-semibold text-slate-800">
+                  Practising for one of these roles?
+                </Label>
+              </div>
+              <p className="mt-1 text-xs text-slate-600">
+                Pick a role and level to load a ready-made question set written for it.
+                Leave it on <span className="font-medium">Describe my own role</span> to
+                describe the seat yourself, exactly as before.
+              </p>
+              <select
+                id="rolePackSlug"
+                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+                value={pickedSlug}
+                onChange={(e) => pickRolePack(e.target.value)}
+              >
+                <option value="">Describe my own role (no ready-made set)</option>
+                {Object.entries(packsByFamily).map(([family, packs]) => (
+                  <optgroup key={family} label={family}>
+                    {packs.map((r) => (
+                      <option key={r.slug} value={r.slug}>
+                        {r.level} — {r.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {pickedPack && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-emerald-700">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  {pickedPack.competencyCount} competencies · {pickedPack.questionCount} questions
+                  in the set — your interview draws one per competency, so practising twice
+                  is not the same interview.
+                </p>
+              )}
+              {pickedPack && roleCatalogue?.provenance && (
+                <p className="mt-1 text-xs italic text-slate-400">{roleCatalogue.provenance}</p>
+              )}
+            </div>
+          )}
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Please confirm five things</p>
           {packCount > 0 && (
             <p className="text-xs text-slate-500">
