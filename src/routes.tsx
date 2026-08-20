@@ -94,6 +94,8 @@ const SuperAdminSettingsPage = React.lazy(() => import("@/pages/super-admin/Sett
 const OrganizationView = React.lazy(() => import("@/pages/super-admin/OrganizationView"));
 const UserCoaches = React.lazy(() => import("@/pages/super-admin/UserCoaches"));
 const ProjectLog = React.lazy(() => import("@/pages/super-admin/ProjectLog"));
+const AssetLibrary = React.lazy(() => import("@/pages/super-admin/AssetLibrary"));
+const AssetOpen = React.lazy(() => import("@/pages/super-admin/AssetOpen"));
 const RlhfTraining = React.lazy(() => import("@/pages/super-admin/RlhfTraining"));
 const DevTrafficReport = React.lazy(() => import("@/pages/super-admin/DevTrafficReport"));
 const BroadcastAlert = React.lazy(() => import("@/pages/super-admin/BroadcastAlert"));
@@ -372,6 +374,12 @@ export const routes: RouteObject[] = [
       // The Honor Foundation — standalone Coach Workbench front door. Reuses the
       // platform magic-link auth; authed visitors are forwarded into the vertical.
       { path: "/honor", element: withSuspense(<HonorLanding />) },
+      // Durable-link broker for confidential assets. Intentionally OUTSIDE the
+      // role-gated /super-admin/* prefix: the page performs its own server-side
+      // authorization and must be able to tell a non-super-admin plainly that
+      // they lack access. Redirecting them to their own dashboard would read as
+      // a broken link. The page reveals nothing without a verified session.
+      { path: "/asset-open", element: withSuspense(<AssetOpen />) },
       { path: "/terms", element: withSuspense(<Terms />) },
       { path: "/privacy", element: withSuspense(<Privacy />) },
       { path: "/preview-home", element: withSuspense(<PreviewHome />) },
@@ -479,6 +487,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/dashboard/licences", element: withSuspense(<LicenceDetailsPage />) },
       { path: "/super-admin/settings", element: withSuspense(<SuperAdminSettingsPage />) },
       { path: "/super-admin/project-log", element: withSuspense(<ProjectLog />) },
+      { path: "/super-admin/asset-library", element: withSuspense(<AssetLibrary />) },
       { path: "/super-admin/rlhf-training", element: withSuspense(<RlhfTraining />) },
       { path: "/super-admin/dev-traffic-report", element: withSuspense(<DevTrafficReport />) },
       { path: "/super-admin/broadcast-alert", element: withSuspense(<BroadcastAlert />) },
