@@ -52,7 +52,6 @@ const initiateSchema = z.object({
   forename: z.string().min(1, 'First name is required').max(50),
   surname: z.string().min(1, 'Last name is required').max(50),
   email: z.string().email('Enter a valid email address'),
-  gender: z.string({ error: 'Select gender' }),
   organisation: z.string().min(1, 'Organisation is required').max(100),
 
   // Questionnaire config
@@ -114,7 +113,6 @@ export default function PrismInitiateForm({
       forename: '',
       surname: '',
       email: '',
-      gender: undefined,
       organisation: '',
       languageId: 1,
       reference: '',
@@ -127,18 +125,24 @@ export default function PrismInitiateForm({
   async function onSubmit(values: InitiateFormValues) {
     // Build the full PRISM CreateCandidate-compatible payload.
     // The top-level fields here mirror `InitiateAssessmentRequest` exactly
-    // (the shape sent to POST /v1/prism/initiate): gender is converted to a
-    // boolean (true = male) and isGift is passed through (true auto-unlocks
-    // the report). Note: `createUser` is NOT part of InitiateAssessmentRequest
-    // — it only informs the PRISM CreateCandidate mapping below and is not
-    // transmitted as a top-level field.
+    // (the shape sent to POST /v1/prism/initiate), with isGift passed through
+    // (true auto-unlocks the report). Note: `createUser` is NOT part of
+    // InitiateAssessmentRequest — it only informs the PRISM CreateCandidate
+    // mapping below and is not transmitted as a top-level field.
+    //
+    // `Gender` is deliberately absent. PRISM Service Library API v2.5
+    // §5.1.2.10 defines it as a boolean used "only in some languages when
+    // gender is required in order to display the correct report text" — it
+    // has no effect on scoring, and IG runs English (LangID 1 / 25), which
+    // has no grammatical gender. Omitting it lets the backend default apply
+    // (`CreateRequestBody.gender = False`), which is the same path the Honor
+    // vertical has used against live PRISM since launch.
     const apiPayload = {
       // IG backend fields — these match InitiateAssessmentRequest
       userId: 'auto-generated',
       forename: values.forename,
       surname: values.surname,
       email: values.email,
-      gender: values.gender === 'male',
       organisation: values.organisation,
       reference: values.reference || `IG-${Date.now()}`,
       questionnaireTypeId: values.questionnaireTypeId,
@@ -156,7 +160,6 @@ export default function PrismInitiateForm({
         Organisation: values.organisation,
         Reference: values.reference || `IG-${Date.now()}`,
         Email: values.email,
-        Gender: values.gender === 'male',
         LangID: values.languageId,
         QTypeID: values.questionnaireTypeId,
         // CreateUser is a PRISM CreateCandidate hint only — it is not part of
@@ -188,8 +191,6 @@ export default function PrismInitiateForm({
         organisation: values.organisation || undefined,
         qtype_id: values.questionnaireTypeId,
         lang_id: values.languageId,
-        // PRISM convention: true = male.
-        gender: values.gender === 'male',
         isGift: values.isGift,
       })
 
@@ -471,52 +472,19 @@ export default function PrismInitiateForm({
               )}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={disabled}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>Required by PRISM API</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="organisation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Organisation *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Acme Corp"
-                        disabled={disabled}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="organisation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Organisation *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Acme Corp" disabled={disabled} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Separator />
 
