@@ -2,9 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import AssetOpen, { ASSET_LIBRARY_API, navigation } from "../AssetOpen"
 
-const secureGetItem = jest.fn()
-jest.mock("@/lib/secureStorage", () => ({
-  secureGetItem: (...args: unknown[]) => secureGetItem(...args),
+// Mocks @/lib/storage — the module that ACTUALLY holds the access token, and
+// the same one the axios interceptor reads. Mocking @/lib/secureStorage instead
+// is what let the broken version pass CI: the mock satisfied an assumption the
+// real app never satisfied.
+const getToken = jest.fn()
+jest.mock("@/lib/storage", () => ({
+  getToken: (...args: unknown[]) => getToken(...args),
 }))
 
 // jsdom's window.location is non-configurable and cannot be mocked, so the
@@ -23,13 +27,13 @@ function renderAt(path: string) {
 
 describe("AssetOpen — durable-link broker", () => {
   beforeEach(() => {
-    secureGetItem.mockReset()
+    getToken.mockReset()
     replace.mockReset()
     global.fetch = jest.fn()
   })
 
   it("exchanges the opaque id for a short-lived URL and sends the browser to it", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
@@ -49,7 +53,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("tells a non-super-admin plainly that they lack access, rather than redirecting", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: false, status: 403, json: async () => ({ ok: false, error: "restricted" }),
     })
@@ -62,7 +66,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("distinguishes a deleted document from a permissions problem", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: false, status: 404, json: async () => ({ ok: false, error: "gone" }),
     })
@@ -74,7 +78,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("asks an unauthenticated visitor to sign in and returns them here", async () => {
-    secureGetItem.mockResolvedValue(null)
+    getToken.mockResolvedValue(null)
 
     renderAt("/asset-open?id=abc123")
 
@@ -85,7 +89,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("surfaces a network failure as an error with a retry, not as 'no access'", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     ;(global.fetch as jest.Mock).mockRejectedValue(new Error("offline"))
 
     renderAt("/asset-open?id=abc123")
@@ -97,7 +101,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("rejects a link with no id instead of calling the API", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
 
     renderAt("/asset-open")
 
@@ -106,7 +110,7 @@ describe("AssetOpen — durable-link broker", () => {
   })
 
   it("resolves only once even if the effect runs twice (StrictMode)", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: true, status: 200,
       json: async () => ({ ok: true, url: "https://signed.example/x", name: "a.pdf" }),

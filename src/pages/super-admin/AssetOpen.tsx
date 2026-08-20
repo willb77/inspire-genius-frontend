@@ -3,8 +3,7 @@ import { useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AlertTriangle, Download, FileLock2, Loader2 } from "lucide-react"
-import { secureGetItem } from "@/lib/secureStorage"
-import { STORAGE_KEYS } from "@/constants/routes"
+import { getToken } from "@/lib/storage"
 
 /**
  * Durable-link broker for confidential assets.
@@ -62,7 +61,16 @@ export default function AssetOpen() {
     }
     setState({ kind: "resolving" })
 
-    const token = await secureGetItem<string>(STORAGE_KEYS.USER_TOKEN)
+    // The access token MUST be read with getToken() from @/lib/storage — the same
+    // accessor the axios interceptor uses. There are two encrypted-storage modules
+    // in this app with INCOMPATIBLE payload formats: storage.ts (encryptString, raw
+    // payload) writes the token, and secureStorage.ts (AES-GCM + a {iv,data,v} JSON
+    // envelope) is a different scheme. Reading the token with secureGetItem parses
+    // the other module's payload, throws, and silently returns null — which is
+    // exactly how this shipped broken: the launcher rendered a link with no token,
+    // the tool never received one, and the confidential checkbox stayed disabled
+    // with nothing logged anywhere.
+    const token = await getToken()
     if (!token) {
       setState({ kind: "no-session" })
       return
