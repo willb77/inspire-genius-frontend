@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react"
 import {
   Loader2, RefreshCw, ArrowRight, MessageSquareText, Mic, MicOff,
   Volume2, Pencil, Printer, Flag, CheckCircle2, FileText, FileDown, Save, Sparkles,
-  Building2,
+  Building2, ListChecks,
 } from "lucide-react"
 
 import UserLayout from "@/layouts/UserLayout"
@@ -43,6 +43,7 @@ import {
   buildCoachMessage,
   buildFindingsMessage,
   buildInterviewPlan,
+  getRolePackQuestions,
   getTailoredPracticeQuestions,
   practiceJobContext,
   practiceService,
@@ -53,6 +54,7 @@ import {
   type PlannedQuestion,
   type PracticeQuestions,
   type EmployerPackMatch,
+  type RolePackMatch,
 } from "@/services/interview/practice.service"
 import {
   downloadInterview,
@@ -114,6 +116,8 @@ export default function InterviewPracticePage() {
   // The curated employer/sector pack the backend matched from the frame, or
   // null when the company/industry are ones we do not cover.
   const [employerPack, setEmployerPack] = useState<EmployerPackMatch | null>(null)
+  // The curated role+level pack the candidate picked, when they picked one.
+  const [rolePack, setRolePack] = useState<RolePackMatch | null>(null)
 
   const pendingRef = useRef<{ kind: "coach"; number: number } | { kind: "findings" } | null>(null)
 
@@ -182,10 +186,30 @@ export default function InterviewPracticePage() {
     const jobTitle = f.roleTitle?.trim()
     const company = f.company?.trim()
     const industry = f.industry?.trim()
+    const roleSlug = f.rolePackSlug?.trim()
     let bank: PracticeQuestions = data
     let tailored = false
     let pack: EmployerPackMatch | null = null
-    if (jobTitle || company || industry) {
+    let picked: RolePackMatch | null = null
+
+    if (roleSlug) {
+      // The candidate PICKED a role, so serve that set verbatim. It is already
+      // written for the role and level; running it through the tailoring model
+      // would rewrite curated questions for no gain.
+      //
+      // On failure fall back to the ordinary path rather than to an empty
+      // interview — but do NOT pretend the pack applied. `rolePack` stays null,
+      // so the badge and the provenance line are absent and the candidate can
+      // see they got the general interview.
+      try {
+        bank = await getRolePackQuestions(roleSlug)
+        picked = bank.role ?? null
+      } catch {
+        picked = null
+      }
+    }
+
+    if (!picked && (jobTitle || company || industry)) {
       bank = await getTailoredPracticeQuestions(
         jobTitle || "",
         f.jobDescription?.trim() || undefined,
@@ -197,6 +221,7 @@ export default function InterviewPracticePage() {
     }
     setTailoredApplied(tailored)
     setEmployerPack(pack)
+    setRolePack(picked)
 
     // ONE-TIME personalization fetch (cheap SQL, no pgvector). The result is
     // replayed into every turn's job context, so the per-turn path never pays a
@@ -342,7 +367,12 @@ export default function InterviewPracticePage() {
                   before you start, or clear the role to practise generally.
                 </div>
               )}
-              <InterviewFrameForm initial={initialFrame} onConfirm={startInterview} showEmployerPacks />
+              <InterviewFrameForm
+                initial={initialFrame}
+                onConfirm={startInterview}
+                showEmployerPacks
+                showRolePacks
+              />
             </>
           )}
         </div>
@@ -431,7 +461,26 @@ export default function InterviewPracticePage() {
                   <Sparkles className="h-3 w-3" /> Tailored to {frame?.roleTitle}
                 </p>
               )}
-              {employerPack && (
+              {rolePack && (
+                <Badge variant="secondary" className="gap-1 bg-indigo-50 text-indigo-700">
+                  <ListChecks className="h-3 w-3" />
+                  {rolePack.level} set — {rolePack.competencyCount} competencies
+                </Badge>
+              )}
+              {rolePack && (
+          <Card className="border-indigo-200 bg-indigo-50/40">
+            <CardContent className="space-y-1 p-4 text-xs text-slate-700">
+              <p className="text-sm font-semibold text-indigo-900">
+                {rolePack.title}
+              </p>
+              <p><span className="font-semibold">Level: </span>{rolePack.level}</p>
+              <p><span className="font-semibold">Discipline: </span>{rolePack.family}</p>
+              <p><span className="font-semibold">Before you start: </span>{rolePack.coachingNote}</p>
+              <p className="pt-1 italic text-slate-500">{rolePack.provenance}</p>
+            </CardContent>
+          </Card>
+        )}
+        {employerPack && (
                 <p className="flex items-center gap-1 text-xs text-amber-700">
                   <Building2 className="h-3 w-3" />
                   {employerPack.kind === "employer"
