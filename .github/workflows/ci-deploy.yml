@@ -78,6 +78,10 @@ jobs:
           echo "VITE_CRYPTO_SALT=${{ secrets.VITE_CRYPTO_SALT }}" >> .env
           echo "VITE_MAGIC_AUTH_URL=${{ secrets.VITE_MAGIC_AUTH_URL }}" >> .env
           echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}" >> .env
+          # Asset Library (dev tier). Non-secret URLs, so literal rather than a
+          # GitHub Secret. staging-b sets its own pair in .env.staging-b.
+          echo "VITE_ASSET_LIBRARY_API=https://assets-dev.inspiresgenius.com" >> .env
+          echo "VITE_ASSET_LIBRARY_TOOL_URL=https://ig-demo-public-videos.s3.amazonaws.com/library/index.html" >> .env
           echo "VITE_SENTRY_ENVIRONMENT=production" >> .env
           echo "VITE_APP_VERSION=${{ github.sha }}" >> .env
           # Default the new user surfaces (HomeV2 dashboard) ON in dev. The in-page
