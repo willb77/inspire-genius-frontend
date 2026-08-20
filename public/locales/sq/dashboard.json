@@ -124,6 +124,10 @@
     "todaysPrep": "Përgatitja e sotme",
     "welcomePrefix": "Mirë se vini",
     "whatToday": "Për çfarë po punojmë sot?",
-    "quickGoals": "Objektivat"
+    "quickGoals": "Objektivat",
+    "checkFailed": "— nuk u kontrollua dot",
+    "retry": "Riprovo",
+    "retryItem": "Riprovo kontrollin e {{name}}",
+    "someChecksFailed": "{{count}} artikull nuk u kontrollua dot"
   }
 }

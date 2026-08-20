@@ -124,6 +124,10 @@
     "todaysPrep": "आज की तैयारी",
     "welcomePrefix": "स्वागत है",
     "whatToday": "आज हम किस पर काम कर रहे हैं?",
-    "quickGoals": "लक्ष्य"
+    "quickGoals": "लक्ष्य",
+    "checkFailed": "— जाँच नहीं हो सकी",
+    "retry": "पुनः प्रयास करें",
+    "retryItem": "{{name}} की जाँच पुनः करें",
+    "someChecksFailed": "{{count}} आइटम की जाँच नहीं हो सकी"
   }
 }

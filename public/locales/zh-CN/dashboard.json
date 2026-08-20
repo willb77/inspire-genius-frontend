@@ -124,6 +124,10 @@
     "todaysPrep": "今日准备",
     "welcomePrefix": "欢迎",
     "whatToday": "今天我们做点什么？",
-    "quickGoals": "目标"
+    "quickGoals": "目标",
+    "checkFailed": "— 无法检查",
+    "retry": "重试",
+    "retryItem": "重新检查 {{name}}",
+    "someChecksFailed": "有 {{count}} 项无法检查"
   }
 }

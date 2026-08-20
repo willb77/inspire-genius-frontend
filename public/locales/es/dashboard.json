@@ -124,6 +124,10 @@
     "todaysPrep": "Preparación de hoy",
     "welcomePrefix": "Bienvenido",
     "whatToday": "¿En qué trabajamos hoy?",
-    "quickGoals": "Objetivos"
+    "quickGoals": "Objetivos",
+    "checkFailed": "— no se pudo comprobar",
+    "retry": "Reintentar",
+    "retryItem": "Reintentar la comprobación de {{name}}",
+    "someChecksFailed": "No se pudo comprobar {{count}} elemento"
   }
 }

@@ -124,6 +124,10 @@
     "todaysPrep": "Bugünün Hazırlığı",
     "welcomePrefix": "Hoş geldiniz",
     "whatToday": "Bugün ne üzerinde çalışıyoruz?",
-    "quickGoals": "Hedefler"
+    "quickGoals": "Hedefler",
+    "checkFailed": "— kontrol edilemedi",
+    "retry": "Yeniden dene",
+    "retryItem": "{{name}} kontrolünü yeniden dene",
+    "someChecksFailed": "{{count}} öğe kontrol edilemedi"
   }
 }

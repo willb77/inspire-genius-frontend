@@ -10,6 +10,8 @@ import {
   Play,
   Plus,
   type LucideIcon,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 
 import {
@@ -27,10 +29,36 @@ export interface WelcomeBackAssessment {
   done: boolean;
 }
 
+/**
+ * A completeness item can be in THREE states, not two.
+ *
+ * `done: false` used to carry both "the user has not uploaded this" and "we
+ * could not find out" — and the second is not an empty state, it is a failed
+ * request wearing one. On 2026-08-19 a user with a PRISM report on file was
+ * shown PRISM as unticked; `hasReport` is `!prismError && !!file_name`, so any
+ * error on GET /v1/documents/latest-prism renders identically to having
+ * nothing. The row then offers "Add", inviting someone to re-upload a report
+ * the platform already has.
+ *
+ * `status: "unknown"` keeps the two apart. `done` is retained so existing
+ * callers and tests keep working; when both are supplied `status` wins.
+ */
+export type WelcomeBackItemStatus = "done" | "missing" | "unknown";
+
 /** Prism Rpt .csv / Resume / Bio / Additional info — same shape, separate group. */
 export interface WelcomeBackPersonalInfo {
   name: string;
   done: boolean;
+  /** Omit for the usual done/missing split; "unknown" means the check failed. */
+  status?: WelcomeBackItemStatus;
+}
+
+/** `status` when present, else derived from the legacy `done` boolean. */
+function itemStatus(item: {
+  done: boolean;
+  status?: WelcomeBackItemStatus;
+}): WelcomeBackItemStatus {
+  return item.status ?? (item.done ? "done" : "missing");
 }
 
 /**
@@ -96,6 +124,8 @@ interface WelcomeBackTileProps {
   // tile still receives `hasReport`/`reportFileName` because it renders the
   // "Latest report" line beside "Powered by PRISM".
   personalInfo: WelcomeBackPersonalInfo[];
+  /** Re-run the queries behind the checklist after a failed check. */
+  onRetryPersonalInfo?: () => void;
   onAddPersonalInfo?: (name: string) => void;
   /** Quick-action links rendered directly under the completion gauge. */
   quickActions?: WelcomeBackQuickAction[];
@@ -113,47 +143,82 @@ interface WelcomeBackTileProps {
 function CompletionRow({
   name,
   done,
+  status,
   onAdd,
+  onRetry,
 }: {
   name: string;
   done: boolean;
+  status?: WelcomeBackItemStatus;
   onAdd?: (name: string) => void;
+  onRetry?: () => void;
 }): JSX.Element {
   const { t } = useTranslation("dashboard");
+  const state = itemStatus({ done, status });
+  const isDone = state === "done";
+  const isUnknown = state === "unknown";
   return (
     <li className="flex items-center justify-between gap-3">
       <span className="inline-flex min-w-0 items-center gap-2 text-[14px]">
-        {done ? (
+        {isDone ? (
           <CheckCircle2
             className="h-4 w-4 shrink-0 text-[#3E6B55]"
+            aria-hidden="true"
+          />
+        ) : isUnknown ? (
+          <AlertCircle
+            className="h-4 w-4 shrink-0 text-[#C9711A]"
             aria-hidden="true"
           />
         ) : (
           <Circle className="h-4 w-4 shrink-0 text-[#7C93B5]" aria-hidden="true" />
         )}
-        <span className={cn("truncate", done ? "text-[#3E6B55]" : "text-[#0B1B33]")}>
+        <span
+          className={cn(
+            "truncate",
+            isDone ? "text-[#3E6B55]" : isUnknown ? "text-[#C9711A]" : "text-[#0B1B33]",
+          )}
+        >
           {name}
+          {isUnknown ? (
+            <span className="ms-1 text-[12px] font-medium">
+              {t("homeV2.checkFailed", { defaultValue: "— couldn't check" })}
+            </span>
+          ) : null}
         </span>
       </span>
       <button
         type="button"
-        onClick={done ? undefined : () => onAdd?.(name)}
-        disabled={done}
-        aria-label={
-          done
-            ? t("homeV2.itemAdded", { defaultValue: "{{name}} added", name })
-            : t("homeV2.addItem", { defaultValue: "Add {{name}}", name })
+        onClick={
+          isUnknown ? () => onRetry?.() : isDone ? undefined : () => onAdd?.(name)
         }
-        aria-disabled={done}
+        disabled={isDone}
+        aria-label={
+          isDone
+            ? t("homeV2.itemAdded", { defaultValue: "{{name}} added", name })
+            : isUnknown
+              ? t("homeV2.retryItem", {
+                  defaultValue: "Retry checking {{name}}",
+                  name,
+                })
+              : t("homeV2.addItem", { defaultValue: "Add {{name}}", name })
+        }
+        aria-disabled={isDone}
         className={cn(
           "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors",
-          done
+          isDone
             ? "cursor-default border-[rgba(11,27,51,0.06)] bg-[#F1F1F1] text-[#9AA3B0]"
             : "border-[rgba(11,27,51,0.10)] bg-white text-[#C9711A] hover:bg-[#FBF7F0]",
         )}
       >
-        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-        {t("homeV2.add", { defaultValue: "Add" })}
+        {isUnknown ? (
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        {isUnknown
+          ? t("homeV2.retry", { defaultValue: "Retry" })
+          : t("homeV2.add", { defaultValue: "Add" })}
       </button>
     </li>
   );
@@ -169,16 +234,23 @@ function CompletionDropdown({
   label,
   items,
   onAdd,
+  onRetry,
   testId,
 }: {
   label: string;
-  items: { name: string; done: boolean }[];
+  items: { name: string; done: boolean; status?: WelcomeBackItemStatus }[];
   onAdd?: (name: string) => void;
+  onRetry?: () => void;
   testId: string;
 }): JSX.Element {
   const { t } = useTranslation("dashboard");
   const [open, setOpen] = useState(false);
-  const doneCount = items.filter((i) => i.done).length;
+  const doneCount = items.filter((i) => itemStatus(i) === "done").length;
+  // An item we could not check is not a *missing* item, so the trigger must not
+  // imply the user has work to do. "3 of 4" with a warning marker is honest;
+  // silently counting unknowns as incomplete is what sent a user to re-upload
+  // a PRISM report he had already uploaded.
+  const unknownCount = items.filter((i) => itemStatus(i) === "unknown").length;
 
   // Sized to its content and floated open, rather than a full-width block that
   // pushed the tile taller (2026-08-05). It now sits at the end of the
@@ -204,6 +276,16 @@ function CompletionDropdown({
             total: items.length,
           })}
         </span>
+        {unknownCount > 0 ? (
+          <AlertCircle
+            data-testid={`${testId}-unknown-marker`}
+            className="h-3.5 w-3.5 shrink-0 text-[#C9711A]"
+            aria-label={t("homeV2.someChecksFailed", {
+              defaultValue: "{{count}} item could not be checked",
+              count: unknownCount,
+            })}
+          />
+        ) : null}
         <ChevronDown
           aria-hidden="true"
           className={cn(
@@ -223,7 +305,9 @@ function CompletionDropdown({
               key={item.name}
               name={item.name}
               done={item.done}
+              status={item.status}
               onAdd={onAdd}
+              onRetry={onRetry}
             />
           ))}
         </ul>
@@ -393,6 +477,7 @@ export function WelcomeBackTile({
   reportFileName,
   prismLoading = false,
   personalInfo,
+  onRetryPersonalInfo,
   onAddPersonalInfo,
   quickActions = [],
   videos = [],
@@ -546,6 +631,7 @@ export function WelcomeBackTile({
                 label={t("homeV2.personalInfo", { defaultValue: "Personal Info" })}
                 items={personalInfo}
                 onAdd={onAddPersonalInfo}
+                onRetry={onRetryPersonalInfo}
               />
             ) : null
           }
