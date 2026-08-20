@@ -124,6 +124,10 @@
     "todaysPrep": "Persiapan Hari Ini",
     "welcomePrefix": "Selamat datang",
     "whatToday": "Apa yang kita kerjakan hari ini?",
-    "quickGoals": "Sasaran"
+    "quickGoals": "Sasaran",
+    "checkFailed": "— tidak dapat diperiksa",
+    "retry": "Coba lagi",
+    "retryItem": "Coba periksa {{name}} lagi",
+    "someChecksFailed": "{{count}} item tidak dapat diperiksa"
   }
 }

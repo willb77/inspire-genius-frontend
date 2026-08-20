@@ -124,6 +124,10 @@
     "todaysPrep": "การเตรียมตัววันนี้",
     "welcomePrefix": "ยินดีต้อนรับ",
     "whatToday": "วันนี้เราจะทำอะไรกันดี?",
-    "quickGoals": "เป้าหมาย"
+    "quickGoals": "เป้าหมาย",
+    "checkFailed": "— ตรวจสอบไม่ได้",
+    "retry": "ลองใหม่",
+    "retryItem": "ลองตรวจสอบ {{name}} อีกครั้ง",
+    "someChecksFailed": "ตรวจสอบ {{count}} รายการไม่ได้"
   }
 }

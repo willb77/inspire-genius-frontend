@@ -124,6 +124,10 @@
     "todaysPrep": "Подготовка на сегодня",
     "welcomePrefix": "Добро пожаловать",
     "whatToday": "Над чем работаем сегодня?",
-    "quickGoals": "Цели"
+    "quickGoals": "Цели",
+    "checkFailed": "— не удалось проверить",
+    "retry": "Повторить",
+    "retryItem": "Повторить проверку {{name}}",
+    "someChecksFailed": "Не удалось проверить {{count}} элемент"
   }
 }

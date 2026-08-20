@@ -124,6 +124,10 @@
     "todaysPrep": "تحضير اليوم",
     "welcomePrefix": "مرحبًا",
     "whatToday": "على ماذا نعمل اليوم؟",
-    "quickGoals": "الأهداف"
+    "quickGoals": "الأهداف",
+    "checkFailed": "— تعذر التحقق",
+    "retry": "إعادة المحاولة",
+    "retryItem": "إعادة التحقق من {{name}}",
+    "someChecksFailed": "تعذر التحقق من {{count}} عنصر"
   }
 }
