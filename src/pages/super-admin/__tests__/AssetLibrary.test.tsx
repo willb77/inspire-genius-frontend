@@ -6,14 +6,18 @@ jest.mock("@/layouts/SuperAdminLayout", () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-const secureGetItem = jest.fn()
-jest.mock("@/lib/secureStorage", () => ({
-  secureGetItem: (...args: unknown[]) => secureGetItem(...args),
+// Mocks @/lib/storage — the module that ACTUALLY holds the access token, and
+// the same one the axios interceptor reads. Mocking @/lib/secureStorage instead
+// is what let the broken version pass CI: the mock satisfied an assumption the
+// real app never satisfied.
+const getToken = jest.fn()
+jest.mock("@/lib/storage", () => ({
+  getToken: (...args: unknown[]) => getToken(...args),
 }))
 
 describe("AssetLibrary launcher", () => {
   beforeEach(() => {
-    secureGetItem.mockReset()
+    getToken.mockReset()
     // The launcher probes /health to learn whether this tier has a public tier.
     global.fetch = jest.fn().mockResolvedValue({
       ok: true, json: async () => ({ ok: true, publicTier: true }),
@@ -21,7 +25,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("renders a real anchor to the durable tool URL, opening in a new tab", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     render(<AssetLibrary />)
 
     const link = await screen.findByRole("link", { name: /open asset library/i })
@@ -32,7 +36,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("hands the session token to the tool in the URL fragment, never the query string", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     render(<AssetLibrary />)
 
     const link = await screen.findByRole("link", { name: /open asset library/i })
@@ -46,7 +50,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("percent-encodes a token containing URL-significant characters", async () => {
-    secureGetItem.mockResolvedValue("a+b/c=d&e")
+    getToken.mockResolvedValue("a+b/c=d&e")
     render(<AssetLibrary />)
 
     const link = await screen.findByRole("link", { name: /open asset library/i })
@@ -57,7 +61,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("falls back to the bare durable URL and says confidential stays locked when there is no token", async () => {
-    secureGetItem.mockResolvedValue(null)
+    getToken.mockResolvedValue(null)
     render(<AssetLibrary />)
 
     await waitFor(() => {
@@ -68,7 +72,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("tells the user confidential access will be unlocked when a token is present", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     render(<AssetLibrary />)
 
     await waitFor(() => {
@@ -77,7 +81,7 @@ describe("AssetLibrary launcher", () => {
   })
 
   it("explains what confidential means so the boundary is not a surprise", async () => {
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockResolvedValue("tok-123")
     render(<AssetLibrary />)
 
     expect(await screen.findByText(/separate private bucket/i)).toBeInTheDocument()
@@ -91,8 +95,8 @@ describe("AssetLibrary launcher", () => {
 
 describe("AssetLibrary launcher — per-tier behaviour", () => {
   beforeEach(() => {
-    secureGetItem.mockReset()
-    secureGetItem.mockResolvedValue("tok-123")
+    getToken.mockReset()
+    getToken.mockResolvedValue("tok-123")
   })
 
   it("does not promise permanent public links on a tier that has no public store", async () => {
