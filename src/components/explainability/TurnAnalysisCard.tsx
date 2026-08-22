@@ -70,14 +70,14 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
   return (
     <aside
       className={cn(
-        "flex h-full flex-col gap-3 overflow-y-auto border-l bg-muted/20 p-4",
+        "flex h-full flex-col gap-4 overflow-y-auto border-l bg-muted/20 p-5",
         className
       )}
       data-testid="turn-analysis-card"
     >
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">Turn analysis</p>
-        <h2 className="font-mono text-xs">{data.turn_id}</h2>
+        <h2 className="font-mono text-sm break-all">{data.turn_id}</h2>
         {data.agent_name && <Badge>{data.agent_name}</Badge>}
       </header>
 
@@ -85,7 +85,7 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
       {s1 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">1. {s1.title}</CardTitle>
+            <CardTitle className="text-base">1. {s1.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div>
@@ -115,11 +115,11 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
       {s2 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">2. {s2.title}</CardTitle>
+            <CardTitle className="text-base">2. {s2.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <RoutingTraceBadge trace={s2.routing_trace} />
-            <p className="text-xs text-muted-foreground">{s2.summary}</p>
+            <p className="text-sm text-muted-foreground">{s2.summary}</p>
             {s2.template_id && (
               <div className="text-xs">
                 <span className="text-muted-foreground">Template:</span>{" "}
@@ -127,7 +127,7 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
               </div>
             )}
             {s2.routing_trace?.reason && (
-              <p className="rounded bg-muted/40 p-2 text-xs italic">
+              <p className="rounded bg-muted/40 p-2 text-sm italic leading-relaxed">
                 “{s2.routing_trace.reason}”
               </p>
             )}
@@ -139,17 +139,17 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
       {s3 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">3. {s3.title}</CardTitle>
+            <CardTitle className="text-base">3. {s3.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex gap-3 text-xs text-muted-foreground">
+            <div className="flex gap-3 text-sm text-muted-foreground">
               <span>{s3.source_count} sources</span>
               <span>{s3.memory_count} memory entries</span>
               {s3.file_ids.length > 0 && <span>{s3.file_ids.length} file ids</span>}
             </div>
             {s3.rag_sources.length > 0 && (
               <div>
-                <p className="text-xs font-medium">RAG sources</p>
+                <p className="text-sm font-medium">RAG sources</p>
                 <div className="flex flex-wrap gap-1 pt-1">
                   {s3.rag_sources.map((src, i) => (
                     <SourceProvenanceTag key={`${src.document_id}-${i}`} source={src} />
@@ -161,8 +161,8 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
               <>
                 <Separator />
                 <div>
-                  <p className="text-xs font-medium">Memory recall</p>
-                  <ul className="mt-1 space-y-1 text-xs">
+                  <p className="text-sm font-medium">Memory recall</p>
+                  <ul className="mt-1 space-y-2 text-sm">
                     {s3.memory_recall.map((m, i) => (
                       <li key={i} className="rounded border bg-background p-2">
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -174,7 +174,9 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
                             <span>{Math.round(m.age_seconds / 60)}m ago</span>
                           )}
                         </div>
-                        {m.content && <p className="mt-1 line-clamp-2">{m.content}</p>}
+                        {m.content && (
+                          <p className="mt-1 whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -189,7 +191,7 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
       {s4 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm">
+            <CardTitle className="flex items-center gap-2 text-base">
               {s4.ok ? (
                 <CheckCircle2 className="size-4 text-emerald-600" />
               ) : (
@@ -200,9 +202,9 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
           </CardHeader>
           <CardContent className="text-sm">
             {s4.flags.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No risk flags detected on this turn.</p>
+              <p className="text-sm text-muted-foreground">No risk flags detected on this turn.</p>
             ) : (
-              <ul className="space-y-1 text-xs">
+              <ul className="space-y-1 text-sm">
                 {s4.flags.map((flag, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 size-3 text-amber-600" />
@@ -219,7 +221,7 @@ export function TurnAnalysisCard({ turnId, className }: TurnAnalysisCardProps) {
       {s5 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">5. {s5.title}</CardTitle>
+            <CardTitle className="text-base">5. {s5.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             <p>{s5.agent_role}</p>

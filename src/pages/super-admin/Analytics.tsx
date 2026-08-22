@@ -38,6 +38,10 @@ import {
 } from "lucide-react"
 import ProjectLogMoved from "@/components/super-admin/ProjectLogMoved"
 import type { AuditLogEntry } from "@/types/audit"
+import {
+  IdentityCell,
+  useIdentityIndex,
+} from "@/components/super-admin/audit/AuditIdentity"
 
 type AuditRow = AuditLogEntry & Record<string, unknown>
 
@@ -206,15 +210,28 @@ function AnalyticsTab() {
 
 // ─── Audit Log Tab ────────────────────────────────────────────────
 function AuditLogTab() {
+  // One roster fetch for the whole table; every row resolves against it.
+  const identityIndex = useIdentityIndex()
+
   const [page, setPage] = useState(1)
   const [actionFilter, setActionFilter] = useState("all")
   const [actorSearch, setActorSearch] = useState("")
+
+  // `actor_id` takes a UUID and NOTHING else: the audit-service parses it with
+  // a helper that returns None on a non-UUID, which becomes `actor_id IS NULL`
+  // — so typing a name or an email here used to return zero rows and look like
+  // "this actor has no events". Route free text to `search` (which matches
+  // actor_email and the metadata blob) and only use `actor_id` for an actual id.
+  const trimmedSearch = actorSearch.trim()
+  const looksLikeUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedSearch)
 
   const params = {
     limit: AUDIT_PAGE_SIZE,
     offset: (page - 1) * AUDIT_PAGE_SIZE,
     action: actionFilter === "all" ? undefined : actionFilter,
-    actor_id: actorSearch || undefined,
+    actor_id: looksLikeUuid ? trimmedSearch : undefined,
+    search: !looksLikeUuid && trimmedSearch ? trimmedSearch : undefined,
   }
 
   const { data: logsData, isLoading: logsLoading } = useAuditLogs(params)
@@ -253,12 +270,35 @@ function AuditLogTab() {
     {
       key: "actor_email",
       header: "Actor",
-      render: (row) => <span>{row.actor_email ?? row.actor_type ?? "—"}</span>,
+      // Email first, name/role/id behind a click. The old cell fell back to
+      // `actor_type`, so most rows read "user" or "system" — the class of the
+      // actor rather than which human it was.
+      render: (row) => (
+        <IdentityCell
+          id={row.actor_id}
+          email={row.actor_email}
+          type={row.actor_type}
+          index={identityIndex}
+        />
+      ),
     },
     {
       key: "target_type",
       header: "Target",
-      render: (row) => <span>{row.target_type ?? "—"}</span>,
+      // `target_id` was never rendered at all — the column showed only the
+      // target's TYPE, so "who was this done to" was unanswerable from the
+      // table. Resolve it the same way as the actor.
+      render: (row) =>
+        row.target_id || row.target_type ? (
+          <div className="flex flex-col gap-0.5">
+            <IdentityCell id={row.target_id} type={row.target_type} index={identityIndex} />
+            {row.target_type && row.target_id && (
+              <span className="text-xs text-muted-foreground">{row.target_type}</span>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       key: "description",
@@ -305,7 +345,7 @@ function AuditLogTab() {
           </SelectContent>
         </Select>
         <Input
-          placeholder="Search actor..."
+          placeholder="Search actor by email, name or ID…"
           value={actorSearch}
           onChange={(e) => { setActorSearch(e.target.value); setPage(1); }}
           className="max-w-[250px]"
@@ -320,9 +360,13 @@ function AuditLogTab() {
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Shield className="h-12 w-12 mb-3 opacity-30" />
             <p className="text-lg font-medium">No audit events found</p>
-            <p className="text-sm mt-1">Audit events will appear here as users interact with the platform.</p>
-            {actionFilter !== "all" && (
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => { setActionFilter("all"); setPage(1); }}>
+            <p className="text-sm mt-1">
+              {trimmedSearch
+                ? `Nothing matched "${trimmedSearch}".`
+                : "Audit events will appear here as users interact with the platform."}
+            </p>
+            {(actionFilter !== "all" || trimmedSearch) && (
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => { setActionFilter("all"); setActorSearch(""); setPage(1); }}>
                 Clear filters
               </Button>
             )}

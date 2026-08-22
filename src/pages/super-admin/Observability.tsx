@@ -1,13 +1,5 @@
-import { useState } from "react"
 import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Eye, RefreshCw } from "lucide-react"
 import { useDashboardMetrics } from "@/hooks/observability/useObservability"
 import { cn } from "@/lib/utils"
@@ -20,7 +12,6 @@ import CostBoard from "@/components/super-admin/CostBoard"
 import ObservabilityBoard from "@/components/super-admin/ObservabilityBoard"
 
 export default function Observability() {
-  const [timeRange, setTimeRange] = useState("today")
   const { isLoading, refetch } = useDashboardMetrics()
 
   return (
@@ -33,20 +24,21 @@ export default function Observability() {
               Agent Observability
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Real-time transparency into AI agent decisions, costs, and performance
+              What the agent platform did <strong>today</strong> — one row per LLM call,
+              aggregated.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-              </SelectContent>
-            </Select>
+            {/*
+              A Today / 7d / 30d Select used to sit here. `timeRange` was
+              stored in state and never read again — neither ObservabilityBoard
+              nor CostBoard accepts a range, and GET /v1/observability/dashboard
+              takes no range parameter. Choosing "Last 30 days" changed nothing
+              while strongly implying it had. A control that lies about the
+              window on a metrics page is worse than no control, so it is gone
+              until the endpoint can actually honour a range; the scope is
+              stated in the subtitle instead.
+            */}
             <Button
               variant="outline"
               size="icon"
@@ -56,6 +48,28 @@ export default function Observability() {
               <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
             </Button>
           </div>
+        </div>
+
+        <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+          <p className="font-medium">What this page shows</p>
+          <ul className="mt-2 space-y-1 text-muted-foreground">
+            <li>
+              <strong>Overview</strong> — today&rsquo;s totals from{" "}
+              <code>response_observability</code>, which the agent-engine writes one row
+              to per LLM call: responses, average end-to-end latency, distinct users,
+              average routing confidence, error rate, and which agents handled the
+              traffic. Spend is shown beneath it.
+            </li>
+            <li>
+              <strong>Tasks</strong> — invocations of the five structured task agents
+              (Maven, James, Atlas, Forge, Sage), read from the audit log.
+            </li>
+          </ul>
+          <p className="mt-2 text-xs text-muted-foreground">
+            The window is the current day and is not adjustable here. Figures are
+            aggregates only — to inspect an individual conversation and see why a
+            particular agent was chosen, use <strong>Explainability</strong>.
+          </p>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">

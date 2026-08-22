@@ -87,6 +87,10 @@ jest.mock("@/components/super-admin/UploadKnowledgeModal", () => ({
   default: () => <div data-testid="upload-modal" />,
 }))
 
+// NOTE: this mock is an explicit ALLOWLIST — an icon the page imports but
+// this list omits resolves to `undefined` and React fails with the opaque
+// "Element type is invalid", which reads like a broken export rather than a
+// missing mock entry. Keep it in step with the page's lucide imports.
 jest.mock("lucide-react", () => ({
   BookOpen: () => <svg />,
   Plus: () => <svg />,
@@ -94,6 +98,8 @@ jest.mock("lucide-react", () => ({
   RefreshCw: () => <svg />,
   FileText: () => <svg />,
   Database: () => <svg />,
+  Search: () => <svg />,
+  X: () => <svg />,
 }))
 
 // ── Hook spy: capture params passed to useKnowledgeDocuments ────────

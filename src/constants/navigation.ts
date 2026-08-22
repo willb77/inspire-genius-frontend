@@ -20,7 +20,6 @@ import {
   Brain,
   Sparkles,
   BarChart3,
-  GitBranch,
   UserPlus,
   Eye,
   Network,
@@ -306,8 +305,14 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   { to: ROUTES.SUPER_ADMIN.MENTOR_MANAGEMENT, icon: Wand2, label: "Agent Management" },
   { to: ROUTES.SUPER_ADMIN.RLHF_TRAINING, icon: MessageSquarePlus, label: "RLHF Training" },
   { to: ROUTES.SUPER_ADMIN.ANALYTICS, icon: BarChart3, label: "Analytics & Logs" },
+  // Agent Trainer absorbs the old "Process Builder" row. That row pointed at
+  // /super-admin/process-builder, which is only a <Navigate> to
+  // /super-admin/agent-trainer/workflows — so it was a second door onto a
+  // page inside Agent Trainer, not a separate destination. The Workflow
+  // Designer (plus Executions and Approvals, which had no nav entry at all)
+  // is now reachable from the Agent Trainer landing page. The redirect route
+  // stays registered so existing links and bookmarks keep working.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRAINER, icon: Brain, label: "Agent Trainer" },
-  { to: ROUTES.SUPER_ADMIN.PROCESS_BUILDER, icon: GitBranch, label: "Process Builder" },
   { to: ROUTES.SUPER_ADMIN.BULK_IMPORT, icon: UserPlus, label: "Bulk User Import" },
   { to: ROUTES.SUPER_ADMIN.OBSERVABILITY, icon: Eye, label: "Observability" },
   { to: ROUTES.SUPER_ADMIN.EXPLAINABILITY, icon: SearchCheck, label: "Explainability" },

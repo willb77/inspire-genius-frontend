@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  AlertCircle,
   Bot,
   Save,
   ScrollText,
@@ -1160,8 +1161,16 @@ export default function MentorManagement() {
 
   const selectedAgent = AGENT_VOICE_CONFIG.find((a) => a.id === selectedAgentId) ?? AGENT_VOICE_CONFIG[0]
 
-  // Fetch coaches for matching backend data
-  const { data: coachesData } = useCoachesList({ page: 1, limit: 100 })
+  // Fetch coaches for matching backend data.
+  //
+  // The sidebar renders from AGENT_VOICE_CONFIG (a frontend constant), so the
+  // agent list is present whether or not this call succeeds. That is precisely
+  // the hazard: when GET /v1/agents-settings/agents fails, the page still looks
+  // fully populated while every backend-derived field on the right — the saved
+  // system prompt, the LLM configuration, the stored category — silently falls
+  // back to whatever the constant carries. An operator can then "edit" a prompt
+  // they are not actually seeing. `error` was not even destructured before.
+  const { data: coachesData, error: coachesError } = useCoachesList({ page: 1, limit: 100 })
   const coachMap = useMemo(() => {
     const d = coachesData?.data
     const list = Array.isArray(d) ? d : d?.agents ?? []
@@ -1193,6 +1202,23 @@ export default function MentorManagement() {
         {/* Right content area */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4 max-w-5xl">
+            {coachesError && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+                <div className="text-[13px] leading-snug text-red-800">
+                  <p className="font-semibold">Could not load agent configuration from the server.</p>
+                  <p className="mt-0.5">
+                    The agent list on the left comes from a built-in roster and is still
+                    shown, but saved prompts, LLM settings and categories below may be
+                    missing or stale. Do not save changes until this resolves — you could
+                    overwrite a stored prompt you are not currently seeing.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Header */}
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-slate-100">

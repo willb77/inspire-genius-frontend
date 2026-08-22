@@ -53,8 +53,13 @@ const mockEcosystems = [
   { ecosystem_id: "inspire-genius", ecosystem_name: "Inspire Genius" },
 ];
 
+// Swappable so a test can supply the shape the API actually returns. The
+// shared fixture above carries BOTH `id` and `agent_id`, which is precisely
+// why the live "navigates to /undefined/" bug was invisible to this suite.
+let trainerPayload: unknown[] = mockAgents;
+
 jest.mock("@/hooks/trainer/useTrainer", () => ({
-  useTrainerAgents: () => ({ data: { data: mockAgents }, isLoading: false }),
+  useTrainerAgents: () => ({ data: { data: trainerPayload }, isLoading: false }),
   useEcosystems: () => ({ data: { data: mockEcosystems } }),
 }));
 
@@ -125,6 +130,60 @@ describe("AgentTrainerDashboard", () => {
     renderComponent();
     fireEvent.click(screen.getByText("Coach Agent"));
     expect(mockNavigate).toHaveBeenCalledWith("/super-admin/agent-trainer/agent-1");
+  });
+
+  // Regression: GET /v1/trainer/agents returns rows keyed `id`, while
+  // AgentConfig and every link on this page read `agent_id`. The payload used
+  // to be passed through raw, so on the live site every tile action navigated
+  // to /super-admin/agent-trainer/undefined/... . The existing fixtures carry
+  // BOTH keys, which is why the old tests could not catch it — this one uses a
+  // trainer-shaped row that carries only `id`.
+  it("does not route to 'undefined' when the API returns rows keyed `id` only", () => {
+    // Exactly what GET /v1/trainer/agents returns (trainer-service
+    // routes/agents.py builds each row with "id", never "agent_id").
+    trainerPayload = [
+      {
+        id: "a1",
+        ecosystem_id: "inspire-genius",
+        name: "Coach Agent",
+        domain: "coaching",
+        maturity_level: 3,
+        status: "active",
+        role_subtitle: "Coaching helper",
+      },
+    ];
+    try {
+      renderComponent();
+      for (const label of ["Prompt", "Knowledge", "Test", "Training", "Costs"]) {
+        fireEvent.click(screen.getAllByText(label)[0]);
+      }
+      expect(mockNavigate).toHaveBeenCalled();
+      for (const call of mockNavigate.mock.calls) {
+        expect(String(call[0])).not.toContain("undefined");
+      }
+      // and it resolves to the row's real id
+      expect(mockNavigate).toHaveBeenCalledWith("/super-admin/agent-trainer/a1/prompt");
+    } finally {
+      trainerPayload = mockAgents;
+    }
+  });
+
+  it("exposes every per-agent option, including Training and Costs", () => {
+    renderComponent();
+    // Training Plans and Costs have routes but had no entry point on the tile,
+    // even though the help panel tells the operator to use Training Plans.
+    expect(screen.getAllByText("Training").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Costs").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("links the trainer tools that previously had no entry point anywhere", () => {
+    renderComponent();
+    fireEvent.click(screen.getByText("Workflow Designer"));
+    expect(mockNavigate).toHaveBeenCalledWith("/super-admin/agent-trainer/workflows");
+    fireEvent.click(screen.getByText("Executions"));
+    expect(mockNavigate).toHaveBeenCalledWith("/super-admin/agent-trainer/executions");
+    fireEvent.click(screen.getByText("Approvals"));
+    expect(mockNavigate).toHaveBeenCalledWith("/super-admin/agent-trainer/approvals");
   });
 
   it("navigates to prompt page via Prompt button", () => {
