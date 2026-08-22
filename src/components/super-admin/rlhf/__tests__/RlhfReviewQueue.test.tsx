@@ -17,7 +17,7 @@ jest.mock("sonner", () => ({
 }))
 
 jest.mock("@/context/useAuth", () => ({
-  useAuth: () => ({ user: { email: "reviewer@3pp.com" } }),
+  useAuth: () => ({ user: { email: "reviewer@example.com" } }),
 }))
 
 const approveMutate = jest.fn()
@@ -88,7 +88,7 @@ describe("RlhfReviewQueue", () => {
     fireEvent.click(screen.getAllByText("Approve")[0])
     expect(approveMutate).toHaveBeenCalledWith({
       correctionId: "c1",
-      approvedBy: "reviewer@3pp.com",
+      approvedBy: "reviewer@example.com",
     })
   })
 
@@ -108,7 +108,7 @@ describe("RlhfReviewQueue", () => {
 
     expect(rejectMutate).toHaveBeenCalledWith({
       correctionId: "c1",
-      rejectedBy: "reviewer@3pp.com",
+      rejectedBy: "reviewer@example.com",
       reason: "Factually wrong",
     })
   })
