@@ -78,8 +78,11 @@ describe("ObservabilityBoard", () => {
       render(<ObservabilityBoard scope="platform" />)
       const banner = screen.getByTestId("observability-board-data-pending-banner")
       expect(banner).toBeInTheDocument()
-      expect(banner).toHaveTextContent(/audit-service EventBridge pipeline is still being verified/i)
-      expect(banner).toHaveTextContent(/R-2\.4/i)
+      // The old copy blamed "R-2.4", which closed 2026-05-11 — this test
+      // previously locked that stale explanation in place. An empty board now
+      // says the window was quiet, and must NOT cite a finished work item.
+      expect(banner).toHaveTextContent(/no agent activity recorded today/i)
+      expect(banner).not.toHaveTextContent(/R-2\.4/i)
     })
 
     it("shows when data is empty (org scope)", () => {

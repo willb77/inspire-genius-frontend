@@ -89,10 +89,13 @@ describe("CostBoard", () => {
       render(<CostBoard scope="platform" />)
       const banner = screen.getByTestId("cost-board-data-pending-banner")
       expect(banner).toBeInTheDocument()
-      expect(banner).toHaveTextContent(
-        /audit-service EventBridge pipeline is still being verified/i
-      )
-      expect(banner).toHaveTextContent(/R-2\.4/i)
+      // Was asserting the old "pending until R-2.4 closes" copy. R-2.4 closed
+      // 2026-05-11; the actual reason spend reads zero is that
+      // GET /v1/trainer/costs/dashboard is a hard-coded zero stub. The banner
+      // must say that, and must not attribute it to a finished work item.
+      expect(banner).toHaveTextContent(/not being aggregated yet/i)
+      expect(banner).toHaveTextContent(/not as \$0 of spend/i)
+      expect(banner).not.toHaveTextContent(/R-2\.4/i)
     })
 
     it("shows the banner when data is empty (org scope)", () => {
