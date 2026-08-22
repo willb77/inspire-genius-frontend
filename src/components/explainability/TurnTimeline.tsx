@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ChevronRight, Loader2, MessageCircle, Sparkles } from "lucide-react"
 
@@ -26,6 +27,34 @@ function findSection<T extends AnalysisSection>(
   title: T["title"]
 ): T | undefined {
   return turn.sections.find((s) => s.title === title) as T | undefined
+}
+
+/** A turn's text, clamped to three lines with a per-turn expand toggle. */
+function TurnBody({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false)
+  // ~3 lines at this width. Only offer the toggle when it would do something.
+  const isLong = content.length > 220 || content.split("\n").length > 3
+  return (
+    <div className="mt-3">
+      <p
+        className={cn(
+          "whitespace-pre-wrap text-sm leading-relaxed",
+          !expanded && isLong && "line-clamp-3"
+        )}
+      >
+        {content}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          className="mt-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Show less" : "Show full turn"}
+        </button>
+      )}
+    </div>
+  )
 }
 
 export function TurnTimeline({
@@ -131,7 +160,12 @@ export function TurnTimeline({
                   Analysis <ChevronRight className="ml-1 size-3.5" />
                 </Button>
               </header>
-              <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm">{turn.content}</p>
+              {/* `line-clamp-3` with no way to expand meant the operator could
+                  read the first three lines of a turn and had no route to the
+                  rest — on a page whose entire purpose is inspecting what was
+                  actually said. Clamp still applies by default (the list has
+                  to stay scannable), but it is now reversible per turn. */}
+              <TurnBody content={turn.content} />
             </article>
           )
         })}

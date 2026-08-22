@@ -36,7 +36,14 @@ export interface KnowledgeListResponse {
 export interface KnowledgeListParams {
   domain?: string
   agent_id?: string
+  /** MIME type, matched exactly against `documents.content_type`. */
   file_type?: string
+  /** Case-insensitive substring of the document name (`documents.filename`). */
+  search?: string
+  /** ISO `YYYY-MM-DD`, inclusive lower bound on upload date. */
+  start_date?: string
+  /** ISO `YYYY-MM-DD`, inclusive upper bound on upload date. */
+  end_date?: string
   limit?: number
   offset?: number
 }

@@ -15,14 +15,45 @@ import { CalendarIcon, FileJson, FileSpreadsheet } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
+import type { FeedbackEntry } from "@/types/feedback"
 
-const MOCK_EXPORT_DATA = [
-  { id: "f1", date: "2026-03-21", agent: "Meridian", rating: 5, type: "positive", correction: null },
-  { id: "f2", date: "2026-03-21", agent: "Aura", rating: 1, type: "correction", correction: "Improved response text" },
-  { id: "f3", date: "2026-03-20", agent: "Nova", rating: 1, type: "negative", correction: null },
-  { id: "f4", date: "2026-03-20", agent: "Meridian", rating: 5, type: "positive", correction: null },
-  { id: "f5", date: "2026-03-19", agent: "Atlas", rating: 5, type: "positive", correction: null },
-]
+/**
+ * Rows for the JSON/CSV export, built from the feedback actually fetched.
+ *
+ * This used to serialise a five-row `MOCK_EXPORT_DATA` constant — invented
+ * feedback for Meridian/Aura/Nova/Atlas with made-up dates and ratings — and
+ * then reported `toast.success("Exported as CSV")`. The export ignored both
+ * the fetched list AND the date-range picker, so an operator could filter to
+ * a week, export, and get the same fabricated five rows every time, with no
+ * indication they were not real. Fabricated data leaving the platform in a
+ * file labelled "rlhf-training-data" is worse than no export button.
+ */
+function toExportRows(entries: FeedbackEntry[]) {
+  return entries.map((f) => ({
+    id: f.feedback_id ?? f.id ?? "",
+    date: f.created_at ?? "",
+    agent: f.agent_id ?? f.coach_id ?? "",
+    session_id: f.session_id ?? "",
+    feedback_type: f.feedback_type ?? "",
+    value: f.value ?? f.rating ?? "",
+    text: f.text ?? "",
+    correction: f.correction_text ?? "",
+  }))
+}
+
+/** RFC-4180 quoting: feedback text contains commas, quotes and newlines. */
+function toCsv(rows: Array<Record<string, unknown>>): string {
+  if (rows.length === 0) return ""
+  const headers = Object.keys(rows[0])
+  const cell = (v: unknown) => {
+    const str = v === null || v === undefined ? "" : String(v)
+    return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+  }
+  return [
+    headers.join(","),
+    ...rows.map((r) => headers.map((h) => cell(r[h])).join(",")),
+  ].join("\n")
+}
 
 function downloadBlob(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type })
@@ -56,17 +87,28 @@ export default function RlhfTraining() {
   const stats = statsData?.data ?? null
   const listResult = listData?.data ?? null
 
+  const feedbackEntries: FeedbackEntry[] = listResult?.feedback ?? []
+  const rangeSuffix = dateFrom || dateTo ? `_${dateFrom ?? "start"}_to_${dateTo ?? "now"}` : ""
+
   const exportJSON = useCallback(() => {
-    downloadBlob(JSON.stringify(MOCK_EXPORT_DATA, null, 2), "rlhf-training-data.json", "application/json")
-    toast.success("Exported as JSON")
-  }, [])
+    const rows = toExportRows(feedbackEntries)
+    if (rows.length === 0) {
+      toast.error("Nothing to export for the selected range.")
+      return
+    }
+    downloadBlob(JSON.stringify(rows, null, 2), `rlhf-feedback${rangeSuffix}.json`, "application/json")
+    toast.success(`Exported ${rows.length} feedback ${rows.length === 1 ? "row" : "rows"} as JSON`)
+  }, [feedbackEntries, rangeSuffix])
 
   const exportCSV = useCallback(() => {
-    const headers = "id,date,agent,rating,type,correction\n"
-    const rows = MOCK_EXPORT_DATA.map((d) => `${d.id},${d.date},${d.agent},${d.rating},${d.type},${d.correction ?? ""}`).join("\n")
-    downloadBlob(headers + rows, "rlhf-training-data.csv", "text/csv")
-    toast.success("Exported as CSV")
-  }, [])
+    const rows = toExportRows(feedbackEntries)
+    if (rows.length === 0) {
+      toast.error("Nothing to export for the selected range.")
+      return
+    }
+    downloadBlob(toCsv(rows), `rlhf-feedback${rangeSuffix}.csv`, "text/csv;charset=utf-8")
+    toast.success(`Exported ${rows.length} feedback ${rows.length === 1 ? "row" : "rows"} as CSV`)
+  }, [feedbackEntries, rangeSuffix])
 
   return (
     <SuperAdminLayout>
