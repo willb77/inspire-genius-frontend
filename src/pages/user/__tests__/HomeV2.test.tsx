@@ -397,4 +397,40 @@ describe("HomeV2 — 2026-08-03 changes", () => {
       keys.indexOf("homev2-quick-goals"),
     );
   });
+  describe("My Workspace guide pill", () => {
+    it("sits in the header, beside the greeting", () => {
+      wrap();
+      const header = screen.getByTestId("homev2-header");
+      const pill = screen.getByTestId("homev2-workspace-guide-video");
+      expect(header).toContainElement(pill);
+      expect(within(header).getByText(/What are we working on today\?/)).toBeInTheDocument();
+    });
+
+    it("points at the durable public URL and opens safely in a new tab", () => {
+      wrap();
+      const pill = screen.getByTestId("homev2-workspace-guide-video");
+      // A durable S3 object URL. A presigned link would expire and leave a
+      // dead pill on Home, which is the failure this asserts against.
+      expect(pill).toHaveAttribute(
+        "href",
+        "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_userguide.mp4",
+      );
+      expect(pill).toHaveAttribute("target", "_blank");
+      // Both tokens matter: noopener stops the opened tab reaching
+      // window.opener, and it is why this is an anchor rather than
+      // window.open(..., "noopener"), which returns null and navigates the
+      // CURRENT tab in some browsers.
+      expect(pill.getAttribute("rel")).toContain("noopener");
+      expect(pill.getAttribute("rel")).toContain("noreferrer");
+    });
+
+    it("renders regardless of PRISM or entitlements", () => {
+      // The pill is universal — it explains the product to someone who has
+      // neither a report nor any vertical switched on, which is precisely the
+      // person who needs it.
+      mockEnabledVerticals.mockReturnValue({ data: [] });
+      wrap();
+      expect(screen.getByTestId("homev2-workspace-guide-video")).toBeInTheDocument();
+    });
+  });
 });
