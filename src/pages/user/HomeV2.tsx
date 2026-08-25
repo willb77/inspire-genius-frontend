@@ -11,6 +11,7 @@ import {
 import {
   CalendarDays,
   MessageSquare,
+  PlayCircle,
   Sparkles,
   Target,
   UserRoundSearch,
@@ -87,6 +88,16 @@ import type { DashboardVideo } from "@/components/dashboard/v2/WatchVideoCard";
  *     viewer modal, as does "View PRISM Report" — previously that button
  *     navigated to the assessment page and never showed the report.
  */
+
+/**
+ * The My Workspace orientation film (7:51), narrated.
+ *
+ * Same public demo bucket as {@link VIDEOS} below, deliberately: those already
+ * play from it, it needs no auth, and the URL does not expire. A presigned URL
+ * would leave a dead pill on Home the moment it lapsed.
+ */
+const WORKSPACE_GUIDE_VIDEO_URL =
+  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_userguide.mp4";
 
 const VIDEOS: DashboardVideo[] = [
   {
@@ -487,16 +498,44 @@ export default function HomeV2() {
               left / centre / right. They were previously inside the tile's
               behavioral row. */}
           <header data-testid="homev2-header" className="pt-1">
-            <h1 className="font-serif text-[26px] leading-tight text-[#0B1B33]">
-              {t("homeV2.welcomePrefix", { defaultValue: "Welcome" })}{" "}
-              <span className="text-[#C9711A]">{firstName}</span>
-              {" — "}
-              <span className="text-[#4b5f80]">
-                {t("homeV2.whatToday", {
-                  defaultValue: "What are we working on today?",
+            {/* The greeting and the guide pill share a row and wrap together on
+                narrow screens: `flex-wrap` with `items-baseline` keeps the pill
+                sitting on the greeting's baseline rather than floating against
+                the tall serif line-box. */}
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 className="font-serif text-[26px] leading-tight text-[#0B1B33]">
+                {t("homeV2.welcomePrefix", { defaultValue: "Welcome" })}{" "}
+                <span className="text-[#C9711A]">{firstName}</span>
+                {" — "}
+                <span className="text-[#4b5f80]">
+                  {t("homeV2.whatToday", {
+                    defaultValue: "What are we working on today?",
+                  })}
+                </span>
+              </h1>
+
+              {/* Orientation film for My Workspace (7:51). A plain anchor, not
+                  `window.open`: `window.open(url, "_blank", "noopener")` returns
+                  null and navigates the CURRENT tab in some browsers, which
+                  would drop the user out of the app mid-session. `rel` carries
+                  noopener anyway so the opened tab cannot reach `window.opener`.
+
+                  Hosted on the public demo bucket, the same one the Home videos
+                  already play from, so the URL is durable and needs no auth —
+                  a signed URL would expire and leave a dead pill behind. */}
+              <a
+                href={WORKSPACE_GUIDE_VIDEO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="homev2-workspace-guide-video"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#C9711A]/35 bg-[#C9711A]/10 px-3 py-1 text-[13px] font-semibold text-[#9C560F] transition-colors hover:bg-[#C9711A]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9711A]"
+              >
+                <PlayCircle className="size-4" aria-hidden />
+                {t("homeV2.watchWorkspaceGuide", {
+                  defaultValue: "Watch: My Workspace guide",
                 })}
-              </span>
-            </h1>
+              </a>
+            </div>
 
             {/* Three columns rather than a flex row with spacers, so the middle
                 button is centred against the PAGE, not against whatever width
