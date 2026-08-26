@@ -15,14 +15,21 @@ import { ROLES, ROUTES } from "@/constants/routes";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 /**
- * The My Workspace orientation film (7:51), narrated.
+ * The My Workspace orientation film (8:06), narrated.
  *
  * A durable object URL on the public demo bucket the Home videos already play
  * from: no auth, no expiry. A presigned link would lapse and leave a dead pill
  * in the header of every page, which is worse than the one it replaced.
+ *
+ * Re-recorded 2026-08-26. Pointed at a NEW key rather than overwriting
+ * `My_Workspace_userguide.mp4` in place: that bucket is served straight from
+ * S3 with `max-age=86400` and no CloudFront in front, so an overwrite has no
+ * invalidation path — anyone who had already played the old film would keep
+ * getting it for up to a day, with nothing anyone could do about it. A new key
+ * is correct for every viewer the moment this deploys.
  */
 const WORKSPACE_GUIDE_VIDEO_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_userguide.mp4";
+  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_Orientation.mp4";
 
 /**
  * Route prefixes where the guide pill is NOT shown.
