@@ -105,6 +105,7 @@ const SuperAdminAnalytics = React.lazy(() => import("@/pages/super-admin/Analyti
 // Wave 2 Lane 2.B — VoiceProviderSettings standalone deprecated; tab embedded in MentorManagement.
 // const VoiceProviderSettings = React.lazy(() => import("@/pages/super-admin/VoiceProviderSettings"));
 const PrismManagement = React.lazy(() => import("@/pages/super-admin/PrismManagement"));
+const CharacterLab = React.lazy(() => import("@/pages/super-admin/CharacterLab"));
 const ProcessBuilderPage = React.lazy(() => import("@/pages/super-admin/ProcessBuilder"));
 
 // ── Agent Trainer pages ────────────────────────────────────────────────────
@@ -515,6 +516,7 @@ export const routes: RouteObject[] = [
       { path: "/super-admin/voice-settings", element: <Navigate to="/super-admin/mentor-management?tab=voice" replace /> },
       { path: "/super-admin/knowledge-base", element: withSuspense(<KnowledgeBase />) },
       { path: "/super-admin/prism-management", element: withSuspense(<PrismManagement />) },
+      { path: "/super-admin/character-lab", element: withSuspense(<CharacterLab />) },
       // Wave 0.E (P5.1) — CulturalContent merged into KnowledgeBase as a domain filter.
       { path: "/super-admin/cultural-content", element: <Navigate to="/super-admin/knowledge-base?domain=cultural" replace /> },
       { path: "/super-admin/privacy-compliance", element: withSuspense(<PrivacyCompliance />) },
