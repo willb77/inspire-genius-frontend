@@ -67,6 +67,7 @@ export const ROUTES = {
     /** @deprecated Wave 0.E (P5.1) — redirects to `KNOWLEDGE_BASE` with `?domain=cultural`. Prefer `KNOWLEDGE_BASE_CULTURAL`. */
     CULTURAL_CONTENT: "/super-admin/cultural-content",
     PRISM_MANAGEMENT: "/super-admin/prism-management",
+    CHARACTER_LAB: "/super-admin/character-lab",
     PRIVACY_COMPLIANCE: "/super-admin/privacy-compliance",
     RESEARCH: "/super-admin/research",
     RESEARCH_LIBRARY: "/super-admin/research-library",
