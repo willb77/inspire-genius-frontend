@@ -31,6 +31,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   FolderOpen,
+  Drama,
 } from "lucide-react"
 
 /**
@@ -323,6 +324,7 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
+  { to: ROUTES.SUPER_ADMIN.CHARACTER_LAB, icon: Drama, label: "Character Lab" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },
