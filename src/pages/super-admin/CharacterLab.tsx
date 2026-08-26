@@ -35,7 +35,8 @@ import type {
 
 const BEHAVIOUR_GROUP = "Behavior Preferences"
 
-type BatteryState = "idle" | "running" | "done" | "error"
+/** `partial` = some parts of a split battery returned and some did not. */
+type BatteryState = "idle" | "running" | "done" | "partial" | "error"
 
 /**
  * Character Lab — place a fictional character on the PRISM dimensions.
@@ -87,20 +88,49 @@ export default function CharacterLab() {
     setBatteryState({})
   }
 
-  async function runBattery(group: string, behaviours: Record<string, ScoreByType>, req: { name: string; source: string; notes: string }) {
+  /**
+   * Score one battery, in as many parts as the server says it needs.
+   *
+   * Parts run concurrently and each one's scores land as soon as it returns, so
+   * a large battery fills in progressively rather than all at once. The split
+   * exists because a single request for a whole group can exceed API Gateway's
+   * 30s cap — Career Development Analysis (26 scales) returned 503 at 30.1s.
+   *
+   * A part that fails does not discard the parts that succeeded: the group is
+   * marked `partial` and the scales that came back are still shown. Throwing the
+   * lot away would turn a recoverable gap into an empty battery.
+   */
+  async function runBattery(
+    group: string,
+    parts: number,
+    behaviours: Record<string, ScoreByType>,
+    req: { name: string; source: string; notes: string },
+  ) {
     setBatteryState((s) => ({ ...s, [group]: "running" }))
-    try {
-      const result = await battery.mutateAsync({ ...req, group, behaviours })
-      setScores((s) => ({ ...s, ...result.scores }))
-      setEvidence((e) => ({ ...e, ...result.evidence }))
-      setBatteryState((s) => ({ ...s, [group]: "done" }))
-      if (result.missing.length) {
-        toast.warning(`${group}: ${result.missing.length} scale(s) came back empty`)
-      }
-    } catch (err) {
+    const outcomes = await Promise.allSettled(
+      Array.from({ length: parts }, (_, part) =>
+        battery.mutateAsync({ ...req, group, behaviours, part }).then((result) => {
+          setScores((s) => ({ ...s, ...result.scores }))
+          setEvidence((e) => ({ ...e, ...result.evidence }))
+          return result
+        }),
+      ),
+    )
+
+    const failed = outcomes.filter((o) => o.status === "rejected")
+    const emptied = outcomes.reduce(
+      (n, o) => n + (o.status === "fulfilled" ? o.value.missing.length : 0),
+      0,
+    )
+    if (failed.length === parts) {
       setBatteryState((s) => ({ ...s, [group]: "error" }))
-      const message = err instanceof Error ? err.message : "failed"
-      toast.error(`${group} failed — ${message}`)
+      toast.error(`${group} failed`)
+    } else if (failed.length) {
+      setBatteryState((s) => ({ ...s, [group]: "partial" }))
+      toast.warning(`${group}: ${failed.length} of ${parts} parts failed`)
+    } else {
+      setBatteryState((s) => ({ ...s, [group]: "done" }))
+      if (emptied) toast.warning(`${group}: ${emptied} scale(s) came back empty`)
     }
   }
 
@@ -129,9 +159,11 @@ export default function CharacterLab() {
       // Batteries run concurrently after the map. Each is its own request:
       // all 88 scales in one call would push a large generation against API
       // Gateway's 30s integration cap, which cannot be raised.
-      const others = rubric.groups.map((g) => g.group).filter((g) => g !== BEHAVIOUR_GROUP)
-      setBatteryState(Object.fromEntries(others.map((g) => [g, "running" as BatteryState])))
-      await Promise.allSettled(others.map((g) => runBattery(g, result.scores, req)))
+      const others = rubric.groups.filter((g) => g.group !== BEHAVIOUR_GROUP)
+      setBatteryState(Object.fromEntries(others.map((g) => [g.group, "running" as BatteryState])))
+      await Promise.allSettled(
+        others.map((g) => runBattery(g.group, Math.max(1, g.parts ?? 1), result.scores, req)),
+      )
     } catch (err) {
       const message = err instanceof Error ? err.message : "failed"
       toast.error(`Could not build the profile — ${message}`)
@@ -341,6 +373,11 @@ export default function CharacterLab() {
                       {state === "error" && (
                         <span className="text-xs font-normal text-destructive">
                           could not be scored
+                        </span>
+                      )}
+                      {state === "partial" && (
+                        <span className="text-xs font-normal text-amber-600 dark:text-amber-500">
+                          partly scored — some scales are missing, not zero
                         </span>
                       )}
                     </CardTitle>
