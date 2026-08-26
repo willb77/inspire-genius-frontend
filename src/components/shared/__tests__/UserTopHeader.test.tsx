@@ -41,7 +41,7 @@ import { render, screen } from "@testing-library/react";
 import UserTopHeader from "@/components/shared/UserTopHeader";
 
 const GUIDE_URL =
-  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_userguide.mp4";
+  "https://ig-demo-public-videos.s3.amazonaws.com/My_Workspace_Orientation.mp4";
 
 beforeEach(() => {
   mockPathname = "/home";
@@ -73,6 +73,11 @@ describe("UserTopHeader — My Workspace guide pill", () => {
     // A durable S3 object URL. A presigned link would expire and leave a dead
     // pill in the header of every page, which is the failure this guards.
     expect(pill).toHaveAttribute("href", GUIDE_URL);
+    // The superseded 2026-08-24 cut is still sitting in the same bucket under
+    // its old key, so it stays one bad merge away from coming back. Nothing
+    // about a stale-but-valid URL looks wrong at runtime — the pill would open
+    // a working film that is simply the previous one.
+    expect(pill.getAttribute("href")).not.toContain("My_Workspace_userguide");
     expect(pill).toHaveAttribute("target", "_blank");
     // Both tokens matter: noopener stops the opened tab reaching
     // window.opener, and it is why this is an anchor rather than
