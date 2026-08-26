@@ -122,6 +122,7 @@ const HitlDashboard = React.lazy(() => import("@/pages/super-admin/trainer/HitlD
 // ── Manager pages ───────────────────────────────────────────────────────────
 const ManagerDashboard = React.lazy(() => import("@/pages/manager/Dashboard"));
 const ManagerTeam = React.lazy(() => import("@/pages/manager/Team"));
+const ManagerJoinRequests = React.lazy(() => import("@/pages/manager/JoinRequests"));
 const ManagerHiring = React.lazy(() => import("@/pages/manager/Hiring"));
 const ManagerCandidates = React.lazy(() => import("@/pages/manager/Candidates"));
 const ManagerInterviews = React.lazy(() => import("@/pages/manager/Interviews"));
@@ -541,6 +542,7 @@ export const routes: RouteObject[] = [
       // Manager pages
       { path: "/manager/dashboard", element: withSuspense(<ManagerDashboard />) },
       { path: "/manager/team", element: withSuspense(<ManagerTeam />) },
+      { path: "/manager/join-requests", element: withSuspense(<ManagerJoinRequests />) },
       { path: "/manager/hiring", element: withSuspense(<ManagerHiring />) },
       { path: "/manager/candidates", element: withSuspense(<ManagerCandidates />) },
       { path: "/manager/interviews", element: withSuspense(<ManagerInterviews />) },

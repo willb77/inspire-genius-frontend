@@ -368,6 +368,10 @@ export const MANAGER_NAV_ITEMS: NavItemDef[] = [
   // are the people they coach, and the page is now a roster of real direct
   // reports (employee_profiles.manager_id) rather than a management console.
   { to: ROUTES.MANAGER.TEAM, icon: Users, label: "Team Roster (Client)" },
+  // Sits next to the roster because it is how the roster grows. There is no
+  // notification when a request arrives — the queue is pull-only — so it has
+  // to be visible in the sidebar or nobody will ever look at it.
+  { to: ROUTES.MANAGER.JOIN_REQUESTS, icon: UserPlus, label: "Join Requests" },
   { to: ROUTES.MANAGER.SCHEDULE, icon: CalendarDays, label: "Schedule" },
   {
     to: ROUTES.MERIDIAN_CHAT,
