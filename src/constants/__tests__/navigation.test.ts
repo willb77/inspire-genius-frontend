@@ -36,6 +36,11 @@ describe("constants/navigation", () => {
   //
   // Order is part of the requirement, not incidental, so it is asserted as a
   // sequence rather than as a set of "contains" checks.
+  //
+  // 2026-08-26: "Join Requests" added after the roster, deliberately. It is how
+  // the roster GROWS — approving a request writes that person's tenant key —
+  // and there is no notification when one arrives, so if it is not in the
+  // sidebar nobody ever looks at it and the queue silently fills up.
   describe("MANAGER_NAV_ITEMS", () => {
     const labels = () => NAV_ITEMS_BY_ROLE.manager.map((i) => i.label)
 
@@ -43,6 +48,7 @@ describe("constants/navigation", () => {
       expect(labels()).toEqual([
         "Dashboard",
         "Team Roster (Client)",
+        "Join Requests",
         "Schedule",
         "Chat with Meridian",
         "Document Library",
