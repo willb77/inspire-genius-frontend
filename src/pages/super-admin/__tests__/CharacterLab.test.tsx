@@ -39,6 +39,7 @@ const RUBRIC: Rubric = {
       group: "Behavior Preferences",
       definition: "The eight behaviour preferences.",
       per_score_type: true,
+      parts: 1,
       dimensions: [
         { key: "initiating", label: "Initiating", measures: "Starting things.", high: "Starts.", low: "Waits.", is_trait: true },
       ],
@@ -47,6 +48,7 @@ const RUBRIC: Rubric = {
       group: "Core Traits",
       definition: "Six broad traits.",
       per_score_type: false,
+      parts: 1,
       dimensions: [
         { key: "decisiveness", label: "Decisiveness", measures: "Committing.", high: "Decides.", low: "Defers.", is_trait: true },
       ],
@@ -81,6 +83,8 @@ describe("CharacterLab", () => {
     generateMutate.mockReset().mockResolvedValue(GENERATED)
     batteryMutate.mockReset().mockResolvedValue({
       group: "Core Traits",
+      part: 0,
+      parts: 1,
       scores: { decisiveness: { Underlying: 90 } },
       evidence: {},
       missing: [],
@@ -152,7 +156,7 @@ describe("CharacterLab", () => {
     // promise settle after the test ends produces an act() warning and, worse,
     // bleeds a setState into whichever test runs next.
     await act(async () => {
-      release({ group: "Core Traits", scores: {}, evidence: {}, missing: [] })
+      release({ group: "Core Traits", part: 0, parts: 1, scores: {}, evidence: {}, missing: [] })
     })
     await waitFor(() => expect(button).toBeEnabled())
   })
@@ -168,6 +172,50 @@ describe("CharacterLab", () => {
       expect.objectContaining({ colours: { Green: 71.5, Red: 85 } }),
     )
     expect(await screen.findByText(/Red-dominant/)).toBeInTheDocument()
+  })
+
+  /**
+   * A battery larger than the server's chunk size is split. These pin the
+   * behaviour added after Career Development Analysis (26 scales x 3 score
+   * types) returned 503 at 30.1s against API Gateway's unraisable 30s cap.
+   */
+  it("fires one request per part, indexed, for a split battery", async () => {
+    rubricResult = {
+      data: {
+        ...RUBRIC,
+        groups: [RUBRIC.groups[0], { ...RUBRIC.groups[1], parts: 3 }],
+      },
+      isLoading: false,
+      error: null,
+    }
+    render(<CharacterLab />)
+    fillAndSubmit()
+    await waitFor(() => expect(batteryMutate).toHaveBeenCalledTimes(3))
+    expect(batteryMutate.mock.calls.map((c) => c[0].part).sort()).toEqual([0, 1, 2])
+  })
+
+  it("keeps the parts that succeeded when one part of a battery fails", async () => {
+    // Discarding the whole battery would turn a recoverable gap into an empty
+    // one — and an empty battery reads as "this character scored nothing".
+    rubricResult = {
+      data: {
+        ...RUBRIC,
+        groups: [RUBRIC.groups[0], { ...RUBRIC.groups[1], parts: 2 }],
+      },
+      isLoading: false,
+      error: null,
+    }
+    batteryMutate
+      .mockResolvedValueOnce({
+        group: "Core Traits", part: 0, parts: 2,
+        scores: { decisiveness: { Underlying: 90 } }, evidence: {}, missing: [],
+      })
+      .mockRejectedValueOnce(new Error("gateway timeout"))
+    render(<CharacterLab />)
+    fillAndSubmit()
+    expect(await screen.findByText(/partly scored/i)).toBeInTheDocument()
+    expect(screen.getByText("90")).toBeInTheDocument()
+    expect(screen.getByText(/missing, not zero/i)).toBeInTheDocument()
   })
 
   it("labels a single-value battery as not varying by score type", async () => {

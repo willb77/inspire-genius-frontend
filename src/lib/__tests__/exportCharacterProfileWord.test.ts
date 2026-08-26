@@ -24,6 +24,7 @@ const RUBRIC: Rubric = {
       group: "Behavior Preferences",
       definition: "The eight behaviour preferences.",
       per_score_type: true,
+      parts: 1,
       dimensions: [
         {
           key: "finishing",
