@@ -108,6 +108,10 @@ export const ROUTES = {
     PRISM_TEAM: "/manager/prism-team",
     ANALYTICS: "/manager/analytics",
     BULK_IMPORT: "/manager/bulk-import",
+    /** Approval queue for self-declared organisation membership.
+     *  Approving writes the requester's tenant key, so this is an
+     *  access grant rather than an inbox. */
+    JOIN_REQUESTS: "/manager/join-requests",
     /** Batch session scheduler over the manager's direct reports. Reuses the
      *  coach schedule endpoints (/v1/agents/coach/schedule*) — one scheduler,
      *  two rosters. */

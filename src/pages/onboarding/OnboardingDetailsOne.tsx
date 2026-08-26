@@ -18,6 +18,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import type { FormValues } from "@/types/onboarding";
 import { useCreateProfileMutation } from "@/hooks/onboarding/useCreateProfile";
 import { useAuth } from "@/context/useAuth";
+import { DeclareOrganisation } from "@/components/org/DeclareOrganisation";
 
 export default function OnboardingDetailsOne() {
   const navigate = useNavigate();
@@ -64,6 +65,19 @@ export default function OnboardingDetailsOne() {
       </div>
       <div className="w-full max-w-2xl space-y-6">
         <ProgressBar current={1} total={2} />
+
+        {/* Organisation self-declaration.
+          *
+          * This is the EARLIEST it can appear. The endpoint requires a verified
+          * token and sign-up has none, so calling it from SignUp would 401 —
+          * onboarding is the first authenticated screen.
+          *
+          * Additive: it neither blocks the form below nor gates completion. A
+          * user who skips it simply has no tenant key, and their org-scoped
+          * pages stay empty until they declare and someone approves. */}
+        <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-6 md:p-8">
+          <DeclareOrganisation />
+        </div>
 
         <div className="bg-white rounded-2xl shadow-[4px_4px_20px_4px_rgba(0,0,0,0.1)] p-6 md:p-8">
           <div className="text-center space-y-1">
