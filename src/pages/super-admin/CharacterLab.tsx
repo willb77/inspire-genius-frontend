@@ -23,6 +23,7 @@ import BrainMap from "@/components/super-admin/character-lab/BrainMap"
 import ScoreRow from "@/components/super-admin/character-lab/ScoreRow"
 import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
 import ProfileLibrary from "@/components/super-admin/character-lab/ProfileLibrary"
+import ImportCsvButton from "@/components/super-admin/character-lab/ImportCsvButton"
 import ComparePanel from "@/components/super-admin/character-lab/ComparePanel"
 import ScenarioPanel from "@/components/super-admin/character-lab/ScenarioPanel"
 import {
@@ -420,6 +421,7 @@ export default function CharacterLab() {
               to re-read, re-analyse or export. <strong>Edit</strong> changes the record without
               re-scoring — add what you know, then load and rebuild.
             </p>
+            <ImportCsvButton />
             <ProfileLibrary onLoad={onLoadProfile} loadingId={loadingId} />
           </TabsContent>
 
