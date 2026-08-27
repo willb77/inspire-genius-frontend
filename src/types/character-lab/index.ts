@@ -21,6 +21,15 @@ export type RubricGroup = {
   group: string
   definition: string
   per_score_type: boolean
+  /**
+   * How many /battery calls this group needs.
+   *
+   * Batteries are split because a single request for all of one group's scales
+   * can exceed API Gateway's 30s integration cap — the Career Development
+   * Analysis battery (26 scales x 3 score types) returned 503 at 30.1s. The
+   * server owns the split rule and publishes the count; do not recompute it.
+   */
+  parts: number
   dimensions: RubricDimension[]
 }
 
@@ -58,6 +67,9 @@ export type GenerateResult = {
 
 export type BatteryResult = {
   group: string
+  /** Which slice of the battery this answered, and how many there are. */
+  part: number
+  parts: number
   scores: Record<string, ScoreByType>
   evidence: Record<string, string>
   missing: string[]
