@@ -29,6 +29,7 @@ import {
   usePatchProfile,
   useSavedProfiles,
 } from "@/hooks/super-admin/useCharacterLab"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import type { ProfileSummary } from "@/types/character-lab"
 
 /**
@@ -74,11 +75,10 @@ export default function ProfileLibrary({
       setEditing(null)
     } catch (err) {
       // The server refuses a rename onto an existing name with a 409 and says
-      // so; surfacing its message beats a generic failure the operator cannot act on.
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Could not save the change")
-      toast.error(detail)
+      // so; surfacing its message beats a generic failure the operator cannot
+      // act on. Via apiErrorMessage so a 422 — whose `detail` is an array of
+      // objects — reports instead of crashing the page.
+      toast.error(apiErrorMessage(err, "Could not save the change"))
     }
   }
 
