@@ -256,6 +256,23 @@ const INTERVIEW_LIVE_ITEM_SUPER_ADMIN: NavItemDef = {
 }
 
 /**
+ * Character Lab — the fictional-character PRISM demo.
+ *
+ * Moved out of the flat super-admin list into the Tools rollup on 2026-08-27
+ * (request). It is a workbench you open to do something, which is what the
+ * Tools section is for, rather than a platform surface you administer.
+ *
+ * The label must stay unique: `SidebarScaffold` keys nav items by label, so a
+ * duplicate collides during reconciliation — the bug that made Tools appear to
+ * hide behind Administration.
+ */
+const CHARACTER_LAB_ITEM: NavItemDef = {
+  to: ROUTES.SUPER_ADMIN.CHARACTER_LAB,
+  icon: Drama,
+  label: "Character Lab",
+}
+
+/**
  * Per-role "Tools" rollup items. Rendered as a collapsible "Tools" section in
  * the sidebar (see UnifiedLayout for manager et al.; SuperAdminLayout for
  * super-admin) rather than as flat top-level nav items. Empty when the pilot
@@ -289,6 +306,7 @@ export const TOOL_ITEMS_BY_ROLE: Partial<Record<UserRole, NavItemDef[]>> = {
     INTERVIEW_PRACTICE_ITEM,
     INTERVIEW_LIVE_ITEM_SUPER_ADMIN,
     INTERVIEW_STUDIO_ITEM_SUPER_ADMIN,
+    CHARACTER_LAB_ITEM,
   ],
 }
 
@@ -324,7 +342,6 @@ export const SUPER_ADMIN_NAV_ITEMS: NavItemDef[] = [
   // Wave 0.E (P5.1) — Cultural Content is now a domain filter on the Knowledge Base page.
   { to: ROUTES.SUPER_ADMIN.KNOWLEDGE_BASE, icon: BookOpen, label: "Knowledge Base" },
   { to: ROUTES.SUPER_ADMIN.PRISM_MANAGEMENT, icon: BookOpen, label: "PRISM Management" },
-  { to: ROUTES.SUPER_ADMIN.CHARACTER_LAB, icon: Drama, label: "Character Lab" },
   { to: ROUTES.SUPER_ADMIN.PRIVACY_COMPLIANCE, icon: ShieldCheck, label: "Privacy & RTBF" },
   // Wave 2 Lane 2.A (P7.1) — formerly "Diagnostic Chat" at /diagnostic-chat.
   { to: ROUTES.SUPER_ADMIN.AGENT_TRACE_CONSOLE, icon: Network, label: "Agent Trace Console" },

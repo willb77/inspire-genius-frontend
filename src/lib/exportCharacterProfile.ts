@@ -10,6 +10,7 @@
  * invents a score.
  */
 import { downloadBlob } from "@/lib/exportTranscript"
+import { parseMarkdownBlocks } from "@/lib/markdownBlocks"
 import type {
   DerivedQuadrant,
   Rubric,
@@ -38,13 +39,6 @@ export function profileFileStem(name: string): string {
 /** Save CSV text the API produced. Kept separate so the caller cannot pass a hand-built string. */
 export function saveCsv(filename: string, content: string): void {
   downloadBlob(filename, new Blob([content], { type: "text/csv;charset=utf-8" }))
-}
-
-function stripInlineMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "$1")
-    .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1$2")
-    .replace(/`(.+?)`/g, "$1")
 }
 
 /**
@@ -135,29 +129,26 @@ export async function exportProfileWord(payload: ProfileExportPayload): Promise<
 
   if (payload.analysis) {
     push(new Paragraph({ text: "Analysis", heading: HeadingLevel.HEADING_1 }))
-    for (const raw of payload.analysis.split(/\r?\n/)) {
-      const line = raw.trimEnd()
-      if (!line.trim()) {
+    // Parsed by the shared block parser so the Word and PDF exports format
+    // the same generated markdown identically — they had drifted apart the
+    // moment a second exporter existed.
+    for (const block of parseMarkdownBlocks(payload.analysis)) {
+      if (block.kind === "blank") {
         push(new Paragraph({ text: "" }))
-        continue
-      }
-      const heading = /^(#{1,4})\s+(.*)$/.exec(line)
-      if (heading) {
-        const level = heading[1].length
+      } else if (block.kind === "heading") {
         push(
           new Paragraph({
-            text: stripInlineMarkdown(heading[2]),
-            heading: level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
+            text: block.text,
+            heading: block.level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
           }),
         )
-        continue
+      } else if (block.kind === "bullet") {
+        push(new Paragraph({ text: block.text, bullet: { level: 0 } }))
+      } else if (block.kind === "ordered") {
+        push(new Paragraph({ text: `${block.index}. ${block.text}` }))
+      } else {
+        push(new Paragraph({ children: [new TextRun(block.text)] }))
       }
-      const bullet = /^\s*[-*+]\s+(.*)$/.exec(line)
-      if (bullet) {
-        push(new Paragraph({ text: stripInlineMarkdown(bullet[1]), bullet: { level: 0 } }))
-        continue
-      }
-      push(new Paragraph({ children: [new TextRun(stripInlineMarkdown(line))] }))
     }
     push(new Paragraph({ text: "" }))
   }
