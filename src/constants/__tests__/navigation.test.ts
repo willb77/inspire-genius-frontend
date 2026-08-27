@@ -116,16 +116,20 @@ describe("constants/navigation", () => {
     // SUPER_ADMIN_TOOLS_SECTION was removed 2026-08-12 — the section is now
     // assembled by useToolsSection, covered in hooks/nav/__tests__. What still
     // belongs here is the DATA that hook consumes.
-    it("gives super-admin all four tools, none of them behind the pilot flag", () => {
+    it("gives super-admin every tool, none of them behind the pilot flag", () => {
       // Team Development Studio is flag-gated for the manager pilot but must be
       // unconditional for super-admin — gating the platform owner on a pilot
       // flag is what made the entry vanish from builds with the flag unset.
+      //
+      // Character Lab joined this list on 2026-08-27, moving out of the flat
+      // super-admin nav.
       const labels = (TOOL_ITEMS_BY_ROLE["super-admin"] ?? []).map((i) => i.label)
       expect(labels).toEqual([
         "Team Development Studio",
         "Interview Practice",
         "Live Interview",
         "Interview Studio",
+        "Character Lab",
       ])
     })
 
@@ -305,6 +309,33 @@ describe("My Workspace menu order + switched-off entries", () => {
     const staticRoutes = USER_NAV_ITEMS.map((i) => i.to)
     const liveRoutes = getUserNavItems(false).map((i) => i.to)
     expect(staticRoutes).toEqual(liveRoutes)
+  })
+
+  describe("Character Lab lives in Tools", () => {
+    // Moved out of the flat super-admin list on 2026-08-27 (request). Both
+    // halves are asserted: an entry that was added to Tools without being
+    // removed from the flat list would render TWICE, and `SidebarScaffold`
+    // keys nav items by label — a duplicate label collides during
+    // reconciliation, which is the bug that made Tools appear to hide behind
+    // Administration.
+    it("is in the super-admin Tools rollup", () => {
+      const tools = TOOL_ITEMS_BY_ROLE["super-admin"] ?? []
+      expect(tools.map((i) => i.to)).toContain(ROUTES.SUPER_ADMIN.CHARACTER_LAB)
+    })
+
+    it("is no longer in the flat super-admin nav", () => {
+      const flat = NAV_ITEMS_BY_ROLE["super-admin"].map((i) => i.to)
+      expect(flat).not.toContain(ROUTES.SUPER_ADMIN.CHARACTER_LAB)
+    })
+
+    it("has a label unique across both lists", () => {
+      const labels = [
+        ...NAV_ITEMS_BY_ROLE["super-admin"],
+        ...(TOOL_ITEMS_BY_ROLE["super-admin"] ?? []),
+      ].map((i) => i.label)
+      const dupes = labels.filter((l, i) => labels.indexOf(l) !== i)
+      expect(dupes).toEqual([])
+    })
   })
 
   it("leaves the four usable entries usable", () => {

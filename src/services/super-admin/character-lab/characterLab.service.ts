@@ -1,11 +1,19 @@
 import { agentApi } from '@/lib/agentApi'
 import type {
   AnalysisPart,
+  AskResult,
   BatteryResult,
   CharacterRequest,
+  ComparisonPart,
   GenerateResult,
+  ProfilePatch,
+  ProfileSummary,
   Rubric,
+  SavedProfile,
+  SavedScenario,
+  ScenarioPart,
   ScoreByType,
+  StarterQuestions,
 } from '@/types/character-lab'
 
 /**
@@ -72,4 +80,107 @@ export async function exportProfile(
     req,
   )
   return data.data
+}
+
+// ─── Saved profiles ─────────────────────────────────────────────────────
+
+export async function listProfiles(): Promise<ProfileSummary[]> {
+  const { data } = await agentApi.get<Envelope<{ profiles: ProfileSummary[] }>>(`${BASE}/profiles`)
+  return data.data.profiles
+}
+
+export async function getProfile(id: string): Promise<SavedProfile> {
+  const { data } = await agentApi.get<Envelope<SavedProfile>>(`${BASE}/profiles/${id}`)
+  return data.data
+}
+
+/**
+ * Save a profile, or update the one already saved under that name.
+ *
+ * Upsert-by-name is the server's contract, not a convenience here: rebuilding a
+ * character after editing its notes means "this is the better version", and two
+ * identical names in the recall list is a bug the operator can see.
+ */
+export async function saveProfile(
+  req: CharacterRequest & {
+    scores: Record<string, ScoreByType>
+    colours: Record<string, number>
+    reading?: string
+    analysis?: string
+    evidence?: Record<string, string>
+  },
+): Promise<SavedProfile> {
+  const { data } = await agentApi.post<Envelope<SavedProfile>>(`${BASE}/profiles`, req)
+  return data.data
+}
+
+/** Patch only the fields supplied — an absent field is left alone, not blanked. */
+export async function patchProfile(id: string, patch: ProfilePatch): Promise<SavedProfile> {
+  const { data } = await agentApi.patch<Envelope<SavedProfile>>(`${BASE}/profiles/${id}`, patch)
+  return data.data
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  await agentApi.delete(`${BASE}/profiles/${id}`)
+}
+
+// ─── Comparison, questions, scenarios ───────────────────────────────────
+
+/**
+ * One section of a comparison across two to four saved characters.
+ *
+ * Split for the same measured reason as the write-up: the constraint is how
+ * much prose comes back, against a 30s gateway cap that cannot be raised.
+ */
+export async function compareProfiles(req: {
+  profile_ids: string[]
+  part?: number
+}): Promise<ComparisonPart> {
+  const { data } = await agentApi.post<Envelope<ComparisonPart>>(`${BASE}/compare`, req)
+  return data.data
+}
+
+export async function fetchStarterQuestions(req: {
+  profile_ids: string[]
+}): Promise<StarterQuestions> {
+  const { data } = await agentApi.post<Envelope<StarterQuestions>>(`${BASE}/questions`, req)
+  return data.data
+}
+
+export async function askAboutProfiles(req: {
+  profile_ids: string[]
+  question: string
+}): Promise<AskResult> {
+  const { data } = await agentApi.post<Envelope<AskResult>>(`${BASE}/ask`, req)
+  return data.data
+}
+
+/** One focus per call — a profile id, or `COLLABORATIVE`. */
+export async function runScenario(req: {
+  profile_ids: string[]
+  situation: string
+  focus: string
+}): Promise<ScenarioPart> {
+  const { data } = await agentApi.post<Envelope<ScenarioPart>>(`${BASE}/scenario`, req)
+  return data.data
+}
+
+export async function listScenarios(): Promise<SavedScenario[]> {
+  const { data } = await agentApi.get<Envelope<{ scenarios: SavedScenario[] }>>(`${BASE}/scenarios`)
+  return data.data.scenarios
+}
+
+export async function saveScenario(req: {
+  profile_ids: string[]
+  title: string
+  situation: string
+  character_names: string[]
+  result: { individual?: Record<string, string>; collaborative?: string }
+}): Promise<SavedScenario> {
+  const { data } = await agentApi.post<Envelope<SavedScenario>>(`${BASE}/scenarios`, req)
+  return data.data
+}
+
+export async function deleteScenario(id: string): Promise<void> {
+  await agentApi.delete(`${BASE}/scenarios/${id}`)
 }

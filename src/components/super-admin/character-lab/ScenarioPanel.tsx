@@ -1,0 +1,295 @@
+import { useState } from "react"
+import { toast } from "sonner"
+import { Clapperboard, Loader2, Save, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton"
+import CastPicker from "@/components/super-admin/character-lab/CastPicker"
+import ProfileMarkdown from "@/components/super-admin/character-lab/ProfileMarkdown"
+import {
+  useDeleteScenario,
+  useRunScenario,
+  useSaveScenario,
+  useSavedProfiles,
+  useSavedScenarios,
+} from "@/hooks/super-admin/useCharacterLab"
+import { mapWithConcurrency } from "@/lib/mapWithConcurrency"
+import { COLLABORATIVE } from "@/types/character-lab"
+
+const MAX_CAST = 4
+
+/** Same bound, same measured reason as the comparison and the write-up. */
+const SCENARIO_CONCURRENCY = 3
+
+const PRESETS = [
+  "A negotiation that is going badly, with a deadline in an hour.",
+  "A team member has made a serious mistake and hidden it for a week.",
+  "The plan they argued for has just failed in public.",
+  "A rival offers them something they want, in exchange for something small.",
+]
+
+type Result = { individual: Record<string, string>; collaborative: string }
+
+/**
+ * Put saved characters into a situation and read back how they behave.
+ *
+ * Each character gets their OWN request, plus one for the collaborative read.
+ * That is not a stylistic choice: one request describing four characters'
+ * behaviour is exactly the unbounded generation that returns 503 against API
+ * Gateway's 30s cap. Splitting by focus makes each generation short and lets
+ * the individual reads land as they arrive.
+ */
+export default function ScenarioPanel() {
+  const { data: profiles, isLoading } = useSavedProfiles()
+  const { data: scenarios, isLoading: scenariosLoading } = useSavedScenarios()
+  const run = useRunScenario()
+  const save = useSaveScenario()
+  const remove = useDeleteScenario()
+
+  const [selected, setSelected] = useState<string[]>([])
+  const [situation, setSituation] = useState("")
+  const [title, setTitle] = useState("")
+  const [result, setResult] = useState<Result | null>(null)
+  const [running, setRunning] = useState(false)
+
+  const cast = (profiles ?? []).filter((p) => selected.includes(p.id))
+
+  async function onRun() {
+    if (!selected.length) {
+      toast.error("Pick at least one character.")
+      return
+    }
+    if (situation.trim().length < 3) {
+      toast.error("Describe the situation first.")
+      return
+    }
+    setRunning(true)
+    setResult({ individual: {}, collaborative: "" })
+    const req = { profile_ids: selected, situation: situation.trim() }
+
+    // One focus per request: each character, then the collaborative read.
+    const focuses = [...selected, COLLABORATIVE]
+    const outcomes = await mapWithConcurrency(focuses, SCENARIO_CONCURRENCY, (focus) =>
+      run.mutateAsync({ ...req, focus }),
+    )
+
+    const next: Result = { individual: {}, collaborative: "" }
+    let failed = 0
+    outcomes.forEach((outcome, i) => {
+      const focus = focuses[i]
+      if (outcome.status === "fulfilled") {
+        if (focus === COLLABORATIVE) next.collaborative = outcome.value.behaviour
+        else next.individual[focus] = outcome.value.behaviour
+      } else {
+        failed += 1
+        const who = cast.find((c) => c.id === focus)?.name ?? "the group"
+        const marker = `_The read for ${who} could not be generated._`
+        if (focus === COLLABORATIVE) next.collaborative = marker
+        else next.individual[focus] = marker
+      }
+    })
+    setResult(next)
+    setRunning(false)
+    if (failed) toast.warning(`${failed} of ${focuses.length} reads failed`)
+  }
+
+  async function onSave() {
+    if (!result) return
+    try {
+      await save.mutateAsync({
+        profile_ids: selected,
+        title: title.trim() || situation.trim().slice(0, 60),
+        situation: situation.trim(),
+        character_names: cast.map((c) => c.name),
+        result,
+      })
+      toast.success("Scenario saved")
+    } catch (err) {
+      toast.error(
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+          "Could not save the scenario",
+      )
+    }
+  }
+
+  function replay(s: { situation: string; character_ids: string[]; title: string; result: Result }) {
+    setSituation(s.situation)
+    setTitle(s.title)
+    setSelected(s.character_ids)
+    setResult({ individual: s.result.individual ?? {}, collaborative: s.result.collaborative ?? "" })
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clapperboard className="h-4 w-4" aria-hidden /> Put them in a situation
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Each character is read on their own first, then as a group. Behaviour is derived from
+            the scores — where the profile predicts something the character is not famous for, the
+            write-up says so.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CastPicker
+            idPrefix="scn"
+            profiles={profiles ?? []}
+            loading={isLoading}
+            selected={selected}
+            onChange={setSelected}
+            max={MAX_CAST}
+            min={1}
+          />
+          <div className="space-y-1.5">
+            <Label htmlFor="cl-situation">The situation</Label>
+            <Textarea
+              id="cl-situation"
+              rows={3}
+              value={situation}
+              onChange={(e) => setSituation(e.target.value)}
+              placeholder="What are they walking into?"
+            />
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setSituation(p)}
+                  className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-accent"
+                >
+                  {p.length > 46 ? `${p.slice(0, 46)}…` : p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cl-scenario-title">Name it (optional)</Label>
+            <Input
+              id="cl-scenario-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="The hospital scene"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={onRun} disabled={running || !selected.length}>
+              {running ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running the scene…
+                </>
+              ) : (
+                "Run the scenario"
+              )}
+            </Button>
+            {result && !running && (
+              <Button variant="secondary" onClick={onSave} disabled={save.isPending}>
+                {save.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Keep this run
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {title.trim() || "How it plays out"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {cast.map((c) => (
+              <div key={c.id}>
+                {result.individual[c.id] ? (
+                  <ProfileMarkdown text={result.individual[c.id]} />
+                ) : running ? (
+                  <Skeleton className="h-20 w-full" />
+                ) : null}
+              </div>
+            ))}
+            {result.collaborative ? (
+              <ProfileMarkdown text={result.collaborative} />
+            ) : running ? (
+              <Skeleton className="h-20 w-full" />
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Saved scenarios</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Each run keeps the character names as they were at the time, so it still reads
+            correctly after a profile is renamed or deleted.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {scenariosLoading ? (
+            <Skeleton className="h-20 w-full" />
+          ) : !scenarios?.length ? (
+            <p className="text-sm text-muted-foreground">Nothing kept yet.</p>
+          ) : (
+            <ul className="divide-y rounded-md border">
+              {scenarios.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{s.title || s.situation}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {s.character_names.join(", ") || "cast not recorded"}
+                      {s.created_at ? ` · ${new Date(s.created_at).toLocaleDateString()}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        replay({
+                          situation: s.situation,
+                          character_ids: s.character_ids,
+                          title: s.title,
+                          result: {
+                            individual: s.result.individual ?? {},
+                            collaborative: s.result.collaborative ?? "",
+                          },
+                        })
+                      }
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Delete ${s.title || "scenario"}`}
+                      onClick={async () => {
+                        try {
+                          await remove.mutateAsync(s.id)
+                          toast.success("Scenario deleted")
+                        } catch {
+                          toast.error("Could not delete")
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
